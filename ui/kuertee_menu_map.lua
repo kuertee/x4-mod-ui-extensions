@@ -23,15 +23,30 @@ function newFuncs.registerCallback (callbackName, callbackFunction)
 	-- note 5: if a callback requires a return value, return it in an object var. e.g. "display_override_room_active" requires a return of {active = true | false}.
 	-- available callbacks:
 	-- createPropertyOwned_on_start
+	-- createPropertyOwned_on_init_infoTableData
+	-- createPropertyOwned_populate_ships_infoTableData
 	-- createPropertyOwned_createPropertySection
-	-- createPropertyRow_override_displayLocation
-	-- createPropertyRow_add_unassigned_ship_data
+	-- createPropertyRow_override_locationtext
+	-- createPropertyRow_override_location_entry_properties
 	--
 	if callbacks [callbackName] == nil then
 		callbacks [callbackName] = {}
 	end
 	table.insert (callbacks [callbackName], callbackFunction)
 end
+-- only have config stuff here that are used in this file
+local config = {
+    mapRowHeight = Helper.standardTextHeight,
+    mapFontSize = Helper.standardFontSize,
+    propertyCategories = {
+        { category = "propertyall",                name = ReadText(1001, 8380),    icon = "mapst_propertyowned",        helpOverlayID = "mapst_po_propertyowned",        helpOverlayText = ReadText(1028, 3220) },
+        { category = "stations",                name = ReadText(1001, 8379),    icon = "mapst_ol_stations",            helpOverlayID = "mapst_po_stations",            helpOverlayText = ReadText(1028, 3221) },
+        { category = "fleets",                    name = ReadText(1001, 8326),    icon = "mapst_ol_fleets",            helpOverlayID = "mapst_po_fleets",                helpOverlayText = ReadText(1028, 3223) },
+        { category = "unassignedships",            name = ReadText(1001, 8327),    icon = "mapst_ol_unassigned",        helpOverlayID = "mapst_po_unassigned",            helpOverlayText = ReadText(1028, 3224) },
+        { category = "inventoryships",            name = ReadText(1001, 8381),    icon = "mapst_ol_inventory",        helpOverlayID = "mapst_po_inventory",            helpOverlayText = ReadText(1028, 3225) },
+        { category = "deployables",                name = ReadText(1001, 1332),    icon = "mapst_ol_deployables",        helpOverlayID = "mapst_po_deployables",            helpOverlayText = ReadText(1028, 3226) },
+    }
+}
 function newFuncs.createPropertyOwned(frame, instance)
 	local menu = mapMenu
 
@@ -78,6 +93,14 @@ function newFuncs.createPropertyOwned(frame, instance)
 	infoTableData.dockedships = { }
 	infoTableData.constructions = { }
 	infoTableData.moduledata = { }
+
+	-- start kuertee_lua_with_callbacks:
+	if callbacks ["createPropertyOwned_on_init_infoTableData"] then
+		for _, callback in ipairs (callbacks ["createPropertyOwned_on_init_infoTableData"]) do
+			callback (infoTableData)
+		end
+	end
+	-- end kuertee_lua_with_callbacks:
 
 	local onlineitems = {}
 	if menu.propertyMode == "inventoryships" then
@@ -185,6 +208,15 @@ function newFuncs.createPropertyOwned(frame, instance)
 					end
 				end
 			end
+
+			-- start kuertee_lua_with_callbacks:
+			if callbacks ["createPropertyOwned_populate_ships_infoTableData"] then
+				for _, callback in ipairs (callbacks ["createPropertyOwned_populate_ships_infoTableData"]) do
+					callback (infoTableData, object)
+				end
+			end
+			-- end kuertee_lua_with_callbacks:
+
 		end
 	end
 
@@ -237,7 +269,7 @@ function newFuncs.createPropertyOwned(frame, instance)
 	if callbacks ["createPropertyOwned_createPropertySection"] then
 		local result
 		for _, callback in ipairs (callbacks ["createPropertyOwned_createPropertySection"]) do
-			result = callback (numdisplayed, instance, ftable)
+			result = callback (numdisplayed, instance, ftable, infoTableData)
 			if result.numdisplayed > numdisplayed then
 				numdisplayed = result.numdisplayed
 			end
@@ -344,7 +376,9 @@ function newFuncs.createPropertyOwned(frame, instance)
 	tabtable.properties.nextTable = ftable.index
 	ftable.properties.prevTable = tabtable.index
 end
-function menu.createPropertyRow(instance, ftable, component, iteration, commanderlocation, showmodules, hidesubordinates, numdisplayed, sorter)
+function newFuncs.createPropertyRow(instance, ftable, component, iteration, commanderlocation, showmodules, hidesubordinates, numdisplayed, sorter)
+	local menu = mapMenu
+
 	local maxicons = menu.infoTableData[instance].maxIcons
 
 	local subordinates = menu.infoTableData[instance].subordinates[tostring(component)] or {}
@@ -366,6 +400,23 @@ function menu.createPropertyRow(instance, ftable, component, iteration, commande
 
 		local isstation = IsComponentClass(component, "station")
 		local isdoublerow = (iteration == 0 and (isstation or #subordinates > 0))
+
+		-- start kuertee_lua_with_callbacks:
+		if callbacks ["createPropertyRow_override_isdoublerow"] then
+			local result
+			local trueCount = 0
+			local callbacksCount = 0
+			for _, callback in ipairs (callbacks ["createPropertyRow_override_isdoublerow"]) do
+				callbacksCount = callbacksCount + 1
+				result = callback (isdoublerow)
+				if result.isdoublerow then
+					trueCount = trueCount + 1
+				end
+			end
+			isdoublerow = trueCount == callbacksCount
+		end
+		-- end kuertee_lua_with_callbacks:
+
 		local name, color, bgcolor, font, mouseover = menu.getContainerNameAndColors(component, iteration, isdoublerow, false)
 		local alertString = ""
 		local alertMouseOver = ""
@@ -430,26 +481,20 @@ function menu.createPropertyRow(instance, ftable, component, iteration, commande
 			isdocked = false
 		end
 
+		-- start kuertee_lua_with_callbacks:
+		if callbacks ["createPropertyRow_override_locationtext"] then
+			local result
+			for _, callback in ipairs (callbacks ["createPropertyRow_override_locationtext"]) do
+				result = callback (locationtext, component)
+			end
+			locationtext = result.locationtext
+		end
+		-- end kuertee_lua_with_callbacks:
+
 		local namecolspan = 1
 		if menu.infoTableMode == "objectlist" then
 			displaylocation = false
 		end
-
-		-- start kuertee_lua_with_callbacks:
-		if callbacks ["createPropertyRow_override_displayLocation"] then
-			local isTrueCount = 0
-			local callbacksCount = 0
-			local result
-			for _, callback in ipairs (callbacks ["createPropertyRow_override_displayLocation"]) do
-				callbacksCount = callbacksCount + 1
-				result = callback (displaylocation)
-				if result.displaylocation == true then
-					isTrueCount = isTrueCount + 1
-				end
-			end
-			displaylocation = isTrueCount == callbacksCount
-		end
-		-- end kuertee_lua_with_callbacks:
 
 		if not displaylocation then
 			if (currentordericon ~= "") or isdocked then
@@ -563,6 +608,7 @@ function menu.createPropertyRow(instance, ftable, component, iteration, commande
 				end
 				mouseover = mouseover .. alertMouseOver
 			end
+
 			row[2]:createText(shipname, { font = font, color = color, mouseOverText = mouseover })
 			-- location / order
 			if displaylocation then
@@ -579,17 +625,21 @@ function menu.createPropertyRow(instance, ftable, component, iteration, commande
 				if locationtexttruncated ~= locationtext then
 					mouseovertext = locationtext
 				end
-				row[3 + namecolspan]:createText(locationtext, { halign = "right", font = font, mouseOverText = mouseovertext, x = 0 })
-			end
 
-			-- start kuertee_lua_with_callbacks:
-			if callbacks ["createPropertyRow_add_unassigned_ship_data"] then
-				for _, callback in ipairs (callbacks ["createPropertyRow_add_unassigned_ship_data"]) do
-					callbacksCount = callbacksCount + 1
-					callback (component, row, maxicons, namecolspan, currentordericon, isdocked, font)
+				-- row[3 + namecolspan]:createText(locationtext, { halign = "right", font = font, mouseOverText = mouseovertext, x = 0 })
+				-- start kuertee_lua_with_callbacks:
+				if not callbacks ["createPropertyRow_override_location_entry_properties"] then
+					row[3 + namecolspan]:createText(locationtext, { halign = "right", font = font, mouseOverText = mouseovertext, x = 0 })
+				else
+					local result
+					for _, callback in ipairs (callbacks ["createPropertyRow_override_location_entry_properties"]) do
+						result = callback (locationtext, {halign = "right", font = font, mouseOverText = mouseovertext, x = 0}, component)
+					end
+					-- only the last callback is used
+					row[3 + namecolspan]:createText(result.locationtext, result.properties)
 				end
+				-- end kuertee_lua_with_callbacks:
 			end
-			-- end kuertee_lua_with_callbacks:
 
 			if (currentordericon ~= "") or isdocked then
 				if isdocked then

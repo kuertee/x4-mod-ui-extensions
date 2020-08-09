@@ -128,8 +128,10 @@ function newFuncs.addEntry(ftable, target, indent, parentcomponent)
 		local result
 		for _, callback in ipairs (callbacks ["addEntry_append_to_room_name"]) do
 			result = callback (name, target)
-			name = result.name
 		end
+		-- DebugError ("kuertee_menu_transporter.lua.addEntry_append_to_room_name name pre " .. tostring (name))
+		name = result.name
+		-- DebugError ("kuertee_menu_transporter.lua.addEntry_append_to_room_name name post " .. tostring (name))
 	end
 	-- end kuertee_lua_with_callbacks:
 
