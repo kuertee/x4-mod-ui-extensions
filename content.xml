@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<content id="kuerteeUILuaWithCallbacks"
+	name="kuertee UI: Lua with callbacks"
+	author="kuertee"
+	version="100"
+	date="2020-08-08"
+	save="false"
+	enabled="1"
+	description="UI: Lua with callbacks&#13;&#10;">
+</content>
