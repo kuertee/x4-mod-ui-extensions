@@ -24,10 +24,11 @@ function newFuncs.registerCallback (callbackName, callbackFunction)
 	-- available callbacks:
 	-- createPropertyOwned_on_start
 	-- createPropertyOwned_on_init_infoTableData
-	-- createPropertyOwned_populate_ships_infoTableData
-	-- createPropertyOwned_createPropertySection
-	-- createPropertyRow_override_locationtext
-	-- createPropertyRow_override_location_entry_properties
+	-- createPropertyOwned_on_set_ships_infoTableData
+	-- createPropertyOwned_on_createPropertySection_end
+	-- createPropertyRow_on_init_vars
+	-- createPropertyRow_on_set_locationtext
+	-- createPropertyRow_override_row_location_createText
 	--
 	if callbacks [callbackName] == nil then
 		callbacks [callbackName] = {}
@@ -210,8 +211,8 @@ function newFuncs.createPropertyOwned(frame, instance)
 			end
 
 			-- start kuertee_lua_with_callbacks:
-			if callbacks ["createPropertyOwned_populate_ships_infoTableData"] then
-				for _, callback in ipairs (callbacks ["createPropertyOwned_populate_ships_infoTableData"]) do
+			if callbacks ["createPropertyOwned_on_set_ships_infoTableData"] then
+				for _, callback in ipairs (callbacks ["createPropertyOwned_on_set_ships_infoTableData"]) do
 					callback (infoTableData, object)
 				end
 			end
@@ -266,9 +267,9 @@ function newFuncs.createPropertyOwned(frame, instance)
 	end
 
 	-- start kuertee_lua_with_callbacks:
-	if callbacks ["createPropertyOwned_createPropertySection"] then
+	if callbacks ["createPropertyOwned_on_createPropertySection_end"] then
 		local result
-		for _, callback in ipairs (callbacks ["createPropertyOwned_createPropertySection"]) do
+		for _, callback in ipairs (callbacks ["createPropertyOwned_on_createPropertySection_end"]) do
 			result = callback (numdisplayed, instance, ftable, infoTableData)
 			if result.numdisplayed > numdisplayed then
 				numdisplayed = result.numdisplayed
@@ -386,6 +387,20 @@ function newFuncs.createPropertyRow(instance, ftable, component, iteration, comm
 	local constructions = menu.infoTableData[instance].constructions[tostring(component)] or {}
 	local convertedComponent = ConvertStringTo64Bit(tostring(component))
 
+	-- start kuertee_lua_with_callbacks:
+	if callbacks ["createPropertyRow_on_init_vars"] then
+		local result
+		for _, callback in ipairs (callbacks ["createPropertyRow_on_init_vars"]) do
+			result = callback (maxicons, subordinates, dockedships, constructions, convertedComponent)
+		end
+		subordinates = result.maxicons
+		subordinates = result.subordinates
+		dockedships = result.dockedships
+		constructions = result.constructions
+		convertedComponent = result.convertedComponent
+	end
+	-- end kuertee_lua_with_callbacks:
+
 	if (#menu.searchtext == 0) or Helper.textArrayHelper(menu.searchtext, function (numtexts, texts) return C.FilterComponentByText(convertedComponent, numtexts, texts, true) end, "text") then
 		numdisplayed = numdisplayed + 1
 
@@ -400,23 +415,6 @@ function newFuncs.createPropertyRow(instance, ftable, component, iteration, comm
 
 		local isstation = IsComponentClass(component, "station")
 		local isdoublerow = (iteration == 0 and (isstation or #subordinates > 0))
-
-		-- start kuertee_lua_with_callbacks:
-		if callbacks ["createPropertyRow_override_isdoublerow"] then
-			local result
-			local trueCount = 0
-			local callbacksCount = 0
-			for _, callback in ipairs (callbacks ["createPropertyRow_override_isdoublerow"]) do
-				callbacksCount = callbacksCount + 1
-				result = callback (isdoublerow)
-				if result.isdoublerow then
-					trueCount = trueCount + 1
-				end
-			end
-			isdoublerow = trueCount == callbacksCount
-		end
-		-- end kuertee_lua_with_callbacks:
-
 		local name, color, bgcolor, font, mouseover = menu.getContainerNameAndColors(component, iteration, isdoublerow, false)
 		local alertString = ""
 		local alertMouseOver = ""
@@ -482,9 +480,9 @@ function newFuncs.createPropertyRow(instance, ftable, component, iteration, comm
 		end
 
 		-- start kuertee_lua_with_callbacks:
-		if callbacks ["createPropertyRow_override_locationtext"] then
+		if callbacks ["createPropertyRow_on_set_locationtext"] then
 			local result
-			for _, callback in ipairs (callbacks ["createPropertyRow_override_locationtext"]) do
+			for _, callback in ipairs (callbacks ["createPropertyRow_on_set_locationtext"]) do
 				result = callback (locationtext, component)
 			end
 			locationtext = result.locationtext
@@ -628,11 +626,11 @@ function newFuncs.createPropertyRow(instance, ftable, component, iteration, comm
 
 				-- row[3 + namecolspan]:createText(locationtext, { halign = "right", font = font, mouseOverText = mouseovertext, x = 0 })
 				-- start kuertee_lua_with_callbacks:
-				if not callbacks ["createPropertyRow_override_location_entry_properties"] then
+				if not callbacks ["createPropertyRow_override_row_location_createText"] then
 					row[3 + namecolspan]:createText(locationtext, { halign = "right", font = font, mouseOverText = mouseovertext, x = 0 })
 				else
 					local result
-					for _, callback in ipairs (callbacks ["createPropertyRow_override_location_entry_properties"]) do
+					for _, callback in ipairs (callbacks ["createPropertyRow_override_row_location_createText"]) do
 						result = callback (locationtext, {halign = "right", font = font, mouseOverText = mouseovertext, x = 0}, component)
 					end
 					-- only the last callback is used

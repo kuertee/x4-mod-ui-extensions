@@ -16,15 +16,15 @@ local function Init ()
 end
 function newFuncs.registerCallback (callbackName, callbackFunction)
 	-- DebugError ("kuertee_menu_transporter.lua.registerCallback " .. tostring (callbackName) .. " " .. tostring (callbackFunction))
-	-- note 1: format is generally [function name]_[action]. e.g.: "display_override_room_active" overrides the room's active property with the return of the callback.
-	-- note 2: events have the word "_on_" followed by a PRESET TENSE verb. e.g.: "display_on_button_table_end" is called after all of the rows of buttontable are set.
+	-- note 1: format is generally [function name]_[action]. e.g.: "display_on_set_room_active" overrides the room's active property with the return of the callback.
+	-- note 2: events have the word "_on_" followed by a PRESET TENSE verb. e.g.: "display_on_set_buttontable" is called after all of the rows of buttontable are set.
 	-- note 3: new callbacks can be added or existing callbacks can be edited. but commit your additions/changes to the mod's GIT repository.
 	-- note 4: search for the callback names to see where they are executed.
-	-- note 5: if a callback requires a return value, return it in an object var. e.g. "display_override_room_active" requires a return of {active = true | false}.
+	-- note 5: if a callback requires a return value, return it in an object var. e.g. "display_on_set_room_active" requires a return of {active = true | false}.
 	-- available callbacks:
-	-- addEntry_append_to_room_name
-	-- display_override_room_active
-	-- display_on_button_table_end
+	-- addEntry_on_set_room_name
+	-- display_on_set_room_active
+	-- display_on_set_buttontable
 	--
 	if callbacks [callbackName] == nil then
 		callbacks [callbackName] = {}
@@ -124,14 +124,14 @@ function newFuncs.addEntry(ftable, target, indent, parentcomponent)
 	end --]]
 
 	-- start kuertee_lua_with_callbacks:
-	if callbacks ["addEntry_append_to_room_name"] then
+	if callbacks ["addEntry_on_set_room_name"] then
 		local result
-		for _, callback in ipairs (callbacks ["addEntry_append_to_room_name"]) do
+		for _, callback in ipairs (callbacks ["addEntry_on_set_room_name"]) do
 			result = callback (name, target)
 		end
-		-- DebugError ("kuertee_menu_transporter.lua.addEntry_append_to_room_name name pre " .. tostring (name))
+		-- DebugError ("kuertee_menu_transporter.lua.addEntry_on_set_room_name name pre " .. tostring (name))
 		name = result.name
-		-- DebugError ("kuertee_menu_transporter.lua.addEntry_append_to_room_name name post " .. tostring (name))
+		-- DebugError ("kuertee_menu_transporter.lua.addEntry_on_set_room_name name post " .. tostring (name))
 	end
 	-- end kuertee_lua_with_callbacks:
 
@@ -260,11 +260,11 @@ function newFuncs.display()
 	local buttonrow = buttontable:addRow(true, { fixed = true, bgColor = Helper.color.transparent })
 	local active = (not menu.currentselection.hassubentries) and ((menu.transportercomponent ~= menu.currentselection.target.component) or (menu.transporterconnection ~= menu.currentselection.target.connection))
 	-- start kuertee_lua_with_callbacks:
-	if callbacks ["display_override_room_active"] then
+	if callbacks ["display_on_set_room_active"] then
 		local activeCount = 0
 		local callbacksCount = 0
 		local result
-		for _, callback in ipairs (callbacks ["display_override_room_active"]) do
+		for _, callback in ipairs (callbacks ["display_on_set_room_active"]) do
 			callbacksCount = callbacksCount + 1
 			result = callback (active)
 			if result.active then
@@ -278,8 +278,8 @@ function newFuncs.display()
 	buttonrow[2].handlers.onClick = menu.buttonGoTo
 
 	-- start kuertee_lua_with_callbacks:
-	if callbacks ["display_on_button_table_end"] then
-		for _, callback in ipairs (callbacks ["display_on_button_table_end"]) do
+	if callbacks ["display_on_set_buttontable"] then
+		for _, callback in ipairs (callbacks ["display_on_set_buttontable"]) do
 			callback (buttontable)
 		end
 	end
