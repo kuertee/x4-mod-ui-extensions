@@ -12,7 +12,7 @@ local function init ()
 	topLevelMenu.removeTable = newFuncs.removeTable
 end
 function newFuncs.createInfoFrame_on_before_frame_display (frame)
-	DebugError ("kuertee_hud.newFuncs.createInfoFrame_on_before_frame_display frame " .. tostring (frame))
+	-- DebugError ("kuertee_hud.newFuncs.createInfoFrame_on_before_frame_display frame " .. tostring (frame))
 	if not topLevelMenu.showTabs then
 		kHUD.createTables (frame)
 	end
