@@ -16,11 +16,11 @@ local function Init ()
 end
 function newFuncs.registerCallback (callbackName, callbackFunction)
 	-- DebugError ("kuertee_menu_transporter.lua.registerCallback " .. tostring (callbackName) .. " " .. tostring (callbackFunction))
-	-- note 1: format is generally [function name]_[action]. e.g.: "display_override_room_active" overrides the room's active property with the return of the callback.
-	-- note 2: events have the word "_on_" followed by a PRESET TENSE verb. e.g.: "display_on_button_table_end" is called after all of the rows of buttontable are set.
+	-- note 1: format is generally [function name]_[action]. e.g.: in kuertee_menu_transporter.lua, "display_on_set_room_active" overrides the room's active property with the return of the callback.
+	-- note 2: events have the word "_on_" followed by a PRESET TENSE verb. e.g.: in kuertee_menu_transporter.lua, "display_on_set_buttontable" is called after all of the rows of buttontable are set.
 	-- note 3: new callbacks can be added or existing callbacks can be edited. but commit your additions/changes to the mod's GIT repository.
 	-- note 4: search for the callback names to see where they are executed.
-	-- note 5: if a callback requires a return value, return it in an object var. e.g. "display_override_room_active" requires a return of {active = true | false}.
+	-- note 5: if a callback requires a return value, return it in an object var. e.g. "display_on_set_room_active" requires a return of {active = true | false}.
 	-- available callbacks:
 	-- createPropertyOwned_on_start
 	-- createPropertyOwned_on_init_infoTableData
