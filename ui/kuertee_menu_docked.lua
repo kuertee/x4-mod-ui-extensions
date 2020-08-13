@@ -5,8 +5,8 @@ local dockedMenu
 local origFuncs = {}
 local newFuncs = {}
 local callbacks = {}
-local function Init ()
-	DebugError ("kuertee_menu_docked.lua.Init")
+local function init ()
+	DebugError ("kuertee_menu_docked.init")
 	dockedMenu = Lib.Get_Egosoft_Menu ("DockedMenu")
 	dockedMenu.registerCallback = newFuncs.registerCallback
 	origFuncs.display = dockedMenu.display
@@ -716,4 +716,4 @@ function newFuncs.display ()
 	-- display view/frame
 	menu.frame:display()
 end
-Init ()
+init ()

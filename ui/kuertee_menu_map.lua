@@ -5,8 +5,8 @@ local mapMenu
 local origFuncs = {}
 local newFuncs = {}
 local callbacks = {}
-local function Init ()
-	DebugError ("kuertee_menu_map.lua.Init")
+local function init ()
+	DebugError ("kuertee_menu_map.init")
 	mapMenu = Lib.Get_Egosoft_Menu ("MapMenu")
 	mapMenu.registerCallback = newFuncs.registerCallback
 	origFuncs.createPropertyOwned = mapMenu.createPropertyOwned
@@ -37,16 +37,16 @@ function newFuncs.registerCallback (callbackName, callbackFunction)
 end
 -- only have config stuff here that are used in this file
 local config = {
-    mapRowHeight = Helper.standardTextHeight,
-    mapFontSize = Helper.standardFontSize,
-    propertyCategories = {
-        { category = "propertyall",                name = ReadText(1001, 8380),    icon = "mapst_propertyowned",        helpOverlayID = "mapst_po_propertyowned",        helpOverlayText = ReadText(1028, 3220) },
-        { category = "stations",                name = ReadText(1001, 8379),    icon = "mapst_ol_stations",            helpOverlayID = "mapst_po_stations",            helpOverlayText = ReadText(1028, 3221) },
-        { category = "fleets",                    name = ReadText(1001, 8326),    icon = "mapst_ol_fleets",            helpOverlayID = "mapst_po_fleets",                helpOverlayText = ReadText(1028, 3223) },
-        { category = "unassignedships",            name = ReadText(1001, 8327),    icon = "mapst_ol_unassigned",        helpOverlayID = "mapst_po_unassigned",            helpOverlayText = ReadText(1028, 3224) },
-        { category = "inventoryships",            name = ReadText(1001, 8381),    icon = "mapst_ol_inventory",        helpOverlayID = "mapst_po_inventory",            helpOverlayText = ReadText(1028, 3225) },
-        { category = "deployables",                name = ReadText(1001, 1332),    icon = "mapst_ol_deployables",        helpOverlayID = "mapst_po_deployables",            helpOverlayText = ReadText(1028, 3226) },
-    }
+	mapRowHeight = Helper.standardTextHeight,
+	mapFontSize = Helper.standardFontSize,
+	propertyCategories = {
+		{ category = "propertyall",                name = ReadText(1001, 8380),    icon = "mapst_propertyowned",        helpOverlayID = "mapst_po_propertyowned",        helpOverlayText = ReadText(1028, 3220) },
+		{ category = "stations",                name = ReadText(1001, 8379),    icon = "mapst_ol_stations",            helpOverlayID = "mapst_po_stations",            helpOverlayText = ReadText(1028, 3221) },
+		{ category = "fleets",                    name = ReadText(1001, 8326),    icon = "mapst_ol_fleets",            helpOverlayID = "mapst_po_fleets",                helpOverlayText = ReadText(1028, 3223) },
+		{ category = "unassignedships",            name = ReadText(1001, 8327),    icon = "mapst_ol_unassigned",        helpOverlayID = "mapst_po_unassigned",            helpOverlayText = ReadText(1028, 3224) },
+		{ category = "inventoryships",            name = ReadText(1001, 8381),    icon = "mapst_ol_inventory",        helpOverlayID = "mapst_po_inventory",            helpOverlayText = ReadText(1028, 3225) },
+		{ category = "deployables",                name = ReadText(1001, 1332),    icon = "mapst_ol_deployables",        helpOverlayID = "mapst_po_deployables",            helpOverlayText = ReadText(1028, 3226) },
+	}
 }
 function newFuncs.createPropertyOwned(frame, instance)
 	local menu = mapMenu
@@ -258,262 +258,347 @@ function newFuncs.createPropertyOwned(frame, instance)
 	end
 	if (menu.propertyMode == "unassignedships") or (menu.propertyMode == "propertyall") then
 		-- construction rows do not use the shield/hull bar widget
-		menu.createConstructionSection(instance, "constructionships", ftable, ReadText(1001, 8328), infoTableData.constructionShips)
-	end
-	if menu.mode ~= "selectCV" then
-		if menu.propertyMode == "deployables" then
-			numdisplayed = menu.createPropertySection(instance, "owneddeployables", ftable, ReadText(1001, 1332), infoTableData.deployables, "-- " .. ReadText(1001, 34) .. " --", nil, numdisplayed, nil, menu.propertySorterType)
+			menu.createConstructionSection(instance, "constructionships", ftable, ReadText(1001, 8328), infoTableData.constructionShips)
 		end
-	end
-
-	-- start kuertee_lua_with_callbacks:
-	if callbacks ["createPropertyOwned_on_createPropertySection_end"] then
-		local result
-		for _, callback in ipairs (callbacks ["createPropertyOwned_on_createPropertySection_end"]) do
-			result = callback (numdisplayed, instance, ftable, infoTableData)
-			if result.numdisplayed > numdisplayed then
-				numdisplayed = result.numdisplayed
+		if menu.mode ~= "selectCV" then
+			if menu.propertyMode == "deployables" then
+				numdisplayed = menu.createPropertySection(instance, "owneddeployables", ftable, ReadText(1001, 1332), infoTableData.deployables, "-- " .. ReadText(1001, 34) .. " --", nil, numdisplayed, nil, menu.propertySorterType)
 			end
-		end
-	end
-	-- end kuertee_lua_with_callbacks:
-
-	if numdisplayed > 50 then
-		ftable.properties.maxVisibleHeight = maxvisibleheight + 50 * (Helper.scaleY(config.mapRowHeight) + Helper.borderSize)
-	end
-
-	menu.numFixedRows = ftable.numfixedrows
-
-	menu.settoprow = ((not menu.settoprow) or (menu.settoprow == 0)) and ((menu.setrow and menu.setrow > 31) and (menu.setrow - 27) or 3) or menu.settoprow
-	ftable:setTopRow(menu.settoprow)
-	if menu.infoTable then
-		local result = GetShiftStartEndRow(menu.infoTable)
-		if result then
-			ftable:setShiftStartEnd(table.unpack(result))
-		end
-	end
-	ftable:setSelectedRow(menu.sethighlightborderrow or menu.setrow)
-	menu.setrow = nil
-	menu.settoprow = nil
-	menu.setcol = nil
-	menu.sethighlightborderrow = nil
-
-	local tabtable = frame:addTable(#config.propertyCategories + 3, { tabOrder = 2, reserveScrollBar = false })
-	for i = 1, #config.propertyCategories do
-		tabtable:setColWidth(i, menu.sideBarWidth, false)
-	end
-	local sorterWidth = menu.infoTableWidth - 3 * (menu.sideBarWidth + Helper.borderSize) - (#config.propertyCategories - 1) * Helper.borderSize
-	local availableWidthForExtraColumns = menu.infoTableWidth - #config.propertyCategories * (menu.sideBarWidth + Helper.borderSize) - 2 * Helper.borderSize
-	local colwidth = sorterWidth / 3
-	local colspan = 3
-	if colwidth > 3 * menu.sideBarWidth + 2 * Helper.borderSize then
-		colspan = 4
-	elseif colwidth < 2 * menu.sideBarWidth + Helper.borderSize then
-		colspan = 2
-		colwidth = (menu.infoTableWidth - 6 * (menu.sideBarWidth + Helper.borderSize) - 2 * Helper.borderSize) / 2
-	end
-
-	if 2 * colwidth >= availableWidthForExtraColumns then
-		colwidth = math.floor((availableWidthForExtraColumns - 1) / 2)
-	end
-
-	tabtable:setColWidth(#config.propertyCategories + 2, colwidth, false)
-	tabtable:setColWidth(#config.propertyCategories + 3, colwidth, false)
-
-	local row = tabtable:addRow("property_tabs", { fixed = true, bgColor = Helper.color.transparent })
-	for i, entry in ipairs(config.propertyCategories) do
-		local bgcolor = Helper.defaultTitleBackgroundColor
-		local color = Helper.color.white
-		if entry.category == menu.propertyMode then
-			bgcolor = Helper.defaultArrowRowBackgroundColor
-		end
-
-		local active = true
-		if menu.mode == "selectCV" then
-			active = entry.category == "propertyall"
-		elseif (menu.mode == "selectComponent") and (menu.modeparam[3] == "deployables") then
-			active = entry.category == "deployables"
-			if active and (menu.selectedCols.propertytabs == nil) then
-				menu.selectedCols.propertytabs = i
-			end
-		end
-
-		row[i]:createButton({ height = menu.sideBarWidth, bgColor = bgcolor, mouseOverText = entry.name, scaling = false, helpOverlayID = entry.helpOverlayID, helpOverlayText = entry.helpOverlayText, active = active }):setIcon(entry.icon, { color = color})
-		row[i].handlers.onClick = function () return menu.buttonPropertySubMode(entry.category, i) end
-	end
-
-	local row = tabtable:addRow(true, { fixed = true, bgColor = Helper.color.transparent })
-	row[1]:setColSpan(3):createText(ReadText(1001, 2906) .. ReadText(1001, 120))
-
-	local buttonheight = Helper.scaleY(config.mapRowHeight)
-	local button = row[4]:setColSpan(colspan):createButton({ scaling = false, height = buttonheight }):setText(ReadText(1001, 8026), { halign = "center", scaling = true })
-	if menu.propertySorterType == "class" then
-		button:setIcon("table_arrow_inv_down", { width = buttonheight, height = buttonheight, x = button:getColSpanWidth() - buttonheight })
-	elseif menu.propertySorterType == "classinverse" then
-		button:setIcon("table_arrow_inv_up", { width = buttonheight, height = buttonheight, x = button:getColSpanWidth() - buttonheight })
-	end
-	row[4].handlers.onClick = function () return menu.buttonPropertySorter("class") end
-	local button = row[#config.propertyCategories + colspan - 2]:setColSpan(5 - colspan):createButton({ scaling = false, height = buttonheight }):setText(ReadText(1001, 2809), { halign = "center", scaling = true })
-	if menu.propertySorterType == "name" then
-		button:setIcon("table_arrow_inv_down", { width = buttonheight, height = buttonheight, x = button:getColSpanWidth() - buttonheight })
-	elseif menu.propertySorterType == "nameinverse" then
-		button:setIcon("table_arrow_inv_up", { width = buttonheight, height = buttonheight, x = button:getColSpanWidth() - buttonheight })
-	end
-	row[#config.propertyCategories + colspan - 2].handlers.onClick = function () return menu.buttonPropertySorter("name") end
-	local button = row[#config.propertyCategories + 3]:createButton({ scaling = false, height = buttonheight }):setText(ReadText(1001, 1), { halign = "center", scaling = true })
-	if menu.propertySorterType == "hull" then
-		button:setIcon("table_arrow_inv_down", { width = buttonheight, height = buttonheight, x = button:getColSpanWidth() - buttonheight })
-	elseif menu.propertySorterType == "hullinverse" then
-		button:setIcon("table_arrow_inv_up", { width = buttonheight, height = buttonheight, x = button:getColSpanWidth() - buttonheight })
-	end
-	row[#config.propertyCategories + 3].handlers.onClick = function () return menu.buttonPropertySorter("hull") end
-	
-	tabtable:setSelectedRow(menu.selectedRows.propertytabs or menu.selectedRows.infotable2 or 0)
-	tabtable:setSelectedCol(menu.selectedCols.propertytabs or Helper.currentTableCol[menu.infoTable2] or 0)
-	menu.selectedRows.propertytabs = nil
-	menu.selectedCols.propertytabs = nil
-
-	ftable.properties.y = tabtable.properties.y + tabtable:getFullHeight() + Helper.borderSize
-	tabtable.properties.nextTable = ftable.index
-	ftable.properties.prevTable = tabtable.index
-end
-function newFuncs.createPropertyRow(instance, ftable, component, iteration, commanderlocation, showmodules, hidesubordinates, numdisplayed, sorter)
-	local menu = mapMenu
-
-	local maxicons = menu.infoTableData[instance].maxIcons
-
-	local subordinates = menu.infoTableData[instance].subordinates[tostring(component)] or {}
-	local dockedships = menu.infoTableData[instance].dockedships[tostring(component)] or {}
-	local constructions = menu.infoTableData[instance].constructions[tostring(component)] or {}
-	local convertedComponent = ConvertStringTo64Bit(tostring(component))
-
-	-- start kuertee_lua_with_callbacks:
-	if callbacks ["createPropertyRow_on_init_vars"] then
-		local result
-		for _, callback in ipairs (callbacks ["createPropertyRow_on_init_vars"]) do
-			result = callback (maxicons, subordinates, dockedships, constructions, convertedComponent)
-		end
-		subordinates = result.maxicons
-		subordinates = result.subordinates
-		dockedships = result.dockedships
-		constructions = result.constructions
-		convertedComponent = result.convertedComponent
-	end
-	-- end kuertee_lua_with_callbacks:
-
-	if (#menu.searchtext == 0) or Helper.textArrayHelper(menu.searchtext, function (numtexts, texts) return C.FilterComponentByText(convertedComponent, numtexts, texts, true) end, "text") then
-		numdisplayed = numdisplayed + 1
-
-		if (not menu.isPropertyExtended(tostring(component))) and (menu.isCommander(component) or menu.isConstructionContext(convertedComponent)) then
-			menu.extendedproperty[tostring(component)] = true
-		end
-		if (not menu.isPropertyExtended(tostring(component))) and menu.isDockContext(convertedComponent) then
-			if menu.infoTableMode ~= "propertyowned" then
-				menu.extendedproperty[tostring(component)] = true
-			end
-		end
-
-		local isstation = IsComponentClass(component, "station")
-		local isdoublerow = (iteration == 0 and (isstation or #subordinates > 0))
-		local name, color, bgcolor, font, mouseover = menu.getContainerNameAndColors(component, iteration, isdoublerow, false)
-		local alertString = ""
-		local alertMouseOver = ""
-		if menu.getFilterOption("layer_think") then
-			local alertStatus, missionlist = menu.getContainerAlertLevel(component)
-			local minAlertLevel = menu.getFilterOption("think_alert")
-			if (minAlertLevel ~= 0) and alertStatus >= minAlertLevel then
-				local color = Helper.color.white
-				if alertStatus == 1 then
-					color = menu.holomapcolor.lowalertcolor
-				elseif alertStatus == 2 then
-					color = menu.holomapcolor.mediumalertcolor
-				else
-					color = menu.holomapcolor.highalertcolor
-				end
-				alertString = Helper.convertColorToText(color) .. "\027[workshop_error]\027X"
-				alertMouseOver = ReadText(1001, 3305) .. ReadText(1001, 120) .. "\n" .. missionlist
-			end
-		end
-
-		if menu.mode == "selectCV" then
-			local isplayerowned, isenemy = GetComponentData(component, "isplayerowned", "isenemy")
-			if isenemy then
-				mouseover = "\027R" .. ReadText(1026, 8014) .. "\027X"
-			elseif C.IsBuilderBusy(convertedComponent) then
-				mouseover = "\027R" .. ReadText(1001, 7939) .. "\027X"
-			elseif not isplayerowned then
-				local fee = tonumber(C.GetBuilderHiringFee())
-				mouseover = ((fee > GetPlayerMoney()) and "\027R" or "\027G") .. ReadText(1001, 7940) .. ReadText(1001, 120) .. " " .. ConvertMoneyString(fee, false, true, nil, true) .. " " .. ReadText(1001, 101) .. "\027X"
-			end
-		end
-
-		local row = ftable:addRow({"property", component, nil, iteration}, { bgColor = bgcolor, multiSelected = menu.isSelectedComponent(component) })
-		if (menu.getNumSelectedComponents() == 1) and menu.isSelectedComponent(component) then
-			menu.setrow = row.index
-		end
-		if IsSameComponent(component, menu.highlightedbordercomponent) then
-			menu.sethighlightborderrow = row.index
-		end
-
-		-- Set up columns
-		--  [+/-] [Object Name] [Top Level Shield/Hull Bar] [Location] [Sub_1] [Sub_2] [Sub_3] ... [Sub_N or Shield/Hull Bar]
-		if showmodules or (subordinates.hasRendered and (not hidesubordinates)) or (#dockedships > 0) or (isstation and (#constructions > 0)) then
-			row[1]:createButton({ scaling = false }):setText(menu.isPropertyExtended(tostring(component)) and "-" or "+", { scaling = true, halign = "center" })
-			row[1].handlers.onClick = function () return menu.buttonExtendProperty(tostring(component)) end
-		end
-
-		local location, locationtext, isdocked, aipilot, isplayerowned, isonlineobject = GetComponentData(component, "sectorid", "sector", "isdocked", "assignedaipilot", "isplayerowned", "isonlineobject")
-		local displaylocation = location and not (commanderlocation and IsSameComponent(location, commanderlocation))
-		local currentordericon, currentorderrawicon, currentordercolor, currentordername, currentorderisoverride = "", "", nil, "", false
-		if IsComponentClass(component, "ship") then
-			currentordericon, currentorderrawicon, currentordercolor, currentordername, currentorderisoverride = menu.getOrderInfo(convertedComponent)
-		end
-		local fleettypes = IsComponentClass(component, "controllable") and menu.getPropertyOwnedFleetData(instance, component, maxicons) or {}
-
-		if isplayerowned and isonlineobject then
-			locationtext = Helper.convertColorToText(menu.holomapcolor.visitorcolor) .. ReadText(1001, 11231) .. "\27X"
-			currentordericon = Helper.convertColorToText(menu.holomapcolor.visitorcolor) .. "\27[order_venture]\27X"
-			currentorderrawicon = "order_venture"
-			currentordercolor = menu.holomapcolor.visitorcolor
-			currentordername = ReadText(1001, 7868)
-			isdocked = false
 		end
 
 		-- start kuertee_lua_with_callbacks:
-		if callbacks ["createPropertyRow_on_set_locationtext"] then
+		if callbacks ["createPropertyOwned_on_createPropertySection_end"] then
 			local result
-			for _, callback in ipairs (callbacks ["createPropertyRow_on_set_locationtext"]) do
-				result = callback (locationtext, component)
+			for _, callback in ipairs (callbacks ["createPropertyOwned_on_createPropertySection_end"]) do
+				result = callback (numdisplayed, instance, ftable, infoTableData)
+				if result.numdisplayed > numdisplayed then
+					numdisplayed = result.numdisplayed
+				end
 			end
-			locationtext = result.locationtext
 		end
 		-- end kuertee_lua_with_callbacks:
 
-		local namecolspan = 1
-		if menu.infoTableMode == "objectlist" then
-			displaylocation = false
+		if numdisplayed > 50 then
+			ftable.properties.maxVisibleHeight = maxvisibleheight + 50 * (Helper.scaleY(config.mapRowHeight) + Helper.borderSize)
 		end
 
-		if not displaylocation then
-			if (currentordericon ~= "") or isdocked then
-				namecolspan = namecolspan + maxicons - 2
-			else
-				namecolspan = namecolspan + maxicons
+		menu.numFixedRows = ftable.numfixedrows
+
+		menu.settoprow = ((not menu.settoprow) or (menu.settoprow == 0)) and ((menu.setrow and menu.setrow > 31) and (menu.setrow - 27) or 3) or menu.settoprow
+		ftable:setTopRow(menu.settoprow)
+		if menu.infoTable then
+			local result = GetShiftStartEndRow(menu.infoTable)
+			if result then
+				ftable:setShiftStartEnd(table.unpack(result))
 			end
 		end
+		ftable:setSelectedRow(menu.sethighlightborderrow or menu.setrow)
+		menu.setrow = nil
+		menu.settoprow = nil
+		menu.setcol = nil
+		menu.sethighlightborderrow = nil
 
-		if isdoublerow then
-			if isstation then
-				-- station case
-				local secondline = ""
-				if displaylocation then
-					secondline = locationtext
+		local tabtable = frame:addTable(#config.propertyCategories + 3, { tabOrder = 2, reserveScrollBar = false })
+		for i = 1, #config.propertyCategories do
+			tabtable:setColWidth(i, menu.sideBarWidth, false)
+		end
+		local sorterWidth = menu.infoTableWidth - 3 * (menu.sideBarWidth + Helper.borderSize) - (#config.propertyCategories - 1) * Helper.borderSize
+		local availableWidthForExtraColumns = menu.infoTableWidth - #config.propertyCategories * (menu.sideBarWidth + Helper.borderSize) - 2 * Helper.borderSize
+		local colwidth = sorterWidth / 3
+		local colspan = 3
+		if colwidth > 3 * menu.sideBarWidth + 2 * Helper.borderSize then
+			colspan = 4
+		elseif colwidth < 2 * menu.sideBarWidth + Helper.borderSize then
+			colspan = 2
+			colwidth = (menu.infoTableWidth - 6 * (menu.sideBarWidth + Helper.borderSize) - 2 * Helper.borderSize) / 2
+		end
+
+		if 2 * colwidth >= availableWidthForExtraColumns then
+			colwidth = math.floor((availableWidthForExtraColumns - 1) / 2)
+		end
+
+		tabtable:setColWidth(#config.propertyCategories + 2, colwidth, false)
+		tabtable:setColWidth(#config.propertyCategories + 3, colwidth, false)
+
+		local row = tabtable:addRow("property_tabs", { fixed = true, bgColor = Helper.color.transparent })
+		for i, entry in ipairs(config.propertyCategories) do
+			local bgcolor = Helper.defaultTitleBackgroundColor
+			local color = Helper.color.white
+			if entry.category == menu.propertyMode then
+				bgcolor = Helper.defaultArrowRowBackgroundColor
+			end
+
+			local active = true
+			if menu.mode == "selectCV" then
+				active = entry.category == "propertyall"
+			elseif (menu.mode == "selectComponent") and (menu.modeparam[3] == "deployables") then
+				active = entry.category == "deployables"
+				if active and (menu.selectedCols.propertytabs == nil) then
+					menu.selectedCols.propertytabs = i
 				end
-				row[2]:setColSpan(4 + maxicons - #fleettypes - 1)
-				local stationname = alertString .. Helper.convertColorToText(color) .. name .. "\27X"
-				local stationnametruncated = TruncateText(stationname, font, Helper.scaleFont(font, config.mapFontSize), row[2]:getColSpanWidth() - Helper.scaleX(Helper.standardTextOffsetx))
-				if stationnametruncated ~= stationname then
-					mouseover = stationname .. ((mouseover ~= "") and ("\n" .. mouseover) or "")
+			end
+
+			row[i]:createButton({ height = menu.sideBarWidth, bgColor = bgcolor, mouseOverText = entry.name, scaling = false, helpOverlayID = entry.helpOverlayID, helpOverlayText = entry.helpOverlayText, active = active }):setIcon(entry.icon, { color = color})
+			row[i].handlers.onClick = function () return menu.buttonPropertySubMode(entry.category, i) end
+		end
+
+		local row = tabtable:addRow(true, { fixed = true, bgColor = Helper.color.transparent })
+		row[1]:setColSpan(3):createText(ReadText(1001, 2906) .. ReadText(1001, 120))
+
+		local buttonheight = Helper.scaleY(config.mapRowHeight)
+		local button = row[4]:setColSpan(colspan):createButton({ scaling = false, height = buttonheight }):setText(ReadText(1001, 8026), { halign = "center", scaling = true })
+		if menu.propertySorterType == "class" then
+			button:setIcon("table_arrow_inv_down", { width = buttonheight, height = buttonheight, x = button:getColSpanWidth() - buttonheight })
+		elseif menu.propertySorterType == "classinverse" then
+			button:setIcon("table_arrow_inv_up", { width = buttonheight, height = buttonheight, x = button:getColSpanWidth() - buttonheight })
+		end
+		row[4].handlers.onClick = function () return menu.buttonPropertySorter("class") end
+		local button = row[#config.propertyCategories + colspan - 2]:setColSpan(5 - colspan):createButton({ scaling = false, height = buttonheight }):setText(ReadText(1001, 2809), { halign = "center", scaling = true })
+		if menu.propertySorterType == "name" then
+			button:setIcon("table_arrow_inv_down", { width = buttonheight, height = buttonheight, x = button:getColSpanWidth() - buttonheight })
+		elseif menu.propertySorterType == "nameinverse" then
+			button:setIcon("table_arrow_inv_up", { width = buttonheight, height = buttonheight, x = button:getColSpanWidth() - buttonheight })
+		end
+		row[#config.propertyCategories + colspan - 2].handlers.onClick = function () return menu.buttonPropertySorter("name") end
+		local button = row[#config.propertyCategories + 3]:createButton({ scaling = false, height = buttonheight }):setText(ReadText(1001, 1), { halign = "center", scaling = true })
+		if menu.propertySorterType == "hull" then
+			button:setIcon("table_arrow_inv_down", { width = buttonheight, height = buttonheight, x = button:getColSpanWidth() - buttonheight })
+		elseif menu.propertySorterType == "hullinverse" then
+			button:setIcon("table_arrow_inv_up", { width = buttonheight, height = buttonheight, x = button:getColSpanWidth() - buttonheight })
+		end
+		row[#config.propertyCategories + 3].handlers.onClick = function () return menu.buttonPropertySorter("hull") end
+		
+		tabtable:setSelectedRow(menu.selectedRows.propertytabs or menu.selectedRows.infotable2 or 0)
+		tabtable:setSelectedCol(menu.selectedCols.propertytabs or Helper.currentTableCol[menu.infoTable2] or 0)
+		menu.selectedRows.propertytabs = nil
+		menu.selectedCols.propertytabs = nil
+
+		ftable.properties.y = tabtable.properties.y + tabtable:getFullHeight() + Helper.borderSize
+		tabtable.properties.nextTable = ftable.index
+		ftable.properties.prevTable = tabtable.index
+	end
+	function newFuncs.createPropertyRow(instance, ftable, component, iteration, commanderlocation, showmodules, hidesubordinates, numdisplayed, sorter)
+		local menu = mapMenu
+
+		local maxicons = menu.infoTableData[instance].maxIcons
+
+		local subordinates = menu.infoTableData[instance].subordinates[tostring(component)] or {}
+		local dockedships = menu.infoTableData[instance].dockedships[tostring(component)] or {}
+		local constructions = menu.infoTableData[instance].constructions[tostring(component)] or {}
+		local convertedComponent = ConvertStringTo64Bit(tostring(component))
+
+		-- start kuertee_lua_with_callbacks:
+		if callbacks ["createPropertyRow_on_init_vars"] then
+			local result
+			for _, callback in ipairs (callbacks ["createPropertyRow_on_init_vars"]) do
+				result = callback (maxicons, subordinates, dockedships, constructions, convertedComponent)
+			end
+			subordinates = result.maxicons
+			subordinates = result.subordinates
+			dockedships = result.dockedships
+			constructions = result.constructions
+			convertedComponent = result.convertedComponent
+		end
+		-- end kuertee_lua_with_callbacks:
+
+		if (#menu.searchtext == 0) or Helper.textArrayHelper(menu.searchtext, function (numtexts, texts) return C.FilterComponentByText(convertedComponent, numtexts, texts, true) end, "text") then
+			numdisplayed = numdisplayed + 1
+
+			if (not menu.isPropertyExtended(tostring(component))) and (menu.isCommander(component) or menu.isConstructionContext(convertedComponent)) then
+				menu.extendedproperty[tostring(component)] = true
+			end
+			if (not menu.isPropertyExtended(tostring(component))) and menu.isDockContext(convertedComponent) then
+				if menu.infoTableMode ~= "propertyowned" then
+					menu.extendedproperty[tostring(component)] = true
+				end
+			end
+
+			local isstation = IsComponentClass(component, "station")
+			local isdoublerow = (iteration == 0 and (isstation or #subordinates > 0))
+			local name, color, bgcolor, font, mouseover = menu.getContainerNameAndColors(component, iteration, isdoublerow, false)
+			local alertString = ""
+			local alertMouseOver = ""
+			if menu.getFilterOption("layer_think") then
+				local alertStatus, missionlist = menu.getContainerAlertLevel(component)
+				local minAlertLevel = menu.getFilterOption("think_alert")
+				if (minAlertLevel ~= 0) and alertStatus >= minAlertLevel then
+					local color = Helper.color.white
+					if alertStatus == 1 then
+						color = menu.holomapcolor.lowalertcolor
+					elseif alertStatus == 2 then
+						color = menu.holomapcolor.mediumalertcolor
+					else
+						color = menu.holomapcolor.highalertcolor
+					end
+					alertString = Helper.convertColorToText(color) .. "\027[workshop_error]\027X"
+					alertMouseOver = ReadText(1001, 3305) .. ReadText(1001, 120) .. "\n" .. missionlist
+				end
+			end
+
+			if menu.mode == "selectCV" then
+				local isplayerowned, isenemy = GetComponentData(component, "isplayerowned", "isenemy")
+				if isenemy then
+					mouseover = "\027R" .. ReadText(1026, 8014) .. "\027X"
+				elseif C.IsBuilderBusy(convertedComponent) then
+					mouseover = "\027R" .. ReadText(1001, 7939) .. "\027X"
+				elseif not isplayerowned then
+					local fee = tonumber(C.GetBuilderHiringFee())
+					mouseover = ((fee > GetPlayerMoney()) and "\027R" or "\027G") .. ReadText(1001, 7940) .. ReadText(1001, 120) .. " " .. ConvertMoneyString(fee, false, true, nil, true) .. " " .. ReadText(1001, 101) .. "\027X"
+				end
+			end
+
+			local row = ftable:addRow({"property", component, nil, iteration}, { bgColor = bgcolor, multiSelected = menu.isSelectedComponent(component) })
+			if (menu.getNumSelectedComponents() == 1) and menu.isSelectedComponent(component) then
+				menu.setrow = row.index
+			end
+			if IsSameComponent(component, menu.highlightedbordercomponent) then
+				menu.sethighlightborderrow = row.index
+			end
+
+			-- Set up columns
+			--  [+/-] [Object Name] [Top Level Shield/Hull Bar] [Location] [Sub_1] [Sub_2] [Sub_3] ... [Sub_N or Shield/Hull Bar]
+			if showmodules or (subordinates.hasRendered and (not hidesubordinates)) or (#dockedships > 0) or (isstation and (#constructions > 0)) then
+				row[1]:createButton({ scaling = false }):setText(menu.isPropertyExtended(tostring(component)) and "-" or "+", { scaling = true, halign = "center" })
+				row[1].handlers.onClick = function () return menu.buttonExtendProperty(tostring(component)) end
+			end
+
+			local location, locationtext, isdocked, aipilot, isplayerowned, isonlineobject = GetComponentData(component, "sectorid", "sector", "isdocked", "assignedaipilot", "isplayerowned", "isonlineobject")
+			local displaylocation = location and not (commanderlocation and IsSameComponent(location, commanderlocation))
+			local currentordericon, currentorderrawicon, currentordercolor, currentordername, currentorderisoverride = "", "", nil, "", false
+			if IsComponentClass(component, "ship") then
+				currentordericon, currentorderrawicon, currentordercolor, currentordername, currentorderisoverride = menu.getOrderInfo(convertedComponent)
+			end
+			local fleettypes = IsComponentClass(component, "controllable") and menu.getPropertyOwnedFleetData(instance, component, maxicons) or {}
+
+			if isplayerowned and isonlineobject then
+				locationtext = Helper.convertColorToText(menu.holomapcolor.visitorcolor) .. ReadText(1001, 11231) .. "\27X"
+				currentordericon = Helper.convertColorToText(menu.holomapcolor.visitorcolor) .. "\27[order_venture]\27X"
+				currentorderrawicon = "order_venture"
+				currentordercolor = menu.holomapcolor.visitorcolor
+				currentordername = ReadText(1001, 7868)
+				isdocked = false
+			end
+
+			-- start kuertee_lua_with_callbacks:
+			if callbacks ["createPropertyRow_on_set_locationtext"] then
+				local result
+				for _, callback in ipairs (callbacks ["createPropertyRow_on_set_locationtext"]) do
+					result = callback (locationtext, component)
+				end
+				locationtext = result.locationtext
+			end
+			-- end kuertee_lua_with_callbacks:
+
+			local namecolspan = 1
+			if menu.infoTableMode == "objectlist" then
+				displaylocation = false
+			end
+
+			if not displaylocation then
+				if (currentordericon ~= "") or isdocked then
+					namecolspan = namecolspan + maxicons - 2
+				else
+					namecolspan = namecolspan + maxicons
+				end
+			end
+
+			if isdoublerow then
+				if isstation then
+					-- station case
+					local secondline = ""
+					if displaylocation then
+						secondline = locationtext
+					end
+					row[2]:setColSpan(4 + maxicons - #fleettypes - 1)
+					local stationname = alertString .. Helper.convertColorToText(color) .. name .. "\27X"
+					local stationnametruncated = TruncateText(stationname, font, Helper.scaleFont(font, config.mapFontSize), row[2]:getColSpanWidth() - Helper.scaleX(Helper.standardTextOffsetx))
+					if stationnametruncated ~= stationname then
+						mouseover = stationname .. ((mouseover ~= "") and ("\n" .. mouseover) or "")
+					end
+					if alertMouseOver ~= "" then
+						if mouseover ~= "" then
+							mouseover = mouseover .. "\n\n"
+						end
+						mouseover = mouseover .. alertMouseOver
+					end
+					row[2]:createText(stationname .. "\n" .. secondline, { font = font, mouseOverText = mouseover })
+				else
+					-- fleet case
+					local textheight = C.GetTextHeight(" \n ", font, Helper.scaleFont(font, config.mapFontSize), Helper.viewWidth)
+					local icon = row[2]:setColSpan(4 + maxicons - #fleettypes - 1):createIcon("solid", { scaling = false, color = { r = 0, g = 0, b = 0, a = 1 }, height = textheight })
+					
+					local secondtext1 = ""
+					local secondtext2 = ""
+					if displaylocation or (currentordericon ~= "") or isdocked then
+						if displaylocation then
+							secondtext1 = locationtext
+						end
+						secondtext2 = (currentordericon ~= "") and currentordericon or ""
+						if isdocked then
+							secondtext2 = secondtext2 .. " \27[order_dockat]"
+						end
+					end
+					secondtext1truncated = TruncateText(secondtext1, font, Helper.scaleFont(font, config.mapFontSize), icon:getColSpanWidth() - Helper.scaleX(Helper.standardTextOffsetx))
+					local secondtext1width = C.GetTextWidth(secondtext1truncated, font, Helper.scaleFont(font, config.mapFontSize))
+					local secondtext2width = C.GetTextWidth(secondtext2, font, Helper.scaleFont(font, config.mapFontSize))
+
+					local fleetname = ffi.string(C.GetFleetName(convertedComponent))
+					local shipname = alertString .. name
+					local fleetnametruncated = TruncateText(fleetname, font, Helper.scaleFont(font, config.mapFontSize), icon:getColSpanWidth() - Helper.scaleX(Helper.standardTextOffsetx) - secondtext1width - Helper.scaleX(10))
+					local shipnametruncated = TruncateText(shipname, font, Helper.scaleFont(font, config.mapFontSize), icon:getColSpanWidth() - Helper.scaleX(Helper.standardTextOffsetx) - secondtext2width - Helper.scaleX(10))
+
+					local mouseovertext = ""
+					if fleetnametruncated ~= fleetname then
+						mouseovertext = mouseovertext .. fleetname
+					end
+					if shipnametruncated ~= shipname then
+						if mouseovertext ~= "" then
+							mouseovertext = mouseovertext .. "\n"
+						end
+						mouseovertext = mouseovertext .. alertString .. Helper.convertColorToText(color) .. name .. "\27X"
+					end
+					if secondtext1truncated ~= secondtext1 then
+						if mouseovertext ~= "" then
+							mouseovertext = mouseovertext .. "\n"
+						end
+						mouseovertext = mouseovertext .. secondtext1
+					end
+					if currentordername ~= "" then
+						if mouseovertext ~= "" then
+							mouseovertext = mouseovertext .. "\n"
+						end
+						mouseovertext = mouseovertext .. currentordername
+					end
+					if alertMouseOver ~= "" then
+						if mouseovertext ~= "" then
+							mouseovertext = mouseovertext .. "\n\n"
+						end
+						mouseovertext = mouseovertext .. alertMouseOver
+					end
+					icon.properties.mouseOverText = mouseovertext
+
+					icon:setText(string.format("%s\n%s%s", fleetnametruncated, Helper.convertColorToText(color), shipnametruncated), { scaling = true, font = font, x = Helper.standardTextOffsetx })
+					icon:setText2(currentorderisoverride and function () return menu.overrideOrderIcon(currentordercolor, true, currentorderrawicon, secondtext1truncated .. "\n", isdocked and "\27[order_dockat]" or "") end or (secondtext1truncated .. "\n" .. secondtext2), { scaling = true, font = font, halign = "right", x = Helper.standardTextOffsetx })
+				end
+				-- fleet info
+				for i, fleetdata in ipairs(fleettypes) do
+					local colidx = 5 + maxicons - #fleettypes + i - 1
+					if fleetdata.icon then
+						row[colidx]:createText(string.format("\027[%s]\n%d", fleetdata.icon, fleetdata.count), { halign = "center", x = 0 })
+					else
+						row[colidx]:createText(string.format("...\n%d", fleetdata.count), { halign = "center", x = 0 })
+					end
+				end
+				-- shieldhullbar
+				row[5 + maxicons]:createObjectShieldHullBar(component, { y = isstation and Helper.standardTextHeight / 2 or 1.5 * Helper.standardTextHeight })
+			else
+				-- unassigned ship case
+				row[2]:setColSpan(namecolspan + 1)
+				local indentation, actualname = string.match(name, "([ ]*)(.*)")
+				local shipname = indentation .. alertString .. actualname
+				local shipnametruncated = TruncateText(shipname, font, Helper.scaleFont(font, config.mapFontSize), row[2]:getColSpanWidth() - Helper.scaleX(Helper.standardTextOffsetx))
+				if shipnametruncated ~= shipname then
+					mouseover = indentation .. alertString .. actualname .. "\27X" .. ((mouseover ~= "") and ("\n" .. mouseover) or "")
 				end
 				if alertMouseOver ~= "" then
 					if mouseover ~= "" then
@@ -521,206 +606,121 @@ function newFuncs.createPropertyRow(instance, ftable, component, iteration, comm
 					end
 					mouseover = mouseover .. alertMouseOver
 				end
-				row[2]:createText(stationname .. "\n" .. secondline, { font = font, mouseOverText = mouseover })
-			else
-				-- fleet case
-				local textheight = C.GetTextHeight(" \n ", font, Helper.scaleFont(font, config.mapFontSize), Helper.viewWidth)
-				local icon = row[2]:setColSpan(4 + maxicons - #fleettypes - 1):createIcon("solid", { scaling = false, color = { r = 0, g = 0, b = 0, a = 1 }, height = textheight })
-				
-				local secondtext1 = ""
-				local secondtext2 = ""
-				if displaylocation or (currentordericon ~= "") or isdocked then
-					if displaylocation then
-						secondtext1 = locationtext
-					end
-					secondtext2 = (currentordericon ~= "") and currentordericon or ""
-					if isdocked then
-						secondtext2 = secondtext2 .. " \27[order_dockat]"
-					end
-				end
-				secondtext1truncated = TruncateText(secondtext1, font, Helper.scaleFont(font, config.mapFontSize), icon:getColSpanWidth() - Helper.scaleX(Helper.standardTextOffsetx))
-				local secondtext1width = C.GetTextWidth(secondtext1truncated, font, Helper.scaleFont(font, config.mapFontSize))
-				local secondtext2width = C.GetTextWidth(secondtext2, font, Helper.scaleFont(font, config.mapFontSize))
 
-				local fleetname = ffi.string(C.GetFleetName(convertedComponent))
-				local shipname = alertString .. name
-				local fleetnametruncated = TruncateText(fleetname, font, Helper.scaleFont(font, config.mapFontSize), icon:getColSpanWidth() - Helper.scaleX(Helper.standardTextOffsetx) - secondtext1width - Helper.scaleX(10))
-				local shipnametruncated = TruncateText(shipname, font, Helper.scaleFont(font, config.mapFontSize), icon:getColSpanWidth() - Helper.scaleX(Helper.standardTextOffsetx) - secondtext2width - Helper.scaleX(10))
-
-				local mouseovertext = ""
-				if fleetnametruncated ~= fleetname then
-					mouseovertext = mouseovertext .. fleetname
-				end
-				if shipnametruncated ~= shipname then
-					if mouseovertext ~= "" then
-						mouseovertext = mouseovertext .. "\n"
-					end
-					mouseovertext = mouseovertext .. alertString .. Helper.convertColorToText(color) .. name .. "\27X"
-				end
-				if secondtext1truncated ~= secondtext1 then
-					if mouseovertext ~= "" then
-						mouseovertext = mouseovertext .. "\n"
-					end
-					mouseovertext = mouseovertext .. secondtext1
-				end
-				if currentordername ~= "" then
-					if mouseovertext ~= "" then
-						mouseovertext = mouseovertext .. "\n"
-					end
-					mouseovertext = mouseovertext .. currentordername
-				end
-				if alertMouseOver ~= "" then
-					if mouseovertext ~= "" then
-						mouseovertext = mouseovertext .. "\n\n"
-					end
-					mouseovertext = mouseovertext .. alertMouseOver
-				end
-				icon.properties.mouseOverText = mouseovertext
-
-				icon:setText(string.format("%s\n%s%s", fleetnametruncated, Helper.convertColorToText(color), shipnametruncated), { scaling = true, font = font, x = Helper.standardTextOffsetx })
-				icon:setText2(currentorderisoverride and function () return menu.overrideOrderIcon(currentordercolor, true, currentorderrawicon, secondtext1truncated .. "\n", isdocked and "\27[order_dockat]" or "") end or (secondtext1truncated .. "\n" .. secondtext2), { scaling = true, font = font, halign = "right", x = Helper.standardTextOffsetx })
-			end
-			-- fleet info
-			for i, fleetdata in ipairs(fleettypes) do
-				local colidx = 5 + maxicons - #fleettypes + i - 1
-				if fleetdata.icon then
-					row[colidx]:createText(string.format("\027[%s]\n%d", fleetdata.icon, fleetdata.count), { halign = "center", x = 0 })
-				else
-					row[colidx]:createText(string.format("...\n%d", fleetdata.count), { halign = "center", x = 0 })
-				end
-			end
-			-- shieldhullbar
-			row[5 + maxicons]:createObjectShieldHullBar(component, { y = isstation and Helper.standardTextHeight / 2 or 1.5 * Helper.standardTextHeight })
-		else
-			-- unassigned ship case
-			row[2]:setColSpan(namecolspan + 1)
-			local indentation, actualname = string.match(name, "([ ]*)(.*)")
-			local shipname = indentation .. alertString .. actualname
-			local shipnametruncated = TruncateText(shipname, font, Helper.scaleFont(font, config.mapFontSize), row[2]:getColSpanWidth() - Helper.scaleX(Helper.standardTextOffsetx))
-			if shipnametruncated ~= shipname then
-				mouseover = indentation .. alertString .. actualname .. "\27X" .. ((mouseover ~= "") and ("\n" .. mouseover) or "")
-			end
-			if alertMouseOver ~= "" then
-				if mouseover ~= "" then
-					mouseover = mouseover .. "\n\n"
-				end
-				mouseover = mouseover .. alertMouseOver
-			end
-
-			row[2]:createText(shipname, { font = font, color = color, mouseOverText = mouseover })
-			-- location / order
-			if displaylocation then
-				local colspan = 5 + maxicons - 3 - namecolspan
-				if currentordericon ~= "" then
-					colspan = colspan - 1
-				end
-				if isdocked then
-					colspan = colspan - 1
-				end
-				row[3 + namecolspan]:setColSpan(colspan)
-				local locationtexttruncated = TruncateText(locationtext, font, Helper.scaleFont(font, config.mapFontSize), row[3 + namecolspan]:getColSpanWidth())
-				local mouseovertext = ""
-				if locationtexttruncated ~= locationtext then
-					mouseovertext = locationtext
-				end
-
-				-- row[3 + namecolspan]:createText(locationtext, { halign = "right", font = font, mouseOverText = mouseovertext, x = 0 })
-				-- start kuertee_lua_with_callbacks:
-				if not callbacks ["createPropertyRow_override_row_location_createText"] then
-					row[3 + namecolspan]:createText(locationtext, { halign = "right", font = font, mouseOverText = mouseovertext, x = 0 })
-				else
-					local result
-					for _, callback in ipairs (callbacks ["createPropertyRow_override_row_location_createText"]) do
-						result = callback (locationtext, {halign = "right", font = font, mouseOverText = mouseovertext, x = 0}, component)
-					end
-					-- only the last callback is used
-					row[3 + namecolspan]:createText(result.locationtext, result.properties)
-				end
-				-- end kuertee_lua_with_callbacks:
-			end
-
-			if (currentordericon ~= "") or isdocked then
-				if isdocked then
-					row[4 + maxicons]:createIcon("order_dockat", { width = config.mapRowHeight, height = config.mapRowHeight, mouseOverText = ReadText(1001, 3249) })
+				row[2]:createText(shipname, { font = font, color = color, mouseOverText = mouseover })
+				-- location / order
+				if displaylocation then
+					local colspan = 5 + maxicons - 3 - namecolspan
 					if currentordericon ~= "" then
-						row[3 + maxicons]:createIcon(currentorderrawicon, { color = currentorderisoverride and function () return menu.overrideOrderIcon(currentordercolor, false) end or currentordercolor, width = config.mapRowHeight, height = config.mapRowHeight, mouseOverText = currentordername })
+						colspan = colspan - 1
 					end
+					if isdocked then
+						colspan = colspan - 1
+					end
+					row[3 + namecolspan]:setColSpan(colspan)
+					local locationtexttruncated = TruncateText(locationtext, font, Helper.scaleFont(font, config.mapFontSize), row[3 + namecolspan]:getColSpanWidth())
+					local mouseovertext = ""
+					if locationtexttruncated ~= locationtext then
+						mouseovertext = locationtext
+					end
+
+					-- row[3 + namecolspan]:createText(locationtext, { halign = "right", font = font, mouseOverText = mouseovertext, x = 0 })
+					-- start kuertee_lua_with_callbacks:
+					if not callbacks ["createPropertyRow_override_row_location_createText"] then
+						row[3 + namecolspan]:createText(locationtext, { halign = "right", font = font, mouseOverText = mouseovertext, x = 0 })
+					else
+						local result
+						for _, callback in ipairs (callbacks ["createPropertyRow_override_row_location_createText"]) do
+							result = callback (locationtext, {halign = "right", font = font, mouseOverText = mouseovertext, x = 0}, component)
+						end
+						-- only the last callback is used
+						row[3 + namecolspan]:createText(result.locationtext, result.properties)
+					end
+					-- end kuertee_lua_with_callbacks:
+				end
+
+				if (currentordericon ~= "") or isdocked then
+					if isdocked then
+						row[4 + maxicons]:createIcon("order_dockat", { width = config.mapRowHeight, height = config.mapRowHeight, mouseOverText = ReadText(1001, 3249) })
+						if currentordericon ~= "" then
+							row[3 + maxicons]:createIcon(currentorderrawicon, { color = currentorderisoverride and function () return menu.overrideOrderIcon(currentordercolor, false) end or currentordercolor, width = config.mapRowHeight, height = config.mapRowHeight, mouseOverText = currentordername })
+						end
+					else
+						row[4 + maxicons]:createIcon(currentorderrawicon, { color = currentorderisoverride and function () return menu.overrideOrderIcon(currentordercolor, false) end or currentordercolor, width = config.mapRowHeight, height = config.mapRowHeight, mouseOverText = currentordername })
+					end
+				end
+				-- shieldhullbar
+				row[5 + maxicons]:createObjectShieldHullBar(component)
+			end
+
+			if row[1].type == "button" then
+				if isdoublerow and (not isstation) then
+					row[1].properties.height = row[2]:getHeight()
 				else
-					row[4 + maxicons]:createIcon(currentorderrawicon, { color = currentorderisoverride and function () return menu.overrideOrderIcon(currentordercolor, false) end or currentordercolor, width = config.mapRowHeight, height = config.mapRowHeight, mouseOverText = currentordername })
+					row[1].properties.height = row[2]:getMinTextHeight(true)
 				end
 			end
-			-- shieldhullbar
-			row[5 + maxicons]:createObjectShieldHullBar(component)
-		end
 
-		if row[1].type == "button" then
-			if isdoublerow and (not isstation) then
-				row[1].properties.height = row[2]:getHeight()
-			else
-				row[1].properties.height = row[2]:getMinTextHeight(true)
+			if IsComponentClass(component, "station") then
+				AddKnownItem("stationtypes", GetComponentData(component, "macro"))
+			elseif IsComponentClass(component, "ship_xl") then
+				AddKnownItem("shiptypes_xl", GetComponentData(component, "macro"))
+			elseif IsComponentClass(component, "ship_l") then
+				AddKnownItem("shiptypes_l", GetComponentData(component, "macro"))
+			elseif IsComponentClass(component, "ship_m") then
+				AddKnownItem("shiptypes_m", GetComponentData(component, "macro"))
+			elseif IsComponentClass(component, "ship_s") then
+				AddKnownItem("shiptypes_s", GetComponentData(component, "macro"))
+			elseif IsComponentClass(component, "ship_xs") then
+				AddKnownItem("shiptypes_xs", GetComponentData(component, "macro"))
 			end
-		end
 
-		if IsComponentClass(component, "station") then
-			AddKnownItem("stationtypes", GetComponentData(component, "macro"))
-		elseif IsComponentClass(component, "ship_xl") then
-			AddKnownItem("shiptypes_xl", GetComponentData(component, "macro"))
-		elseif IsComponentClass(component, "ship_l") then
-			AddKnownItem("shiptypes_l", GetComponentData(component, "macro"))
-		elseif IsComponentClass(component, "ship_m") then
-			AddKnownItem("shiptypes_m", GetComponentData(component, "macro"))
-		elseif IsComponentClass(component, "ship_s") then
-			AddKnownItem("shiptypes_s", GetComponentData(component, "macro"))
-		elseif IsComponentClass(component, "ship_xs") then
-			AddKnownItem("shiptypes_xs", GetComponentData(component, "macro"))
-		end
+			if menu.isPropertyExtended(tostring(component)) then
+				-- modules
+				if showmodules then
+					menu.createModuleSection(instance, ftable, component, iteration)
+				end
+				-- subordinates
+				if subordinates.hasRendered and (not hidesubordinates) then
+					numdisplayed = menu.createSubordinateSection(instance, ftable, component, isstation, iteration, location or commanderlocation, numdisplayed, sorter)
+				end
+				-- dockedships
+				if #dockedships > 0 then
+					local isdockedshipsextended = menu.isDockedShipsExtended(tostring(component), isstation)
+					if (not isdockedshipsextended) and menu.isDockContext(convertedComponent) then
+						if menu.infoTableMode ~= "propertyowned" then
+							menu.extendeddockedships[tostring(component)] = true
+							isdockedshipsextended = true
+						end
+					end
 
-		if menu.isPropertyExtended(tostring(component)) then
-			-- modules
-			if showmodules then
-				menu.createModuleSection(instance, ftable, component, iteration)
-			end
-			-- subordinates
-			if subordinates.hasRendered and (not hidesubordinates) then
-				numdisplayed = menu.createSubordinateSection(instance, ftable, component, isstation, iteration, location or commanderlocation, numdisplayed, sorter)
-			end
-			-- dockedships
-			if #dockedships > 0 then
-				local isdockedshipsextended = menu.isDockedShipsExtended(tostring(component), isstation)
-				if (not isdockedshipsextended) and menu.isDockContext(convertedComponent) then
-					if menu.infoTableMode ~= "propertyowned" then
-						menu.extendeddockedships[tostring(component)] = true
-						isdockedshipsextended = true
+					local row = ftable:addRow({"dockedships", component}, { bgColor = Helper.color.transparent })
+					row[1]:createButton():setText(isdockedshipsextended and "-" or "+", { halign = "center" })
+					row[1].handlers.onClick = function () return menu.buttonExtendDockedShips(tostring(component), isstation) end
+					local text = ReadText(1001, 3265)
+					for i = 1, iteration + 1 do
+						text = "    " .. text
+					end
+					row[2]:setColSpan(3):createText(text)
+					if IsSameComponent(component, menu.highlightedbordercomponent) and (menu.highlightedborderstationcategory == "dockedships") then
+						menu.sethighlightborderrow = row.index
+					end
+					if isdockedshipsextended then
+						dockedships = menu.sortComponentListHelper(dockedships, sorter)
+						for _, dockedship in ipairs(dockedships) do
+							numdisplayed = menu.createPropertyRow(instance, ftable, dockedship, iteration + 2, location or commanderlocation, nil, true, numdisplayed, sorter)
+						end
 					end
 				end
-
-				local row = ftable:addRow({"dockedships", component}, { bgColor = Helper.color.transparent })
-				row[1]:createButton():setText(isdockedshipsextended and "-" or "+", { halign = "center" })
-				row[1].handlers.onClick = function () return menu.buttonExtendDockedShips(tostring(component), isstation) end
-				local text = ReadText(1001, 3265)
-				for i = 1, iteration + 1 do
-					text = "    " .. text
-				end
-				row[2]:setColSpan(3):createText(text)
-				if IsSameComponent(component, menu.highlightedbordercomponent) and (menu.highlightedborderstationcategory == "dockedships") then
-					menu.sethighlightborderrow = row.index
-				end
-				if isdockedshipsextended then
-					dockedships = menu.sortComponentListHelper(dockedships, sorter)
-					for _, dockedship in ipairs(dockedships) do
-						numdisplayed = menu.createPropertyRow(instance, ftable, dockedship, iteration + 2, location or commanderlocation, nil, true, numdisplayed, sorter)
+				if isstation then
+					-- construction
+					if #constructions > 0 then
+						menu.createConstructionSubSection(ftable, component, constructions)
 					end
 				end
 			end
-			if isstation then
-				-- construction
-				if #constructions > 0 then
-					menu.createConstructionSubSection(ftable, component, constructions)
-				end
-			end
 		end
+
+		return numdisplayed
 	end
-
-	return numdisplayed
-end
-Init ()
+	init ()

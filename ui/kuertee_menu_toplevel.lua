@@ -5,10 +5,12 @@ local topLevelMenu
 local origFuncs = {}
 local newFuncs = {}
 local callbacks = {}
-local function Init ()
-	DebugError ("kuertee_menu_toplevel.lua.Init")
+local function init ()
+	DebugError ("kuertee_menu_toplevel.init")
 	topLevelMenu = Lib.Get_Egosoft_Menu ("TopLevelMenu")
 	topLevelMenu.registerCallback = newFuncs.registerCallback
+	topLevelMenu.config = config
+	topLevelMenu.callbacks = callbacks
 	origFuncs.createInfoFrame = topLevelMenu.createInfoFrame
 	topLevelMenu.createInfoFrame = newFuncs.createInfoFrame
 end
@@ -21,6 +23,7 @@ function newFuncs.registerCallback (callbackName, callbackFunction)
 	-- note 5: if a callback requires a return value, return it in an object var. e.g. "display_on_set_room_active" requires a return of {active = true | false}.
 	-- available callbacks:
 	-- createInfoFrame_on_before_frame_display
+	-- kHUD_create_new_HUD_table
 	--
 	if callbacks [callbackName] == nil then
 		callbacks [callbackName] = {}
@@ -98,4 +101,4 @@ function newFuncs.createInfoFrame ()
 
 	menu.infoFrame:display()
 end
-Init ()
+init ()

@@ -5,8 +5,8 @@ local transporterMenu
 local origFuncs = {}
 local newFuncs = {}
 local callbacks = {}
-local function Init ()
-	DebugError ("kuertee_menu_transporter.lua.Init")
+local function init ()
+	DebugError ("kuertee_menu_transporter.init")
 	transporterMenu = Lib.Get_Egosoft_Menu ("TransporterMenu")
 	transporterMenu.registerCallback = newFuncs.registerCallback
 	origFuncs.addEntry = transporterMenu.addEntry
@@ -396,4 +396,4 @@ function newFuncs.display()
 
 	frame:display()
 end
-Init ()
+init ()
