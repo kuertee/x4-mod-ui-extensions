@@ -5,19 +5,23 @@ local transporterMenu
 local origFuncs = {}
 local newFuncs = {}
 local callbacks = {}
+local isInited
 local function init ()
-	DebugError ("kuertee_menu_transporter.init")
-	transporterMenu = Lib.Get_Egosoft_Menu ("TransporterMenu")
-	transporterMenu.registerCallback = newFuncs.registerCallback
-	origFuncs.addEntry = transporterMenu.addEntry
-	origFuncs.display = transporterMenu.display
-	transporterMenu.addEntry = newFuncs.addEntry
-	transporterMenu.display = newFuncs.display
+	DebugError ("kuertee_menu_transporter.init isInited")
+	if not isInited then
+		isInited = true
+		transporterMenu = Lib.Get_Egosoft_Menu ("TransporterMenu")
+		transporterMenu.registerCallback = newFuncs.registerCallback
+		origFuncs.addEntry = transporterMenu.addEntry
+		origFuncs.display = transporterMenu.display
+		transporterMenu.addEntry = newFuncs.addEntry
+		transporterMenu.display = newFuncs.display
+	end
 end
 function newFuncs.registerCallback (callbackName, callbackFunction)
-	-- DebugError ("kuertee_menu_transporter.lua.registerCallback " .. tostring (callbackName) .. " " .. tostring (callbackFunction))
-	-- note 1: format is generally [function name]_[action]. e.g.: in kuertee_menu_transporter.lua, "display_on_set_room_active" overrides the room's active property with the return of the callback.
-	-- note 2: events have the word "_on_" followed by a PRESET TENSE verb. e.g.: in kuertee_menu_transporter.lua, "display_on_set_buttontable" is called after all of the rows of buttontable are set.
+	-- DebugError ("kuertee_menu_transporter.registerCallback " .. tostring (callbackName) .. " " .. tostring (callbackFunction))
+	-- note 1: format is generally [function name]_[action]. e.g.: in kuertee_menu_transporter, "display_on_set_room_active" overrides the room's active property with the return of the callback.
+	-- note 2: events have the word "_on_" followed by a PRESET TENSE verb. e.g.: in kuertee_menu_transporter, "display_on_set_buttontable" is called after all of the rows of buttontable are set.
 	-- note 3: new callbacks can be added or existing callbacks can be edited. but commit your additions/changes to the mod's GIT repository.
 	-- note 4: search for the callback names to see where they are executed.
 	-- note 5: if a callback requires a return value, return it in an object var. e.g. "display_on_set_room_active" requires a return of {active = true | false}.
@@ -129,9 +133,9 @@ function newFuncs.addEntry(ftable, target, indent, parentcomponent)
 		for _, callback in ipairs (callbacks ["addEntry_on_set_room_name"]) do
 			result = callback (name, target)
 		end
-		-- DebugError ("kuertee_menu_transporter.lua.addEntry_on_set_room_name name pre " .. tostring (name))
+		-- DebugError ("kuertee_menu_transporter.addEntry_on_set_room_name name pre " .. tostring (name))
 		name = result.name
-		-- DebugError ("kuertee_menu_transporter.lua.addEntry_on_set_room_name name post " .. tostring (name))
+		-- DebugError ("kuertee_menu_transporter.addEntry_on_set_room_name name post " .. tostring (name))
 	end
 	-- end kuertee_lua_with_callbacks:
 

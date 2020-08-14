@@ -4,17 +4,29 @@ local Lib = require ("extensions.sn_mod_support_apis.lua_library")
 local topLevelMenu
 local newFuncs = {}
 local kHUD = {}
+local isInited
 local function init ()
-	DebugError ("kuertee_hud.init")
-	topLevelMenu = Lib.Get_Egosoft_Menu ("TopLevelMenu")
-	topLevelMenu.registerCallback ("createInfoFrame_on_before_frame_display", newFuncs.createInfoFrame_on_before_frame_display)
-	topLevelMenu.addTable = newFuncs.addTable
-	topLevelMenu.removeTable = newFuncs.removeTable
+	DebugError ("kuertee_hud.init isInited")
+	if not isInited then
+		isInited = true
+		topLevelMenu = Lib.Get_Egosoft_Menu ("TopLevelMenu")
+		topLevelMenu.registerCallback ("createInfoFrame_on_before_frame_display", newFuncs.createInfoFrame_on_before_frame_display)
+		topLevelMenu.registerCallback ("createInfoFrame_onUpdate_before_frame_update", newFuncs.createInfoFrame_onUpdate_before_frame_update)
+	end
 end
 function newFuncs.createInfoFrame_on_before_frame_display (frame)
-	-- DebugError ("kuertee_hud.newFuncs.createInfoFrame_on_before_frame_display frame " .. tostring (frame))
 	if not topLevelMenu.showTabs then
 		kHUD.createTables (frame)
+	end
+end
+function newFuncs.createInfoFrame_onUpdate_before_frame_update (frame)
+	if not topLevelMenu.showTabs then
+		if topLevelMenu.callbacks ["kHUD_update_HUD_tables"] then
+			local result = {ftables = {}}
+			for _, callback in ipairs (topLevelMenu.callbacks ["kHUD_update_HUD_tables"]) do
+				callback (frame)
+			end
+		end
 	end
 end
 function kHUD.createTables (frame)
@@ -37,8 +49,8 @@ function kHUD.createTables (frame)
 	-- Lib.Print_Table (topLevelArrowsTable)
 	-- create new HUDs
 	local lastTableYBottom
-	if true then
-		-- create kHUD label table
+	if false then
+		-- create kHUD label table for test purposes
 		ftable = frame:addTable (
 			1,
 			{
@@ -51,20 +63,11 @@ function kHUD.createTables (frame)
 		)
 		local row = ftable:addRow (false, {bgColor = Helper.color.transparent60})
 		row [1]:createText ("kHUD", {halign = "center", color = Helper.standardColor})
-		lastTableYBottom = ftable.properties.y + ftable:getFullHeight ()
-		if lastTableYBottom > yBottom then
-			yBottom = lastTableYBottom
+	end
+	if topLevelMenu.callbacks ["kHUD_add_HUD_tables"] then
+		for _, callback in ipairs (topLevelMenu.callbacks ["kHUD_add_HUD_tables"]) do
+			callback (frame)
 		end
 	end
-	if topLevelMenu.callbacks ["kHUD_create_HUD_table"] then
-		for _, callback in ipairs (topLevelMenu.callbacks ["kHUD_create_new_HUD_table"]) do
-			ftable = callback (frame)
-			lastTableYBottom = ftable.properties.y + ftable:getFullHeight ()
-			if lastTableYBottom > yBottom then
-				yBottom = lastTableYBottom
-			end
-		end
-	end
-	frame.properties.height = yBottom + Helper.borderSize
 end
 init ()
