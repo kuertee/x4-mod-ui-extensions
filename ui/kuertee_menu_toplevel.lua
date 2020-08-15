@@ -25,8 +25,8 @@ local function init ()
 		topLevelMenu.onTableMouseOut = nil -- mouse.over is now set onUpdate
 		origFuncs.onTableMouseOver = topLevelMenu.onTableMouseOver
 		topLevelMenu.onTableMouseOver = nil -- mouse.over is now set onUpdate
-		origFuncs.closeTabs = topLevelMenu.closeTabs
-		topLevelMenu.closeTabs = newFuncs.closeTabs
+		origFuncs.cleanup = topLevelMenu.cleanup
+		topLevelMenu.cleanup = newFuncs.cleanup
 	end
 end
 function newFuncs.registerCallback (callbackName, callbackFunction)
@@ -66,8 +66,8 @@ local config = {
 -- 	origFuncs.onShowMenu ()
 -- end
 local pullDownArrowsHeight = Helper.sidebarWidth
-local isForceMenuOver
 local redisplayCount = 0
+local isRedisplayNextUpdate
 function newFuncs.createInfoFrame (param)
 	local menu = topLevelMenu
 
@@ -128,18 +128,10 @@ function newFuncs.createInfoFrame (param)
 				callback (menu.infoFrame)
 			end
 			newFuncs.updateFrameHeight ()
-			-- if param == nil or not param.isFromUpdate then
-			-- 	DebugError ("kuertee_menu_toplevel.newFuncs.createInfoFrame param " .. tostring (param))
-			-- 	-- newFuncs.requestUpdate ()
-			-- 	isForceMenuOver = true
-			-- end
+			DebugError ("kuertee_menu_toplevel.newFuncs.createInfoFrame redisplayCount " .. tostring (redisplayCount))
 			if redisplayCount < 1 then
-				DebugError ("kuertee_menu_toplevel.newFuncs.createInfoFrame redisplayCount " .. tostring (redisplayCount))
+				isRedisplayNextUpdate = true
 				redisplayCount = redisplayCount + 1
-				-- newFuncs.requestUpdate ()
-				isForceMenuOver = true
-			else
-				isForceMenuOver = false
 			end
 		end
 		-- end kuertee_lua_with_callbacks:
@@ -173,8 +165,17 @@ function newFuncs.updateFrameHeight ()
 		menu.height = Helper.scaleX (frameHeight)
 	end
 end
-function newFuncs.onUpdate()
+function newFuncs.onUpdate ()
 	local menu = topLevelMenu
+
+	if isRedisplayNextUpdate then
+		DebugError ("kuertee_menu_toplevel.newFuncs.onUpdate isRedisplayNextUpdate " .. tostring (isRedisplayNextUpdate))
+		isRedisplayNextUpdate = false
+		menu.over = true
+		-- menu.lock = getElapsedTime ()
+		menu.createInfoFrame ({isFromUpdate = true})
+		return
+	end
 
 	if menu.showTabs and next(menu.mouseOutBox) then
 		if (GetControllerInfo() ~= "gamepad") or (C.IsMouseEmulationActive()) then
@@ -244,8 +245,7 @@ function newFuncs.onUpdate()
 				y2 = Helper.viewHeight / 2 - pullDownArrowsHeight,
 			}
 			local curpos = table.pack (GetLocalMousePosition ())
-			DebugError ("kuertee_menu_toplevel.newFuncs.onUpdate isForceMenuOver " .. tostring (isForceMenuOver))
-			local isIn = isForceMenuOver
+			local isIn = false
 			if curpos[1] and curpos[1] > mouseInBox.x1 and curpos[1] < mouseInBox.x2 then
 				if curpos[2] and curpos[2] < mouseInBox.y1 and curpos[2] > mouseInBox.y2 then
 					isIn = true
@@ -278,8 +278,9 @@ function newFuncs.onUpdate()
 
 	menu.infoFrame:update()
 end
-function newFuncs.closeTabs ()
-	DebugError ("kuertee_menu_toplevel.newFuncs.closeTabs")
-	origFuncs.closeTabs ()
+function newFuncs.cleanup ()
+	DebugError ("kuertee_menu_toplevel.newFuncs.cleanup()")
+	origFuncs.cleanup ()
+	redisplayCount = 0
 end
 init ()
