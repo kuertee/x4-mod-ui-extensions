@@ -61,6 +61,7 @@ local config = {
 -- 	origFuncs.onShowMenu ()
 -- end
 local pullDownArrowsHeight = Helper.sidebarWidth
+local isForceMenuOver
 function newFuncs.createInfoFrame (param)
 	local menu = topLevelMenu
 
@@ -122,7 +123,9 @@ function newFuncs.createInfoFrame (param)
 			end
 			newFuncs.updateFrameHeight ()
 			if param == nil or not param.isFromUpdate then
-				newFuncs.requestUpdate ()
+				DebugError ("kuertee_menu_toplevel.newFuncs.createInfoFrame param " .. tostring (param))
+				-- newFuncs.requestUpdate ()
+				isForceMenuOver = true
 			end
 		end
 		-- end kuertee_lua_with_callbacks:
@@ -227,7 +230,8 @@ function newFuncs.onUpdate()
 				y2 = Helper.viewHeight / 2 - pullDownArrowsHeight,
 			}
 			local curpos = table.pack (GetLocalMousePosition ())
-			local isIn = false
+			DebugError ("kuertee_menu_toplevel.newFuncs.onUpdate isForceMenuOver " .. tostring (isForceMenuOver))
+			local isIn = isForceMenuOver
 			if curpos[1] and curpos[1] > mouseInBox.x1 and curpos[1] < mouseInBox.x2 then
 				if curpos[2] and curpos[2] < mouseInBox.y1 and curpos[2] > mouseInBox.y2 then
 					isIn = true
