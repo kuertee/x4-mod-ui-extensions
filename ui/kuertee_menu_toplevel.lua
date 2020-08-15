@@ -25,6 +25,8 @@ local function init ()
 		topLevelMenu.onTableMouseOut = nil -- mouse.over is now set onUpdate
 		origFuncs.onTableMouseOver = topLevelMenu.onTableMouseOver
 		topLevelMenu.onTableMouseOver = nil -- mouse.over is now set onUpdate
+		origFuncs.closeTabs = topLevelMenu.closeTabs
+		topLevelMenu.closeTabs = newFuncs.closeTabs
 	end
 end
 function newFuncs.registerCallback (callbackName, callbackFunction)
@@ -45,9 +47,12 @@ function newFuncs.registerCallback (callbackName, callbackFunction)
 	end
 	table.insert (callbacks [callbackName], callbackFunction)
 end
-function newFuncs.requestUpdate ()
+function newFuncs.requestUpdate (adj)
+	if adj == nil then
+		adj = 0
+	end
 	if topLevelMenu.refresh == nil then
-		topLevelMenu.refresh = getElapsedTime ()
+		topLevelMenu.refresh = getElapsedTime () + adj
 	end
 end
 local config = {
@@ -62,6 +67,7 @@ local config = {
 -- end
 local pullDownArrowsHeight = Helper.sidebarWidth
 local isForceMenuOver
+local redisplayCount = 0
 function newFuncs.createInfoFrame (param)
 	local menu = topLevelMenu
 
@@ -122,10 +128,18 @@ function newFuncs.createInfoFrame (param)
 				callback (menu.infoFrame)
 			end
 			newFuncs.updateFrameHeight ()
-			if param == nil or not param.isFromUpdate then
-				DebugError ("kuertee_menu_toplevel.newFuncs.createInfoFrame param " .. tostring (param))
+			-- if param == nil or not param.isFromUpdate then
+			-- 	DebugError ("kuertee_menu_toplevel.newFuncs.createInfoFrame param " .. tostring (param))
+			-- 	-- newFuncs.requestUpdate ()
+			-- 	isForceMenuOver = true
+			-- end
+			if redisplayCount < 1 then
+				DebugError ("kuertee_menu_toplevel.newFuncs.createInfoFrame redisplayCount " .. tostring (redisplayCount))
+				redisplayCount = redisplayCount + 1
 				-- newFuncs.requestUpdate ()
 				isForceMenuOver = true
+			else
+				isForceMenuOver = false
 			end
 		end
 		-- end kuertee_lua_with_callbacks:
@@ -247,6 +261,7 @@ function newFuncs.onUpdate()
 	end
 
 	if menu.refresh and menu.refresh <= curtime then
+		DebugError ("kuertee_menu_toplevel.newFuncs.onUpdate menu.refresh " .. tostring (menu.refresh) .. " curtime " .. tostring (curtime))
 		menu.createInfoFrame ({isFromUpdate = true})
 		menu.refresh = nil
 		return
@@ -262,5 +277,9 @@ function newFuncs.onUpdate()
 	-- end kuertee_lua_with_callbacks:
 
 	menu.infoFrame:update()
+end
+function newFuncs.closeTabs ()
+	DebugError ("kuertee_menu_toplevel.newFuncs.closeTabs")
+	origFuncs.closeTabs ()
 end
 init ()
