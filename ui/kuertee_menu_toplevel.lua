@@ -12,11 +12,8 @@ local function init ()
 		isInited = true
 		topLevelMenu = Lib.Get_Egosoft_Menu ("TopLevelMenu")
 		topLevelMenu.registerCallback = newFuncs.registerCallback
-		topLevelMenu.config = config -- required because Helper.clearDataForRefresh(menu, config.infoLayer) in createInfoFrame ()
 		topLevelMenu.callbacks = callbacks
-		topLevelMenu.requestUpdate = newFuncs.requestUpdate
-		-- origFuncs.onShowMenu = topLevelMenu.onShowMenu
-		-- topLevelMenu.onShowMenu = newFuncs.onShowMenu
+		-- start rewrites:
 		origFuncs.createInfoFrame = topLevelMenu.createInfoFrame
 		topLevelMenu.createInfoFrame = newFuncs.createInfoFrame
 		origFuncs.onUpdate = topLevelMenu.onUpdate
@@ -27,6 +24,10 @@ local function init ()
 		topLevelMenu.onTableMouseOver = nil -- mouse.over is now set onUpdate
 		origFuncs.cleanup = topLevelMenu.cleanup
 		topLevelMenu.cleanup = newFuncs.cleanup
+		-- end rewrites:
+		-- start new:
+		topLevelMenu.requestUpdate = newFuncs.requestUpdate
+		-- end new:
 	end
 end
 function newFuncs.registerCallback (callbackName, callbackFunction)
@@ -55,6 +56,7 @@ function newFuncs.requestUpdate (adj)
 		topLevelMenu.refresh = getElapsedTime () + adj
 	end
 end
+-- config = {} required because Helper.clearDataForRefresh(menu, config.infoLayer) in createInfoFrame ()
 local config = {
 	width = Helper.sidebarWidth,
 	height = Helper.sidebarWidth,
@@ -203,7 +205,7 @@ function newFuncs.onUpdate ()
 	-- 	end
 	-- end
 	if not menu.lock then
-		if menu.over then
+		if menu.over and (GetControllerInfo() ~= "gamepad") or (C.IsMouseEmulationActive()) then
 			local mouseOutBox = {
 				x1 = - Helper.sidebarWidth / 2,
 				x2 =   Helper.sidebarWidth / 2,
