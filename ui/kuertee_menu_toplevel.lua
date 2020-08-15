@@ -66,8 +66,7 @@ local config = {
 -- 	origFuncs.onShowMenu ()
 -- end
 local pullDownArrowsHeight = Helper.sidebarWidth
-local redisplayCount = 0
-local isRedisplayNextUpdate
+local isDisplayed = false
 function newFuncs.createInfoFrame (param)
 	local menu = topLevelMenu
 
@@ -82,9 +81,10 @@ function newFuncs.createInfoFrame (param)
 		layer = config.layer,
 		startAnimation = false,
 		playerControls = true,
-		useMiniWidgetSystem = (not menu.showTabs) and (not menu.over),
+		useMiniWidgetSystem = (not menu.showTabs) and (not menu.over) and isDisplayed,
 		enableDefaultInteractions = false,
 	}
+	isDisplayed = true
 
 	menu.infoFrame = Helper.createFrameHandle(menu, frameProperties)
 
@@ -128,11 +128,6 @@ function newFuncs.createInfoFrame (param)
 				callback (menu.infoFrame)
 			end
 			newFuncs.updateFrameHeight ()
-			DebugError ("kuertee_menu_toplevel.newFuncs.createInfoFrame redisplayCount " .. tostring (redisplayCount))
-			if redisplayCount < 1 then
-				isRedisplayNextUpdate = true
-				redisplayCount = redisplayCount + 1
-			end
 		end
 		-- end kuertee_lua_with_callbacks:
 
@@ -167,15 +162,6 @@ function newFuncs.updateFrameHeight ()
 end
 function newFuncs.onUpdate ()
 	local menu = topLevelMenu
-
-	if isRedisplayNextUpdate then
-		DebugError ("kuertee_menu_toplevel.newFuncs.onUpdate isRedisplayNextUpdate " .. tostring (isRedisplayNextUpdate))
-		isRedisplayNextUpdate = false
-		menu.over = true
-		-- menu.lock = getElapsedTime ()
-		menu.createInfoFrame ({isFromUpdate = true})
-		return
-	end
 
 	if menu.showTabs and next(menu.mouseOutBox) then
 		if (GetControllerInfo() ~= "gamepad") or (C.IsMouseEmulationActive()) then
@@ -261,7 +247,6 @@ function newFuncs.onUpdate ()
 	end
 
 	if menu.refresh and menu.refresh <= curtime then
-		DebugError ("kuertee_menu_toplevel.newFuncs.onUpdate menu.refresh " .. tostring (menu.refresh) .. " curtime " .. tostring (curtime))
 		menu.createInfoFrame ({isFromUpdate = true})
 		menu.refresh = nil
 		return
@@ -279,8 +264,7 @@ function newFuncs.onUpdate ()
 	menu.infoFrame:update()
 end
 function newFuncs.cleanup ()
-	DebugError ("kuertee_menu_toplevel.newFuncs.cleanup()")
 	origFuncs.cleanup ()
-	redisplayCount = 0
+	isDisplayed = false
 end
 init ()
