@@ -26,13 +26,13 @@ function newFuncs.registerCallback (callbackName, callbackFunction)
 	-- note 4: search for the callback names to see where they are executed.
 	-- note 5: if a callback requires a return value, return it in an object var. e.g. "display_on_set_room_active" requires a return of {active = true | false}.
 	-- available callbacks:
-	-- createPropertyOwned_on_start
-	-- createPropertyOwned_on_init_infoTableData
-	-- createPropertyOwned_on_set_ships_infoTableData
-	-- createPropertyOwned_on_createPropertySection_end
-	-- createPropertyRow_on_init_vars
-	-- createPropertyRow_on_set_locationtext
-	-- createPropertyRow_override_row_location_createText
+	-- createPropertyOwned_on_start (config)
+	-- createPropertyOwned_on_init_infoTableData (infoTableData)
+	-- createPropertyOwned_on_add_ship_infoTableData (infoTableData, object)
+	-- {numdisplayed = numdisplayed} = createPropertyOwned_on_createPropertySection_unassignedships (numdisplayed, instance, ftable, infoTableData)
+	-- {maxicons = maxicons, subordinates = subordinates, dockedships = dockedships, constructions = constructions, convertedComponent = convertedComponent} = createPropertyRow_on_init_vars (maxicons, subordinates, dockedships, constructions, convertedComponent)
+	-- {locationtext = locationtext} = createPropertyRow_on_set_locationtext (locationtext, component)
+	-- {locationtext = createtext text, createText properties} = createPropertyRow_override_row_location_createText (locationtext, createTextProperties, component)
 	--
 	if callbacks [callbackName] == nil then
 		callbacks [callbackName] = {}
@@ -215,8 +215,8 @@ function newFuncs.createPropertyOwned(frame, instance)
 			end
 
 			-- start kuertee_lua_with_callbacks:
-			if callbacks ["createPropertyOwned_on_set_ships_infoTableData"] then
-				for _, callback in ipairs (callbacks ["createPropertyOwned_on_set_ships_infoTableData"]) do
+			if callbacks ["createPropertyOwned_on_add_ship_infoTableData"] then
+				for _, callback in ipairs (callbacks ["createPropertyOwned_on_add_ship_infoTableData"]) do
 					callback (infoTableData, object)
 				end
 			end
@@ -271,9 +271,9 @@ function newFuncs.createPropertyOwned(frame, instance)
 		end
 
 		-- start kuertee_lua_with_callbacks:
-		if callbacks ["createPropertyOwned_on_createPropertySection_end"] then
+		if callbacks ["createPropertyOwned_on_createPropertySection_unassignedships"] then
 			local result
-			for _, callback in ipairs (callbacks ["createPropertyOwned_on_createPropertySection_end"]) do
+			for _, callback in ipairs (callbacks ["createPropertyOwned_on_createPropertySection_unassignedships"]) do
 				result = callback (numdisplayed, instance, ftable, infoTableData)
 				if result.numdisplayed > numdisplayed then
 					numdisplayed = result.numdisplayed

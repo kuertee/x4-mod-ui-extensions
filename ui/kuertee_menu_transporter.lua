@@ -26,9 +26,9 @@ function newFuncs.registerCallback (callbackName, callbackFunction)
 	-- note 4: search for the callback names to see where they are executed.
 	-- note 5: if a callback requires a return value, return it in an object var. e.g. "display_on_set_room_active" requires a return of {active = true | false}.
 	-- available callbacks:
-	-- addEntry_on_set_room_name
-	-- display_on_set_room_active
-	-- display_on_set_buttontable
+	-- {name = name} = addEntry_on_set_room_name (name, target)
+	-- {active = true / false} = display_on_set_room_active (active)
+	-- display_on_set_buttontable (buttontable)
 	--
 	if callbacks [callbackName] == nil then
 		callbacks [callbackName] = {}

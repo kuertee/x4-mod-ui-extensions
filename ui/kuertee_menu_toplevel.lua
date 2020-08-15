@@ -22,9 +22,9 @@ local function init ()
 		origFuncs.onUpdate = topLevelMenu.onUpdate
 		topLevelMenu.onUpdate = newFuncs.onUpdate
 		origFuncs.onTableMouseOut = topLevelMenu.onTableMouseOut
-		topLevelMenu.onTableMouseOut = nil
+		topLevelMenu.onTableMouseOut = nil -- mouse.over is now set onUpdate
 		origFuncs.onTableMouseOver = topLevelMenu.onTableMouseOver
-		topLevelMenu.onTableMouseOver = nil
+		topLevelMenu.onTableMouseOver = nil -- mouse.over is now set onUpdate
 	end
 end
 function newFuncs.registerCallback (callbackName, callbackFunction)
@@ -35,10 +35,10 @@ function newFuncs.registerCallback (callbackName, callbackFunction)
 	-- note 4: search for the callback names to see where they are executed.
 	-- note 5: if a callback requires a return value, return it in an object var. e.g. "display_on_set_room_active" requires a return of {active = true | false}.
 	-- available callbacks:
-	-- createInfoFrame_on_before_frame_display
-	-- createInfoFrame_onUpdate_before_frame_update
-	-- kHUD_add_HUD_tables
-	-- kHUD_update_HUD_tables
+	-- createInfoFrame_on_before_frame_display (frame)
+	-- createInfoFrame_onUpdate_before_frame_update (frame)
+	-- {ftables = {created ftable 1, created ftable 2, ...}} = kHUD_add_HUD_tables (frame)
+	-- kHUD_update_HUD_tables (frame, {created ftable 1, created ftable 2, ...})
 	--
 	if callbacks [callbackName] == nil then
 		callbacks [callbackName] = {}
@@ -122,9 +122,9 @@ function newFuncs.createInfoFrame (param)
 				callback (menu.infoFrame)
 			end
 			newFuncs.updateFrameHeight ()
-			if not param.isFromUpdate then
+			if param ~= nil and not param.isFromUpdate then
 				newFuncs.requestUpdate ()
-				isForceMenuOver = true
+				-- isForceMenuOver = true
 			end
 		end
 		-- end kuertee_lua_with_callbacks:
@@ -251,8 +251,8 @@ function newFuncs.onUpdate()
 	end
 
 	-- start kuertee_lua_with_callbacks:
-	if callbacks ["createInfoFrame_on_before_frame_display"] then
-		for _, callback in ipairs (callbacks ["createInfoFrame_on_before_frame_display"]) do
+	if callbacks ["createInfoFrame_onUpdate_before_frame_update"] then
+		for _, callback in ipairs (callbacks ["createInfoFrame_onUpdate_before_frame_update"]) do
 			callback (menu.infoFrame)
 			newFuncs.updateFrameHeight ()
 		end
@@ -260,9 +260,5 @@ function newFuncs.onUpdate()
 	-- end kuertee_lua_with_callbacks:
 
 	menu.infoFrame:update()
-end
-function newFuncs.onTableMouseOut(uitable, row)
-end
-function newFuncs.onTableMouseOver(uitable, row)
 end
 init ()
