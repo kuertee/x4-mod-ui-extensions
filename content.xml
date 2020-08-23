@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
-<content id="kuerteeUILuaWithCallbacks"
-	name="kuertee UI: Lua with callbacks"
+<content id="kuerteeUIExtensionsAndHUD"
+	name="kuertee UI Extensions and HUD"
 	author="kuertee"
 	version="100"
-	date="2020-08-08"
+	date="2020-08-22"
 	save="false"
 	enabled="1"
-	description="UI: Lua with callbacks&#13;&#10;">
+	description="UI Extensions and HUD&#13;&#10;https://www.nexusmods.com/x4foundations/mods/552&#13;&#10;by kuertee&#13;&#10;&#13;&#10;Mod effects:&#13;&#10;============&#13;&#10;Modded Lua files with callbacks to allow more than one mod to change the same UI element.&#13;&#10;Functions to add new HUD elements to the Top Level Menu.&#13;&#10;">
 </content>

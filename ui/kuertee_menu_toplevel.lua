@@ -2,27 +2,27 @@ local ffi = require ("ffi")
 local C = ffi.C
 local Lib = require ("extensions.sn_mod_support_apis.lua_library")
 local topLevelMenu
-local origFuncs = {}
+local oldFuncs = {}
 local newFuncs = {}
 local callbacks = {}
 local isInited
 local function init ()
-	DebugError ("kuertee_menu_toplevel.init isInited")
+	DebugError ("kuertee_menu_toplevel.init")
 	if not isInited then
 		isInited = true
 		topLevelMenu = Lib.Get_Egosoft_Menu ("TopLevelMenu")
 		topLevelMenu.registerCallback = newFuncs.registerCallback
 		topLevelMenu.callbacks = callbacks
 		-- start rewrites:
-		origFuncs.createInfoFrame = topLevelMenu.createInfoFrame
+		oldFuncs.createInfoFrame = topLevelMenu.createInfoFrame
 		topLevelMenu.createInfoFrame = newFuncs.createInfoFrame
-		origFuncs.onUpdate = topLevelMenu.onUpdate
+		oldFuncs.onUpdate = topLevelMenu.onUpdate
 		topLevelMenu.onUpdate = newFuncs.onUpdate
-		origFuncs.onTableMouseOut = topLevelMenu.onTableMouseOut
+		oldFuncs.onTableMouseOut = topLevelMenu.onTableMouseOut
 		topLevelMenu.onTableMouseOut = nil -- mouse.over is now set onUpdate
-		origFuncs.onTableMouseOver = topLevelMenu.onTableMouseOver
+		oldFuncs.onTableMouseOver = topLevelMenu.onTableMouseOver
 		topLevelMenu.onTableMouseOver = nil -- mouse.over is now set onUpdate
-		origFuncs.cleanup = topLevelMenu.cleanup
+		oldFuncs.cleanup = topLevelMenu.cleanup
 		topLevelMenu.cleanup = newFuncs.cleanup
 		-- end rewrites:
 		-- start new:
@@ -65,7 +65,7 @@ local config = {
 	mouseOutRange = 100,
 }
 -- function newFuncs.onShowMenu ()
--- 	origFuncs.onShowMenu ()
+-- 	oldFuncs.onShowMenu ()
 -- end
 local pullDownArrowsHeight = Helper.sidebarWidth
 local isDisplayed = false
@@ -266,7 +266,7 @@ function newFuncs.onUpdate ()
 	menu.infoFrame:update()
 end
 function newFuncs.cleanup ()
-	origFuncs.cleanup ()
+	oldFuncs.cleanup ()
 	isDisplayed = false
 end
 init ()

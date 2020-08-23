@@ -2,19 +2,19 @@
 local C = ffi.C
 local Lib = require ("extensions.sn_mod_support_apis.lua_library")
 local transporterMenu
-local origFuncs = {}
+local oldFuncs = {}
 local newFuncs = {}
 local callbacks = {}
 local isInited
 local function init ()
-	DebugError ("kuertee_menu_transporter.init isInited")
+	DebugError ("kuertee_menu_transporter.init")
 	if not isInited then
 		isInited = true
 		transporterMenu = Lib.Get_Egosoft_Menu ("TransporterMenu")
 		transporterMenu.registerCallback = newFuncs.registerCallback
-		origFuncs.addEntry = transporterMenu.addEntry
-		origFuncs.display = transporterMenu.display
+		oldFuncs.addEntry = transporterMenu.addEntry
 		transporterMenu.addEntry = newFuncs.addEntry
+		oldFuncs.display = transporterMenu.display
 		transporterMenu.display = newFuncs.display
 	end
 end

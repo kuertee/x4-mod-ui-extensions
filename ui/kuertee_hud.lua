@@ -6,7 +6,7 @@ local newFuncs = {}
 local kHUD = {}
 local isInited
 local function init ()
-	DebugError ("kuertee_hud.init isInited")
+	DebugError ("kuertee_hud.init")
 	if not isInited then
 		isInited = true
 		topLevelMenu = Lib.Get_Egosoft_Menu ("TopLevelMenu")

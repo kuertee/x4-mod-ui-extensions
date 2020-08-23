@@ -2,26 +2,26 @@
 local C = ffi.C
 local Lib = require ("extensions.sn_mod_support_apis.lua_library")
 local mapMenu
-local origFuncs = {}
+local oldFuncs = {}
 local newFuncs = {}
 local callbacks = {}
 local isInited
 local function init ()
-	DebugError ("kuertee_menu_map.init isInited")
+	DebugError ("kuertee_menu_map.init")
 	if not isInited then
 		isInited = true
 		mapMenu = Lib.Get_Egosoft_Menu ("MapMenu")
 		mapMenu.registerCallback = newFuncs.registerCallback
-		origFuncs.createPropertyOwned = mapMenu.createPropertyOwned
-		origFuncs.createPropertyRow = mapMenu.createPropertyRow
+		oldFuncs.createPropertyOwned = mapMenu.createPropertyOwned
 		mapMenu.createPropertyOwned = newFuncs.createPropertyOwned
+		oldFuncs.createPropertyRow = mapMenu.createPropertyRow
 		mapMenu.createPropertyRow = newFuncs.createPropertyRow
 	end
 end
 function newFuncs.registerCallback (callbackName, callbackFunction)
 	-- DebugError ("kuertee_menu_transporter.registerCallback " .. tostring (callbackName) .. " " .. tostring (callbackFunction))
 	-- note 1: format is generally [function name]_[action]. e.g.: in kuertee_menu_transporter, "display_on_set_room_active" overrides the room's active property with the return of the callback.
-	-- note 2: events have the word "_on_" followed by a PRESET TENSE verb. e.g.: in kuertee_menu_transporter, "display_on_set_buttontable" is called after all of the rows of buttontable are set.
+	-- note 2: events have the word "_on_" followed by a PRESENT TENSE verb. e.g.: in kuertee_menu_transporter, "display_on_set_buttontable" is called after all of the rows of buttontable are set.
 	-- note 3: new callbacks can be added or existing callbacks can be edited. but commit your additions/changes to the mod's GIT repository.
 	-- note 4: search for the callback names to see where they are executed.
 	-- note 5: if a callback requires a return value, return it in an object var. e.g. "display_on_set_room_active" requires a return of {active = true | false}.
