@@ -9,9 +9,9 @@ Modded Lua files with callbacks to allow more than one mod to change the same UI
 
 Mod effects:
 ============
-This is a modder's resource/API. By itself, this mod has no does not affect the game.
+This is a modder's resource/API. By itself, this mod does not affect the game.
 
-Modders can use this API to mod the game's Lua files with compatibility with others' UI mods that also use this API.
+Modders can use this API to mod the game's Lua files with compatibility with other mods that also use this API.
 
 Without this API, some Lua elements can be modified by only one mod. For example, my mods, "NPC reactions/NPC taxi" and "Teleport from transporter room" adds buttons to the bottom of the Transporter Room panel. Because its Lua's display () function constructs its frame, table, rows, and content AND THEN immediately calls the frame:display () function, it is impossible for both mods to "rewrite" the display () function and expect both "rewrites" to work.
 
@@ -42,13 +42,13 @@ In the mod's MD file:
 
 In your mod's release:
 ----------------------
-Make this a mod a required download for your mod.
+Make this mod a required download for your mod.
 
 Documentation:
 ==============
 Soon.
 
-But the callbacks, along with their function parameters and their expected returns, are listed in each of the new Lua files. Learning at which point in the code they execute is as easy as searching for them in the code. Examples of how they are used can be seen in my mods that use them. My mods "NPC Reactions/NPC Taxi" and "Teleport from transporter room" both have changes to the "TransporterMenu".
+But the callbacks, along with their function parameters and their expected returns, are listed in each of the new Lua files. Learning at which point in the code they execute is as easy as searching for them in the code. Examples of how they are used can be seen in my mods that use them. My mods "NPC reactions/NPC taxi" and "Teleport from transporter room" both have changes to the "TransporterMenu".
 
 Requirement:
 ============
