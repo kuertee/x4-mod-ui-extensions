@@ -1,11 +1,16 @@
 UI Extensions and HUD
 https://www.nexusmods.com/x4foundations/mods/552
-Code: https://github.com/kuertee/x4-mod-ui-extensions.git
+Code: https://github.com/kuertee/x4-mod-ui-extensions
 by kuertee
 
 What this is:
 =============
 Modded Lua files with callbacks to allow more than one mod to change the same UI element. Functionality to add new HUD elements to the Top Level Menu.
+
+Update:
+=======
+v1.1.0, 2 Nov 2020:
+-New feature: Features that allow totally custom panels that work like the Objects and Properties panel. I.e. Items in these custom panels are interactive and can be clicked, multi-selected, right-clicked, expanded, etc. See the UI screenshots in my "Crime has consequences" mod (https://www.nexusmods.com/x4foundations/mods/566).
 
 Mod effects:
 ============
@@ -13,7 +18,7 @@ This is a modder's resource/API. By itself, this mod does not affect the game.
 
 Modders can use this API to mod the game's Lua files with compatibility with other mods that also use this API.
 
-Without this API, some Lua elements can be modified by only one mod. For example, my mods, "NPC reactions/NPC taxi" and "Teleport from transporter room" adds buttons to the bottom of the Transporter Room panel. Because its Lua's display () function constructs its frame, table, rows, and content AND THEN immediately calls the frame:display () function, it is impossible for both mods to "rewrite" the display () function and expect both "rewrites" to work.
+Without this API, some Lua elements can be modified by only one mod. For example, my mods, "NPC reactions/NPC taxi" and "Teleport from transporter room" add buttons to the bottom of the Transporter Room panel. Because its Lua's display () function constructs its frame, table, rows, and content AND THEN immediately calls the frame:display () function, it is impossible for both mods to "rewrite" the display () function and expect both "rewrites" to work.
 
 With this API, specifically its callbacks, it is possible.
 

@@ -86,8 +86,10 @@ function kHUD.createTables (frame)
 		for i, callback in ipairs (topLevelMenu.callbacks ["kHUD_add_HUD_tables"]) do
 			callbackFTableStartEndIndicies [i] = {first = ftableIndex}
 			result = callback (frame)
-			for i, ftable in ipairs (result.ftables) do
-				ftableIndex = ftableIndex + 1
+			if result then
+				for i, ftable in ipairs (result.ftables) do
+					ftableIndex = ftableIndex + 1
+				end
 			end
 			callbackFTableStartEndIndicies [i].last = ftableIndex - 1
 		end

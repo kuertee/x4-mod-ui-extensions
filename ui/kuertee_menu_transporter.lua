@@ -132,10 +132,12 @@ function newFuncs.addEntry(ftable, target, indent, parentcomponent)
 		local result
 		for _, callback in ipairs (callbacks ["addEntry_on_set_room_name"]) do
 			result = callback (name, target)
+			if result then
+				-- DebugError ("kuertee_menu_transporter.addEntry_on_set_room_name name pre " .. tostring (name))
+				name = result.name
+				-- DebugError ("kuertee_menu_transporter.addEntry_on_set_room_name name post " .. tostring (name))
+			end
 		end
-		-- DebugError ("kuertee_menu_transporter.addEntry_on_set_room_name name pre " .. tostring (name))
-		name = result.name
-		-- DebugError ("kuertee_menu_transporter.addEntry_on_set_room_name name post " .. tostring (name))
 	end
 	-- end kuertee_lua_with_callbacks:
 
@@ -271,7 +273,7 @@ function newFuncs.display()
 		for _, callback in ipairs (callbacks ["display_on_set_room_active"]) do
 			callbacksCount = callbacksCount + 1
 			result = callback (active)
-			if result.active then
+			if result and result.active then
 				activeCount = activeCount + 1
 			end
 		end
