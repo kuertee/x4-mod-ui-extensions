@@ -14,6 +14,8 @@ local function init ()
 		mapMenu.registerCallback = newFuncs.registerCallback
 		oldFuncs.createInfoFrame = mapMenu.createInfoFrame
 		mapMenu.createInfoFrame = newFuncs.createInfoFrame
+		oldFuncs.buttonMissionActivate = mapMenu.buttonMissionActivate
+		mapMenu.buttonMissionActivate = newFuncs.buttonMissionActivate
 		oldFuncs.refreshInfoFrame = mapMenu.refreshInfoFrame
 		mapMenu.refreshInfoFrame = newFuncs.refreshInfoFrame
 		oldFuncs.createPropertyOwned = mapMenu.createPropertyOwned
@@ -22,6 +24,8 @@ local function init ()
 		mapMenu.createPropertyRow = newFuncs.createPropertyRow
 		oldFuncs.createSideBar = mapMenu.createSideBar
 		mapMenu.createSideBar = newFuncs.createSideBar
+		oldFuncs.createMissionContext = mapMenu.createMissionContext
+		mapMenu.createMissionContext = newFuncs.createMissionContext
 		oldFuncs.onRowChanged = mapMenu.onRowChanged
 		mapMenu.onRowChanged = newFuncs.onRowChanged
 		oldFuncs.onSelectElement = mapMenu.onSelectElement
@@ -48,7 +52,9 @@ function newFuncs.registerCallback (callbackName, callbackFunction)
 	-- note 4: search for the callback names to see where they are executed.
 	-- note 5: if a callback requires a return value, return it in an object var. e.g. "display_on_set_room_active" requires a return of {active = true | false}.
 	-- available callbacks:
+	-- 
 	-- (true | false) = createInfoFrame_on_menu_infoTableMode (menu.infoFrame)
+	-- buttonMissionActivate_on_activate (missionid)
 	-- createPropertyOwned_on_start (config)
 	-- createPropertyOwned_on_init_infoTableData (infoTableData)
 	-- createPropertyOwned_on_add_ship_infoTableData (infoTableData, object)
@@ -93,21 +99,21 @@ local config = {
 
 	layersettings = {
 		["layer_trade"] = {
-			callback = function (value) return C.SetMapRenderTradeOffers(menu.holomap, value) end,
+			callback = function (value) return C.SetMapRenderTradeOffers(mapMenu.holomap, value) end,
 			[1] = {
 				caption = ReadText(1001, 46),
 				info = ReadText(1001, 3279),
 				overrideText = ReadText(1001, 8378),
 				type = "multiselectlist",
 				id = "trade_wares",
-				callback = function (...) return menu.filterTradeWares(...) end,
-				listOptions = function (...) return menu.getFilterTradeWaresOptions(...) end,
+				callback = function (...) return mapMenu.filterTradeWares(...) end,
+				listOptions = function (...) return mapMenu.getFilterTradeWaresOptions(...) end,
 				displayOption = function (option) return "\27[maptr_supply] " .. GetWareData(option, "name") end,
 			},
 			[2] = {
 				caption = ReadText(1001, 1400),
 				type = "checkbox",
-				callback = function (...) return menu.filterTradeStorage(...) end,
+				callback = function (...) return mapMenu.filterTradeStorage(...) end,
 				[1] = {
 					id = "trade_storage_container",
 					name = ReadText(20205, 100),
@@ -130,7 +136,7 @@ local config = {
 			[3] = {
 				caption = ReadText(1001, 2808),
 				type = "slidercell",
-				callback = function (...) return menu.filterTradePrice(...) end,
+				callback = function (...) return mapMenu.filterTradePrice(...) end,
 				[1] = {
 					id = "trade_price_maxprice",
 					name = ReadText(1001, 3284),
@@ -148,35 +154,35 @@ local config = {
 			[4] = {
 				caption = ReadText(1001, 8357),
 				type = "dropdown",
-				callback = function (...) return menu.filterTradeVolume(...) end,
+				callback = function (...) return mapMenu.filterTradeVolume(...) end,
 				[1] = {
 					id = "trade_volume",
 					info = ReadText(1001, 8358),
-					listOptions = function (...) return menu.getFilterTradeVolumeOptions(...) end,
+					listOptions = function (...) return mapMenu.getFilterTradeVolumeOptions(...) end,
 					param = "volume"
 				},
 			},
 			[5] = {
 				caption = ReadText(1001, 11205),
 				type = "dropdown",
-				callback = function (...) return menu.filterTradePlayerOffer(...) end,
+				callback = function (...) return mapMenu.filterTradePlayerOffer(...) end,
 				[1] = {
 					id = "trade_playeroffer_buy",
 					info = ReadText(1001, 11209),
-					listOptions = function (...) return menu.getFilterTradePlayerOfferOptions(true) end,
+					listOptions = function (...) return mapMenu.getFilterTradePlayerOfferOptions(true) end,
 					param = "playeroffer_buy"
 				},
 				[2] = {
 					id = "trade_playeroffer_sell",
 					info = ReadText(1001, 11210),
-					listOptions = function (...) return menu.getFilterTradePlayerOfferOptions(false) end,
+					listOptions = function (...) return mapMenu.getFilterTradePlayerOfferOptions(false) end,
 					param = "playeroffer_sell"
 				},
 			},
 			[6] = {
 				caption = ReadText(1001, 11240),
 				type = "checkbox",
-				callback = function (...) return menu.filterTradeRelation(...) end,
+				callback = function (...) return mapMenu.filterTradeRelation(...) end,
 				[1] = {
 					id = "trade_relation_enemy",
 					name = ReadText(1001, 11241),
@@ -187,7 +193,7 @@ local config = {
 			[7] = {
 				caption = ReadText(1001, 8343),
 				type = "slidercell",
-				callback = function (...) return menu.filterTradeOffer(...) end,
+				callback = function (...) return mapMenu.filterTradeOffer(...) end,
 				[1] = {
 					id = "trade_offer_number",
 					name = ReadText(1001, 8344),
@@ -205,22 +211,22 @@ local config = {
 		},
 		["layer_fight"] = {},
 		["layer_think"] = {
-			callback = function (value) return menu.filterThink(value) end,
+			callback = function (value) return mapMenu.filterThink(value) end,
 			[1] = {
 				caption = ReadText(1001, 3285),
 				type = "dropdown",
-				callback = function (...) return menu.filterThinkAlert(...) end,
+				callback = function (...) return mapMenu.filterThinkAlert(...) end,
 				[1] = {
 					info = ReadText(1001, 3286),
 					id = "think_alert",
-					listOptions = function (...) return menu.getFilterThinkAlertOptions(...) end,
+					listOptions = function (...) return mapMenu.getFilterThinkAlertOptions(...) end,
 					param = "alert"
 				},
 			},
 			[2] = {
 				caption = ReadText(1001, 8335),
 				type = "checkbox",
-				callback = function (...) return menu.filterOtherStation(...) end,
+				callback = function (...) return mapMenu.filterOtherStation(...) end,
 				[1] = {
 					id = "other_misc_missions",
 					name = ReadText(1001, 3291),
@@ -231,7 +237,7 @@ local config = {
 			[3] = {
 				caption = ReadText(1001, 11204),
 				type = "checkbox",
-				callback = function (...) return menu.filterThinkDiplomacy(...) end,
+				callback = function (...) return mapMenu.filterThinkDiplomacy(...) end,
 				[1] = {
 					id = "think_diplomacy_factioncolor",
 					name = ReadText(1001, 11203),
@@ -248,11 +254,11 @@ local config = {
 		["layer_build"] = {},
 		["layer_diplo"] = {},
 		["layer_mining"] = {
-			callback = function (value) return menu.filterMining(value) end,
+			callback = function (value) return mapMenu.filterMining(value) end,
 			[1] = {
 				caption = ReadText(1001, 8330),
 				type = "checkbox",
-				callback = function (...) return menu.filterMiningResources(...) end,
+				callback = function (...) return mapMenu.filterMiningResources(...) end,
 				[1] = {
 					id = "mining_resource_display",
 					name = ReadText(1001, 8331),
@@ -262,11 +268,11 @@ local config = {
 			},
 		},
 		["layer_other"] = {
-			callback = function (value) return menu.filterOther(value) end,
+			callback = function (value) return mapMenu.filterOther(value) end,
 			[1] = {
 				caption = ReadText(1001, 8335),
 				type = "checkbox",
-				callback = function (...) return menu.filterOtherStation(...) end,
+				callback = function (...) return mapMenu.filterOtherStation(...) end,
 				[1] = {
 					id = "other_misc_cargo",
 					name = ReadText(1001, 3289),
@@ -295,7 +301,7 @@ local config = {
 			[2] = {
 				caption = ReadText(1001, 8336),
 				type = "checkbox",
-				callback = function (...) return menu.filterOtherShip(...) end,
+				callback = function (...) return mapMenu.filterOtherShip(...) end,
 				[1] = {
 					id = "other_misc_orderqueue",
 					name = ReadText(1001, 3287),
@@ -318,7 +324,7 @@ local config = {
 			[3] = {
 				caption = ReadText(1001, 2664),
 				type = "checkbox",
-				callback = function (...) return menu.filterOtherMisc(...) end,
+				callback = function (...) return mapMenu.filterOtherMisc(...) end,
 				[1] = {
 					id = "other_misc_ecliptic",
 					name = ReadText(1001, 3297),
@@ -357,6 +363,43 @@ local config = {
 	mapFontSize = Helper.standardFontSize,
 	contextBorder = 5
 }
+function newFuncs.buttonMissionActivate()
+	local menu = mapMenu
+
+	local active = menu.contextMenuData.missionid == C.GetActiveMissionID()
+	for _, submissionEntry in ipairs(menu.contextMenuData.subMissions) do
+		if submissionEntry.active then
+			active = true
+		end
+	end
+	if active then
+		C.SetActiveMission(0)
+	else
+		C.SetActiveMission(menu.contextMenuData.missionid)
+		PlaySound("ui_mission_set_active")
+
+		-- start kuertee_lua_with_callbacks:
+		if callbacks ["buttonMissionActivate_on_activate"] then
+			-- get active mission first, because the clicked item may have been a group
+			local activeMissionId
+			local numMissions = GetNumMissions ()
+			for i = 1, numMissions do
+				local entry = mapMenu.getMissionInfoHelper (i)
+				if entry.active then
+					activeMissionId = entry.ID
+				end
+			end
+			for _, callback in ipairs (callbacks ["buttonMissionActivate_on_activate"]) do
+				-- callback (menu.contextMenuData.missionid)
+				callback (activeMissionId)
+			end
+		end
+		-- end kuertee_lua_with_callbacks:
+
+	end
+	menu.closeContextMenu()
+	menu.refreshIF = getElapsedTime()
+end
 function newFuncs.createInfoFrame()
 	local menu = mapMenu
 
@@ -1387,6 +1430,244 @@ function newFuncs.createSideBar(firsttime, frame, width, height, offsetx, offset
 
 	ftable:setSelectedRow(menu.selectedRows.sideBar)
 	menu.selectedRows.sideBar = nil
+end
+function newFuncs.createMissionContext(frame)
+	local menu = mapMenu
+
+	local tablespacing = Helper.standardTextHeight
+	local maxObjectiveLines = 10
+
+	-- description table
+	local desctable = frame:addTable(1, { tabOrder = 3, highlightMode = "off", maxVisibleHeight = menu.contextMenuData.descriptionHeight, x = Helper.borderSize, y = Helper.borderSize, width = menu.contextMenuData.width })
+
+	-- title
+	local visibleHeight
+	local row = desctable:addRow(false, { fixed = true })
+	row[1]:createText(menu.contextMenuData.name, Helper.headerRowCenteredProperties)
+
+	-- briefing icon if any
+	local icontable
+	if menu.contextMenuData.briefingicon then
+		icontable = frame:addTable(1, { tabOrder = 0, highlightMode = "off", maxVisibleHeight = menu.contextMenuData.descriptionHeight, x = Helper.borderSize, y = desctable.properties.y + desctable:getFullHeight() + Helper.borderSize, width = menu.contextMenuData.briefingiconwidth })
+
+		local row = icontable:addRow(nil, { bgColor = Helper.color.transparent })
+		row[1]:createIcon(menu.contextMenuData.briefingicon, { scaling = false, height = menu.contextMenuData.briefingiconwidth })
+		
+		local row = icontable:addRow(nil, { bgColor = Helper.color.transparent })
+		row[1]:createText(menu.contextMenuData.briefingiconcaption, { wordwrap = true })
+	end
+
+	-- description
+	for linenum, descline in ipairs(menu.contextMenuData.description) do
+		local row = desctable:addRow(true, { bgColor = Helper.color.transparent })
+		row[1]:createText(descline, { scaling = false, fontsize = Helper.scaleFont(Helper.standardFont, Helper.standardFontSize), x = menu.contextMenuData.briefingiconwidth and (menu.contextMenuData.briefingiconwidth + Helper.borderSize + Helper.scaleX(Helper.standardTextOffsetx)) or nil, minRowHeight = Helper.scaleY(Helper.standardTextHeight) })
+		if linenum == menu.contextMenuData.descriptionLines then
+			visibleHeight = desctable:getFullHeight()
+		end
+	end
+	if visibleHeight then
+		desctable.properties.maxVisibleHeight = visibleHeight
+	else
+		desctable.properties.maxVisibleHeight = desctable:getFullHeight()
+	end
+
+	local objectiveOffsetY = desctable.properties.y + desctable:getVisibleHeight()
+	if icontable then
+		objectiveOffsetY = math.max(objectiveOffsetY, menu.contextMenuData.descriptionHeight)
+	end
+	objectiveOffsetY = objectiveOffsetY + tablespacing + Helper.borderSize
+
+	-- objectives table
+	local objectivetable = frame:addTable(2, { tabOrder = 4, highlightMode = "off", x = Helper.borderSize, y = objectiveOffsetY, maxVisibleHeight = menu.contextMenuData.objectiveHeight, width = menu.contextMenuData.width })
+	objectivetable:setColWidth(2, Helper.standardTextHeight)
+	objectivetable:setDefaultColSpan(1, 2)
+
+	-- objectives
+	local visibleHeight
+	if menu.contextMenuData.threadtype ~= "" then
+		-- title
+		local row = objectivetable:addRow(false, { fixed = true })
+		row[1]:createText(ReadText(1001, 3418), Helper.headerRowCenteredProperties)
+		if menu.contextMenuData.isoffer then
+			if #menu.contextMenuData.briefingmissions > 0 then
+				for i, details in ipairs(menu.contextMenuData.briefingmissions) do
+					local infotext = ""
+					local textProperties = {}
+					if i < details.activeobjective then
+						infotext = " - " .. ReadText(1001, 3416)
+						textProperties.color = Helper.color.grey
+					end
+					local row = objectivetable:addRow(true, { bgColor = Helper.color.transparent })
+					row[1]:setColSpan(1):createText(((menu.contextMenuData.threadtype == "sequential") and (i .. ReadText(1001, 120)) or "·") .. " " .. details.name .. infotext, textProperties)
+					row[2]:createIcon("missionoffer_" .. details.type .. "_active", { height = Helper.standardTextHeight })
+					if i == maxObjectiveLines then
+						visibleHeight = objectivetable:getFullHeight()
+					end
+				end
+			else
+				local row = objectivetable:addRow(true, { bgColor = Helper.color.transparent })
+				row[1]:createText("--- " .. ReadText(1001, 3410) .. " ---")
+			end
+		else
+			if #menu.contextMenuData.subMissions > 0 then
+				for i, submissionEntry in ipairs(menu.contextMenuData.subMissions) do
+					local infotext = ""
+					local textProperties = {}
+					if i < submissionEntry.activebriefingstep then
+						infotext = " - " .. ReadText(1001, 3416)
+						textProperties.color = Helper.color.grey
+					elseif i == submissionEntry.activebriefingstep then
+						if submissionEntry.active then
+							textProperties.color = Helper.color.mission
+						end
+					else
+						-- nothing to do
+					end
+					local row = objectivetable:addRow(true, { bgColor = Helper.color.transparent })
+					row[1]:setColSpan(1):createText(((menu.contextMenuData.threadtype == "sequential") and (i .. ReadText(1001, 120)) or "·") .. " " .. submissionEntry.name .. infotext, textProperties)
+					row[2]:createIcon("missionoffer_" .. submissionEntry.type .. "_active", { height = Helper.standardTextHeight })
+					if i == maxObjectiveLines then
+						visibleHeight = objectivetable:getFullHeight()
+					end
+				end
+			else
+				local row = objectivetable:addRow(true, { bgColor = Helper.color.transparent })
+				row[1]:createText("--- " .. ReadText(1001, 3410) .. " ---")
+			end
+		end
+	else
+		-- title
+		local row = objectivetable:addRow(false, { fixed = true })
+		row[1]:createText(ReadText(1001, 3402), Helper.headerRowCenteredProperties)
+		if #menu.contextMenuData.briefingobjectives > 0 then
+			for linenum, briefingobjective in ipairs(menu.contextMenuData.briefingobjectives) do
+				local infotext = ""
+				local textProperties = {}
+				if linenum < menu.contextMenuData.activebriefingstep then
+					infotext = " - " .. (briefingobjective.failed and ReadText(1001, 3422) or ReadText(1001, 3416))
+					textProperties.color = Helper.color.grey
+				elseif linenum == menu.contextMenuData.activebriefingstep then
+					if (not menu.isOffer) and (menu.contextMenuData.missionid == C.GetActiveMissionID()) then
+						textProperties.color = Helper.color.mission
+					end
+				else
+					-- nothing to do
+				end
+				local row = objectivetable:addRow(true, { bgColor = Helper.color.transparent })
+				row[1]:createText(briefingobjective.step .. ReadText(1001, 120) .. " " .. briefingobjective.text .. infotext, textProperties)
+				if linenum == maxObjectiveLines then
+					visibleHeight = objectivetable:getFullHeight()
+				end
+			end
+		else
+			local row = objectivetable:addRow(true, { bgColor = Helper.color.transparent })
+			row[1]:createText("--- " .. ReadText(1001, 3410) .. " ---")
+		end
+	end
+	if visibleHeight then
+		objectivetable.properties.maxVisibleHeight = visibleHeight
+	else
+		objectivetable.properties.maxVisibleHeight = objectivetable:getFullHeight()
+	end
+
+	-- bottom table (info and buttons)
+	local bottomtable = frame:addTable(2, { tabOrder = 2, x = Helper.borderSize, y = objectivetable.properties.y + objectivetable:getVisibleHeight() + tablespacing, width = menu.contextMenuData.width })
+
+	-- faction
+	if menu.contextMenuData.factionName then
+		local row = bottomtable:addRow(false, { fixed = true, bgColor = Helper.color.transparent })
+		row[1]:createText(ReadText(1001, 43) .. ReadText(1001, 120))
+		row[2]:createText(menu.contextMenuData.factionName, { halign = "right" })
+	end
+	-- reward
+	local rewardtext
+	if menu.contextMenuData.rewardmoney ~= 0 then
+		rewardtext = ConvertMoneyString(menu.contextMenuData.rewardmoney, false, true, 0, true) .. " " .. ReadText(1001, 101)
+		if menu.contextMenuData.rewardtext ~= "" then
+			rewardtext = rewardtext .. " \n" .. menu.contextMenuData.rewardtext
+		end
+	else
+		rewardtext = menu.contextMenuData.rewardtext
+	end
+	local row = bottomtable:addRow(false, { fixed = true, bgColor = Helper.color.transparent })
+	row[1]:createText(ReadText(1001, 3301) .. ReadText(1001, 120))
+	row[2]:createText(rewardtext, { halign = "right", wordwrap = true })
+	-- difficulty
+	if menu.contextMenuData.difficulty ~= 0 then
+		local row = bottomtable:addRow(false, { fixed = true, bgColor = Helper.color.transparent })
+		row[1]:createText(ReadText(1001, 3403) .. ReadText(1001, 120))
+		row[2]:createText(ConvertMissionLevelString(menu.contextMenuData.difficulty), { halign = "right" })
+	end
+	-- time left
+	local row = bottomtable:addRow(false, { fixed = true, bgColor = Helper.color.transparent })
+	row[1]:createText(ReadText(1001, 3404) .. ReadText(1001, 120))
+	row[2]:createText(menu.getMissionContextTime, { halign = "right" })
+
+	-- buttons
+	if menu.contextMenuData.isoffer then
+		-- Accept & Briefing
+		local row = bottomtable:addRow(true, { fixed = true, bgColor = Helper.color.transparent })
+		local active = true
+		local mouseovertext
+		if C.IsMissionLimitReached(false, false, false) then
+			active = false
+			mouseovertext = ReadText(1026, 3242)
+		end
+		row[1]:createButton({ active = active, mouseOverText = mouseovertext, helpOverlayID = "map_accpetmission", helpOverlayText = " ", helpOverlayHighlightOnly = true }):setText(ReadText(1001, 57), { halign = "center" })
+		row[1].handlers.onClick = menu.buttonMissionOfferAccept
+		row[1].properties.uiTriggerID = "missionofferaccept"
+		row[2]:createButton({  }):setText(ReadText(1001, 3326), { halign = "center" })
+		row[2].handlers.onClick = menu.buttonMissionOfferBriefing
+		row[2].properties.uiTriggerID = "missionofferbriefing"
+	else
+		-- Abort & Briefing
+		local active = menu.contextMenuData.abortable
+		local mouseovertext = ""
+		if menu.contextMenuData.threadMissionID ~= 0 then
+			local details = menu.getMissionIDInfoHelper(menu.contextMenuData.threadMissionID)
+			active = details.threadtype ~= "sequential"
+			if not active then
+				mouseovertext = ReadText(1026, 3405)
+			end
+		end
+		local row = bottomtable:addRow(true, { fixed = true, bgColor = Helper.color.transparent })
+		row[1]:createButton({ active = active, mouseOverText = mouseovertext, helpOverlayID = "map_abortmission", helpOverlayText = " ",  helpOverlayHighlightOnly = true }):setText(ReadText(1001, 3407), { halign = "center" })
+		row[1].handlers.onClick = menu.buttonMissionAbort
+		row[1].properties.uiTriggerID = "missionabort"
+		row[2]:createButton({  }):setText(ReadText(1001, 3326), { halign = "center" })
+		row[2].handlers.onClick = menu.buttonMissionBriefing
+		row[2].properties.uiTriggerID = "missionbriefing"
+
+		-- start kuertee_lua_with_callbacks:
+		-- if menu.contextMenuData.type ~= "guidance" then
+		-- end kuertee_lua_with_callbacks:
+
+			-- Set active
+			local active = menu.contextMenuData.missionid == C.GetActiveMissionID()
+			for _, submissionEntry in ipairs(menu.contextMenuData.subMissions) do
+				if submissionEntry.active then
+					active = true
+				end
+			end
+			local row = bottomtable:addRow(true, { fixed = true, bgColor = Helper.color.transparent })
+			row[1]:createButton({  }):setText(active and ReadText(1001, 3413) or ReadText(1001, 3406), { halign = "center" })
+			row[1].handlers.onClick = menu.buttonMissionActivate
+			row[1].properties.uiTriggerID = "missionactivate"
+
+		-- start kuertee_lua_with_callbacks:
+		-- end
+		-- end kuertee_lua_with_callbacks:
+	end
+	local neededheight = bottomtable.properties.y + bottomtable:getFullHeight() + Helper.frameBorder
+	if frame.properties.y + neededheight > Helper.viewHeight then
+		frame.properties.y = Helper.viewHeight - neededheight
+	end
+
+	desctable.properties.nextTable = objectivetable.index
+	objectivetable.properties.prevTable = desctable.index
+
+	objectivetable.properties.nextTable = bottomtable.index
+	bottomtable.properties.prevTable = objectivetable.index
 end
 function newFuncs.onRowChanged(row, rowdata, uitable, modified, input, source)
 	local menu = mapMenu

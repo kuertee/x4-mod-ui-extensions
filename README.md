@@ -3,14 +3,16 @@ https://www.nexusmods.com/x4foundations/mods/552
 Code: https://github.com/kuertee/x4-mod-ui-extensions
 by kuertee
 
+Update:
+=======
+v1.2.0, 8 Dec 2020:
+-New feature: Allow mods to create guidance missions (i.e. missiontype.guidance) that will be listed in the Guidance Missions tab. This also enables the Set Active and Set Inactive buttons in missions listed in the Guidance Missions tab. Examples of these are my mods: Loot mining, Ship scanner, Signal leak hunter - increasing range, Station scanner, and Waypoint fields for deployments.
+
 What this is:
 =============
 Modded Lua files with callbacks to allow more than one mod to change the same UI element. Functionality to add new HUD elements to the Top Level Menu.
 
-Update:
-=======
-v1.1.0, 2 Nov 2020:
--New feature: Features that allow totally custom panels that work like the Objects and Properties panel. I.e. Items in these custom panels are interactive and can be clicked, multi-selected, right-clicked, expanded, etc. See the UI screenshots in my "Crime has consequences" mod (https://www.nexusmods.com/x4foundations/mods/566).
+This mod allows other mods to create guidance missions (i.e. missiontype.guidance) that will be listed in the Guidance Missions tab. This mod enables the Set Active and Set Inactive buttons in missions listed in the Guidance Missions tab. Examples of these are my mods: Loot mining, Ship scanner, Signal leak hunter - increasing range, Station scanner, and Waypoint fields for deployments.
 
 Mod effects:
 ============
@@ -71,4 +73,7 @@ Uninstall:
 
 History
 =======
+v1.1.0, 2 Nov 2020:
+-New feature: Features that allow totally custom panels that work like the Objects and Properties panel. I.e. Items in these custom panels are interactive and can be clicked, multi-selected, right-clicked, expanded, etc. See the UI screenshots in my "Crime has consequences" mod (https://www.nexusmods.com/x4foundations/mods/566).
+
 v1.0.0, 27 Aug 2020: Initial release.
