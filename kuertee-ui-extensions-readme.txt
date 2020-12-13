@@ -5,6 +5,9 @@ by kuertee
 
 Update:
 =======
+v1.2.1, 13 Dec 2020:
+-New feature: Support for Info Center (https://www.nexusmods.com/x4foundations/mods/268) by Forleyor.
+
 v1.2.0, 8 Dec 2020:
 -New feature: Allow mods to create guidance missions (i.e. missiontype.guidance) that will be listed in the Guidance Missions tab. This also enables the Set Active and Set Inactive buttons in missions listed in the Guidance Missions tab. Examples of these are my mods: Loot mining, Ship scanner, Signal leak hunter - increasing range, Station scanner, and Waypoint fields for deployments.
 
