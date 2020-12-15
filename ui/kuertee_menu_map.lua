@@ -1,4 +1,11 @@
-﻿local ffi = require ("ffi")
+﻿-- modes: - "selectComponent",      param: { returnsection, classlist[, category][, playerowned][, customheading][, screenname] }
+--        - if "returnsection" == null, insted of "closeMenuForSection", an "AddUITriggeredEvent" is sent with screen = "MapMenu", control = "selectComponent" and param3 = selectedComponent
+--        - valid categories are: null or "deployables"
+--        - playerowned: 1 (default) or 0
+--        - customheading: custom prompt otherwise, {1001, 8325} Select Object (default)
+--        - screenname: AddUITriggeredEvent screen name
+
+local ffi = require ("ffi")
 local C = ffi.C
 local Lib = require ("extensions.sn_mod_support_apis.lua_library")
 local mapMenu
@@ -12,10 +19,13 @@ local function init ()
         isInited = true
         mapMenu = Lib.Get_Egosoft_Menu ("MapMenu")
         mapMenu.registerCallback = newFuncs.registerCallback
+        -- map menu rewrites:
         oldFuncs.createInfoFrame = mapMenu.createInfoFrame
         mapMenu.createInfoFrame = newFuncs.createInfoFrame
         oldFuncs.buttonMissionActivate = mapMenu.buttonMissionActivate
         mapMenu.buttonMissionActivate = newFuncs.buttonMissionActivate
+        oldFuncs.buttonSelectHandler = mapMenu.buttonSelectHandler
+        mapMenu.buttonSelectHandler = newFuncs.buttonSelectHandler
         oldFuncs.refreshInfoFrame = mapMenu.refreshInfoFrame
         mapMenu.refreshInfoFrame = newFuncs.refreshInfoFrame
         oldFuncs.createPropertyOwned = mapMenu.createPropertyOwned
@@ -46,6 +56,8 @@ local function init ()
         mapMenu.createSearchField = newFuncs.createSearchField
         oldFuncs.createFilterMode = mapMenu.createFilterMode -- Forleyor_infoCenter
         mapMenu.createFilterMode = newFuncs.createFilterMode -- Forleyor_infoCenter
+        -- new functions. i.e. doesn't exist in the original map menu.
+        mapMenu.setSelectComponentMode = newFuncs.setSelectComponentMode
     end
 end
 function newFuncs.registerCallback (callbackName, callbackFunction)
@@ -73,6 +85,27 @@ function newFuncs.registerCallback (callbackName, callbackFunction)
         callbacks [callbackName] = {}
     end
     table.insert (callbacks [callbackName], callbackFunction)
+end
+function newFuncs.setSelectComponentMode (returnsection, classlist, category, playerowned, customheading, screenname)
+    local menu = mapMenu
+
+    menu.old_mode = menu.mode
+    menu.old_modeparam = menu.modeparam
+    menu.old_infoTableMode = menu.infoTableMode
+
+    menu.mode = "selectComponent"
+    menu.modeparam = {
+        returnsection,
+        classlist,
+        category,
+        playerowned,
+        customheading,
+        screenname
+    }
+    menu.infoTableMode = "propertyowned"
+    menu.closeContextMenu()
+    menu.refreshMainFrame = true
+    menu.refreshInfoFrame()
 end
 -- only have config stuff here that are used in this file
 local config = {
@@ -410,6 +443,58 @@ function newFuncs.buttonMissionActivate()
     end
     menu.closeContextMenu()
     menu.refreshIF = getElapsedTime()
+end
+function newFuncs.buttonSelectHandler()
+    local menu = mapMenu
+
+    DebugError ("kuertee_menu_map.ui.buttonSelectHandler menu.mode " .. tostring (menu.mode))
+    DebugError ("kuertee_menu_map.ui.buttonSelectHandler menu.modeparam[1] " .. tostring (menu.modeparam[1]))
+    if menu.mode == "hire" then
+        if C.IsComponentClass(menu.contextMenuData.component, "controllable") then
+            local isplayerowned, isdock, isonlineobject = GetComponentData(menu.contextMenuData.component, "isplayerowned", "isdock", "isonlineobject")
+            if not isonlineobject and (isplayerowned or (isdock and C.IsComponentClass(menu.contextMenuData.component, "station"))) then
+                if menu.hireShip ~= menu.contextMenuData.component then
+                    menu.hireShip = menu.contextMenuData.component
+                    menu.hireRole = nil
+                    menu.hireIsPost = nil
+                    menu.hireIsMission = nil
+
+                    menu.refreshMainFrame = true
+                end
+            end
+        end
+    elseif menu.mode == "selectCV" then
+        menu.selectCV(menu.contextMenuData.component)
+    elseif menu.mode == "orderparam_object" then
+        if menu.checkForOrderParamObject(menu.contextMenuData.component) then
+            menu.modeparam[1](ConvertStringToLuaID(tostring(menu.contextMenuData.component)))
+        end
+    elseif menu.mode == "selectComponent" then
+
+        -- start kuertee_lua_with_callbacks:
+        if menu.modeparam[6] ~= nil then
+            -- if selectComponent returnsection is nil, then do a AddUITriggeredEvent instead
+            DebugError ("kuertee_menu_map.ui.buttonSelectHandler menu.contextMenuData.component " .. tostring (menu.contextMenuData.component))
+            DebugError ("kuertee_menu_map.ui.buttonSelectHandler menu.contextMenuData.component " .. tostring (ConvertStringToLuaID (tostring (menu.contextMenuData.component))))
+            AddUITriggeredEvent (menu.modeparam[6], "select_component", ConvertStringToLuaID (tostring (menu.contextMenuData.component)))
+            menu.mode = menu.old_mode
+            menu.modeparam = menu.old_modeparam
+            menu.infoTableMode = menu.old_infoTableMode
+            menu.closeContextMenu()
+            menu.refreshMainFrame = true
+            menu.refreshInfoFrame()
+            return
+        end
+
+        -- if menu.checkForSelectComponent(menu.contextMenuData.component) then
+        if menu.modeparam[1] and menu.checkForSelectComponent(menu.contextMenuData.component) then
+        -- end kuertee_lua_with_callbacks:
+
+            Helper.closeMenuForSection(menu, menu.modeparam[1], { ConvertStringToLuaID(tostring(menu.contextMenuData.component)) })
+            menu.cleanup()
+        end
+    end
+    menu.closeContextMenu()
 end
 function newFuncs.createInfoFrame()
     local menu = mapMenu
