@@ -1,40 +1,3 @@
-local ffi = require ("ffi")
-local C = ffi.C
-local Lib = require ("extensions.sn_mod_support_apis.lua_library")
-local userQuestionMenu
-local oldFuncs = {}
-local newFuncs = {}
-local isInited
-local function init ()
-	DebugError ("kuertee_menu_userquestion.init")
-	if not isInited then
-		isInited = true
-		userQuestionMenu = Lib.Get_Egosoft_Menu ("UserQuestionMenu")
-		-- oldFuncs.customOption = userQuestionMenu.customOption
-		-- userQuestionMenu.customOption = newFuncs.customOption
-		oldFuncs.createTable = userQuestionMenu.createTable
-		userQuestionMenu.createTable = newFuncs.createTable
-	end
-end
--- function newFuncs.customOption (optionid, optionparameters)
--- 	local menu = userQuestionMenu
-
--- 	DebugError ("kuertee_menu_userquestion.newFuncs.createTable menu.conversationMenu " .. tostring (menu.conversationMenu))
--- 	DebugError ("kuertee_menu_userquestion.newFuncs.createTable menu.modeparam [7] " .. tostring (menu.modeparam [7]))
--- 	DebugError ("kuertee_menu_userquestion.newFuncs.createTable optionid " .. tostring (optionid))
--- 	if menu.modeparam [7] ~= nil and menu.conversationMenu then
--- 		-- has conversation next section parameter, assume opened with "open_conversation_menu"
--- 		-- local continueConversationFunc = function ()
--- 		-- 	UnsuspendConversation ()
--- 		-- 	ProceedFromMenu (menu.modeparam [7], optionid)
--- 		-- end
--- 		-- -- menu.onCloseElement ("close")
--- 		-- Helper.clearMenu (menu, continueConversationFunc)
--- 		Helper.closeMenuForSection (menu, menu.modeparam [7], optionid)
--- 	else
--- 		oldFuncs.customOption (optionid, optionparameters)
--- 	end
--- end
 function newFuncs.createTable(frame, tableProperties)
 	local menu = userQuestionMenu
 
@@ -94,4 +57,3 @@ function newFuncs.createTable(frame, tableProperties)
 
 	return ftable
 end
-init ()

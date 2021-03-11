@@ -5,31 +5,24 @@ by kuertee
 
 Update:
 =======
-v1.2.2, 15 Dec 2020:
--Allows the "selectComponent" mode to work directly from the MapMenu instead of only from the ConversationMenu.
--Also for "selectComponent" mode, if menu.modeparam[6] is set, an "AddUITriggeredEvent", with screen = menu.modeparam[6] and control = "select_component", will trigger.
--Also for "selectComponent" mode, if menu.modeparam[1] is nil, the next conversation section will not trigger.
--Documented the two features (Mission Guidance tab, and selectComponent mode directly from the menu) that are not related to the call-backs available in this mod. See the section "Documentation".
+v2.0.0, 11 Mar 2021:
+-Updated for version 4.0 beta 11 of the base game.
 
-v1.2.1, 13 Dec 2020:
--New feature: Support for Info Center (https://www.nexusmods.com/x4foundations/mods/268) by Forleyor provided by Forleyor.
+Features:
+=========
+Modded Lua files with callbacks that allow more than one mod to change the same UI element.
 
-v1.2.0, 8 Dec 2020:
--New feature: Allow mods to create guidance missions (i.e. missiontype.guidance) that will be listed in the Guidance Missions tab. This also enables the Set Active and Set Inactive buttons in missions listed in the Guidance Missions tab. Examples of these are my mods: Loot mining, Ship scanner, Signal leak hunter - increasing range, Station scanner, and Waypoint fields for deployments.
+Functionality that adds HUD elements to the Top Level Menu.
 
-What this is:
-=============
-Modded Lua files with callbacks to allow more than one mod to change the same UI element. Functionality to add new HUD elements to the Top Level Menu.
-
-This mod allows other mods to create guidance missions (i.e. missiontype.guidance) that will be listed in the Guidance Missions tab. This mod enables the Set Active and Set Inactive buttons in missions listed in the Guidance Missions tab. Examples of these are my mods: Loot mining, Ship scanner, Signal leak hunter - increasing range, Station scanner, and Waypoint fields for deployments.
+Allows other mods to create guidance missions (i.e. missiontype.guidance) that will be listed in the Guidance Missions tab. Also enables the Set Active and Set Inactive buttons in missions listed in the Guidance Missions tab. Examples of these are my mods: Loot mining, Ship scanner, Signal leak hunter - increasing range, Station scanner, and Waypoint fields for deployments.
 
 Mod effects:
 ============
 This is a modder's resource/API. By itself, this mod does not affect the game.
 
-Modders can use this API to mod the game's Lua files with compatibility with other mods that also use this API.
+Modders can use this API to mod the game's Lua files that helps compatibility with other mods that also use this API.
 
-Without this API, some Lua elements can be modified by only one mod. For example, my mods, "NPC reactions/NPC taxi" and "Teleport from transporter room" add buttons to the bottom of the Transporter Room panel. Because its Lua's display () function constructs its frame, table, rows, and content AND THEN immediately calls the frame:display () function, it is impossible for both mods to "rewrite" the display () function and expect both "rewrites" to work.
+Without this API, some Lua elements can be modified by only one mod. For example, my mods, "NPC reactions: NPC taxis" and "Teleport from transporter room" add buttons to the bottom of the Transporter Room panel. Because its Lua's display () function constructs its frame, table, rows, and content AND THEN immediately calls the frame:display () function, it is impossible for both mods to "rewrite" the display () function and expect both "rewrites" to work.
 
 With this API, specifically its callbacks, it is possible.
 
@@ -100,6 +93,18 @@ Uninstall:
 
 History
 =======
+v1.2.2, 15 Dec 2020:
+-Allows the "selectComponent" mode to work directly from the MapMenu instead of only from the ConversationMenu.
+-Also for "selectComponent" mode, if menu.modeparam[6] is set, an "AddUITriggeredEvent", with screen = menu.modeparam[6] and control = "select_component", will trigger.
+-Also for "selectComponent" mode, if menu.modeparam[1] is nil, the next conversation section will not trigger.
+-Documented the two features (Mission Guidance tab, and selectComponent mode directly from the menu) that are not related to the call-backs available in this mod. See the section "Documentation".
+
+v1.2.1, 13 Dec 2020:
+-New feature: Support for Info Center (https://www.nexusmods.com/x4foundations/mods/268) by Forleyor provided by Forleyor.
+
+v1.2.0, 8 Dec 2020:
+-New feature: Allow mods to create guidance missions (i.e. missiontype.guidance) that will be listed in the Guidance Missions tab. This also enables the Set Active and Set Inactive buttons in missions listed in the Guidance Missions tab. Examples of these are my mods: Loot mining, Ship scanner, Signal leak hunter - increasing range, Station scanner, and Waypoint fields for deployments.
+
 v1.1.0, 2 Nov 2020:
 -New feature: Features that allow totally custom panels that work like the Objects and Properties panel. I.e. Items in these custom panels are interactive and can be clicked, multi-selected, right-clicked, expanded, etc. See the UI screenshots in my "Crime has consequences" mod (https://www.nexusmods.com/x4foundations/mods/566).
 
