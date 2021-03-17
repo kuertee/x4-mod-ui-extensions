@@ -5,8 +5,8 @@ by kuertee
 
 Update:
 =======
-v2.0.0, 11 Mar 2021:
--Updated for version 4.0 beta 11 of the base game.
+v2.0.1, 17 Mar 2021:
+-Update for version 4.0 of the base game.
 
 Features:
 =========
@@ -93,6 +93,9 @@ Uninstall:
 
 History
 =======
+v2.0.0, 11 Mar 2021:
+-Updated for version 4.0 beta 11 of the base game.
+
 v1.2.2, 15 Dec 2020:
 -Allows the "selectComponent" mode to work directly from the MapMenu instead of only from the ConversationMenu.
 -Also for "selectComponent" mode, if menu.modeparam[6] is set, an "AddUITriggeredEvent", with screen = menu.modeparam[6] and control = "select_component", will trigger.

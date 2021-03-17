@@ -42,6 +42,7 @@ function newFuncs.createTable(frame, tableProperties)
 		return oldFuncs.createTable (frame, tableProperties)
 	end
 
+	-- kuertee start: re-written custom user question
 	local numCols = (menu.mode == "custom") and 5 or 6
 	local ftable = frame:addTable(numCols, { tabOrder = 1, borderEnabled = true, width = tableProperties.width, x = tableProperties.x, y = tableProperties.y, defaultInteractiveObject = true })
 	if menu.mode == "custom" then
@@ -93,5 +94,6 @@ function newFuncs.createTable(frame, tableProperties)
 	end
 
 	return ftable
+	-- kuertee end: re-written custom user question
 end
 init ()

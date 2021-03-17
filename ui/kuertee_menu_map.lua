@@ -416,13 +416,13 @@ local config = {
 function newFuncs.buttonToggleObjectList(objectlistparam)
 	local menu = mapMenu
 
-	-- start kuertee_lua_with_callbacks:
+	-- kuertee start: callback
 	if callbacks ["buttonToggleObjectList_on_start"] then
 		for _, callback in ipairs (callbacks ["buttonToggleObjectList_on_start"]) do
 			callback (objectlistparam, config)
 		end
 	end
-	-- end kuertee_lua_with_callbacks:
+	-- kuertee end: callback
 
 	local oldidx, newidx
 	local leftbar = menu.showMultiverse and config.leftBarMultiverse or config.leftBar
@@ -536,7 +536,7 @@ function newFuncs.buttonMissionActivate()
 		C.SetActiveMission(menu.contextMenuData.missionid)
 		PlaySound("ui_mission_set_active")
 
-		-- start kuertee_lua_with_callbacks:
+		-- kuertee start: callback
 		if callbacks ["buttonMissionActivate_on_activate"] then
 			-- get active mission first, because the clicked item may have been a group
 			local activeMissionId
@@ -552,7 +552,7 @@ function newFuncs.buttonMissionActivate()
 				callback (activeMissionId)
 			end
 		end
-		-- end kuertee_lua_with_callbacks:
+		-- kuertee end: callback
 
 	end
 	menu.closeContextMenu()
@@ -584,7 +584,7 @@ function newFuncs.buttonSelectHandler()
 		end
 	elseif menu.mode == "selectComponent" then
 
-		-- start kuertee_lua_with_callbacks:
+		-- kuertee start: callback
 		if menu.modeparam[6] ~= nil then
 			-- if selectComponent returnsection is nil, then do a AddUITriggeredEvent instead
 			DebugError ("kuertee_menu_map.ui.buttonSelectHandler menu.contextMenuData.component " .. tostring (menu.contextMenuData.component))
@@ -601,7 +601,7 @@ function newFuncs.buttonSelectHandler()
 
 		-- if menu.checkForSelectComponent(menu.contextMenuData.component) then
 		if menu.modeparam[1] and menu.checkForSelectComponent(menu.contextMenuData.component) then
-		-- end kuertee_lua_with_callbacks:
+		-- kuertee end: callback
 
 			Helper.closeMenuForSection(menu, menu.modeparam[1], { ConvertStringToLuaID(tostring(menu.contextMenuData.component)) })
 			menu.cleanup()
@@ -719,7 +719,7 @@ function newFuncs.createInfoFrame()
 		-- menu.infoFrame.properties.autoFrameHeight = false
 		-- menu.infoFrame:addTable(0)
 
-		-- start kuertee_lua_with_callbacks:
+		-- kuertee start: callback
 		local isCreated = false
 		if callbacks ["createInfoFrame_on_menu_infoTableMode"] then
 			for _, callback in ipairs (callbacks ["createInfoFrame_on_menu_infoTableMode"]) do
@@ -733,7 +733,7 @@ function newFuncs.createInfoFrame()
 			menu.infoFrame.properties.autoFrameHeight = false
 			menu.infoFrame:addTable(0)
 		end
-		-- end kuertee_lua_with_callbacks:
+		-- kuertee end: callback
 
 	end
 
@@ -779,9 +779,9 @@ function newFuncs.refreshInfoFrame(setrow, setcol)
 		end
 
 		-- if (menu.infoTableMode ~= "objectlist") and (menu.infoTableMode ~= "propertyowned") then
-		-- start kuertee_lua_with_callbacks:
+		-- kuertee start: callback
 		if (not string.find ("" .. tostring (menu.infoTableMode), "objectlist")) and (not string.find ("" .. tostring (menu.infoTableMode), "propertyowned")) then
-		-- end kuertee_lua_with_callbacks:
+		-- kuertee end: callback
 
 			menu.setrow = setrow or Helper.currentTableRow[menu.infoTable]
 			menu.selectedRows.infotableleft = menu.setrow
@@ -820,13 +820,13 @@ end
 function newFuncs.createPropertyOwned(frame, instance)
 	local menu = mapMenu
 
-	-- start kuertee_lua_with_callbacks:
+	-- kuertee start: callback
 	if callbacks ["createPropertyOwned_on_start"] then
 		for _, callback in ipairs (callbacks ["createPropertyOwned_on_start"]) do
 			callback (config)
 		end
 	end
-	-- end kuertee_lua_with_callbacks:
+	-- kuertee end: callback
 
 	local infoTableData = menu.infoTableData[instance]
 
@@ -864,13 +864,13 @@ function newFuncs.createPropertyOwned(frame, instance)
 	infoTableData.constructions = { }
 	infoTableData.moduledata = { }
 
-	-- start kuertee_lua_with_callbacks:
+	-- kuertee start: callback
 	if callbacks ["createPropertyOwned_on_init_infoTableData"] then
 		for _, callback in ipairs (callbacks ["createPropertyOwned_on_init_infoTableData"]) do
 			callback (infoTableData)
 		end
 	end
-	-- end kuertee_lua_with_callbacks:
+	-- kuertee end: callback
 
 	local onlineitems = {}
 	if menu.propertyMode == "inventoryships" then
@@ -998,24 +998,24 @@ function newFuncs.createPropertyOwned(frame, instance)
 				end
 			end
 
-			-- start kuertee_lua_with_callbacks:
+			-- kuertee start: callback
 			if callbacks ["createPropertyOwned_on_add_ship_infoTableData"] then
 				for _, callback in ipairs (callbacks ["createPropertyOwned_on_add_ship_infoTableData"]) do
 					callback (infoTableData, object)
 				end
 			end
-			-- end kuertee_lua_with_callbacks:
+			-- kuertee end: callback
 
 		end
 	end
 
-	-- start kuertee_lua_with_callbacks:
+	-- kuertee start: callback
 	if callbacks ["createPropertyOwned_on_add_other_objects_infoTableData"] then
 		for _, callback in ipairs (callbacks ["createPropertyOwned_on_add_other_objects_infoTableData"]) do
 			callback (infoTableData)
 		end
 	end
-	-- end kuertee_lua_with_callbacks:
+	-- kuertee end: callback
 
 	local constructionshipsbymacro = {}
 	local n = C.GetNumPlayerShipBuildTasks(true, false)
@@ -1077,7 +1077,7 @@ function newFuncs.createPropertyOwned(frame, instance)
 		end
 	end
 
-	-- start kuertee_lua_with_callbacks:
+	-- kuertee start: callback
 	if callbacks ["createPropertyOwned_on_createPropertySection_unassignedships"] then
 		local result
 		for _, callback in ipairs (callbacks ["createPropertyOwned_on_createPropertySection_unassignedships"]) do
@@ -1087,7 +1087,7 @@ function newFuncs.createPropertyOwned(frame, instance)
 			end
 		end
 	end
-	-- end kuertee_lua_with_callbacks:
+	-- kuertee end: callback
 
 	if numdisplayed > 50 then
 		ftable.properties.maxVisibleHeight = maxvisibleheight + 50 * (Helper.scaleY(config.mapRowHeight) + Helper.borderSize)
@@ -1109,28 +1109,91 @@ function newFuncs.createPropertyOwned(frame, instance)
 	menu.setcol = nil
 	menu.sethighlightborderrow = nil
 
-	local tabtable = frame:addTable(#config.propertyCategories + 3, { tabOrder = 2, reserveScrollBar = false })
-	for i = 1, #config.propertyCategories do
+	-- kuertee start: re-written product categories and sorter table
+	-- purpose: allows mods to add more product categories without destroying the sorter's layout
+
+	-- egosoft start: original product categories and sorter table
+	-- local tabtable = frame:addTable(#config.propertyCategories + 3, { tabOrder = 2, reserveScrollBar = false })
+	-- for i = 1, #config.propertyCategories do
+	-- 	tabtable:setColWidth(i, menu.sideBarWidth, false)
+	-- end
+	-- local sorterWidth = menu.infoTableWidth - 3 * (menu.sideBarWidth + Helper.borderSize) - (#config.propertyCategories - 1) * Helper.borderSize
+	-- local availableWidthForExtraColumns = menu.infoTableWidth - #config.propertyCategories * (menu.sideBarWidth + Helper.borderSize) - 2 * Helper.borderSize
+	-- local colwidth = sorterWidth / 3
+	-- local colspan = 3
+	-- if colwidth > 3 * menu.sideBarWidth + 2 * Helper.borderSize then
+	-- 	colspan = 4
+	-- elseif colwidth < 2 * menu.sideBarWidth + Helper.borderSize then
+	-- 	colspan = 2
+	-- 	colwidth = (menu.infoTableWidth - 6 * (menu.sideBarWidth + Helper.borderSize) - 2 * Helper.borderSize) / 2
+	-- end
+
+	-- if 2 * colwidth >= availableWidthForExtraColumns then
+	-- 	colwidth = math.floor((availableWidthForExtraColumns - 1) / 2)
+	-- end
+
+	-- tabtable:setColWidth(#config.propertyCategories + 2, colwidth, false)
+	-- tabtable:setColWidth(#config.propertyCategories + 3, colwidth, false)
+
+	-- local row = tabtable:addRow("property_tabs", { fixed = true, bgColor = Helper.color.transparent })
+	-- for i, entry in ipairs(config.propertyCategories) do
+	-- 	local bgcolor = Helper.defaultTitleBackgroundColor
+	-- 	local color = Helper.color.white
+	-- 	if entry.category == menu.propertyMode then
+	-- 		bgcolor = Helper.defaultArrowRowBackgroundColor
+	-- 	end
+
+	-- 	local active = true
+	-- 	if menu.mode == "selectCV" then
+	-- 		active = entry.category == "propertyall"
+	-- 	elseif (menu.mode == "selectComponent") and (menu.modeparam[3] == "deployables") then
+	-- 		active = entry.category == "deployables"
+	-- 		if active and (menu.selectedCols.propertytabs == nil) then
+	-- 			menu.selectedCols.propertytabs = i
+	-- 		end
+	-- 	end
+
+	-- 	row[i]:createButton({ height = menu.sideBarWidth, bgColor = bgcolor, mouseOverText = entry.name, scaling = false, helpOverlayID = entry.helpOverlayID, helpOverlayText = entry.helpOverlayText, active = active }):setIcon(entry.icon, { color = color})
+	-- 	row[i].handlers.onClick = function () return menu.buttonPropertySubMode(entry.category, i) end
+	-- end
+
+	-- local row = tabtable:addRow(true, { fixed = true, bgColor = Helper.color.transparent })
+	-- row[1]:setColSpan(3):createText(ReadText(1001, 2906) .. ReadText(1001, 120))
+
+	-- local buttonheight = Helper.scaleY(config.mapRowHeight)
+	-- local button = row[4]:setColSpan(colspan):createButton({ scaling = false, height = buttonheight }):setText(ReadText(1001, 8026), { halign = "center", scaling = true })
+	-- if menu.propertySorterType == "class" then
+	-- 	button:setIcon("table_arrow_inv_down", { width = buttonheight, height = buttonheight, x = button:getColSpanWidth() - buttonheight })
+	-- elseif menu.propertySorterType == "classinverse" then
+	-- 	button:setIcon("table_arrow_inv_up", { width = buttonheight, height = buttonheight, x = button:getColSpanWidth() - buttonheight })
+	-- end
+	-- row[4].handlers.onClick = function () return menu.buttonPropertySorter("class") end
+	-- local button = row[#config.propertyCategories + colspan - 2]:setColSpan(5 - colspan):createButton({ scaling = false, height = buttonheight }):setText(ReadText(1001, 2809), { halign = "center", scaling = true })
+	-- if menu.propertySorterType == "name" then
+	-- 	button:setIcon("table_arrow_inv_down", { width = buttonheight, height = buttonheight, x = button:getColSpanWidth() - buttonheight })
+	-- elseif menu.propertySorterType == "nameinverse" then
+	-- 	button:setIcon("table_arrow_inv_up", { width = buttonheight, height = buttonheight, x = button:getColSpanWidth() - buttonheight })
+	-- end
+	-- row[#config.propertyCategories + colspan - 2].handlers.onClick = function () return menu.buttonPropertySorter("name") end
+	-- local button = row[#config.propertyCategories + 3]:createButton({ scaling = false, height = buttonheight }):setText(ReadText(1001, 1), { halign = "center", scaling = true })
+	-- if menu.propertySorterType == "hull" then
+	-- 	button:setIcon("table_arrow_inv_down", { width = buttonheight, height = buttonheight, x = button:getColSpanWidth() - buttonheight })
+	-- elseif menu.propertySorterType == "hullinverse" then
+	-- 	button:setIcon("table_arrow_inv_up", { width = buttonheight, height = buttonheight, x = button:getColSpanWidth() - buttonheight })
+	-- end
+	-- row[#config.propertyCategories + 3].handlers.onClick = function () return menu.buttonPropertySorter("hull") end
+	-- egosoft end: original product categories and sorter table
+
+	local maxNumCategoryColumns =  math.floor (menu.infoTableWidth / (menu.sideBarWidth + Helper.borderSize))
+	local numOfSorterColumns = 4 -- "sort by", "size", "name", "hull"
+	local colSpanPerSorterColumn = math.floor (maxNumCategoryColumns / numOfSorterColumns)
+	local tabtable = frame:addTable(maxNumCategoryColumns, { tabOrder = 2, reserveScrollBar = false })
+	for i = 1, maxNumCategoryColumns do
 		tabtable:setColWidth(i, menu.sideBarWidth, false)
 	end
-	local sorterWidth = menu.infoTableWidth - 3 * (menu.sideBarWidth + Helper.borderSize) - (#config.propertyCategories - 1) * Helper.borderSize
-	local availableWidthForExtraColumns = menu.infoTableWidth - #config.propertyCategories * (menu.sideBarWidth + Helper.borderSize) - 2 * Helper.borderSize
-	local colwidth = sorterWidth / 3
-	local colspan = 3
-	if colwidth > 3 * menu.sideBarWidth + 2 * Helper.borderSize then
-		colspan = 4
-	elseif colwidth < 2 * menu.sideBarWidth + Helper.borderSize then
-		colspan = 2
-		colwidth = (menu.infoTableWidth - 6 * (menu.sideBarWidth + Helper.borderSize) - 2 * Helper.borderSize) / 2
-	end
-
-	if 2 * colwidth >= availableWidthForExtraColumns then
-		colwidth = math.floor((availableWidthForExtraColumns - 1) / 2)
-	end
-
-	tabtable:setColWidth(#config.propertyCategories + 2, colwidth, false)
-	tabtable:setColWidth(#config.propertyCategories + 3, colwidth, false)
-
+	local diff = menu.infoTableWidth - maxNumCategoryColumns * (menu.sideBarWidth + Helper.borderSize)
+	tabtable:setColWidth(maxNumCategoryColumns, menu.sideBarWidth + diff, false)
+	-- product categories row
 	local row = tabtable:addRow("property_tabs", { fixed = true, bgColor = Helper.color.transparent })
 	for i, entry in ipairs(config.propertyCategories) do
 		local bgcolor = Helper.defaultTitleBackgroundColor
@@ -1138,7 +1201,6 @@ function newFuncs.createPropertyOwned(frame, instance)
 		if entry.category == menu.propertyMode then
 			bgcolor = Helper.defaultArrowRowBackgroundColor
 		end
-
 		local active = true
 		if menu.mode == "selectCV" then
 			active = entry.category == "propertyall"
@@ -1148,37 +1210,46 @@ function newFuncs.createPropertyOwned(frame, instance)
 				menu.selectedCols.propertytabs = i
 			end
 		end
-
 		row[i]:createButton({ height = menu.sideBarWidth, bgColor = bgcolor, mouseOverText = entry.name, scaling = false, helpOverlayID = entry.helpOverlayID, helpOverlayText = entry.helpOverlayText, active = active }):setIcon(entry.icon, { color = color})
 		row[i].handlers.onClick = function () return menu.buttonPropertySubMode(entry.category, i) end
 	end
-
 	local row = tabtable:addRow(true, { fixed = true, bgColor = Helper.color.transparent })
-	row[1]:setColSpan(3):createText(ReadText(1001, 2906) .. ReadText(1001, 120))
-
+	-- sorter row
+	-- "sort by"
+	row[1]:setColSpan(colSpanPerSorterColumn):createText(ReadText(1001, 2906) .. ReadText(1001, 120))
 	local buttonheight = Helper.scaleY(config.mapRowHeight)
-	local button = row[4]:setColSpan(colspan):createButton({ scaling = false, height = buttonheight }):setText(ReadText(1001, 8026), { halign = "center", scaling = true })
+	-- "size"
+	local sorterColumn = 2
+	local tableColumn = (sorterColumn - 1) * colSpanPerSorterColumn + 1
+	local button = row[tableColumn]:setColSpan(colSpanPerSorterColumn):createButton({ scaling = false, height = buttonheight }):setText(ReadText(1001, 8026), { halign = "center", scaling = true })
 	if menu.propertySorterType == "class" then
 		button:setIcon("table_arrow_inv_down", { width = buttonheight, height = buttonheight, x = button:getColSpanWidth() - buttonheight })
 	elseif menu.propertySorterType == "classinverse" then
 		button:setIcon("table_arrow_inv_up", { width = buttonheight, height = buttonheight, x = button:getColSpanWidth() - buttonheight })
 	end
-	row[4].handlers.onClick = function () return menu.buttonPropertySorter("class") end
-	local button = row[#config.propertyCategories + colspan - 2]:setColSpan(5 - colspan):createButton({ scaling = false, height = buttonheight }):setText(ReadText(1001, 2809), { halign = "center", scaling = true })
+	row[tableColumn].handlers.onClick = function () return menu.buttonPropertySorter("class") end
+	-- "name"
+	sorterColumn = 3
+	tableColumn = (sorterColumn - 1) * colSpanPerSorterColumn + 1
+	local button = row[tableColumn]:setColSpan(colSpanPerSorterColumn):createButton({ scaling = false, height = buttonheight }):setText(ReadText(1001, 2809), { halign = "center", scaling = true })
 	if menu.propertySorterType == "name" then
 		button:setIcon("table_arrow_inv_down", { width = buttonheight, height = buttonheight, x = button:getColSpanWidth() - buttonheight })
 	elseif menu.propertySorterType == "nameinverse" then
 		button:setIcon("table_arrow_inv_up", { width = buttonheight, height = buttonheight, x = button:getColSpanWidth() - buttonheight })
 	end
-	row[#config.propertyCategories + colspan - 2].handlers.onClick = function () return menu.buttonPropertySorter("name") end
-	local button = row[#config.propertyCategories + 3]:createButton({ scaling = false, height = buttonheight }):setText(ReadText(1001, 1), { halign = "center", scaling = true })
+	row[tableColumn].handlers.onClick = function () return menu.buttonPropertySorter("name") end
+	-- "hull"
+	sorterColumn = 4
+	tableColumn = (sorterColumn - 1) * colSpanPerSorterColumn + 1
+	local button = row[tableColumn]:setColSpan(colSpanPerSorterColumn):createButton({ scaling = false, height = buttonheight }):setText(ReadText(1001, 1), { halign = "center", scaling = true })
 	if menu.propertySorterType == "hull" then
 		button:setIcon("table_arrow_inv_down", { width = buttonheight, height = buttonheight, x = button:getColSpanWidth() - buttonheight })
 	elseif menu.propertySorterType == "hullinverse" then
 		button:setIcon("table_arrow_inv_up", { width = buttonheight, height = buttonheight, x = button:getColSpanWidth() - buttonheight })
 	end
-	row[#config.propertyCategories + 3].handlers.onClick = function () return menu.buttonPropertySorter("hull") end
-	
+	row[tableColumn].handlers.onClick = function () return menu.buttonPropertySorter("hull") end
+	-- kuertee end: re-written product categories and sorter table
+
 	tabtable:setSelectedRow(menu.selectedRows.propertytabs or menu.selectedRows.infotable2 or 0)
 	tabtable:setSelectedCol(menu.selectedCols.propertytabs or Helper.currentTableCol[menu.infoTable2] or 0)
 	menu.selectedRows.propertytabs = nil
@@ -1199,7 +1270,7 @@ function newFuncs.createPropertyRow(instance, ftable, component, iteration, comm
 	local constructions = menu.infoTableData[instance].constructions[tostring(component)] or {}
 	local convertedComponent = ConvertStringTo64Bit(tostring(component))
 
-	-- start kuertee_lua_with_callbacks:
+	-- kuertee start: callback
 	if callbacks ["createPropertyRow_on_init_vars"] then
 		local result
 		for _, callback in ipairs (callbacks ["createPropertyRow_on_init_vars"]) do
@@ -1214,7 +1285,7 @@ function newFuncs.createPropertyRow(instance, ftable, component, iteration, comm
 			end
 		end
 	end
-	-- end kuertee_lua_with_callbacks:
+	-- kuertee end: callback
 
 	if (#menu.searchtext == 0) or Helper.textArrayHelper(menu.searchtext, function (numtexts, texts) return C.FilterComponentByText(convertedComponent, numtexts, texts, true) end, "text") then
 		numdisplayed = numdisplayed + 1
@@ -1225,9 +1296,9 @@ function newFuncs.createPropertyRow(instance, ftable, component, iteration, comm
 		if (not menu.isPropertyExtended(tostring(component))) and menu.isDockContext(convertedComponent) then
 
 			-- if menu.infoTableMode ~= "propertyowned" then
-			-- start kuertee_lua_with_callbacks:
+			-- kuertee start: callback
 			if not string.find (menu.infoTableMode, "propertyowned") then
-			-- end kuertee_lua_with_callbacks:
+			-- kuertee end: callback
 
 				menu.extendedproperty[tostring(component)] = true
 			end
@@ -1302,7 +1373,7 @@ function newFuncs.createPropertyRow(instance, ftable, component, iteration, comm
 			isdocked = false
 		end
 
-		-- start kuertee_lua_with_callbacks:
+		-- kuertee start: callback
 		if callbacks ["createPropertyRow_on_set_locationtext"] then
 			local result
 			for _, callback in ipairs (callbacks ["createPropertyRow_on_set_locationtext"]) do
@@ -1312,7 +1383,7 @@ function newFuncs.createPropertyRow(instance, ftable, component, iteration, comm
 				end
 			end
 		end
-		-- end kuertee_lua_with_callbacks:
+		-- kuertee end: callback
 
 		local namecolspan = 1
 		if menu.infoTableMode == "objectlist" then
@@ -1432,7 +1503,7 @@ function newFuncs.createPropertyRow(instance, ftable, component, iteration, comm
 			end
 
 			-- row[2]:createText(shipname, { font = font, color = color, mouseOverText = mouseover })
-			-- start kuertee_lua_with_callbacks:
+			-- kuertee start: callback
 			if not callbacks ["createPropertyRow_override_row_shipname_createText"] then
 				row[2]:createText(shipname, { font = font, color = color, mouseOverText = mouseover })
 			else
@@ -1447,7 +1518,7 @@ function newFuncs.createPropertyRow(instance, ftable, component, iteration, comm
 					row[2]:createText(shipname, { font = font, color = color, mouseOverText = mouseover })
 				end
 			end
-			-- end kuertee_lua_with_callbacks:
+			-- kuertee end: callback
 
 			-- location / order
 			if displaylocation then
@@ -1466,7 +1537,7 @@ function newFuncs.createPropertyRow(instance, ftable, component, iteration, comm
 				end
 
 				-- row[3 + namecolspan]:createText(locationtext, { halign = "right", font = font, mouseOverText = mouseovertext, x = 0 })
-				-- start kuertee_lua_with_callbacks:
+				-- kuertee start: callback
 				if not callbacks ["createPropertyRow_override_row_location_createText"] then
 					row[3 + namecolspan]:createText(locationtext, { halign = "right", font = font, mouseOverText = mouseovertext, x = 0 })
 				else
@@ -1481,7 +1552,7 @@ function newFuncs.createPropertyRow(instance, ftable, component, iteration, comm
 						row[3 + namecolspan]:createText(locationtext, { halign = "right", font = font, mouseOverText = mouseovertext, x = 0 })
 					end
 				end
-				-- end kuertee_lua_with_callbacks:
+				-- kuertee end: callback
 
 			end
 			if (currentordericon ~= "") or isdocked then
@@ -1537,9 +1608,9 @@ function newFuncs.createPropertyRow(instance, ftable, component, iteration, comm
 				if (not isdockedshipsextended) and menu.isDockContext(convertedComponent) then
 
 					-- if menu.infoTableMode ~= "propertyowned" then
-					-- start kuertee_lua_with_callbacks:
+					-- kuertee start: callback
 					if not string.find (menu.infoTableMode, "propertyowned") then
-					-- end kuertee_lua_with_callbacks:
+					-- kuertee end: callback
 
 						menu.extendeddockedships[tostring(component)] = true
 						isdockedshipsextended = true
@@ -1578,13 +1649,13 @@ end
 function newFuncs.createSideBar(firsttime, frame, width, height, offsetx, offsety)
 	local menu = mapMenu
 
-	-- start kuertee_lua_with_callbacks:
+	-- kuertee start: callback
 	if callbacks ["createSideBar_on_start"] then
 		for _, callback in ipairs (callbacks ["createSideBar_on_start"]) do
 			callback (config)
 		end
 	end
-	-- end kuertee_lua_with_callbacks:
+	-- kuertee end: callback
 
 	-- start Forleyor_infoCenter Callback:
 	if callbacks ["ic_createSideBar"] then
@@ -1613,36 +1684,36 @@ function newFuncs.createSideBar(firsttime, frame, width, height, offsetx, offset
 					if menu.mode == "selectCV" then
 
 						-- if (entry.mode ~= "objectlist") and (entry.mode ~= "propertyowned") then
-						-- start kuertee_lua_with_callbacks:
+						-- kuertee start: callback
 						if (not string.find (entry.mode, "objectlist")) and (not string.find (entry.mode, "propertyowned")) then
-						-- end kuertee_lua_with_callbacks:
+						-- kuertee end: callback
 
 							entry.active = false
 						end
 					elseif menu.mode == "hire" then
 
 						-- if entry.mode ~= "propertyowned" then
-						-- start kuertee_lua_with_callbacks:
+						-- kuertee start: callback
 						if not string.find (entry.mode, "propertyowned") then
-						-- end kuertee_lua_with_callbacks:
+						-- kuertee end: callback
 
 							entry.active = false
 						end
 					elseif menu.mode == "orderparam_object" then
 
 						-- if (entry.mode ~= "objectlist") and (entry.mode ~= "propertyowned") then
-						-- start kuertee_lua_with_callbacks:
+						-- kuertee start: callback
 						if (not string.find (entry.mode, "objectlist")) and (not string.find (entry.mode, "propertyowned")) then
-						-- end kuertee_lua_with_callbacks:
+						-- kuertee end: callback
 
 							entry.active = false
 						end
 					elseif menu.mode == "selectComponent" then
 
 						-- if (entry.mode ~= "objectlist") and (entry.mode ~= "propertyowned") then
-						-- start kuertee_lua_with_callbacks:
+						-- kuertee start: callback
 						if (not string.find (entry.mode, "objectlist")) and (not string.find (entry.mode, "propertyowned")) then
-						-- end kuertee_lua_with_callbacks:
+						-- kuertee end: callback
 
 							entry.active = false
 						end
@@ -1935,9 +2006,9 @@ function newFuncs.createMissionContext(frame)
 		row[2].handlers.onClick = menu.buttonMissionBriefing
 		row[2].properties.uiTriggerID = "missionbriefing"
 
-		-- start kuertee_lua_with_callbacks:
+		-- kuertee start: callback
 		-- if menu.contextMenuData.type ~= "guidance" then
-		-- end kuertee_lua_with_callbacks:
+		-- kuertee end: callback
 
 			-- Set active
 			local active = menu.contextMenuData.missionid == C.GetActiveMissionID()
@@ -1951,9 +2022,9 @@ function newFuncs.createMissionContext(frame)
 			row[1].handlers.onClick = menu.buttonMissionActivate
 			row[1].properties.uiTriggerID = "missionactivate"
 
-		-- start kuertee_lua_with_callbacks:
+		-- kuertee start: callback
 		-- end
-		-- end kuertee_lua_with_callbacks:
+		-- kuertee end: callback
 
 	end
 	local neededheight = bottomtable.properties.y + bottomtable:getFullHeight() + Helper.frameBorder
@@ -2036,10 +2107,10 @@ function newFuncs.onRowChanged(row, rowdata, uitable, modified, input, source)
 			end
 		end
 
-	-- start kuertee_lua_with_callbacks:
+	-- kuertee start: callback
 	-- elseif (menu.infoTableMode == "objectlist") or (menu.infoTableMode == "propertyowned") then
 	elseif (string.find ("" .. tostring (menu.infoTableMode), "objectlist")) or (string.find ("" .. tostring (menu.infoTableMode), "propertyowned")) then
-	-- end kuertee_lua_with_callbacks:
+	-- kuertee end: callback
 
 		if uitable == menu.infoTable then
 			if type(rowdata) == "table" then
@@ -2224,9 +2295,9 @@ function newFuncs.onSelectElement(uitable, modified, row, isdblclick, input)
 	local rowdata = Helper.getCurrentRowData(menu, uitable)
 
 	-- if (menu.infoTableMode == "objectlist") or (menu.infoTableMode == "propertyowned") then
-	-- start kuertee_lua_with_callbacks:
+	-- kuertee start: callback
 	if (string.find ("" .. tostring (menu.infoTableMode), "objectlist")) or (string.find ("" .. tostring (menu.infoTableMode), "propertyowned")) then
-	-- end kuertee_lua_with_callbacks:
+	-- kuertee end: callback
 
 		if uitable == menu.infoTable then
 			if type(rowdata) == "table" then
@@ -2522,10 +2593,10 @@ function newFuncs.onRenderTargetSelect(modified)
 							local newmode
 							if (menu.mode ~= "selectComponent") or (menu.modeparam[3] ~= "deployables") then
 
-								-- start kuertee_lua_with_callbacks:
+								-- kuertee start: callback
 								-- if menu.infoTableMode == "objectlist" then
 								if string.find ("" .. tostring (menu.infoTableMode), "objectlist") then
-								-- end kuertee_lua_with_callbacks:
+								-- kuertee end: callback
 
 									local isdeployable = GetComponentData(ConvertStringTo64Bit(tostring(pickedcomponent)), "isdeployable")
 									if isdeployable or (pickedcomponentclass == "lockbox") then
@@ -2550,10 +2621,10 @@ function newFuncs.onRenderTargetSelect(modified)
 										end
 									end
 
-								-- start kuertee_lua_with_callbacks:
+								-- kuertee start: callback
 								-- elseif menu.infoTableMode == "propertyowned" then
 								elseif string.find ("" .. tostring (menu.infoTableMode), "propertyowned") then
-								-- end kuertee_lua_with_callbacks:
+								-- kuertee end: callback
 
 									local isplayerowned, isdeployable = GetComponentData(ConvertStringTo64Bit(tostring(pickedcomponent)), "isplayerowned", "isdeployable")
 									if isplayerowned then
@@ -2588,20 +2659,20 @@ function newFuncs.onRenderTargetSelect(modified)
 							menu.addSelectedComponent(pickedcomponent, not modified)
 							if newmode then
 
-								-- start kuertee_lua_with_callbacks:
+								-- kuertee start: callback
 								-- if menu.infoTableMode == "objectlist" then
 								if string.find ("" .. tostring (menu.infoTableMode), "objectlist") then
-								-- end kuertee_lua_with_callbacks:
+								-- kuertee end: callback
 
 									if newmode ~= menu.objectMode then
 										menu.objectMode = newmode
 										menu.refreshInfoFrame()
 									end
 
-								-- start kuertee_lua_with_callbacks:
+								-- kuertee start: callback
 								-- elseif menu.infoTableMode == "propertyowned" then
 								elseif string.find ("" .. tostring (menu.infoTableMode), "propertyowned") then
-								-- end kuertee_lua_with_callbacks:
+								-- kuertee end: callback
 
 									if newmode ~= menu.propertyMode then
 										menu.propertyMode = newmode
@@ -2639,10 +2710,10 @@ function newFuncs.onTableRightMouseClick(uitable, row, posx, posy)
 		if row > (menu.numFixedRows or 0) then
 			local rowdata = menu.rowDataMap[uitable] and menu.rowDataMap[uitable][row]
 
-			-- start kuertee_lua_with_callbacks:
+			-- kuertee start: callback
 			-- if (menu.infoTableMode == "objectlist") or (menu.infoTableMode == "propertyowned") then
 			if (string.find ("" .. tostring (menu.infoTableMode), "objectlist")) or (string.find ("" .. tostring (menu.infoTableMode), "propertyowned")) then
-			-- end kuertee_lua_with_callbacks:
+			-- kuertee end: callback
 
 				if uitable == menu.infoTable then
 					if type(rowdata) == "table" then
@@ -2730,10 +2801,10 @@ function newFuncs.onInteractiveElementChanged(element)
 	local menu = mapMenu
 
 	menu.lastactivetable = element
-	-- start kuertee_lua_with_callbacks:
+	-- kuertee start: callback
 	-- if (menu.infoTableMode == "objectlist") or (menu.infoTableMode == "propertyowned") then
 	if (string.find ("" .. tostring (menu.infoTableMode), "objectlist")) or (string.find ("" .. tostring (menu.infoTableMode), "propertyowned")) then
-	-- end kuertee_lua_with_callbacks:
+	-- kuertee end: callback
 		if menu.lastactivetable == menu.infoTable then
 			if not menu.arrowsRegistered then
 				RegisterAddonBindings("ego_detailmonitor", "map_arrows")
@@ -2853,10 +2924,10 @@ function newFuncs.updateSelectedComponents(modified, keepselection, changedCompo
 				table.insert(components, component)
 			end
 
-			-- start kuertee_lua_with_callbacks:
+			-- kuertee start: callback
 			-- if menu.infoTableMode == "propertyowned" then
 			if string.find ("" .. tostring (menu.infoTableMode), "propertyowned") then
-			-- end kuertee_lua_with_callbacks:
+			-- kuertee end: callback
 
 				local isplayerowned, isdeployable = GetComponentData(component, "isplayerowned", "isdeployable")
 				if not isplayerowned then
@@ -2877,10 +2948,10 @@ function newFuncs.updateSelectedComponents(modified, keepselection, changedCompo
 					table.insert(components, component)
 				end
 
-			-- start kuertee_lua_with_callbacks:
+			-- kuertee start: callback
 			-- elseif menu.infoTableMode == "objectlist" then
 			elseif string.find ("" .. tostring (menu.infoTableMode), "objectlist") then
-			-- end kuertee_lua_with_callbacks:
+			-- kuertee end: callback
 
 				local isdeployable = GetComponentData(component, "isdeployable")
 				if menu.objectMode ~= "objectall" then
@@ -2958,9 +3029,9 @@ function newFuncs.updateTableSelection(lastcomponent)
 	menu.refreshMainFrame = true
 
 	-- if (menu.infoTableMode == "objectlist") or (menu.infoTableMode == "propertyowned") then
-	-- start kuertee_lua_with_callbacks:
+	-- kuertee start: callback
 	if (string.find ("" .. tostring (menu.infoTableMode), "objectlist")) or (string.find ("" .. tostring (menu.infoTableMode), "propertyowned")) then
-	-- end kuertee_lua_with_callbacks:
+	-- kuertee end: callback
 
 		-- check if sections need to be extended - if so we need a refresh
 		local refresh = false

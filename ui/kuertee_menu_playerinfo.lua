@@ -73,13 +73,13 @@ local config = {
 function newFuncs.buttonTogglePlayerInfo(mode)
 	local menu = playerInfoMenu
 
-	-- start kuertee_lua_with_callbacks:
+	-- kuertee start: callback
 	if callbacks ["buttonTogglePlayerInfo_on_start"] then
 		for _, callback in ipairs (callbacks ["buttonTogglePlayerInfo_on_start"]) do
 			callback (mode, config)
 		end
 	end
-	-- end kuertee_lua_with_callbacks:
+	-- kuertee end: callback
 
 	local oldidx, newidx
 	for i, entry in ipairs(config.leftBar) do
@@ -111,6 +111,8 @@ function newFuncs.buttonTogglePlayerInfo(mode)
 			C.SetMessageRead(menu.messageData.curEntry.id, menu.messageData.curEntry.category)
 			AddUITriggeredEvent(menu.name, "message_read", ConvertStringTo64Bit(tostring(menu.messageData.curEntry.id)))
 		end
+		menu.messageData.showFullscreen = nil
+		menu.cleanupCutsceneRenderTarget()
 	end
 	
 	AddUITriggeredEvent(menu.name, mode, menu.mode == mode and "off" or "on")
@@ -138,13 +140,13 @@ end
 function newFuncs.createPlayerInfo(frame, width, height, offsetx, offsety)
 	local menu = playerInfoMenu
 
-	-- start kuertee_lua_with_callbacks:
+	-- kuertee start: callback
 	if callbacks ["createPlayerInfo_on_start"] then
 		for _, callback in ipairs (callbacks ["createPlayerInfo_on_start"]) do
 			callback (config)
 		end
 	end
-	-- end kuertee_lua_with_callbacks:
+	-- kuertee end: callback
 
 	local ftable = frame:addTable(2, { tabOrder = 3, scaling = false, borderEnabled = false, x = offsetx, y = offsety, reserveScrollBar = false })
 	ftable:setColWidth(1, menu.sideBarWidth, false)
@@ -174,13 +176,13 @@ end
 function newFuncs.createInfoFrame()
 	local menu = playerInfoMenu
 
-	-- start kuertee_lua_with_callbacks:
+	-- kuertee start: callback
 	if callbacks ["createInfoFrame_on_start"] then
 		for _, callback in ipairs (callbacks ["createInfoFrame_on_start"]) do
 			callback (menu.infoFrame, tableProperties)
 		end
 	end
-	-- end kuertee_lua_with_callbacks:
+	-- kuertee end: callback
 
 	-- remove old data
 	Helper.clearDataForRefresh(menu, config.infoLayer)
@@ -200,6 +202,10 @@ function newFuncs.createInfoFrame()
 	}
 
 	menu.infoFrame = Helper.createFrameHandle(menu, frameProperties)
+
+	if not menu.messageData.showFullscreen then
+		menu.createTopLevel(menu.infoFrame)
+	end
 
 	menu.createTopLevel(menu.infoFrame)
 
@@ -242,13 +248,13 @@ function newFuncs.createInfoFrame()
 		menu.createPersonnelInfo(menu.infoFrame, tableProperties)
 
 	else
-		-- start kuertee_lua_with_callbacks:
+		-- kuertee start: callback
 		if callbacks ["createInfoFrame_on_info_frame_mode"] then
 			for _, callback in ipairs (callbacks ["createInfoFrame_on_info_frame_mode"]) do
 				callback (menu.infoFrame, tableProperties)
 			end
 		end
-		-- end kuertee_lua_with_callbacks:
+		-- kuertee end: callback
 	end
 
 	menu.infoFrame:display()
@@ -262,10 +268,10 @@ function newFuncs.createFactions(frame, tableProperties)
 
 	local infotable = frame:addTable(3, { tabOrder = 1, borderEnabled = true, width = narrowtablewidth, x = tableProperties.x, y = tableProperties.y })
 
-	-- start kuertee_lua_with_callbacks:
+	-- kuertee start: callback
 	infotable:setDefaultCellProperties("text", {minRowHeight = config.rowHeight, fontsize = Helper.standardFontSize})
 	infotable:setDefaultCellProperties("button", {height = config.rowHeight})
-	-- end kuertee_lua_with_callbacks:
+	-- kuertee end: callback
 
 	if menu.setdefaulttable then
 		infotable.properties.defaultInteractiveObject = true
@@ -315,13 +321,13 @@ function newFuncs.createFactions(frame, tableProperties)
 				function () return string.format("%+d", GetUIRelation(relation.id)) end,
 				{ font = Helper.standardFontMono, color = function () return menu.relationColor(relation.id) end, fontsize = 14, halign = "right", y = 2 * iconoffset })
 
-			-- start kuertee_lua_with_callbacks:
+			-- kuertee start: callback
 			if callbacks ["createFactions_on_before_render_licences"] then
 				for _, callback in ipairs (callbacks ["createFactions_on_before_render_licences"]) do
 					callback (frame, tableProperties, relation.id, infotable)
 				end
 			end
-			-- end kuertee_lua_with_callbacks:
+			-- kuertee end: callback
 
 		end
 	end

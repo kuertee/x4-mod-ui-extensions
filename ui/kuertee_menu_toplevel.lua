@@ -120,14 +120,14 @@ function newFuncs.createInfoFrame(param)
 		pullDownArrowsHeight = ftable:getVisibleHeight()
 		menu.infoFrame.properties.height = ftable.properties.y + pullDownArrowsHeight + Helper.borderSize
 
-		-- start kuertee_lua_with_callbacks:
+		-- kuertee start: callback
 		if callbacks ["createInfoFrame_on_before_frame_display"] then
 			for _, callback in ipairs (callbacks ["createInfoFrame_on_before_frame_display"]) do
 				callback (menu.infoFrame)
 			end
 			newFuncs.updateFrameHeight ()
 		end
-		-- end kuertee_lua_with_callbacks:
+		-- kuertee end: callback
 
 	end
 
@@ -250,14 +250,14 @@ function newFuncs.onUpdate()
 		return
 	end
 
-	-- start kuertee_lua_with_callbacks:
+	-- kuertee start: callback
 	if callbacks ["createInfoFrame_onUpdate_before_frame_update"] then
 		for _, callback in ipairs (callbacks ["createInfoFrame_onUpdate_before_frame_update"]) do
 			callback (menu.infoFrame)
 			newFuncs.updateFrameHeight ()
 		end
 	end
-	-- end kuertee_lua_with_callbacks:
+	-- kuertee end: callback
 
 	menu.infoFrame:update()
 end

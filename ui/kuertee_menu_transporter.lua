@@ -126,7 +126,7 @@ function newFuncs.addEntry(ftable, target, indent, parentcomponent)
 		row[1].handlers.onClick = function () return menu.buttonExtendCategory(tostring(target.component)) end
 	end --]]
 
-	-- start kuertee_lua_with_callbacks:
+	-- kuertee start: callback
 	if callbacks ["addEntry_on_set_room_name"] then
 		local result
 		for _, callback in ipairs (callbacks ["addEntry_on_set_room_name"]) do
@@ -138,7 +138,7 @@ function newFuncs.addEntry(ftable, target, indent, parentcomponent)
 			end
 		end
 	end
-	-- end kuertee_lua_with_callbacks:
+	-- kuertee end: callback
 
 	if objectid then
 		row[2]:createText(componentIndent .. name .. current, { color = color, font = font })
@@ -265,7 +265,7 @@ function newFuncs.display()
 	local buttonrow = buttontable:addRow(true, { fixed = true, bgColor = Helper.color.transparent })
 	local active = (not menu.currentselection.hassubentries) and ((menu.transportercomponent ~= menu.currentselection.target.component) or (menu.transporterconnection ~= menu.currentselection.target.connection))
 
-	-- start kuertee_lua_with_callbacks:
+	-- kuertee start: callback
 	if callbacks ["display_on_set_room_active"] then
 		local activeCount = 0
 		local callbacksCount = 0
@@ -279,18 +279,18 @@ function newFuncs.display()
 		end
 		active = activeCount == callbacksCount
 	end
-	-- end kuertee_lua_with_callbacks:
+	-- kuertee end: callback
 
 	buttonrow[2]:setColSpan(2):createButton({ active = active, height = Helper.standardTextHeight }):setText(menu.buttontext, { halign = "center" })
 	buttonrow[2].handlers.onClick = menu.buttonGoTo
 
-	-- start kuertee_lua_with_callbacks:
+	-- kuertee start: callback
 	if callbacks ["display_on_set_buttontable"] then
 		for _, callback in ipairs (callbacks ["display_on_set_buttontable"]) do
 			callback (buttontable)
 		end
 	end
-	-- end kuertee_lua_with_callbacks:
+	-- kuertee end: callback
 
 	buttontable.properties.y = height + Helper.borderSize - buttontable:getFullHeight()
 	ftable.properties.maxVisibleHeight = buttontable.properties.y
