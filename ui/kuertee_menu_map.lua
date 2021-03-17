@@ -34,6 +34,8 @@ local function init ()
 		mapMenu.createPropertyOwned = newFuncs.createPropertyOwned
 		oldFuncs.createPropertyRow = mapMenu.createPropertyRow
 		mapMenu.createPropertyRow = newFuncs.createPropertyRow
+		oldFuncs.createMissionMode = mapMenu.createMissionMode
+		mapMenu.createMissionMode = newFuncs.createMissionMode
 		oldFuncs.createSideBar = mapMenu.createSideBar
 		mapMenu.createSideBar = newFuncs.createSideBar
 		oldFuncs.createMissionContext = mapMenu.createMissionContext
@@ -83,6 +85,7 @@ function newFuncs.registerCallback (callbackName, callbackFunction)
 	-- {shipname = shipname, properties = createTextProperties} = createPropertyRow_override_row_shipname_createText (shipname, createTextProperties, component)
 	-- {locationtext = locationtext, properties = createTextProperties} = createPropertyRow_override_row_location_createText (locationtext, createTextProperties, component)
 	-- createSideBar_on_start (config)
+	-- createMissionMode_on_missionoffer_guild_start (ftable)
 	if callbacks [callbackName] == nil then
 		callbacks [callbackName] = {}
 	end
@@ -411,7 +414,23 @@ local config = {
 	plotPairedDimension = { posX = "negX", negX = "posX", posY = "negY", negY = "posY", posZ = "negZ", negZ = "posZ" },
 	maxPlotSize = 20,
 
-	contextBorder = 5
+	contextBorder = 5,
+
+	missionOfferCategories = {
+		{ category = "plot",		name = ReadText(1001, 3340),	icon = "mapst_mission_main",		helpOverlayID = "mapst_mission_offer_plot",			helpOverlayText = ReadText(1028, 3240) },
+		{ category = "guild",		name = ReadText(1001, 3331),	icon = "mapst_mission_guild",		helpOverlayID = "mapst_mission_offer_guild",		helpOverlayText = ReadText(1028, 3227) },
+		{ category = "coalition",	name = ReadText(1001, 8801),	icon = "mapst_mission_other",		helpOverlayID = "mapst_mission_offer_coalition",	helpOverlayText = "",					showtab = false },
+		{ category = "other",		name = ReadText(1001, 3332),	icon = "mapst_mission_other",		helpOverlayID = "mapst_mission_offer_other",		helpOverlayText = ReadText(1028, 3228) },
+	},
+
+	missionCategories = {
+		{ category = "plot",		name = ReadText(1001, 3341),	icon = "mapst_mission_main",		helpOverlayID = "mapst_mission_active_main",		helpOverlayText = ReadText(1028, 3241) },
+		{ category = "guild",		name = ReadText(1001, 3333),	icon = "mapst_mission_guild",		helpOverlayID = "mapst_mission_active_guild",		helpOverlayText = ReadText(1028, 3229),	showtab = false },
+		{ category = "coalition",	name = ReadText(1001, 8801),	icon = "mapst_mission_other",		helpOverlayID = "mapst_mission_active_coalition",	helpOverlayText = "",					showtab = false },
+		{ category = "other",		name = ReadText(1001, 3334),	icon = "mapst_mission_other",		helpOverlayID = "mapst_mission_active_other",		helpOverlayText = ReadText(1028, 3230),	showtab = false },
+		{ category = "upkeep",		name = ReadText(1001, 3305),	icon = "mapst_mission_upkeep",		helpOverlayID = "mapst_mission_active_upkeep",		helpOverlayText = ReadText(1028, 3231) },
+		{ category = "guidance",	name = ReadText(1001, 3329),	icon = "mapst_mission_guidance",	helpOverlayID = "mapst_mission_active_guidance",	helpOverlayText = ReadText(1028, 3232) },
+	}
 }
 function newFuncs.buttonToggleObjectList(objectlistparam)
 	local menu = mapMenu
@@ -1645,6 +1664,372 @@ function newFuncs.createPropertyRow(instance, ftable, component, iteration, comm
 	end
 
 	return numdisplayed
+end
+function newFuncs.createMissionMode(frame)
+	local menu = mapMenu
+
+	menu.setrow = 3
+	menu.missionDoNotUpdate = true
+
+	if menu.infoTableMode == "missionoffer" then
+		menu.updateMissionOfferList()
+	elseif menu.infoTableMode == "mission" then
+		menu.updateMissions()
+
+		if menu.missionMode == menu.activeMissionMode then
+			if menu.highlightLeftBar[menu.infoTableMode] then
+				menu.highlightLeftBar[menu.infoTableMode] = nil
+				menu.refreshMainFrame = true
+			end
+		end
+	end
+
+	local ftable = frame:addTable(9 , { tabOrder = 1 })
+	ftable:addConnection(1, 2, true)
+	ftable:setDefaultCellProperties("text", { minRowHeight = config.mapRowHeight, fontsize = config.mapFontSize })
+	ftable:setDefaultCellProperties("button", { height = config.mapRowHeight })
+	ftable:setDefaultComplexCellProperties("button", "text", { fontsize = config.mapFontSize })
+
+	ftable:setColWidth(1, Helper.scaleY(config.mapRowHeight), false)
+	ftable:setColWidth(2, Helper.scaleY(config.mapRowHeight), false)
+	-- in smaller resolutions, e.g. 1280x720, this can get negative due to different scalings used (this would be solved if we unify the scaling support as planned)
+	ftable:setColWidth(3, math.max(1, menu.sideBarWidth - 2 * (Helper.scaleY(config.mapRowHeight) + Helper.borderSize)), false)
+	ftable:setColWidth(4, menu.sideBarWidth / 2, false)
+	ftable:setColWidth(5, menu.sideBarWidth / 2 - Helper.borderSize, false)
+	ftable:setColWidth(6, menu.sideBarWidth, false)
+	ftable:setColWidth(7, menu.sideBarWidth, false)
+	ftable:setColWidthPercent(9, 20)
+
+	ftable:setDefaultBackgroundColSpan(2, 8)
+
+	local title = ""
+
+	if menu.infoTableMode == "mission" then
+		local row = ftable:addRow("tabs", { fixed = true, bgColor = Helper.color.transparent })
+		if menu.missionModeCurrent == "tabs" then
+			menu.setrow = row.index
+		else
+			menu.setcol = nil
+		end
+		local categories = (menu.infoTableMode == "missionoffer") and config.missionOfferCategories or config.missionCategories
+		local index = 1
+		for _, entry in ipairs(categories) do
+			if entry.showtab ~= false then
+				local colindex = index
+				if index == 1 then
+					row[colindex]:setColSpan(3)
+				elseif index == 2 then
+					colindex = colindex + 2
+					row[colindex]:setColSpan(2)
+				else
+					colindex = colindex + 3
+				end
+
+				local bgcolor = Helper.defaultTitleBackgroundColor
+				local color = Helper.color.white
+				if menu.infoTableMode == "missionoffer" then
+					if entry.category == menu.missionOfferMode then
+						title = entry.name
+						bgcolor = Helper.defaultArrowRowBackgroundColor
+					end
+				else
+					if entry.category == menu.missionMode then
+						title = entry.name
+						bgcolor = Helper.defaultArrowRowBackgroundColor
+						if menu.missionModeCurrent == "tabs" then
+							if menu.setcol == nil then
+								menu.setcol = colindex
+							end
+						end
+					end
+					if entry.category == menu.activeMissionMode then
+						color = Helper.color.mission
+					end
+				end
+
+				row[colindex]:createButton({ height = menu.sideBarWidth, bgColor = bgcolor, mouseOverText = entry.name, scaling = false, helpOverlayID = entry.helpOverlayID, helpOverlayText = entry.helpOverlayText }):setIcon(entry.icon, { color = color})
+				if menu.infoTableMode == "missionoffer" then
+					row[colindex].handlers.onClick = function () return menu.buttonMissionOfferSubMode(entry.category, colindex) end
+				else
+					row[colindex].handlers.onClick = function () return menu.buttonMissionSubMode(entry.category, colindex) end
+				end
+				index = index + 1
+			end
+		end
+	end
+
+	if menu.infoTableMode == "missionoffer" then
+		local found = false
+		-- important
+		if #menu.missionOfferList["plot"] > 0 then
+			local row = ftable:addRow(nil, { bgColor = Helper.defaultTitleBackgroundColor })
+			row[1]:setColSpan(9):createText(ReadText(1001, 3340), Helper.headerRowCenteredProperties)
+			for _, entry in ipairs(menu.missionOfferList["plot"]) do
+				found = true
+				menu.addMissionRow(ftable, entry)
+			end
+			if not found then
+				local row = ftable:addRow("plotnone", { bgColor = Helper.color.transparent, interactive = false })
+				if menu.missionModeCurrent == "plotnone" then
+					menu.setrow = row.index
+				end
+				row[1]:setColSpan(9):createText("--- " .. ReadText(1001, 3302) .. " ---", { halign = "center" })
+			end
+		end
+		-- guild
+		found = false
+		local row = ftable:addRow(nil, { bgColor = Helper.defaultTitleBackgroundColor })
+		row[1]:setColSpan(9):createText(ReadText(1001, 3331), Helper.headerRowCenteredProperties)
+
+		-- kuertee start: callback
+		if callbacks ["createMissionMode_on_missionoffer_guild_start"] then
+			for _, callback in ipairs (callbacks ["createMissionMode_on_missionoffer_guild_start"]) do
+				callback (ftable)
+			end
+		end
+		-- kuertee end: callback
+
+		for _, data in ipairs(menu.missionOfferList["guild"]) do
+			if #data.missions > 0 then
+				found = true
+
+				-- check if we need to expand for the current selected mission
+				for _, entry in ipairs(data.missions) do
+					if entry.ID == menu.missionModeCurrent then
+						menu.expandedMissionGroups[data.id] = true
+					end
+				end
+
+				local isexpanded = menu.expandedMissionGroups[data.id] ~= false
+				local row = ftable:addRow(data.id, { bgColor = Helper.color.transparent })
+				if data.id == menu.missionModeCurrent then
+					menu.setrow = row.index
+				end
+				row[1]:createButton():setText(isexpanded and "-" or "+", { halign = "center" })
+				row[1].handlers.onClick = function () return menu.buttonExpandMissionGroup(data.id, row.index) end
+				row[2]:setColSpan(7):createText(data.name)
+				row[9]:createText((#data.missions == 1) and ReadText(1001, 3335) or string.format(ReadText(1001, 3336), #data.missions), { halign = "right" })
+			
+				if isexpanded then
+					for _, entry in ipairs(data.missions) do
+						menu.addMissionRow(ftable, entry, 1)
+					end
+				end
+			end
+		end
+		if not found then
+			local row = ftable:addRow("guildnone", { bgColor = Helper.color.transparent, interactive = false })
+			if menu.missionModeCurrent == "guildnone" then
+				menu.setrow = row.index
+			end
+			row[1]:setColSpan(9):createText("--- " .. ReadText(1001, 3302) .. " ---", { halign = "center" })
+		end
+		-- other
+		found = false
+		local row = ftable:addRow(nil, { bgColor = Helper.defaultTitleBackgroundColor })
+		row[1]:setColSpan(9):createText(ReadText(1001, 3332), Helper.headerRowCenteredProperties)
+		for _, entry in ipairs(menu.missionOfferList["other"]) do
+			found = true
+			menu.addMissionRow(ftable, entry)
+		end
+		if not found then
+			local row = ftable:addRow("othernone", { bgColor = Helper.color.transparent, interactive = false })
+			if menu.missionModeCurrent == "othernone" then
+				menu.setrow = row.index
+			end
+			row[1]:setColSpan(9):createText("--- " .. ReadText(1001, 3302) .. " ---", { halign = "center" })
+		end
+	elseif menu.infoTableMode == "mission" then
+		local found = false
+		if menu.missionMode == "plot" then
+			-- important
+			local row = ftable:addRow(nil, { bgColor = Helper.defaultTitleBackgroundColor })
+			row[1]:setColSpan(9):createText(ReadText(1001, 3341), Helper.headerRowCenteredProperties)
+			local hadThreadMission = false
+			for _, entry in ipairs(menu.missionList["plot"]) do
+				found = true
+				if entry.threadtype ~= "" then
+					hadThreadMission = true
+				end
+				if hadThreadMission and (entry.threadtype == "") then
+					-- first non thread mission after threads
+					hadThreadMission = false
+					local row = ftable:addRow(false, { bgColor = Helper.color.transparent })
+					row[1]:setColSpan(9):createText("")
+				end
+				menu.addMissionRow(ftable, entry)
+			end
+			if not found then
+				local row = ftable:addRow("plotnone", { bgColor = Helper.color.transparent, interactive = false })
+				if menu.missionModeCurrent == "plotnone" then
+					menu.setrow = row.index
+				end
+				row[1]:setColSpan(9):createText("--- " .. ReadText(1001, 3302) .. " ---", { halign = "center" })
+			end
+			-- guild
+			local row = ftable:addRow(nil, { bgColor = Helper.defaultTitleBackgroundColor })
+			row[1]:setColSpan(9):createText(ReadText(1001, 3333), Helper.headerRowCenteredProperties)
+			found = false
+			for _, data in ipairs(menu.missionList["guild"]) do
+				found = true
+
+				-- check if we need to expand for the current selected mission
+				for _, entry in ipairs(data.missions) do
+					if entry.ID == menu.missionModeCurrent then
+						menu.expandedMissionGroups[data.id] = true
+					end
+					for i, submission in ipairs(entry.subMissions) do
+						if submission.ID == menu.missionModeCurrent then
+							menu.expandedMissionGroups[data.id] = true
+							menu.expandedMissionGroups[entry.ID] = true
+						end
+					end
+				end
+
+				local isexpanded = menu.expandedMissionGroups[data.id]
+				local row = ftable:addRow(data.id, { bgColor = Helper.color.transparent })
+				if data.id == menu.missionModeCurrent then
+					menu.setrow = row.index
+				end
+
+				local color = Helper.color.white
+				if data.active then
+					color = Helper.color.mission
+				end
+
+				row[1]:createButton():setText(isexpanded and "-" or "+", { halign = "center" })
+				row[1].handlers.onClick = function () return menu.buttonExpandMissionGroup(data.id, row.index) end
+				row[2]:setColSpan(7):createText(data.name, { color = color, font = font })
+				row[9]:createText((#data.missions == 1) and ReadText(1001, 3337) or string.format(ReadText(1001, 3338), #data.missions), { halign = "right", color = color })
+			
+				if isexpanded then
+					local hadThreadMission = false
+					for _, entry in ipairs(data.missions) do
+						if entry.threadtype ~= "" then
+							hadThreadMission = true
+						end
+						if hadThreadMission and (entry.threadtype == "") then
+							-- first non thread mission after threads
+							hadThreadMission = false
+							local row = ftable:addRow(false, { bgColor = Helper.color.transparent })
+							row[1]:setColSpan(9):createText("")
+						end
+						menu.addMissionRow(ftable, entry, 1)
+					end
+				end
+			end
+			if not found then
+				local row = ftable:addRow("guildnone", { bgColor = Helper.color.transparent, interactive = false })
+				if menu.missionModeCurrent == "guildnone" then
+					menu.setrow = row.index
+				end
+				row[1]:setColSpan(9):createText("--- " .. ReadText(1001, 3302) .. " ---", { halign = "center" })
+			end
+			-- other
+			local row = ftable:addRow(nil, { bgColor = Helper.defaultTitleBackgroundColor })
+			row[1]:setColSpan(9):createText(ReadText(1001, 3334), Helper.headerRowCenteredProperties)
+			found = false
+			local hadThreadMission = false
+			for _, entry in ipairs(menu.missionList["other"]) do
+				found = true
+				if entry.threadtype ~= "" then
+					hadThreadMission = true
+				end
+				if hadThreadMission and (entry.threadtype == "") then
+					-- first non thread mission after threads
+					hadThreadMission = false
+					local row = ftable:addRow(false, { bgColor = Helper.color.transparent })
+					row[1]:setColSpan(9):createText("")
+				end
+				menu.addMissionRow(ftable, entry)
+			end
+		elseif menu.missionMode == "upkeep" then
+			-- title
+			local row = ftable:addRow(false, { fixed = true, bgColor = Helper.defaultTitleBackgroundColor })
+			row[1]:setColSpan(9):createText(title, Helper.headerRowCenteredProperties)
+			for containeridstring, data in pairs(menu.missionList[menu.missionMode]) do
+				found = true
+
+				-- check if we need to expand for the current selected mission
+				for _, entry in ipairs(data.missions) do
+					if entry.ID == menu.missionModeCurrent then
+						menu.expandedMissionGroups[containeridstring] = true
+					end
+					for i, submission in ipairs(entry.subMissions) do
+						if submission.ID == menu.missionModeCurrent then
+							menu.expandedMissionGroups[containeridstring] = true
+							menu.expandedMissionGroups[entry.ID] = true
+						end
+					end
+				end
+
+				local isexpanded = menu.expandedMissionGroups[containeridstring]
+				local row = ftable:addRow(containeridstring, { bgColor = Helper.color.transparent })
+				if containeridstring == menu.missionModeCurrent then
+					menu.setrow = row.index
+				end
+
+				local color = Helper.color.white
+				if data.active then
+					color = Helper.color.mission
+				end
+
+				row[1]:createButton():setText(isexpanded and "-" or "+", { halign = "center" })
+				row[1].handlers.onClick = function () return menu.buttonExpandMissionGroup(containeridstring, row.index) end
+				local container = ConvertStringTo64Bit(containeridstring)
+				row[2]:setColSpan(7):createText(ffi.string(C.GetComponentName(container)) .. " (" .. ffi.string(C.GetObjectIDCode(container)) .. ")" , { color = color })
+				row[9]:createText((#data.missions == 1) and ReadText(1001, 3337) or string.format(ReadText(1001, 3338), #data.missions), { halign = "right", color = color })
+			
+				if isexpanded then
+					local hadThreadMission = false
+					for _, entry in ipairs(data.missions) do
+						if entry.threadtype ~= "" then
+							hadThreadMission = true
+						end
+						if hadThreadMission and (entry.threadtype == "") then
+							-- first non thread mission after threads
+							hadThreadMission = false
+							local row = ftable:addRow(false, { bgColor = Helper.color.transparent })
+							row[1]:setColSpan(9):createText("")
+						end
+						menu.addMissionRow(ftable, entry, 1)
+					end
+				end
+			end
+		else
+			-- title
+			local row = ftable:addRow(false, { fixed = true, bgColor = Helper.defaultTitleBackgroundColor })
+			row[1]:setColSpan(9):createText(title, Helper.headerRowCenteredProperties)
+			local hadThreadMission = false
+			for _, entry in ipairs(menu.missionList[menu.missionMode]) do
+				found = true
+				if entry.threadtype ~= "" then
+					hadThreadMission = true
+				end
+				if hadThreadMission and (entry.threadtype == "") then
+					-- first non thread mission after threads
+					hadThreadMission = false
+					local row = ftable:addRow(false, { bgColor = Helper.color.transparent })
+					row[1]:setColSpan(9):createText("")
+				end
+				menu.addMissionRow(ftable, entry)
+			end
+		end
+		if not found then
+			local row = ftable:addRow("othernone", { bgColor = Helper.color.transparent, interactive = false })
+			if menu.missionModeCurrent == "othernone" then
+				menu.setrow = row.index
+			end
+			row[1]:setColSpan(9):createText("--- " .. ReadText(1001, 3302) .. " ---", { halign = "center" })
+		end
+	end
+
+	ftable:setTopRow(menu.settoprow)
+	ftable:setSelectedRow(menu.setrow)
+	ftable:setSelectedCol(menu.setcol or 0)
+	menu.setrow = nil
+	menu.settoprow = nil
+	menu.setcol = nil
 end
 function newFuncs.createSideBar(firsttime, frame, width, height, offsetx, offsety)
 	local menu = mapMenu
