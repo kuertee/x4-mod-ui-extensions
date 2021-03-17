@@ -5,6 +5,9 @@ by kuertee
 
 Update:
 =======
+v2.0.2, 17 Mar 2021:
+-PlayerInfo menu fix: the 2ndary tables (logo, paint mod, faction, etc.) weren't getting rendered.
+
 v2.0.1, 17 Mar 2021:
 -Update for version 4.0 of the base game.
 

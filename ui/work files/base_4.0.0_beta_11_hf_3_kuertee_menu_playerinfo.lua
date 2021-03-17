@@ -1,48 +1,3 @@
-local ffi = require ("ffi")
-local C = ffi.C
-local Lib = require ("extensions.sn_mod_support_apis.lua_library")
-local playerInfoMenu
-local oldFuncs = {}
-local newFuncs = {}
-local callbacks = {}
-local isInited
-local function init ()
-	DebugError ("kuertee_menu_playerinfo.init")
-	if not isInited then
-		isInited = true
-		playerInfoMenu = Lib.Get_Egosoft_Menu ("PlayerInfoMenu")
-		playerInfoMenu.registerCallback = newFuncs.registerCallback
-		-- map menu rewrites:
-		oldFuncs.buttonTogglePlayerInfo = playerInfoMenu.buttonTogglePlayerInfo
-		playerInfoMenu.buttonTogglePlayerInfo = newFuncs.buttonTogglePlayerInfo
-		oldFuncs.createPlayerInfo = playerInfoMenu.createPlayerInfo
-		playerInfoMenu.createPlayerInfo = newFuncs.createPlayerInfo
-		oldFuncs.createInfoFrame = playerInfoMenu.createInfoFrame
-		playerInfoMenu.createInfoFrame = newFuncs.createInfoFrame
-		oldFuncs.createFactions = playerInfoMenu.createFactions
-		playerInfoMenu.createFactions = newFuncs.createFactions
-	end
-end
-function newFuncs.registerCallback (callbackName, callbackFunction)
-	-- note 1: format is generally [function name]_[action]. e.g.: in kuertee_menu_transporter, "display_on_set_room_active" overrides the room's active property with the return of the callback.
-	-- note 2: events have the word "_on_" followed by a PRESENT TENSE verb. e.g.: in kuertee_menu_transporter, "display_on_set_buttontable" is called after all of the rows of buttontable are set.
-	-- note 3: new callbacks can be added or existing callbacks can be edited. but commit your additions/changes to the mod's GIT repository.
-	-- note 4: search for the callback names to see where they are executed.
-	-- note 5: if a callback requires a return value, return it in an object var. e.g. "display_on_set_room_active" requires a return of {active = true | false}.
-	-- available callbacks:
-	-- 
-	-- buttonTogglePlayerInfo_on_start (mode, config)
-	-- createPlayerInfo_on_start (config)
-	-- createInfoFrame_on_start ()
-	-- createInfoFrame_on_info_frame_mode (infoFrame, tableProperties)
-	-- createFactions_on_before_render_licences (frame, tableProperties, relation.id, infotable)
-	-- createAccounts_add_new_table (frame, tableProperties, tabOrderOffset)
-	if callbacks [callbackName] == nil then
-		callbacks [callbackName] = {}
-	end
-	table.insert (callbacks [callbackName], callbackFunction)
-end
--- only have config stuff here that are used in this file
 local config = {
 	mainLayer = 5,
 	infoLayer = 4,
@@ -405,4 +360,3 @@ function newFuncs.createFactions(frame, tableProperties)
 		row[3].handlers.onClick = function () return menu.buttonWarDeclarationConfirm(relation.id) end
 	end
 end
-init ()
