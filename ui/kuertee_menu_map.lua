@@ -7,7 +7,7 @@
 
 local ffi = require ("ffi")
 local C = ffi.C
-local Lib = require ("extensions.sn_mod_support_apis.lua_library")
+local Lib = require ("extensions.sn_mod_support_apis.lua_interface").Library
 local mapMenu
 local oldFuncs = {}
 local newFuncs = {}
@@ -1207,30 +1207,34 @@ function newFuncs.createPropertyOwned(frame, instance)
 	local numOfSorterColumns = 4 -- "sort by", "size", "name", "hull"
 	local colSpanPerSorterColumn = math.floor (maxNumCategoryColumns / numOfSorterColumns)
 	local tabtable = frame:addTable(maxNumCategoryColumns, { tabOrder = 2, reserveScrollBar = false })
-	for i = 1, maxNumCategoryColumns do
-		tabtable:setColWidth(i, menu.sideBarWidth, false)
+	if maxNumCategoryColumns > 0 then
+		for i = 1, maxNumCategoryColumns do
+			tabtable:setColWidth(i, menu.sideBarWidth, false)
+		end
 	end
 	local diff = menu.infoTableWidth - maxNumCategoryColumns * (menu.sideBarWidth + Helper.borderSize)
 	tabtable:setColWidth(maxNumCategoryColumns, menu.sideBarWidth + diff, false)
 	-- product categories row
 	local row = tabtable:addRow("property_tabs", { fixed = true, bgColor = Helper.color.transparent })
-	for i, entry in ipairs(config.propertyCategories) do
-		local bgcolor = Helper.defaultTitleBackgroundColor
-		local color = Helper.color.white
-		if entry.category == menu.propertyMode then
-			bgcolor = Helper.defaultArrowRowBackgroundColor
-		end
-		local active = true
-		if menu.mode == "selectCV" then
-			active = entry.category == "propertyall"
-		elseif (menu.mode == "selectComponent") and (menu.modeparam[3] == "deployables") then
-			active = entry.category == "deployables"
-			if active and (menu.selectedCols.propertytabs == nil) then
-				menu.selectedCols.propertytabs = i
+	if #config.propertyCategories > 0 then
+		for i, entry in ipairs(config.propertyCategories) do
+			local bgcolor = Helper.defaultTitleBackgroundColor
+			local color = Helper.color.white
+			if entry.category == menu.propertyMode then
+				bgcolor = Helper.defaultArrowRowBackgroundColor
 			end
+			local active = true
+			if menu.mode == "selectCV" then
+				active = entry.category == "propertyall"
+			elseif (menu.mode == "selectComponent") and (menu.modeparam[3] == "deployables") then
+				active = entry.category == "deployables"
+				if active and (menu.selectedCols.propertytabs == nil) then
+					menu.selectedCols.propertytabs = i
+				end
+			end
+			row[i]:createButton({ height = menu.sideBarWidth, bgColor = bgcolor, mouseOverText = entry.name, scaling = false, helpOverlayID = entry.helpOverlayID, helpOverlayText = entry.helpOverlayText, active = active }):setIcon(entry.icon, { color = color})
+			row[i].handlers.onClick = function () return menu.buttonPropertySubMode(entry.category, i) end
 		end
-		row[i]:createButton({ height = menu.sideBarWidth, bgColor = bgcolor, mouseOverText = entry.name, scaling = false, helpOverlayID = entry.helpOverlayID, helpOverlayText = entry.helpOverlayText, active = active }):setIcon(entry.icon, { color = color})
-		row[i].handlers.onClick = function () return menu.buttonPropertySubMode(entry.category, i) end
 	end
 	local row = tabtable:addRow(true, { fixed = true, bgColor = Helper.color.transparent })
 	-- sorter row
@@ -3262,6 +3266,7 @@ function newFuncs.closeContextMenu(dueToClose)
 			or (menu.contextMenuMode == "userquestion")
 			or (menu.contextMenuMode == "mission")
 			or (menu.contextMenuMode == "venturepatron")
+			or (menu.contextMenuMode == "filter_multiselectlist")
 		) then
 			menu.picking = true
 			menu.currentMouseOverTable = nil

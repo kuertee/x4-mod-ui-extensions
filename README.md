@@ -3,8 +3,18 @@ https://www.nexusmods.com/x4foundations/mods/552
 Code: https://github.com/kuertee/x4-mod-ui-extensions
 by kuertee
 
-Update:
-=======
+Updates:
+========
+v2.0.4, 26 Mar 2021:
+-Update for 4.0.0 hot-fix 2 beta 1.
+-Tweak: Property Owned Categories rendering with out unsightly gaps when mods add new Categories, e.g. like Crime Has Consequences do.
+
+v2.0.3, 20 Mar 2021:
+-Bug-fix: Property Owned menu hanging bug-fix.
+
+v2.0.2, 17 Mar 2021:
+-Bug-fix: PlayerInfo menu fix: the 2ndary tables (logo, paint mod, faction, etc.) weren't getting rendered.
+
 v2.0.1, 17 Mar 2021:
 -Update for version 4.0 of the base game.
 

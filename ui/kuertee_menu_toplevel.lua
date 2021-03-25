@@ -1,6 +1,6 @@
 local ffi = require ("ffi")
 local C = ffi.C
-local Lib = require ("extensions.sn_mod_support_apis.lua_library")
+local Lib = require ("extensions.sn_mod_support_apis.lua_interface").Library
 local topLevelMenu
 local oldFuncs = {}
 local newFuncs = {}
