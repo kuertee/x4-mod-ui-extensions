@@ -1204,6 +1204,9 @@ function newFuncs.createPropertyOwned(frame, instance)
 	-- egosoft end: original product categories and sorter table
 
 	local maxNumCategoryColumns =  math.floor (menu.infoTableWidth / (menu.sideBarWidth + Helper.borderSize))
+	if maxNumCategoryColumns > 13 then
+		maxNumCategoryColumns = 13
+	end
 	local numOfSorterColumns = 4 -- "sort by", "size", "name", "hull"
 	local colSpanPerSorterColumn = math.floor (maxNumCategoryColumns / numOfSorterColumns)
 	local tabtable = frame:addTable(maxNumCategoryColumns, { tabOrder = 2, reserveScrollBar = false })

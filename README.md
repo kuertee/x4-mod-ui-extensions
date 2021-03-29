@@ -5,6 +5,9 @@ by kuertee
 
 Updates:
 ========
+v2.0.5, 29 Mar 2021:
+-Bug-fix: Too many columns bug in my changes to the Property Owned Category tabs.
+
 v2.0.4, 26 Mar 2021:
 -Update for 4.0.0 hot-fix 2 beta 1.
 -Tweak: Property Owned Categories rendering with out unsightly gaps when mods add new Categories, e.g. like Crime Has Consequences do.
