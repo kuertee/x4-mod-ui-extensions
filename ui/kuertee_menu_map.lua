@@ -4040,7 +4040,7 @@ function newFuncs.setupLoadoutInfoSubmenuRows(mode, inputtable, inputobject, ins
 							local rd_callbackVal
 							if callbacks ["rd_addReactiveDockingMapMenu"] then
 				  				for _, callback in ipairs (callbacks ["rd_addReactiveDockingMapMenu"]) do
-				    				rd_callbackVal = callback (row, inputobject, i)
+				    				rd_callbackVal = callback (row, inputobject, i, mode)
 				  				end
 							end
 							if not rd_callbackVal then
