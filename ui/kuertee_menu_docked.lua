@@ -686,7 +686,7 @@ function newFuncs.display()
 						local rd_callbackVal
 						if callbacks ["rd_addReactiveDockingDockMenu"] then
 				  			for _, callback in ipairs (callbacks ["rd_addReactiveDockingDockMenu"]) do
-				    			rd_callbackVal = callback (row, menu.currentplayership, i)
+				    			rd_callbackVal = callback (row, menu.currentplayership, i, active, mouseovertext)
 				  			end
 						end
 						if not rd_callbackVal then
