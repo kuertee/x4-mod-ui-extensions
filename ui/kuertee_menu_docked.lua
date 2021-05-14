@@ -32,20 +32,8 @@ function newFuncs.registerCallback (callbackName, callbackFunction)
 	-- note 5: if a callback requires a return value, return it in an object var. e.g. "display_on_set_room_active" requires a return of {active = true | false}.
 	-- available callbacks:
 	-- 
-	-- (true | false) = createInfoFrame_on_menu_infoTableMode (menu.infoFrame)
-	-- buttonMissionActivate_on_activate (missionid)
-	-- buttonToggleObjectList_on_start (objectlistparam, config)
-	-- createPropertyOwned_on_start (config)
-	-- createPropertyOwned_on_init_infoTableData (infoTableData)
-	-- createPropertyOwned_on_add_ship_infoTableData (infoTableData, object)
-	-- createPropertyOwned_on_add_other_objects_infoTableData (infoTableData)
-	-- {numdisplayed = numdisplayed} = createPropertyOwned_on_createPropertySection_unassignedships (numdisplayed, instance, ftable, infoTableData)
-	-- {maxicons = maxicons, subordinates = subordinates, dockedships = dockedships, constructions = constructions, convertedComponent = convertedComponent} = createPropertyRow_on_init_vars (maxicons, subordinates, dockedships, constructions, convertedComponent)
-	-- {locationtext = locationtext} = createPropertyRow_on_set_locationtext (locationtext, component)
-	-- {shipname = shipname, properties = createTextProperties} = createPropertyRow_override_row_shipname_createText (shipname, createTextProperties, component)
-	-- {locationtext = locationtext, properties = createTextProperties} = createPropertyRow_override_row_location_createText (locationtext, createTextProperties, component)
-	-- createSideBar_on_start (config)
-	-- createMissionMode_on_missionoffer_guild_start (ftable)
+	-- sto_addTurretBehavioursDockMenu ()
+	-- (true | false) = rd_addReactiveDockingDockMenu (row, menu.currentplayership, i, active, mouseovertext)
 	if callbacks [callbackName] == nil then
 		callbacks [callbackName] = {}
 	end
@@ -699,7 +687,6 @@ function newFuncs.display()
 			end
 		end
 	else
-		DebugError("ELSE ELSE")
 		local row = table_header:addRow("buttonRow1", { bgColor = Helper.color.transparent, fixed = true })
 		local active = canwareexchange
 		row[1]:createButton(active and {helpOverlayID = "docked_transferwares", helpOverlayText = " ", helpOverlayHighlightOnly = true } or config.inactiveButtonProperties):setText(ReadText(1001, 8618), active and config.activeButtonTextProperties or config.inactiveButtonTextProperties)	-- "Transfer Wares"
