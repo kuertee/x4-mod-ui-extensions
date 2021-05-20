@@ -6,7 +6,7 @@ by kuertee
 Updates:
 ========
 v2.1.0, 14 May 2021:
--New callbacks: UserQuestionMenu.createInfoFrame_custom_frame_properties, UserQuestionMenu.createTable_new_custom_table: allows the creation of new partial menus.
+-New callbacks: UserQuestionMenu.createInfoFrame_custom_frame_properties, UserQuestionMenu.createTable_new_custom_table: allows the creation of new menus that look like they are not connected to other menus. See my other mod, "Modification parts trader".
 
 Features:
 =========
