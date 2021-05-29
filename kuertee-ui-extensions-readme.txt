@@ -5,8 +5,9 @@ by kuertee
 
 Updates:
 ========
-v2.1.0, 14 May 2021:
--New callbacks: UserQuestionMenu.createInfoFrame_custom_frame_properties, UserQuestionMenu.createTable_new_custom_table: allows the creation of new menus that look like they are not connected to other menus. See my other mod, "Modification parts trader".
+v2.1.1, 29 May 2021:
+-New feature: show objective progress for current objective in mission description.
+-New callback: createMissionMode_replaceMissionModeCurrent for mission switching between original mission and Waypoint Field mission in WFFD mod.
 
 Features:
 =========
@@ -93,6 +94,9 @@ Uninstall:
 
 History
 =======
+v2.1.0, 14 May 2021:
+-New callbacks: UserQuestionMenu.createInfoFrame_custom_frame_properties, UserQuestionMenu.createTable_new_custom_table: allows the creation of new menus that look like they are not connected to other menus. See my other mod, "Modification parts trader".
+
 v2.0.6, 16 Apr 2021:
 -New supported mods: Allectus' Subsystem Targeting, Runkn's Reactive Docking. Compatibility code by Forleyor.
 

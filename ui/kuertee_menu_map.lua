@@ -36,6 +36,8 @@ local function init ()
 		mapMenu.createPropertyRow = newFuncs.createPropertyRow
 		oldFuncs.createMissionMode = mapMenu.createMissionMode
 		mapMenu.createMissionMode = newFuncs.createMissionMode
+		oldFuncs.getMissionInfoHelper = mapMenu.getMissionInfoHelper
+		mapMenu.getMissionInfoHelper = newFuncs.getMissionInfoHelper
 		oldFuncs.createSideBar = mapMenu.createSideBar
 		mapMenu.createSideBar = newFuncs.createSideBar
 		oldFuncs.createMissionContext = mapMenu.createMissionContext
@@ -84,6 +86,7 @@ function newFuncs.registerCallback (callbackName, callbackFunction)
 	-- {locationtext = locationtext, properties = createTextProperties} = createPropertyRow_override_row_location_createText (locationtext, createTextProperties, component)
 	-- createSideBar_on_start (config)
 	-- createMissionMode_on_missionoffer_guild_start (ftable)
+	-- replacement ConvertStringTo64Bit (missionId) = createMissionMode_replaceMissionModeCurrent (current missionId)
 	if callbacks [callbackName] == nil then
 		callbacks [callbackName] = {}
 	end
@@ -1128,102 +1131,40 @@ function newFuncs.createPropertyOwned(frame, instance)
 
 	-- kuertee start: re-written product categories and sorter table
 	-- purpose: allows mods to add more product categories without destroying the sorter's layout
-
-	-- egosoft start: original product categories and sorter table
-	-- local tabtable = frame:addTable(#config.propertyCategories + 3, { tabOrder = 2, reserveScrollBar = false })
-	-- for i = 1, #config.propertyCategories do
-	-- 	tabtable:setColWidth(i, menu.sideBarWidth, false)
-	-- end
-	-- local sorterWidth = menu.infoTableWidth - 3 * (menu.sideBarWidth + Helper.borderSize) - (#config.propertyCategories - 1) * Helper.borderSize
-	-- local availableWidthForExtraColumns = menu.infoTableWidth - #config.propertyCategories * (menu.sideBarWidth + Helper.borderSize) - 2 * Helper.borderSize
-	-- local colwidth = sorterWidth / 3
-	-- local colspan = 3
-	-- if colwidth > 3 * menu.sideBarWidth + 2 * Helper.borderSize then
-	-- 	colspan = 4
-	-- elseif colwidth < 2 * menu.sideBarWidth + Helper.borderSize then
-	-- 	colspan = 2
-	-- 	colwidth = (menu.infoTableWidth - 6 * (menu.sideBarWidth + Helper.borderSize) - 2 * Helper.borderSize) / 2
-	-- end
-
-	-- if 2 * colwidth >= availableWidthForExtraColumns then
-	-- 	colwidth = math.floor((availableWidthForExtraColumns - 1) / 2)
-	-- end
-
-	-- tabtable:setColWidth(#config.propertyCategories + 2, colwidth, false)
-	-- tabtable:setColWidth(#config.propertyCategories + 3, colwidth, false)
-
-	-- local row = tabtable:addRow("property_tabs", { fixed = true, bgColor = Helper.color.transparent })
-	-- for i, entry in ipairs(config.propertyCategories) do
-	-- 	local bgcolor = Helper.defaultTitleBackgroundColor
-	-- 	local color = Helper.color.white
-	-- 	if entry.category == menu.propertyMode then
-	-- 		bgcolor = Helper.defaultArrowRowBackgroundColor
-	-- 	end
-
-	-- 	local active = true
-	-- 	if menu.mode == "selectCV" then
-	-- 		active = entry.category == "propertyall"
-	-- 	elseif (menu.mode == "selectComponent") and (menu.modeparam[3] == "deployables") then
-	-- 		active = entry.category == "deployables"
-	-- 		if active and (menu.selectedCols.propertytabs == nil) then
-	-- 			menu.selectedCols.propertytabs = i
-	-- 		end
-	-- 	end
-
-	-- 	row[i]:createButton({ height = menu.sideBarWidth, bgColor = bgcolor, mouseOverText = entry.name, scaling = false, helpOverlayID = entry.helpOverlayID, helpOverlayText = entry.helpOverlayText, active = active }):setIcon(entry.icon, { color = color})
-	-- 	row[i].handlers.onClick = function () return menu.buttonPropertySubMode(entry.category, i) end
-	-- end
-
-	-- local row = tabtable:addRow(true, { fixed = true, bgColor = Helper.color.transparent })
-	-- row[1]:setColSpan(3):createText(ReadText(1001, 2906) .. ReadText(1001, 120))
-
-	-- local buttonheight = Helper.scaleY(config.mapRowHeight)
-	-- local button = row[4]:setColSpan(colspan):createButton({ scaling = false, height = buttonheight }):setText(ReadText(1001, 8026), { halign = "center", scaling = true })
-	-- if menu.propertySorterType == "class" then
-	-- 	button:setIcon("table_arrow_inv_down", { width = buttonheight, height = buttonheight, x = button:getColSpanWidth() - buttonheight })
-	-- elseif menu.propertySorterType == "classinverse" then
-	-- 	button:setIcon("table_arrow_inv_up", { width = buttonheight, height = buttonheight, x = button:getColSpanWidth() - buttonheight })
-	-- end
-	-- row[4].handlers.onClick = function () return menu.buttonPropertySorter("class") end
-	-- local button = row[#config.propertyCategories + colspan - 2]:setColSpan(5 - colspan):createButton({ scaling = false, height = buttonheight }):setText(ReadText(1001, 2809), { halign = "center", scaling = true })
-	-- if menu.propertySorterType == "name" then
-	-- 	button:setIcon("table_arrow_inv_down", { width = buttonheight, height = buttonheight, x = button:getColSpanWidth() - buttonheight })
-	-- elseif menu.propertySorterType == "nameinverse" then
-	-- 	button:setIcon("table_arrow_inv_up", { width = buttonheight, height = buttonheight, x = button:getColSpanWidth() - buttonheight })
-	-- end
-	-- row[#config.propertyCategories + colspan - 2].handlers.onClick = function () return menu.buttonPropertySorter("name") end
-	-- local button = row[#config.propertyCategories + 3]:createButton({ scaling = false, height = buttonheight }):setText(ReadText(1001, 1), { halign = "center", scaling = true })
-	-- if menu.propertySorterType == "hull" then
-	-- 	button:setIcon("table_arrow_inv_down", { width = buttonheight, height = buttonheight, x = button:getColSpanWidth() - buttonheight })
-	-- elseif menu.propertySorterType == "hullinverse" then
-	-- 	button:setIcon("table_arrow_inv_up", { width = buttonheight, height = buttonheight, x = button:getColSpanWidth() - buttonheight })
-	-- end
-	-- row[#config.propertyCategories + 3].handlers.onClick = function () return menu.buttonPropertySorter("hull") end
-	-- egosoft end: original product categories and sorter table
-
-	local maxNumCategoryColumns =  math.floor (menu.infoTableWidth / (menu.sideBarWidth + Helper.borderSize))
-	if maxNumCategoryColumns > 13 then
-		maxNumCategoryColumns = 13
-	end
-	local numOfSorterColumns = 4 -- "sort by", "size", "name", "hull"
-	local colSpanPerSorterColumn = math.floor (maxNumCategoryColumns / numOfSorterColumns)
-	local tabtable = frame:addTable(maxNumCategoryColumns, { tabOrder = 2, reserveScrollBar = false })
-	if maxNumCategoryColumns > 0 then
-		for i = 1, maxNumCategoryColumns do
+	local isUseEgosoftProductCategoriesTab = false
+	local tabtable
+	if isUseEgosoftProductCategoriesTab then
+		-- egosoft start: original product categories and sorter table
+		tabtable = frame:addTable(#config.propertyCategories + 3, { tabOrder = 2, reserveScrollBar = false })
+		for i = 1, #config.propertyCategories do
 			tabtable:setColWidth(i, menu.sideBarWidth, false)
 		end
-	end
-	local diff = menu.infoTableWidth - maxNumCategoryColumns * (menu.sideBarWidth + Helper.borderSize)
-	tabtable:setColWidth(maxNumCategoryColumns, menu.sideBarWidth + diff, false)
-	-- product categories row
-	local row = tabtable:addRow("property_tabs", { fixed = true, bgColor = Helper.color.transparent })
-	if #config.propertyCategories > 0 then
+		local sorterWidth = menu.infoTableWidth - 3 * (menu.sideBarWidth + Helper.borderSize) - (#config.propertyCategories - 1) * Helper.borderSize
+		local availableWidthForExtraColumns = menu.infoTableWidth - #config.propertyCategories * (menu.sideBarWidth + Helper.borderSize) - 2 * Helper.borderSize
+		local colwidth = sorterWidth / 3
+		local colspan = 3
+		if colwidth > 3 * menu.sideBarWidth + 2 * Helper.borderSize then
+			colspan = 4
+		elseif colwidth < 2 * menu.sideBarWidth + Helper.borderSize then
+			colspan = 2
+			colwidth = (menu.infoTableWidth - 6 * (menu.sideBarWidth + Helper.borderSize) - 2 * Helper.borderSize) / 2
+		end
+
+		if 2 * colwidth >= availableWidthForExtraColumns then
+			colwidth = math.floor((availableWidthForExtraColumns - 1) / 2)
+		end
+
+		tabtable:setColWidth(#config.propertyCategories + 2, colwidth, false)
+		tabtable:setColWidth(#config.propertyCategories + 3, colwidth, false)
+
+		local row = tabtable:addRow("property_tabs", { fixed = true, bgColor = Helper.color.transparent })
 		for i, entry in ipairs(config.propertyCategories) do
 			local bgcolor = Helper.defaultTitleBackgroundColor
 			local color = Helper.color.white
 			if entry.category == menu.propertyMode then
 				bgcolor = Helper.defaultArrowRowBackgroundColor
 			end
+
 			local active = true
 			if menu.mode == "selectCV" then
 				active = entry.category == "propertyall"
@@ -1233,45 +1174,110 @@ function newFuncs.createPropertyOwned(frame, instance)
 					menu.selectedCols.propertytabs = i
 				end
 			end
+
 			row[i]:createButton({ height = menu.sideBarWidth, bgColor = bgcolor, mouseOverText = entry.name, scaling = false, helpOverlayID = entry.helpOverlayID, helpOverlayText = entry.helpOverlayText, active = active }):setIcon(entry.icon, { color = color})
 			row[i].handlers.onClick = function () return menu.buttonPropertySubMode(entry.category, i) end
 		end
+
+		local row = tabtable:addRow(true, { fixed = true, bgColor = Helper.color.transparent })
+		row[1]:setColSpan(3):createText(ReadText(1001, 2906) .. ReadText(1001, 120))
+
+		local buttonheight = Helper.scaleY(config.mapRowHeight)
+		local button = row[4]:setColSpan(colspan):createButton({ scaling = false, height = buttonheight }):setText(ReadText(1001, 8026), { halign = "center", scaling = true })
+		if menu.propertySorterType == "class" then
+			button:setIcon("table_arrow_inv_down", { width = buttonheight, height = buttonheight, x = button:getColSpanWidth() - buttonheight })
+		elseif menu.propertySorterType == "classinverse" then
+			button:setIcon("table_arrow_inv_up", { width = buttonheight, height = buttonheight, x = button:getColSpanWidth() - buttonheight })
+		end
+		row[4].handlers.onClick = function () return menu.buttonPropertySorter("class") end
+		local button = row[#config.propertyCategories + colspan - 2]:setColSpan(5 - colspan):createButton({ scaling = false, height = buttonheight }):setText(ReadText(1001, 2809), { halign = "center", scaling = true })
+		if menu.propertySorterType == "name" then
+			button:setIcon("table_arrow_inv_down", { width = buttonheight, height = buttonheight, x = button:getColSpanWidth() - buttonheight })
+		elseif menu.propertySorterType == "nameinverse" then
+			button:setIcon("table_arrow_inv_up", { width = buttonheight, height = buttonheight, x = button:getColSpanWidth() - buttonheight })
+		end
+		row[#config.propertyCategories + colspan - 2].handlers.onClick = function () return menu.buttonPropertySorter("name") end
+		local button = row[#config.propertyCategories + 3]:createButton({ scaling = false, height = buttonheight }):setText(ReadText(1001, 1), { halign = "center", scaling = true })
+		if menu.propertySorterType == "hull" then
+			button:setIcon("table_arrow_inv_down", { width = buttonheight, height = buttonheight, x = button:getColSpanWidth() - buttonheight })
+		elseif menu.propertySorterType == "hullinverse" then
+			button:setIcon("table_arrow_inv_up", { width = buttonheight, height = buttonheight, x = button:getColSpanWidth() - buttonheight })
+		end
+		row[#config.propertyCategories + 3].handlers.onClick = function () return menu.buttonPropertySorter("hull") end
+		-- egosoft end: original product categories and sorter table
+	else
+		local maxNumCategoryColumns =  math.floor (menu.infoTableWidth / (menu.sideBarWidth + Helper.borderSize))
+		if maxNumCategoryColumns > 13 then
+			maxNumCategoryColumns = 13
+		end
+		local numOfSorterColumns = 4 -- "sort by", "size", "name", "hull"
+		local colSpanPerSorterColumn = math.floor (maxNumCategoryColumns / numOfSorterColumns)
+		tabtable = frame:addTable(maxNumCategoryColumns, { tabOrder = 2, reserveScrollBar = false })
+		if maxNumCategoryColumns > 0 then
+			for i = 1, maxNumCategoryColumns do
+				tabtable:setColWidth(i, menu.sideBarWidth, false)
+			end
+		end
+		local diff = menu.infoTableWidth - maxNumCategoryColumns * (menu.sideBarWidth + Helper.borderSize)
+		tabtable:setColWidth(maxNumCategoryColumns, menu.sideBarWidth + diff, false)
+		-- product categories row
+		local row = tabtable:addRow("property_tabs", { fixed = true, bgColor = Helper.color.transparent })
+		if #config.propertyCategories > 0 then
+			for i, entry in ipairs(config.propertyCategories) do
+				local bgcolor = Helper.defaultTitleBackgroundColor
+				local color = Helper.color.white
+				if entry.category == menu.propertyMode then
+					bgcolor = Helper.defaultArrowRowBackgroundColor
+				end
+				local active = true
+				if menu.mode == "selectCV" then
+					active = entry.category == "propertyall"
+				elseif (menu.mode == "selectComponent") and (menu.modeparam[3] == "deployables") then
+					active = entry.category == "deployables"
+					if active and (menu.selectedCols.propertytabs == nil) then
+						menu.selectedCols.propertytabs = i
+					end
+				end
+				row[i]:createButton({ height = menu.sideBarWidth, bgColor = bgcolor, mouseOverText = entry.name, scaling = false, helpOverlayID = entry.helpOverlayID, helpOverlayText = entry.helpOverlayText, active = active }):setIcon(entry.icon, { color = color})
+				row[i].handlers.onClick = function () return menu.buttonPropertySubMode(entry.category, i) end
+			end
+		end
+		local row = tabtable:addRow(true, { fixed = true, bgColor = Helper.color.transparent })
+		-- sorter row
+		-- "sort by"
+		row[1]:setColSpan(colSpanPerSorterColumn):createText(ReadText(1001, 2906) .. ReadText(1001, 120))
+		local buttonheight = Helper.scaleY(config.mapRowHeight)
+		-- "size"
+		local sorterColumn = 2
+		local tableColumn = (sorterColumn - 1) * colSpanPerSorterColumn + 1
+		local button = row[tableColumn]:setColSpan(colSpanPerSorterColumn):createButton({ scaling = false, height = buttonheight }):setText(ReadText(1001, 8026), { halign = "center", scaling = true })
+		if menu.propertySorterType == "class" then
+			button:setIcon("table_arrow_inv_down", { width = buttonheight, height = buttonheight, x = button:getColSpanWidth() - buttonheight })
+		elseif menu.propertySorterType == "classinverse" then
+			button:setIcon("table_arrow_inv_up", { width = buttonheight, height = buttonheight, x = button:getColSpanWidth() - buttonheight })
+		end
+		row[tableColumn].handlers.onClick = function () return menu.buttonPropertySorter("class") end
+		-- "name"
+		sorterColumn = 3
+		tableColumn = (sorterColumn - 1) * colSpanPerSorterColumn + 1
+		local button = row[tableColumn]:setColSpan(colSpanPerSorterColumn):createButton({ scaling = false, height = buttonheight }):setText(ReadText(1001, 2809), { halign = "center", scaling = true })
+		if menu.propertySorterType == "name" then
+			button:setIcon("table_arrow_inv_down", { width = buttonheight, height = buttonheight, x = button:getColSpanWidth() - buttonheight })
+		elseif menu.propertySorterType == "nameinverse" then
+			button:setIcon("table_arrow_inv_up", { width = buttonheight, height = buttonheight, x = button:getColSpanWidth() - buttonheight })
+		end
+		row[tableColumn].handlers.onClick = function () return menu.buttonPropertySorter("name") end
+		-- "hull"
+		sorterColumn = 4
+		tableColumn = (sorterColumn - 1) * colSpanPerSorterColumn + 1
+		local button = row[tableColumn]:setColSpan(colSpanPerSorterColumn):createButton({ scaling = false, height = buttonheight }):setText(ReadText(1001, 1), { halign = "center", scaling = true })
+		if menu.propertySorterType == "hull" then
+			button:setIcon("table_arrow_inv_down", { width = buttonheight, height = buttonheight, x = button:getColSpanWidth() - buttonheight })
+		elseif menu.propertySorterType == "hullinverse" then
+			button:setIcon("table_arrow_inv_up", { width = buttonheight, height = buttonheight, x = button:getColSpanWidth() - buttonheight })
+		end
+		row[tableColumn].handlers.onClick = function () return menu.buttonPropertySorter("hull") end
 	end
-	local row = tabtable:addRow(true, { fixed = true, bgColor = Helper.color.transparent })
-	-- sorter row
-	-- "sort by"
-	row[1]:setColSpan(colSpanPerSorterColumn):createText(ReadText(1001, 2906) .. ReadText(1001, 120))
-	local buttonheight = Helper.scaleY(config.mapRowHeight)
-	-- "size"
-	local sorterColumn = 2
-	local tableColumn = (sorterColumn - 1) * colSpanPerSorterColumn + 1
-	local button = row[tableColumn]:setColSpan(colSpanPerSorterColumn):createButton({ scaling = false, height = buttonheight }):setText(ReadText(1001, 8026), { halign = "center", scaling = true })
-	if menu.propertySorterType == "class" then
-		button:setIcon("table_arrow_inv_down", { width = buttonheight, height = buttonheight, x = button:getColSpanWidth() - buttonheight })
-	elseif menu.propertySorterType == "classinverse" then
-		button:setIcon("table_arrow_inv_up", { width = buttonheight, height = buttonheight, x = button:getColSpanWidth() - buttonheight })
-	end
-	row[tableColumn].handlers.onClick = function () return menu.buttonPropertySorter("class") end
-	-- "name"
-	sorterColumn = 3
-	tableColumn = (sorterColumn - 1) * colSpanPerSorterColumn + 1
-	local button = row[tableColumn]:setColSpan(colSpanPerSorterColumn):createButton({ scaling = false, height = buttonheight }):setText(ReadText(1001, 2809), { halign = "center", scaling = true })
-	if menu.propertySorterType == "name" then
-		button:setIcon("table_arrow_inv_down", { width = buttonheight, height = buttonheight, x = button:getColSpanWidth() - buttonheight })
-	elseif menu.propertySorterType == "nameinverse" then
-		button:setIcon("table_arrow_inv_up", { width = buttonheight, height = buttonheight, x = button:getColSpanWidth() - buttonheight })
-	end
-	row[tableColumn].handlers.onClick = function () return menu.buttonPropertySorter("name") end
-	-- "hull"
-	sorterColumn = 4
-	tableColumn = (sorterColumn - 1) * colSpanPerSorterColumn + 1
-	local button = row[tableColumn]:setColSpan(colSpanPerSorterColumn):createButton({ scaling = false, height = buttonheight }):setText(ReadText(1001, 1), { halign = "center", scaling = true })
-	if menu.propertySorterType == "hull" then
-		button:setIcon("table_arrow_inv_down", { width = buttonheight, height = buttonheight, x = button:getColSpanWidth() - buttonheight })
-	elseif menu.propertySorterType == "hullinverse" then
-		button:setIcon("table_arrow_inv_up", { width = buttonheight, height = buttonheight, x = button:getColSpanWidth() - buttonheight })
-	end
-	row[tableColumn].handlers.onClick = function () return menu.buttonPropertySorter("hull") end
 	-- kuertee end: re-written product categories and sorter table
 
 	tabtable:setSelectedRow(menu.selectedRows.propertytabs or menu.selectedRows.infotable2 or 0)
@@ -1670,8 +1676,14 @@ function newFuncs.createPropertyRow(instance, ftable, component, iteration, comm
 
 	return numdisplayed
 end
+-- kuertee start: show mission progress
+newFuncs.missionProgress = {}
+-- kuertee end: show mission progress
 function newFuncs.createMissionMode(frame)
 	local menu = mapMenu
+	-- kuertee start: show mission progress
+	newFuncs.missionProgress = {}
+	-- kuertee end: show mission progress
 
 	menu.setrow = 3
 	menu.missionDoNotUpdate = true
@@ -1846,6 +1858,20 @@ function newFuncs.createMissionMode(frame)
 		end
 	elseif menu.infoTableMode == "mission" then
 		local found = false
+
+		-- kuertee start: callback
+		if callbacks ["createMissionMode_replaceMissionModeCurrent"] then
+			local oldMissionModeCurrent = menu.missionModeCurrent
+			for _, callback in ipairs (callbacks ["createMissionMode_replaceMissionModeCurrent"]) do
+				menu.missionModeCurrent = callback (menu.missionModeCurrent)
+				if menu.missionModeCurrent ~= oldMissionModeCurrent then
+					-- break immediately if changed
+					break
+				end
+			end
+		end
+		-- kuertee end: callback
+
 		if menu.missionMode == "plot" then
 			-- important
 			local row = ftable:addRow(nil, { bgColor = Helper.defaultTitleBackgroundColor })
@@ -2035,6 +2061,57 @@ function newFuncs.createMissionMode(frame)
 	menu.setrow = nil
 	menu.settoprow = nil
 	menu.setcol = nil
+end
+function newFuncs.getMissionInfoHelper(mission)
+	local menu = mapMenu
+
+	local missionID, name, description, difficulty, threadtype, maintype, subtype, subtypename, faction, reward, rewardtext, _, _, _, _, _, missiontime, _, abortable, disableguidance, associatedcomponent, upkeepalertlevel, hasobjective, threadmissionid = GetMissionDetails(mission)
+	local missionid64 = ConvertIDTo64Bit(missionID)
+	local missionGroup = C.GetMissionGroupDetails(missionid64)
+	local groupID, groupName = ffi.string(missionGroup.id), ffi.string(missionGroup.name)
+	local onlinechapter = ffi.string(C.GetMissionOnlineChapter(missionid64))
+	local objectiveText, timeout, progressname, curProgress, maxProgress = GetMissionObjective(mission)
+	local subMissions, buf = {}, {}
+	local subactive = false
+	Helper.ffiVLA(buf, "MissionID", C.GetNumMissionThreadSubMissions, C.GetMissionThreadSubMissions, missionid64)
+	for _, submission in ipairs(buf) do
+		local submissionEntry = menu.getMissionIDInfoHelper(submission)
+		table.insert(subMissions, submissionEntry)
+		if submissionEntry.active then
+			subactive = true
+		end
+	end
+	local entry = {
+		["active"] = (mission == GetActiveMission()) or subactive,
+		["name"] = name,
+		["description"] = description,
+		["difficulty"] = difficulty,
+		["missionGroup"] = { id = groupID, name = groupName },
+		["threadtype"] = threadtype,
+		["maintype"] = maintype,
+		["type"] = subtype,
+		["faction"] = faction,
+		["reward"] = reward,
+		["rewardtext"] = rewardtext,
+		["duration"] = (timeout and timeout ~= -1) and timeout or (missiontime or -1),		-- timeout can be nil, if mission has no objective
+		["ID"] = tostring(missionid64),
+		["associatedcomponent"] = ConvertIDTo64Bit(associatedcomponent),
+		["abortable"] = abortable,
+		["threadMissionID"] = ConvertIDTo64Bit(threadmissionid) or 0,
+		["subMissions"] = subMissions,
+		["onlinechapter"] = onlinechapter,
+	}
+
+	-- kuertee start: show mission progress
+	newFuncs.missionProgress [tostring (missionid64)] = {
+		["objectiveText"] = objectiveText,
+		["progressname"] = progressname,
+		["curProgress"] = curProgress,
+		["maxProgress"] = maxProgress,
+	}
+	-- kuertee end: show mission progress
+
+	return entry
 end
 function newFuncs.createSideBar(firsttime, frame, width, height, offsetx, offsety)
 	local menu = mapMenu
@@ -2304,6 +2381,31 @@ function newFuncs.createMissionContext(frame)
 				end
 				local row = objectivetable:addRow(true, { bgColor = Helper.color.transparent })
 				row[1]:setColSpan(briefingobjective.encyclopedia and 1 or 2):createText(briefingobjective.step .. ReadText(1001, 120) .. " " .. briefingobjective.text .. infotext, textProperties)
+
+				-- kuertee start: show mission progress
+				if menu.infoTableMode == "mission" and linenum == menu.contextMenuData.activebriefingstep then
+					-- DebugError ("missionid64: " .. tostring (menu.contextMenuData.missionid))
+					-- local row = objectivetable:addRow(true, { bgColor = Helper.color.transparent })
+					-- row[1]:setColSpan(2):createText(tostring (newFuncs.missionProgress [tostring (menu.contextMenuData.missionid)].objectiveText))
+					local progressText = newFuncs.missionProgress [tostring (menu.contextMenuData.missionid)].progressname
+					local curProgress = newFuncs.missionProgress [tostring (menu.contextMenuData.missionid)].curProgress
+					local maxProgress = newFuncs.missionProgress [tostring (menu.contextMenuData.missionid)].maxProgress
+					if curProgress > 0 or  maxProgress > 0 then
+						if not string.find (briefingobjective.text, tostring (curProgress) .. " / ") then
+							local row = objectivetable:addRow(true, { bgColor = Helper.color.transparent })
+							local progressLine
+							if progressText ~= nil then
+								progressLine = "    " .. newFuncs.missionProgress [tostring (menu.contextMenuData.missionid)].progressname .. ReadText(1001, 120) .. " "
+							else
+								progressLine = "    " .. ReadText (1001, 9513) .. ReadText(1001, 120) .. " "
+							end
+							progressLine = progressLine .. tostring (newFuncs.missionProgress [tostring (menu.contextMenuData.missionid)].curProgress) .. " / " .. tostring (newFuncs.missionProgress [tostring (menu.contextMenuData.missionid)].maxProgress)
+							row [1]:setColSpan (2):createText (progressLine, textProperties)
+						end
+					end
+				end
+				-- kuertee end: show mission progress
+
 				if briefingobjective.encyclopedia then
 					row[2]:createButton({ active = briefingobjective.encyclopedia.known, height = Helper.standardTextHeight, mouseOverText = briefingobjective.encyclopedia.known and ReadText(1001, 2416) or ReadText(1026, 3259) }):setIcon("mm_externallink")
 					row[2].handlers.onClick = function () Helper.closeMenuAndOpenNewMenu(menu, "EncyclopediaMenu", { 0, 0, briefingobjective.encyclopedia.mode, briefingobjective.encyclopedia.library, briefingobjective.encyclopedia.id, briefingobjective.encyclopedia.object }); menu.cleanup() end

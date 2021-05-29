@@ -5,8 +5,9 @@ by kuertee
 
 Updates:
 ========
-v2.0.6, 16 Apr 2021:
--New supported mods: Allectus' Subsystem Targeting, Runkn's Reactive Docking. Compatibility code by Forleyor.
+v2.1.1, 29 May 2021:
+-New feature: show objective progress for current objective in mission description.
+-New callback: createMissionMode_replaceMissionModeCurrent for mission switching between original mission and Waypoint Field mission in WFFD mod.
 
 Features:
 =========
@@ -63,13 +64,13 @@ But here is documentation on NEW features (not connected to mod-specific changes
 
 Map Menu: Mission Guidance tab
 ==============================
-Any missions with the "missiontype.guidance" will now be listed in the Mission Guidance tab.  In the base game, the Mission Guidance tab is to only the Guidance created manually with the right-click mouse button. 
+Any mission with the "missiontype.guidance" will now be listed in the Mission Guidance tab.  In the base game, the Mission Guidance tab lists only the Guidance created manually with the right-click mouse button. 
 
 The "Set to inactive" and "Set to active" buttons are available on missions listed in the Mission Guidance tab. The base game makes these buttons unavailable for Guidance Missions.
 
 Map Menu: selectComponent mode
 ==============================
-The selectComponent mode is now available to use from directly within the Map Menu. In the base game, the use of this mode is limited to conversations triggered from the Mission Director (md). E.g. &lt;open_conversation_menu menu="MapMenu" param="[0, 0, true, player.entity, null, 'selectComponent', ['kTFTR_set_destination', [class.ship_s, class.ship_m, class.ship_l, class.ship_xl, class.station]]]" /&gt;. And it triggered an "event_conversation_next_section" with the menu.modeparam[1] as the section of the conversation.
+The selectComponent mode is now available to use from directly within the Map Menu. In the base game, the use of this mode is limited to conversations triggered from the Mission Director (md). E.g. &lt;open_conversation_menu menu="MapMenu" param="[0, 0, true, player.entity, null, 'selectComponent', ['kTFTR_set_destination', [class.ship_s, class.ship_m, class.ship_l, class.ship_xl, class.station]]]" /&gt;. Which then triggers an "event_conversation_next_section" with the menu.modeparam[1] as the section of the conversation. In this version, this mode can be called directly from the Map Menu.
 
 To use:
 1. Call "mapMenu.setSelectComponentMode (returnsection, classlist, category, playerowned, customheading, screenname)"
@@ -93,6 +94,12 @@ Uninstall:
 
 History
 =======
+v2.1.0, 14 May 2021:
+-New callbacks: UserQuestionMenu.createInfoFrame_custom_frame_properties, UserQuestionMenu.createTable_new_custom_table: allows the creation of new menus that look like they are not connected to other menus. See my other mod, "Modification parts trader".
+
+v2.0.6, 16 Apr 2021:
+-New supported mods: Allectus' Subsystem Targeting, Runkn's Reactive Docking. Compatibility code by Forleyor.
+
 v2.0.5, 29 Mar 2021:
 -Bug-fix: Too many columns bug in my changes to the Property Owned Category tabs.
 
