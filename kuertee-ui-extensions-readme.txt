@@ -5,9 +5,15 @@ by kuertee
 
 Updates:
 ========
+For v4.1beta1 of the game:
 v2.2.0, 15 Jun 2021:
 -New feature: compatibility with 4.1beta1 of the game.
 -New feature: playerinfo menu new callback: onRowChanged.
+
+For v4.0 of the game:
+v2.1.1, 29 May 2021:
+-New feature: show objective progress for current objective in mission description.
+-New callback: createMissionMode_replaceMissionModeCurrent for mission switching between original mission and Waypoint Field mission in WFFD mod.
 
 Features:
 =========
@@ -96,10 +102,6 @@ Uninstall:
 
 History
 =======
-v2.1.1, 29 May 2021:
--New feature: show objective progress for current objective in mission description.
--New callback: createMissionMode_replaceMissionModeCurrent for mission switching between original mission and Waypoint Field mission in WFFD mod.
-
 v2.1.0, 14 May 2021:
 -New callbacks: UserQuestionMenu.createInfoFrame_custom_frame_properties, UserQuestionMenu.createTable_new_custom_table: allows the creation of new menus that look like they are not connected to other menus. See my other mod, "Modification parts trader".
 
