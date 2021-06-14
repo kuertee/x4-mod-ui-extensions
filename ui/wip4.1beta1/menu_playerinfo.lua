@@ -1,52 +1,3 @@
-local ffi = require ("ffi")
-local C = ffi.C
-local Lib = require ("extensions.sn_mod_support_apis.lua_interface").Library
-local playerInfoMenu
-local oldFuncs = {}
-local newFuncs = {}
-local callbacks = {}
-local isInited
-local function init ()
-	DebugError ("kuertee_menu_playerinfo.init")
-	if not isInited then
-		isInited = true
-		playerInfoMenu = Lib.Get_Egosoft_Menu ("PlayerInfoMenu")
-		playerInfoMenu.registerCallback = newFuncs.registerCallback
-		-- map menu rewrites:
-		oldFuncs.buttonTogglePlayerInfo = playerInfoMenu.buttonTogglePlayerInfo
-		playerInfoMenu.buttonTogglePlayerInfo = newFuncs.buttonTogglePlayerInfo
-		oldFuncs.createPlayerInfo = playerInfoMenu.createPlayerInfo
-		playerInfoMenu.createPlayerInfo = newFuncs.createPlayerInfo
-		oldFuncs.createInfoFrame = playerInfoMenu.createInfoFrame
-		playerInfoMenu.createInfoFrame = newFuncs.createInfoFrame
-		oldFuncs.createFactions = playerInfoMenu.createFactions
-		playerInfoMenu.createFactions = newFuncs.createFactions
-		oldFuncs.onRowChanged = playerInfoMenu.onRowChanged
-		playerInfoMenu.onRowChanged = newFuncs.onRowChanged
-	end
-end
-function newFuncs.registerCallback (callbackName, callbackFunction)
-	-- note 1: format is generally [function name]_[action]. e.g.: in kuertee_menu_transporter, "display_on_set_room_active" overrides the room's active property with the return of the callback.
-	-- note 2: events have the word "_on_" followed by a PRESENT TENSE verb. e.g.: in kuertee_menu_transporter, "display_on_set_buttontable" is called after all of the rows of buttontable are set.
-	-- note 3: new callbacks can be added or existing callbacks can be edited. but commit your additions/changes to the mod's GIT repository.
-	-- note 4: search for the callback names to see where they are executed.
-	-- note 5: if a callback requires a return value, return it in an object var. e.g. "display_on_set_room_active" requires a return of {active = true | false}.
-	-- available callbacks:
-	-- 
-	-- buttonTogglePlayerInfo_on_start (mode, config)
-	-- createPlayerInfo_on_start (config)
-	-- createInfoFrame_on_start ()
-	-- createInfoFrame_on_info_frame_mode (infoFrame, tableProperties)
-	-- createFactions_on_before_render_licences (frame, tableProperties, relation.id, infotable)
-	-- createAccounts_add_new_table (frame, tableProperties, tabOrderOffset)
-	-- createAccounts_add_new_table (frame, tableProperties, tabOrderOffset)
-	-- onRowChanged (row, rowdata, uitable, modified, input)
-	if callbacks [callbackName] == nil then
-		callbacks [callbackName] = {}
-	end
-	table.insert (callbacks [callbackName], callbackFunction)
-end
--- only have config stuff here that are used in this file
 local config = {
 	mainLayer = 5,
 	infoLayer = 4,
@@ -66,7 +17,7 @@ local config = {
 		{ name = ReadText(1001, 7708),		icon = "pi_accountmanagement",		mode = "accounts",			active = true, helpOverlayID = "playerinfo_sidebar_accounts",		helpOverlayText = ReadText(1028, 7713) },
 		{ name = ReadText(1001, 11034),		icon = "pi_personnelmanagement",	mode = "personnel",			active = true, helpOverlayID = "playerinfo_sidebar_personnel",		helpOverlayText = ReadText(1028, 7718) },
 		{ spacing = true },
-		{ name = ReadText(1001, 7730),		icon = function () return playerInfoMenu.messageSidebarIcon() end,		mode = "messages",			active = true, helpOverlayID = "playerinfo_sidebar_messages",		helpOverlayText = ReadText(1028, 7712),		iconcolor = function () return playerInfoMenu.messageSidebarIconColor() end },
+		{ name = ReadText(1001, 7730),		icon = function () return menu.messageSidebarIcon() end,		mode = "messages",			active = true, helpOverlayID = "playerinfo_sidebar_messages",		helpOverlayText = ReadText(1028, 7712),		iconcolor = function () return menu.messageSidebarIconColor() end },
 		{ name = ReadText(1001, 7702),		icon = "pi_transactionlog",			mode = "transactionlog",	active = true, helpOverlayID = "playerinfo_sidebar_transactions",	helpOverlayText = ReadText(1028, 7719) },
 		{ name = ReadText(1001, 5700),		icon = "pi_logbook",				mode = "logbook",			active = true, helpOverlayID = "playerinfo_sidebar_logbook",		helpOverlayText = ReadText(1028, 7711) },
 	},
@@ -74,18 +25,7 @@ local config = {
 		{ name = ReadText(1001, 7741),	icon = "pi_message_read_high",	icon_unread = "pi_message_unread_high",	mode = "highprio" },
 		{ name = ReadText(1001, 7742),	icon = "pi_message_read_low",	icon_unread = "pi_message_unread_low",	mode = "lowprio" },
 	},
-}
-function newFuncs.buttonTogglePlayerInfo(mode)
-	local menu = playerInfoMenu
-
-	-- kuertee start: callback
-	if callbacks ["buttonTogglePlayerInfo_on_start"] then
-		for _, callback in ipairs (callbacks ["buttonTogglePlayerInfo_on_start"]) do
-			callback (mode, config)
-		end
-	end
-	-- kuertee end: callback
-
+function menu.buttonTogglePlayerInfo(mode)
 	local oldidx, newidx
 	for i, entry in ipairs(config.leftBar) do
 		if entry.mode then
@@ -142,17 +82,7 @@ function newFuncs.buttonTogglePlayerInfo(mode)
 
 	menu.refreshInfoFrame(1, 1)
 end
-function newFuncs.createPlayerInfo(frame, width, height, offsetx, offsety)
-	local menu = playerInfoMenu
-
-	-- kuertee start: callback
-	if callbacks ["createPlayerInfo_on_start"] then
-		for _, callback in ipairs (callbacks ["createPlayerInfo_on_start"]) do
-			callback (config)
-		end
-	end
-	-- kuertee end: callback
-
+function menu.createPlayerInfo(frame, width, height, offsetx, offsety)
 	local ftable = frame:addTable(2, { tabOrder = 3, scaling = false, borderEnabled = false, x = offsetx, y = offsety, reserveScrollBar = false })
 	ftable:setColWidth(1, menu.sideBarWidth, false)
 	ftable:setColWidth(2, width - menu.sideBarWidth - Helper.borderSize, false)
@@ -178,17 +108,7 @@ function newFuncs.createPlayerInfo(frame, width, height, offsetx, offsety)
 		end
 	end
 end
-function newFuncs.createInfoFrame()
-	local menu = playerInfoMenu
-
-	-- kuertee start: callback
-	if callbacks ["createInfoFrame_on_start"] then
-		for _, callback in ipairs (callbacks ["createInfoFrame_on_start"]) do
-			callback (menu.infoFrame, tableProperties)
-		end
-	end
-	-- kuertee end: callback
-
+function menu.createInfoFrame()
 	-- remove old data
 	Helper.clearDataForRefresh(menu, config.infoLayer)
 
@@ -249,33 +169,16 @@ function newFuncs.createInfoFrame()
 		menu.createMessages(menu.infoFrame, tableProperties)
 	elseif menu.mode == "personnel" then
 		menu.createPersonnelInfo(menu.infoFrame, tableProperties)
-
-	else
-		-- kuertee start: callback
-		if callbacks ["createInfoFrame_on_info_frame_mode"] then
-			for _, callback in ipairs (callbacks ["createInfoFrame_on_info_frame_mode"]) do
-				callback (menu.infoFrame, tableProperties)
-			end
-		end
-		-- kuertee end: callback
 	end
 
 	menu.infoFrame:display()
 end
-function newFuncs.createFactions(frame, tableProperties)
-	local menu = playerInfoMenu
-
+function menu.createFactions(frame, tableProperties)
 	local narrowtablewidth = Helper.playerInfoConfig.width - menu.sideBarWidth - Helper.borderSize
 	local iconheight = math.ceil(config.rowHeight * 1.5)
 	local iconoffset = 2
 
 	local infotable = frame:addTable(3, { tabOrder = 1, borderEnabled = true, width = narrowtablewidth, x = tableProperties.x, y = tableProperties.y })
-
-	-- kuertee start: callback
-	infotable:setDefaultCellProperties("text", {minRowHeight = config.rowHeight, fontsize = Helper.standardFontSize})
-	infotable:setDefaultCellProperties("button", {height = config.rowHeight})
-	-- kuertee end: callback
-
 	if menu.setdefaulttable then
 		infotable.properties.defaultInteractiveObject = true
 		menu.setdefaulttable = nil
@@ -323,15 +226,6 @@ function newFuncs.createFactions(frame, tableProperties)
 			row[3]:createText(
 				function () return string.format("%+d", GetUIRelation(relation.id)) end,
 				{ font = Helper.standardFontMono, color = function () return menu.relationColor(relation.id) end, fontsize = 14, halign = "right", y = 2 * iconoffset })
-
-			-- kuertee start: callback
-			if callbacks ["createFactions_on_before_render_licences"] then
-				for _, callback in ipairs (callbacks ["createFactions_on_before_render_licences"]) do
-					callback (frame, tableProperties, relation.id, infotable)
-				end
-			end
-			-- kuertee end: callback
-
 		end
 	end
 	infotable:setTopRow(menu.settoprow)
@@ -410,9 +304,7 @@ function newFuncs.createFactions(frame, tableProperties)
 		row[3].handlers.onClick = function () return menu.buttonWarDeclarationConfirm(relation.id) end
 	end
 end
-function newFuncs.onRowChanged(row, rowdata, uitable, modified, input, source)
-	local menu = playerInfoMenu
-
+function menu.onRowChanged(row, rowdata, uitable, modified, input)
 	if uitable == menu.infoTable then
 		if (menu.mode == "inventory") or (menu.mode == "spacesuit") then
 			menu.onInventoryRowChange(row, rowdata, input, menu.mode)
@@ -651,13 +543,4 @@ function newFuncs.onRowChanged(row, rowdata, uitable, modified, input, source)
 			end
 		end
 	end
-
-	-- kuertee start: callback
-	if callbacks ["onRowChanged"] then
-		for _, callback in ipairs (callbacks ["onRowChanged"]) do
-			callback (row, rowdata, uitable, modified, input, source)
-		end
-	end
-	-- kuertee end: callback
 end
-init ()
