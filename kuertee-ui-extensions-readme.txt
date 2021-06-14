@@ -5,17 +5,19 @@ by kuertee
 
 Updates:
 ========
-v2.1.1, 29 May 2021:
--New feature: show objective progress for current objective in mission description.
--New callback: createMissionMode_replaceMissionModeCurrent for mission switching between original mission and Waypoint Field mission in WFFD mod.
+v2.2.0, 15 Jun 2021:
+-New feature: compatibility with 4.1beta1 of the game.
+-New feature: playerinfo menu new callback: onRowChanged.
 
 Features:
 =========
 Modded Lua files with callbacks that allow more than one mod to change the same UI element.
 
-Functionality that adds HUD elements to the Top Level Menu.
+Functionality that allows new HUD elements to the Top Level Menu.
 
 Allows other mods to create guidance missions (i.e. missiontype.guidance) that will be listed in the Guidance Missions tab. Also enables the Set Active and Set Inactive buttons in missions listed in the Guidance Missions tab. Examples of these are my mods: Loot mining, Ship scanner, Signal leak hunter - increasing range, Station scanner, and Waypoint fields for deployments.
+
+Progress data, if it exists, of missions are shown in the mission's objective list. I.e. players do not need to activate the mission to view it's progress.
 
 Mod effects:
 ============
@@ -94,6 +96,10 @@ Uninstall:
 
 History
 =======
+v2.1.1, 29 May 2021:
+-New feature: show objective progress for current objective in mission description.
+-New callback: createMissionMode_replaceMissionModeCurrent for mission switching between original mission and Waypoint Field mission in WFFD mod.
+
 v2.1.0, 14 May 2021:
 -New callbacks: UserQuestionMenu.createInfoFrame_custom_frame_properties, UserQuestionMenu.createTable_new_custom_table: allows the creation of new menus that look like they are not connected to other menus. See my other mod, "Modification parts trader".
 
