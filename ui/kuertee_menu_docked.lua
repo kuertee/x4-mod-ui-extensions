@@ -81,9 +81,9 @@ function newFuncs.display()
 	local table_topleft, table_header, table_button, row
 
 	local isdocked = (menu.currentplayership ~= 0) and GetComponentData(menu.currentplayership, "isdocked")
-	local ownericon, owner, shiptrader, isdock, canbuildships, isplayerowned, issupplyship, canhavetradeoffers, aipilot = GetComponentData(menu.currentcontainer, "ownericon", "owner", "shiptrader", "isdock", "canbuildships", "isplayerowned", "issupplyship", "canhavetradeoffers", "aipilot")
+	local ownericon, owner, shiptrader, isdock, canbuildships, isplayerowned, issupplyship, canhavetradeoffers = GetComponentData(menu.currentcontainer, "ownericon", "owner", "shiptrader", "isdock", "canbuildships", "isplayerowned", "issupplyship", "canhavetradeoffers")
 	local cantrade = canhavetradeoffers and isdock
-	local canwareexchange = isplayerowned and ((not C.IsComponentClass(menu.currentcontainer, "ship")) or aipilot) 
+	local canwareexchange = cantrade and isplayerowned
 	--NB: equipment docks currently do not have ship traders
 	local dockedplayerships = {}
 	Helper.ffiVLA(dockedplayerships, "UniverseID", C.GetNumDockedShips, C.GetDockedShips, menu.currentcontainer, "player")
@@ -689,17 +689,9 @@ function newFuncs.display()
 	else
 		local row = table_header:addRow("buttonRow1", { bgColor = Helper.color.transparent, fixed = true })
 		local active = canwareexchange
-		local mouseovertext
-		if (not active) and isplayerowned then
-			if C.IsComponentClass(menu.currentcontainer, "ship") then
-				mouseovertext = ReadText(1026, 7830)
-			end
-		end
-		row[1]:createButton(active and { helpOverlayID = "docked_transferwares", helpOverlayText = " ", helpOverlayHighlightOnly = true } or config.inactiveButtonProperties):setText(ReadText(1001, 8618), active and config.activeButtonTextProperties or config.inactiveButtonTextProperties)	-- "Transfer Wares"
+		row[1]:createButton(active and {helpOverlayID = "docked_transferwares", helpOverlayText = " ", helpOverlayHighlightOnly = true } or config.inactiveButtonProperties):setText(ReadText(1001, 8618), active and config.activeButtonTextProperties or config.inactiveButtonTextProperties)	-- "Transfer Wares"
 		if active then
 			row[1].handlers.onClick = function() return menu.buttonTrade(true) end
-		else
-			row[1].properties.mouseOverText = mouseovertext
 		end
 		local active = menu.currentplayership ~= 0
 		row[2]:createButton(active and { mouseOverText = GetLocalizedKeyName("action", 277), helpOverlayID = "docked_getup", helpOverlayText = " ", helpOverlayHighlightOnly = true } or config.inactiveButtonProperties):setText(ReadText(1002, 20014), active and config.activeButtonTextProperties or config.inactiveButtonTextProperties)	-- "Get Up"

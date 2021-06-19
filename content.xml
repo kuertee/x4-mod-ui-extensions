@@ -2,8 +2,8 @@
 <content id="kuerteeUIExtensionsAndHUD"
 name="kuertee UI Extensions and HUD"
 author="kuertee"
-version="220"
-date="2021-06-15"
+version="221"
+date="2021-06-19"
 save="false"
 enabled="1">
 
@@ -16,12 +16,10 @@ by kuertee&#13;&#10;
 Features:&#13;&#10;
 Modded Lua files with callbacks that allow more than one mod to change the same UI element.&#13;&#10;
 &#13;&#10;
-Functionality that allows new HUD elements to the Top Level Menu.&#13;&#10;
+Functionality that adds HUD elements to the Top Level Menu.&#13;&#10;
 &#13;&#10;
 Allows other mods to create guidance missions (i.e. missiontype.guidance) that will be listed in the Guidance Missions tab.
-Also enables the Set Active and Set Inactive buttons in missions listed in the Guidance Missions tab.&#13;&#10;
-&#13;&#10;
-Progress data, if it exists, of missions are shown in the mission's objective list.&#13;&#10;"
+Also enables the Set Active and Set Inactive buttons in missions listed in the Guidance Missions tab.&#13;&#10;"
 />
 
 <dependency id="ws_2042901274" optional="false" name="SirNukes Mod Support APIs"></dependency>

@@ -181,12 +181,6 @@ local config = {
 					info = ReadText(1001, 3282),
 					param = "liquid",
 				},
-				[4] = {
-					id = "trade_storage_condensate",
-					name = ReadText(20205, 1100),
-					info = ReadText(1001, 11614),
-					param = "condensate",
-				},
 			},
 			[3] = {
 				caption = ReadText(1001, 2808),
@@ -314,7 +308,7 @@ local config = {
 			[3] = {
 				caption = ReadText(1001, 2664),
 				type = "checkbox",
-				callback = function (...) return mapMenu.filterOtherMisc(...) end,
+				callback = function (...) return mapMenu.filterMiningResources(...) end,
 				[1] = {
 					id = "other_misc_ecliptic",
 					name = ReadText(1001, 3297),
@@ -494,21 +488,19 @@ function newFuncs.buttonToggleObjectList(objectlistparam)
 			menu.closeContextMenu()
 			menu.missionModeContext = nil
 		end
-	elseif (menu.infoTableMode == "ventureoperation") or (menu.infoTableMode == "ventureinventory") then
-		Helper.callExtensionFunction("multiverse", "onCloseMenuTab", menu, menu.infoTableMode, objectlistparam)
+	elseif menu.infoTableMode == "ventureoperation" then
+		menu.currentOperationSelection = nil
+		menu.closeContextMenu()
 	end
 	AddUITriggeredEvent(menu.name, objectlistparam, menu.infoTableMode == objectlistparam and "off" or "on")
 	if menu.infoTableMode == objectlistparam then
 		menu.settoprow = GetTopRow(menu.infoTable)
-		menu.topRows.infotableleft = menu.settoprow
 		PlaySound("ui_negative_back")
 		menu.infoTableMode = nil
 		if oldidx then
 			SelectRow(menu.sideBar, oldidx)
 		end
 	else
-		menu.settoprow = nil
-		menu.topRows.infotableleft = nil
 		menu.infoTable = nil
 		menu.infoTable2 = nil
 		PlaySound("ui_positive_select")
@@ -546,8 +538,6 @@ function newFuncs.buttonToggleObjectList(objectlistparam)
 	end
 	menu.setrow = nil
 	menu.setcol = nil
-	menu.selectedRows.infotableleft = nil
-	menu.selectedCols.infotableleft = nil
 	menu.refreshMainFrame = true
 	menu.createInfoFrame()
 end
@@ -633,7 +623,6 @@ function newFuncs.buttonSelectHandler()
 		if menu.modeparam[1] and menu.checkForSelectComponent(menu.contextMenuData.component) then
 		-- kuertee end: callback
 
-			C.ClearMapObjectFilter(menu.holomap)
 			Helper.closeMenuForSection(menu, menu.modeparam[1], { ConvertStringToLuaID(tostring(menu.contextMenuData.component)) })
 			menu.cleanup()
 		end
@@ -723,18 +712,24 @@ function newFuncs.createInfoFrame()
 		if menu.seasonMode.left == "currentseason" then
 			menu.createVentureSeason(menu.infoFrame, "left")
 		elseif menu.seasonMode.left == "coalition" then
-			Helper.callExtensionFunction("multiverse", "createVentureCoalition", menu, menu.infoFrame, "left")
-		elseif menu.seasonMode.left == "ventureteam" then
-			Helper.callExtensionFunction("multiverse", "createVentureTeam", menu, menu.infoFrame, "left")
+			menu.createVentureCoalition(menu.infoFrame, "left")
 		elseif menu.seasonMode.left == "pastseasons" then
-			Helper.callExtensionFunction("multiverse", "createVenturePastSeasons", menu, menu.infoFrame, "left")
+			menu.createVenturePastSeasons(menu.infoFrame, "left")
 		end
 	elseif menu.infoTableMode == "ventureoperation" then
-		Helper.callExtensionFunction("multiverse", "createVentureOperation", menu, menu.infoFrame, "left")
+		menu.createVentureOperation(menu.infoFrame, "left")
+	elseif menu.infoTableMode == "ventureoutcomes" then
+		menu.createVentureOutcomes(menu.infoFrame, "left")
 	elseif menu.infoTableMode == "venturelogbook" then
-		Helper.callExtensionFunction("multiverse", "createVentureLogbook", menu, menu.infoFrame, "left")
+		menu.createVentureLogbook(menu.infoFrame, "left")
+	elseif menu.infoTableMode == "ventureteam" then
+		menu.createVentureTeam(menu.infoFrame, "left")
 	elseif menu.infoTableMode == "ventureinventory" then
-		Helper.callExtensionFunction("multiverse", "createVentureInventory", menu, menu.infoFrame, "left")
+		if menu.ventureInventoryMode.left == "playerinventory" then
+			menu.createVenturePlayerInventory(menu.infoFrame, "left")
+		elseif menu.ventureInventoryMode.left == "teaminventory" then
+			menu.createVentureTeamInventory(menu.infoFrame, "left")
+		end
 	elseif menu.infoTableMode == "cheats" then
 		menu.createCheats(menu.infoFrame)
 	else
@@ -899,7 +894,11 @@ function newFuncs.createPropertyOwned(frame, instance)
 
 	local onlineitems = {}
 	if menu.propertyMode == "inventoryships" then
-		onlineitems = OnlineGetUserItems()
+		onlineitems = OnlineGetUserItems(false)
+		local persistentonlineitems = OnlineGetUserItems(true)
+		for k, v in pairs(persistentonlineitems) do
+			onlineitems[k] = v
+		end
 	end
 
 	local playerobjects = {}
@@ -1076,7 +1075,7 @@ function newFuncs.createPropertyOwned(frame, instance)
 	local maxvisibleheight = ftable:getFullHeight()
 	if menu.mode ~= "selectCV" then
 		if (menu.propertyMode == "stations") or (menu.propertyMode == "propertyall") then
-			numdisplayed = menu.createPropertySection(instance, "ownedstations", ftable, ReadText(1001, 8379), infoTableData.stations, "-- " .. ReadText(1001, 33) .. " --", menu.mode ~= "hire", numdisplayed, nil, menu.propertySorterType)
+			numdisplayed = menu.createPropertySection(instance, "ownedstations", ftable, ReadText(1001, 8379), infoTableData.stations, "-- " .. ReadText(1001, 33) .. " --", true, numdisplayed, nil, menu.propertySorterType)
 		end
 	end
 	if (menu.propertyMode == "fleets") or (menu.propertyMode == "propertyall") then
@@ -1167,9 +1166,7 @@ function newFuncs.createPropertyOwned(frame, instance)
 			end
 
 			local active = true
-			if menu.mode == "hire" then
-				active = entry.category ~= "deployables"
-			elseif menu.mode == "selectCV" then
+			if menu.mode == "selectCV" then
 				active = entry.category == "propertyall"
 			elseif (menu.mode == "selectComponent") and (menu.modeparam[3] == "deployables") then
 				active = entry.category == "deployables"
@@ -1321,12 +1318,6 @@ function newFuncs.createPropertyRow(instance, ftable, component, iteration, comm
 	-- kuertee end: callback
 
 	if (#menu.searchtext == 0) or Helper.textArrayHelper(menu.searchtext, function (numtexts, texts) return C.FilterComponentByText(convertedComponent, numtexts, texts, true) end, "text") then
-		if (menu.mode == "orderparam_object") and (not menu.checkForOrderParamObject(convertedComponent)) then
-			return numdisplayed
-		elseif (menu.mode == "selectComponent") and (not menu.checkForSelectComponent(convertedComponent)) then
-			return numdisplayed
-		end
-
 		numdisplayed = numdisplayed + 1
 
 		if (not menu.isPropertyExtended(tostring(component))) and (menu.isCommander(component) or menu.isConstructionContext(convertedComponent)) then
@@ -1983,22 +1974,6 @@ function newFuncs.createMissionMode(frame)
 				end
 				menu.addMissionRow(ftable, entry)
 			end
-			if not found then
-				local row = ftable:addRow("othernone", { bgColor = Helper.color.transparent, interactive = false })
-				if menu.missionModeCurrent == "othernone" then
-					menu.setrow = row.index
-				end
-				row[1]:setColSpan(9):createText("--- " .. ReadText(1001, 3302) .. " ---", { halign = "center" })
-			end
-			found = true
-			-- online
-			if #menu.missionList["coalition"] > 0 then
-				local row = ftable:addRow(nil, { bgColor = Helper.defaultTitleBackgroundColor })
-				row[1]:setColSpan(9):createText(ReadText(1001, 11609), Helper.headerRowCenteredProperties)
-				for _, entry in ipairs(menu.missionList["coalition"]) do
-					menu.addMissionRow(ftable, entry)
-				end
-			end
 		elseif menu.missionMode == "upkeep" then
 			-- title
 			local row = ftable:addRow(false, { fixed = true, bgColor = Helper.defaultTitleBackgroundColor })
@@ -2094,8 +2069,7 @@ function newFuncs.getMissionInfoHelper(mission)
 	local missionid64 = ConvertIDTo64Bit(missionID)
 	local missionGroup = C.GetMissionGroupDetails(missionid64)
 	local groupID, groupName = ffi.string(missionGroup.id), ffi.string(missionGroup.name)
-	local onlineinfo = C.GetMissionOnlineInfo(missionid64)
-	local onlinechapter, onlineid = ffi.string(onlineinfo.chapter), ffi.string(onlineinfo.onlineid)
+	local onlinechapter = ffi.string(C.GetMissionOnlineChapter(missionid64))
 	local objectiveText, timeout, progressname, curProgress, maxProgress = GetMissionObjective(mission)
 	local subMissions, buf = {}, {}
 	local subactive = false
@@ -2126,7 +2100,6 @@ function newFuncs.getMissionInfoHelper(mission)
 		["threadMissionID"] = ConvertIDTo64Bit(threadmissionid) or 0,
 		["subMissions"] = subMissions,
 		["onlinechapter"] = onlinechapter,
-		["onlineID"] = onlineid,
 	}
 
 	-- kuertee start: show mission progress
@@ -2495,8 +2468,9 @@ function newFuncs.createMissionContext(frame)
 			active = false
 			mouseovertext = ReadText(1026, 3242)
 		elseif menu.contextMenuData.onlinechapter ~= "" then
-			if C.HasAcceptedOnlineMission() then
-				mouseovertext = "\27R" .. ReadText(1026, 11306)
+			active = not C.HasAcceptedOnlineMission()
+			if not active then
+				mouseovertext = ReadText(1026, 11305)
 			end
 		end
 		row[1]:createButton({ active = active, mouseOverText = mouseovertext, helpOverlayID = "map_acceptmission", helpOverlayText = " ", helpOverlayHighlightOnly = true }):setText(ReadText(1001, 57), { halign = "center" })
@@ -2523,7 +2497,6 @@ function newFuncs.createMissionContext(frame)
 		row[2]:createButton({  }):setText(ReadText(1001, 3326), { halign = "center" })
 		row[2].handlers.onClick = menu.buttonMissionBriefing
 		row[2].properties.uiTriggerID = "missionbriefing"
-		local row
 
 		-- kuertee start: callback
 		-- if menu.contextMenuData.type ~= "guidance" then
@@ -2536,7 +2509,7 @@ function newFuncs.createMissionContext(frame)
 					active = true
 				end
 			end
-			row = bottomtable:addRow(true, { fixed = true, bgColor = Helper.color.transparent })
+			local row = bottomtable:addRow(true, { fixed = true, bgColor = Helper.color.transparent })
 			row[1]:createButton({  }):setText(active and ReadText(1001, 3413) or ReadText(1001, 3406), { halign = "center" })
 			row[1].handlers.onClick = menu.buttonMissionActivate
 			row[1].properties.uiTriggerID = "missionactivate"
@@ -2545,16 +2518,6 @@ function newFuncs.createMissionContext(frame)
 		-- end
 		-- kuertee end: callback
 
-		-- deliver wares
-		if #menu.contextMenuData.deliveryWares > 0 then
-			if not row then
-				row = bottomtable:addRow(true, { fixed = true, bgColor = Helper.color.transparent })
-			end
-
-			row[2]:createButton({ active = menu.checkDeliverWaresCargo, mouseOverText = function () return menu.checkDeliverWaresCargo() and "" or ("\27R" .. ReadText(1026, 3406)) end }):setText(ReadText(1001, 3423), { halign = "center" })
-			row[2].handlers.onClick = menu.buttonMissionDeliverWares
-			row[2].properties.uiTriggerID = "missiondeliverwares"
-		end
 	end
 	local neededheight = bottomtable.properties.y + bottomtable:getFullHeight() + Helper.frameBorder
 	if frame.properties.y + neededheight > Helper.viewHeight then
@@ -2722,9 +2685,60 @@ function newFuncs.onRowChanged(row, rowdata, uitable, modified, input, source)
 				end
 			end
 		end
+	elseif menu.infoTableMode == "ventureoutcomes" then
+		if uitable == menu.infoTable then
+			if type(rowdata) == "table" then
+				if (rowdata[1] == "outcome") and ((not menu.infoTablePersistentData.left.selectedOutcome) or (rowdata[2].id ~= menu.infoTablePersistentData.left.selectedOutcome.id)) then
+					menu.infoTablePersistentData.left.selectedOutcome = rowdata[2]
+					menu.infoTablePersistentData.left.selectedVenture = nil
+					menu.refreshIF = getElapsedTime()
+				elseif (rowdata[1] == "venture") and ((not menu.infoTablePersistentData.left.selectedVenture) or (rowdata[2].platform.id ~= menu.infoTablePersistentData.left.selectedVenture.platform.id)) then
+					menu.infoTablePersistentData.left.selectedVenture = rowdata[2]
+					menu.infoTablePersistentData.left.selectedOutcome = nil
+					menu.refreshIF = getElapsedTime()
+				end
+			else
+				if menu.infoTablePersistentData.left.selectedOutcome or menu.infoTablePersistentData.left.selectedVenture then
+					menu.infoTablePersistentData.left.selectedOutcome = nil
+					menu.infoTablePersistentData.left.selectedVenture = nil
+					menu.refreshIF = getElapsedTime()
+				end
+			end
+		end
 	elseif menu.infoTableMode == "ventureoperation" then
 		if uitable == menu.infoTable then
-			Helper.callExtensionFunction("multiverse", "onRowChanged", menu, menu.infoTableMode, row, rowdata, uitable, modified, input, source)
+			if type(rowdata) == "table" then
+				if rowdata[1] == "venture" then
+					menu.currentOperationSelection = rowdata[2].id
+					if input == "mouse" then
+						if menu.contextMenuData and menu.contextMenuData.venture and (menu.contextMenuData.venture == rowdata[2].id) then
+							menu.closeContextMenu()
+						else
+							menu.contextMenuMode = "ventureconfig"
+							local offsetx = menu.infoTableOffsetX + menu.infoTableWidth + Helper.borderSize + config.contextBorder
+							local offsety = menu.infoTableOffsetY
+							menu.contextMenuData = { xoffset = offsetx, yoffset = offsety, venture = rowdata[2].id, selectedShips = {} }
+							menu.createContextFrame(menu.ventureConfigWidth)
+						end
+					end
+				elseif (rowdata[1] == "mission") or (rowdata[1] == "missionoffer") then
+					local missionid = ConvertStringTo64Bit(rowdata[2].ID)
+					menu.currentOperationSelection = missionid
+					if input == "mouse" then
+						if menu.contextMenuData and menu.contextMenuData.missionid and (menu.contextMenuData.missionid == missionid) then
+							menu.closeContextMenu()
+						else
+							menu.closeContextMenu()
+							menu.showMissionContext(missionid, rowdata[1] == "missionoffer")
+						end
+					end
+				else
+					menu.currentOperationSelection = nil
+				end
+				if source ~= "auto" then
+					menu.refreshInfoFrame()
+				end
+			end
 		end
 	end
 
@@ -2865,7 +2879,27 @@ function newFuncs.onSelectElement(uitable, modified, row, isdblclick, input)
 		end
 	elseif menu.infoTableMode == "ventureoperation" then
 		if uitable == menu.infoTable then
-			Helper.callExtensionFunction("multiverse", "onSelectRow", menu, menu.infoTableMode, uitable, modified, row, isdblclick, input)
+			if type(rowdata) == "table" then
+				if rowdata[1] == "venture" then
+					if menu.contextMenuData and menu.contextMenuData.venture and (menu.contextMenuData.venture == rowdata[2].id) then
+						menu.closeContextMenu()
+					else
+						menu.contextMenuMode = "ventureconfig"
+						local offsetx = menu.infoTableOffsetX + menu.infoTableWidth + Helper.borderSize + config.contextBorder
+						local offsety = menu.infoTableOffsetY
+						menu.contextMenuData = { xoffset = offsetx, yoffset = offsety, venture = rowdata[2].id, selectedShips = {} }
+						menu.createContextFrame(menu.ventureConfigWidth)
+					end
+				elseif (rowdata[1] == "mission") or (rowdata[1] == "missionoffer") then
+					local missionid = ConvertStringTo64Bit(rowdata[2].ID)
+					if menu.contextMenuData and menu.contextMenuData.missionid and (menu.contextMenuData.missionid == missionid) then
+						menu.closeContextMenu()
+					else
+						menu.closeContextMenu()
+						menu.showMissionContext(missionid, rowdata[1] == "missionoffer")
+					end
+				end
+			end
 		end
 	end
 
@@ -3178,42 +3212,25 @@ function newFuncs.onTableRightMouseClick(uitable, row, posx, posy)
 						local convertedRowComponent = ConvertIDTo64Bit(rowdata[2])
 						if convertedRowComponent and (convertedRowComponent ~= 0) then
 							local x, y = GetLocalMousePosition()
-							if x == nil then
-								-- gamepad case
-								if posx ~= nil then
-									x = posx + Helper.viewWidth / 2
-									y = posy + Helper.viewHeight / 2
-								end
-							else
-								x = x + Helper.viewWidth / 2
-								y = Helper.viewHeight / 2 - y
-							end
-
 							if menu.mode == "hire" then
 								if GetComponentData(convertedRowComponent, "isplayerowned") and C.IsComponentClass(convertedRowComponent, "controllable") then
-									menu.contextMenuMode = "hire"
-									menu.contextMenuData = { hireObject = convertedRowComponent, xoffset = x, yoffset = y }
-
-									local width = Helper.scaleX(config.hireContextWidth)
-									if menu.contextMenuData.xoffset + width > Helper.viewWidth then
-										menu.contextMenuData.xoffset = Helper.viewWidth - width - Helper.frameBorder
-									end
-
-									menu.createContextFrame(width, nil, menu.contextMenuData.xoffset, menu.contextMenuData.yoffset)
+									menu.contextMenuData = { component = convertedRowComponent, xoffset = x + Helper.viewWidth / 2, yoffset = Helper.viewHeight / 2 - y }
+									menu.contextMenuMode = "select"
+									menu.createContextFrame(menu.selectWidth)
 								end
 							elseif menu.mode == "selectCV" then
-								menu.contextMenuData = { component = convertedRowComponent, xoffset = x, yoffset = y }
+								menu.contextMenuData = { component = convertedRowComponent, xoffset = x + Helper.viewWidth / 2, yoffset = Helper.viewHeight / 2 - y }
 								menu.contextMenuMode = "select"
 								menu.createContextFrame(menu.selectWidth)
 							elseif menu.mode == "orderparam_object" then
 								if menu.checkForOrderParamObject(convertedRowComponent) then
-									menu.contextMenuData = { component = convertedRowComponent, xoffset = x, yoffset = y }
+									menu.contextMenuData = { component = convertedRowComponent, xoffset = x + Helper.viewWidth / 2, yoffset = Helper.viewHeight / 2 - y }
 									menu.contextMenuMode = "select"
 									menu.createContextFrame(menu.selectWidth)
 								end
 							elseif menu.mode == "selectComponent" then
 								if menu.checkForSelectComponent(convertedRowComponent) then
-									menu.contextMenuData = { component = convertedRowComponent, xoffset = x, yoffset = y }
+									menu.contextMenuData = { component = convertedRowComponent, xoffset = x + Helper.viewWidth / 2, yoffset = Helper.viewHeight / 2 - y }
 									menu.contextMenuMode = "select"
 									menu.createContextFrame(menu.selectWidth)
 								end
@@ -3333,8 +3350,9 @@ function newFuncs.closeContextMenu(dueToClose)
 			if dueToClose == "back" then
 				return false
 			end
-		elseif (menu.contextMenuMode == "ventureconfig") or (menu.contextMenuMode == "venturecreateparty") or (menu.contextMenuMode == "ventureoutcome") then
-			Helper.callExtensionFunction("multiverse", "closeContextMenu", menu, menu.contextMenuMode, dueToClose)
+		elseif menu.contextMenuMode == "ventureconfig" then
+			Helper.clearTableConnectionColumn(menu, 3)
+			Helper.clearTableConnectionColumn(menu, 4)
 		end
 		-- REMOVE this block once the mouse out/over event order is correct -> This should be unnessecary due to the global tablemouseout event reseting the picking
 		if menu.currentMouseOverTable and (
@@ -3352,7 +3370,6 @@ function newFuncs.closeContextMenu(dueToClose)
 			or (menu.contextMenuMode == "mission")
 			or (menu.contextMenuMode == "venturepatron")
 			or (menu.contextMenuMode == "filter_multiselectlist")
-			or (menu.contextMenuMode == "hire")
 		) then
 			menu.picking = true
 			menu.currentMouseOverTable = nil

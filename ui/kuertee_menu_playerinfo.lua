@@ -50,7 +50,6 @@ end
 local config = {
 	mainLayer = 5,
 	infoLayer = 4,
-	contextLayer = 3,
 	rowHeight = 17,
 	leftBar = {
 		{ name = ReadText(1001, 7717),		icon = "pi_empire",					mode = "empire",			active = true, helpOverlayID = "playerinfo_sidebar_empire",			helpOverlayText = ReadText(1028, 7701) },
