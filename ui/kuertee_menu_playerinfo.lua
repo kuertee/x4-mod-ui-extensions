@@ -409,7 +409,7 @@ function newFuncs.createFactions(frame, tableProperties)
 		row[3].handlers.onClick = function () return menu.buttonWarDeclarationConfirm(relation.id) end
 	end
 end
-function newFuncs.onRowChanged(row, rowdata, uitable, modified, input, source)
+function newFuncs.onRowChanged(row, rowdata, uitable, modified, input)
 	local menu = playerInfoMenu
 
 	if uitable == menu.infoTable then
@@ -654,7 +654,7 @@ function newFuncs.onRowChanged(row, rowdata, uitable, modified, input, source)
 	-- kuertee start: callback
 	if callbacks ["onRowChanged"] then
 		for _, callback in ipairs (callbacks ["onRowChanged"]) do
-			callback (row, rowdata, uitable, modified, input, source)
+			callback (row, rowdata, uitable, modified, input)
 		end
 	end
 	-- kuertee end: callback
