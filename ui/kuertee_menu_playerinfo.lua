@@ -38,6 +38,7 @@ function newFuncs.registerCallback (callbackName, callbackFunction)
 	-- createInfoFrame_on_start ()
 	-- createInfoFrame_on_info_frame_mode (infoFrame, tableProperties)
 	-- createFactions_on_before_render_licences (frame, tableProperties, relation.id, infotable)
+	-- createFactions_on_after_declare_war_button(frame, tableProperties, relation.id, infotable)
 	-- createAccounts_add_new_table (frame, tableProperties, tabOrderOffset)
 	-- createAccounts_add_new_table (frame, tableProperties, tabOrderOffset)
 	-- onRowChanged (row, rowdata, uitable, modified, input)
@@ -407,6 +408,14 @@ function newFuncs.createFactions(frame, tableProperties)
 		end
 		row[3]:createButton({ active = active, mouseOverText = mouseovertext }):setText(ReadText(1001, 7750), { halign = "center" })
 		row[3].handlers.onClick = function () return menu.buttonWarDeclarationConfirm(relation.id) end
+
+		-- kuertee start: callback
+		if callbacks ["createFactions_on_after_declare_war_button"] then
+			for _, callback in ipairs (callbacks ["createFactions_on_after_declare_war_button"]) do
+				callback (frame, tableProperties, relation.id, detailtable)
+			end
+		end
+		-- kuertee end: callback
 	end
 end
 function newFuncs.onRowChanged(row, rowdata, uitable, modified, input)
