@@ -43,6 +43,7 @@ local config = {
 	width = 400,
 	layer = 3,
 	saveOptionVersion = 1,
+	rowHeight = 17
 }
 function newFuncs.cleanup()
 	local menu = userQuestionMenu
