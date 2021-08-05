@@ -6,6 +6,9 @@ by kuertee
 Updates:
 ========
 For v4.0 of the game:
+v2.2.3, 5 Aug 2021:
+-New feature: support for Accessibility Features mod (https://www.nexusmods.com/x4foundations/mods/748).
+
 v2.2.2, 11 Jul 2021:
 -Tweak: Removed an unnecessary argument in onRowChanged () from kuertee_menu_playerinfo.lua added in v2.2.1.
 
