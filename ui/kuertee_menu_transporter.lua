@@ -35,6 +35,13 @@ function newFuncs.registerCallback (callbackName, callbackFunction)
 	table.insert (callbacks [callbackName], callbackFunction)
 end
 function newFuncs.addEntry(ftable, target, indent, parentcomponent)
+	-- if target.type == "zone" then
+	-- 	Lib.Print_Table (target.directtarget)
+	-- 	DebugError ("kuertee_menu_transporter addEntry target.directtarget.connection " .. tostring (target.directtarget.connection) .. " (" .. type (target.directtarget.connection) .. ")")
+	-- 	DebugError ("kuertee_menu_transporter addEntry target.directtarget.component " .. tostring (target.directtarget.component))
+	-- 	DebugError ("kuertee_menu_transporter addEntry target.directtarget.component name " .. GetComponentData (ConvertStringToLuaID (tostring (target.directtarget.component)), "name"))
+	-- 	DebugError ("kuertee_menu_transporter addEntry target.directtarget.component IsComponentClass zone " .. tostring (C.IsComponentClass (target.directtarget.component, "zone")))
+	-- end
 	local menu = transporterMenu
 
 	local componentIndent = ""

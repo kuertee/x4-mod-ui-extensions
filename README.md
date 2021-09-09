@@ -6,8 +6,8 @@ by kuertee
 Updates:
 ========
 For v4.0 of the game:
-v2.2.1, 19 Jun 2021:
--Compatibility: Update so the previous changes for v4.1beta1 of the game work in v4.0 of the game.
+v2.2.4, 9 Sep 2021:
+-New feature: call back in Transaction Log screen to support UI: Trade Analytics (https://www.nexusmods.com/x4foundations/mods/764).
 
 For v4.1beta1 of the game:
 v2.2.0, 15 Jun 2021:
@@ -99,6 +99,18 @@ Uninstall:
 
 History
 =======
+For v4.0 of the game:
+v2.2.3, 5 Aug 2021:
+-New feature: support for Accessibility Features mod (https://www.nexusmods.com/x4foundations/mods/748).
+
+For v4.0 of the game:
+v2.2.2, 11 Jul 2021:
+-Tweak: Removed an unnecessary argument in onRowChanged () from kuertee_menu_playerinfo.lua added in v2.2.1.
+
+For v4.0 of the game:
+v2.2.1, 19 Jun 2021:
+-Compatibility: Update so the previous changes for v4.1beta1 of the game work in v4.0 of the game.
+
 For v4.0 of the game:
 v2.1.2, 16 Jun 2021:
 -New feature: playerinfo menu new callback: onRowChanged.

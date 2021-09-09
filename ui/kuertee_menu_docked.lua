@@ -34,6 +34,7 @@ function newFuncs.registerCallback (callbackName, callbackFunction)
 	-- 
 	-- sto_addTurretBehavioursDockMenu ()
 	-- (true | false) = rd_addReactiveDockingDockMenu (row, menu.currentplayership, i, active, mouseovertext)
+	-- display_on_after_main_interactions (ftable)
 	if callbacks [callbackName] == nil then
 		callbacks [callbackName] = {}
 	end
@@ -301,6 +302,14 @@ function newFuncs.display()
 		if active then
 			row[7].handlers.onClick = menu.buttonAutoPilot
 		end
+
+		-- start: kuertee call-back
+		if callbacks ["display_on_after_main_interactions"] then
+  			for _, callback in ipairs (callbacks ["display_on_after_main_interactions"]) do
+  				callback (table_header)
+  			end
+  		end
+		-- end: kuertee call-back
 
 		if menu.currentplayership ~= 0 then
 			local weapons = {}
@@ -734,6 +743,14 @@ function newFuncs.display()
 			row[2].handlers.onClick = menu.buttonGoToShip
 		end
 		row[7]:createButton(config.inactiveButtonProperties):setText("", config.inactiveButtonTextProperties)	-- dummy
+
+		-- start: kuertee call-back
+		if callbacks ["display_on_after_main_interactions"] then
+  			for _, callback in ipairs (callbacks ["display_on_after_main_interactions"]) do
+  				callback (table_header)
+  			end
+  		end
+		-- end: kuertee call-back
 
 		local row = table_header:addRow(false, { bgColor = Helper.color.transparent, fixed = true })
 		row[1]:setColSpan(11):createBoxText(menu.infoText, { halign = "center", color = Helper.color.warningorange, boxColor = menu.infoBoxColor })
