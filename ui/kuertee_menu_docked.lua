@@ -42,28 +42,28 @@ function newFuncs.registerCallback (callbackName, callbackFunction)
 end
 -- only have config stuff here that are used in this file
 local config = {
-    modes = {
-        [1] = { id = "travel",          name = ReadText(1002, 1158),    stoptext = ReadText(1002, 1159),    action = 303 },
-        [2] = { id = "scan",            name = ReadText(1002, 1156),    stoptext = ReadText(1002, 1157),    action = 304 },
-        [3] = { id = "scan_longrange",  name = ReadText(1002, 1155),    stoptext = ReadText(1002, 1160),    action = 305 },
-        [4] = { id = "seta",            name = ReadText(1001, 1132),    stoptext = ReadText(1001, 8606),    action = 225 },
-    },
-    consumables = {
-        { id = "satellite",     type = "civilian",  getnum = C.GetNumAllSatellites,     getdata = C.GetAllSatellites,       callback = C.LaunchSatellite },
-        { id = "navbeacon",     type = "civilian",  getnum = C.GetNumAllNavBeacons,     getdata = C.GetAllNavBeacons,       callback = C.LaunchNavBeacon },
-        { id = "resourceprobe", type = "civilian",  getnum = C.GetNumAllResourceProbes, getdata = C.GetAllResourceProbes,   callback = C.LaunchResourceProbe },
-        { id = "lasertower",    type = "military",  getnum = C.GetNumAllLaserTowers,    getdata = C.GetAllLaserTowers,      callback = C.LaunchLaserTower },
-        { id = "mine",          type = "military",  getnum = C.GetNumAllMines,          getdata = C.GetAllMines,            callback = C.LaunchMine },
-    },
-    inactiveButtonProperties = { bgColor = Helper.defaultUnselectableButtonBackgroundColor, highlightColor = Helper.defaultUnselectableButtonHighlightColor },
-    activeButtonTextProperties = { halign = "center" },
-    inactiveButtonTextProperties = { halign = "center", color = Helper.color.grey },
-    dronetypes = {
-        { id = "orecollector",  name = ReadText(20214, 500) },
-        { id = "gascollector",  name = ReadText(20214, 400) },
-        { id = "defence",       name = ReadText(20214, 300) },
-        { id = "transport",     name = ReadText(20214, 900) },
-    },
+	modes = {
+		[1] = { id = "travel",			name = ReadText(1002, 1158),	stoptext = ReadText(1002, 1159),	action = 303 },
+		[2] = { id = "scan",			name = ReadText(1002, 1156),	stoptext = ReadText(1002, 1157),	action = 304 },
+		[3] = { id = "scan_longrange",	name = ReadText(1002, 1155),	stoptext = ReadText(1002, 1160),	action = 305 },
+		[4] = { id = "seta",			name = ReadText(1001, 1132),	stoptext = ReadText(1001, 8606),	action = 225 },
+	},
+	consumables = {
+		{ id = "satellite",		type = "civilian",	getnum = C.GetNumAllSatellites,		getdata = C.GetAllSatellites,		callback = C.LaunchSatellite },
+		{ id = "navbeacon",		type = "civilian",	getnum = C.GetNumAllNavBeacons,		getdata = C.GetAllNavBeacons,		callback = C.LaunchNavBeacon },
+		{ id = "resourceprobe",	type = "civilian",	getnum = C.GetNumAllResourceProbes,	getdata = C.GetAllResourceProbes,	callback = C.LaunchResourceProbe },
+		{ id = "lasertower",	type = "military",	getnum = C.GetNumAllLaserTowers,	getdata = C.GetAllLaserTowers,		callback = C.LaunchLaserTower },
+		{ id = "mine",			type = "military",	getnum = C.GetNumAllMines,			getdata = C.GetAllMines,			callback = C.LaunchMine },
+	},
+	inactiveButtonProperties = { bgColor = Helper.defaultUnselectableButtonBackgroundColor, highlightColor = Helper.defaultUnselectableButtonHighlightColor },
+	activeButtonTextProperties = { halign = "center" },
+	inactiveButtonTextProperties = { halign = "center", color = Helper.color.grey },
+	dronetypes = {
+		{ id = "orecollector",	name = ReadText(20214, 500) },
+		{ id = "gascollector",	name = ReadText(20214, 400) },
+		{ id = "defence",		name = ReadText(20214, 300) },
+		{ id = "transport",		name = ReadText(20214, 900) },
+	},
 }
 function newFuncs.display()
 	local menu = dockedMenu
@@ -82,9 +82,9 @@ function newFuncs.display()
 	local table_topleft, table_header, table_button, row
 
 	local isdocked = (menu.currentplayership ~= 0) and GetComponentData(menu.currentplayership, "isdocked")
-	local ownericon, owner, shiptrader, isdock, canbuildships, isplayerowned, issupplyship, canhavetradeoffers = GetComponentData(menu.currentcontainer, "ownericon", "owner", "shiptrader", "isdock", "canbuildships", "isplayerowned", "issupplyship", "canhavetradeoffers")
+	local ownericon, owner, shiptrader, isdock, canbuildships, isplayerowned, issupplyship, canhavetradeoffers, aipilot = GetComponentData(menu.currentcontainer, "ownericon", "owner", "shiptrader", "isdock", "canbuildships", "isplayerowned", "issupplyship", "canhavetradeoffers", "aipilot")
 	local cantrade = canhavetradeoffers and isdock
-	local canwareexchange = cantrade and isplayerowned
+	local canwareexchange = isplayerowned and ((not C.IsComponentClass(menu.currentcontainer, "ship")) or aipilot) 
 	--NB: equipment docks currently do not have ship traders
 	local dockedplayerships = {}
 	Helper.ffiVLA(dockedplayerships, "UniverseID", C.GetNumDockedShips, C.GetDockedShips, menu.currentcontainer, "player")
@@ -443,6 +443,7 @@ function newFuncs.display()
 				end
 			end
 
+			local hasonlytugturrets = true
 			menu.turrets = {}
 			local numslots = tonumber(C.GetNumUpgradeSlots(menu.currentplayership, "", "turret"))
 			for j = 1, numslots do
@@ -451,6 +452,9 @@ function newFuncs.display()
 					local current = C.GetUpgradeSlotCurrentComponent(menu.currentplayership, "turret", j)
 					if current ~= 0 then
 						table.insert(menu.turrets, current)
+						if not GetComponentData(ConvertStringTo64Bit(tostring(current)), "istugweapon") then
+							hasonlytugturrets = false
+						end
 					end
 				end
 			end
@@ -465,9 +469,13 @@ function newFuncs.display()
 					local groupinfo = C.GetUpgradeGroupInfo2(menu.currentplayership, "", group.context, group.path, group.group, "turret")
 					if (groupinfo.count > 0) then
 						group.operational = groupinfo.operational
+						group.currentcomponent = groupinfo.currentcomponent
 						group.currentmacro = ffi.string(groupinfo.currentmacro)
 						group.slotsize = ffi.string(groupinfo.slotsize)
 						table.insert(menu.turretgroups, group)
+						if not GetComponentData(ConvertStringTo64Bit(tostring(group.currentcomponent)), "istugweapon") then
+							hasonlytugturrets = false
+						end
 					end
 				end
 			end
@@ -482,16 +490,6 @@ function newFuncs.display()
 				row[2]:createText(ReadText(1001, 8620), { font = Helper.standardFontBold, halign = "center" })
 				row[7]:createText(ReadText(1001, 12),   { font = Helper.standardFontBold, halign = "center" })
 
-				local turretmodes = {
-					[1] = { id = "defend",			text = ReadText(1001, 8613),	icon = "",	displayremoveoption = false },
-					[2] = { id = "attackenemies",	text = ReadText(1001, 8614),	icon = "",	displayremoveoption = false },
-					[3] = { id = "attackcapital",	text = ReadText(1001, 8624),	icon = "",	displayremoveoption = false },
-					[4] = { id = "attackfighters",	text = ReadText(1001, 8625),	icon = "",	displayremoveoption = false },
-					[5] = { id = "mining",			text = ReadText(1001, 8616),	icon = "",	displayremoveoption = false },
-					[6] = { id = "missiledefence",	text = ReadText(1001, 8615),	icon = "",	displayremoveoption = false },
-					[7] = { id = "autoassist",		text = ReadText(1001, 8617),	icon = "",	displayremoveoption = false },
-				}
-
 				local row = table_header:addRow("turret_config", { bgColor = Helper.color.transparent })
 				row[1]:createText(ReadText(1001, 2963))
 
@@ -503,8 +501,8 @@ function newFuncs.display()
 				  end
 				end
 				if not sto_callbackVal then
-				    row[2]:setColSpan(5):createDropDown(turretmodes, { startOption = function () return menu.getDropDownTurretModeOption(menu.currentplayership, "all") end, helpOverlayID = "docked_turretconfig_modes", helpOverlayText = " ", helpOverlayHighlightOnly = true  })
-				    row[2].handlers.onDropDownConfirmed = function(_, newturretmode) C.SetAllTurretModes(menu.currentplayership, newturretmode) end
+					row[2]:setColSpan(5):createDropDown(Helper.getTurretModes(nil, not hasonlytugturrets), { startOption = function () return menu.getDropDownTurretModeOption(menu.currentplayership, "all") end, helpOverlayID = "docked_turretconfig_modes", helpOverlayText = " ", helpOverlayHighlightOnly = true  })
+					row[2].handlers.onDropDownConfirmed = function(_, newturretmode) C.SetAllTurretModes(menu.currentplayership, newturretmode) end
 				end
 				-- End Subsystem Targeting Orders callback
 				row[7]:setColSpan(5):createButton({ helpOverlayID = "docked_turretconfig_arm", helpOverlayText = " ", helpOverlayHighlightOnly = true  }):setText(function () return menu.areTurretsArmed(menu.currentplayership) and ReadText(1001, 8631) or ReadText(1001, 8632) end, { halign = "center" })
@@ -521,7 +519,7 @@ function newFuncs.display()
 						mouseovertext = turretname
 					end
 					row[1]:createText(turretname, { mouseOverText = mouseovertext })
-					row[2]:setColSpan(5):createDropDown(turretmodes, { startOption = function () return menu.getDropDownTurretModeOption(turret) end, helpOverlayID = "docked_turrets_modes".. turretscounter, helpOverlayText = " ", helpOverlayHighlightOnly = true  })
+					row[2]:setColSpan(5):createDropDown(Helper.getTurretModes(turret), { startOption = function () return menu.getDropDownTurretModeOption(turret) end, helpOverlayID = "docked_turrets_modes".. turretscounter, helpOverlayText = " ", helpOverlayHighlightOnly = true  })
 					row[2].handlers.onDropDownConfirmed = function(_, newturretmode) C.SetWeaponMode(turret, newturretmode) end
 					row[7]:setColSpan(5):createButton({helpOverlayID = "docked_turrets_arm" .. turretscounter, helpOverlayText = " ", helpOverlayHighlightOnly = true   }):setText(function () return C.IsWeaponArmed(turret) and ReadText(1001, 8631) or ReadText(1001, 8632) end, { halign = "center" })
 					row[7].handlers.onClick = function () return C.SetWeaponArmed(turret, not C.IsWeaponArmed(turret)) end
@@ -538,7 +536,7 @@ function newFuncs.display()
 						mouseovertext = groupname
 					end
 					row[1]:createText(groupname, { color = (group.operational > 0) and Helper.color.white or Helper.color.red, mouseOverText = mouseovertext })
-					row[2]:setColSpan(5):createDropDown(turretmodes, { startOption = function () return menu.getDropDownTurretModeOption(menu.currentplayership, group.context, group.path, group.group) end, active = group.operational > 0, helpOverlayID = "docked_turretgroups_modes".. turretgroupscounter, helpOverlayText = " ", helpOverlayHighlightOnly = true  })
+					row[2]:setColSpan(5):createDropDown(Helper.getTurretModes(group.currentcomponent ~= 0 and group.currentcomponent or nil), { startOption = function () return menu.getDropDownTurretModeOption(menu.currentplayership, group.context, group.path, group.group) end, active = group.operational > 0, helpOverlayID = "docked_turretgroups_modes".. turretgroupscounter, helpOverlayText = " ", helpOverlayHighlightOnly = true  })
 					row[2].handlers.onDropDownConfirmed = function(_, newturretmode) C.SetTurretGroupMode2(menu.currentplayership, group.context, group.path, group.group, newturretmode) end
 					row[7]:setColSpan(5):createButton({ helpOverlayID = "docked_turretgroups_arm" .. turretgroupscounter, helpOverlayText = " ", helpOverlayHighlightOnly = true  }):setText(function () return C.IsTurretGroupArmed(menu.currentplayership, group.context, group.path, group.group) and ReadText(1001, 8631) or ReadText(1001, 8632) end, { halign = "center" })
 					row[7].handlers.onClick = function () return C.SetTurretGroupArmed(menu.currentplayership, group.context, group.path, group.group, not C.IsTurretGroupArmed(menu.currentplayership, group.context, group.path, group.group)) end
@@ -698,9 +696,17 @@ function newFuncs.display()
 	else
 		local row = table_header:addRow("buttonRow1", { bgColor = Helper.color.transparent, fixed = true })
 		local active = canwareexchange
-		row[1]:createButton(active and {helpOverlayID = "docked_transferwares", helpOverlayText = " ", helpOverlayHighlightOnly = true } or config.inactiveButtonProperties):setText(ReadText(1001, 8618), active and config.activeButtonTextProperties or config.inactiveButtonTextProperties)	-- "Transfer Wares"
+		local mouseovertext
+		if (not active) and isplayerowned then
+			if C.IsComponentClass(menu.currentcontainer, "ship") then
+				mouseovertext = ReadText(1026, 7830)
+			end
+		end
+		row[1]:createButton(active and { helpOverlayID = "docked_transferwares", helpOverlayText = " ", helpOverlayHighlightOnly = true } or config.inactiveButtonProperties):setText(ReadText(1001, 8618), active and config.activeButtonTextProperties or config.inactiveButtonTextProperties)	-- "Transfer Wares"
 		if active then
 			row[1].handlers.onClick = function() return menu.buttonTrade(true) end
+		else
+			row[1].properties.mouseOverText = mouseovertext
 		end
 		local active = menu.currentplayership ~= 0
 		row[2]:createButton(active and { mouseOverText = GetLocalizedKeyName("action", 277), helpOverlayID = "docked_getup", helpOverlayText = " ", helpOverlayHighlightOnly = true } or config.inactiveButtonProperties):setText(ReadText(1002, 20014), active and config.activeButtonTextProperties or config.inactiveButtonTextProperties)	-- "Get Up"

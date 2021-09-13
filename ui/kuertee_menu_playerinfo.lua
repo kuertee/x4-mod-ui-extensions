@@ -356,6 +356,14 @@ function newFuncs.createFactions(frame, tableProperties)
 	row[2].properties.height = row[2].properties.height + Helper.borderSize
 
 	if next(relation) then
+		local isrelationlocked, relationlockreason, willclaimspace = GetFactionData(relation.id, "isrelationlocked", "relationlockreason", "willclaimspace")
+		-- sector ownership
+		if not willclaimspace then
+			local row = detailtable:addRow(nil, { bgColor = Helper.color.transparent })
+			row[1]:setColSpan(3):createText(ReadText(1001, 7784))
+
+			detailtable:addEmptyRow(Helper.standardTextHeight / 2)
+		end
 		-- licences
 		if menu.licences[relation.id] and #menu.licences[relation.id] > 0 then
 			local row = detailtable:addRow(nil, { bgColor = Helper.color.transparent })
@@ -398,7 +406,6 @@ function newFuncs.createFactions(frame, tableProperties)
 		local row = detailtable:addRow(true, { bgColor = Helper.color.transparent })
 		local active = true
 		local mouseovertext
-		local isrelationlocked, relationlockreason = GetFactionData(relation.id, "isrelationlocked", "relationlockreason")
 		if GetUIRelation(relation.id) <= -25 then
 			active = false
 			mouseovertext = ReadText(1026, 7702)

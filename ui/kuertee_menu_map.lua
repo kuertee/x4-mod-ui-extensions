@@ -181,6 +181,14 @@ local config = {
 					info = ReadText(1001, 3282),
 					param = "liquid",
 				},
+				--[[ not available yet
+				[4] = {
+					id = "trade_storage_condensate",
+					name = ReadText(20205, 1100),
+					info = ReadText(1001, 11614),
+					param = "condensate",
+				},
+				--]]
 			},
 			[3] = {
 				caption = ReadText(1001, 2808),
@@ -308,7 +316,7 @@ local config = {
 			[3] = {
 				caption = ReadText(1001, 2664),
 				type = "checkbox",
-				callback = function (...) return mapMenu.filterMiningResources(...) end,
+				callback = function (...) return mapMenu.filterOtherMisc(...) end,
 				[1] = {
 					id = "other_misc_ecliptic",
 					name = ReadText(1001, 3297),
@@ -363,12 +371,6 @@ local config = {
 					info = ReadText(1001, 8371),
 					param = "allyorderqueue",
 				},
-				[3] = {
-					id = "other_misc_crew",
-					name = ReadText(1001, 3295),
-					info = ReadText(1001, 3296),
-					param = "crew",
-				},
 			},
 			[5] = {
 				caption = ReadText(1001, 8335),
@@ -381,24 +383,6 @@ local config = {
 					param = "missions",
 				},
 				[2] = {
-					id = "other_misc_cargo",
-					name = ReadText(1001, 3289),
-					info = ReadText(1001, 3290),
-					param = "cargo",
-				},
-				[3] = {
-					id = "other_misc_workforce",
-					name = ReadText(1001, 3293),
-					info = ReadText(1001, 3294),
-					param = "workforce",
-				},
-				[4] = {
-					id = "other_misc_dockedships",
-					name = ReadText(1001, 3275),
-					info = ReadText(1001, 3299),
-					param = "dockedships",
-				},
-				[5] = {
 					id = "other_misc_civilian",
 					name = ReadText(1001, 8333),
 					info = ReadText(1001, 8334),
@@ -433,7 +417,7 @@ local config = {
 		{ category = "guidance",	name = ReadText(1001, 3329),	icon = "mapst_mission_guidance",	helpOverlayID = "mapst_mission_active_guidance",	helpOverlayText = ReadText(1028, 3232) },
 	}
 }
-function newFuncs.buttonToggleObjectList(objectlistparam)
+function newFuncs.buttonToggleObjectList(objectlistparam, confirmed)
 	local menu = mapMenu
 
 	-- kuertee start: callback
@@ -474,6 +458,26 @@ function newFuncs.buttonToggleObjectList(objectlistparam)
 			break
 		end
 	end
+
+	if menu.infoTableMode == "info" then
+		if menu.infoTablePersistentData.left.orderqueuemode and (menu.infoTablePersistentData.left.orderqueuemode.mode == "plandefaultorder") then
+			if confirmed then
+				C.RemovePlannedDefaultOrder(menu.infoTablePersistentData.left.orderqueuemode.curobject)
+				menu.infoTablePersistentData.left.planneddefaultorderloop = nil
+				menu.infoTablePersistentData.left.planneddefaultorderiscopy = nil
+				menu.infoTablePersistentData.left.orderqueuemode = nil
+
+				menu.closeContextMenu()
+			else
+				menu.contextMenuMode = "userquestion"
+				menu.contextMenuData = { mode = "discardplanneddefaultbehaviour", xoffset = (Helper.viewWidth - Helper.scaleX(400)) / 2, yoffset = Helper.viewHeight / 2, callback = function () menu.buttonToggleObjectList(objectlistparam, true) end }
+
+				menu.createContextFrame(Helper.scaleX(400), nil, menu.contextMenuData.xoffset, menu.contextMenuData.yoffset)
+				return
+			end
+		end
+	end
+
 	if newidx then
 		Helper.updateButtonColor(menu.sideBar, newidx, 1, Helper.defaultArrowRowBackgroundColor)
 	end
@@ -482,25 +486,41 @@ function newFuncs.buttonToggleObjectList(objectlistparam)
 	end
 
 	menu.createInfoFrameRunning = true
-	if (menu.infoTableMode == "missionoffer") or (menu.infoTableMode == "mission") then
-		menu.missionModeCurrent = nil
-		if menu.missionModeContext then
-			menu.closeContextMenu()
-			menu.missionModeContext = nil
+	if menu.showMultiverse then
+		if (menu.ventureMode == "ventureoperation") or (menu.ventureMode == "ventureinventory") or (menu.ventureMode == "ventureseason") then
+			Helper.callExtensionFunction("multiverse", "onCloseMenuTab", menu, menu.infoTableMode, objectlistparam)
 		end
-	elseif menu.infoTableMode == "ventureoperation" then
-		menu.currentOperationSelection = nil
-		menu.closeContextMenu()
+	else
+		if (menu.infoTableMode == "missionoffer") or (menu.infoTableMode == "mission") then
+			menu.missionModeCurrent = nil
+			if menu.missionModeContext then
+				menu.closeContextMenu()
+				menu.missionModeContext = nil
+			end
+		end
 	end
 	AddUITriggeredEvent(menu.name, objectlistparam, menu.infoTableMode == objectlistparam and "off" or "on")
-	if menu.infoTableMode == objectlistparam then
+	local deactivate = false
+	if menu.showMultiverse then
+		deactivate = menu.ventureMode == objectlistparam
+	else
+		deactivate = menu.infoTableMode == objectlistparam
+	end
+	if deactivate then
 		menu.settoprow = GetTopRow(menu.infoTable)
+		menu.topRows.infotableleft = menu.settoprow
 		PlaySound("ui_negative_back")
-		menu.infoTableMode = nil
+		if menu.showMultiverse then
+			menu.ventureMode = nil
+		else
+			menu.infoTableMode = nil
+		end
 		if oldidx then
 			SelectRow(menu.sideBar, oldidx)
 		end
 	else
+		menu.settoprow = nil
+		menu.topRows.infotableleft = nil
 		menu.infoTable = nil
 		menu.infoTable2 = nil
 		PlaySound("ui_positive_select")
@@ -510,7 +530,11 @@ function newFuncs.buttonToggleObjectList(objectlistparam)
 				menu.missionModeContext = nil
 			end
 		end
-		menu.infoTableMode = objectlistparam
+		if menu.showMultiverse then
+			menu.ventureMode = objectlistparam
+		else
+			menu.infoTableMode = objectlistparam
+		end
 		if newidx then
 			SelectRow(menu.sideBar, newidx)
 		end
@@ -538,6 +562,8 @@ function newFuncs.buttonToggleObjectList(objectlistparam)
 	end
 	menu.setrow = nil
 	menu.setcol = nil
+	menu.selectedRows.infotableleft = nil
+	menu.selectedCols.infotableleft = nil
 	menu.refreshMainFrame = true
 	menu.createInfoFrame()
 end
@@ -579,24 +605,7 @@ function newFuncs.buttonMissionActivate()
 	menu.refreshIF = getElapsedTime()
 end
 function newFuncs.buttonSelectHandler()
-	local menu = mapMenu
-	-- DebugError ("kuertee_menu_map.ui.buttonSelectHandler menu.mode " .. tostring (menu.mode))
-	-- DebugError ("kuertee_menu_map.ui.buttonSelectHandler menu.modeparam[1] " .. tostring (menu.modeparam[1]))
-	if menu.mode == "hire" then
-		if C.IsComponentClass(menu.contextMenuData.component, "controllable") then
-			local isplayerowned, isdock, isonlineobject = GetComponentData(menu.contextMenuData.component, "isplayerowned", "isdock", "isonlineobject")
-			if not isonlineobject and (isplayerowned or (isdock and C.IsComponentClass(menu.contextMenuData.component, "station"))) then
-				if menu.hireShip ~= menu.contextMenuData.component then
-					menu.hireShip = menu.contextMenuData.component
-					menu.hireRole = nil
-					menu.hireIsPost = nil
-					menu.hireIsMission = nil
-
-					menu.refreshMainFrame = true
-				end
-			end
-		end
-	elseif menu.mode == "selectCV" then
+	if menu.mode == "selectCV" then
 		menu.selectCV(menu.contextMenuData.component)
 	elseif menu.mode == "orderparam_object" then
 		if menu.checkForOrderParamObject(menu.contextMenuData.component) then
@@ -623,6 +632,7 @@ function newFuncs.buttonSelectHandler()
 		if menu.modeparam[1] and menu.checkForSelectComponent(menu.contextMenuData.component) then
 		-- kuertee end: callback
 
+			C.ClearMapObjectFilter(menu.holomap)
 			Helper.closeMenuForSection(menu, menu.modeparam[1], { ConvertStringToLuaID(tostring(menu.contextMenuData.component)) })
 			menu.cleanup()
 		end
@@ -681,95 +691,99 @@ function newFuncs.createInfoFrame()
 	local infotabledesc, infotabledesc2
 	menu.infoTableData = menu.infoTableData or {}
 	menu.infoTableData.left = {}
-	if menu.infoTableMode == "objectlist" then
-		infotabledesc, infotabledesc2 = menu.createObjectList(menu.infoFrame, "left")
-	elseif menu.infoTableMode == "propertyowned" then
-		infotabledesc = menu.createPropertyOwned(menu.infoFrame, "left")
-	elseif menu.infoTableMode == "plots" then
-		menu.createPlotMode(menu.infoFrame)
-	elseif menu.infoTableMode == "info" then
-		if menu.infoMode.left == "objectinfo" then
-			menu.infoFrame.properties.autoFrameHeight = false
-			menu.createInfoSubmenu(menu.infoFrame, "left")
-		elseif menu.infoMode.left == "objectcrew" then
-			menu.createCrewInfoSubmenu(menu.infoFrame, "left")
-		elseif menu.infoMode.left == "objectloadout" then
-			menu.createLoadoutInfoSubmenu(menu.infoFrame, "left")
-		elseif menu.infoMode.left == "objectlogbook" then
-			menu.createLogbookInfoSubmenu(menu.infoFrame, "left")
-		elseif menu.infoMode.left == "orderqueue" then
-			menu.createOrderQueue(menu.infoFrame, menu.infoMode.left, "left")
-		elseif menu.infoMode.left == "orderqueue_advanced" then
-			menu.createOrderQueue(menu.infoFrame, menu.infoMode.left, "left")
-		elseif menu.infoMode.left == "standingorders" then
-			menu.createStandingOrdersMenu(menu.infoFrame, "left")
-		end
-	elseif menu.infoTableMode == "missionoffer" then
-		menu.createMissionMode(menu.infoFrame)
-	elseif menu.infoTableMode == "mission" then
-		menu.createMissionMode(menu.infoFrame)
-	elseif menu.infoTableMode == "ventureseason" then
-		if menu.seasonMode.left == "currentseason" then
-			menu.createVentureSeason(menu.infoFrame, "left")
-		elseif menu.seasonMode.left == "coalition" then
-			menu.createVentureCoalition(menu.infoFrame, "left")
-		elseif menu.seasonMode.left == "pastseasons" then
-			menu.createVenturePastSeasons(menu.infoFrame, "left")
-		end
-	elseif menu.infoTableMode == "ventureoperation" then
-		menu.createVentureOperation(menu.infoFrame, "left")
-	elseif menu.infoTableMode == "ventureoutcomes" then
-		menu.createVentureOutcomes(menu.infoFrame, "left")
-	elseif menu.infoTableMode == "venturelogbook" then
-		menu.createVentureLogbook(menu.infoFrame, "left")
-	elseif menu.infoTableMode == "ventureteam" then
-		menu.createVentureTeam(menu.infoFrame, "left")
-	elseif menu.infoTableMode == "ventureinventory" then
-		if menu.ventureInventoryMode.left == "playerinventory" then
-			menu.createVenturePlayerInventory(menu.infoFrame, "left")
-		elseif menu.ventureInventoryMode.left == "teaminventory" then
-			menu.createVentureTeamInventory(menu.infoFrame, "left")
-		end
-	elseif menu.infoTableMode == "cheats" then
-		menu.createCheats(menu.infoFrame)
-	else
-		-- empty
-
-		-- menu.infoFrame.properties.backgroundID = ""
-		-- menu.infoFrame.properties.autoFrameHeight = false
-		-- menu.infoFrame:addTable(0)
-
-		-- kuertee start: callback
-		local isCreated = false
-		if callbacks ["createInfoFrame_on_menu_infoTableMode"] then
-			for _, callback in ipairs (callbacks ["createInfoFrame_on_menu_infoTableMode"]) do
-				if callback (menu.infoFrame) then
-					isCreated = true
-				end
+	if menu.showMultiverse then
+		if menu.ventureMode == "ventureseason" then
+			if menu.seasonMode.left == "currentseason" then
+				menu.createVentureSeason(menu.infoFrame, "left")
+			elseif menu.seasonMode.left == "coalition" then
+				Helper.callExtensionFunction("multiverse", "createVentureCoalition", menu, menu.infoFrame, "left")
+			elseif menu.seasonMode.left == "ventureteam" then
+				Helper.callExtensionFunction("multiverse", "createVentureTeam", menu, menu.infoFrame, "left")
+			elseif menu.seasonMode.left == "pastseasons" then
+				Helper.callExtensionFunction("multiverse", "createVenturePastSeasons", menu, menu.infoFrame, "left")
 			end
-		end
-		if isCreated ~= true then
+		elseif menu.ventureMode == "ventureoperation" then
+			Helper.callExtensionFunction("multiverse", "createVentureOperation", menu, menu.infoFrame, "left")
+		elseif menu.ventureMode == "venturelogbook" then
+			Helper.callExtensionFunction("multiverse", "createVentureLogbook", menu, menu.infoFrame, "left")
+		elseif menu.ventureMode == "ventureinventory" then
+			Helper.callExtensionFunction("multiverse", "createVentureInventory", menu, menu.infoFrame, "left")
+		else
+			-- empty
 			menu.infoFrame.properties.backgroundID = ""
 			menu.infoFrame.properties.autoFrameHeight = false
 			menu.infoFrame:addTable(0)
 		end
-		-- kuertee end: callback
+	else
+		if menu.infoTableMode == "objectlist" then
+			infotabledesc, infotabledesc2 = menu.createObjectList(menu.infoFrame, "left")
+		elseif menu.infoTableMode == "propertyowned" then
+			infotabledesc = menu.createPropertyOwned(menu.infoFrame, "left")
+		elseif menu.infoTableMode == "plots" then
+			menu.createPlotMode(menu.infoFrame)
+		elseif menu.infoTableMode == "info" then
+			if menu.infoMode.left == "objectinfo" then
+				menu.infoFrame.properties.autoFrameHeight = false
+				menu.createInfoSubmenu(menu.infoFrame, "left")
+			elseif menu.infoMode.left == "objectcrew" then
+				menu.createCrewInfoSubmenu(menu.infoFrame, "left")
+			elseif menu.infoMode.left == "objectloadout" then
+				menu.createLoadoutInfoSubmenu(menu.infoFrame, "left")
+			elseif menu.infoMode.left == "objectlogbook" then
+				menu.createLogbookInfoSubmenu(menu.infoFrame, "left")
+			elseif menu.infoMode.left == "orderqueue" then
+				menu.createOrderQueue(menu.infoFrame, menu.infoMode.left, "left")
+			elseif menu.infoMode.left == "orderqueue_advanced" then
+				menu.createOrderQueue(menu.infoFrame, menu.infoMode.left, "left")
+			elseif menu.infoMode.left == "standingorders" then
+				menu.createStandingOrdersMenu(menu.infoFrame, "left")
+			end
+		elseif menu.infoTableMode == "missionoffer" then
+			menu.createMissionMode(menu.infoFrame)
+		elseif menu.infoTableMode == "mission" then
+			menu.createMissionMode(menu.infoFrame)
+		elseif menu.infoTableMode == "cheats" then
+			menu.createCheats(menu.infoFrame)
+		else
+			-- empty
 
-	end
+			-- menu.infoFrame.properties.backgroundID = ""
+			-- menu.infoFrame.properties.autoFrameHeight = false
+			-- menu.infoFrame:addTable(0)
 
-		-- start Forleyor_infoCenter callback:
-		local isCreated = false
-		if callbacks ["ic_createInfoFrame"] then
-			for _, callback in ipairs (callbacks ["ic_createInfoFrame"]) do
-				if callback (menu.infoFrame) then
-					isCreated = true
+			-- kuertee start: callback
+			local isCreated = false
+			if callbacks ["createInfoFrame_on_menu_infoTableMode"] then
+				for _, callback in ipairs (callbacks ["createInfoFrame_on_menu_infoTableMode"]) do
+					if callback (menu.infoFrame) then
+						isCreated = true
+					end
 				end
 			end
+			if isCreated ~= true then
+				menu.infoFrame.properties.backgroundID = ""
+				menu.infoFrame.properties.autoFrameHeight = false
+				menu.infoFrame:addTable(0)
+			end
+			-- kuertee end: callback
+
+			-- start Forleyor_infoCenter callback:
+			local isCreated = false
+			if callbacks ["ic_createInfoFrame"] then
+				for _, callback in ipairs (callbacks ["ic_createInfoFrame"]) do
+					if callback (menu.infoFrame) then
+						isCreated = true
+					end
+				end
+			end
+			if isCreated ~= true then
+				menu.infoFrame:addTable(0)
+			end
+			-- end Forleyor_infoCenter callback:
+
 		end
-		if isCreated ~= true then
-			menu.infoFrame:addTable(0)
-		end
-		-- end Forleyor_infoCenter callback:
+
+	end
 
 	if menu.infoFrame then
 		menu.infoFrame.properties.helpOverlayText = helpOverlayText
@@ -797,12 +811,18 @@ function newFuncs.refreshInfoFrame(setrow, setcol)
 			menu.settoprow = menu.setplottoprow
 			menu.setplottoprow = nil
 		end
+		local storerowinfo = true
+		if not menu.showMultiverse then
 
-		-- if (menu.infoTableMode ~= "objectlist") and (menu.infoTableMode ~= "propertyowned") then
-		-- kuertee start: callback
-		if (not string.find ("" .. tostring (menu.infoTableMode), "objectlist")) and (not string.find ("" .. tostring (menu.infoTableMode), "propertyowned")) then
-		-- kuertee end: callback
+			-- if (menu.infoTableMode ~= "objectlist") and (menu.infoTableMode ~= "propertyowned") then
+			-- kuertee start: callback
+			if (not string.find ("" .. tostring (menu.infoTableMode), "objectlist")) and (not string.find ("" .. tostring (menu.infoTableMode), "propertyowned")) then
+			-- kuertee end: callback
 
+				storerowinfo = false
+			end
+		end
+		if storerowinfo then
 			menu.setrow = setrow or Helper.currentTableRow[menu.infoTable]
 			menu.selectedRows.infotableleft = menu.setrow
 			if menu.setplotrow then
@@ -894,11 +914,7 @@ function newFuncs.createPropertyOwned(frame, instance)
 
 	local onlineitems = {}
 	if menu.propertyMode == "inventoryships" then
-		onlineitems = OnlineGetUserItems(false)
-		local persistentonlineitems = OnlineGetUserItems(true)
-		for k, v in pairs(persistentonlineitems) do
-			onlineitems[k] = v
-		end
+		onlineitems = OnlineGetUserItems()
 	end
 
 	local playerobjects = {}
@@ -1075,7 +1091,7 @@ function newFuncs.createPropertyOwned(frame, instance)
 	local maxvisibleheight = ftable:getFullHeight()
 	if menu.mode ~= "selectCV" then
 		if (menu.propertyMode == "stations") or (menu.propertyMode == "propertyall") then
-			numdisplayed = menu.createPropertySection(instance, "ownedstations", ftable, ReadText(1001, 8379), infoTableData.stations, "-- " .. ReadText(1001, 33) .. " --", true, numdisplayed, nil, menu.propertySorterType)
+			numdisplayed = menu.createPropertySection(instance, "ownedstations", ftable, ReadText(1001, 8379), infoTableData.stations, "-- " .. ReadText(1001, 33) .. " --", menu.mode ~= "hire", numdisplayed, nil, menu.propertySorterType)
 		end
 	end
 	if (menu.propertyMode == "fleets") or (menu.propertyMode == "propertyall") then
@@ -1166,7 +1182,9 @@ function newFuncs.createPropertyOwned(frame, instance)
 			end
 
 			local active = true
-			if menu.mode == "selectCV" then
+			if menu.mode == "hire" then
+				active = entry.category ~= "deployables"
+			elseif menu.mode == "selectCV" then
 				active = entry.category == "propertyall"
 			elseif (menu.mode == "selectComponent") and (menu.modeparam[3] == "deployables") then
 				active = entry.category == "deployables"
@@ -1318,6 +1336,12 @@ function newFuncs.createPropertyRow(instance, ftable, component, iteration, comm
 	-- kuertee end: callback
 
 	if (#menu.searchtext == 0) or Helper.textArrayHelper(menu.searchtext, function (numtexts, texts) return C.FilterComponentByText(convertedComponent, numtexts, texts, true) end, "text") then
+		if (menu.mode == "orderparam_object") and (not menu.checkForOrderParamObject(convertedComponent)) then
+			return numdisplayed
+		elseif (menu.mode == "selectComponent") and (not menu.checkForSelectComponent(convertedComponent)) then
+			return numdisplayed
+		end
+
 		numdisplayed = numdisplayed + 1
 
 		if (not menu.isPropertyExtended(tostring(component))) and (menu.isCommander(component) or menu.isConstructionContext(convertedComponent)) then
@@ -1396,7 +1420,7 @@ function newFuncs.createPropertyRow(instance, ftable, component, iteration, comm
 		if isplayerowned and isonlineobject then
 			locationtext = Helper.convertColorToText(menu.holomapcolor.visitorcolor) .. ReadText(1001, 11231) .. "\27X"
 			currentordericon = Helper.convertColorToText(menu.holomapcolor.visitorcolor) .. "\27[order_venture]\27X"
-			currentorderrawicon = "order_venture"
+			currentorderrawicon = "order_waitforventure"
 			currentordercolor = menu.holomapcolor.visitorcolor
 			currentordername = ReadText(1001, 7868)
 			currentordermouseovertext = nil
@@ -1817,13 +1841,13 @@ function newFuncs.createMissionMode(frame)
 					end
 				end
 
-				local isexpanded = menu.expandedMissionGroups[data.id] ~= false
+				local isexpanded = menu.expandedMissionGroups[data.id .. "offer"] ~= false
 				local row = ftable:addRow(data.id, { bgColor = Helper.color.transparent })
 				if data.id == menu.missionModeCurrent then
 					menu.setrow = row.index
 				end
 				row[1]:createButton():setText(isexpanded and "-" or "+", { halign = "center" })
-				row[1].handlers.onClick = function () return menu.buttonExpandMissionGroup(data.id, row.index) end
+				row[1].handlers.onClick = function () return menu.buttonExpandMissionGroup(data.id .. "offer", row.index) end
 				row[2]:setColSpan(7):createText(data.name)
 				row[9]:createText((#data.missions == 1) and ReadText(1001, 3335) or string.format(ReadText(1001, 3336), #data.missions), { halign = "right" })
 			
@@ -1974,6 +1998,22 @@ function newFuncs.createMissionMode(frame)
 				end
 				menu.addMissionRow(ftable, entry)
 			end
+			if not found then
+				local row = ftable:addRow("othernone", { bgColor = Helper.color.transparent, interactive = false })
+				if menu.missionModeCurrent == "othernone" then
+					menu.setrow = row.index
+				end
+				row[1]:setColSpan(9):createText("--- " .. ReadText(1001, 3302) .. " ---", { halign = "center" })
+			end
+			found = true
+			-- online
+			if #menu.missionList["coalition"] > 0 then
+				local row = ftable:addRow(nil, { bgColor = Helper.defaultTitleBackgroundColor })
+				row[1]:setColSpan(9):createText(ReadText(1001, 11609), Helper.headerRowCenteredProperties)
+				for _, entry in ipairs(menu.missionList["coalition"]) do
+					menu.addMissionRow(ftable, entry)
+				end
+			end
 		elseif menu.missionMode == "upkeep" then
 			-- title
 			local row = ftable:addRow(false, { fixed = true, bgColor = Helper.defaultTitleBackgroundColor })
@@ -2069,7 +2109,8 @@ function newFuncs.getMissionInfoHelper(mission)
 	local missionid64 = ConvertIDTo64Bit(missionID)
 	local missionGroup = C.GetMissionGroupDetails(missionid64)
 	local groupID, groupName = ffi.string(missionGroup.id), ffi.string(missionGroup.name)
-	local onlinechapter = ffi.string(C.GetMissionOnlineChapter(missionid64))
+	local onlineinfo = C.GetMissionOnlineInfo(missionid64)
+	local onlinechapter, onlineid = ffi.string(onlineinfo.chapter), ffi.string(onlineinfo.onlineid)
 	local objectiveText, timeout, progressname, curProgress, maxProgress = GetMissionObjective(mission)
 	local subMissions, buf = {}, {}
 	local subactive = false
@@ -2100,6 +2141,7 @@ function newFuncs.getMissionInfoHelper(mission)
 		["threadMissionID"] = ConvertIDTo64Bit(threadmissionid) or 0,
 		["subMissions"] = subMissions,
 		["onlinechapter"] = onlinechapter,
+		["onlineID"] = onlineid,
 	}
 
 	-- kuertee start: show mission progress
@@ -2133,10 +2175,16 @@ function newFuncs.createSideBar(firsttime, frame, width, height, offsetx, offset
 	-- end Forleyor_infoCenter:
 
 	local spacingHeight = menu.sideBarWidth / 4
-	local ftable = frame:addTable(1, { tabOrder = 3, width = width, height = height, x = offsetx, y = offsety, scaling = false, borderEnabled = false, reserveScrollBar = false, defaultInteractiveObject = menu.infoTableMode == nil })
+	local defaultInteractiveObject = false
+	if menu.showMultiverse then
+		defaultInteractiveObject = menu.ventureMode == nil
+	else
+		defaultInteractiveObject = menu.infoTableMode == nil
+	end
+	local ftable = frame:addTable(1, { tabOrder = 3, width = width, height = height, x = offsetx, y = offsety, scaling = false, borderEnabled = false, reserveScrollBar = false, defaultInteractiveObject = defaultInteractiveObject })
 	ftable:addConnection(1, 1, true)
 
-	local firstactive, foundselection
+	local foundselection
 	local leftbar = menu.showMultiverse and config.leftBarMultiverse or config.leftBar
 	for _, entry in ipairs(leftbar) do
 		if (entry.condition == nil) or entry.condition() then
@@ -2190,30 +2238,35 @@ function newFuncs.createSideBar(firsttime, frame, width, height, offsetx, offset
 					local selectedmode = false
 					if type(entry.mode) == "table" then
 						for _, mode in ipairs(entry.mode) do
-							if mode == menu.infoTableMode then
-								selectedmode = true
-								break
+							if menu.showMultiverse then
+								if mode == menu.ventureMode then
+									selectedmode = true
+									break
+								end
+							else
+								if mode == menu.infoTableMode then
+									selectedmode = true
+									break
+								end
 							end
 						end
 					else
-						if entry.mode == menu.infoTableMode then
-							selectedmode = true
+						if menu.showMultiverse then
+							if entry.mode == menu.ventureMode then
+								selectedmode = true
+							end
+						else
+							if entry.mode == menu.infoTableMode then
+								selectedmode = true
+							end
 						end
 					end
 					if selectedmode then
-						firstactive = nil
 						foundselection = true
-					end
-					if (not foundselection) and (not firstactive) then
-						firstactive = entry.mode
 					end
 				end
 			end
 		end
-	end
-	if firstactive and firsttime then
-		menu.infoTableMode = firstactive
-		firstactive = nil
 	end
 
 	for _, entry in ipairs(leftbar) do
@@ -2230,14 +2283,27 @@ function newFuncs.createSideBar(firsttime, frame, width, height, offsetx, offset
 				local bgcolor = Helper.defaultTitleBackgroundColor
 				if type(entry.mode) == "table" then
 					for _, mode in ipairs(entry.mode) do
-						if mode == menu.infoTableMode then
-							bgcolor = Helper.defaultArrowRowBackgroundColor
-							break
+						if menu.showMultiverse then
+							if mode == menu.ventureMode then
+								bgcolor = Helper.defaultArrowRowBackgroundColor
+								break
+							end
+						else
+							if mode == menu.infoTableMode then
+								bgcolor = Helper.defaultArrowRowBackgroundColor
+								break
+							end
 						end
 					end
 				else
-					if entry.mode == menu.infoTableMode then
-						bgcolor = Helper.defaultArrowRowBackgroundColor
+					if menu.showMultiverse then
+						if entry.mode == menu.ventureMode then
+							bgcolor = Helper.defaultArrowRowBackgroundColor
+						end
+					else
+						if entry.mode == menu.infoTableMode then
+							bgcolor = Helper.defaultArrowRowBackgroundColor
+						end
 					end
 				end
 				local color = Helper.color.white
@@ -2321,7 +2387,7 @@ function newFuncs.createMissionContext(frame)
 						textProperties.color = Helper.color.grey
 					end
 					local row = objectivetable:addRow(true, { bgColor = Helper.color.transparent })
-					row[1]:setColSpan(1):createText(((menu.contextMenuData.threadtype == "sequential") and (i .. ReadText(1001, 120)) or "·") .. " " .. details.name .. infotext, textProperties)
+					row[1]:setColSpan(1):createText(((menu.contextMenuData.threadtype == "sequential") and (i .. ReadText(1001, 120)) or "Â·") .. " " .. details.name .. infotext, textProperties)
 					row[2]:createIcon("missiontype_" .. details.type, { height = Helper.standardTextHeight })
 					if i == maxObjectiveLines then
 						visibleHeight = objectivetable:getFullHeight()
@@ -2347,7 +2413,7 @@ function newFuncs.createMissionContext(frame)
 						-- nothing to do
 					end
 					local row = objectivetable:addRow(true, { bgColor = Helper.color.transparent })
-					row[1]:setColSpan(1):createText(((menu.contextMenuData.threadtype == "sequential") and (i .. ReadText(1001, 120)) or "·") .. " " .. submissionEntry.name .. infotext, textProperties)
+					row[1]:setColSpan(1):createText(((menu.contextMenuData.threadtype == "sequential") and (i .. ReadText(1001, 120)) or "Â·") .. " " .. submissionEntry.name .. infotext, textProperties)
 					row[2]:createIcon("missiontype_" .. submissionEntry.type, { height = Helper.standardTextHeight })
 					if i == maxObjectiveLines then
 						visibleHeight = objectivetable:getFullHeight()
@@ -2468,9 +2534,8 @@ function newFuncs.createMissionContext(frame)
 			active = false
 			mouseovertext = ReadText(1026, 3242)
 		elseif menu.contextMenuData.onlinechapter ~= "" then
-			active = not C.HasAcceptedOnlineMission()
-			if not active then
-				mouseovertext = ReadText(1026, 11305)
+			if C.HasAcceptedOnlineMission() then
+				mouseovertext = "\27R" .. ReadText(1026, 11306)
 			end
 		end
 		row[1]:createButton({ active = active, mouseOverText = mouseovertext, helpOverlayID = "map_acceptmission", helpOverlayText = " ", helpOverlayHighlightOnly = true }):setText(ReadText(1001, 57), { halign = "center" })
@@ -2497,6 +2562,7 @@ function newFuncs.createMissionContext(frame)
 		row[2]:createButton({  }):setText(ReadText(1001, 3326), { halign = "center" })
 		row[2].handlers.onClick = menu.buttonMissionBriefing
 		row[2].properties.uiTriggerID = "missionbriefing"
+		local row
 
 		-- kuertee start: callback
 		-- if menu.contextMenuData.type ~= "guidance" then
@@ -2509,7 +2575,7 @@ function newFuncs.createMissionContext(frame)
 					active = true
 				end
 			end
-			local row = bottomtable:addRow(true, { fixed = true, bgColor = Helper.color.transparent })
+			row = bottomtable:addRow(true, { fixed = true, bgColor = Helper.color.transparent })
 			row[1]:createButton({  }):setText(active and ReadText(1001, 3413) or ReadText(1001, 3406), { halign = "center" })
 			row[1].handlers.onClick = menu.buttonMissionActivate
 			row[1].properties.uiTriggerID = "missionactivate"
@@ -2518,6 +2584,16 @@ function newFuncs.createMissionContext(frame)
 		-- end
 		-- kuertee end: callback
 
+		-- deliver wares
+		if #menu.contextMenuData.deliveryWares > 0 then
+			if not row then
+				row = bottomtable:addRow(true, { fixed = true, bgColor = Helper.color.transparent })
+			end
+
+			row[2]:createButton({ active = menu.checkDeliverWaresCargo, mouseOverText = function () return menu.checkDeliverWaresCargo() and "" or ("\27R" .. ReadText(1026, 3406)) end }):setText(ReadText(1001, 3423), { halign = "center" })
+			row[2].handlers.onClick = menu.buttonMissionDeliverWares
+			row[2].properties.uiTriggerID = "missiondeliverwares"
+		end
 	end
 	local neededheight = bottomtable.properties.y + bottomtable:getFullHeight() + Helper.frameBorder
 	if frame.properties.y + neededheight > Helper.viewHeight then
@@ -2569,174 +2645,127 @@ function newFuncs.onRowChanged(row, rowdata, uitable, modified, input, source)
 		return
 	end
 
-	if (menu.infoTableMode == "info") then
-		if uitable == menu.infoTable then
-			if (menu.infoMode.left == "objectinfo") or (menu.infoMode.left == "objectcrew") or (menu.infoMode.left == "objectloadout") then
-				menu.selectedRows.infotableleft = row
-				if menu.infoMode.left == "objectloadout" then
-					local infomacrostolaunch = menu.infoTablePersistentData.left.macrostolaunch
-					if (type(rowdata) == "table") and (rowdata[1] == "info_deploy") then
-						if GetMacroData(rowdata[2], "islasertower") and (infomacrostolaunch.lasertower ~= rowdata[2]) then
-							menu.infoTablePersistentData.left.macrostolaunch = { lasertower = rowdata[2] }
-						elseif IsMacroClass(rowdata[2], "mine") and (infomacrostolaunch.mine ~= rowdata[2]) then
-							menu.infoTablePersistentData.left.macrostolaunch = { mine = rowdata[2] }
-						elseif IsMacroClass(rowdata[2], "navbeacon") and (infomacrostolaunch.navbeacon ~= rowdata[2]) then
-							menu.infoTablePersistentData.left.macrostolaunch = { navbeacon = rowdata[2] }
-						elseif IsMacroClass(rowdata[2], "resourceprobe") and (infomacrostolaunch.resourceprobe ~= rowdata[2]) then
-							menu.infoTablePersistentData.left.macrostolaunch = { resourceprobe = rowdata[2] }
-						elseif IsMacroClass(rowdata[2], "satellite") and (infomacrostolaunch.satellite ~= rowdata[2]) then
-							menu.infoTablePersistentData.left.macrostolaunch = { satellite = rowdata[2] }
-						end
-					else
-						menu.infoTablePersistentData.left.macrostolaunch = {}
-					end
-				end
-			elseif (menu.infoMode.left == "orderqueue") or (menu.infoMode.left == "orderqueue_advanced") or (menu.infoMode.left == "standingorders") then
-				menu.infoTablePersistentData.left.selectedorder = rowdata
-				if type(menu.infoTablePersistentData.left.selectedorder) == "table" then
-					menu.infoTablePersistentData.left.selectedorder.object = menu.infoSubmenuObject
-				end
+	if menu.showMultiverse then
+		if (menu.ventureMode == "ventureoperation") or (menu.ventureMode == "ventureseason") then
+			if uitable == menu.infoTable then
+				Helper.callExtensionFunction("multiverse", "onRowChanged", menu, menu.ventureMode, row, rowdata, uitable, modified, input, source)
 			end
 		end
-
-	-- kuertee start: callback
-	-- elseif (menu.infoTableMode == "objectlist") or (menu.infoTableMode == "propertyowned") then
-	elseif (string.find ("" .. tostring (menu.infoTableMode), "objectlist")) or (string.find ("" .. tostring (menu.infoTableMode), "propertyowned")) then
-	-- kuertee end: callback
-
-		if uitable == menu.infoTable then
-			if type(rowdata) == "table" then
-				local convertedComponent = ConvertIDTo64Bit(rowdata[2])
-				if (source ~= "auto") and convertedComponent then
-					local convertedcomponentclass = ffi.string(C.GetComponentClass(convertedComponent))
-					if convertedcomponentclass  == "station" then
-						AddUITriggeredEvent(menu.name, "selection_station", convertedComponent)
-					end
-					if (convertedcomponentclass  == "ship_s") or (convertedcomponentclass  == "ship_m") or (convertedcomponentclass  == "ship_l") or (convertedcomponentclass  == "ship_xl") then
-						AddUITriggeredEvent(menu.name, "selection_ship", convertedComponent)
-					end
-					if (convertedcomponentclass == "resourceprobe") then
-						AddUITriggeredEvent(menu.name, "selection_resourceprobe", convertedComponent)
-					end
-
-					if (menu.mode ~= "orderparam_object") and (input ~= "rightmouse") then
-						menu.infoSubmenuObject = convertedComponent
-						if menu.infoTableMode == "info" then
-							menu.refreshInfoFrame(nil, 0)
-						elseif menu.searchTableMode == "info" then
-							menu.refreshInfoFrame2(nil, 0)
-						end
-					end
-				end
-				menu.updateSelectedComponents(modified, source == "auto", convertedComponent)
-				menu.setSelectedMapComponents()
-			end
-		end
-	elseif menu.infoTableMode == "plots" then
-		if menu.plotDoNotUpdate then
-			menu.plotDoNotUpdate = nil
-		elseif menu.table_plotlist and (uitable == menu.table_plotlist.id) then
-			menu.settoprow = GetTopRow(menu.table_plotlist)
-			menu.setrow = Helper.currentTableRow[menu.table_plotlist]
-			if not rowdata then
-				print("rowdata empty. table id: " .. tostring(uitable) .. ", row: " .. tostring(row) .. ", rowdata: " .. tostring(rowdata))
-			elseif input == "mouse" then
-				--print("table id: " .. tostring(uitable) .. ", row: " .. tostring(row) .. ", rowdata: " .. tostring(rowdata) .. ", menu.table_plotlist.id: " .. tostring(menu.table_plotlist.id) .. ", uitable == menu.table_plotlist.id? " .. tostring(uitable == menu.table_plotlist.id))
-				if rowdata == "plots_new" then
-					menu.updatePlotData("plots_new", true)
-				else
-					C.SetFocusMapComponent(menu.holomap, rowdata, true)
-				end
-				menu.updatePlotData(rowdata)
-			end
-		end
-	elseif (menu.infoTableMode == "missionoffer") or (menu.infoTableMode == "mission") then
-		if uitable == menu.infoTable then
-			local oldmission = menu.missionModeCurrent
-			if type(rowdata) == "table" then
-				local missionid = ConvertStringTo64Bit(rowdata[1])
-				menu.missionModeCurrent = rowdata[1]
-				if menu.missionDoNotUpdate then
-					menu.missionDoNotUpdate = nil
-				elseif input == "mouse" then
-					if menu.contextMenuData and menu.contextMenuData.missionid and (menu.contextMenuData.missionid == missionid) then
-						menu.closeContextMenu()
-						menu.missionModeContext = nil
-					else
-						menu.closeContextMenu()
-						menu.showMissionContext(missionid)
-						menu.missionModeContext = true
-					end
-				end
-			elseif type(rowdata) == "string" then
-				menu.missionModeCurrent = rowdata
-				if menu.missionDoNotUpdate then
-					menu.missionDoNotUpdate = nil
-				elseif input == "mouse" then
-					menu.closeContextMenu()
-					menu.missionModeContext = nil
-				end
-			end
-			if menu.missionDoNotUpdate then
-				menu.missionDoNotUpdate = nil
-			elseif menu.missionModeCurrent ~= oldmission then
-				if source ~= "auto" then
-					menu.refreshInfoFrame()
-				end
-			end
-		end
-	elseif menu.infoTableMode == "ventureoutcomes" then
-		if uitable == menu.infoTable then
-			if type(rowdata) == "table" then
-				if (rowdata[1] == "outcome") and ((not menu.infoTablePersistentData.left.selectedOutcome) or (rowdata[2].id ~= menu.infoTablePersistentData.left.selectedOutcome.id)) then
-					menu.infoTablePersistentData.left.selectedOutcome = rowdata[2]
-					menu.infoTablePersistentData.left.selectedVenture = nil
-					menu.refreshIF = getElapsedTime()
-				elseif (rowdata[1] == "venture") and ((not menu.infoTablePersistentData.left.selectedVenture) or (rowdata[2].platform.id ~= menu.infoTablePersistentData.left.selectedVenture.platform.id)) then
-					menu.infoTablePersistentData.left.selectedVenture = rowdata[2]
-					menu.infoTablePersistentData.left.selectedOutcome = nil
-					menu.refreshIF = getElapsedTime()
-				end
-			else
-				if menu.infoTablePersistentData.left.selectedOutcome or menu.infoTablePersistentData.left.selectedVenture then
-					menu.infoTablePersistentData.left.selectedOutcome = nil
-					menu.infoTablePersistentData.left.selectedVenture = nil
-					menu.refreshIF = getElapsedTime()
-				end
-			end
-		end
-	elseif menu.infoTableMode == "ventureoperation" then
-		if uitable == menu.infoTable then
-			if type(rowdata) == "table" then
-				if rowdata[1] == "venture" then
-					menu.currentOperationSelection = rowdata[2].id
-					if input == "mouse" then
-						if menu.contextMenuData and menu.contextMenuData.venture and (menu.contextMenuData.venture == rowdata[2].id) then
-							menu.closeContextMenu()
+	else
+		if (menu.infoTableMode == "info") then
+			if uitable == menu.infoTable then
+				if (menu.infoMode.left == "objectinfo") or (menu.infoMode.left == "objectcrew") or (menu.infoMode.left == "objectloadout") then
+					menu.selectedRows.infotableleft = row
+					if menu.infoMode.left == "objectloadout" then
+						local infomacrostolaunch = menu.infoTablePersistentData.left.macrostolaunch
+						if (type(rowdata) == "table") and (rowdata[1] == "info_deploy") then
+							if GetMacroData(rowdata[2], "islasertower") and (infomacrostolaunch.lasertower ~= rowdata[2]) then
+								menu.infoTablePersistentData.left.macrostolaunch = { lasertower = rowdata[2] }
+							elseif IsMacroClass(rowdata[2], "mine") and (infomacrostolaunch.mine ~= rowdata[2]) then
+								menu.infoTablePersistentData.left.macrostolaunch = { mine = rowdata[2] }
+							elseif IsMacroClass(rowdata[2], "navbeacon") and (infomacrostolaunch.navbeacon ~= rowdata[2]) then
+								menu.infoTablePersistentData.left.macrostolaunch = { navbeacon = rowdata[2] }
+							elseif IsMacroClass(rowdata[2], "resourceprobe") and (infomacrostolaunch.resourceprobe ~= rowdata[2]) then
+								menu.infoTablePersistentData.left.macrostolaunch = { resourceprobe = rowdata[2] }
+							elseif IsMacroClass(rowdata[2], "satellite") and (infomacrostolaunch.satellite ~= rowdata[2]) then
+								menu.infoTablePersistentData.left.macrostolaunch = { satellite = rowdata[2] }
+							end
 						else
-							menu.contextMenuMode = "ventureconfig"
-							local offsetx = menu.infoTableOffsetX + menu.infoTableWidth + Helper.borderSize + config.contextBorder
-							local offsety = menu.infoTableOffsetY
-							menu.contextMenuData = { xoffset = offsetx, yoffset = offsety, venture = rowdata[2].id, selectedShips = {} }
-							menu.createContextFrame(menu.ventureConfigWidth)
+							menu.infoTablePersistentData.left.macrostolaunch = {}
 						end
 					end
-				elseif (rowdata[1] == "mission") or (rowdata[1] == "missionoffer") then
-					local missionid = ConvertStringTo64Bit(rowdata[2].ID)
-					menu.currentOperationSelection = missionid
-					if input == "mouse" then
+				elseif (menu.infoMode.left == "orderqueue") or (menu.infoMode.left == "orderqueue_advanced") or (menu.infoMode.left == "standingorders") then
+					menu.infoTablePersistentData.left.selectedorder = rowdata
+					if type(menu.infoTablePersistentData.left.selectedorder) == "table" then
+						menu.infoTablePersistentData.left.selectedorder.object = menu.infoSubmenuObject
+					end
+				end
+			end
+
+		-- kuertee start: callback
+		-- elseif (menu.infoTableMode == "objectlist") or (menu.infoTableMode == "propertyowned") then
+		elseif (string.find ("" .. tostring (menu.infoTableMode), "objectlist")) or (string.find ("" .. tostring (menu.infoTableMode), "propertyowned")) then
+		-- kuertee end: callback
+
+			if uitable == menu.infoTable then
+				if type(rowdata) == "table" then
+					local convertedComponent = ConvertIDTo64Bit(rowdata[2])
+					if (source ~= "auto") and convertedComponent then
+						local convertedcomponentclass = ffi.string(C.GetComponentClass(convertedComponent))
+						if convertedcomponentclass  == "station" then
+							AddUITriggeredEvent(menu.name, "selection_station", convertedComponent)
+						end
+						if (convertedcomponentclass  == "ship_s") or (convertedcomponentclass  == "ship_m") or (convertedcomponentclass  == "ship_l") or (convertedcomponentclass  == "ship_xl") then
+							AddUITriggeredEvent(menu.name, "selection_ship", convertedComponent)
+						end
+						if (convertedcomponentclass == "resourceprobe") then
+							AddUITriggeredEvent(menu.name, "selection_resourceprobe", convertedComponent)
+						end
+
+						if (menu.mode ~= "orderparam_object") and (input ~= "rightmouse") then
+							menu.infoSubmenuObject = convertedComponent
+							if menu.infoTableMode == "info" then
+								menu.refreshInfoFrame(nil, 0)
+							elseif menu.searchTableMode == "info" then
+								menu.refreshInfoFrame2(nil, 0)
+							end
+						end
+					end
+					menu.updateSelectedComponents(modified, source == "auto", convertedComponent)
+					menu.setSelectedMapComponents()
+				end
+			end
+		elseif menu.infoTableMode == "plots" then
+			if menu.plotDoNotUpdate then
+				menu.plotDoNotUpdate = nil
+			elseif menu.table_plotlist and (uitable == menu.table_plotlist.id) then
+				menu.settoprow = GetTopRow(menu.table_plotlist)
+				menu.setrow = Helper.currentTableRow[menu.table_plotlist]
+				if not rowdata then
+					print("rowdata empty. table id: " .. tostring(uitable) .. ", row: " .. tostring(row) .. ", rowdata: " .. tostring(rowdata))
+				elseif input == "mouse" then
+					--print("table id: " .. tostring(uitable) .. ", row: " .. tostring(row) .. ", rowdata: " .. tostring(rowdata) .. ", menu.table_plotlist.id: " .. tostring(menu.table_plotlist.id) .. ", uitable == menu.table_plotlist.id? " .. tostring(uitable == menu.table_plotlist.id))
+					if rowdata == "plots_new" then
+						menu.updatePlotData("plots_new", true)
+					else
+						C.SetFocusMapComponent(menu.holomap, rowdata, true)
+					end
+					menu.updatePlotData(rowdata)
+				end
+			end
+		elseif (menu.infoTableMode == "missionoffer") or (menu.infoTableMode == "mission") then
+			if uitable == menu.infoTable then
+				local oldmission = menu.missionModeCurrent
+				if type(rowdata) == "table" then
+					local missionid = ConvertStringTo64Bit(rowdata[1])
+					menu.missionModeCurrent = rowdata[1]
+					if menu.missionDoNotUpdate then
+						menu.missionDoNotUpdate = nil
+					elseif input == "mouse" then
 						if menu.contextMenuData and menu.contextMenuData.missionid and (menu.contextMenuData.missionid == missionid) then
 							menu.closeContextMenu()
+							menu.missionModeContext = nil
 						else
 							menu.closeContextMenu()
-							menu.showMissionContext(missionid, rowdata[1] == "missionoffer")
+							menu.showMissionContext(missionid)
+							menu.missionModeContext = true
 						end
 					end
-				else
-					menu.currentOperationSelection = nil
+				elseif type(rowdata) == "string" then
+					menu.missionModeCurrent = rowdata
+					if menu.missionDoNotUpdate then
+						menu.missionDoNotUpdate = nil
+					elseif input == "mouse" then
+						menu.closeContextMenu()
+						menu.missionModeContext = nil
+					end
 				end
-				if source ~= "auto" then
-					menu.refreshInfoFrame()
+				if menu.missionDoNotUpdate then
+					menu.missionDoNotUpdate = nil
+				elseif menu.missionModeCurrent ~= oldmission then
+					if source ~= "auto" then
+						menu.refreshInfoFrame()
+					end
 				end
 			end
 		end
@@ -2775,128 +2804,111 @@ function newFuncs.onRowChanged(row, rowdata, uitable, modified, input, source)
 end
 function newFuncs.onSelectElement(uitable, modified, row, isdblclick, input)
 	local menu = mapMenu
-
-	-- start Forleyor_infoCenter Callback:
-	if callbacks ["ic_onSelectElement"] then
-		for _, callback in ipairs (callbacks ["ic_onSelectElement"]) do
-			callback (uitable, modified, row, isdblclick, input)
-		end
-	end
-	-- end Forleyor_infoCenter:
-
 	local rowdata = Helper.getCurrentRowData(menu, uitable)
+	if menu.showMultiverse then
+		if menu.ventureMode == "ventureoperation" then
+			if uitable == menu.infoTable then
+				Helper.callExtensionFunction("multiverse", "onSelectRow", menu, menu.ventureMode, uitable, modified, row, isdblclick, input)
+			end
+		end
+	else
 
-	-- if (menu.infoTableMode == "objectlist") or (menu.infoTableMode == "propertyowned") then
-	-- kuertee start: callback
-	if (string.find ("" .. tostring (menu.infoTableMode), "objectlist")) or (string.find ("" .. tostring (menu.infoTableMode), "propertyowned")) then
-	-- kuertee end: callback
+		-- start Forleyor_infoCenter Callback:
+		if callbacks ["ic_onSelectElement"] then
+			for _, callback in ipairs (callbacks ["ic_onSelectElement"]) do
+				callback (uitable, modified, row, isdblclick, input)
+			end
+		end
+		-- end Forleyor_infoCenter:
 
-		if uitable == menu.infoTable then
-			if type(rowdata) == "table" then
-				local convertedRowComponent = ConvertIDTo64Bit(rowdata[2])
-				menu.setSelectedMapComponents()
+		-- if (menu.infoTableMode == "objectlist") or (menu.infoTableMode == "propertyowned") then
+		-- kuertee start: callback
+		if (string.find ("" .. tostring (menu.infoTableMode), "objectlist")) or (string.find ("" .. tostring (menu.infoTableMode), "propertyowned")) then
+		-- kuertee end: callback
 
-				if convertedRowComponent and (convertedRowComponent ~= 0) then
-					local isonlineobject, isplayerowned = GetComponentData(rowdata[2], "isonlineobject", "isplayerowned")
-					if (isdblclick or (input ~= "mouse")) and (ffi.string(C.GetComponentClass(convertedRowComponent)) ~= "sector") then
-						if string.find(rowdata[1], "subordinates") then
-							local subordinates = menu.infoTableData.left.subordinates[tostring(rowdata[2])] or {}
-							local groups = {}
-							for _, subordinate in ipairs(subordinates) do
-								local group = GetComponentData(subordinate, "subordinategroup")
-								if group and group > 0 then
-									if groups[group] then
-										table.insert(groups[group].subordinates, subordinate)
-									else
-										groups[group] = { assignment = ffi.string(C.GetSubordinateGroupAssignment(convertedRowComponent, group)), subordinates = { subordinate } }
+			if uitable == menu.infoTable then
+				if type(rowdata) == "table" then
+					local convertedRowComponent = ConvertIDTo64Bit(rowdata[2])
+					menu.setSelectedMapComponents()
+
+					if convertedRowComponent and (convertedRowComponent ~= 0) then
+						local isonlineobject, isplayerowned = GetComponentData(rowdata[2], "isonlineobject", "isplayerowned")
+						if (isdblclick or (input ~= "mouse")) and (ffi.string(C.GetComponentClass(convertedRowComponent)) ~= "sector") then
+							if string.find(rowdata[1], "subordinates") then
+								local subordinates = menu.infoTableData.left.subordinates[tostring(rowdata[2])] or {}
+								local groups = {}
+								for _, subordinate in ipairs(subordinates) do
+									local group = GetComponentData(subordinate, "subordinategroup")
+									if group and group > 0 then
+										if groups[group] then
+											table.insert(groups[group].subordinates, subordinate)
+										else
+											groups[group] = { assignment = ffi.string(C.GetSubordinateGroupAssignment(convertedRowComponent, group)), subordinates = { subordinate } }
+										end
 									end
 								end
-							end
 
-							if groups[rowdata[3]] then
-								C.SetFocusMapComponent(menu.holomap, ConvertIDTo64Bit(groups[rowdata[3]].subordinates[1]), true)
-								menu.addSelectedComponents(groups[rowdata[3]].subordinates, modified ~= "shift")
-							end
-						elseif isplayerowned and isonlineobject then
-							local assigneddock = ConvertIDTo64Bit(GetComponentData(convertedRowComponent, "assigneddock"))
-							if assigneddock then
-								local container = C.GetContextByClass(assigneddock, "container", false)
-								if container then
-									C.SetFocusMapComponent(menu.holomap, container, true)
+								if groups[rowdata[3]] then
+									C.SetFocusMapComponent(menu.holomap, ConvertIDTo64Bit(groups[rowdata[3]].subordinates[1]), true)
+									menu.addSelectedComponents(groups[rowdata[3]].subordinates, modified ~= "shift")
 								end
+							elseif isplayerowned and isonlineobject then
+								local assigneddock = ConvertIDTo64Bit(GetComponentData(convertedRowComponent, "assigneddock"))
+								if assigneddock then
+									local container = C.GetContextByClass(assigneddock, "container", false)
+									if container then
+										C.SetFocusMapComponent(menu.holomap, container, true)
+									end
+								end
+							else
+								C.SetFocusMapComponent(menu.holomap, convertedRowComponent, true)
 							end
-						else
-							C.SetFocusMapComponent(menu.holomap, convertedRowComponent, true)
 						end
 					end
 				end
 			end
-		end
-	elseif menu.infoTableMode == "plots" then
-		if menu.plotDoNotUpdate then
-			menu.plotDoNotUpdate = nil
-		elseif menu.table_plotlist and (uitable == menu.table_plotlist.id) then
-			if rowdata == "plots_new" then
-				menu.updatePlotData("plots_new", true)
-			else
-				C.SetFocusMapComponent(menu.holomap, rowdata, true)
-			end
-			menu.updatePlotData(rowdata)
-		end
-	elseif (menu.infoTableMode == "missionoffer") or (menu.infoTableMode == "mission") then
-		if uitable == menu.infoTable then
-			if type(rowdata) == "table" then
-				menu.missionModeCurrent = rowdata[1]
-				local missionid = ConvertStringTo64Bit(rowdata[1])
-				if menu.contextMenuData and menu.contextMenuData.missionid and (menu.contextMenuData.missionid == missionid) then
-					menu.closeContextMenu()
-					menu.missionModeContext = nil
+		elseif menu.infoTableMode == "plots" then
+			if menu.plotDoNotUpdate then
+				menu.plotDoNotUpdate = nil
+			elseif menu.table_plotlist and (uitable == menu.table_plotlist.id) then
+				if rowdata == "plots_new" then
+					menu.updatePlotData("plots_new", true)
 				else
-					menu.closeContextMenu()
-					menu.showMissionContext(missionid)
-					menu.missionModeContext = true
+					C.SetFocusMapComponent(menu.holomap, rowdata, true)
 				end
-			elseif type(rowdata) == "string" then
-				menu.missionModeCurrent = rowdata
-				if menu.missionDoNotUpdate then
-					menu.missionDoNotUpdate = nil
-				else
-					menu.closeContextMenu()
-					menu.missionModeContext = nil
-				end
+				menu.updatePlotData(rowdata)
 			end
-		end
-	elseif (menu.infoTableMode == "info") then
-		if (isdblclick or (input ~= "mouse")) then
-			if (rowdata == "info_focus") or ((type(rowdata) == "table") and (rowdata[1] == "info_focus")) then
-				C.SetFocusMapComponent(menu.holomap, menu.infoSubmenuObject, true)
-			end
-			if (menu.infoMode.left == "orderqueue") or (menu.infoMode.left == "orderqueue_advanced") then
-				if (type(rowdata) == "table") and (type(rowdata[1]) == "number") then
-					C.SetFocusMapOrder(menu.holomap, menu.infoSubmenuObject, rowdata[1], true)
-				end
-			end
-		end
-	elseif menu.infoTableMode == "ventureoperation" then
-		if uitable == menu.infoTable then
-			if type(rowdata) == "table" then
-				if rowdata[1] == "venture" then
-					if menu.contextMenuData and menu.contextMenuData.venture and (menu.contextMenuData.venture == rowdata[2].id) then
-						menu.closeContextMenu()
-					else
-						menu.contextMenuMode = "ventureconfig"
-						local offsetx = menu.infoTableOffsetX + menu.infoTableWidth + Helper.borderSize + config.contextBorder
-						local offsety = menu.infoTableOffsetY
-						menu.contextMenuData = { xoffset = offsetx, yoffset = offsety, venture = rowdata[2].id, selectedShips = {} }
-						menu.createContextFrame(menu.ventureConfigWidth)
-					end
-				elseif (rowdata[1] == "mission") or (rowdata[1] == "missionoffer") then
-					local missionid = ConvertStringTo64Bit(rowdata[2].ID)
+		elseif (menu.infoTableMode == "missionoffer") or (menu.infoTableMode == "mission") then
+			if uitable == menu.infoTable then
+				if type(rowdata) == "table" then
+					menu.missionModeCurrent = rowdata[1]
+					local missionid = ConvertStringTo64Bit(rowdata[1])
 					if menu.contextMenuData and menu.contextMenuData.missionid and (menu.contextMenuData.missionid == missionid) then
 						menu.closeContextMenu()
+						menu.missionModeContext = nil
 					else
 						menu.closeContextMenu()
-						menu.showMissionContext(missionid, rowdata[1] == "missionoffer")
+						menu.showMissionContext(missionid)
+						menu.missionModeContext = true
+					end
+				elseif type(rowdata) == "string" then
+					menu.missionModeCurrent = rowdata
+					if menu.missionDoNotUpdate then
+						menu.missionDoNotUpdate = nil
+					else
+						menu.closeContextMenu()
+						menu.missionModeContext = nil
+					end
+				end
+			end
+		elseif (menu.infoTableMode == "info") then
+			if (isdblclick or (input ~= "mouse")) then
+				if (rowdata == "info_focus") or ((type(rowdata) == "table") and (rowdata[1] == "info_focus")) then
+					C.SetFocusMapComponent(menu.holomap, menu.infoSubmenuObject, true)
+				end
+				if (menu.infoMode.left == "orderqueue") or (menu.infoMode.left == "orderqueue_advanced") then
+					if (type(rowdata) == "table") and (type(rowdata[1]) == "number") then
+						C.SetFocusMapOrder(menu.holomap, menu.infoSubmenuObject, rowdata[1], true)
 					end
 				end
 			end
@@ -3212,25 +3224,42 @@ function newFuncs.onTableRightMouseClick(uitable, row, posx, posy)
 						local convertedRowComponent = ConvertIDTo64Bit(rowdata[2])
 						if convertedRowComponent and (convertedRowComponent ~= 0) then
 							local x, y = GetLocalMousePosition()
+							if x == nil then
+								-- gamepad case
+								if posx ~= nil then
+									x = posx + Helper.viewWidth / 2
+									y = posy + Helper.viewHeight / 2
+								end
+							else
+								x = x + Helper.viewWidth / 2
+								y = Helper.viewHeight / 2 - y
+							end
+
 							if menu.mode == "hire" then
 								if GetComponentData(convertedRowComponent, "isplayerowned") and C.IsComponentClass(convertedRowComponent, "controllable") then
-									menu.contextMenuData = { component = convertedRowComponent, xoffset = x + Helper.viewWidth / 2, yoffset = Helper.viewHeight / 2 - y }
-									menu.contextMenuMode = "select"
-									menu.createContextFrame(menu.selectWidth)
+									menu.contextMenuMode = "hire"
+									menu.contextMenuData = { hireObject = convertedRowComponent, xoffset = x, yoffset = y }
+
+									local width = Helper.scaleX(config.hireContextWidth)
+									if menu.contextMenuData.xoffset + width > Helper.viewWidth then
+										menu.contextMenuData.xoffset = Helper.viewWidth - width - Helper.frameBorder
+									end
+
+									menu.createContextFrame(width, nil, menu.contextMenuData.xoffset, menu.contextMenuData.yoffset)
 								end
 							elseif menu.mode == "selectCV" then
-								menu.contextMenuData = { component = convertedRowComponent, xoffset = x + Helper.viewWidth / 2, yoffset = Helper.viewHeight / 2 - y }
+								menu.contextMenuData = { component = convertedRowComponent, xoffset = x, yoffset = y }
 								menu.contextMenuMode = "select"
 								menu.createContextFrame(menu.selectWidth)
 							elseif menu.mode == "orderparam_object" then
 								if menu.checkForOrderParamObject(convertedRowComponent) then
-									menu.contextMenuData = { component = convertedRowComponent, xoffset = x + Helper.viewWidth / 2, yoffset = Helper.viewHeight / 2 - y }
+									menu.contextMenuData = { component = convertedRowComponent, xoffset = x, yoffset = y }
 									menu.contextMenuMode = "select"
 									menu.createContextFrame(menu.selectWidth)
 								end
 							elseif menu.mode == "selectComponent" then
 								if menu.checkForSelectComponent(convertedRowComponent) then
-									menu.contextMenuData = { component = convertedRowComponent, xoffset = x + Helper.viewWidth / 2, yoffset = Helper.viewHeight / 2 - y }
+									menu.contextMenuData = { component = convertedRowComponent, xoffset = x, yoffset = y }
 									menu.contextMenuMode = "select"
 									menu.createContextFrame(menu.selectWidth)
 								end
@@ -3350,9 +3379,8 @@ function newFuncs.closeContextMenu(dueToClose)
 			if dueToClose == "back" then
 				return false
 			end
-		elseif menu.contextMenuMode == "ventureconfig" then
-			Helper.clearTableConnectionColumn(menu, 3)
-			Helper.clearTableConnectionColumn(menu, 4)
+		elseif (menu.contextMenuMode == "ventureconfig") or (menu.contextMenuMode == "venturecreateparty") or (menu.contextMenuMode == "ventureoutcome") then
+			Helper.callExtensionFunction("multiverse", "closeContextMenu", menu, menu.contextMenuMode, dueToClose)
 		end
 		-- REMOVE this block once the mouse out/over event order is correct -> This should be unnessecary due to the global tablemouseout event reseting the picking
 		if menu.currentMouseOverTable and (
@@ -3370,6 +3398,7 @@ function newFuncs.closeContextMenu(dueToClose)
 			or (menu.contextMenuMode == "mission")
 			or (menu.contextMenuMode == "venturepatron")
 			or (menu.contextMenuMode == "filter_multiselectlist")
+			or (menu.contextMenuMode == "hire")
 		) then
 			menu.picking = true
 			menu.currentMouseOverTable = nil
@@ -3412,7 +3441,7 @@ function newFuncs.updateSelectedComponents(modified, keepselection, changedCompo
 		for id in pairs(menu.selectedcomponents) do
 			local component = ConvertStringTo64Bit(id)
 			-- keep gates, satellites, etc. selected even if they don't have their own list entries
-			if C.IsComponentClass(component, "gate") or C.IsComponentClass(component, "asteroid") or C.IsComponentClass(component, "buildstorage") or C.IsComponentClass(component, "highwayentrygate") then
+			if C.IsComponentClass(component, "gate") or C.IsComponentClass(component, "asteroid") or C.IsComponentClass(component, "buildstorage") or C.IsComponentClass(component, "highwayentrygate") or C.IsComponentClass(component, "highway") then
 				table.insert(components, component)
 			end
 
@@ -3802,6 +3831,7 @@ function newFuncs.setupLoadoutInfoSubmenuRows(mode, inputtable, inputobject, ins
 			local hasmissileturrets = false
 			local hasoperationalnormalturrets = false
 			local hasoperationalmissileturrets = false
+			local hasonlytugturrets = true
 
 			local row = inputtable:addRow(false, { bgColor = Helper.defaultTitleBackgroundColor })
 			row[1]:setColSpan(13):createText(ReadText(1001, 8612), Helper.headerRowCenteredProperties) -- Turret Behaviour
@@ -3816,6 +3846,9 @@ function newFuncs.setupLoadoutInfoSubmenuRows(mode, inputtable, inputobject, ins
 							local ismissileturret = C.IsComponentClass(current, "missileturret")
 							hasmissileturrets = hasmissileturrets or ismissileturret
 							hasnormalturrets = hasnormalturrets or (not ismissileturret)
+						end
+						if not GetComponentData(ConvertStringTo64Bit(tostring(current)), "istugweapon") then
+							hasonlytugturrets = false
 						end
 						table.insert(menu.turrets, current)
 					end
@@ -3832,6 +3865,7 @@ function newFuncs.setupLoadoutInfoSubmenuRows(mode, inputtable, inputobject, ins
 					local groupinfo = C.GetUpgradeGroupInfo2(inputobject, "", group.context, group.path, group.group, "turret")
 					if (groupinfo.count > 0) then
 						group.operational = groupinfo.operational
+						group.currentcomponent = groupinfo.currentcomponent
 						group.currentmacro = ffi.string(groupinfo.currentmacro)
 						group.slotsize = ffi.string(groupinfo.slotsize)
 						if (not hasmissileturrets) or (not hasnormalturrets) then
@@ -3848,6 +3882,9 @@ function newFuncs.setupLoadoutInfoSubmenuRows(mode, inputtable, inputobject, ins
 								end
 							end
 						end
+						if not GetComponentData(ConvertStringTo64Bit(tostring(group.currentcomponent)), "istugweapon") then
+							hasonlytugturrets = false
+						end
 						table.insert(menu.turretgroups, group)
 					end
 				end
@@ -3855,16 +3892,6 @@ function newFuncs.setupLoadoutInfoSubmenuRows(mode, inputtable, inputobject, ins
 
 			if (#menu.turrets > 0) or (#menu.turretgroups > 0) then
 				if mode == "ship" then
-					local turretmodes = {
-						[1] = { id = "defend",			text = ReadText(1001, 8613),	icon = "",	displayremoveoption = false },
-						[2] = { id = "attackenemies",	text = ReadText(1001, 8614),	icon = "",	displayremoveoption = false },
-						[3] = { id = "attackcapital",	text = ReadText(1001, 8624),	icon = "",	displayremoveoption = false },
-						[4] = { id = "attackfighters",	text = ReadText(1001, 8625),	icon = "",	displayremoveoption = false },
-						[5] = { id = "mining",			text = ReadText(1001, 8616),	icon = "",	displayremoveoption = false },
-						[6] = { id = "missiledefence",	text = ReadText(1001, 8615),	icon = "",	displayremoveoption = false },
-						[7] = { id = "autoassist",		text = ReadText(1001, 8617),	icon = "",	displayremoveoption = false },
-					}
-
 					local row = inputtable:addRow("info_turretconfig", { bgColor = Helper.color.transparent })
 					row[2]:setColSpan(3):createText(ReadText(1001, 2963))
 
@@ -3876,7 +3903,7 @@ function newFuncs.setupLoadoutInfoSubmenuRows(mode, inputtable, inputobject, ins
 					  end
 					end
 					if not sto_callbackVal then
-						row[5]:setColSpan(9):createDropDown(turretmodes, { startOption = function () return menu.getDropDownTurretModeOption(inputobject, "all") end })
+						row[5]:setColSpan(9):createDropDown(Helper.getTurretModes(nil, not hasonlytugturrets), { startOption = function () return menu.getDropDownTurretModeOption(inputobject, "all") end })
 						row[5].handlers.onDropDownConfirmed = function(_, newturretmode) menu.noupdate = false; C.SetAllTurretModes(inputobject, newturretmode) end
 					end
 					-- End Subsystem Targeting Orders callback
@@ -3892,7 +3919,7 @@ function newFuncs.setupLoadoutInfoSubmenuRows(mode, inputtable, inputobject, ins
 
 						local row = inputtable:addRow("info_turretconfig" .. i, { bgColor = Helper.color.transparent })
 						row[2]:setColSpan(3):createText(ffi.string(C.GetComponentName(turret)))
-						row[5]:setColSpan(9):createDropDown(turretmodes, { startOption = function () return menu.getDropDownTurretModeOption(turret) end })
+						row[5]:setColSpan(9):createDropDown(Helper.getTurretModes(turret), { startOption = function () return menu.getDropDownTurretModeOption(turret) end })
 						row[5].handlers.onDropDownConfirmed = function(_, newturretmode) menu.noupdate = false; C.SetWeaponMode(turret, newturretmode) end
 						row[5].handlers.onDropDownActivated = function () menu.noupdate = true end
 						dropdownCount = dropdownCount + 1
@@ -3912,7 +3939,7 @@ function newFuncs.setupLoadoutInfoSubmenuRows(mode, inputtable, inputobject, ins
 
 						local row = inputtable:addRow("info_turretgroupconfig" .. i, { bgColor = Helper.color.transparent })
 						row[2]:setColSpan(3):createText(name, { color = (group.operational > 0) and Helper.color.white or Helper.color.red })
-						row[5]:setColSpan(9):createDropDown(turretmodes, { startOption = function () return menu.getDropDownTurretModeOption(inputobject, group.context, group.path, group.group) end, active = group.operational > 0 })
+						row[5]:setColSpan(9):createDropDown(Helper.getTurretModes(group.currentcomponent), { startOption = function () return menu.getDropDownTurretModeOption(inputobject, group.context, group.path, group.group) end, active = group.operational > 0 })
 						row[5].handlers.onDropDownConfirmed = function(_, newturretmode) menu.noupdate = false; C.SetTurretGroupMode2(inputobject, group.context, group.path, group.group, newturretmode) end
 						row[5].handlers.onDropDownActivated = function () menu.noupdate = true end
 						dropdownCount = dropdownCount + 1
