@@ -60,6 +60,8 @@ local function init ()
 		mapMenu.updateTableSelection = newFuncs.updateTableSelection
 		oldFuncs.setupLoadoutInfoSubmenuRows = mapMenu.setupLoadoutInfoSubmenuRows
 		mapMenu.setupLoadoutInfoSubmenuRows = newFuncs.setupLoadoutInfoSubmenuRows
+		oldFuncs.checkForSelectComponent = mapMenu.checkForSelectComponent
+		mapMenu.checkForSelectComponent = newFuncs.checkForSelectComponent
 		-- new functions. i.e. doesn't exist in the original map menu.
 		mapMenu.setSelectComponentMode = newFuncs.setSelectComponentMode
 	end
@@ -605,6 +607,8 @@ function newFuncs.buttonMissionActivate()
 	menu.refreshIF = getElapsedTime()
 end
 function newFuncs.buttonSelectHandler()
+	local menu = mapMenu
+	-- DebugError ("kuertee_menu_map buttonSelectHandler menu.mode: " .. tostring (menu.mode))
 	if menu.mode == "selectCV" then
 		menu.selectCV(menu.contextMenuData.component)
 	elseif menu.mode == "orderparam_object" then
@@ -616,8 +620,8 @@ function newFuncs.buttonSelectHandler()
 		-- kuertee start: callback
 		if menu.modeparam[6] ~= nil then
 			-- if selectComponent returnsection is nil, then do a AddUITriggeredEvent instead
-			DebugError ("kuertee_menu_map.ui.buttonSelectHandler menu.contextMenuData.component " .. tostring (menu.contextMenuData.component))
-			DebugError ("kuertee_menu_map.ui.buttonSelectHandler menu.contextMenuData.component " .. tostring (ConvertStringToLuaID (tostring (menu.contextMenuData.component))))
+			-- DebugError ("kuertee_menu_map.ui.buttonSelectHandler menu.contextMenuData.component " .. tostring (menu.contextMenuData.component))
+			-- DebugError ("kuertee_menu_map.ui.buttonSelectHandler menu.contextMenuData.component " .. tostring (ConvertStringToLuaID (tostring (menu.contextMenuData.component))))
 			AddUITriggeredEvent (menu.modeparam[6], "select_component", ConvertStringToLuaID (tostring (menu.contextMenuData.component)))
 			menu.mode = menu.old_mode
 			menu.modeparam = menu.old_modeparam
@@ -628,6 +632,7 @@ function newFuncs.buttonSelectHandler()
 			return
 		end
 
+		-- DebugError ("kuertee_menu_map buttonSelectHandler menu.modeparam [1]: " .. tostring (menu.modeparam [1]))
 		-- if menu.checkForSelectComponent(menu.contextMenuData.component) then
 		if menu.modeparam[1] and menu.checkForSelectComponent(menu.contextMenuData.component) then
 		-- kuertee end: callback
@@ -4460,5 +4465,50 @@ function newFuncs.setupLoadoutInfoSubmenuRows(mode, inputtable, inputobject, ins
 		local row = inputtable:addRow(false, { bgColor = Helper.color.unselectable })
 		row[2]:setColSpan(12):createText(ReadText(1001, 6526))
 	end
+end
+function newFuncs.checkForSelectComponent(component)
+	-- kuertee: replaced with checkForSelectComponent from pre-4.1 because the 4.1 version returned these types of errors:
+	-- [=ERROR=] 282601.58 SetupFilterForMapMode(): Given class on idx '1' is nullptr.
+
+	-- start 4.1:
+	-- local numclasses = menu.modeparam[2] and #menu.modeparam[2] or 0
+	-- local classes = ffi.new("const char*[?]", numclasses)
+	-- if numclasses > 0 then
+	-- 	for _, class in ipairs(menu.modeparam[2]) do
+	-- 		classes[0] = Helper.ffiNewString(class)
+	-- 	end
+	-- end
+	-- local result = C.FilterComponentForMapMode(component, classes, numclasses, menu.modeparam[4] or -1, false)
+	-- Helper.ffiClearNewHelper()
+	-- return result
+	-- end 4.1
+
+	-- start: edited from pre-4.1: removed "isonlineobject" data
+	local menu = mapMenu
+	-- DebugError ("kuertee_menu_map checkForSelectComponent component: " .. tostring (component) .. " " .. GetComponentData (component, "name"))
+	local result
+	local isplayerowned = GetComponentData (ConvertStringTo64Bit (tostring (component)), "isplayerowned")
+	-- DebugError ("    kuertee_menu_map checkForSelectComponent isplayerowned: " .. tostring (isplayerowned))
+	-- DebugError ("    kuertee_menu_map checkForSelectComponent menu.modeparam [4]: " .. tostring (menu.modeparam [4]))
+	if menu.modeparam [4] ~= nil then
+		result = (menu.modeparam [4] ~= 0) == isplayerowned
+		-- DebugError ("    kuertee_menu_map checkForSelectComponent result (isplayerowned): " .. tostring (result))
+	end
+	if result ~= false then
+		if menu.modeparam[2] and (#menu.modeparam[2] > 0) then
+			result = false
+			for _, class in ipairs(menu.modeparam[2]) do
+				-- DebugError ("    kuertee_menu_map checkForSelectComponent class: " .. tostring (class))
+				if C.IsComponentClass(component, class) then
+					result = true
+					-- DebugError ("    kuertee_menu_map checkForSelectComponent result (IsComponentClass): " .. tostring (result))
+					break
+				end
+			end
+		end
+	end
+	-- DebugError ("    kuertee_menu_map checkForSelectComponent result (final): " .. tostring (result))
+	return result
+	-- end: edited from pre-4.1
 end
 init ()

@@ -5,6 +5,9 @@ by kuertee
 
 Updates:
 ========
+v4.1.01, 14 Sep 2021:
+-Bug-fix: unresponsive right-click "Select" button e.g. when hiring construction ships.
+
 v4.1.0, 14 Sep 2021:
 -New feature: compatibility with version 4.1 of the game.
 
