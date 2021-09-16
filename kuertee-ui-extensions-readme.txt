@@ -5,6 +5,9 @@ by kuertee
 
 Updates:
 ========
+v4.1.02, 16 Sep 2021:
+-Bug-fix: hiring or "work elsewhere" ui was unresponsive when selecting the position's new location.
+
 v4.1.01, 14 Sep 2021:
 -Bug-fix: unresponsive right-click "Select" button e.g. when hiring construction ships.
 
