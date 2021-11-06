@@ -5,14 +5,17 @@ by kuertee
 
 Updates:
 ========
-v4.1.02, 16 Sep 2021:
--Bug-fix: hiring or "work elsewhere" ui was unresponsive when selecting the position's new location.
+v4.1.03, 06 Nov 2021:
+-Tweak: PlayerInfo menu: Allow custom panels to be shown next to default panels.
 
-v4.1.01, 14 Sep 2021:
--Bug-fix: unresponsive right-click "Select" button e.g. when hiring construction ships.
+Instructions for players:
+=========================
+Just install UI Extensions as normal - that is IF you have a mod that requires UI Extensions.
+You don't need UI Extensions if you don't have a mod that requires UI Extensions.
 
-v4.1.0, 14 Sep 2021:
--New feature: compatibility with version 4.1 of the game.
+Instructions for developers:
+============================
+All other information as described below.
 
 Features:
 =========
@@ -99,6 +102,15 @@ Uninstall:
 
 History
 =======
+v4.1.02, 16 Sep 2021:
+-Bug-fix: hiring or "work elsewhere" ui was unresponsive when selecting the position's new location.
+
+v4.1.01, 14 Sep 2021:
+-Bug-fix: unresponsive right-click "Select" button e.g. when hiring construction ships.
+
+v4.1.0, 14 Sep 2021:
+-New feature: compatibility with version 4.1 of the game.
+
 For v4.0 of the game:
 v2.2.4, 9 Sep 2021:
 -New feature: call back in Transaction Log screen to support UI: Trade Analytics (https://www.nexusmods.com/x4foundations/mods/764).

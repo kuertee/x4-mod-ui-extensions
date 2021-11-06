@@ -249,16 +249,15 @@ function newFuncs.createInfoFrame()
 		menu.createMessages(menu.infoFrame, tableProperties)
 	elseif menu.mode == "personnel" then
 		menu.createPersonnelInfo(menu.infoFrame, tableProperties)
-
-	else
-		-- kuertee start: callback
-		if callbacks ["createInfoFrame_on_info_frame_mode"] then
-			for _, callback in ipairs (callbacks ["createInfoFrame_on_info_frame_mode"]) do
-				callback (menu.infoFrame, tableProperties)
-			end
-		end
-		-- kuertee end: callback
 	end
+
+	-- kuertee start: callback
+	if callbacks ["createInfoFrame_on_info_frame_mode"] then
+		for _, callback in ipairs (callbacks ["createInfoFrame_on_info_frame_mode"]) do
+			callback (menu.infoFrame, tableProperties)
+		end
+	end
+	-- kuertee end: callback
 
 	menu.infoFrame:display()
 end

@@ -918,7 +918,6 @@ function newFuncs.buttonSelectHandler()
 end
 function newFuncs.createInfoFrame()
 	local menu = mapMenu
-	DebugError ("kuertee_menu_map createInfoFrame menu.mode: " .. tostring (menu.mode))
 
 	menu.createInfoFrameRunning = true
 	menu.refreshed = true
