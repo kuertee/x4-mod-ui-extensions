@@ -322,15 +322,6 @@ function newFuncs.createFactions(frame, tableProperties)
 			row[3]:createText(
 				function () return string.format("%+d", GetUIRelation(relation.id)) end,
 				{ font = Helper.standardFontMono, color = function () return menu.relationColor(relation.id) end, fontsize = 14, halign = "right", y = 2 * iconoffset })
-
-			-- kuertee start: callback
-			if callbacks ["createFactions_on_before_render_licences"] then
-				for _, callback in ipairs (callbacks ["createFactions_on_before_render_licences"]) do
-					callback (frame, tableProperties, relation.id, infotable)
-				end
-			end
-			-- kuertee end: callback
-
 		end
 	end
 	infotable:setTopRow(menu.settoprow)
@@ -363,6 +354,15 @@ function newFuncs.createFactions(frame, tableProperties)
 
 			detailtable:addEmptyRow(Helper.standardTextHeight / 2)
 		end
+
+		-- kuertee start: callback
+		if callbacks ["createFactions_on_before_render_licences"] then
+			for _, callback in ipairs (callbacks ["createFactions_on_before_render_licences"]) do
+				callback (frame, tableProperties, relation.id, detailtable)
+			end
+		end
+		-- kuertee end: callback
+
 		-- licences
 		if menu.licences[relation.id] and #menu.licences[relation.id] > 0 then
 			local row = detailtable:addRow(nil, { bgColor = Helper.color.transparent })

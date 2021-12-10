@@ -5,8 +5,8 @@ by kuertee
 
 Updates:
 ========
-v4.1.03, 06 Nov 2021:
--Tweak: PlayerInfo menu: Allow custom panels to be shown next to default panels.
+v4.2.0, 10 Dec 2021:
+-Tweak: PlayerInfo menu: The callback, "createFactions_on_before_render_licences", now occurs BEFORE the list of faction licences - to support the new 4.x 2-panel factions list.
 
 Instructions for players:
 =========================
@@ -102,6 +102,9 @@ Uninstall:
 
 History
 =======
+v4.1.03, 06 Nov 2021:
+-Tweak: PlayerInfo menu: Allow custom panels to be shown next to default panels.
+
 v4.1.02, 16 Sep 2021:
 -Bug-fix: hiring or "work elsewhere" ui was unresponsive when selecting the position's new location.
 
