@@ -5,8 +5,8 @@ by kuertee
 
 Updates:
 ========
-v4.2.0, 10 Dec 2021:
--Tweak: PlayerInfo menu: The callback, "createFactions_on_before_render_licences", now occurs BEFORE the list of faction licences - to support the new 4.x 2-panel factions list.
+v4.2.04, 22 Dec 2021:
+-New feature: Distance tool: The Interact Menu (i.e. right-click) shows the distance from the selected object or from the last left-click on the holo-map. Requires a mod that loads the new kuertee_menu_interactmenu.lua file. E.g. Trade Analytics (https://www.nexusmods.com/x4foundations/mods/764) and/or Waypoint Fields For Deployment (https://www.nexusmods.com/x4foundations/mods/585).
 
 Instructions for players:
 =========================
@@ -102,6 +102,9 @@ Uninstall:
 
 History
 =======
+v4.2.0, 10 Dec 2021:
+-Tweak: PlayerInfo menu: The callback, "createFactions_on_before_render_licences", now occurs BEFORE the list of faction licences - to support the new 4.x 2-panel factions list.
+
 v4.1.03, 06 Nov 2021:
 -Tweak: PlayerInfo menu: Allow custom panels to be shown next to default panels.
 
