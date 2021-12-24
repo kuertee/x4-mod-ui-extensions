@@ -5,6 +5,9 @@ by kuertee
 
 Updates:
 ========
+v4.2.05, 24 Dec 2021:
+-Bug-fix: The distance tool wasn't working when taking measurements from accelerators.
+
 v4.2.04, 22 Dec 2021:
 -New feature: Distance tool: The Interact Menu (i.e. right-click) shows the distance from the selected object or from the last left-click on the holo-map. Requires a mod that loads the new kuertee_menu_interactmenu.lua file. E.g. Trade Analytics (https://www.nexusmods.com/x4foundations/mods/764) and/or Waypoint Fields For Deployment (https://www.nexusmods.com/x4foundations/mods/585).
 

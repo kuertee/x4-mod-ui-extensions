@@ -154,8 +154,8 @@ function newFuncs.onRenderTargetMouseDown (modified)
 	newFuncs.kuertee_offset_freeDistFrom = ffi.new ("UIPosRot")
 	local eclipticoffset = ffi.new ("UIPosRot")
 	newFuncs.kuertee_sector_freeDistFrom = C.GetMapPositionOnEcliptic2 (menu.holomap, newFuncs.kuertee_offset_freeDistFrom, false, 0, eclipticoffset)
-	newFuncs.debugText_forced ("kuertee_sector_freeDistFrom: " .. tostring (newFuncs.kuertee_sector_freeDistFrom))
-	newFuncs.debugText_forced ("kuertee_offset_freeDistFrom: " .. tostring (newFuncs.kuertee_offset_freeDistFrom))
+	-- newFuncs.debugText_forced ("kuertee_sector_freeDistFrom: " .. tostring (newFuncs.kuertee_sector_freeDistFrom))
+	-- newFuncs.debugText_forced ("kuertee_offset_freeDistFrom: " .. tostring (newFuncs.kuertee_offset_freeDistFrom))
 end
 function newFuncs.createContentTable(frame, position)
 	local menu = interactMenu
@@ -319,7 +319,7 @@ function newFuncs.createContentTable(frame, position)
 							kuertee_sector_check = ConvertStringTo64Bit (tostring (kuertee_sector_check))
 						end
 						-- newFuncs.debugText_forced ("kuertee_sector_check: " .. tostring (kuertee_sector_check))
-						local isSameSector = kuertee_sector_check == kuertee_component_distTo
+						local isSameSector = kuertee_sector_check == kuertee_component_distTo or kuertee_isFreeDistFrom ~= true
 						if isSameSector then
 							-- newFuncs.debugText_forced ("kuertee_isSector_distTo: " .. tostring (kuertee_isSector_distTo))
 							local kuertee_posFrom
