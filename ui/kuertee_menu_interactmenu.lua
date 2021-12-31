@@ -1,5 +1,6 @@
 local ffi = require ("ffi")
 local C = ffi.C
+local utf8 = require("utf8")
 local Lib = require ("extensions.sn_mod_support_apis.lua_interface").Library
 local interactMenu
 local mapMenu
@@ -94,8 +95,6 @@ local function init ()
 		interactMenu.registerCallback = newFuncs.registerCallback
 		mapMenu = Lib.Get_Egosoft_Menu ("MapMenu")
 		-- rewrites: interact menu
-		-- oldFuncs.cleanup = interactMenu.cleanup
-		-- interactMenu.cleanup = newFuncs.cleanup
 		oldFuncs.createContentTable = interactMenu.createContentTable
 		interactMenu.createContentTable = newFuncs.createContentTable
 		-- rewrites: map menu
@@ -140,11 +139,6 @@ function newFuncs.debugText (data1, data2, indent, isForced)
 end
 function newFuncs.debugText_forced (data1, data2, indent)
 	return newFuncs.debugText (data1, data2, indent, true)
-end
-function newFuncs.cleanup ()
-	oldFuncs.cleanup ()
-	newFuncs.kuertee_sector_freeDistFrom = nil
-	newFuncs.kuertee_offset_freeDistFrom = nil
 end
 newFuncs.kuertee_sector_freeDistFrom = nil
 newFuncs.kuertee_offset_freeDistFrom = nil

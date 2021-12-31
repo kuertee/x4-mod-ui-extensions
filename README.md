@@ -5,6 +5,9 @@ by kuertee
 
 Updates:
 ========
+v4.2.06, 31 Dec 2021:
+-Bug-fix: The distance tool of the previous version killed the Repeat Orders function. Fixed now.
+
 v4.2.05, 24 Dec 2021:
 -Bug-fix: The distance tool wasn't working when taking measurements from accelerators.
 
