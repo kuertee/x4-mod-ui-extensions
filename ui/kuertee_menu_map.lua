@@ -89,6 +89,10 @@ function newFuncs.registerCallback (callbackName, callbackFunction)
 	-- createSideBar_on_start (config)
 	-- createMissionMode_on_missionoffer_guild_start (ftable)
 	-- replacement ConvertStringTo64Bit (missionId) = createMissionMode_replaceMissionModeCurrent (current missionId)
+	-- createMissionContext_startDescriptionTable (ftable)
+	-- (true | false) = createMissionContext_getIsMissionAcceptable (missionid)
+	-- (true | false) = createMissionContext_getIsMissionBriefingAvailable (missionid)
+	-- createMissionContext_addMissionOfferButtons (ftable, missionid)
 	if callbacks [callbackName] == nil then
 		callbacks [callbackName] = {}
 	end
@@ -2605,6 +2609,14 @@ function newFuncs.createMissionContext(frame)
 	-- description table
 	local desctable = frame:addTable(1, { tabOrder = 3, highlightMode = "off", maxVisibleHeight = menu.contextMenuData.descriptionHeight, x = Helper.borderSize, y = Helper.borderSize, width = menu.contextMenuData.width })
 
+	-- kuertee start: callback
+	if callbacks ["createMissionContext_startDescriptionTable"] then
+		for _, callback in ipairs (callbacks ["createMissionContext_startDescriptionTable"]) do
+			callback (desctable)
+		end
+	end
+	-- kuertee end: callback
+
 	-- title
 	local visibleHeight
 	local row = desctable:addRow(false, { fixed = true })
@@ -2814,12 +2826,50 @@ function newFuncs.createMissionContext(frame)
 				mouseovertext = "\27R" .. ReadText(1026, 11306)
 			end
 		end
+
+		-- kuertee start: callback
+		if active then
+			if callbacks ["createMissionContext_getIsMissionAcceptable"] then
+				for _, callback in ipairs (callbacks ["createMissionContext_getIsMissionAcceptable"]) do
+					active = callback (menu.contextMenuData.missionid)
+					if active == 0 or active == false then
+						break
+					end
+				end
+			end
+		end
+		-- kuertee end: callback
+
 		row[1]:createButton({ active = active, mouseOverText = mouseovertext, helpOverlayID = "map_acceptmission", helpOverlayText = " ", helpOverlayHighlightOnly = true }):setText(ReadText(1001, 57), { halign = "center" })
 		row[1].handlers.onClick = menu.buttonMissionOfferAccept
 		row[1].properties.uiTriggerID = "missionofferaccept"
-		row[2]:createButton({  }):setText(ReadText(1001, 3326), { halign = "center" })
+
+		-- kuertee start: callback
+		local kEM_isBriefingAvailable = false
+		if callbacks ["createMissionContext_getIsMissionBriefingAvailable"] then
+			for _, callback in ipairs (callbacks ["createMissionContext_getIsMissionBriefingAvailable"]) do
+				kEM_isBriefingAvailable = callback (menu.contextMenuData.missionid)
+				if kEM_isBriefingAvailable == 0 or kEM_isBriefingAvailable == false then
+					break
+				end
+			end
+		end
+		-- row[2]:createButton({  }):setText(ReadText(1001, 3326), { halign = "center" })
+		row[2]:createButton({active = kEM_isBriefingAvailable}):setText(ReadText(1001, 3326), { halign = "center" })
+		-- kuertee end: callback
+
 		row[2].handlers.onClick = menu.buttonMissionOfferBriefing
 		row[2].properties.uiTriggerID = "missionofferbriefing"
+
+
+		-- kuertee start: callback
+		if callbacks ["createMissionContext_addMissionOfferButtons"] then
+			for _, callback in ipairs (callbacks ["createMissionContext_addMissionOfferButtons"]) do
+				active = callback (bottomtable, menu.contextMenuData.missionid)
+			end
+		end
+		-- kuertee end: callback
+
 	else
 		-- Abort & Briefing
 		local active = menu.contextMenuData.abortable

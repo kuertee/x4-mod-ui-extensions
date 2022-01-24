@@ -5,14 +5,8 @@ by kuertee
 
 Updates:
 ========
-v4.2.06, 31 Dec 2021:
--Bug-fix: The distance tool of the previous version killed the Repeat Orders function. Fixed now.
-
-v4.2.05, 24 Dec 2021:
--Bug-fix: The distance tool wasn't working when taking measurements from accelerators.
-
-v4.2.04, 22 Dec 2021:
--New feature: Distance tool: The Interact Menu (i.e. right-click) shows the distance from the selected object or from the last left-click on the holo-map. Requires a mod that loads the new kuertee_menu_interactmenu.lua file. E.g. Trade Analytics (https://www.nexusmods.com/x4foundations/mods/764) and/or Waypoint Fields For Deployment (https://www.nexusmods.com/x4foundations/mods/585).
+v4.2.0801, 24 Jan 2022:
+-New feature: new callbacks in the MapMenu to disable mission offer buttons to support the Emergent Missions' download data from mission feature of its Search And Destroy mission types.
 
 Instructions for players:
 =========================
@@ -108,6 +102,15 @@ Uninstall:
 
 History
 =======
+v4.2.06, 31 Dec 2021:
+-Bug-fix: The distance tool of the previous version killed the Repeat Orders function. Fixed now.
+
+v4.2.05, 24 Dec 2021:
+-Bug-fix: The distance tool wasn't working when taking measurements from accelerators.
+
+v4.2.04, 22 Dec 2021:
+-New feature: Distance tool: The Interact Menu (i.e. right-click) shows the distance from the selected object or from the last left-click on the holo-map. Requires a mod that loads the new kuertee_menu_interactmenu.lua file. E.g. Trade Analytics (https://www.nexusmods.com/x4foundations/mods/764) and/or Waypoint Fields For Deployment (https://www.nexusmods.com/x4foundations/mods/585).
+
 v4.2.0, 10 Dec 2021:
 -Tweak: PlayerInfo menu: The callback, "createFactions_on_before_render_licences", now occurs BEFORE the list of faction licences - to support the new 4.x 2-panel factions list.
 
