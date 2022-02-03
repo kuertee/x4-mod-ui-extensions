@@ -93,6 +93,7 @@ function newFuncs.registerCallback (callbackName, callbackFunction)
 	-- (true | false) = createMissionContext_getIsMissionAcceptable (missionid)
 	-- (true | false) = createMissionContext_getIsMissionBriefingAvailable (missionid)
 	-- createMissionContext_addMissionOfferButtons (ftable, missionid)
+	-- createMissionContext_addMissionAcceptedButtons (ftable, missionid)
 	if callbacks [callbackName] == nil then
 		callbacks [callbackName] = {}
 	end
@@ -2920,6 +2921,14 @@ function newFuncs.createMissionContext(frame)
 			row[2].handlers.onClick = menu.buttonMissionDeliverWares
 			row[2].properties.uiTriggerID = "missiondeliverwares"
 		end
+
+		-- kuertee start: callback
+		if callbacks ["createMissionContext_addMissionAcceptedButtons"] then
+			for _, callback in ipairs (callbacks ["createMissionContext_addMissionAcceptedButtons"]) do
+				active = callback (bottomtable, menu.contextMenuData.missionid)
+			end
+		end
+		-- kuertee end: callback
 	end
 	local neededheight = bottomtable.properties.y + bottomtable:getFullHeight() + Helper.frameBorder
 	if frame.properties.y + neededheight > Helper.viewHeight then

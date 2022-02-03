@@ -5,8 +5,8 @@ by kuertee
 
 Updates:
 ========
-v4.2.0801, 24 Jan 2022:
--New feature: new callbacks in the MapMenu to disable mission offer buttons to support the Emergent Missions' download data from mission feature of its Search And Destroy mission types.
+v4.2.0804, 2 Feb 2022:
+-New feature: new callback in the MapMenu that allows new buttons to be added to accepted mission descriptions to support the mod Emergent Missions' "Add A Ship Or Fleet" to that mod's missions.
 
 Instructions for players:
 =========================
@@ -102,6 +102,9 @@ Uninstall:
 
 History
 =======
+v4.2.0801, 24 Jan 2022:
+-New feature: new callbacks in the MapMenu to disable mission offer buttons to support the Emergent Missions' download data from mission feature of its Search And Destroy mission types.
+
 v4.2.06, 31 Dec 2021:
 -Bug-fix: The distance tool of the previous version killed the Repeat Orders function. Fixed now.
 
