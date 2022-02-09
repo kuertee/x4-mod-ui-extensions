@@ -169,9 +169,11 @@ function newFuncs.onUpdate()
 	-- DebugError ("kuertee_menu_userquestion onUpdate")
 	-- kuertee start: refresh feature
 	-- menu.infoFrame:update()
-	if menu.isRefresh == true then
-		menu.createInfoFrame ()
+	local currentTime = getElapsedTime()
+	if menu.isRefresh == true or menu.isRefresh == 1 or (menu.refresh and menu.refresh > currentTime) then
 		menu.isRefresh = false
+		menu.refresh = nil
+		menu.createInfoFrame ()
 	else
 		menu.infoFrame:update()
 	end
