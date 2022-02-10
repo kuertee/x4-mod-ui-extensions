@@ -24,12 +24,16 @@ local function init ()
 		mapMenu.buttonToggleObjectList = newFuncs.buttonToggleObjectList
 		oldFuncs.createInfoFrame = mapMenu.createInfoFrame
 		mapMenu.createInfoFrame = newFuncs.createInfoFrame
+		oldFuncs.createInfoFrame2 = mapMenu.createInfoFrame2
+		mapMenu.createInfoFrame2 = newFuncs.createInfoFrame2
 		oldFuncs.buttonMissionActivate = mapMenu.buttonMissionActivate
 		mapMenu.buttonMissionActivate = newFuncs.buttonMissionActivate
 		oldFuncs.buttonSelectHandler = mapMenu.buttonSelectHandler
 		mapMenu.buttonSelectHandler = newFuncs.buttonSelectHandler
 		oldFuncs.refreshInfoFrame = mapMenu.refreshInfoFrame
 		mapMenu.refreshInfoFrame = newFuncs.refreshInfoFrame
+		oldFuncs.refreshInfoFrame2 = mapMenu.refreshInfoFrame2
+		mapMenu.refreshInfoFrame2 = newFuncs.refreshInfoFrame2
 		oldFuncs.createPropertyOwned = mapMenu.createPropertyOwned
 		mapMenu.createPropertyOwned = newFuncs.createPropertyOwned
 		oldFuncs.createPropertyRow = mapMenu.createPropertyRow
@@ -40,6 +44,8 @@ local function init ()
 		mapMenu.getMissionInfoHelper = newFuncs.getMissionInfoHelper
 		oldFuncs.createSideBar = mapMenu.createSideBar
 		mapMenu.createSideBar = newFuncs.createSideBar
+		oldFuncs.createRightBar = mapMenu.createRightBar
+		mapMenu.createRightBar = newFuncs.createRightBar
 		oldFuncs.createMissionContext = mapMenu.createMissionContext
 		mapMenu.createMissionContext = newFuncs.createMissionContext
 		oldFuncs.onRowChanged = mapMenu.onRowChanged
@@ -73,7 +79,7 @@ function newFuncs.registerCallback (callbackName, callbackFunction)
 	-- note 4: search for the callback names to see where they are executed.
 	-- note 5: if a callback requires a return value, return it in an object var. e.g. "display_on_set_room_active" requires a return of {active = true | false}.
 	-- available callbacks:
-	-- 
+	--
 	-- (true | false) = createInfoFrame_on_menu_infoTableMode (menu.infoFrame)
 	-- buttonMissionActivate_on_activate (missionid)
 	-- buttonToggleObjectList_on_start (objectlistparam, config)
@@ -663,7 +669,7 @@ local config = {
 	hireContextWidth = 350,
 
 	orderDragSupport = {
-	--	order name					position parameter
+		--	order name					position parameter
 		["MoveWait"]				= 1,
 		["CollectDropsInRadius"]	= 1,
 		["DeployObjectAtPosition"]	= 1,
@@ -909,10 +915,10 @@ function newFuncs.buttonSelectHandler()
 			menu.refreshInfoFrame()
 			return
 
-		-- DebugError ("kuertee_menu_map buttonSelectHandler menu.modeparam [1]: " .. tostring (menu.modeparam [1]))
-		-- if menu.checkForSelectComponent(menu.contextMenuData.component) then
+			-- DebugError ("kuertee_menu_map buttonSelectHandler menu.modeparam [1]: " .. tostring (menu.modeparam [1]))
+			-- if menu.checkForSelectComponent(menu.contextMenuData.component) then
 		elseif menu.checkForSelectComponent(menu.contextMenuData.component) then
-		-- kuertee end: callback
+			-- kuertee end: callback
 
 			C.ClearMapObjectFilter(menu.holomap)
 			Helper.closeMenuForSection(menu, menu.modeparam[1], { ConvertStringToLuaID(tostring(menu.contextMenuData.component)) })
@@ -1098,7 +1104,7 @@ function newFuncs.refreshInfoFrame(setrow, setcol)
 			-- if (menu.infoTableMode ~= "objectlist") and (menu.infoTableMode ~= "propertyowned") then
 			-- kuertee start: callback
 			if (not string.find ("" .. tostring (menu.infoTableMode), "objectlist")) and (not string.find ("" .. tostring (menu.infoTableMode), "propertyowned")) then
-			-- kuertee end: callback
+				-- kuertee end: callback
 
 				storerowinfo = false
 			end
@@ -1137,6 +1143,127 @@ function newFuncs.refreshInfoFrame(setrow, setcol)
 		menu.createInfoFrame()
 	end
 	menu.refreshInfoFrame2()
+end
+function newFuncs.refreshInfoFrame2(setrow, setcol)
+	local menu = mapMenu
+
+	-- kuertee start: callback
+	if callbacks ["refreshInfoFrame2_on_start"] then
+		for _, callback in ipairs (callbacks ["refreshInfoFrame2_on_start"]) do
+			if callback () then
+				isCreated = true
+			end
+		end
+	end
+	-- kuertee end: callback
+
+	if (menu.mode == "tradecontext") or (menu.mode == "dropwarescontext") or (menu.mode == "renamecontext") or (menu.mode == "crewtransfercontext") or (menu.mode == "venturepatroninfo") then
+		return
+	end
+	if not menu.createInfoFrame2Running then
+		menu.topRows.infotableright = menu.topRows.infotableright or GetTopRow(menu.infoTableRight)
+		menu.selectedRows.infotableright = setrow or Helper.currentTableRow[menu.infoTableRight]
+		menu.selectedCols.infotableright = setcol or Helper.currentTableCol[menu.infoTableRight]
+
+		if menu.infoTableRight3 then
+			menu.topRows.infotable3right = GetTopRow(menu.infoTableRight3)
+			menu.selectedRows.infotable3right = Helper.currentTableRow[menu.infoTableRight3]
+		end
+		if menu.orderHeaderTableRight and menu.lastactivetable == menu.orderHeaderTableRight.id then
+			menu.selectedRows.orderHeaderTableright = menu.selectedRows.orderHeaderTableright or Helper.currentTableRow[menu.orderHeaderTableRight.id] or 1
+			menu.selectedCols.orderHeaderTableright = menu.selectedCols.orderHeaderTableright or Helper.currentTableCol[menu.orderHeaderTableRight.id]
+		end
+		if menu.ventureSeasonHeaderTableRight and menu.lastactivetable == menu.ventureSeasonHeaderTableRight.id then
+			menu.selectedRows.ventureSeasonHeaderTableright = menu.selectedRows.ventureSeasonHeaderTableright or Helper.currentTableRow[menu.ventureSeasonHeaderTableRight.id] or 1
+			menu.selectedCols.ventureSeasonHeaderTableright = menu.selectedCols.ventureSeasonHeaderTableright or Helper.currentTableCol[menu.ventureSeasonHeaderTableRight.id]
+		end
+		if menu.ventureInventoryHeaderTableRight and menu.lastactivetable == menu.ventureInventoryHeaderTableRight.id then
+			menu.selectedRows.ventureInventoryHeaderTableright = menu.selectedRows.ventureInventoryHeaderTableright or Helper.currentTableRow[menu.ventureInventoryHeaderTableRight.id] or 1
+			menu.selectedCols.ventureInventoryHeaderTableright = menu.selectedCols.ventureInventoryHeaderTableright or Helper.currentTableCol[menu.ventureInventoryHeaderTableRight.id]
+		end
+		menu.createInfoFrame2()
+	end
+end
+function newFuncs.createInfoFrame2()
+	local menu = mapMenu
+
+	menu.createInfoFrame2Running = true
+
+	-- remove old data
+	Helper.clearDataForRefresh(menu, config.infoFrameLayer2)
+
+	-- infoTable
+	local infoTableHeight = Helper.viewHeight - menu.infoTableOffsetY - menu.borderOffset
+
+	menu.infoFrame2 = Helper.createFrameHandle(menu, {
+		x = Helper.viewWidth - menu.infoTableOffsetX - menu.infoTableWidth,
+		y = menu.infoTableOffsetY,
+		width = menu.infoTableWidth,
+		height = infoTableHeight,
+		layer = config.infoFrameLayer2,
+		backgroundID = "solid",
+		backgroundColor = Helper.color.semitransparent,
+		standardButtons = {},
+		showBrackets = false,
+		autoFrameHeight = true,
+		helpOverlayID = "map_infoframe2",
+	})
+
+	if (menu.searchTableMode ~= "info") and (menu.mode ~= "orderparam_object") then
+		menu.infoTablePersistentData.right.cashtransferdetails = {}
+		menu.infoTablePersistentData.right.drops = {}
+		menu.infoTablePersistentData.right.crew.object = nil
+		menu.infoTablePersistentData.right.macrostolaunch = {}
+	end
+
+	menu.infoTableData = menu.infoTableData or {}
+	menu.infoTableData.right = {}
+	if (not menu.showMultiverse) and (menu.searchTableMode == "info") then
+		if menu.infoMode.right == "objectinfo" then
+			menu.infoFrame2.properties.autoFrameHeight = false
+			menu.createInfoSubmenu(menu.infoFrame2, "right")
+		elseif menu.infoMode.right == "objectcrew" then
+			menu.createCrewInfoSubmenu(menu.infoFrame2, "right")
+		elseif menu.infoMode.right == "objectloadout" then
+			menu.createLoadoutInfoSubmenu(menu.infoFrame2, "right")
+		elseif menu.infoMode.right == "objectlogbook" then
+			menu.createLogbookInfoSubmenu(menu.infoFrame2, "right")
+		elseif menu.infoMode.right == "orderqueue" then
+			menu.createOrderQueue(menu.infoFrame2, menu.infoMode.right, "right")
+		elseif menu.infoMode.right == "orderqueue_advanced" then
+			menu.createOrderQueue(menu.infoFrame2, menu.infoMode.right, "right")
+		elseif menu.infoMode.right == "standingorders" then
+			menu.createStandingOrdersMenu(menu.infoFrame2, "right")
+		end
+	else
+		-- empty
+
+		-- kuertee start: callback
+		-- menu.infoFrame2.properties.backgroundID = ""
+		-- menu.infoFrame2.properties.showBrackets = false
+		-- menu.infoFrame2.properties.autoFrameHeight = false
+		-- menu.infoFrame2:addTable(0)
+
+		local isCreated = false
+		if callbacks ["createInfoFrame2_on_menu_infoModeRight"] then
+			for _, callback in ipairs (callbacks ["createInfoFrame2_on_menu_infoModeRight"]) do
+				if callback (menu.infoFrame2) then
+					isCreated = true
+				end
+			end
+		end
+		if isCreated ~= true then
+			menu.infoFrame2.properties.backgroundID = ""
+			menu.infoFrame2.properties.showBrackets = false
+			menu.infoFrame2.properties.autoFrameHeight = false
+			menu.infoFrame2:addTable(0)
+		end
+		-- kuertee end: callback
+
+	end
+
+	menu.infoFrame2.properties.helpOverlayText = helpOverlayText
+	menu.infoFrame2:display()
 end
 function newFuncs.createPropertyOwned(frame, instance)
 	local menu = mapMenu
@@ -1633,7 +1760,7 @@ function newFuncs.createPropertyRow(instance, ftable, component, iteration, comm
 			-- if menu.infoTableMode ~= "propertyowned" then
 			-- kuertee start: callback
 			if not string.find (menu.infoTableMode, "propertyowned") then
-			-- kuertee end: callback
+				-- kuertee end: callback
 
 				menu.extendedproperty[tostring(component)] = true
 			end
@@ -1756,7 +1883,7 @@ function newFuncs.createPropertyRow(instance, ftable, component, iteration, comm
 				-- fleet case
 				local textheight = C.GetTextHeight(" \n ", font, Helper.scaleFont(font, config.mapFontSize), Helper.viewWidth)
 				local icon = row[2]:setColSpan(4 + maxicons - #fleettypes - 1):createIcon("solid", { scaling = false, color = { r = 0, g = 0, b = 0, a = 1 }, height = textheight })
-				
+
 				local secondtext1 = ""
 				local secondtext2 = ""
 				if displaylocation or (currentordericon ~= "") or isdocked then
@@ -1945,7 +2072,7 @@ function newFuncs.createPropertyRow(instance, ftable, component, iteration, comm
 					-- kuertee start: callback
 					-- if menu.infoTableMode ~= "propertyowned" then
 					if not string.find (menu.infoTableMode, "propertyowned") then
-					-- kuertee end: callback
+						-- kuertee end: callback
 
 						menu.extendeddockedships[tostring(component)] = true
 						isdockedshipsextended = true
@@ -2131,7 +2258,7 @@ function newFuncs.createMissionMode(frame)
 				row[1].handlers.onClick = function () return menu.buttonExpandMissionGroup(data.id .. "offer", row.index) end
 				row[2]:setColSpan(7):createText(data.name)
 				row[9]:createText((#data.missions == 1) and ReadText(1001, 3335) or string.format(ReadText(1001, 3336), #data.missions), { halign = "right" })
-			
+
 				if isexpanded then
 					for _, entry in ipairs(data.missions) do
 						menu.addMissionRow(ftable, entry, 1)
@@ -2237,7 +2364,7 @@ function newFuncs.createMissionMode(frame)
 				row[1].handlers.onClick = function () return menu.buttonExpandMissionGroup(data.id, row.index) end
 				row[2]:setColSpan(7):createText(data.name, { color = color, font = font })
 				row[9]:createText((#data.missions == 1) and ReadText(1001, 3337) or string.format(ReadText(1001, 3338), #data.missions), { halign = "right", color = color })
-			
+
 				if isexpanded then
 					local hadThreadMission = false
 					for _, entry in ipairs(data.missions) do
@@ -2331,7 +2458,7 @@ function newFuncs.createMissionMode(frame)
 				local container = ConvertStringTo64Bit(containeridstring)
 				row[2]:setColSpan(7):createText(ffi.string(C.GetComponentName(container)) .. " (" .. ffi.string(C.GetObjectIDCode(container)) .. ")" , { color = color })
 				row[9]:createText((#data.missions == 1) and ReadText(1001, 3337) or string.format(ReadText(1001, 3338), #data.missions), { halign = "right", color = color })
-			
+
 				if isexpanded then
 					local hadThreadMission = false
 					for _, entry in ipairs(data.missions) do
@@ -2436,6 +2563,62 @@ function newFuncs.getMissionInfoHelper(mission)
 
 	return entry
 end
+function newFuncs.createRightBar(frame, width, height, offsetx, offsety)
+	local menu = mapMenu
+
+	-- kuertee start: callback
+	if callbacks ["createRightBar_on_start"] then
+		for _, callback in ipairs (callbacks ["createRightBar_on_start"]) do
+			callback (config)
+		end
+	end
+	-- kuertee end: callback
+
+	local spacingHeight = menu.sideBarWidth / 4
+	local ftable = frame:addTable(1, { tabOrder = 5, width = width, height = height, x = offsetx, y = offsety, scaling = false, borderEnabled = false, reserveScrollBar = false, skipTabChange = true })
+	ftable:addConnection(1, 4, true)
+
+	for _, entry in ipairs(config.rightBar) do
+		if (entry.condition == nil) or entry.condition() then
+			if entry.spacing then
+				local row = ftable:addRow(false, { fixed = true })
+				row[1]:createIcon("mapst_seperator_line", { width = menu.sideBarWidth, height = spacingHeight })
+			else
+				local mode = entry.mode
+				if type(entry.mode) == "table" then
+					mode = mode[1]
+				end
+				local row = ftable:addRow(true, { fixed = true })
+				local active = true
+				if menu.mode == "selectCV" then
+					active = false
+				elseif menu.mode == "hire" then
+					active = false
+				elseif menu.mode == "selectComponent" then
+					active = false
+				end
+				local bgcolor = Helper.defaultTitleBackgroundColor
+				if type(entry.mode) == "table" then
+					for _, mode in ipairs(entry.mode) do
+						if mode == menu.searchTableMode then
+							bgcolor = Helper.defaultArrowRowBackgroundColor
+							break
+						end
+					end
+				else
+					if entry.mode == menu.searchTableMode then
+						bgcolor = Helper.defaultArrowRowBackgroundColor
+					end
+				end
+				row[1]:createButton({ active = active, height = menu.sideBarWidth, bgColor = bgcolor, mouseOverText = entry.name, helpOverlayID = entry.helpOverlayID, helpOverlayText = entry.helpOverlayText }):setIcon(entry.icon)
+				row[1].handlers.onClick = function () return menu.buttonToggleRightBar(mode) end
+			end
+		end
+	end
+
+	ftable:setSelectedRow(menu.selectedRows.rightBar)
+	menu.selectedRows.rightBar = nil
+end
 function newFuncs.createSideBar(firsttime, frame, width, height, offsetx, offsety)
 	local menu = mapMenu
 
@@ -2482,7 +2665,7 @@ function newFuncs.createSideBar(firsttime, frame, width, height, offsetx, offset
 						-- if (entry.mode ~= "objectlist") and (entry.mode ~= "propertyowned") then
 						-- kuertee start: callback
 						if (not string.find (entry.mode, "objectlist")) and (not string.find (entry.mode, "propertyowned")) then
-						-- kuertee end: callback
+							-- kuertee end: callback
 
 							entry.active = false
 						end
@@ -2491,7 +2674,7 @@ function newFuncs.createSideBar(firsttime, frame, width, height, offsetx, offset
 						-- if entry.mode ~= "propertyowned" then
 						-- kuertee start: callback
 						if not string.find (entry.mode, "propertyowned") then
-						-- kuertee end: callback
+							-- kuertee end: callback
 
 							entry.active = false
 						end
@@ -2500,7 +2683,7 @@ function newFuncs.createSideBar(firsttime, frame, width, height, offsetx, offset
 						-- if (entry.mode ~= "objectlist") and (entry.mode ~= "propertyowned") then
 						-- kuertee start: callback
 						if (not string.find (entry.mode, "objectlist")) and (not string.find (entry.mode, "propertyowned")) then
-						-- kuertee end: callback
+							-- kuertee end: callback
 
 							entry.active = false
 						end
@@ -2509,7 +2692,7 @@ function newFuncs.createSideBar(firsttime, frame, width, height, offsetx, offset
 						-- if (entry.mode ~= "objectlist") and (entry.mode ~= "propertyowned") then
 						-- kuertee start: callback
 						if (not string.find (entry.mode, "objectlist")) and (not string.find (entry.mode, "propertyowned")) then
-						-- kuertee end: callback
+							-- kuertee end: callback
 
 							entry.active = false
 						end
@@ -2591,7 +2774,7 @@ function newFuncs.createSideBar(firsttime, frame, width, height, offsetx, offset
 				if menu.highlightLeftBar[mode] then
 					color = Helper.color.mission
 				end
-				
+
 				row[1]:createButton({ active = entry.active, height = menu.sideBarWidth, bgColor = bgcolor, mouseOverText = entry.name, helpOverlayID = entry.helpOverlayID, helpOverlayText = entry.helpOverlayText }):setIcon(entry.icon, { color = color })
 				row[1].handlers.onClick = function () return menu.buttonToggleObjectList(mode) end
 			end
@@ -2630,7 +2813,7 @@ function newFuncs.createMissionContext(frame)
 
 		local row = icontable:addRow(nil, { bgColor = Helper.color.transparent })
 		row[1]:createIcon(menu.contextMenuData.briefingicon, { scaling = false, height = menu.contextMenuData.briefingiconwidth })
-		
+
 		local row = icontable:addRow(nil, { bgColor = Helper.color.transparent })
 		row[1]:createText(menu.contextMenuData.briefingiconcaption, { wordwrap = true })
 	end
@@ -2895,17 +3078,17 @@ function newFuncs.createMissionContext(frame)
 		-- if menu.contextMenuData.type ~= "guidance" then
 		-- kuertee end: callback
 
-			-- Set active
-			local active = menu.contextMenuData.missionid == C.GetActiveMissionID()
-			for _, submissionEntry in ipairs(menu.contextMenuData.subMissions) do
-				if submissionEntry.active then
-					active = true
-				end
+		-- Set active
+		local active = menu.contextMenuData.missionid == C.GetActiveMissionID()
+		for _, submissionEntry in ipairs(menu.contextMenuData.subMissions) do
+			if submissionEntry.active then
+				active = true
 			end
-			row = bottomtable:addRow(true, { fixed = true, bgColor = Helper.color.transparent })
-			row[1]:createButton({  }):setText(active and ReadText(1001, 3413) or ReadText(1001, 3406), { halign = "center" })
-			row[1].handlers.onClick = menu.buttonMissionActivate
-			row[1].properties.uiTriggerID = "missionactivate"
+		end
+		row = bottomtable:addRow(true, { fixed = true, bgColor = Helper.color.transparent })
+		row[1]:createButton({  }):setText(active and ReadText(1001, 3413) or ReadText(1001, 3406), { halign = "center" })
+		row[1].handlers.onClick = menu.buttonMissionActivate
+		row[1].properties.uiTriggerID = "missionactivate"
 
 		-- kuertee start: callback
 		-- end
@@ -3017,10 +3200,10 @@ function newFuncs.onRowChanged(row, rowdata, uitable, modified, input, source)
 				end
 			end
 
-		-- kuertee start: callback
-		-- elseif (menu.infoTableMode == "objectlist") or (menu.infoTableMode == "propertyowned") then
+			-- kuertee start: callback
+			-- elseif (menu.infoTableMode == "objectlist") or (menu.infoTableMode == "propertyowned") then
 		elseif (string.find ("" .. tostring (menu.infoTableMode), "objectlist")) or (string.find ("" .. tostring (menu.infoTableMode), "propertyowned")) then
-		-- kuertee end: callback
+			-- kuertee end: callback
 
 			if uitable == menu.infoTable then
 				if type(rowdata) == "table" then
@@ -3159,7 +3342,7 @@ function newFuncs.onSelectElement(uitable, modified, row, isdblclick, input)
 		-- if (menu.infoTableMode == "objectlist") or (menu.infoTableMode == "propertyowned") then
 		-- kuertee start: callback
 		if (string.find ("" .. tostring (menu.infoTableMode), "objectlist")) or (string.find ("" .. tostring (menu.infoTableMode), "propertyowned")) then
-		-- kuertee end: callback
+			-- kuertee end: callback
 
 			if uitable == menu.infoTable then
 				if type(rowdata) == "table" then
@@ -3409,13 +3592,13 @@ function newFuncs.onRenderTargetSelect(modified)
 				elseif (#menu.searchtext == 0) or Helper.textArrayHelper(menu.searchtext, function (numtexts, texts) return C.FilterComponentByText(pickedcomponent, numtexts, texts, true) end) then
 					local isconstruction = IsComponentConstruction(ConvertStringTo64Bit(tostring(pickedcomponent)))
 					if (C.IsComponentOperational(pickedcomponent) and (pickedcomponentclass ~= "player") and (pickedcomponentclass ~= "collectablewares") and (not menu.createInfoFrameRunning)) or
-						(pickedcomponentclass == "gate") or (pickedcomponentclass == "asteroid") or isconstruction
+							(pickedcomponentclass == "gate") or (pickedcomponentclass == "asteroid") or isconstruction
 					then
 						local sectorcontext = C.GetContextByClass(pickedcomponent, "sector", false)
 						if sectorcontext ~= menu.currentsector then
 							menu.currentsector = sectorcontext
 						end
-						
+
 						if modified == "ctrl" then
 							menu.toggleSelectedComponent(pickedcomponent)
 						else
@@ -3435,7 +3618,7 @@ function newFuncs.onRenderTargetSelect(modified)
 								-- kuertee start: callback
 								-- if menu.infoTableMode == "objectlist" then
 								if string.find ("" .. tostring (menu.infoTableMode), "objectlist") then
-								-- kuertee end: callback
+									-- kuertee end: callback
 
 									local isdeployable = GetComponentData(ConvertStringTo64Bit(tostring(pickedcomponent)), "isdeployable")
 									if isdeployable or (pickedcomponentclass == "lockbox") then
@@ -3460,10 +3643,10 @@ function newFuncs.onRenderTargetSelect(modified)
 										end
 									end
 
-								-- kuertee start: callback
-								-- elseif menu.infoTableMode == "propertyowned" then
+									-- kuertee start: callback
+									-- elseif menu.infoTableMode == "propertyowned" then
 								elseif string.find ("" .. tostring (menu.infoTableMode), "propertyowned") then
-								-- kuertee end: callback
+									-- kuertee end: callback
 
 									local isplayerowned, isdeployable = GetComponentData(ConvertStringTo64Bit(tostring(pickedcomponent)), "isplayerowned", "isdeployable")
 									if isplayerowned then
@@ -3501,17 +3684,17 @@ function newFuncs.onRenderTargetSelect(modified)
 								-- kuertee start: callback
 								-- if menu.infoTableMode == "objectlist" then
 								if string.find ("" .. tostring (menu.infoTableMode), "objectlist") then
-								-- kuertee end: callback
+									-- kuertee end: callback
 
 									if newmode ~= menu.objectMode then
 										menu.objectMode = newmode
 										menu.refreshInfoFrame()
 									end
 
-								-- kuertee start: callback
-								-- elseif menu.infoTableMode == "propertyowned" then
+									-- kuertee start: callback
+									-- elseif menu.infoTableMode == "propertyowned" then
 								elseif string.find ("" .. tostring (menu.infoTableMode), "propertyowned") then
-								-- kuertee end: callback
+									-- kuertee end: callback
 
 									if newmode ~= menu.propertyMode then
 										menu.propertyMode = newmode
@@ -3552,7 +3735,7 @@ function newFuncs.onTableRightMouseClick(uitable, row, posx, posy)
 			-- kuertee start: callback
 			-- if (menu.infoTableMode == "objectlist") or (menu.infoTableMode == "propertyowned") then
 			if (string.find ("" .. tostring (menu.infoTableMode), "objectlist")) or (string.find ("" .. tostring (menu.infoTableMode), "propertyowned")) then
-			-- kuertee end: callback
+				-- kuertee end: callback
 
 				if uitable == menu.infoTable then
 					if type(rowdata) == "table" then
@@ -3601,7 +3784,7 @@ function newFuncs.onTableRightMouseClick(uitable, row, posx, posy)
 							else
 								local missions = {}
 								Helper.ffiVLA(missions, "MissionID", C.GetNumMapComponentMissions, C.GetMapComponentMissions, menu.holomap, convertedRowComponent)
-								
+
 								local playerships, otherobjects, playerdeployables = menu.getSelectedComponentCategories()
 								if rowdata[1] == "construction" then
 									menu.interactMenuComponent = convertedRowComponent
@@ -3660,7 +3843,7 @@ function newFuncs.onInteractiveElementChanged(element)
 	-- kuertee start: callback
 	-- if (menu.infoTableMode == "objectlist") or (menu.infoTableMode == "propertyowned") then
 	if (string.find ("" .. tostring (menu.infoTableMode), "objectlist")) or (string.find ("" .. tostring (menu.infoTableMode), "propertyowned")) then
-	-- kuertee end: callback
+		-- kuertee end: callback
 		if menu.lastactivetable == menu.infoTable then
 			if not menu.arrowsRegistered then
 				RegisterAddonBindings("ego_detailmonitor", "map_arrows")
@@ -3719,21 +3902,21 @@ function newFuncs.closeContextMenu(dueToClose)
 		end
 		-- REMOVE this block once the mouse out/over event order is correct -> This should be unnessecary due to the global tablemouseout event reseting the picking
 		if menu.currentMouseOverTable and (
-			(menu.currentMouseOverTable == menu.contexttable)
-			or (menu.currentMouseOverTable == menu.contextshiptable)
-			or (menu.currentMouseOverTable == menu.contextbuttontable)
-			or (menu.currentMouseOverTable == menu.contextdesctable)
-			or (menu.currentMouseOverTable == menu.contextobjectivetable)
-			or (menu.currentMouseOverTable == menu.contextbottomtable)
-			or (menu.contextMenuMode == "boardingcontext")
-			or (menu.contextMenuMode == "dropwares")
-			or (menu.contextMenuMode == "crewtransfer")
-			or (menu.contextMenuMode == "rename")
-			or (menu.contextMenuMode == "userquestion")
-			or (menu.contextMenuMode == "mission")
-			or (menu.contextMenuMode == "venturepatron")
-			or (menu.contextMenuMode == "filter_multiselectlist")
-			or (menu.contextMenuMode == "hire")
+				(menu.currentMouseOverTable == menu.contexttable)
+						or (menu.currentMouseOverTable == menu.contextshiptable)
+						or (menu.currentMouseOverTable == menu.contextbuttontable)
+						or (menu.currentMouseOverTable == menu.contextdesctable)
+						or (menu.currentMouseOverTable == menu.contextobjectivetable)
+						or (menu.currentMouseOverTable == menu.contextbottomtable)
+						or (menu.contextMenuMode == "boardingcontext")
+						or (menu.contextMenuMode == "dropwares")
+						or (menu.contextMenuMode == "crewtransfer")
+						or (menu.contextMenuMode == "rename")
+						or (menu.contextMenuMode == "userquestion")
+						or (menu.contextMenuMode == "mission")
+						or (menu.contextMenuMode == "venturepatron")
+						or (menu.contextMenuMode == "filter_multiselectlist")
+						or (menu.contextMenuMode == "hire")
 		) then
 			menu.picking = true
 			menu.currentMouseOverTable = nil
@@ -3783,7 +3966,7 @@ function newFuncs.updateSelectedComponents(modified, keepselection, changedCompo
 			-- kuertee start: callback
 			-- if menu.infoTableMode == "propertyowned" then
 			if string.find ("" .. tostring (menu.infoTableMode), "propertyowned") then
-			-- kuertee end: callback
+				-- kuertee end: callback
 
 				local isplayerowned, isdeployable = GetComponentData(component, "isplayerowned", "isdeployable")
 				if not isplayerowned then
@@ -3804,10 +3987,10 @@ function newFuncs.updateSelectedComponents(modified, keepselection, changedCompo
 					table.insert(components, component)
 				end
 
-			-- kuertee start: callback
-			-- elseif menu.infoTableMode == "objectlist" then
+				-- kuertee start: callback
+				-- elseif menu.infoTableMode == "objectlist" then
 			elseif string.find ("" .. tostring (menu.infoTableMode), "objectlist") then
-			-- kuertee end: callback
+				-- kuertee end: callback
 
 				local isdeployable = GetComponentData(component, "isdeployable")
 				if menu.objectMode ~= "objectall" then
@@ -3815,7 +3998,7 @@ function newFuncs.updateSelectedComponents(modified, keepselection, changedCompo
 					if (menu.objectMode ~= "stations") and C.IsRealComponentClass(component, "station") then
 						table.insert(components, component)
 					end
-						if (modified ~= "ctrl") or (component ~= changedComponent) then
+					if (modified ~= "ctrl") or (component ~= changedComponent) then
 						if C.IsComponentClass(component, "ship") then
 							table.insert(components, component)
 						end
@@ -3887,7 +4070,7 @@ function newFuncs.updateTableSelection(lastcomponent)
 	-- if (menu.infoTableMode == "objectlist") or (menu.infoTableMode == "propertyowned") then
 	-- kuertee start: callback
 	if (string.find ("" .. tostring (menu.infoTableMode), "objectlist")) or (string.find ("" .. tostring (menu.infoTableMode), "propertyowned")) then
-	-- kuertee end: callback
+		-- kuertee end: callback
 
 		-- check if sections need to be extended - if so we need a refresh
 		local refresh = false
@@ -4233,9 +4416,9 @@ function newFuncs.setupLoadoutInfoSubmenuRows(mode, inputtable, inputobject, ins
 					-- Start Subsystem Targeting Orders callback
 					local sto_callbackVal
 					if callbacks ["sto_addTurretBehavioursMapMenu"] then
-					  for _, callback in ipairs (callbacks ["sto_addTurretBehavioursMapMenu"]) do
-					    sto_callbackVal = callback (row, inputobject)
-					  end
+						for _, callback in ipairs (callbacks ["sto_addTurretBehavioursMapMenu"]) do
+							sto_callbackVal = callback (row, inputobject)
+						end
 					end
 					if not sto_callbackVal then
 						row[5]:setColSpan(9):createDropDown(Helper.getTurretModes(nil, not hasonlytugturrets), { startOption = function () return menu.getDropDownTurretModeOption(inputobject, "all") end })
@@ -4389,7 +4572,7 @@ function newFuncs.setupLoadoutInfoSubmenuRows(mode, inputtable, inputobject, ins
 					local row2 = inputtable:addRow("drone_config", { bgColor = Helper.color.transparent })
 					row2[2]:createText("    " .. ReadText(1001, 11229), { color = hasmodes and function () return C.IsDroneTypeArmed(inputobject, entry.type) and Helper.color.white or Helper.color.grey end or nil })
 					row2[3]:setColSpan(isplayerowned and 2 or 11):createText(function () return Helper.unlockInfo(unitinfo_amount, C.GetNumUnavailableUnits(inputobject, entry.type)) end, { halign = isplayerowned and "left" or "right", color = hasmodes and function () return C.IsDroneTypeBlocked(inputobject, entry.type) and Helper.color.warningorange or (C.IsDroneTypeArmed(inputobject, entry.type) and Helper.color.white or Helper.color.grey) end or nil })
-					
+
 					-- drone mode support - disabled for mining drones, to avoid conflicts with order defined drone behaviour
 					if hasmodes then
 						local isblocked = C.IsDroneTypeBlocked(inputobject, entry.type)
@@ -4503,9 +4686,9 @@ function newFuncs.setupLoadoutInfoSubmenuRows(mode, inputtable, inputobject, ins
 							-- Start Reactive Docking callback
 							local rd_callbackVal
 							if callbacks ["rd_addReactiveDockingMapMenu"] then
-				  				for _, callback in ipairs (callbacks ["rd_addReactiveDockingMapMenu"]) do
-				    				rd_callbackVal = callback (row, inputobject, i, mode, active, mouseovertext)
-				  				end
+								for _, callback in ipairs (callbacks ["rd_addReactiveDockingMapMenu"]) do
+									rd_callbackVal = callback (row, inputobject, i, mode, active, mouseovertext)
+								end
 							end
 							if not rd_callbackVal then
 								row[3]:setColSpan(11):createButton({ active = active, mouseOverText = mouseovertext, height = config.mapRowHeight }):setText(function () return C.ShouldSubordinateGroupDockAtCommander(inputobject, i) and ReadText(1001, 8630) or ReadText(1001, 8629) end, { halign = "center" })
