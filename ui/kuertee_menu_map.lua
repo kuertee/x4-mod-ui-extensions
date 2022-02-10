@@ -100,6 +100,9 @@ function newFuncs.registerCallback (callbackName, callbackFunction)
 	-- (true | false) = createMissionContext_getIsMissionBriefingAvailable (missionid)
 	-- createMissionContext_addMissionOfferButtons (ftable, missionid)
 	-- createMissionContext_addMissionAcceptedButtons (ftable, missionid)
+	-- refreshInfoFrame2_on_start ()
+	-- createInfoFrame2_on_menu_infoModeRight (menu.infoFrame2)
+	-- createRightBar_on_start (config)
 	if callbacks [callbackName] == nil then
 		callbacks [callbackName] = {}
 	end
