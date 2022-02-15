@@ -1,15 +1,15 @@
 local ffi = require ("ffi")
 local C = ffi.C
 local Lib = require ("extensions.sn_mod_support_apis.lua_interface").Library
-local topLevelMenu
+local topLevelMenu = Lib.Get_Egosoft_Menu ("TopLevelMenu")
+local menu = topLevelMenu
 local newFuncs = {}
 local kHUD = {}
 local isInited
 local function init ()
-	DebugError ("kuertee_hud.init")
+	-- DebugError ("kuertee_hud.init")
 	if not isInited then
 		isInited = true
-		topLevelMenu = Lib.Get_Egosoft_Menu ("TopLevelMenu")
 		topLevelMenu.registerCallback ("createInfoFrame_on_before_frame_display", newFuncs.createInfoFrame_on_before_frame_display)
 		topLevelMenu.registerCallback ("createInfoFrame_onUpdate_before_frame_update", newFuncs.createInfoFrame_onUpdate_before_frame_update)
 	end

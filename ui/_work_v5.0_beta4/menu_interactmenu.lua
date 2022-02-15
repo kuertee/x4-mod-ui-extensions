@@ -1,15 +1,4 @@
-local ffi = require ("ffi")
-local C = ffi.C
-local utf8 = require("utf8")
-local Lib = require ("extensions.sn_mod_support_apis.lua_interface").Library
-local interactMenu = Lib.Get_Egosoft_Menu ("InteractMenu")
-local menu = interactMenu
-local mapMenu = Lib.Get_Egosoft_Menu ("MapMenu")
-local oldFuncs = {}
-local newFuncs = {}
-local callbacks = {}
-local isInited
-local config = {
+﻿local config = {
 	layer = 3,
 	width = 260,
 	rowHeight = 16,
@@ -110,69 +99,7 @@ local config = {
 		["salvage"]					= { name = ReadText(20208, 41401) },
 	},
 }
-local function init ()
-	-- DebugError ("kuertee_menu_interactmenu.init")
-	if not isInited then
-		isInited = true
-		interactMenu.registerCallback = newFuncs.registerCallback
-		-- rewrites: interact menu
-		oldFuncs.createContentTable = interactMenu.createContentTable
-		interactMenu.createContentTable = newFuncs.createContentTable
-		-- rewrites: map menu
-		oldFuncs.onRenderTargetMouseDown = mapMenu.onRenderTargetMouseDown
-		mapMenu.onRenderTargetMouseDown = newFuncs.onRenderTargetMouseDown
-	end
-end
-function newFuncs.registerCallback (callbackName, callbackFunction)
-	-- note 1: format is generally [function name]_[action]. e.g.: in kuertee_menu_transporter, "display_on_set_room_active" overrides the room's active property with the return of the callback.
-	-- note 2: events have the word "_on_" followed by a PRESENT TENSE verb. e.g.: in kuertee_menu_transporter, "display_on_set_buttontable" is called after all of the rows of buttontable are set.
-	-- note 3: new callbacks can be added or existing callbacks can be edited. but commit your additions/changes to the mod's GIT repository.
-	-- note 4: search for the callback names to see where they are executed.
-	-- note 5: if a callback requires a return value, return it in an object var. e.g. "display_on_set_room_active" requires a return of {active = true | false}.
-	-- available callbacks:
-	-- 
-	-- NONE AT THE MOMENT
-	if callbacks [callbackName] == nil then
-		callbacks [callbackName] = {}
-	end
-	table.insert (callbacks [callbackName], callbackFunction)
-end
-function newFuncs.debugText (data1, data2, indent, isForced)
-	local isDebug = false
-	if isDebug == true or isForced == true then
-		if indent == nil then
-			indent = ""
-		end
-		if type (data1) == "table" then
-			for i, value in pairs (data1) do
-				DebugError (indent .. tostring (i) .. ": " .. tostring (value))
-				if type (value) == "table" then
-					newFuncs.debugText (value, nil, indent .. "    ", isForced)
-				end
-			end
-		else
-			DebugError (indent .. tostring (data1))
-		end
-		if data2 then
-			newFuncs.debugText (data2, nil, indent .. "    ", isForced)
-		end
-	end
-end
-function newFuncs.debugText_forced (data1, data2, indent)
-	return newFuncs.debugText (data1, data2, indent, true)
-end
-newFuncs.kuertee_sector_freeDistFrom = nil
-newFuncs.kuertee_offset_freeDistFrom = nil
-function newFuncs.onRenderTargetMouseDown (modified)
-	local menu = mapMenu
-	oldFuncs.onRenderTargetMouseDown (modified)
-	newFuncs.kuertee_offset_freeDistFrom = ffi.new ("UIPosRot")
-	local eclipticoffset = ffi.new ("UIPosRot")
-	newFuncs.kuertee_sector_freeDistFrom = C.GetMapPositionOnEcliptic2 (menu.holomap, newFuncs.kuertee_offset_freeDistFrom, false, 0, eclipticoffset)
-	-- newFuncs.debugText_forced ("kuertee_sector_freeDistFrom: " .. tostring (newFuncs.kuertee_sector_freeDistFrom))
-	-- newFuncs.debugText_forced ("kuertee_offset_freeDistFrom: " .. tostring (newFuncs.kuertee_offset_freeDistFrom))
-end
-function newFuncs.createContentTable(frame, position)
+function menu.createContentTable(frame, position)
 	local x = 0
 	if position == "right" then
 		x = menu.width + Helper.borderSize
@@ -283,91 +210,6 @@ function newFuncs.createContentTable(frame, position)
 		row[1]:setColSpan(4):createText(string.format(ReadText(1001, 8398), ReadText(20401, menu.subordinategroup)), Helper.headerRowCenteredProperties)
 		row[1].properties.color = color
 	end
-
-	-- kuertee start: add distance
-	if mapMenu and mapMenu.holomap then
-		-- newFuncs.debugText_forced ("mapMenu: " .. tostring (mapMenu))
-		local kuertee_component_distFrom
-		local kuertee_isFreeDistFrom
-		if #menu.selectedplayerships > 0 then
-			-- newFuncs.debugText_forced ("#menu.selectedplayerships: " .. tostring (#menu.selectedplayerships))
-			kuertee_component_distFrom = menu.selectedplayerships [1]
-		elseif #menu.selectedotherobjects > 0 then
-			-- newFuncs.debugText_forced ("#menu.selectedotherobjects: " .. tostring (#menu.selectedotherobjects))
-			kuertee_component_distFrom = menu.selectedotherobjects [1]
-		elseif #menu.selectedplayerdeployables > 0 then
-			-- newFuncs.debugText_forced ("#menu.selectedplayerdeployables: " .. tostring (#menu.selectedplayerdeployables))
-			kuertee_component_distFrom = menu.selectedplayerdeployables [1]
-		else
-			local kuertee_selectedComponents = {}
-			Helper.ffiVLA (kuertee_selectedComponents, "UniverseID", C.GetNumMapSelectedComponents, C.GetMapSelectedComponents, mapMenu.holomap)
-			if #kuertee_selectedComponents > 0 then
-				-- newFuncs.debugText_forced ("#kuertee_selectedComponents: " .. tostring (#kuertee_selectedComponents))
-				kuertee_component_distFrom = kuertee_selectedComponents [1]
-			elseif newFuncs.kuertee_sector_freeDistFrom and newFuncs.kuertee_offset_freeDistFrom then
-				-- newFuncs.debugText_forced ("kuertee_sector_freeDistFrom: " .. tostring (newFuncs.kuertee_sector_freeDistFrom))
-				-- newFuncs.debugText_forced ("kuertee_offset_freeDistFrom: " .. tostring (newFuncs.kuertee_offset_freeDistFrom))
-				kuertee_isFreeDistFrom = true
-				kuertee_component_distFrom = newFuncs.kuertee_sector_freeDistFrom
-			end
-		end
-		-- newFuncs.debugText_forced ("kuertee_component_distFrom: " .. tostring (kuertee_component_distFrom))
-		if kuertee_component_distFrom then
-			local kuertee_component_distTo
-			if menu.componentSlot.component then
-				-- newFuncs.debugText_forced ("menu.componentSlot.component: " .. tostring (menu.componentSlot.component))
-				kuertee_component_distTo = ConvertStringTo64Bit (tostring (menu.componentSlot.component))
-				if kuertee_component_distTo then
-					kuertee_component_distTo = ConvertStringTo64Bit (tostring (kuertee_component_distTo))
-					-- newFuncs.debugText_forced ("kuertee_component_distTo: " .. tostring (kuertee_component_distTo))
-					local kuertee_dist
-					local kuertee_isSector_distTo = C.IsComponentClass (kuertee_component_distTo, "sector")
-					if kuertee_isSector_distTo then
-						local kuertee_sector_check
-						-- newFuncs.debugText_forced ("kuertee_isFreeDistFrom: " .. tostring (kuertee_isFreeDistFrom))
-						if kuertee_isFreeDistFrom == true then
-							kuertee_sector_check = ConvertStringTo64Bit (tostring (kuertee_component_distFrom))
-						else
-							kuertee_sector_check = GetComponentData (ConvertStringTo64Bit (tostring (kuertee_component_distFrom)), "sectorid")
-							kuertee_sector_check = ConvertStringTo64Bit (tostring (kuertee_sector_check))
-						end
-						-- newFuncs.debugText_forced ("kuertee_sector_check: " .. tostring (kuertee_sector_check))
-						local isSameSector = kuertee_sector_check == kuertee_component_distTo or kuertee_isFreeDistFrom ~= true
-						if isSameSector then
-							-- newFuncs.debugText_forced ("kuertee_isSector_distTo: " .. tostring (kuertee_isSector_distTo))
-							local kuertee_posFrom
-							if kuertee_isFreeDistFrom then
-								kuertee_posFrom = newFuncs.kuertee_offset_freeDistFrom
-							else
-								kuertee_posFrom = ffi.new ("UIPosRot")
-								kuertee_posFrom = C.GetObjectPositionInSector (kuertee_component_distFrom)
-							end
-							-- newFuncs.debugText_forced ("kuertee_posFrom: " .. tostring (kuertee_posFrom.x) .. " " .. tostring (kuertee_posFrom.y) .. " " .. tostring (kuertee_posFrom.z))
-							-- newFuncs.debugText_forced ("menu.offset: " .. tostring (menu.offset.x) .. " " .. tostring (menu.offset.y) .. " " .. tostring (menu.offset.z))
-							-- https://www.engineeringtoolbox.com/distance-relationship-between-two-points-d_1854.html
-							-- d = ((x2 - x1)2 + (y2 - y1)2 + (z2 - z1)2)1/2
-							local x_delta = math.abs (kuertee_posFrom.x - menu.offset.x)
-							local y_delta = math.abs (kuertee_posFrom.y - menu.offset.y)
-							local z_delta = math.abs (kuertee_posFrom.z - menu.offset.z)
-							-- newFuncs.debugText_forced ("deltas: " .. tostring (x_delta) .. " " .. tostring (y_delta) .. " " .. tostring (z_delta))
-							kuertee_dist = math.pow (math.pow (x_delta, 2) + math.pow (y_delta, 2) + math.pow (z_delta, 2), 0.5)
-						end
-					else
-						kuertee_dist = C.GetDistanceBetween (kuertee_component_distFrom, kuertee_component_distTo)
-					end
-					if kuertee_dist and kuertee_dist > 0 then
-						-- newFuncs.debugText_forced ("kuertee_dist: " .. tostring (kuertee_dist))
-						kuertee_dist = kuertee_dist / 1000.0
-						kuertee_dist = math.floor (kuertee_dist * 100 + 0.5) / 100
-						row = ftable:addRow (false, {bgColor = Helper.color.transparent})
-						local kuertee_text = ReadText (1001, 2957) .. ReadText (1001, 120) .. " " .. tostring (kuertee_dist) .. " " .. ReadText (1001, 108) -- Distance colon space X space km
-						row [1]:setColSpan (4):createText (kuertee_text, {halign = "center"})
-					end
-				end
-			end
-		end
-	end
-	-- kuertee end
 
 	-- entries
 	local convertedComponent = ConvertStringTo64Bit(tostring(menu.componentSlot.component))
@@ -546,4 +388,3 @@ function newFuncs.createContentTable(frame, position)
 
 	return ftable
 end
-init ()

@@ -1,49 +1,19 @@
-﻿local ffi = require ("ffi")
-local C = ffi.C
-local Lib = require ("extensions.sn_mod_support_apis.lua_interface").Library
-local transporterMenu = Lib.Get_Egosoft_Menu ("TransporterMenu")
-local menu = transporterMenu
-local oldFuncs = {}
-local newFuncs = {}
-local callbacks = {}
-local isInited
-local function init ()
-	-- DebugError ("kuertee_menu_transporter.init")
-	if not isInited then
-		isInited = true
-		transporterMenu.registerCallback = newFuncs.registerCallback
-		oldFuncs.addEntry = transporterMenu.addEntry
-		transporterMenu.addEntry = newFuncs.addEntry
-		oldFuncs.display = transporterMenu.display
-		transporterMenu.display = newFuncs.display
-	end
-end
-function newFuncs.registerCallback (callbackName, callbackFunction)
-	-- note 1: format is generally [function name]_[action]. e.g.: in kuertee_menu_transporter, "display_on_set_room_active" overrides the room's active property with the return of the callback.
-	-- note 2: events have the word "_on_" followed by a PRESET TENSE verb. e.g.: in kuertee_menu_transporter, "display_on_set_buttontable" is called after all of the rows of buttontable are set.
-	-- note 3: new callbacks can be added or existing callbacks can be edited. but commit your additions/changes to the mod's GIT repository.
-	-- note 4: search for the callback names to see where they are executed.
-	-- note 5: if a callback requires a return value, return it in an object var. e.g. "display_on_set_room_active" requires a return of {active = true | false}.
-	-- available callbacks:
-	-- {name = name} = addEntry_on_set_room_name (name, target)
-	-- {active = true / false} = display_on_set_room_active (active)
-	-- display_on_set_buttontable (buttontable)
-	--
-	if callbacks [callbackName] == nil then
-		callbacks [callbackName] = {}
-	end
-	table.insert (callbacks [callbackName], callbackFunction)
-end
-function newFuncs.addEntry(ftable, target, indent, parentcomponent)
-	-- if target.type == "zone" then
-	-- 	Lib.Print_Table (target.directtarget)
-	-- 	DebugError ("kuertee_menu_transporter addEntry target.directtarget.connection " .. tostring (target.directtarget.connection) .. " (" .. type (target.directtarget.connection) .. ")")
-	-- 	DebugError ("kuertee_menu_transporter addEntry target.directtarget.component " .. tostring (target.directtarget.component))
-	-- 	DebugError ("kuertee_menu_transporter addEntry target.directtarget.component name " .. GetComponentData (ConvertStringToLuaID (tostring (target.directtarget.component)), "name"))
-	-- 	DebugError ("kuertee_menu_transporter addEntry target.directtarget.component IsComponentClass zone " .. tostring (C.IsComponentClass (target.directtarget.component, "zone")))
-	-- end
-	local menu = transporterMenu
-
+﻿local config = {
+	sortOrder = {
+		["dyninterior"] = 1,
+		["cockpit"] = 2,
+		["shipinterior"] = 3,
+		["walkablemodule"] = 4,
+		["ship"] = 5,
+		["parent"] = 6,
+		["zone"] = 7,
+	},
+	roomClassSortOrder = {
+		["room"] = 1,
+		["dockingbay"] = 2,
+	},
+}
+function menu.addEntry(ftable, target, indent, parentcomponent)
 	local componentIndent = ""
 	local subtargetIndent = "   "
 	for i = 1, indent do
@@ -134,21 +104,6 @@ function newFuncs.addEntry(ftable, target, indent, parentcomponent)
 		row[1]:createButton({ height = Helper.standardTextHeight }):setText(menu.extendedcategories[tostring(target.component)] and "-" or "+", { halign = "center" })
 		row[1].handlers.onClick = function () return menu.buttonExtendCategory(tostring(target.component)) end
 	end --]]
-
-	-- kuertee start: callback
-	if callbacks ["addEntry_on_set_room_name"] then
-		local result
-		for _, callback in ipairs (callbacks ["addEntry_on_set_room_name"]) do
-			result = callback (name, target)
-			if result then
-				-- DebugError ("kuertee_menu_transporter.addEntry_on_set_room_name name pre " .. tostring (name))
-				name = result.name
-				-- DebugError ("kuertee_menu_transporter.addEntry_on_set_room_name name post " .. tostring (name))
-			end
-		end
-	end
-	-- kuertee end: callback
-
 	if objectid then
 		row[2]:createText(componentIndent .. name .. current, { color = color, font = font })
 		row[3]:createText(objectid, { color = color, font = font, halign = "right" })
@@ -221,7 +176,7 @@ function newFuncs.addEntry(ftable, target, indent, parentcomponent)
 		end
 	end
 end
-function newFuncs.display()
+function menu.display()
 	-- remove old data
 	Helper.clearDataForRefresh(menu)
 
@@ -271,33 +226,8 @@ function newFuncs.display()
 
 	local buttonrow = buttontable:addRow(true, { fixed = true, bgColor = Helper.color.transparent })
 	local active = (not menu.currentselection.hassubentries) and ((menu.transportercomponent ~= menu.currentselection.target.component) or (menu.transporterconnection ~= menu.currentselection.target.connection))
-
-	-- kuertee start: callback
-	if callbacks ["display_on_set_room_active"] then
-		local activeCount = 0
-		local callbacksCount = 0
-		local result
-		for _, callback in ipairs (callbacks ["display_on_set_room_active"]) do
-			callbacksCount = callbacksCount + 1
-			result = callback (active)
-			if result and result.active then
-				activeCount = activeCount + 1
-			end
-		end
-		active = activeCount == callbacksCount
-	end
-	-- kuertee end: callback
-
 	buttonrow[2]:setColSpan(2):createButton({ active = active, height = Helper.standardTextHeight }):setText(menu.buttontext, { halign = "center" })
 	buttonrow[2].handlers.onClick = menu.buttonGoTo
-
-	-- kuertee start: callback
-	if callbacks ["display_on_set_buttontable"] then
-		for _, callback in ipairs (callbacks ["display_on_set_buttontable"]) do
-			callback (buttontable)
-		end
-	end
-	-- kuertee end: callback
 
 	buttontable.properties.y = height + Helper.borderSize - buttontable:getFullHeight()
 	ftable.properties.maxVisibleHeight = buttontable.properties.y
@@ -410,4 +340,3 @@ function newFuncs.display()
 
 	frame:display()
 end
-init ()

@@ -1,71 +1,4 @@
-﻿-- modes: - "selectComponent",      param: { returnsection, classlist[, category][, playerowned][, customheading][, screenname] }
---        - if "returnsection" == null, insted of "closeMenuForSection", an "AddUITriggeredEvent" is sent with screen = "MapMenu", control = "selectComponent" and param3 = selectedComponent
---        - valid categories are: null or "deployables"
---        - playerowned: 1 (default) or 0
---        - customheading: custom prompt otherwise, {1001, 8325} Select Object (default)
---        - screenname: AddUITriggeredEvent screen name
-
-local ffi = require ("ffi")
-local C = ffi.C
-local Lib = require ("extensions.sn_mod_support_apis.lua_interface").Library
-local dockedMenu = Lib.Get_Egosoft_Menu ("DockedMenu")
-local menu = dockedMenu
-local oldFuncs = {}
-local newFuncs = {}
-local callbacks = {}
-local isInited
-local function init ()
-	-- DebugError ("kuertee_menu_docked.init")
-	if not isInited then
-		isInited = true
-		dockedMenu.registerCallback = newFuncs.registerCallback
-		-- docked menu rewrites:
-		oldFuncs.display = dockedMenu.display
-		dockedMenu.display = newFuncs.display
-	end
-end
-function newFuncs.registerCallback (callbackName, callbackFunction)
-	-- note 1: format is generally [function name]_[action]. e.g.: in kuertee_menu_transporter, "display_on_set_room_active" overrides the room's active property with the return of the callback.
-	-- note 2: events have the word "_on_" followed by a PRESENT TENSE verb. e.g.: in kuertee_menu_transporter, "display_on_set_buttontable" is called after all of the rows of buttontable are set.
-	-- note 3: new callbacks can be added or existing callbacks can be edited. but commit your additions/changes to the mod's GIT repository.
-	-- note 4: search for the callback names to see where they are executed.
-	-- note 5: if a callback requires a return value, return it in an object var. e.g. "display_on_set_room_active" requires a return of {active = true | false}.
-	-- available callbacks:
-	-- 
-	-- sto_addTurretBehavioursDockMenu ()
-	-- (true | false) = rd_addReactiveDockingDockMenu (row, menu.currentplayership, i, active, mouseovertext)
-	-- display_on_after_main_interactions (ftable)
-	if callbacks [callbackName] == nil then
-		callbacks [callbackName] = {}
-	end
-	table.insert (callbacks [callbackName], callbackFunction)
-end
--- only have config stuff here that are used in this file
-local config = {
-	modes = {
-		[1] = { id = "travel",			name = ReadText(1002, 1158),	stoptext = ReadText(1002, 1159),	action = 303 },
-		[2] = { id = "scan",			name = ReadText(1002, 1156),	stoptext = ReadText(1002, 1157),	action = 304 },
-		[3] = { id = "scan_longrange",	name = ReadText(1002, 1155),	stoptext = ReadText(1002, 1160),	action = 305 },
-		[4] = { id = "seta",			name = ReadText(1001, 1132),	stoptext = ReadText(1001, 8606),	action = 225 },
-	},
-	consumables = {
-		{ id = "satellite",		type = "civilian",	getnum = C.GetNumAllSatellites,		getdata = C.GetAllSatellites,		callback = C.LaunchSatellite },
-		{ id = "navbeacon",		type = "civilian",	getnum = C.GetNumAllNavBeacons,		getdata = C.GetAllNavBeacons,		callback = C.LaunchNavBeacon },
-		{ id = "resourceprobe",	type = "civilian",	getnum = C.GetNumAllResourceProbes,	getdata = C.GetAllResourceProbes,	callback = C.LaunchResourceProbe },
-		{ id = "lasertower",	type = "military",	getnum = C.GetNumAllLaserTowers,	getdata = C.GetAllLaserTowers,		callback = C.LaunchLaserTower },
-		{ id = "mine",			type = "military",	getnum = C.GetNumAllMines,			getdata = C.GetAllMines,			callback = C.LaunchMine },
-	},
-	inactiveButtonProperties = { bgColor = Helper.defaultUnselectableButtonBackgroundColor, highlightColor = Helper.defaultUnselectableButtonHighlightColor },
-	activeButtonTextProperties = { halign = "center" },
-	inactiveButtonTextProperties = { halign = "center", color = Helper.color.grey },
-	dronetypes = {
-		{ id = "orecollector",	name = ReadText(20214, 500) },
-		{ id = "gascollector",	name = ReadText(20214, 400) },
-		{ id = "defence",		name = ReadText(20214, 300) },
-		{ id = "transport",		name = ReadText(20214, 900) },
-	},
-}
-function newFuncs.display()
+﻿function menu.display()
 	Helper.removeAllWidgetScripts(menu)
 
 	local width = Helper.viewWidth
@@ -302,14 +235,6 @@ function newFuncs.display()
 			row[7].handlers.onClick = menu.buttonAutoPilot
 		end
 
-		-- start: kuertee call-back
-		if callbacks ["display_on_after_main_interactions"] then
-  			for _, callback in ipairs (callbacks ["display_on_after_main_interactions"]) do
-  				callback (table_header)
-  			end
-  		end
-		-- end: kuertee call-back
-
 		if menu.currentplayership ~= 0 then
 			local weapons = {}
 			local numslots = tonumber(C.GetNumUpgradeSlots(menu.currentplayership, "", "weapon"))
@@ -491,19 +416,8 @@ function newFuncs.display()
 
 				local row = table_header:addRow("turret_config", { bgColor = Helper.color.transparent })
 				row[1]:createText(ReadText(1001, 2963))
-
-				-- Start Subsystem Targeting Orders callback
-				local sto_callbackVal
-				if callbacks ["sto_addTurretBehavioursDockMenu"] then
-				  for _, callback in ipairs (callbacks ["sto_addTurretBehavioursDockMenu"]) do
-				    sto_callbackVal = callback (row)
-				  end
-				end
-				if not sto_callbackVal then
-					row[2]:setColSpan(5):createDropDown(Helper.getTurretModes(nil, not hasonlytugturrets), { startOption = function () return menu.getDropDownTurretModeOption(menu.currentplayership, "all") end, helpOverlayID = "docked_turretconfig_modes", helpOverlayText = " ", helpOverlayHighlightOnly = true  })
-					row[2].handlers.onDropDownConfirmed = function(_, newturretmode) C.SetAllTurretModes(menu.currentplayership, newturretmode) end
-				end
-				-- End Subsystem Targeting Orders callback
+				row[2]:setColSpan(5):createDropDown(Helper.getTurretModes(nil, not hasonlytugturrets), { startOption = function () return menu.getDropDownTurretModeOption(menu.currentplayership, "all") end, helpOverlayID = "docked_turretconfig_modes", helpOverlayText = " ", helpOverlayHighlightOnly = true  })
+				row[2].handlers.onDropDownConfirmed = function(_, newturretmode) C.SetAllTurretModes(menu.currentplayership, newturretmode) end
 				row[7]:setColSpan(5):createButton({ helpOverlayID = "docked_turretconfig_arm", helpOverlayText = " ", helpOverlayHighlightOnly = true  }):setText(function () return menu.areTurretsArmed(menu.currentplayership) and ReadText(1001, 8631) or ReadText(1001, 8632) end, { halign = "center" })
 				row[7].handlers.onClick = function () return C.SetAllTurretsArmed(menu.currentplayership, not menu.areTurretsArmed(menu.currentplayership)) end
 
@@ -680,19 +594,8 @@ function newFuncs.display()
 						row[1]:createText(function () menu.updateSubordinateGroupInfo(); return ReadText(20401, i) .. (menu.subordinategroups[i] and (" (" .. ((not C.ShouldSubordinateGroupDockAtCommander(menu.currentplayership, i)) and ((#menu.subordinategroups[i].subordinates - menu.subordinategroups[i].numdockedatcommander) .. "/") or "") .. #menu.subordinategroups[i].subordinates ..")") or "") end, { color = isblocked and Helper.color.warningorange or nil })
 						row[2]:setColSpan(5):createDropDown(subordinateassignments, { startOption = function () menu.updateSubordinateGroupInfo(); return menu.subordinategroups[i] and menu.subordinategroups[i].assignment or "" end })
 						row[2].handlers.onDropDownConfirmed = function (_, newassignment) C.SetSubordinateGroupAssignment(menu.currentplayership, i, newassignment) end
-						
-						-- Start Reactive Docking callback
-						local rd_callbackVal
-						if callbacks ["rd_addReactiveDockingDockMenu"] then
-				  			for _, callback in ipairs (callbacks ["rd_addReactiveDockingDockMenu"]) do
-				    			rd_callbackVal = callback (row, menu.currentplayership, i, active, mouseovertext)
-				  			end
-						end
-						if not rd_callbackVal then
-							row[7]:setColSpan(5):createButton({ active = active, mouseOverText = mouseovertext }):setText(function () return C.ShouldSubordinateGroupDockAtCommander(menu.currentplayership, i) and ReadText(1001, 8630) or ReadText(1001, 8629) end, { halign = "center" })
-							row[7].handlers.onClick = function () return C.SetSubordinateGroupDockAtCommander(menu.currentplayership, i, not C.ShouldSubordinateGroupDockAtCommander(menu.currentplayership, i)) end
-						end
-						-- End Reactive Docking callback
+						row[7]:setColSpan(5):createButton({ active = active, mouseOverText = mouseovertext }):setText(function () return C.ShouldSubordinateGroupDockAtCommander(menu.currentplayership, i) and ReadText(1001, 8630) or ReadText(1001, 8629) end, { halign = "center" })
+						row[7].handlers.onClick = function () return C.SetSubordinateGroupDockAtCommander(menu.currentplayership, i, not C.ShouldSubordinateGroupDockAtCommander(menu.currentplayership, i)) end
 					end
 				end
 			end
@@ -803,14 +706,6 @@ function newFuncs.display()
 		end
 		row[7]:createButton(config.inactiveButtonProperties):setText("", config.inactiveButtonTextProperties)	-- dummy
 
-		-- start: kuertee call-back
-		if callbacks ["display_on_after_main_interactions"] then
-  			for _, callback in ipairs (callbacks ["display_on_after_main_interactions"]) do
-  				callback (table_header)
-  			end
-  		end
-		-- end: kuertee call-back
-
 		local row = table_header:addRow(false, { bgColor = Helper.color.transparent, fixed = true })
 		row[1]:setColSpan(11):createBoxText(menu.infoText, { halign = "center", color = Helper.color.warningorange, boxColor = menu.infoBoxColor })
 	end
@@ -833,4 +728,3 @@ function newFuncs.display()
 	-- display view/frame
 	menu.frame:display()
 end
-init ()

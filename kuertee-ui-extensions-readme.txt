@@ -3,8 +3,13 @@ https://www.nexusmods.com/x4foundations/mods/552
 Code: https://github.com/kuertee/x4-mod-ui-extensions
 by kuertee. contributors: Forleyor, Mycu.
 
-Updates:
-========
+Beta version for v5.0.x beta of the base game
+=============================================
+v5.0.0001 BETA, 15 Feb 2022:
+-New feature: Updates to work in the v5.0 beta 4 of the base game.
+
+Relase version for v4.2.x of the base game.
+===========================================
 v4.2.0805, 11 Feb 2022:
 -New feature: kuertee_menu_map.lua: 3 call-backs by Mycu: refreshInfoFrame2_on_start (), createInfoFrame2_on_menu_infoModeRight (menu.infoFrame2), createRightBar_on_start (config)
 
