@@ -459,6 +459,7 @@ function newFuncs.display()
 			end
 
 			menu.turretgroups = {}
+			local turretsizecounts = {}
 			local n = C.GetNumUpgradeGroups(menu.currentplayership, "")
 			local buf = ffi.new("UpgradeGroup2[?]", n)
 			n = C.GetUpgradeGroups2(buf, n, menu.currentplayership, "")
@@ -471,12 +472,28 @@ function newFuncs.display()
 						group.currentcomponent = groupinfo.currentcomponent
 						group.currentmacro = ffi.string(groupinfo.currentmacro)
 						group.slotsize = ffi.string(groupinfo.slotsize)
+						group.sizecount = 0
+
+						if group.slotsize ~= "" then
+							if turretsizecounts[group.slotsize] then
+								turretsizecounts[group.slotsize] = turretsizecounts[group.slotsize] + 1
+							else
+								turretsizecounts[group.slotsize] = 1
+							end
+							group.sizecount = turretsizecounts[group.slotsize]
+						end
+
 						table.insert(menu.turretgroups, group)
+						
 						if not GetComponentData(ConvertStringTo64Bit(tostring(group.currentcomponent)), "istugweapon") then
 							hasonlytugturrets = false
 						end
 					end
 				end
+			end
+
+			if #menu.turretgroups > 0 then
+				table.sort(menu.turretgroups, Helper.sortSlots)
 			end
 
 			if (#menu.turrets > 0) or (#menu.turretgroups > 0) then
@@ -528,7 +545,7 @@ function newFuncs.display()
 				for i, group in ipairs(menu.turretgroups) do
 					local row = table_header:addRow("turret_config", { bgColor = Helper.color.transparent })
 					turretgroupscounter = turretgroupscounter + 1
-					local groupname = ReadText(1001, 8023) .. " " .. i .. ((group.currentmacro ~= "") and (" (" .. menu.getSlotSizeText(group.slotsize) .. " " .. GetMacroData(group.currentmacro, "shortname") .. ")") or "")
+					local groupname = ReadText(1001, 8023) .. " " .. Helper.getSlotSizeText(group.slotsize) .. group.sizecount .. ((group.currentmacro ~= "") and (" (" .. Helper.getSlotSizeText(group.slotsize) .. " " .. GetMacroData(group.currentmacro, "shortname") .. ")") or "")
 					local mouseovertext = ""
 					local textwidth = C.GetTextWidth(groupname, Helper.standardFont, Helper.scaleFont(Helper.standardFont, Helper.standardFontSize)) + Helper.scaleX(Helper.standardTextOffsetx)
 					if (textwidth > row[1]:getWidth()) then

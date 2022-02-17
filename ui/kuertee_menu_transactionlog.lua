@@ -54,7 +54,8 @@ function newFuncs.createFrame(toprow, selectedrow)
 	menu.sidebarWidth = Helper.scaleX(Helper.sidebarWidth)
 
 	if menu.isstation then
-		Helper.createRightSideBar(menu.infoFrame, menu.container, true, "transactions", menu.buttonRightBar)
+		local rightbartable = Helper.createRightSideBar(menu.infoFrame, menu.container, true, "transactions", menu.buttonRightBar)
+		rightbartable:addConnection(1, 4, true)
 	end
 
 	local tableProperties = {

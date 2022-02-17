@@ -246,6 +246,8 @@ function newFuncs.createPlayerInfo(frame, width, height, offsetx, offsety)
 			row[1].handlers.onClick = function () return menu.buttonTogglePlayerInfo(entry.mode) end
 		end
 	end
+
+	ftable:addConnection(1, 1, true)
 end
 function newFuncs.createInfoFrame()
 	-- kuertee start: callback
@@ -285,6 +287,9 @@ function newFuncs.createInfoFrame()
 		y = Helper.playerInfoConfig.offsetY + Helper.playerInfoConfig.height + Helper.borderSize,
 	}
 	tableProperties.height = Helper.viewHeight - tableProperties.y
+
+	Helper.clearTableConnectionColumn(menu, 2)
+	Helper.clearTableConnectionColumn(menu, 3)
 
 	if menu.mode == "inventory" then
 		menu.createInventory(menu.infoFrame, tableProperties)
@@ -489,6 +494,9 @@ function newFuncs.createFactions(frame, tableProperties)
 		end
 		-- kuertee end: callback
 	end
+
+	infotable:addConnection(1, 2, true)
+	detailtable:addConnection(1, 3, true)
 end
 function newFuncs.onRowChanged(row, rowdata, uitable, modified, input)
 	if uitable == menu.infoTable then

@@ -758,23 +758,8 @@ function newFuncs.buttonToggleObjectList(objectlistparam, confirmed)
 		end
 	end
 
-	if menu.infoTableMode == "info" then
-		if menu.infoTablePersistentData.left.orderqueuemode and (menu.infoTablePersistentData.left.orderqueuemode.mode == "plandefaultorder") then
-			if confirmed then
-				C.RemovePlannedDefaultOrder(menu.infoTablePersistentData.left.orderqueuemode.curobject)
-				menu.infoTablePersistentData.left.planneddefaultorderloop = nil
-				menu.infoTablePersistentData.left.planneddefaultorderiscopy = nil
-				menu.infoTablePersistentData.left.orderqueuemode = nil
-
-				menu.closeContextMenu()
-			else
-				menu.contextMenuMode = "userquestion"
-				menu.contextMenuData = { mode = "discardplanneddefaultbehaviour", xoffset = (Helper.viewWidth - Helper.scaleX(400)) / 2, yoffset = Helper.viewHeight / 2, callback = function () menu.buttonToggleObjectList(objectlistparam, true) end }
-
-				menu.createContextFrame(Helper.scaleX(400), nil, menu.contextMenuData.xoffset, menu.contextMenuData.yoffset)
-				return
-			end
-		end
+	if not menu.handlePlannedDefaultOrder("left", confirmed, function () menu.buttonToggleObjectList(objectlistparam, true) end) then
+		return
 	end
 
 	if newidx then
@@ -1755,9 +1740,9 @@ function newFuncs.createPropertyRow(instance, ftable, component, iteration, comm
 		end
 
 		local displaylocation = location and not (commanderlocation and IsSameComponent(location, commanderlocation))
-		local currentordericon, currentorderrawicon, currentordercolor, currentordername, currentorderisoverride, currentordermouseovertext, behaviouricon, behaviourrawicon, behaviourname = "", "", nil, "", false, nil, "", "", ""
+		local currentordericon, currentorderrawicon, currentordercolor, currentordername, currentorderdescription, currentorderisoverride, currentordermouseovertext, behaviouricon, behaviourrawicon, behaviourname, behaviourdescription = "", "", nil, "", "", false, nil, "", "", "", ""
 		if IsComponentClass(component, "ship") then
-			currentordericon, currentorderrawicon, currentordercolor, currentordername, currentorderisoverride, currentordermouseovertext, _, behaviouricon, behaviourrawicon, behaviourname = menu.getOrderInfo(convertedComponent)
+			currentordericon, currentorderrawicon, currentordercolor, currentordername, currentorderdescription, currentorderisoverride, currentordermouseovertext, _, behaviouricon, behaviourrawicon, behaviourname, behaviourdescription = menu.getOrderInfo(convertedComponent)
 		end
 		local fleettypes = IsComponentClass(component, "controllable") and menu.getPropertyOwnedFleetData(instance, component, maxicons) or {}
 
@@ -1831,7 +1816,7 @@ function newFuncs.createPropertyRow(instance, ftable, component, iteration, comm
 						secondtext2 = secondtext2 .. " \27[order_dockat]"
 					end
 					if behaviouricon ~= "" then
-						secondtext2 = behaviouricon .. "\27X" .. secondtext2
+						secondtext2 = Helper.convertColorToText(Helper.color.blue) .. behaviouricon .. "\27X" .. secondtext2
 					end
 				end
 				secondtext1truncated = TruncateText(secondtext1, font, Helper.scaleFont(font, config.mapFontSize), icon:getColSpanWidth() - Helper.scaleX(Helper.standardTextOffsetx))
@@ -1859,11 +1844,37 @@ function newFuncs.createPropertyRow(instance, ftable, component, iteration, comm
 					end
 					mouseovertext = mouseovertext .. secondtext1
 				end
+				-- skip adding when behaviouricon was ignored (case: behaviour == HoldPosition AND order ~= null)
+				if behaviouricon ~= "" and behaviourname and behaviourname ~= "" then
+					if mouseovertext ~= "" then
+						mouseovertext = mouseovertext .. "\n"
+					end
+					mouseovertext = mouseovertext .. behaviourname
+				end
+				-- skip adding when behaviouricon was ignored (case: behaviour == HoldPosition AND order ~= null)
+				if behaviouricon ~= "" and behaviourdescription and behaviourdescription ~= "" then
+					if mouseovertext ~= "" then
+						mouseovertext = mouseovertext .. "\n"
+					end
+					mouseovertext = mouseovertext .. Helper.indentText(behaviourdescription, "  ", GetCurrentMouseOverWidth(), GetCurrentMouseOverFont())
+				end
 				if currentordername ~= "" then
 					if mouseovertext ~= "" then
 						mouseovertext = mouseovertext .. "\n"
 					end
 					mouseovertext = mouseovertext .. currentordername .. (currentordermouseovertext and ("\n\27R" .. currentordermouseovertext .. "\27X") or "")
+				end
+				if currentorderdescription and currentorderdescription ~= "" then
+					if mouseovertext ~= "" then
+						mouseovertext = mouseovertext .. "\n"
+					end
+					mouseovertext = mouseovertext .. Helper.indentText(currentorderdescription, "  ", GetCurrentMouseOverWidth(), GetCurrentMouseOverFont())
+				end
+				if isdocked then
+					if mouseovertext ~= "" then
+						mouseovertext = mouseovertext .. "\n"
+					end
+					mouseovertext = mouseovertext .. ReadText(1001, 3249)
 				end
 				if alertMouseOver ~= "" then
 					if mouseovertext ~= "" then
@@ -1966,11 +1977,11 @@ function newFuncs.createPropertyRow(instance, ftable, component, iteration, comm
 					col = col - 1
 				end
 				if currentordericon ~= "" then
-					row[col]:createIcon(currentorderrawicon, { color = currentorderisoverride and function () return menu.overrideOrderIcon(currentordercolor, false) end or currentordercolor, width = config.mapRowHeight, height = config.mapRowHeight, mouseOverText = currentordername .. (currentordermouseovertext and ("\n\27R" .. currentordermouseovertext .. "\27X") or "") })
+					row[col]:createIcon(currentorderrawicon, { color = currentorderisoverride and function () return menu.overrideOrderIcon(currentordercolor, false) end or currentordercolor, width = config.mapRowHeight, height = config.mapRowHeight, mouseOverText = currentordername .. "\n" .. currentorderdescription .. (currentordermouseovertext and ("\n\27R" .. currentordermouseovertext .. "\27X") or "") })
 					col = col - 1
 				end
 				if behaviouricon ~= "" then
-					row[col]:createIcon(behaviourrawicon, { color = Helper.color.blue, width = config.mapRowHeight, height = config.mapRowHeight, mouseOverText = behaviourname })
+					row[col]:createIcon(behaviourrawicon, { color = Helper.color.blue, width = config.mapRowHeight, height = config.mapRowHeight, mouseOverText = behaviourname .. "\n" .. behaviourdescription })
 					col = col - 1
 				end
 			end
@@ -3553,6 +3564,10 @@ function newFuncs.onRenderTargetSelect(modified)
 				end
 				menu.sound_selectedelement = pickedcomponent
 				if menu.mode ~= "orderparam_object" then
+					if not menu.handlePlannedDefaultOrderRendertargetSelect(false) then
+						return
+					end
+
 					menu.infoSubmenuObject = ConvertStringTo64Bit(tostring(pickedcomponent))
 					if menu.infoTableMode == "info" then
 						menu.refreshInfoFrame(nil, 0)
@@ -4343,6 +4358,7 @@ function newFuncs.setupLoadoutInfoSubmenuRows(mode, inputtable, inputobject, ins
 			end
 
 			menu.turretgroups = {}
+			local turretsizecounts = {}
 			local n = C.GetNumUpgradeGroups(inputobject, "")
 			local buf = ffi.new("UpgradeGroup2[?]", n)
 			n = C.GetUpgradeGroups2(buf, n, inputobject, "")
@@ -4355,6 +4371,7 @@ function newFuncs.setupLoadoutInfoSubmenuRows(mode, inputtable, inputobject, ins
 						group.currentcomponent = groupinfo.currentcomponent
 						group.currentmacro = ffi.string(groupinfo.currentmacro)
 						group.slotsize = ffi.string(groupinfo.slotsize)
+						group.sizecount = 0
 						if (not hasmissileturrets) or (not hasnormalturrets) then
 							local ismissileturret = IsMacroClass(group.currentmacro, "missileturret")
 							hasmissileturrets = hasmissileturrets or ismissileturret
@@ -4372,9 +4389,23 @@ function newFuncs.setupLoadoutInfoSubmenuRows(mode, inputtable, inputobject, ins
 						if not GetComponentData(ConvertStringTo64Bit(tostring(group.currentcomponent)), "istugweapon") then
 							hasonlytugturrets = false
 						end
+
+						if group.slotsize ~= "" then
+							if turretsizecounts[group.slotsize] then
+								turretsizecounts[group.slotsize] = turretsizecounts[group.slotsize] + 1
+							else
+								turretsizecounts[group.slotsize] = 1
+							end
+							group.sizecount = turretsizecounts[group.slotsize]
+						end
+
 						table.insert(menu.turretgroups, group)
 					end
 				end
+			end
+			
+			if #menu.turretgroups > 0 then
+				table.sort(menu.turretgroups, Helper.sortSlots)
 			end
 
 			if (#menu.turrets > 0) or (#menu.turretgroups > 0) then
@@ -4421,8 +4452,8 @@ function newFuncs.setupLoadoutInfoSubmenuRows(mode, inputtable, inputobject, ins
 
 					for i, group in ipairs(menu.turretgroups) do
 						inputtable:addEmptyRow(config.mapRowHeight / 2)
-
-						local name = ReadText(1001, 8023) .. " " .. i .. ((group.currentmacro ~= "") and (" (" .. menu.getSlotSizeText(group.slotsize) .. " " .. GetMacroData(group.currentmacro, "shortname") .. ")") or "")
+						
+						local name = ReadText(1001, 8023) .. " " .. Helper.getSlotSizeText(group.slotsize) .. group.sizecount .. ((group.currentmacro ~= "") and (" (" .. Helper.getSlotSizeText(group.slotsize) .. " " .. GetMacroData(group.currentmacro, "shortname") .. ")") or "")
 
 						local row = inputtable:addRow("info_turretgroupconfig" .. i, { bgColor = Helper.color.transparent })
 						row[2]:setColSpan(3):createText(name, { color = (group.operational > 0) and Helper.color.white or Helper.color.red })
@@ -4957,48 +4988,48 @@ function newFuncs.checkForSelectComponent(component)
 	if menu.mode ~= "selectComponent" then
 		return oldFuncs.checkForSelectComponent (component)
 	else
-		-- kuertee: replaced with checkForSelectComponent from pre-4.1 because the 4.1 version returned these types of errors:
-		-- [=ERROR=] 282601.58 SetupFilterForMapMode(): Given class on idx '1' is nullptr.
-
-		-- start 4.1:
-		-- local numclasses = menu.modeparam[2] and #menu.modeparam[2] or 0
-		-- local classes = ffi.new("const char*[?]", numclasses)
-		-- if numclasses > 0 then
-		-- 	for i, class in ipairs(menu.modeparam[2]) do
-		-- 		classes[i - 1] = Helper.ffiNewString(class)
-		-- 	end
-		-- end
-		-- local result = C.FilterComponentForMapMode(component, classes, numclasses, menu.modeparam[4] or -1, false)
-		-- Helper.ffiClearNewHelper()
-		-- return result
-		-- end 4.1
-
-		-- start: edited from pre-4.1: removed "isonlineobject" data
-		-- DebugError ("kuertee_menu_map checkForSelectComponent component: " .. tostring (component) .. " " .. GetComponentData (component, "name"))
-		local result
-		local isplayerowned = GetComponentData (ConvertStringTo64Bit (tostring (component)), "isplayerowned")
-		-- DebugError ("    kuertee_menu_map checkForSelectComponent isplayerowned: " .. tostring (isplayerowned))
-		-- DebugError ("    kuertee_menu_map checkForSelectComponent menu.modeparam [4]: " .. tostring (menu.modeparam [4]))
-		if menu.modeparam [4] ~= nil then
-			result = (menu.modeparam [4] ~= 0) == isplayerowned
-			-- DebugError ("    kuertee_menu_map checkForSelectComponent result (isplayerowned): " .. tostring (result))
-		end
-		if result ~= false then
-			if menu.modeparam[2] and (#menu.modeparam[2] > 0) then
-				result = false
-				for _, class in ipairs(menu.modeparam[2]) do
-					-- DebugError ("    kuertee_menu_map checkForSelectComponent class: " .. tostring (class))
-					if C.IsComponentClass(component, class) then
-						result = true
-						-- DebugError ("    kuertee_menu_map checkForSelectComponent result (IsComponentClass): " .. tostring (result))
-						break
+		local isUseEgoSoft = true
+		if isUseEgoSoft then
+			local numclasses = menu.modeparam[2] and #menu.modeparam[2] or 0
+			local classes = ffi.new("const char*[?]", numclasses)
+			if numclasses > 0 then
+				for i, class in ipairs(menu.modeparam[2]) do
+					classes[i - 1] = Helper.ffiNewString(class)
+				end
+			end
+			local result = C.FilterComponentForMapMode(component, classes, numclasses, menu.modeparam[4] or -1, false)
+			Helper.ffiClearNewHelper()
+			return result
+		else
+			-- kuertee: replaced with checkForSelectComponent from pre-4.1 because the 4.1 version returned these types of errors:
+			-- [=ERROR=] 282601.58 SetupFilterForMapMode(): Given class on idx '1' is nullptr.
+			-- start: edited from pre-4.1: removed "isonlineobject" data
+			-- DebugError ("kuertee_menu_map checkForSelectComponent component: " .. tostring (component) .. " " .. GetComponentData (component, "name"))
+			local result
+			local isplayerowned = GetComponentData (ConvertStringTo64Bit (tostring (component)), "isplayerowned")
+			-- DebugError ("    kuertee_menu_map checkForSelectComponent isplayerowned: " .. tostring (isplayerowned))
+			-- DebugError ("    kuertee_menu_map checkForSelectComponent menu.modeparam [4]: " .. tostring (menu.modeparam [4]))
+			if menu.modeparam [4] ~= nil then
+				result = (menu.modeparam [4] ~= 0) == isplayerowned
+				-- DebugError ("    kuertee_menu_map checkForSelectComponent result (isplayerowned): " .. tostring (result))
+			end
+			if result ~= false then
+				if menu.modeparam[2] and (#menu.modeparam[2] > 0) then
+					result = false
+					for _, class in ipairs(menu.modeparam[2]) do
+						-- DebugError ("    kuertee_menu_map checkForSelectComponent class: " .. tostring (class))
+						if C.IsComponentClass(component, class) then
+							result = true
+							-- DebugError ("    kuertee_menu_map checkForSelectComponent result (IsComponentClass): " .. tostring (result))
+							break
+						end
 					end
 				end
 			end
+			-- DebugError ("    kuertee_menu_map checkForSelectComponent result (final): " .. tostring (result))
+			return result
+			-- end: edited from pre-4.1
 		end
-		-- DebugError ("    kuertee_menu_map checkForSelectComponent result (final): " .. tostring (result))
-		return result
-		-- end: edited from pre-4.1
 	end
 end
 init ()

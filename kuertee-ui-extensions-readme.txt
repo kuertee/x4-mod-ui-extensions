@@ -1,10 +1,13 @@
 UI Extensions and HUD
 https://www.nexusmods.com/x4foundations/mods/552
 Code: https://github.com/kuertee/x4-mod-ui-extensions
-by kuertee. contributors: Forleyor, Mycu.
+by kuertee. Contributors: Forleyor, Mycu.
 
 Beta version for v5.0.x beta of the base game
 =============================================
+v5.0.0002 BETA, 17 Feb 2022:
+-Bug-fix: Updates to work in the v5.0 beta 5 of the base game.
+
 v5.0.0001 BETA, 15 Feb 2022:
 -New feature: Updates to work in the v5.0 beta 4 of the base game.
 
