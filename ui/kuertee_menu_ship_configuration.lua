@@ -709,7 +709,7 @@ function newFuncs.displaySlots(frame, firsttime)
 											end
 											local active = ((group[i].macro == plandata.macro) or (not hasmod)) and hasstock
 
-											-- start: kuertee call-back
+											-- start: mycu call-back
 											if callbacks ["displaySlots_on_before_create_button_mouseovertext"] then
 												for _, callback in ipairs (callbacks ["displaySlots_on_before_create_button_mouseovertext"]) do
 													result = callback (group[i].macro, plandata.macro, mouseovertext)
@@ -718,7 +718,7 @@ function newFuncs.displaySlots(frame, firsttime)
 													end
 												end
 											end
-											-- end: kuertee call-back
+											-- end: mycu call-back
 
 											row[column]:createButton({
 												active = active,
@@ -926,7 +926,7 @@ function newFuncs.displaySlots(frame, firsttime)
 								end
 							end
 
-							-- start: kuertee call-back
+							-- start: mycu call-back
 							if callbacks ["displaySlots_on_before_create_button_mouseovertext"] then
 								for _, callback in ipairs (callbacks ["displaySlots_on_before_create_button_mouseovertext"]) do
 									result = callback (group[i].macro, plandata.macro, mouseovertext)
@@ -935,7 +935,7 @@ function newFuncs.displaySlots(frame, firsttime)
 									end
 								end
 							end
-							-- end: kuertee call-back
+							-- end: mycu call-back
 
 							local active = ((group[i].macro == plandata.macro) or (not hasmod)) and hasstock
 							row[column]:createButton({

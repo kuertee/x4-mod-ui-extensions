@@ -5,6 +5,9 @@ by kuertee. contributors: Forleyor, Mycu.
 
 Updates:
 ========
+v4.2.0806, 24 Feb 2022:
+-New feature: kuertee_menu_ship_configuration.lua: call-back by mycu: displaySlots_on_before_create_button_mouseovertext ()
+
 v4.2.0805, 11 Feb 2022:
 -New feature: kuertee_menu_map.lua: 3 call-backs by Mycu: refreshInfoFrame2_on_start (), createInfoFrame2_on_menu_infoModeRight (menu.infoFrame2), createRightBar_on_start (config)
 
