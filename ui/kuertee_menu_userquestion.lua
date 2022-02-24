@@ -163,7 +163,7 @@ function newFuncs.onUpdate()
 	-- kuertee start: refresh feature
 	-- menu.infoFrame:update()
 	local currentTime = getElapsedTime()
-	if menu.isRefresh == true or menu.isRefresh == 1 or (menu.refresh and menu.refresh > currentTime) then
+	if menu.isRefresh == true or menu.isRefresh == 1 or (menu.refresh and currentTime > menu.refresh) then
 		menu.isRefresh = false
 		menu.refresh = nil
 		menu.createInfoFrame ()
