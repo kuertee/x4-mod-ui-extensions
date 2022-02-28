@@ -153,12 +153,6 @@ local config = {
 	undoSteps = 100,
 	maxSidePanelWidth = 800,
 	maxCenterPanelWidth = 1600,
-	slotSizeOrder = {
-		["extralarge"]	= 1,
-		["large"]		= 2,
-		["medium"]		= 3,
-		["small"]		= 4,
-	},
 	compatibilityFontSize = 5,
 }
 function newFuncs.displaySlots(frame, firsttime)
@@ -210,7 +204,16 @@ function newFuncs.displaySlots(frame, firsttime)
 				end
 			end
 		elseif (menu.upgradetypeMode == "repair") then
-			if #menu.damagedcomponents > 0 then
+			if menu.objectgroup then
+				for i, ship in ipairs(menu.objectgroup.ships) do
+					if #menu.objectgroup.shipdata[i].damagedcomponents > 0 then
+						local group = math.ceil(count / 3)
+						menu.groupedupgrades[group] = menu.groupedupgrades[group] or {}
+						table.insert(menu.groupedupgrades[group], { macro = ship.macro, icon = (C.IsIconValid("ship_" .. ship.macro) and ("ship_" .. ship.macro) or "ship_notfound"), name = ship.name, component = ship.ship })
+						count = count + 1
+					end
+				end
+			else
 				local component = menu.object
 				local group = math.ceil(count / 3)
 				local macro = GetComponentData(ConvertStringTo64Bit(tostring(component)), "macro")
@@ -257,7 +260,7 @@ function newFuncs.displaySlots(frame, firsttime)
 						currentSlotInfo.compatibilities = compatibilities
 					end
 
-					table.insert(groupedslots, { i, upgradegroup, groupname, slotsize, compatibilities = compatibilities })
+					table.insert(groupedslots, { i, upgradegroup, groupname, sizecount = i, slotsize = slotsize, compatibilities = compatibilities })
 					groupcount = groupcount + 1
 				end
 			end
@@ -265,14 +268,25 @@ function newFuncs.displaySlots(frame, firsttime)
 			local slotcount = 1
 			menu.repairslots = {}
 
-			if #menu.damagedcomponents > 0 then
-				local component = menu.object
-				local group = math.ceil(slotcount / 3)
-				local macro = GetComponentData(ConvertStringTo64Bit(tostring(component)), "macro")
-				local slotnum = i
+			if menu.objectgroup then
+				for i, ship in ipairs(menu.objectgroup.ships) do
+					if #menu.objectgroup.shipdata[i].damagedcomponents > 0 then
+						local group = math.ceil(i / 3)
 
-				menu.repairslots[group] = menu.repairslots[group] or {}
-				table.insert(menu.repairslots[group], {slotnum, macro, slotcount, component})
+						menu.repairslots[group] = menu.repairslots[group] or {}
+						table.insert(menu.repairslots[group], { i, ship.macro, i, ship.ship })
+					end
+				end
+			else
+				if #menu.damagedcomponents > 0 then
+					local component = menu.object
+					local group = math.ceil(slotcount / 3)
+					local macro = GetComponentData(ConvertStringTo64Bit(tostring(component)), "macro")
+					local slotnum = 1
+
+					menu.repairslots[group] = menu.repairslots[group] or {}
+					table.insert(menu.repairslots[group], {slotnum, macro, slotcount, component})
+				end
 			end
 		elseif (menu.upgradetypeMode ~= "consumables") and (menu.upgradetypeMode ~= "software") and (menu.upgradetypeMode ~= "settings") then
 			if not upgradetype.mergeslots then
@@ -297,7 +311,7 @@ function newFuncs.displaySlots(frame, firsttime)
 							currentSlotInfo.compatibilities = compatibilities
 						end
 
-						table.insert(groupedslots, { i, slot, slotname, slotsize, compatibilities = compatibilities })
+						table.insert(groupedslots, { i, slot, slotname, sizecount = i, slotsize = slotsize, compatibilities = compatibilities })
 					end
 				end
 			else
@@ -316,7 +330,8 @@ function newFuncs.displaySlots(frame, firsttime)
 				end
 			end
 		end
-		table.sort(groupedslots, menu.sortSlots)
+		table.sort(groupedslots, Helper.sortSlots)
+
 		for i, entry in ipairs(groupedslots) do
 			local group = math.ceil(i / 9)
 			menu.groupedslots[group] = menu.groupedslots[group] or {}
@@ -594,7 +609,10 @@ function newFuncs.displaySlots(frame, firsttime)
 									if j then
 										local upgradeware = menu.upgradewares[upgradetype2.grouptype][j]
 										if not upgradeware.isFromShipyard then
-											scale.maxSelect = math.min(scale.maxSelect, menu.groups[menu.currentSlot][upgradetype2.grouptype].count)
+											scale.maxSelect = math.min(scale.maxSelect, menu.objectgroup and 0 or menu.groups[menu.currentSlot][upgradetype2.grouptype].count)
+											if menu.objectgroup then
+												scale.minSelect = 0
+											end
 											menu.upgradeplan[upgradetype2.type][menu.currentSlot].count = math.min(scale.maxSelect, menu.upgradeplan[upgradetype2.type][menu.currentSlot].count)
 										end
 									end
@@ -672,7 +690,7 @@ function newFuncs.displaySlots(frame, firsttime)
 													end
 												end
 
-												hasstock = upgradeware.isFromShipyard or (menu.groups[menu.currentSlot][upgradetype2.grouptype].currentmacro == group[i].macro)
+												hasstock = upgradeware.isFromShipyard or ((menu.groups[menu.currentSlot][upgradetype2.grouptype].currentmacro == group[i].macro) and (not menu.objectgroup))
 											end
 
 											local amounttext = ""
@@ -756,55 +774,90 @@ function newFuncs.displaySlots(frame, firsttime)
 					for i = 1, 3 do
 						if group[i] then
 							local repairslotdata = menu.repairslots[k][i]
-							local objectstring = tostring(menu.object)
 							local componentstring = tostring(repairslotdata[4])
 
 							local totalprice = 0
 							local mouseovertext = ""
-							for i = #menu.damagedcomponents, 1, -1 do
-								local component = menu.damagedcomponents[i]
-								local macro
+							if menu.objectgroup then
+								for j, ship in ipairs(menu.objectgroup.ships) do
+									if ship.ship == repairslotdata[4] then
+										for k = #menu.objectgroup.shipdata[j].damagedcomponents, 1, -1 do
+											local component = menu.objectgroup.shipdata[j].damagedcomponents[k]
+											if k ~= #menu.objectgroup.shipdata[j].damagedcomponents then
+												mouseovertext = mouseovertext .. "\n"
+											end
 
-								if component == menu.object then
-									macro = GetComponentData(ConvertStringTo64Bit(tostring(component)), "macro")
-								else
-									for _, upgradetype in ipairs(Helper.upgradetypes) do
-										if upgradetype.supertype == "macro" then
-											if menu.slots[upgradetype.type] then
-												for j = 1, #menu.slots[upgradetype.type] do
-													if menu.slots[upgradetype.type][j].component == component then
-														macro = GetComponentData(ConvertStringTo64Bit(tostring(component)), "macro")
-														break
+											local price = tonumber(C.GetRepairPrice(component, menu.container))
+											if price then
+												totalprice = totalprice + price
+											end
+											local hull = GetComponentData(ConvertStringTo64Bit(tostring(component)), "hullpercent")
+											mouseovertext = mouseovertext .. group[i].name .. " (" .. (100 - hull) .. "% " .. ReadText(1001, 1) .. ")"
+										end
+										break
+									end
+								end
+							else
+								for j = #menu.damagedcomponents, 1, -1 do
+									local component = menu.damagedcomponents[j]
+									local macro
+
+									if component == menu.object then
+										macro = GetComponentData(ConvertStringTo64Bit(tostring(component)), "macro")
+									else
+										for _, upgradetype in ipairs(Helper.upgradetypes) do
+											if upgradetype.supertype == "macro" then
+												if menu.slots[upgradetype.type] then
+													for k = 1, #menu.slots[upgradetype.type] do
+														if menu.slots[upgradetype.type][k].component == component then
+															macro = GetComponentData(ConvertStringTo64Bit(tostring(component)), "macro")
+															break
+														end
 													end
 												end
 											end
 										end
 									end
-								end
-								if macro then
-									if i ~= #menu.damagedcomponents then
-										mouseovertext = mouseovertext .. "\n"
-									end
+									if macro then
+										if j ~= #menu.damagedcomponents then
+											mouseovertext = mouseovertext .. "\n"
+										end
 
-									local price = tonumber(C.GetRepairPrice(component, menu.container))
-									if price then
-										totalprice = totalprice + price
+										local price = tonumber(C.GetRepairPrice(component, menu.container))
+										if price then
+											totalprice = totalprice + price
+										end
+										local shortname = GetMacroData(macro, "shortname")
+										local hull = GetComponentData(ConvertStringTo64Bit(tostring(component)), "hullpercent")
+										mouseovertext = mouseovertext .. shortname .. " (" .. (100 - hull) .. "% " .. ReadText(1001, 1) .. ")"
 									end
-									local shortname = GetMacroData(macro, "shortname")
-									local hull = GetComponentData(ConvertStringTo64Bit(tostring(component)), "hullpercent")
-									mouseovertext = mouseovertext .. shortname .. " (" .. (100 - hull) .. "% " .. ReadText(1001, 1) .. ")"
 								end
 							end
 
-							local shortname, mk = GetMacroData(group[i].macro, "shortname", "mk")
-							local extraText = menu.getExtraText(columnWidths[i], shortname, group[i].macro, (totalprice > 0) and totalprice or nil, repairslotdata[4])
+							if #menu.repairdiscounts > 0 then
+								if mouseovertext ~= "" then
+									mouseovertext = mouseovertext .. "\n\n"
+								end
+								mouseovertext = mouseovertext .. ReadText(1001, 2819) .. ReadText(1001, 120)
+								for _, entry in ipairs(menu.repairdiscounts) do
+									mouseovertext = mouseovertext .. "\n· " .. entry.name .. ReadText(1001, 120) .. " " .. entry.amount .. " %"
+								end
+							end
+
+							local shortname
+							if menu.objectgroup then
+								shortname = group[i].name .. "\n" .. ffi.string(C.GetObjectIDCode(group[i].component))
+							else
+								shortname = GetMacroData(group[i].macro, "shortname")
+							end
+							local extraText = menu.getExtraText(columnWidths[i], shortname, group[i].macro, (totalprice > 0) and totalprice * menu.repairdiscounts.totalfactor or nil, repairslotdata[4])
 
 							local color = Helper.defaultButtonBackgroundColor
 							-- TODO: handle button colors for queued items here.
 
 							local installicon, installcolor = sizeicon or ""
-							menu.repairplan[objectstring] = menu.repairplan[objectstring] or {}
-							if menu.repairplan[objectstring][componentstring] then
+							menu.repairplan[componentstring] = menu.repairplan[componentstring] or {}
+							if menu.repairplan[componentstring][componentstring] then
 								installicon = "be_upgrade_installed"
 								installcolor = Helper.color.green
 							end
@@ -815,7 +868,7 @@ function newFuncs.displaySlots(frame, firsttime)
 							end
 							--print("adding button for component: " .. tostring(componentstring) .. " row: " .. tostring(row.index) .. ", col: " .. tostring(column))
 							row[column]:createButton({ width = columnWidths[i], height = maxColumnWidth, bgColor = color, mouseOverText = mouseovertext }):setIcon(group[i].icon):setIcon2(installicon, { color = installcolor })
-							row[column].handlers.onClick = function () return menu.buttonSelectRepair(row.index, column) end
+							row[column].handlers.onClick = function () return menu.buttonSelectRepair(row.index, column, componentstring) end
 
 							row2[column]:createBoxText(extraText, { width = columnWidths[i], fontsize = menu.extraFontSize })
 						end
@@ -888,7 +941,7 @@ function newFuncs.displaySlots(frame, firsttime)
 									end
 								end
 
-								hasstock = upgradeware.isFromShipyard or (slots[menu.currentSlot].currentmacro == group[i].macro)
+								hasstock = upgradeware.isFromShipyard or ((slots[menu.currentSlot].currentmacro == group[i].macro) and (not menu.objectgroup))
 							end
 
 							local amounttext = ""
@@ -1148,8 +1201,9 @@ function newFuncs.displaySlots(frame, firsttime)
 						n = C.GetAllRaces(buf, n)
 						for i = 0, n - 1 do
 							local id = ffi.string(buf[i].id)
+							local name = ffi.string(buf[i].name)
 							if C.CanPlayerUseRace(id, "aipilot") then
-								table.insert(raceoptions, { id = id, text = ffi.string(buf[i].name), icon = "", displayremoveoption = false })
+								table.insert(raceoptions, { id = id, text = name, icon = "", displayremoveoption = false })
 							end
 						end
 						table.sort(raceoptions, function (a, b) return a.text < b.text end)
@@ -1176,19 +1230,23 @@ function newFuncs.displaySlots(frame, firsttime)
 					end
 				end
 
-				local row = ftable:addRow(menu.mode ~= "customgamestart", { bgColor = Helper.color.transparent })
-				row[1]:setColSpan(7):setBackgroundColSpan(9):createText(ReadText(1001, 80), menu.subHeaderTextProperties)
-				-- include the +1 for the captain
-				if menu.mode ~= "customgamestart" then
-					row[8]:setColSpan(3):createText((menu.crew.total + menu.crew.hired - #menu.crew.fired + (menu.captainSelected and 1 or 0)) .. " / " .. (menu.crew.capacity + 1), menu.subHeaderTextProperties)
-					row[8].properties.halign = "right"
-					row[11]:createButton({ active = (not menu.isReadOnly), mouseOverText = ReadText(1026, 8001), height = menu.rowHeight, y = math.max(0, row:getHeight() - menu.rowHeight) }):setIcon("menu_reset")
-					row[11].handlers.onClick = menu.buttonResetCrew
-				elseif not menu.modeparam.creative then
-					local value = tonumber(C.GetCustomGameStartShipPeopleValue(menu.modeparam.gamestartid, menu.macro, menu.customgamestartpeopledef, menu.customgamestartpeoplefillpercentage))
+				if (menu.mode ~= "customgamestart") or (menu.crew.capacity > 0) then
+					local row = ftable:addRow(menu.mode ~= "customgamestart", { bgColor = Helper.color.transparent })
+					row[1]:setColSpan(7):setBackgroundColSpan(9):createText(ReadText(1001, 80), menu.subHeaderTextProperties)
+					-- include the +1 for the captain
+					if menu.mode ~= "customgamestart" then
+						row[8]:setColSpan(3):createText((menu.crew.total + menu.crew.hired - #menu.crew.fired + (menu.captainSelected and 1 or 0)) .. " / " .. (menu.crew.capacity + 1), menu.subHeaderTextProperties)
+						row[8].properties.halign = "right"
+						row[11]:createButton({ active = (not menu.isReadOnly), mouseOverText = ReadText(1026, 8001), height = menu.rowHeight, y = math.max(0, row:getHeight() - menu.rowHeight) }):setIcon("menu_reset")
+						row[11].handlers.onClick = menu.buttonResetCrew
+					elseif not menu.modeparam.creative then
+						local value = tonumber(C.GetCustomGameStartShipPeopleValue2(menu.modeparam.gamestartid, menu.macro, menu.customgamestartpeopledef, menu.customgamestartpeoplefillpercentage))
 
-					row[8]:setColSpan(4):createText(ConvertIntegerString(value, true, 0, true)  .. " " .. Helper.convertColorToText(Helper.color.red) .. "\27[gamestart_custom_people]", menu.subHeaderTextProperties)
-					row[8].properties.halign = "right"
+						row[8]:setColSpan(4):createText(ConvertIntegerString(value, true, 0, true)  .. " " .. Helper.convertColorToText(Helper.color.red) .. "\27[gamestart_custom_people]", menu.subHeaderTextProperties)
+						row[8].properties.halign = "right"
+					else
+						row[8]:setColSpan(4):createText(" ", menu.subHeaderTextProperties)
+					end
 				end
 
 				if menu.mode ~= "customgamestart" then
@@ -1201,55 +1259,49 @@ function newFuncs.displaySlots(frame, firsttime)
 					end
 				end
 
-				--[[
-				if menu.mode == "customgamestart" then
-					local row = ftable:addRow(true, { scaling = true, bgColor = Helper.color.transparent })
-					row[1]:setColSpan(1):createCheckBox(menu.upgradeplan.hascrewexperience, { scaling = false, width = menu.rowHeight, height = menu.rowHeight })
-					row[1].handlers.onClick = function (_, checked) menu.upgradeplan.hascrewexperience = checked end
-					row[2]:setColSpan(7):createText(ReadText(1001, 8552))
-				end]]
+				if menu.crew.capacity > 0 then
+					if menu.mode == "customgamestart" then
+						local peopleoptions = {}
+						local n = C.GetNumPlayerPeopleDefinitions()
+						local buf = ffi.new("PeopleDefinitionInfo[?]", n)
+						n = C.GetPlayerPeopleDefinitions(buf, n)
+						for i = 0, n - 1 do
+							table.insert(peopleoptions, { id = ffi.string(buf[i].id), text = ffi.string(buf[i].name), icon = "", displayremoveoption = false, mouseovertext = ffi.string(buf[i].desc) })
+						end
+						table.sort(peopleoptions, function (a, b) return a.text < b.text end)
+						table.insert(peopleoptions, 1, { id = "none", text = ReadText(1001, 9931), icon = "", displayremoveoption = false })
 
-				if menu.mode == "customgamestart" then
-					local peopleoptions = {}
-					local n = C.GetNumPlayerPeopleDefinitions()
-					local buf = ffi.new("PeopleDefinitionInfo[?]", n)
-					n = C.GetPlayerPeopleDefinitions(buf, n)
-					for i = 0, n - 1 do
-						table.insert(peopleoptions, { id = ffi.string(buf[i].id), text = ffi.string(buf[i].name), icon = "", displayremoveoption = false, mouseovertext = ffi.string(buf[i].desc) })
-					end
-					table.sort(peopleoptions, function (a, b) return a.text < b.text end)
-					table.insert(peopleoptions, 1, { id = "none", text = ReadText(1001, 9931), icon = "", displayremoveoption = false })
+						local row = ftable:addRow(true, { bgColor = Helper.color.transparent, scaling = true })
+						row[1]:setColSpan(11):createDropDown(peopleoptions, { startOption = (menu.customgamestartpeopledef and (menu.customgamestartpeopledef ~= "")) and menu.customgamestartpeopledef or "none", height = Helper.standardTextHeight, x = Helper.standardTextOffsetx })
+						row[1].handlers.onDropDownConfirmed = function(_, peopledefid) if peopledefid == "none" then menu.customgamestartpeopledef = "" else menu.customgamestartpeopledef = peopledefid end; menu.refreshMenu() end
 
-					local row = ftable:addRow(true, { bgColor = Helper.color.transparent, scaling = true })
-					row[1]:setColSpan(11):createDropDown(peopleoptions, { startOption = (menu.customgamestartpeopledef and (menu.customgamestartpeopledef ~= "")) and menu.customgamestartpeopledef or "none", height = Helper.standardTextHeight, x = Helper.standardTextOffsetx })
-					row[1].handlers.onDropDownConfirmed = function(_, peopledefid) if peopledefid == "none" then menu.customgamestartpeopledef = "" else menu.customgamestartpeopledef = peopledefid end; menu.refreshMenu() end
+						local row = ftable:addRow(true, { bgColor = Helper.color.transparent, scaling = true })
+						row[1]:setColSpan(11):createSliderCell({ height = Helper.standardTextHeight, valueColor = Helper.color.slidervalue, min = 0, max = menu.crew.capacity, start = (menu.customgamestartpeopledef == "") and 0 or Helper.round(menu.crew.capacity * menu.customgamestartpeoplefillpercentage / 100), step = 1, readOnly = menu.customgamestartpeopledef == "" }):setText(ReadText(1001, 47))
+						row[1].handlers.onSliderCellChanged = function(_, newamount) menu.customgamestartpeoplefillpercentage = newamount / menu.crew.capacity * 100 end
+					else
+						local row = ftable:addRow(false, { bgColor = Helper.color.transparent, scaling = true })
+						row[1]:setColSpan(11):createText("")
 
-					local row = ftable:addRow(true, { bgColor = Helper.color.transparent, scaling = true })
-					row[1]:setColSpan(11):createSliderCell({ height = Helper.standardTextHeight, valueColor = Helper.color.slidervalue, min = 0, max = menu.crew.capacity, start = (menu.customgamestartpeopledef == "") and 0 or Helper.round(menu.crew.capacity * menu.customgamestartpeoplefillpercentage / 100), step = 1, readOnly = menu.customgamestartpeopledef == "" }):setText(ReadText(1001, 47))
-					row[1].handlers.onSliderCellChanged = function(_, newamount) menu.customgamestartpeoplefillpercentage = math.ceil(newamount / menu.crew.capacity * 100) end
-				else
-					local row = ftable:addRow(false, { bgColor = Helper.color.transparent, scaling = true })
-					row[1]:setColSpan(11):createText("")
+						if (not menu.usemacro) and (not menu.isReadOnly) then
+							local color = Helper.color.white
+							if #menu.crew.unassigned > 0 then
+								color = Helper.color.red
+							end
 
-					if (not menu.usemacro) and (not menu.isReadOnly) then
-						local color = Helper.color.white
-						if #menu.crew.unassigned > 0 then
-							color = Helper.color.red
+							local row = ftable:addRow(true, { scaling = true, bgColor = Helper.color.transparent })
+							row[1]:setColSpan(7):createText(ReadText(1001, 8025))
+							row[8]:setColSpan(3):createText(#menu.crew.unassigned, { halign = "right", color = color })
+							row[11]:createButton({ active = (not menu.isReadOnly), mouseOverText = ReadText(1026, 8002) }):setIcon("menu_dismiss")
+							row[11].handlers.onClick = menu.buttonFireCrew
 						end
 
-						local row = ftable:addRow(true, { scaling = true, bgColor = Helper.color.transparent })
-						row[1]:setColSpan(7):createText(ReadText(1001, 8025))
-						row[8]:setColSpan(3):createText(#menu.crew.unassigned, { halign = "right", color = color })
-						row[11]:createButton({ active = (not menu.isReadOnly), mouseOverText = ReadText(1026, 8002) }):setIcon("menu_dismiss")
-						row[11].handlers.onClick = menu.buttonFireCrew
-					end
-
-					local first = true
-					for i, entry in ipairs(menu.crew.roles) do
-						local row = menu.displayCrewSlot(ftable, i, entry, buttonWidth, menu.crew.price, first)
-						first = false
-						if (maxVisibleHeight == nil) and row.index >= config.maxSlotRows then
-							maxVisibleHeight = ftable:getFullHeight()
+						local first = true
+						for i, entry in ipairs(menu.crew.roles) do
+							local row = menu.displayCrewSlot(ftable, i, entry, buttonWidth, menu.crew.price, first)
+							first = false
+							if (maxVisibleHeight == nil) and row.index >= config.maxSlotRows then
+								maxVisibleHeight = ftable:getFullHeight()
+							end
 						end
 					end
 				end
