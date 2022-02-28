@@ -7,7 +7,7 @@ local newFuncs = {}
 local callbacks = {}
 local isInited
 local function init ()
-	DebugError ("kuertee_menu_ship_configuration.init")
+	-- DebugError ("kuertee_menu_ship_configuration.init")
 	if not isInited then
 		isInited = true
 		shipConfigurationMenu = Lib.Get_Egosoft_Menu ("ShipConfigurationMenu")

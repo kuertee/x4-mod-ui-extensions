@@ -442,6 +442,12 @@ local config = {
 					param = "coveroverride",
 					active = Helper.isPlayerCovered,
 				},
+				[7] = {
+					id = "other_misc_rendersatelliteradarrange",
+					name = ReadText(1001, 11637),
+					info = ReadText(1001, 11638),
+					param = "rendersatelliteradarrange",
+				},
 			},
 			[4] = {
 				caption = ReadText(1001, 8336),
@@ -479,7 +485,7 @@ local config = {
 			},
 		},
 	},
-	mapfilterversion = 19,
+	mapfilterversion = 20,
 
 	-- custom default row properties, different from Helper defaults
 	mapRowHeight = Helper.standardTextHeight,
@@ -716,6 +722,10 @@ local config = {
 
 	ventureSeasons = {
 		maxDescRows = 12,
+	},
+
+	plots = {
+		maxPlotRows = 10,
 	},
 }
 function newFuncs.buttonToggleObjectList(objectlistparam, confirmed)
@@ -3182,9 +3192,11 @@ function newFuncs.onRowChanged(row, rowdata, uitable, modified, input, source)
 						end
 					end
 				elseif (menu.infoMode.left == "orderqueue") or (menu.infoMode.left == "orderqueue_advanced") or (menu.infoMode.left == "standingorders") then
-					menu.infoTablePersistentData.left.selectedorder = rowdata
-					if type(menu.infoTablePersistentData.left.selectedorder) == "table" then
+					if type(rowdata) == "table" then
+						menu.infoTablePersistentData.left.selectedorder = rowdata
 						menu.infoTablePersistentData.left.selectedorder.object = menu.infoSubmenuObject
+					else
+						menu.infoTablePersistentData.left.selectedorder = nil
 					end
 				end
 			end
@@ -3305,9 +3317,11 @@ function newFuncs.onRowChanged(row, rowdata, uitable, modified, input, source)
 					end
 				end
 			elseif (menu.infoMode.right == "orderqueue") or (menu.infoMode.right == "orderqueue_advanced") or (menu.infoMode.right == "standingorders") then
-				menu.infoTablePersistentData.right.selectedorder = rowdata
-				if type(menu.infoTablePersistentData.right.selectedorder) == "table" then
+				if type(rowdata) == "table" then
+					menu.infoTablePersistentData.right.selectedorder = rowdata
 					menu.infoTablePersistentData.right.selectedorder.object = menu.infoSubmenuObject
+				else
+					menu.infoTablePersistentData.right.selectedorder = nil
 				end
 			end
 		end
@@ -3479,7 +3493,7 @@ function newFuncs.onRenderTargetSelect(modified)
 				for _, row in ipairs(menu.table_plotlist.rows) do
 					if row.rowdata == station then
 						menu.setplotrow = row.index
-						menu.setplottoprow = (row.index - 12) > 1 and (row.index - 12) or 1
+						menu.setplottoprow = (row.index - config.plots.maxPlotRows + 1) > 1 and (row.index - config.plots.maxPlotRows + 1) or 1
 						break
 					end
 				end
