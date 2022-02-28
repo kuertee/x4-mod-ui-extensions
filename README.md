@@ -5,8 +5,11 @@ by kuertee. Contributors: Forleyor, Mycu.
 
 Beta version for v5.0.x beta of the base game
 =============================================
+v5.0.00061 BETA, 28 Feb 2022:
+-Bug-fix: Update kuertee_menu_ship_configuration.lua to include 5.0 beta 6 version of menu_ship_configuration.lua of the base game.
+
 v5.0.0006 BETA, 24 Feb 2022:
--Bug-fix: Updates to work in the v5.0 beta 6 of the base game.
+-Bug-fix: Updates to work in the v5.0 beta 6 of the base game. Includes updates from v4.2.00806.
 
 Release version for v4.2.x of the base game.
 ============================================
