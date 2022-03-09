@@ -13,8 +13,8 @@ v5.0.00061 BETA, 28 Feb 2022:
 
 Release version for v4.2.x of the base game.
 ============================================
-v4.2.0806, 24 Feb 2022:
--New feature: kuertee_menu_ship_configuration.lua: call-back by mycu: displaySlots_on_before_create_button_mouseovertext ()
+v4.2.0807, 9 Mar 2022:
+-New feature: new call-backs by Mycu for his new upcoming mod.
 
 Instructions for players:
 =========================
@@ -112,6 +112,9 @@ History
 =======
 v5.0.0006 BETA, 24 Feb 2022:
 -Bug-fix: Updates to work in the v5.0 beta 6 of the base game. Includes updates from v4.2.00806.
+
+v4.2.0806, 24 Feb 2022:
+-New feature: kuertee_menu_ship_configuration.lua: call-back by mycu: displaySlots_on_before_create_button_mouseovertext ()
 
 v5.0.0002 BETA, 17 Feb 2022:
 -Bug-fix: Updates to work in the v5.0 beta 5 of the base game.
