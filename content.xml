@@ -11,7 +11,7 @@ enabled="1">
 description="UI Extensions and HUD&#13;&#10;
 https://www.nexusmods.com/x4foundations/mods/552&#13;&#10;
 Code: https://github.com/kuertee/x4-mod-ui-extensions.git&#13;&#10;
-by kuertee&#13;&#10;
+by kuertee. Contributors: Forleyor, Mycu, Runekn.&#13;&#10;
 &#13;&#10;
 Features:&#13;&#10;
 Modded Lua files with callbacks that allow more than one mod to change the same UI element.&#13;&#10;

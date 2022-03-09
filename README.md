@@ -1,15 +1,12 @@
 UI Extensions and HUD
 https://www.nexusmods.com/x4foundations/mods/552
 Code: https://github.com/kuertee/x4-mod-ui-extensions
-by kuertee. contributors: Forleyor, Mycu.
+by kuertee. contributors: Forleyor, Mycu, Runekn.
 
 Updates:
 ========
-v4.2.0806, 24 Feb 2022:
--New feature: kuertee_menu_ship_configuration.lua: call-back by mycu: displaySlots_on_before_create_button_mouseovertext ()
-
-v4.2.0805, 11 Feb 2022:
--New feature: kuertee_menu_map.lua: 3 call-backs by Mycu: refreshInfoFrame2_on_start (), createInfoFrame2_on_menu_infoModeRight (menu.infoFrame2), createRightBar_on_start (config)
+v4.2.0807, 9 Mar 2022:
+-New feature: new call-backs by Mycu for his new upcoming mod.
 
 Instructions for players:
 =========================
@@ -105,6 +102,12 @@ Uninstall:
 
 History
 =======
+v4.2.0806, 24 Feb 2022:
+-New feature: kuertee_menu_ship_configuration.lua: call-back by mycu: displaySlots_on_before_create_button_mouseovertext ()
+
+v4.2.0805, 11 Feb 2022:
+-New feature: kuertee_menu_map.lua: 3 call-backs by Mycu: refreshInfoFrame2_on_start (), createInfoFrame2_on_menu_infoModeRight (menu.infoFrame2), createRightBar_on_start (config)
+
 v4.2.0804, 2 Feb 2022:
 -New feature: new callback in the MapMenu that allows new buttons to be added to accepted mission descriptions to support the mod Emergent Missions' "Add A Ship Or Fleet" to that mod's missions.
 
