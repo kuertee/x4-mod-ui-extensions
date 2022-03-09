@@ -1389,7 +1389,10 @@ function newFuncs.createPropertyOwned(frame, instance)
 	-- kuertee start: callback
 	if callbacks ["createPropertyOwned_on_add_other_objects_infoTableData"] then
 		for _, callback in ipairs (callbacks ["createPropertyOwned_on_add_other_objects_infoTableData"]) do
-			callback (infoTableData)
+			result = callback (infoTableData)
+			if result then
+				infoTableData = result.infoTableData
+			end
 		end
 	end
 	-- kuertee end: callback
@@ -3694,6 +3697,18 @@ function newFuncs.onRenderTargetSelect(modified)
 											end
 										end
 									end
+
+									-- start: mycu call-back
+									if callbacks ["onRenderTargetSelect_on_propertyowned_newmode"] then
+										for _, callback in ipairs (callbacks ["onRenderTargetSelect_on_propertyowned_newmode"]) do
+											result = callback (pickedcomponent64, newmode)
+											if result then
+												newmode = result.newmode
+											end
+										end
+									end
+									-- end: mycu call-back
+
 								end
 							end
 							menu.addSelectedComponent(pickedcomponent, not modified)
