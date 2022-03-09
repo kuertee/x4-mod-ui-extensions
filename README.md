@@ -5,6 +5,9 @@ by kuertee. Contributors: Forleyor, Mycu.
 
 Beta version for v5.0.x beta of the base game
 =============================================
+v5.0.0008 BETA, 9 Mar 2022:
+-New feature: new call-backs by Mycu for his new upcoming mod.
+
 v5.0.0007 BETA, 2 Mar 2022:
 -Bug-fix: Updates to work in the v5.0 RC 1 of the base game.
 
