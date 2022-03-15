@@ -4719,8 +4719,19 @@ function newFuncs.setupLoadoutInfoSubmenuRows(mode, inputtable, inputobject, ins
 							row[3].handlers.onDropDownActivated = function () menu.noupdate = true end
 							row[3].handlers.onDropDownConfirmed = function (_, newassignment) C.SetSubordinateGroupAssignment(inputobject, i, newassignment); menu.noupdate = false; menu.refreshInfoFrame() end
 							local row = inputtable:addRow("subordinate_config", { bgColor = Helper.color.transparent })
-							row[3]:setColSpan(11):createButton({ active = active, mouseOverText = mouseovertext, height = config.mapRowHeight }):setText(function () return C.ShouldSubordinateGroupDockAtCommander(inputobject, i) and ReadText(1001, 8630) or ReadText(1001, 8629) end, { halign = "center" })
-							row[3].handlers.onClick = function () return C.SetSubordinateGroupDockAtCommander(inputobject, i, not C.ShouldSubordinateGroupDockAtCommander(inputobject, i)) end
+							
+							-- Start Reactive Docking callback
+							local rd_callbackVal
+							if callbacks ["rd_addReactiveDockingMapMenu"] then
+								for _, callback in ipairs (callbacks ["rd_addReactiveDockingMapMenu"]) do
+									rd_callbackVal = callback (row, inputobject, i, mode, active, mouseovertext)
+								end
+							end
+							if not rd_callbackVal then
+								row[3]:setColSpan(11):createButton({ active = active, mouseOverText = mouseovertext, height = config.mapRowHeight }):setText(function () return C.ShouldSubordinateGroupDockAtCommander(inputobject, i) and ReadText(1001, 8630) or ReadText(1001, 8629) end, { halign = "center" })
+								row[3].handlers.onClick = function () return C.SetSubordinateGroupDockAtCommander(inputobject, i, not C.ShouldSubordinateGroupDockAtCommander(inputobject, i)) end
+							end
+							-- End Reactive Docking callback
 						end
 					end
 				end
