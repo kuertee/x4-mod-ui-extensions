@@ -1,16 +1,16 @@
 local ffi = require ("ffi")
 local C = ffi.C
 local Lib = require ("extensions.sn_mod_support_apis.lua_interface").Library
-local topLevelMenu
+local topLevelMenu = Lib.Get_Egosoft_Menu ("TopLevelMenu")
+local menu = topLevelMenu
 local oldFuncs = {}
 local newFuncs = {}
 local callbacks = {}
 local isInited
 local function init ()
-	DebugError ("kuertee_menu_toplevel.init")
+	-- DebugError ("kuertee_menu_toplevel.init")
 	if not isInited then
 		isInited = true
-		topLevelMenu = Lib.Get_Egosoft_Menu ("TopLevelMenu")
 		topLevelMenu.registerCallback = newFuncs.registerCallback
 		topLevelMenu.callbacks = callbacks
 		-- start rewrites:
@@ -66,8 +66,6 @@ local config = {
 local pullDownArrowsHeight = Helper.sidebarWidth
 local isDisplayed = false
 function newFuncs.createInfoFrame(param)
-	local menu = topLevelMenu
-
 	-- remove old data
 	Helper.clearDataForRefresh(menu, config.infoLayer)
 
@@ -134,8 +132,6 @@ function newFuncs.createInfoFrame(param)
 	menu.infoFrame:display()
 end
 function newFuncs.updateFrameHeight ()
-	local menu = topLevelMenu
-
 	local yBottomMax = 0
 	local yBottomFTable = 0
 	local frame = menu.infoFrame
@@ -159,8 +155,6 @@ function newFuncs.updateFrameHeight ()
 	end
 end
 function newFuncs.onUpdate()
-	local menu = topLevelMenu
-
 	if menu.showTabs and next(menu.mouseOutBox) then
 		if (GetControllerInfo() ~= "gamepad") or (C.IsMouseEmulationActive()) then
 			local curpos = table.pack(GetLocalMousePosition())

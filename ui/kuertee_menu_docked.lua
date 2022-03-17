@@ -8,16 +8,16 @@
 local ffi = require ("ffi")
 local C = ffi.C
 local Lib = require ("extensions.sn_mod_support_apis.lua_interface").Library
-local dockedMenu
+local dockedMenu = Lib.Get_Egosoft_Menu ("DockedMenu")
+local menu = dockedMenu
 local oldFuncs = {}
 local newFuncs = {}
 local callbacks = {}
 local isInited
 local function init ()
-	DebugError ("kuertee_menu_docked.init")
+	-- DebugError ("kuertee_menu_docked.init")
 	if not isInited then
 		isInited = true
-		dockedMenu = Lib.Get_Egosoft_Menu ("DockedMenu")
 		dockedMenu.registerCallback = newFuncs.registerCallback
 		-- docked menu rewrites:
 		oldFuncs.display = dockedMenu.display
@@ -66,8 +66,6 @@ local config = {
 	},
 }
 function newFuncs.display()
-	local menu = dockedMenu
-
 	Helper.removeAllWidgetScripts(menu)
 
 	local width = Helper.viewWidth
@@ -75,7 +73,7 @@ function newFuncs.display()
 	local xoffset = 0
 	local yoffset = 0
 
-	menu.frame = Helper.createFrameHandle(menu, { width = width, x = xoffset, y = yoffset, backgroundID = "solid", backgroundColor = Helper.color.semitransparent, standardButtons = ((menu.mode == "docked") and (menu.currentplayership ~= 0)) and {} or { close = true, back = true } })
+	menu.frame = Helper.createFrameHandle(menu, { width = width, x = xoffset, y = yoffset, backgroundID = "solid", backgroundColor = Helper.color.semitransparent, standardButtons = (((menu.mode == "docked") and (menu.currentplayership ~= 0)) or menu.secondarycontrolpost) and {} or { close = true, back = true } })
 
 	menu.createTopLevel(menu.frame)
 
@@ -161,7 +159,7 @@ function newFuncs.display()
 	if menu.mode == "cockpit" then
 		local row = table_header:addRow("buttonRow1", { bgColor = Helper.color.transparent, fixed = true })
 		row[1]:createButton(config.inactiveButtonProperties):setText("", config.inactiveButtonTextProperties)	-- dummy
-		local active = (menu.currentplayership ~= 0) and C.CanPlayerStandUp()
+		local active = ((menu.currentplayership ~= 0) or menu.secondarycontrolpost) and C.CanPlayerStandUp()
 		row[2]:createButton(active and { mouseOverText = GetLocalizedKeyName("action", 277), helpOverlayID = "docked_getup", helpOverlayText = " ", helpOverlayHighlightOnly = true } or config.inactiveButtonProperties):setText(ReadText(1002, 20014), active and config.activeButtonTextProperties or config.inactiveButtonTextProperties)	-- "Get Up"
 		if active then
 			row[2].handlers.onClick = menu.buttonGetUp
@@ -179,27 +177,28 @@ function newFuncs.display()
 					break
 				end
 			end
-			local active = menu.currentplayership ~= 0
+			local active = (menu.currentplayership ~= 0) or C.IsPlayerControlGroupValid()
 			row[2]:createButton(active and {helpOverlayID = "docked_stopmode", helpOverlayText = " ", helpOverlayHighlightOnly = true } or config.inactiveButtonProperties):setText(text, active and config.activeButtonTextProperties or config.inactiveButtonTextProperties)	-- "Stop Mode"
 			if active then
 				row[2].handlers.onClick = menu.buttonStopMode
 				row[2].properties.uiTriggerID = "stopmode"
 			end
 		else
-			local active = menu.currentplayership ~= 0
+			local active = (menu.currentplayership ~= 0) or C.IsPlayerControlGroupValid()
 			local modes = {}
 			if active then
 				for _, entry in ipairs(config.modes) do
-					local active = true
+					local entryactive = menu.currentplayership ~= 0
 					local visible = true
 					if entry.id == "travel" then
-						active = (menu.currentplayership ~= 0) and C.CanStartTravelMode(menu.currentplayership)
+						entryactive = entryactive and C.CanStartTravelMode(menu.currentplayership)
 					elseif entry.id == "seta" then
+						entryactive = true
 						visible = C.CanActivateSeta(false)
 					end
 					local mouseovertext = GetLocalizedKeyName("action", entry.action)
 					if visible then
-						table.insert(modes, { id = entry.id, text = entry.name, icon = "", displayremoveoption = false, active = active, mouseovertext = mouseovertext })
+						table.insert(modes, { id = entry.id, text = entry.name, icon = "", displayremoveoption = false, active = entryactive, mouseovertext = mouseovertext })
 					end
 				end
 			end
@@ -460,6 +459,7 @@ function newFuncs.display()
 			end
 
 			menu.turretgroups = {}
+			local turretsizecounts = {}
 			local n = C.GetNumUpgradeGroups(menu.currentplayership, "")
 			local buf = ffi.new("UpgradeGroup2[?]", n)
 			n = C.GetUpgradeGroups2(buf, n, menu.currentplayership, "")
@@ -472,12 +472,28 @@ function newFuncs.display()
 						group.currentcomponent = groupinfo.currentcomponent
 						group.currentmacro = ffi.string(groupinfo.currentmacro)
 						group.slotsize = ffi.string(groupinfo.slotsize)
+						group.sizecount = 0
+
+						if group.slotsize ~= "" then
+							if turretsizecounts[group.slotsize] then
+								turretsizecounts[group.slotsize] = turretsizecounts[group.slotsize] + 1
+							else
+								turretsizecounts[group.slotsize] = 1
+							end
+							group.sizecount = turretsizecounts[group.slotsize]
+						end
+
 						table.insert(menu.turretgroups, group)
+						
 						if not GetComponentData(ConvertStringTo64Bit(tostring(group.currentcomponent)), "istugweapon") then
 							hasonlytugturrets = false
 						end
 					end
 				end
+			end
+
+			if #menu.turretgroups > 0 then
+				table.sort(menu.turretgroups, Helper.sortSlots)
 			end
 
 			if (#menu.turrets > 0) or (#menu.turretgroups > 0) then
@@ -529,7 +545,7 @@ function newFuncs.display()
 				for i, group in ipairs(menu.turretgroups) do
 					local row = table_header:addRow("turret_config", { bgColor = Helper.color.transparent })
 					turretgroupscounter = turretgroupscounter + 1
-					local groupname = ReadText(1001, 8023) .. " " .. i .. ((group.currentmacro ~= "") and (" (" .. menu.getSlotSizeText(group.slotsize) .. " " .. GetMacroData(group.currentmacro, "shortname") .. ")") or "")
+					local groupname = ReadText(1001, 8023) .. " " .. Helper.getSlotSizeText(group.slotsize) .. group.sizecount .. ((group.currentmacro ~= "") and (" (" .. Helper.getSlotSizeText(group.slotsize) .. " " .. GetMacroData(group.currentmacro, "shortname") .. ")") or "")
 					local mouseovertext = ""
 					local textwidth = C.GetTextWidth(groupname, Helper.standardFont, Helper.scaleFont(Helper.standardFont, Helper.standardFontSize)) + Helper.scaleX(Helper.standardTextOffsetx)
 					if (textwidth > row[1]:getWidth()) then
@@ -604,10 +620,13 @@ function newFuncs.display()
 						if purpose == "mine" then
 							groups[group].numassignableminingships = groups[group].numassignableminingships + 1
 						end
+						if shiptype == "tug" then
+							groups[group].numassignabletugships = groups[group].numassignabletugships + 1
+						end
 					else
 						local assignment = ffi.string(C.GetSubordinateGroupAssignment(menu.currentplayership, group))
 						usedassignments[assignment] = i
-						groups[group] = { assignment = assignment, subordinates = { subordinate }, numassignableresupplyships = (shiptype == "resupplier") and 1 or 0, numassignableminingships = (purpose == "mine") and 1 or 0 }
+						groups[group] = { assignment = assignment, subordinates = { subordinate }, numassignableresupplyships = (shiptype == "resupplier") and 1 or 0, numassignableminingships = (purpose == "mine") and 1 or 0, numassignabletugships= (shiptype == "tug") and 1 or 0 }
 					end
 				end
 			end
@@ -638,6 +657,8 @@ function newFuncs.display()
 							table.insert(subordinateassignments, { id = "trade", text = ReadText(20208, 40101), icon = "", displayremoveoption = false, active = tradeactive, mouseovertext = tradeactive and ((groups[i].numassignableminingships > 0) and (Helper.convertColorToText(Helper.color.warningorange) .. ReadText(1026, 8607)) or "") or ReadText(1026, 7840) })
 							local tradeforbuildstorageactive = (groups[i].numassignableminingships == 0) and ((not usedassignments["tradeforbuildstorage"]) or (usedassignments["tradeforbuildstorage"] == i))
 							table.insert(subordinateassignments, { id = "tradeforbuildstorage", text = ReadText(20208, 40801), icon = "", displayremoveoption = false, active = tradeforbuildstorageactive, mouseovertext = tradeforbuildstorageactive and "" or ReadText(1026, 8603) })
+							local salvageactive = (groups[i].numassignabletugships == #groups[i].subordinates) and ((not usedassignments["salvage"]) or (usedassignments["salvage"] == i))
+							table.insert(subordinateassignments, { id = "salvage", text = ReadText(20208, 41401), icon = "", displayremoveoption = false, active = salvageactive, mouseovertext = salvageactive and "" or ReadText(1026, 8610) })
 						elseif C.IsComponentClass(menu.currentplayership, "ship") then
 							table.insert(subordinateassignments, { id = "attack", text = ReadText(20208, 40901), icon = "", displayremoveoption = false })
 							table.insert(subordinateassignments, { id = "interception", text = ReadText(20208, 41001), icon = "", displayremoveoption = false })
@@ -708,7 +729,7 @@ function newFuncs.display()
 		else
 			row[1].properties.mouseOverText = mouseovertext
 		end
-		local active = menu.currentplayership ~= 0
+		local active = (menu.currentplayership ~= 0) or menu.secondarycontrolpost
 		row[2]:createButton(active and { mouseOverText = GetLocalizedKeyName("action", 277), helpOverlayID = "docked_getup", helpOverlayText = " ", helpOverlayHighlightOnly = true } or config.inactiveButtonProperties):setText(ReadText(1002, 20014), active and config.activeButtonTextProperties or config.inactiveButtonTextProperties)	-- "Get Up"
 		row[2].handlers.onClick = menu.buttonGetUp
 		local active = menu.currentplayership ~= 0
@@ -727,6 +748,7 @@ function newFuncs.display()
 		row[2]:createButton(active and {helpOverlayID = "docked_trade", helpOverlayText = " ", helpOverlayHighlightOnly = true } or config.inactiveButtonProperties):setText(ReadText(1002, 9005), active and config.activeButtonTextProperties or config.inactiveButtonTextProperties)	-- "Trade"
 		if active then
 			row[2].handlers.onClick = function() return menu.buttonTrade(false) end
+			row[2].properties.uiTriggerID = "docked_trade"
 		end
 		local active = canmodifyship
 		row[7]:createButton(active and {helpOverlayID = "docked_upgrade_repair", helpOverlayText = " ", helpOverlayHighlightOnly = true } or config.inactiveButtonProperties):setText(issupplyship and ReadText(1001, 7877) or ReadText(1001, 7841), active and config.activeButtonTextProperties or config.inactiveButtonTextProperties)	-- Upgrade / Repair Ship
@@ -740,7 +762,55 @@ function newFuncs.display()
 		end
 
 		local row = table_header:addRow("buttonRow3", { bgColor = Helper.color.transparent, fixed = true })
-		row[1]:createButton(config.inactiveButtonProperties):setText("", config.inactiveButtonTextProperties)	-- dummy
+		local currentactivity = GetPlayerActivity()
+		if currentactivity ~= "none" then
+			local text = ""
+			for _, entry in ipairs(config.modes) do
+				if entry.id == currentactivity then
+					text = entry.stoptext
+					break
+				end
+			end
+			local active = (menu.currentplayership ~= 0) or C.IsPlayerControlGroupValid()
+			row[1]:createButton(active and {helpOverlayID = "docked_stopmode", helpOverlayText = " ", helpOverlayHighlightOnly = true } or config.inactiveButtonProperties):setText(text, active and config.activeButtonTextProperties or config.inactiveButtonTextProperties)	-- "Stop Mode"
+			if active then
+				row[1].handlers.onClick = menu.buttonStopMode
+				row[1].properties.uiTriggerID = "stopmode"
+			end
+		else
+			local active = (menu.currentplayership ~= 0) or C.IsPlayerControlGroupValid()
+			local modes = {}
+			if active then
+				for _, entry in ipairs(config.modes) do
+					local entryactive = menu.currentplayership ~= 0
+					local visible = true
+					if entry.id == "travel" then
+						entryactive = entryactive and C.CanStartTravelMode(menu.currentplayership)
+					elseif entry.id == "seta" then
+						entryactive = true
+						visible = C.CanActivateSeta(false)
+					end
+					local mouseovertext = GetLocalizedKeyName("action", entry.action)
+					if visible then
+						table.insert(modes, { id = entry.id, text = entry.name, icon = "", displayremoveoption = false, active = entryactive, mouseovertext = mouseovertext })
+					end
+				end
+			end
+			row[1]:createDropDown(modes, {
+				helpOverlayID = "docked_modes",		
+				helpOverlayText = " ", 
+				helpOverlayHighlightOnly = true, 
+				height = Helper.standardButtonHeight,
+				startOption = "",
+				textOverride = ReadText(1002, 1001),
+				bgColor = active and Helper.defaultButtonBackgroundColor or Helper.defaultUnselectableButtonBackgroundColor,
+				highlightColor = active and Helper.defaultButtonHighlightColor or Helper.defaultUnselectableButtonHighlightColor
+			}):setTextProperties(active and config.activeButtonTextProperties or config.inactiveButtonTextProperties)	-- Modes
+			if active then
+				row[1].handlers.onDropDownConfirmed = menu.dropdownMode
+				row[1].properties.uiTriggerID = "startmode"
+			end
+		end
 		if menu.currentplayership ~= 0 then
 			row[2]:createButton({ mouseOverText = GetLocalizedKeyName("action", 175), bgColor = menu.undockButtonBGColor, highlightColor = menu.undockButtonHighlightColor, helpOverlayID = "docked_undock", helpOverlayText = " ", helpOverlayHighlightOnly = true }):setText(ReadText(1002, 20013), { halign = "center", color = menu.undockButtonTextColor })	-- "Undock"
 			row[2].handlers.onClick = menu.buttonUndock

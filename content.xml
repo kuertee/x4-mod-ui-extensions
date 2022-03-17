@@ -2,8 +2,8 @@
 <content id="kuerteeUIExtensionsAndHUD"
 name="kuertee UI Extensions and HUD"
 author="kuertee"
-version="420"
-date="2022-02-24"
+version="500"
+date="2022-03-17"
 save="false"
 enabled="1">
 
@@ -11,7 +11,7 @@ enabled="1">
 description="UI Extensions and HUD&#13;&#10;
 https://www.nexusmods.com/x4foundations/mods/552&#13;&#10;
 Code: https://github.com/kuertee/x4-mod-ui-extensions.git&#13;&#10;
-by kuertee. Contributors: Forleyor, Mycu, Runekn.&#13;&#10;
+by kuertee. Contributors: Forleyor, Mycu.&#13;&#10;
 &#13;&#10;
 Features:&#13;&#10;
 Modded Lua files with callbacks that allow more than one mod to change the same UI element.&#13;&#10;

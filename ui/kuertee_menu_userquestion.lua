@@ -1,16 +1,16 @@
 local ffi = require ("ffi")
 local C = ffi.C
 local Lib = require ("extensions.sn_mod_support_apis.lua_interface").Library
-local userQuestionMenu
+local userQuestionMenu = Lib.Get_Egosoft_Menu ("UserQuestionMenu")
+local menu = userQuestionMenu
 local oldFuncs = {}
 local newFuncs = {}
 local callbacks = {}
 local isInited
 local function init ()
-	DebugError ("kuertee_menu_userquestion.init")
+	-- DebugError ("kuertee_menu_userquestion.init")
 	if not isInited then
 		isInited = true
-		userQuestionMenu = Lib.Get_Egosoft_Menu ("UserQuestionMenu")
 		userQuestionMenu.registerCallback = newFuncs.registerCallback
 		-- rewrites
 		oldFuncs.cleanup = userQuestionMenu.cleanup
@@ -43,10 +43,8 @@ local config = {
 	width = 400,
 	layer = 3,
 	saveOptionVersion = 1,
-	rowHeight = 17
 }
 function newFuncs.cleanup()
-	local menu = userQuestionMenu
 	oldFuncs.cleanup ()
 	if callbacks ["cleanup_end"] then
 		for _, callback in ipairs (callbacks ["cleanup_end"]) do
@@ -55,8 +53,6 @@ function newFuncs.cleanup()
 	end
 end
 function newFuncs.createInfoFrame()
-	local menu = userQuestionMenu
-
 	-- remove old data
 	Helper.clearDataForRefresh(menu, config.infoLayer)
 
@@ -102,8 +98,6 @@ function newFuncs.createInfoFrame()
 	menu.infoFrame:display()
 end
 function newFuncs.createTable(frame, tableProperties)
-	local menu = userQuestionMenu
-
 	-- if menu.mode ~= "custom" then
 	if not string.find ("" .. tostring (menu.mode), "custom") then
 		return oldFuncs.createTable (frame, tableProperties)
@@ -165,12 +159,11 @@ function newFuncs.createTable(frame, tableProperties)
 	return ftable
 end
 function newFuncs.onUpdate()
-	local menu = userQuestionMenu
 	-- DebugError ("kuertee_menu_userquestion onUpdate")
 	-- kuertee start: refresh feature
 	-- menu.infoFrame:update()
 	local currentTime = getElapsedTime()
-	if menu.isRefresh == true or menu.isRefresh == 1 or (menu.refresh and menu.refresh > currentTime) then
+	if menu.isRefresh == true or menu.isRefresh == 1 or (menu.refresh and currentTime > menu.refresh) then
 		menu.isRefresh = false
 		menu.refresh = nil
 		menu.createInfoFrame ()

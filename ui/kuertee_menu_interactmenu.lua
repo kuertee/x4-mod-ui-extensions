@@ -2,16 +2,23 @@ local ffi = require ("ffi")
 local C = ffi.C
 local utf8 = require("utf8")
 local Lib = require ("extensions.sn_mod_support_apis.lua_interface").Library
-local interactMenu
-local mapMenu
+local interactMenu = Lib.Get_Egosoft_Menu ("InteractMenu")
+local menu = interactMenu
+local mapMenu = Lib.Get_Egosoft_Menu ("MapMenu")
 local oldFuncs = {}
 local newFuncs = {}
 local callbacks = {}
 local isInited
 local config = {
+	layer = 3,
+	width = 260,
 	rowHeight = 16,
 	entryFontSize = Helper.standardFontSize,
 	entryX = 3,
+	mouseOutRange = 100,
+	border = 5,
+	subsectionDelay = 0.5,
+
 	sections = {
 		{ id = "main",					text = "",						isorder = false },
 		{ id = "interaction",			text = ReadText(1001, 7865),	isorder = false },
@@ -38,6 +45,7 @@ local config = {
 			{ id = "main_assignments_trade",				text = ReadText(20208, 40104) },
 			{ id = "main_assignments_tradeforbuildstorage",	text = ReadText(20208, 40804) },
 			{ id = "main_assignments_assist",				text = ReadText(20208, 41204) },
+			{ id = "main_assignments_salvage",				text = ReadText(20208, 41404) },
 		}},
 		{ id = "order",					text = "",						isorder = nil },
 		{ id = "syncpoint",				text = "",						isorder = nil },
@@ -68,6 +76,7 @@ local config = {
 			{ id = "selected_change_assignments_trade",					text = ReadText(20208, 40104) },
 			{ id = "selected_change_assignments_tradeforbuildstorage",	text = ReadText(20208, 40804) },
 			{ id = "selected_change_assignments_assist",				text = ReadText(20208, 41204) },
+			{ id = "selected_change_assignments_salvage",				text = ReadText(20208, 41404) },
 		}},
 		{ id = "selected_assignments",	text = ReadText(1001, 7805),	isorder = true,		subsections = {
 			{ id = "selected_assignments_defence",				text = ReadText(20208, 40304),	helpOverlayID = "interactmenu_assign",	helpOverlayText = " ",	helpOverlayHighlightOnly = true },
@@ -79,21 +88,33 @@ local config = {
 			{ id = "selected_assignments_trade",				text = ReadText(20208, 40104) },
 			{ id = "selected_assignments_tradeforbuildstorage",	text = ReadText(20208, 40804) },
 			{ id = "selected_assignments_assist",				text = ReadText(20208, 41204) },
+			{ id = "selected_assignments_salvage",				text = ReadText(20208, 41404) },
 		}},
 		{ id = "selected_consumables",	text = ReadText(1001, 7849),	isorder = true,		subsections = {
 			{ id = "selected_consumables_civilian",	text = "\27[order_deployobjectatposition] " .. ReadText(1001, 7847) },
 			{ id = "selected_consumables_military",	text = "\27[order_deployobjectatposition] " .. ReadText(1001, 7848) },
 		}},
 		{ id = "shipconsole",			text = "",						isorder = false },
-	}
+	},
+
+	assignments = {
+		["defence"]					= { name = ReadText(20208, 40304) },
+		["attack"]					= { name = ReadText(20208, 40904) },
+		["interception"]			= { name = ReadText(20208, 41004) },
+		["follow"]					= { name = ReadText(20208, 41304) },
+		["supplyfleet"]				= { name = ReadText(20208, 40704) },
+		["mining"]					= { name = ReadText(20208, 40204) },
+		["trade"]					= { name = ReadText(20208, 40104) },
+		["tradeforbuildstorage"]	= { name = ReadText(20208, 40804) },
+		["assist"]					= { name = ReadText(20208, 41204) },
+		["salvage"]					= { name = ReadText(20208, 41401) },
+	},
 }
 local function init ()
-	DebugError ("kuertee_menu_interactmenu.init")
+	-- DebugError ("kuertee_menu_interactmenu.init")
 	if not isInited then
 		isInited = true
-		interactMenu = Lib.Get_Egosoft_Menu ("InteractMenu")
 		interactMenu.registerCallback = newFuncs.registerCallback
-		mapMenu = Lib.Get_Egosoft_Menu ("MapMenu")
 		-- rewrites: interact menu
 		oldFuncs.createContentTable = interactMenu.createContentTable
 		interactMenu.createContentTable = newFuncs.createContentTable
@@ -152,8 +173,6 @@ function newFuncs.onRenderTargetMouseDown (modified)
 	-- newFuncs.debugText_forced ("kuertee_offset_freeDistFrom: " .. tostring (newFuncs.kuertee_offset_freeDistFrom))
 end
 function newFuncs.createContentTable(frame, position)
-	local menu = interactMenu
-
 	local x = 0
 	if position == "right" then
 		x = menu.width + Helper.borderSize
@@ -207,7 +226,7 @@ function newFuncs.createContentTable(frame, position)
 		DebugError("Interact title text is nil [Florian]" ..
 			"\n   targetShortName: " ..tostring(menu.texts.targetShortName) ..
 			"\n   construction: " .. tostring(menu.construction) ..
-			"\n   constructionName: " ..  tostring(menu.texts.constructionName) ..
+			"\n   constructionName: " .. tostring(menu.texts.constructionName) ..
 			"\n   selectedNameAll: " .. tostring(menu.texts.selectedNameAll) ..
 			"\n   selectedName: " .. tostring(menu.texts.selectedName) ..
 			"\n   otherName: " .. tostring(menu.texts.otherName) ..
@@ -356,57 +375,67 @@ function newFuncs.createContentTable(frame, position)
 	if convertedComponent ~= 0 then
 		isonlinetarget, isplayerownedtarget = GetComponentData(convertedComponent, "isonlineobject", "isplayerowned")
 	end
-	if (#menu.selectedplayerships == 0) and (#menu.selectedotherobjects > 0) then
-		-- show the player that they cannot do anything with their selection
-		menu.noopreason = {}
-		for _, selectedcomponent in ipairs(menu.selectedotherobjects) do
-			if C.IsRealComponentClass(selectedcomponent, "ship") then
-				local selected64 = ConvertStringTo64Bit(tostring(selectedcomponent))
-				if GetComponentData(selected64, "isplayerowned") then
-					if IsComponentConstruction(selected64) then
-						-- player ship in construction
-						menu.noopreason[1] = ReadText(1001, 11106)
+
+	local skipped = false
+	if (not menu.syncpoint) and (not menu.syncpointorder) and (not menu.mission) and (not menu.missionoffer) then
+		if (#menu.selectedplayerships == 0) and (#menu.selectedotherobjects > 0) then
+			-- show the player that they cannot do anything with their selection
+			menu.noopreason = {}
+			for _, selectedcomponent in ipairs(menu.selectedotherobjects) do
+				if C.IsRealComponentClass(selectedcomponent, "ship") then
+					local selected64 = ConvertStringTo64Bit(tostring(selectedcomponent))
+					if GetComponentData(selected64, "isplayerowned") then
+						if IsComponentConstruction(selected64) then
+							-- player ship in construction
+							menu.noopreason[1] = ReadText(1001, 11106)
+						end
+					else
+						-- npc ship
+						menu.noopreason[2] = ReadText(1001, 7852)
 					end
 				else
-					-- npc ship
-					menu.noopreason[2] = ReadText(1001, 7852)
+					-- station case
+					menu.noopreason[3] = ReadText(1001, 11104)
 				end
-			else
-				-- station case
-				menu.noopreason[3] = ReadText(1001, 11104)
 			end
-		end
-		local reason = ""
-		if menu.noopreason[1] then
-			reason = menu.noopreason[1]
-		end
-		if menu.noopreason[2] then
-			if reason ~= "" then
-				reason = reason .. "\n"
+			local reason = ""
+			if menu.noopreason[1] then
+				reason = menu.noopreason[1]
 			end
-			reason = reason .. menu.noopreason[2]
-		elseif menu.noopreason[3] then
-			if reason ~= "" then
-				reason = reason .. "\n"
+			if menu.noopreason[2] then
+				if reason ~= "" then
+					reason = reason .. "\n"
+				end
+				reason = reason .. menu.noopreason[2]
+			elseif menu.noopreason[3] then
+				if reason ~= "" then
+					reason = reason .. "\n"
+				end
+				reason = reason .. menu.noopreason[3]
 			end
-			reason = reason .. menu.noopreason[3]
-		end
 
-		local row = ftable:addRow(true, { bgColor = Helper.color.darkgrey })
-		row[1]:setColSpan(4):createText(reason, { wordwrap = true, color = Helper.color.grey })
-	elseif isonlinetarget and isplayerownedtarget then
-		local row = ftable:addRow(true, { fixed = true, bgColor = Helper.color.darkgrey })
-		row[1]:setColSpan(4):createText(ReadText(1001, 7868), { wordwrap = true, color = Helper.color.grey })
-	elseif (#menu.ventureships > 0) and (#menu.selectedplayerships == 0) then
-		local row = ftable:addRow(true, { fixed = true, bgColor = Helper.color.darkgrey })
-		row[1]:setColSpan(4):createText(ReadText(1001, 7868), { wordwrap = true, color = Helper.color.grey })
-	elseif (menu.numorderloops > 0) and (#menu.selectedplayerships ~= menu.numorderloops) then
-		local row = ftable:addRow(true, { fixed = true, bgColor = Helper.color.darkgrey })
-		row[1]:setColSpan(4):createText(ReadText(1001, 11108), { wordwrap = true, color = Helper.color.grey })
-	elseif (menu.numorderloops > 1) then
-		local row = ftable:addRow(true, { fixed = true, bgColor = Helper.color.darkgrey })
-		row[1]:setColSpan(4):createText(ReadText(1001, 11109), { wordwrap = true, color = Helper.color.grey })
-	else
+			local row = ftable:addRow(true, { bgColor = Helper.color.darkgrey })
+			row[1]:setColSpan(4):createText(reason, { wordwrap = true, color = Helper.color.grey })
+			skipped = true
+		elseif isonlinetarget and isplayerownedtarget then
+			local row = ftable:addRow(true, { fixed = true, bgColor = Helper.color.darkgrey })
+			row[1]:setColSpan(4):createText(ReadText(1001, 7868), { wordwrap = true, color = Helper.color.grey })
+			skipped = true
+		elseif (#menu.ventureships > 0) and (#menu.selectedplayerships == 0) then
+			local row = ftable:addRow(true, { fixed = true, bgColor = Helper.color.darkgrey })
+			row[1]:setColSpan(4):createText(ReadText(1001, 7868), { wordwrap = true, color = Helper.color.grey })
+			skipped = true
+		elseif (menu.numorderloops > 0) and (#menu.selectedplayerships ~= menu.numorderloops) then
+			local row = ftable:addRow(true, { fixed = true, bgColor = Helper.color.darkgrey })
+			row[1]:setColSpan(4):createText(ReadText(1001, 11108), { wordwrap = true, color = Helper.color.grey })
+			skipped = true
+		elseif (menu.numorderloops > 1) then
+			local row = ftable:addRow(true, { fixed = true, bgColor = Helper.color.darkgrey })
+			row[1]:setColSpan(4):createText(ReadText(1001, 11109), { wordwrap = true, color = Helper.color.grey })
+			skipped = true
+		end
+	end
+	if not skipped then
 		local first = true
 		for _, section in ipairs(config.sections) do
 			local pass = false

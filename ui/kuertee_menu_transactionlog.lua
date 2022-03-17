@@ -1,16 +1,16 @@
 ﻿local ffi = require ("ffi")
 local C = ffi.C
 local Lib = require ("extensions.sn_mod_support_apis.lua_interface").Library
-local transactionLogMenu
+local transactionLogMenu = Lib.Get_Egosoft_Menu ("TransactionLogMenu")
+local menu = transactionLogMenu
 local oldFuncs = {}
 local newFuncs = {}
 local callbacks = {}
 local isInited
 local function init ()
-	DebugError ("kuertee_menu_transactionlog.init")
+	-- DebugError ("kuertee_menu_transactionlog.init")
 	if not isInited then
 		isInited = true
-		transactionLogMenu = Lib.Get_Egosoft_Menu ("TransactionLogMenu")
 		transactionLogMenu.registerCallback = newFuncs.registerCallback
 		-- rewrites: 
 		oldFuncs.createFrame = transactionLogMenu.createFrame
@@ -36,7 +36,6 @@ local config = {
 	infoLayer = 3,
 }
 function newFuncs.createFrame(toprow, selectedrow)
-	local menu = transactionLogMenu
 	-- remove old data
 	Helper.clearDataForRefresh(menu, config.infoLayer)
 
@@ -55,7 +54,8 @@ function newFuncs.createFrame(toprow, selectedrow)
 	menu.sidebarWidth = Helper.scaleX(Helper.sidebarWidth)
 
 	if menu.isstation then
-		Helper.createRightSideBar(menu.infoFrame, menu.container, true, "transactions", menu.buttonRightBar)
+		local rightbartable = Helper.createRightSideBar(menu.infoFrame, menu.container, true, "transactions", menu.buttonRightBar)
+		rightbartable:addConnection(1, 4, true)
 	end
 
 	local tableProperties = {

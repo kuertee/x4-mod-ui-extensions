@@ -1,16 +1,16 @@
 ﻿local ffi = require ("ffi")
 local C = ffi.C
 local Lib = require ("extensions.sn_mod_support_apis.lua_interface").Library
-local transporterMenu
+local transporterMenu = Lib.Get_Egosoft_Menu ("TransporterMenu")
+local menu = transporterMenu
 local oldFuncs = {}
 local newFuncs = {}
 local callbacks = {}
 local isInited
 local function init ()
-	DebugError ("kuertee_menu_transporter.init")
+	-- DebugError ("kuertee_menu_transporter.init")
 	if not isInited then
 		isInited = true
-		transporterMenu = Lib.Get_Egosoft_Menu ("TransporterMenu")
 		transporterMenu.registerCallback = newFuncs.registerCallback
 		oldFuncs.addEntry = transporterMenu.addEntry
 		transporterMenu.addEntry = newFuncs.addEntry
@@ -112,6 +112,8 @@ function newFuncs.addEntry(ftable, target, indent, parentcomponent)
 			if (target.type == "ship") or (target.type == "cockpit") then
 				if C.IsComponentClass(target.component, "ship_m") or C.IsComponentClass(target.component, "ship_s") then
 					menu.infotext = string.format(ReadText(1001, 6308), ffi.string(C.GetComponentName(target.component)))
+				elseif C.IsComponentClass(target.component, "navcontext") then
+					menu.infotext = string.format(ReadText(1001, 6306), name)
 				else
 					menu.infotext = string.format(ReadText(1001, 6307), ffi.string(C.GetComponentName(target.component)))
 				end
@@ -220,8 +222,6 @@ function newFuncs.addEntry(ftable, target, indent, parentcomponent)
 	end
 end
 function newFuncs.display()
-	local menu = transporterMenu
-
 	-- remove old data
 	Helper.clearDataForRefresh(menu)
 

@@ -1,16 +1,16 @@
 local ffi = require ("ffi")
 local C = ffi.C
 local Lib = require ("extensions.sn_mod_support_apis.lua_interface").Library
-local playerInfoMenu
+local playerInfoMenu = Lib.Get_Egosoft_Menu ("PlayerInfoMenu")
+local menu = playerInfoMenu
 local oldFuncs = {}
 local newFuncs = {}
 local callbacks = {}
 local isInited
 local function init ()
-	DebugError ("kuertee_menu_playerinfo.init")
+	-- DebugError ("kuertee_menu_playerinfo.init")
 	if not isInited then
 		isInited = true
-		playerInfoMenu = Lib.Get_Egosoft_Menu ("PlayerInfoMenu")
 		playerInfoMenu.registerCallback = newFuncs.registerCallback
 		-- map menu rewrites:
 		oldFuncs.buttonTogglePlayerInfo = playerInfoMenu.buttonTogglePlayerInfo
@@ -49,8 +49,10 @@ function newFuncs.registerCallback (callbackName, callbackFunction)
 end
 -- only have config stuff here that are used in this file
 local config = {
+	mode = "empire",
 	mainLayer = 5,
 	infoLayer = 4,
+	contextLayer = 3,
 	rowHeight = 17,
 	leftBar = {
 		{ name = ReadText(1001, 7717),		icon = "pi_empire",					mode = "empire",			active = true, helpOverlayID = "playerinfo_sidebar_empire",			helpOverlayText = ReadText(1028, 7701) },
@@ -66,18 +68,81 @@ local config = {
 		{ name = ReadText(1001, 7708),		icon = "pi_accountmanagement",		mode = "accounts",			active = true, helpOverlayID = "playerinfo_sidebar_accounts",		helpOverlayText = ReadText(1028, 7713) },
 		{ name = ReadText(1001, 11034),		icon = "pi_personnelmanagement",	mode = "personnel",			active = true, helpOverlayID = "playerinfo_sidebar_personnel",		helpOverlayText = ReadText(1028, 7718) },
 		{ spacing = true },
-		{ name = ReadText(1001, 7730),		icon = function () return playerInfoMenu.messageSidebarIcon() end,		mode = "messages",			active = true, helpOverlayID = "playerinfo_sidebar_messages",		helpOverlayText = ReadText(1028, 7712),		iconcolor = function () return playerInfoMenu.messageSidebarIconColor() end },
+		{ name = ReadText(1001, 7730),		icon = function () return menu.messageSidebarIcon() end,		mode = "messages",			active = true, helpOverlayID = "playerinfo_sidebar_messages",		helpOverlayText = ReadText(1028, 7712),		iconcolor = function () return menu.messageSidebarIconColor() end },
 		{ name = ReadText(1001, 7702),		icon = "pi_transactionlog",			mode = "transactionlog",	active = true, helpOverlayID = "playerinfo_sidebar_transactions",	helpOverlayText = ReadText(1028, 7719) },
 		{ name = ReadText(1001, 5700),		icon = "pi_logbook",				mode = "logbook",			active = true, helpOverlayID = "playerinfo_sidebar_logbook",		helpOverlayText = ReadText(1028, 7711) },
 	},
+	rightAlignTextProperties = {
+		halign = "right"
+	},
+	rightAlignBoldTextProperties = {
+		font = Helper.standardFontBold,
+		halign = "right"
+	},
+	logbookCategories = {
+		{ name = ReadText(1001, 2963),	icon = "pi_logbook",		mode = "all" },
+		{ empty = true },
+		{ name = ReadText(1001, 5701),	icon = "logbook_general",	mode = "general" },
+		{ name = ReadText(1001, 5702),	icon = "logbook_missions",	mode = "missions" },
+		{ name = ReadText(1001, 5721),	icon = "logbook_news",		mode = "news" },
+		{ name = ReadText(1001, 5714),	icon = "logbook_alerts",	mode = "alerts" },
+		{ name = ReadText(1001, 5704),	icon = "logbook_upkeep",	mode = "upkeep" },
+		{ name = ReadText(1001, 5708),	icon = "logbook_tips",		mode = "tips" },
+		-- { empty = true,		online = true }, -- TODO onlineUI
+		-- { name = ReadText(1001, 11319),	icon = "vt_logbook",		mode = "online",	online = true }, -- TODO onlineUI
+	},
+	logbookPage = 100,
+	logbookQueryLimit = 1000,
 	messageCategories = {
 		{ name = ReadText(1001, 7741),	icon = "pi_message_read_high",	icon_unread = "pi_message_unread_high",	mode = "highprio" },
 		{ name = ReadText(1001, 7742),	icon = "pi_message_read_low",	icon_unread = "pi_message_unread_low",	mode = "lowprio" },
 	},
+	messageCutscenes = {
+		["OrbitIndefinitely"] = true,
+		["terraforming_scaleplate_green"] = true,
+		["terraforming_black_hole_sun"] = true,
+		["terraforming_getsu_fune"] = true,
+		["terraforming_frontier_edge"] = true,
+		["terraforming_atiyas_misfortune"] = true,
+		["terraforming_18billion"] = true,
+		["terraforming_memory_of_profit"] = true,
+		["terraforming_tharkas_cascade"] = true
+	},
+	mouseOutRange = 100,
+	modCountColumnWidth = 60,
+	equipmentModClasses = {
+		{ name = ReadText(1001, 8008), modclass = "ship" },
+		{ name = ReadText(1001, 1301), modclass = "weapon" },
+		{ name = ReadText(1001, 1317), modclass = "shield" },
+		{ name = ReadText(1001, 1103), modclass = "engine" },
+	},
+	inventoryCategories = {
+		{ id = "crafting",		name = ReadText(1001, 2827) },
+		{ id = "upgrade",		name = ReadText(1001, 7716) },
+		{ id = "paintmod",		name = ReadText(1001, 8510) },
+		{ id = "useful",		name = ReadText(1001, 2828) },
+		{ id = "tradeonly",		name = ReadText(1001, 2829) },
+	},
+	inventoryTabs = {
+		{ category = "normal",	name = ReadText(1001, 2202),	icon = "pi_inventory",			helpOverlayID = "playerinfo_inventory_normal",		helpOverlayText = ReadText(1028, 7703) },
+		{ category = "online",	name = ReadText(1001, 7720),	icon = "vt_inventory_player",	helpOverlayID = "playerinfo_inventory_online",		helpOverlayText = ReadText(1028, 3269) },
+	},
+	blacklistTypes = {
+		[1] = { id = "sectortravel",	text = ReadText(1001, 9165), icon = "", displayremoveoption = false, mouseovertext = ReadText(1026, 9101), shorttext = ReadText(1001, 9162) },
+		[2] = { id = "sectoractivity",	text = ReadText(1001, 9166), icon = "", displayremoveoption = false, mouseovertext = ReadText(1026, 9102), shorttext = ReadText(1001, 9163) },
+		[3] = { id = "objectactivity",	text = ReadText(1001, 9167), icon = "", displayremoveoption = false, mouseovertext = ReadText(1026, 9103), shorttext = ReadText(1001, 9164) },
+	},
+	classDefinitions = {
+		["object"]	= ReadText(1001, 9198),
+		["station"]	= ReadText(1001, 3),
+		["ship_xl"]	= ReadText(1001, 11003),
+		["ship_l"]	= ReadText(1001, 11002),
+		["ship_m"]	= ReadText(1001, 11001),
+		["ship_s"]	= ReadText(1001, 11000),
+	},
+	personnelPage = 100,
 }
 function newFuncs.buttonTogglePlayerInfo(mode)
-	local menu = playerInfoMenu
-
 	-- kuertee start: callback
 	if callbacks ["buttonTogglePlayerInfo_on_start"] then
 		for _, callback in ipairs (callbacks ["buttonTogglePlayerInfo_on_start"]) do
@@ -111,6 +176,12 @@ function newFuncs.buttonTogglePlayerInfo(mode)
 	if (menu.mode == "inventory") or (menu.mode == "spacesuit") or (menu.empireData.mode and (menu.empireData.mode[1] == "empire_call") and (menu.empireData.mode[2] == "inventory")) then
 		menu.inventoryData.selectedWares = {}
 		C.ReadAllInventoryWares()
+		if menu.inventoryData.mode == "online" then
+			if Helper.hasExtension("multiverse") then
+				Helper.callExtensionFunction("multiverse", "unregisterOnlineEvents", menu)
+				Helper.callExtensionFunction("multiverse", "onCloseMenuTab", menu, "ventureinventory", mode)
+			end
+		end
 	elseif menu.mode == "messages" then
 		if next(menu.messageData.curEntry) then
 			C.SetMessageRead(menu.messageData.curEntry.id, menu.messageData.curEntry.category)
@@ -143,8 +214,6 @@ function newFuncs.buttonTogglePlayerInfo(mode)
 	menu.refreshInfoFrame(1, 1)
 end
 function newFuncs.createPlayerInfo(frame, width, height, offsetx, offsety)
-	local menu = playerInfoMenu
-
 	-- kuertee start: callback
 	if callbacks ["createPlayerInfo_on_start"] then
 		for _, callback in ipairs (callbacks ["createPlayerInfo_on_start"]) do
@@ -177,10 +246,10 @@ function newFuncs.createPlayerInfo(frame, width, height, offsetx, offsety)
 			row[1].handlers.onClick = function () return menu.buttonTogglePlayerInfo(entry.mode) end
 		end
 	end
+
+	ftable:addConnection(1, 1, true)
 end
 function newFuncs.createInfoFrame()
-	local menu = playerInfoMenu
-
 	-- kuertee start: callback
 	if callbacks ["createInfoFrame_on_start"] then
 		for _, callback in ipairs (callbacks ["createInfoFrame_on_start"]) do
@@ -219,6 +288,9 @@ function newFuncs.createInfoFrame()
 	}
 	tableProperties.height = Helper.viewHeight - tableProperties.y
 
+	Helper.clearTableConnectionColumn(menu, 2)
+	Helper.clearTableConnectionColumn(menu, 3)
+
 	if menu.mode == "inventory" then
 		menu.createInventory(menu.infoFrame, tableProperties)
 	elseif menu.mode == "crafting" then
@@ -244,6 +316,7 @@ function newFuncs.createInfoFrame()
 	elseif menu.mode == "stats" then
 		menu.createStats(menu.infoFrame, tableProperties)
 	elseif menu.mode == "logbook" then
+		tableProperties.width = tableProperties.width * 5 / 4
 		menu.createLogbook(menu.infoFrame, tableProperties)
 	elseif menu.mode == "messages" then
 		menu.createMessages(menu.infoFrame, tableProperties)
@@ -262,8 +335,6 @@ function newFuncs.createInfoFrame()
 	menu.infoFrame:display()
 end
 function newFuncs.createFactions(frame, tableProperties)
-	local menu = playerInfoMenu
-
 	local narrowtablewidth = Helper.playerInfoConfig.width - menu.sideBarWidth - Helper.borderSize
 	local iconheight = math.ceil(config.rowHeight * 1.5)
 	local iconoffset = 2
@@ -423,10 +494,11 @@ function newFuncs.createFactions(frame, tableProperties)
 		end
 		-- kuertee end: callback
 	end
+
+	infotable:addConnection(1, 2, true)
+	detailtable:addConnection(1, 3, true)
 end
 function newFuncs.onRowChanged(row, rowdata, uitable, modified, input)
-	local menu = playerInfoMenu
-
 	if uitable == menu.infoTable then
 		if (menu.mode == "inventory") or (menu.mode == "spacesuit") then
 			menu.onInventoryRowChange(row, rowdata, input, menu.mode)

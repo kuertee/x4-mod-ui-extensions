@@ -1,12 +1,12 @@
 UI Extensions and HUD
 https://www.nexusmods.com/x4foundations/mods/552
 Code: https://github.com/kuertee/x4-mod-ui-extensions
-by kuertee. contributors: Forleyor, Mycu, Runekn.
+by kuertee. Contributors: Forleyor, Mycu.
 
-Updates:
-========
-v4.2.0807, 9 Mar 2022:
--New feature: new call-backs by Mycu for his new upcoming mod.
+Updates
+=======
+v5.0.001, 17 Mar 2022:
+-Bug-fix: I missed re-adding the Reactive Docking support into the previous 5.0.x betas.
 
 Instructions for players:
 =========================
@@ -102,8 +102,29 @@ Uninstall:
 
 History
 =======
+v5.0.0008 BETA, 9 Mar 2022:
+-New feature: new call-backs by Mycu for his new upcoming mod.
+
+v5.0.0007 BETA, 2 Mar 2022:
+-Bug-fix: Updates to work in the v5.0 RC 1 of the base game.
+
+v5.0.00061 BETA, 28 Feb 2022:
+-Bug-fix: Update kuertee_menu_ship_configuration.lua to include 5.0 beta 6 version of menu_ship_configuration.lua of the base game.
+
+v4.2.0807, 9 Mar 2022:
+-New feature: new call-backs by Mycu for his new upcoming mod.
+
+v5.0.0006 BETA, 24 Feb 2022:
+-Bug-fix: Updates to work in the v5.0 beta 6 of the base game. Includes updates from v4.2.00806.
+
 v4.2.0806, 24 Feb 2022:
 -New feature: kuertee_menu_ship_configuration.lua: call-back by mycu: displaySlots_on_before_create_button_mouseovertext ()
+
+v5.0.0002 BETA, 17 Feb 2022:
+-Bug-fix: Updates to work in the v5.0 beta 5 of the base game.
+
+v5.0.0001 BETA, 15 Feb 2022:
+-New feature: Updates to work in the v5.0 beta 4 of the base game.
 
 v4.2.0805, 11 Feb 2022:
 -New feature: kuertee_menu_map.lua: 3 call-backs by Mycu: refreshInfoFrame2_on_start (), createInfoFrame2_on_menu_infoModeRight (menu.infoFrame2), createRightBar_on_start (config)
