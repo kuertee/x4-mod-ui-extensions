@@ -645,6 +645,7 @@ function newFuncs.displaySlots(frame, firsttime)
 
 											local haslicence, icon, overridecolor, mouseovertext = menu.checkLicence(group[i].macro)
 											local extraText = ""
+											local untruncatedExtraText = ""
 
 											-- handle already installed equipment
 											if (group[i].macro == menu.groups[menu.currentSlot][upgradetype2.grouptype].currentmacro) and (not haslicence) then
@@ -699,10 +700,10 @@ function newFuncs.displaySlots(frame, firsttime)
 											end
 											if group[i].macro ~= "" then
 												local shortname, infolibrary = GetMacroData(group[i].macro, "shortname", "infolibrary")
-												extraText = menu.getExtraText(columnWidths[i], amounttext .. shortname, group[i].macro, price)
+												extraText, untruncatedExtraText = menu.getExtraText(columnWidths[i], amounttext .. shortname, group[i].macro, price)
 												AddKnownItem(infolibrary, group[i].macro)
 											else
-												extraText = menu.getExtraText(columnWidths[i], amounttext .. group[i].name, nil, price)
+												extraText, untruncatedExtraText = menu.getExtraText(columnWidths[i], amounttext .. group[i].name, nil, price)
 											end
 
 											local installicon, installcolor = (group[i].macro ~= "") and (sizeicon or "") or ""
@@ -753,7 +754,7 @@ function newFuncs.displaySlots(frame, firsttime)
 												row[column].handlers.onRightClick = function (...) return menu.buttonInteract({ type = upgradetype2.type, name = group[i].name, macro = group[i].macro }, ...) end
 											end
 
-											row2[column]:createBoxText(extraText, { width = columnWidths[i], fontsize = menu.extraFontSize, color = overridecolor, boxColor = haslicence and Helper.defaultButtonBackgroundColor or Helper.defaultUnselectableButtonBackgroundColor })
+											row2[column]:createBoxText(extraText, { width = columnWidths[i], fontsize = menu.extraFontSize, color = overridecolor, boxColor = haslicence and Helper.defaultButtonBackgroundColor or Helper.defaultUnselectableButtonBackgroundColor, mouseOverText = untruncatedExtraText })
 										end
 									end
 									if (maxVisibleHeight == nil) and row.index >= config.maxSlotRows then
@@ -850,7 +851,7 @@ function newFuncs.displaySlots(frame, firsttime)
 							else
 								shortname = GetMacroData(group[i].macro, "shortname")
 							end
-							local extraText = menu.getExtraText(columnWidths[i], shortname, group[i].macro, (totalprice > 0) and totalprice * menu.repairdiscounts.totalfactor or nil, repairslotdata[4])
+							local extraText, untruncatedExtraText = menu.getExtraText(columnWidths[i], shortname, group[i].macro, (totalprice > 0) and totalprice * menu.repairdiscounts.totalfactor or nil, repairslotdata[4])
 
 							local color = Helper.defaultButtonBackgroundColor
 							-- TODO: handle button colors for queued items here.
@@ -869,8 +870,7 @@ function newFuncs.displaySlots(frame, firsttime)
 							--print("adding button for component: " .. tostring(componentstring) .. " row: " .. tostring(row.index) .. ", col: " .. tostring(column))
 							row[column]:createButton({ width = columnWidths[i], height = maxColumnWidth, bgColor = color, mouseOverText = mouseovertext }):setIcon(group[i].icon):setIcon2(installicon, { color = installcolor })
 							row[column].handlers.onClick = function () return menu.buttonSelectRepair(row.index, column, componentstring) end
-
-							row2[column]:createBoxText(extraText, { width = columnWidths[i], fontsize = menu.extraFontSize })
+							row2[column]:createBoxText(extraText, { width = columnWidths[i], fontsize = menu.extraFontSize, mouseOverText = untruncatedExtraText })
 						end
 					end
 					if (maxVisibleHeight == nil) and row.index >= config.maxSlotRows then
@@ -893,6 +893,7 @@ function newFuncs.displaySlots(frame, firsttime)
 
 							local haslicence, icon, overridecolor, mouseovertext = menu.checkLicence(group[i].macro, nil, false)
 							local extraText = ""
+							local untruncatedExtraText = ""
 
 							-- handle already installed equipment
 							if (group[i].macro == slots[menu.currentSlot].currentmacro) and (not haslicence) then
@@ -950,10 +951,10 @@ function newFuncs.displaySlots(frame, firsttime)
 							end
 							if group[i].macro ~= "" then
 								local shortname, infolibrary = GetMacroData(group[i].macro, "shortname", "infolibrary")
-								extraText = menu.getExtraText(columnWidths[i], amounttext .. shortname, group[i].macro, price, nil, upgradetype.type)
+								extraText, untruncatedExtraText = menu.getExtraText(columnWidths[i], amounttext .. shortname, group[i].macro, price, nil, upgradetype.type)
 								AddKnownItem(infolibrary, group[i].macro)
 							else
-								extraText = menu.getExtraText(columnWidths[i], amounttext .. group[i].name, nil, price)
+								extraText, untruncatedExtraText = menu.getExtraText(columnWidths[i], amounttext .. group[i].name, nil, price)
 							end
 
 							local installicon, installcolor = (group[i].macro ~= "") and (sizeicon or "") or ""
@@ -1005,8 +1006,7 @@ function newFuncs.displaySlots(frame, firsttime)
 							if group[i].macro ~= "" then
 								row[column].handlers.onRightClick = function (...) return menu.buttonInteract({ type = menu.upgradetypeMode, name = group[i].name, macro = group[i].macro }, ...) end
 							end
-
-							row2[column]:createBoxText(extraText, { width = columnWidths[i], fontsize = menu.extraFontSize, color = overridecolor, boxColor = haslicence and Helper.defaultButtonBackgroundColor or Helper.defaultUnselectableButtonBackgroundColor })
+							row2[column]:createBoxText(extraText, { width = columnWidths[i], fontsize = menu.extraFontSize, color = overridecolor, boxColor = haslicence and Helper.defaultButtonBackgroundColor or Helper.defaultUnselectableButtonBackgroundColor, mouseOverText = untruncatedExtraText })
 						end
 					end
 					if (maxVisibleHeight == nil) and row.index >= config.maxSlotRows then

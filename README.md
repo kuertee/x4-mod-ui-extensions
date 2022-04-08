@@ -1,12 +1,12 @@
 UI Extensions and HUD
 https://www.nexusmods.com/x4foundations/mods/552
 Code: https://github.com/kuertee/x4-mod-ui-extensions
-by kuertee. Contributors: Forleyor, Mycu.
+by kuertee. Contributors: Forleyor, Mycu, Runekn.
 
 Updates
 =======
-v5.0.001, 17 Mar 2022:
--Bug-fix: I missed re-adding the Reactive Docking support into the previous 5.0.x betas.
+v5.1.0001, 8 Apr 2022:
+-Compatibility: Updated ship configuration menu with 5.1 changes.
 
 Instructions for players:
 =========================
@@ -102,6 +102,9 @@ Uninstall:
 
 History
 =======
+v5.0.001, 17 Mar 2022:
+-Bug-fix: I missed adding the Reactive Docking support into the previous 5.0.x betas.
+
 v5.0.0008 BETA, 9 Mar 2022:
 -New feature: new call-backs by Mycu for his new upcoming mod.
 
