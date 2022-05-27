@@ -77,7 +77,7 @@ function newFuncs.createInfoFrame(param)
 		layer = config.layer,
 		startAnimation = false,
 		playerControls = true,
-		useMiniWidgetSystem = (not menu.showTabs) and (not menu.over) and isDisplayed,
+		useMiniWidgetSystem = (not menu.showTabs) and (not menu.over),
 		enableDefaultInteractions = false,
 	}
 	isDisplayed = true

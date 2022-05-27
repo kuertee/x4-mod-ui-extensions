@@ -5,28 +5,28 @@ by kuertee. Contributors: Forleyor, Mycu, Runekn.
 
 Updates
 =======
-v5.1.0001, 8 Apr 2022:
--Compatibility: Updated ship configuration menu with 5.1 changes.
+v5.1.0011, 27 May 2022:
+-Bug-fix: Removed an FPS killer. Thanks to Mycu for finding the problem.
 
-Instructions for players:
-=========================
+Instructions for players
+========================
 Just install UI Extensions as normal - that is IF you have a mod that requires UI Extensions.
 You don't need UI Extensions if you don't have a mod that requires UI Extensions.
 
-Instructions for developers:
-============================
+Instructions for developers
+===========================
 All other information as described below.
 
-Features:
-=========
+Features
+========
 Modded Lua files with callbacks that allow more than one mod to change the same UI element.
 
 Functionality that adds HUD elements to the Top Level Menu.
 
 Allows other mods to create guidance missions (i.e. missiontype.guidance) that will be listed in the Guidance Missions tab. Also enables the Set Active and Set Inactive buttons in missions listed in the Guidance Missions tab. Examples of these are my mods: Loot mining, Ship scanner, Signal leak hunter - increasing range, Station scanner, and Waypoint fields for deployments.
 
-Mod effects:
-============
+Mod effects
+===========
 This is a modder's resource/API. By itself, this mod does not affect the game.
 
 Modders can use this API to mod the game's Lua files that helps compatibility with other mods that also use this API.
@@ -37,8 +37,8 @@ With this API, specifically its callbacks, it is possible.
 
 Files in this API will be referred to as UIXs.
 
-Summary of how to use:
-======================
+Summary of how to use
+=====================
 In the mod's Lua file:
 ----------------------
 1. Create a pointer to the base game's menu to be modded.
@@ -62,8 +62,8 @@ In your mod's release:
 ----------------------
 Make this mod a required download for your mod.
 
-Documentation:
-==============
+Documentation
+=============
 Soon.
 
 But the callbacks, along with their function parameters and their expected returns, are listed in each of the new Lua files. Learning at which point in the code they execute is as easy as searching for them in the code. Examples of how they are used can be seen in my mods that use them. My mods "NPC reactions/NPC taxi" and "Teleport from transporter room" both have changes to the "TransporterMenu".
@@ -86,22 +86,32 @@ To use:
 3. To trigger an "AddUITriggeredEvent" after the player selects an object, set screenname in the mapMenu.setSelectComponentMode call.
 4. To disable the default "event_conversation_next_section" after the player selects an object, set returnsection to nil in the mapMenu.setSelectComponentMode call.
 
-Requirement:
-============
+Requirement
+===========
 SirNukes Mod Support APIs mod (https://www.nexusmods.com/x4foundations/mods/503) - to load the custom Lua files
 
-Install:
-========
+Install
+=======
 -Unzip to 'X4 Foundations/extensions/kuertee_ui_extensions/'.
 -Make sure the sub-folders and files are in 'X4 Foundations/extensions/kuertee_ui_extensions/' and not in 'X4 Foundations/extensions/kuertee_ui_extensions/kuertee_ui_extensions/'.
--If 'X4 Foundations/extensions/' is inaccessible, try 'Documents/Egosoft/X4/XXXXXXXX/extensions/kuertee_ui_extensions/' - where XXXXXXXX is a number that is specific to your computer.
 
-Uninstall:
-==========
+Uninstall
+=========
 -Delete the mod folder.
+
+Troubleshooting
+===============
+(1) Do not change the file structure of the mod. If you do, you'll need to troubleshoot problems you encounter yourself.
+(2) Allow the game to log events to a text file by adding "-debug all -logfile debug.log" to its launch parameters.
+(3) Enable the mod-specific Debug Log in the mod's Extension Options.
+(4) Play for long enough for the mod to log its events.
+(5) Send me (at kuertee@gmail.com) the log found in My Documents\Egosoft\X4\(your player-specific number)\debug.log.
 
 History
 =======
+v5.1.0001, 8 Apr 2022:
+-Compatibility: Updated ship configuration menu with 5.1 changes.
+
 v5.0.001, 17 Mar 2022:
 -Bug-fix: I missed adding the Reactive Docking support into the previous 5.0.x betas.
 

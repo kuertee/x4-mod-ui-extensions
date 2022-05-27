@@ -5,8 +5,8 @@ by kuertee. Contributors: Forleyor, Mycu, Runekn.
 
 Updates
 =======
-v5.1.0001, 8 Apr 2022:
--Compatibility: Updated ship configuration menu with 5.1 changes.
+v5.1.0011, 27 May 2022:
+-Bug-fix: Removed an FPS killer. Thanks to Mycu for finding the problem.
 
 Instructions for players:
 =========================
@@ -94,14 +94,24 @@ Install:
 ========
 -Unzip to 'X4 Foundations/extensions/kuertee_ui_extensions/'.
 -Make sure the sub-folders and files are in 'X4 Foundations/extensions/kuertee_ui_extensions/' and not in 'X4 Foundations/extensions/kuertee_ui_extensions/kuertee_ui_extensions/'.
--If 'X4 Foundations/extensions/' is inaccessible, try 'Documents/Egosoft/X4/XXXXXXXX/extensions/kuertee_ui_extensions/' - where XXXXXXXX is a number that is specific to your computer.
 
 Uninstall:
 ==========
 -Delete the mod folder.
 
+Troubleshooting
+===============
+(1) Do not change the file structure of the mod. If you do, you'll need to troubleshoot problems you encounter yourself.
+(2) Allow the game to log events to a text file by adding "-debug all -logfile debug.log" to its launch parameters.
+(3) Enable the mod-specific Debug Log in the mod's Extension Options.
+(4) Play for long enough for the mod to log its events.
+(5) Send me (at kuertee@gmail.com) the log found in My Documents\Egosoft\X4\(your player-specific number)\debug.log.
+
 History
 =======
+v5.1.0001, 8 Apr 2022:
+-Compatibility: Updated ship configuration menu with 5.1 changes.
+
 v5.0.001, 17 Mar 2022:
 -Bug-fix: I missed adding the Reactive Docking support into the previous 5.0.x betas.
 
