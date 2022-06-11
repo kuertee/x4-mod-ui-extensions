@@ -81,7 +81,8 @@ function kHUD.createTables (frame)
 		local row = ftable:addRow (false, {bgColor = Helper.color.transparent60})
 		row [1]:createText ("kHUD", {halign = "center", color = Helper.standardColor})
 	end
-	local ftableIndex = 2 -- ftableIndex 1 is for topLevelArrowsTable
+	-- local ftableIndex = 2 -- ftableIndex 1 is for topLevelArrowsTable
+	local ftableIndex = #frame.content + 1 -- ftableIndex 1 is for topLevelArrowsTable
 	if topLevelMenu.callbacks ["kHUD_add_HUD_tables"] then
 		for i, callback in ipairs (topLevelMenu.callbacks ["kHUD_add_HUD_tables"]) do
 			callbackFTableStartEndIndicies [i] = {first = ftableIndex}

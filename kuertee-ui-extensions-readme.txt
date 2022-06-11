@@ -5,6 +5,9 @@ by kuertee. Contributors: Forleyor, Mycu, Runekn.
 
 Updates
 =======
+v5.1.0012, 12 Jun 2022:
+-Bug-fix: The last version prevented custom HUDs (e.g. the destruction countdown from my Alternatives To Death mod) from showing.
+
 v5.1.0011, 27 May 2022:
 -Bug-fix: Removed an FPS killer. Thanks to Mycu for finding the problem.
 
