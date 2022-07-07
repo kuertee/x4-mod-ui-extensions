@@ -5,11 +5,8 @@ by kuertee. Contributors: Forleyor, Mycu, Runekn.
 
 Updates
 =======
-v5.1.0012, 12 Jun 2022:
--Bug-fix: The last version prevented custom HUDs (e.g. the destruction countdown from my Alternatives To Death mod) from showing.
-
-v5.1.0011, 27 May 2022:
--Bug-fix: Removed an FPS killer. Thanks to Mycu for finding the problem.
+v5.1.0301, 4 Jul 2022:
+-Bug-fix: Re-enable custom HUDs. It was disabled in the last two versions because FPS dropped even when the HUD is not displayed. Note that custom HUDs (e.g. like the destruction countdown from my Alternatives To Death mod) uses the same display mode as any menu (e.g. the Interact Menu). It will drop your FPS when custom HUDs are active, like any menu.
 
 Instructions for players
 ========================
@@ -112,6 +109,12 @@ Troubleshooting
 
 History
 =======
+v5.1.0012, 12 Jun 2022:
+-Bug-fix: The last version prevented custom HUDs (e.g. the destruction countdown from my Alternatives To Death mod) from showing.
+
+v5.1.0011, 27 May 2022:
+-Bug-fix: Removed an FPS killer. Thanks to Mycu for finding the problem.
+
 v5.1.0001, 8 Apr 2022:
 -Compatibility: Updated ship configuration menu with 5.1 changes.
 

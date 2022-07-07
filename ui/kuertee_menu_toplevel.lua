@@ -8,7 +8,6 @@ local newFuncs = {}
 local callbacks = {}
 local isInited
 local function init ()
-	-- DebugError ("kuertee_menu_toplevel.init")
 	if not isInited then
 		isInited = true
 		topLevelMenu.registerCallback = newFuncs.registerCallback
@@ -65,7 +64,7 @@ local config = {
 }
 local pullDownArrowsHeight = Helper.sidebarWidth
 local isDisplayed = false
-function newFuncs.createInfoFrame(param)
+function newFuncs.createInfoFrame ()
 	-- remove old data
 	Helper.clearDataForRefresh(menu, config.infoLayer)
 
@@ -77,10 +76,9 @@ function newFuncs.createInfoFrame(param)
 		layer = config.layer,
 		startAnimation = false,
 		playerControls = true,
-		useMiniWidgetSystem = (not menu.showTabs) and (not menu.over),
+		useMiniWidgetSystem = (not menu.showTabs) and (not menu.over) and (not isDisplayed),
 		enableDefaultInteractions = false,
 	}
-	isDisplayed = true
 
 	menu.infoFrame = Helper.createFrameHandle(menu, frameProperties)
 
@@ -140,18 +138,17 @@ function newFuncs.updateFrameHeight ()
 		if frame.content [i].type == "table" then
 			ftable = frame.content [i]
 			yBottomFTable = ftable.properties.y + ftable:getVisibleHeight ()
-			-- DebugError ("kuertee_menu_toplevel.newFuncs.updateFrameHeight yBottomFTable " .. tostring (yBottomFTable))
-			-- DebugError ("kuertee_menu_toplevel.newFuncs.updateFrameHeight yBottomMax " .. tostring (yBottomMax))
 			if yBottomFTable > yBottomMax then
 				yBottomMax = yBottomFTable
 			end
 		end
 	end
 	local frameHeight = yBottomMax - frame.properties.y
+	isDisplayed = false
 	if menu.infoFrame.properties.height ~= frameHeight then
-		-- DebugError ("kuertee_menu_toplevel.newFuncs.updateFrameHeight frameHeight " .. tostring (frameHeight))
-		frame.properties.height = frameHeight
+		menu.infoFrame.properties.height = frameHeight
 		menu.height = Helper.scaleX (frameHeight)
+		isDisplayed = true
 	end
 end
 function newFuncs.onUpdate()
@@ -212,7 +209,7 @@ function newFuncs.onUpdate()
 			if isOut then
 				menu.over = false
 				menu.lock = getElapsedTime()
-				menu.createInfoFrame ({isFromUpdate = true})
+				menu.createInfoFrame ()
 				return
 			end
 		else
@@ -232,26 +229,28 @@ function newFuncs.onUpdate()
 			if isIn then
 				menu.over = true
 				menu.lock = getElapsedTime()
-				menu.createInfoFrame ({isFromUpdate = true})
+				menu.createInfoFrame ()
 				return
 			end
 		end
 	end
 
 	if menu.refresh and menu.refresh <= curtime then
-		menu.createInfoFrame ({isFromUpdate = true})
+		menu.createInfoFrame ()
+
+
+		-- kuertee start: callback
+		if callbacks ["createInfoFrame_onUpdate_before_frame_update"] then
+			for _, callback in ipairs (callbacks ["createInfoFrame_onUpdate_before_frame_update"]) do
+				callback (menu.infoFrame)
+			end
+			newFuncs.updateFrameHeight ()
+		end
+		-- kuertee end: callback
+
 		menu.refresh = nil
 		return
 	end
-
-	-- kuertee start: callback
-	if callbacks ["createInfoFrame_onUpdate_before_frame_update"] then
-		for _, callback in ipairs (callbacks ["createInfoFrame_onUpdate_before_frame_update"]) do
-			callback (menu.infoFrame)
-			newFuncs.updateFrameHeight ()
-		end
-	end
-	-- kuertee end: callback
 
 	menu.infoFrame:update()
 end
