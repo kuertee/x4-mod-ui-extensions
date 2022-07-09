@@ -4451,8 +4451,20 @@ function newFuncs.setupLoadoutInfoSubmenuRows(mode, inputtable, inputobject, ins
 				if mode == "ship" then
 					local row = inputtable:addRow("info_turretconfig", { bgColor = Helper.color.transparent })
 					row[2]:setColSpan(3):createText(ReadText(1001, 2963))
-					row[5]:setColSpan(9):createDropDown(Helper.getTurretModes(nil, not hasonlytugturrets), { startOption = function () return menu.getDropDownTurretModeOption(inputobject, "all") end })
-					row[5].handlers.onDropDownConfirmed = function(_, newturretmode) menu.noupdate = false; C.SetAllTurretModes(inputobject, newturretmode) end
+					
+					-- Start Subsystem Targeting Orders callback
+					local sto_callbackVal
+					if callbacks ["sto_addTurretBehavioursMapMenu"] then
+						for _, callback in ipairs (callbacks ["sto_addTurretBehavioursMapMenu"]) do
+							sto_callbackVal = callback (row, inputobject)
+						end
+					end
+					if not sto_callbackVal then
+						row[5]:setColSpan(9):createDropDown(Helper.getTurretModes(nil, not hasonlytugturrets), { startOption = function () return menu.getDropDownTurretModeOption(inputobject, "all") end })
+						row[5].handlers.onDropDownConfirmed = function(_, newturretmode) menu.noupdate = false; C.SetAllTurretModes(inputobject, newturretmode) end
+					end
+					-- End Subsystem Targeting Orders callback
+
 					row[5].handlers.onDropDownActivated = function () menu.noupdate = true end
 
 					local row = inputtable:addRow("info_turretconfig_2", { bgColor = Helper.color.transparent })
