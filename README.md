@@ -5,8 +5,9 @@ by kuertee. Contributors: Forleyor, Mycu, Runekn.
 
 Updates
 =======
-v5.1.0301, 4 Jul 2022:
--Bug-fix: Re-enable custom HUDs. It was disabled in the last two versions because FPS dropped even when the HUD is not displayed. Note that custom HUDs (e.g. like the destruction countdown from my Alternatives To Death mod) uses the same display mode as any menu (e.g. the Interact Menu). It will drop your FPS when custom HUDs are active, like any menu.
+v5.1.0301, 17 Jul 2022:
+-Returned feature: Support for Subsystem Targeting Orders.
+-Bug-fix: (For real this time.) Re-enabled custom HUDs.
 
 Instructions for players
 ========================
