@@ -68,6 +68,12 @@ local function init ()
 		mapMenu.setupLoadoutInfoSubmenuRows = newFuncs.setupLoadoutInfoSubmenuRows
 		oldFuncs.checkForSelectComponent = mapMenu.checkForSelectComponent
 		mapMenu.checkForSelectComponent = newFuncs.checkForSelectComponent
+		oldFuncs.isInfoModeValidFor = mapMenu.isInfoModeValidFor
+		mapMenu.isInfoModeValidFor = newFuncs.isInfoModeValidFor
+		oldFuncs.createLogbookInfoSubmenu = mapMenu.createLogbookInfoSubmenu
+		mapMenu.createLogbookInfoSubmenu = newFuncs.createLogbookInfoSubmenu
+		oldFuncs.componentSorter = mapMenu.componentSorter
+		mapMenu.componentSorter = newFuncs.componentSorter
 		-- new functions. i.e. doesn't exist in the original map menu.
 		mapMenu.setSelectComponentMode = newFuncs.setSelectComponentMode
 	end
@@ -109,8 +115,6 @@ function newFuncs.registerCallback (callbackName, callbackFunction)
 	table.insert (callbacks [callbackName], callbackFunction)
 end
 function newFuncs.setSelectComponentMode (returnsection, classlist, category, playerowned, customheading, screenname)
-	local menu = mapMenu
-
 	menu.old_mode = menu.mode
 	menu.old_modeparam = menu.modeparam
 	menu.old_infoTableMode = menu.infoTableMode
@@ -1200,6 +1204,108 @@ function newFuncs.refreshInfoFrame2(setrow, setcol)
 		menu.createInfoFrame2()
 	end
 end
+function newFuncs.componentSorter(sorttype)
+	-- kuertee start: replace name and object id sort with name and sector sort
+	-- local sorter = Helper.sortNameAndObjectID
+	-- if sorttype == "nameinverse" then
+	-- 	sorter = function (a, b) return Helper.sortNameAndObjectID(a, b, true) end
+	local sorter = newFuncs.sortNameSectorThenId
+	if sorttype == "nameinverse" then
+		sorter = function (a, b) return newFuncs.sortNameSectorThenId (a, b, true) end
+	-- kuertee end: replace name and object id sort with name and sector sort
+
+	elseif sorttype == "class" then
+		sorter = Helper.sortShipsByClassAndPurpose
+	elseif sorttype == "classinverse" then
+		sorter = function (a, b) return Helper.sortShipsByClassAndPurpose(a, b, true) end
+	elseif sorttype == "hull" then
+		sorter = Helper.sortHullAndName
+	elseif sorttype == "hullinverse" then
+		sorter = function (a, b) return Helper.sortHullAndName(a, b, true) end
+	elseif sorttype == "relation" then
+		sorter = Helper.sortRelationAndName
+	elseif sorttype == "relationinverse" then
+		sorter = function (a, b) return Helper.sortRelationAndName(a, b, true) end
+
+	-- kuertee start: add sort by distance
+	elseif sorttype == "distance_from_player" then
+		sorter = newFuncs.sortDistanceFromPlayer
+	elseif sorttype == "distance_from_playerinverse" then
+		sorter = function (a, b) return newFuncs.sortDistanceFromPlayer (a, b, true) end
+	elseif sorttype == "distance_from_object" then
+		sorter = newFuncs.sortDistanceFromObject
+	elseif sorttype == "distance_from_objectinverse" then
+		sorter = function (a, b) return newFuncs.sortDistanceFromObject (a, b, true) end
+	-- kuertee end: add sort by distance
+
+	end
+	return sorter
+end
+-- kuertee start: replace name and object id sort with name and sector sort
+function newFuncs.sortNameSectorThenId(a, b, invert)
+	local sector_a = GetComponentData (ConvertStringTo64Bit (tostring (a.id)), "sectorid")
+	local sector_b = GetComponentData (ConvertStringTo64Bit (tostring (b.id)), "sectorid")
+	local sector_a_name = ""
+	if sector_a then
+		sector_a_name = ffi.string (C.GetComponentName (ConvertStringTo64Bit (tostring (sector_a))))
+	end
+	local sector_b_name = ""
+	if sector_b then
+		sector_b_name = ffi.string (C.GetComponentName (ConvertStringTo64Bit (tostring (sector_b))))
+	end
+	if (a.fleetname or b.fleetname) and (a.fleetname ~= b.fleetname) then
+		if a.fleetname and b.fleetname then
+			if invert then
+				return a.fleetname > b.fleetname
+			else
+				return a.fleetname < b.fleetname
+			end
+		end
+		return a.fleetname ~= nil
+	end
+	if a.name == b.name then
+		if sector_a_name == sector_b_name then
+			if invert then
+				return a.objectid > b.objectid
+			else
+				return a.objectid < b.objectid
+			end
+		else
+			if invert then
+				return sector_a_name > sector_b_name
+			else
+				return sector_a_name < sector_b_name
+			end
+		end
+	else
+		if invert then
+			return a.name > b.name
+		else
+			return a.name < b.name
+		end
+	end
+end
+-- kuertee end: replace name and object id sort with name and sector sort
+-- kuertee start: add sort by distances
+function newFuncs.sortDistanceFromPlayer (a, b, invert)
+	local distance_a = C.GetDistanceBetween (ConvertStringTo64Bit (tostring (a.id)), ConvertStringTo64Bit (tostring (C.GetPlayerID ())))
+	local distance_b = C.GetDistanceBetween (ConvertStringTo64Bit (tostring (b.id)), ConvertStringTo64Bit (tostring (C.GetPlayerID ())))
+	if invert then
+		return distance_a > distance_b
+	else
+		return distance_a < distance_b
+	end
+end
+function newFuncs.sortDistanceFromObject (a, b, invert)
+	local distance_a = C.GetDistanceBetween (ConvertStringTo64Bit (tostring (a.id)), ConvertStringTo64Bit (tostring (menu.infoSubmenuObject)))
+	local distance_b = C.GetDistanceBetween (ConvertStringTo64Bit (tostring (b.id)), ConvertStringTo64Bit (tostring (menu.infoSubmenuObject)))
+	if invert then
+		return distance_a > distance_b
+	else
+		return distance_a < distance_b
+	end
+end
+-- kuertee end: add sort by distances
 function newFuncs.createPropertyOwned(frame, instance)
 	-- kuertee start: callback
 	if callbacks ["createPropertyOwned_on_start"] then
@@ -1643,6 +1749,35 @@ function newFuncs.createPropertyOwned(frame, instance)
 			button:setIcon("table_arrow_inv_up", { width = buttonheight, height = buttonheight, x = button:getColSpanWidth() - buttonheight })
 		end
 		row[tableColumn].handlers.onClick = function () return menu.buttonPropertySorter("hull") end
+
+		--kuertee start: add distance sorters
+		local row = tabtable:addRow(true, { fixed = true, bgColor = Helper.color.transparent })
+		row[1]:setColSpan (colSpanPerSorterColumn):createText (ReadText (1001, 2957) .. ReadText (1001, 120))
+		-- "distance from player"
+		local buttonLabel = ffi.string (C.GetPlayerName ())
+		sorterColumn = 2
+		tableColumn = (sorterColumn - 1) * colSpanPerSorterColumn + 1
+		local button = row[tableColumn]:setColSpan(colSpanPerSorterColumn):createButton({ scaling = false, height = buttonheight }):setText(buttonLabel, { halign = "center", scaling = true })
+		if menu.propertySorterType == "distance_from_player" then
+			button:setIcon("table_arrow_inv_down", { width = buttonheight, height = buttonheight, x = button:getColSpanWidth() - buttonheight })
+		elseif menu.propertySorterType == "distance_from_playerinverse" then
+			button:setIcon("table_arrow_inv_up", { width = buttonheight, height = buttonheight, x = button:getColSpanWidth() - buttonheight })
+		end
+		row[tableColumn].handlers.onClick = function () return menu.buttonPropertySorter("distance_from_player") end
+		-- "distance from object"
+		if menu.infoSubmenuObject then
+			buttonLabel = ffi.string (C.GetObjectIDCode (menu.infoSubmenuObject))
+			sorterColumn = 3
+			tableColumn = (sorterColumn - 1) * colSpanPerSorterColumn + 1
+			local button = row[tableColumn]:setColSpan(colSpanPerSorterColumn):createButton({ scaling = false, height = buttonheight }):setText(buttonLabel, { halign = "center", scaling = true })
+			if menu.propertySorterType == "distance_from_object" then
+				button:setIcon("table_arrow_inv_down", { width = buttonheight, height = buttonheight, x = button:getColSpanWidth() - buttonheight })
+			elseif menu.propertySorterType == "distance_from_objectinverse" then
+				button:setIcon("table_arrow_inv_up", { width = buttonheight, height = buttonheight, x = button:getColSpanWidth() - buttonheight })
+			end
+			row[tableColumn].handlers.onClick = function () return menu.buttonPropertySorter("distance_from_object") end
+		end
+		--kuertee end: add distance sorters
 	end
 	-- kuertee end: re-written product categories and sorter table
 
@@ -2082,6 +2217,1182 @@ function newFuncs.createPropertyRow(instance, ftable, component, iteration, comm
 	end
 
 	return numdisplayed
+end
+function newFuncs.createLogbookInfoSubmenu(inputframe, instance)
+	local mode = ""
+	local frameheight = inputframe.properties.height
+	if (not menu.infoSubmenuObject) or (menu.infoSubmenuObject == 0) then
+		-- only get the first selected item. if multiple items selected, whose information do we show?
+		for id, content in pairs(menu.selectedcomponents) do
+			menu.infoSubmenuObject = ConvertStringTo64Bit(tostring(id))
+			break
+		end
+		if (not menu.infoSubmenuObject) or (menu.infoSubmenuObject == 0) then
+			menu.infoSubmenuObject = ConvertStringTo64Bit(tostring(C.GetPlayerOccupiedShipID()))
+			if (not menu.infoSubmenuObject) or (menu.infoSubmenuObject == 0) then
+				menu.infoSubmenuObject = ConvertStringTo64Bit(tostring(C.GetPlayerContainerID()))
+			end
+		end
+	end
+
+	local isvalid = menu.isInfoModeValidFor(menu.infoSubmenuObject, "objectlogbook")
+
+	AddUITriggeredEvent(menu.name, "logbookinfomenu_open", menu.infoSubmenuObject)
+
+	-- kuertee start: set mode to normal regardless of object type
+	-- local macro = GetComponentData(menu.infoSubmenuObject, "macro")
+	-- if C.IsRealComponentClass(menu.infoSubmenuObject, "ship_xs") then
+	-- 	mode = "none"
+	-- elseif GetMacroData(macro, "islasertower") then
+	-- 	mode = "none"
+	-- elseif C.IsRealComponentClass(menu.infoSubmenuObject, "ship") then
+	-- 	mode = "normal"
+	-- elseif C.IsRealComponentClass(menu.infoSubmenuObject, "station") then
+	-- 	mode = "normal"
+	-- elseif C.IsComponentClass(menu.infoSubmenuObject, "sector") then
+	-- 	mode = "none"
+	-- elseif C.IsComponentClass(menu.infoSubmenuObject, "gate") then
+	-- 	mode = "none"
+	-- elseif C.IsComponentClass(menu.infoSubmenuObject, "mine") or C.IsComponentClass(menu.infoSubmenuObject, "navbeacon") or C.IsComponentClass(menu.infoSubmenuObject, "resourceprobe") or C.IsComponentClass(menu.infoSubmenuObject, "satellite") then
+	-- 	mode = "none"
+	-- elseif C.IsComponentClass(menu.infoSubmenuObject, "asteroid") or C.IsComponentClass(menu.infoSubmenuObject, "collectablewares") then
+	-- 	mode = "none"
+	-- elseif C.IsComponentClass(menu.infoSubmenuObject, "lockbox") then
+	-- 	mode = "none"
+	-- else
+	-- 	DebugError("menu.createLogbookInfoSubmenu(): Selected component " .. tostring(menu.infoSubmenuObject) .. " of class " .. ffi.string(C.GetComponentClass(menu.infoSubmenuObject)) .. " is unsupported. Support?")
+	-- end
+	mode = "normal"
+	-- kuertee end: set mode to normal regardless of object type
+
+	local useSeparatePageRow = true
+	local buttonsize = Helper.scaleY(config.mapRowHeight)
+	local table_info = inputframe:addTable(10, { tabOrder = 1 } )
+	table_info:setColWidth(1, inputframe.properties.width / 3, false)
+	table_info:setColWidth(4, config.mapRowHeight)
+	table_info:setColWidth(5, config.mapRowHeight)
+	table_info:setColWidth(6, config.mapRowHeight)
+	table_info:setColWidth(7, config.mapRowHeight)
+	table_info:setColWidth(8, inputframe.properties.width / 3 - 4 * (buttonsize + Helper.borderSize), false)
+	table_info:setColWidth(9, config.mapRowHeight)
+	table_info:setColWidth(10, config.mapRowHeight)
+
+	menu.setupLogbookInfoSubmenuRows(mode, table_info, menu.infoSubmenuObject, instance)
+
+	if menu.selectedRows["infotable" .. instance] then
+		table_info:setSelectedRow(menu.selectedRows["infotable" .. instance])
+		menu.selectedRows["infotable" .. instance] = nil
+		if menu.topRows["infotable" .. instance] then
+			table_info:setTopRow(menu.topRows["infotable" .. instance])
+			menu.topRows["infotable" .. instance] = nil
+		end
+		if menu.selectedCols["infotable" .. instance] then
+			table_info:setSelectedCol(menu.selectedCols["infotable" .. instance])
+			menu.selectedCols["infotable" .. instance] = nil
+		end
+	end
+	menu.setrow = nil
+	menu.settoprow = nil
+	menu.setcol = nil
+
+	local table_header = menu.createOrdersMenuHeader(inputframe, instance)
+
+	table_info.properties.y = table_header.properties.y + table_header:getFullHeight() + Helper.borderSize
+
+	local table_button = inputframe:addTable(3, { tabOrder = 3 } )
+	table_button:addEmptyRow()
+	local row = table_button:addRow(true, { bgColor = Helper.color.transparent })
+	row[3]:createButton({ active = isvalid }):setText(ReadText(1001, 5722), { halign = "center" })
+	row[3].handlers.onClick = function () return menu.buttonInfoLogbookClearQuestion(instance) end
+
+	local infotableheight = table_info:getFullHeight()
+	local buttontableheight = table_button:getFullHeight()
+	if table_info.properties.y + infotableheight + buttontableheight + Helper.borderSize + Helper.frameBorder < frameheight then
+		table_button.properties.y = table_info.properties.y + infotableheight + Helper.borderSize
+	else
+		table_button.properties.y = frameheight - Helper.frameBorder - buttontableheight
+		table_info.properties.maxVisibleHeight = table_button.properties.y - Helper.borderSize - table_info.properties.y
+	end
+	
+	table_header:addConnection(1, (instance == "left") and 2 or 3, true)
+	table_info:addConnection(2, (instance == "left") and 2 or 3)
+	table_button:addConnection(3, (instance == "left") and 2 or 3)
+end
+function newFuncs.setupLoadoutInfoSubmenuRows(mode, inputtable, inputobject, instance)
+	local object64 = ConvertStringTo64Bit(tostring(inputobject))
+	local isplayerowned, isonlineobject, isenemy, ishostile = GetComponentData(object64, "isplayerowned", "isonlineobject", "isenemy", "ishostile")
+	local titlecolor = Helper.color.white
+	if isplayerowned then
+		titlecolor = menu.holomapcolor.playercolor
+		if object64 == C.GetPlayerObjectID() then
+			titlecolor = menu.holomapcolor.currentplayershipcolor
+		end
+	elseif isonlineobject and menu.getFilterOption("layer_other") and menu.getFilterOption("think_diplomacy_highlightvisitor") then
+		titlecolor = menu.holomapcolor.visitorcolor
+	elseif ishostile then
+		titlecolor = menu.holomapcolor.hostilecolor
+	elseif isenemy then
+		titlecolor = menu.holomapcolor.enemycolor
+	end
+
+	local loadout = {}
+	if mode == "ship" or mode == "station" then
+		loadout = { ["component"] = {}, ["macro"] = {}, ["ware"] = {} }
+		for i, upgradetype in ipairs(Helper.upgradetypes) do
+			if upgradetype.supertype == "macro" then
+				loadout.component[upgradetype.type] = {}
+				local numslots = 0
+				if C.IsComponentClass(inputobject, "defensible") then
+					numslots = tonumber(C.GetNumUpgradeSlots(inputobject, "", upgradetype.type))
+				end
+				for j = 1, numslots do
+					local current = C.GetUpgradeSlotCurrentComponent(inputobject, upgradetype.type, j)
+					if current ~= 0 then
+						table.insert(loadout.component[upgradetype.type], current)
+					end
+				end
+			elseif upgradetype.supertype == "virtualmacro" then
+				loadout.macro[upgradetype.type] = {}
+				local numslots = tonumber(C.GetNumVirtualUpgradeSlots(inputobject, "", upgradetype.type))
+				for j = 1, numslots do
+					local current = ffi.string(C.GetVirtualUpgradeSlotCurrentMacro(inputobject, upgradetype.type, j))
+					if current ~= "" then
+						table.insert(loadout.macro[upgradetype.type], current)
+					end
+				end
+			elseif upgradetype.supertype == "software" then
+				loadout.ware[upgradetype.type] = {}
+				local numslots = C.GetNumSoftwareSlots(inputobject, "")
+				local buf = ffi.new("SoftwareSlot[?]", numslots)
+				numslots = C.GetSoftwareSlots(buf, numslots, inputobject, "")
+				for j = 0, numslots - 1 do
+					local current = ffi.string(buf[j].current)
+					if current ~= "" then
+						table.insert(loadout.ware[upgradetype.type], current)
+					end
+				end
+			elseif upgradetype.supertype == "ammo" then
+				loadout.macro[upgradetype.type] = {}
+			end
+		end
+	end
+
+	local cheatsecrecy = false
+	-- secrecy stuff
+	local nameinfo =					cheatsecrecy or C.IsInfoUnlockedForPlayer(inputobject, "name")
+	local defenceinfo_low =				cheatsecrecy or C.IsInfoUnlockedForPlayer(inputobject, "defence_level")
+	local defenceinfo_high =			cheatsecrecy or C.IsInfoUnlockedForPlayer(inputobject, "defence_status")
+	local unitinfo_capacity =			cheatsecrecy or C.IsInfoUnlockedForPlayer(inputobject, "units_capacity")
+	local unitinfo_amount =				cheatsecrecy or C.IsInfoUnlockedForPlayer(inputobject, "units_amount")
+	local unitinfo_details =			cheatsecrecy or C.IsInfoUnlockedForPlayer(inputobject, "units_details")
+	local equipment_mods =				cheatsecrecy or C.IsInfoUnlockedForPlayer(inputobject, "equipment_mods")
+
+	--- title ---
+	local row = inputtable:addRow(false, { fixed = true, bgColor = Helper.defaultTitleBackgroundColor })
+	row[1]:setColSpan(13):createText(ReadText(1001, 2427), Helper.headerRowCenteredProperties)
+	local row = inputtable:addRow(false, { fixed = true, bgColor = Helper.defaultTitleBackgroundColor })
+	row[1]:setColSpan(13):createText(ReadText(1001, 9413), Helper.headerRowCenteredProperties)
+
+	local objectname = Helper.unlockInfo(nameinfo, ffi.string(C.GetComponentName(inputobject)))
+	-- object name
+	local row = inputtable:addRow("info_focus", { fixed = true, bgColor = Helper.defaultTitleBackgroundColor })
+	row[13]:createButton({ width = config.mapRowHeight, cellBGColor = Helper.color.transparent }):setIcon("menu_center_selection", { width = config.mapRowHeight, height = config.mapRowHeight, y = (Helper.headerRow1Height - config.mapRowHeight) / 2 })
+	row[13].handlers.onClick = function () return C.SetFocusMapComponent(menu.holomap, menu.infoSubmenuObject, true) end
+	if (mode == "ship") or (mode == "station") then
+		row[1]:setBackgroundColSpan(12):setColSpan(6):createText(objectname, Helper.headerRow1Properties)
+		row[1].properties.color = titlecolor
+		row[7]:setColSpan(6):createText(Helper.unlockInfo(nameinfo, ffi.string(C.GetObjectIDCode(inputobject))), Helper.headerRow1Properties)
+		row[7].properties.halign = "right"
+		row[7].properties.color = titlecolor
+	else
+		row[1]:setBackgroundColSpan(12):setColSpan(12):createText(objectname, Helper.headerRow1Properties)
+		row[1].properties.color = titlecolor
+	end
+
+	if mode == "ship" then
+		local pilot = GetComponentData(inputobject, "assignedpilot")
+		pilot = ConvertIDTo64Bit(pilot)
+		local pilotname, skilltable, postname, aicommandstack, aicommand, aicommandparam, aicommandaction, aicommandactionparam = "-", {}, ReadText(1001, 4847), {}
+		if pilot and IsValidComponent(pilot) then
+			pilotname, skilltable, postname, aicommandstack, aicommand, aicommandparam, aicommandaction, aicommandactionparam = GetComponentData(pilot, "name", "skills", "postname", "aicommandstack", "aicommand", "aicommandparam", "aicommandaction", "aicommandactionparam")
+		end
+
+		local isbigship = C.IsComponentClass(inputobject, "ship_m") or C.IsComponentClass(inputobject, "ship_l") or C.IsComponentClass(inputobject, "ship_xl")
+		-- weapon config
+		if isplayerowned and (#loadout.component.weapon > 0) then
+			local row = inputtable:addRow(false, { bgColor = Helper.defaultTitleBackgroundColor })
+			row[1]:setColSpan(13):createText(ReadText(1001, 9409), Helper.headerRowCenteredProperties) -- Weapon Configuration
+			-- subheader
+			local row = inputtable:addRow(false, { bgColor = Helper.color.unselectable })
+			row[3]:setColSpan(5):createText(ReadText(1001, 9410), { font = Helper.standardFontBold }) -- Primary
+			row[8]:setColSpan(6):createText(ReadText(1001, 9411), { font = Helper.standardFontBold }) -- Secondary
+			-- active weapon groups
+			local row = inputtable:addRow("info_weaponconfig_active", { bgColor = Helper.color.transparent })
+			row[2]:createText(ReadText(1001, 11218))
+			for j = 1, 4 do
+				row[2 + j]:createCheckBox(function () return C.GetDefensibleActiveWeaponGroup(inputobject, true) == j end, { width = config.mapRowHeight, height = config.mapRowHeight, symbol = "arrow", bgColor = function () return menu.infoWeaponGroupCheckBoxColor(inputobject, j, true) end })
+				row[2 + j].handlers.onClick = function () C.SetDefensibleActiveWeaponGroup(inputobject, true, j) end
+			end
+			for j = 1, 4 do
+				row[7 + j]:createCheckBox(function () return C.GetDefensibleActiveWeaponGroup(inputobject, false) == j end, { width = config.mapRowHeight, height = config.mapRowHeight, symbol = "arrow", bgColor = function () return menu.infoWeaponGroupCheckBoxColor(inputobject, j, false) end })
+				row[7 + j].handlers.onClick = function () C.SetDefensibleActiveWeaponGroup(inputobject, false, j) end
+			end
+			inputtable:addEmptyRow(config.mapRowHeight / 2)
+			-- weapons
+			for i, gun in ipairs(loadout.component.weapon) do
+				local gun = ConvertStringTo64Bit(tostring(gun))
+				local numweapongroups = C.GetNumWeaponGroupsByWeapon(inputobject, gun)
+				local rawweapongroups = ffi.new("UIWeaponGroup[?]", numweapongroups)
+				numweapongroups = C.GetWeaponGroupsByWeapon(rawweapongroups, numweapongroups, inputobject, gun)
+				local uiweapongroups = { primary = {}, secondary = {} }
+				for j = 0, numweapongroups - 1 do
+					-- there are two sets: primary and secondary.
+					-- each set has four groups.
+					-- .primary tells you if this particular weapon is active in a group in the primary or secondary group set.
+					-- .idx tells you which group in that group set it is active in.
+					if rawweapongroups[j].primary then
+						uiweapongroups.primary[rawweapongroups[j].idx] = true
+					else
+						uiweapongroups.secondary[rawweapongroups[j].idx] = true
+					end
+					--print("primary: " .. tostring(rawweapongroups[j].primary) .. ", idx: " .. tostring(rawweapongroups[j].idx))
+				end
+
+				local row = inputtable:addRow("info_weaponconfig" .. i, { bgColor = Helper.color.transparent })
+				row[2]:createText(ffi.string(C.GetComponentName(gun)))
+
+				-- primary weapon groups
+				for j = 1, 4 do
+					row[2 + j]:createCheckBox(uiweapongroups.primary[j], { width = config.mapRowHeight, height = config.mapRowHeight, bgColor = function () return menu.infoWeaponGroupCheckBoxColor(inputobject, j, true) end })
+					row[2 + j].handlers.onClick = function() menu.infoSetWeaponGroup(inputobject, gun, true, j, not uiweapongroups.primary[j]) end
+				end
+
+				-- secondary weapon groups
+				for j = 1, 4 do
+					row[7 + j]:createCheckBox(uiweapongroups.secondary[j], { width = config.mapRowHeight, height = config.mapRowHeight, bgColor = function () return menu.infoWeaponGroupCheckBoxColor(inputobject, j, false) end })
+					row[7 + j].handlers.onClick = function() menu.infoSetWeaponGroup(inputobject, gun, false, j, not uiweapongroups.secondary[j]) end
+				end
+
+				if IsComponentClass(gun, "missilelauncher") then
+					local nummissiletypes = C.GetNumAllMissiles(inputobject)
+					local missilestoragetable = ffi.new("AmmoData[?]", nummissiletypes)
+					nummissiletypes = C.GetAllMissiles(missilestoragetable, nummissiletypes, inputobject)
+
+					local gunmacro = GetComponentData(gun, "macro")
+					local dropdowndata = {}
+					for j = 0, nummissiletypes-1 do
+						local ammomacro = ffi.string(missilestoragetable[j].macro)
+						if C.IsAmmoMacroCompatible(gunmacro, ammomacro) then
+							table.insert(dropdowndata, {id = ammomacro, text = GetMacroData(ammomacro, "name"), icon = "", displayremoveoption = false})
+						end
+					end
+
+					-- if the ship has no compatible ammunition in ammo storage, have the dropdown print "Out of ammo" and make it inactive.
+					local currentammomacro = "empty"
+					local dropdownactive = true
+					if #dropdowndata == 0 then
+						dropdownactive = false
+						table.insert(dropdowndata, {id = "empty", text = ReadText(1001, 9412), icon = "", displayremoveoption = false})	-- Out of ammo
+					else
+						-- NB: currentammomacro can be null
+						currentammomacro = ffi.string(C.GetCurrentAmmoOfWeapon(gun))
+					end
+
+					row = inputtable:addRow(("info_weaponconfig" .. i .. "_ammo"), { bgColor = Helper.color.transparent })
+					row[2]:createText((ReadText(1001, 2800) .. ReadText(1001, 120)))	-- Ammunition, :
+					row[3]:setColSpan(11):createDropDown(dropdowndata, {startOption = currentammomacro, active = dropdownactive})
+					row[3].handlers.onDropDownConfirmed = function(_, newammomacro) C.SetAmmoOfWeapon(gun, newammomacro) end
+				elseif pilot and IsValidComponent(pilot) and IsComponentClass(gun, "bomblauncher") then
+					local numbombtypes = C.GetNumAllInventoryBombs(pilot)
+					local bombstoragetable = ffi.new("AmmoData[?]", numbombtypes)
+					numbombtypes = C.GetAllInventoryBombs(bombstoragetable, numbombtypes, pilot)
+
+					local gunmacro = GetComponentData(gun, "macro")
+					local dropdowndata = {}
+					for j = 0, numbombtypes-1 do
+						local ammomacro = ffi.string(bombstoragetable[j].macro)
+						if C.IsAmmoMacroCompatible(gunmacro, ammomacro) then
+							table.insert(dropdowndata, {id = ammomacro, text = GetMacroData(ammomacro, "name"), icon = "", displayremoveoption = false})
+						end
+					end
+
+					-- if the ship has no compatible ammunition in ammo storage, have the dropdown print "Out of ammo" and make it inactive.
+					local currentammomacro = "empty"
+					local dropdownactive = true
+					if #dropdowndata == 0 then
+						dropdownactive = false
+						table.insert(dropdowndata, {id = "empty", text = ReadText(1001, 9412), icon = "", displayremoveoption = false})	-- Out of ammo
+					else
+						-- NB: currentammomacro can be null
+						currentammomacro = ffi.string(C.GetCurrentAmmoOfWeapon(gun))
+					end
+
+					row = inputtable:addRow(("info_weaponconfig" .. i .. "_ammo"), { bgColor = Helper.color.transparent })
+					row[2]:createText((ReadText(1001, 2800) .. ReadText(1001, 120)))	-- Ammunition, :
+					row[3]:setColSpan(11):createDropDown(dropdowndata, {startOption = currentammomacro, active = dropdownactive})
+					row[3].handlers.onDropDownConfirmed = function(_, newammomacro) C.SetAmmoOfWeapon(gun, newammomacro) end
+				end
+			end
+		end
+	end
+	if (mode == "ship") or (mode == "station") then
+		-- turret behaviour
+		if isplayerowned and #loadout.component.turret > 0 then
+			local hasnormalturrets = false
+			local hasmissileturrets = false
+			local hasoperationalnormalturrets = false
+			local hasoperationalmissileturrets = false
+			local hasonlytugturrets = true
+
+			local row = inputtable:addRow(false, { bgColor = Helper.defaultTitleBackgroundColor })
+			row[1]:setColSpan(13):createText(ReadText(1001, 8612), Helper.headerRowCenteredProperties) -- Turret Behaviour
+			menu.turrets = {}
+			local numslots = tonumber(C.GetNumUpgradeSlots(inputobject, "", "turret"))
+			for j = 1, numslots do
+				local groupinfo = C.GetUpgradeSlotGroup(inputobject, "", "turret", j)
+				if (ffi.string(groupinfo.path) == "..") and (ffi.string(groupinfo.group) == "") then
+					local current = C.GetUpgradeSlotCurrentComponent(inputobject, "turret", j)
+					if current ~= 0 then
+						if (not hasmissileturrets) or (not hasnormalturrets) then
+							local ismissileturret = C.IsComponentClass(current, "missileturret")
+							hasmissileturrets = hasmissileturrets or ismissileturret
+							hasnormalturrets = hasnormalturrets or (not ismissileturret)
+						end
+						if not GetComponentData(ConvertStringTo64Bit(tostring(current)), "istugweapon") then
+							hasonlytugturrets = false
+						end
+						table.insert(menu.turrets, current)
+					end
+				end
+			end
+
+			menu.turretgroups = {}
+			local turretsizecounts = {}
+			local n = C.GetNumUpgradeGroups(inputobject, "")
+			local buf = ffi.new("UpgradeGroup2[?]", n)
+			n = C.GetUpgradeGroups2(buf, n, inputobject, "")
+			for i = 0, n - 1 do
+				if (ffi.string(buf[i].path) ~= "..") or (ffi.string(buf[i].group) ~= "") then
+					local group = { context = buf[i].contextid, path = ffi.string(buf[i].path), group = ffi.string(buf[i].group) }
+					local groupinfo = C.GetUpgradeGroupInfo2(inputobject, "", group.context, group.path, group.group, "turret")
+					if (groupinfo.count > 0) then
+						group.operational = groupinfo.operational
+						group.currentcomponent = groupinfo.currentcomponent
+						group.currentmacro = ffi.string(groupinfo.currentmacro)
+						group.slotsize = ffi.string(groupinfo.slotsize)
+						group.sizecount = 0
+						if (not hasmissileturrets) or (not hasnormalturrets) then
+							local ismissileturret = IsMacroClass(group.currentmacro, "missileturret")
+							hasmissileturrets = hasmissileturrets or ismissileturret
+							hasnormalturrets = hasnormalturrets or (not ismissileturret)
+							if ismissileturret then
+								if not hasoperationalmissileturrets then
+									hasoperationalmissileturrets = group.operational > 0
+								end
+							else
+								if not hasoperationalnormalturrets then
+									hasoperationalnormalturrets = group.operational > 0
+								end
+							end
+						end
+						if not GetComponentData(ConvertStringTo64Bit(tostring(group.currentcomponent)), "istugweapon") then
+							hasonlytugturrets = false
+						end
+
+						if group.slotsize ~= "" then
+							if turretsizecounts[group.slotsize] then
+								turretsizecounts[group.slotsize] = turretsizecounts[group.slotsize] + 1
+							else
+								turretsizecounts[group.slotsize] = 1
+							end
+							group.sizecount = turretsizecounts[group.slotsize]
+						end
+
+						table.insert(menu.turretgroups, group)
+					end
+				end
+			end
+			
+			if #menu.turretgroups > 0 then
+				table.sort(menu.turretgroups, Helper.sortSlots)
+			end
+
+			if (#menu.turrets > 0) or (#menu.turretgroups > 0) then
+				if mode == "ship" then
+					local row = inputtable:addRow("info_turretconfig", { bgColor = Helper.color.transparent })
+					row[2]:setColSpan(3):createText(ReadText(1001, 2963))
+					
+					-- Start Subsystem Targeting Orders callback
+					local sto_callbackVal
+					if callbacks ["sto_addTurretBehavioursMapMenu"] then
+						for _, callback in ipairs (callbacks ["sto_addTurretBehavioursMapMenu"]) do
+							sto_callbackVal = callback (row, inputobject)
+						end
+					end
+					if not sto_callbackVal then
+						row[5]:setColSpan(9):createDropDown(Helper.getTurretModes(nil, not hasonlytugturrets), { startOption = function () return menu.getDropDownTurretModeOption(inputobject, "all") end })
+						row[5].handlers.onDropDownConfirmed = function(_, newturretmode) menu.noupdate = false; C.SetAllTurretModes(inputobject, newturretmode) end
+					end
+					-- End Subsystem Targeting Orders callback
+
+					row[5].handlers.onDropDownActivated = function () menu.noupdate = true end
+
+					local row = inputtable:addRow("info_turretconfig_2", { bgColor = Helper.color.transparent })
+					row[5]:setColSpan(9):createButton({ height = config.mapRowHeight }):setText(function () return menu.areTurretsArmed(inputobject) and ReadText(1001, 8631) or ReadText(1001, 8632) end, { halign = "center" })
+					row[5].handlers.onClick = function () return C.SetAllTurretsArmed(inputobject, not menu.areTurretsArmed(inputobject)) end
+
+					local dropdownCount = 1
+					for i, turret in ipairs(menu.turrets) do
+						inputtable:addEmptyRow(config.mapRowHeight / 2)
+
+						local row = inputtable:addRow("info_turretconfig" .. i, { bgColor = Helper.color.transparent })
+						row[2]:setColSpan(3):createText(ffi.string(C.GetComponentName(turret)))
+						row[5]:setColSpan(9):createDropDown(Helper.getTurretModes(turret), { startOption = function () return menu.getDropDownTurretModeOption(turret) end })
+						row[5].handlers.onDropDownConfirmed = function(_, newturretmode) menu.noupdate = false; C.SetWeaponMode(turret, newturretmode) end
+						row[5].handlers.onDropDownActivated = function () menu.noupdate = true end
+						dropdownCount = dropdownCount + 1
+						if dropdownCount == 14 then
+							inputtable.properties.maxVisibleHeight = inputtable:getFullHeight()
+						end
+
+						local row = inputtable:addRow("info_turretconfig" .. i .. "_2", { bgColor = Helper.color.transparent })
+						row[5]:setColSpan(9):createButton({ height = config.mapRowHeight }):setText(function () return C.IsWeaponArmed(turret) and ReadText(1001, 8631) or ReadText(1001, 8632) end, { halign = "center" })
+						row[5].handlers.onClick = function () return C.SetWeaponArmed(turret, not C.IsWeaponArmed(turret)) end
+					end
+
+					for i, group in ipairs(menu.turretgroups) do
+						inputtable:addEmptyRow(config.mapRowHeight / 2)
+						
+						local name = ReadText(1001, 8023) .. " " .. Helper.getSlotSizeText(group.slotsize) .. group.sizecount .. ((group.currentmacro ~= "") and (" (" .. Helper.getSlotSizeText(group.slotsize) .. " " .. GetMacroData(group.currentmacro, "shortname") .. ")") or "")
+
+						local row = inputtable:addRow("info_turretgroupconfig" .. i, { bgColor = Helper.color.transparent })
+						row[2]:setColSpan(3):createText(name, { color = (group.operational > 0) and Helper.color.white or Helper.color.red })
+						row[5]:setColSpan(9):createDropDown(Helper.getTurretModes(group.currentcomponent), { startOption = function () return menu.getDropDownTurretModeOption(inputobject, group.context, group.path, group.group) end, active = group.operational > 0 })
+						row[5].handlers.onDropDownConfirmed = function(_, newturretmode) menu.noupdate = false; C.SetTurretGroupMode2(inputobject, group.context, group.path, group.group, newturretmode) end
+						row[5].handlers.onDropDownActivated = function () menu.noupdate = true end
+						dropdownCount = dropdownCount + 1
+						if dropdownCount == 14 then
+							inputtable.properties.maxVisibleHeight = inputtable:getFullHeight()
+						end
+
+						local row = inputtable:addRow("info_turretgroupconfig" .. i .. "_2", { bgColor = Helper.color.transparent })
+						row[5]:setColSpan(9):createButton({ height = config.mapRowHeight }):setText(function () return C.IsTurretGroupArmed(inputobject, group.context, group.path, group.group) and ReadText(1001, 8631) or ReadText(1001, 8632) end, { halign = "center" })
+						row[5].handlers.onClick = function () return C.SetTurretGroupArmed(inputobject, group.context, group.path, group.group, not C.IsTurretGroupArmed(inputobject, group.context, group.path, group.group)) end
+					end
+				elseif mode == "station" then
+					local turretmodes = {
+						[1] = { id = "defend",			text = ReadText(1001, 8613),	icon = "",	displayremoveoption = false },
+						[2] = { id = "attackenemies",	text = ReadText(1001, 8614),	icon = "",	displayremoveoption = false },
+						[3] = { id = "attackcapital",	text = ReadText(1001, 8624),	icon = "",	displayremoveoption = false },
+						[4] = { id = "attackfighters",	text = ReadText(1001, 8625),	icon = "",	displayremoveoption = false },
+						[5] = { id = "missiledefence",	text = ReadText(1001, 8615),	icon = "",	displayremoveoption = false },
+					}
+
+					if hasnormalturrets then
+						-- non-missile
+						local row = inputtable:addRow("info_turretconfig", { bgColor = Helper.color.transparent })
+						row[2]:setColSpan(3):createText(ReadText(1001, 8397))
+						row[5]:setColSpan(9):createDropDown(turretmodes, { startOption = function () return menu.getDropDownTurretModeOption(inputobject, "all", false) end, active = hasoperationalnormalturrets, mouseOverText = (not hasoperationalnormalturrets) and ReadText(1026, 3235) or nil })
+						row[5].handlers.onDropDownConfirmed = function(_, newturretmode) menu.noupdate = false; C.SetAllNonMissileTurretModes(inputobject, newturretmode) end
+						row[5].handlers.onDropDownActivated = function () menu.noupdate = true end
+
+						local row = inputtable:addRow("info_turretconfig_2", { bgColor = Helper.color.transparent })
+						row[5]:setColSpan(9):createButton({ height = config.mapRowHeight }):setText(function () return menu.areTurretsArmed(inputobject, false) and ReadText(1001, 8631) or ReadText(1001, 8632) end, { halign = "center" })
+						row[5].handlers.onClick = function () return C.SetAllNonMissileTurretsArmed(inputobject, not menu.areTurretsArmed(inputobject, false)) end
+					end
+					if hasmissileturrets then
+						-- missile
+						local row = inputtable:addRow("info_turretconfig_missile", { bgColor = Helper.color.transparent })
+						row[2]:setColSpan(3):createText(ReadText(1001, 9031))
+						row[5]:setColSpan(9):createDropDown(turretmodes, { startOption = function () return menu.getDropDownTurretModeOption(inputobject, "all", true) end, active = hasoperationalmissileturrets, mouseOverText = (not hasoperationalnormalturrets) and ReadText(1026, 3235) or nil })
+						row[5].handlers.onDropDownConfirmed = function(_, newturretmode) menu.noupdate = false; C.SetAllMissileTurretModes(inputobject, newturretmode) end
+						row[5].handlers.onDropDownActivated = function () menu.noupdate = true end
+
+						local row = inputtable:addRow("info_turretconfig_missile_2", { bgColor = Helper.color.transparent })
+						row[5]:setColSpan(9):createButton({ height = config.mapRowHeight }):setText(function () return menu.areTurretsArmed(inputobject, true) and ReadText(1001, 8631) or ReadText(1001, 8632) end, { halign = "center" })
+						row[5].handlers.onClick = function () return C.SetAllMissileTurretsArmed(inputobject, not menu.areTurretsArmed(inputobject, true)) end
+					end
+				end
+			end
+		end
+		-- drones
+		local isplayeroccupiedship = menu.infoSubmenuObject == ConvertStringTo64Bit(tostring(C.GetPlayerOccupiedShipID()))
+
+		local unitstoragetable = C.IsComponentClass(object64, "defensible") and GetUnitStorageData(object64) or { stored = 0, capacity = 0 }
+		local locunitcapacity = Helper.unlockInfo(unitinfo_capacity, tostring(unitstoragetable.capacity))
+		local locunitcount = Helper.unlockInfo(unitinfo_amount, tostring(unitstoragetable.stored))
+		menu.drones = {}
+		local dronetypes = {
+			{ id = "orecollector",	name = ReadText(20214, 500),	displayonly = true },
+			{ id = "gascollector",	name = ReadText(20214, 400),	displayonly = true },
+			{ id = "defence",		name = ReadText(20214, 300) },
+			{ id = "transport",		name = ReadText(20214, 900) },
+			{ id = "build",			name = ReadText(20214, 1000),	skipmode = true },
+			{ id = "repair",		name = ReadText(20214, 1100),	skipmode = true },
+		}
+		for _, dronetype in ipairs(dronetypes) do
+			if C.GetNumStoredUnits(inputobject, dronetype.id, false) > 0 then
+				local entry
+				if not dronetype.skipmode then
+					entry = {
+						type = dronetype.id,
+						name = dronetype.name,
+						current = ffi.string(C.GetCurrentDroneMode(inputobject, dronetype.id)),
+						modes = {},
+						displayonly = dronetype.displayonly,
+					}
+					local n = C.GetNumDroneModes(inputobject, dronetype.id)
+					local buf = ffi.new("DroneModeInfo[?]", n)
+					n = C.GetDroneModes(buf, n, inputobject, dronetype.id)
+					for i = 0, n - 1 do
+						local id = ffi.string(buf[i].id)
+						if (id ~= "trade") or (id == entry.current) then
+							table.insert(entry.modes, { id = id, text = ffi.string(buf[i].name), icon = "", displayremoveoption = false })
+						end
+					end
+				else
+					entry = {
+						type = dronetype.id,
+						name = dronetype.name,
+					}
+				end
+				table.insert(menu.drones, entry)
+			end
+		end
+		if unitstoragetable.capacity > 0 then
+			-- title
+			local row = inputtable:addRow(false, { bgColor = Helper.defaultTitleBackgroundColor })
+			row[1]:setColSpan(13):createText(ReadText(1001, 8619), Helper.headerRowCenteredProperties)
+			-- capcity
+			local row = inputtable:addRow(false, { bgColor = Helper.color.unselectable })
+			row[2]:createText(ReadText(1001, 8393))
+			row[8]:setColSpan(6):createText(locunitcount .. " / " .. locunitcapacity, { halign = "right" })
+			-- drones
+			if unitinfo_details then
+				for i, entry in ipairs(menu.drones) do
+					if i ~= 1 then
+						inputtable:addEmptyRow(config.mapRowHeight / 2)
+					end
+					local hasmodes = (mode == "ship") and entry.current
+					-- drone name, amount and mode
+					local row1 = inputtable:addRow("drone_config", { bgColor = Helper.color.transparent })
+					row1[2]:createText(entry.name)
+					row1[3]:setColSpan(isplayerowned and 2 or 11):createText(function () return Helper.unlockInfo(unitinfo_amount, C.GetNumStoredUnits(inputobject, entry.type, false)) end, { halign = isplayerowned and "left" or "right" })
+					-- active and armed status
+					local row2 = inputtable:addRow("drone_config", { bgColor = Helper.color.transparent })
+					row2[2]:createText("    " .. ReadText(1001, 11229), { color = hasmodes and function () return C.IsDroneTypeArmed(inputobject, entry.type) and Helper.color.white or Helper.color.grey end or nil })
+					row2[3]:setColSpan(isplayerowned and 2 or 11):createText(function () return Helper.unlockInfo(unitinfo_amount, C.GetNumUnavailableUnits(inputobject, entry.type)) end, { halign = isplayerowned and "left" or "right", color = hasmodes and function () return C.IsDroneTypeBlocked(inputobject, entry.type) and Helper.color.warningorange or (C.IsDroneTypeArmed(inputobject, entry.type) and Helper.color.white or Helper.color.grey) end or nil })
+					
+					-- drone mode support - disabled for mining drones, to avoid conflicts with order defined drone behaviour
+					if hasmodes then
+						local isblocked = C.IsDroneTypeBlocked(inputobject, entry.type)
+						if isplayerowned then
+							local active = (isplayeroccupiedship or (not entry.displayonly)) and (not isblocked)
+							local mouseovertext = ""
+							if isblocked then
+								mouseovertext = ReadText(1026, 3229)
+							elseif (not isplayeroccupiedship) and entry.displayonly then
+								mouseovertext = ReadText(1026, 3230)
+							end
+
+							row1[5]:setColSpan(9):createDropDown(entry.modes, { startOption = function () return ffi.string(C.GetCurrentDroneMode(inputobject, entry.type)) end, active = active, mouseOverText = mouseovertext })
+							row1[5].handlers.onDropDownConfirmed = function (_, newdronemode) C.SetDroneMode(inputobject, entry.type, newdronemode) end
+
+							row2[5]:setColSpan(9):createButton({ active = active, mouseOverText = mouseovertext, height = config.mapRowHeight }):setText(function () return C.IsDroneTypeArmed(inputobject, entry.type) and ReadText(1001, 8622) or ReadText(1001, 8623) end, { halign = "center" })
+							row2[5].handlers.onClick = function () return C.SetDroneTypeArmed(inputobject, entry.type, not C.IsDroneTypeArmed(inputobject, entry.type)) end
+						end
+					end
+				end
+			end
+		end
+		-- subordinates
+		if isplayerowned then
+			if C.IsComponentClass(inputobject, "controllable") then
+				local subordinates = GetSubordinates(inputobject)
+				local groups = {}
+				local usedassignments = {}
+				for _, subordinate in ipairs(subordinates) do
+					local purpose, shiptype = GetComponentData(subordinate, "primarypurpose", "shiptype")
+					local group = GetComponentData(subordinate, "subordinategroup")
+					if group and group > 0 then
+						if groups[group] then
+							table.insert(groups[group].subordinates, subordinate)
+							if shiptype == "resupplier" then
+								groups[group].numassignableresupplyships = groups[group].numassignableresupplyships + 1
+							end
+							if purpose == "mine" then
+								groups[group].numassignableminingships = groups[group].numassignableminingships + 1
+							end
+							if shiptype == "tug" then
+								groups[group].numassignabletugships = groups[group].numassignabletugships + 1
+							end
+						else
+							local assignment = ffi.string(C.GetSubordinateGroupAssignment(inputobject, group))
+							usedassignments[assignment] = group
+							groups[group] = { assignment = assignment, subordinates = { subordinate }, numassignableresupplyships = (shiptype == "resupplier") and 1 or 0, numassignableminingships = (purpose == "mine") and 1 or 0, numassignabletugships = (shiptype == "tug") and 1 or 0 }
+						end
+					end
+				end
+
+				if #subordinates > 0 then
+					-- title
+					local row = inputtable:addRow(false, { bgColor = Helper.defaultTitleBackgroundColor })
+					row[1]:setColSpan(13):createText(ReadText(1001, 8626), Helper.headerRowCenteredProperties)
+
+					local isstation = C.IsComponentClass(inputobject, "station")
+					for i = 1, isstation and 5 or 10 do
+						if groups[i] then
+							local defenceactive = true
+							if isstation then
+								defenceactive = ((not usedassignments["defence"]) or (usedassignments["defence"] == i))
+							end
+							local supplyactive = (groups[i].numassignableresupplyships == #groups[i].subordinates) and ((not usedassignments["supplyfleet"]) or (usedassignments["supplyfleet"] == i))
+							local subordinateassignments = {
+								[1] = { id = "defence",			text = ReadText(20208, 40301),	icon = "",	displayremoveoption = false, active = defenceactive, mouseovertext = defenceactive and "" or ReadText(1026, 7840) },
+								[2] = { id = "supplyfleet",		text = ReadText(20208, 40701),	icon = "",	displayremoveoption = false, active = supplyactive, mouseovertext = supplyactive and "" or ReadText(1026, 8601) },
+							}
+							if GetComponentData(inputobject, "shiptype") == "resupplier" then
+								table.insert(subordinateassignments, { id = "trade",			text = ReadText(20208, 40101),	icon = "",	displayremoveoption = false })
+							end
+
+							if isstation then
+								local miningactive = (groups[i].numassignableminingships == #groups[i].subordinates) and ((not usedassignments["mining"]) or (usedassignments["mining"] == i))
+								table.insert(subordinateassignments, { id = "mining", text = ReadText(20208, 40201), icon = "", displayremoveoption = false, active = miningactive, mouseovertext = miningactive and "" or ReadText(1026, 8602) })
+								local tradeactive = ((not usedassignments["trade"]) or (usedassignments["trade"] == i))
+								table.insert(subordinateassignments, { id = "trade", text = ReadText(20208, 40101), icon = "", displayremoveoption = false, active = tradeactive, mouseovertext = tradeactive and ((groups[i].numassignableminingships > 0) and (Helper.convertColorToText(Helper.color.warningorange) .. ReadText(1026, 8607)) or "") or ReadText(1026, 7840) })
+								local tradeforbuildstorageactive = (groups[i].numassignableminingships == 0) and ((not usedassignments["tradeforbuildstorage"]) or (usedassignments["tradeforbuildstorage"] == i))
+								table.insert(subordinateassignments, { id = "tradeforbuildstorage", text = ReadText(20208, 40801), icon = "", displayremoveoption = false, active = tradeforbuildstorageactive, mouseovertext = tradeforbuildstorageactive and "" or ReadText(1026, 8603) })
+								local salvageactive = (groups[i].numassignabletugships == #groups[i].subordinates) and ((not usedassignments["salvage"]) or (usedassignments["salvage"] == i))
+								table.insert(subordinateassignments, { id = "salvage", text = ReadText(20208, 41401), icon = "", displayremoveoption = false, active = salvageactive, mouseovertext = salvageactive and "" or ReadText(1026, 8610) })
+							elseif C.IsComponentClass(inputobject, "ship") then
+								table.insert(subordinateassignments, { id = "attack", text = ReadText(20208, 40901), icon = "", displayremoveoption = false })
+								table.insert(subordinateassignments, { id = "interception", text = ReadText(20208, 41001), icon = "", displayremoveoption = false })
+								table.insert(subordinateassignments, { id = "follow", text = ReadText(20208, 41301), icon = "", displayremoveoption = false })
+								local active = true
+								local mouseovertext = ""
+								local buf = ffi.new("Order")
+								if not C.GetDefaultOrder(buf, inputobject) then
+									active = false
+									mouseovertext = ReadText(1026, 8606)
+								end
+								table.insert(subordinateassignments, { id = "assist", text = ReadText(20208, 41201), icon = "", displayremoveoption = false, active = active, mouseovertext = mouseovertext })
+							end
+
+							local isdockingpossible = false
+							for _, subordinate in ipairs(groups[i].subordinates) do
+								if IsDockingPossible(subordinate, inputobject) then
+									isdockingpossible = true
+									break
+								end
+							end
+							local active = true
+							local mouseovertext = ""
+							if not GetComponentData(inputobject, "hasshipdockingbays") then
+								active = false
+								mouseovertext = ReadText(1026, 8604)
+							elseif not isdockingpossible then
+								active = false
+								mouseovertext = ReadText(1026, 8605)
+							end
+
+							local row = inputtable:addRow("subordinate_config", { bgColor = Helper.color.transparent })
+							row[2]:createText(function () menu.updateSubordinateGroupInfo(inputobject); return ReadText(20401, i) .. (menu.subordinategroups[i] and (" (" .. ((not C.ShouldSubordinateGroupDockAtCommander(inputobject, i)) and ((#menu.subordinategroups[i].subordinates - menu.subordinategroups[i].numdockedatcommander) .. "/") or "") .. #menu.subordinategroups[i].subordinates ..")") or "") end, { color = isblocked and Helper.color.warningorange or nil })
+							row[3]:setColSpan(11):createDropDown(subordinateassignments, { startOption = function () menu.updateSubordinateGroupInfo(inputobject); return menu.subordinategroups[i] and menu.subordinategroups[i].assignment or "" end })
+							row[3].handlers.onDropDownActivated = function () menu.noupdate = true end
+							row[3].handlers.onDropDownConfirmed = function (_, newassignment) C.SetSubordinateGroupAssignment(inputobject, i, newassignment); menu.noupdate = false; menu.refreshInfoFrame() end
+							local row = inputtable:addRow("subordinate_config", { bgColor = Helper.color.transparent })
+							
+							-- Start Reactive Docking callback
+							local rd_callbackVal
+							if callbacks ["rd_addReactiveDockingMapMenu"] then
+								for _, callback in ipairs (callbacks ["rd_addReactiveDockingMapMenu"]) do
+									rd_callbackVal = callback (row, inputobject, i, mode, active, mouseovertext)
+								end
+							end
+							if not rd_callbackVal then
+								row[3]:setColSpan(11):createButton({ active = active, mouseOverText = mouseovertext, height = config.mapRowHeight }):setText(function () return C.ShouldSubordinateGroupDockAtCommander(inputobject, i) and ReadText(1001, 8630) or ReadText(1001, 8629) end, { halign = "center" })
+								row[3].handlers.onClick = function () return C.SetSubordinateGroupDockAtCommander(inputobject, i, not C.ShouldSubordinateGroupDockAtCommander(inputobject, i)) end
+							end
+							-- End Reactive Docking callback
+						end
+					end
+				end
+			end
+		end
+		-- ammunition
+		local nummissiletypes = C.GetNumAllMissiles(inputobject)
+		local missilestoragetable = ffi.new("AmmoData[?]", nummissiletypes)
+		nummissiletypes = C.GetAllMissiles(missilestoragetable, nummissiletypes, inputobject)
+		local totalnummissiles = 0
+		for i = 0, nummissiletypes - 1 do
+			totalnummissiles = totalnummissiles + missilestoragetable[i].amount
+		end
+		local missilecapacity = 0
+		if C.IsComponentClass(inputobject, "defensible") then
+			missilecapacity = GetComponentData(inputobject, "missilecapacity")
+		end
+		local locmissilecapacity = Helper.unlockInfo(defenceinfo_low, tostring(missilecapacity))
+		local locnummissiles = Helper.unlockInfo(defenceinfo_high, tostring(totalnummissiles))
+		if totalnummissiles > 0 then
+			-- title
+			local row = inputtable:addRow(false, { bgColor = Helper.defaultTitleBackgroundColor })
+			row[1]:setColSpan(12):createText(ReadText(1001, 2800), Helper.headerRowCenteredProperties) -- Ammunition
+			-- capcity
+			local row = inputtable:addRow(false, { bgColor = Helper.color.unselectable })
+			row[2]:createText(ReadText(1001, 8393))
+			row[8]:setColSpan(6):createText(locnummissiles .. " / " .. locmissilecapacity, { halign = "right" })
+			if defenceinfo_high then
+				for i = 0, nummissiletypes - 1 do
+					local macro = ffi.string(missilestoragetable[i].macro)
+					local row = inputtable:addRow({ "info_weapons", macro, inputobject }, { bgColor = Helper.color.transparent })
+					row[2]:createText(GetMacroData(macro, "name"))
+					row[8]:setColSpan(6):createText(tostring(missilestoragetable[i].amount), { halign = "right" })
+				end
+			end
+		end
+	end
+	if mode == "ship" then
+		-- countermeasures
+		local numcountermeasuretypes = C.GetNumAllCountermeasures(inputobject)
+		local countermeasurestoragetable = ffi.new("AmmoData[?]", numcountermeasuretypes)
+		numcountermeasuretypes = C.GetAllCountermeasures(countermeasurestoragetable, numcountermeasuretypes, inputobject)
+		local totalnumcountermeasures = 0
+		for i = 0, numcountermeasuretypes - 1 do
+			totalnumcountermeasures = totalnumcountermeasures + countermeasurestoragetable[i].amount
+		end
+		local countermeasurecapacity = GetComponentData(object64, "countermeasurecapacity")
+		local loccountermeasurecapacity = Helper.unlockInfo(defenceinfo_low, tostring(countermeasurecapacity))
+		local locnumcountermeasures = Helper.unlockInfo(defenceinfo_high, tostring(totalnumcountermeasures))
+		if totalnumcountermeasures > 0 then
+			-- title
+			local row = inputtable:addRow(false, { bgColor = Helper.defaultTitleBackgroundColor })
+			row[1]:setColSpan(13):createText(ReadText(20215, 1701), Helper.headerRowCenteredProperties) -- Countermeasures
+			-- capcity
+			local row = inputtable:addRow(false, { bgColor = Helper.color.unselectable })
+			row[2]:createText(ReadText(1001, 8393))
+			row[8]:setColSpan(6):createText(locnumcountermeasures .. " / " .. loccountermeasurecapacity, { halign = "right" })
+			if defenceinfo_high then
+				for i = 0, numcountermeasuretypes - 1 do
+					local row = inputtable:addRow(true, { bgColor = Helper.color.transparent, interactive = false })
+					row[2]:createText(GetMacroData(ffi.string(countermeasurestoragetable[i].macro), "name"))
+					row[8]:setColSpan(6):createText(tostring(countermeasurestoragetable[i].amount), { halign = "right" })
+				end
+			end
+		end
+		-- deployables
+		local consumables = {
+			{ id = "satellite",		type = "civilian",	getnum = C.GetNumAllSatellites,		getdata = C.GetAllSatellites,		callback = C.LaunchSatellite },
+			{ id = "navbeacon",		type = "civilian",	getnum = C.GetNumAllNavBeacons,		getdata = C.GetAllNavBeacons,		callback = C.LaunchNavBeacon },
+			{ id = "resourceprobe",	type = "civilian",	getnum = C.GetNumAllResourceProbes,	getdata = C.GetAllResourceProbes,	callback = C.LaunchResourceProbe },
+			{ id = "lasertower",	type = "military",	getnum = C.GetNumAllLaserTowers,	getdata = C.GetAllLaserTowers,		callback = C.LaunchLaserTower },
+			{ id = "mine",			type = "military",	getnum = C.GetNumAllMines,			getdata = C.GetAllMines,			callback = C.LaunchMine },
+		}
+		local totalnumdeployables = 0
+		local consumabledata = {}
+		for _, entry in ipairs(consumables) do
+			local n = entry.getnum(inputobject)
+			local buf = ffi.new("AmmoData[?]", n)
+			n = entry.getdata(buf, n, inputobject)
+			consumabledata[entry.id] = {}
+			for i = 0, n - 1 do
+				table.insert(consumabledata[entry.id], { macro = ffi.string(buf[i].macro), name = GetMacroData(ffi.string(buf[i].macro), "name"), amount = buf[i].amount, capacity = buf[i].capacity })
+				totalnumdeployables = totalnumdeployables + buf[i].amount
+			end
+		end
+		local deployablecapacity = C.GetDefensibleDeployableCapacity(inputobject)
+		local printednumdeployables = Helper.unlockInfo(defenceinfo_low, tostring(totalnumdeployables))
+		local printeddeployablecapacity = Helper.unlockInfo(defenceinfo_low, tostring(deployablecapacity))
+		if totalnumdeployables > 0 then
+			-- title
+			local row = inputtable:addRow(false, { bgColor = Helper.defaultTitleBackgroundColor })
+			row[1]:setColSpan(13):createText(ReadText(1001, 1332), Helper.headerRowCenteredProperties) -- Deployables
+			-- capcity
+			local row = inputtable:addRow(false, { bgColor = Helper.color.unselectable })
+			row[2]:createText(ReadText(1001, 8393))
+			row[8]:setColSpan(6):createText(printednumdeployables .. " / " .. printeddeployablecapacity, { halign = "right" })
+			if defenceinfo_high then
+				for _, entry in ipairs(consumables) do
+					if #consumabledata[entry.id] > 0 then
+						for _, data in ipairs(consumabledata[entry.id]) do
+							local row = inputtable:addRow({ "info_deploy", data.macro, inputobject }, { bgColor = Helper.color.transparent })
+							row[2]:createText(data.name)
+							row[8]:setColSpan(6):createText(data.amount, { halign = "right" })
+						end
+					end
+				end
+				if isplayerowned then
+					-- deploy
+					local row = inputtable:addRow("info_deploy", { bgColor = Helper.color.transparent })
+					row[3]:setColSpan(11):createButton({ height = config.mapRowHeight, active = function () return next(menu.infoTablePersistentData[instance].macrostolaunch) ~= nil end }):setText(ReadText(1001, 8390), { halign = "center" })
+					row[3].handlers.onClick = function () return menu.buttonDeploy(instance) end
+				end
+			end
+		end
+	end
+	if (mode == "ship") or (mode == "station") then
+		-- loadout
+		if (#loadout.component.weapon > 0) or (#loadout.component.turret > 0) or (#loadout.component.shield > 0) or (#loadout.component.engine > 0) or (#loadout.macro.thruster > 0) or (#loadout.ware.software > 0) then
+			if defenceinfo_high then
+				local hasshown = false
+				-- title
+				local row = inputtable:addRow(false, { bgColor = Helper.defaultTitleBackgroundColor })
+				row[1]:setColSpan(13):createText(ReadText(1001, 9413), Helper.headerRowCenteredProperties) -- Loadout
+				local row = inputtable:addRow(false, { bgColor = Helper.color.unselectable })
+				row[2]:setColSpan(5):createText(ReadText(1001, 7935), { font = Helper.standardFontBold })
+				row[7]:setColSpan(4):createText(ReadText(1001, 1311), { font = Helper.standardFontBold, halign = "right" })
+				row[11]:setColSpan(3):createText(ReadText(1001, 12), { font = Helper.standardFontBold, halign = "right" })
+
+				inputtable:addEmptyRow(config.mapRowHeight / 2)
+
+				local macroequipment = {
+					{ type = "weapon", encyclopedia = "info_weapon" },
+					{ type = "turret", encyclopedia = "info_weapon" },
+					{ type = "shield", encyclopedia = "info_equipment" },
+					{ type = "engine", encyclopedia = "info_equipment" },
+				}
+				for _, entry in ipairs(macroequipment) do
+					if #loadout.component[entry.type] > 0 then
+						if hasshown then
+							inputtable:addEmptyRow(config.mapRowHeight / 2)
+						end
+						hasshown = true
+						local locmacros = menu.infoCombineLoadoutComponents(loadout.component[entry.type])
+						for macro, data in pairs(locmacros) do
+							local row = inputtable:addRow({ entry.encyclopedia, macro, inputobject }, { bgColor = Helper.color.transparent })
+							row[2]:setColSpan(5):createText(GetMacroData(macro, "name"))
+							row[7]:setColSpan(4):createText(data.count .. " / " .. data.count + data.construction, { halign = "right" })
+							local shieldpercent = data.shieldpercent
+							local hullpercent = data.hullpercent
+							if data.count > 0 then
+								shieldpercent = shieldpercent / data.count
+								hullpercent = hullpercent / data.count
+							end
+							row[11]:setColSpan(3):createShieldHullBar(shieldpercent, hullpercent, { scaling = false, width = row[11]:getColSpanWidth() / 2, x = row[11]:getColSpanWidth() / 4 })
+
+							AddKnownItem(GetMacroData(macro, "infolibrary"), macro)
+						end
+					end
+				end
+
+				if #loadout.macro.thruster > 0 then
+					if hasshown then
+						inputtable:addEmptyRow(config.mapRowHeight / 2)
+					end
+					hasshown = true
+					-- ships normally only have 1 set of thrusters. in case a ship has more, this will list all of them.
+					for i, val in ipairs(loadout.macro.thruster) do
+						local row = inputtable:addRow({ "info_equipment", macro, inputobject }, { bgColor = Helper.color.transparent })
+						row[2]:setColSpan(12):createText(GetMacroData(val, "name"))
+
+						AddKnownItem(GetMacroData(val, "infolibrary"), val)
+					end
+				end
+				if #loadout.ware.software > 0 then
+					if hasshown then
+						inputtable:addEmptyRow(config.mapRowHeight / 2)
+					end
+					hasshown = true
+					for i, val in ipairs(loadout.ware.software) do
+						local row = inputtable:addRow({ "info_software", val, inputobject }, { bgColor = Helper.color.transparent })
+						row[2]:setColSpan(12):createText(GetWareData(val, "name"))
+
+						AddKnownItem("software", val)
+					end
+				end
+			else
+				local row = inputtable:addRow(false, { bgColor = Helper.color.unselectable })
+				row[2]:setColSpan(12):createText(ReadText(1001, 3210))
+			end
+		end
+	end
+	if mode == "ship" then
+		-- mods
+		-- title
+		local row = inputtable:addRow(false, { bgColor = Helper.defaultTitleBackgroundColor })
+		row[1]:setColSpan(13):createText(ReadText(1001, 8031), Helper.headerRowCenteredProperties)
+		if equipment_mods and GetComponentData(object64, "hasanymod") then
+			local hasshown = false
+			-- chassis
+			local hasinstalledmod, installedmod = Helper.getInstalledModInfo("ship", inputobject)
+			if hasinstalledmod then
+				if hasshown then
+					inputtable:addEmptyRow(config.mapRowHeight / 2)
+				end
+				hasshown = true
+				row = menu.addEquipmentModInfoRow(inputtable, "ship", installedmod, ReadText(1001, 8008))
+			end
+			-- weapon
+			for i, weapon in ipairs(loadout.component.weapon) do
+				local hasinstalledmod, installedmod = Helper.getInstalledModInfo("weapon", weapon)
+				if hasinstalledmod then
+					if hasshown then
+						inputtable:addEmptyRow(config.mapRowHeight / 2)
+					end
+					hasshown = true
+					row = menu.addEquipmentModInfoRow(inputtable, "weapon", installedmod, ffi.string(C.GetComponentName(weapon)))
+				end
+			end
+			-- turret
+			for i, turret in ipairs(loadout.component.turret) do
+				local hasinstalledmod, installedmod = Helper.getInstalledModInfo("turret", turret)
+				if hasinstalledmod then
+					if hasshown then
+						inputtable:addEmptyRow(config.mapRowHeight / 2)
+					end
+					hasshown = true
+					row = menu.addEquipmentModInfoRow(inputtable, "weapon", installedmod, ffi.string(C.GetComponentName(turret)))
+				end
+			end
+			-- shield
+			local shieldgroups = {}
+			local n = C.GetNumShieldGroups(inputobject)
+			local buf = ffi.new("ShieldGroup[?]", n)
+			n = C.GetShieldGroups(buf, n, inputobject)
+			for i = 0, n - 1 do
+				local entry = {}
+				entry.context = buf[i].context
+				entry.group = ffi.string(buf[i].group)
+				entry.component = buf[i].component
+
+				table.insert(shieldgroups, entry)
+			end
+			for i, entry in ipairs(shieldgroups) do
+				if (entry.context == inputobject) and (entry.group == "") then
+					shieldgroups.hasMainGroup = true
+					-- force maingroup to first index
+					table.insert(shieldgroups, 1, entry)
+					table.remove(shieldgroups, i + 1)
+					break
+				end
+			end
+			for i, shieldgroupdata in ipairs(shieldgroups) do
+				local hasinstalledmod, installedmod = Helper.getInstalledModInfo("shield", inputobject, shieldgroupdata.context, shieldgroupdata.group)
+				if hasinstalledmod then
+					local name = GetMacroData(GetComponentData(ConvertStringTo64Bit(tostring(shieldgroupdata.component)), "macro"), "name")
+					if (i == 1) and shieldgroups.hasMainGroup then
+						name = ReadText(1001, 8044)
+					end
+					if hasshown then
+						inputtable:addEmptyRow(config.mapRowHeight / 2)
+					end
+					hasshown = true
+					row = menu.addEquipmentModInfoRow(inputtable, "shield", installedmod, name)
+				end
+			end
+			-- engine
+			local hasinstalledmod, installedmod = Helper.getInstalledModInfo("engine", inputobject)
+			if hasinstalledmod then
+				if hasshown then
+					inputtable:addEmptyRow(config.mapRowHeight / 2)
+				end
+				hasshown = true
+				row = menu.addEquipmentModInfoRow(inputtable, "engine", installedmod, ffi.string(C.GetComponentName(loadout.component.engine[1])))
+			end
+		else
+			local row = inputtable:addRow(false, { bgColor = Helper.color.unselectable })
+			row[2]:setColSpan(12):createText(Helper.unlockInfo(equipment_mods, ReadText(1001, 8394)))
+		end
+	end
+	if mode == "none" then
+		local row = inputtable:addRow(false, { bgColor = Helper.color.unselectable })
+		row[2]:setColSpan(12):createText(ReadText(1001, 6526))
+	end
+end
+function menu.setupLogbookInfoSubmenuRows(mode, inputtable, inputobject, instance)
+	-- kuertee start: if object has no idcode, use its name.
+	local objecttext
+	-- kuertee end: if object has no idcode, use its name.
+	if (not menu.infoTablePersistentData[instance].logbookData) or (menu.infoTablePersistentData[instance].logbookData.curobject ~= inputobject) then
+		if mode == "normal" then
+			-- kuertee start: if object has no idcode, use its name.
+			-- menu.infoTablePersistentData[instance].logbookData = { curobject = inputobject, curPage = 1, objecttext = ffi.string(C.GetObjectIDCode(inputobject)), searchtext = "" }
+			local isUseId = true
+			local macro = GetComponentData(inputobject, "macro")
+			if C.IsRealComponentClass(inputobject, "ship_xs") then
+			elseif GetMacroData(macro, "islasertower") then
+				isUseId = false
+			elseif C.IsRealComponentClass(inputobject, "ship") then
+			elseif C.IsRealComponentClass(inputobject, "station") then
+			elseif C.IsComponentClass(inputobject, "sector") then
+				isUseId = false
+			elseif C.IsComponentClass(inputobject, "gate") then
+				isUseId = false
+			elseif C.IsComponentClass(inputobject, "mine") or C.IsComponentClass(inputobject, "navbeacon") or C.IsComponentClass(inputobject, "resourceprobe") or C.IsComponentClass(inputobject, "satellite") then
+				isUseId = false
+			elseif C.IsComponentClass(inputobject, "asteroid") or C.IsComponentClass(inputobject, "collectablewares") then
+				isUseId = false
+			elseif C.IsComponentClass(inputobject, "lockbox") then
+				isUseId = false
+			else
+				mode = "none"
+			end
+			if isUseId then
+				objecttext = ffi.string(C.GetObjectIDCode(inputobject))
+			else
+				objecttext = GetComponentData (inputobject, "name")
+			end
+			local searchtext = ""
+			menu.infoTablePersistentData[instance].logbookData = { curobject = inputobject, curPage = 1, objecttext = objecttext, searchtext = searchtext }
+			-- kuertee end: if object has no idcode, use its name.
+		else
+			menu.infoTablePersistentData[instance].logbookData = { curobject = nil, curPage = 1, objecttext = "", searchtext = "" }
+		end
+	end
+
+	local logbookData = menu.infoTablePersistentData[instance].logbookData
+
+	local cheatsecrecy = false
+	-- secrecy stuff
+	local nameinfo = cheatsecrecy or C.IsInfoUnlockedForPlayer(inputobject, "name")
+
+	--- title ---
+	local row = inputtable:addRow(false, { fixed = true, bgColor = Helper.defaultTitleBackgroundColor })
+	row[1]:setColSpan(10):createText(ReadText(1001, 2427), Helper.headerRowCenteredProperties)
+	local row = inputtable:addRow(false, {fixed = true, bgColor = Helper.defaultTitleBackgroundColor})
+	row[1]:setColSpan(10):createText(ReadText(1001, 5700), Helper.headerRowCenteredProperties)
+
+	local objectname = Helper.unlockInfo(nameinfo, ffi.string(C.GetComponentName(inputobject)))
+	--- object name ---
+	local row = inputtable:addRow("info_focus", { fixed = true, bgColor = Helper.defaultTitleBackgroundColor })
+	row[10]:createButton({ width = config.mapRowHeight, cellBGColor = Helper.color.transparent }):setIcon("menu_center_selection", { width = config.mapRowHeight, height = config.mapRowHeight, y = (Helper.headerRow1Height - config.mapRowHeight) / 2 })
+	row[10].handlers.onClick = function () return C.SetFocusMapComponent(menu.holomap, menu.infoSubmenuObject, true) end
+	if mode == "normal" then
+		row[1]:setBackgroundColSpan(9):setColSpan(7):createText(objectname, Helper.headerRow1Properties)
+		row[1].properties.color = titlecolor
+		-- kuertee start: if object has no idcode, use its name.
+		-- row[8]:setColSpan(2):createText(Helper.unlockInfo(nameinfo, ffi.string(C.GetObjectIDCode(inputobject))), Helper.headerRow1Properties)
+		row[8]:setColSpan(2):createText(Helper.unlockInfo(nameinfo, objecttext), Helper.headerRow1Properties)
+		-- kuertee end: if object has no idcode, use its name.
+		row[8].properties.halign = "right"
+		row[8].properties.color = titlecolor
+	else
+		row[1]:setBackgroundColSpan(9):setColSpan(9):createText(objectname, Helper.headerRow1Properties)
+		row[1].properties.color = titlecolor
+	end
+
+	-- kuertee start: allow any object to show its logbook entries - even those not player-owned. if its in the logbook, show it.
+	-- local isplayerowned = GetComponentData(inputobject, "isplayerowned")
+	local isplayerowned = true
+	-- kuertee end: allow any object to show its logbook entries - even those not player-owned. if its in the logbook, show it.
+	if isplayerowned then
+		if mode == "normal" then
+			config.infoLogbook.category = "all"
+			config.infoLogbook.logbookPage = 100
+			config.infoLogbook.logbookQueryLimit= 1000
+
+			-- entries
+			local numEntries = GetNumLogbook(config.infoLogbook.category)
+			logbookData.logbook = {}
+			for i = 1, math.ceil(numEntries / config.infoLogbook.logbookQueryLimit) do
+				local offset = (i - 1) * config.infoLogbook.logbookQueryLimit
+				local numQuery = math.min(config.infoLogbook.logbookQueryLimit, numEntries - offset)
+				local templogbook = GetLogbook(offset + 1, numQuery, config.infoLogbook.category) or {}
+				if #templogbook > 0 then
+					for j, entry in ipairs(templogbook) do
+						entry.index = offset + j
+						if menu.infologbookSearchHelper(entry, logbookData.objecttext, logbookData.searchtext) then
+							table.insert(logbookData.logbook, entry)
+						end
+					end
+				end
+			end
+
+			numEntries = #logbookData.logbook
+			local logbook
+			if numEntries <= config.infoLogbook.logbookPage then
+				logbookData.curPage = 1
+				logbook = logbookData.logbook
+			else
+				local startIndex = numEntries - config.infoLogbook.logbookPage * logbookData.curPage + 1
+				local endIndex = config.infoLogbook.logbookPage + startIndex - 1
+				if startIndex < 1 then
+					startIndex = 1
+				end
+				logbook = { table.unpack(logbookData.logbook, startIndex, endIndex) }
+			end
+			logbookData.numPages = math.max(1, math.ceil(numEntries / config.infoLogbook.logbookPage))
+
+			local buttonsize = Helper.scaleY(config.mapRowHeight)
+			local row = inputtable:addRow(true, { fixed = true, bgColor = Helper.color.transparent })
+			row[1]:setColSpan(3):createEditBox({ description = ReadText(1001, 7740), defaultText = ReadText(1001, 3250), height = Helper.subHeaderHeight }):setText(logbookData.searchtext, { halign = "left", x = Helper.standardTextOffsetx }):setHotkey("INPUT_STATE_DETAILMONITOR_0", { displayIcon = true })
+			row[1].handlers.onEditBoxDeactivated = function (_, text) if text ~= logbookData.searchtext then logbookData.searchtext = text; menu.refreshInfoFrame() end end
+			row[4]:createButton({ scaling = false, width = buttonsize, height = Helper.scaleY(Helper.subHeaderHeight), cellBGColor = Helper.color.transparent }):setText("X", { halign = "center", font = Helper.standardFontBold })
+			row[4].handlers.onClick = function () logbookData.searchtext = ""; menu.refreshInfoFrame() end
+
+			row[5]:createButton({ scaling = false, active = logbookData.curPage > 1, width = buttonsize, height = Helper.scaleY(Helper.subHeaderHeight), cellBGColor = Helper.color.transparent }):setIcon("widget_arrow_skip_left_01", { width = buttonsize, height = buttonsize, y = (row:getHeight() - buttonsize) / 2 })
+			row[5].handlers.onClick = function () logbookData.curPage = 1; menu.refreshInfoFrame() end
+			row[6]:createButton({ scaling = false, active = logbookData.curPage > 1, width = buttonsize, height = Helper.scaleY(Helper.subHeaderHeight), cellBGColor = Helper.color.transparent }):setIcon("widget_arrow_left_01", { width = buttonsize, height = buttonsize, y = (row:getHeight() - buttonsize) / 2 })
+			row[6].handlers.onClick = function () logbookData.curPage = logbookData.curPage - 1; menu.refreshInfoFrame() end
+			menu.logbookPageEditBox = row[7]:setColSpan(2):createEditBox({ description = ReadText(1001, 7739) }):setText(logbookData.curPage .. " / " .. logbookData.numPages, { halign = "center" })
+			row[7].handlers.onEditBoxActivated = function (widget) return menu.editboxInfoLogbookPageActivated(widget, instance) end
+			row[7].handlers.onEditBoxDeactivated = function (_, text, textchanged) return menu.editboxInfoLogbookPage(instance, text, textchanged) end
+			row[9]:createButton({ scaling = false, active = logbookData.curPage < logbookData.numPages, width = buttonsize, height = Helper.scaleY(Helper.subHeaderHeight), cellBGColor = Helper.color.transparent }):setIcon("widget_arrow_right_01", { width = buttonsize, height = buttonsize, y = (row:getHeight() - buttonsize) / 2 })
+			row[9].handlers.onClick = function () logbookData.curPage = logbookData.curPage + 1; menu.refreshInfoFrame() end
+			row[10]:createButton({ scaling = false, active = logbookData.curPage < logbookData.numPages, width = buttonsize, height = Helper.scaleY(Helper.subHeaderHeight), cellBGColor = Helper.color.transparent }):setIcon("widget_arrow_skip_right_01", { width = buttonsize, height = buttonsize, y = (row:getHeight() - buttonsize) / 2 })
+			row[10].handlers.onClick = function () logbookData.curPage = logbookData.numPages; menu.refreshInfoFrame() end
+
+			inputtable:addEmptyRow(Helper.standardTextHeight / 2)
+
+			if #logbook > 0 then
+				for i = #logbook, 1, -1 do
+					local entry = logbook[i]
+					local textcolor = entry.highlighted and Helper.color.red or Helper.standardColor
+					local row = inputtable:addRow(true, { bgColor = Helper.color.transparent, borderBelow = false })
+					if entry.interaction and IsValidComponent(entry.interactioncomponent) then
+						local mouseoverobject = entry.interactioncomponent
+						if IsComponentClass(mouseoverobject, "zone") and not IsComponentClass(mouseoverobject, "highway") then
+							mouseoverobject = GetContextByClass(mouseoverobject, "sector")
+						end
+						row[1]:setColSpan(9):createText(entry.title, { font = Helper.standardFontBold, color = textcolor, wordwrap = true })
+						row[10]:createButton({ scaling = false, bgColor = Helper.color.transparent, mouseOverText = string.format(entry.interactiontext, GetComponentData(mouseoverobject, "name")), height = buttonsize }):setIcon("widget_arrow_right_01", { width = buttonsize, height = buttonsize })
+						row[10].handlers.onClick = function () return menu.buttonLogbookInteraction(entry) end
+					else
+						row[1]:setColSpan(10):createText(entry.index .. " - " .. entry.title, { font = Helper.standardFontBold, color = textcolor, wordwrap = true })
+					end
+
+					if (entry.entityname ~= "") or (entry.factionname ~= "") then
+						local row = inputtable:addRow(false, { bgColor = Helper.color.transparent, borderBelow = false })
+						if entry.entityname ~= "" then
+							row[1]:setColSpan(2):createText(ReadText(1001, 5711) .. " " .. entry.entityname, { x = config.mapRowHeight })
+						end
+						row[3]:setColSpan(8):createText(entry.factionname, { halign = "right" })
+					end
+
+					if entry.text ~= "" then
+						local row = inputtable:addRow(false, { bgColor = Helper.color.transparent, borderBelow = false })
+						row[1]:setColSpan(10):createText(entry.text, { x = config.mapRowHeight, color = textcolor, wordwrap = true })
+					end
+
+					local row = inputtable:addRow(false, { bgColor = Helper.color.transparent })
+					row[1]:setColSpan(2):createText(Helper.getPassedTime(entry.time), { mouseOverText = Helper.convertGameTimeToXTimeString(entry.time), x = config.mapRowHeight })
+					local moneystring = ""
+					if entry.money ~= 0 then
+						local moneycolor = (entry.money >= 0) and Helper.color.green or Helper.color.red
+						moneystring = moneystring .. Helper.convertColorToText(moneycolor) .. ((entry.bonus >= 0) and "+" or "-") .. ConvertMoneyString(entry.money, false, true, nil, true) .. " " .. ReadText(1001, 101)
+					end
+					if entry.bonus ~= 0 then
+						local bonuscolor = (entry.bonus >= 0) and Helper.color.green or Helper.color.red
+						moneystring = moneystring .. " " .. Helper.convertColorToText(bonuscolor) .. "(" .. ((entry.bonus >= 0) and "+" or "-") .. " " .. ReadText(1001, 5712) .. " " .. ConvertMoneyString(entry.bonus, false, true, nil, true) .. " " .. ReadText(1001, 101) .. ")"
+					end
+					row[3]:setColSpan(8):createText(moneystring, { halign = "right" })
+
+					if i ~= 1 then
+						local row = inputtable:addRow(false, { bgColor = Helper.defaultSimpleBackgroundColor })
+						row[1]:setColSpan(10):createText("", { fontsize = 1, minRowHeight = 1 })
+					end
+				end
+			else
+				local row = inputtable:addRow(false, { bgColor = Helper.color.transparent })
+				row[1]:setColSpan(10):createText("--- " .. ReadText(1001, 5705) .. " ---", { halign = "center" })
+			end
+		elseif mode == "none" then
+			local row = inputtable:addRow(false, { bgColor = Helper.color.unselectable })
+			row[2]:setColSpan(9):createText(ReadText(1001, 6526))
+		end
+	else
+		local row = inputtable:addRow(false, { bgColor = Helper.color.unselectable })
+		row[2]:setColSpan(9):createText(ReadText(1001, 6526))
+	end
 end
 -- kuertee start: show mission progress
 newFuncs.missionProgress = {}
@@ -4087,6 +5398,87 @@ function newFuncs.updateSelectedComponents(modified, keepselection, changedCompo
 
 	menu.addSelectedComponents(components, modified)
 end
+function newFuncs.isInfoModeValidFor(object, mode)
+	if object == nil or object == 0 then
+		print(TraceBack())
+	end
+	local isonlineobject, isplayerowned, macro = GetComponentData(object, "isonlineobject", "isplayerowned", "macro")
+	if isplayerowned and isonlineobject then
+		return false
+	end
+
+	if mode == "objectinfo" then
+		local isdatavault, islandmark = GetComponentData(object, "isdatavault", "islandmark")
+		if	C.IsComponentClass(object, "ship") or
+			C.IsRealComponentClass(object, "station") or
+			C.IsComponentClass(object, "sector") or
+			C.IsComponentClass(object, "gate") or
+			C.IsComponentClass(object, "mine") or
+			C.IsComponentClass(object, "navbeacon") or
+			C.IsComponentClass(object, "resourceprobe") or
+			C.IsComponentClass(object, "satellite") or
+			C.IsComponentClass(object, "asteroid") or
+			(C.IsComponentClass(object, "object") and (isdatavault or islandmark))
+		then
+			return true
+		end
+	elseif (mode == "objectcrew") or (mode == "objectloadout") then
+		if C.IsRealComponentClass(object, "ship_xs") then
+			return false
+		elseif GetMacroData(macro, "islasertower") then
+			return false
+		elseif C.IsComponentClass(object, "ship") or C.IsComponentClass(object, "station") then
+			return true
+		end
+	elseif mode == "objectlogbook" then
+
+		-- kuertee start: allow logbook on all objects
+		-- if isplayerowned and (C.IsComponentClass(object, "ship") or C.IsComponentClass(object, "station")) and (not C.IsUnit(object)) and (not GetMacroData(macro, "islasertower")) then
+		-- 	return true
+		-- end
+
+		-- disabled start: allow for certain objects
+		-- if C.IsComponentClass(object, "sector") then
+		-- 	return true
+		-- elseif isplayerowned and (C.IsComponentClass(object, "ship") or C.IsComponentClass(object, "station")) and (not C.IsUnit(object)) and (not GetMacroData(macro, "islasertower")) then
+		-- 	return true
+		-- end
+		-- disabled end: allow for certain objects
+
+		-- enabled start: allow for all objects
+		return true
+		-- enabled end: allow for all objects
+		-- kuertee start: allow logbook on all objects
+
+	elseif mode == "orderqueue" then
+		if isplayerowned and C.IsComponentClass(object, "ship") and (not C.IsUnit(object)) then
+			return true
+		end
+	elseif mode == "standingorders" then
+		if isplayerowned and (C.IsComponentClass(object, "ship") or C.IsComponentClass(object, "station")) and (not C.IsUnit(object)) then
+			return true
+		end
+	elseif mode == "orderqueue_advanced" then
+		if isplayerowned and C.IsComponentClass(object, "ship") and (not C.IsUnit(object)) then
+			return true
+		end
+	else
+		local text = ""
+		for i, entry in ipairs(config.infoCategories) do
+			if not entry.empty then
+				if i == #config.infoCategories then
+					text = text .. " and "
+				elseif i > 1 then
+					text = text .. ", "
+				end
+				text = text .. "'" .. entry.category .. "'"
+			end
+		end
+		DebugError("menu.isInfoModeValidFor called with invalid mode: " .. tostring(mode) .. ". valid modes are " .. text)
+	end
+
+	return false
+end
 function newFuncs.updateTableSelection(lastcomponent)
 	menu.refreshMainFrame = true
 
@@ -4147,886 +5539,6 @@ function newFuncs.updateTableSelection(lastcomponent)
 		end
 	end
 	menu.setSelectedMapComponents()
-end
-function newFuncs.setupLoadoutInfoSubmenuRows(mode, inputtable, inputobject, instance)
-	local object64 = ConvertStringTo64Bit(tostring(inputobject))
-	local isplayerowned, isonlineobject, isenemy, ishostile = GetComponentData(object64, "isplayerowned", "isonlineobject", "isenemy", "ishostile")
-	local titlecolor = Helper.color.white
-	if isplayerowned then
-		titlecolor = menu.holomapcolor.playercolor
-		if object64 == C.GetPlayerObjectID() then
-			titlecolor = menu.holomapcolor.currentplayershipcolor
-		end
-	elseif isonlineobject and menu.getFilterOption("layer_other") and menu.getFilterOption("think_diplomacy_highlightvisitor") then
-		titlecolor = menu.holomapcolor.visitorcolor
-	elseif ishostile then
-		titlecolor = menu.holomapcolor.hostilecolor
-	elseif isenemy then
-		titlecolor = menu.holomapcolor.enemycolor
-	end
-
-	local loadout = {}
-	if mode == "ship" or mode == "station" then
-		loadout = { ["component"] = {}, ["macro"] = {}, ["ware"] = {} }
-		for i, upgradetype in ipairs(Helper.upgradetypes) do
-			if upgradetype.supertype == "macro" then
-				loadout.component[upgradetype.type] = {}
-				local numslots = 0
-				if C.IsComponentClass(inputobject, "defensible") then
-					numslots = tonumber(C.GetNumUpgradeSlots(inputobject, "", upgradetype.type))
-				end
-				for j = 1, numslots do
-					local current = C.GetUpgradeSlotCurrentComponent(inputobject, upgradetype.type, j)
-					if current ~= 0 then
-						table.insert(loadout.component[upgradetype.type], current)
-					end
-				end
-			elseif upgradetype.supertype == "virtualmacro" then
-				loadout.macro[upgradetype.type] = {}
-				local numslots = tonumber(C.GetNumVirtualUpgradeSlots(inputobject, "", upgradetype.type))
-				for j = 1, numslots do
-					local current = ffi.string(C.GetVirtualUpgradeSlotCurrentMacro(inputobject, upgradetype.type, j))
-					if current ~= "" then
-						table.insert(loadout.macro[upgradetype.type], current)
-					end
-				end
-			elseif upgradetype.supertype == "software" then
-				loadout.ware[upgradetype.type] = {}
-				local numslots = C.GetNumSoftwareSlots(inputobject, "")
-				local buf = ffi.new("SoftwareSlot[?]", numslots)
-				numslots = C.GetSoftwareSlots(buf, numslots, inputobject, "")
-				for j = 0, numslots - 1 do
-					local current = ffi.string(buf[j].current)
-					if current ~= "" then
-						table.insert(loadout.ware[upgradetype.type], current)
-					end
-				end
-			elseif upgradetype.supertype == "ammo" then
-				loadout.macro[upgradetype.type] = {}
-			end
-		end
-	end
-
-	local cheatsecrecy = false
-	-- secrecy stuff
-	local nameinfo =					cheatsecrecy or C.IsInfoUnlockedForPlayer(inputobject, "name")
-	local defenceinfo_low =				cheatsecrecy or C.IsInfoUnlockedForPlayer(inputobject, "defence_level")
-	local defenceinfo_high =			cheatsecrecy or C.IsInfoUnlockedForPlayer(inputobject, "defence_status")
-	local unitinfo_capacity =			cheatsecrecy or C.IsInfoUnlockedForPlayer(inputobject, "units_capacity")
-	local unitinfo_amount =				cheatsecrecy or C.IsInfoUnlockedForPlayer(inputobject, "units_amount")
-	local unitinfo_details =			cheatsecrecy or C.IsInfoUnlockedForPlayer(inputobject, "units_details")
-	local equipment_mods =				cheatsecrecy or C.IsInfoUnlockedForPlayer(inputobject, "equipment_mods")
-
-	--- title ---
-	local row = inputtable:addRow(false, { fixed = true, bgColor = Helper.defaultTitleBackgroundColor })
-	row[1]:setColSpan(13):createText(ReadText(1001, 2427), Helper.headerRowCenteredProperties)
-	local row = inputtable:addRow(false, { fixed = true, bgColor = Helper.defaultTitleBackgroundColor })
-	row[1]:setColSpan(13):createText(ReadText(1001, 9413), Helper.headerRowCenteredProperties)
-
-	local objectname = Helper.unlockInfo(nameinfo, ffi.string(C.GetComponentName(inputobject)))
-	-- object name
-	local row = inputtable:addRow("info_focus", { fixed = true, bgColor = Helper.defaultTitleBackgroundColor })
-	row[13]:createButton({ width = config.mapRowHeight, cellBGColor = Helper.color.transparent }):setIcon("menu_center_selection", { width = config.mapRowHeight, height = config.mapRowHeight, y = (Helper.headerRow1Height - config.mapRowHeight) / 2 })
-	row[13].handlers.onClick = function () return C.SetFocusMapComponent(menu.holomap, menu.infoSubmenuObject, true) end
-	if (mode == "ship") or (mode == "station") then
-		row[1]:setBackgroundColSpan(12):setColSpan(6):createText(objectname, Helper.headerRow1Properties)
-		row[1].properties.color = titlecolor
-		row[7]:setColSpan(6):createText(Helper.unlockInfo(nameinfo, ffi.string(C.GetObjectIDCode(inputobject))), Helper.headerRow1Properties)
-		row[7].properties.halign = "right"
-		row[7].properties.color = titlecolor
-	else
-		row[1]:setBackgroundColSpan(12):setColSpan(12):createText(objectname, Helper.headerRow1Properties)
-		row[1].properties.color = titlecolor
-	end
-
-	if mode == "ship" then
-		local pilot = GetComponentData(inputobject, "assignedpilot")
-		pilot = ConvertIDTo64Bit(pilot)
-		local pilotname, skilltable, postname, aicommandstack, aicommand, aicommandparam, aicommandaction, aicommandactionparam = "-", {}, ReadText(1001, 4847), {}
-		if pilot and IsValidComponent(pilot) then
-			pilotname, skilltable, postname, aicommandstack, aicommand, aicommandparam, aicommandaction, aicommandactionparam = GetComponentData(pilot, "name", "skills", "postname", "aicommandstack", "aicommand", "aicommandparam", "aicommandaction", "aicommandactionparam")
-		end
-
-		local isbigship = C.IsComponentClass(inputobject, "ship_m") or C.IsComponentClass(inputobject, "ship_l") or C.IsComponentClass(inputobject, "ship_xl")
-		-- weapon config
-		if isplayerowned and (#loadout.component.weapon > 0) then
-			local row = inputtable:addRow(false, { bgColor = Helper.defaultTitleBackgroundColor })
-			row[1]:setColSpan(13):createText(ReadText(1001, 9409), Helper.headerRowCenteredProperties) -- Weapon Configuration
-			-- subheader
-			local row = inputtable:addRow(false, { bgColor = Helper.color.unselectable })
-			row[3]:setColSpan(5):createText(ReadText(1001, 9410), { font = Helper.standardFontBold }) -- Primary
-			row[8]:setColSpan(6):createText(ReadText(1001, 9411), { font = Helper.standardFontBold }) -- Secondary
-			-- active weapon groups
-			local row = inputtable:addRow("info_weaponconfig_active", { bgColor = Helper.color.transparent })
-			row[2]:createText(ReadText(1001, 11218))
-			for j = 1, 4 do
-				row[2 + j]:createCheckBox(function () return C.GetDefensibleActiveWeaponGroup(inputobject, true) == j end, { width = config.mapRowHeight, height = config.mapRowHeight, symbol = "arrow", bgColor = function () return menu.infoWeaponGroupCheckBoxColor(inputobject, j, true) end })
-				row[2 + j].handlers.onClick = function () C.SetDefensibleActiveWeaponGroup(inputobject, true, j) end
-			end
-			for j = 1, 4 do
-				row[7 + j]:createCheckBox(function () return C.GetDefensibleActiveWeaponGroup(inputobject, false) == j end, { width = config.mapRowHeight, height = config.mapRowHeight, symbol = "arrow", bgColor = function () return menu.infoWeaponGroupCheckBoxColor(inputobject, j, false) end })
-				row[7 + j].handlers.onClick = function () C.SetDefensibleActiveWeaponGroup(inputobject, false, j) end
-			end
-			inputtable:addEmptyRow(config.mapRowHeight / 2)
-			-- weapons
-			for i, gun in ipairs(loadout.component.weapon) do
-				local gun = ConvertStringTo64Bit(tostring(gun))
-				local numweapongroups = C.GetNumWeaponGroupsByWeapon(inputobject, gun)
-				local rawweapongroups = ffi.new("UIWeaponGroup[?]", numweapongroups)
-				numweapongroups = C.GetWeaponGroupsByWeapon(rawweapongroups, numweapongroups, inputobject, gun)
-				local uiweapongroups = { primary = {}, secondary = {} }
-				for j = 0, numweapongroups - 1 do
-					-- there are two sets: primary and secondary.
-					-- each set has four groups.
-					-- .primary tells you if this particular weapon is active in a group in the primary or secondary group set.
-					-- .idx tells you which group in that group set it is active in.
-					if rawweapongroups[j].primary then
-						uiweapongroups.primary[rawweapongroups[j].idx] = true
-					else
-						uiweapongroups.secondary[rawweapongroups[j].idx] = true
-					end
-					--print("primary: " .. tostring(rawweapongroups[j].primary) .. ", idx: " .. tostring(rawweapongroups[j].idx))
-				end
-
-				local row = inputtable:addRow("info_weaponconfig" .. i, { bgColor = Helper.color.transparent })
-				row[2]:createText(ffi.string(C.GetComponentName(gun)))
-
-				-- primary weapon groups
-				for j = 1, 4 do
-					row[2 + j]:createCheckBox(uiweapongroups.primary[j], { width = config.mapRowHeight, height = config.mapRowHeight, bgColor = function () return menu.infoWeaponGroupCheckBoxColor(inputobject, j, true) end })
-					row[2 + j].handlers.onClick = function() menu.infoSetWeaponGroup(inputobject, gun, true, j, not uiweapongroups.primary[j]) end
-				end
-
-				-- secondary weapon groups
-				for j = 1, 4 do
-					row[7 + j]:createCheckBox(uiweapongroups.secondary[j], { width = config.mapRowHeight, height = config.mapRowHeight, bgColor = function () return menu.infoWeaponGroupCheckBoxColor(inputobject, j, false) end })
-					row[7 + j].handlers.onClick = function() menu.infoSetWeaponGroup(inputobject, gun, false, j, not uiweapongroups.secondary[j]) end
-				end
-
-				if IsComponentClass(gun, "missilelauncher") then
-					local nummissiletypes = C.GetNumAllMissiles(inputobject)
-					local missilestoragetable = ffi.new("AmmoData[?]", nummissiletypes)
-					nummissiletypes = C.GetAllMissiles(missilestoragetable, nummissiletypes, inputobject)
-
-					local gunmacro = GetComponentData(gun, "macro")
-					local dropdowndata = {}
-					for j = 0, nummissiletypes-1 do
-						local ammomacro = ffi.string(missilestoragetable[j].macro)
-						if C.IsAmmoMacroCompatible(gunmacro, ammomacro) then
-							table.insert(dropdowndata, {id = ammomacro, text = GetMacroData(ammomacro, "name"), icon = "", displayremoveoption = false})
-						end
-					end
-
-					-- if the ship has no compatible ammunition in ammo storage, have the dropdown print "Out of ammo" and make it inactive.
-					local currentammomacro = "empty"
-					local dropdownactive = true
-					if #dropdowndata == 0 then
-						dropdownactive = false
-						table.insert(dropdowndata, {id = "empty", text = ReadText(1001, 9412), icon = "", displayremoveoption = false})	-- Out of ammo
-					else
-						-- NB: currentammomacro can be null
-						currentammomacro = ffi.string(C.GetCurrentAmmoOfWeapon(gun))
-					end
-
-					row = inputtable:addRow(("info_weaponconfig" .. i .. "_ammo"), { bgColor = Helper.color.transparent })
-					row[2]:createText((ReadText(1001, 2800) .. ReadText(1001, 120)))	-- Ammunition, :
-					row[3]:setColSpan(11):createDropDown(dropdowndata, {startOption = currentammomacro, active = dropdownactive})
-					row[3].handlers.onDropDownConfirmed = function(_, newammomacro) C.SetAmmoOfWeapon(gun, newammomacro) end
-				elseif pilot and IsValidComponent(pilot) and IsComponentClass(gun, "bomblauncher") then
-					local numbombtypes = C.GetNumAllInventoryBombs(pilot)
-					local bombstoragetable = ffi.new("AmmoData[?]", numbombtypes)
-					numbombtypes = C.GetAllInventoryBombs(bombstoragetable, numbombtypes, pilot)
-
-					local gunmacro = GetComponentData(gun, "macro")
-					local dropdowndata = {}
-					for j = 0, numbombtypes-1 do
-						local ammomacro = ffi.string(bombstoragetable[j].macro)
-						if C.IsAmmoMacroCompatible(gunmacro, ammomacro) then
-							table.insert(dropdowndata, {id = ammomacro, text = GetMacroData(ammomacro, "name"), icon = "", displayremoveoption = false})
-						end
-					end
-
-					-- if the ship has no compatible ammunition in ammo storage, have the dropdown print "Out of ammo" and make it inactive.
-					local currentammomacro = "empty"
-					local dropdownactive = true
-					if #dropdowndata == 0 then
-						dropdownactive = false
-						table.insert(dropdowndata, {id = "empty", text = ReadText(1001, 9412), icon = "", displayremoveoption = false})	-- Out of ammo
-					else
-						-- NB: currentammomacro can be null
-						currentammomacro = ffi.string(C.GetCurrentAmmoOfWeapon(gun))
-					end
-
-					row = inputtable:addRow(("info_weaponconfig" .. i .. "_ammo"), { bgColor = Helper.color.transparent })
-					row[2]:createText((ReadText(1001, 2800) .. ReadText(1001, 120)))	-- Ammunition, :
-					row[3]:setColSpan(11):createDropDown(dropdowndata, {startOption = currentammomacro, active = dropdownactive})
-					row[3].handlers.onDropDownConfirmed = function(_, newammomacro) C.SetAmmoOfWeapon(gun, newammomacro) end
-				end
-			end
-		end
-	end
-	if (mode == "ship") or (mode == "station") then
-		-- turret behaviour
-		if isplayerowned and #loadout.component.turret > 0 then
-			local hasnormalturrets = false
-			local hasmissileturrets = false
-			local hasoperationalnormalturrets = false
-			local hasoperationalmissileturrets = false
-			local hasonlytugturrets = true
-
-			local row = inputtable:addRow(false, { bgColor = Helper.defaultTitleBackgroundColor })
-			row[1]:setColSpan(13):createText(ReadText(1001, 8612), Helper.headerRowCenteredProperties) -- Turret Behaviour
-			menu.turrets = {}
-			local numslots = tonumber(C.GetNumUpgradeSlots(inputobject, "", "turret"))
-			for j = 1, numslots do
-				local groupinfo = C.GetUpgradeSlotGroup(inputobject, "", "turret", j)
-				if (ffi.string(groupinfo.path) == "..") and (ffi.string(groupinfo.group) == "") then
-					local current = C.GetUpgradeSlotCurrentComponent(inputobject, "turret", j)
-					if current ~= 0 then
-						if (not hasmissileturrets) or (not hasnormalturrets) then
-							local ismissileturret = C.IsComponentClass(current, "missileturret")
-							hasmissileturrets = hasmissileturrets or ismissileturret
-							hasnormalturrets = hasnormalturrets or (not ismissileturret)
-						end
-						if not GetComponentData(ConvertStringTo64Bit(tostring(current)), "istugweapon") then
-							hasonlytugturrets = false
-						end
-						table.insert(menu.turrets, current)
-					end
-				end
-			end
-
-			menu.turretgroups = {}
-			local turretsizecounts = {}
-			local n = C.GetNumUpgradeGroups(inputobject, "")
-			local buf = ffi.new("UpgradeGroup2[?]", n)
-			n = C.GetUpgradeGroups2(buf, n, inputobject, "")
-			for i = 0, n - 1 do
-				if (ffi.string(buf[i].path) ~= "..") or (ffi.string(buf[i].group) ~= "") then
-					local group = { context = buf[i].contextid, path = ffi.string(buf[i].path), group = ffi.string(buf[i].group) }
-					local groupinfo = C.GetUpgradeGroupInfo2(inputobject, "", group.context, group.path, group.group, "turret")
-					if (groupinfo.count > 0) then
-						group.operational = groupinfo.operational
-						group.currentcomponent = groupinfo.currentcomponent
-						group.currentmacro = ffi.string(groupinfo.currentmacro)
-						group.slotsize = ffi.string(groupinfo.slotsize)
-						group.sizecount = 0
-						if (not hasmissileturrets) or (not hasnormalturrets) then
-							local ismissileturret = IsMacroClass(group.currentmacro, "missileturret")
-							hasmissileturrets = hasmissileturrets or ismissileturret
-							hasnormalturrets = hasnormalturrets or (not ismissileturret)
-							if ismissileturret then
-								if not hasoperationalmissileturrets then
-									hasoperationalmissileturrets = group.operational > 0
-								end
-							else
-								if not hasoperationalnormalturrets then
-									hasoperationalnormalturrets = group.operational > 0
-								end
-							end
-						end
-						if not GetComponentData(ConvertStringTo64Bit(tostring(group.currentcomponent)), "istugweapon") then
-							hasonlytugturrets = false
-						end
-
-						if group.slotsize ~= "" then
-							if turretsizecounts[group.slotsize] then
-								turretsizecounts[group.slotsize] = turretsizecounts[group.slotsize] + 1
-							else
-								turretsizecounts[group.slotsize] = 1
-							end
-							group.sizecount = turretsizecounts[group.slotsize]
-						end
-
-						table.insert(menu.turretgroups, group)
-					end
-				end
-			end
-			
-			if #menu.turretgroups > 0 then
-				table.sort(menu.turretgroups, Helper.sortSlots)
-			end
-
-			if (#menu.turrets > 0) or (#menu.turretgroups > 0) then
-				if mode == "ship" then
-					local row = inputtable:addRow("info_turretconfig", { bgColor = Helper.color.transparent })
-					row[2]:setColSpan(3):createText(ReadText(1001, 2963))
-					
-					-- Start Subsystem Targeting Orders callback
-					local sto_callbackVal
-					if callbacks ["sto_addTurretBehavioursMapMenu"] then
-						for _, callback in ipairs (callbacks ["sto_addTurretBehavioursMapMenu"]) do
-							sto_callbackVal = callback (row, inputobject)
-						end
-					end
-					if not sto_callbackVal then
-						row[5]:setColSpan(9):createDropDown(Helper.getTurretModes(nil, not hasonlytugturrets), { startOption = function () return menu.getDropDownTurretModeOption(inputobject, "all") end })
-						row[5].handlers.onDropDownConfirmed = function(_, newturretmode) menu.noupdate = false; C.SetAllTurretModes(inputobject, newturretmode) end
-					end
-					-- End Subsystem Targeting Orders callback
-
-					row[5].handlers.onDropDownActivated = function () menu.noupdate = true end
-
-					local row = inputtable:addRow("info_turretconfig_2", { bgColor = Helper.color.transparent })
-					row[5]:setColSpan(9):createButton({ height = config.mapRowHeight }):setText(function () return menu.areTurretsArmed(inputobject) and ReadText(1001, 8631) or ReadText(1001, 8632) end, { halign = "center" })
-					row[5].handlers.onClick = function () return C.SetAllTurretsArmed(inputobject, not menu.areTurretsArmed(inputobject)) end
-
-					local dropdownCount = 1
-					for i, turret in ipairs(menu.turrets) do
-						inputtable:addEmptyRow(config.mapRowHeight / 2)
-
-						local row = inputtable:addRow("info_turretconfig" .. i, { bgColor = Helper.color.transparent })
-						row[2]:setColSpan(3):createText(ffi.string(C.GetComponentName(turret)))
-						row[5]:setColSpan(9):createDropDown(Helper.getTurretModes(turret), { startOption = function () return menu.getDropDownTurretModeOption(turret) end })
-						row[5].handlers.onDropDownConfirmed = function(_, newturretmode) menu.noupdate = false; C.SetWeaponMode(turret, newturretmode) end
-						row[5].handlers.onDropDownActivated = function () menu.noupdate = true end
-						dropdownCount = dropdownCount + 1
-						if dropdownCount == 14 then
-							inputtable.properties.maxVisibleHeight = inputtable:getFullHeight()
-						end
-
-						local row = inputtable:addRow("info_turretconfig" .. i .. "_2", { bgColor = Helper.color.transparent })
-						row[5]:setColSpan(9):createButton({ height = config.mapRowHeight }):setText(function () return C.IsWeaponArmed(turret) and ReadText(1001, 8631) or ReadText(1001, 8632) end, { halign = "center" })
-						row[5].handlers.onClick = function () return C.SetWeaponArmed(turret, not C.IsWeaponArmed(turret)) end
-					end
-
-					for i, group in ipairs(menu.turretgroups) do
-						inputtable:addEmptyRow(config.mapRowHeight / 2)
-						
-						local name = ReadText(1001, 8023) .. " " .. Helper.getSlotSizeText(group.slotsize) .. group.sizecount .. ((group.currentmacro ~= "") and (" (" .. Helper.getSlotSizeText(group.slotsize) .. " " .. GetMacroData(group.currentmacro, "shortname") .. ")") or "")
-
-						local row = inputtable:addRow("info_turretgroupconfig" .. i, { bgColor = Helper.color.transparent })
-						row[2]:setColSpan(3):createText(name, { color = (group.operational > 0) and Helper.color.white or Helper.color.red })
-						row[5]:setColSpan(9):createDropDown(Helper.getTurretModes(group.currentcomponent), { startOption = function () return menu.getDropDownTurretModeOption(inputobject, group.context, group.path, group.group) end, active = group.operational > 0 })
-						row[5].handlers.onDropDownConfirmed = function(_, newturretmode) menu.noupdate = false; C.SetTurretGroupMode2(inputobject, group.context, group.path, group.group, newturretmode) end
-						row[5].handlers.onDropDownActivated = function () menu.noupdate = true end
-						dropdownCount = dropdownCount + 1
-						if dropdownCount == 14 then
-							inputtable.properties.maxVisibleHeight = inputtable:getFullHeight()
-						end
-
-						local row = inputtable:addRow("info_turretgroupconfig" .. i .. "_2", { bgColor = Helper.color.transparent })
-						row[5]:setColSpan(9):createButton({ height = config.mapRowHeight }):setText(function () return C.IsTurretGroupArmed(inputobject, group.context, group.path, group.group) and ReadText(1001, 8631) or ReadText(1001, 8632) end, { halign = "center" })
-						row[5].handlers.onClick = function () return C.SetTurretGroupArmed(inputobject, group.context, group.path, group.group, not C.IsTurretGroupArmed(inputobject, group.context, group.path, group.group)) end
-					end
-				elseif mode == "station" then
-					local turretmodes = {
-						[1] = { id = "defend",			text = ReadText(1001, 8613),	icon = "",	displayremoveoption = false },
-						[2] = { id = "attackenemies",	text = ReadText(1001, 8614),	icon = "",	displayremoveoption = false },
-						[3] = { id = "attackcapital",	text = ReadText(1001, 8624),	icon = "",	displayremoveoption = false },
-						[4] = { id = "attackfighters",	text = ReadText(1001, 8625),	icon = "",	displayremoveoption = false },
-						[5] = { id = "missiledefence",	text = ReadText(1001, 8615),	icon = "",	displayremoveoption = false },
-					}
-
-					if hasnormalturrets then
-						-- non-missile
-						local row = inputtable:addRow("info_turretconfig", { bgColor = Helper.color.transparent })
-						row[2]:setColSpan(3):createText(ReadText(1001, 8397))
-						row[5]:setColSpan(9):createDropDown(turretmodes, { startOption = function () return menu.getDropDownTurretModeOption(inputobject, "all", false) end, active = hasoperationalnormalturrets, mouseOverText = (not hasoperationalnormalturrets) and ReadText(1026, 3235) or nil })
-						row[5].handlers.onDropDownConfirmed = function(_, newturretmode) menu.noupdate = false; C.SetAllNonMissileTurretModes(inputobject, newturretmode) end
-						row[5].handlers.onDropDownActivated = function () menu.noupdate = true end
-
-						local row = inputtable:addRow("info_turretconfig_2", { bgColor = Helper.color.transparent })
-						row[5]:setColSpan(9):createButton({ height = config.mapRowHeight }):setText(function () return menu.areTurretsArmed(inputobject, false) and ReadText(1001, 8631) or ReadText(1001, 8632) end, { halign = "center" })
-						row[5].handlers.onClick = function () return C.SetAllNonMissileTurretsArmed(inputobject, not menu.areTurretsArmed(inputobject, false)) end
-					end
-					if hasmissileturrets then
-						-- missile
-						local row = inputtable:addRow("info_turretconfig_missile", { bgColor = Helper.color.transparent })
-						row[2]:setColSpan(3):createText(ReadText(1001, 9031))
-						row[5]:setColSpan(9):createDropDown(turretmodes, { startOption = function () return menu.getDropDownTurretModeOption(inputobject, "all", true) end, active = hasoperationalmissileturrets, mouseOverText = (not hasoperationalnormalturrets) and ReadText(1026, 3235) or nil })
-						row[5].handlers.onDropDownConfirmed = function(_, newturretmode) menu.noupdate = false; C.SetAllMissileTurretModes(inputobject, newturretmode) end
-						row[5].handlers.onDropDownActivated = function () menu.noupdate = true end
-
-						local row = inputtable:addRow("info_turretconfig_missile_2", { bgColor = Helper.color.transparent })
-						row[5]:setColSpan(9):createButton({ height = config.mapRowHeight }):setText(function () return menu.areTurretsArmed(inputobject, true) and ReadText(1001, 8631) or ReadText(1001, 8632) end, { halign = "center" })
-						row[5].handlers.onClick = function () return C.SetAllMissileTurretsArmed(inputobject, not menu.areTurretsArmed(inputobject, true)) end
-					end
-				end
-			end
-		end
-		-- drones
-		local isplayeroccupiedship = menu.infoSubmenuObject == ConvertStringTo64Bit(tostring(C.GetPlayerOccupiedShipID()))
-
-		local unitstoragetable = C.IsComponentClass(object64, "defensible") and GetUnitStorageData(object64) or { stored = 0, capacity = 0 }
-		local locunitcapacity = Helper.unlockInfo(unitinfo_capacity, tostring(unitstoragetable.capacity))
-		local locunitcount = Helper.unlockInfo(unitinfo_amount, tostring(unitstoragetable.stored))
-		menu.drones = {}
-		local dronetypes = {
-			{ id = "orecollector",	name = ReadText(20214, 500),	displayonly = true },
-			{ id = "gascollector",	name = ReadText(20214, 400),	displayonly = true },
-			{ id = "defence",		name = ReadText(20214, 300) },
-			{ id = "transport",		name = ReadText(20214, 900) },
-			{ id = "build",			name = ReadText(20214, 1000),	skipmode = true },
-			{ id = "repair",		name = ReadText(20214, 1100),	skipmode = true },
-		}
-		for _, dronetype in ipairs(dronetypes) do
-			if C.GetNumStoredUnits(inputobject, dronetype.id, false) > 0 then
-				local entry
-				if not dronetype.skipmode then
-					entry = {
-						type = dronetype.id,
-						name = dronetype.name,
-						current = ffi.string(C.GetCurrentDroneMode(inputobject, dronetype.id)),
-						modes = {},
-						displayonly = dronetype.displayonly,
-					}
-					local n = C.GetNumDroneModes(inputobject, dronetype.id)
-					local buf = ffi.new("DroneModeInfo[?]", n)
-					n = C.GetDroneModes(buf, n, inputobject, dronetype.id)
-					for i = 0, n - 1 do
-						local id = ffi.string(buf[i].id)
-						if (id ~= "trade") or (id == entry.current) then
-							table.insert(entry.modes, { id = id, text = ffi.string(buf[i].name), icon = "", displayremoveoption = false })
-						end
-					end
-				else
-					entry = {
-						type = dronetype.id,
-						name = dronetype.name,
-					}
-				end
-				table.insert(menu.drones, entry)
-			end
-		end
-		if unitstoragetable.capacity > 0 then
-			-- title
-			local row = inputtable:addRow(false, { bgColor = Helper.defaultTitleBackgroundColor })
-			row[1]:setColSpan(13):createText(ReadText(1001, 8619), Helper.headerRowCenteredProperties)
-			-- capcity
-			local row = inputtable:addRow(false, { bgColor = Helper.color.unselectable })
-			row[2]:createText(ReadText(1001, 8393))
-			row[8]:setColSpan(6):createText(locunitcount .. " / " .. locunitcapacity, { halign = "right" })
-			-- drones
-			if unitinfo_details then
-				for i, entry in ipairs(menu.drones) do
-					if i ~= 1 then
-						inputtable:addEmptyRow(config.mapRowHeight / 2)
-					end
-					local hasmodes = (mode == "ship") and entry.current
-					-- drone name, amount and mode
-					local row1 = inputtable:addRow("drone_config", { bgColor = Helper.color.transparent })
-					row1[2]:createText(entry.name)
-					row1[3]:setColSpan(isplayerowned and 2 or 11):createText(function () return Helper.unlockInfo(unitinfo_amount, C.GetNumStoredUnits(inputobject, entry.type, false)) end, { halign = isplayerowned and "left" or "right" })
-					-- active and armed status
-					local row2 = inputtable:addRow("drone_config", { bgColor = Helper.color.transparent })
-					row2[2]:createText("    " .. ReadText(1001, 11229), { color = hasmodes and function () return C.IsDroneTypeArmed(inputobject, entry.type) and Helper.color.white or Helper.color.grey end or nil })
-					row2[3]:setColSpan(isplayerowned and 2 or 11):createText(function () return Helper.unlockInfo(unitinfo_amount, C.GetNumUnavailableUnits(inputobject, entry.type)) end, { halign = isplayerowned and "left" or "right", color = hasmodes and function () return C.IsDroneTypeBlocked(inputobject, entry.type) and Helper.color.warningorange or (C.IsDroneTypeArmed(inputobject, entry.type) and Helper.color.white or Helper.color.grey) end or nil })
-					
-					-- drone mode support - disabled for mining drones, to avoid conflicts with order defined drone behaviour
-					if hasmodes then
-						local isblocked = C.IsDroneTypeBlocked(inputobject, entry.type)
-						if isplayerowned then
-							local active = (isplayeroccupiedship or (not entry.displayonly)) and (not isblocked)
-							local mouseovertext = ""
-							if isblocked then
-								mouseovertext = ReadText(1026, 3229)
-							elseif (not isplayeroccupiedship) and entry.displayonly then
-								mouseovertext = ReadText(1026, 3230)
-							end
-
-							row1[5]:setColSpan(9):createDropDown(entry.modes, { startOption = function () return ffi.string(C.GetCurrentDroneMode(inputobject, entry.type)) end, active = active, mouseOverText = mouseovertext })
-							row1[5].handlers.onDropDownConfirmed = function (_, newdronemode) C.SetDroneMode(inputobject, entry.type, newdronemode) end
-
-							row2[5]:setColSpan(9):createButton({ active = active, mouseOverText = mouseovertext, height = config.mapRowHeight }):setText(function () return C.IsDroneTypeArmed(inputobject, entry.type) and ReadText(1001, 8622) or ReadText(1001, 8623) end, { halign = "center" })
-							row2[5].handlers.onClick = function () return C.SetDroneTypeArmed(inputobject, entry.type, not C.IsDroneTypeArmed(inputobject, entry.type)) end
-						end
-					end
-				end
-			end
-		end
-		-- subordinates
-		if isplayerowned then
-			if C.IsComponentClass(inputobject, "controllable") then
-				local subordinates = GetSubordinates(inputobject)
-				local groups = {}
-				local usedassignments = {}
-				for _, subordinate in ipairs(subordinates) do
-					local purpose, shiptype = GetComponentData(subordinate, "primarypurpose", "shiptype")
-					local group = GetComponentData(subordinate, "subordinategroup")
-					if group and group > 0 then
-						if groups[group] then
-							table.insert(groups[group].subordinates, subordinate)
-							if shiptype == "resupplier" then
-								groups[group].numassignableresupplyships = groups[group].numassignableresupplyships + 1
-							end
-							if purpose == "mine" then
-								groups[group].numassignableminingships = groups[group].numassignableminingships + 1
-							end
-							if shiptype == "tug" then
-								groups[group].numassignabletugships = groups[group].numassignabletugships + 1
-							end
-						else
-							local assignment = ffi.string(C.GetSubordinateGroupAssignment(inputobject, group))
-							usedassignments[assignment] = group
-							groups[group] = { assignment = assignment, subordinates = { subordinate }, numassignableresupplyships = (shiptype == "resupplier") and 1 or 0, numassignableminingships = (purpose == "mine") and 1 or 0, numassignabletugships = (shiptype == "tug") and 1 or 0 }
-						end
-					end
-				end
-
-				if #subordinates > 0 then
-					-- title
-					local row = inputtable:addRow(false, { bgColor = Helper.defaultTitleBackgroundColor })
-					row[1]:setColSpan(13):createText(ReadText(1001, 8626), Helper.headerRowCenteredProperties)
-
-					local isstation = C.IsComponentClass(inputobject, "station")
-					for i = 1, isstation and 5 or 10 do
-						if groups[i] then
-							local defenceactive = true
-							if isstation then
-								defenceactive = ((not usedassignments["defence"]) or (usedassignments["defence"] == i))
-							end
-							local supplyactive = (groups[i].numassignableresupplyships == #groups[i].subordinates) and ((not usedassignments["supplyfleet"]) or (usedassignments["supplyfleet"] == i))
-							local subordinateassignments = {
-								[1] = { id = "defence",			text = ReadText(20208, 40301),	icon = "",	displayremoveoption = false, active = defenceactive, mouseovertext = defenceactive and "" or ReadText(1026, 7840) },
-								[2] = { id = "supplyfleet",		text = ReadText(20208, 40701),	icon = "",	displayremoveoption = false, active = supplyactive, mouseovertext = supplyactive and "" or ReadText(1026, 8601) },
-							}
-							if GetComponentData(inputobject, "shiptype") == "resupplier" then
-								table.insert(subordinateassignments, { id = "trade",			text = ReadText(20208, 40101),	icon = "",	displayremoveoption = false })
-							end
-
-							if isstation then
-								local miningactive = (groups[i].numassignableminingships == #groups[i].subordinates) and ((not usedassignments["mining"]) or (usedassignments["mining"] == i))
-								table.insert(subordinateassignments, { id = "mining", text = ReadText(20208, 40201), icon = "", displayremoveoption = false, active = miningactive, mouseovertext = miningactive and "" or ReadText(1026, 8602) })
-								local tradeactive = ((not usedassignments["trade"]) or (usedassignments["trade"] == i))
-								table.insert(subordinateassignments, { id = "trade", text = ReadText(20208, 40101), icon = "", displayremoveoption = false, active = tradeactive, mouseovertext = tradeactive and ((groups[i].numassignableminingships > 0) and (Helper.convertColorToText(Helper.color.warningorange) .. ReadText(1026, 8607)) or "") or ReadText(1026, 7840) })
-								local tradeforbuildstorageactive = (groups[i].numassignableminingships == 0) and ((not usedassignments["tradeforbuildstorage"]) or (usedassignments["tradeforbuildstorage"] == i))
-								table.insert(subordinateassignments, { id = "tradeforbuildstorage", text = ReadText(20208, 40801), icon = "", displayremoveoption = false, active = tradeforbuildstorageactive, mouseovertext = tradeforbuildstorageactive and "" or ReadText(1026, 8603) })
-								local salvageactive = (groups[i].numassignabletugships == #groups[i].subordinates) and ((not usedassignments["salvage"]) or (usedassignments["salvage"] == i))
-								table.insert(subordinateassignments, { id = "salvage", text = ReadText(20208, 41401), icon = "", displayremoveoption = false, active = salvageactive, mouseovertext = salvageactive and "" or ReadText(1026, 8610) })
-							elseif C.IsComponentClass(inputobject, "ship") then
-								table.insert(subordinateassignments, { id = "attack", text = ReadText(20208, 40901), icon = "", displayremoveoption = false })
-								table.insert(subordinateassignments, { id = "interception", text = ReadText(20208, 41001), icon = "", displayremoveoption = false })
-								table.insert(subordinateassignments, { id = "follow", text = ReadText(20208, 41301), icon = "", displayremoveoption = false })
-								local active = true
-								local mouseovertext = ""
-								local buf = ffi.new("Order")
-								if not C.GetDefaultOrder(buf, inputobject) then
-									active = false
-									mouseovertext = ReadText(1026, 8606)
-								end
-								table.insert(subordinateassignments, { id = "assist", text = ReadText(20208, 41201), icon = "", displayremoveoption = false, active = active, mouseovertext = mouseovertext })
-							end
-
-							local isdockingpossible = false
-							for _, subordinate in ipairs(groups[i].subordinates) do
-								if IsDockingPossible(subordinate, inputobject) then
-									isdockingpossible = true
-									break
-								end
-							end
-							local active = true
-							local mouseovertext = ""
-							if not GetComponentData(inputobject, "hasshipdockingbays") then
-								active = false
-								mouseovertext = ReadText(1026, 8604)
-							elseif not isdockingpossible then
-								active = false
-								mouseovertext = ReadText(1026, 8605)
-							end
-
-							local row = inputtable:addRow("subordinate_config", { bgColor = Helper.color.transparent })
-							row[2]:createText(function () menu.updateSubordinateGroupInfo(inputobject); return ReadText(20401, i) .. (menu.subordinategroups[i] and (" (" .. ((not C.ShouldSubordinateGroupDockAtCommander(inputobject, i)) and ((#menu.subordinategroups[i].subordinates - menu.subordinategroups[i].numdockedatcommander) .. "/") or "") .. #menu.subordinategroups[i].subordinates ..")") or "") end, { color = isblocked and Helper.color.warningorange or nil })
-							row[3]:setColSpan(11):createDropDown(subordinateassignments, { startOption = function () menu.updateSubordinateGroupInfo(inputobject); return menu.subordinategroups[i] and menu.subordinategroups[i].assignment or "" end })
-							row[3].handlers.onDropDownActivated = function () menu.noupdate = true end
-							row[3].handlers.onDropDownConfirmed = function (_, newassignment) C.SetSubordinateGroupAssignment(inputobject, i, newassignment); menu.noupdate = false; menu.refreshInfoFrame() end
-							local row = inputtable:addRow("subordinate_config", { bgColor = Helper.color.transparent })
-							
-							-- Start Reactive Docking callback
-							local rd_callbackVal
-							if callbacks ["rd_addReactiveDockingMapMenu"] then
-								for _, callback in ipairs (callbacks ["rd_addReactiveDockingMapMenu"]) do
-									rd_callbackVal = callback (row, inputobject, i, mode, active, mouseovertext)
-								end
-							end
-							if not rd_callbackVal then
-								row[3]:setColSpan(11):createButton({ active = active, mouseOverText = mouseovertext, height = config.mapRowHeight }):setText(function () return C.ShouldSubordinateGroupDockAtCommander(inputobject, i) and ReadText(1001, 8630) or ReadText(1001, 8629) end, { halign = "center" })
-								row[3].handlers.onClick = function () return C.SetSubordinateGroupDockAtCommander(inputobject, i, not C.ShouldSubordinateGroupDockAtCommander(inputobject, i)) end
-							end
-							-- End Reactive Docking callback
-						end
-					end
-				end
-			end
-		end
-		-- ammunition
-		local nummissiletypes = C.GetNumAllMissiles(inputobject)
-		local missilestoragetable = ffi.new("AmmoData[?]", nummissiletypes)
-		nummissiletypes = C.GetAllMissiles(missilestoragetable, nummissiletypes, inputobject)
-		local totalnummissiles = 0
-		for i = 0, nummissiletypes - 1 do
-			totalnummissiles = totalnummissiles + missilestoragetable[i].amount
-		end
-		local missilecapacity = 0
-		if C.IsComponentClass(inputobject, "defensible") then
-			missilecapacity = GetComponentData(inputobject, "missilecapacity")
-		end
-		local locmissilecapacity = Helper.unlockInfo(defenceinfo_low, tostring(missilecapacity))
-		local locnummissiles = Helper.unlockInfo(defenceinfo_high, tostring(totalnummissiles))
-		if totalnummissiles > 0 then
-			-- title
-			local row = inputtable:addRow(false, { bgColor = Helper.defaultTitleBackgroundColor })
-			row[1]:setColSpan(12):createText(ReadText(1001, 2800), Helper.headerRowCenteredProperties) -- Ammunition
-			-- capcity
-			local row = inputtable:addRow(false, { bgColor = Helper.color.unselectable })
-			row[2]:createText(ReadText(1001, 8393))
-			row[8]:setColSpan(6):createText(locnummissiles .. " / " .. locmissilecapacity, { halign = "right" })
-			if defenceinfo_high then
-				for i = 0, nummissiletypes - 1 do
-					local macro = ffi.string(missilestoragetable[i].macro)
-					local row = inputtable:addRow({ "info_weapons", macro, inputobject }, { bgColor = Helper.color.transparent })
-					row[2]:createText(GetMacroData(macro, "name"))
-					row[8]:setColSpan(6):createText(tostring(missilestoragetable[i].amount), { halign = "right" })
-				end
-			end
-		end
-	end
-	if mode == "ship" then
-		-- countermeasures
-		local numcountermeasuretypes = C.GetNumAllCountermeasures(inputobject)
-		local countermeasurestoragetable = ffi.new("AmmoData[?]", numcountermeasuretypes)
-		numcountermeasuretypes = C.GetAllCountermeasures(countermeasurestoragetable, numcountermeasuretypes, inputobject)
-		local totalnumcountermeasures = 0
-		for i = 0, numcountermeasuretypes - 1 do
-			totalnumcountermeasures = totalnumcountermeasures + countermeasurestoragetable[i].amount
-		end
-		local countermeasurecapacity = GetComponentData(object64, "countermeasurecapacity")
-		local loccountermeasurecapacity = Helper.unlockInfo(defenceinfo_low, tostring(countermeasurecapacity))
-		local locnumcountermeasures = Helper.unlockInfo(defenceinfo_high, tostring(totalnumcountermeasures))
-		if totalnumcountermeasures > 0 then
-			-- title
-			local row = inputtable:addRow(false, { bgColor = Helper.defaultTitleBackgroundColor })
-			row[1]:setColSpan(13):createText(ReadText(20215, 1701), Helper.headerRowCenteredProperties) -- Countermeasures
-			-- capcity
-			local row = inputtable:addRow(false, { bgColor = Helper.color.unselectable })
-			row[2]:createText(ReadText(1001, 8393))
-			row[8]:setColSpan(6):createText(locnumcountermeasures .. " / " .. loccountermeasurecapacity, { halign = "right" })
-			if defenceinfo_high then
-				for i = 0, numcountermeasuretypes - 1 do
-					local row = inputtable:addRow(true, { bgColor = Helper.color.transparent, interactive = false })
-					row[2]:createText(GetMacroData(ffi.string(countermeasurestoragetable[i].macro), "name"))
-					row[8]:setColSpan(6):createText(tostring(countermeasurestoragetable[i].amount), { halign = "right" })
-				end
-			end
-		end
-		-- deployables
-		local consumables = {
-			{ id = "satellite",		type = "civilian",	getnum = C.GetNumAllSatellites,		getdata = C.GetAllSatellites,		callback = C.LaunchSatellite },
-			{ id = "navbeacon",		type = "civilian",	getnum = C.GetNumAllNavBeacons,		getdata = C.GetAllNavBeacons,		callback = C.LaunchNavBeacon },
-			{ id = "resourceprobe",	type = "civilian",	getnum = C.GetNumAllResourceProbes,	getdata = C.GetAllResourceProbes,	callback = C.LaunchResourceProbe },
-			{ id = "lasertower",	type = "military",	getnum = C.GetNumAllLaserTowers,	getdata = C.GetAllLaserTowers,		callback = C.LaunchLaserTower },
-			{ id = "mine",			type = "military",	getnum = C.GetNumAllMines,			getdata = C.GetAllMines,			callback = C.LaunchMine },
-		}
-		local totalnumdeployables = 0
-		local consumabledata = {}
-		for _, entry in ipairs(consumables) do
-			local n = entry.getnum(inputobject)
-			local buf = ffi.new("AmmoData[?]", n)
-			n = entry.getdata(buf, n, inputobject)
-			consumabledata[entry.id] = {}
-			for i = 0, n - 1 do
-				table.insert(consumabledata[entry.id], { macro = ffi.string(buf[i].macro), name = GetMacroData(ffi.string(buf[i].macro), "name"), amount = buf[i].amount, capacity = buf[i].capacity })
-				totalnumdeployables = totalnumdeployables + buf[i].amount
-			end
-		end
-		local deployablecapacity = C.GetDefensibleDeployableCapacity(inputobject)
-		local printednumdeployables = Helper.unlockInfo(defenceinfo_low, tostring(totalnumdeployables))
-		local printeddeployablecapacity = Helper.unlockInfo(defenceinfo_low, tostring(deployablecapacity))
-		if totalnumdeployables > 0 then
-			-- title
-			local row = inputtable:addRow(false, { bgColor = Helper.defaultTitleBackgroundColor })
-			row[1]:setColSpan(13):createText(ReadText(1001, 1332), Helper.headerRowCenteredProperties) -- Deployables
-			-- capcity
-			local row = inputtable:addRow(false, { bgColor = Helper.color.unselectable })
-			row[2]:createText(ReadText(1001, 8393))
-			row[8]:setColSpan(6):createText(printednumdeployables .. " / " .. printeddeployablecapacity, { halign = "right" })
-			if defenceinfo_high then
-				for _, entry in ipairs(consumables) do
-					if #consumabledata[entry.id] > 0 then
-						for _, data in ipairs(consumabledata[entry.id]) do
-							local row = inputtable:addRow({ "info_deploy", data.macro, inputobject }, { bgColor = Helper.color.transparent })
-							row[2]:createText(data.name)
-							row[8]:setColSpan(6):createText(data.amount, { halign = "right" })
-						end
-					end
-				end
-				if isplayerowned then
-					-- deploy
-					local row = inputtable:addRow("info_deploy", { bgColor = Helper.color.transparent })
-					row[3]:setColSpan(11):createButton({ height = config.mapRowHeight, active = function () return next(menu.infoTablePersistentData[instance].macrostolaunch) ~= nil end }):setText(ReadText(1001, 8390), { halign = "center" })
-					row[3].handlers.onClick = function () return menu.buttonDeploy(instance) end
-				end
-			end
-		end
-	end
-	if (mode == "ship") or (mode == "station") then
-		-- loadout
-		if (#loadout.component.weapon > 0) or (#loadout.component.turret > 0) or (#loadout.component.shield > 0) or (#loadout.component.engine > 0) or (#loadout.macro.thruster > 0) or (#loadout.ware.software > 0) then
-			if defenceinfo_high then
-				local hasshown = false
-				-- title
-				local row = inputtable:addRow(false, { bgColor = Helper.defaultTitleBackgroundColor })
-				row[1]:setColSpan(13):createText(ReadText(1001, 9413), Helper.headerRowCenteredProperties) -- Loadout
-				local row = inputtable:addRow(false, { bgColor = Helper.color.unselectable })
-				row[2]:setColSpan(5):createText(ReadText(1001, 7935), { font = Helper.standardFontBold })
-				row[7]:setColSpan(4):createText(ReadText(1001, 1311), { font = Helper.standardFontBold, halign = "right" })
-				row[11]:setColSpan(3):createText(ReadText(1001, 12), { font = Helper.standardFontBold, halign = "right" })
-
-				inputtable:addEmptyRow(config.mapRowHeight / 2)
-
-				local macroequipment = {
-					{ type = "weapon", encyclopedia = "info_weapon" },
-					{ type = "turret", encyclopedia = "info_weapon" },
-					{ type = "shield", encyclopedia = "info_equipment" },
-					{ type = "engine", encyclopedia = "info_equipment" },
-				}
-				for _, entry in ipairs(macroequipment) do
-					if #loadout.component[entry.type] > 0 then
-						if hasshown then
-							inputtable:addEmptyRow(config.mapRowHeight / 2)
-						end
-						hasshown = true
-						local locmacros = menu.infoCombineLoadoutComponents(loadout.component[entry.type])
-						for macro, data in pairs(locmacros) do
-							local row = inputtable:addRow({ entry.encyclopedia, macro, inputobject }, { bgColor = Helper.color.transparent })
-							row[2]:setColSpan(5):createText(GetMacroData(macro, "name"))
-							row[7]:setColSpan(4):createText(data.count .. " / " .. data.count + data.construction, { halign = "right" })
-							local shieldpercent = data.shieldpercent
-							local hullpercent = data.hullpercent
-							if data.count > 0 then
-								shieldpercent = shieldpercent / data.count
-								hullpercent = hullpercent / data.count
-							end
-							row[11]:setColSpan(3):createShieldHullBar(shieldpercent, hullpercent, { scaling = false, width = row[11]:getColSpanWidth() / 2, x = row[11]:getColSpanWidth() / 4 })
-
-							AddKnownItem(GetMacroData(macro, "infolibrary"), macro)
-						end
-					end
-				end
-
-				if #loadout.macro.thruster > 0 then
-					if hasshown then
-						inputtable:addEmptyRow(config.mapRowHeight / 2)
-					end
-					hasshown = true
-					-- ships normally only have 1 set of thrusters. in case a ship has more, this will list all of them.
-					for i, val in ipairs(loadout.macro.thruster) do
-						local row = inputtable:addRow({ "info_equipment", macro, inputobject }, { bgColor = Helper.color.transparent })
-						row[2]:setColSpan(12):createText(GetMacroData(val, "name"))
-
-						AddKnownItem(GetMacroData(val, "infolibrary"), val)
-					end
-				end
-				if #loadout.ware.software > 0 then
-					if hasshown then
-						inputtable:addEmptyRow(config.mapRowHeight / 2)
-					end
-					hasshown = true
-					for i, val in ipairs(loadout.ware.software) do
-						local row = inputtable:addRow({ "info_software", val, inputobject }, { bgColor = Helper.color.transparent })
-						row[2]:setColSpan(12):createText(GetWareData(val, "name"))
-
-						AddKnownItem("software", val)
-					end
-				end
-			else
-				local row = inputtable:addRow(false, { bgColor = Helper.color.unselectable })
-				row[2]:setColSpan(12):createText(ReadText(1001, 3210))
-			end
-		end
-	end
-	if mode == "ship" then
-		-- mods
-		-- title
-		local row = inputtable:addRow(false, { bgColor = Helper.defaultTitleBackgroundColor })
-		row[1]:setColSpan(13):createText(ReadText(1001, 8031), Helper.headerRowCenteredProperties)
-		if equipment_mods and GetComponentData(object64, "hasanymod") then
-			local hasshown = false
-			-- chassis
-			local hasinstalledmod, installedmod = Helper.getInstalledModInfo("ship", inputobject)
-			if hasinstalledmod then
-				if hasshown then
-					inputtable:addEmptyRow(config.mapRowHeight / 2)
-				end
-				hasshown = true
-				row = menu.addEquipmentModInfoRow(inputtable, "ship", installedmod, ReadText(1001, 8008))
-			end
-			-- weapon
-			for i, weapon in ipairs(loadout.component.weapon) do
-				local hasinstalledmod, installedmod = Helper.getInstalledModInfo("weapon", weapon)
-				if hasinstalledmod then
-					if hasshown then
-						inputtable:addEmptyRow(config.mapRowHeight / 2)
-					end
-					hasshown = true
-					row = menu.addEquipmentModInfoRow(inputtable, "weapon", installedmod, ffi.string(C.GetComponentName(weapon)))
-				end
-			end
-			-- turret
-			for i, turret in ipairs(loadout.component.turret) do
-				local hasinstalledmod, installedmod = Helper.getInstalledModInfo("turret", turret)
-				if hasinstalledmod then
-					if hasshown then
-						inputtable:addEmptyRow(config.mapRowHeight / 2)
-					end
-					hasshown = true
-					row = menu.addEquipmentModInfoRow(inputtable, "weapon", installedmod, ffi.string(C.GetComponentName(turret)))
-				end
-			end
-			-- shield
-			local shieldgroups = {}
-			local n = C.GetNumShieldGroups(inputobject)
-			local buf = ffi.new("ShieldGroup[?]", n)
-			n = C.GetShieldGroups(buf, n, inputobject)
-			for i = 0, n - 1 do
-				local entry = {}
-				entry.context = buf[i].context
-				entry.group = ffi.string(buf[i].group)
-				entry.component = buf[i].component
-
-				table.insert(shieldgroups, entry)
-			end
-			for i, entry in ipairs(shieldgroups) do
-				if (entry.context == inputobject) and (entry.group == "") then
-					shieldgroups.hasMainGroup = true
-					-- force maingroup to first index
-					table.insert(shieldgroups, 1, entry)
-					table.remove(shieldgroups, i + 1)
-					break
-				end
-			end
-			for i, shieldgroupdata in ipairs(shieldgroups) do
-				local hasinstalledmod, installedmod = Helper.getInstalledModInfo("shield", inputobject, shieldgroupdata.context, shieldgroupdata.group)
-				if hasinstalledmod then
-					local name = GetMacroData(GetComponentData(ConvertStringTo64Bit(tostring(shieldgroupdata.component)), "macro"), "name")
-					if (i == 1) and shieldgroups.hasMainGroup then
-						name = ReadText(1001, 8044)
-					end
-					if hasshown then
-						inputtable:addEmptyRow(config.mapRowHeight / 2)
-					end
-					hasshown = true
-					row = menu.addEquipmentModInfoRow(inputtable, "shield", installedmod, name)
-				end
-			end
-			-- engine
-			local hasinstalledmod, installedmod = Helper.getInstalledModInfo("engine", inputobject)
-			if hasinstalledmod then
-				if hasshown then
-					inputtable:addEmptyRow(config.mapRowHeight / 2)
-				end
-				hasshown = true
-				row = menu.addEquipmentModInfoRow(inputtable, "engine", installedmod, ffi.string(C.GetComponentName(loadout.component.engine[1])))
-			end
-		else
-			local row = inputtable:addRow(false, { bgColor = Helper.color.unselectable })
-			row[2]:setColSpan(12):createText(Helper.unlockInfo(equipment_mods, ReadText(1001, 8394)))
-		end
-	end
-	if mode == "none" then
-		local row = inputtable:addRow(false, { bgColor = Helper.color.unselectable })
-		row[2]:setColSpan(12):createText(ReadText(1001, 6526))
-	end
 end
 function newFuncs.checkForSelectComponent(component)
 	if menu.mode ~= "selectComponent" then
