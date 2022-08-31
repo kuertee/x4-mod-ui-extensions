@@ -1767,6 +1767,9 @@ function newFuncs.createPropertyOwned(frame, instance)
 		-- "distance from object"
 		if menu.infoSubmenuObject then
 			buttonLabel = ffi.string (C.GetObjectIDCode (menu.infoSubmenuObject))
+			if buttonLabel == "" then
+				buttonLabel = ffi.string (C.GetComponentName (menu.infoSubmenuObject))
+			end
 			sorterColumn = 3
 			tableColumn = (sorterColumn - 1) * colSpanPerSorterColumn + 1
 			local button = row[tableColumn]:setColSpan(colSpanPerSorterColumn):createButton({ scaling = false, height = buttonheight }):setText(buttonLabel, { halign = "center", scaling = true })
