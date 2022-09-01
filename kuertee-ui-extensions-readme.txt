@@ -5,9 +5,11 @@ by kuertee. Contributors: Forleyor, Mycu, Runekn.
 
 Updates
 =======
-v5.1.0301, 17 Jul 2022:
--Returned feature: Support for Subsystem Targeting Orders.
--Bug-fix: (For real this time.) Re-enabled custom HUDs.
+v5.1.0303, 1 Sep 2022:
+-New feature: Sort by distance from: Player or selected object in the Player Owned menu.
+-Tweak: Sort by Name is sort by name, then sector, then object id. The base-game sorting order was by name then by object id - which is useless. :D
+-New feature: The Logbook button in the Information menu is now enabled for all objects. If an object has a logbook entry, it's allowed to be listed here.
+-Note: These new quality-of-life features are, of course, available in games that load this new kuertee_menu_map.lua file. A lot of my other mods do.
 
 Instructions for players
 ========================
@@ -71,6 +73,24 @@ But the callbacks, along with their function parameters and their expected retur
 
 But here is documentation on NEW features (not connected to mod-specific changes via call-backs) that UIX offers.
 
+QUALITY-OF-LIFE CHANGES
+=======================
+
+Map Menu: Sort by distance
+==========================
+The Player Owned list can be sorted by distance from the player or from the last selected object.
+Note that Egosoft's sorting icons (the up and down arrows) signify direction of the list NOT ascending descending orders.
+E.g. The down arrow actually sorts the list in ascending order. The list is sorted from least to greatest.
+
+Map Menu: Logbook in Information menu
+=====================================
+The Logbook button is enabled for all objects - even sectors.
+The list is filtered by the object's Id as text.
+If the object has no id, the filter is its name. E.g. the Sector's name.
+With this feature, a summary of events in a sector can be accessed easily.
+
+Recommendation: Get the 5.1.0303 version of NPC Reactions for its Report Enemies and Scouts features. Their reports in this log give a good impression of events in a sector.
+
 Map Menu: Mission Guidance tab
 ==============================
 Any mission with the "missiontype.guidance" will now be listed in the Mission Guidance tab.  In the base game, the Mission Guidance tab lists only the Guidance created manually with the right-click mouse button. 
@@ -110,6 +130,10 @@ Troubleshooting
 
 History
 =======
+v5.1.0301, 17 Jul 2022:
+-Returned feature: Support for Subsystem Targeting Orders.
+-Bug-fix: (For real this time.) Re-enabled custom HUDs.
+
 v5.1.0012, 12 Jun 2022:
 -Bug-fix: The last version prevented custom HUDs (e.g. the destruction countdown from my Alternatives To Death mod) from showing.
 
