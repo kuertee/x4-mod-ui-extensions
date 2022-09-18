@@ -1,35 +1,28 @@
-UI Extensions and HUD
+[size=6]UI Extensions and HUD[/size]
 https://www.nexusmods.com/x4foundations/mods/552
 Code: https://github.com/kuertee/x4-mod-ui-extensions
 by kuertee. Contributors: Forleyor, Mycu, Runekn.
 
-Updates
-=======
-v5.1.0303, 1 Sep 2022:
--New feature: Sort by distance from: Player or selected object in the Player Owned menu.
--Tweak: Sort by Name is sort by name, then sector, then object id. The base-game sorting order was by name then by object id - which is useless. :D
--New feature: The Logbook button in the Information menu is now enabled for all objects. If an object has a logbook entry, it's allowed to be listed here.
--Note: These new quality-of-life features are, of course, available in games that load this new kuertee_menu_map.lua file. A lot of my other mods do.
+[size=5]Updates[/size]
+v5.1.0306, 18 Sep 2022:
+-Tweak: Expanding a fleet or a station will auto expand their ship sections.
+-New feature: Callbacks to support Trade Analytic's new idlers and away icons and location (final sector destination) ship row data.
 
-Instructions for players
-========================
+[size=5]Instructions for players[/size]
 Just install UI Extensions as normal - that is IF you have a mod that requires UI Extensions.
 You don't need UI Extensions if you don't have a mod that requires UI Extensions.
 
-Instructions for developers
-===========================
+[size=5]Instructions for developers[/size]
 All other information as described below.
 
-Features
-========
+[size=5]Features[/size]
 Modded Lua files with callbacks that allow more than one mod to change the same UI element.
 
 Functionality that adds HUD elements to the Top Level Menu.
 
 Allows other mods to create guidance missions (i.e. missiontype.guidance) that will be listed in the Guidance Missions tab. Also enables the Set Active and Set Inactive buttons in missions listed in the Guidance Missions tab. Examples of these are my mods: Loot mining, Ship scanner, Signal leak hunter - increasing range, Station scanner, and Waypoint fields for deployments.
 
-Mod effects
-===========
+[size=5]Mod effects[/size]
 This is a modder's resource/API. By itself, this mod does not affect the game.
 
 Modders can use this API to mod the game's Lua files that helps compatibility with other mods that also use this API.
@@ -40,8 +33,7 @@ With this API, specifically its callbacks, it is possible.
 
 Files in this API will be referred to as UIXs.
 
-Summary of how to use
-=====================
+[size=5]Summary of how to use[/size]
 In the mod's Lua file:
 ----------------------
 1. Create a pointer to the base game's menu to be modded.
@@ -65,39 +57,34 @@ In your mod's release:
 ----------------------
 Make this mod a required download for your mod.
 
-Documentation
-=============
+[size=5]Documentation[/size]
 Soon.
 
 But the callbacks, along with their function parameters and their expected returns, are listed in each of the new Lua files. Learning at which point in the code they execute is as easy as searching for them in the code. Examples of how they are used can be seen in my mods that use them. My mods "NPC reactions/NPC taxi" and "Teleport from transporter room" both have changes to the "TransporterMenu".
 
 But here is documentation on NEW features (not connected to mod-specific changes via call-backs) that UIX offers.
 
-QUALITY OF LIFE CHANGES
-=======================
+[size=5]QUALITY-OF-LIFE CHANGES[/size]
 
-Map Menu: Sort by distance
-==========================
+[size=5]Map Menu: Sort by distance[/size]
 The Player Owned list can be sorted by distance from the player or from the last selected object.
 Note that Egosoft's sorting icons (the up and down arrows) signify direction of the list NOT ascending descending orders.
 E.g. The down arrow actually sorts the list in ascending order. The list is sorted from least to greatest.
 
-Map Menu: Logbook in Information menu
-=====================================
+[size=5]Map Menu: Logbook in Information menu[/size]
 The Logbook button is enabled for all objects - even sectors.
 The list is filtered by the object's Id as text.
-If the object has no id, the filter will be its name. E.g. Sectors.
-With this feature, a summary of events in a sector can be accessed quickly.
+If the object has no id, the filter is its name. E.g. the Sector's name.
+With this feature, a summary of events in a sector can be accessed easily.
+
 Recommendation: Get the 5.1.0303 version of NPC Reactions for its Report Enemies and Scouts features. Their reports in this log give a good impression of events in a sector.
 
-Map Menu: Mission Guidance tab
-==============================
+[size=5]Map Menu: Mission Guidance tab[/size]
 Any mission with the "missiontype.guidance" will now be listed in the Mission Guidance tab.  In the base game, the Mission Guidance tab lists only the Guidance created manually with the right-click mouse button. 
 
 The "Set to inactive" and "Set to active" buttons are available on missions listed in the Mission Guidance tab. The base game makes these buttons unavailable for Guidance Missions.
 
-Map Menu: selectComponent mode
-==============================
+[size=5]Map Menu: selectComponent mode[/size]
 The selectComponent mode is now available to use from directly within the Map Menu. In the base game, the use of this mode is limited to conversations triggered from the Mission Director (md). E.g. &lt;open_conversation_menu menu="MapMenu" param="[0, 0, true, player.entity, null, 'selectComponent', ['kTFTR_set_destination', [class.ship_s, class.ship_m, class.ship_l, class.ship_xl, class.station]]]" /&gt;. Which then triggers an "event_conversation_next_section" with the menu.modeparam[1] as the section of the conversation. In this version, this mode can be called directly from the Map Menu.
 
 To use:
@@ -106,29 +93,30 @@ To use:
 3. To trigger an "AddUITriggeredEvent" after the player selects an object, set screenname in the mapMenu.setSelectComponentMode call.
 4. To disable the default "event_conversation_next_section" after the player selects an object, set returnsection to nil in the mapMenu.setSelectComponentMode call.
 
-Requirement
-===========
+[size=5]Requirement[/size]
 SirNukes Mod Support APIs mod (https://www.nexusmods.com/x4foundations/mods/503) - to load the custom Lua files
 
-Install
-=======
+[size=5]Install[/size]
 -Unzip to 'X4 Foundations/extensions/kuertee_ui_extensions/'.
 -Make sure the sub-folders and files are in 'X4 Foundations/extensions/kuertee_ui_extensions/' and not in 'X4 Foundations/extensions/kuertee_ui_extensions/kuertee_ui_extensions/'.
 
-Uninstall
-=========
+[size=5]Uninstall[/size]
 -Delete the mod folder.
 
-Troubleshooting
-===============
+[size=5]Troubleshooting[/size]
 (1) Do not change the file structure of the mod. If you do, you'll need to troubleshoot problems you encounter yourself.
 (2) Allow the game to log events to a text file by adding "-debug all -logfile debug.log" to its launch parameters.
 (3) Enable the mod-specific Debug Log in the mod's Extension Options.
 (4) Play for long enough for the mod to log its events.
 (5) Send me (at kuertee@gmail.com) the log found in My Documents\Egosoft\X4\(your player-specific number)\debug.log.
 
-History
-=======
+[size=5]History[/size]
+v5.1.0303, 1 Sep 2022:
+-New feature: Sort by distance from: Player or selected object in the Player Owned menu.
+-Tweak: Sort by Name is sort by name, then sector, then object id. The base-game sorting order was by name then by object id - which is useless. :D
+-New feature: The Logbook button in the Information menu is now enabled for all objects. If an object has a logbook entry, it's allowed to be listed here.
+-Note: These new quality-of-life features are, of course, available in games that load this new kuertee_menu_map.lua file. A lot of my other mods do.
+
 v5.1.0301, 17 Jul 2022:
 -Returned feature: Support for Subsystem Targeting Orders.
 -Bug-fix: (For real this time.) Re-enabled custom HUDs.
