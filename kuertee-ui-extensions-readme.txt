@@ -5,11 +5,9 @@ by kuertee. Contributors: Forleyor, Mycu, Runekn.
 
 Updates
 =======
-v5.1.0303, 1 Sep 2022:
--New feature: Sort by distance from: Player or selected object in the Player Owned menu.
--Tweak: Sort by Name is sort by name, then sector, then object id. The base-game sorting order was by name then by object id - which is useless. :D
--New feature: The Logbook button in the Information menu is now enabled for all objects. If an object has a logbook entry, it's allowed to be listed here.
--Note: These new quality-of-life features are, of course, available in games that load this new kuertee_menu_map.lua file. A lot of my other mods do.
+v5.1.0306, 18 Sep 2022:
+-Tweak: Expanding a fleet or a station will auto expand their ship sections.
+-New feature: Callbacks to support Trade Analytic's new idlers and away icons and location (final sector destination) ship row data.
 
 Instructions for players
 ========================
@@ -130,6 +128,12 @@ Troubleshooting
 
 History
 =======
+v5.1.0303, 1 Sep 2022:
+-New feature: Sort by distance from: Player or selected object in the Player Owned menu.
+-Tweak: Sort by Name is sort by name, then sector, then object id. The base-game sorting order was by name then by object id - which is useless. :D
+-New feature: The Logbook button in the Information menu is now enabled for all objects. If an object has a logbook entry, it's allowed to be listed here.
+-Note: These new quality-of-life features are, of course, available in games that load this new kuertee_menu_map.lua file. A lot of my other mods do.
+
 v5.1.0301, 17 Jul 2022:
 -Returned feature: Support for Subsystem Targeting Orders.
 -Bug-fix: (For real this time.) Re-enabled custom HUDs.

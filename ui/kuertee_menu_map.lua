@@ -74,6 +74,12 @@ local function init ()
 		mapMenu.createLogbookInfoSubmenu = newFuncs.createLogbookInfoSubmenu
 		oldFuncs.componentSorter = mapMenu.componentSorter
 		mapMenu.componentSorter = newFuncs.componentSorter
+		oldFuncs.getPropertyOwnedFleetData = mapMenu.getPropertyOwnedFleetData
+		mapMenu.getPropertyOwnedFleetData = newFuncs.getPropertyOwnedFleetData
+		oldFuncs.getPropertyOwnedFleetDataInternal = mapMenu.getPropertyOwnedFleetDataInternal
+		mapMenu.getPropertyOwnedFleetDataInternal = newFuncs.getPropertyOwnedFleetDataInternal
+		oldFuncs.createSubordinateSection = mapMenu.createSubordinateSection
+		mapMenu.createSubordinateSection = newFuncs.createSubordinateSection
 		-- new functions. i.e. doesn't exist in the original map menu.
 		mapMenu.setSelectComponentMode = newFuncs.setSelectComponentMode
 	end
@@ -109,6 +115,7 @@ function newFuncs.registerCallback (callbackName, callbackFunction)
 	-- refreshInfoFrame2_on_start ()
 	-- createInfoFrame2_on_menu_infoModeRight (menu.infoFrame2)
 	-- createRightBar_on_start (config)
+	-- getPropertyOwnedFleetDataInternal_addToFleetIcons (component, shiptyperanks, shiptypedata)
 	if callbacks [callbackName] == nil then
 		callbacks [callbackName] = {}
 	end
@@ -2031,6 +2038,7 @@ function newFuncs.createPropertyRow(instance, ftable, component, iteration, comm
 					end
 					mouseovertext = mouseovertext .. ReadText(1001, 3249)
 				end
+
 				if alertMouseOver ~= "" then
 					if mouseovertext ~= "" then
 						mouseovertext = mouseovertext .. "\n\n"
@@ -2220,6 +2228,171 @@ function newFuncs.createPropertyRow(instance, ftable, component, iteration, comm
 	end
 
 	return numdisplayed
+end
+function newFuncs.createSubordinateSection(instance, ftable, component, isstation, iteration, location, numdisplayed, sorter)
+	local maxicons = menu.infoTableData[instance].maxIcons
+	local subordinates = menu.infoTableData[instance].subordinates[tostring(component)] or {}
+	subordinates = menu.sortComponentListHelper(subordinates, sorter)
+	-- setup groups
+	local groups = {}
+	for _, subordinate in ipairs(subordinates) do
+		local group = GetComponentData(subordinate, "subordinategroup")
+		if group and group > 0 then
+			if groups[group] then
+				if (not groups[group].hasrendered) and (menu.infoTableMode == "objectlist") then
+					groups[group].hasrendered = menu.renderedComponentsRef[ConvertIDTo64Bit(subordinate)]
+				end
+				table.insert(groups[group].subordinates, subordinate)
+			else
+				local isrendered = true
+				if menu.infoTableMode == "objectlist" then
+					isrendered = menu.renderedComponentsRef[ConvertIDTo64Bit(subordinate)]
+				end
+				groups[group] = { assignment = ffi.string(C.GetSubordinateGroupAssignment(ConvertIDTo64Bit(component), group)), subordinates = { subordinate }, hasrendered = isrendered }
+			end
+		end
+	end
+
+	for group = 1, 10 do
+		if groups[group] and groups[group].hasrendered then
+
+			-- kuertee start: auto-expand all subordinates of stations
+			-- local issubordinateextended = menu.isSubordinateExtended(tostring(component), isstation, group)
+			local issubordinateextended
+			if isstation then
+				issubordinateextended = true
+			else
+				issubordinateextended = menu.isSubordinateExtended(tostring(component), isstation, group)
+			end
+			-- kuertee end: auto-expand all subordinates of stations
+
+			if (not issubordinateextended) and menu.isCommander(component, group) then
+				menu.extendedsubordinates[tostring(component) .. group] = true
+				issubordinateextended = true
+			end
+			local row = ftable:addRow({"subordinates" .. tostring(component) .. group, component, group}, { bgColor = Helper.color.transparent })
+			row[1]:createButton():setText(issubordinateextended and "-" or "+", { halign = "center" })
+			row[1].handlers.onClick = function () return menu.buttonExtendSubordinate(tostring(component), isstation, group) end
+			local text = string.format(ReadText(1001, 8398), ReadText(20401, group))
+			for i = 1, iteration + 1 do
+				text = "    " .. text
+			end
+			row[2]:setColSpan(3):createText(text)
+			row[5]:setColSpan(maxicons + 1):createText(config.assignments[groups[group].assignment] and config.assignments[groups[group].assignment].name or "", { halign = "right" })
+			if menu.highlightedborderstationcategory == "subordinates" .. tostring(component) .. group then
+				menu.sethighlightborderrow = row.index
+			end
+			if issubordinateextended then
+				for _, subordinate in ipairs(groups[group].subordinates) do
+					local isdocked, subordinategroup = GetComponentData(subordinate, "isdocked", "subordinategroup")
+					local isexternaldock, parent
+					if isdocked then
+						isexternaldock = C.IsShipAtExternalDock(ConvertIDTo64Bit(subordinate))
+						parent = C.GetContextByClass(ConvertIDTo64Bit(subordinate), "container", false)
+					end
+
+					if (menu.infoTableMode ~= "objectlist") or menu.renderedComponentsRef[ConvertIDTo64Bit(subordinate)] or (isdocked and (not isexternaldock) and menu.renderedComponentsRef[ConvertStringTo64Bit(tostring(parent))]) then
+						numdisplayed = menu.createPropertyRow(instance, ftable, subordinate, iteration + 2, location, nil, nil, numdisplayed, sorter)
+					end
+				end
+			end
+		end
+	end
+
+	return numdisplayed
+end
+function newFuncs.getPropertyOwnedFleetData(instance, component, maxentries)
+	local shiptyperanks = { }
+	local shiptypedata = { }
+	menu.getPropertyOwnedFleetDataInternal(instance, component, shiptyperanks, shiptypedata)
+	table.sort(shiptyperanks)
+	local result = { }
+
+	-- kuertee start: show idlers - do not show if 0 or component is a ship
+	-- for _, shiptyperank in ipairs(shiptyperanks) do
+	-- 	-- insert at front
+	-- 	table.insert(result, 1, shiptypedata[shiptyperank])
+	-- end
+	for _, shiptyperank in ipairs(shiptyperanks) do
+		if shiptypedata [shiptyperank].count > 0 then
+			table.insert(result, 1, shiptypedata [shiptyperank])
+		end
+	end
+	-- kuertee end: show idlers - do not show if 0 or component is a ship
+
+	-- If there are too many entries, accumulate counts in last entry and invalidate icon
+	while maxentries and #result > maxentries do
+		local removed = table.remove(result)
+		result[maxentries].count = result[maxentries].count + removed.count
+		result[maxentries].icon = nil
+	end
+	return result
+end
+function newFuncs.getPropertyOwnedFleetDataInternal(instance, component, shiptyperanks, shiptypedata)
+	local shiptyperank
+	local shipclass = "xs"
+	if IsComponentClass(component, "ship_xl") then
+		shiptyperank = 50
+		shipclass = "xl"
+	elseif IsComponentClass(component, "ship_l") then
+		shiptyperank = 40
+		shipclass = "l"
+	elseif IsComponentClass(component, "ship_m") then
+		shiptyperank = 30
+		shipclass = "m"
+	elseif IsComponentClass(component, "ship_s") then
+		shiptyperank = 20
+		shipclass = "s"
+	elseif IsComponentClass(component, "ship_xs") then
+		shiptyperank = 10
+		shipclass = "xs"
+	end
+	local purpose, icon
+	if shiptyperank then
+		purpose, icon = GetComponentData(component, "primarypurpose", "icon")
+		if purpose == "fight" then
+			shiptyperank = shiptyperank + 5
+		elseif purpose == "auxiliary" then
+			shiptyperank = shiptyperank + 4
+		elseif purpose == "trade" then
+			shiptyperank = shiptyperank + 3
+		elseif purpose == "mine" then
+			shiptyperank = shiptyperank + 2
+		elseif purpose == "build" then
+			shiptyperank = shiptyperank + 1
+		else
+			purpose = "neutral"
+		end
+		if not shiptypedata[shiptyperank] then
+			table.insert(shiptyperanks, shiptyperank)
+			shiptypedata[shiptyperank] = { icon = icon, count = 0 }
+		end
+		shiptypedata[shiptyperank].count = shiptypedata[shiptyperank].count + 1
+	end
+
+	-- kuertee start: callback
+	if callbacks ["getPropertyOwnedFleetDataInternal_addToFleetIcons"] then
+		for _, callback in ipairs (callbacks ["getPropertyOwnedFleetDataInternal_addToFleetIcons"]) do
+			callback (component, shiptyperanks, shiptypedata)
+		end
+	end
+	-- kuertee end: callback
+
+	local subordinates = menu.infoTableData[instance].subordinates[tostring(component)]
+	if subordinates == nil then
+		-- component is not rendered but we still need the subordinates for accurate fleet counts
+		subordinates = GetSubordinates(component)
+		for i = #subordinates, 1, -1 do
+			local subordinate = subordinates[i]
+			if not menu.isObjectValid(ConvertIDTo64Bit(subordinate)) then
+				table.remove(subordinates, i)
+			end
+		end
+	end
+	menu.infoTableData[instance].subordinates[tostring(component)] = subordinates
+	for _, subordinate in ipairs(subordinates) do
+		menu.getPropertyOwnedFleetDataInternal(instance, subordinate, shiptyperanks, shiptypedata)
+	end
 end
 function newFuncs.createLogbookInfoSubmenu(inputframe, instance)
 	local mode = ""
