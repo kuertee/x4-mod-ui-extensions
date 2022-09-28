@@ -78,8 +78,14 @@ local function init ()
 		mapMenu.getPropertyOwnedFleetData = newFuncs.getPropertyOwnedFleetData
 		oldFuncs.getPropertyOwnedFleetDataInternal = mapMenu.getPropertyOwnedFleetDataInternal
 		mapMenu.getPropertyOwnedFleetDataInternal = newFuncs.getPropertyOwnedFleetDataInternal
-		oldFuncs.createSubordinateSection = mapMenu.createSubordinateSection
-		mapMenu.createSubordinateSection = newFuncs.createSubordinateSection
+		oldFuncs.sortComponentListHelper = mapMenu.sortComponentListHelper
+		mapMenu.sortComponentListHelper = newFuncs.sortComponentListHelper
+		oldFuncs.updateRenderedComponents = mapMenu.updateRenderedComponents
+		mapMenu.updateRenderedComponents = newFuncs.updateRenderedComponents
+		oldFuncs.buttonExtendSubordinate = mapMenu.buttonExtendSubordinate
+		mapMenu.buttonExtendSubordinate = newFuncs.buttonExtendSubordinate
+		oldFuncs.isSubordinateExtended = mapMenu.isSubordinateExtended
+		mapMenu.isSubordinateExtended = newFuncs.isSubordinateExtended
 		-- new functions. i.e. doesn't exist in the original map menu.
 		mapMenu.setSelectComponentMode = newFuncs.setSelectComponentMode
 	end
@@ -739,6 +745,32 @@ local config = {
 		maxPlotRows = 10,
 	},
 }
+function newFuncs.buttonExtendSubordinate(name, isstation, group)
+	if menu.isSubordinateExtended(name, isstation, group) then
+
+		-- kuertee start: auto-expand subordinates
+		-- if isstation then
+		-- 	menu.extendedsubordinates[name .. group] = nil
+		-- else
+		-- 	menu.extendedsubordinates[name .. group] = false
+		-- end
+		menu.extendedsubordinates[name .. group] = false
+		-- kuertee end: auto-expand subordinates
+
+		menu.clearSelectedComponents()
+		menu.highlightedbordercomponent = ConvertStringTo64Bit(name)
+		menu.highlightedborderstationcategory = "subordinates" .. name .. group
+	else
+
+		-- kuertee start: auto-expand subordinates
+		-- menu.extendedsubordinates[name .. group] = true
+		menu.extendedsubordinates[name .. group] = nil
+		-- kuertee end: auto-expand subordinates
+
+	end
+	menu.settoprow = GetTopRow(menu.infoTable)
+	menu.createInfoFrame()
+end
 function newFuncs.buttonToggleObjectList(objectlistparam, confirmed)
 	-- kuertee start: callback
 	if callbacks ["buttonToggleObjectList_on_start"] then
@@ -1211,6 +1243,103 @@ function newFuncs.refreshInfoFrame2(setrow, setcol)
 		menu.createInfoFrame2()
 	end
 end
+function newFuncs.updateRenderedComponents()
+	menu.renderedComponents = {}
+	menu.renderedComponentsRef = {}
+	if menu.holomap and (menu.holomap ~= 0) then
+		Helper.ffiVLA(menu.renderedComponents, "UniverseID", C.GetNumMapRenderedComponents, C.GetMapRenderedComponents, menu.holomap)
+		for i = #menu.renderedComponents, 1, -1 do
+			local id = ConvertStringTo64Bit(tostring(menu.renderedComponents[i]))
+			if IsValidComponent(id) then
+				local ismasstraffic, isenemy, hull, purpose, ismodule, uirelation = GetComponentData(id, "ismasstraffic", "isenemy", "hullpercent", "primarypurpose", "ismodule", "uirelation")
+				if ismasstraffic and (not isenemy) then
+					table.remove(menu.renderedComponents, i)
+				else
+					menu.renderedComponents[i] = { id = id, name = ffi.string(C.GetComponentName(id)), fleetname = menu.getFleetName(id), objectid = ismodule and "" or ffi.string(C.GetObjectIDCode(id)), class = ffi.string(C.GetComponentClass(id)), hull = hull, purpose = purpose, relation = uirelation }
+					menu.renderedComponentsRef[ConvertStringTo64Bit(tostring(id))] = true
+				end
+			else
+				table.remove(menu.renderedComponents, i)
+			end
+		end
+
+		-- make sure the holomap is up before using the focuscomponent to init selectedcomponents
+		if #menu.renderedComponents > 0 then
+			if menu.focuscomponent then
+				menu.infoTable = nil
+				menu.highlightedbordercomponent = nil
+				menu.highlightedbordermoduletype = nil
+				menu.highlightedplannedmodule = nil
+				menu.highlightedbordersection = nil
+				menu.highlightedborderstationcategory = nil
+				menu.selectedstationcategory = nil
+				menu.highlightedconstruction = nil
+				menu.selectedconstruction = nil
+				if menu.selectfocuscomponent then
+					menu.addSelectedComponent(menu.focuscomponent)
+					menu.selectfocuscomponent = nil
+				end
+				menu.focuscomponent = nil
+			end
+		end
+	end
+
+	-- Always show target component
+	local softtarget = ConvertStringTo64Bit(tostring(C.GetSofttarget().softtargetID))
+	if softtarget ~= 0 then
+		if not menu.renderedComponentsRef[softtarget] then
+
+			-- kuertee start: add sector to the data for sorting
+			-- local hull, purpose, uirelation = GetComponentData(softtarget, "hullpercent", "primarypurpose", "uirelation")
+			-- table.insert(menu.renderedComponents, { id = softtarget, name = ffi.string(C.GetComponentName(softtarget)), fleetname = menu.getFleetName(softtarget), objectid = C.IsComponentClass(softtarget, "object") and ffi.string(C.GetObjectIDCode(softtarget)) or "", class = ffi.string(C.GetComponentClass(softtarget)), hull = hull, purpose = purpose, relation = uirelation })
+			local hull, purpose, uirelation, sector = GetComponentData (softtarget, "hullpercent", "primarypurpose", "uirelation", "sector")
+			table.insert (menu.renderedComponents, {
+				id = softtarget,
+				name = ffi.string (C.GetComponentName (softtarget)),
+				fleetname = menu.getFleetName(softtarget),
+				objectid = C.IsComponentClass (softtarget, "object") and ffi.string(C.GetObjectIDCode(softtarget)) or "",
+				class = ffi.string (C.GetComponentClass(softtarget)),
+				hull = hull,
+				purpose = purpose,
+				relation = uirelation,
+				sector = sector
+			})
+			-- kuertee end: add sector to the data for sorting
+
+			menu.renderedComponentsRef[softtarget] = true
+		end
+	end
+
+	-- Always show selected components
+	for id, _ in pairs(menu.selectedcomponents) do
+		local selectedcomponent = ConvertStringTo64Bit(id)
+		if IsValidComponent(selectedcomponent) then
+			if not menu.renderedComponentsRef[selectedcomponent] then
+
+				-- kuertee start: add sector to the data for sorting
+				-- local hull, purpose, uirelation = GetComponentData(selectedcomponent, "hullpercent", "primarypurpose", "uirelation")
+				-- table.insert(menu.renderedComponents, { id = selectedcomponent, name = ffi.string(C.GetComponentName(selectedcomponent)), fleetname = menu.getFleetName(selectedcomponent), objectid = C.IsComponentClass(selectedcomponent, "object") and ffi.string(C.GetObjectIDCode(selectedcomponent)) or "", class = ffi.string(C.GetComponentClass(selectedcomponent)), hull = hull, purpose = purpose, relation = uirelation })
+				local hull, purpose, uirelation, sector = GetComponentData(selectedcomponent, "hullpercent", "primarypurpose", "uirelation", "sector")
+				table.insert (menu.renderedComponents, {
+					id = selectedcomponent,
+					name = ffi.string (C.GetComponentName (selectedcomponent)),
+					fleetname = menu.getFleetName (selectedcomponent),
+					objectid = C.IsComponentClass (selectedcomponent, "object") and ffi.string(C.GetObjectIDCode(selectedcomponent)) or "",
+					class = ffi.string (C.GetComponentClass (selectedcomponent)),
+					hull = hull,
+					purpose = purpose,
+					relation = uirelation,
+					sector = sector
+				})
+				-- kuertee end: add sector to the data for sorting
+
+				menu.renderedComponentsRef[selectedcomponent] = true
+			end
+		end
+	end
+
+	table.sort(menu.renderedComponents, menu.componentSorter(menu.objectSorterType))
+end
 function newFuncs.componentSorter(sorttype)
 	-- kuertee start: replace name and object id sort with name and sector sort
 	-- local sorter = Helper.sortNameAndObjectID
@@ -1248,18 +1377,40 @@ function newFuncs.componentSorter(sorttype)
 	end
 	return sorter
 end
+function newFuncs.sortComponentListHelper(components, sorter)
+	local sortedComponents = {}
+	for _, component in ipairs(components) do
+		local component64 = ConvertStringTo64Bit(tostring(component))
+
+		-- kuertee start: add sector to the data for sorting
+		-- local hull, purpose, uirelation = GetComponentData(component64, "hullpercent", "primarypurpose", "uirelation")
+		-- table.insert(sortedComponents, { id = component64, name = ffi.string(C.GetComponentName(component64)), fleetname = menu.getFleetName(component64), objectid = C.IsComponentClass(component64, "object") and ffi.string(C.GetObjectIDCode(component64)) or "", class = ffi.string(C.GetComponentClass(component64)), hull = hull, purpose = purpose, relation = uirelation })
+		local hull, purpose, uirelation, sector = GetComponentData (component64, "hullpercent", "primarypurpose", "uirelation", "sector")
+		table.insert (sortedComponents, {
+			id = component64,
+			name = ffi.string (C.GetComponentName (component64)),
+			fleetname = menu.getFleetName (component64),
+			objectid = C.IsComponentClass (component64, "object") and ffi.string (C.GetObjectIDCode (component64)) or "",
+			class = ffi.string (C.GetComponentClass (component64)),
+			hull = hull,
+			purpose = purpose,
+			relation = uirelation,
+			sector = sector
+		})
+		-- kuertee end: add sector to the data for sorting
+
+	end
+	table.sort(sortedComponents, menu.componentSorter(sorter))
+	local returnvalue = {}
+	for _, entry in ipairs(sortedComponents) do
+		table.insert(returnvalue, ConvertStringToLuaID(tostring(entry.id)))
+	end
+	return returnvalue
+end
 -- kuertee start: replace name and object id sort with name and sector sort
 function newFuncs.sortNameSectorThenId(a, b, invert)
-	local sector_a = GetComponentData (ConvertStringTo64Bit (tostring (a.id)), "sectorid")
-	local sector_b = GetComponentData (ConvertStringTo64Bit (tostring (b.id)), "sectorid")
-	local sector_a_name = ""
-	if sector_a then
-		sector_a_name = ffi.string (C.GetComponentName (ConvertStringTo64Bit (tostring (sector_a))))
-	end
-	local sector_b_name = ""
-	if sector_b then
-		sector_b_name = ffi.string (C.GetComponentName (ConvertStringTo64Bit (tostring (sector_b))))
-	end
+	local sector_a_name = a.sector
+	local sector_b_name = b.sector
 	if (a.fleetname or b.fleetname) and (a.fleetname ~= b.fleetname) then
 		if a.fleetname and b.fleetname then
 			if invert then
@@ -1381,8 +1532,24 @@ function newFuncs.createPropertyOwned(frame, instance)
 		local object = playerobjects[i]
 		local object64 = ConvertIDTo64Bit(object)
 		if menu.isObjectValid(object64) then
-			local hull, purpose, uirelation = GetComponentData(object, "hullpercent", "primarypurpose", "uirelation")
-			playerobjects[i] = { id = object, name = ffi.string(C.GetComponentName(object64)), fleetname = menu.getFleetName(object64), objectid = ffi.string(C.GetObjectIDCode(object64)), class = ffi.string(C.GetComponentClass(object64)), hull = hull, purpose = purpose, relation = uirelation }
+
+			-- kuertee start: add sector to the data for sorting
+			-- local hull, purpose, uirelation = GetComponentData(object, "hullpercent", "primarypurpose", "uirelation")
+			-- playerobjects[i] = { id = object, name = ffi.string(C.GetComponentName(object64)), fleetname = menu.getFleetName(object64), objectid = ffi.string(C.GetObjectIDCode(object64)), class = ffi.string(C.GetComponentClass(object64)), hull = hull, purpose = purpose, relation = uirelation }
+			local hull, purpose, uirelation, sector = GetComponentData (object, "hullpercent", "primarypurpose", "uirelation", "sector")
+			playerobjects [i] = {
+				id = object,
+				name = ffi.string (C.GetComponentName (object64)),
+				fleetname = menu.getFleetName(object64),
+				objectid = ffi.string (C.GetObjectIDCode (object64)),
+				class = ffi.string (C.GetComponentClass (object64)),
+				hull = hull,
+				purpose = purpose,
+				relation = uirelation,
+				sector = sector
+			}
+			-- kuertee end: add sector to the data for sorting
+
 		else
 			table.remove(playerobjects, i)
 		end
@@ -1921,9 +2088,9 @@ function newFuncs.createPropertyRow(instance, ftable, component, iteration, comm
 		-- kuertee start: callback
 		if callbacks ["createPropertyRow_on_set_locationtext"] then
 			local result
-			for _, callback in ipairs (callbacks ["createPropertyRow_on_set_locationtext"]) do
+			for i, callback in ipairs (callbacks ["createPropertyRow_on_set_locationtext"]) do
 				result = callback (locationtext, component)
-				if result then
+				if result.locationtext then
 					locationtext = result.locationtext
 				end
 			end
@@ -2222,78 +2389,6 @@ function newFuncs.createPropertyRow(instance, ftable, component, iteration, comm
 				-- construction
 				if #constructions > 0 then
 					menu.createConstructionSubSection(ftable, component, constructions)
-				end
-			end
-		end
-	end
-
-	return numdisplayed
-end
-function newFuncs.createSubordinateSection(instance, ftable, component, isstation, iteration, location, numdisplayed, sorter)
-	local maxicons = menu.infoTableData[instance].maxIcons
-	local subordinates = menu.infoTableData[instance].subordinates[tostring(component)] or {}
-	subordinates = menu.sortComponentListHelper(subordinates, sorter)
-	-- setup groups
-	local groups = {}
-	for _, subordinate in ipairs(subordinates) do
-		local group = GetComponentData(subordinate, "subordinategroup")
-		if group and group > 0 then
-			if groups[group] then
-				if (not groups[group].hasrendered) and (menu.infoTableMode == "objectlist") then
-					groups[group].hasrendered = menu.renderedComponentsRef[ConvertIDTo64Bit(subordinate)]
-				end
-				table.insert(groups[group].subordinates, subordinate)
-			else
-				local isrendered = true
-				if menu.infoTableMode == "objectlist" then
-					isrendered = menu.renderedComponentsRef[ConvertIDTo64Bit(subordinate)]
-				end
-				groups[group] = { assignment = ffi.string(C.GetSubordinateGroupAssignment(ConvertIDTo64Bit(component), group)), subordinates = { subordinate }, hasrendered = isrendered }
-			end
-		end
-	end
-
-	for group = 1, 10 do
-		if groups[group] and groups[group].hasrendered then
-
-			-- kuertee start: auto-expand all subordinates of stations
-			-- local issubordinateextended = menu.isSubordinateExtended(tostring(component), isstation, group)
-			local issubordinateextended
-			if isstation then
-				issubordinateextended = true
-			else
-				issubordinateextended = menu.isSubordinateExtended(tostring(component), isstation, group)
-			end
-			-- kuertee end: auto-expand all subordinates of stations
-
-			if (not issubordinateextended) and menu.isCommander(component, group) then
-				menu.extendedsubordinates[tostring(component) .. group] = true
-				issubordinateextended = true
-			end
-			local row = ftable:addRow({"subordinates" .. tostring(component) .. group, component, group}, { bgColor = Helper.color.transparent })
-			row[1]:createButton():setText(issubordinateextended and "-" or "+", { halign = "center" })
-			row[1].handlers.onClick = function () return menu.buttonExtendSubordinate(tostring(component), isstation, group) end
-			local text = string.format(ReadText(1001, 8398), ReadText(20401, group))
-			for i = 1, iteration + 1 do
-				text = "    " .. text
-			end
-			row[2]:setColSpan(3):createText(text)
-			row[5]:setColSpan(maxicons + 1):createText(config.assignments[groups[group].assignment] and config.assignments[groups[group].assignment].name or "", { halign = "right" })
-			if menu.highlightedborderstationcategory == "subordinates" .. tostring(component) .. group then
-				menu.sethighlightborderrow = row.index
-			end
-			if issubordinateextended then
-				for _, subordinate in ipairs(groups[group].subordinates) do
-					local isdocked, subordinategroup = GetComponentData(subordinate, "isdocked", "subordinategroup")
-					local isexternaldock, parent
-					if isdocked then
-						isexternaldock = C.IsShipAtExternalDock(ConvertIDTo64Bit(subordinate))
-						parent = C.GetContextByClass(ConvertIDTo64Bit(subordinate), "container", false)
-					end
-
-					if (menu.infoTableMode ~= "objectlist") or menu.renderedComponentsRef[ConvertIDTo64Bit(subordinate)] or (isdocked and (not isexternaldock) and menu.renderedComponentsRef[ConvertStringTo64Bit(tostring(parent))]) then
-						numdisplayed = menu.createPropertyRow(instance, ftable, subordinate, iteration + 2, location, nil, nil, numdisplayed, sorter)
-					end
 				end
 			end
 		end
@@ -5372,6 +5467,16 @@ function newFuncs.onInteractiveElementChanged(element)
 			end
 		end
 	end
+end
+function newFuncs.isSubordinateExtended(name, isstation, group)
+	-- kuertee start: auto-expand subordinates
+	-- if isstation then
+	-- 	return menu.extendedsubordinates[name .. group] ~= nil
+	-- else
+	-- 	return menu.extendedsubordinates[name .. group] ~= false
+	-- end
+	return menu.extendedsubordinates[name .. group] ~= false
+	-- kuertee end: auto-expand subordinates
 end
 function newFuncs.closeContextMenu(dueToClose)
 	if Helper.closeInteractMenu() then

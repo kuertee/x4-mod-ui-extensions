@@ -5,9 +5,10 @@ by kuertee. Contributors: Forleyor, Mycu, Runekn.
 
 Updates
 =======
-v5.1.0306, 18 Sep 2022:
--Tweak: Expanding a fleet or a station will auto expand their ship sections.
--New feature: Callbacks to support Trade Analytic's new idlers and away icons and location (final sector destination) ship row data.
+v5.1.0307, 29 Sep 2022:
+-Bug-fix: Removed the stutter when the map is open. The bug was introduced when the sort by name then sector was added in a previous version.
+-Bug-fix: Trade Analytic mod's location and intended sector destination display wasn't working.
+-Bug-fix: Auto-expand feature was preventing the subordinates list from collapsing. Note that the base-game's functionality have station subordinates lists closed by default. 
 
 Instructions for players
 ========================
@@ -74,6 +75,11 @@ But here is documentation on NEW features (not connected to mod-specific changes
 QUALITY-OF-LIFE CHANGES
 =======================
 
+Map Menu: Subordinates list
+===========================
+The subordinates lists of fleets and stations are expanded by default.
+Changes the base-game functionality of the lists being closed by default for stations.
+
 Map Menu: Sort by distance
 ==========================
 The Player Owned list can be sorted by distance from the player or from the last selected object.
@@ -128,6 +134,10 @@ Troubleshooting
 
 History
 =======
+v5.1.0306, 18 Sep 2022:
+-Tweak: Expanding a fleet or a station will auto expand their ship sections.
+-New feature: Callbacks to support Trade Analytic's new idlers and away icons and location (final sector destination) ship row data.
+
 v5.1.0303, 1 Sep 2022:
 -New feature: Sort by distance from: Player or selected object in the Player Owned menu.
 -Tweak: Sort by Name is sort by name, then sector, then object id. The base-game sorting order was by name then by object id - which is useless. :D
