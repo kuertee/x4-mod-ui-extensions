@@ -130,8 +130,8 @@ function newFuncs.registerCallback (callbackName, callbackFunction)
 	-- note 4: search for the callback names to see where they are executed.
 	-- note 5: if a callback requires a return value, return it in an object var. e.g. "display_on_set_room_active" requires a return of {active = true | false}.
 	-- available callbacks:
+	-- none yet
 	-- 
-	-- NONE AT THE MOMENT
 	if callbacks [callbackName] == nil then
 		callbacks [callbackName] = {}
 	end
@@ -169,10 +169,9 @@ function newFuncs.onRenderTargetMouseDown (modified)
 	newFuncs.kuertee_offset_freeDistFrom = ffi.new ("UIPosRot")
 	local eclipticoffset = ffi.new ("UIPosRot")
 	newFuncs.kuertee_sector_freeDistFrom = C.GetMapPositionOnEcliptic2 (menu.holomap, newFuncs.kuertee_offset_freeDistFrom, false, 0, eclipticoffset)
-	-- newFuncs.debugText_forced ("kuertee_sector_freeDistFrom: " .. tostring (newFuncs.kuertee_sector_freeDistFrom))
-	-- newFuncs.debugText_forced ("kuertee_offset_freeDistFrom: " .. tostring (newFuncs.kuertee_offset_freeDistFrom))
 end
 function newFuncs.createContentTable(frame, position)
+	local menu = interactMenu
 	local x = 0
 	if position == "right" then
 		x = menu.width + Helper.borderSize
@@ -286,55 +285,57 @@ function newFuncs.createContentTable(frame, position)
 
 	-- kuertee start: add distance
 	if mapMenu and mapMenu.holomap then
-		-- newFuncs.debugText_forced ("mapMenu: " .. tostring (mapMenu))
+		newFuncs.debugText ("mapMenu: " .. tostring (mapMenu))
 		local kuertee_component_distFrom
 		local kuertee_isFreeDistFrom
 		if #menu.selectedplayerships > 0 then
-			-- newFuncs.debugText_forced ("#menu.selectedplayerships: " .. tostring (#menu.selectedplayerships))
+			newFuncs.debugText ("#menu.selectedplayerships: " .. tostring (#menu.selectedplayerships))
 			kuertee_component_distFrom = menu.selectedplayerships [1]
 		elseif #menu.selectedotherobjects > 0 then
-			-- newFuncs.debugText_forced ("#menu.selectedotherobjects: " .. tostring (#menu.selectedotherobjects))
+			newFuncs.debugText ("#menu.selectedotherobjects: " .. tostring (#menu.selectedotherobjects))
 			kuertee_component_distFrom = menu.selectedotherobjects [1]
 		elseif #menu.selectedplayerdeployables > 0 then
-			-- newFuncs.debugText_forced ("#menu.selectedplayerdeployables: " .. tostring (#menu.selectedplayerdeployables))
+			newFuncs.debugText ("#menu.selectedplayerdeployables: " .. tostring (#menu.selectedplayerdeployables))
 			kuertee_component_distFrom = menu.selectedplayerdeployables [1]
 		else
 			local kuertee_selectedComponents = {}
 			Helper.ffiVLA (kuertee_selectedComponents, "UniverseID", C.GetNumMapSelectedComponents, C.GetMapSelectedComponents, mapMenu.holomap)
 			if #kuertee_selectedComponents > 0 then
-				-- newFuncs.debugText_forced ("#kuertee_selectedComponents: " .. tostring (#kuertee_selectedComponents))
+				newFuncs.debugText ("#kuertee_selectedComponents: " .. tostring (#kuertee_selectedComponents))
 				kuertee_component_distFrom = kuertee_selectedComponents [1]
 			elseif newFuncs.kuertee_sector_freeDistFrom and newFuncs.kuertee_offset_freeDistFrom then
-				-- newFuncs.debugText_forced ("kuertee_sector_freeDistFrom: " .. tostring (newFuncs.kuertee_sector_freeDistFrom))
-				-- newFuncs.debugText_forced ("kuertee_offset_freeDistFrom: " .. tostring (newFuncs.kuertee_offset_freeDistFrom))
+				newFuncs.debugText ("kuertee_sector_freeDistFrom: " .. tostring (newFuncs.kuertee_sector_freeDistFrom))
+				newFuncs.debugText ("kuertee_offset_freeDistFrom: " .. tostring (newFuncs.kuertee_offset_freeDistFrom))
 				kuertee_isFreeDistFrom = true
 				kuertee_component_distFrom = newFuncs.kuertee_sector_freeDistFrom
 			end
 		end
-		-- newFuncs.debugText_forced ("kuertee_component_distFrom: " .. tostring (kuertee_component_distFrom))
+		newFuncs.debugText ("kuertee_component_distFrom: " .. tostring (kuertee_component_distFrom))
 		if kuertee_component_distFrom then
 			local kuertee_component_distTo
 			if menu.componentSlot.component then
-				-- newFuncs.debugText_forced ("menu.componentSlot.component: " .. tostring (menu.componentSlot.component))
+				newFuncs.debugText ("menu.componentSlot.component: " .. tostring (menu.componentSlot.component))
 				kuertee_component_distTo = ConvertStringTo64Bit (tostring (menu.componentSlot.component))
 				if kuertee_component_distTo then
 					kuertee_component_distTo = ConvertStringTo64Bit (tostring (kuertee_component_distTo))
-					-- newFuncs.debugText_forced ("kuertee_component_distTo: " .. tostring (kuertee_component_distTo))
+					newFuncs.debugText ("kuertee_component_distTo: " .. tostring (kuertee_component_distTo))
 					local kuertee_dist
 					local kuertee_isSector_distTo = C.IsComponentClass (kuertee_component_distTo, "sector")
+					local kuertee_dist_isApprox = false
 					if kuertee_isSector_distTo then
 						local kuertee_sector_check
-						-- newFuncs.debugText_forced ("kuertee_isFreeDistFrom: " .. tostring (kuertee_isFreeDistFrom))
+						newFuncs.debugText ("kuertee_isFreeDistFrom: " .. tostring (kuertee_isFreeDistFrom))
 						if kuertee_isFreeDistFrom == true then
 							kuertee_sector_check = ConvertStringTo64Bit (tostring (kuertee_component_distFrom))
 						else
 							kuertee_sector_check = GetComponentData (ConvertStringTo64Bit (tostring (kuertee_component_distFrom)), "sectorid")
 							kuertee_sector_check = ConvertStringTo64Bit (tostring (kuertee_sector_check))
 						end
-						-- newFuncs.debugText_forced ("kuertee_sector_check: " .. tostring (kuertee_sector_check))
-						local isSameSector = kuertee_sector_check == kuertee_component_distTo or kuertee_isFreeDistFrom ~= true
+						newFuncs.debugText ("kuertee_sector_check: " .. tostring (kuertee_sector_check))
+						-- local isSameSector = kuertee_sector_check == kuertee_component_distTo or kuertee_isFreeDistFrom ~= true
+						local isSameSector = kuertee_sector_check == kuertee_component_distTo
 						if isSameSector then
-							-- newFuncs.debugText_forced ("kuertee_isSector_distTo: " .. tostring (kuertee_isSector_distTo))
+							newFuncs.debugText ("kuertee_isSector_distTo: " .. tostring (kuertee_isSector_distTo))
 							local kuertee_posFrom
 							if kuertee_isFreeDistFrom then
 								kuertee_posFrom = newFuncs.kuertee_offset_freeDistFrom
@@ -342,24 +343,44 @@ function newFuncs.createContentTable(frame, position)
 								kuertee_posFrom = ffi.new ("UIPosRot")
 								kuertee_posFrom = C.GetObjectPositionInSector (kuertee_component_distFrom)
 							end
-							-- newFuncs.debugText_forced ("kuertee_posFrom: " .. tostring (kuertee_posFrom.x) .. " " .. tostring (kuertee_posFrom.y) .. " " .. tostring (kuertee_posFrom.z))
-							-- newFuncs.debugText_forced ("menu.offset: " .. tostring (menu.offset.x) .. " " .. tostring (menu.offset.y) .. " " .. tostring (menu.offset.z))
+							newFuncs.debugText ("kuertee_posFrom: " .. tostring (kuertee_posFrom.x) .. " " .. tostring (kuertee_posFrom.y) .. " " .. tostring (kuertee_posFrom.z))
+							newFuncs.debugText ("menu.offset: " .. tostring (menu.offset.x) .. " " .. tostring (menu.offset.y) .. " " .. tostring (menu.offset.z))
 							-- https://www.engineeringtoolbox.com/distance-relationship-between-two-points-d_1854.html
 							-- d = ((x2 - x1)2 + (y2 - y1)2 + (z2 - z1)2)1/2
 							local x_delta = math.abs (kuertee_posFrom.x - menu.offset.x)
 							local y_delta = math.abs (kuertee_posFrom.y - menu.offset.y)
 							local z_delta = math.abs (kuertee_posFrom.z - menu.offset.z)
-							-- newFuncs.debugText_forced ("deltas: " .. tostring (x_delta) .. " " .. tostring (y_delta) .. " " .. tostring (z_delta))
+							newFuncs.debugText ("deltas: " .. tostring (x_delta) .. " " .. tostring (y_delta) .. " " .. tostring (z_delta))
 							kuertee_dist = math.pow (math.pow (x_delta, 2) + math.pow (y_delta, 2) + math.pow (z_delta, 2), 0.5)
+						else
+							kuertee_dist_isApprox = true
+							local kuertee_posFrom
+							if kuertee_isFreeDistFrom then
+								-- free distance from sector to sector = distance of point to current sector + distance between the two sectors
+								-- kuertee_posFrom = newFuncs.kuertee_offset_freeDistFrom
+								-- local x_delta = math.abs (kuertee_posFrom.x - menu.offset.x)
+								-- local y_delta = math.abs (kuertee_posFrom.y - menu.offset.y)
+								-- local z_delta = math.abs (kuertee_posFrom.z - menu.offset.z)
+								-- kuertee_dist = math.pow (math.pow (x_delta, 2) + math.pow (y_delta, 2) + math.pow (z_delta, 2), 0.5)
+								-- kuertee_dist = kuertee_dist + C.GetDistanceBetween (kuertee_sector_check, kuertee_component_distTo)
+								kuertee_dist = 0
+							else
+								kuertee_posFrom = ffi.new ("UIPosRot")
+								kuertee_posFrom = C.GetObjectPositionInSector (kuertee_component_distFrom)
+								kuertee_dist = C.GetDistanceBetween (kuertee_component_distFrom, kuertee_component_distTo)
+							end
 						end
 					else
 						kuertee_dist = C.GetDistanceBetween (kuertee_component_distFrom, kuertee_component_distTo)
 					end
 					if kuertee_dist and kuertee_dist > 0 then
-						-- newFuncs.debugText_forced ("kuertee_dist: " .. tostring (kuertee_dist))
+						newFuncs.debugText ("kuertee_dist: " .. tostring (kuertee_dist))
 						kuertee_dist = kuertee_dist / 1000.0
 						kuertee_dist = math.floor (kuertee_dist * 100 + 0.5) / 100
 						row = ftable:addRow (false, {bgColor = Helper.color.transparent})
+						if kuertee_dist_isApprox then
+							kuertee_dist = "+/- " .. tostring(kuertee_dist)
+						end
 						local kuertee_text = ReadText (1001, 2957) .. ReadText (1001, 120) .. " " .. tostring (kuertee_dist) .. " " .. ReadText (1001, 108) -- Distance colon space X space km
 						row [1]:setColSpan (4):createText (kuertee_text, {halign = "center"})
 					end
@@ -367,7 +388,7 @@ function newFuncs.createContentTable(frame, position)
 			end
 		end
 	end
-	-- kuertee end
+	-- kuertee end: add distance
 
 	-- entries
 	local convertedComponent = ConvertStringTo64Bit(tostring(menu.componentSlot.component))
@@ -533,6 +554,7 @@ function newFuncs.createContentTable(frame, position)
 				end
 			end
 		end
+
 		if first then
 			local row = ftable:addRow(true, { bgColor = Helper.color.transparent })
 			local button = row[1]:setColSpan(4):createButton({ active = false, bgColor = Helper.color.darkgrey }):setText("---", { halign = "center", color = Helper.color.red })

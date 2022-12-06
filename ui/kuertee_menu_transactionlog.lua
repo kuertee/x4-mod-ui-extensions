@@ -25,6 +25,7 @@ function newFuncs.registerCallback (callbackName, callbackFunction)
 	-- note 5: if a callback requires a return value, return it in an object var. e.g. "display_on_set_room_active" requires a return of {active = true | false}.
 	-- available callbacks:
 	-- createFrame_on_create_transaction_log ()
+	-- cleanup()
 	--
 	if callbacks [callbackName] == nil then
 		callbacks [callbackName] = {}
@@ -35,6 +36,17 @@ end
 local config = {
 	infoLayer = 3,
 }
+function newFuncs.cleanup()
+	oldFuncs.clean()
+
+	-- start: kuertee call-back
+	if callbacks ["cleanup"] then
+		for _, callback in ipairs (callbacks ["cleanup"]) do
+			callback ()
+		end
+	end
+	-- end: kuertee call-back
+end
 function newFuncs.createFrame(toprow, selectedrow)
 	-- remove old data
 	Helper.clearDataForRefresh(menu, config.infoLayer)

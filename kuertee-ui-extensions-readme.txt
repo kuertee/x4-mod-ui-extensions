@@ -5,10 +5,10 @@ by kuertee. Contributors: Forleyor, Mycu, Runekn.
 
 Updates
 =======
-v5.1.0307, 29 Sep 2022:
--Bug-fix: Removed the stutter when the map is open. The bug was introduced when the sort by name then sector was added in a previous version.
--Bug-fix: Trade Analytic mod's location and intended sector destination display wasn't working.
--Bug-fix: Auto-expand feature was preventing the subordinates list from collapsing. Note that the base-game's functionality have station subordinates lists closed by default. 
+v5.1.0314, 06 Dec 2022:
+-Tweak: removed the right-click distance tool when measuring distance to a map point in another sector. The distance value is just wrong. But the distance between two objects across any number of sectors is still available and correct.
+-Tweak: added callback for Mission menu that allows new actions to be added. i.e. Waypoint Field for Deployments mod.
+-New features: callbacks for Station Overview menu, Station Configuration menu, and Helper API to support unreleased Trade Analytics mod features.
 
 Instructions for players
 ========================
@@ -134,6 +134,11 @@ Troubleshooting
 
 History
 =======
+v5.1.0307, 29 Sep 2022:
+-Bug-fix: Removed the stutter when the map is open. The bug was introduced when the sort by name then sector was added in a previous version.
+-Bug-fix: Trade Analytic mod's location and intended sector destination display wasn't working.
+-Bug-fix: Auto-expand feature was preventing the subordinates list from collapsing. Note that the base-game's functionality have station subordinates lists closed by default. 
+
 v5.1.0306, 18 Sep 2022:
 -Tweak: Expanding a fleet or a station will auto expand their ship sections.
 -New feature: Callbacks to support Trade Analytic's new idlers and away icons and location (final sector destination) ship row data.

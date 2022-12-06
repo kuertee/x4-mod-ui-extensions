@@ -122,6 +122,7 @@ function newFuncs.registerCallback (callbackName, callbackFunction)
 	-- createInfoFrame2_on_menu_infoModeRight (menu.infoFrame2)
 	-- createRightBar_on_start (config)
 	-- getPropertyOwnedFleetDataInternal_addToFleetIcons (component, shiptyperanks, shiptypedata)
+	-- createMissionContext_on_end(frame)
 	if callbacks [callbackName] == nil then
 		callbacks [callbackName] = {}
 	end
@@ -1409,8 +1410,8 @@ function newFuncs.sortComponentListHelper(components, sorter)
 end
 -- kuertee start: replace name and object id sort with name and sector sort
 function newFuncs.sortNameSectorThenId(a, b, invert)
-	local sector_a_name = a.sector
-	local sector_b_name = b.sector
+	local sector_a_name = a.sector or ""
+	local sector_b_name = b.sector or ""
 	if (a.fleetname or b.fleetname) and (a.fleetname ~= b.fleetname) then
 		if a.fleetname and b.fleetname then
 			if invert then
@@ -4713,6 +4714,14 @@ function newFuncs.createMissionContext(frame)
 
 	objectivetable.properties.nextTable = bottomtable.index
 	bottomtable.properties.prevTable = objectivetable.index
+
+	-- kuertee start: callback
+	if callbacks ["createMissionContext_on_end"] then
+		for _, callback in ipairs (callbacks ["createMissionContext_on_end"]) do
+			callback (frame)
+		end
+	end
+	-- kuertee end: callback
 end
 function newFuncs.onRowChanged(row, rowdata, uitable, modified, input, source)
 	-- start Forleyor_infoCenter Callback:
