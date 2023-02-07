@@ -9,8 +9,9 @@ local oldFuncs = {}
 local newFuncs = {}
 local callbacks = {}
 local isInited
+-- just copy the whole config - but ensure that all references to "menu." is correct.
 local config = {
-	layer = 3,
+	layer = 2,
 	width = 260,
 	rowHeight = 16,
 	entryFontSize = Helper.standardFontSize,
@@ -37,8 +38,10 @@ local config = {
 		{ id = "main_assignments",		text = ReadText(1001, 7803),	isorder = false },
 		{ id = "main_assignments_subsections",	text = ReadText(1001, 7805),	isorder = false,	subsections = {
 			{ id = "main_assignments_defence",				text = ReadText(20208, 40304) },
+			{ id = "main_assignments_positiondefence",		text = ReadText(20208, 41504) },
 			{ id = "main_assignments_attack",				text = ReadText(20208, 40904) },
 			{ id = "main_assignments_interception",			text = ReadText(20208, 41004) },
+			{ id = "main_assignments_bombardment",			text = ReadText(20208, 41604) },
 			{ id = "main_assignments_follow",				text = ReadText(20208, 41304) },
 			{ id = "main_assignments_supplyfleet",			text = ReadText(20208, 40704) },
 			{ id = "main_assignments_mining",				text = ReadText(20208, 40204) },
@@ -49,12 +52,14 @@ local config = {
 		}},
 		{ id = "order",					text = "",						isorder = nil },
 		{ id = "syncpoint",				text = "",						isorder = nil },
+		{ id = "intersectordefencegroup",	text = "",					isorder = nil },
 		{ id = "guidance",				text = "",						isorder = nil,		isplayerinteraction = true },
 		{ id = "player_interaction",	text = ReadText(1001, 7843),	isorder = false,	isplayerinteraction = true },
 		{ id = "consumables",			text = ReadText(1001, 7846),	isorder = false,	subsections = {
 			{ id = "consumables_civilian",	text = ReadText(1001, 7847) },
 			{ id = "consumables_military",	text = ReadText(1001, 7848) },
 		}},
+		{ id = "venturereport",			text = ReadText(1001, 12110),	isorder = false },
 		{ id = "cheats",				text = "Cheats",				isorder = false }, -- (cheat only)
 		{ id = "selected_orders_all",	text = ReadText(1001, 7804),	isorder = true,		showloop = true },
 		{ id = "selected_orders",		text = ReadText(1001, 7804),	isorder = true,		showloop = true },
@@ -64,12 +69,17 @@ local config = {
 		{ id = "venturedockoption",		text = "",						isorder = true,		showloop = true,		subsections = {
 			{ id = "venturedock",	text = "\27[order_dockandwait] " .. ReadText(1001, 7844) },
 		}},
+		{ id = "selected_disable",	text = "",	isorder = true,		subsections = {
+			{ id = "selected_disable_attack",		text = ReadText(1001, 11128),	orderid = "Attack" },
+		}},
 		{ id = "trade_orders",			text = ReadText(1001, 7861),	isorder = true,		showloop = true },
 		{ id = "selected_assignments_all", text = ReadText(1001, 7886),	isorder = true },
 		{ id = "selected_change_assignments",	text = ReadText(1001, 11119),	isorder = true,		subsections = {
 			{ id = "selected_change_assignments_defence",				text = ReadText(20208, 40304),	helpOverlayID = "interactmenu_change_assign",	helpOverlayText = " ",	helpOverlayHighlightOnly = true },
+			{ id = "selected_change_assignments_positiondefence",		text = ReadText(20208, 41504) },
 			{ id = "selected_change_assignments_attack",				text = ReadText(20208, 40904) },
 			{ id = "selected_change_assignments_interception",			text = ReadText(20208, 41004) },
+			{ id = "selected_change_assignments_bombardment",			text = ReadText(20208, 41604) },
 			{ id = "selected_change_assignments_follow",				text = ReadText(20208, 41304) },
 			{ id = "selected_change_assignments_supplyfleet",			text = ReadText(20208, 40704) },
 			{ id = "selected_change_assignments_mining",				text = ReadText(20208, 40204) },
@@ -80,8 +90,10 @@ local config = {
 		}},
 		{ id = "selected_assignments",	text = ReadText(1001, 7805),	isorder = true,		subsections = {
 			{ id = "selected_assignments_defence",				text = ReadText(20208, 40304),	helpOverlayID = "interactmenu_assign",	helpOverlayText = " ",	helpOverlayHighlightOnly = true },
+			{ id = "selected_assignments_positiondefence",		text = ReadText(20208, 41504) },
 			{ id = "selected_assignments_attack",				text = ReadText(20208, 40904) },
 			{ id = "selected_assignments_interception",			text = ReadText(20208, 41004) },
+			{ id = "selected_assignments_bombardment",			text = ReadText(20208, 41604) },
 			{ id = "selected_assignments_follow",				text = ReadText(20208, 41304) },
 			{ id = "selected_assignments_supplyfleet",			text = ReadText(20208, 40704) },
 			{ id = "selected_assignments_mining",				text = ReadText(20208, 40204) },
@@ -99,8 +111,10 @@ local config = {
 
 	assignments = {
 		["defence"]					= { name = ReadText(20208, 40304) },
+		["positiondefence"]			= { name = ReadText(20208, 41504) },
 		["attack"]					= { name = ReadText(20208, 40904) },
 		["interception"]			= { name = ReadText(20208, 41004) },
+		["bombardment"]				= { name = ReadText(20208, 41604) },
 		["follow"]					= { name = ReadText(20208, 41304) },
 		["supplyfleet"]				= { name = ReadText(20208, 40704) },
 		["mining"]					= { name = ReadText(20208, 40204) },
@@ -177,9 +191,10 @@ function newFuncs.createContentTable(frame, position)
 		x = menu.width + Helper.borderSize
 	end
 
-	local ftable = frame:addTable(4, { tabOrder = menu.subsection and 2 or 1, x = x, width = menu.width, backgroundID = "solid", backgroundColor = Helper.color.semitransparent, highlightMode = "off" })
+	local ftable = frame:addTable(5, { tabOrder = menu.subsection and 2 or 1, x = x, width = menu.width, backgroundID = "solid", backgroundColor = Helper.color.semitransparent, highlightMode = "off" })
 	ftable:setDefaultCellProperties("text",   { minRowHeight = config.rowHeight, fontsize = config.entryFontSize, x = config.entryX })
 	ftable:setDefaultCellProperties("button", { height = config.rowHeight })
+	ftable:setDefaultCellProperties("checkbox", { height = config.rowHeight, width = config.rowHeight })
 	ftable:setDefaultComplexCellProperties("button", "text", { fontsize = config.entryFontSize, x = config.entryX })
 	ftable:setDefaultComplexCellProperties("button", "text2", { fontsize = config.entryFontSize, x = config.entryX })
 
@@ -190,7 +205,7 @@ function newFuncs.createContentTable(frame, position)
 	end
 
 	local modetext = ReadText(1001, 7804)
-	if (not menu.syncpoint) and (not menu.syncpointorder) and (not menu.mission) and (not menu.missionoffer) then
+	if (not menu.syncpoint) and (not menu.syncpointorder) and (not menu.intersectordefencegroup) and (not menu.mission) and (not menu.missionoffer) then
 		if (not menu.showPlayerInteractions) and (#menu.selectedplayerships > 0) then
 			if #menu.actions["selected_orders_all"] > 0 then
 				modetext = ReadText(1001, 7804)
@@ -233,11 +248,12 @@ function newFuncs.createContentTable(frame, position)
 			"\n   #menu.selectedplayerships: " .. tostring(#menu.selectedplayerships) ..
 			"\n   #menu.selectedotherobjects: " .. tostring(#menu.selectedotherobjects) ..
 			"\n   #menu.ventureships: " .. tostring(#menu.ventureships) ..
-			"\n   showPlayerInteractions: " .. tostring(menu.texts.showPlayerInteractions) ..
-			"\n   syncpoint: " .. tostring(menu.texts.syncpoint) ..
-			"\n   syncpointorder: " .. tostring(menu.texts.syncpointorder) ..
-			"\n   mission: " .. tostring(menu.texts.mission) ..
-			"\n   missionoffer: " .. tostring(menu.texts.missionoffer) ..
+			"\n   showPlayerInteractions: " .. tostring(menu.showPlayerInteractions) ..
+			"\n   syncpoint: " .. tostring(menu.syncpoint) ..
+			"\n   syncpointorder: " .. tostring(menu.syncpointorder) ..
+			"\n   intersectordefencegroup: " .. tostring(menu.intersectordefencegroup) ..
+			"\n   mission: " .. tostring(menu.mission) ..
+			"\n   missionoffer: " .. tostring(menu.missionoffer) ..
 			"\n   #menu.actions['selected_orders_all']: " .. tostring(#menu.actions["selected_orders_all"]) ..
 			"\n   #menu.actions['selected_orders']: " .. tostring(#menu.actions["selected_orders"]) ..
 			"\n   #menu.actions['trade_orders']: " .. tostring(#menu.actions["trade_orders"]) ..
@@ -250,36 +266,38 @@ function newFuncs.createContentTable(frame, position)
 	local modetextwidth = math.ceil(math.max(0.2 * menu.width + 2 * Helper.borderSize, C.GetTextWidth(" " .. modetext .. " ", Helper.standardFontBold, Helper.scaleFont(Helper.standardFont, Helper.headerRow1FontSize, true))))
 	local bordericonsize = Helper.scaleX(Helper.headerRow1Height)
 	local borderwidth = math.ceil(math.max(bordericonsize, (menu.width - modetextwidth - 2 * Helper.borderSize) / 2))
+	borderwidth = math.max(borderwidth, Helper.scaleX(config.rowHeight) + Helper.borderSize + 1)
 
-	ftable:setColWidth(1, borderwidth, false)
-	ftable:setColWidth(3, math.ceil(0.4 * menu.width - borderwidth - Helper.borderSize), false)
-	ftable:setColWidth(4, borderwidth, false)
+	ftable:setColWidth(1, config.rowHeight)
+	ftable:setColWidth(2, borderwidth - Helper.scaleX(config.rowHeight) - Helper.borderSize, false)
+	ftable:setColWidth(4, math.ceil(0.4 * menu.width - borderwidth - Helper.borderSize), false)
+	ftable:setColWidth(5, borderwidth, false)
 	ftable:setDefaultBackgroundColSpan(1, 4)
-	ftable:setDefaultColSpan(1, 2)
-	ftable:setDefaultColSpan(3, 2)
+	ftable:setDefaultColSpan(1, 3)
+	ftable:setDefaultColSpan(4, 2)
 
 	local height = 0
-	if (((not menu.showPlayerInteractions) and (#menu.selectedplayerships > 0)) or ((#menu.selectedplayerships == 0) and (#menu.selectedotherobjects > 0))) and (not menu.syncpoint) and (not menu.syncpointorder) and (not menu.mission) and (not menu.missionoffer) then
+	if (((not menu.showPlayerInteractions) and (#menu.selectedplayerships > 0)) or ((#menu.selectedplayerships == 0) and (#menu.selectedotherobjects > 0))) and (not menu.syncpoint) and (not menu.syncpointorder) and (not menu.intersectordefencegroup) and (not menu.mission) and (not menu.missionoffer) then
 		-- modemarker
 		local row = ftable:addRow(false, { bgColor = Helper.color.transparent })
-		row[1]:setColSpan(1):createIcon("be_diagonal_01", { width = bordericonsize, height = bordericonsize, x = borderwidth - bordericonsize + Helper.borderSize, scaling = false, color = Helper.defaultTitleTrapezoidBackgroundColor })
-		row[3]:setColSpan(1)
-		row[2]:setColSpan(2)
-		local width = row[2]:getColSpanWidth() + Helper.scrollbarWidth + Helper.borderSize
-		row[2]:createIcon("solid", { height = bordericonsize, width = width, scaling = false, color = Helper.defaultTitleTrapezoidBackgroundColor }):setText(modetext, { font = Helper.headerRow1Font, fontsize = Helper.scaleFont(Helper.headerRow1Font, Helper.headerRow1FontSize, true), halign = "center", x = math.ceil((width - Helper.borderSize) / 2) })
-		row[4]:setColSpan(1):createIcon("be_diagonal_02", { width = bordericonsize, height = bordericonsize, scaling = false, color = Helper.defaultTitleTrapezoidBackgroundColor })
+		row[1]:setBackgroundColSpan(5):setColSpan(2):createIcon("be_diagonal_01", { width = bordericonsize, height = bordericonsize, x = borderwidth - bordericonsize + Helper.borderSize, scaling = false, color = Helper.defaultTitleTrapezoidBackgroundColor })
+		row[4]:setColSpan(1)
+		row[3]:setColSpan(2)
+		local width = row[3]:getColSpanWidth() + Helper.scrollbarWidth + Helper.borderSize
+		row[3]:createIcon("solid", { height = bordericonsize, width = width, scaling = false, color = Helper.defaultTitleTrapezoidBackgroundColor }):setText(modetext, { font = Helper.headerRow1Font, fontsize = Helper.scaleFont(Helper.headerRow1Font, Helper.headerRow1FontSize, true), halign = "center", x = math.ceil((width- Helper.borderSize) / 2) })
+		row[5]:setColSpan(1):createIcon("be_diagonal_02", { width = bordericonsize, height = bordericonsize, scaling = false, color = Helper.defaultTitleTrapezoidBackgroundColor })
 		height = height + row:getHeight() + Helper.borderSize
 	end
 	-- title
 	local row = ftable:addRow(false, { bgColor = Helper.color.transparent })
 	text = TruncateText(text, Helper.standardFontBold, Helper.scaleFont(Helper.standardFontBold, Helper.headerRow1FontSize), menu.width - Helper.scaleX(Helper.standardButtonWidth) - 2 * config.entryX)
-	row[1]:setColSpan(4):createText(text, Helper.headerRowCenteredProperties)
+	row[1]:setColSpan(5):createText(text, Helper.headerRowCenteredProperties)
 	row[1].properties.color = color
 	height = height + row:getHeight() + Helper.borderSize
-	if menu.subordinategroup and (#menu.selectedplayerships == 0) then
+	if (menu.subordinategroup or menu.intersectordefencegroup) and (#menu.selectedplayerships == 0) then
 		row[1].properties.titleColor = nil
 		local row = ftable:addRow(nil, { bgColor = Helper.color.transparent })
-		row[1]:setColSpan(4):createText(string.format(ReadText(1001, 8398), ReadText(20401, menu.subordinategroup)), Helper.headerRowCenteredProperties)
+		row[1]:setColSpan(5):createText(string.format(ReadText(1001, 8398), ReadText(20401, menu.subordinategroup or menu.intersectordefencegroup)), Helper.headerRowCenteredProperties)
 		row[1].properties.color = color
 	end
 
@@ -398,7 +416,7 @@ function newFuncs.createContentTable(frame, position)
 	end
 
 	local skipped = false
-	if (not menu.syncpoint) and (not menu.syncpointorder) and (not menu.mission) and (not menu.missionoffer) then
+	if (not menu.syncpoint) and (not menu.syncpointorder) and (not menu.intersectordefencegroup) and (not menu.mission) and (not menu.missionoffer) then
 		if (#menu.selectedplayerships == 0) and (#menu.selectedotherobjects > 0) then
 			-- show the player that they cannot do anything with their selection
 			menu.noopreason = {}
@@ -436,23 +454,23 @@ function newFuncs.createContentTable(frame, position)
 			end
 
 			local row = ftable:addRow(true, { bgColor = Helper.color.darkgrey })
-			row[1]:setColSpan(4):createText(reason, { wordwrap = true, color = Helper.color.grey })
+			row[1]:setColSpan(5):createText(reason, { wordwrap = true, color = Helper.color.grey })
 			skipped = true
 		elseif isonlinetarget and isplayerownedtarget then
 			local row = ftable:addRow(true, { fixed = true, bgColor = Helper.color.darkgrey })
-			row[1]:setColSpan(4):createText(ReadText(1001, 7868), { wordwrap = true, color = Helper.color.grey })
+			row[1]:setColSpan(5):createText(ReadText(1001, 7868), { wordwrap = true, color = Helper.color.grey })
 			skipped = true
 		elseif (#menu.ventureships > 0) and (#menu.selectedplayerships == 0) then
 			local row = ftable:addRow(true, { fixed = true, bgColor = Helper.color.darkgrey })
-			row[1]:setColSpan(4):createText(ReadText(1001, 7868), { wordwrap = true, color = Helper.color.grey })
+			row[1]:setColSpan(5):createText(ReadText(1001, 7868), { wordwrap = true, color = Helper.color.grey })
 			skipped = true
 		elseif (menu.numorderloops > 0) and (#menu.selectedplayerships ~= menu.numorderloops) then
 			local row = ftable:addRow(true, { fixed = true, bgColor = Helper.color.darkgrey })
-			row[1]:setColSpan(4):createText(ReadText(1001, 11108), { wordwrap = true, color = Helper.color.grey })
+			row[1]:setColSpan(5):createText(ReadText(1001, 11108), { wordwrap = true, color = Helper.color.grey })
 			skipped = true
 		elseif (menu.numorderloops > 1) then
 			local row = ftable:addRow(true, { fixed = true, bgColor = Helper.color.darkgrey })
-			row[1]:setColSpan(4):createText(ReadText(1001, 11109), { wordwrap = true, color = Helper.color.grey })
+			row[1]:setColSpan(5):createText(ReadText(1001, 11109), { wordwrap = true, color = Helper.color.grey })
 			skipped = true
 		end
 	end
@@ -481,14 +499,14 @@ function newFuncs.createContentTable(frame, position)
 							local data = { id = subsection.id, y = height }
 							local row = ftable:addRow(data, { bgColor = Helper.color.transparent })
 							local iconHeight = Helper.scaleY(config.rowHeight)
-							local button = row[1]:setColSpan(4):createButton({
+							local button = row[1]:setColSpan(5):createButton({
 								bgColor = #menu.actions[subsection.id] > 0 and Helper.color.transparent or Helper.color.darkgrey,
 								highlightColor = #menu.actions[subsection.id] > 0 and Helper.defaultButtonHighlightColor or Helper.defaultUnselectableButtonHighlightColor,
 								mouseOverText = (#menu.actions[subsection.id] > 0) and "" or menu.forceSubSection[subsection.id],
 								helpOverlayID = subsection.helpOverlayID,
 								helpOverlayText = subsection.helpOverlayText,
 								helpOverlayHighlightOnly = subsection.helpOverlayHighlightOnly,
-							}):setText(subsection.text, { color = Helper.color.white }):setIcon("table_arrow_inv_right", { scaling = false, width = iconHeight, height = iconHeight, x = menu.width - iconHeight })
+							}):setText((subsection.orderid and menu.orderIconText(subsection.orderid) or "") .. subsection.text, { color = Helper.color.white }):setIcon("table_arrow_inv_right", { scaling = false, width = iconHeight, height = iconHeight, x = menu.width - iconHeight })
 							row[1].handlers.onClick = function () return menu.handleSubSectionOption(data, true) end
 							height = height + row:getHeight() + Helper.borderSize
 						end
@@ -512,38 +530,50 @@ function newFuncs.createContentTable(frame, position)
 							entry.active = true
 						end
 						local row = ftable:addRow(true, { bgColor = Helper.color.transparent })
-						local button = row[1]:setColSpan(4):createButton({
-							bgColor = entry.active and Helper.color.transparent or Helper.color.darkgrey,
-							highlightColor = entry.active and Helper.defaultButtonHighlightColor or Helper.defaultUnselectableButtonHighlightColor,
-							mouseOverText = entry.mouseOverText,
-							helpOverlayID = entry.helpOverlayID,
-							helpOverlayText = entry.helpOverlayText,
-							helpOverlayHighlightOnly = entry.helpOverlayHighlightOnly,
-						}):setText(entry.text, { color = entry.active and Helper.color.white or Helper.color.lightgrey })
-						button.properties.uiTriggerID = entry.type
-						if (section.id == "selected_orders") or (section.id == "trade_orders") or (section.id == "selected_assignments") or (section.id == "player_interaction") or (section.id == "trade") then
-							if not entry.hidetarget then
-								local text2 = ""
-								if entry.text2 then
-									text2 = entry.text2
-								else
-									if ((section.id == "trade_orders") or (section.id == "trade") or (section.id == "player_interaction")) and entry.buildstorage then
-										text2 = menu.texts.buildstorageName
+						if entry.checkbox ~= nil then
+							row[1]:setColSpan(1):createCheckBox(entry.checkbox, { active = entry.active, mouseOverText = entry.mouseOverText })
+							row[1].properties.uiTriggerID = entry.type
+							row[2]:setColSpan(4):createText(entry.text, {
+								color = entry.active and Helper.color.white or Helper.color.lightgrey,
+								mouseOverText = entry.mouseOverText,
+								helpOverlayID = entry.helpOverlayID,
+								helpOverlayText = entry.helpOverlayText,
+								helpOverlayHighlightOnly = entry.helpOverlayHighlightOnly,
+							})
+						else
+							local button = row[1]:setColSpan(5):createButton({
+								bgColor = entry.active and Helper.color.transparent or Helper.color.darkgrey,
+								highlightColor = entry.active and Helper.defaultButtonHighlightColor or Helper.defaultUnselectableButtonHighlightColor,
+								mouseOverText = entry.mouseOverText,
+								helpOverlayID = entry.helpOverlayID,
+								helpOverlayText = entry.helpOverlayText,
+								helpOverlayHighlightOnly = entry.helpOverlayHighlightOnly,
+							}):setText(entry.text, { color = entry.active and Helper.color.white or Helper.color.lightgrey })
+							button.properties.uiTriggerID = entry.type
+							if (section.id == "selected_orders") or (section.id == "trade_orders") or (section.id == "selected_assignments") or (section.id == "player_interaction") or (section.id == "trade") then
+								if not entry.hidetarget then
+									local text2 = ""
+									if entry.text2 then
+										text2 = entry.text2
 									else
-										text2 = menu.texts.targetBaseName or menu.texts.targetShortName
+										if ((section.id == "trade_orders") or (section.id == "trade") or (section.id == "player_interaction")) and entry.buildstorage then
+											text2 = menu.texts.buildstorageName
+										else
+											text2 = menu.texts.targetBaseName or menu.texts.targetShortName
+										end
+									end
+									text2 = TruncateText(text2, button.properties.text.font, Helper.scaleFont(button.properties.text.font, button.properties.text.fontsize, button.properties.scaling), availabletextwidth)
+									button:setText2(text2, { halign = "right", color = menu.colors.target })
+									if (entry.mouseOverText == nil) or (entry.mouseOverText == "") then
+										button.properties.mouseOverText = entry.text .. " " .. (entry.buildstorage and menu.texts.buildstorageFullName or menu.texts.targetName)
 									end
 								end
-								text2 = TruncateText(text2, button.properties.text.font, Helper.scaleFont(button.properties.text.font, button.properties.text.fontsize, button.properties.scaling), availabletextwidth)
-								button:setText2(text2, { halign = "right", color = menu.colors.target })
-								if (entry.mouseOverText == nil) or (entry.mouseOverText == "") then
-									button.properties.mouseOverText = entry.text .. " " .. (entry.buildstorage and menu.texts.buildstorageFullName or menu.texts.targetName)
+							elseif (section.id == "main") then
+								if entry.text2 then
+									local text2 = entry.text2
+									text2 = TruncateText(text2, button.properties.text.font, Helper.scaleFont(button.properties.text.font, button.properties.text.fontsize, button.properties.scaling), availabletextwidth)
+									button:setText2(text2, { halign = "right", color = menu.colors.target })
 								end
-							end
-						elseif (section.id == "main") then
-							if entry.text2 then
-								local text2 = entry.text2
-								text2 = TruncateText(text2, button.properties.text.font, Helper.scaleFont(button.properties.text.font, button.properties.text.fontsize, button.properties.scaling), availabletextwidth)
-								button:setText2(text2, { halign = "right", color = menu.colors.target })
 							end
 						end
 						if entry.active then
@@ -557,7 +587,7 @@ function newFuncs.createContentTable(frame, position)
 
 		if first then
 			local row = ftable:addRow(true, { bgColor = Helper.color.transparent })
-			local button = row[1]:setColSpan(4):createButton({ active = false, bgColor = Helper.color.darkgrey }):setText("---", { halign = "center", color = Helper.color.red })
+			local button = row[1]:setColSpan(5):createButton({ active = false, bgColor = Helper.color.darkgrey }):setText("---", { halign = "center", color = Helper.color.red })
 		end
 	end
 

@@ -54,12 +54,12 @@ function newFuncs.requestUpdate (adj)
 		topLevelMenu.refresh = getElapsedTime () + adj
 	end
 end
--- config = {} required because Helper.clearDataForRefresh(menu, config.infoLayer) in createInfoFrame ()
+-- just copy the whole config - but ensure that all references to "menu." is correct.
 local config = {
 	width = Helper.sidebarWidth,
 	height = Helper.sidebarWidth,
 	offsetY = 0,
-	layer = 3,
+	layer = 2,
 	mouseOutRange = 100,
 }
 local pullDownArrowsHeight = Helper.sidebarWidth

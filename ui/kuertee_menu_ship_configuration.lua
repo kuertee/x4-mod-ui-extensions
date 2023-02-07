@@ -31,11 +31,11 @@ function newFuncs.registerCallback (callbackName, callbackFunction)
 	end
 	table.insert (callbacks [callbackName], callbackFunction)
 end
-
+-- just copy the whole config - but ensure that all references to "menu." is correct.
 local config = {
 	mainLayer = 5,
 	infoLayer = 4,
-	contextLayer = 3,
+	contextLayer = 2,
 	classorder = { "ship_xl", "ship_l", "ship_m", "ship_s", "ship_xs" },
 	leftBar = {
 		{ name = ReadText(1001, 1103),	icon = "shipbuildst_engine",		mode = "engine",		iscapship = false },
@@ -79,7 +79,6 @@ local config = {
 		{ "upgradeplan" },
 		{ "crew" },
 		{ "editingshoppinglist" },
-		{ "searchtext" },
 		{ "loadoutName" },
 		{ "captainSelected", "bool" },
 		{ "validLicence", "bool" },
@@ -109,6 +108,7 @@ local config = {
 		{ id = "DeployableCapacity",		name = ReadText(1001, 8064),	unit = "",					type = "UINT",		accuracy = 0 },
 		{ id = "CountermeasureCapacity",	name = ReadText(1001, 8063),	unit = "",					type = "UINT",		accuracy = 0 },
 		{ id = "" },
+		{ id = "" },
 		-- new column
 		{ id = "ForwardSpeed",				name = ReadText(1001, 8051),	unit = ReadText(1001, 113),	type = "float",		accuracy = 0 },
 		{ id = "ForwardAcceleration",		name = ReadText(1001, 8069),	unit = ReadText(1001, 111),	type = "float",		accuracy = 0 },
@@ -123,6 +123,7 @@ local config = {
 		{ id = "ContainerCapacity",			name = ReadText(1001, 8058),	unit = ReadText(1001, 110),	type = "UINT",		accuracy = 0 },
 		{ id = "SolidCapacity",				name = ReadText(1001, 8059),	unit = ReadText(1001, 110),	type = "UINT",		accuracy = 0 },
 		{ id = "LiquidCapacity",			name = ReadText(1001, 8060),	unit = ReadText(1001, 110),	type = "UINT",		accuracy = 0 },
+		{ id = "CondensateCapacity",		name = ReadText(20109, 9801),	unit = ReadText(1001, 110),	type = "UINT",		accuracy = 0 },
 		{ id = "" },
 		{ id = "NumDocksShipMedium",		name = ReadText(1001, 8524),	unit = "",					type = "UINT",		accuracy = 0 },
 		{ id = "NumDocksShipSmall",			name = ReadText(1001, 8525),	unit = "",					type = "UINT",		accuracy = 0 },
@@ -154,6 +155,7 @@ local config = {
 	maxSidePanelWidth = 800,
 	maxCenterPanelWidth = 1600,
 	compatibilityFontSize = 5,
+	equipmentfilter_races_width = 300,
 }
 function newFuncs.displaySlots(frame, firsttime)
 	local menu = shipConfigurationMenu
@@ -182,10 +184,22 @@ function newFuncs.displaySlots(frame, firsttime)
 					if upgradetype2.supertype == "group" then
 						menu.groupedupgrades[upgradetype2.grouptype] = {}
 						for i, macro in ipairs(upgradegroup[upgradetype2.grouptype].possiblemacros) do
-							if (menu.searchtext == "") or menu.filterUpgradeByText(macro, menu.searchtext) then
+							local macroname, makerrace, makerracename = GetMacroData(macro, "name", "makerraceid", "makerracename")
+							for race_i, race in ipairs(makerrace) do
+								if (not menu.equipmentfilter_races[race]) then
+									menu.equipmentfilter_races[race] = { id = race, name = makerracename[race_i] }
+								end
+								if (not menu.equipmentfilter_races[race].upgradeTypes) then
+									menu.equipmentfilter_races[race].upgradeTypes = {}
+								end
+								if (not menu.equipmentfilter_races[race].upgradeTypes[menu.upgradetypeMode]) then
+									menu.equipmentfilter_races[race].upgradeTypes[menu.upgradetypeMode] = true
+								end
+							end
+							if (#menu.equipmentsearchtext == 0) or menu.filterUpgradeByText(macro, menu.equipmentsearchtext) then
 								local group = math.ceil(upgradegroupcount / 3)
 								menu.groupedupgrades[upgradetype2.grouptype][group] = menu.groupedupgrades[upgradetype2.grouptype][group] or {}
-								table.insert(menu.groupedupgrades[upgradetype2.grouptype][group], { macro = macro, icon = (C.IsIconValid("upgrade_" .. macro) and ("upgrade_" .. macro) or "upgrade_notfound"), name = GetMacroData(macro, "name") })
+								table.insert(menu.groupedupgrades[upgradetype2.grouptype][group], { macro = macro, icon = (C.IsIconValid("upgrade_" .. macro) and ("upgrade_" .. macro) or "upgrade_notfound"), name = macroname })
 								upgradegroupcount = upgradegroupcount + 1
 							end
 						end
@@ -217,8 +231,20 @@ function newFuncs.displaySlots(frame, firsttime)
 				local component = menu.object
 				local group = math.ceil(count / 3)
 				local macro = GetComponentData(ConvertStringTo64Bit(tostring(component)), "macro")
+				local macroname, makerrace, makerracename = GetMacroData(macro, "name", "makerraceid", "makerracename")
+				for race_i, race in ipairs(makerrace) do
+					if (not menu.equipmentfilter_races[race]) then
+						menu.equipmentfilter_races[race] = { id = race, name = makerracename[race_i] }
+					end
+					if (not menu.equipmentfilter_races[race].upgradeTypes) then
+						menu.equipmentfilter_races[race].upgradeTypes = {}
+					end
+					if (not menu.equipmentfilter_races[race].upgradeTypes[menu.upgradetypeMode]) then
+						menu.equipmentfilter_races[race].upgradeTypes[menu.upgradetypeMode] = true
+					end
+				end
 				menu.groupedupgrades[group] = menu.groupedupgrades[group] or {}
-				table.insert(menu.groupedupgrades[group], { macro = macro, icon = (C.IsIconValid("ship_" .. macro) and ("ship_" .. macro) or "ship_notfound"), name = GetMacroData(macro, "name"), component = component })
+				table.insert(menu.groupedupgrades[group], { macro = macro, icon = (C.IsIconValid("ship_" .. macro) and ("ship_" .. macro) or "ship_notfound"), name = macroname, component = component })
 				count = count + 1
 			end
 			rowcount = rowcount + math.ceil(count / 3)
@@ -226,10 +252,22 @@ function newFuncs.displaySlots(frame, firsttime)
 			if #slots > 0 then
 				if (upgradetype.supertype == "macro") or (upgradetype.supertype == "virtualmacro") then
 					for i, macro in ipairs(slots[menu.currentSlot].possiblemacros) do
-						if (menu.searchtext == "") or menu.filterUpgradeByText(macro, menu.searchtext) then
+						local macroname, makerrace, makerracename = GetMacroData(macro, "name", "makerraceid", "makerracename")
+						for race_i, race in ipairs(makerrace) do
+							if (not menu.equipmentfilter_races[race]) then
+								menu.equipmentfilter_races[race] = { id = race, name = makerracename[race_i] }
+							end
+							if (not menu.equipmentfilter_races[race].upgradeTypes) then
+								menu.equipmentfilter_races[race].upgradeTypes = {}
+							end
+							if (not menu.equipmentfilter_races[race].upgradeTypes[menu.upgradetypeMode]) then
+								menu.equipmentfilter_races[race].upgradeTypes[menu.upgradetypeMode] = true
+							end
+						end
+						if (#menu.equipmentsearchtext == 0) or menu.filterUpgradeByText(macro, menu.equipmentsearchtext) then
 							local group = math.ceil(count / 3)
 							menu.groupedupgrades[group] = menu.groupedupgrades[group] or {}
-							table.insert(menu.groupedupgrades[group], { macro = macro, icon = (C.IsIconValid("upgrade_" .. macro) and ("upgrade_" .. macro) or "upgrade_notfound"), name = GetMacroData(macro, "name") })
+							table.insert(menu.groupedupgrades[group], { macro = macro, icon = (C.IsIconValid("upgrade_" .. macro) and ("upgrade_" .. macro) or "upgrade_notfound"), name = macroname })
 							count = count + 1
 						end
 					end
@@ -557,11 +595,50 @@ function newFuncs.displaySlots(frame, firsttime)
 
 		ftable:addEmptyRow(Helper.standardTextHeight / 2)
 
+		-- local editboxheight = math.max(23, Helper.scaleY(Helper.standardTextHeight))
+		local rowy = ftable:getFullHeight()
 		local row = ftable:addRow(true, { fixed = true })
-		row[1]:setColSpan(10):createEditBox({  }):setText(menu.searchtext, {  }):setHotkey("INPUT_STATE_DETAILMONITOR_0", { displayIcon = true })
+		local issearchandfilteractive = menu.upgradetypeMode ~= "crew" and menu.upgradetypeMode ~= "repair" and menu.upgradetypeMode ~= "settings"
+		row[1]:setColSpan(10):createEditBox({ active = issearchandfilteractive, defaultText = ReadText(1001, 3250), scaling = true }):setText("", { x = Helper.standardTextOffsetx }):setHotkey("INPUT_STATE_DETAILMONITOR_0", { displayIcon = true })
 		row[1].handlers.onEditBoxDeactivated = menu.editboxSearchUpdateText
-		row[11]:createButton({ height = menu.rowHeight }):setText("X", { halign = "center", font = Helper.standardFontBold })
-		row[11].handlers.onClick = function () return menu.buttonClearEditbox(row.index) end
+		menu.equipmentsearch_editboxrow = row.index
+		row[11]:createButton({ active = issearchandfilteractive, height = menu.rowHeight }):setIcon("menu_filter")
+		menu.equipmentfilter_races_y = menu.slotData.offsetY + rowy + Helper.borderSize
+		row[11].handlers.onClick = function () return menu.buttonEquipmentFilter(menu.equipmentfilter_races_y) end
+
+		if #menu.equipmentsearchtext > 0 and issearchandfilteractive then
+			table.sort(menu.equipmentsearchtext, function (a, b)
+				if a.race == b.race then
+					return a.text < b.text
+				end
+				if (a.race == "generic") or (b.race == "generic") then
+					return a.race == "generic"
+				end
+				return a.text < b.text
+			end)
+			local row = ftable:addRow((#menu.equipmentsearchtext > 0), { fixed = true, bgColor = Helper.color.transparent })
+			local searchindex = 0
+			local cols = { 1, 5, 8 }
+			for i = 1, math.min(3, #menu.equipmentsearchtext) do
+				searchindex = searchindex + 1
+				local truncatedString = TruncateText(menu.equipmentsearchtext[i].text, Helper.standardFont, Helper.scaleFont(Helper.standardFont, Helper.standardFontSize), row[cols[i]]:getWidth() - 3 * Helper.scaleX(10))
+				if i < 3 or #menu.equipmentsearchtext <= 3 then
+					row[cols[i]]:createButton({ scaling = true, height = Helper.standardTextHeight, mouseOverText = (truncatedString ~= menu.equipmentsearchtext[i].text) and menu.equipmentsearchtext[i].text or "" }):setText(truncatedString, { halign = "center" }):setText2("X", { halign = "right" })
+				else
+					row[cols[i]]:setColSpan(2):createButton({ scaling = true, height = Helper.standardTextHeight, mouseOverText = (truncatedString ~= menu.equipmentsearchtext[i].text) and menu.equipmentsearchtext[i].text or "" }):setText(truncatedString, { halign = "center" }):setText2("X", { halign = "right" })
+				end
+				if menu.equipmentsearchtext[i].race then
+					row[cols[i]]:setIcon("menu_filter", { width = Helper.standardTextHeight, height = Helper.standardTextHeight })
+				end
+				row[cols[i]].handlers.onClick = function () return menu.buttonRemoveSearchEntry(i) end
+			end
+			if #menu.equipmentsearchtext > 3 then
+				row[10]:setColSpan(2):createText(string.format("%+d", #menu.equipmentsearchtext - 3), { scaling = true })
+			end
+		end
+
+		local row = ftable:addEmptyRow(Helper.standardTextHeight / 2)
+		row.properties.fixed = true
 
 		if next(menu.groupedupgrades) then
 			if (menu.upgradetypeMode == "enginegroup") or (menu.upgradetypeMode == "turretgroup") then
@@ -691,7 +768,7 @@ function newFuncs.displaySlots(frame, firsttime)
 													end
 												end
 
-												hasstock = upgradeware.isFromShipyard or ((menu.groups[menu.currentSlot][upgradetype2.grouptype].currentmacro == group[i].macro) and (not menu.objectgroup))
+												hasstock = upgradeware.isFromShipyard or (menu.groups[menu.currentSlot][upgradetype2.grouptype].currentmacro == group[i].macro)
 											end
 
 											local amounttext = ""
@@ -726,7 +803,7 @@ function newFuncs.displaySlots(frame, firsttime)
 													end
 												end
 											end
-											local active = ((group[i].macro == plandata.macro) or (not hasmod)) and hasstock
+											local active = ((group[i].macro == plandata.macro) or (not hasmod)) 
 
 											-- start: mycu call-back
 											if callbacks ["displaySlots_on_before_create_button_mouseovertext"] then
@@ -739,22 +816,23 @@ function newFuncs.displaySlots(frame, firsttime)
 											end
 											-- end: mycu call-back
 
+											local useable = hasstock and haslicence
 											row[column]:createButton({
 												active = active,
 												width = columnWidths[i],
 												height = maxColumnWidth,
 												mouseOverText = mouseovertext,
-												bgColor = haslicence and Helper.defaultButtonBackgroundColor or Helper.defaultUnselectableButtonBackgroundColor,
-												highlightColor = haslicence and Helper.defaultButtonHighlightColor or Helper.defaultUnselectableButtonHighlightColor,
+												bgColor = useable and Helper.defaultButtonBackgroundColor or Helper.defaultUnselectableButtonBackgroundColor,
+												highlightColor = useable and Helper.defaultButtonHighlightColor or Helper.defaultUnselectableButtonHighlightColor,
 											}):setIcon(group[i].icon):setIcon2(installicon, { color = installcolor }):setText(icon, { y = maxColumnWidth / 2 - Helper.scaleY(Helper.standardTextHeight) / 2 - Helper.configButtonBorderSize, halign = "right", color = overridecolor, fontsize = Helper.scaleFont(Helper.standardFont, Helper.standardFontSize) }):setText2(weaponicon, { x = 3, y = -maxColumnWidth / 2 + Helper.scaleY(Helper.standardTextHeight) / 2 + Helper.configButtonBorderSize, fontsize = Helper.scaleFont(Helper.standardFont, Helper.standardFontSize) })
-											if haslicence then
+											if useable then
 												row[column].handlers.onClick = function () return menu.buttonSelectGroupUpgrade(upgradetype2.type, menu.currentSlot, group[i].macro, row.index, column) end
 											end
 											if group[i].macro ~= "" then
 												row[column].handlers.onRightClick = function (...) return menu.buttonInteract({ type = upgradetype2.type, name = group[i].name, macro = group[i].macro }, ...) end
 											end
 
-											row2[column]:createBoxText(extraText, { width = columnWidths[i], fontsize = menu.extraFontSize, color = overridecolor, boxColor = haslicence and Helper.defaultButtonBackgroundColor or Helper.defaultUnselectableButtonBackgroundColor, mouseOverText = untruncatedExtraText })
+											row2[column]:createBoxText(extraText, { width = columnWidths[i], fontsize = menu.extraFontSize, color = overridecolor, boxColor = (active and useable) and Helper.defaultButtonBackgroundColor or Helper.defaultUnselectableButtonBackgroundColor, mouseOverText = untruncatedExtraText })
 										end
 									end
 									if (maxVisibleHeight == nil) and row.index >= config.maxSlotRows then
@@ -942,7 +1020,7 @@ function newFuncs.displaySlots(frame, firsttime)
 									end
 								end
 
-								hasstock = upgradeware.isFromShipyard or ((slots[menu.currentSlot].currentmacro == group[i].macro) and (not menu.objectgroup))
+								hasstock = upgradeware.isFromShipyard or (slots[menu.currentSlot].currentmacro == group[i].macro)
 							end
 
 							local amounttext = ""
@@ -991,22 +1069,23 @@ function newFuncs.displaySlots(frame, firsttime)
 							end
 							-- end: mycu call-back
 
-							local active = ((group[i].macro == plandata.macro) or (not hasmod)) and hasstock
+							local active = ((group[i].macro == plandata.macro) or (not hasmod))
+							local useable = hasstock and haslicence
 							row[column]:createButton({
 								active = active,
 								width = columnWidths[i],
 								height = maxColumnWidth,
 								mouseOverText = mouseovertext,
-								bgColor = haslicence and Helper.defaultButtonBackgroundColor or Helper.defaultUnselectableButtonBackgroundColor,
-								highlightColor = haslicence and Helper.defaultButtonHighlightColor or Helper.defaultUnselectableButtonHighlightColor,
+								bgColor = useable and Helper.defaultButtonBackgroundColor or Helper.defaultUnselectableButtonBackgroundColor,
+								highlightColor = useable and Helper.defaultButtonHighlightColor or Helper.defaultUnselectableButtonHighlightColor,
 							}):setIcon(group[i].icon):setIcon2(installicon, { color = installcolor }):setText(icon, { y = maxColumnWidth / 2 - Helper.scaleY(Helper.standardTextHeight) / 2 - Helper.configButtonBorderSize, halign = "right", color = overridecolor, fontsize = Helper.scaleFont(Helper.standardFont, Helper.standardFontSize) }):setText2(weaponicon, { x = 3, y = -maxColumnWidth / 2 + Helper.scaleY(Helper.standardTextHeight) / 2 + Helper.configButtonBorderSize, fontsize = Helper.scaleFont(Helper.standardFont, Helper.standardFontSize) })
-							if haslicence then
+							if useable then
 								row[column].handlers.onClick = function () return menu.buttonSelectUpgradeMacro(menu.upgradetypeMode, menu.currentSlot, group[i].macro, row.index, column) end
 							end
 							if group[i].macro ~= "" then
 								row[column].handlers.onRightClick = function (...) return menu.buttonInteract({ type = menu.upgradetypeMode, name = group[i].name, macro = group[i].macro }, ...) end
 							end
-							row2[column]:createBoxText(extraText, { width = columnWidths[i], fontsize = menu.extraFontSize, color = overridecolor, boxColor = haslicence and Helper.defaultButtonBackgroundColor or Helper.defaultUnselectableButtonBackgroundColor, mouseOverText = untruncatedExtraText })
+							row2[column]:createBoxText(extraText, { width = columnWidths[i], fontsize = menu.extraFontSize, color = overridecolor, boxColor = (active and useable) and Helper.defaultButtonBackgroundColor or Helper.defaultUnselectableButtonBackgroundColor, mouseOverText = untruncatedExtraText })
 						end
 					end
 					if (maxVisibleHeight == nil) and row.index >= config.maxSlotRows then
@@ -1056,7 +1135,19 @@ function newFuncs.displaySlots(frame, firsttime)
 								local first = true
 								local sortedammo = Helper.orderedKeys(menu.ammo[upgradetype.type], menu.sortAmmo)
 								for _, macro in ipairs(sortedammo) do
-									if (menu.searchtext == "") or menu.filterUpgradeByText(macro, menu.searchtext) then
+									local macroname, makerrace, makerracename = GetMacroData(macro, "name", "makerraceid", "makerracename")
+									for race_i, race in ipairs(makerrace) do
+										if (not menu.equipmentfilter_races[race]) then
+											menu.equipmentfilter_races[race] = { id = race, name = makerracename[race_i] }
+										end
+										if (not menu.equipmentfilter_races[race].upgradeTypes) then
+											menu.equipmentfilter_races[race].upgradeTypes = {}
+										end
+										if (not menu.equipmentfilter_races[race].upgradeTypes[menu.upgradetypeMode]) then
+											menu.equipmentfilter_races[race].upgradeTypes[menu.upgradetypeMode] = true
+										end
+									end
+									if (#menu.equipmentsearchtext == 0) or menu.filterUpgradeByText(macro, menu.equipmentsearchtext) then
 										local row = menu.displayAmmoSlot(ftable, upgradetype.type, macro, total, capacity, first)
 										first = false
 										if (maxVisibleHeight == nil) and row and row.index >= config.maxSlotRows then
@@ -1326,6 +1417,84 @@ function newFuncs.displaySlots(frame, firsttime)
 				end
 			elseif menu.upgradetypeMode == "settings" then
 				-- settings
+				-- blacklists
+				local row = ftable:addRow(false, { bgColor = Helper.defaultHeaderBackgroundColor })
+				row[1]:setColSpan(11):setBackgroundColSpan(10):createText(ReadText(1001, 9143), menu.subHeaderTextProperties)
+
+				local blacklists = Helper.getBlackLists()
+
+				local purpose = GetMacroData(menu.macro, "primarypurpose")
+				local group = ((purpose == "fight") or (purpose == "auxiliary")) and "military" or "civilian"
+				local types = {
+					{ type = "sectortravel",	name = ReadText(1001, 9165) },
+					{ type = "sectoractivity",	name = ReadText(1001, 9166) },
+					{ type = "objectactivity",	name = ReadText(1001, 9167) },
+				}
+				for i, entry in ipairs(types) do
+					row = ftable:addRow(false, { scaling = true, bgColor = Helper.color.transparent })
+					row[1]:setColSpan(11):createText(entry.name .. ReadText(1001, 120))
+
+					local blacklistid = menu.settings.blacklists[entry.type] or 0
+
+					local rowdata = "orders_blacklist_" .. entry.type .. "_global"
+					local row = ftable:addRow({ rowdata }, { scaling = true, bgColor = Helper.color.transparent })
+					row[1]:setColSpan(1):createCheckBox(blacklistid == 0, { width = Helper.standardTextHeight, height = Helper.standardTextHeight })
+					row[1].handlers.onClick = function(_, checked) menu.settings.blacklists[entry.type] = checked and 0 or -1; menu.refreshMenu() end
+					row[2]:setColSpan(10):createText(ReadText(1001, 8367))
+
+					local locresponses = {
+						{ id = -1, text = ReadText(1001, 7726), icon = "", displayremoveoption = false },
+					}
+
+					local defaultblacklistid = -1
+					for _, blacklist in ipairs(blacklists) do
+						if blacklist.type == entry.type then
+							if blacklist.defaults[group] then
+								defaultblacklistid = blacklist.id
+							end
+							table.insert(locresponses, { id = blacklist.id, text = blacklist.name, icon = "", displayremoveoption = false })
+						end
+					end
+					local row = ftable:addRow("orders_resupply", { scaling = true, bgColor = Helper.color.transparent })
+					row[1]:setColSpan(10):createDropDown(locresponses, { startOption = (blacklistid ~= 0) and blacklistid or defaultblacklistid, active = blacklistid ~= 0 })
+					row[1].handlers.onDropDownConfirmed = function (_, id) menu.settings.blacklists[entry.type] = tonumber(id) end
+					row[11]:createButton({ mouseOverText = ReadText(1026, 8413) }):setIcon("menu_edit")
+					row[11].handlers.onClick = menu.buttonEditBlacklist
+
+					ftable:addEmptyRow()
+				end
+
+				-- fight rules
+				local row = ftable:addRow(false, { bgColor = Helper.defaultHeaderBackgroundColor })
+				row[1]:setColSpan(11):setBackgroundColSpan(10):createText(ReadText(1001, 7753), menu.subHeaderTextProperties)
+
+				local fightrules = Helper.getFightRules()
+
+				local fightruleid = menu.settings.fightrules["attack"] or 0
+
+				local rowdata = "orders_fightrule_attack_global"
+				local row = ftable:addRow({ rowdata }, { scaling = true, bgColor = Helper.color.transparent })
+				row[1]:setColSpan(1):createCheckBox(fightruleid == 0, { width = config.mapRowHeight, height = config.mapRowHeight })
+				row[1].handlers.onClick = function(_, checked) menu.settings.fightrules["attack"] = checked and 0 or -1; menu.refreshMenu() end
+				row[2]:setColSpan(10):createText(ReadText(1001, 8367))
+
+				local locresponses = {
+					{ id = -1, text = ReadText(1001, 7726), icon = "", displayremoveoption = false },
+				}
+
+				local defaultfightruleid = -1
+				for _, fightrule in ipairs(fightrules) do
+					if fightrule.defaults["attack"] then
+						defaultfightruleid = fightrule.id
+					end
+					table.insert(locresponses, { id = fightrule.id, text = fightrule.name, icon = "", displayremoveoption = false })
+				end
+				local row = ftable:addRow("orders_resupply", { scaling = true, bgColor = Helper.color.transparent })
+				row[1]:setColSpan(10):createDropDown(locresponses, { startOption = (fightruleid ~= 0) and fightruleid or defaultfightruleid, active = fightruleid ~= 0 })
+				row[1].handlers.onDropDownConfirmed = function (_, id) menu.settings.fightrules["attack"] = tonumber(id) end
+				row[11]:createButton({ mouseOverText = ReadText(1026, 8414) }):setIcon("menu_edit")
+				row[11].handlers.onClick = menu.buttonEditFightRule
+
 				-- missile launchers
 				local hasmissilelauncher = false
 				for slot, data in pairs(menu.upgradeplan.weapon) do
@@ -1337,6 +1506,8 @@ function newFuncs.displaySlots(frame, firsttime)
 					end
 				end
 				if hasmissilelauncher then
+					ftable:addEmptyRow()
+
 					local row = ftable:addRow(false, { bgColor = Helper.defaultHeaderBackgroundColor })
 					row[1]:setColSpan(11):setBackgroundColSpan(10):createText(ReadText(1001, 9030), menu.subHeaderTextProperties)
 					for slot, data in pairs(menu.upgradeplan.weapon) do
@@ -1356,6 +1527,8 @@ function newFuncs.displaySlots(frame, firsttime)
 					end
 				end
 				if hasindividualturrets then
+					ftable:addEmptyRow()
+
 					local row = ftable:addRow(false, { bgColor = Helper.defaultHeaderBackgroundColor })
 					row[1]:setColSpan(11):setBackgroundColSpan(10):createText(ReadText(1001, 1319), menu.subHeaderTextProperties)
 					for slot, data in pairs(menu.upgradeplan.turret) do
@@ -1366,6 +1539,8 @@ function newFuncs.displaySlots(frame, firsttime)
 				end
 				-- turret groups
 				if next(menu.upgradeplan.turretgroup) then
+					ftable:addEmptyRow()
+
 					local row = ftable:addRow(false, { bgColor = Helper.defaultHeaderBackgroundColor })
 					row[1]:setColSpan(11):setBackgroundColSpan(10):createText(ReadText(1001, 7901), menu.subHeaderTextProperties)
 					for slot, groupdata in pairs(menu.upgradeplan.turretgroup) do

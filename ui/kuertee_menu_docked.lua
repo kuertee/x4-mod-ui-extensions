@@ -40,7 +40,7 @@ function newFuncs.registerCallback (callbackName, callbackFunction)
 	end
 	table.insert (callbacks [callbackName], callbackFunction)
 end
--- only have config stuff here that are used in this file
+-- just copy the whole config - but ensure that all references to "menu." is correct.
 local config = {
 	modes = {
 		[1] = { id = "travel",			name = ReadText(1002, 1158),	stoptext = ReadText(1002, 1159),	action = 303 },
@@ -660,8 +660,16 @@ function newFuncs.display()
 							local salvageactive = (groups[i].numassignabletugships == #groups[i].subordinates) and ((not usedassignments["salvage"]) or (usedassignments["salvage"] == i))
 							table.insert(subordinateassignments, { id = "salvage", text = ReadText(20208, 41401), icon = "", displayremoveoption = false, active = salvageactive, mouseovertext = salvageactive and "" or ReadText(1026, 8610) })
 						elseif C.IsComponentClass(menu.currentplayership, "ship") then
+							-- position defence
+							local shiptype = GetComponentData(menu.currentplayership, "shiptype")
+							local parentcommander = ConvertIDTo64Bit(GetCommander(menu.currentplayership))
+							local isfleetcommander = (not parentcommander) and (#subordinates > 0)
+							if (shiptype == "carrier") and isfleetcommander then
+								table.insert(subordinateassignments, { id = "positiondefence", text = ReadText(20208, 41501), icon = "", displayremoveoption = false })
+							end
 							table.insert(subordinateassignments, { id = "attack", text = ReadText(20208, 40901), icon = "", displayremoveoption = false })
 							table.insert(subordinateassignments, { id = "interception", text = ReadText(20208, 41001), icon = "", displayremoveoption = false })
+							table.insert(subordinateassignments, { id = "bombardment", text = ReadText(20208, 41601), icon = "", displayremoveoption = false })
 							table.insert(subordinateassignments, { id = "follow", text = ReadText(20208, 41301), icon = "", displayremoveoption = false })
 							local active = true
 							local mouseovertext = ""
@@ -671,7 +679,7 @@ function newFuncs.display()
 								mouseovertext = ReadText(1026, 8606)
 							end
 							table.insert(subordinateassignments, { id = "assist", text = ReadText(20208, 41201), icon = "", displayremoveoption = false, active = active, mouseovertext = mouseovertext })
-							if GetComponentData(menu.currentplayership, "shiptype") == "resupplier" then
+							if shiptype == "resupplier" then
 								table.insert(subordinateassignments, { id = "trade", text = ReadText(20208, 40101), icon = "", displayremoveoption = false })
 							end
 						end
@@ -696,7 +704,7 @@ function newFuncs.display()
 						local row = table_header:addRow("subordinate_config", { bgColor = Helper.color.transparent })
 						row[1]:createText(function () menu.updateSubordinateGroupInfo(); return ReadText(20401, i) .. (menu.subordinategroups[i] and (" (" .. ((not C.ShouldSubordinateGroupDockAtCommander(menu.currentplayership, i)) and ((#menu.subordinategroups[i].subordinates - menu.subordinategroups[i].numdockedatcommander) .. "/") or "") .. #menu.subordinategroups[i].subordinates ..")") or "") end, { color = isblocked and Helper.color.warningorange or nil })
 						row[2]:setColSpan(5):createDropDown(subordinateassignments, { startOption = function () menu.updateSubordinateGroupInfo(); return menu.subordinategroups[i] and menu.subordinategroups[i].assignment or "" end })
-						row[2].handlers.onDropDownConfirmed = function (_, newassignment) C.SetSubordinateGroupAssignment(menu.currentplayership, i, newassignment) end
+						row[2].handlers.onDropDownConfirmed = function(_, newassignment) Helper.dropdownAssignment(_, nil, i, menu.currentplayership, newassignment) end
 						
 						-- Start Reactive Docking callback
 						local rd_callbackVal

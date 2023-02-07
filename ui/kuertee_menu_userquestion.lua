@@ -39,9 +39,10 @@ function newFuncs.registerCallback (callbackName, callbackFunction)
 	end
 	table.insert (callbacks [callbackName], callbackFunction)
 end
+-- just copy the whole config - but ensure that all references to "menu." is correct.
 local config = {
 	width = 400,
-	layer = 3,
+	layer = 2,
 	saveOptionVersion = 1,
 }
 function newFuncs.cleanup()

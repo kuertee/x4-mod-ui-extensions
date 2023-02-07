@@ -5,10 +5,12 @@ by kuertee. Contributors: Forleyor, Mycu, Runekn.
 
 Updates
 =======
-v5.1.0314, 06 Dec 2022:
--Tweak: removed the right-click distance tool when measuring distance to a map point in another sector. The distance value is just wrong. But the distance between two objects across any number of sectors is still available and correct.
--Tweak: added callback for Mission menu that allows new actions to be added. i.e. Waypoint Field for Deployments mod.
--New features: callbacks for Station Overview menu, Station Configuration menu, and Helper API to support unreleased Trade Analytics mod features.
+v6.0.0001, 07 Feb 2023:
+-Tweak: Compatibility with 6.0 public beta
+-Removed: Sort by Name, then Sector, then Id Code. Already in the 6.x base game.
+-Removed: Logbook entries of non-player-owned properties. Already in the 6.x base game.
+-Removed: Auto-expand of subordinates list. Already in the 6.x base game.
+-Removed: Mission progress in the mission objective list. Already in the 6.x base game.
 
 Instructions for players
 ========================
@@ -134,6 +136,11 @@ Troubleshooting
 
 History
 =======
+v5.1.0314, 06 Dec 2022:
+-Tweak: removed the right-click distance tool when measuring distance to a map point in another sector. The distance value is just wrong. But the distance between two objects across any number of sectors is still available and correct.
+-Tweak: added callback for Mission menu that allows new actions to be added. i.e. Waypoint Field for Deployments mod.
+-New features: callbacks for Station Overview menu, Station Configuration menu, and Helper API to support unreleased Trade Analytics mod features.
+
 v5.1.0307, 29 Sep 2022:
 -Bug-fix: Removed the stutter when the map is open. The bug was introduced when the sort by name then sector was added in a previous version.
 -Bug-fix: Trade Analytic mod's location and intended sector destination display wasn't working.

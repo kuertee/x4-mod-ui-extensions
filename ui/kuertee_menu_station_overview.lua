@@ -40,10 +40,11 @@ function newFuncs.registerCallback (callbackName, callbackFunction)
 	end
 	table.insert (callbacks [callbackName], callbackFunction)
 end
+-- just copy the whole config - but ensure that all references to "menu." is correct.
 local config = {
 	mainFrameLayer = 5,
 	expandedMenuFrameLayer = 4,
-	contextFrameLayer = 3,
+	contextFrameLayer = 2,
 	nodeoffsetx = 30,
 	nodewidth = 270,
 	dronetypes = { 

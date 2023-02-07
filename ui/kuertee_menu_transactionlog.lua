@@ -32,9 +32,11 @@ function newFuncs.registerCallback (callbackName, callbackFunction)
 	end
 	table.insert (callbacks [callbackName], callbackFunction)
 end
--- only have config stuff here that are used in this file
+-- just copy the whole config - but ensure that all references to "menu." is correct.
 local config = {
-	infoLayer = 3,
+	infoLayer = 4,
+	contextLayer = 2,
+	mouseOutRange = 100,
 }
 function newFuncs.cleanup()
 	oldFuncs.clean()
@@ -52,6 +54,7 @@ function newFuncs.createFrame(toprow, selectedrow)
 	Helper.clearDataForRefresh(menu, config.infoLayer)
 
 	local frameProperties = {
+		layer = config.infoLayer,
 		standardButtons = {},
 		width = Helper.viewWidth,
 		height = Helper.viewHeight,

@@ -47,12 +47,12 @@ function newFuncs.registerCallback (callbackName, callbackFunction)
 	end
 	table.insert (callbacks [callbackName], callbackFunction)
 end
--- only have config stuff here that are used in this file
+-- just copy the whole config - but ensure that all references to "menu." is correct.
 local config = {
 	mode = "empire",
 	mainLayer = 5,
 	infoLayer = 4,
-	contextLayer = 3,
+	contextLayer = 2,
 	rowHeight = 17,
 	leftBar = {
 		{ name = ReadText(1001, 7717),		icon = "pi_empire",					mode = "empire",			active = true, helpOverlayID = "playerinfo_sidebar_empire",			helpOverlayText = ReadText(1028, 7701) },
@@ -68,7 +68,7 @@ local config = {
 		{ name = ReadText(1001, 7708),		icon = "pi_accountmanagement",		mode = "accounts",			active = true, helpOverlayID = "playerinfo_sidebar_accounts",		helpOverlayText = ReadText(1028, 7713) },
 		{ name = ReadText(1001, 11034),		icon = "pi_personnelmanagement",	mode = "personnel",			active = true, helpOverlayID = "playerinfo_sidebar_personnel",		helpOverlayText = ReadText(1028, 7718) },
 		{ spacing = true },
-		{ name = ReadText(1001, 7730),		icon = function () return menu.messageSidebarIcon() end,		mode = "messages",			active = true, helpOverlayID = "playerinfo_sidebar_messages",		helpOverlayText = ReadText(1028, 7712),		iconcolor = function () return menu.messageSidebarIconColor() end },
+		{ name = ReadText(1001, 7730),		icon = function () return playerInfoMenu.messageSidebarIcon() end,		mode = "messages",			active = true, helpOverlayID = "playerinfo_sidebar_messages",		helpOverlayText = ReadText(1028, 7712),		iconcolor = function () return playerInfoMenu.messageSidebarIconColor() end },
 		{ name = ReadText(1001, 7702),		icon = "pi_transactionlog",			mode = "transactionlog",	active = true, helpOverlayID = "playerinfo_sidebar_transactions",	helpOverlayText = ReadText(1028, 7719) },
 		{ name = ReadText(1001, 5700),		icon = "pi_logbook",				mode = "logbook",			active = true, helpOverlayID = "playerinfo_sidebar_logbook",		helpOverlayText = ReadText(1028, 7711) },
 	},
@@ -88,8 +88,6 @@ local config = {
 		{ name = ReadText(1001, 5714),	icon = "logbook_alerts",	mode = "alerts" },
 		{ name = ReadText(1001, 5704),	icon = "logbook_upkeep",	mode = "upkeep" },
 		{ name = ReadText(1001, 5708),	icon = "logbook_tips",		mode = "tips" },
-		-- { empty = true,		online = true }, -- TODO onlineUI
-		-- { name = ReadText(1001, 11319),	icon = "vt_logbook",		mode = "online",	online = true }, -- TODO onlineUI
 	},
 	logbookPage = 100,
 	logbookQueryLimit = 1000,
@@ -125,7 +123,6 @@ local config = {
 	},
 	inventoryTabs = {
 		{ category = "normal",	name = ReadText(1001, 2202),	icon = "pi_inventory",			helpOverlayID = "playerinfo_inventory_normal",		helpOverlayText = ReadText(1028, 7703) },
-		{ category = "online",	name = ReadText(1001, 7720),	icon = "vt_inventory_player",	helpOverlayID = "playerinfo_inventory_online",		helpOverlayText = ReadText(1028, 3269) },
 	},
 	blacklistTypes = {
 		[1] = { id = "sectortravel",	text = ReadText(1001, 9165), icon = "", displayremoveoption = false, mouseovertext = ReadText(1026, 9101), shorttext = ReadText(1001, 9162) },
@@ -388,11 +385,11 @@ function newFuncs.createFactions(frame, tableProperties)
 		for i, relation in ipairs(menu.relations) do
 			local shortname = GetFactionData(relation.id, "shortname")
 			row = infotable:addRow({ "faction", relation }, { bgColor = Helper.color.transparent })
-			row[1]:createIcon((relation.icon ~= "") and relation.icon or "solid", { height = iconheight, x = iconoffset, color = function () return menu.relationColor(relation.id) end })
-			row[2]:createText("[" .. shortname .. "] " .. relation.name, { fontsize = 14, color = function () return menu.relationColor(relation.id) end, y = 2 * iconoffset, minRowHeight = iconheight + 2 * iconoffset })
+			row[1]:createIcon((relation.icon ~= "") and relation.icon or "solid", { height = iconheight, x = iconoffset, color = function () return menu.relationColor(relation.id) end, mouseOverText = function () local prioritizedrelationrangename = GetFactionData(relation.id, "prioritizedrelationrangename"); return prioritizedrelationrangename end })
+			row[2]:createText("[" .. shortname .. "] " .. relation.name, { fontsize = 14, color = function () return menu.relationColor(relation.id) end, y = 2 * iconoffset, minRowHeight = iconheight + 2 * iconoffset, mouseOverText = function () local prioritizedrelationrangename = GetFactionData(relation.id, "prioritizedrelationrangename"); return prioritizedrelationrangename end })
 			row[3]:createText(
 				function () return string.format("%+d", GetUIRelation(relation.id)) end,
-				{ font = Helper.standardFontMono, color = function () return menu.relationColor(relation.id) end, fontsize = 14, halign = "right", y = 2 * iconoffset })
+				{ font = Helper.standardFontMono, color = function () return menu.relationColor(relation.id) end, fontsize = 14, halign = "right", y = 2 * iconoffset, mouseOverText = function () local prioritizedrelationrangename = GetFactionData(relation.id, "prioritizedrelationrangename"); return prioritizedrelationrangename end })
 		end
 	end
 	infotable:setTopRow(menu.settoprow)

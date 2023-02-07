@@ -36,10 +36,11 @@ function newFuncs.registerCallback (callbackName, callbackFunction)
 	end
 	table.insert (callbacks [callbackName], callbackFunction)
 end
+-- just copy the whole config - but ensure that all references to "menu." is correct.
 local config = {
 	mainLayer = 5,
 	infoLayer = 4,
-	contextLayer = 3,
+	contextLayer = 2,
 	leftBar = {
 		{ name = ReadText(1001, 2421),	icon = "stationbuildst_production",		mode = "moduletypes_production",	helpOverlayID = "stationbuildst_production",	helpOverlayText = ReadText(1028, 3250)  },
 		{ name = ReadText(1001, 2439),	icon = "stationbuildst_buildmodule",	mode = "moduletypes_build",			helpOverlayID = "stationbuildst_buildmodule",	helpOverlayText = ReadText(1028, 3251)  },
@@ -279,6 +280,44 @@ function newFuncs.displayPlan(frame)
 			row[5]:setColSpan(2):createDropDown(loadoutOptions, { startOption = function () return tostring(menu.defaultLoadout) end }):setTextProperties({ halign = "center" })
 			row[5].handlers.onDropDownConfirmed = menu.dropdownDefaultLoadout
 
+			-- preferred build method
+			local row = modulestatustable:addRow(false, { bgColor = Helper.defaultTitleBackgroundColor })
+			row[1]:setColSpan(6):createText(ReadText(1001, 11298), menu.headerTextProperties)
+
+			local cursetting = ffi.string(C.GetContainerBuildMethod(menu.container))
+			local curglobalsetting = ffi.string(C.GetPlayerBuildMethod())
+			local foundcursetting = false
+			local locresponses = {}
+			local n = C.GetNumPlayerBuildMethods()
+			if n > 0 then
+				local buf = ffi.new("ProductionMethodInfo[?]", n)
+				n = C.GetPlayerBuildMethods(buf, n)
+				for i = 0, n - 1 do
+					local id = ffi.string(buf[i].id)
+					-- check if the curglobalsetting (which can be the method of the player's race) is in the list of options
+					if id == curglobalsetting then
+						foundcursetting = true
+					end
+					table.insert(locresponses, { id = id, text = ffi.string(buf[i].name), icon = "", displayremoveoption = false })
+				end
+			end
+			-- if the setting is not in the list, default to default (if the race method is not in the list, there is no ware that has this method and it will always use default)
+			if not foundcursetting then
+				curglobalsetting = "default"
+			end
+			local hasownsetting = cursetting ~= ""
+
+			local rowdata = "info_buildrule_global"
+			local row = modulestatustable:addRow({ rowdata }, { bgColor = Helper.color.transparent })
+			row[1]:setColSpan(5):createText(ReadText(1001, 8367))
+			row[6]:createCheckBox(not hasownsetting, { width = config.mapRowHeight, height = config.mapRowHeight })
+			row[6].handlers.onClick = function(_, checked) return menu.checkboxSetBuildRuleOverride(menu.container, checked, curglobalsetting) end
+
+			local row = modulestatustable:addRow("info_buildrule", { bgColor = Helper.color.transparent })
+			row[1]:setColSpan(6):createDropDown(locresponses, { height = Helper.standardTextHeight, startOption = hasownsetting and cursetting or curglobalsetting, active = hasownsetting }):setTextProperties({ fontsize = config.mapFontSize })
+			row[1].handlers.onDropDownConfirmed = function (_, id) return menu.dropdownBuildRule(menu.container, id) end
+			row[1].handlers.onDropDownActivated = function () menu.noupdate = true end
+
 			-- module status here
 			local row = modulestatustable:addRow(false, { fixed = true, bgColor = Helper.defaultTitleBackgroundColor })
 			row[1]:setColSpan(6):createText(ReadText(1001, 7991), menu.headerTextProperties)
@@ -314,9 +353,14 @@ function newFuncs.displayPlan(frame)
 				row[4].handlers.onClick = menu.buttonCancelCancel
 			else
 				local row = modulestatustable:addRow(true, { fixed = true, bgColor = Helper.defaultTitleBackgroundColor })
-				row[1]:setColSpan(3):createButton({ helpOverlayID = "confirm_modulechanges", helpOverlayText = " ",  helpOverlayHighlightOnly = true, active = menu.confirmModuleChangesActive }):setText(ReadText(1001, 7919), { halign = "center" })
-				row[1].handlers.onClick = menu.buttonConfirm
-				row[1].properties.uiTriggerID = "confirmmodulechanges"
+				if (ffi.string(C.GetGameStartName()) == "x4ep1_gamestart_workshop") and (not menu.confirmModuleChangesActive()) and ((C.GetCurrentBuildProgress(menu.container) >= 0) or C.IsBuildWaitingForSecondaryComponentResources(menu.container)) then
+					row[1]:setColSpan(3):createButton({ helpOverlayID = "force_modulechanges", helpOverlayText = " ",  helpOverlayHighlightOnly = true, active = true }):setText(ReadText(1001, 11919), { halign = "center" })
+					row[1].handlers.onClick = menu.buttonForceBuild
+				else
+					row[1]:setColSpan(3):createButton({ helpOverlayID = "confirm_modulechanges", helpOverlayText = " ",  helpOverlayHighlightOnly = true, active = menu.confirmModuleChangesActive }):setText(ReadText(1001, 7919), { halign = "center" })
+					row[1].handlers.onClick = menu.buttonConfirm
+					row[1].properties.uiTriggerID = "confirmmodulechanges"
+				end
 				row[4]:setColSpan(3):createButton({ helpOverlayID = "cancel_modulechanges", helpOverlayText = " ",  helpOverlayHighlightOnly = true, active = menu.haschanges }):setText(ReadText(1001, 7918), { halign = "center" })
 				row[4].handlers.onClick = menu.buttonCancel
 				row[4].properties.uiTriggerID = "cancelmodulechanges"
