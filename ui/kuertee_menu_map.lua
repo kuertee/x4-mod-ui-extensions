@@ -3454,6 +3454,12 @@ function menu.setupLogbookInfoSubmenuRows(mode, inputtable, inputobject, instanc
 	end
 end
 function newFuncs.createMissionMode(frame)
+	-- kuertee start: bug-fix of sideBarWidth being nil
+	if menu.sideBarWidth == nil then
+		menu.sideBarWidth = Helper.scaleX(Helper.sidebarWidth)
+	end
+	-- kuertee end: bug-fix of sideBarWidth being nil
+
 	menu.setrow = 3
 	menu.missionDoNotUpdate = true
 
