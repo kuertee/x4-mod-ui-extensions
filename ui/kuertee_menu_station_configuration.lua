@@ -122,7 +122,7 @@ function newFuncs.displayPlan(frame)
 			ftable = frame:addTable(5, { tabOrder = 3, width = menu.planData.width, maxVisibleHeight = 0.4 * Helper.viewHeight, x = menu.planData.offsetX, y = menu.planData.offsetY, reserveScrollBar = true, backgroundID = "solid", backgroundColor = Helper.color.transparent60 })
 			ftable:setColWidth(1, Helper.scaleY(Helper.standardTextHeight), false)
 			ftable:setColWidth(2, Helper.scaleY(Helper.standardTextHeight), false)
-			ftable:setColWidth(4, 0.3 * menu.planData.width, false)
+			ftable:setColWidth(4, 0.2 * menu.planData.width, false)
 			ftable:setColWidth(5, Helper.scaleY(Helper.standardTextHeight), false)
 
 			local prevfullheight = 0

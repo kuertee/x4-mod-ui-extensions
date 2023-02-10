@@ -4606,7 +4606,7 @@ function newFuncs.onRowChanged(row, rowdata, uitable, modified, input, source)
 							end
 						end
 					end
-					menu.updateSelectedComponents(modified, source == "auto", convertedComponent)
+					menu.updateSelectedComponents(modified, source == "auto", convertedComponent, row)
 					menu.setSelectedMapComponents()
 				end
 			end
@@ -5349,19 +5349,31 @@ function newFuncs.closeContextMenu(dueToClose)
 	end
 	return false
 end
-function newFuncs.updateSelectedComponents(modified, keepselection, changedComponent)
+function newFuncs.updateSelectedComponents(modified, keepselection, changedComponent, changedrow)
 	local components = {}
 	local rows, highlightedborderrow = GetSelectedRows(menu.infoTable)
+
+	-- determine whether the component we are changing is now selected or unselected
+	local ischangedselected = false
+	for _, row in ipairs(rows) do
+		if row == changedrow then
+			ischangedselected = true
+			break
+		end
+	end
 
 	for _, row in ipairs(rows) do
 		local rowdata = menu.rowDataMap[menu.infoTable][row]
 		if type(rowdata) == "table" then
 			if (rowdata[1] ~= "moduletype") and (not string.find(rowdata[1], "subordinates")) and (rowdata[1] ~= "dockedships") and (rowdata[1] ~= "constructions") then
+				-- for docked ships in the PO the ship can be listed twice in the menu, do not keep the component due to the selection in the other line if the changed line is now unselected
 				if rowdata[1] == "construction" then
 					if rowdata[3].component ~= 0 then
-						table.insert(components, ConvertStringTo64Bit(tostring(rowdata[3].component)))
+						if ischangedselected or (rowdata[3].component ~= changedComponent) then
+							table.insert(components, ConvertStringTo64Bit(tostring(rowdata[3].component)))
+						end
 					end
-				else
+				elseif ischangedselected or (C.ConvertStringTo64Bit(tostring(rowdata[2])) ~= changedComponent) then
 					table.insert(components, rowdata[2])
 				end
 			end
