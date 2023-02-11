@@ -5,6 +5,10 @@ by kuertee. Contributors: Forleyor, Mycu, Runekn.
 
 Updates
 =======
+v6.0.0002, 11 Feb 2023:
+-Tweak: Compatibility with 6.0 beta 3.
+-Bug-fix: The Logbook on the Map Menu would make the menu unresponsive.
+
 v6.0.0001, 07 Feb 2023:
 -Tweak: Compatibility with 6.0 public beta
 -Removed: Sort by Name, then Sector, then Id Code. Already in the 6.x base game.

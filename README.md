@@ -5,6 +5,10 @@ by kuertee. Contributors: Forleyor, Mycu, Runekn.
 
 Updates
 =======
+v6.0.0002, 11 Feb 2023:
+-Tweak: Compatibility with 6.0 beta 3.
+-Bug-fix: The Logbook on the Map Menu would make the menu unresponsive.
+
 v6.0.0001, 07 Feb 2023:
 -Tweak: Compatibility with 6.0 public beta
 -Removed: Sort by Name, then Sector, then Id Code. Already in the 6.x base game.
@@ -74,13 +78,8 @@ But the callbacks, along with their function parameters and their expected retur
 
 But here is documentation on NEW features (not connected to mod-specific changes via call-backs) that UIX offers.
 
-QUALITY-OF-LIFE CHANGES
-=======================
-
-Map Menu: Subordinates list
+CHANGES BUILT INTO THIS MOD
 ===========================
-The subordinates lists of fleets and stations are expanded by default.
-Changes the base-game functionality of the lists being closed by default for stations.
 
 Map Menu: Sort by distance
 ==========================
@@ -88,20 +87,13 @@ The Player Owned list can be sorted by distance from the player or from the last
 Note that Egosoft's sorting icons (the up and down arrows) signify direction of the list NOT ascending descending orders.
 E.g. The down arrow actually sorts the list in ascending order. The list is sorted from least to greatest.
 
-Map Menu: Logbook in Information menu
-=====================================
-The Logbook button is enabled for all objects - even sectors.
-The list is filtered by the object's Id as text.
-If the object has no id, the filter is its name. E.g. the Sector's name.
-With this feature, a summary of events in a sector can be accessed easily.
-
-Recommendation: Get the 5.1.0303 version of NPC Reactions for its Report Enemies and Scouts features. Their reports in this log give a good impression of events in a sector.
-
 Map Menu: Mission Guidance tab
 ==============================
-Any mission with the "missiontype.guidance" will now be listed in the Mission Guidance tab.  In the base game, the Mission Guidance tab lists only the Guidance created manually with the right-click mouse button. 
+Any mission with the "missiontype.guidance" will now be listed in the Mission Guidance tab.
+In the base game, the Mission Guidance tab lists only the Guidance created manually with the right-click mouse button. 
 
-The "Set to inactive" and "Set to active" buttons are available on missions listed in the Mission Guidance tab. The base game makes these buttons unavailable for Guidance Missions.
+The "Set to inactive" and "Set to active" buttons are available on missions listed in the Mission Guidance tab.
+The base game makes these buttons unavailable for Guidance Missions.
 
 Map Menu: selectComponent mode
 ==============================
