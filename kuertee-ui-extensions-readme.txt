@@ -5,6 +5,9 @@ by kuertee. Contributors: Forleyor, Mycu, Runekn.
 
 Updates
 =======
+v6.0.0004, 17 Feb 2023:
+-Tweak: Transaction Log: The graph is half its screen's height, giving Trade Analytics more vertical space.
+
 v6.0.0002, 11 Feb 2023:
 -Tweak: Compatibility with 6.0 beta 3.
 -Bug-fix: The Logbook on the Map Menu would make the menu unresponsive.

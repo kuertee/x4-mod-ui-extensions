@@ -303,7 +303,6 @@ function newFuncs.createContentTable(frame, position)
 
 	-- kuertee start: add distance
 	if mapMenu and mapMenu.holomap then
-		newFuncs.debugText ("mapMenu: " .. tostring (mapMenu))
 		local kuertee_component_distFrom
 		local kuertee_isFreeDistFrom
 		if #menu.selectedplayerships > 0 then
@@ -400,7 +399,7 @@ function newFuncs.createContentTable(frame, position)
 							kuertee_dist = "+/- " .. tostring(kuertee_dist)
 						end
 						local kuertee_text = ReadText (1001, 2957) .. ReadText (1001, 120) .. " " .. tostring (kuertee_dist) .. " " .. ReadText (1001, 108) -- Distance colon space X space km
-						row [1]:setColSpan (4):createText (kuertee_text, {halign = "center"})
+						row [1]:setColSpan (5):createText (kuertee_text, {halign = "center"})
 					end
 				end
 			end
