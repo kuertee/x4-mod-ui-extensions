@@ -5,7 +5,7 @@ by kuertee. Contributors: Forleyor, Mycu, Runekn.
 
 Updates
 =======
-v6.0.0003, 17 Feb 2023:
+v6.0.0004, 18 Feb 2023:
 -Tweak: Transaction Log: The graph is half its screen's height, giving Trade Analytics more vertical space.
 
 v6.0.0002, 11 Feb 2023:
