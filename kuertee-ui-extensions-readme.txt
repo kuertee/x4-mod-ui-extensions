@@ -5,6 +5,9 @@ by kuertee. Contributors: Forleyor, Mycu, Runekn.
 
 Updates
 =======
+v6.0.00041 24 Feb 2023
+-Tweak: Compatibility with 6.0 beta 4.
+
 v6.0.0004, 18 Feb 2023:
 -Tweak: Transaction Log: The graph is half its screen's height, giving Trade Analytics mod (https://www.nexusmods.com/x4foundations/mods/764) more vertical space.
 
