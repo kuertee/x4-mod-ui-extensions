@@ -776,11 +776,13 @@ function newFuncs.onExpandLSOStorageNode(menu, container, _, ftable, _, nodedata
 					local name = (isplayerowned and Helper.convertColorToText(Helper.color.green) or "") .. ffi.string(C.GetComponentName(reservation.reserver)) .. " (" .. ffi.string(C.GetObjectIDCode(reservation.reserver)) .. ")\27X"
 
 					-- kuertee start: callback
-					-- row[1]:createText(function () return Helper.getETAString(name, reservation.eta) end, { font = Helper.standardFontMono, mouseOverText = name })
+					-- row[1]:createText(function () return Helper.getETAString(name, reservation.eta) end, { font = Helper.standardFontMono })
 					if callbacks ["onExpandLSOStorageNode_list_incoming_trade"] then
 						for _, callback in ipairs (callbacks ["onExpandLSOStorageNode_list_incoming_trade"]) do
 							callback (row, name, reservation, isplayerowned)
 						end
+					else
+						row[1]:createText(function () return Helper.getETAString(name, reservation.eta) end, { font = Helper.standardFontMono })
 					end
 					-- kuertee end: callback
 
@@ -926,11 +928,13 @@ function newFuncs.onExpandLSOStorageNode(menu, container, _, ftable, _, nodedata
 					local name = (isplayerowned and Helper.convertColorToText(Helper.color.green) or "") .. ffi.string(C.GetComponentName(reservation.reserver)) .. " (" .. ffi.string(C.GetObjectIDCode(reservation.reserver)) .. ")\27X"
 
 					-- kuertee start: callback
-					-- row[1]:createText(function () return Helper.getETAString(name, reservation.eta) end, { font = Helper.standardFontMono, mouseOverText = name })
+					-- row[1]:createText(function () return Helper.getETAString(name, reservation.eta) end, { font = Helper.standardFontMono })
 					if callbacks ["onExpandLSOStorageNode_list_incoming_trade"] then
 						for _, callback in ipairs (callbacks ["onExpandLSOStorageNode_list_incoming_trade"]) do
 							callback (row, name, reservation, isplayerowned)
 						end
+					else
+						row[1]:createText(function () return Helper.getETAString(name, reservation.eta) end, { font = Helper.standardFontMono })
 					end
 					-- kuertee end: callback
 

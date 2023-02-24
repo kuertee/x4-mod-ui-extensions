@@ -534,11 +534,14 @@ function newFuncs.displaySlots(frame, firsttime)
 					end
 					if group[i].compatibilities then
 						local compatibilitytext = ""
+						local j = 0
 						for _, entry in ipairs(Helper.equipmentCompatibilities) do
 							if group[i].compatibilities[entry.tag] then
 								compatibilitytext = compatibilitytext .. " " .. Helper.convertColorToText(entry.color) .. "\27[menu_weaponslot]"
-							else
-								compatibilitytext = compatibilitytext .. " " .. Helper.convertColorToText(Helper.color.black) .. "\27[menu_weaponslot]"
+								j = j + 1
+							end
+							if (j > 0) and (j % 4 == 0) then
+								compatibilitytext = compatibilitytext .. "\n"
 							end
 						end
 						-- slotwidth is based on Helper.viewWidth but limited, so we need to reflect that here
