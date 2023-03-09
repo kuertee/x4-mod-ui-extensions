@@ -1477,7 +1477,7 @@ function newFuncs.displaySlots(frame, firsttime)
 
 				local rowdata = "orders_fightrule_attack_global"
 				local row = ftable:addRow({ rowdata }, { scaling = true, bgColor = Helper.color.transparent })
-				row[1]:setColSpan(1):createCheckBox(fightruleid == 0, { width = config.mapRowHeight, height = config.mapRowHeight })
+				row[1]:setColSpan(1):createCheckBox(fightruleid == 0, { width = Helper.standardTextHeight, height = Helper.standardTextHeight })
 				row[1].handlers.onClick = function(_, checked) menu.settings.fightrules["attack"] = checked and 0 or -1; menu.refreshMenu() end
 				row[2]:setColSpan(10):createText(ReadText(1001, 8367))
 

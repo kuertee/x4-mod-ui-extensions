@@ -4959,7 +4959,7 @@ function newFuncs.onTableRightMouseClick(uitable, row, posx, posy)
 							end
 
 							if menu.mode == "hire" then
-								if GetComponentData(convertedRowComponent, "isplayerowned") and C.IsComponentClass(convertedRowComponent, "controllable") then
+								if GetComponentData(convertedRowComponent, "isplayerowned") and C.IsComponentClass(convertedRowComponent, "controllable") and (not C.IsComponentClass(convertedRowComponent, "spacesuit")) then
 									menu.contextMenuMode = "hire"
 									menu.contextMenuData = { hireObject = convertedRowComponent, xoffset = x, yoffset = y }
 
