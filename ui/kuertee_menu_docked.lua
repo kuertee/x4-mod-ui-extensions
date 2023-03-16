@@ -116,7 +116,7 @@ function newFuncs.display()
 	local xoffset = (Helper.viewWidth - width) / 2
 	local yoffset = 25
 
-	table_header = menu.frame:addTable(11, { tabOrder = 1, width = width, x = xoffset, y = menu.topLevelOffsetY + Helper.borderSize + yoffset, highlightMode = "off" })
+	table_header = menu.frame:addTable(11, { tabOrder = 1, width = width, x = xoffset, y = menu.topLevelOffsetY + Helper.borderSize + yoffset })
 	table_header:setColWidth(1, math.floor((width - 2 * Helper.borderSize) / 3), false)
 	table_header:setColWidth(3, Helper.standardTextHeight)
 	table_header:setColWidth(4, Helper.standardTextHeight)

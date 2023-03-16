@@ -5,25 +5,8 @@ by kuertee. Contributors: Forleyor, Mycu, Runekn.
 
 Updates
 =======
-v6.0.0005, 13 Mar 2023
--Tweak: Compatibility with 6.0 beta 5.
-
-v6.0.00041, 24 Feb 2023
--Tweak: Compatibility with 6.0 beta 4.
-
-v6.0.0004, 18 Feb 2023:
--Tweak: Transaction Log: The graph is half its screen's height, giving Trade Analytics mod (https://www.nexusmods.com/x4foundations/mods/764) more vertical space.
-
-v6.0.0002, 11 Feb 2023:
--Tweak: Compatibility with 6.0 beta 3.
--Bug-fix: The Logbook on the Map Menu would make the menu unresponsive.
-
-v6.0.0001, 07 Feb 2023:
--Tweak: Compatibility with 6.0 public beta
--Removed: Sort by Name, then Sector, then Id Code. Already in the 6.x base game.
--Removed: Logbook entries of non-player-owned properties. Already in the 6.x base game.
--Removed: Auto-expand of subordinates list. Already in the 6.x base game.
--Removed: Mission progress in the mission objective list. Already in the 6.x base game.
+v6.0.0006, 16 Mar 2023
+-Tweak: Compatibility with 6.0 beta 6.
 
 Instructions for players
 ========================
@@ -137,6 +120,26 @@ Troubleshooting
 
 History
 =======
+v6.0.0005, 13 Mar 2023
+-Tweak: Compatibility with 6.0 beta 5.
+
+v6.0.00041, 24 Feb 2023
+-Tweak: Compatibility with 6.0 beta 4.
+
+v6.0.0004, 18 Feb 2023:
+-Tweak: Transaction Log: The graph is half its screen's height, giving Trade Analytics mod (https://www.nexusmods.com/x4foundations/mods/764) more vertical space.
+
+v6.0.0002, 11 Feb 2023:
+-Tweak: Compatibility with 6.0 beta 3.
+-Bug-fix: The Logbook on the Map Menu would make the menu unresponsive.
+
+v6.0.0001, 07 Feb 2023:
+-Tweak: Compatibility with 6.0 public beta
+-Removed: Sort by Name, then Sector, then Id Code. Already in the 6.x base game.
+-Removed: Logbook entries of non-player-owned properties. Already in the 6.x base game.
+-Removed: Auto-expand of subordinates list. Already in the 6.x base game.
+-Removed: Mission progress in the mission objective list. Already in the 6.x base game.
+
 v5.1.0314, 06 Dec 2022:
 -Tweak: removed the right-click distance tool when measuring distance to a map point in another sector. The distance value is just wrong. But the distance between two objects across any number of sectors is still available and correct.
 -Tweak: added callback for Mission menu that allows new actions to be added. i.e. Waypoint Field for Deployments mod.

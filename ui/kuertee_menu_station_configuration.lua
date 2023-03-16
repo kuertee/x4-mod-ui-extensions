@@ -122,7 +122,7 @@ function newFuncs.displayPlan(frame)
 			ftable = frame:addTable(5, { tabOrder = 3, width = menu.planData.width, maxVisibleHeight = 0.4 * Helper.viewHeight, x = menu.planData.offsetX, y = menu.planData.offsetY, reserveScrollBar = true, backgroundID = "solid", backgroundColor = Helper.color.transparent60 })
 			ftable:setColWidth(1, Helper.scaleY(Helper.standardTextHeight), false)
 			ftable:setColWidth(2, Helper.scaleY(Helper.standardTextHeight), false)
-			ftable:setColWidth(4, 0.2 * menu.planData.width, false)
+			ftable:setColWidth(4, 0.25 * menu.planData.width, false)
 			ftable:setColWidth(5, Helper.scaleY(Helper.standardTextHeight), false)
 
 			local prevfullheight = 0
@@ -284,7 +284,7 @@ function newFuncs.displayPlan(frame)
 			local row = modulestatustable:addRow(false, { bgColor = Helper.defaultTitleBackgroundColor })
 			row[1]:setColSpan(6):createText(ReadText(1001, 11298), menu.headerTextProperties)
 
-			local cursetting = ffi.string(C.GetContainerBuildMethod(menu.container))
+			local cursetting = ffi.string(C.GetContainerBuildMethod(menu.buildstorage))
 			local curglobalsetting = ffi.string(C.GetPlayerBuildMethod())
 			local foundcursetting = false
 			local locresponses = {}
@@ -311,11 +311,11 @@ function newFuncs.displayPlan(frame)
 			local row = modulestatustable:addRow({ rowdata }, { bgColor = Helper.color.transparent })
 			row[1]:setColSpan(5):createText(ReadText(1001, 8367))
 			row[6]:createCheckBox(not hasownsetting, { width = config.mapRowHeight, height = config.mapRowHeight })
-			row[6].handlers.onClick = function(_, checked) return menu.checkboxSetBuildRuleOverride(menu.container, checked, curglobalsetting) end
+			row[6].handlers.onClick = function(_, checked) return menu.checkboxSetBuildRuleOverride(menu.buildstorage, checked, curglobalsetting) end
 
 			local row = modulestatustable:addRow("info_buildrule", { bgColor = Helper.color.transparent })
 			row[1]:setColSpan(6):createDropDown(locresponses, { height = Helper.standardTextHeight, startOption = hasownsetting and cursetting or curglobalsetting, active = hasownsetting }):setTextProperties({ fontsize = config.mapFontSize })
-			row[1].handlers.onDropDownConfirmed = function (_, id) return menu.dropdownBuildRule(menu.container, id) end
+			row[1].handlers.onDropDownConfirmed = function (_, id) return menu.dropdownBuildRule(menu.buildstorage, id) end
 			row[1].handlers.onDropDownActivated = function () menu.noupdate = true end
 
 			-- module status here
