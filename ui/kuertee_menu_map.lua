@@ -56,8 +56,6 @@ local function init ()
 		mapMenu.onRenderTargetSelect = newFuncs.onRenderTargetSelect
 		oldFuncs.onTableRightMouseClick = mapMenu.onTableRightMouseClick
 		mapMenu.onTableRightMouseClick = newFuncs.onTableRightMouseClick
-		oldFuncs.onInteractiveElementChanged = mapMenu.onInteractiveElementChanged
-		mapMenu.onInteractiveElementChanged = newFuncs.onInteractiveElementChanged
 		oldFuncs.closeContextMenu = mapMenu.closeContextMenu
 		mapMenu.closeContextMenu = newFuncs.closeContextMenu
 		oldFuncs.updateSelectedComponents = mapMenu.updateSelectedComponents
