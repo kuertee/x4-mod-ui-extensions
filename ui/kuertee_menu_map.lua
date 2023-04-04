@@ -206,6 +206,7 @@ local config = {
 		{ name = ReadText(1001, 11319),	icon = "vt_logbook",				mode = "venturelogbook",	helpOverlayID = "multimap_logbook",				helpOverlayText = ReadText(1028, 3267) },
 		{ spacing = true, },
 		{ name = ReadText(1001, 7720),	icon = "vt_inventory",				mode = "ventureinventory",	helpOverlayID = "multimap_inventory",			helpOverlayText = ReadText(1028, 3269) },
+		{ name = ReadText(1001, 11386),	icon = "vt_contactlist",			mode = "venturecontacts",	helpOverlayID = "multimap_contacts",			helpOverlayText = ReadText(1028, 3275) },
 	},
 	rightBar = {
 		{ name = ReadText(1001, 3227),	icon = "mapst_filtersystem",		mode = "filter",		helpOverlayID = "mapst_filter",						helpOverlayText = ReadText(1028, 3212) },
@@ -702,6 +703,7 @@ local config = {
 	venturePatronWidth = 400,
 	hireContextWidth = 350,
 	ventureTeamContextWidth = 260,
+	ventureContactContextWidth = 260,
 
 	orderDragSupport = {
 	--	order name					position parameter
@@ -746,7 +748,7 @@ local config = {
 		maxPlotRows = 10,
 	},
 }
-function newFuncs.buttonToggleObjectList(objectlistparam, confirmed)
+function newFuncs.buttonToggleObjectList(objectlistparam, confirmed, override)
 	-- kuertee start: callback
 	if callbacks ["buttonToggleObjectList_on_start"] then
 		for _, callback in ipairs (callbacks ["buttonToggleObjectList_on_start"]) do
@@ -790,6 +792,16 @@ function newFuncs.buttonToggleObjectList(objectlistparam, confirmed)
 		return
 	end
 
+	if override == nil then
+		if menu.showMultiverse then
+			deactivate = menu.ventureMode == objectlistparam
+		else
+			deactivate = menu.infoTableMode == objectlistparam
+		end
+	else
+		deactivate = not override
+	end
+
 	if newidx then
 		Helper.updateButtonColor(menu.sideBar, newidx, 1, Helper.defaultArrowRowBackgroundColor)
 	end
@@ -799,7 +811,7 @@ function newFuncs.buttonToggleObjectList(objectlistparam, confirmed)
 
 	menu.createInfoFrameRunning = true
 	if menu.showMultiverse then
-		if (menu.ventureMode == "ventureoperation") or (menu.ventureMode == "ventureinventory") or (menu.ventureMode == "ventureseason") then
+		if (menu.ventureMode == "ventureoperation") or (menu.ventureMode == "ventureinventory") or (menu.ventureMode == "ventureseason") or (menu.ventureMode == "venturecontacts") then
 			Helper.callExtensionFunction("multiverse", "onCloseMenuTab", menu, menu.infoTableMode, objectlistparam)
 		end
 	else
@@ -818,12 +830,6 @@ function newFuncs.buttonToggleObjectList(objectlistparam, confirmed)
 		end
 	end
 	AddUITriggeredEvent(menu.name, objectlistparam, menu.infoTableMode == objectlistparam and "off" or "on")
-	local deactivate = false
-	if menu.showMultiverse then
-		deactivate = menu.ventureMode == objectlistparam
-	else
-		deactivate = menu.infoTableMode == objectlistparam
-	end
 	if deactivate then
 		menu.settoprow = GetTopRow(menu.infoTable)
 		menu.topRows.infotableleft = menu.settoprow
@@ -1026,6 +1032,8 @@ function newFuncs.createInfoFrame()
 			Helper.callExtensionFunction("multiverse", "createVentureLogbook", menu, menu.infoFrame, "left")
 		elseif menu.ventureMode == "ventureinventory" then
 			Helper.callExtensionFunction("multiverse", "createVentureInventory", menu, menu.infoFrame, "left")
+		elseif menu.ventureMode == "venturecontacts" then
+			Helper.callExtensionFunction("multiverse", "createVentureContacts", menu, menu.infoFrame, "left")
 		else
 			-- empty
 			menu.infoFrame.properties.backgroundID = ""
@@ -1168,6 +1176,10 @@ function newFuncs.refreshInfoFrame(setrow, setcol)
 			menu.selectedRows.ventureInventoryHeaderTableleft = menu.selectedRows.ventureInventoryHeaderTableleft or Helper.currentTableRow[menu.ventureInventoryHeaderTableLeft.id] or 1
 			menu.selectedCols.ventureInventoryHeaderTableleft = menu.selectedCols.ventureInventoryHeaderTableleft or Helper.currentTableCol[menu.ventureInventoryHeaderTableLeft.id]
 		end
+		if menu.ventureContactsHeaderTableLeft and menu.lastactivetable == menu.ventureContactsHeaderTableLeft.id then
+			menu.selectedRows.ventureContactsHeaderTableleft = menu.selectedRows.ventureContactsHeaderTableleft or Helper.currentTableRow[menu.ventureContactsHeaderTableLeft.id] or 1
+			menu.selectedCols.ventureContactsHeaderTableleft = menu.selectedCols.ventureContactsHeaderTableleft or Helper.currentTableCol[menu.ventureContactsHeaderTableLeft.id]
+		end
 		if menu.missionModeHeaderTableLeft and menu.lastactivetable == menu.missionModeHeaderTableLeft.id then
 			menu.selectedRows.missionModeHeaderTableleft = menu.selectedRows.missionModeHeaderTableleft or Helper.currentTableRow[menu.missionModeHeaderTableLeft.id] or 1
 			menu.selectedCols.missionModeHeaderTableleft = menu.selectedCols.missionModeHeaderTableleft or Helper.currentTableCol[menu.missionModeHeaderTableLeft.id]
@@ -1210,6 +1222,10 @@ function newFuncs.refreshInfoFrame2(setrow, setcol)
 		if menu.ventureInventoryHeaderTableRight and menu.lastactivetable == menu.ventureInventoryHeaderTableRight.id then
 			menu.selectedRows.ventureInventoryHeaderTableright = menu.selectedRows.ventureInventoryHeaderTableright or Helper.currentTableRow[menu.ventureInventoryHeaderTableRight.id] or 1
 			menu.selectedCols.ventureInventoryHeaderTableright = menu.selectedCols.ventureInventoryHeaderTableright or Helper.currentTableCol[menu.ventureInventoryHeaderTableRight.id]
+		end
+		if menu.ventureContactsHeaderTableRight and menu.lastactivetable == menu.ventureContactsHeaderTableRight.id then
+			menu.selectedRows.ventureContactsHeaderTableright = menu.selectedRows.ventureContactsHeaderTableright or Helper.currentTableRow[menu.ventureContactsHeaderTableRight.id] or 1
+			menu.selectedCols.ventureContactsHeaderTableright = menu.selectedCols.ventureContactsHeaderTableright or Helper.currentTableCol[menu.ventureContactsHeaderTableRight.id]
 		end
 		if menu.missionModeHeaderTableRight and menu.lastactivetable == menu.missionModeHeaderTableRight.id then
 			menu.selectedRows.missionModeHeaderTableright = menu.selectedRows.missionModeHeaderTableright or Helper.currentTableRow[menu.missionModeHeaderTableRight.id] or 1
@@ -1501,8 +1517,9 @@ function newFuncs.createPropertyOwned(frame, instance)
 				if (component == 0) and (macro ~= "") then
 					if constructionshipsbymacro[macro] then
 						constructions[constructionshipsbymacro[macro]].amount = constructions[constructionshipsbymacro[macro]].amount + 1
+						table.insert(constructions[constructionshipsbymacro[macro]].ids, buf[i].id)
 					else
-						table.insert(constructions, { id = buf[i].id, buildingcontainer = buf[i].buildingcontainer, component = component, macro = macro, factionid = ffi.string(buf[i].factionid), buildercomponent = buf[i].buildercomponent, price = buf[i].price, ismissingresources = buf[i].ismissingresources, queueposition = buf[i].queueposition, inprogress = false, amount = 1 })
+						table.insert(constructions, { id = buf[i].id, buildingcontainer = buf[i].buildingcontainer, component = component, macro = macro, factionid = ffi.string(buf[i].factionid), buildercomponent = buf[i].buildercomponent, price = buf[i].price, ismissingresources = buf[i].ismissingresources, queueposition = buf[i].queueposition, inprogress = false, amount = 1, ids = { buf[i].id } })
 						constructionshipsbymacro[macro] = #constructions
 					end
 				else
@@ -1574,8 +1591,9 @@ function newFuncs.createPropertyOwned(frame, instance)
 			if (component == 0) and (macro ~= "") then
 				if constructionshipsbymacro[macro] then
 					infoTableData.constructionShips[constructionshipsbymacro[macro]].amount = infoTableData.constructionShips[constructionshipsbymacro[macro]].amount + 1
+					table.insert(infoTableData.constructionShips[constructionshipsbymacro[macro]].ids, buf[i].id)
 				else
-					table.insert(infoTableData.constructionShips, { id = buf[i].id, buildingcontainer = buf[i].buildingcontainer, component = component, macro = macro, factionid = factionid, buildercomponent = buf[i].buildercomponent, price = buf[i].price, ismissingresources = buf[i].ismissingresources, queueposition = buf[i].queueposition, inprogress = false, amount = 1 })
+					table.insert(infoTableData.constructionShips, { id = buf[i].id, buildingcontainer = buf[i].buildingcontainer, component = component, macro = macro, factionid = factionid, buildercomponent = buf[i].buildercomponent, price = buf[i].price, ismissingresources = buf[i].ismissingresources, queueposition = buf[i].queueposition, inprogress = false, amount = 1, ids = { buf[i].id } })
 					constructionshipsbymacro[macro] = #infoTableData.constructionShips
 				end
 			else
@@ -5030,24 +5048,44 @@ function newFuncs.onTableRightMouseClick(uitable, row, posx, posy)
 			end
 			
 			if menu.showMultiverse then
-				if menu.seasonMode.left == "ventureteam" then
+				if menu.ventureMode == "ventureseason" then
+					if menu.seasonMode.left == "ventureteam" then
+						if uitable == menu.infoTable then
+							if type(rowdata) == "table" then
+								if not rowdata.isplayer then
+									menu.closeContextMenu()
+
+									local x, y = GetLocalMousePosition()
+
+									menu.contextMenuMode = "ventureteammembercontext"
+									menu.contextMenuData = { teammember = rowdata, xoffset = x + Helper.viewWidth / 2, yoffset = Helper.viewHeight / 2 - y }
+
+									local width = Helper.scaleX(config.ventureTeamContextWidth)
+									if menu.contextMenuData.xoffset + width > Helper.viewWidth then
+										menu.contextMenuData.xoffset = Helper.viewWidth - width - Helper.frameBorder
+									end
+
+									menu.createContextFrame(width, nil, menu.contextMenuData.xoffset, menu.contextMenuData.yoffset)
+								end
+							end
+						end
+					end
+				elseif menu.ventureMode == "venturecontacts" then
 					if uitable == menu.infoTable then
 						if type(rowdata) == "table" then
-							if not rowdata.isplayer then
-								menu.closeContextMenu()
+							menu.closeContextMenu()
 
-								local x, y = GetLocalMousePosition()
+							local x, y = GetLocalMousePosition()
 
-								menu.contextMenuMode = "ventureteammembercontext"
-								menu.contextMenuData = { teammember = rowdata, xoffset = x + Helper.viewWidth / 2, yoffset = Helper.viewHeight / 2 - y }
+							menu.contextMenuMode = "venturecontactcontext"
+							menu.contextMenuData = { contact = rowdata, xoffset = x + Helper.viewWidth / 2, yoffset = Helper.viewHeight / 2 - y }
 
-								local width = Helper.scaleX(config.ventureTeamContextWidth)
-								if menu.contextMenuData.xoffset + width > Helper.viewWidth then
-									menu.contextMenuData.xoffset = Helper.viewWidth - width - Helper.frameBorder
-								end
-
-								menu.createContextFrame(width, nil, menu.contextMenuData.xoffset, menu.contextMenuData.yoffset)
+							local width = Helper.scaleX(config.ventureContactContextWidth)
+							if menu.contextMenuData.xoffset + width > Helper.viewWidth then
+								menu.contextMenuData.xoffset = Helper.viewWidth - width - Helper.frameBorder
 							end
+
+							menu.createContextFrame(width, nil, menu.contextMenuData.xoffset, menu.contextMenuData.yoffset)
 						end
 					end
 				end
@@ -5099,10 +5137,12 @@ function newFuncs.closeContextMenu(dueToClose)
 			menu.boardingData = {}
 			menu.contexttoprow = nil
 			menu.contextselectedrow = nil
-		elseif (menu.contextMenuMode == "onlinemode") or (menu.contextMenuMode == "onlinereward") then
+		elseif (menu.contextMenuMode == "onlinemode") then
 			if dueToClose == "back" then
 				return false
 			end
+		elseif (menu.contextMenuMode == "onlinereward") then
+			OnlineClearLogbookRewards()
 		elseif (menu.contextMenuMode == "ventureconfig") or (menu.contextMenuMode == "venturecreateparty") or (menu.contextMenuMode == "ventureoutcome") then
 			if not Helper.callExtensionFunction("multiverse", "closeContextMenu", menu, menu.contextMenuMode, dueToClose) then
 				return true
@@ -5129,10 +5169,10 @@ function newFuncs.closeContextMenu(dueToClose)
 			or (menu.contextMenuMode == "rename")
 			or (menu.contextMenuMode == "changelogo")
 			or (menu.contextMenuMode == "userquestion")
-			or (menu.contextMenuMode == "mission")
 			or (menu.contextMenuMode == "venturepatron")
 			or (menu.contextMenuMode == "venturereport")
 			or (menu.contextMenuMode == "ventureteammembercontext")
+			or (menu.contextMenuMode == "venturecontactcontext")
 			or (menu.contextMenuMode == "filter_multiselectlist")
 			or (menu.contextMenuMode == "hire")
 		) then
@@ -5303,7 +5343,7 @@ function newFuncs.isInfoModeValidFor(object, mode)
 		return false
 	end
 
-	if mode == "objectinfo" then
+	if mode == "objectinfo" or mode == "objectlogbook" then
 		local isdatavault, islandmark = GetComponentData(object, "isdatavault", "islandmark")
 		if	C.IsComponentClass(object, "ship") or
 			C.IsRealComponentClass(object, "station") or
@@ -5326,26 +5366,6 @@ function newFuncs.isInfoModeValidFor(object, mode)
 		elseif C.IsComponentClass(object, "ship") or C.IsComponentClass(object, "station") then
 			return true
 		end
-	elseif mode == "objectlogbook" then
-
-		-- kuertee start: allow logbook on all objects
-		-- if isplayerowned and (C.IsComponentClass(object, "ship") or C.IsComponentClass(object, "station")) and (not C.IsUnit(object)) and (not GetMacroData(macro, "islasertower")) then
-		-- 	return true
-		-- end
-
-		-- disabled start: allow for certain objects
-		-- if C.IsComponentClass(object, "sector") then
-		-- 	return true
-		-- elseif isplayerowned and (C.IsComponentClass(object, "ship") or C.IsComponentClass(object, "station")) and (not C.IsUnit(object)) and (not GetMacroData(macro, "islasertower")) then
-		-- 	return true
-		-- end
-		-- disabled end: allow for certain objects
-
-		-- enabled start: allow for all objects
-		return true
-		-- enabled end: allow for all objects
-		-- kuertee start: allow logbook on all objects
-
 	elseif mode == "orderqueue" then
 		if isplayerowned and C.IsComponentClass(object, "ship") and (not C.IsUnit(object)) then
 			return true

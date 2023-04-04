@@ -103,6 +103,9 @@ function newFuncs.createTransactionLog(frame, container, tableProperties, refres
 		end
 		if entry.partner ~= 0 then
 			entry.partnername = ffi.string(C.GetComponentName(entry.partner)) .. " (" .. ffi.string(C.GetObjectIDCode(entry.partner)) .. ")"
+			entry.destroyedpartner = not C.IsComponentOperational(entry.partner)
+		else
+			entry.destroyedpartner = entry.partnername ~= ""
 		end
 		if entry.eventtype == "trade" then
 			if entry.seller and (entry.seller == container) then
@@ -197,18 +200,19 @@ function newFuncs.createTransactionLog(frame, container, tableProperties, refres
 	row[1]:setColSpan(2):createEditBox({ description = ReadText(1001, 7740), defaultText = ReadText(1001, 3250), height = Helper.subHeaderHeight }):setText(Helper.transactionLogData.searchtext, { halign = "left", x = Helper.standardTextOffsetx }):setHotkey("INPUT_STATE_DETAILMONITOR_0", { displayIcon = true })
 	row[1].handlers.onEditBoxDeactivated = function (_, text) if text ~= Helper.transactionLogData.searchtext then Helper.transactionLogData.searchtext = text; Helper.transactionLogData.noupdate = nil; refreshCallback() end end
 	-- clear search
-	row[3]:createButton({ scaling = false, width = buttonsize, height = Helper.scaleY(Helper.subHeaderHeight), cellBGColor = Helper.color.transparent }):setText("X", { halign = "center", font = Helper.standardFontBold })
+	local buttonheight = math.max(Helper.editboxMinHeight, Helper.scaleY(Helper.subHeaderHeight))
+	row[3]:createButton({ scaling = false, width = buttonsize, height = buttonheight, cellBGColor = Helper.color.transparent }):setText("X", { halign = "center", font = Helper.standardFontBold })
 	row[3].handlers.onClick = function () Helper.transactionLogData.searchtext = ""; refreshCallback() end
 	-- pages
-	row[4]:createButton({ scaling = false, active = Helper.transactionLogData.curPage > 1, width = buttonsize, height = Helper.scaleY(Helper.subHeaderHeight), cellBGColor = Helper.color.transparent }):setIcon("widget_arrow_skip_left_01", { width = buttonsize, height = buttonsize, y = (row:getHeight() - buttonsize) / 2 })
+	row[4]:createButton({ scaling = false, active = Helper.transactionLogData.curPage > 1, width = buttonsize, height = buttonheight, cellBGColor = Helper.color.transparent }):setIcon("widget_arrow_skip_left_01", { width = buttonsize, height = buttonsize, y = (row:getHeight() - buttonsize) / 2 })
 	row[4].handlers.onClick = function () Helper.transactionLogData.curEntry = nil; Helper.transactionLogData.curPage = 1; refreshCallback() end
-	row[5]:createButton({ scaling = false, active = Helper.transactionLogData.curPage > 1, width = buttonsize, height = Helper.scaleY(Helper.subHeaderHeight), cellBGColor = Helper.color.transparent }):setIcon("widget_arrow_left_01", { width = buttonsize, height = buttonsize, y = (row:getHeight() - buttonsize) / 2 })
+	row[5]:createButton({ scaling = false, active = Helper.transactionLogData.curPage > 1, width = buttonsize, height = buttonheight, cellBGColor = Helper.color.transparent }):setIcon("widget_arrow_left_01", { width = buttonsize, height = buttonsize, y = (row:getHeight() - buttonsize) / 2 })
 	row[5].handlers.onClick = function () Helper.transactionLogData.curEntry = nil; Helper.transactionLogData.curPage = Helper.transactionLogData.curPage - 1; refreshCallback() end
 	Helper.transactionLogData.pageEditBox = row[6]:setColSpan(2):createEditBox({ description = ReadText(1001, 7739) }):setText(Helper.transactionLogData.curPage .. " / " .. Helper.transactionLogData.numPages, { halign = "center" })
 	row[6].handlers.onEditBoxDeactivated = function (_, text, textchanged) Helper.transactionLogData.noupdate = nil; return Helper.editboxTransactionLogPage(text, textchanged, refreshCallback) end
-	row[8]:createButton({ scaling = false, active = Helper.transactionLogData.curPage < Helper.transactionLogData.numPages, width = buttonsize, height = Helper.scaleY(Helper.subHeaderHeight), cellBGColor = Helper.color.transparent }):setIcon("widget_arrow_right_01", { width = buttonsize, height = buttonsize, y = (row:getHeight() - buttonsize) / 2 })
+	row[8]:createButton({ scaling = false, active = Helper.transactionLogData.curPage < Helper.transactionLogData.numPages, width = buttonsize, height = buttonheight, cellBGColor = Helper.color.transparent }):setIcon("widget_arrow_right_01", { width = buttonsize, height = buttonsize, y = (row:getHeight() - buttonsize) / 2 })
 	row[8].handlers.onClick = function () Helper.transactionLogData.curEntry = nil; Helper.transactionLogData.curPage = Helper.transactionLogData.curPage + 1; refreshCallback() end
-	row[9]:createButton({ scaling = false, active = Helper.transactionLogData.curPage < Helper.transactionLogData.numPages, width = buttonsize, height = Helper.scaleY(Helper.subHeaderHeight), cellBGColor = Helper.color.transparent }):setIcon("widget_arrow_skip_right_01", { width = buttonsize, height = buttonsize, y = (row:getHeight() - buttonsize) / 2 })
+	row[9]:createButton({ scaling = false, active = Helper.transactionLogData.curPage < Helper.transactionLogData.numPages, width = buttonsize, height = buttonheight, cellBGColor = Helper.color.transparent }):setIcon("widget_arrow_skip_right_01", { width = buttonsize, height = buttonsize, y = (row:getHeight() - buttonsize) / 2 })
 	row[9].handlers.onClick = function () Helper.transactionLogData.curEntry = nil; Helper.transactionLogData.curPage = Helper.transactionLogData.numPages; refreshCallback() end
 
 	local headerHeight = table_data:getFullHeight()
@@ -232,14 +236,14 @@ function newFuncs.createTransactionLog(frame, container, tableProperties, refres
 				row[1]:createButton({ height = Helper.standardTextHeight }):setText(function() return Helper.transactionLogData.expandedEntries[entry.entryid] and "-" or "+" end, { halign = "center" })
 				row[1].handlers.onClick = function() return Helper.buttonExpandTransactionEntry(entry.entryid, row.index, refreshCallback) end
 			end
-			row[2]:createText(((entry.partnername ~= "") and (entry.partnername .. " - ") or "") .. entry.eventtypename)
+			row[2]:createText(((entry.partnername ~= "") and (entry.partnername .. " - ") or "") .. entry.eventtypename, { color = entry.destroyedpartner and Helper.color.grey or nil, mouseOverText = entry.destroyedpartner and ReadText(1026, 5701) or "" })
 			row[3]:setColSpan(4):createText(Helper.getPassedTime(entry.time), { halign = "right" })
 			row[7]:setColSpan(3):createText(((entry.money > 0) and "+" or "") .. ConvertMoneyString(entry.money, false, true, 0, true) .. " " .. ReadText(1001, 101), { halign = "right", color = (entry.money > 0) and Helper.color.green or Helper.color.red })
 			total = total + entry.money
 			if Helper.transactionLogData.expandedEntries[entry.entryid] then
 				local row = table_data:addRow(nil, { bgColor = Helper.color.unselectable })
 				row[1].properties.cellBGColor = Helper.color.transparent
-				row[2]:setColSpan(8):createText(entry.description, { x = Helper.standardTextHeight, wordwrap = true })
+				row[2]:setColSpan(8):createText(entry.description, { x = Helper.standardTextHeight, wordwrap = true, color = entry.destroyedpartner and Helper.color.grey or nil })
 			end
 		end
 

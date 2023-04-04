@@ -516,7 +516,7 @@ function newFuncs.displayPlan(frame)
 									local colorprefix = GetComponentData(reserverid, "isplayerowned") and "\27G" or ""
 
 									-- kuertee start: callback
-									-- row[2]:setColSpan(3):createText(function () return Helper.getETAString(colorprefix .. name, reservation.eta) end, { font = Helper.standardFontMono, mouseOverText = name })
+									-- row[2]:setColSpan(3):createText(function () return Helper.getETAString(colorprefix .. name, reservation.eta) end, { font = Helper.standardFontMono })
 									if callbacks ["displayPlan_render_incoming_ware"] then
 										for _, callback in ipairs (callbacks ["displayPlan_render_incoming_ware"]) do
 											isbreak = callback (row, colorprefix, name, reservation)

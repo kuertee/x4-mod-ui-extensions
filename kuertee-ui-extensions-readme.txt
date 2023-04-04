@@ -5,8 +5,8 @@ by kuertee. Contributors: Forleyor, Mycu, Runekn.
 
 Updates
 =======
-v6.0.0007, 25 Mar 2023:
--Bug-fix: Removed function no longer required by UIX.
+v6.0.001, 4 Apr 2023:
+-Tweaks: Compatibility with v6.0 RC 1 of the base game.
 
 Instructions for players
 ========================
@@ -120,6 +120,9 @@ Troubleshooting
 
 History
 =======
+v6.0.0007, 25 Mar 2023:
+-Bug-fix: Removed function no longer required by UIX.
+
 v6.0.0006, 16 Mar 2023:
 -Tweak: Compatibility with 6.0 beta 6.
 
