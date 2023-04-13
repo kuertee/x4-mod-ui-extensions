@@ -792,6 +792,7 @@ function newFuncs.buttonToggleObjectList(objectlistparam, confirmed, override)
 		return
 	end
 
+	local deactivate = false
 	if override == nil then
 		if menu.showMultiverse then
 			deactivate = menu.ventureMode == objectlistparam
@@ -3209,7 +3210,19 @@ function newFuncs.setupLoadoutInfoSubmenuRows(mode, inputtable, inputobject, ins
 				end
 			end
 			-- turret
-			for i, turret in ipairs(loadout.component.turret) do
+			for i, group in ipairs(menu.turretgroups) do
+				local hasinstalledmod, installedmod = Helper.getInstalledModInfo("turret", inputobject, group.context, group.group, true)
+				if hasinstalledmod then
+					if hasshown then
+						inputtable:addEmptyRow(config.mapRowHeight / 2)
+					end
+					hasshown = true
+
+					local name = ReadText(1001, 8023) .. " " .. Helper.getSlotSizeText(group.slotsize) .. group.sizecount .. ((group.currentmacro ~= "") and (" (" .. Helper.getSlotSizeText(group.slotsize) .. " " .. GetMacroData(group.currentmacro, "shortname") .. ")") or "")
+					row = menu.addEquipmentModInfoRow(inputtable, "weapon", installedmod, name)
+				end
+			end
+			for i, turret in ipairs(menu.turrets) do
 				local hasinstalledmod, installedmod = Helper.getInstalledModInfo("turret", turret)
 				if hasinstalledmod then
 					if hasshown then
@@ -4268,17 +4281,17 @@ function newFuncs.createMissionContext(frame)
 		-- if menu.contextMenuData.type ~= "guidance" then
 		-- kuertee end: allow buttons in guidance missions
 
-		-- Set active
-		local active = menu.contextMenuData.missionid == C.GetActiveMissionID()
-		for _, submissionEntry in ipairs(menu.contextMenuData.subMissions) do
-			if submissionEntry.active then
-				active = true
+			-- Set active
+			local active = menu.contextMenuData.missionid == C.GetActiveMissionID()
+			for _, submissionEntry in ipairs(menu.contextMenuData.subMissions) do
+				if submissionEntry.active then
+					active = true
+				end
 			end
-		end
-		row = bottomtable:addRow(true, { fixed = true, bgColor = Helper.color.transparent })
-		row[1]:createButton({ helpOverlayID = "map_activatemission", helpOverlayText = " ",  helpOverlayHighlightOnly = true }):setText(active and ReadText(1001, 3413) or ReadText(1001, 3406), { halign = "center" })
-		row[1].handlers.onClick = menu.buttonMissionActivate
-		row[1].properties.uiTriggerID = "missionactivate"
+			row = bottomtable:addRow(true, { fixed = true, bgColor = Helper.color.transparent })
+			row[1]:createButton({ helpOverlayID = "map_activatemission", helpOverlayText = " ",  helpOverlayHighlightOnly = true }):setText(active and ReadText(1001, 3413) or ReadText(1001, 3406), { halign = "center" })
+			row[1].handlers.onClick = menu.buttonMissionActivate
+			row[1].properties.uiTriggerID = "missionactivate"
 
 		-- kuertee start: allow buttons in guidance missions
 		-- end
@@ -4952,102 +4965,104 @@ function newFuncs.onTableRightMouseClick(uitable, row, posx, posy)
 	else
 		if row > (menu.numFixedRows or 0) then
 			local rowdata = menu.rowDataMap[uitable] and menu.rowDataMap[uitable][row]
+			if not menu.showMultiverse then
 
-			-- kuertee start:
-			-- if (menu.infoTableMode == "objectlist") or (menu.infoTableMode == "propertyowned") then
-			if (string.find ("" .. tostring (menu.infoTableMode), "objectlist")) or (string.find ("" .. tostring (menu.infoTableMode), "propertyowned")) then
-				-- kuertee end:
+				-- kuertee start:
+				-- if (menu.infoTableMode == "objectlist") or (menu.infoTableMode == "propertyowned") then
+				if (string.find ("" .. tostring (menu.infoTableMode), "objectlist")) or (string.find ("" .. tostring (menu.infoTableMode), "propertyowned")) then
+					-- kuertee end:
 
-				if uitable == menu.infoTable then
-					if type(rowdata) == "table" then
-						local convertedRowComponent = ConvertIDTo64Bit(rowdata[2])
-						if convertedRowComponent and (convertedRowComponent ~= 0) then
-							local x, y = GetLocalMousePosition()
-							if x == nil then
-								-- gamepad case
-								if posx ~= nil then
-									x = posx + Helper.viewWidth / 2
-									y = posy + Helper.viewHeight / 2
-								end
-							else
-								x = x + Helper.viewWidth / 2
-								y = Helper.viewHeight / 2 - y
-							end
-
-							if menu.mode == "hire" then
-								if GetComponentData(convertedRowComponent, "isplayerowned") and C.IsComponentClass(convertedRowComponent, "controllable") and (not C.IsComponentClass(convertedRowComponent, "spacesuit")) then
-									menu.contextMenuMode = "hire"
-									menu.contextMenuData = { hireObject = convertedRowComponent, xoffset = x, yoffset = y }
-
-									local width = Helper.scaleX(config.hireContextWidth)
-									if menu.contextMenuData.xoffset + width > Helper.viewWidth then
-										menu.contextMenuData.xoffset = Helper.viewWidth - width - Helper.frameBorder
+					if uitable == menu.infoTable then
+						if type(rowdata) == "table" then
+							local convertedRowComponent = ConvertIDTo64Bit(rowdata[2])
+							if convertedRowComponent and (convertedRowComponent ~= 0) then
+								local x, y = GetLocalMousePosition()
+								if x == nil then
+									-- gamepad case
+									if posx ~= nil then
+										x = posx + Helper.viewWidth / 2
+										y = posy + Helper.viewHeight / 2
 									end
-
-									menu.createContextFrame(width, nil, menu.contextMenuData.xoffset, menu.contextMenuData.yoffset)
-								end
-							elseif menu.mode == "selectCV" then
-								menu.contextMenuData = { component = convertedRowComponent, xoffset = x, yoffset = y }
-								menu.contextMenuMode = "select"
-								menu.createContextFrame(menu.selectWidth)
-							elseif menu.mode == "orderparam_object" then
-								if menu.checkForOrderParamObject(convertedRowComponent) then
-									menu.contextMenuData = { component = convertedRowComponent, xoffset = x, yoffset = y }
-									menu.contextMenuMode = "select"
-									menu.createContextFrame(menu.selectWidth)
-								end
-							elseif menu.mode == "selectComponent" then
-								if menu.checkForSelectComponent(convertedRowComponent) then
-									menu.contextMenuData = { component = convertedRowComponent, xoffset = x, yoffset = y }
-									menu.contextMenuMode = "select"
-									menu.createContextFrame(menu.selectWidth)
-								end
-							else
-								local missions = {}
-								Helper.ffiVLA(missions, "MissionID", C.GetNumMapComponentMissions, C.GetMapComponentMissions, menu.holomap, convertedRowComponent)
-								
-								local playerships, otherobjects, playerdeployables = menu.getSelectedComponentCategories()
-								if rowdata[1] == "construction" then
-									menu.interactMenuComponent = convertedRowComponent
-									Helper.openInteractMenu(menu, { component = convertedRowComponent, playerships = playerships, otherobjects = otherobjects, playerdeployables = playerdeployables, mouseX = posx, mouseY = posy, construction = rowdata[3], componentmissions = missions })
-								elseif string.find(rowdata[1], "subordinates") then
-									menu.interactMenuComponent = convertedRowComponent
-									Helper.openInteractMenu(menu, { component = convertedRowComponent, playerships = playerships, otherobjects = otherobjects, playerdeployables = playerdeployables, mouseX = posx, mouseY = posy, subordinategroup = rowdata[3], componentmissions = missions })
 								else
-									menu.interactMenuComponent = convertedRowComponent
-									Helper.openInteractMenu(menu, { component = convertedRowComponent, playerships = playerships, otherobjects = otherobjects, playerdeployables = playerdeployables, mouseX = posx, mouseY = posy, componentmissions = missions })
+									x = x + Helper.viewWidth / 2
+									y = Helper.viewHeight / 2 - y
+								end
+
+								if menu.mode == "hire" then
+									local isplayerowned, isonlineobject = GetComponentData(convertedRowComponent, "isplayerowned", "isonlineobject")
+									if isplayerowned and C.IsComponentClass(convertedRowComponent, "controllable") and (not C.IsComponentClass(convertedRowComponent, "spacesuit")) and (not isonlineobject) then
+										menu.contextMenuMode = "hire"
+										menu.contextMenuData = { hireObject = convertedRowComponent, xoffset = x, yoffset = y }
+
+										local width = Helper.scaleX(config.hireContextWidth)
+										if menu.contextMenuData.xoffset + width > Helper.viewWidth then
+											menu.contextMenuData.xoffset = Helper.viewWidth - width - Helper.frameBorder
+										end
+
+										menu.createContextFrame(width, nil, menu.contextMenuData.xoffset, menu.contextMenuData.yoffset)
+									end
+								elseif menu.mode == "selectCV" then
+									menu.contextMenuData = { component = convertedRowComponent, xoffset = x, yoffset = y }
+									menu.contextMenuMode = "select"
+									menu.createContextFrame(menu.selectWidth)
+								elseif menu.mode == "orderparam_object" then
+									if menu.checkForOrderParamObject(convertedRowComponent) then
+										menu.contextMenuData = { component = convertedRowComponent, xoffset = x, yoffset = y }
+										menu.contextMenuMode = "select"
+										menu.createContextFrame(menu.selectWidth)
+									end
+								elseif menu.mode == "selectComponent" then
+									if menu.checkForSelectComponent(convertedRowComponent) then
+										menu.contextMenuData = { component = convertedRowComponent, xoffset = x, yoffset = y }
+										menu.contextMenuMode = "select"
+										menu.createContextFrame(menu.selectWidth)
+									end
+								else
+									local missions = {}
+									Helper.ffiVLA(missions, "MissionID", C.GetNumMapComponentMissions, C.GetMapComponentMissions, menu.holomap, convertedRowComponent)
+									
+									local playerships, otherobjects, playerdeployables = menu.getSelectedComponentCategories()
+									if rowdata[1] == "construction" then
+										menu.interactMenuComponent = convertedRowComponent
+										Helper.openInteractMenu(menu, { component = convertedRowComponent, playerships = playerships, otherobjects = otherobjects, playerdeployables = playerdeployables, mouseX = posx, mouseY = posy, construction = rowdata[3], componentmissions = missions })
+									elseif string.find(rowdata[1], "subordinates") then
+										menu.interactMenuComponent = convertedRowComponent
+										Helper.openInteractMenu(menu, { component = convertedRowComponent, playerships = playerships, otherobjects = otherobjects, playerdeployables = playerdeployables, mouseX = posx, mouseY = posy, subordinategroup = rowdata[3], componentmissions = missions })
+									else
+										menu.interactMenuComponent = convertedRowComponent
+										Helper.openInteractMenu(menu, { component = convertedRowComponent, playerships = playerships, otherobjects = otherobjects, playerdeployables = playerdeployables, mouseX = posx, mouseY = posy, componentmissions = missions })
+									end
 								end
 							end
 						end
 					end
-				end
-			elseif menu.infoTableMode == "info" then
-				if uitable == menu.infoTable then
-					menu.prepareInfoContext(rowdata, "left")
-				end
-			elseif menu.infoTableMode == "missionoffer" then
-				if uitable == menu.infoTable then
-					if type(rowdata) == "table" then
-						menu.closeContextMenu()
+				elseif menu.infoTableMode == "info" then
+					if uitable == menu.infoTable then
+						menu.prepareInfoContext(rowdata, "left")
+					end
+				elseif menu.infoTableMode == "missionoffer" then
+					if uitable == menu.infoTable then
+						if type(rowdata) == "table" then
+							menu.closeContextMenu()
 
-						local missionid = ConvertStringTo64Bit(rowdata[1])
-						local playerships, otherobjects, playerdeployables = menu.getSelectedComponentCategories()
-						Helper.openInteractMenu(menu, { missionoffer = missionid, playerships = playerships, otherobjects = otherobjects, playerdeployables = playerdeployables })
+							local missionid = ConvertStringTo64Bit(rowdata[1])
+							local playerships, otherobjects, playerdeployables = menu.getSelectedComponentCategories()
+							Helper.openInteractMenu(menu, { missionoffer = missionid, playerships = playerships, otherobjects = otherobjects, playerdeployables = playerdeployables })
+						end
+					end
+				elseif menu.infoTableMode == "mission" then
+					if uitable == menu.infoTable then
+						if type(rowdata) == "table" then
+							menu.closeContextMenu()
+
+							local missionid = ConvertStringTo64Bit(rowdata[1])
+							local playerships, otherobjects, playerdeployables = menu.getSelectedComponentCategories()
+							Helper.openInteractMenu(menu, { mission = missionid, playerships = playerships, otherobjects = otherobjects, playerdeployables = playerdeployables })
+						end
 					end
 				end
-			elseif menu.infoTableMode == "mission" then
-				if uitable == menu.infoTable then
-					if type(rowdata) == "table" then
-						menu.closeContextMenu()
-
-						local missionid = ConvertStringTo64Bit(rowdata[1])
-						local playerships, otherobjects, playerdeployables = menu.getSelectedComponentCategories()
-						Helper.openInteractMenu(menu, { mission = missionid, playerships = playerships, otherobjects = otherobjects, playerdeployables = playerdeployables })
-					end
-				end
-			end
 			
-			if menu.showMultiverse then
+			else
 				if menu.ventureMode == "ventureseason" then
 					if menu.seasonMode.left == "ventureteam" then
 						if uitable == menu.infoTable then

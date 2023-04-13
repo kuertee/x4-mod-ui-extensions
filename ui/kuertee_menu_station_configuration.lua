@@ -524,6 +524,8 @@ function newFuncs.displayPlan(frame)
 												break
 											end
 										end
+									else
+										row[2]:setColSpan(3):createText(function () return Helper.getETAString(colorprefix .. name, reservation.eta) end, { font = Helper.standardFontMono })
 									end
 									-- kuertee end: callback
 

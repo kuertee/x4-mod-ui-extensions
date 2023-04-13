@@ -104,7 +104,8 @@ local config = {
 		["terraforming_atiyas_misfortune"] = true,
 		["terraforming_18billion"] = true,
 		["terraforming_memory_of_profit"] = true,
-		["terraforming_tharkas_cascade"] = true
+		["terraforming_tharkas_cascade"] = true,
+		["terraforming_ocean_of_fantasy"] = true
 	},
 	mouseOutRange = 100,
 	modCountColumnWidth = 60,
@@ -371,7 +372,7 @@ function newFuncs.createFactions(frame, tableProperties)
 			break
 		end
 	end
-	table.sort(menu.relations, Helper.sortName)	
+	table.sort(menu.relations, Helper.sortName)
 	menu.licences = {}
 	for i, relation in ipairs(menu.relations) do
 		menu.licences[relation.id] = GetOwnLicences(relation.id)
