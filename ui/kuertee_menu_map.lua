@@ -4232,7 +4232,7 @@ function newFuncs.createMissionContext(frame)
 		row[1].properties.uiTriggerID = "missionofferaccept"
 
 		-- kuertee start: callback
-		local kEM_isBriefingAvailable = false
+		local kEM_isBriefingAvailable = nil
 		if callbacks ["createMissionContext_getIsMissionBriefingAvailable"] then
 			for _, callback in ipairs (callbacks ["createMissionContext_getIsMissionBriefingAvailable"]) do
 				kEM_isBriefingAvailable = callback (menu.contextMenuData.missionid)
@@ -4241,8 +4241,14 @@ function newFuncs.createMissionContext(frame)
 				end
 			end
 		end
-		-- row[2]:createButton({  }):setText(ReadText(1001, 3326), { halign = "center" })
-		row[2]:createButton({active = kEM_isBriefingAvailable}):setText(ReadText(1001, 3326), { halign = "center" })
+				
+		if kEM_isBriefingAvailable == nil then
+			-- Vanilla do original logic
+			row[2]:createButton({  }):setText(ReadText(1001, 3326), { halign = "center" })
+		else
+			-- Emergent Missions is installed do modified logic
+			row[2]:createButton({active = kEM_isBriefingAvailable}):setText(ReadText(1001, 3326), { halign = "center" })
+		end
 		-- kuertee end: callback
 
 		row[2].handlers.onClick = menu.buttonMissionOfferBriefing
@@ -4336,14 +4342,6 @@ function newFuncs.createMissionContext(frame)
 	-- kuertee end: callback
 end
 function newFuncs.onRowChanged(row, rowdata, uitable, modified, input, source)
-	-- start Forleyor_infoCenter Callback:
-	if callbacks ["ic_onRowChanged"] then
-		for _, callback in ipairs (callbacks ["ic_onRowChanged"]) do
-			callback (row, rowdata, uitable, modified, input, source)
-		end
-	end
-	-- end Forleyor_infoCenter:
-
 	-- Lock button over updates
 	menu.lock = getElapsedTime()
 
@@ -4379,6 +4377,15 @@ function newFuncs.onRowChanged(row, rowdata, uitable, modified, input, source)
 			end
 		end
 	else
+		
+		-- start Forleyor_infoCenter Callback:
+		if callbacks ["ic_onRowChanged"] then
+			for _, callback in ipairs (callbacks ["ic_onRowChanged"]) do
+				callback (row, rowdata, uitable, modified, input, source)
+			end
+		end
+		-- end Forleyor_infoCenter:
+
 		if (menu.infoTableMode == "info") then
 			if uitable == menu.infoTable then
 				if (menu.infoMode.left == "objectinfo") or (menu.infoMode.left == "objectcrew") or (menu.infoMode.left == "objectloadout") then
@@ -4411,8 +4418,8 @@ function newFuncs.onRowChanged(row, rowdata, uitable, modified, input, source)
 				end
 			end
 
-			-- kuertee start:
-			-- elseif (menu.infoTableMode == "objectlist") or (menu.infoTableMode == "propertyowned") then
+		-- kuertee start:
+		-- elseif (menu.infoTableMode == "objectlist") or (menu.infoTableMode == "propertyowned") then
 		elseif (string.find ("" .. tostring (menu.infoTableMode), "objectlist")) or (string.find ("" .. tostring (menu.infoTableMode), "propertyowned")) then
 			-- kuertee end:
 
