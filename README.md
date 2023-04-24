@@ -5,8 +5,9 @@ by kuertee. Contributors: Forleyor, Mycu, Runekn.
 
 Updates
 =======
-v6.0.002, 13 Apr 2023:
--Tweaks: Compatibility with v6.0 final of the base game.
+v6.0.003, 25 Apr 2023:
+-Bug-fix: Infocentre compatibility.
+-Bug-fix: Open Briefing button was disblaed unless the Emergent Missions mod was installed.
 
 Instructions for players
 ========================
@@ -120,6 +121,9 @@ Troubleshooting
 
 History
 =======
+v6.0.002, 13 Apr 2023:
+-Tweaks: Compatibility with v6.0 final of the base game.
+
 v6.0.001, 4 Apr 2023:
 -Tweaks: Compatibility with v6.0 RC 1 of the base game.
 
