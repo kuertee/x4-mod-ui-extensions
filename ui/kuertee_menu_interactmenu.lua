@@ -80,6 +80,7 @@ local config = {
 		}},
 		-- kuertee start: add custom orders group
 		{ id = "custom_orders",	text = ReadText(101475, 101),		isorder = true,	showloop = true, subsections = {
+			{ id = "custom_tabs",	text = ReadText(26124, 100) },
 			{ id = "urgent_orders",	text = ReadText(12115, 1) },
 			{ id = "subsystem_targeting_orders", text = ReadText(92015, 1) },
 		}},
