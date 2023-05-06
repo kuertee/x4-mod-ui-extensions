@@ -26,6 +26,9 @@ local config = {
 		{ id = "hiringbuilderoption",	text = "",						isorder = false,	subsections = {
 			{ id = "hiringbuilder",	text = ReadText(1001, 7873) },
 		}},
+		{ id = "custom_actions",	text = ReadText(101475, 100),		isorder = false,	subsections = {
+			{ id = "custom_tabs",	text = ReadText(26124, 100) },
+		}},
 		{ id = "trade",					text = ReadText(1001, 7104),	isorder = false },
 		{ id = "playersquad_orders",	text = ReadText(1001, 1002),	isorder = false },	-- Broadcast
 		{ id = "overrideorderoption",	text = ReadText(1001, 11118),	isorder = false,	subsections = {
@@ -132,6 +135,8 @@ local function init ()
 		-- rewrites: interact menu
 		oldFuncs.createContentTable = interactMenu.createContentTable
 		interactMenu.createContentTable = newFuncs.createContentTable
+		oldFuncs.prepareSections = interactMenu.prepareSections
+		interactMenu.prepareSections = newFuncs.prepareSections
 		-- rewrites: map menu
 		oldFuncs.onRenderTargetMouseDown = mapMenu.onRenderTargetMouseDown
 		mapMenu.onRenderTargetMouseDown = newFuncs.onRenderTargetMouseDown
@@ -151,6 +156,22 @@ function newFuncs.registerCallback (callbackName, callbackFunction)
 	end
 	table.insert (callbacks [callbackName], callbackFunction)
 end
+function newFuncs.prepareSections()
+	menu.actions = {}
+	for _, section in ipairs(config.sections) do
+		if section.subsections then
+			-- kuertee start: add section initializer
+			menu.actions[section.id] = {}
+			-- kuertee end: add section initializer
+			for _, subsection in ipairs(section.subsections) do
+				menu.actions[subsection.id] = {}
+			end
+		else
+			menu.actions[section.id] = {}
+		end
+	end
+end
+
 function newFuncs.debugText (data1, data2, indent, isForced)
 	local isDebug = false
 	if isDebug == true or isForced == true then
