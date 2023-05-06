@@ -10,6 +10,7 @@ local newFuncs = {}
 local callbacks = {}
 local isInited
 -- just copy the whole config - but ensure that all references to "menu." is correct.
+-- add custom menu groups
 local config = {
 	layer = 2,
 	width = 260,
@@ -26,9 +27,11 @@ local config = {
 		{ id = "hiringbuilderoption",	text = "",						isorder = false,	subsections = {
 			{ id = "hiringbuilder",	text = ReadText(1001, 7873) },
 		}},
+		-- kuertee start: add custom actions group
 		{ id = "custom_actions",	text = ReadText(101475, 100),		isorder = false,	subsections = {
 			{ id = "custom_tabs",	text = ReadText(26124, 100) },
 		}},
+		-- kuertee end: add custom actions group
 		{ id = "trade",					text = ReadText(1001, 7104),	isorder = false },
 		{ id = "playersquad_orders",	text = ReadText(1001, 1002),	isorder = false },	-- Broadcast
 		{ id = "overrideorderoption",	text = ReadText(1001, 11118),	isorder = false,	subsections = {
