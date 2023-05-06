@@ -83,7 +83,7 @@ local config = {
 			{ id = "urgent_orders",	text = ReadText(12115, 1) },
 			{ id = "subsystem_targeting_orders", text = ReadText(92015, 1) },
 		}},
-		-- kuertee start: add custom orders group
+		-- kuertee end: add custom orders group
 
 		{ id = "trade_orders",			text = ReadText(1001, 7861),	isorder = true,		showloop = true },
 		{ id = "selected_assignments_all", text = ReadText(1001, 7886),	isorder = true },
