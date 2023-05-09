@@ -80,6 +80,8 @@ local function init ()
 		mapMenu.sortComponentListHelper = newFuncs.sortComponentListHelper
 		oldFuncs.updateRenderedComponents = mapMenu.updateRenderedComponents
 		mapMenu.updateRenderedComponents = newFuncs.updateRenderedComponents
+		oldFuncs.displayDefaultBehaviour = mapMenu.displayDefaultBehaviour
+		mapMenu.displayDefaultBehaviour = newFuncs.displayDefaultBehaviour
 		-- new functions. i.e. doesn't exist in the original map menu.
 		mapMenu.setSelectComponentMode = newFuncs.setSelectComponentMode
 	end
@@ -117,6 +119,7 @@ function newFuncs.registerCallback (callbackName, callbackFunction)
 	-- createRightBar_on_start (config)
 	-- getPropertyOwnedFleetDataInternal_addToFleetIcons (component, shiptyperanks, shiptypedata)
 	-- createMissionContext_on_end(frame)
+	-- displayDefaultBehaviour_change_param_behaviouractive (behaviouractive)
 	if callbacks [callbackName] == nil then
 		callbacks [callbackName] = {}
 	end
@@ -1300,6 +1303,120 @@ function newFuncs.updateRenderedComponents()
 	end
 
 	table.sort(menu.renderedComponents, menu.componentSorter(menu.objectSorterType))
+end
+function newFuncs.displayDefaultBehaviour(ftable, mode, titlerow, instance)
+
+	local infoTableData = menu.infoTableData[instance]
+	local selectedorder = menu.infoTablePersistentData[instance].selectedorder
+
+	local isvalid = menu.isInfoModeValidFor(menu.infoSubmenuObject, mode)
+	local playeroccupiedship64 = C.GetPlayerOccupiedShipID()
+	local isplayeroccupiedship = menu.infoSubmenuObject == playeroccupiedship64
+
+	local haspilot = GetComponentData(menu.infoSubmenuObject, "assignedpilot") ~= nil
+	local behaviouractive = (infoTableData.commander == nil) and isvalid and (not isplayeroccupiedship) and haspilot
+	local mouseovertext = isplayeroccupiedship and ReadText(1026, 3226) or ((not haspilot) and ReadText(1026, 3227) or "")
+
+	menu.displayDefaultBehaviourFailure(ftable, mode, titlerow, instance)
+
+	local order = infoTableData.defaultorder
+	if infoTableData.hasloop then
+		-- name
+		local row = ftable:addRow({ "default2" }, { bgColor = Helper.color.transparent })
+		if selectedorder and (selectedorder[1] == "default2") then
+			menu.setrow = row.index
+			menu.setcol = nil
+		end
+		row[1]:setColSpan(4):createText(ReadText(1001, 8320) .. ReadText(1001, 120))
+		row[5]:setColSpan(6):createButton({ active = behaviouractive, mouseOverText = (mouseovertext == "") and ReadText(1026, 3269) or mouseovertext }):setText(ReadText(1001, 11267)):setText2(Helper.displaySkill(menu.orderloopskill), { halign = "right", color = Helper.color.brightyellow })
+		row[5].handlers.onClick = function () return menu.buttonNewOrder(nil, true, instance) end
+		titlerow[1].properties.helpOverlayHeight = titlerow[1].properties.helpOverlayHeight + row:getHeight() + Helper.borderSize
+	elseif next(order) then
+		order.params = GetOrderParams(menu.infoSubmenuObject, "default")
+		-- commander
+		if infoTableData.commander then
+			local row = ftable:addRow(nil, { bgColor = Helper.color.transparent })
+			row[1]:setColSpan(10):createText(ReadText(1001, 11230), { wordwrap = true })
+			titlerow[1].properties.helpOverlayHeight = titlerow[1].properties.helpOverlayHeight + row:getHeight() + Helper.borderSize
+		end
+		-- note
+		local row = ftable:addRow(nil, { bgColor = Helper.color.transparent })
+		row[1]:setColSpan(10):createText(ReadText(1001, 8363) .. ReadText(1001, 120))
+		titlerow[1].properties.helpOverlayHeight = titlerow[1].properties.helpOverlayHeight + row:getHeight() + Helper.borderSize
+		-- name
+		local row = ftable:addRow({ "default2" }, { bgColor = Helper.color.transparent })
+		if selectedorder and (selectedorder[1] == "default2") then
+			menu.setrow = row.index
+			menu.setcol = nil
+		end
+		local printedSkillReq = math.floor(order.orderdefref.requiredSkill * 15 / 100)
+		row[1]:setColSpan(4):createText(ReadText(1001, 8364) .. ReadText(1001, 120))
+		row[5]:setColSpan(6):createButton({helpOverlayID = "map_behaviourassignement", helpOverlayText = " ", helpOverlayHighlightOnly = true, active = behaviouractive, mouseOverText = (mouseovertext == "") and order.orderdefref.description or mouseovertext }):setText(order.orderdefref.name):setText2(Helper.displaySkill(printedSkillReq), { halign = "right", color = Helper.color.brightyellow })
+		row[5].handlers.onClick = function () return menu.buttonNewOrder(nil, true, instance) end
+		row[5].properties.uiTriggerID = "DefaultBehaviour"
+		titlerow[1].properties.helpOverlayHeight = titlerow[1].properties.helpOverlayHeight + row:getHeight() + Helper.borderSize
+		-- weapon config - TODO
+		--row[7]:createButton({ active = isvalid and not isplayeroccupiedship }):setText("*", { halign = "center" })
+		--row[7].handlers.onClick = function () return menu.buttonWeaponConfig(menu.infoSubmenuObject, nil, true) end
+
+		for j, param in ipairs(order.params) do
+			if (not param.hasinfinitevalue) and ((not param.advanced) or (mode == "orderqueue_advanced")) then
+				if param.type == "list" then
+					local playerreadonly = param.inputparams and param.inputparams.playerreadonly
+					if param.value then
+						for k, entry in ipairs(param.value) do
+							local param2 = { text = param.text .. " #" .. k, value = entry, type = param.inputparams.type, editable = param.editable, playerreadonly = playerreadonly }
+							menu.displayOrderParam(ftable, "default", order, j, param2, k, instance)
+						end
+					end
+
+					if playerreadonly ~= 1 then
+						local row = ftable:addRow({ i, j, "new" }, { bgColor = Helper.color.transparent })
+						if selectedorder and (selectedorder[1] == i) and (selectedorder[2] == j) and (selectedorder[3] == "new") then
+							menu.setrow = row.index
+							menu.setcol = nil
+						end
+
+						-- kuertee start: callback
+						if callbacks ["displayDefaultBehaviour_change_param_behaviouractive"] then
+							for _, callback in ipairs (callbacks ["displayDefaultBehaviour_change_param_behaviouractive"]) do
+								result = callback (behaviouractive)
+								if result then
+									behaviouractive = result.behaviouractive
+								end
+							end
+						end
+						-- kuertee end: callback
+
+						local active = behaviouractive and isvalid and (not isplayeroccupiedship) and (((order.state == "setup") and (j <= (order.actualparams + 1))) or ((order.state ~= "setup") and param.editable))
+						row[2]:setColSpan(9):createButton({ active = active }):setText("  " .. string.format((param.inputparams.type == "ware") and ReadText(1001, 8377) or ReadText(1001, 3235), param.text), { halign = "center" })
+						row[2].handlers.onClick = function () return menu.buttonSetOrderParam("default", j, nil, nil, instance) end
+						titlerow[1].properties.helpOverlayHeight = titlerow[1].properties.helpOverlayHeight + row:getHeight() + Helper.borderSize
+					end
+				elseif (param.type ~= "internal") then
+					menu.displayOrderParam(ftable, "default", order, j, param, nil, instance)
+				end
+			end
+		end
+	else
+		local row = ftable:addRow({ "default" }, { bgColor = Helper.color.transparent })
+		if selectedorder and (selectedorder[1] == "default") then
+			menu.setrow = row.index
+			menu.setcol = nil
+		end
+		row[2]:setColSpan(8):createText(ReadText(1001, 8320) .. ReadText(1001, 120) .. " ---")
+		row[10]:createButton({ active = behaviouractive, mouseOverText = mouseovertext }):setIcon("menu_edit")
+		row[10].handlers.onClick = function () return menu.buttonNewOrder(nil, true, instance) end
+		titlerow[1].properties.helpOverlayHeight = titlerow[1].properties.helpOverlayHeight + row:getHeight() + Helper.borderSize
+	end
+
+	local row = ftable:addRow({ "defaultbuttons" }, { bgColor = Helper.color.transparent })
+	if selectedorder and (selectedorder[1] == "defaultbuttons") then
+		menu.setrow = row.index
+	end
+	row[1]:setColSpan(4):createButton({ active = false }):setText(ReadText(1001, 2821), { halign = "center" })
+	row[6]:setColSpan(5):createButton({ active = false }):setText(ReadText(1001, 64), { halign = "center" })
+	titlerow[1].properties.helpOverlayHeight = titlerow[1].properties.helpOverlayHeight + row:getHeight() + Helper.borderSize
 end
 function newFuncs.componentSorter(sorttype)
 	local sorter = Helper.sortNameAndObjectID
