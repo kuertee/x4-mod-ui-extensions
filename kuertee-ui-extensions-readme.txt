@@ -5,9 +5,12 @@ by kuertee. Contributors: Forleyor, Mycu, Runekn.
 
 Updates
 =======
-v6.0.003, 25 Apr 2023:
--Bug-fix: Infocentre compatibility.
--Bug-fix: Open Briefing button was disblaed unless the Emergent Missions mod was installed.
+v6.0.004, 10 May 2023:
+-Mycu's contribution: custom nested Interact Menu actions.
+-Mycu's contribution: support for Urgent Orders mod and Subsystem Targeting Orders mod.
+-Mycu's contribution: support for Custom Tabs mod.
+-Mycu's contribution: new map menu callback: displayDefaultBehaviour_change_param_behaviouractive.
+-Note: From here-on, I'll be noting the contributions of other authors in the change logs. Apologies to Forleyor and Runekn for not noting them before. But you're still credited in the code directly in your code comments.
 
 Instructions for players
 ========================
@@ -121,6 +124,10 @@ Troubleshooting
 
 History
 =======
+v6.0.003, 25 Apr 2023:
+-Bug-fix: Infocentre compatibility.
+-Bug-fix: Open Briefing button was disblaed unless the Emergent Missions mod was installed.
+
 v6.0.002, 13 Apr 2023:
 -Tweaks: Compatibility with v6.0 final of the base game.
 
