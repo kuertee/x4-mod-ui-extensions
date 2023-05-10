@@ -10,6 +10,7 @@ local newFuncs = {}
 local callbacks = {}
 local isInited
 -- just copy the whole config - but ensure that all references to "menu." is correct.
+-- add custom menu groups
 local config = {
 	layer = 2,
 	width = 260,
@@ -26,6 +27,11 @@ local config = {
 		{ id = "hiringbuilderoption",	text = "",						isorder = false,	subsections = {
 			{ id = "hiringbuilder",	text = ReadText(1001, 7873) },
 		}},
+		-- kuertee start: add custom actions group
+		{ id = "custom_actions",	text = ReadText(101475, 100),		isorder = false,	subsections = {
+			{ id = "custom_tabs",	text = ReadText(26124, 100) },
+		}},
+		-- kuertee end: add custom actions group
 		{ id = "trade",					text = ReadText(1001, 7104),	isorder = false },
 		{ id = "playersquad_orders",	text = ReadText(1001, 1002),	isorder = false },	-- Broadcast
 		{ id = "overrideorderoption",	text = ReadText(1001, 11118),	isorder = false,	subsections = {
@@ -72,6 +78,14 @@ local config = {
 		{ id = "selected_disable",	text = "",	isorder = true,		subsections = {
 			{ id = "selected_disable_attack",		text = ReadText(1001, 11128),	orderid = "Attack" },
 		}},
+		-- kuertee start: add custom orders group
+		{ id = "custom_orders",	text = ReadText(101475, 101),		isorder = true,	showloop = true, subsections = {
+			{ id = "custom_tabs",	text = ReadText(26124, 100) },
+			{ id = "urgent_orders",	text = ReadText(12115, 1) },
+			{ id = "subsystem_targeting_orders", text = ReadText(92015, 1) },
+		}},
+		-- kuertee end: add custom orders group
+
 		{ id = "trade_orders",			text = ReadText(1001, 7861),	isorder = true,		showloop = true },
 		{ id = "selected_assignments_all", text = ReadText(1001, 7886),	isorder = true },
 		{ id = "selected_change_assignments",	text = ReadText(1001, 11119),	isorder = true,		subsections = {
@@ -132,6 +146,8 @@ local function init ()
 		-- rewrites: interact menu
 		oldFuncs.createContentTable = interactMenu.createContentTable
 		interactMenu.createContentTable = newFuncs.createContentTable
+		oldFuncs.prepareSections = interactMenu.prepareSections
+		interactMenu.prepareSections = newFuncs.prepareSections
 		-- rewrites: map menu
 		oldFuncs.onRenderTargetMouseDown = mapMenu.onRenderTargetMouseDown
 		mapMenu.onRenderTargetMouseDown = newFuncs.onRenderTargetMouseDown
@@ -145,12 +161,29 @@ function newFuncs.registerCallback (callbackName, callbackFunction)
 	-- note 5: if a callback requires a return value, return it in an object var. e.g. "display_on_set_room_active" requires a return of {active = true | false}.
 	-- available callbacks:
 	-- none yet
-	-- 
+	--
 	if callbacks [callbackName] == nil then
 		callbacks [callbackName] = {}
 	end
 	table.insert (callbacks [callbackName], callbackFunction)
 end
+function newFuncs.prepareSections()
+	local menu = interactMenu
+	menu.actions = {}
+	for _, section in ipairs(config.sections) do
+		if section.subsections then
+			-- kuertee start: add section initializer
+			menu.actions[section.id] = {}
+			-- kuertee end: add section initializer
+			for _, subsection in ipairs(section.subsections) do
+				menu.actions[subsection.id] = {}
+			end
+		else
+			menu.actions[section.id] = {}
+		end
+	end
+end
+
 function newFuncs.debugText (data1, data2, indent, isForced)
 	local isDebug = false
 	if isDebug == true or isForced == true then
@@ -238,26 +271,26 @@ function newFuncs.createContentTable(frame, position)
 	end
 	if text == nil then
 		DebugError("Interact title text is nil [Florian]" ..
-			"\n   targetShortName: " ..tostring(menu.texts.targetShortName) ..
-			"\n   construction: " .. tostring(menu.construction) ..
-			"\n   constructionName: " .. tostring(menu.texts.constructionName) ..
-			"\n   selectedNameAll: " .. tostring(menu.texts.selectedNameAll) ..
-			"\n   selectedName: " .. tostring(menu.texts.selectedName) ..
-			"\n   otherName: " .. tostring(menu.texts.otherName) ..
-			"\n   ventureName: " .. tostring(menu.texts.ventureName) ..
-			"\n   #menu.selectedplayerships: " .. tostring(#menu.selectedplayerships) ..
-			"\n   #menu.selectedotherobjects: " .. tostring(#menu.selectedotherobjects) ..
-			"\n   #menu.ventureships: " .. tostring(#menu.ventureships) ..
-			"\n   showPlayerInteractions: " .. tostring(menu.showPlayerInteractions) ..
-			"\n   syncpoint: " .. tostring(menu.syncpoint) ..
-			"\n   syncpointorder: " .. tostring(menu.syncpointorder) ..
-			"\n   intersectordefencegroup: " .. tostring(menu.intersectordefencegroup) ..
-			"\n   mission: " .. tostring(menu.mission) ..
-			"\n   missionoffer: " .. tostring(menu.missionoffer) ..
-			"\n   #menu.actions['selected_orders_all']: " .. tostring(#menu.actions["selected_orders_all"]) ..
-			"\n   #menu.actions['selected_orders']: " .. tostring(#menu.actions["selected_orders"]) ..
-			"\n   #menu.actions['trade_orders']: " .. tostring(#menu.actions["trade_orders"]) ..
-			"\n   #menu.actions['selected_assignments_all']: " .. tostring(#menu.actions["selected_assignments_all"])
+				"\n   targetShortName: " ..tostring(menu.texts.targetShortName) ..
+				"\n   construction: " .. tostring(menu.construction) ..
+				"\n   constructionName: " .. tostring(menu.texts.constructionName) ..
+				"\n   selectedNameAll: " .. tostring(menu.texts.selectedNameAll) ..
+				"\n   selectedName: " .. tostring(menu.texts.selectedName) ..
+				"\n   otherName: " .. tostring(menu.texts.otherName) ..
+				"\n   ventureName: " .. tostring(menu.texts.ventureName) ..
+				"\n   #menu.selectedplayerships: " .. tostring(#menu.selectedplayerships) ..
+				"\n   #menu.selectedotherobjects: " .. tostring(#menu.selectedotherobjects) ..
+				"\n   #menu.ventureships: " .. tostring(#menu.ventureships) ..
+				"\n   showPlayerInteractions: " .. tostring(menu.showPlayerInteractions) ..
+				"\n   syncpoint: " .. tostring(menu.syncpoint) ..
+				"\n   syncpointorder: " .. tostring(menu.syncpointorder) ..
+				"\n   intersectordefencegroup: " .. tostring(menu.intersectordefencegroup) ..
+				"\n   mission: " .. tostring(menu.mission) ..
+				"\n   missionoffer: " .. tostring(menu.missionoffer) ..
+				"\n   #menu.actions['selected_orders_all']: " .. tostring(#menu.actions["selected_orders_all"]) ..
+				"\n   #menu.actions['selected_orders']: " .. tostring(#menu.actions["selected_orders"]) ..
+				"\n   #menu.actions['trade_orders']: " .. tostring(#menu.actions["trade_orders"]) ..
+				"\n   #menu.actions['selected_assignments_all']: " .. tostring(#menu.actions["selected_assignments_all"])
 		)
 		text = ""
 	end
