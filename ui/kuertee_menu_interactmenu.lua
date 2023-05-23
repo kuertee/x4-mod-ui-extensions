@@ -30,6 +30,7 @@ local config = {
 		-- kuertee start: add custom actions group
 		{ id = "custom_actions",	text = ReadText(101475, 100),		isorder = false,	subsections = {
 			{ id = "custom_tabs",	text = ReadText(26124, 100) },
+			{ id = "ship_built_notifications", text = ReadText(24627, 100) },
 		}},
 		-- kuertee end: add custom actions group
 		{ id = "trade",					text = ReadText(1001, 7104),	isorder = false },
