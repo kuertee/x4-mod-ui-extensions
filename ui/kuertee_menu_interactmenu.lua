@@ -152,6 +152,8 @@ local function init ()
 		-- rewrites: map menu
 		oldFuncs.onRenderTargetMouseDown = mapMenu.onRenderTargetMouseDown
 		mapMenu.onRenderTargetMouseDown = newFuncs.onRenderTargetMouseDown
+		RegisterEvent ("Interact_Menu_API.Add_Custom_Actions_Group_Id", newFuncs.Add_Custom_Actions_Group_Id)
+		RegisterEvent ("Interact_Menu_API.Add_Custom_Actions_Group_Text", newFuncs.Add_Custom_Actions_Group_Text)
 	end
 end
 function newFuncs.registerCallback (callbackName, callbackFunction)
@@ -630,5 +632,44 @@ function newFuncs.createContentTable(frame, position)
 	menu.topRows.contentTable = nil
 
 	return ftable
+end
+
+local newCustomGroupId
+local newCustomGroupText
+function newFuncs.Add_Custom_Actions_Group_Id(_, id)
+	newCustomGroupId = id
+	if newCustomGroupId and newCustomGroupText then
+		newFuncs.Add_Custom_Actions_Group(newCustomGroupId, newCustomGroupText)
+		newCustomGroupId = nil
+		newCustomGroupText = nil
+	end
+end
+function newFuncs.Add_Custom_Actions_Group_Text(_, text)
+	newCustomGroupText = text
+	if newCustomGroupId and newCustomGroupText then
+		newFuncs.Add_Custom_Actions_Group(newCustomGroupId, newCustomGroupText)
+		newCustomGroupId = nil
+		newCustomGroupText = nil
+	end
+end
+function newFuncs.Add_Custom_Actions_Group(id, text)
+	local customActionsSection
+	local isFound = false
+	newFuncs.debugText("Add_Custom_Actions_Group id: " .. tostring(id) .. " text: " .. tostring(text))
+	for _, section in ipairs(config.sections) do
+		if section.id == "custom_actions" then
+			customActionsSection = section
+			for _, subsection in ipairs(section.subsections) do
+				if subsection.id == id then
+					isFound = true
+				end
+			end
+		end
+	end
+	if customActionsSection and (not isFound) then
+		local subsection = 
+		table.insert (customActionsSection.subsections, {id = id, text = text})
+		newFuncs.debugText("Add_Custom_Actions_Group customActionsSection.subsections", customActionsSection.subsections)
+	end
 end
 init ()
