@@ -5,12 +5,26 @@ by kuertee. Contributors: Forleyor, Mycu, Runekn.
 
 Updates
 =======
-v6.0.004, 10 May 2023:
--Mycu's contribution: custom nested Interact Menu actions.
--Mycu's contribution: support for Urgent Orders mod and Subsystem Targeting Orders mod.
--Mycu's contribution: support for Custom Tabs mod.
--Mycu's contribution: new map menu callback: displayDefaultBehaviour_change_param_behaviouractive.
--Note: From here-on, I'll be noting the contributions of other authors in the change logs. Apologies to Forleyor and Runekn for not noting them before. But you're still credited in the code directly in your code comments.
+v6.1.001, 27 Jun 2023:
+-modders resource: Add Custom Actions Group to the Interact Menu (via MD):
+1. Load UIX's customised Interact Menu with: <raise_lua_event name="'Lua_Loader.Load'" param="'extensions.kuertee_ui_extensions.ui.kuertee_menu_interactmenu'"/>
+2. Add the new Custom Actions Group Id <raise_lua_event name="'Interact_Menu_API.Add_Custom_Actions_Group_Id'" param="'my_custom_actions_group_id'" />
+3. Add the new Custom Actions Group Name <raise_lua_event name="'Interact_Menu_API.Add_Custom_Actions_Group_Text'" param="'My Custom Actions Group'" />
+4. Use the new id in Mod Support API's Add_Action function like this:
+					<signal_cue_instantly cue="md.Interact_Menu_API.Add_Action" param = "table[
+						$id = 'my_custom_action_1,
+						$section = 'my_custom_actions_group_id',
+						$text = 'My Custom Action 1',
+						$mouseover = 'My Custom Action 1 mouse over',
+						$callback = My_Custom_Action_1_Cue
+					]" />
+					<signal_cue_instantly cue="md.Interact_Menu_API.Add_Action" param = "table[
+						$id = 'my_custom_action_2,
+						$section = 'my_custom_actions_group_id',
+						$text = 'My Custom Action 1',
+						$mouseover = 'My Custom Action 2 mouse over',
+						$callback = My_Custom_Action_2_Cue
+					]" />
 
 Instructions for players
 ========================
@@ -101,8 +115,29 @@ To use:
 3. To trigger an "AddUITriggeredEvent" after the player selects an object, set screenname in the mapMenu.setSelectComponentMode call.
 4. To disable the default "event_conversation_next_section" after the player selects an object, set returnsection to nil in the mapMenu.setSelectComponentMode call.
 
-Requirement
-===========
+Add Custom Actions Group to the Interact Menu (via MD)
+======================================================
+1. Load UIX's customised Interact Menu with: <raise_lua_event name="'Lua_Loader.Load'" param="'extensions.kuertee_ui_extensions.ui.kuertee_menu_interactmenu'"/>
+2. Add the new Custom Actions Group Id <raise_lua_event name="'Interact_Menu_API.Add_Custom_Actions_Group_Id'" param="'my_custom_actions_group_id'" />
+3. Add the new Custom Actions Group Name <raise_lua_event name="'Interact_Menu_API.Add_Custom_Actions_Group_Text'" param="'My Custom Actions Group'" />
+4. Use the new id in Mod Support API's Add_Action function like this:
+					<signal_cue_instantly cue="md.Interact_Menu_API.Add_Action" param = "table[
+						$id = 'my_custom_action_1,
+						$section = 'my_custom_actions_group_id',
+						$text = 'My Custom Action 1',
+						$mouseover = 'My Custom Action 1 mouse over',
+						$callback = My_Custom_Action_1_Cue
+					]" />
+					<signal_cue_instantly cue="md.Interact_Menu_API.Add_Action" param = "table[
+						$id = 'my_custom_action_2,
+						$section = 'my_custom_actions_group_id',
+						$text = 'My Custom Action 1',
+						$mouseover = 'My Custom Action 2 mouse over',
+						$callback = My_Custom_Action_2_Cue
+					]" />
+
+Requirements
+============
 SirNukes Mod Support APIs mod (https://www.nexusmods.com/x4foundations/mods/503) - to load the custom Lua files
 
 Install
@@ -124,6 +159,13 @@ Troubleshooting
 
 History
 =======
+v6.0.004, 10 May 2023:
+-Mycu's contribution: custom nested Interact Menu actions.
+-Mycu's contribution: support for Urgent Orders mod and Subsystem Targeting Orders mod.
+-Mycu's contribution: support for Custom Tabs mod.
+-Mycu's contribution: new map menu callback: displayDefaultBehaviour_change_param_behaviouractive.
+-Note: From here-on, I'll be noting the contributions of other authors in the change logs. Apologies to Forleyor and Runekn for not noting them before. But you're still credited in the code directly in your code comments.
+
 v6.0.003, 25 Apr 2023:
 -Bug-fix: Infocentre compatibility.
 -Bug-fix: Open Briefing button was disblaed unless the Emergent Missions mod was installed.
