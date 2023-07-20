@@ -58,10 +58,10 @@ function newFuncs.createInfoFrame()
 	Helper.clearDataForRefresh(menu, config.infoLayer)
 
 	-- kuertee start: callback
-	local frameProperties
+	local frameProperties, isUseFrameHeight
 	if callbacks ["createInfoFrame_custom_frame_properties"] then
 		for _, callback in ipairs (callbacks ["createInfoFrame_custom_frame_properties"]) do
-			frameProperties = callback (config)
+			frameProperties, isUseFrameHeight = callback (config)
 			if frameProperties then break end
 		end
 		-- Lib.Print_Table (frameProperties)
@@ -93,7 +93,12 @@ function newFuncs.createInfoFrame()
 
 	local ftable = menu.createTable(menu.infoFrame, tableProperties)
 
-	menu.infoFrame.properties.height = ftable.properties.y + ftable:getVisibleHeight() + 3 * Helper.borderSize
+	DebugError("kuertee_menu_userquestion createInfoFrame isUseFrameHeight: " .. tostring(isUseFrameHeight))
+	if not isUseFrameHeight then
+		menu.infoFrame.properties.height = ftable.properties.y + ftable:getVisibleHeight() + 3 * Helper.borderSize
+	else
+		menu.infoFrame.properties.height = frameProperties.height
+	end
 	menu.infoFrame.properties.y = (Helper.viewHeight - menu.infoFrame.properties.height) / 2
 
 	menu.infoFrame:display()
