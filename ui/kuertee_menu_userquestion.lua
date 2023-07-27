@@ -93,7 +93,7 @@ function newFuncs.createInfoFrame()
 
 	local ftable = menu.createTable(menu.infoFrame, tableProperties)
 
-	DebugError("kuertee_menu_userquestion createInfoFrame isUseFrameHeight: " .. tostring(isUseFrameHeight))
+	-- DebugError("kuertee_menu_userquestion createInfoFrame isUseFrameHeight: " .. tostring(isUseFrameHeight))
 	if not isUseFrameHeight then
 		menu.infoFrame.properties.height = ftable.properties.y + ftable:getVisibleHeight() + 3 * Helper.borderSize
 	else

@@ -79,13 +79,13 @@ local config = {
 		{ id = "selected_disable",	text = "",	isorder = true,		subsections = {
 			{ id = "selected_disable_attack",		text = ReadText(1001, 11128),	orderid = "Attack" },
 		}},
-		-- kuertee start: add custom orders group
+		-- mycu start: add custom orders group
 		{ id = "custom_orders",	text = ReadText(101475, 101),		isorder = true,	showloop = true, subsections = {
 			{ id = "custom_tabs",	text = ReadText(26124, 100) },
 			{ id = "urgent_orders",	text = ReadText(12115, 1) },
 			{ id = "subsystem_targeting_orders", text = ReadText(92015, 1) },
 		}},
-		-- kuertee end: add custom orders group
+		-- mycu end: add custom orders group
 
 		{ id = "trade_orders",			text = ReadText(1001, 7861),	isorder = true,		showloop = true },
 		{ id = "selected_assignments_all", text = ReadText(1001, 7886),	isorder = true },
@@ -654,22 +654,47 @@ function newFuncs.Add_Custom_Actions_Group_Text(_, text)
 end
 function newFuncs.Add_Custom_Actions_Group(id, text)
 	local customActionsSection
-	local isFound = false
+	local customActionsSection_isFound = false
+	local customActionsSection_isAddTo = string.find(id, "actions_")
+	local customOrdersSection
+	local customOrdersSection_isFound = false
+	local customOrdersSection_isAddTo = string.find(id, "orders_")
+	if (not customActionsSection_isAddTo) and (not customOrdersSection_isAddTo) then
+		customActionsSection_isAddTo = true
+		customOrdersSection_isAddTo = true
+	end
 	newFuncs.debugText("Add_Custom_Actions_Group id: " .. tostring(id) .. " text: " .. tostring(text))
 	for _, section in ipairs(config.sections) do
-		if section.id == "custom_actions" then
-			customActionsSection = section
+		if section.id == "custom_actions" or section.id == "custom_orders" then
+			newFuncs.debugText("    section.id: ", section.id)
+			if section.id == "custom_actions" then
+				customActionsSection = section
+			else
+				customOrdersSection = section
+			end
 			for _, subsection in ipairs(section.subsections) do
+				newFuncs.debugText("        subsection.id: ", subsection.id)
 				if subsection.id == id then
-					isFound = true
+					if section.id == "custom_actions" then
+						customActionsSection_isFound = true
+					else
+						customOrdersSection_isFound = true
+					end
+					table.insert (customActionsSection.subsections, {id = id, text = text})
+					newFuncs.debugText("Add_Custom_Actions_Group customActionsSection.subsections", customActionsSection.subsections)
 				end
 			end
 		end
 	end
-	if customActionsSection and (not isFound) then
-		local subsection = 
+	newFuncs.debugText("customActionsSection_isFound: ", customActionsSection_isFound)
+	newFuncs.debugText("customOrdersSection_isFound: ", customOrdersSection_isFound)
+	if customActionsSection and customActionsSection_isAddTo and (not customActionsSection_isFound) then
 		table.insert (customActionsSection.subsections, {id = id, text = text})
 		newFuncs.debugText("Add_Custom_Actions_Group customActionsSection.subsections", customActionsSection.subsections)
+	end
+	if customOrdersSection and customOrdersSection_isAddTo and (not customOrdersSection_isFound) then
+		table.insert (customOrdersSection.subsections, {id = id, text = text})
+		newFuncs.debugText("Add_Custom_Actions_Group customOrdersSection.subsections", customOrdersSection.subsections)
 	end
 end
 init ()
