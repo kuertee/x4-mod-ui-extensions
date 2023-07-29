@@ -5,26 +5,8 @@ by kuertee. Contributors: Forleyor, Mycu, Runekn.
 
 Updates
 =======
-v6.1.001, 27 Jun 2023:
--modders resource: Add Custom Actions Group to the Interact Menu (via MD):
-1. Load UIX's customised Interact Menu with: <raise_lua_event name="'Lua_Loader.Load'" param="'extensions.kuertee_ui_extensions.ui.kuertee_menu_interactmenu'"/>
-2. Add the new Custom Actions Group Id <raise_lua_event name="'Interact_Menu_API.Add_Custom_Actions_Group_Id'" param="'my_custom_actions_group_id'" />
-3. Add the new Custom Actions Group Name <raise_lua_event name="'Interact_Menu_API.Add_Custom_Actions_Group_Text'" param="'My Custom Actions Group'" />
-4. Use the new id in Mod Support API's Add_Action function like this:
-					<signal_cue_instantly cue="md.Interact_Menu_API.Add_Action" param = "table[
-						$id = 'my_custom_action_1,
-						$section = 'my_custom_actions_group_id',
-						$text = 'My Custom Action 1',
-						$mouseover = 'My Custom Action 1 mouse over',
-						$callback = My_Custom_Action_1_Cue
-					]" />
-					<signal_cue_instantly cue="md.Interact_Menu_API.Add_Action" param = "table[
-						$id = 'my_custom_action_2,
-						$section = 'my_custom_actions_group_id',
-						$text = 'My Custom Action 1',
-						$mouseover = 'My Custom Action 2 mouse over',
-						$callback = My_Custom_Action_2_Cue
-					]" />
+v6.1.003, 29 Jul 2023:
+-Modders resource: Custom orders are now added to the Custom Actions and Custom Orders sub-menus. To add only to one or the other, prefix the section name with either "actions_" or "orders_". Read the Add Custom Actions Group to the Interact Menu (via MD) section below.
 
 Instructions for players
 ========================
@@ -135,6 +117,8 @@ Add Custom Actions Group to the Interact Menu (via MD)
 						$mouseover = 'My Custom Action 2 mouse over',
 						$callback = My_Custom_Action_2_Cue
 					]" />
+5. The custom commands will be added to both the Custom Actions and Custom Orders sub-menus.
+6. To add only to one sub-menu and not the other, start the section name with either "actions_" or "orders_". E.g. "actions_my_custom_actions" will be added to only the Custom Actions sub-menu. And "orders_my_custom_orders" will be added to only the Custom Orders sub-menu.
 
 Requirements
 ============
@@ -159,6 +143,27 @@ Troubleshooting
 
 History
 =======
+v6.1.001, 27 Jun 2023:
+-modders resource: Add Custom Actions Group to the Interact Menu (via MD):
+1. Load UIX's customised Interact Menu with: <raise_lua_event name="'Lua_Loader.Load'" param="'extensions.kuertee_ui_extensions.ui.kuertee_menu_interactmenu'"/>
+2. Add the new Custom Actions Group Id <raise_lua_event name="'Interact_Menu_API.Add_Custom_Actions_Group_Id'" param="'my_custom_actions_group_id'" />
+3. Add the new Custom Actions Group Name <raise_lua_event name="'Interact_Menu_API.Add_Custom_Actions_Group_Text'" param="'My Custom Actions Group'" />
+4. Use the new id in Mod Support API's Add_Action function like this:
+					<signal_cue_instantly cue="md.Interact_Menu_API.Add_Action" param = "table[
+						$id = 'my_custom_action_1,
+						$section = 'my_custom_actions_group_id',
+						$text = 'My Custom Action 1',
+						$mouseover = 'My Custom Action 1 mouse over',
+						$callback = My_Custom_Action_1_Cue
+					]" />
+					<signal_cue_instantly cue="md.Interact_Menu_API.Add_Action" param = "table[
+						$id = 'my_custom_action_2,
+						$section = 'my_custom_actions_group_id',
+						$text = 'My Custom Action 1',
+						$mouseover = 'My Custom Action 2 mouse over',
+						$callback = My_Custom_Action_2_Cue
+					]" />
+
 v6.0.004, 10 May 2023:
 -Mycu's contribution: custom nested Interact Menu actions.
 -Mycu's contribution: support for Urgent Orders mod and Subsystem Targeting Orders mod.
