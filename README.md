@@ -5,8 +5,12 @@ by kuertee. Contributors: Forleyor, Mycu, Runekn.
 
 Updates
 =======
-v6.1.003, 29 Jul 2023:
--Modders resource: Custom orders are now added to the Custom Actions and Custom Orders sub-menus. To add only to one or the other, prefix the section name with either "actions_" or "orders_". Read the Add Custom Actions Group to the Interact Menu (via MD) section below.
+v6.1.004, 1 Aug 2023:
+-Modders resource: UIX's Interact Menu now sends a signal to the MD that it has been loaded. The modder can listen for this before setting up their custom actions/orders.
+-Compatibility: Mycu's tweaks for better compatibility with his updated mods.
+
+-v6.1.003, 29 Jul 2023:
+-Modders resource: Custom orders are now added to the Custom Actions and Custom Orders sub-menus. To add only to one or the other, prefix the section name with either "actions_" or "orders_". Read the Add Custom Actions/Orders Group to the Interact Menu (via MD) section below.
 
 Instructions for players
 ========================
@@ -97,12 +101,13 @@ To use:
 3. To trigger an "AddUITriggeredEvent" after the player selects an object, set screenname in the mapMenu.setSelectComponentMode call.
 4. To disable the default "event_conversation_next_section" after the player selects an object, set returnsection to nil in the mapMenu.setSelectComponentMode call.
 
-Add Custom Actions Group to the Interact Menu (via MD)
+Add Custom Actions/Orders Group to the Interact Menu (via MD)
 ======================================================
 1. Load UIX's customised Interact Menu with: <raise_lua_event name="'Lua_Loader.Load'" param="'extensions.kuertee_ui_extensions.ui.kuertee_menu_interactmenu'"/>
-2. Add the new Custom Actions Group Id <raise_lua_event name="'Interact_Menu_API.Add_Custom_Actions_Group_Id'" param="'my_custom_actions_group_id'" />
-3. Add the new Custom Actions Group Name <raise_lua_event name="'Interact_Menu_API.Add_Custom_Actions_Group_Text'" param="'My Custom Actions Group'" />
-4. Use the new id in Mod Support API's Add_Action function like this:
+2. At <event_ui_triggered screen="'UIXInteractMenu'" control="'loaded'" />, add the Custom Actions/Orders below.
+3. Add the new Custom Actions/Orders Group Id <raise_lua_event name="'Interact_Menu_API.Add_Custom_Actions_Group_Id'" param="'my_custom_actions_group_id'" />
+4. Add the new Custom Actions/Orders Group Name <raise_lua_event name="'Interact_Menu_API.Add_Custom_Actions_Group_Text'" param="'My Custom Actions/Orders Group'" />
+5. Use the new id in Mod Support API's Add_Action function like this:
 					<signal_cue_instantly cue="md.Interact_Menu_API.Add_Action" param = "table[
 						$id = 'my_custom_action_1,
 						$section = 'my_custom_actions_group_id',
@@ -117,8 +122,8 @@ Add Custom Actions Group to the Interact Menu (via MD)
 						$mouseover = 'My Custom Action 2 mouse over',
 						$callback = My_Custom_Action_2_Cue
 					]" />
-5. The custom commands will be added to both the Custom Actions and Custom Orders sub-menus.
-6. To add only to one sub-menu and not the other, start the section name with either "actions_" or "orders_". E.g. "actions_my_custom_actions" will be added to only the Custom Actions sub-menu. And "orders_my_custom_orders" will be added to only the Custom Orders sub-menu.
+6. The custom commands will be added to both the Custom Actions and Custom Orders sub-menus.
+7. To add only to one sub-menu and not the other, start the section name with either "actions_" or "orders_". E.g. "actions_my_custom_actions" will add the custom action to only the Custom Actions sub-menu. And "orders_my_custom_orders" will add the custom order to only the Custom Orders sub-menu.
 
 Requirements
 ============
@@ -144,10 +149,10 @@ Troubleshooting
 History
 =======
 v6.1.001, 27 Jun 2023:
--modders resource: Add Custom Actions Group to the Interact Menu (via MD):
+-modders resource: Add Custom Actions/Orders Group to the Interact Menu (via MD):
 1. Load UIX's customised Interact Menu with: <raise_lua_event name="'Lua_Loader.Load'" param="'extensions.kuertee_ui_extensions.ui.kuertee_menu_interactmenu'"/>
-2. Add the new Custom Actions Group Id <raise_lua_event name="'Interact_Menu_API.Add_Custom_Actions_Group_Id'" param="'my_custom_actions_group_id'" />
-3. Add the new Custom Actions Group Name <raise_lua_event name="'Interact_Menu_API.Add_Custom_Actions_Group_Text'" param="'My Custom Actions Group'" />
+2. Add the new Custom Actions/Orders Group Id <raise_lua_event name="'Interact_Menu_API.Add_Custom_Actions_Group_Id'" param="'my_custom_actions_group_id'" />
+3. Add the new Custom Actions/Orders Group Name <raise_lua_event name="'Interact_Menu_API.Add_Custom_Actions_Group_Text'" param="'My Custom Actions/Orders Group'" />
 4. Use the new id in Mod Support API's Add_Action function like this:
 					<signal_cue_instantly cue="md.Interact_Menu_API.Add_Action" param = "table[
 						$id = 'my_custom_action_1,

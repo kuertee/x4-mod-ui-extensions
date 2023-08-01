@@ -27,12 +27,9 @@ local config = {
 		{ id = "hiringbuilderoption",	text = "",						isorder = false,	subsections = {
 			{ id = "hiringbuilder",	text = ReadText(1001, 7873) },
 		}},
-		-- kuertee start: add custom actions group
-		{ id = "custom_actions",	text = ReadText(101475, 100),		isorder = false,	subsections = {
-			{ id = "custom_tabs",	text = ReadText(26124, 100) },
-			{ id = "ship_built_notifications", text = ReadText(24627, 100) },
-		}},
-		-- kuertee end: add custom actions group
+		-- mycu start: add custom actions group
+		{ id = "custom_actions",	text = ReadText(101475, 100),		isorder = false,	subsections = {}},
+		-- mycu end: add custom actions group
 		{ id = "trade",					text = ReadText(1001, 7104),	isorder = false },
 		{ id = "playersquad_orders",	text = ReadText(1001, 1002),	isorder = false },	-- Broadcast
 		{ id = "overrideorderoption",	text = ReadText(1001, 11118),	isorder = false,	subsections = {
@@ -80,11 +77,7 @@ local config = {
 			{ id = "selected_disable_attack",		text = ReadText(1001, 11128),	orderid = "Attack" },
 		}},
 		-- mycu start: add custom orders group
-		{ id = "custom_orders",	text = ReadText(101475, 101),		isorder = true,	showloop = true, subsections = {
-			{ id = "custom_tabs",	text = ReadText(26124, 100) },
-			{ id = "urgent_orders",	text = ReadText(12115, 1) },
-			{ id = "subsystem_targeting_orders", text = ReadText(92015, 1) },
-		}},
+		{ id = "custom_orders",	text = ReadText(101475, 101),		isorder = true,	showloop = true, subsections = {}},
 		-- mycu end: add custom orders group
 
 		{ id = "trade_orders",			text = ReadText(1001, 7861),	isorder = true,		showloop = true },
@@ -154,6 +147,7 @@ local function init ()
 		mapMenu.onRenderTargetMouseDown = newFuncs.onRenderTargetMouseDown
 		RegisterEvent ("Interact_Menu_API.Add_Custom_Actions_Group_Id", newFuncs.Add_Custom_Actions_Group_Id)
 		RegisterEvent ("Interact_Menu_API.Add_Custom_Actions_Group_Text", newFuncs.Add_Custom_Actions_Group_Text)
+		AddUITriggeredEvent ("UIXInteractMenu", "loaded")
 	end
 end
 function newFuncs.registerCallback (callbackName, callbackFunction)
@@ -680,7 +674,6 @@ function newFuncs.Add_Custom_Actions_Group(id, text)
 					else
 						customOrdersSection_isFound = true
 					end
-					table.insert (customActionsSection.subsections, {id = id, text = text})
 					newFuncs.debugText("Add_Custom_Actions_Group customActionsSection.subsections", customActionsSection.subsections)
 				end
 			end
