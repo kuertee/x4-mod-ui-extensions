@@ -28,6 +28,8 @@ function Helper.registerCallback (callbackName, callbackFunction)
 	-- available callbacks:
 	-- name = createLSOStorageNode_get_ware_name(ware)
 	-- onExpandLSOStorageNode_list_incoming_trade(row, name, reservation)
+	-- true or false = createTransactionLog_getTransactionLogData(Helper.transactionLogData)
+	-- title = createTransactionLog_getTransactionLogName()
 	--
 	if callbacks [callbackName] == nil then
 		callbacks [callbackName] = {}
@@ -60,86 +62,101 @@ function newFuncs.createTransactionLog(frame, container, tableProperties, refres
 	local endtime = C.GetCurrentGameTime()
 	local starttime = math.max(0, endtime - 60 * Helper.transactionLogConfig.zoomSteps[Helper.transactionLogData.xZoom].zoom)
 
-	-- transaction entries with data
-	local n = C.GetNumTransactionLog(container, starttime, endtime)
-	local buf = ffi.new("TransactionLogEntry[?]", n)
-	n = C.GetTransactionLog(buf, n, container, starttime, endtime)
-	for i = 0, n - 1 do
-		local partnername = ffi.string(buf[i].partnername)
-
-		table.insert(Helper.transactionLogData.accountLogUnfiltered, { 
-			time = buf[i].time,
-			money = tonumber(buf[i].money) / 100,
-			entryid = ConvertStringTo64Bit(tostring(buf[i].entryid)),
-			eventtype = ffi.string(buf[i].eventtype),
-			eventtypename = ffi.string(buf[i].eventtypename),
-			partner = buf[i].partnerid,
-			partnername = (partnername ~= "") and (partnername .. " (" .. ffi.string(buf[i].partneridcode) .. ")") or "",
-			tradeentryid = ConvertStringTo64Bit(tostring(buf[i].tradeentryid)),
-			tradeeventtype = ffi.string(buf[i].tradeeventtype),
-			tradeeventtypename = ffi.string(buf[i].tradeeventtypename),
-			buyer = buf[i].buyerid,
-			seller = buf[i].sellerid,
-			ware = ffi.string(buf[i].ware),
-			amount = buf[i].amount,
-			price = tonumber(buf[i].price) / 100,
-			complete = buf[i].complete,
-			description = "",
-		})
-
-		local entry = Helper.transactionLogData.accountLogUnfiltered[#Helper.transactionLogData.accountLogUnfiltered]
-		if (entry.buyer ~= 0) and (entry.seller ~= 0) then
-			if entry.seller == container then
-				entry.description = string.format(ReadText(1001, 7780), ffi.string(C.GetComponentName(entry.seller)) .. " (" .. ffi.string(C.GetObjectIDCode(entry.seller)) .. ")", entry.amount, GetWareData(entry.ware, "name"), ffi.string(C.GetComponentName(entry.buyer)) .. " (" .. ffi.string(C.GetObjectIDCode(entry.buyer)) .. ")", ConvertMoneyString(Helper.round(entry.price, 2), true, true, 0, true) .. " " .. ReadText(1001, 101))
-			else
-				entry.description = string.format(ReadText(1001, 7770), ffi.string(C.GetComponentName(entry.buyer)) .. " (" .. ffi.string(C.GetObjectIDCode(entry.buyer)) .. ")", entry.amount, GetWareData(entry.ware, "name"), ffi.string(C.GetComponentName(entry.seller)) .. " (" .. ffi.string(C.GetObjectIDCode(entry.seller)) .. ")", ConvertMoneyString(Helper.round(entry.price, 2), true, true, 0, true) .. " " .. ReadText(1001, 101))
-			end
-		elseif entry.buyer ~= 0 then
-			entry.description = string.format(ReadText(1001, 7772), ffi.string(C.GetComponentName(entry.buyer)) .. " (" .. ffi.string(C.GetObjectIDCode(entry.buyer)) .. ")", entry.amount, GetWareData(entry.ware, "name"), ConvertMoneyString(Helper.round(entry.price, 2), true, true, 0, true) .. " " .. ReadText(1001, 101))
-		elseif entry.seller ~= 0 then
-			entry.description = string.format(ReadText(1001, 7771), ffi.string(C.GetComponentName(entry.seller)) .. " (" .. ffi.string(C.GetObjectIDCode(entry.seller)) .. ")", entry.amount, GetWareData(entry.ware, "name"), ConvertMoneyString(Helper.round(entry.price, 2), true, true, 0, true) .. " " .. ReadText(1001, 101))
-		elseif entry.ware ~= "" then
-			entry.description = entry.amount .. ReadText(1001, 42) .. " " .. GetWareData(entry.ware, "name") .. " - " .. ConvertMoneyString(entry.price, false, true, 0, true) .. " " .. ReadText(1001, 101)
+	-- kuertee start: callback
+	local k_isTransactionLogDataSet
+	if callbacks ["createTransactionLog_getTransactionLogData"] then
+		for _, callback in ipairs (callbacks ["createTransactionLog_getTransactionLogData"]) do
+			k_isTransactionLogDataSet = callback (Helper.transactionLogData)
 		end
-		if entry.partner ~= 0 then
-			entry.partnername = ffi.string(C.GetComponentName(entry.partner)) .. " (" .. ffi.string(C.GetObjectIDCode(entry.partner)) .. ")"
-			entry.destroyedpartner = not C.IsComponentOperational(entry.partner)
-		else
-			entry.destroyedpartner = entry.partnername ~= ""
-		end
-		if entry.eventtype == "trade" then
-			if entry.seller and (entry.seller == container) then
-				entry.eventtypename = ReadText(1001, 7781)
-			elseif entry.buyer and (entry.buyer == container) then
-				entry.eventtypename = ReadText(1001, 7782)
-			end
-		elseif entry.eventtype == "sellship" then
-			if entry.partnername ~= "" then
-				entry.eventtypename = ReadText(1001, 7783)
-			else
-				entry.eventtypename = entry.eventtypename .. ReadText(1001, 120) .. " " .. entry.partnername
-				entry.partnername = ""
-			end
-		end
-
-		table.insert(Helper.transactionLogData.accountLog, entry)
 	end
-	-- pure money stats for graph
-	local buf = ffi.new("MoneyLogEntry[?]", Helper.transactionLogConfig.numdatapoints)
-	local numdata = C.GetMoneyLog(buf, Helper.transactionLogConfig.numdatapoints, container, starttime, endtime)
-	for i = 0, numdata - 1 do
-		local money = tonumber(buf[i].money) / 100
-		local prevmoney = (i > 0) and (tonumber(buf[i - 1].money) / 100) or nil
-		local nextmoney = (i < numdata - 1) and (tonumber(buf[i + 1].money) / 100) or nil
-		if (money ~= prevmoney) or (money ~= nextmoney) then
-			table.insert(Helper.transactionLogData.graphdata, { 
-				t = buf[i].time,
-				y = money,
+	if not k_isTransactionLogDataSet then
+	-- kuertee end: callback
+
+		-- transaction entries with data
+		local n = C.GetNumTransactionLog(container, starttime, endtime)
+		local buf = ffi.new("TransactionLogEntry[?]", n)
+		n = C.GetTransactionLog(buf, n, container, starttime, endtime)
+		for i = 0, n - 1 do
+			local partnername = ffi.string(buf[i].partnername)
+
+			table.insert(Helper.transactionLogData.accountLogUnfiltered, { 
+				time = buf[i].time,
+				money = tonumber(buf[i].money) / 100,
 				entryid = ConvertStringTo64Bit(tostring(buf[i].entryid)),
+				eventtype = ffi.string(buf[i].eventtype),
+				eventtypename = ffi.string(buf[i].eventtypename),
+				partner = buf[i].partnerid,
+				partnername = (partnername ~= "") and (partnername .. " (" .. ffi.string(buf[i].partneridcode) .. ")") or "",
+				tradeentryid = ConvertStringTo64Bit(tostring(buf[i].tradeentryid)),
+				tradeeventtype = ffi.string(buf[i].tradeeventtype),
+				tradeeventtypename = ffi.string(buf[i].tradeeventtypename),
+				buyer = buf[i].buyerid,
+				seller = buf[i].sellerid,
+				ware = ffi.string(buf[i].ware),
+				amount = buf[i].amount,
+				price = tonumber(buf[i].price) / 100,
+				complete = buf[i].complete,
+				description = "",
 			})
-			local entry = Helper.transactionLogData.graphdata[#Helper.transactionLogData.graphdata]
+
+			local entry = Helper.transactionLogData.accountLogUnfiltered[#Helper.transactionLogData.accountLogUnfiltered]
+			if (entry.buyer ~= 0) and (entry.seller ~= 0) then
+				if entry.seller == container then
+					entry.description = string.format(ReadText(1001, 7780), ffi.string(C.GetComponentName(entry.seller)) .. " (" .. ffi.string(C.GetObjectIDCode(entry.seller)) .. ")", entry.amount, GetWareData(entry.ware, "name"), ffi.string(C.GetComponentName(entry.buyer)) .. " (" .. ffi.string(C.GetObjectIDCode(entry.buyer)) .. ")", ConvertMoneyString(Helper.round(entry.price, 2), true, true, 0, true) .. " " .. ReadText(1001, 101))
+				else
+					entry.description = string.format(ReadText(1001, 7770), ffi.string(C.GetComponentName(entry.buyer)) .. " (" .. ffi.string(C.GetObjectIDCode(entry.buyer)) .. ")", entry.amount, GetWareData(entry.ware, "name"), ffi.string(C.GetComponentName(entry.seller)) .. " (" .. ffi.string(C.GetObjectIDCode(entry.seller)) .. ")", ConvertMoneyString(Helper.round(entry.price, 2), true, true, 0, true) .. " " .. ReadText(1001, 101))
+				end
+			elseif entry.buyer ~= 0 then
+				entry.description = string.format(ReadText(1001, 7772), ffi.string(C.GetComponentName(entry.buyer)) .. " (" .. ffi.string(C.GetObjectIDCode(entry.buyer)) .. ")", entry.amount, GetWareData(entry.ware, "name"), ConvertMoneyString(Helper.round(entry.price, 2), true, true, 0, true) .. " " .. ReadText(1001, 101))
+			elseif entry.seller ~= 0 then
+				entry.description = string.format(ReadText(1001, 7771), ffi.string(C.GetComponentName(entry.seller)) .. " (" .. ffi.string(C.GetObjectIDCode(entry.seller)) .. ")", entry.amount, GetWareData(entry.ware, "name"), ConvertMoneyString(Helper.round(entry.price, 2), true, true, 0, true) .. " " .. ReadText(1001, 101))
+			elseif entry.ware ~= "" then
+				entry.description = entry.amount .. ReadText(1001, 42) .. " " .. GetWareData(entry.ware, "name") .. " - " .. ConvertMoneyString(entry.price, false, true, 0, true) .. " " .. ReadText(1001, 101)
+			end
+			if entry.partner ~= 0 then
+				entry.partnername = ffi.string(C.GetComponentName(entry.partner)) .. " (" .. ffi.string(C.GetObjectIDCode(entry.partner)) .. ")"
+				entry.destroyedpartner = not C.IsComponentOperational(entry.partner)
+			else
+				entry.destroyedpartner = entry.partnername ~= ""
+			end
+			if entry.eventtype == "trade" then
+				if entry.seller and (entry.seller == container) then
+					entry.eventtypename = ReadText(1001, 7781)
+				elseif entry.buyer and (entry.buyer == container) then
+					entry.eventtypename = ReadText(1001, 7782)
+				end
+			elseif entry.eventtype == "sellship" then
+				if entry.partnername ~= "" then
+					entry.eventtypename = ReadText(1001, 7783)
+				else
+					entry.eventtypename = entry.eventtypename .. ReadText(1001, 120) .. " " .. entry.partnername
+					entry.partnername = ""
+				end
+			end
+
+			table.insert(Helper.transactionLogData.accountLog, entry)
 		end
+		-- pure money stats for graph
+		local buf = ffi.new("MoneyLogEntry[?]", Helper.transactionLogConfig.numdatapoints)
+		local numdata = C.GetMoneyLog(buf, Helper.transactionLogConfig.numdatapoints, container, starttime, endtime)
+		for i = 0, numdata - 1 do
+			local money = tonumber(buf[i].money) / 100
+			local prevmoney = (i > 0) and (tonumber(buf[i - 1].money) / 100) or nil
+			local nextmoney = (i < numdata - 1) and (tonumber(buf[i + 1].money) / 100) or nil
+			if (money ~= prevmoney) or (money ~= nextmoney) then
+				table.insert(Helper.transactionLogData.graphdata, { 
+					t = buf[i].time,
+					y = money,
+					entryid = ConvertStringTo64Bit(tostring(buf[i].entryid)),
+				})
+				local entry = Helper.transactionLogData.graphdata[#Helper.transactionLogData.graphdata]
+			end
+		end
+
+	-- kuertee start: callback
 	end
+	-- kuertee end: callback
+
 	-- apply search
 	if Helper.transactionLogData.searchtext ~= "" then
 		Helper.transactionLogData.accountLog = {}
@@ -384,10 +401,27 @@ function newFuncs.createTransactionLog(frame, container, tableProperties, refres
 	local yaxis = Helper.createGraphAxis(Helper.createGraphText(ReadText(1001, 7773) .. " [" .. ReadText(1001, 101) .. "]", Helper.standardFont, 9, Helper.color.white), minY, maxY, granularity, yOffset, true, Helper.color.white, { r = 96, g = 96, b = 96, a = 80 })
 
 	-- graph
-	local title = ffi.string(C.GetComponentName(container))
-	if container ~= C.GetPlayerID() then
-		title = title .. " (" .. ffi.string(C.GetObjectIDCode(container)) .. ")"
+
+	-- kuertee start: callback
+	local title
+	if callbacks ["createTransactionLog_getTransactionLogName"] then
+		for _, callback in ipairs (callbacks ["createTransactionLog_getTransactionLogName"]) do
+			title = callback ()
+		end
 	end
+	if not title then
+		-- local title = ffi.string(C.GetComponentName(container))
+		title = ffi.string(C.GetComponentName(container))
+		-- kuertee end: callback
+
+		if container ~= C.GetPlayerID() then
+			title = title .. " (" .. ffi.string(C.GetObjectIDCode(container)) .. ")"
+		end
+
+	-- kuertee start: callback
+	end
+	-- kuertee end: callback
+
 	Helper.transactionLogData.graph = row[1]:setColSpan(4):createGraph("line", true, Helper.color.semitransparent, { text = title, font = Helper.titleFont, size = Helper.scaleFont(Helper.titleFont, Helper.titleFontSize), color = Helper.color.white }, xaxis, yaxis, datarecords, 0, 0, nil, height)
 	row[1].handlers.onClick = function (_, data) return Helper.graphDataSelection(data, refreshCallback) end
 
