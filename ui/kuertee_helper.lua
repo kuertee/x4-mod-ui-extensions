@@ -28,8 +28,6 @@ function Helper.registerCallback (callbackName, callbackFunction)
 	-- available callbacks:
 	-- name = createLSOStorageNode_get_ware_name(ware)
 	-- onExpandLSOStorageNode_list_incoming_trade(row, name, reservation)
-	-- true or false = createTransactionLog_getTransactionLogData(Helper.transactionLogData)
-	-- title = createTransactionLog_getTransactionLogName()
 	--
 	if callbacks [callbackName] == nil then
 		callbacks [callbackName] = {}
@@ -62,100 +60,86 @@ function newFuncs.createTransactionLog(frame, container, tableProperties, refres
 	local endtime = C.GetCurrentGameTime()
 	local starttime = math.max(0, endtime - 60 * Helper.transactionLogConfig.zoomSteps[Helper.transactionLogData.xZoom].zoom)
 
-	-- kuertee start: callback
-	local k_isTransactionLogDataSet
-	if callbacks ["createTransactionLog_getTransactionLogData"] then
-		for _, callback in ipairs (callbacks ["createTransactionLog_getTransactionLogData"]) do
-			k_isTransactionLogDataSet = callback (Helper.transactionLogData)
-		end
-	end
-	if not k_isTransactionLogDataSet then
-	-- kuertee end: callback
+	-- transaction entries with data
+	local n = C.GetNumTransactionLog(container, starttime, endtime)
+	local buf = ffi.new("TransactionLogEntry[?]", n)
+	n = C.GetTransactionLog(buf, n, container, starttime, endtime)
+	for i = 0, n - 1 do
+		local partnername = ffi.string(buf[i].partnername)
 
-		-- transaction entries with data
-		local n = C.GetNumTransactionLog(container, starttime, endtime)
-		local buf = ffi.new("TransactionLogEntry[?]", n)
-		n = C.GetTransactionLog(buf, n, container, starttime, endtime)
-		for i = 0, n - 1 do
-			local partnername = ffi.string(buf[i].partnername)
+		table.insert(Helper.transactionLogData.accountLogUnfiltered, { 
+			time = buf[i].time,
+			money = tonumber(buf[i].money) / 100,
+			entryid = ConvertStringTo64Bit(tostring(buf[i].entryid)),
+			eventtype = ffi.string(buf[i].eventtype),
+			eventtypename = ffi.string(buf[i].eventtypename),
+			partner = buf[i].partnerid,
+			partnername = (partnername ~= "") and (partnername .. " (" .. ffi.string(buf[i].partneridcode) .. ")") or "",
+			tradeentryid = ConvertStringTo64Bit(tostring(buf[i].tradeentryid)),
+			tradeeventtype = ffi.string(buf[i].tradeeventtype),
+			tradeeventtypename = ffi.string(buf[i].tradeeventtypename),
+			buyer = buf[i].buyerid,
+			seller = buf[i].sellerid,
+			ware = ffi.string(buf[i].ware),
+			amount = buf[i].amount,
+			price = tonumber(buf[i].price) / 100,
+			complete = buf[i].complete,
+			description = "",
+		})
 
-			table.insert(Helper.transactionLogData.accountLogUnfiltered, { 
-				time = buf[i].time,
-				money = tonumber(buf[i].money) / 100,
-				entryid = ConvertStringTo64Bit(tostring(buf[i].entryid)),
-				eventtype = ffi.string(buf[i].eventtype),
-				eventtypename = ffi.string(buf[i].eventtypename),
-				partner = buf[i].partnerid,
-				partnername = (partnername ~= "") and (partnername .. " (" .. ffi.string(buf[i].partneridcode) .. ")") or "",
-				tradeentryid = ConvertStringTo64Bit(tostring(buf[i].tradeentryid)),
-				tradeeventtype = ffi.string(buf[i].tradeeventtype),
-				tradeeventtypename = ffi.string(buf[i].tradeeventtypename),
-				buyer = buf[i].buyerid,
-				seller = buf[i].sellerid,
-				ware = ffi.string(buf[i].ware),
-				amount = buf[i].amount,
-				price = tonumber(buf[i].price) / 100,
-				complete = buf[i].complete,
-				description = "",
-			})
-
-			local entry = Helper.transactionLogData.accountLogUnfiltered[#Helper.transactionLogData.accountLogUnfiltered]
-			if (entry.buyer ~= 0) and (entry.seller ~= 0) then
-				if entry.seller == container then
-					entry.description = string.format(ReadText(1001, 7780), ffi.string(C.GetComponentName(entry.seller)) .. " (" .. ffi.string(C.GetObjectIDCode(entry.seller)) .. ")", entry.amount, GetWareData(entry.ware, "name"), ffi.string(C.GetComponentName(entry.buyer)) .. " (" .. ffi.string(C.GetObjectIDCode(entry.buyer)) .. ")", ConvertMoneyString(Helper.round(entry.price, 2), true, true, 0, true) .. " " .. ReadText(1001, 101))
-				else
-					entry.description = string.format(ReadText(1001, 7770), ffi.string(C.GetComponentName(entry.buyer)) .. " (" .. ffi.string(C.GetObjectIDCode(entry.buyer)) .. ")", entry.amount, GetWareData(entry.ware, "name"), ffi.string(C.GetComponentName(entry.seller)) .. " (" .. ffi.string(C.GetObjectIDCode(entry.seller)) .. ")", ConvertMoneyString(Helper.round(entry.price, 2), true, true, 0, true) .. " " .. ReadText(1001, 101))
-				end
-			elseif entry.buyer ~= 0 then
-				entry.description = string.format(ReadText(1001, 7772), ffi.string(C.GetComponentName(entry.buyer)) .. " (" .. ffi.string(C.GetObjectIDCode(entry.buyer)) .. ")", entry.amount, GetWareData(entry.ware, "name"), ConvertMoneyString(Helper.round(entry.price, 2), true, true, 0, true) .. " " .. ReadText(1001, 101))
-			elseif entry.seller ~= 0 then
-				entry.description = string.format(ReadText(1001, 7771), ffi.string(C.GetComponentName(entry.seller)) .. " (" .. ffi.string(C.GetObjectIDCode(entry.seller)) .. ")", entry.amount, GetWareData(entry.ware, "name"), ConvertMoneyString(Helper.round(entry.price, 2), true, true, 0, true) .. " " .. ReadText(1001, 101))
-			elseif entry.ware ~= "" then
-				entry.description = entry.amount .. ReadText(1001, 42) .. " " .. GetWareData(entry.ware, "name") .. " - " .. ConvertMoneyString(entry.price, false, true, 0, true) .. " " .. ReadText(1001, 101)
-			end
-			if entry.partner ~= 0 then
-				entry.partnername = ffi.string(C.GetComponentName(entry.partner)) .. " (" .. ffi.string(C.GetObjectIDCode(entry.partner)) .. ")"
-				entry.destroyedpartner = not C.IsComponentOperational(entry.partner)
+		local entry = Helper.transactionLogData.accountLogUnfiltered[#Helper.transactionLogData.accountLogUnfiltered]
+		if (entry.buyer ~= 0) and (entry.seller ~= 0) then
+			if entry.seller == container then
+				entry.description = string.format(ReadText(1001, 7780), ffi.string(C.GetComponentName(entry.seller)) .. " (" .. ffi.string(C.GetObjectIDCode(entry.seller)) .. ")", entry.amount, GetWareData(entry.ware, "name"), ffi.string(C.GetComponentName(entry.buyer)) .. " (" .. ffi.string(C.GetObjectIDCode(entry.buyer)) .. ")", ConvertMoneyString(Helper.round(entry.price, 2), true, true, 0, true) .. " " .. ReadText(1001, 101))
 			else
-				entry.destroyedpartner = entry.partnername ~= ""
+				entry.description = string.format(ReadText(1001, 7770), ffi.string(C.GetComponentName(entry.buyer)) .. " (" .. ffi.string(C.GetObjectIDCode(entry.buyer)) .. ")", entry.amount, GetWareData(entry.ware, "name"), ffi.string(C.GetComponentName(entry.seller)) .. " (" .. ffi.string(C.GetObjectIDCode(entry.seller)) .. ")", ConvertMoneyString(Helper.round(entry.price, 2), true, true, 0, true) .. " " .. ReadText(1001, 101))
 			end
-			if entry.eventtype == "trade" then
-				if entry.seller and (entry.seller == container) then
-					entry.eventtypename = ReadText(1001, 7781)
-				elseif entry.buyer and (entry.buyer == container) then
-					entry.eventtypename = ReadText(1001, 7782)
-				end
-			elseif entry.eventtype == "sellship" then
-				if entry.partnername ~= "" then
-					entry.eventtypename = ReadText(1001, 7783)
-				else
-					entry.eventtypename = entry.eventtypename .. ReadText(1001, 120) .. " " .. entry.partnername
-					entry.partnername = ""
-				end
-			end
-
-			table.insert(Helper.transactionLogData.accountLog, entry)
+		elseif entry.buyer ~= 0 then
+			entry.description = string.format(ReadText(1001, 7772), ffi.string(C.GetComponentName(entry.buyer)) .. " (" .. ffi.string(C.GetObjectIDCode(entry.buyer)) .. ")", entry.amount, GetWareData(entry.ware, "name"), ConvertMoneyString(Helper.round(entry.price, 2), true, true, 0, true) .. " " .. ReadText(1001, 101))
+		elseif entry.seller ~= 0 then
+			entry.description = string.format(ReadText(1001, 7771), ffi.string(C.GetComponentName(entry.seller)) .. " (" .. ffi.string(C.GetObjectIDCode(entry.seller)) .. ")", entry.amount, GetWareData(entry.ware, "name"), ConvertMoneyString(Helper.round(entry.price, 2), true, true, 0, true) .. " " .. ReadText(1001, 101))
+		elseif entry.ware ~= "" then
+			entry.description = entry.amount .. ReadText(1001, 42) .. " " .. GetWareData(entry.ware, "name") .. " - " .. ConvertMoneyString(entry.price, false, true, 0, true) .. " " .. ReadText(1001, 101)
 		end
-		-- pure money stats for graph
-		local buf = ffi.new("MoneyLogEntry[?]", Helper.transactionLogConfig.numdatapoints)
-		local numdata = C.GetMoneyLog(buf, Helper.transactionLogConfig.numdatapoints, container, starttime, endtime)
-		for i = 0, numdata - 1 do
-			local money = tonumber(buf[i].money) / 100
-			local prevmoney = (i > 0) and (tonumber(buf[i - 1].money) / 100) or nil
-			local nextmoney = (i < numdata - 1) and (tonumber(buf[i + 1].money) / 100) or nil
-			if (money ~= prevmoney) or (money ~= nextmoney) then
-				table.insert(Helper.transactionLogData.graphdata, { 
-					t = buf[i].time,
-					y = money,
-					entryid = ConvertStringTo64Bit(tostring(buf[i].entryid)),
-				})
-				local entry = Helper.transactionLogData.graphdata[#Helper.transactionLogData.graphdata]
+		if entry.partner ~= 0 then
+			entry.partnername = ffi.string(C.GetComponentName(entry.partner)) .. " (" .. ffi.string(C.GetObjectIDCode(entry.partner)) .. ")"
+			entry.destroyedpartner = not C.IsComponentOperational(entry.partner)
+		else
+			entry.destroyedpartner = entry.partnername ~= ""
+		end
+		if entry.eventtype == "trade" then
+			if entry.seller and (entry.seller == container) then
+				entry.eventtypename = ReadText(1001, 7781)
+			elseif entry.buyer and (entry.buyer == container) then
+				entry.eventtypename = ReadText(1001, 7782)
+			end
+		elseif entry.eventtype == "sellship" then
+			if entry.partnername ~= "" then
+				entry.eventtypename = ReadText(1001, 7783)
+			else
+				entry.eventtypename = entry.eventtypename .. ReadText(1001, 120) .. " " .. entry.partnername
+				entry.partnername = ""
 			end
 		end
 
-	-- kuertee start: callback
+		table.insert(Helper.transactionLogData.accountLog, entry)
 	end
-	-- kuertee end: callback
+	-- pure money stats for graph
+	local buf = ffi.new("MoneyLogEntry[?]", Helper.transactionLogConfig.numdatapoints)
+	local numdata = C.GetMoneyLog(buf, Helper.transactionLogConfig.numdatapoints, container, starttime, endtime)
+	for i = 0, numdata - 1 do
+		local money = tonumber(buf[i].money) / 100
+		local prevmoney = (i > 0) and (tonumber(buf[i - 1].money) / 100) or nil
+		local nextmoney = (i < numdata - 1) and (tonumber(buf[i + 1].money) / 100) or nil
+		if (money ~= prevmoney) or (money ~= nextmoney) then
+			table.insert(Helper.transactionLogData.graphdata, { 
+				t = buf[i].time,
+				y = money,
+				entryid = ConvertStringTo64Bit(tostring(buf[i].entryid)),
+			})
+			local entry = Helper.transactionLogData.graphdata[#Helper.transactionLogData.graphdata]
+		end
+	end
 
 	-- apply search
 	if Helper.transactionLogData.searchtext ~= "" then
@@ -402,27 +386,310 @@ function newFuncs.createTransactionLog(frame, container, tableProperties, refres
 
 	-- graph
 
-	-- kuertee start: callback
-	local title
-	if callbacks ["createTransactionLog_getTransactionLogName"] then
-		for _, callback in ipairs (callbacks ["createTransactionLog_getTransactionLogName"]) do
-			title = callback ()
-		end
+	local title = ffi.string(C.GetComponentName(container))
+	if container ~= C.GetPlayerID() then
+		title = title .. " (" .. ffi.string(C.GetObjectIDCode(container)) .. ")"
 	end
-	if not title then
-		-- local title = ffi.string(C.GetComponentName(container))
-		title = ffi.string(C.GetComponentName(container))
-		-- kuertee end: callback
-
-		if container ~= C.GetPlayerID() then
-			title = title .. " (" .. ffi.string(C.GetObjectIDCode(container)) .. ")"
-		end
-
-	-- kuertee start: callback
-	end
-	-- kuertee end: callback
 
 	Helper.transactionLogData.graph = row[1]:setColSpan(4):createGraph("line", true, Helper.color.semitransparent, { text = title, font = Helper.titleFont, size = Helper.scaleFont(Helper.titleFont, Helper.titleFontSize), color = Helper.color.white }, xaxis, yaxis, datarecords, 0, 0, nil, height)
+	row[1].handlers.onClick = function (_, data) return Helper.graphDataSelection(data, refreshCallback) end
+
+	-- zoom
+	local row = table_graph:addRow(true, { fixed = true, bgColor = Helper.color.transparent })
+	row[2]:createButton({ active = Helper.transactionLogData.xZoom > 1 }):setText(ReadText(1001, 7777), { halign = "center" })
+	row[2].handlers.onClick = function () return Helper.buttonTransactionLogZoom(-1, refreshCallback) end
+	row[3]:createButton({ active = Helper.transactionLogData.xZoom < #Helper.transactionLogConfig.zoomSteps }):setText(ReadText(1001, 7778), { halign = "center" })
+	row[3].handlers.onClick = function () return Helper.buttonTransactionLogZoom(1, refreshCallback) end
+
+	table_graph:addConnection(1, 3, true)
+end
+-- kuertee start: custom graph menu
+function Helper.createCustomGraph(frame, container, tableProperties, refreshCallback, selectionData, title_menu, title_graph, func_getGraphData, title_xAxis, title_yAxis, isYAxisMoney, isShowLogTotal)
+	Helper.transactionLogData = {
+		title_menu = title_menu,
+		title_graph = title_graph,
+		xTitle = title_xAxis,
+		yTitle = title_yAxis,
+
+		accountLog = {},
+		accountLogUnfiltered = {},
+		transactionsByID = {},
+		transactionsByIDUnfiltered = {},
+		graphdata = {},
+
+		xZoom = Helper.transactionLogData and Helper.transactionLogData.xZoom or 6,
+		xScale = Helper.transactionLogData and Helper.transactionLogData.xScale or 60,
+		xGranularity = Helper.transactionLogData and Helper.transactionLogData.xGranularity or 300,
+		expandedEntries = Helper.transactionLogData and Helper.transactionLogData.expandedEntries or {},
+		searchtext = Helper.transactionLogData and Helper.transactionLogData.searchtext or "",
+		curPage = Helper.transactionLogData and Helper.transactionLogData.curPage or 1,
+		curEntry = Helper.transactionLogData and Helper.transactionLogData.curEntry or nil,
+
+		numPages = 1,
+		pageEditBox = nil,
+		graph = nil,
+		noupdate = nil,
+	}
+
+	local endtime = C.GetCurrentGameTime()
+	local starttime = math.max(0, endtime - 60 * Helper.transactionLogConfig.zoomSteps[Helper.transactionLogData.xZoom].zoom)
+
+	-- transaction entries with data
+	func_getGraphData(Helper.transactionLogData)
+	DebugError("createCustomGraph Helper.transactionLogData: " .. tostring(Helper.transactionLogData))
+
+	-- apply search
+	if Helper.transactionLogData.searchtext ~= "" then
+		Helper.transactionLogData.accountLog = {}
+		for _, entry in ipairs(Helper.transactionLogData.accountLogUnfiltered) do
+			if Helper.transactionLogSearchHelper(entry, Helper.transactionLogData.searchtext) then
+				table.insert(Helper.transactionLogData.accountLog, entry)
+			end
+		end
+	end
+	-- create transaction index
+	for i, entry in ipairs(Helper.transactionLogData.accountLogUnfiltered) do
+		Helper.transactionLogData.transactionsByIDUnfiltered[entry.entryid] = i
+	end
+	for i, entry in ipairs(Helper.transactionLogData.accountLog) do
+		Helper.transactionLogData.transactionsByID[entry.entryid] = i
+	end
+	-- make sure the page of the selected entry is shown
+	if Helper.transactionLogData.curEntry then
+		local transactionIndex = Helper.transactionLogData.transactionsByID[Helper.transactionLogData.curEntry]
+		if transactionIndex then
+			Helper.transactionLogData.curPage = math.ceil((#Helper.transactionLogData.accountLog - transactionIndex + 1) / Helper.transactionLogConfig.transactionLogPage)
+		end
+	end
+
+	Helper.transactionLogData.numPages = math.max(1, math.ceil(#Helper.transactionLogData.accountLog / Helper.transactionLogConfig.transactionLogPage))
+	Helper.transactionLogData.curPage = math.max(1, math.min(Helper.transactionLogData.numPages, Helper.transactionLogData.curPage))
+
+	local startIndex = #Helper.transactionLogData.accountLog
+	local endIndex = 1
+	if #Helper.transactionLogData.accountLog <= Helper.transactionLogConfig.transactionLogPage then
+		Helper.transactionLogData.curPage = 1
+	else
+		endIndex = #Helper.transactionLogData.accountLog - Helper.transactionLogConfig.transactionLogPage * Helper.transactionLogData.curPage + 1
+		startIndex = Helper.transactionLogConfig.transactionLogPage + endIndex - 1
+		if endIndex < 1 then
+			endIndex = 1
+		end
+	end
+
+	local editboxHeight = math.max(23, Helper.scaleY(Helper.standardTextHeight))
+	local buttonsize = Helper.scaleY(Helper.standardTextHeight)
+
+	local table_data = frame:addTable(9, { tabOrder = 1, borderEnabled = true, width = tableProperties.width, x = tableProperties.x, y = tableProperties.y, maxVisibleHeight = tableProperties.height })
+	table_data:setColWidth(1, Helper.standardTextHeight)
+	table_data:setColWidth(3, Helper.standardTextHeight)
+	table_data:setColWidth(4, Helper.standardTextHeight)
+	table_data:setColWidth(5, Helper.standardTextHeight)
+	table_data:setColWidth(6, tableProperties.width / 6 - 2 * (buttonsize + Helper.borderSize), false)
+	table_data:setColWidth(7, tableProperties.width / 6 - 2 * (buttonsize + Helper.borderSize), false)
+	table_data:setColWidth(8, Helper.standardTextHeight)
+	table_data:setColWidth(9, Helper.standardTextHeight)
+
+	local row = table_data:addRow(nil, { fixed = true, bgColor = Helper.defaultTitleBackgroundColor })
+	row[1]:setColSpan(9):createText(title_menu, Helper.titleTextProperties)
+
+	local row = table_data:addRow("search", { fixed = true })
+	-- searchbar
+	row[1]:setColSpan(2):createEditBox({ description = ReadText(1001, 7740), defaultText = ReadText(1001, 3250), height = Helper.subHeaderHeight }):setText(Helper.transactionLogData.searchtext, { halign = "left", x = Helper.standardTextOffsetx }):setHotkey("INPUT_STATE_DETAILMONITOR_0", { displayIcon = true })
+	row[1].handlers.onEditBoxDeactivated = function (_, text) if text ~= Helper.transactionLogData.searchtext then Helper.transactionLogData.searchtext = text; Helper.transactionLogData.noupdate = nil; refreshCallback() end end
+	-- clear search
+	local buttonheight = math.max(Helper.editboxMinHeight, Helper.scaleY(Helper.subHeaderHeight))
+	row[3]:createButton({ scaling = false, width = buttonsize, height = buttonheight, cellBGColor = Helper.color.transparent }):setText("X", { halign = "center", font = Helper.standardFontBold })
+	row[3].handlers.onClick = function () Helper.transactionLogData.searchtext = ""; refreshCallback() end
+	-- pages
+	row[4]:createButton({ scaling = false, active = Helper.transactionLogData.curPage > 1, width = buttonsize, height = buttonheight, cellBGColor = Helper.color.transparent }):setIcon("widget_arrow_skip_left_01", { width = buttonsize, height = buttonsize, y = (row:getHeight() - buttonsize) / 2 })
+	row[4].handlers.onClick = function () Helper.transactionLogData.curEntry = nil; Helper.transactionLogData.curPage = 1; refreshCallback() end
+	row[5]:createButton({ scaling = false, active = Helper.transactionLogData.curPage > 1, width = buttonsize, height = buttonheight, cellBGColor = Helper.color.transparent }):setIcon("widget_arrow_left_01", { width = buttonsize, height = buttonsize, y = (row:getHeight() - buttonsize) / 2 })
+	row[5].handlers.onClick = function () Helper.transactionLogData.curEntry = nil; Helper.transactionLogData.curPage = Helper.transactionLogData.curPage - 1; refreshCallback() end
+	Helper.transactionLogData.pageEditBox = row[6]:setColSpan(2):createEditBox({ description = ReadText(1001, 7739) }):setText(Helper.transactionLogData.curPage .. " / " .. Helper.transactionLogData.numPages, { halign = "center" })
+	row[6].handlers.onEditBoxDeactivated = function (_, text, textchanged) Helper.transactionLogData.noupdate = nil; return Helper.editboxTransactionLogPage(text, textchanged, refreshCallback) end
+	row[8]:createButton({ scaling = false, active = Helper.transactionLogData.curPage < Helper.transactionLogData.numPages, width = buttonsize, height = buttonheight, cellBGColor = Helper.color.transparent }):setIcon("widget_arrow_right_01", { width = buttonsize, height = buttonsize, y = (row:getHeight() - buttonsize) / 2 })
+	row[8].handlers.onClick = function () Helper.transactionLogData.curEntry = nil; Helper.transactionLogData.curPage = Helper.transactionLogData.curPage + 1; refreshCallback() end
+	row[9]:createButton({ scaling = false, active = Helper.transactionLogData.curPage < Helper.transactionLogData.numPages, width = buttonsize, height = buttonheight, cellBGColor = Helper.color.transparent }):setIcon("widget_arrow_skip_right_01", { width = buttonsize, height = buttonsize, y = (row:getHeight() - buttonsize) / 2 })
+	row[9].handlers.onClick = function () Helper.transactionLogData.curEntry = nil; Helper.transactionLogData.curPage = Helper.transactionLogData.numPages; refreshCallback() end
+
+	local headerHeight = table_data:getFullHeight()
+
+	if #Helper.transactionLogData.accountLog > 0 then
+		local total = 0
+		for i = startIndex, endIndex, -1 do
+			local entry = Helper.transactionLogData.accountLog[i]
+			local row = table_data:addRow(entry.entryid, { bgColor = Helper.color.transparent })
+			if Helper.transactionLogData.curEntry == entry.entryid then
+				local numLines = (table_data.properties.maxVisibleHeight - headerHeight) / (Helper.scaleY(Helper.standardTextHeight) + Helper.borderSize)
+				if selectionData.toprow and ((selectionData.toprow > row.index - numLines) and (selectionData.toprow < row.index + numLines + 1)) then
+					table_data:setTopRow(selectionData.toprow)
+				else
+					table_data:setTopRow(row.index)
+				end
+				table_data:setSelectedRow(row.index)
+				selectionData = {}
+			end
+			if entry.ware ~= "" then
+				row[1]:createButton({ height = Helper.standardTextHeight }):setText(function() return Helper.transactionLogData.expandedEntries[entry.entryid] and "-" or "+" end, { halign = "center" })
+				row[1].handlers.onClick = function() return Helper.buttonExpandTransactionEntry(entry.entryid, row.index, refreshCallback) end
+			end
+			row[2]:createText(((entry.partnername ~= "") and (entry.partnername .. " - ") or "") .. entry.eventtypename, { color = entry.destroyedpartner and Helper.color.grey or nil, mouseOverText = entry.destroyedpartner and ReadText(1026, 5701) or "" })
+			row[3]:setColSpan(4):createText(Helper.getPassedTime(entry.time), { halign = "right" })
+			if isYAxisMoney then
+				row[7]:setColSpan(3):createText(((entry.money > 0) and "+" or "") .. ConvertMoneyString(entry.money, false, true, 0, true) .. " " .. ReadText(1001, 101), { halign = "right", color = (entry.money > 0) and Helper.color.green or Helper.color.red })
+			else
+				row[7]:setColSpan(3):createText(tostring(entry.money), { halign = "right", color = (entry.money > 0) and Helper.color.green or Helper.color.red })
+			end
+			total = total + entry.money
+			if Helper.transactionLogData.expandedEntries[entry.entryid] then
+				local row = table_data:addRow(nil, { bgColor = Helper.color.unselectable })
+				row[1].properties.cellBGColor = Helper.color.transparent
+				row[2]:setColSpan(8):createText(entry.description, { x = Helper.standardTextHeight, wordwrap = true, color = entry.destroyedpartner and Helper.color.grey or nil })
+			end
+		end
+
+		if Helper.transactionLogData.xZoom < #Helper.transactionLogConfig.zoomSteps then
+			local row = table_data:addRow("showmore", { bgColor = Helper.color.transparent })
+			row[1]:setColSpan(9):createButton({ bgColor = Helper.color.transparent }):setText(ReadText(1001, 7778), { halign = "center" })
+			if endIndex == 1 then
+				row[1].handlers.onClick = function () return Helper.buttonTransactionLogZoom(1, refreshCallback) end
+			else
+				row[1].handlers.onClick = function () Helper.transactionLogData.curEntry = nil; Helper.transactionLogData.curPage = Helper.transactionLogData.curPage + 1; refreshCallback(_, 1) end
+			end
+		end
+
+		local table_total = frame:addTable(2, { tabOrder = 0, width = tableProperties.width, x = tableProperties.x, y = tableProperties.y })
+		table_total:setColWidthPercent(1, 75)
+
+		table_total:addEmptyRow()
+
+		local row = table_total:addRow(nil, { bgColor = Helper.color.lightgrey })
+		row[1]:setColSpan(2):createText("", { fontsize = 1, minRowHeight = 2 })
+
+		if isShowLogTotal then
+			local row = table_total:addRow(nil, { bgColor = Helper.color.transparent })
+			row[1]:createText(ReadText(1001, 7776) .. ReadText(1001, 120))
+			if isYAxisMoney then
+				row[2]:createText(((total > 0) and "+" or "") .. ConvertMoneyString(total, false, true, 0, true) .. " " .. ReadText(1001, 101), { halign = "right", color = (total > 0) and Helper.color.green or Helper.color.red })
+			else
+				row[2]:createText(tostring(total), { halign = "right", color = (total > 0) and Helper.color.green or Helper.color.red })
+			end
+		end
+
+		local maxVisibleHeight = table_data.properties.maxVisibleHeight - table_total:getFullHeight() - Helper.frameBorder
+		table_total.properties.y = table_total.properties.y + math.min(maxVisibleHeight, table_data:getFullHeight())
+		table_data.properties.maxVisibleHeight = table_total.properties.y - table_data.properties.y
+
+		table_data:addConnection(1, 2, true)
+		table_total:addConnection(2, 2)
+	else
+		local row = table_data:addRow("none", { bgColor = Helper.color.transparent })
+		row[1]:setColSpan(9):createText("--- " .. ReadText(1001, 5705) .. " ---", { halign = "center" })
+
+		if Helper.transactionLogData.xZoom < #Helper.transactionLogConfig.zoomSteps then
+			local row = table_data:addRow("showmore", { bgColor = Helper.color.transparent })
+			row[1]:setColSpan(9):createButton({ bgColor = Helper.color.transparent }):setText(ReadText(1001, 7778), { halign = "center" })
+			row[1].handlers.onClick = function () return Helper.buttonTransactionLogZoom(1, refreshCallback) end
+		end
+
+		table_data:addConnection(1, 2, true)
+	end
+
+	if selectionData.selectedrow then
+		table_data:setTopRow(selectionData.toprow)
+		table_data:setSelectedRow(selectionData.selectedrow)
+	end
+
+	-- graph table
+	local xoffset = tableProperties.x + tableProperties.width + Helper.borderSize + Helper.frameBorder
+	local width = Helper.viewWidth - xoffset - tableProperties.x2
+
+	-- kuertee start: ensure graph is only half viewHeight so that trade analytics can fit
+	-- local height = math.min(Helper.viewHeight - tableProperties.y - Helper.frameBorder - Helper.scaleY(Helper.standardTextHeight) - Helper.borderSize, math.floor(width * 9 / 16))
+	-- local table_graph = frame:addTable(4, { tabOrder = 3, width = width, x = xoffset, y = tableProperties.y })
+	local height = Helper.viewHeight * 0.5 - tableProperties.y - Helper.frameBorder - Helper.scaleY(Helper.standardTextHeight) - Helper.borderSize
+	local table_graph = frame:addTable(4, { tabOrder = 3, width = width, height = height, x = xoffset, y = tableProperties.y })
+	-- kuertee end: ensure graph is only half viewHeight so that trade analytics can fit
+
+	table_graph:setColWidthPercent(2, 15)
+	table_graph:setColWidthPercent(3, 15)
+
+	-- graph cell
+	local row = table_graph:addRow(false, { fixed = true, bgColor = Helper.color.transparent })
+
+	local minY, maxY = 0, 1
+	for i, point in pairs(Helper.transactionLogData.graphdata) do
+		if point.y < minY then
+			minY = point.y
+		elseif point.y > maxY then
+			maxY = point.y
+		end
+	end
+	local datarecords = {}
+
+	local data = {}
+	local firstNonZeroY = true
+	for i, point in pairs(Helper.transactionLogData.graphdata) do
+		local inactive
+		if Helper.transactionLogData.searchtext ~= "" then
+			inactive = true
+
+			local transactionIndex = Helper.transactionLogData.transactionsByIDUnfiltered[point.entryid]
+			local prevTransactionIndex = 1
+			if i > 1 then
+				prevTransactionIndex = Helper.transactionLogData.transactionsByIDUnfiltered[Helper.transactionLogData.graphdata[i -1].entryid]
+			end
+
+			if transactionIndex and prevTransactionIndex then
+				if prevTransactionIndex < transactionIndex then
+					-- if the previous transactionlog index is smaller than the current, skip this index, as it is part of the previous data point not the current
+					--  prevTimeInterval  |  curTimeInterval
+					-- [ ..., prevEntry ] | [ ..., curEntry ]
+					prevTransactionIndex = prevTransactionIndex + 1
+				end
+				for i = prevTransactionIndex, transactionIndex do
+					local entry = Helper.transactionLogData.accountLogUnfiltered[i]
+					if Helper.transactionLogData.transactionsByID[entry.entryid] then
+						inactive = false
+						break
+					end
+				end
+			end
+		end
+		table.insert(data, Helper.createGraphDataPoint((point.t - endtime) / Helper.transactionLogData.xScale, point.y, nil, nil, inactive))
+	end
+
+	table.insert(datarecords, Helper.createGraphDataRecord(Helper.transactionLogConfig.point.type, Helper.transactionLogConfig.point.size, Helper.color.brightyellow, Helper.transactionLogConfig.line.type, Helper.transactionLogConfig.line.size, Helper.color.brightyellow, data, false))
+
+	local mingranularity = (maxY - minY) / 12
+	local maxgranularity = (maxY - minY) / 8
+	local granularity = 0.1
+	for _, factor in ipairs(Helper.transactionLogConfig.factors) do
+		local testgranularity = math.ceil(mingranularity / factor) * factor
+		if testgranularity >= maxgranularity then
+			break;
+		end
+		granularity = testgranularity
+	end
+	maxY = (math.ceil(maxY / granularity) + 0.5) * granularity
+	minY = (math.floor(minY / granularity) - 0.5) * granularity
+
+	local xRange = (endtime - starttime) / Helper.transactionLogData.xScale
+	local xGranularity = Helper.transactionLogData.xGranularity
+	if endtime > starttime then
+		while (endtime - starttime) < xGranularity do
+			xGranularity = xGranularity / 2
+		end
+	end
+	xGranularity = Helper.round(xGranularity / Helper.transactionLogData.xScale, 3)
+	local xOffset = xRange % xGranularity
+	local yOffset = (math.ceil(minY / granularity) * granularity) - minY		-- offset is distance from minY to next multiple of granularity (value of first Y axis label)
+
+	local xaxis = Helper.createGraphAxis(Helper.createGraphText(Helper.transactionLogData.xTitle, Helper.standardFont, 9, Helper.color.white), -xRange, 0, xGranularity, xOffset, true, Helper.color.white, { r = 96, g = 96, b = 96, a = 80 })
+	local yaxis = Helper.createGraphAxis(Helper.createGraphText(Helper.transactionLogData.yTitle, Helper.standardFont, 9, Helper.color.white), minY, maxY, granularity, yOffset, true, Helper.color.white, { r = 96, g = 96, b = 96, a = 80 })
+
+	Helper.transactionLogData.graph = row[1]:setColSpan(4):createGraph("line", true, Helper.color.semitransparent, { text = title_graph, font = Helper.titleFont, size = Helper.scaleFont(Helper.titleFont, Helper.titleFontSize), color = Helper.color.white }, xaxis, yaxis, datarecords, 0, 0, nil, height)
 	row[1].handlers.onClick = function (_, data) return Helper.graphDataSelection(data, refreshCallback) end
 
 	-- zoom
