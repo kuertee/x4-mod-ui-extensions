@@ -976,6 +976,8 @@ function newFuncs.onExpandLSOStorageNode(menu, container, _, ftable, _, nodedata
 	menu.restoreTableState("nodeTable", ftable)
 end
 -- kuertee start: custom graph menu
+-- function Helper.createCustomGraph(frame, container, tableProperties, refreshCallback, selectionData, title_menu, title_graph, func_getGraphData, title_xAxis, title_yAxis, isYAxisMoney, isShowLogTotal, frame2)
+	-- DebugError("kuertee_faction_history.lua createCustomGraph frame2: " .. tostring(frame2))
 function Helper.createCustomGraph(frame, container, tableProperties, refreshCallback, selectionData, title_menu, title_graph, func_getGraphData, title_xAxis, title_yAxis, isYAxisMoney, isShowLogTotal)
 	-- do this in func_getGraphData():
 	-- ===============================
@@ -1011,6 +1013,7 @@ function Helper.createCustomGraph(frame, container, tableProperties, refreshCall
 		transactionsByID = {},
 		transactionsByIDUnfiltered = {},
 		graphdata = {},
+		graphdata2 = {},
 
 		xZoom = Helper.transactionLogData and Helper.transactionLogData.xZoom or 6,
 		xScale = Helper.transactionLogData and Helper.transactionLogData.xScale or 60,
@@ -1045,11 +1048,13 @@ function Helper.createCustomGraph(frame, container, tableProperties, refreshCall
 	-- create transaction index
 	for i, entry in ipairs(Helper.transactionLogData.accountLogUnfiltered) do
 		Helper.transactionLogData.transactionsByIDUnfiltered[entry.entryid] = i
-		-- set money = value for other functions to work
+		-- set money = value so that other functions to work
 		entry.money = entry.value
 	end
 	for i, entry in ipairs(Helper.transactionLogData.accountLog) do
 		Helper.transactionLogData.transactionsByID[entry.entryid] = i
+		-- set money = value so that other functions to work
+		entry.money = entry.value
 	end
 	-- make sure the page of the selected entry is shown
 	if Helper.transactionLogData.curEntry then
@@ -1129,10 +1134,10 @@ function Helper.createCustomGraph(frame, container, tableProperties, refreshCall
 				table_data:setSelectedRow(row.index)
 				selectionData = {}
 			end
-			if entry.description ~= "" then
-				row[1]:createButton({ height = Helper.standardTextHeight }):setText(function() return Helper.transactionLogData.expandedEntries[entry.entryid] and "-" or "+" end, { halign = "center" })
-				row[1].handlers.onClick = function() return Helper.buttonExpandTransactionEntry(entry.entryid, row.index, refreshCallback) end
-			end
+			-- if entry.description ~= "" then
+			-- 	row[1]:createButton({ height = Helper.standardTextHeight }):setText(function() return Helper.transactionLogData.expandedEntries[entry.entryid] and "-" or "+" end, { halign = "center" })
+			-- 	row[1].handlers.onClick = function() return Helper.buttonExpandTransactionEntry(entry.entryid, row.index, refreshCallback) end
+			-- end
 			row[2]:createText(entry.eventtypename)
 			row[3]:setColSpan(4):createText(Helper.getPassedTime(entry.time), { halign = "right" })
 			if isYAxisMoney then
@@ -1141,7 +1146,8 @@ function Helper.createCustomGraph(frame, container, tableProperties, refreshCall
 				row[7]:setColSpan(3):createText(tostring(entry.value), { halign = "right", color = (entry.value > 0) and Helper.color.green or Helper.color.red })
 			end
 			total = total + entry.value
-			if Helper.transactionLogData.expandedEntries[entry.entryid] then
+			-- if Helper.transactionLogData.expandedEntries[entry.entryid] then
+			if entry.description ~= "" then
 				local row = table_data:addRow(nil, { bgColor = Helper.color.unselectable })
 				row[1].properties.cellBGColor = Helper.color.transparent
 				row[2]:setColSpan(8):createText(entry.description, { x = Helper.standardTextHeight, wordwrap = true})
@@ -1204,18 +1210,15 @@ function Helper.createCustomGraph(frame, container, tableProperties, refreshCall
 	local xoffset = tableProperties.x + tableProperties.width + Helper.borderSize + Helper.frameBorder
 	local width = Helper.viewWidth - xoffset - tableProperties.x2
 
-	-- kuertee start: ensure graph is only half viewHeight so that trade analytics can fit
-	-- local height = math.min(Helper.viewHeight - tableProperties.y - Helper.frameBorder - Helper.scaleY(Helper.standardTextHeight) - Helper.borderSize, math.floor(width * 9 / 16))
-	-- local table_graph = frame:addTable(4, { tabOrder = 3, width = width, x = xoffset, y = tableProperties.y })
-	local height = Helper.viewHeight * 0.5 - tableProperties.y - Helper.frameBorder - Helper.scaleY(Helper.standardTextHeight) - Helper.borderSize
-	local table_graph = frame:addTable(4, { tabOrder = 3, width = width, height = height, x = xoffset, y = tableProperties.y })
-	-- kuertee end: ensure graph is only half viewHeight so that trade analytics can fit
+	local height = math.min(Helper.viewHeight - tableProperties.y - Helper.frameBorder - Helper.scaleY(Helper.standardTextHeight) - Helper.borderSize, math.floor(width * 9 / 16))
+	local table_graph = frame:addTable(4, { tabOrder = 3, width = width, x = xoffset, y = tableProperties.y })
 
 	table_graph:setColWidthPercent(2, 15)
 	table_graph:setColWidthPercent(3, 15)
 
 	-- graph cell
 	local row = table_graph:addRow(false, { fixed = true, bgColor = Helper.color.transparent })
+	-- local row = table_graph:addRow(false, { fixed = true, bgColor = Helper.color.lightgreen })
 
 	local minY, maxY = 0, 1
 	for i, point in pairs(Helper.transactionLogData.graphdata) do
@@ -1225,10 +1228,18 @@ function Helper.createCustomGraph(frame, container, tableProperties, refreshCall
 			maxY = point.y
 		end
 	end
-	local datarecords = {}
+	if #Helper.transactionLogData.graphdata2 then
+		for i, point in pairs(Helper.transactionLogData.graphdata2) do
+			if point.y < minY then
+				minY = point.y
+			elseif point.y > maxY then
+				maxY = point.y
+			end
+		end
+	end
 
+	local datarecords = {}
 	local data = {}
-	local firstNonZeroY = true
 	for i, point in pairs(Helper.transactionLogData.graphdata) do
 		local inactive
 		if Helper.transactionLogData.searchtext ~= "" then
@@ -1291,6 +1302,10 @@ function Helper.createCustomGraph(frame, container, tableProperties, refreshCall
 	Helper.transactionLogData.graph = row[1]:setColSpan(4):createGraph("line", true, Helper.color.semitransparent, { text = title_graph, font = Helper.titleFont, size = Helper.scaleFont(Helper.titleFont, Helper.titleFontSize), color = Helper.color.white }, xaxis, yaxis, datarecords, 0, 0, nil, height)
 	row[1].handlers.onClick = function (_, data) return newFuncs.customGraphDataSelection(data, refreshCallback) end
 
+	if #Helper.transactionLogData.graphdata2 then
+		newFuncs.graphData2(table_graph, starttime, endtime, xRange, xGranularity, maxY, minY, granularity)
+	end
+
 	-- zoom
 	local row = table_graph:addRow(true, { fixed = true, bgColor = Helper.color.transparent })
 	row[2]:createButton({ active = Helper.transactionLogData.xZoom > 1 }):setText(ReadText(1001, 7777), { halign = "center" })
@@ -1299,6 +1314,149 @@ function Helper.createCustomGraph(frame, container, tableProperties, refreshCall
 	row[3].handlers.onClick = function () return Helper.buttonTransactionLogZoom(1, refreshCallback) end
 
 	table_graph:addConnection(1, 3, true)
+end
+local graphData2_startTime
+local graphData2_x_forStartTime
+local graphData2_x_for1Min
+local graphData2_x_interval
+-- xRange = total minutes
+-- xGranularity = minutes for x grid
+-- graphData2_x_forStartTime = x pixel for oldest time - at left edge of graph
+-- graphData2_x_interval = x pixe for x grid
+local graphData2_y_forLowestValue
+local graphData2_y_interval
+local graphData2_y_for1Value
+-- maxY = highest y value
+-- minY = lowest y value
+-- granularity = y value for y grid
+-- graphData2_y_forLowestValue = y pixel for lowest value - at bottom edge of graph
+-- graphData2_y_interval = y pixel for y grid
+function newFuncs.graphData2(table_graph, starttime, endtime, xRange, xGranularity, maxY, minY, granularity)
+	-- local border_left = 46 -- eye-balled to the pixel with photoshop
+	-- local border_right = 15 -- eye-balled to the pixel with photoshop
+	-- local x_oldestTime = table_graph.properties.x + border_left
+	-- local x_now = table_graph.properties.x + table_graph.properties.width - border_right
+	-- local x_width = x_now - x_oldestTime
+	-- local x_interval = x_width / math.floor(xRange / xGranularity)
+	-- DebugError("x_interval: " .. tostring(x_interval))
+	-- local startpos = {x = x_oldestTime, y = table_graph.properties.y + height - 400}
+	-- local endpos = {x = x_now, y = table_graph.properties.y + height - 400}
+	-- Helper.drawLine(startpos, endpos, nil, nil, Helper.color.orange)
+
+	-- local border_top = 30
+	-- local border_bottom = 41
+	-- local y_maxValue = table_graph.properties.y + border_top
+	-- local y_minValue = table_graph.properties.y + height - border_bottom
+	-- local y_height = y_minValue - y_maxValue
+	-- local y_interval = y_height / math.floor((maxY - minY) / granularity)
+	-- DebugError("y_interval: " .. tostring(y_interval))
+	-- local startpos = {x = x_oldestTime + 200, y = y_maxValue}
+	-- local endpos = {x = x_oldestTime + 200, y = y_minValue}
+	-- Helper.drawLine(startpos, endpos, nil, nil, Helper.color.orange)
+
+	graphData2_startTime = starttime
+
+	local border_left = 46 -- eye-balled to the pixel with photoshop
+	local border_right = 15 -- eye-balled to the pixel with photoshop
+	local x_forOldestTime = table_graph.properties.x + border_left + 2.5
+	local x_forNow = table_graph.properties.x + table_graph.properties.width - border_right - 2.5
+	graphData2_x_forStartTime = x_forOldestTime
+	graphData2_x_for1Min = (x_forNow - x_forOldestTime) / xRange
+	graphData2_x_interval = (x_forNow - x_forOldestTime) / math.floor(xRange / xGranularity)
+
+	local border_top = 30
+	local border_bottom = 41
+	local y_forMaxValue = table_graph.properties.y + border_top
+	local height = table_graph:getVisibleHeight()
+	local y_forMinValue = table_graph.properties.y + height - border_bottom
+	graphData2_y_forLowestValue = y_forMinValue
+	graphData2_y_for1Value = (y_forMinValue - y_forMaxValue) / (maxY - minY)
+	graphData2_y_interval = (y_forMinValue - y_forMaxValue) / math.floor((maxY - minY) / granularity)
+
+	HideAllRects()
+	local time_now = C.GetCurrentGameTime()
+	local time_oldest = xRange * 60
+	local entry_previous
+	for i, entry in ipairs(Helper.transactionLogData.graphdata2) do
+		if entry.t >= starttime and entry.t <= endtime then
+			if not entry.width then
+				entry.width = 1
+			end
+			if entry.type == "bar" or entry.type == "bar+line" then
+				if entry.segments and #entry.segments then
+					table.sort(entry.segments, function (a, b) return a.value < b.value end)
+					local y_segment_bottom = 0
+					for _, segment in ipairs(entry.segments) do
+						local color = segment.color
+						if not color then
+							color = {r = segment.value / entry.y * 255, g = 0, b = 0, a = 100}
+						end
+						newFuncs.debugText_forced("color", color)
+						local y_segment_top = y_segment_bottom + segment.value / entry.y * entry.y
+						local x_left, y_bottom = newFuncs.graphData2_getXY(starttime, minY, entry.t - entry.width * 0.5, y_segment_bottom)
+						local x_right, y_top = newFuncs.graphData2_getXY(starttime, minY, entry.t + entry.width * 0.5, y_segment_top)
+						if x_left < x_forOldestTime then
+							x_left = x_forOldestTime
+						end
+						if x_right > x_forNow then
+							x_right = x_forNow
+						end
+						local startpos = {x = x_left, y = y_bottom}
+						local endpos = {x = x_right, y = y_top}
+						-- Helper.drawLine(startpos, endpos, nil, nil, color)
+						Helper.drawRectangle(x_right - x_left, y_bottom - y_top, x_left, y_top, nil, nil, color)
+						y_segment_bottom = y_segment_top
+					end
+				else
+					local color = entry.color
+					if not color then
+						color = {r = 255, g = 0, b = 0, a = 100}
+					end
+					local x_left, y_bottom = newFuncs.graphData2_getXY(starttime, minY, entry.t, 0)
+					local x_right, y_top = newFuncs.graphData2_getXY(starttime, minY, entry.t + entry.width, entry.y)
+					local startpos = {x = x_left, y = y_bottom}
+					local endpos = {x = x_right, y = y_top}
+					-- Helper.drawLine(startpos, endpos, nil, nil, color)
+					Helper.drawRectangle(x_right - x_left, y_bottom - y_top, x_left, y_top, nil, nil, color)
+				end
+			end
+			if type == "line" or entry.type == "bar+line" then
+				if entry_previous then
+					local color = entry.color
+					if not color then
+						color = {r = 255, g = 0, b = 0, a = 100}
+					end
+					local x, y = newFuncs.graphData2_getXY(starttime, minY, entry_previous.t, entry_previous.y)
+					local x2, y2 = newFuncs.graphData2_getXY(starttime, minY, entry.t, entry.y)
+					local startpos = {x = x, y = y}
+					local endpos = {x = x2, y = y2}
+					if x < x_forOldestTime then
+						x = x_forOldestTime
+						y = newFuncs.getYAtXFromPoint1AndPoint2(x, startpos, endpos)
+					end
+					local startpos = {x = x, y = y}
+					local endpos = {x = x2, y = y2}
+					Helper.drawLine(startpos, endpos, nil, nil, color)
+				end
+			end
+		end
+		entry_previous = entry
+	end
+end
+function newFuncs.graphData2_getXY(starttime, minY, time, value)
+	local x = graphData2_x_forStartTime + (time - starttime) / 60 * graphData2_x_for1Min
+	local y = graphData2_y_forLowestValue - (value - minY) * graphData2_y_for1Value
+	return x, y
+end
+function newFuncs.getYAtXFromPoint1AndPoint2(x, point1, point2)
+	local rise = point2.y - point1.y
+	local run = point2.x - point1.x
+	local m = rise / run
+	-- y = mx + b
+	-- b = y - mx
+	local b = point1.y - m * point1.x
+	local y = m * x + b
+	return y
 end
 function newFuncs.customGraphDataSelection(data, refreshCallback)
 	local entryId_selected = Helper.transactionLogData.graphdata[data[4]].entryid
@@ -1329,6 +1487,30 @@ function newFuncs.customGraphDataSelection(data, refreshCallback)
 	Helper.transactionLogData.curEntry = entryId_best
 	-- DebugError("kuertee_helper.lua customGraphDataSelection curEntry: " .. tostring(Helper.transactionLogData.curEntry))
 	refreshCallback()
+end
+function newFuncs.debugText (data1, data2, indent, isForced)
+	local isDebug = false
+	if isDebug == true or isForced == true then
+		if indent == nil then
+			indent = ""
+		end
+		if type (data1) == "table" then
+			for i, value in pairs (data1) do
+				DebugError (indent .. tostring (i) .. ReadText (1001, 120) .. " " .. tostring (value))
+				if type (value) == "table" then
+					newFuncs.debugText (value, nil, indent .. "    ", isForced)
+				end
+			end
+		else
+			DebugError (indent .. tostring (data1))
+		end
+		if data2 then
+			newFuncs.debugText (data2, nil, indent .. "    ", isForced)
+		end
+	end
+end
+function newFuncs.debugText_forced (data1, data2, indent)
+	return newFuncs.debugText (data1, data2, indent, true)
 end
 -- kuertee end: custom graph menu
 init()
