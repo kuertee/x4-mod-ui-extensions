@@ -985,7 +985,7 @@ function Helper.createCustomGraph(frame, container, tableProperties, refreshCall
 	-- ===================
 	-- table.insert(Helper.transactionLogData.accountLogUnfiltered, {
 	-- 	  time = time,
-	-- 	  entryid = ConvertStringTo64Bit(tostring(time)),
+	-- 	  entryid = id (time is a good id),
 	-- 	  eventtypename = text for unexpanded log entry,
 	-- 	  value = value of entry,
 	-- 	  description = text for expanded log entry,
@@ -996,9 +996,9 @@ function Helper.createCustomGraph(frame, container, tableProperties, refreshCall
 	-- for each graph entry:
 	-- =====================
 	-- table.insert(Helper.transactionLogData.graphdata, { 
-	-- 	  entryid = ConvertStringTo64Bit(tostring(time)),
-	-- 	  t = time,
-	-- 	  y = value of entry,
+	-- 	  entryid = id (time is a good id),
+	-- 	  x = value of horizontal data from entry. time is a good value for x,
+	-- 	  y = value of vertical data from entry,
 	-- })
 	Helper.transactionLogData = {
 		isCustomGraph = true,
@@ -1029,12 +1029,36 @@ function Helper.createCustomGraph(frame, container, tableProperties, refreshCall
 		noupdate = nil,
 	}
 
-	local endtime = C.GetCurrentGameTime()
-	local starttime = math.max(0, endtime - 60 * Helper.transactionLogConfig.zoomSteps[Helper.transactionLogData.xZoom].zoom)
-
-	-- transaction entries with data
 	func_getGraphData()
-	-- DebugError("createCustomGraph Helper.transactionLogData: " .. tostring(Helper.transactionLogData))
+
+	newFuncs.debugText_forced("createCustomGraph accountLogUnfiltered", Helper.transactionLogData.accountLogUnfiltered)
+	newFuncs.debugText_forced("createCustomGraph accountLog", Helper.transactionLogData.accountLog)
+	newFuncs.debugText_forced("createCustomGraph graphdata", Helper.transactionLogData.graphdata)
+	newFuncs.debugText_forced("createCustomGraph graphdata2", Helper.transactionLogData.graphdata2)
+	if #Helper.transactionLogData.accountLogUnfiltered < 1 then
+		return
+	end
+
+	if #Helper.transactionLogData.accountLogUnfiltered then
+		table.sort(Helper.transactionLogData.accountLogUnfiltered, function (a, b) return a.time < b.time end)
+	end
+	if #Helper.transactionLogData.accountLog then
+		table.sort(Helper.transactionLogData.accountLog, function (a, b) return a.time < b.time end)
+	end
+	if #Helper.transactionLogData.graphdata then
+		table.sort(Helper.transactionLogData.graphdata, function (a, b) return a.t < b.t end)
+	end
+	if #Helper.transactionLogData.graphdata2 then
+		table.sort(Helper.transactionLogData.graphdata2, function (a, b) return a.t < b.t end)
+	end
+
+	local endtime
+	if Helper.transactionLogData.searchtext ~= "" then
+		endtime = Helper.transactionLogData.accountLog[#Helper.transactionLogData.accountLog].time
+	else
+		endtime = Helper.transactionLogData.accountLogUnfiltered[#Helper.transactionLogData.accountLog].time
+	end
+	local starttime = math.max(0, endtime - 60 * Helper.transactionLogConfig.zoomSteps[Helper.transactionLogData.xZoom].zoom)
 
 	-- apply search
 	if Helper.transactionLogData.searchtext ~= "" then
@@ -1143,7 +1167,7 @@ function Helper.createCustomGraph(frame, container, tableProperties, refreshCall
 			if isYAxisMoney then
 				row[7]:setColSpan(3):createText(((entry.value > 0) and "+" or "") .. ConvertMoneyString(entry.value, false, true, 0, true) .. " " .. ReadText(1001, 101), { halign = "right", color = (entry.money > 0) and Helper.color.green or Helper.color.red })
 			else
-				row[7]:setColSpan(3):createText(tostring(entry.value), { halign = "right", color = (entry.value > 0) and Helper.color.green or Helper.color.red })
+				row[7]:setColSpan(3):createText(tostring(entry.value), { halign = "right", color = (entry.value >= 0) and Helper.color.green or Helper.color.red })
 			end
 			total = total + entry.value
 			-- if Helper.transactionLogData.expandedEntries[entry.entryid] then
@@ -1374,7 +1398,7 @@ function newFuncs.graphData2(table_graph, starttime, endtime, xRange, xGranulari
 	graphData2_y_interval = (y_forMinValue - y_forMaxValue) / math.floor((maxY - minY) / granularity)
 
 	HideAllRects()
-	local time_now = C.GetCurrentGameTime()
+	local time_now = starttime
 	local time_oldest = xRange * 60
 	local entry_previous
 	for i, entry in ipairs(Helper.transactionLogData.graphdata2) do
