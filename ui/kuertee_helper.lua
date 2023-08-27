@@ -1181,12 +1181,16 @@ function Helper.createCustomGraph(frame, container, tableProperties, refreshCall
 				row[3]:setColSpan(4):createText(Helper.getPassedTime(entry.time), { halign = "right" })
 			end
 			if entry.value then
-				if isYAxisMoney then
-					row[7]:setColSpan(3):createText(((entry.value > 0) and "+" or "") .. ConvertMoneyString(entry.value, false, true, 0, true) .. " " .. ReadText(1001, 101), { halign = "right", color = (entry.value > 0) and Helper.color.green or Helper.color.red })
-				else
-					row[7]:setColSpan(3):createText(tostring(entry.value), { halign = "right", color = (entry.value >= 0) and Helper.color.green or Helper.color.red })
+				local entryValue = entry.value
+				if entry.yMultiplier then
+					entryValue = entryValue * entry.yMultiplier
 				end
-				total = total + entry.value
+				if isYAxisMoney then
+					row[7]:setColSpan(3):createText(((entryValue > 0) and "+" or "") .. ConvertMoneyString(entryValue, false, true, 0, true) .. " " .. ReadText(1001, 101), { halign = "right", color = (entryValue > 0) and Helper.color.green or Helper.color.red })
+				else
+					row[7]:setColSpan(3):createText(tostring(entryValue), { halign = "right", color = (entryValue >= 0) and Helper.color.green or Helper.color.red })
+				end
+				total = total + entryValue
 			end
 			-- if Helper.transactionLogData.expandedEntries[entry.entryid] then
 			if entry.description ~= "" then
@@ -1464,7 +1468,7 @@ function newFuncs.graphOtherData(graphData, table_graph, starttime, endtime, xRa
 						local startpos = {x = x_left, y = y_bottom}
 						local endpos = {x = x_right, y = y_top}
 						-- Helper.drawLine(startpos, endpos, nil, nil, color)
-						Helper.drawRectangle(x_right - x_left - 5, y_bottom - y_top, x_left, y_top, nil, nil, color)
+						Helper.drawRectangle(x_right - x_left - 2, y_bottom - y_top, x_left, y_top, nil, nil, color)
 						y_segment_bottom = y_segment_top
 					end
 				else
@@ -1481,7 +1485,7 @@ function newFuncs.graphOtherData(graphData, table_graph, starttime, endtime, xRa
 					local startpos = {x = x_left, y = y_bottom}
 					local endpos = {x = x_right, y = y_top}
 					-- Helper.drawLine(startpos, endpos, nil, nil, color)
-					Helper.drawRectangle(x_right - x_left - 5, y_bottom - y_top, x_left, y_top, nil, nil, color)
+					Helper.drawRectangle(x_right - x_left - 2, y_bottom - y_top, x_left, y_top, nil, nil, color)
 				end
 			end
 		end
