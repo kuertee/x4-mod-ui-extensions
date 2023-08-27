@@ -1159,8 +1159,6 @@ function Helper.createCustomGraph(frame, container, tableProperties, refreshCall
 		local total = 0
 		for i = startIndex, endIndex, -1 do
 			local entry = Helper.transactionLogData.accountLog[i]
-			-- set money = value for other functions to work
-			entry.money = entry.value
 			local row = table_data:addRow(entry.entryid, { bgColor = Helper.color.transparent })
 			if Helper.transactionLogData.curEntry == entry.entryid then
 				local numLines = (table_data.properties.maxVisibleHeight - headerHeight) / (Helper.scaleY(Helper.standardTextHeight) + Helper.borderSize)
@@ -1182,12 +1180,14 @@ function Helper.createCustomGraph(frame, container, tableProperties, refreshCall
 			else
 				row[3]:setColSpan(4):createText(Helper.getPassedTime(entry.time), { halign = "right" })
 			end
-			if isYAxisMoney then
-				row[7]:setColSpan(3):createText(((entry.value > 0) and "+" or "") .. ConvertMoneyString(entry.value, false, true, 0, true) .. " " .. ReadText(1001, 101), { halign = "right", color = (entry.money > 0) and Helper.color.green or Helper.color.red })
-			else
-				row[7]:setColSpan(3):createText(tostring(entry.value), { halign = "right", color = (entry.value >= 0) and Helper.color.green or Helper.color.red })
+			if entry.value then
+				if isYAxisMoney then
+					row[7]:setColSpan(3):createText(((entry.value > 0) and "+" or "") .. ConvertMoneyString(entry.value, false, true, 0, true) .. " " .. ReadText(1001, 101), { halign = "right", color = (entry.value > 0) and Helper.color.green or Helper.color.red })
+				else
+					row[7]:setColSpan(3):createText(tostring(entry.value), { halign = "right", color = (entry.value >= 0) and Helper.color.green or Helper.color.red })
+				end
+				total = total + entry.value
 			end
-			total = total + entry.value
 			-- if Helper.transactionLogData.expandedEntries[entry.entryid] then
 			if entry.description ~= "" then
 				local row = table_data:addRow(nil, { bgColor = Helper.color.transparent })
@@ -1432,8 +1432,11 @@ function newFuncs.graphOtherData(graphData, table_graph, starttime, endtime, xRa
 	local time_oldest = xRange * 60
 	local entry_previous
 	for i, entry in ipairs(graphData) do
-		if not entry.width or entry.width < graphData2_x_for1Min then
-			entry.width = graphData2_x_for1Min
+		-- if (not entry.width) or entry.width < graphData2_x_for1Min then
+		-- 	entry.width = graphData2_x_for1Min
+		-- end
+		if (not entry.width) or entry.width < 1 then
+			entry.width = 1
 		end
 		if entry.t + entry.width >= starttime and entry.t <= endtime then
 			if entry.type == "bar" or entry.type == "bar+line" then
