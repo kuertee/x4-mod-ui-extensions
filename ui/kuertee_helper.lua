@@ -1174,7 +1174,20 @@ function Helper.createCustomGraph(frame, container, tableProperties, refreshCall
 			-- 	row[1]:createButton({ height = Helper.standardTextHeight }):setText(function() return Helper.transactionLogData.expandedEntries[entry.entryid] and "-" or "+" end, { halign = "center" })
 			-- 	row[1].handlers.onClick = function() return Helper.buttonExpandTransactionEntry(entry.entryid, row.index, refreshCallback) end
 			-- end
-			row[2]:createText(entry.eventtypename)
+			local entryText = entry.eventtypename
+			if entry.description ~= "" then
+				-- entryText = entryText .. "\n" .. entry.description
+				local description = ""
+				for line in entry.description:gmatch("[^\r\n]+") do
+					description = description .. "    " .. line .. "\n"
+				end
+				entryText = entryText .. "\n" .. description
+			end
+			if entry.color then
+				row[2]:createText(entryText, {color = entry.color, wordwrap = true})
+			else
+				row[2]:createText(entryText, {wordwrap = true})
+			end
 			if entry.width then
 				row[3]:setColSpan(4):createText(Helper.getPassedTime(entry.time) .. " to " .. Helper.getPassedTime(entry.time + entry.width), { halign = "right" })
 			else
@@ -1193,11 +1206,11 @@ function Helper.createCustomGraph(frame, container, tableProperties, refreshCall
 				total = total + entryValue
 			end
 			-- if Helper.transactionLogData.expandedEntries[entry.entryid] then
-			if entry.description ~= "" then
-				local row = table_data:addRow(nil, { bgColor = Helper.color.transparent })
-				-- row[1].properties.cellBGColor = Helper.color.transparent
-				row[2]:setColSpan(8):createText(entry.description, { x = Helper.standardTextHeight, wordwrap = true})
-			end
+			-- if entry.description ~= "" then
+			-- 	local row = table_data:addRow(nil, { bgColor = Helper.color.transparent })
+			-- 	-- row[1].properties.cellBGColor = Helper.color.transparent
+			-- 	row[2]:setColSpan(8):createText(entry.description, { x = Helper.standardTextHeight, wordwrap = true})
+			-- end
 		end
 
 		if Helper.transactionLogData.xZoom < #Helper.transactionLogConfig.zoomSteps then
