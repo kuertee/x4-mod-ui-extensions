@@ -797,14 +797,17 @@ local function init()
 
 	menu.shoppinglist = {}
 
-	DebugError("menu_ship_configuration.xpl.init - kuertee")
-	Helper.init_kuertee()
+	-- kuertee start:
+	menu.init_kuertee()
+	-- kuertee end
 end
 
 -- kuertee start:
 local callbacks = {}
-function Helper.init_kuertee ()
+function menu.init_kuertee ()
+	DebugError("menu_ship_configuration.xpl.init - kuertee")
 end
+-- kuertee end
 
 function menu.cleanup()
 	menu.isReadOnly = nil

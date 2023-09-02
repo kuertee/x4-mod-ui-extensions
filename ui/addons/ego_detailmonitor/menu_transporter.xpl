@@ -70,14 +70,17 @@ local function init()
 		Helper.registerMenu(menu)
 	end
 
-	DebugError("menu_transporter.xpl.init - kuertee")
-	Helper.init_kuertee()
+	-- kuertee start:
+	menu.init_kuertee()
+	-- kuertee end
 end
 
 -- kuertee start:
 local callbacks = {}
-function Helper.init_kuertee ()
+function menu.init_kuertee ()
+	DebugError("menu_transporter.xpl.init - kuertee")
 end
+-- kuertee end
 
 function menu.cleanup()
 	menu.transportercomponent = nil

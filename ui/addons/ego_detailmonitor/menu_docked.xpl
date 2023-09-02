@@ -181,14 +181,17 @@ local function init()
 	RegisterEvent("conversationCancelled", menu.onConvEnds)
 	RegisterEvent("conversationFinished", menu.onConvEnds)
 
-	DebugError("menu_docked.xpl.init - kuertee")
-	Helper.init_kuertee()
+	-- kuertee start:
+	menu.init_kuertee()
+	-- kuertee end
 end
 
 -- kuertee start:
 local callbacks = {}
-function Helper.init_kuertee ()
+function menu.init_kuertee ()
+	DebugError("menu_docked.xpl.init - kuertee")
 end
+-- kuertee end
 
 function menu.onGamePlanChange(_, mode)
 	if menu.init then

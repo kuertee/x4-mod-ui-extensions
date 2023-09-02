@@ -696,14 +696,17 @@ local function init()
 	Helper.createTopLevelConfig()
 	Helper.createPlayerInfoConfig()
 
-	DebugError("helper.xpl.init - kuertee")
+	-- kuertee start:
 	Helper.init_kuertee()
+	-- kuertee end
 end
 
 -- kuertee start:
 local callbacks = {}
 function Helper.init_kuertee ()
+	DebugError("menu_helper.xpl.init - kuertee")
 end
+-- kuertee end
 
 function Helper.registerCallback (callbackName, callbackFunction)
 	-- note 1: format is generally [function name]_[action]. e.g.: in kuertee_menu_transporter, "display_on_set_room_active" overrides the room's active property with the return of the callback.
@@ -12552,6 +12555,15 @@ function Helper.customGraphDataSelection(data, refreshCallback)
 
 	Helper.transactionLogData.curEntry = entryId_best
 	refreshCallback()
+end
+
+function Helper.getMenu(menuName)
+	for _, menu in Menus do
+		if menu.name == menuName then
+			return menu
+		end
+	end
+	return nil
 end
 -- kuertee end
 

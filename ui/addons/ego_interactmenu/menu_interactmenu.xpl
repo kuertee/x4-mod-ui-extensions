@@ -387,16 +387,20 @@ local function init()
 	end
 
 	RegisterEvent("hideInteractMenu", function () menu.onCloseElement("auto") end)
-	DebugError("menu_interactmenu.xpl.init - kuertee")
+
+	-- kuertee start:
 	Helper.init_kuertee()
+	-- kuertee end
 end
 
 -- kuertee start:
 local callbacks = {}
 function Helper.init_kuertee ()
+	DebugError("menu_interactmenu.xpl.init - kuertee")
 	RegisterEvent ("Interact_Menu_API.Add_Custom_Actions_Group_Id", menu.Add_Custom_Actions_Group_Id)
 	RegisterEvent ("Interact_Menu_API.Add_Custom_Actions_Group_Text", menu.Add_Custom_Actions_Group_Text)
 end
+-- kuertee end
 
 function menu.cleanup()
 	menu.mode = nil

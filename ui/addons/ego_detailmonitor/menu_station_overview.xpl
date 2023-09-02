@@ -295,14 +295,17 @@ local function init()
 		Helper.registerMenu(menu)
 	end
 
-	DebugError("menu_station_overview.xpl.init - kuertee")
-	Helper.init_kuertee()
+	-- kuertee start:
+	menu.init_kuertee()
+	-- kuertee end
 end
 
 -- kuertee start:
 local callbacks = {}
-function Helper.init_kuertee ()
+function menu.init_kuertee ()
+	DebugError("menu_station_overview.xpl.init - kuertee")
 end
+-- kuertee end
 
 -- cleanup variables in menu, no need for the menu variable to keep all the data while the menu is not active
 function menu.cleanup()

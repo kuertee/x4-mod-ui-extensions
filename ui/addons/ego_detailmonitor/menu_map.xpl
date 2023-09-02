@@ -1602,14 +1602,18 @@ local function init()
 	if __CORE_DETAILMONITOR_MAPFILTER.version < config.mapfilterversion then
 		menu.upgradeMapFilterVersion()
 	end
-	DebugError("menu_map.xpl.init - kuertee")
+
+	-- kuertee start:
 	menu.init_kuertee()
+	-- kuertee end
 end
 
 -- kuertee start:
 local callbacks = {}
 function menu.init_kuertee ()
+	DebugError("menu_map.xpl.init - kuertee")
 end
+-- kuertee end
 
 function menu.createLegend()
 	if menu.haslegend then
