@@ -8,6 +8,7 @@ local newFuncs = {}
 local callbacks = {}
 local isInited
 local function init ()
+	DebugError ("kuertee_menu_toplevel.init")
 	if not isInited then
 		isInited = true
 		topLevelMenu.registerCallback = newFuncs.registerCallback

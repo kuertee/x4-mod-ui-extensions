@@ -7,6 +7,7 @@ local newFuncs = {}
 local kHUD = {}
 local isInited
 local function init ()
+	DebugError ("kuertee_hud.init")
 	if not isInited then
 		isInited = true
 		topLevelMenu.registerCallback ("createInfoFrame_on_before_frame_display", newFuncs.createInfoFrame_on_before_frame_display)
