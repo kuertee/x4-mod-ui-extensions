@@ -5,12 +5,8 @@ by kuertee. Contributors: Forleyor, Mycu, Runekn.
 
 Updates
 =======
-v6.1.004, 1 Aug 2023:
--Modders resource: UIX's Interact Menu now sends a signal to the MD that it has been loaded. The modder can listen for this before setting up their custom actions/orders.
--Compatibility: Mycu's tweaks for better compatibility with his updated mods.
-
--v6.1.003, 29 Jul 2023:
--Modders resource: Custom orders are now added to the Custom Actions and Custom Orders sub-menus. To add only to one or the other, prefix the section name with either "actions_" or "orders_". Read the Add Custom Actions/Orders Group to the Interact Menu (via MD) section below.
+v6.2.001, 2 Sep 2023:
+-Tweak: 6.2 Compatibility.
 
 Instructions for players
 ========================
@@ -148,6 +144,13 @@ Troubleshooting
 
 History
 =======
+v6.1.004, 1 Aug 2023:
+-Modders resource: UIX's Interact Menu now sends a signal to the MD that it has been loaded. The modder can listen for this before setting up their custom actions/orders.
+-Compatibility: Mycu's tweaks for better compatibility with his updated mods.
+
+v6.1.003, 29 Jul 2023:
+-Modders resource: Custom orders are now added to the Custom Actions and Custom Orders sub-menus. To add only to one or the other, prefix the section name with either "actions_" or "orders_". Read the Add Custom Actions/Orders Group to the Interact Menu (via MD) section below.
+
 v6.1.001, 27 Jun 2023:
 -modders resource: Add Custom Actions/Orders Group to the Interact Menu (via MD):
 1. Load UIX's customised Interact Menu with: <raise_lua_event name="'Lua_Loader.Load'" param="'extensions.kuertee_ui_extensions.ui.kuertee_menu_interactmenu'"/>

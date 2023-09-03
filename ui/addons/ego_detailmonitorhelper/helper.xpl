@@ -12396,10 +12396,10 @@ function Helper.graphOtherData(graphData, table_graph, starttime, endtime, xRang
 	local border_left = 46 -- eye-balled to the pixel with photoshop
 	local border_right = 15 -- eye-balled to the pixel with photoshop
 	local x_forOldestTime = table_graph.properties.x + border_left + 2.5
-	local x_forNow = table_graph.properties.x + table_graph.properties.width - border_right - 2.5
+	local x_forNewestTime = table_graph.properties.x + table_graph.properties.width - border_right - 2.5
 	graphData2_x_forStartTime = x_forOldestTime
-	graphData2_x_for1Min = (x_forNow - x_forOldestTime) / xRange
-	graphData2_x_interval = (x_forNow - x_forOldestTime) / math.floor(xRange / xGranularity)
+	graphData2_x_for1Min = (x_forNewestTime - x_forOldestTime) / xRange
+	graphData2_x_interval = (x_forNewestTime - x_forOldestTime) / math.floor(xRange / xGranularity)
 
 	local border_top = 30
 	local border_bottom = 41
@@ -12422,31 +12422,60 @@ function Helper.graphOtherData(graphData, table_graph, starttime, endtime, xRang
 		end
 		if entry.t + entry.width >= starttime and entry.t <= endtime then
 			if entry.type == "bar" or entry.type == "bar+line" then
+				-- function Helper.drawRectangle(width, height, offsetx, offsety, angle, z, color, noscaling)
 				if entry.segments and #entry.segments then
 					table.sort(entry.segments, function (a, b) return a.value < b.value end)
 					local y_segment_bottom = 0
 					for _, segment in ipairs(entry.segments) do
-						local segmentValue = segment.value
-						if entry.yMultiplier then
-							segmentValue = segmentValue * entry.yMultiplier
-						end
 						local color = segment.color
 						if not color then
-							color = {r = segmentValue / entry.y * 255, g = 0, b = 0, a = 100}
+							color = {r = segment.value / entry.y * 255, g = 0, b = 0, a = 100}
 						end
-						local y_segment_top = y_segment_bottom + segmentValue / entry.y * entry.y
+						local yMultiplier = 1
+						if entry.yMultiplier then
+							yMultiplier = entry.yMultiplier
+						end
+						segment.value = segment.value * yMultiplier
+						local y_segment_top = y_segment_bottom + segment.value / entry.y * entry.y
 						local x_left, y_bottom = Helper.graphData2_getXY(starttime, minY, entry.t, y_segment_bottom)
 						local x_right, y_top = Helper.graphData2_getXY(starttime, minY, entry.t + entry.width, y_segment_top)
-						if x_left < x_forOldestTime then
-							x_left = x_forOldestTime
+						if segment.segments and #segment.segments > 0 then
+							local x_left2 = x_left
+							for _, segment2 in ipairs(segment.segments) do
+								local color2 = segment2.color
+								if not color2 then
+									color2 = color
+								end
+								x_right2 = x_left2 + segment2.value / segment.value * (x_right - x_left)
+								if x_left2 < x_forOldestTime then
+									x_left2 = x_forOldestTime
+								elseif x_left2 > x_forNewestTime then
+									x_left2 = x_forNewestTime
+								end
+								if x_right2 < x_forOldestTime then
+									x_right2 = x_forOldestTime
+								elseif x_right2 > x_forNewestTime then
+									x_right2 = x_forNewestTime
+								end
+								Helper.drawRectangle(x_right2 - x_left2, y_bottom - y_top - 2 * yMultiplier, x_left2, y_top + 2 * yMultiplier, nil, nil, color2)
+								x_left2 = x_right2
+							end
+						else
+							if x_left < x_forOldestTime then
+								x_left = x_forOldestTime
+							elseif x_left > x_forNewestTime then
+								x_left = x_forNewestTime
+							end
+							if x_right < x_forOldestTime then
+								x_right = x_forOldestTime
+							elseif x_right > x_forNewestTime then
+								x_right = x_forNewestTime
+							end
+							local startpos = {x = x_left, y = y_bottom}
+							local endpos = {x = x_right, y = y_top}
+							-- Helper.drawLine(star
+							Helper.drawRectangle(x_right - x_left - 2, y_bottom - y_top, x_left, y_top, nil, nil, color)
 						end
-						if x_right > x_forNow then
-							x_right = x_forNow
-						end
-						local startpos = {x = x_left, y = y_bottom}
-						local endpos = {x = x_right, y = y_top}
-						-- Helper.drawLine(startpos, endpos, nil, nil, color)
-						Helper.drawRectangle(x_right - x_left - 2, y_bottom - y_top, x_left, y_top, nil, nil, color)
 						y_segment_bottom = y_segment_top
 					end
 				else
@@ -12460,6 +12489,16 @@ function Helper.graphOtherData(graphData, table_graph, starttime, endtime, xRang
 					end
 					local x_left, y_bottom = Helper.graphData2_getXY(starttime, minY, entry.t, 0)
 					local x_right, y_top = Helper.graphData2_getXY(starttime, minY, entry.t + entry.width, yValue)
+					if x_left < x_forOldestTime then
+						x_left = x_forOldestTime
+					elseif x_left > x_forNewestTime then
+						x_left = x_forNewestTime
+					end
+					if x_right < x_forOldestTime then
+						x_right = x_forOldestTime
+					elseif x_right > x_forNewestTime then
+						x_right = x_forNewestTime
+					end
 					local startpos = {x = x_left, y = y_bottom}
 					local endpos = {x = x_right, y = y_top}
 					-- Helper.drawLine(startpos, endpos, nil, nil, color)
@@ -12499,8 +12538,16 @@ function Helper.graphOtherData(graphData, table_graph, starttime, endtime, xRang
 					local endpos = {x = x2, y = y2}
 					if x < x_forOldestTime then
 						x = x_forOldestTime
-						y = Helper.getYAtXFromPoint1AndPoint2(x, startpos, endpos)
+					elseif x > x_forNewestTime then
+						x = x_forNewestTime
 					end
+					if x2 < x_forOldestTime then
+						x2 = x_forOldestTime
+					elseif x2 > x_forNewestTime then
+						x2 = x_forNewestTime
+					end
+					y = Helper.getYAtXFromPoint1AndPoint2(x, startpos, endpos)
+					y2 = Helper.getYAtXFromPoint1AndPoint2(x2, startpos, endpos)
 					local startpos = {x = x, y = y}
 					local endpos = {x = x2, y = y2}
 					local thickness = 3
