@@ -167,6 +167,10 @@ local config = {
 	},
 }
 
+-- kuertee start:
+local callbacks = {}
+-- kuertee end
+
 -- init menu and register with Helper
 local function init()
 	--print("Initializing")
@@ -187,7 +191,6 @@ local function init()
 end
 
 -- kuertee start:
-local callbacks = {}
 function menu.init_kuertee ()
 	DebugError("menu_docked.xpl.init - kuertee")
 end

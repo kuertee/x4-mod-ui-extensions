@@ -1562,6 +1562,14 @@ __CORE_DETAILMONITOR_MAPFILTER = __CORE_DETAILMONITOR_MAPFILTER or {
 	["other_misc_rendersatelliteradarrange"] = true,
 }
 
+-- kuertee start:
+local callbacks = {}
+local distanceTool_from_component
+local distanceTool_from_posRot
+local distanceTool_to_component
+local distanceTool_to_posRot
+-- kuertee end
+
 local function init()
 	Menus = Menus or { }
 	table.insert(Menus, menu)
@@ -1609,7 +1617,6 @@ local function init()
 end
 
 -- kuertee start:
-local callbacks = {}
 function menu.init_kuertee ()
 	DebugError("menu_map.xpl.init - kuertee")
 end
@@ -24952,6 +24959,12 @@ function menu.onRenderTargetMouseDown(modified)
 			menu.noupdate = true
 		end
 	end
+
+	-- kuertee start: distance tool
+	distanceTool_from_posRot = ffi.new("UIPosRot")
+	local eclipticoffset = ffi.new("UIPosRot")
+	distanceTool_from_component = C.GetMapPositionOnEcliptic2(menu.holomap, distanceTool_from_posRot, false, 0, eclipticoffset)
+    -- kuertee end
 end
 
 function menu.onRenderTargetMouseUp(modified)
@@ -25113,6 +25126,38 @@ function menu.onRenderTargetRightMouseUp(modified)
 			local eclipticoffset = ffi.new("UIPosRot")
 			local posrotcomponent = C.GetMapPositionOnEcliptic2(menu.holomap, posrot, false, 0, eclipticoffset)
 
+			-- kuertee start: distance tool
+			distanceTool_to_posRot = posrot
+			distanceTool_to_component = posrotcomponent
+    
+    		Helper.distanceTool_distance = nil
+			if distanceTool_from_component and distanceTool_from_posRot then
+				local posFrom, sectorFrom, posTo, sectorTo
+				if C.IsComponentClass (distanceTool_from_component, "sector") then
+					posFrom = distanceTool_from_posRot
+					sectorFrom = distanceTool_from_component
+				else
+					posFrom = C.GetObjectPositionInSector (distanceTool_from_component)
+					sectorFrom = ConvertIDTo64Bit(GetComponentData(distanceTool_from_component, "sectorid"))
+				end
+				if C.IsComponentClass (distanceTool_to_component, "sector") then
+					posTo = distanceTool_to_posRot
+					sectorTo = distanceTool_to_component
+				else
+					posTo = C.GetObjectPositionInSector (distanceTool_to_component)
+					sectorTo = ConvertIDTo64Bit(GetComponentData(distanceTool_to_component, "sectorid"))
+				end
+				if sectorFrom == sectorTo then
+					local x_delta = math.abs (posTo.x - posFrom.x)
+					local y_delta = math.abs (posTo.y - posFrom.y)
+					local z_delta = math.abs (posTo.z - posFrom.z)
+					Helper.distanceTool_distance = math.pow (math.pow (x_delta, 2) + math.pow (y_delta, 2) + math.pow (z_delta, 2), 0.5)
+				end
+			end
+			distanceTool_from_posRot = distanceTool_to_posRot
+			distanceTool_from_component = distanceTool_to_component
+		    -- kuertee end
+
 			local playerships, otherobjects, playerdeployables = menu.getSelectedComponentCategories()
 			if pickedordercomponent ~= 0 then
 				if GetComponentData(ConvertStringTo64Bit(tostring(pickedordercomponent)), "isplayerowned") then
@@ -25120,6 +25165,7 @@ function menu.onRenderTargetRightMouseUp(modified)
 						PlaySound("ui_menu_interact_btn_selectinvalid_core")
 					else
 						menu.interactMenuComponent = pickedcomponent
+
 						Helper.openInteractMenu(menu, { component = pickedordercomponent, order = pickedorder, offsetcomponent = posrotcomponent, offset = posrot, playerships = playerships, otherobjects = otherobjects, playerdeployables = playerdeployables })
 					end
 				end

@@ -428,6 +428,10 @@ if C.AreVenturesCompatible() then
 	table.insert(config.logbookCategories, { name = ReadText(1001, 11319),	icon = "vt_logbook",		mode = "online",	online = true })
 end
 
+-- kuertee start:
+local callbacks = {}
+-- kuertee end
+
 local function init()
 	Menus = Menus or { }
 	table.insert(Menus, menu)
@@ -441,7 +445,6 @@ local function init()
 end
 
 -- kuertee start:
-local callbacks = {}
 function menu.init_kuertee ()
 	DebugError("menu_playerinfo.xpl.init - kuertee")
 end

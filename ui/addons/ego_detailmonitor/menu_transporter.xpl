@@ -63,6 +63,10 @@ local config = {
 	},
 }
 
+-- kuertee start:
+local callbacks = {}
+-- kuertee end
+
 local function init()
 	Menus = Menus or { }
 	table.insert(Menus, menu)
@@ -76,7 +80,6 @@ local function init()
 end
 
 -- kuertee start:
-local callbacks = {}
 function menu.init_kuertee ()
 	DebugError("menu_transporter.xpl.init - kuertee")
 end

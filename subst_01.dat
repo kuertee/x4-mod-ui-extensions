@@ -167,6 +167,10 @@ local config = {
 	},
 }
 
+-- kuertee start:
+local callbacks = {}
+-- kuertee end
+
 -- init menu and register with Helper
 local function init()
 	--print("Initializing")
@@ -187,7 +191,6 @@ local function init()
 end
 
 -- kuertee start:
-local callbacks = {}
 function menu.init_kuertee ()
 	DebugError("menu_docked.xpl.init - kuertee")
 end
@@ -3029,6 +3032,15 @@ __CORE_DETAILMONITOR_MAPFILTER = __CORE_DETAILMONITOR_MAPFILTER or {
 	["other_misc_rendersatelliteradarrange"] = true,
 }
 
+-- kuertee start:
+local callbacks = {}
+local distanceTool_from_component
+local distanceTool_from_posRot
+local distanceTool_to_component
+local distanceTool_to_posRot
+local distanceTool_distance
+-- kuertee end
+
 local function init()
 	Menus = Menus or { }
 	table.insert(Menus, menu)
@@ -3076,7 +3088,6 @@ local function init()
 end
 
 -- kuertee start:
-local callbacks = {}
 function menu.init_kuertee ()
 	DebugError("menu_map.xpl.init - kuertee")
 end
@@ -26419,6 +26430,13 @@ function menu.onRenderTargetMouseDown(modified)
 			menu.noupdate = true
 		end
 	end
+
+	-- kuertee start: distance tool
+	distanceTool_from_posRot = ffi.new("UIPosRot")
+	local eclipticoffset = ffi.new("UIPosRot")
+	distanceTool_from_component = C.GetMapPositionOnEcliptic2(menu.holomap, distanceTool_from_posRot, false, 0, eclipticoffset)
+	Helper.debugText_forced("menu_map.xpl.onRenderTargetMouseDown distanceTool_from_component", distanceTool_from_component)
+    -- kuertee end
 end
 
 function menu.onRenderTargetMouseUp(modified)
@@ -26580,6 +26598,41 @@ function menu.onRenderTargetRightMouseUp(modified)
 			local eclipticoffset = ffi.new("UIPosRot")
 			local posrotcomponent = C.GetMapPositionOnEcliptic2(menu.holomap, posrot, false, 0, eclipticoffset)
 
+			-- kuertee start: distance tool
+			distanceTool_to_posRot = posrot
+			distanceTool_to_component = posrotcomponent
+			Helper.debugText_forced("menu_map.xpl.onRenderTargetRightMouseUp distanceTool_to_component", distanceTool_to_component)
+    
+			distanceTool_distance = nil
+			if distanceTool_from_component and distanceTool_from_posRot then
+				local posFrom, sectorFrom, posTo, sectorTo
+				if C.IsComponentClass (distanceTool_from_component, "sector") then
+					posFrom = distanceTool_from_posRot
+					sectorFrom = distanceTool_from_component
+				else
+					posFrom = C.GetObjectPositionInSector (distanceTool_from_component)
+					sectorFrom = ConvertIDTo64Bit(GetComponentData(distanceTool_from_component, "sectorid"))
+				end
+				if C.IsComponentClass (distanceTool_to_component, "sector") then
+					posTo = distanceTool_to_posRot
+					sectorTo = distanceTool_to_component
+				else
+					posTo = C.GetObjectPositionInSector (distanceTool_to_component)
+					sectorTo = ConvertIDTo64Bit(GetComponentData(distanceTool_to_component, "sectorid"))
+				end
+				Helper.debugText_forced("menu_map.xpl.onRenderTargetRightMouseUp sectorFrom", sectorFrom)
+				Helper.debugText_forced("menu_map.xpl.onRenderTargetRightMouseUp sectorTo", sectorTo)
+				if sectorFrom == sectorTo then
+					Helper.debugText_forced("menu_map.xpl.onRenderTargetRightMouseUp sectorFrom", posFrom)
+					Helper.debugText_forced("menu_map.xpl.onRenderTargetRightMouseUp sectorTo", posTo)
+					local x_delta = math.abs (posTo.x - posFrom.x)
+					local y_delta = math.abs (posTo.y - posFrom.y)
+					local z_delta = math.abs (posTo.z - posFrom.z)
+					distanceTool_distance = math.pow (math.pow (x_delta, 2) + math.pow (y_delta, 2) + math.pow (z_delta, 2), 0.5)
+				end
+			end
+		    -- kuertee end
+
 			local playerships, otherobjects, playerdeployables = menu.getSelectedComponentCategories()
 			if pickedordercomponent ~= 0 then
 				if GetComponentData(ConvertStringTo64Bit(tostring(pickedordercomponent)), "isplayerowned") then
@@ -26587,7 +26640,11 @@ function menu.onRenderTargetRightMouseUp(modified)
 						PlaySound("ui_menu_interact_btn_selectinvalid_core")
 					else
 						menu.interactMenuComponent = pickedcomponent
-						Helper.openInteractMenu(menu, { component = pickedordercomponent, order = pickedorder, offsetcomponent = posrotcomponent, offset = posrot, playerships = playerships, otherobjects = otherobjects, playerdeployables = playerdeployables })
+
+						-- kuertee start:
+						-- Helper.openInteractMenu(menu, { component = pickedordercomponent, order = pickedorder, offsetcomponent = posrotcomponent, offset = posrot, playerships = playerships, otherobjects = otherobjects, playerdeployables = playerdeployables })
+						Helper.openInteractMenu(menu, { component = pickedordercomponent, order = pickedorder, offsetcomponent = posrotcomponent, offset = posrot, playerships = playerships, otherobjects = otherobjects, playerdeployables = playerdeployables, distanceTool_distance = distanceTool_distance })
+						-- kuertee end
 					end
 				end
 			elseif pickedsyncpoint ~= 0 then
@@ -29888,6 +29945,10 @@ if C.AreVenturesCompatible() then
 	table.insert(config.logbookCategories, { name = ReadText(1001, 11319),	icon = "vt_logbook",		mode = "online",	online = true })
 end
 
+-- kuertee start:
+local callbacks = {}
+-- kuertee end
+
 local function init()
 	Menus = Menus or { }
 	table.insert(Menus, menu)
@@ -29901,7 +29962,6 @@ local function init()
 end
 
 -- kuertee start:
-local callbacks = {}
 function menu.init_kuertee ()
 	DebugError("menu_playerinfo.xpl.init - kuertee")
 end
@@ -37375,6 +37435,10 @@ local config = {
 	equipmentfilter_races_width = 300,
 }
 
+-- kuertee start:
+local callbacks = {}
+-- kuertee end
+
 local function init()
 	Menus = Menus or {}
 	table.insert(Menus, menu)
@@ -37390,7 +37454,6 @@ local function init()
 end
 
 -- kuertee start:
-local callbacks = {}
 function menu.init_kuertee ()
 	DebugError("menu_ship_configuration.xpl.init - kuertee")
 end
@@ -47269,6 +47332,10 @@ __CORE_DETAILMONITOR_STATIONBUILD = __CORE_DETAILMONITOR_STATIONBUILD or {
 	["environment"] = true,
 }
 
+-- kuertee start:
+local callbacks = {}
+-- kuertee end
+
 local function init()
 	Menus = Menus or {}
 	table.insert(Menus, menu)
@@ -47288,7 +47355,6 @@ local function init()
 end
 
 -- kuertee start:
-local callbacks = {}
 function menu.init_kuertee ()
 	DebugError("menu_station_configuration.xpl.init - kuertee")
 end
@@ -52971,6 +53037,10 @@ local config = {
 	},
 }
 
+-- kuertee start:
+local callbacks = {}
+-- kuertee end
+
 -- init menu and register with Helper
 local function init()
 	Menus = Menus or { }
@@ -52985,7 +53055,6 @@ local function init()
 end
 
 -- kuertee start:
-local callbacks = {}
 function menu.init_kuertee ()
 	DebugError("menu_station_overview.xpl.init - kuertee")
 end
@@ -58232,6 +58301,10 @@ local config = {
 	mouseOutRange = 100,
 }
 
+-- kuertee start:
+local callbacks = {}
+-- kuertee end
+
 local function init()
 	Menus = Menus or { }
 	table.insert(Menus, menu)
@@ -58245,7 +58318,6 @@ local function init()
 end
 
 -- kuertee start:
-local callbacks = {}
 function menu.init_kuertee ()
 	DebugError("menu_transactionlog.xpl.init - kuertee")
 end
@@ -58582,6 +58654,10 @@ local config = {
 	},
 }
 
+-- kuertee start:
+local callbacks = {}
+-- kuertee end
+
 local function init()
 	Menus = Menus or { }
 	table.insert(Menus, menu)
@@ -58595,7 +58671,6 @@ local function init()
 end
 
 -- kuertee start:
-local callbacks = {}
 function menu.init_kuertee ()
 	DebugError("menu_transporter.xpl.init - kuertee")
 end
@@ -59467,6 +59542,10 @@ local config = {
 	saveOptionVersion = 1,
 }
 
+-- kuertee start:
+local callbacks = {}
+-- kuertee end
+
 local function init()
 	__CORE_DETAILMONITOR_USERQUESTION = __CORE_DETAILMONITOR_USERQUESTION or {
 		version = config.saveOptionVersion,
@@ -59483,7 +59562,6 @@ local function init()
 end
 
 -- kuertee start:
-local callbacks = {}
 function menu.init_kuertee ()
 	DebugError("menu_userquestion.xpl.init - kuertee")
 end
@@ -60538,6 +60616,10 @@ local registerViewDescriptor
 local releaseObjectDescriptors
 local releaseViewDescriptors
 
+-- kuertee start:
+local callbacks = {}
+-- kuertee end
+
 local function init()
 	SetScript("onUpdate", onUpdate)
 	
@@ -60567,7 +60649,6 @@ local function init()
 end
 
 -- kuertee start:
-local callbacks = {}
 function Helper.init_kuertee ()
 	DebugError("menu_helper.xpl.init - kuertee")
 end
@@ -72261,10 +72342,10 @@ function Helper.graphOtherData(graphData, table_graph, starttime, endtime, xRang
 	local border_left = 46 -- eye-balled to the pixel with photoshop
 	local border_right = 15 -- eye-balled to the pixel with photoshop
 	local x_forOldestTime = table_graph.properties.x + border_left + 2.5
-	local x_forNow = table_graph.properties.x + table_graph.properties.width - border_right - 2.5
+	local x_forNewestTime = table_graph.properties.x + table_graph.properties.width - border_right - 2.5
 	graphData2_x_forStartTime = x_forOldestTime
-	graphData2_x_for1Min = (x_forNow - x_forOldestTime) / xRange
-	graphData2_x_interval = (x_forNow - x_forOldestTime) / math.floor(xRange / xGranularity)
+	graphData2_x_for1Min = (x_forNewestTime - x_forOldestTime) / xRange
+	graphData2_x_interval = (x_forNewestTime - x_forOldestTime) / math.floor(xRange / xGranularity)
 
 	local border_top = 30
 	local border_bottom = 41
@@ -72285,50 +72366,125 @@ function Helper.graphOtherData(graphData, table_graph, starttime, endtime, xRang
 		if (not entry.width) or entry.width < 1 then
 			entry.width = 1
 		end
+		-- function Helper.drawLine(startpos, endpos, thickness, z, color, noscaling)
+		-- function Helper.drawRectangle(width, height, offsetx, offsety, angle, z, color, noscaling)
 		if entry.t + entry.width >= starttime and entry.t <= endtime then
+			local entry_width, entry_height, entry_x, entry_y
 			if entry.type == "bar" or entry.type == "bar+line" then
-				if entry.segments and #entry.segments then
-					table.sort(entry.segments, function (a, b) return a.value < b.value end)
-					local y_segment_bottom = 0
-					for _, segment in ipairs(entry.segments) do
-						local segmentValue = segment.value
-						if entry.yMultiplier then
-							segmentValue = segmentValue * entry.yMultiplier
+				local color = entry.color
+				if not color then
+					color = {r = 255, g = 0, b = 0, a = 100}
+				end
+				local yValue = entry.y
+				if entry.yMultiplier then
+					yValue = yValue * entry.yMultiplier
+				end
+				local x_left, y_bottom = Helper.graphData2_getXY(starttime, minY, entry.t, 0)
+				local x_right, y_top = Helper.graphData2_getXY(starttime, minY, entry.t + entry.width, yValue)
+				if x_left < x_forOldestTime then
+					x_left = x_forOldestTime
+				elseif x_left > x_forNewestTime then
+					x_left = x_forNewestTime
+				end
+				if x_right < x_forOldestTime then
+					x_right = x_forOldestTime
+				elseif x_right > x_forNewestTime then
+					x_right = x_forNewestTime
+				end
+				entry_width = x_right - x_left
+				entry_height = y_bottom - y_top
+				entry_x = x_left
+				entry_y = y_top
+				-- Helper.debugText_forced("helper.xpl.graphOtherData entry_width: " .. tostring(entry_width) .. " entry_height: " .. tostring(entry_height) .. " entry_x: " .. tostring(entry_x) .. " entry_y: " .. tostring(entry_y))
+				-- local startpos = {x = entry_x - 2, y = entry_y - 2}
+				-- local endpos = {x = entry_x + entry_width + 2, y = entry_y - 2}
+				-- Helper.drawLine(startpos, endpos, 2, 0, Helper.color.white)
+				-- local startpos = {x = entry_x + entry_width + 2, y = entry_y - 2}
+				-- local endpos = {x = entry_x + entry_width + 2, y = entry_y + entry_height + 2}
+				-- Helper.drawLine(startpos, endpos, 2, 0, Helper.color.white)
+				-- local startpos = {x = entry_x + entry_width + 2, y = entry_y + entry_height + 2}
+				-- local endpos = {x = entry_x - 2, y = entry_y + entry_height + 2}
+				-- Helper.drawLine(startpos, endpos, 2, 0, Helper.color.white)
+				-- local startpos = {x = entry_x - 2, y = entry_y + entry_height + 2}
+				-- local endpos = {x = entry_x - 2, y = entry_y - 2}
+				-- Helper.drawLine(startpos, endpos, 2, 0, Helper.color.white)
+				if entry.segments and #entry.segments > 0 then
+					local entry_left = entry_x
+					local entry_right = entry_left + entry_width
+					local entry_top
+					local entry_bottom
+					if entry_height >= 0 then
+						entry_top = entry_y
+						entry_bottom = entry_top + entry_height
+					else
+						entry_top = entry_y - math.abs(entry_height)
+						entry_bottom = entry_top + math.abs(entry_height)
+					end
+					-- local startpos = {x = entry_left - 2, y = entry_top - 2}
+					-- local endpos = {x = entry_right + 2, y = entry_top - 2}
+					-- Helper.drawLine(startpos, endpos, 2, 0, Helper.color.white)
+					-- local startpos = {x = entry_right + 2, y = entry_top - 2}
+					-- local endpos = {x = entry_right + 2, y = entry_bottom + 2}
+					-- Helper.drawLine(startpos, endpos, 2, 0, Helper.color.white)
+					-- local startpos = {x = entry_right + 2, y = entry_bottom + 2}
+					-- local endpos = {x = entry_left - 2, y = entry_bottom + 2}
+					-- Helper.drawLine(startpos, endpos, 2, 0, Helper.color.white)
+					-- local startpos = {x = entry_left - 2, y = entry_bottom + 2}
+					-- local endpos = {x = entry_left - 2, y = entry_top - 2}
+					-- Helper.drawLine(startpos, endpos, 2, 0, Helper.color.white)
+					-- Helper.debugText_forced("helper.xpl.graphOtherData entry_left: " .. tostring(entry_left) .. " entry_top: " .. tostring(entry_top) .. " entry_right: " .. tostring(entry_right) .. " entry_bottom: " .. tostring(entry_bottom))
+					local segment_width, segment_height, segment_x, segment_y
+					segment_y = entry_bottom -- render moves up from bottom
+					for j, segment in ipairs(entry.segments) do
+						if segment.color then
+							color = segment.color
 						end
-						local color = segment.color
-						if not color then
-							color = {r = segmentValue / entry.y * 255, g = 0, b = 0, a = 100}
+						segment_width = entry_right - entry_left
+						segment_height = math.abs(segment.value / entry.y * entry_height)
+						segment_x = entry_left
+						if segment.segments and #segment.segments > 0 then
+							local segment_left = segment_x
+							local segment_top = segment_y - segment_height
+							local segment_right = segment_left + segment_width
+							local segment_bottom = segment_top + segment_height
+							local s2_w, s2_h, s2_x, s2_y
+							s2_x = segment_left
+							for k, s2 in ipairs(segment.segments) do
+								if s2.color then
+									color = s2.color
+								end
+								s2_w = s2.value / segment.value * segment_width
+								s2_h = segment_bottom - segment_top
+								s2_y = segment_top
+								Helper.debugText_forced("helper.xpl.graphOtherData s2.value: " .. tostring(s2.value) .. " segment.value: " .. tostring(segment.value) .. " segment_height: " .. tostring(segment_height) .. " s2_w: " .. tostring(s2_w) .. " s2_h: " .. tostring(s2_h) .. " s2_x: " .. tostring(s2_x) .. " s2_y: " .. tostring(s2_y))
+								if j > 1 then
+									if #segment.segments == 1 then
+										Helper.drawRectangle(s2_w, s2_h - 2, s2_x, s2_y, nil, nil, color)
+									elseif k < #segment.segments then
+										-- offset x and width so that there are no gaps
+										Helper.drawRectangle(s2_w + 2, s2_h - 2, s2_x - 1, s2_y, nil, nil, color)
+									else
+										Helper.drawRectangle(s2_w + 1, s2_h - 2, s2_x, s2_y, nil, nil, color)
+									end
+								else
+									if #segment.segments == 1 then
+										Helper.drawRectangle(s2_w, s2_h, s2_x, s2_y, nil, nil, color)
+									elseif k < #segment.segments then
+										-- offset x and width so that there are no gaps
+										Helper.drawRectangle(s2_w + 2, s2_h, s2_x - 1, s2_y, nil, nil, color)
+									else
+										Helper.drawRectangle(s2_w + 1, s2_h, s2_x - 1, s2_y, nil, nil, color)
+									end
+								end
+								s2_x = s2_x + s2_w
+							end
+						else
+							Helper.drawRectangle(segment_width, segment_height, segment_x, segment_y - segment_height, nil, nil, color)
 						end
-						local y_segment_top = y_segment_bottom + segmentValue / entry.y * entry.y
-						local x_left, y_bottom = Helper.graphData2_getXY(starttime, minY, entry.t, y_segment_bottom)
-						local x_right, y_top = Helper.graphData2_getXY(starttime, minY, entry.t + entry.width, y_segment_top)
-						if x_left < x_forOldestTime then
-							x_left = x_forOldestTime
-						end
-						if x_right > x_forNow then
-							x_right = x_forNow
-						end
-						local startpos = {x = x_left, y = y_bottom}
-						local endpos = {x = x_right, y = y_top}
-						-- Helper.drawLine(startpos, endpos, nil, nil, color)
-						Helper.drawRectangle(x_right - x_left - 2, y_bottom - y_top, x_left, y_top, nil, nil, color)
-						y_segment_bottom = y_segment_top
+						segment_y = segment_y - segment_height
 					end
 				else
-					local color = entry.color
-					if not color then
-						color = {r = 255, g = 0, b = 0, a = 100}
-					end
-					local yValue = entry.y
-					if entry.yMultiplier then
-						yValue = yValue * entry.yMultiplier
-					end
-					local x_left, y_bottom = Helper.graphData2_getXY(starttime, minY, entry.t, 0)
-					local x_right, y_top = Helper.graphData2_getXY(starttime, minY, entry.t + entry.width, yValue)
-					local startpos = {x = x_left, y = y_bottom}
-					local endpos = {x = x_right, y = y_top}
-					-- Helper.drawLine(startpos, endpos, nil, nil, color)
-					Helper.drawRectangle(x_right - x_left - 2, y_bottom - y_top, x_left, y_top, nil, nil, color)
+					Helper.drawRectangle(entry_width, entry_height, entry_x, entry_y, nil, nil, color)
 				end
 			end
 		end
@@ -72364,8 +72520,16 @@ function Helper.graphOtherData(graphData, table_graph, starttime, endtime, xRang
 					local endpos = {x = x2, y = y2}
 					if x < x_forOldestTime then
 						x = x_forOldestTime
-						y = Helper.getYAtXFromPoint1AndPoint2(x, startpos, endpos)
+					elseif x > x_forNewestTime then
+						x = x_forNewestTime
 					end
+					if x2 < x_forOldestTime then
+						x2 = x_forOldestTime
+					elseif x2 > x_forNewestTime then
+						x2 = x_forNewestTime
+					end
+					y = Helper.getYAtXFromPoint1AndPoint2(x, startpos, endpos)
+					y2 = Helper.getYAtXFromPoint1AndPoint2(x2, startpos, endpos)
 					local startpos = {x = x, y = y}
 					local endpos = {x = x2, y = y2}
 					local thickness = 3
@@ -72818,6 +72982,10 @@ local config = {
 	},
 }
 
+-- kuertee start:
+local callbacks = {}
+-- kuertee end
+
 local function init()
 	Menus = Menus or { }
 	table.insert(Menus, menu)
@@ -72828,13 +72996,12 @@ local function init()
 	RegisterEvent("hideInteractMenu", function () menu.onCloseElement("auto") end)
 
 	-- kuertee start:
-	Helper.init_kuertee()
+	menu.init_kuertee()
 	-- kuertee end
 end
 
 -- kuertee start:
-local callbacks = {}
-function Helper.init_kuertee ()
+function menu.init_kuertee ()
 	DebugError("menu_interactmenu.xpl.init - kuertee")
 	RegisterEvent ("Interact_Menu_API.Add_Custom_Actions_Group_Id", menu.Add_Custom_Actions_Group_Id)
 	RegisterEvent ("Interact_Menu_API.Add_Custom_Actions_Group_Text", menu.Add_Custom_Actions_Group_Text)
@@ -75066,6 +75233,10 @@ function menu.showInteractMenu(param)
 	menu.mouseX = param.mouseX
 	menu.mouseY = param.mouseY
 
+	-- kuertee start: distance tool
+	menu.distanceTool_distance = param.distanceTool_distance
+	-- kuertee end
+
 	menu.processSelectedPlayerShips()
 
 	menu.display()
@@ -75477,6 +75648,16 @@ function menu.createContentTable(frame, position)
 		row[1]:setColSpan(5):createText(string.format(ReadText(1001, 8398), ReadText(20401, menu.subordinategroup or menu.intersectordefencegroup)), Helper.headerRowCenteredProperties)
 		row[1].properties.color = color
 	end
+
+	-- kuertee start: distance tool
+	if menu.distanceTool_distance then
+		local kuertee_dist = menu.distanceTool_distance / 1000.0
+		kuertee_dist = math.floor (kuertee_dist * 100 + 0.5) / 100
+		row = ftable:addRow (false, {bgColor = Helper.color.transparent})
+		local kuertee_text = ReadText (1001, 2957) .. ReadText (1001, 120) .. " " .. tostring (kuertee_dist) .. " " .. ReadText (1001, 108) -- Distance colon space X space km
+		row [1]:setColSpan (5):createText (kuertee_text, {halign = "center"})
+	end
+	-- kuertee end
 
 	-- entries
 	local convertedComponent = ConvertStringTo64Bit(tostring(menu.componentSlot.component))

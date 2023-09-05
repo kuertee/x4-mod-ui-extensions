@@ -287,6 +287,10 @@ local config = {
 	},
 }
 
+-- kuertee start:
+local callbacks = {}
+-- kuertee end
+
 -- init menu and register with Helper
 local function init()
 	Menus = Menus or { }
@@ -301,7 +305,6 @@ local function init()
 end
 
 -- kuertee start:
-local callbacks = {}
 function menu.init_kuertee ()
 	DebugError("menu_station_overview.xpl.init - kuertee")
 end

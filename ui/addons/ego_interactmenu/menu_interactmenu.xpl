@@ -379,6 +379,10 @@ local config = {
 	},
 }
 
+-- kuertee start:
+local callbacks = {}
+-- kuertee end
+
 local function init()
 	Menus = Menus or { }
 	table.insert(Menus, menu)
@@ -389,13 +393,12 @@ local function init()
 	RegisterEvent("hideInteractMenu", function () menu.onCloseElement("auto") end)
 
 	-- kuertee start:
-	Helper.init_kuertee()
+	menu.init_kuertee()
 	-- kuertee end
 end
 
 -- kuertee start:
-local callbacks = {}
-function Helper.init_kuertee ()
+function menu.init_kuertee ()
 	DebugError("menu_interactmenu.xpl.init - kuertee")
 	RegisterEvent ("Interact_Menu_API.Add_Custom_Actions_Group_Id", menu.Add_Custom_Actions_Group_Id)
 	RegisterEvent ("Interact_Menu_API.Add_Custom_Actions_Group_Text", menu.Add_Custom_Actions_Group_Text)
@@ -3038,6 +3041,16 @@ function menu.createContentTable(frame, position)
 		row[1]:setColSpan(5):createText(string.format(ReadText(1001, 8398), ReadText(20401, menu.subordinategroup or menu.intersectordefencegroup)), Helper.headerRowCenteredProperties)
 		row[1].properties.color = color
 	end
+
+	-- kuertee start: distance tool
+	if Helper.distanceTool_distance then
+		local kuertee_dist = Helper.distanceTool_distance / 1000.0
+		kuertee_dist = math.floor (kuertee_dist * 100 + 0.5) / 100
+		row = ftable:addRow (false, {bgColor = Helper.color.transparent})
+		local kuertee_text = ReadText (1001, 2957) .. ReadText (1001, 120) .. " " .. tostring (kuertee_dist) .. " " .. ReadText (1001, 108) -- Distance colon space X space km
+		row [1]:setColSpan (5):createText (kuertee_text, {halign = "center"})
+	end
+	-- kuertee end
 
 	-- entries
 	local convertedComponent = ConvertStringTo64Bit(tostring(menu.componentSlot.component))
@@ -6065,37 +6078,37 @@ function menu.Add_Custom_Actions_Group(id, text)
 		customActionsSection_isAddTo = true
 		customOrdersSection_isAddTo = true
 	end
-	Helper.debugText("Add_Custom_Actions_Group id: " .. tostring(id) .. " text: " .. tostring(text))
+	Helper.debugText("menu_interactmenu.xpl.Add_Custom_Actions_Group id: " .. tostring(id) .. " text: " .. tostring(text))
 	for _, section in ipairs(config.sections) do
 		if section.id == "custom_actions" or section.id == "custom_orders" then
-			Helper.debugText("    section.id: ", section.id)
+			Helper.debugText("menu_interactmenu.xpl.Add_Custom_Actions_Group    section.id: ", section.id)
 			if section.id == "custom_actions" then
 				customActionsSection = section
 			else
 				customOrdersSection = section
 			end
 			for _, subsection in ipairs(section.subsections) do
-				Helper.debugText("        subsection.id: ", subsection.id)
+				Helper.debugText("menu_interactmenu.xpl.Add_Custom_Actions_Group        subsection.id: ", subsection.id)
 				if subsection.id == id then
 					if section.id == "custom_actions" then
 						customActionsSection_isFound = true
 					else
 						customOrdersSection_isFound = true
 					end
-					Helper.debugText("Add_Custom_Actions_Group customActionsSection.subsections", customActionsSection.subsections)
+					Helper.debugText("menu_interactmenu.xpl.Add_Custom_Actions_Group customActionsSection.subsections", customActionsSection.subsections)
 				end
 			end
 		end
 	end
-	Helper.debugText("customActionsSection_isFound: ", customActionsSection_isFound)
-	Helper.debugText("customOrdersSection_isFound: ", customOrdersSection_isFound)
+	Helper.debugText("menu_interactmenu.xpl.Add_Custom_Actions_GroupcustomActionsSection_isFound: ", customActionsSection_isFound)
+	Helper.debugText("menu_interactmenu.xpl.Add_Custom_Actions_GroupcustomOrdersSection_isFound: ", customOrdersSection_isFound)
 	if customActionsSection and customActionsSection_isAddTo and (not customActionsSection_isFound) then
 		table.insert (customActionsSection.subsections, {id = id, text = text})
-		Helper.debugText("Add_Custom_Actions_Group customActionsSection.subsections", customActionsSection.subsections)
+		Helper.debugText("menu_interactmenu.xpl.Add_Custom_Actions_Group customActionsSection.subsections", customActionsSection.subsections)
 	end
 	if customOrdersSection and customOrdersSection_isAddTo and (not customOrdersSection_isFound) then
 		table.insert (customOrdersSection.subsections, {id = id, text = text})
-		Helper.debugText("Add_Custom_Actions_Group customOrdersSection.subsections", customOrdersSection.subsections)
+		Helper.debugText("menu_interactmenu.xpl.Add_Custom_Actions_Group customOrdersSection.subsections", customOrdersSection.subsections)
 	end
 end
 -- kuertee end

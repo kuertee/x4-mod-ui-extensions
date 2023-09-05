@@ -673,6 +673,10 @@ local registerViewDescriptor
 local releaseObjectDescriptors
 local releaseViewDescriptors
 
+-- kuertee start:
+local callbacks = {}
+-- kuertee end
+
 local function init()
 	SetScript("onUpdate", onUpdate)
 	
@@ -702,7 +706,6 @@ local function init()
 end
 
 -- kuertee start:
-local callbacks = {}
 function Helper.init_kuertee ()
 	DebugError("menu_helper.xpl.init - kuertee")
 end
@@ -732,13 +735,13 @@ function Helper.debugText (data1, data2, indent, isForced)
 		end
 		if type (data1) == "table" then
 			for i, value in pairs (data1) do
-				DebugError (indent .. tostring (i) .. ReadText (1001, 120) .. " " .. tostring (value))
+				DebugError ("kuertee " .. indent .. tostring (i) .. ReadText (1001, 120) .. " " .. tostring (value))
 				if type (value) == "table" then
 					Helper.debugText(value, nil, indent .. "    ", isForced)
 				end
 			end
 		else
-			DebugError (indent .. tostring (data1) .. " (" .. type(data1) .. ")")
+			DebugError ("kuertee " .. indent .. tostring (data1) .. " (" .. type(data1) .. ")")
 		end
 		if data2 then
 			Helper.debugText(data2, nil, indent .. "    ", isForced)
@@ -12005,11 +12008,11 @@ function Helper.createCustomGraph(frame, container, tableProperties, refreshCall
 
 	func_getGraphData()
 
-	Helper.debugText("createCustomGraph accountLogUnfiltered", Helper.transactionLogData.accountLogUnfiltered)
-	Helper.debugText("createCustomGraph accountLog", Helper.transactionLogData.accountLog)
-	Helper.debugText("createCustomGraph graphdata", Helper.transactionLogData.graphdata)
-	Helper.debugText("createCustomGraph graphdata2", Helper.transactionLogData.graphdata2)
-	Helper.debugText("createCustomGraph graphdata3", Helper.transactionLogData.graphdata3)
+	Helper.debugText_forced("helper.xpl.createCustomGraph accountLogUnfiltered", Helper.transactionLogData.accountLogUnfiltered)
+	Helper.debugText_forced("helper.xpl.createCustomGraph accountLog", Helper.transactionLogData.accountLog)
+	Helper.debugText_forced("helper.xpl.createCustomGraph graphdata", Helper.transactionLogData.graphdata)
+	Helper.debugText_forced("helper.xpl.createCustomGraph graphdata2", Helper.transactionLogData.graphdata2)
+	Helper.debugText_forced("helper.xpl.createCustomGraph graphdata3", Helper.transactionLogData.graphdata3)
 	if #Helper.transactionLogData.accountLogUnfiltered < 1 then
 		return
 	end
@@ -12420,89 +12423,125 @@ function Helper.graphOtherData(graphData, table_graph, starttime, endtime, xRang
 		if (not entry.width) or entry.width < 1 then
 			entry.width = 1
 		end
+		-- function Helper.drawLine(startpos, endpos, thickness, z, color, noscaling)
+		-- function Helper.drawRectangle(width, height, offsetx, offsety, angle, z, color, noscaling)
 		if entry.t + entry.width >= starttime and entry.t <= endtime then
+			local entry_width, entry_height, entry_x, entry_y
 			if entry.type == "bar" or entry.type == "bar+line" then
-				-- function Helper.drawRectangle(width, height, offsetx, offsety, angle, z, color, noscaling)
-				if entry.segments and #entry.segments then
-					table.sort(entry.segments, function (a, b) return a.value < b.value end)
-					local y_segment_bottom = 0
-					for _, segment in ipairs(entry.segments) do
-						local color = segment.color
-						if not color then
-							color = {r = segment.value / entry.y * 255, g = 0, b = 0, a = 100}
+				local color = entry.color
+				if not color then
+					color = {r = 255, g = 0, b = 0, a = 100}
+				end
+				local yValue = entry.y
+				if entry.yMultiplier then
+					yValue = yValue * entry.yMultiplier
+				end
+				local x_left, y_bottom = Helper.graphData2_getXY(starttime, minY, entry.t, 0)
+				local x_right, y_top = Helper.graphData2_getXY(starttime, minY, entry.t + entry.width, yValue)
+				if x_left < x_forOldestTime then
+					x_left = x_forOldestTime
+				elseif x_left > x_forNewestTime then
+					x_left = x_forNewestTime
+				end
+				if x_right < x_forOldestTime then
+					x_right = x_forOldestTime
+				elseif x_right > x_forNewestTime then
+					x_right = x_forNewestTime
+				end
+				entry_width = x_right - x_left
+				entry_height = y_bottom - y_top
+				entry_x = x_left
+				entry_y = y_top
+				-- Helper.debugText_forced("helper.xpl.graphOtherData entry_width: " .. tostring(entry_width) .. " entry_height: " .. tostring(entry_height) .. " entry_x: " .. tostring(entry_x) .. " entry_y: " .. tostring(entry_y))
+				-- local startpos = {x = entry_x - 2, y = entry_y - 2}
+				-- local endpos = {x = entry_x + entry_width + 2, y = entry_y - 2}
+				-- Helper.drawLine(startpos, endpos, 2, 0, Helper.color.white)
+				-- local startpos = {x = entry_x + entry_width + 2, y = entry_y - 2}
+				-- local endpos = {x = entry_x + entry_width + 2, y = entry_y + entry_height + 2}
+				-- Helper.drawLine(startpos, endpos, 2, 0, Helper.color.white)
+				-- local startpos = {x = entry_x + entry_width + 2, y = entry_y + entry_height + 2}
+				-- local endpos = {x = entry_x - 2, y = entry_y + entry_height + 2}
+				-- Helper.drawLine(startpos, endpos, 2, 0, Helper.color.white)
+				-- local startpos = {x = entry_x - 2, y = entry_y + entry_height + 2}
+				-- local endpos = {x = entry_x - 2, y = entry_y - 2}
+				-- Helper.drawLine(startpos, endpos, 2, 0, Helper.color.white)
+				if entry.segments and #entry.segments > 0 then
+					local entry_left = entry_x
+					local entry_right = entry_left + entry_width
+					local entry_top
+					local entry_bottom
+					if entry_height >= 0 then
+						entry_top = entry_y
+						entry_bottom = entry_top + entry_height
+					else
+						entry_top = entry_y - math.abs(entry_height)
+						entry_bottom = entry_top + math.abs(entry_height)
+					end
+					-- local startpos = {x = entry_left - 2, y = entry_top - 2}
+					-- local endpos = {x = entry_right + 2, y = entry_top - 2}
+					-- Helper.drawLine(startpos, endpos, 2, 0, Helper.color.white)
+					-- local startpos = {x = entry_right + 2, y = entry_top - 2}
+					-- local endpos = {x = entry_right + 2, y = entry_bottom + 2}
+					-- Helper.drawLine(startpos, endpos, 2, 0, Helper.color.white)
+					-- local startpos = {x = entry_right + 2, y = entry_bottom + 2}
+					-- local endpos = {x = entry_left - 2, y = entry_bottom + 2}
+					-- Helper.drawLine(startpos, endpos, 2, 0, Helper.color.white)
+					-- local startpos = {x = entry_left - 2, y = entry_bottom + 2}
+					-- local endpos = {x = entry_left - 2, y = entry_top - 2}
+					-- Helper.drawLine(startpos, endpos, 2, 0, Helper.color.white)
+					-- Helper.debugText_forced("helper.xpl.graphOtherData entry_left: " .. tostring(entry_left) .. " entry_top: " .. tostring(entry_top) .. " entry_right: " .. tostring(entry_right) .. " entry_bottom: " .. tostring(entry_bottom))
+					local segment_width, segment_height, segment_x, segment_y
+					segment_y = entry_bottom -- render moves up from bottom
+					for j, segment in ipairs(entry.segments) do
+						if segment.color then
+							color = segment.color
 						end
-						local yMultiplier = 1
-						if entry.yMultiplier then
-							yMultiplier = entry.yMultiplier
-						end
-						segment.value = segment.value * yMultiplier
-						local y_segment_top = y_segment_bottom + segment.value / entry.y * entry.y
-						local x_left, y_bottom = Helper.graphData2_getXY(starttime, minY, entry.t, y_segment_bottom)
-						local x_right, y_top = Helper.graphData2_getXY(starttime, minY, entry.t + entry.width, y_segment_top)
+						segment_width = entry_right - entry_left
+						segment_height = math.abs(segment.value / entry.y * entry_height)
+						segment_x = entry_left
 						if segment.segments and #segment.segments > 0 then
-							local x_left2 = x_left
-							for _, segment2 in ipairs(segment.segments) do
-								local color2 = segment2.color
-								if not color2 then
-									color2 = color
+							local segment_left = segment_x
+							local segment_top = segment_y - segment_height
+							local segment_right = segment_left + segment_width
+							local segment_bottom = segment_top + segment_height
+							local s2_w, s2_h, s2_x, s2_y
+							s2_x = segment_left
+							for k, s2 in ipairs(segment.segments) do
+								if s2.color then
+									color = s2.color
 								end
-								x_right2 = x_left2 + segment2.value / segment.value * (x_right - x_left)
-								if x_left2 < x_forOldestTime then
-									x_left2 = x_forOldestTime
-								elseif x_left2 > x_forNewestTime then
-									x_left2 = x_forNewestTime
+								s2_w = s2.value / segment.value * segment_width
+								s2_h = segment_bottom - segment_top
+								s2_y = segment_top
+								Helper.debugText_forced("helper.xpl.graphOtherData s2.value: " .. tostring(s2.value) .. " segment.value: " .. tostring(segment.value) .. " segment_height: " .. tostring(segment_height) .. " s2_w: " .. tostring(s2_w) .. " s2_h: " .. tostring(s2_h) .. " s2_x: " .. tostring(s2_x) .. " s2_y: " .. tostring(s2_y))
+								if j > 1 then
+									if #segment.segments == 1 then
+										Helper.drawRectangle(s2_w, s2_h - 2, s2_x, s2_y, nil, nil, color)
+									elseif k < #segment.segments then
+										-- offset x and width so that there are no gaps
+										Helper.drawRectangle(s2_w + 2, s2_h - 2, s2_x - 1, s2_y, nil, nil, color)
+									else
+										Helper.drawRectangle(s2_w + 1, s2_h - 2, s2_x, s2_y, nil, nil, color)
+									end
+								else
+									if #segment.segments == 1 then
+										Helper.drawRectangle(s2_w, s2_h, s2_x, s2_y, nil, nil, color)
+									elseif k < #segment.segments then
+										-- offset x and width so that there are no gaps
+										Helper.drawRectangle(s2_w + 2, s2_h, s2_x - 1, s2_y, nil, nil, color)
+									else
+										Helper.drawRectangle(s2_w + 1, s2_h, s2_x - 1, s2_y, nil, nil, color)
+									end
 								end
-								if x_right2 < x_forOldestTime then
-									x_right2 = x_forOldestTime
-								elseif x_right2 > x_forNewestTime then
-									x_right2 = x_forNewestTime
-								end
-								Helper.drawRectangle(x_right2 - x_left2, y_bottom - y_top - 2 * yMultiplier, x_left2, y_top + 2 * yMultiplier, nil, nil, color2)
-								x_left2 = x_right2
+								s2_x = s2_x + s2_w
 							end
 						else
-							if x_left < x_forOldestTime then
-								x_left = x_forOldestTime
-							elseif x_left > x_forNewestTime then
-								x_left = x_forNewestTime
-							end
-							if x_right < x_forOldestTime then
-								x_right = x_forOldestTime
-							elseif x_right > x_forNewestTime then
-								x_right = x_forNewestTime
-							end
-							local startpos = {x = x_left, y = y_bottom}
-							local endpos = {x = x_right, y = y_top}
-							-- Helper.drawLine(star
-							Helper.drawRectangle(x_right - x_left - 2, y_bottom - y_top, x_left, y_top, nil, nil, color)
+							Helper.drawRectangle(segment_width, segment_height, segment_x, segment_y - segment_height, nil, nil, color)
 						end
-						y_segment_bottom = y_segment_top
+						segment_y = segment_y - segment_height
 					end
 				else
-					local color = entry.color
-					if not color then
-						color = {r = 255, g = 0, b = 0, a = 100}
-					end
-					local yValue = entry.y
-					if entry.yMultiplier then
-						yValue = yValue * entry.yMultiplier
-					end
-					local x_left, y_bottom = Helper.graphData2_getXY(starttime, minY, entry.t, 0)
-					local x_right, y_top = Helper.graphData2_getXY(starttime, minY, entry.t + entry.width, yValue)
-					if x_left < x_forOldestTime then
-						x_left = x_forOldestTime
-					elseif x_left > x_forNewestTime then
-						x_left = x_forNewestTime
-					end
-					if x_right < x_forOldestTime then
-						x_right = x_forOldestTime
-					elseif x_right > x_forNewestTime then
-						x_right = x_forNewestTime
-					end
-					local startpos = {x = x_left, y = y_bottom}
-					local endpos = {x = x_right, y = y_top}
-					-- Helper.drawLine(startpos, endpos, nil, nil, color)
-					Helper.drawRectangle(x_right - x_left - 2, y_bottom - y_top, x_left, y_top, nil, nil, color)
+					Helper.drawRectangle(entry_width, entry_height, entry_x, entry_y, nil, nil, color)
 				end
 			end
 		end

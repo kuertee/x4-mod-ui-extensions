@@ -20,6 +20,10 @@ local config = {
 	mouseOutRange = 100,
 }
 
+-- kuertee start:
+local callbacks = {}
+-- kuertee end
+
 local function init()
 	Menus = Menus or { }
 	table.insert(Menus, menu)
@@ -33,7 +37,6 @@ local function init()
 end
 
 -- kuertee start:
-local callbacks = {}
 function menu.init_kuertee ()
 	DebugError("menu_transactionlog.xpl.init - kuertee")
 end

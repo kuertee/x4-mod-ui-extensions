@@ -375,6 +375,10 @@ __CORE_DETAILMONITOR_STATIONBUILD = __CORE_DETAILMONITOR_STATIONBUILD or {
 	["environment"] = true,
 }
 
+-- kuertee start:
+local callbacks = {}
+-- kuertee end
+
 local function init()
 	Menus = Menus or {}
 	table.insert(Menus, menu)
@@ -394,7 +398,6 @@ local function init()
 end
 
 -- kuertee start:
-local callbacks = {}
 function menu.init_kuertee ()
 	DebugError("menu_station_configuration.xpl.init - kuertee")
 end

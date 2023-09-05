@@ -43,6 +43,10 @@ local config = {
 	saveOptionVersion = 1,
 }
 
+-- kuertee start:
+local callbacks = {}
+-- kuertee end
+
 local function init()
 	__CORE_DETAILMONITOR_USERQUESTION = __CORE_DETAILMONITOR_USERQUESTION or {
 		version = config.saveOptionVersion,
@@ -59,7 +63,6 @@ local function init()
 end
 
 -- kuertee start:
-local callbacks = {}
 function menu.init_kuertee ()
 	DebugError("menu_userquestion.xpl.init - kuertee")
 end
