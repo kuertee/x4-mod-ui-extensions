@@ -171,8 +171,9 @@ function menu.createInfoFrame()
 				callback (menu.infoFrame)
 			end
 			menu.updateFrameHeight ()
+			menu.refresh = getElapsedTime()
 		end
-		-- end
+		-- kuertee end
 
 	end
 
@@ -251,21 +252,6 @@ function menu.onUpdate()
 
 	if menu.refresh and menu.refresh <= curtime then
 		menu.createInfoFrame()
-
-		-- kuertee start: callback
-		local count_contentBeforeCallback = #menu.infoFrame.content
-		if menu.callbacks ["createInfoFrame_onUpdate_before_frame_update"] then
-			for _, callback in ipairs (menu.callbacks ["createInfoFrame_onUpdate_before_frame_update"]) do
-				callback (menu.infoFrame)
-			end
-			menu.updateFrameHeight ()
-		end
-
-		if #menu.infoFrame.content > count_contentBeforeCallback then
-			menu.lock = getElapsedTime()
-		end
-		-- kuertee end: callback
-
 		menu.refresh = nil
 		return
 	end
