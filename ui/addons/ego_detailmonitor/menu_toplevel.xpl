@@ -252,7 +252,24 @@ function menu.onUpdate()
 
 	if menu.refresh and menu.refresh <= curtime then
 		menu.createInfoFrame()
-		menu.refresh = nil
+
+
+		-- kuertee start: callback
+		-- menu.refresh = nil
+		local count_contentBeforeCallback = #menu.infoFrame.content
+		if menu.callbacks ["createInfoFrame_onUpdate_before_frame_update"] then
+			for _, callback in ipairs (menu.callbacks ["createInfoFrame_onUpdate_before_frame_update"]) do
+				callback (menu.infoFrame)
+			end
+		end
+
+		if #menu.infoFrame.content > count_contentBeforeCallback then
+			menu.refresh = getElapsedTime()
+		else
+			menu.refresh = nil
+		end
+		-- kuertee end: callback
+
 		return
 	end
 

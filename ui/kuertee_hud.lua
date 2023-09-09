@@ -11,15 +11,9 @@ local function init ()
 	if not isInited then
 		isInited = true
 		topLevelMenu.registerCallback ("createInfoFrame_on_before_frame_display", newFuncs.createInfoFrame_on_before_frame_display)
-		topLevelMenu.registerCallback ("createInfoFrame_onUpdate_before_frame_update", newFuncs.createInfoFrame_onUpdate_before_frame_update)
 	end
 end
 function newFuncs.createInfoFrame_on_before_frame_display (frame)
-	if not topLevelMenu.showTabs then
-		kHUD.createTables (frame)
-	end
-end
-function newFuncs.createInfoFrame_onUpdate_before_frame_update (frame)
 	if not topLevelMenu.showTabs then
 		kHUD.createTables (frame)
 	end
