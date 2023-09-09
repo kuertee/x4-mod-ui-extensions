@@ -3,6 +3,11 @@ mkdir ui
 cd ui
 mkdir addons
 
+mkdir addons\ego_chatwindow
+cd addons\ego_chatwindow
+mklink /h chatwindow.xpl "D:\games\steam\steamapps\common\X4 Foundations\extensions\kuertee_ui_extensions\ui\addons\ego_chatwindow\chatwindow.xpl"
+cd ..\..
+
 mkdir addons\ego_detailmonitor
 cd addons\ego_detailmonitor
 mklink /h menu_docked.xpl "D:\games\steam\steamapps\common\X4 Foundations\extensions\kuertee_ui_extensions\ui\addons\ego_detailmonitor\menu_docked.xpl"
