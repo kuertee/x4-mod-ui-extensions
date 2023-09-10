@@ -16,7 +16,6 @@ mklink /h menu_playerinfo.xpl "D:\games\steam\steamapps\common\X4 Foundations\ex
 mklink /h menu_ship_configuration.xpl "D:\games\steam\steamapps\common\X4 Foundations\extensions\kuertee_ui_extensions\ui\addons\ego_detailmonitor\menu_ship_configuration.xpl"
 mklink /h menu_station_configuration.xpl "D:\games\steam\steamapps\common\X4 Foundations\extensions\kuertee_ui_extensions\ui\addons\ego_detailmonitor\menu_station_configuration.xpl"
 mklink /h menu_station_overview.xpl "D:\games\steam\steamapps\common\X4 Foundations\extensions\kuertee_ui_extensions\ui\addons\ego_detailmonitor\menu_station_overview.xpl"
-mklink /h menu_timeline.xpl "D:\games\steam\steamapps\common\X4 Foundations\extensions\kuertee_ui_extensions\ui\addons\ego_detailmonitor\menu_timeline.xpl"
 mklink /h menu_toplevel.xpl "D:\games\steam\steamapps\common\X4 Foundations\extensions\kuertee_ui_extensions\ui\addons\ego_detailmonitor\menu_toplevel.xpl"
 mklink /h menu_transactionlog.xpl "D:\games\steam\steamapps\common\X4 Foundations\extensions\kuertee_ui_extensions\ui\addons\ego_detailmonitor\menu_transactionlog.xpl"
 mklink /h menu_transporter.xpl "D:\games\steam\steamapps\common\X4 Foundations\extensions\kuertee_ui_extensions\ui\addons\ego_detailmonitor\menu_transporter.xpl"
