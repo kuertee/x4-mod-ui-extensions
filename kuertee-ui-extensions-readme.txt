@@ -5,8 +5,8 @@ by kuertee. Contributors: Forleyor, Mycu, Runekn.
 
 Updates
 =======
-v6.2.001, 2 Sep 2023:
--Tweak: 6.2 Compatibility.
+v6.2.005, 18 Oct 2023:
+-Bug-fix: "Station Configuration > Configure individual buy offers" menu was broken without my Trade Analytics mod.
 
 Instructions for players
 ========================
@@ -144,6 +144,9 @@ Troubleshooting
 
 History
 =======
+v6.2.001, 2 Sep 2023:
+-Tweak: 6.2 Compatibility.
+
 v6.1.004, 1 Aug 2023:
 -Modders resource: UIX's Interact Menu now sends a signal to the MD that it has been loaded. The modder can listen for this before setting up their custom actions/orders.
 -Compatibility: Mycu's tweaks for better compatibility with his updated mods.

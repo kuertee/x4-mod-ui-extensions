@@ -11988,9 +11988,7 @@ function Helper.createCustomGraph(frame, container, tableProperties, refreshCall
 		accountLogUnfiltered = {},
 		transactionsByID = {},
 		transactionsByIDUnfiltered = {},
-		graphdata = {},
-		graphdata2 = {},
-		graphdata3 = {},
+		graphs = {},
 
 		xZoom = Helper.transactionLogData and Helper.transactionLogData.xZoom or 6,
 		xScale = Helper.transactionLogData and Helper.transactionLogData.xScale or 60,
@@ -12008,11 +12006,9 @@ function Helper.createCustomGraph(frame, container, tableProperties, refreshCall
 
 	func_getGraphData()
 
-	Helper.debugText_forced("helper.xpl.createCustomGraph accountLogUnfiltered", Helper.transactionLogData.accountLogUnfiltered)
-	Helper.debugText_forced("helper.xpl.createCustomGraph accountLog", Helper.transactionLogData.accountLog)
-	Helper.debugText_forced("helper.xpl.createCustomGraph graphdata", Helper.transactionLogData.graphdata)
-	Helper.debugText_forced("helper.xpl.createCustomGraph graphdata2", Helper.transactionLogData.graphdata2)
-	Helper.debugText_forced("helper.xpl.createCustomGraph graphdata3", Helper.transactionLogData.graphdata3)
+	Helper.debugText_forced("helper.xpl.createCustomGraph #accountLogUnfiltered", #Helper.transactionLogData.accountLogUnfiltered)
+	Helper.debugText_forced("helper.xpl.createCustomGraph #accountLog", #Helper.transactionLogData.accountLog)
+	Helper.debugText_forced("helper.xpl.createCustomGraph #graphs", #Helper.transactionLogData.graphs)
 	if #Helper.transactionLogData.accountLogUnfiltered < 1 then
 		return
 	end
@@ -12023,14 +12019,10 @@ function Helper.createCustomGraph(frame, container, tableProperties, refreshCall
 	if #Helper.transactionLogData.accountLog then
 		table.sort(Helper.transactionLogData.accountLog, function (a, b) return a.time < b.time end)
 	end
-	if #Helper.transactionLogData.graphdata then
-		table.sort(Helper.transactionLogData.graphdata, function (a, b) return a.t < b.t end)
-	end
-	if #Helper.transactionLogData.graphdata2 then
-		table.sort(Helper.transactionLogData.graphdata2, function (a, b) return a.t < b.t end)
-	end
-	if #Helper.transactionLogData.graphdata3 then
-		table.sort(Helper.transactionLogData.graphdata3, function (a, b) return a.t < b.t end)
+	for _, graph in ipairs(Helper.transactionLogData.graphs) do
+		if #graph.data then
+			table.sort(graph.data, function (a, b) return a.t < b.t end)
+		end
 	end
 
 	local endtime
@@ -12247,65 +12239,78 @@ function Helper.createCustomGraph(frame, container, tableProperties, refreshCall
 	-- local row = table_graph:addRow(false, { fixed = true, bgColor = Helper.color.lightgreen })
 
 	local minY, maxY = 0, 1
-	for i, point in pairs(Helper.transactionLogData.graphdata) do
-		if point.y < minY then
-			minY = point.y
-		elseif point.y > maxY then
-			maxY = point.y
-		end
-	end
-	if #Helper.transactionLogData.graphdata2 then
-		for i, point in pairs(Helper.transactionLogData.graphdata2) do
-			if point.y < minY then
-				minY = point.y
-			elseif point.y > maxY then
-				maxY = point.y
-			end
-		end
-	end
-	if #Helper.transactionLogData.graphdata3 then
-		for i, point in pairs(Helper.transactionLogData.graphdata3) do
-			if point.y < minY then
-				minY = point.y
-			elseif point.y > maxY then
-				maxY = point.y
+	for _, graph in ipairs(Helper.transactionLogData.graphs) do
+		if #graph.data then
+			for i, point in ipairs(graph.data) do
+				if point.y < minY then
+					minY = point.y
+				elseif point.y > maxY then
+					maxY = point.y
+				end
 			end
 		end
 	end
 
 	local datarecords = {}
-	local data = {}
-	for i, point in pairs(Helper.transactionLogData.graphdata) do
-		local inactive
-		if Helper.transactionLogData.searchtext ~= "" then
-			inactive = true
+	for _, graph in ipairs(Helper.transactionLogData.graphs) do
+		Helper.debugText_forced("graph.id: ", graph.id .. " #graph.data: " .. tostring(#graph.data))
+		local data = {}
+		local type = graph.type
+		local color = graph.color
+		if #graph.data then
+			-- table.insert(graphData, {
+			-- 	entryid = time,
+			-- 	t = time,
+			-- 	width = width,
+			-- 	y = total,
+			-- 	type = "bar+line",
+			-- 	segments = segments,
+			-- 	color = color,
+			-- 	yMultiplier = yMultiplier,
+			-- })
+			for i, point in ipairs(graph.data) do
+				local inactive
+				if Helper.transactionLogData.searchtext ~= "" then
+					inactive = true
 
-			local transactionIndex = Helper.transactionLogData.transactionsByIDUnfiltered[point.entryid]
-			local prevTransactionIndex = 1
-			if i > 1 then
-				prevTransactionIndex = Helper.transactionLogData.transactionsByIDUnfiltered[Helper.transactionLogData.graphdata[i -1].entryid]
-			end
+					local transactionIndex = Helper.transactionLogData.transactionsByIDUnfiltered[point.entryid]
+					local prevTransactionIndex = 1
+					if i > 1 then
+						prevTransactionIndex = Helper.transactionLogData.transactionsByIDUnfiltered[Helper.transactionLogData.graphdata[i -1].entryid]
+					end
 
-			if transactionIndex and prevTransactionIndex then
-				if prevTransactionIndex < transactionIndex then
-					-- if the previous transactionlog index is smaller than the current, skip this index, as it is part of the previous data point not the current
-					--  prevTimeInterval  |  curTimeInterval
-					-- [ ..., prevEntry ] | [ ..., curEntry ]
-					prevTransactionIndex = prevTransactionIndex + 1
-				end
-				for i = prevTransactionIndex, transactionIndex do
-					local entry = Helper.transactionLogData.accountLogUnfiltered[i]
-					if Helper.transactionLogData.transactionsByID[entry.entryid] then
-						inactive = false
-						break
+					if transactionIndex and prevTransactionIndex then
+						if prevTransactionIndex < transactionIndex then
+							-- if the previous transactionlog index is smaller than the current, skip this index, as it is part of the previous data point not the current
+							--  prevTimeInterval  |  curTimeInterval
+							-- [ ..., prevEntry ] | [ ..., curEntry ]
+							prevTransactionIndex = prevTransactionIndex + 1
+						end
+						for i = prevTransactionIndex, transactionIndex do
+							local entry = Helper.transactionLogData.accountLogUnfiltered[i]
+							if Helper.transactionLogData.transactionsByID[entry.entryid] then
+								inactive = false
+								break
+							end
+						end
 					end
 				end
+				-- function Helper.createGraphDataPoint(x, y, icon, mouseovertext, inactive)
+				-- table.insert(data, Helper.createGraphDataPoint((point.t - menu.xEnd) / menu.xScale, point.y, nil, nil))
+				table.insert(data, Helper.createGraphDataPoint((point.t - endtime) / Helper.transactionLogData.xScale, point.y, nil, nil, inactive))
 			end
+			-- Helper.debugText_forced("data", data)
 		end
-		table.insert(data, Helper.createGraphDataPoint((point.t - endtime) / Helper.transactionLogData.xScale, point.y, nil, nil, inactive))
+		Helper.debugText_forced("#data", #data)
+		if #data then
+			-- function Helper.createGraphDataRecord(markertype, markersize, markercolor, linetype, linewidth, linecolor, data, highlighted, mouseovertext)
+			-- table.insert(datarecords, Helper.createGraphDataRecord(config.graph.point.type, highlight and config.graph.point.highlightSize or config.graph.point.size, color, config.graph.line.type, highlight and config.graph.line.highlightSize or config.graph.line.size, color, data, false, ReadText(1001, 2916) .. ReadText(1001, 120) .. " " .. menu.graphdata[buyDataWeights[i].dataIdx].text))
+			table.insert(datarecords, Helper.createGraphDataRecord(Helper.transactionLogConfig.point.type, Helper.transactionLogConfig.point.size, color, Helper.transactionLogConfig.line.type, Helper.transactionLogConfig.line.size, color, data, false))
+		end
+		-- break
 	end
-
-	table.insert(datarecords, Helper.createGraphDataRecord(Helper.transactionLogConfig.point.type, Helper.transactionLogConfig.point.size, Helper.color.brightyellow, Helper.transactionLogConfig.line.type, Helper.transactionLogConfig.line.size, Helper.color.brightyellow, data, false))
+	Helper.debugText_forced("#datarecords", #datarecords)
+	Helper.debugText_forced("#datarecords", datarecords)
 
 	local mingranularity = (maxY - minY) / 12
 	local maxgranularity = (maxY - minY) / 8
@@ -12334,16 +12339,20 @@ function Helper.createCustomGraph(frame, container, tableProperties, refreshCall
 	local xaxis = Helper.createGraphAxis(Helper.createGraphText(Helper.transactionLogData.xTitle, Helper.standardFont, 9, Helper.color.white), -xRange, 0, xGranularity, xOffset, true, Helper.color.white, { r = 96, g = 96, b = 96, a = 80 })
 	local yaxis = Helper.createGraphAxis(Helper.createGraphText(Helper.transactionLogData.yTitle, Helper.standardFont, 9, Helper.color.white), minY, maxY, granularity, yOffset, true, Helper.color.white, { r = 96, g = 96, b = 96, a = 80 })
 
+	Helper.debugText_forced("xaxis", xaxis)
+	Helper.debugText_forced("yaxis", yaxis)
+	Helper.debugText_forced("height", height)
+	-- graphrow[1]:setColSpan(9):createGraph("line", true, Helper.color.semitransparent, nil, xaxis, yaxis, datarecords, 0, 0, nil, height - table_graph:getFullHeight())
 	Helper.transactionLogData.graph = row[1]:setColSpan(4):createGraph("line", true, Helper.color.semitransparent, { text = title_graph, font = Helper.titleFont, size = Helper.scaleFont(Helper.titleFont, Helper.titleFontSize), color = Helper.color.white }, xaxis, yaxis, datarecords, 0, 0, nil, height)
-	row[1].handlers.onClick = function (_, data) return Helper.customGraphDataSelection(data, refreshCallback) end
+	row[1].handlers.onClick = function (_, data) return Helper.customGraphDataSelection(datarecords, refreshCallback) end
 
 	HideAllRects()
-	if #Helper.transactionLogData.graphdata2 then
-		Helper.graphOtherData(Helper.transactionLogData.graphdata2, table_graph, starttime, endtime, xRange, xGranularity, maxY, minY, granularity)
-	end
-	if #Helper.transactionLogData.graphdata3 then
-		Helper.graphOtherData(Helper.transactionLogData.graphdata3, table_graph, starttime, endtime, xRange, xGranularity, maxY, minY, granularity)
-	end
+	-- if #Helper.transactionLogData.graphs.[2] then
+	-- 	Helper.graphOtherData(Helper.transactionLogData.graphs.[2], table_graph, starttime, endtime, xRange, xGranularity, maxY, minY, granularity)
+	-- end
+	-- if #Helper.transactionLogData.graphs.[3] then
+	-- 	Helper.graphOtherData(Helper.transactionLogData.graphs.[3], table_graph, starttime, endtime, xRange, xGranularity, maxY, minY, granularity)
+	-- end
 
 	-- zoom
 	local row = table_graph:addRow(true, { fixed = true, bgColor = Helper.color.transparent })

@@ -3450,6 +3450,8 @@ function menu.displayPlan(frame)
 						else
 							row[3]:setColSpan(2):createText(GetWareData(ware.ware, "name"))
 						end
+					else
+						row[3]:setColSpan(2):createText(GetWareData(ware.ware, "name"))
 					end
 					-- kuertee end: callback
 
