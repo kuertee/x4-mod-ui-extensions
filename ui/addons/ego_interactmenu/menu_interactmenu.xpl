@@ -270,12 +270,12 @@ local config = {
 			{ id = "hiringbuilder",		text = ReadText(1001, 7873) },
 			{ id = "assigningbuilder",	text = ReadText(1001, 11141) },
 		}},
+		{ id = "trade",					text = ReadText(1001, 7104),	isorder = false },
 
 		-- mycu start: add custom actions group
 		{ id = "custom_actions",	text = ReadText(101475, 100),		isorder = false,	subsections = {}},
 		-- mycu end: add custom actions group
 
-		{ id = "trade",					text = ReadText(1001, 7104),	isorder = false },
 		{ id = "playersquad_orders",	text = ReadText(1001, 1002),	isorder = false },	-- Broadcast
 		{ id = "overrideorderoption",	text = ReadText(1001, 11118),	isorder = false,	subsections = {
 			{ id = "overrideorder",		text = ReadText(1001, 11248) },
@@ -321,12 +321,12 @@ local config = {
 		{ id = "selected_disable",	text = "",	isorder = true,		subsections = {
 			{ id = "selected_disable_attack",		text = ReadText(1001, 11128),	orderid = "Attack" },
 		}},
+		{ id = "trade_orders",			text = ReadText(1001, 7861),	isorder = true,		showloop = true },
 
 		-- mycu start: add custom orders group
 		{ id = "custom_orders",	text = ReadText(101475, 101),		isorder = true,	showloop = true, subsections = {}},
 		-- mycu end: add custom orders group
 
-		{ id = "trade_orders",			text = ReadText(1001, 7861),	isorder = true,		showloop = true },
 		{ id = "selected_assignments_all", text = ReadText(1001, 7886),	isorder = true },
 		{ id = "selected_change_assignments",	text = ReadText(1001, 11119),	isorder = true,		subsections = {
 			{ id = "selected_change_assignments_defence",				text = ReadText(20208, 40304),	helpOverlayID = "interactmenu_change_assign",	helpOverlayText = " ",	helpOverlayHighlightOnly = true },

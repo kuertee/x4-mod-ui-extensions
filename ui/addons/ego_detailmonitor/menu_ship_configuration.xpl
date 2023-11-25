@@ -8116,6 +8116,19 @@ function menu.evaluateShipOptions()
 				local haslicence, icon, overridecolor, mouseovertext = menu.checkLicence(macro, true)
 				local name, infolibrary, shiptypename, primarypurpose, shipicon = GetMacroData(macro, "name", "infolibrary", "shiptypename", "primarypurpose", "icon")
 
+				-- start: alexandretk call-back
+				if callbacks ["evaluateShipOptions_override_shiptypename"] then
+					local shiptypename_override
+					for _, callback in ipairs (callbacks ["evaluateShipOptions_override_shiptypename"]) do
+						shiptypename_override = callback (shiptypename, shipicon)
+						if shiptypename_override then
+							shiptypename = shiptypename_override
+							break
+						end
+					end
+				end
+				-- end: alexandretk call-back
+
 				table.insert(shipOptions, { id = macro, text = "\27[" .. shipicon .. "] " .. name .. " - " .. shiptypename, icon = icon or "", displayremoveoption = false, overridecolor = overridecolor, mouseovertext = mouseovertext, name = name .. " - " .. shiptypename, objectid = "", class = menu.class, purpose = primarypurpose })
 				AddKnownItem(infolibrary, macro)
 			end

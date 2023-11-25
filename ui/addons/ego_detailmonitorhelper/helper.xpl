@@ -11954,6 +11954,8 @@ end
 Helper.chatParams = {}
 
 -- kuertee start: custom graph menu
+local customGraph_endTime
+local customGraph_startTime
 function Helper.createCustomGraph(frame, container, tableProperties, refreshCallback, selectionData, title_menu, title_graph, func_getGraphData, title_xAxis, title_yAxis, isYAxisMoney, isShowLogTotal)
 	-- do this in func_getGraphData():
 	-- ===============================
@@ -11968,14 +11970,37 @@ function Helper.createCustomGraph(frame, container, tableProperties, refreshCall
 	-- })
 	-- local entry = Helper.transactionLogData.accountLogUnfiltered[#Helper.transactionLogData.accountLogUnfiltered]
 	-- table.insert(Helper.transactionLogData.accountLog, entry)
-	-- =====================
-	-- for each graph entry:
-	-- =====================
-	-- table.insert(Helper.transactionLogData.graphdata, { 
+	-- ===================================================
+	-- for each graph - i.e. for each different graph line
+	-- i.e. each graph line contains series of data (i.e. dots)
+	-- ========================================================
+	-- local dots = {}
+	-- for each data:
+	-- ==============
+	-- table.insert(Helper.transactionLogData.accountLogUnfiltered, {
+	-- 	  time = time,
 	-- 	  entryid = id (time is a good id),
-	-- 	  x = value of horizontal data from entry. time is a good value for x,
+	-- 	  eventtypename = text for unexpanded log entry,
+	-- 	  value = value of entry,
+	-- 	  description = text for expanded log entry,
+	-- })
+	-- table.insert(dots, { 
+	-- 	  entryid = id (time is a good id),
+	-- 	  t = value of horizontal data from entry. time is a good value for x,
 	-- 	  y = value of vertical data from entry,
 	-- })
+	-- ==================================
+	-- when all data of ONE line is done:
+	-- ==================================
+	-- table.insert(Helper.transactionLogData.graphs, {
+	-- 	id = "id for ONE graph line",
+	-- 	type = "line",
+	-- 	color = color for one graph line,
+	-- 	data = dots,
+	-- })
+	-- ==========================
+	-- repeat for each graph line
+	-- ==========================
 	Helper.transactionLogData = {
 		isCustomGraph = true,
 
@@ -12026,10 +12051,18 @@ function Helper.createCustomGraph(frame, container, tableProperties, refreshCall
 	end
 
 	local endtime
-	if Helper.transactionLogData.searchtext ~= "" then
-		endtime = Helper.transactionLogData.accountLog[#Helper.transactionLogData.accountLog].time
+	if customGraph_endTime == nil then
+		if customGraph_endTime then
+			endtime = customGraph_endTime
+		else
+			endtime = 0
+		end
 	else
-		endtime = Helper.transactionLogData.accountLogUnfiltered[#Helper.transactionLogData.accountLog].time
+		if Helper.transactionLogData.searchtext ~= "" then
+			endtime = Helper.transactionLogData.accountLog[#Helper.transactionLogData.accountLog].time
+		else
+			endtime = Helper.transactionLogData.accountLogUnfiltered[#Helper.transactionLogData.accountLog].time
+		end
 	end
 	local starttime = math.max(0, endtime - 60 * Helper.transactionLogConfig.zoomSteps[Helper.transactionLogData.xZoom].zoom)
 
@@ -12356,10 +12389,10 @@ function Helper.createCustomGraph(frame, container, tableProperties, refreshCall
 
 	-- zoom
 	local row = table_graph:addRow(true, { fixed = true, bgColor = Helper.color.transparent })
-	row[2]:createButton({ active = Helper.transactionLogData.xZoom > 1 }):setText(ReadText(1001, 7777), { halign = "center" })
-	row[2].handlers.onClick = function () return Helper.buttonTransactionLogZoom(-1, refreshCallback) end
-	row[3]:createButton({ active = Helper.transactionLogData.xZoom < #Helper.transactionLogConfig.zoomSteps }):setText(ReadText(1001, 7778), { halign = "center" })
-	row[3].handlers.onClick = function () return Helper.buttonTransactionLogZoom(1, refreshCallback) end
+	row[1]:createButton({ active = Helper.transactionLogData.xZoom > 1 }):setText(ReadText(1001, 7769), { halign = "center" })
+	row[1].handlers.onClick = function () return Helper.buttonTransactionLogZoom(-1, refreshCallback) end
+	row[2]:createButton({ active = Helper.transactionLogData.xZoom < #Helper.transactionLogConfig.zoomSteps }):setText(ReadText(1001, 7768), { halign = "center" })
+	row[2].handlers.onClick = function () return Helper.buttonTransactionLogZoom(1, refreshCallback) end
 
 	table_graph:addConnection(1, 3, true)
 end
