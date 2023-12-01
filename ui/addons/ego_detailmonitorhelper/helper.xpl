@@ -11955,8 +11955,10 @@ Helper.chatParams = {}
 
 -- kuertee start: custom graph menu
 local customGraph_endTime
-local customGraph_startTime
 function Helper.createCustomGraph(frame, container, tableProperties, refreshCallback, selectionData, title_menu, title_graph, func_getGraphData, title_xAxis, title_yAxis, isYAxisMoney, isShowLogTotal)
+	Helper.debugText_forced("")
+	Helper.debugText_forced("")
+	Helper.debugText_forced("")
 	-- do this in func_getGraphData():
 	-- ===============================
 	-- for each log entry:
@@ -12050,12 +12052,17 @@ function Helper.createCustomGraph(frame, container, tableProperties, refreshCall
 		end
 	end
 
-	local endtime
-	if customGraph_endTime == nil then
-		if customGraph_endTime then
-			endtime = customGraph_endTime
+	local endtime, endX
+	if customGraph_endTime ~= nil then
+		endtime = customGraph_endTime
+		if Helper.transactionLogData.searchtext ~= "" then
+			if endtime > Helper.transactionLogData.accountLog[#Helper.transactionLogData.accountLog].time then
+				endtime = Helper.transactionLogData.accountLog[#Helper.transactionLogData.accountLog].time
+			end
 		else
-			endtime = 0
+			if endtime > Helper.transactionLogData.accountLogUnfiltered[#Helper.transactionLogData.accountLog].time then
+				endtime = Helper.transactionLogData.accountLogUnfiltered[#Helper.transactionLogData.accountLog].time
+			end
 		end
 	else
 		if Helper.transactionLogData.searchtext ~= "" then
@@ -12064,7 +12071,10 @@ function Helper.createCustomGraph(frame, container, tableProperties, refreshCall
 			endtime = Helper.transactionLogData.accountLogUnfiltered[#Helper.transactionLogData.accountLog].time
 		end
 	end
-	local starttime = math.max(0, endtime - 60 * Helper.transactionLogConfig.zoomSteps[Helper.transactionLogData.xZoom].zoom)
+	-- local starttime = math.max(0, endtime - 60 * Helper.transactionLogConfig.zoomSteps[Helper.transactionLogData.xZoom].zoom)
+	Helper.debugText_forced("helper.xpl.createCustomGraph endtime", endtime)
+	local starttime = math.max(0, endtime - Helper.transactionLogData.xScale * Helper.transactionLogConfig.zoomSteps[Helper.transactionLogData.xZoom].zoom)
+	Helper.debugText_forced("helper.xpl.createCustomGraph starttime", starttime)
 
 	-- apply search
 	if Helper.transactionLogData.searchtext ~= "" then
@@ -12285,8 +12295,9 @@ function Helper.createCustomGraph(frame, container, tableProperties, refreshCall
 	end
 
 	local datarecords = {}
+	local minTime, maxTime = C.GetCurrentGameTime(), 0
 	for _, graph in ipairs(Helper.transactionLogData.graphs) do
-		Helper.debugText_forced("graph.id: ", graph.id .. " #graph.data: " .. tostring(#graph.data))
+		Helper.debugText_forced("helper.xpl.createCustomGraph graph.id: ", graph.id .. " #graph.data: " .. tostring(#graph.data))
 		local data = {}
 		local type = graph.type
 		local color = graph.color
@@ -12330,11 +12341,18 @@ function Helper.createCustomGraph(frame, container, tableProperties, refreshCall
 				end
 				-- function Helper.createGraphDataPoint(x, y, icon, mouseovertext, inactive)
 				-- table.insert(data, Helper.createGraphDataPoint((point.t - menu.xEnd) / menu.xScale, point.y, nil, nil))
-				table.insert(data, Helper.createGraphDataPoint((point.t - endtime) / Helper.transactionLogData.xScale, point.y, nil, nil, inactive))
+				-- table.insert(data, Helper.createGraphDataPoint((point.t - endtime) / Helper.transactionLogData.xScale, point.y, nil, nil, inactive))
+				local x_valueOfTime = Helper.customGraph_getXValueOfTime(point.t, endtime)
+				table.insert(data, Helper.createGraphDataPoint(x_valueOfTime, point.y, nil, nil, inactive))
+				if point.t < minTime then
+					minTime = point.t
+				elseif point.t > maxTime then
+					maxTime = point.t
+				end
 			end
 			-- Helper.debugText_forced("data", data)
 		end
-		Helper.debugText_forced("#data", #data)
+		Helper.debugText_forced("helper.xpl.createCustomGraph #data", #data)
 		if #data then
 			-- function Helper.createGraphDataRecord(markertype, markersize, markercolor, linetype, linewidth, linecolor, data, highlighted, mouseovertext)
 			-- table.insert(datarecords, Helper.createGraphDataRecord(config.graph.point.type, highlight and config.graph.point.highlightSize or config.graph.point.size, color, config.graph.line.type, highlight and config.graph.line.highlightSize or config.graph.line.size, color, data, false, ReadText(1001, 2916) .. ReadText(1001, 120) .. " " .. menu.graphdata[buyDataWeights[i].dataIdx].text))
@@ -12342,8 +12360,12 @@ function Helper.createCustomGraph(frame, container, tableProperties, refreshCall
 		end
 		-- break
 	end
-	Helper.debugText_forced("#datarecords", #datarecords)
-	Helper.debugText_forced("#datarecords", datarecords)
+	Helper.debugText_forced("helper.xpl.createCustomGraph #datarecords", #datarecords)
+	-- Helper.debugText_forced("helper.xpl.createCustomGraph #datarecords", datarecords)
+	Helper.debugText_forced("helper.xpl.createCustomGraph minTime", minTime)
+	Helper.debugText_forced("helper.xpl.createCustomGraph maxTime", maxTime)
+	endX = Helper.customGraph_getXValueOfTime(endtime, maxTime)
+	Helper.debugText_forced("helper.xpl.createCustomGraph endX", endX)
 
 	local mingranularity = (maxY - minY) / 12
 	local maxgranularity = (maxY - minY) / 8
@@ -12359,6 +12381,7 @@ function Helper.createCustomGraph(frame, container, tableProperties, refreshCall
 	minY = (math.floor(minY / granularity) - 0.5) * granularity
 
 	local xRange = (endtime - starttime) / Helper.transactionLogData.xScale
+	Helper.debugText_forced("helper.xpl.createCustomGraph xRange", xRange)
 	local xGranularity = Helper.transactionLogData.xGranularity
 	if endtime > starttime then
 		while (endtime - starttime) < xGranularity do
@@ -12369,32 +12392,58 @@ function Helper.createCustomGraph(frame, container, tableProperties, refreshCall
 	local xOffset = xRange % xGranularity
 	local yOffset = (math.ceil(minY / granularity) * granularity) - minY		-- offset is distance from minY to next multiple of granularity (value of first Y axis label)
 
-	local xaxis = Helper.createGraphAxis(Helper.createGraphText(Helper.transactionLogData.xTitle, Helper.standardFont, 9, Helper.color.white), -xRange, 0, xGranularity, xOffset, true, Helper.color.white, { r = 96, g = 96, b = 96, a = 80 })
+	-- local xaxis = Helper.createGraphAxis(Helper.createGraphText(Helper.transactionLogData.xTitle, Helper.standardFont, 9, Helper.color.white), -xRange, 0, xGranularity, xOffset, true, Helper.color.white, { r = 96, g = 96, b = 96, a = 80 })
+	local xaxis = Helper.createGraphAxis(Helper.createGraphText(Helper.transactionLogData.xTitle, Helper.standardFont, 9, Helper.color.white), endX - xRange, endX, xGranularity, xOffset, true, Helper.color.white, { r = 96, g = 96, b = 96, a = 80 })
 	local yaxis = Helper.createGraphAxis(Helper.createGraphText(Helper.transactionLogData.yTitle, Helper.standardFont, 9, Helper.color.white), minY, maxY, granularity, yOffset, true, Helper.color.white, { r = 96, g = 96, b = 96, a = 80 })
 
-	Helper.debugText_forced("xaxis", xaxis)
-	Helper.debugText_forced("yaxis", yaxis)
-	Helper.debugText_forced("height", height)
+	Helper.debugText_forced("helper.xpl.createCustomGraph xaxis", xaxis)
+	Helper.debugText_forced("helper.xpl.createCustomGraph yaxis", yaxis)
+	Helper.debugText_forced("helper.xpl.createCustomGraph height", height)
 	-- graphrow[1]:setColSpan(9):createGraph("line", true, Helper.color.semitransparent, nil, xaxis, yaxis, datarecords, 0, 0, nil, height - table_graph:getFullHeight())
 	Helper.transactionLogData.graph = row[1]:setColSpan(4):createGraph("line", true, Helper.color.semitransparent, { text = title_graph, font = Helper.titleFont, size = Helper.scaleFont(Helper.titleFont, Helper.titleFontSize), color = Helper.color.white }, xaxis, yaxis, datarecords, 0, 0, nil, height)
-	row[1].handlers.onClick = function (_, data) return Helper.customGraphDataSelection(datarecords, refreshCallback) end
+	row[1].handlers.onClick = function (_, data) return Helper.customGraph_onClickGraph(datarecords, refreshCallback) end
 
 	HideAllRects()
-	-- if #Helper.transactionLogData.graphs.[2] then
-	-- 	Helper.graphOtherData(Helper.transactionLogData.graphs.[2], table_graph, starttime, endtime, xRange, xGranularity, maxY, minY, granularity)
+	-- NOTE: redo graphOtherData so that it shows the "rectangles of activity"
+	-- if #Helper.transactionLogData.graphs[2] then
+	-- 	Helper.graphOtherData(Helper.transactionLogData.graphs[2], table_graph, starttime, endtime, xRange, xGranularity, maxY, minY, granularity)
 	-- end
-	-- if #Helper.transactionLogData.graphs.[3] then
-	-- 	Helper.graphOtherData(Helper.transactionLogData.graphs.[3], table_graph, starttime, endtime, xRange, xGranularity, maxY, minY, granularity)
+	-- if #Helper.transactionLogData.graphs[3] then
+	-- 	Helper.graphOtherData(Helper.transactionLogData.graphs[3], table_graph, starttime, endtime, xRange, xGranularity, maxY, minY, granularity)
 	-- end
 
 	-- zoom
 	local row = table_graph:addRow(true, { fixed = true, bgColor = Helper.color.transparent })
-	row[1]:createButton({ active = Helper.transactionLogData.xZoom > 1 }):setText(ReadText(1001, 7769), { halign = "center" })
-	row[1].handlers.onClick = function () return Helper.buttonTransactionLogZoom(-1, refreshCallback) end
-	row[2]:createButton({ active = Helper.transactionLogData.xZoom < #Helper.transactionLogConfig.zoomSteps }):setText(ReadText(1001, 7768), { halign = "center" })
-	row[2].handlers.onClick = function () return Helper.buttonTransactionLogZoom(1, refreshCallback) end
+	row[1]:createButton({active = starttime > minTime}):setText("- " .. tostring(xRange * 0.5), { halign = "center" })
+	row[1].handlers.onClick = function () return Helper.customGraph_setEndTime(endX, xRange * -0.5, maxTime, refreshCallback) end
+	row[2]:createButton({ active = Helper.transactionLogData.xZoom > 1 }):setText(ReadText(1001, 7777), { halign = "center" })
+	row[2].handlers.onClick = function () return Helper.buttonTransactionLogZoom(-1, refreshCallback) end
+	row[3]:createButton({ active = Helper.transactionLogData.xZoom < #Helper.transactionLogConfig.zoomSteps }):setText(ReadText(1001, 7778), { halign = "center" })
+	row[3].handlers.onClick = function () return Helper.buttonTransactionLogZoom(1, refreshCallback) end
+	row[4]:createButton({active = endtime < maxTime}):setText("+ " .. tostring(xRange * 0.5), { halign = "center" })
+	row[4].handlers.onClick = function () return Helper.customGraph_setEndTime(endX, xRange * 0.5, maxTime, refreshCallback) end
 
 	table_graph:addConnection(1, 3, true)
+end
+
+function Helper.customGraph_getXValueOfTime(time, maxTime)
+	-- x = (point.t - endtime) / Helper.transactionLogData.xScale
+	return (time - maxTime) / Helper.transactionLogData.xScale
+end
+
+function Helper.customGraph_getTimeValueOfX(x, maxTime)
+	-- x = (point.t - endtime) / Helper.transactionLogData.xScale
+	-- x * xScale = point.t - endtime
+	-- point.t = x * xScale + endtime
+	return x * Helper.transactionLogData.xScale + maxTime
+end
+
+function Helper.customGraph_setEndTime(endX, x_adj, endtime, refreshCallback)
+	Helper.debugText_forced("helper.xpl.customGraph_setEndTime endX", endX)
+	Helper.debugText_forced("helper.xpl.customGraph_setEndTime x_adj", x_adj)
+	customGraph_endTime = Helper.customGraph_getTimeValueOfX(endX + x_adj, endtime)
+	Helper.debugText_forced("helper.xpl.customGraph_setEndTime customGraph_endTime", customGraph_endTime)
+	refreshCallback()
 end
 
 local graphData2_startTime
@@ -12413,6 +12462,7 @@ local graphData2_y_for1Value
 -- granularity = y value for y grid
 -- graphData2_y_forLowestValue = y pixel for lowest value - at bottom edge of graph
 -- graphData2_y_interval = y pixel for y grid
+-- NOTE: redo graphOtherData so that it shows the "rectangles of activity"
 function Helper.graphOtherData(graphData, table_graph, starttime, endtime, xRange, xGranularity, maxY, minY, granularity)
 	-- local border_left = 46 -- eye-balled to the pixel with photoshop
 	-- local border_right = 15 -- eye-balled to the pixel with photoshop
@@ -12657,7 +12707,7 @@ function Helper.getYAtXFromPoint1AndPoint2(x, point1, point2)
 	return y
 end
 
-function Helper.customGraphDataSelection(data, refreshCallback)
+function Helper.customGraph_onClickGraph(data, refreshCallback)
 	local entryId_selected = Helper.transactionLogData.graphdata[data[4]].entryid
 	local entryId_first
 	local entryId_prev
