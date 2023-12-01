@@ -8114,13 +8114,13 @@ function menu.evaluateShipOptions()
 		if menu.class ~= "" then
 			for _, macro in ipairs(menu.availableshipmacrosbyclass[menu.class]) do
 				local haslicence, icon, overridecolor, mouseovertext = menu.checkLicence(macro, true)
-				local name, infolibrary, shiptypename, primarypurpose, shipicon = GetMacroData(macro, "name", "infolibrary", "shiptypename", "primarypurpose", "icon")
+				local name, infolibrary, shiptypename, primarypurpose, shipicon= GetMacroData(macro, "name", "infolibrary", "shiptypename", "primarypurpose", "icon")
 
 				-- start: alexandretk call-back
 				if callbacks ["evaluateShipOptions_override_shiptypename"] then
 					local shiptypename_override
 					for _, callback in ipairs (callbacks ["evaluateShipOptions_override_shiptypename"]) do
-						shiptypename_override = callback (shiptypename, shipicon)
+						shiptypename_override = callback (shiptypename, shipicon, menu.class)
 						if shiptypename_override then
 							shiptypename = shiptypename_override
 							break
