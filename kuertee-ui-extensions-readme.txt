@@ -1,21 +1,40 @@
 UI Extensions and HUD
 https://www.nexusmods.com/x4foundations/mods/552
 Code: https://github.com/kuertee/x4-mod-ui-extensions
-by kuertee. Contributors: Forleyor, Mycu, Runekn.
+by kuertee. Contributors: Forleyor, Mycu, Runekn, AlexandreTK.
 
 Updates
 =======
-v6.2.005, 18 Oct 2023:
--Bug-fix: "Station Configuration > Configure individual buy offers" menu was broken without my Trade Analytics mod.
+v6.2.007, 4 Dec 2023:
+-Tweak: The Custom Actions/Orders are now listed after the trade orders.
+-New features: Ship Configuration menu and Encyclopedia menu callbacks for a new unreleased mod.
 
 Instructions for players
 ========================
 Just install UI Extensions as normal - that is IF you have a mod that requires UI Extensions.
-You don't need UI Extensions if you don't have a mod that requires UI Extensions.
+You don't need UI Extensions if you're not using mods that require UI Extensions.
+When extracting the package from github, ensure that the folder you install the mod to is: "game/extensions/kuertee_ui_extensions/".
+Extracting the package from Nexus Mods will extract it "game/extensions/kuertee_ui_extensions/". But be sure it does anyway.
 
 Instructions for developers
 ===========================
-All other information as described below.
+The gist is:
+1. Install the mod as a player.
+2. Copy the "game/extensions/kuertee_ui_extensions/ui" folder into the "game/ui" folder. This will overwrite UIX's XPL files into the game.
+3. Launch the game with the "-prefersinglefiles" option. This will make the game use UIX XPL files instead of the base game's corresponding files that are in its cat/dat files.
+4. Examine one of the callbacks in any of those XPL files. Search for "callback". Add any callback you need in any of those XPL files. If you need a add callbacks to a menu file that UIX doesn't have let me know (on Discord, Nexus or kuertee@gmail.com).
+5. When done adding your callbacks, send me the changed XPL files.
+6. I'll merge them with the master UIX files.
+7. We'll coordinate release dates so that the new UIX mod with your callbacks is released near the time you release your mod.
+
+An an alternative installation instructions for advanced developers:
+1. Pull the github files into the "game/extensions/kuertee_ui_extensions" folder.
+2. To copy the UIX XPL files that are in "game/extensions/kuertee_ui_extensions/ui" to the "game/ui" folder, run the "dev-make_symlink_files.bat". This will copy-linked files from UIX's folder into the game folder. Any changes you make in the UIX folder will be automatically mirrored in the files in the game folder.
+3. Examine one of the callbacks in any of those XPL files. Search for "callback". Add any callback you need at any other point in the file.
+4. When done adding your callbacks, commit your changes to github.
+5. We'll coordinate release dates so that the new UIX mod with your callbacks is released near the time you release your mod.
+
+Any questions, it's best to @ me on Egosoft's unofficial Discord modding channel: https://discord.gg/RzAGhcY
 
 Features
 ========
@@ -144,6 +163,9 @@ Troubleshooting
 
 History
 =======
+v6.2.005, 18 Oct 2023:
+-Bug-fix: "Station Configuration > Configure individual buy offers" menu was broken without my Trade Analytics mod.
+
 v6.2.001, 2 Sep 2023:
 -Tweak: 6.2 Compatibility.
 
