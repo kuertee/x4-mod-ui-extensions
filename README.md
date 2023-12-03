@@ -22,7 +22,7 @@ The gist is:
 1. Install the mod as a player.
 2. Copy the "game/extensions/kuertee_ui_extensions/ui" folder into the "game/ui" folder. This will overwrite UIX's XPL files into the game.
 3. Launch the game with the "-prefersinglefiles" option. This will make the game use UIX XPL files instead of the base game's corresponding files that are in its cat/dat files.
-4. Examine one of the callbacks in any of those XPL files. Search for "callback". Add any callback you need in any of those XPL files. If you need a add callbacks to a menu file that UIX doesn't have let me know (on Discord, Nexus or kuertee@gmail.com).
+4. Examine one of the callbacks in any of those XPL files. Search for "callback". Add any callback you need in any of the XPL files IN THE GAME FOLDER. If you need a add callbacks to a menu file that UIX doesn't have let me know (on Discord, Nexus or kuertee@gmail.com).
 5. When done adding your callbacks, send me the changed XPL files.
 6. I'll merge them with the master UIX files.
 7. We'll coordinate release dates so that the new UIX mod with your callbacks is released near the time you release your mod.
@@ -30,7 +30,7 @@ The gist is:
 An an alternative installation instructions for advanced developers:
 1. Pull the github files into the "game/extensions/kuertee_ui_extensions" folder.
 2. To copy the UIX XPL files that are in "game/extensions/kuertee_ui_extensions/ui" to the "game/ui" folder, run the "dev-make_symlink_files.bat". This will copy-linked files from UIX's folder into the game folder. Any changes you make in the UIX folder will be automatically mirrored in the files in the game folder.
-3. Examine one of the callbacks in any of those XPL files. Search for "callback". Add any callback you need at any other point in the file.
+3. Examine one of the callbacks in any of those XPL files. Search for "callback". Add any callback you need in any of the XPL files IN THE MOD FOLDER. If you need a add callbacks to a menu file that UIX doesn't have let me know (on Discord, Nexus or kuertee@gmail.com).
 4. When done adding your callbacks, commit your changes to github.
 5. We'll coordinate release dates so that the new UIX mod with your callbacks is released near the time you release your mod.
 
