@@ -8300,8 +8300,26 @@ function menu.createTitleBar(frame)
 		row[3].handlers.onDropDownConfirmed = menu.dropdownLoadout
 		row[3].handlers.onDropDownRemoved = menu.dropdownLoadoutRemoved
 		-- save
+
+		-- mycu start: callback
+		if callbacks ["displaySlots_on_before_create_store_loadout_button"] then
+			for _, callback in ipairs (callbacks ["displaySlots_on_before_create_store_loadout_button"]) do
+				callback ()
+			end
+		end
+		-- mycu end: callback
+
 		row[4]:createButton({ active = (not menu.isReadOnly) and active and ((menu.object ~= 0) or (menu.macro ~= "")), height = menu.titleData.height, mouseOverText = ReadText(1026, 7905) }):setIcon("menu_save")
 		row[4].handlers.onClick = menu.buttonTitleSave
+
+		-- mycu start: callback
+		if callbacks ["displaySlots_on_after_create_store_loadout_button"] then
+			for _, callback in ipairs (callbacks ["displaySlots_on_after_create_store_loadout_button"]) do
+				callback ()
+			end
+		end
+		-- mycu end: callback
+
 		-- reset camera
 		row[5]:createButton({ active = true, height = menu.titleData.height, mouseOverText = ffi.string(C.ConvertInputString(ReadText(1026, 7911), ReadText(1026, 7902))) }):setIcon("menu_reset_view"):setHotkey("INPUT_STATE_DETAILMONITOR_RESET_VIEW", { displayIcon = false })
 		row[5].handlers.onClick = function () return C.ResetMapPlayerRotation(menu.holomap) end
