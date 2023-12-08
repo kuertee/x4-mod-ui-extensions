@@ -708,8 +708,19 @@ end
 -- kuertee start:
 function Helper.init_kuertee ()
 	DebugError("menu_helper.xpl.init - kuertee")
+	Helper.SWIUI_Init()
 end
--- kuertee end
+
+function Helper.getMenu(menuName)
+	if Menus then
+		for _, menu in ipairs(Menus) do
+			if menu.name == menuName then
+				return menu
+			end
+		end
+	end
+	return nil
+end
 
 function Helper.registerCallback (callbackName, callbackFunction)
 	-- note 1: format is generally [function name]_[action]. e.g.: in kuertee_menu_transporter, "display_on_set_room_active" overrides the room's active property with the return of the callback.
@@ -12734,16 +12745,21 @@ function Helper.customGraph_onClickGraph(data, refreshCallback)
 	Helper.transactionLogData.curEntry = entryId_best
 	refreshCallback()
 end
+-- kuertee end: custom graph menu
 
-function Helper.getMenu(menuName)
-	for _, menu in Menus do
-		if menu.name == menuName then
-			return menu
-		end
-	end
-	return nil
+-- kuertee start: load lua
+function Helper.SWIUI_LoadLua(_, file)
+	Helper.debugText("Helper.SWIUI_LoadLua", file)
+    require(file)
+    AddUITriggeredEvent("SWIUI_OnLoad", file)
 end
--- kuertee end
+
+function Helper.SWIUI_Init()
+	Helper.debugText("Helper.SWIUI_Init")
+	RegisterEvent("SWIUI_LoadLua", Helper.SWIUI_LoadLua)
+	AddUITriggeredEvent("SWIUI_OnInit", "Init")
+end
+-- kuertee end: load lua
 
 ---------------------------------------------------------------------------------
 -- Init

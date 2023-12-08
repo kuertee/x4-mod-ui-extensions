@@ -41,6 +41,14 @@ del helper.xpl
 mklink /h helper.xpl "..\..\..\extensions\kuertee_ui_extensions\ui\addons\ego_detailmonitorhelper\helper.xpl"
 cd ..\..
 
+mkdir addons\ego_gameoptions
+cd addons\ego_gameoptions
+del gameoptions.xpl
+del customgame.xpl
+mklink /h gameoptions.xpl "..\..\..\extensions\kuertee_ui_extensions\ui\addons\ego_gameoptions\gameoptions.xpl"
+mklink /h customgame.xpl "..\..\..\extensions\kuertee_ui_extensions\ui\addons\ego_gameoptions\customgame.xpl"
+cd ..\..
+
 mkdir addons\ego_interactmenu
 cd addons\ego_interactmenu
 del menu_interactmenu.xpl
