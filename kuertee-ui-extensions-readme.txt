@@ -5,6 +5,9 @@ by kuertee. Contributors: Forleyor, Mycu, Runekn, AlexandreTK.
 
 Updates
 =======
+v6.2.008, 9 Dec 2023:
+-New feature: New call back to the Ship Configuration menu for another unreleased mod.
+
 v6.2.007, 4 Dec 2023:
 -Tweak: The Custom Actions/Orders are now listed after the trade orders.
 -New features: Ship Configuration menu and Encyclopedia menu callbacks for a new unreleased mod.
