@@ -12783,34 +12783,45 @@ function Helper.loadModLuas(menuName, modLuaName)
 		}
 	end
 	local extensions = GetExtensionList()
+	local isModLuaLoaded
 	if #extensions then
 		for _, extension in ipairs(extensions) do
 			if (not extension.error) and extension.enabled then
 				local file = "extensions." .. extension.location:gsub("%\\", "") .. ".ui." .. modLuaName
 				if pcall(function() Helper.modLuas[menuName].byExtension[extension.location] = require(file) end) then
-					-- DebugError("uix: " .. modLuaName .. " (mod: " .. tostring(extension.location) .. ") loaded to " .. tostring(Helper.modLuas[menuName].byExtension[extension.location]) .. " from " .. tostring(file))
-					DebugError("uix: " .. tostring(file) .. " loaded")
+					isModLuaLoaded = true
+					DebugError("uix: " .. tostring(file) .. " load success")
 				end
 			end
 		end
 	end
+	if isModLuaLoaded then
+		AddUITriggeredEvent("uix_mod_lua", "load", menuName)
+	end
 end
 
 function Helper.initModLuas(menuName)
+	local isModLuaInited
 	if Helper.modLuas[menuName] then
 		if Helper.modLuas[menuName].modLuaName then
 			local modLuaName = Helper.modLuas[menuName].modLuaName
 			if Helper.modLuas[menuName].isInited ~= true then
 				Helper.modLuas[menuName].isInited = true
 				for extension, modLua in pairs(Helper.modLuas[menuName].byExtension) do
+					local file = "extensions." .. extension:gsub("%\\", "") .. ".ui." .. modLuaName
 					if pcall(function () modLua.init() end) then
-						-- DebugError("uix: " .. modLuaName .. " (mod: " .. tostring(extension) .. ") inited")
-						local file = "extensions." .. extension:gsub("%\\", "") .. ".ui." .. modLuaName
-						DebugError("uix: " .. tostring(file) .. ".init")
+						isModLuaInited = true
+						DebugError("uix: " .. tostring(file) .. " init success")
+					else
+						DebugError("uix: " .. tostring(file) .. " init failed")
+						Helper.debugText_forced("Helper.initModLuas modLua", modLua)
 					end
 				end
 			end
 		end
+	end
+	if isModLuaInited then
+		AddUITriggeredEvent("uix_mod_lua", "init", menuName)
 	end
 end
 -- kuertee end

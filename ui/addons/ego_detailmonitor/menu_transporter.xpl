@@ -906,17 +906,8 @@ function menu.registerCallback (callbackName, callbackFunction)
 end
 
 function menu.loadModLuas()
-	local modLuaName = "menu_transporter_uix"
-	local extensions = GetExtensionList()
-	if #extensions then
-		for _, extension in ipairs(extensions) do
-			if (not extension.error) and extension.enabled then
-				local file = "extensions." .. extension.location:gsub("%\\", "") .. ".ui." .. modLuaName
-				if pcall(function() require(file) end) then
-					DebugError(file .. " loaded")
-				end
-			end
-		end
+	if Helper then
+		Helper.loadModLuas(menu.name, "menu_transporter_uix")
 	end
 end
 -- kuertee end
