@@ -707,9 +707,10 @@ end
 
 -- kuertee start:
 function Helper.init_kuertee ()
-	Helper.loadModLua()
+	Helper.loadModLuas("Helper", "helper_uix")
+	Helper.initModLuas("Helper")
 	Helper.SWIUI_Init()
-	DebugError("menu_helper.xpl.init - kuertee")
+	DebugError("uix: menu_helper.xpl.init")
 end
 -- kuertee end
 
@@ -1176,6 +1177,10 @@ local function createCustomHooks(menu)
 								end
 end
 
+-- kuertee start: mod luas
+local isModLuaInited = {}
+-- end
+
 function Helper.registerMenu(menu)
 	menu.rowDataMap = {}
 	menu.frameData = {}
@@ -1185,6 +1190,11 @@ function Helper.registerMenu(menu)
 
 	-- Create and register a closure that will be called when the menu should be started
 	menu.showMenuCallback = function(...)
+
+		-- kuertee start: mod luas
+		Helper.initModLuas(menu.name)
+		-- kuertee end
+
 		if C.IsGameOver() and (menu.name ~= "OptionsMenu") then
 			return
 		end
@@ -12763,15 +12773,41 @@ function Helper.debugText_forced (data1, data2, indent)
 	return Helper.debugText(data1, data2, indent, true)
 end
 
-function Helper.loadModLua()
-	local modLuaName = "helper_uix"
+Helper.modLuas = {}
+function Helper.loadModLuas(menuName, modLuaName)
+	if not Helper.modLuas[menuName] then
+		Helper.modLuas[menuName] = {
+			modLuaName = modLuaName,
+			isInited = false,
+			byExtension = {}
+		}
+	end
 	local extensions = GetExtensionList()
 	if #extensions then
 		for _, extension in ipairs(extensions) do
 			if (not extension.error) and extension.enabled then
 				local file = "extensions." .. extension.location:gsub("%\\", "") .. ".ui." .. modLuaName
-				if pcall(function() require(file) end) then
-					DebugError(file .. " loaded")
+				if pcall(function() Helper.modLuas[menuName].byExtension[extension.location] = require(file) end) then
+					-- DebugError("uix: " .. modLuaName .. " (mod: " .. tostring(extension.location) .. ") loaded to " .. tostring(Helper.modLuas[menuName].byExtension[extension.location]) .. " from " .. tostring(file))
+					DebugError("uix: " .. tostring(file) .. " loaded")
+				end
+			end
+		end
+	end
+end
+
+function Helper.initModLuas(menuName)
+	if Helper.modLuas[menuName] then
+		if Helper.modLuas[menuName].modLuaName then
+			local modLuaName = Helper.modLuas[menuName].modLuaName
+			if Helper.modLuas[menuName].isInited ~= true then
+				Helper.modLuas[menuName].isInited = true
+				for extension, modLua in pairs(Helper.modLuas[menuName].byExtension) do
+					if pcall(function () modLua.init() end) then
+						-- DebugError("uix: " .. modLuaName .. " (mod: " .. tostring(extension) .. ") inited")
+						local file = "extensions." .. extension:gsub("%\\", "") .. ".ui." .. modLuaName
+						DebugError("uix: " .. tostring(file) .. ".init")
+					end
 				end
 			end
 		end

@@ -38,8 +38,8 @@ end
 
 -- kuertee start:
 function menu.init_kuertee ()
-	menu.loadModLua()
-	DebugError("menu_transactionlog.xpl.init - kuertee")
+	menu.loadModLuas()
+	DebugError("uix: menu_transactionlog.xpl.init")
 end
 -- kuertee end
 
@@ -307,7 +307,7 @@ function menu.registerCallback (callbackName, callbackFunction)
 	table.insert (callbacks [callbackName], callbackFunction)
 end
 
-function menu.loadModLua()
+function menu.loadModLuas()
 	local modLuaName = "menu_transactionlog_uix"
 	local extensions = GetExtensionList()
 	if #extensions then

@@ -358,8 +358,8 @@ end
 
 -- kuertee start:
 function menu.init_kuertee ()
-	menu.loadModLua()
-	DebugError("customgame.xpl.init - kuertee")
+	menu.loadModLuas()
+	DebugError("uix: customgame.xpl.init")
 end
 -- kuertee end
 
@@ -5386,18 +5386,9 @@ function menu.registerCallback (callbackName, callbackFunction)
 	table.insert (callbacks [callbackName], callbackFunction)
 end
 
-function menu.loadModLua()
-	local modLuaName = "customgame_uix"
-	local extensions = GetExtensionList()
-	if #extensions then
-		for _, extension in ipairs(extensions) do
-			if (not extension.error) and extension.enabled then
-				local file = "extensions." .. extension.location:gsub("%\\", "") .. ".ui." .. modLuaName
-				if pcall(function() require(file) end) then
-					DebugError(file .. " loaded")
-				end
-			end
-		end
+function menu.loadModLuas()
+	if Helper then
+		Helper.loadModLuas(menu.name, "customgame_uix")
 	end
 end
 -- kuertee end

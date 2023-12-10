@@ -399,9 +399,9 @@ end
 
 -- kuertee start:
 function menu.init_kuertee ()
-	DebugError("menu_interactmenu.xpl.init - kuertee")
 	RegisterEvent ("Interact_Menu_API.Add_Custom_Actions_Group_Id", menu.Add_Custom_Actions_Group_Id)
 	RegisterEvent ("Interact_Menu_API.Add_Custom_Actions_Group_Text", menu.Add_Custom_Actions_Group_Text)
+	DebugError("uix: menu_interactmenu.xpl.init")
 end
 -- kuertee end
 

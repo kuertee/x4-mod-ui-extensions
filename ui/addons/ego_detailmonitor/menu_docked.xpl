@@ -192,8 +192,8 @@ end
 
 -- kuertee start:
 function menu.init_kuertee ()
-	menu.loadModLua()
-	DebugError("menu_docked.xpl.init - kuertee")
+	menu.loadModLuas()
+	DebugError("uix: menu_docked.xpl.init")
 end
 -- kuertee end
 
@@ -1467,7 +1467,7 @@ function menu.registerCallback (callbackName, callbackFunction)
 	table.insert (callbacks [callbackName], callbackFunction)
 end
 
-function menu.loadModLua()
+function menu.loadModLuas()
 	local modLuaName = "menu_docked_uix"
 	local extensions = GetExtensionList()
 	if #extensions then

@@ -297,8 +297,8 @@ end
 
 -- kuertee start:
 function menu.init_kuertee ()
-	menu.loadModLua()
-	DebugError("gameoptions.xpl.init - kuertee")
+	menu.loadModLuas()
+	DebugError("uix: gameoptions.xpl.init")
 end
 -- kuertee end
 
@@ -9112,7 +9112,7 @@ function menu.registerCallback (callbackName, callbackFunction)
 	table.insert (callbacks [callbackName], callbackFunction)
 end
 
-function menu.loadModLua()
+function menu.loadModLuas()
 	local modLuaName = "gameoptions_uix"
 	local extensions = GetExtensionList()
 	if #extensions then

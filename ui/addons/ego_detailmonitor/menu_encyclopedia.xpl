@@ -244,8 +244,8 @@ end
 
 -- kuertee start:
 function menu.init_kuertee ()
-	menu.loadModLua()
-	DebugError("menu_encyclopedia.xpl.init - kuertee")
+	menu.loadModLuas()
+	DebugError("uix: menu_encyclopedia.xpl.init")
 end
 -- kuertee end
 
@@ -3967,7 +3967,7 @@ function menu.registerCallback (callbackName, callbackFunction)
 	table.insert (callbacks [callbackName], callbackFunction)
 end
 
-function menu.loadModLua()
+function menu.loadModLuas()
 	local modLuaName = "menu_encyclopedia_uix"
 	local extensions = GetExtensionList()
 	if #extensions then

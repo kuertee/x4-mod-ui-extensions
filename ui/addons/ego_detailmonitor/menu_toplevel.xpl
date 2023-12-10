@@ -42,8 +42,8 @@ end
 
 -- kuertee start:
 function menu.init_kuertee ()
-	menu.loadModLua()
-	DebugError("menu_toplevel.xpl.init - kuertee")
+	menu.loadModLuas()
+	DebugError("uix: menu_toplevel.xpl.init")
 end
 -- kuertee end
 
@@ -376,7 +376,7 @@ function menu.updateFrameHeight ()
 	end
 end
 
-function menu.loadModLua()
+function menu.loadModLuas()
 	local modLuaName = "menu_toplevel_uix"
 	local extensions = GetExtensionList()
 	if #extensions then

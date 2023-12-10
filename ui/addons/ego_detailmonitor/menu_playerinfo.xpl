@@ -446,8 +446,8 @@ end
 
 -- kuertee start:
 function menu.init_kuertee ()
-	menu.loadModLua()
-	DebugError("menu_playerinfo.xpl.init - kuertee")
+	menu.loadModLuas()
+	DebugError("uix: menu_playerinfo.xpl.init")
 end
 -- kuertee end
 
@@ -7127,18 +7127,9 @@ function menu.registerCallback (callbackName, callbackFunction)
 	table.insert (callbacks [callbackName], callbackFunction)
 end
 
-function menu.loadModLua()
-	local modLuaName = "menu_playerinfo_uix"
-	local extensions = GetExtensionList()
-	if #extensions then
-		for _, extension in ipairs(extensions) do
-			if (not extension.error) and extension.enabled then
-				local file = "extensions." .. extension.location:gsub("%\\", "") .. ".ui." .. modLuaName
-				if pcall(function() require(file) end) then
-					DebugError(file .. " loaded")
-				end
-			end
-		end
+function menu.loadModLuas()
+	if Helper then
+		Helper.loadModLuas(menu.name, "menu_playerinfo_uix")
 	end
 end
 -- kuertee end

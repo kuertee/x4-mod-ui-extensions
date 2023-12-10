@@ -386,10 +386,6 @@ end
 
 function menu.editboxMessageChanged(_, text)
 	menu.editboxstate.text = text
-
-	-- kuertee start: signal md
-	AddUITriggeredEvent("Chat_Window_API", "text_entered", {terms = {""}, text = text})
-	-- kuertee end
 end
 
 function menu.editboxMessageCursorChanged(_, cursorpos, shiftstartpos)
@@ -406,6 +402,11 @@ function menu.editboxSendMessage(_, text, textchanged, isconfirmed, wastableclic
 		menu.onShowMenu()
 		return
 	end
+
+	-- kuertee start: signal md
+	AddUITriggeredEvent("Chat_Window_API", "text_entered", {terms = {""}, text = text})
+	DebugError("uix: chatwindow.xpl.editboxSendMessage text_entered: " .. tostring(text))
+	-- kuertee end
 
 	local parameter = ""
 	if string.sub(text, 1, 1) ~= "/" then
