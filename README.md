@@ -17,7 +17,7 @@ Instructions for players
 Just install UI Extensions as normal - that is IF you have a mod that requires UI Extensions.
 You don't need UI Extensions if you're not using mods that require UI Extensions.
 When extracting the package from github, ensure that the folder you install the mod to is: "game/extensions/kuertee_ui_extensions/".
-Extracting the package from Nexus Mods will extract it "game/extensions/kuertee_ui_extensions/". But be sure it does anyway.
+Extracting the package from Nexus Mods will extract it to "game/extensions/kuertee_ui_extensions/". But be sure it does anyway.
 
 Instructions for developers
 ===========================
