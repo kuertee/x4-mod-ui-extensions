@@ -331,6 +331,10 @@ local menu = {
 	cpwarescache = {},
 }
 
+-- kuertee start:
+local callbacks = {}
+-- kuertee end
+
 local function init()
 	-- register callbacks
 	local contract = getElement("Scene.UIContract")
@@ -348,9 +352,16 @@ local function init()
 	end
 
 	-- kuertee start:
-	DebugError("customgame.xpl.init - kuertee")
+	menu.init_kuertee()
 	-- kuertee end
 end
+
+-- kuertee start:
+function menu.init_kuertee ()
+	menu.loadModLua()
+	DebugError("customgame.xpl.init - kuertee")
+end
+-- kuertee end
 
 local config = {
 	mainFrameLayer = 4,
@@ -1176,43 +1187,14 @@ function menu.dropdownCurrentFaction(_, option)
 	end
 end
 
--- kuertee start
-local playerMacro_currentOption
-local playerMacro_options
-local universeSector_currentOption
-local universeSector_options
--- kuertee end
-
 function menu.dropdownProperty(property, row, option)
-	-- kuertee start
-	if false then
-		Helper.debugText("dropdownProperty property.id: " .. tostring(property.id) .. " option: " .. tostring(option))
-		local isRandom
-		if option == "random" then
-			if property.id == "player" then
-				isRandom = true
-				local random = math.random(1, #playerMacro_options - 1) -- last item is "random"
-				option = playerMacro_options[random].id
-				Helper.debugText("dropdownProperty option (post random): " .. tostring(option))
-				menu.editboxProperty(config.categories[1].properties[1], "Random")
-				menu.refresh = getElapsedTime()
-			elseif property.id == "sector" then
-				isRandom = true
-				local random = math.random(1, #universeSector_options - 1) -- last item is "random"
-				option = universeSector_options[random].id
-				Helper.debugText("dropdownProperty sector (post random): " .. tostring(sector) .. " " .. tostring(universeSector_options[random].text))
-				local knownspaceproperty = menu.findProperty("playerknownspace")
-				if knownspaceproperty then
-					menu.initPropertyValue(knownspaceproperty)
-					for i = #knownspaceproperty.value, 1, -1 do
-						menu.setKnownValue("playerknownspace", knownspaceproperty.value[i].id, false)
-						table.remove(knownspaceproperty.value, i)
-					end
-				end
-			end
+	-- kuertee start: callback
+	if callbacks ["dropdownProperty_on_start"] then
+		for _, callback in ipairs (callbacks ["dropdownProperty_on_start"]) do
+			callback (property, row, option)
 		end
 	end
-	-- kuertee end
+	-- kuertee end: callback
 
 	if option ~= menu.curDropDownOption[property.id] then
 		menu.curDropDownOption[property.id] = option
@@ -1816,7 +1798,6 @@ function menu.playerMoney(start)
 end
 
 function menu.playerMacro(current, customoptions)
-	Helper.debugText("menu.playerMacro customoptions:" .. tostring(customoptions))
 	local options = {}
 	local currentOption = current
 
@@ -1857,14 +1838,13 @@ function menu.playerMacro(current, customoptions)
 		table.insert(options, { id = entry.basemacro, text = name, icon = "", displayremoveoption = false })
 	end
 
-	if false then
-		-- kuertee start
-		-- <t id="17">Random</t>
-		table.insert(options, {id = "random", text = ReadText(1118719, 17), icon = "", displayremoveoption = false})
-		playerMacro_currentOption = currentOption
-		playerMacro_options = options
-		-- kuertee end
+	-- kuertee start: callback
+	if callbacks ["playerMacro_on_end"] then
+		for _, callback in ipairs (callbacks ["playerMacro_on_end"]) do
+			callback (current, customoptions, options, currentOption)
+		end
 	end
+	-- kuertee end: callback
 
 	return options, currentOption
 end
@@ -1976,14 +1956,13 @@ function menu.universeSector(current)
 		end
 	end
 
-	if false then
-		-- kuertee start
-		-- <t id="17">Random</t>
-		table.insert(options, {id = "random", text = ReadText(1118719, 17), icon = "", displayremoveoption = false, active = active, mouseovertext = "" })
-		universeSector_currentOption = currentOption
-		universeSector_options = options
-		-- kuertee end
+	-- kuertee start: callback
+	if callbacks ["universeSector_on_end"] then
+		for _, callback in ipairs (callbacks ["universeSector_on_end"]) do
+			callback (current, options, currentOption)
+		end
 	end
+	-- kuertee end: callback
 
 	return options, currentOption
 end
@@ -2921,59 +2900,13 @@ function menu.display()
 	row[3]:setColSpan(2):createButton({  }):setText(ReadText(1001, 9904), { halign = "center" })
 	row[3].handlers.onClick = menu.buttonReset
 
-	if false then
-		-- kuertee start
-		-- <t id="21">Random Gamestarts</t>
-		-- <t id="22">Random Person</t>
-		-- <t id="23">Random Fighter</t>
-		-- <t id="24">Random Commander</t>
-		-- <t id="25">Random Prospector</t>
-		-- <t id="26">Random Miner</t>
-		-- <t id="27">Random Trader</t>
-		-- <t id="28">Random Merchant</t>
-		-- <t id="32">Start as a random pilot, with a random M-class or L-class ship, in a random sector, and between 10k to 200k Cr.</t>
-		-- <t id="33">Start as a random pilot, with a random corvette or frigate strike ship, in a random sector, and 20k Cr.</t>
-		-- <t id="34">Start as a random pilot, with a random capital ship, in a random sector, and 10k Cr.</t>
-		-- <t id="35">Start as a random pilot, with a random mining ship, in a random sector, and 20k Cr.</t>
-		-- <t id="36">Start as a random pilot, with a random L-class mining ship, in a random sector, and 10k Cr.</t>
-		-- <t id="37">Start as a random pilot, with a random trading ship, in a random sector, and 20k Cr.</t>
-		-- <t id="38">Start as a random pilot, with a random L-class trading ship, in a random sector, and 20k Cr.</t>
-		local row = menu.categoryTable:addRow(true, { bgColor = Helper.color.transparent })
-		row[2]:setColSpan(3):createText("")
-
-		local row = menu.categoryTable:addRow(true, { bgColor = Helper.color.transparent })
-		row[2]:setColSpan(3):createText(ReadText(1118719, 21))
-
-		local row = menu.categoryTable:addRow(true, { bgColor = Helper.color.transparent })
-		row[2]:setColSpan(3):createButton({mouseOverText = ReadText(1118719, 32)}):setText(ReadText(1118719, 22))
-		row[2].handlers.onClick = menu.randomGS
-
-		-- <t id="11001">M Ship</t>
-		-- <t id="11002">L Ship</t>
-		local row = menu.categoryTable:addRow(true, { bgColor = Helper.color.transparent })
-		row[2]:createText(ReadText(1001, 11001), {halign = "center"})
-		row[3]:setColSpan(2):createText(ReadText(1001, 11002), {halign = "center"})
-
-		local row = menu.categoryTable:addRow(true, { bgColor = Helper.color.transparent })
-		row[2]:createButton({mouseOverText = ReadText(1118719, 33)}):setText(ReadText(1118719, 23))
-		row[2].handlers.onClick = menu.randomGS_fighter
-		row[3]:setColSpan(2):createButton({mouseOverText = ReadText(1118719, 34)}):setText(ReadText(1118719, 24))
-		row[3].handlers.onClick = menu.randomGS_commander
-
-		local row = menu.categoryTable:addRow(true, { bgColor = Helper.color.transparent })
-		row[2]:createButton({mouseOverText = ReadText(1118719, 35)}):setText(ReadText(1118719, 25))
-		row[2].handlers.onClick = menu.randomGS_prospector
-		row[3]:setColSpan(2):createButton({mouseOverText = ReadText(1118719, 36)}):setText(ReadText(1118719, 26))
-		row[3].handlers.onClick = menu.randomGS_miner
-
-		local row = menu.categoryTable:addRow(true, { bgColor = Helper.color.transparent })
-		row[2]:createButton({mouseOverText = ReadText(1118719, 37)}):setText(ReadText(1118719, 27))
-		row[2].handlers.onClick = menu.randomGS_trader
-		row[3]:setColSpan(2):createButton({mouseOverText = ReadText(1118719, 38)}):setText(ReadText(1118719, 28))
-		row[3].handlers.onClick = menu.randomGS_merchant
-	-- kuertee end
-
+	-- kuertee start: callback
+	if callbacks ["display_on_after_main_options"] then
+		for _, callback in ipairs (callbacks ["display_on_after_main_options"]) do
+			callback ()
+		end
 	end
+	-- kuertee end: callback
 
 	menu.categoryTable:setTopRow(menu.topRows.categoryTable)
 	menu.categoryTable:setSelectedRow(menu.selectedRows.categoryTable)
@@ -5440,449 +5373,33 @@ function menu.checkConstructionPlan(source, id, limitedmodulesused, onlineitems,
 	return false
 end
 
---kuertee start
--- function menu.getRandomFaction()
--- 	local factions = {}
--- 	local n = C.GetNumAllFactions(false)
--- 	local buf = ffi.new("const char*[?]", n)
--- 	n = C.GetAllFactions(buf, n, false)
--- 	for i = 0, n - 1 do
--- 		local id = ffi.string(buf[i])
--- 		table.insert(factions, id)
--- 	end
--- 	local random = math.random(1, #factions)
--- 	local faction = factions[random]
--- 	local primaryrace = GetFactionData(faction, "primaryrace")
--- 	return faction
--- end
--- function menu.getRandomSectorByFaction(faction)
--- 	local sectors = {}
--- 	Helper.ffiVLA(sectors, "UniverseID", C.GetNumSectorsByOwner, C.GetSectorsByOwner, faction)
--- 	local random = math.random(1, #sectors)
--- 	local sector = sectors[random]
--- 	return sector
--- end
-
-function menu.getRandomSector()
-	Helper.debugText("getRandomSector")
-	menu.universeSector(nil)
-	-- for _, sectorData in ipairs(universeSector_options) do
-	-- 	Helper.debugText(sectorData.id .. ": " .. sectorData.text)
-	-- end
-	-- cluster_14_sector001_macro: Argon Prime
-	-- cluster_100_sector001_macro: Asteroid Belt
-	-- cluster_26_sector001_macro: Atiya's Misfortune I
-	-- cluster_26_sector002_macro: Atiya's Misfortune III
-	-- cluster_608_sector001_macro: Atreus' Clouds
-	-- cluster_500_sector001_macro: Avarice I
-	-- cluster_500_sector003_macro: Avarice IV
-	-- cluster_500_sector002_macro: Avarice V Dead End
-	-- cluster_602_sector001_macro: Barren Shores
-	-- cluster_06_sector001_macro: Black Hole Sun IV
-	-- cluster_06_sector002_macro: Black Hole Sun V
-	-- cluster_115_sector001_macro: Brennan's Triumph
-	-- cluster_09_sector001_macro: Bright Promise
-	-- cluster_36_sector001_macro: Cardinal's Redress
-	-- cluster_20_sector001_macro: Company Regard
-	-- cluster_104_sector001_macro: Earth
-	-- cluster_02_sector001_macro: Eighteen Billion
-	-- cluster_417_sector001_macro: Eleventh Hour
-	-- cluster_424_sector001_macro: Emperor's Pride IV
-	-- cluster_424_sector002_macro: Emperor's Pride VI
-	-- cluster_402_sector001_macro: Family Kritt
-	-- cluster_418_sector001_macro: Family Nhuut
-	-- cluster_407_sector001_macro: Family Tkr
-	-- cluster_401_sector001_macro: Family Zhin
-	-- cluster_25_sector001_macro: Faulty Logic I
-	-- cluster_25_sector002_macro: Faulty Logic VII
-	-- cluster_421_sector001_macro: Fires of Defeat
-	-- cluster_49_sector001_macro: Frontier Edge
-	-- cluster_114_sector001_macro: Gaian Prophecy
-	-- cluster_48_sector001_macro: Getsu Fune
-	-- cluster_01_sector001_macro: Grand Exchange I
-	-- cluster_01_sector002_macro: Grand Exchange III
-	-- cluster_01_sector003_macro: Grand Exchange IV
-	-- cluster_603_sector001_macro: Great Reef
-	-- cluster_416_sector001_macro: Guiding Star V
-	-- cluster_416_sector002_macro: Guiding Star VII
-	-- cluster_29_sector001_macro: Hatikvah's Choice I
-	-- cluster_29_sector002_macro: Hatikvah's Choice III
-	-- cluster_425_sector001_macro: Heart of Acrimony I The Boneyard
-	-- cluster_411_sector001_macro: Heart of Acrimony II
-	-- cluster_31_sector001_macro: Heretic's End
-	-- cluster_19_sector001_macro: Hewa's Twin I
-	-- cluster_19_sector002_macro: Hewa's Twin II
-	-- cluster_42_sector001_macro: Hewa's Twin III
-	-- cluster_42_sector002_macro: Hewa's Twin IV The Cove
-	-- cluster_43_sector001_macro: Hewa's Twin V
-	-- cluster_24_sector001_macro: Holy Vision
-	-- cluster_15_sector001_macro: Ianamus Zura IV
-	-- cluster_15_sector002_macro: Ianamus Zura VII
-	-- cluster_107_sector001_macro: Jupiter
-	-- cluster_606_sector001_macro: Kingdom End I
-	-- cluster_35_sector001_macro: Lasting Vengeance
-	-- cluster_423_sector001_macro: Litany of Fury IX
-	-- cluster_423_sector002_macro: Litany of Fury XII
-	-- cluster_101_sector001_macro: Mars
-	-- cluster_16_sector001_macro: Matrix #451
-	-- cluster_415_sector001_macro: Matrix #598
-	-- cluster_33_sector001_macro: Matrix #79B
-	-- cluster_17_sector001_macro: Matrix #9
-	-- cluster_03_sector001_macro: Memory of Profit IX
-	-- cluster_39_sector001_macro: Memory of Profit X
-	-- cluster_609_sector001_macro: Menelaus' Oasis
-	-- cluster_106_sector001_macro: Mercury
-	-- cluster_30_sector001_macro: Morning Star III
-	-- cluster_46_sector001_macro: Morning Star IV
-	-- cluster_110_sector001_macro: Neptune
-	-- cluster_04_sector001_macro: Nopileos' Fortune II
-	-- cluster_04_sector002_macro: Nopileos' Fortune VI
-	-- cluster_604_sector001_macro: Ocean of Fantasy
-	-- cluster_116_sector001_macro: Oort Cloud
-	-- cluster_419_sector001_macro: Open Market
-	-- cluster_05_sector001_macro: Path to Profit
-	-- cluster_22_sector001_macro: Pious Mists II
-	-- cluster_37_sector001_macro: Pious Mists IV
-	-- cluster_38_sector001_macro: Pious Mists XI
-	-- cluster_111_sector001_macro: Pluto
-	-- cluster_11_sector001_macro: Pontifex's Claim
-	-- cluster_34_sector001_macro: Profit Center Alpha
-	-- cluster_606_sector002_macro: Reflected Stars
-	-- cluster_414_sector001_macro: Rhy's Defiance
-	-- cluster_607_sector001_macro: Rolk's Demise
-	-- cluster_23_sector001_macro: Sacred Relic
-	-- cluster_605_sector001_macro: Sanctuary of Darkness
-	-- cluster_108_sector001_macro: Saturn 1
-	-- cluster_108_sector003_macro: Saturn 2
-	-- cluster_112_sector001_macro: Savage Spur I
-	-- cluster_112_sector002_macro: Savage Spur II
-	-- cluster_21_sector001_macro: Scale Plate Green I
-	-- cluster_21_sector002_macro: Scale Plate Green VII
-	-- cluster_13_sector001_macro: Second Contact II Flashpoint
-	-- cluster_40_sector001_macro: Second Contact VII
-	-- cluster_41_sector001_macro: Second Contact XI
-	-- cluster_113_sector001_macro: Segaris
-	-- cluster_08_sector001_macro: Silent Witness I
-	-- cluster_44_sector001_macro: Silent Witness XI
-	-- cluster_45_sector001_macro: Silent Witness XII
-	-- cluster_32_sector001_macro: Tharka's Cascade XV
-	-- cluster_32_sector002_macro: Tharka's Cascade XVII
-	-- cluster_413_sector001_macro: Tharka's Ravine IV Tharka's Fall
-	-- cluster_412_sector001_macro: Tharka's Ravine VIII
-	-- cluster_410_sector001_macro: Tharka's Ravine XVI
-	-- cluster_409_sector001_macro: Tharka's Ravine XXIV
-	-- cluster_104_sector002_macro: The Moon
-	-- cluster_07_sector001_macro: The Reach
-	-- cluster_27_sector001_macro: The Void
-	-- cluster_408_sector002_macro: Thuruk's Demise II First Impact
-	-- cluster_408_sector001_macro: Thuruk's Demise III
-	-- cluster_108_sector002_macro: Titan
-	-- cluster_606_sector003_macro: Towering Wave
-	-- cluster_18_sector001_macro: Trinity Sanctum III
-	-- cluster_47_sector001_macro: Trinity Sanctum VII
-	-- cluster_12_sector001_macro: True Sight
-	-- cluster_50_sector001_macro: Turquoise Sea IX
-	-- cluster_50_sector002_macro: Turquoise Sea X
-	-- cluster_420_sector001_macro: Two Grand
-	-- cluster_10_sector001_macro: Unholy Retribution
-	-- cluster_504_sector001_macro: Unknown System
-	-- cluster_109_sector001_macro: Uranus
-	-- cluster_102_sector001_macro: Venus
-	-- cluster_601_sector001_macro: Watchful Gaze
-	-- cluster_501_sector001_macro: Windfall I Union Summit
-	-- cluster_502_sector001_macro: Windfall III The Hoard
-	-- cluster_503_sector001_macro: Windfall IV Aurora's Dream
-	-- cluster_400_sector001_macro: Wretched Skies IV Family Valka
-	-- cluster_403_sector001_macro: Wretched Skies V Family Phi
-	-- cluster_422_sector001_macro: Wretched Skies X
-	-- cluster_404_sector001_macro: Zyarth's Dominion I
-	-- cluster_405_sector001_macro: Zyarth's Dominion IV
-	-- cluster_406_sector001_macro: Zyarth's Dominion X
-	local random = math.random(1, #universeSector_options - 1) -- last item is "random"
-	return universeSector_options[random].id
-end
-function menu.getRaceFromSector(sector)
-	local factionsBySector = {
-		cluster_409_sector001_macro = 'freesplit',
-		cluster_43_sector001_macro = 'teladi',
-		cluster_42_sector002_macro = 'ownerless',
-		cluster_42_sector001_macro = 'teladi',
-		cluster_18_sector001_macro = 'paranid',
-		cluster_417_sector001_macro = 'argon',
-		cluster_05_sector001_macro = 'teladi',
-		cluster_37_sector001_macro = 'paranid',
-		cluster_33_sector001_macro = 'xenon',
-		cluster_410_sector001_macro = 'freesplit',
-		cluster_08_sector001_macro = 'argon',
-		cluster_50_sector002_macro = 'ownerless',
-		cluster_50_sector001_macro = 'ownerless',
-		cluster_12_sector001_macro = 'holyorder',
-		cluster_49_sector001_macro = 'ownerless',
-		cluster_415_sector001_macro = 'xenon',
-		cluster_423_sector001_macro = 'paranid',
-		cluster_423_sector002_macro = 'paranid',
-		cluster_02_sector001_macro = 'teladi',
-		cluster_40_sector001_macro = 'antigone',
-		cluster_408_sector001_macro = 'freesplit',
-		cluster_408_sector002_macro = 'freesplit',
-		cluster_30_sector001_macro = 'argon',
-		cluster_604_sector001_macro = 'boron',
-		cluster_405_sector001_macro = 'split',
-		cluster_606_sector003_macro = 'boron',
-		cluster_606_sector001_macro = 'boron',
-		cluster_606_sector002_macro = 'boron',
-		cluster_406_sector001_macro = 'split',
-		cluster_404_sector001_macro = 'split',
-		cluster_602_sector001_macro = 'boron',
-		cluster_416_sector001_macro = 'argon',
-		cluster_416_sector002_macro = 'argon',
-		cluster_41_sector001_macro = 'antigone',
-		cluster_601_sector001_macro = 'ownerless',
-		cluster_111_sector001_macro = 'terran',
-		cluster_500_sector001_macro = 'scavenger',
-		cluster_500_sector003_macro = 'scavenger',
-		cluster_500_sector002_macro = 'scavenger',
-		cluster_110_sector001_macro = 'terran',
-		cluster_112_sector002_macro = 'xenon',
-		cluster_112_sector001_macro = 'xenon',
-		cluster_104_sector001_macro = 'terran',
-		cluster_104_sector002_macro = 'terran',
-		cluster_605_sector001_macro = 'ownerless',
-		cluster_19_sector001_macro = 'teladi',
-		cluster_19_sector002_macro = 'teladi',
-		cluster_31_sector001_macro = 'ownerless',
-		cluster_420_sector001_macro = 'teladi',
-		cluster_48_sector001_macro = 'ownerless',
-		cluster_403_sector001_macro = 'split',
-		cluster_102_sector001_macro = 'terran',
-		cluster_113_sector001_macro = 'pioneers',
-		cluster_101_sector001_macro = 'terran',
-		cluster_501_sector001_macro = 'loanshark',
-		cluster_27_sector001_macro = 'antigone',
-		cluster_418_sector001_macro = 'split',
-		cluster_419_sector001_macro = 'teladi',
-		cluster_01_sector002_macro = 'teladi',
-		cluster_01_sector003_macro = 'teladi',
-		cluster_01_sector001_macro = 'teladi',
-		cluster_26_sector001_macro = 'xenon',
-		cluster_26_sector002_macro = 'xenon',
-		cluster_108_sector003_macro = 'ownerless',
-		cluster_108_sector002_macro = 'terran',
-		cluster_108_sector001_macro = 'terran',
-		cluster_25_sector002_macro = 'xenon',
-		cluster_25_sector001_macro = 'xenon',
-		cluster_03_sector001_macro = 'teladi',
-		cluster_20_sector001_macro = 'teladi',
-		cluster_114_sector001_macro = 'pioneers',
-		cluster_425_sector001_macro = 'ownerless',
-		cluster_412_sector001_macro = 'freesplit',
-		cluster_502_sector001_macro = 'loanshark',
-		cluster_17_sector001_macro = 'xenon',
-		cluster_424_sector002_macro = 'xenon',
-		cluster_424_sector001_macro = 'xenon',
-		cluster_407_sector001_macro = 'freesplit',
-		cluster_44_sector001_macro = 'ownerless',
-		cluster_24_sector001_macro = 'holyorder',
-		cluster_16_sector001_macro = 'xenon',
-		cluster_116_sector001_macro = 'terran',
-		cluster_608_sector001_macro = 'boron',
-		cluster_106_sector001_macro = 'terran',
-		cluster_22_sector001_macro = 'paranid',
-		cluster_422_sector001_macro = 'paranid',
-		cluster_603_sector001_macro = 'boron',
-		cluster_421_sector001_macro = 'freesplit',
-		cluster_107_sector001_macro = 'terran',
-		cluster_609_sector001_macro = 'boron',
-		cluster_503_sector001_macro = 'loanshark',
-		cluster_34_sector001_macro = 'teladi',
-		cluster_411_sector001_macro = 'freesplit',
-		cluster_13_sector001_macro = 'antigone',
-		cluster_46_sector001_macro = 'argon',
-		cluster_607_sector001_macro = 'boron',
-		cluster_23_sector001_macro = 'paranid',
-		cluster_413_sector001_macro = 'xenon',
-		cluster_14_sector001_macro = 'argon',
-		cluster_100_sector001_macro = 'terran',
-		cluster_115_sector001_macro = 'pioneers',
-		cluster_11_sector001_macro = 'holyorder',
-		cluster_29_sector002_macro = 'argon',
-		cluster_29_sector001_macro = 'hatikvah',
-		cluster_28_sector001_macro = 'antigone',
-		cluster_32_sector002_macro = 'xenon',
-		cluster_32_sector001_macro = 'xenon',
-		cluster_504_sector001_macro = 'ownerless',
-		cluster_35_sector001_macro = 'holyorder',
-		cluster_414_sector001_macro = 'xenon',
-		cluster_09_sector001_macro = 'teladi',
-		cluster_401_sector001_macro = 'split',
-		cluster_38_sector001_macro = 'paranid',
-		cluster_47_sector001_macro = 'paranid',
-		cluster_39_sector001_macro = 'teladi',
-		cluster_10_sector001_macro = 'paranid',
-		cluster_36_sector001_macro = 'holyorder',
-		cluster_21_sector001_macro = 'xenon',
-		cluster_21_sector002_macro = 'xenon',
-		cluster_45_sector001_macro = 'ownerless',
-		cluster_07_sector001_macro = 'argon',
-		cluster_06_sector001_macro = 'argon',
-		cluster_06_sector002_macro = 'argon',
-		cluster_402_sector001_macro = 'split',
-		cluster_04_sector001_macro = 'ownerless',
-		cluster_04_sector002_macro = 'ownerless',
-		cluster_109_sector001_macro = 'terran',
-		cluster_400_sector001_macro = 'split',
-		cluster_15_sector001_macro = 'teladi',
-		cluster_15_sector002_macro = 'teladi',
-	}
-	local faction = factionsBySector[sector]
-	local raceByFaction = {
-		alliance = "paranid",
-		antigone = "argon",
-		argon = "argon",
-		buccaneers = "paranid",
-		hatikvah = "argon",
-		holyorder = "paranid",
-		ministry = "teladi",
-		paranid = "paranid",
-		scaleplate = "teladi",
-		teladi = "teladi",
-		trinity = "paranid",
-		court = "split",
-		freesplit = "split",
-		split = "split",
-		pioneers = "terran",
-		terran = "terran",
-		loanshark = "argon",
-		scavenger = "argon",
-		boron = "boron",
-		fallensplit = "split",
-		yaki = "argon",
-		khaak = "khaak",
-		xenon = "xenon",
-		player = "argon",
-	}
-	local race = raceByFaction[faction]
-	return race
-end
-function menu.getPlayerMacroFromSector(sector)
-	local race = menu.getRaceFromSector(sector)
-
-	local property = config.categories[1].properties[2]
-	local buf = ffi.new("CustomGameStart" .. property.propertyType .. "PropertyState[1]")
-	property.value = property.get(menu.customgamestart, property.id, buf)
-	property.state = ffi.string(buf[0].state)
-	property.defaultvalue = buf[0].defaultvalue
-	local options = ffi.string(buf[0].options)
-
-	local macros = {}
-	local macrosByRace = {}
-	for macro in string.gmatch(options, "[%w_]+") do
-		local race, racename, female, basemacro = GetMacroData(macro, "entityrace", "entityracename", "entityfemale", "basemacro")
-		table.insert(macros, basemacro)
-		if not macrosByRace[race] then
-			macrosByRace[race] = {}
-		end
-		table.insert(macrosByRace[race], basemacro)
+-- kuertee start:
+function menu.registerCallback (callbackName, callbackFunction)
+	-- note 1: format is generally [function name]_[action]. e.g.: in kuertee_menu_transporter, "display_on_set_room_active" overrides the room's active property with the return of the callback.
+	-- note 2: events have the word "_on_" followed by a PRESENT TENSE verb. e.g.: in kuertee_menu_transporter, "display_on_set_buttontable" is called after all of the rows of buttontable are set.
+	-- note 3: new callbacks can be added or existing callbacks can be edited. but commit your additions/changes to the mod's GIT repository.
+	-- note 4: search for the callback names to see where they are executed.
+	-- note 5: if a callback requires a return value, return it in an object var. e.g. "display_on_set_room_active" requires a return of {active = true | false}.
+	if callbacks [callbackName] == nil then
+		callbacks [callbackName] = {}
 	end
-
-	local macro
-	if macrosByRace[race] then
-		local random = math.random(1, #macrosByRace[race])
-		macro = macrosByRace[race][random]
-	end
-	if not macro then
-		local random = math.random(1, #macros)
-		macro = macros[random]
-	end
-	return macro
+	table.insert (callbacks [callbackName], callbackFunction)
 end
--- <t id="22">Random Person</t>
--- <t id="23">Random Fighter</t>
--- <t id="24">Random Commander</t>
--- <t id="25">Random Prospector</t>
--- <t id="26">Random Miner</t>
--- <t id="27">Random Trader</t>
--- <t id="28">Random Merchant</t>
-function menu.getRandomGS()
-	Helper.debugText("randomGS")
-	local sector = menu.getRandomSector()
-	Helper.debugText("sector: " .. tostring(sector))
-	C.SetCustomGameStartStringProperty(menu.customgamestart, "sector", sector)
 
-	local buf = ffi.new("CustomGameStartPosRotPropertyState[1]")
-	local sectoroffset = C.GetCustomGameStartPosRotProperty(menu.customgamestart, "offset", buf)
-
-	local knownspaceproperty = menu.findProperty("playerknownspace")
-	if knownspaceproperty then
-		menu.initPropertyValue(knownspaceproperty)
-		for i = #knownspaceproperty.value, 1, -1 do
-			menu.setKnownValue("playerknownspace", knownspaceproperty.value[i].id, false)
-			Helper.debugText("randomGS knownspaceproperty.value[i].id (pre remove): " .. tostring(knownspaceproperty.value[i].id))
-			table.remove(knownspaceproperty.value, i)
-		end
-		for i = #knownspaceproperty.value, 1, -1 do
-			Helper.debugText("randomGS knownspaceproperty.value[i].id (post remove): " .. tostring(knownspaceproperty.value[i].id))
+function menu.loadModLua()
+	local modLuaName = "customgame_uix"
+	local extensions = GetExtensionList()
+	if #extensions then
+		for _, extension in ipairs(extensions) do
+			if (not extension.error) and extension.enabled then
+				local file = "extensions." .. extension.location:gsub("%\\", "") .. ".ui." .. modLuaName
+				if pcall(function() require(file) end) then
+					DebugError(file .. " loaded")
+				end
+			end
 		end
 	end
-	menu.setKnownValue("playerknownspace", sector, true)
-	menu.saveKnownValue("playerknownspace")
-
-	local playerMacro = menu.getPlayerMacroFromSector(sector)
-	-- local playerMacro = menu.getPlayerMacroFromSector("cluster_17_sector001_macro") -- xenon sector
-	Helper.debugText("playerMacro: " .. tostring(playerMacro))
-
-	C.SetCustomGameStartStringProperty(menu.customgamestart, "player", playerMacro)
-	local isfemale = GetMacroData(playerMacro, "entityfemale")
-	C.SetCustomGameStartBoolProperty(menu.customgamestart, "playerfemale", isfemale)
-
-	local random = math.random(10000, 200000)
-	C.SetCustomGameStartMoneyProperty(menu.customgamestart, "playermoney", random)
-
-	local spacesuitmacro = GetMacroData(playerMacro, "spacesuitmacro")
-	C.SetCustomGameStartShipAndEmptyLoadout(menu.customgamestart, "ship", "shiploadout", spacesuitmacro)
-
-	C.SetCustomGameStartStringProperty(menu.customgamestart, "playername", "kuertee_random_gamestart")
 end
-function menu.randomGS()
-	menu.getRandomGS()
-	menu.buttonNewGame()
-end
-function menu.randomGS_fighter()
-	menu.getRandomGS()
-	C.SetCustomGameStartMoneyProperty(menu.customgamestart, "playermoney", 20000)
-	C.SetCustomGameStartStringProperty(menu.customgamestart, "playername", "kuertee_random_gamestart_fighter")
-	menu.buttonNewGame()
-end
-function menu.randomGS_commander()
-	menu.getRandomGS()
-	C.SetCustomGameStartMoneyProperty(menu.customgamestart, "playermoney", 10000)
-	C.SetCustomGameStartStringProperty(menu.customgamestart, "playername", "kuertee_random_gamestart_commander")
-	menu.buttonNewGame()
-end
-function menu.randomGS_prospector()
-	menu.getRandomGS()
-	C.SetCustomGameStartMoneyProperty(menu.customgamestart, "playermoney", 20000)
-	C.SetCustomGameStartStringProperty(menu.customgamestart, "playername", "kuertee_random_gamestart_prospector")
-	menu.buttonNewGame()
-end
-function menu.randomGS_miner()
-	menu.getRandomGS()
-	C.SetCustomGameStartMoneyProperty(menu.customgamestart, "playermoney", 10000)
-	C.SetCustomGameStartStringProperty(menu.customgamestart, "playername", "kuertee_random_gamestart_miner")
-	menu.buttonNewGame()
-end
-function menu.randomGS_trader()
-	menu.getRandomGS()
-	C.SetCustomGameStartMoneyProperty(menu.customgamestart, "playermoney", 200000)
-	C.SetCustomGameStartStringProperty(menu.customgamestart, "playername", "kuertee_random_gamestart_trader")
-	menu.buttonNewGame()
-end
-function menu.randomGS_merchant()
-	menu.getRandomGS()
-	C.SetCustomGameStartMoneyProperty(menu.customgamestart, "playermoney", 200000)
-	C.SetCustomGameStartStringProperty(menu.customgamestart, "playername", "kuertee_random_gamestart_merchant")
-	menu.buttonNewGame()
-end
---kuertee end
+-- kuertee end
 
 init()

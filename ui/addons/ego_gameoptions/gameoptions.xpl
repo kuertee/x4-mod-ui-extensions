@@ -289,8 +289,18 @@ local function init()
 			menu.contextMenuData = { width = Helper.scaleX(400), y = Helper.viewHeight / 2 }
 		end
 	end
+
+	-- kuertee start:
+	menu.init_kuertee()
+	-- kuertee end
 end
 
+-- kuertee start:
+function menu.init_kuertee ()
+	menu.loadModLua()
+	DebugError("gameoptions.xpl.init - kuertee")
+end
+-- kuertee end
 
 --- config ---
 
@@ -9088,5 +9098,34 @@ function menu.onCloseElement(dueToClose)
 		end
 	end
 end
+
+-- kuertee start:
+function menu.registerCallback (callbackName, callbackFunction)
+	-- note 1: format is generally [function name]_[action]. e.g.: in kuertee_menu_transporter, "display_on_set_room_active" overrides the room's active property with the return of the callback.
+	-- note 2: events have the word "_on_" followed by a PRESENT TENSE verb. e.g.: in kuertee_menu_transporter, "display_on_set_buttontable" is called after all of the rows of buttontable are set.
+	-- note 3: new callbacks can be added or existing callbacks can be edited. but commit your additions/changes to the mod's GIT repository.
+	-- note 4: search for the callback names to see where they are executed.
+	-- note 5: if a callback requires a return value, return it in an object var. e.g. "display_on_set_room_active" requires a return of {active = true | false}.
+	if callbacks [callbackName] == nil then
+		callbacks [callbackName] = {}
+	end
+	table.insert (callbacks [callbackName], callbackFunction)
+end
+
+function menu.loadModLua()
+	local modLuaName = "gameoptions_uix"
+	local extensions = GetExtensionList()
+	if #extensions then
+		for _, extension in ipairs(extensions) do
+			if (not extension.error) and extension.enabled then
+				local file = "extensions." .. extension.location:gsub("%\\", "") .. ".ui." .. modLuaName
+				if pcall(function() require(file) end) then
+					DebugError(file .. " loaded")
+				end
+			end
+		end
+	end
+end
+-- kuertee end
 
 init()

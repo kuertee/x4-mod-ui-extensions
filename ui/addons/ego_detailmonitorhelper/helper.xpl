@@ -707,61 +707,9 @@ end
 
 -- kuertee start:
 function Helper.init_kuertee ()
-	DebugError("menu_helper.xpl.init - kuertee")
+	Helper.loadModLua()
 	Helper.SWIUI_Init()
-end
-
-function Helper.getMenu(menuName)
-	if Menus then
-		for _, menu in ipairs(Menus) do
-			if menu.name == menuName then
-				return menu
-			end
-		end
-	end
-	return nil
-end
-
-function Helper.registerCallback (callbackName, callbackFunction)
-	-- note 1: format is generally [function name]_[action]. e.g.: in kuertee_menu_transporter, "display_on_set_room_active" overrides the room's active property with the return of the callback.
-	-- note 2: events have the word "_on_" followed by a PRESET TENSE verb. e.g.: in kuertee_menu_transporter, "display_on_set_buttontable" is called after all of the rows of buttontable are set.
-	-- note 3: new callbacks can be added or existing callbacks can be edited. but commit your additions/changes to the mod's GIT repository.
-	-- note 4: search for the callback names to see where they are executed.
-	-- note 5: if a callback requires a return value, return it in an object var. e.g. "display_on_set_room_active" requires a return of {active = true | false}.
-	-- available callbacks:
-	-- name = createLSOStorageNode_get_ware_name(ware)
-	-- onExpandLSOStorageNode_list_incoming_trade(row, name, reservation)
-	--
-	if callbacks [callbackName] == nil then
-		callbacks [callbackName] = {}
-	end
-	table.insert (callbacks [callbackName], callbackFunction)
-end
-
-function Helper.debugText (data1, data2, indent, isForced)
-	local isDebug = false
-	if isDebug == true or isForced == true then
-		if indent == nil then
-			indent = ""
-		end
-		if type (data1) == "table" then
-			for i, value in pairs (data1) do
-				DebugError ("kuertee " .. indent .. tostring (i) .. ReadText (1001, 120) .. " " .. tostring (value))
-				if type (value) == "table" then
-					Helper.debugText(value, nil, indent .. "    ", isForced)
-				end
-			end
-		else
-			DebugError ("kuertee " .. indent .. tostring (data1) .. " (" .. type(data1) .. ")")
-		end
-		if data2 then
-			Helper.debugText(data2, nil, indent .. "    ", isForced)
-		end
-	end
-end
-
-function Helper.debugText_forced (data1, data2, indent)
-	return Helper.debugText(data1, data2, indent, true)
+	DebugError("menu_helper.xpl.init - kuertee")
 end
 -- kuertee end
 
@@ -12747,7 +12695,7 @@ function Helper.customGraph_onClickGraph(data, refreshCallback)
 end
 -- kuertee end: custom graph menu
 
--- kuertee start: load lua
+-- kuertee start: SWI load lua
 function Helper.SWIUI_LoadLua(_, file)
 	Helper.debugText("Helper.SWIUI_LoadLua", file)
     require(file)
@@ -12760,6 +12708,76 @@ function Helper.SWIUI_Init()
 	AddUITriggeredEvent("SWIUI_OnInit", "Init")
 end
 -- kuertee end: load lua
+
+-- kuertee start:
+function Helper.getMenu(menuName)
+	if Menus then
+		for _, menu in ipairs(Menus) do
+			if menu.name == menuName then
+				return menu
+			end
+		end
+	end
+	return nil
+end
+
+function Helper.registerCallback (callbackName, callbackFunction)
+	-- note 1: format is generally [function name]_[action]. e.g.: in kuertee_menu_transporter, "display_on_set_room_active" overrides the room's active property with the return of the callback.
+	-- note 2: events have the word "_on_" followed by a PRESET TENSE verb. e.g.: in kuertee_menu_transporter, "display_on_set_buttontable" is called after all of the rows of buttontable are set.
+	-- note 3: new callbacks can be added or existing callbacks can be edited. but commit your additions/changes to the mod's GIT repository.
+	-- note 4: search for the callback names to see where they are executed.
+	-- note 5: if a callback requires a return value, return it in an object var. e.g. "display_on_set_room_active" requires a return of {active = true | false}.
+	-- available callbacks:
+	-- name = createLSOStorageNode_get_ware_name(ware)
+	-- onExpandLSOStorageNode_list_incoming_trade(row, name, reservation)
+	--
+	if callbacks [callbackName] == nil then
+		callbacks [callbackName] = {}
+	end
+	table.insert (callbacks [callbackName], callbackFunction)
+end
+
+function Helper.debugText (data1, data2, indent, isForced)
+	local isDebug = false
+	if isDebug == true or isForced == true then
+		if indent == nil then
+			indent = ""
+		end
+		if type (data1) == "table" then
+			for i, value in pairs (data1) do
+				DebugError ("kuertee " .. indent .. tostring (i) .. ReadText (1001, 120) .. " " .. tostring (value))
+				if type (value) == "table" then
+					Helper.debugText(value, nil, indent .. "    ", isForced)
+				end
+			end
+		else
+			DebugError ("kuertee " .. indent .. tostring (data1) .. " (" .. type(data1) .. ")")
+		end
+		if data2 then
+			Helper.debugText(data2, nil, indent .. "    ", isForced)
+		end
+	end
+end
+
+function Helper.debugText_forced (data1, data2, indent)
+	return Helper.debugText(data1, data2, indent, true)
+end
+
+function Helper.loadModLua()
+	local modLuaName = "helper_uix"
+	local extensions = GetExtensionList()
+	if #extensions then
+		for _, extension in ipairs(extensions) do
+			if (not extension.error) and extension.enabled then
+				local file = "extensions." .. extension.location:gsub("%\\", "") .. ".ui." .. modLuaName
+				if pcall(function() require(file) end) then
+					DebugError(file .. " loaded")
+				end
+			end
+		end
+	end
+end
+-- kuertee end
 
 ---------------------------------------------------------------------------------
 -- Init

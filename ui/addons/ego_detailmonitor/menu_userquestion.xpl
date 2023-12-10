@@ -64,6 +64,7 @@ end
 
 -- kuertee start:
 function menu.init_kuertee ()
+	menu.loadModLua()
 	DebugError("menu_userquestion.xpl.init - kuertee")
 end
 -- kuertee end
@@ -438,6 +439,21 @@ function menu.createTable_kuertee(frame, tableProperties)
 		end
 	end
 	return ftable
+end
+
+function menu.loadModLua()
+	local modLuaName = "menu_userquestion_uix"
+	local extensions = GetExtensionList()
+	if #extensions then
+		for _, extension in ipairs(extensions) do
+			if (not extension.error) and extension.enabled then
+				local file = "extensions." .. extension.location:gsub("%\\", "") .. ".ui." .. modLuaName
+				if pcall(function() require(file) end) then
+					DebugError(file .. " loaded")
+				end
+			end
+		end
+	end
 end
 -- kuertee end
 
