@@ -5,12 +5,8 @@ by kuertee. Contributors: Forleyor, Mycu, Runekn, AlexandreTK.
 
 Updates
 =======
-v6.2.008, 9 Dec 2023:
--New feature: New call back to the Ship Configuration menu for another unreleased mod.
-
-v6.2.007, 4 Dec 2023:
--Tweak: The Custom Actions/Orders are now listed after the trade orders.
--New features: Ship Configuration menu and Encyclopedia menu callbacks for a new unreleased mod.
+v6.2.009, 17 Dec 2023:
+-New feature: Lua files of mods are now loaded when the base-game lua files are loaded. i.e. They don't need a signal from the Mission Director like in previous versions. Mods that use the old method still work, so there's no need for the mod author to update their mod. This new version allows modifications to lua files that are not in-game specific. E.g. customgame.lua.
 
 Instructions for players
 ========================
@@ -21,7 +17,7 @@ Extracting the package from Nexus Mods will extract it to "game/extensions/kuert
 
 Instructions for developers
 ===========================
-The gist is:
+An overview on how to mod for UIX:
 1. Install the mod as a player.
 2. Copy the "game/extensions/kuertee_ui_extensions/ui" folder into the "game/ui" folder. This will overwrite UIX's XPL files into the game.
 3. Launch the game with the "-prefersinglefiles" option. This will make the game use UIX XPL files instead of the base game's corresponding files that are in its cat/dat files.
@@ -38,6 +34,14 @@ An an alternative installation instructions for advanced developers:
 5. We'll coordinate release dates so that the new UIX mod with your callbacks is released near the time you release your mod.
 
 Any questions, it's best to @ me on Egosoft's unofficial Discord modding channel: https://discord.gg/RzAGhcY
+
+Mod-specific lua files
+======================
+The actual lua that modifies the UI need to exist in the mod's lua file in the mod's folder.
+The file needs to be named the lua file it will be modding.
+Extract and examine "kuertee_uix_mod_sample.ZIP".
+It adds a "Hello world" menu item in both the left and right side bars of the Map Menu.
+In this example, the lua file is named: "menu_map_uix.lua" because it will be modding the base-game's "menu_map.lua" file.
 
 Features
 ========
@@ -166,6 +170,13 @@ Troubleshooting
 
 History
 =======
+v6.2.008, 9 Dec 2023:
+-New feature: New call back to the Ship Configuration menu for another unreleased mod.
+
+v6.2.007, 4 Dec 2023:
+-Tweak: The Custom Actions/Orders are now listed after the trade orders.
+-New features: Ship Configuration menu and Encyclopedia menu callbacks for a new unreleased mod.
+
 v6.2.005, 18 Oct 2023:
 -Bug-fix: "Station Configuration > Configure individual buy offers" menu was broken without my Trade Analytics mod.
 
