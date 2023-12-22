@@ -12862,9 +12862,7 @@ function Helper.initModLuas(menuName)
 		for _, extension in ipairs(extensionsToRemove) do
 			table.remove(menuData.failedByExtension, extension)
 		end
-		if isModLuaInited then
-			AddUITriggeredEvent("uix_mod_lua", "init", menuName)
-		end
+		AddUITriggeredEvent("uix_mod_lua", "init", menuName)
 	end
 end
 -- kuertee end
