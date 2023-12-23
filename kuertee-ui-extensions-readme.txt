@@ -5,8 +5,9 @@ by kuertee. Contributors: Forleyor, Mycu, Runekn, AlexandreTK.
 
 Updates
 =======
-v6.2.009, 17 Dec 2023:
--New feature: Lua files of mods are now loaded when the base-game lua files are loaded. i.e. They don't need a signal from the Mission Director like in previous versions. Mods that use the old method still work, so there's no need for the mod author to update their mod. This new version allows modifications to lua files that are not in-game specific. E.g. customgame.lua.
+v6.2.0093, 24 Dec 2023:
+-Bug-fix: Trigger an init event from UIX even if no mods have custom lua files loaded in case the event is required by a mod's MD.
+-Bug-fix: The github releases were crashing the game due to github changing the line feed character in the XMLs and likely in the cat/dat files. ref: https://docs.github.com/en/get-started/getting-started-with-git/configuring-git-to-handle-line-endings
 
 Instructions for players
 ========================
@@ -170,6 +171,9 @@ Troubleshooting
 
 History
 =======
+v6.2.009, 17 Dec 2023:
+-New feature: Lua files of mods are now loaded when the base-game lua files are loaded. i.e. They don't need a signal from the Mission Director like in previous versions. Mods that use the old method still work, so there's no need for the mod author to update their mod. This new version allows modifications to lua files that are not in-game specific. E.g. customgame.lua.
+
 v6.2.008, 9 Dec 2023:
 -New feature: New call back to the Ship Configuration menu for another unreleased mod.
 
