@@ -6615,7 +6615,18 @@ function menu.getContainerNameAndColors(container, iteration, issquadleader, sho
 		bgcolor = menu.darkgrey
 	end
 
-	if not menu.mode then 
+    -- mycu start: callback
+    if callbacks ["getContainerNameAndColors_on_name_construct"] then
+        for _, callback in ipairs (callbacks ["getContainerNameAndColors_on_name_construct"]) do
+            local result = callback (container, name)
+            if result then
+                name = result.name
+            end
+        end
+    end
+    -- mycu end: callback
+
+	if not menu.mode then
 		if convertedContainer == menu.softtarget then
 			name = config.softtargetmarker_l .. name
 			font = Helper.standardFontBold
