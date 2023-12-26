@@ -801,7 +801,11 @@ Helper.validSaveFilenames["quicksave"] = true
 for i = 1, 3 do
 	Helper.validSaveFilenames[string.format("autosave_%02d", i)] = true
 end
-for i = 1, 10 do
+
+-- kuertee start: more save games
+-- for i = 1, 10 do
+for i = 1, 20 do
+-- kuertee end: more save games
 	Helper.validSaveFilenames[string.format("save_%03d", i)] = true
 end
 
