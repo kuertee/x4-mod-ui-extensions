@@ -5,6 +5,9 @@ by kuertee. Contributors: Forleyor, Mycu, Runekn, AlexandreTK.
 
 Updates
 =======
+v6.2.010, 28 Dec 2023:
+-New feature: New callback in the Map Menu for an upcoming mod.
+
 v6.2.0093, 24 Dec 2023:
 -Bug-fix: Trigger an init event from UIX even if no mods have custom lua files loaded in case the event is required by a mod's MD.
 -Bug-fix: The github releases were crashing the game due to github changing the line feed character in the XMLs and likely in the cat/dat files. ref: https://docs.github.com/en/get-started/getting-started-with-git/configuring-git-to-handle-line-endings
