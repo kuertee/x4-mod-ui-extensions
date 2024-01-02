@@ -245,7 +245,7 @@ end
 -- kuertee start:
 function menu.init_kuertee ()
 	menu.loadModLuas()
-	DebugError("uix: menu_encyclopedia.xpl.init")
+	DebugError("uix init success: " .. tostring(debug.getinfo(init).source))
 end
 -- kuertee end
 

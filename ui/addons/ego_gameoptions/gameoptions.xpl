@@ -250,6 +250,10 @@ local menu = {
 	searchtext = "",
 }
 
+-- kuertee start:
+local callbacks = {}
+-- kuertee end:
+
 local function init()
 	-- register callbacks
 	RegisterEvent("gfx_ok", menu.onGfxDone)
@@ -298,7 +302,7 @@ end
 -- kuertee start:
 function menu.init_kuertee ()
 	menu.loadModLuas()
-	DebugError("uix: gameoptions.xpl.init")
+	DebugError("uix init success: " .. tostring(debug.getinfo(init).source))
 end
 -- kuertee end
 
@@ -2342,6 +2346,7 @@ function menu.loadSaveCallback(_, filename)
 		DebugError("Lua Event 'loadSave' got an invalid filename '" .. tostring(filename) .. "'.")
 		return
 	end
+
 	C.SkipNextStartAnimation()
 	menu.delayedLoadGame = filename
 	menu.displayInit()
@@ -2663,6 +2668,29 @@ end
 --- helper functions ---
 
 function menu.addSavegameRow(ftable, savegame, name, slot)
+	-- kuertee start: callback
+	local isSaveFileOk = true
+	if callbacks ["addSavegameRow_isListSaveGame"] then
+		for _, callback in ipairs (callbacks ["addSavegameRow_isListSaveGame"]) do
+			isSaveFileOk = callback(ftable, savegame, name, slot)
+			if not isSaveFileOk then
+				break
+			end
+		end
+	end
+	if not isSaveFileOk then
+		return 0
+	end
+	-- kuertee end: callback
+
+	-- kuertee start: callback
+	if callbacks ["addSavegameRow_changeSaveGameDisplayName"] then
+		for _, callback in ipairs (callbacks ["addSavegameRow_changeSaveGameDisplayName"]) do
+			name = callback(ftable, savegame, name, slot, name)
+		end
+	end
+	-- kuertee end: callback
+
 	local invalid = false
 	if menu.currentOption == "load" then
 		invalid = savegame.error or savegame.invalidgameid or savegame.invalidversion or savegame.invalidpatches
@@ -2682,6 +2710,7 @@ function menu.addSavegameRow(ftable, savegame, name, slot)
 		row[2].properties.halign = "right"
 	end
 	local nametruncated = TruncateText(name, config.fontBold, Helper.scaleFont(config.font, config.standardFontSize), row[3]:getWidth() - Helper.scaleX(config.standardTextOffsetX))
+
 	local mouseovertext = ""
 	if nametruncated ~= name then
 		mouseovertext = name
@@ -2701,7 +2730,8 @@ function menu.addSavegameRow(ftable, savegame, name, slot)
 		end
 	end
 
-	local icon = row[3]:createIcon("solid", { width = row[3]:getWidth(), height = height, color = { r = 0, g = 0, b = 0, a = 1 }, scaling = false, mouseOverText = mouseovertext }):setText(warningicon .. nametruncated, (not invalid) and config.standardTextProperties or config.disabledTextProperties)
+	icon = row[3]:createIcon("solid", { width = row[3]:getWidth(), height = height, color = { r = 0, g = 0, b = 0, a = 1 }, scaling = false, mouseOverText = mouseovertext }):setText(warningicon .. nametruncated, (not invalid) and config.standardTextProperties or config.disabledTextProperties)
+
 	row[3].properties.text.font = config.fontBold
 	row[3].properties.text.scaling = true
 	if invalid then
@@ -2785,6 +2815,14 @@ function menu.cleanup()
 	menu.frameOffsetY = nil
 
 	menu.table = {}
+
+	-- kuertee start: callback
+	if callbacks ["cleanup"] then
+		for _, callback in ipairs (callbacks ["cleanup"]) do
+			callback()
+		end
+	end
+	-- kuertee end: callback
 end
 
 function menu.createOptionsFrame(extrawide)
@@ -3387,6 +3425,14 @@ function menu.submenuHandler(optionParameter)
 	if optionParameter ~= "main" then
 		C.HidePromo()
 	end
+
+	-- kuertee start: callback
+	if callbacks ["submenuHandler_preDisplayOptions"] then
+		for _, callback in ipairs (callbacks ["submenuHandler_preDisplayOptions"]) do
+			callback(optionParameter)
+		end
+	end
+	-- kuertee end: callback
 
 	if optionParameter == "main" then
 		if menu.isStartmenu then
@@ -5653,6 +5699,15 @@ function menu.loadGameCallback(filename, checked)
 		table.insert(menu.history, 1, { optionParameter = menu.currentOption, topRow = GetTopRow(menu.optionTable), selectedOption = filename })
 		menu.displayUserQuestion(ReadText(1001, 2604) .. " - " .. ReadText(1001, 7720), function () return menu.loadGameCallback(filename, true) end, nil, nil, nil, nil, nil, ReadText(1001, 11707))
 	else
+
+		-- kuertee start: callback
+		if callbacks ["loadGameCallback_preLoadGame"] then
+			for _, callback in ipairs (callbacks ["loadGameCallback_preLoadGame"]) do
+				callback(filename)
+			end
+		end
+		-- kuertee end: callback
+
 		LoadGame(filename)
 		menu.displayInit()
 	end
@@ -5693,6 +5748,14 @@ function menu.callbackDeleteSave(filename)
 	menu.onlinesave = nil
 	C.ReloadSaveList()
 	menu.onCloseElement("back")
+
+	-- kuertee start: callback
+	if callbacks ["callbackDeleteSave_onDeleteSave"] then
+		for _, callback in ipairs (callbacks ["callbackDeleteSave_onDeleteSave"]) do
+			callback(filename)
+		end
+	end
+	-- kuertee end: callback
 end
 
 function menu.callbackExit(quit)
@@ -6496,6 +6559,15 @@ function menu.callbackSave(savegame, name)
 			name = "#" .. savegame.empty
 		end
 		SaveGame("save_" .. savegame.empty, name)
+
+		-- kuertee start: callback
+		if callbacks ["callbackSave_onSaveGame"] then
+			for _, callback in ipairs (callbacks ["callbackSave_onSaveGame"]) do
+				callback(savegame, name)
+			end
+		end
+		-- kuertee end: callback
+
 	else
 		--  don't save the default name, so on next save to this slot it gets updated
 		if type(savegame.name) == "string" then
@@ -6510,6 +6582,15 @@ function menu.callbackSave(savegame, name)
 			SaveOnlineGame()
 		else
 			SaveGame(savegame.filename, name)
+
+			-- kuertee start: callback
+			if callbacks ["callbackSave_onSaveGame"] then
+				for _, callback in ipairs (callbacks ["callbackSave_onSaveGame"]) do
+					callback(savegame, name)
+				end
+			end
+			-- kuertee end: callback
+
 		end
 	end
 	menu.closeMenu("close")
@@ -7263,6 +7344,15 @@ function menu.displaySavegameOptions(optionParameter)
 		-- wait until loading the savegame list is complete
 	end
 	menu.savegames = GetSaveList(Helper.validSaveFilenames)
+
+	-- kuertee start: callback
+	if callbacks ["displaySavegameOptions_onGetSaveGames"] then
+		for _, callback in ipairs (callbacks ["displaySavegameOptions_onGetSaveGames"]) do
+			callback(optionParameter)
+		end
+	end
+	-- kuertee end: callback
+
 	menu.onlinesave = nil
 	for _, save in ipairs(menu.savegames) do
 		if save.isonline and (save.filename == "online_save") then
@@ -7380,15 +7470,35 @@ function menu.displaySavegameOptions(optionParameter)
 					end
 				end
 			end
-			local startIdx = (menu.saveSort == "slot_inv") and 10 or 1
-			local endIdx = (menu.saveSort == "slot_inv") and 1 or 10
+
+			-- kuertee start: more save games
+			-- local startIdx = (menu.saveSort == "slot_inv") and 10 or 1
+			-- local endIdx = (menu.saveSort == "slot_inv") and 1 or 10
+			-- local direction = (menu.saveSort == "slot_inv") and -1 or 1
+			local startIdx = (menu.saveSort == "slot_inv") and Helper.maxSaveFiles or 1
+			local endIdx = (menu.saveSort == "slot_inv") and 1 or Helper.maxSaveFiles
 			local direction = (menu.saveSort == "slot_inv") and -1 or 1
+			-- kuertee end: more save games
+
 			for i = startIdx, endIdx, direction do
 				local savegamestring = string.format("%03d", i)
 				if usedsavegamenames["save_" .. savegamestring] then
 					local savegame = menu.savegames[usedsavegamenames["save_" .. savegamestring]]
 					maxRowHeight = math.max(maxRowHeight, menu.addSavegameRow(ftable, savegame, savegame.displayedname, i))
 				else
+
+					-- kuertee start: callback
+					local isShowUnusedSaveFile = true
+					if callbacks ["displaySavegameOptions_isShowUnusedSaveGame"] then
+						for _, callback in ipairs (callbacks ["displaySavegameOptions_isShowUnusedSaveGame"]) do
+							isShowUnusedSaveFile = callback(i)
+							if not isShowUnusedSaveFile then
+								goto continue
+							end
+						end
+					end
+					-- kuertee end: callback
+
 					local row = ftable:addRow({ empty = savegamestring }, { bgColor = Helper.color.transparent })
 					if string.format("save_%03d", i) == menu.preselectOption then
 						ftable:setSelectedRow(row.index)
@@ -7399,6 +7509,10 @@ function menu.displaySavegameOptions(optionParameter)
 					row[3]:setColSpan(3):createText(ReadText(1001, 4812), { scaling = false, font = config.font, fontsize = Helper.scaleFont(config.font, config.standardFontSize), x = Helper.scaleX(config.standardTextOffsetX), y = Helper.scaleY(2), color = (menu.currentOption == "load") and Helper.color.grey or nil, minRowHeight = Helper.scaleY(config.standardTextHeight) + Helper.borderSize })
 					maxRowHeight = math.max(maxRowHeight, row:getHeight())
 				end
+
+				-- kuertee start: callback
+				::continue::
+				-- kuertee end: callback
 			end
 		else
 			if menu.saveSort == "date" then
@@ -7414,9 +7528,27 @@ function menu.displaySavegameOptions(optionParameter)
 				local idx = tonumber(string.match(savegame.filename, "^save_(%d+)"))
 				maxRowHeight = math.max(maxRowHeight, menu.addSavegameRow(ftable, savegame, savegame.displayedname, idx))
 			end
-			for i = 1, 10 do
+
+			-- kuertee start: more save games
+			-- for i = 1, 10 do
+			for i = 1, Helper.maxSaveFiles do
+			-- kuertee end: more save games
+
 				local savegamestring = string.format("%03d", i)
 				if not usedsavegamenames["save_" .. savegamestring] then
+
+					-- kuertee start: callback
+					local isShowUnusedSaveFile = true
+					if callbacks ["displaySavegameOptions_isShowUnusedSaveGame"] then
+						for _, callback in ipairs (callbacks ["displaySavegameOptions_isShowUnusedSaveGame"]) do
+							isShowUnusedSaveFile = callback(i)
+							if not isShowUnusedSaveFile then
+								goto continue
+							end
+						end
+					end
+					-- kuertee end: callback
+
 					local row = ftable:addRow({ empty = savegamestring }, { bgColor = Helper.color.transparent })
 					if string.format("save_%03d", i) == menu.preselectOption then
 						ftable:setSelectedRow(row.index)
@@ -7426,10 +7558,20 @@ function menu.displaySavegameOptions(optionParameter)
 					row[2].properties.halign = "right"
 					row[3]:setColSpan(3):createText(ReadText(1001, 4812), { scaling = false, font = config.font, fontsize = Helper.scaleFont(config.font, config.standardFontSize), x = Helper.scaleX(config.standardTextOffsetX), y = Helper.scaleY(2), color = (menu.currentOption == "load") and Helper.color.grey or nil, minRowHeight = Helper.scaleY(config.standardTextHeight) + Helper.borderSize })
 					maxRowHeight = math.max(maxRowHeight, row:getHeight())
+
+					-- kuertee start: callback
+					::continue::
+					-- kuertee end: callback
 				end
 			end
 		end
 	end
+
+	-- kuertee start: debug save selectedOption
+	-- if menu.selectedOption then
+	-- 	Helper.debugText_forced("displaySavegameOptions", menu.selectedOption)
+	-- end
+	-- kuertee end: debug save selectedOption
 
 	local customsavetitlerow
 	if (menu.currentOption == "load") and (#customsaves > 0) and IsCheatVersion() then
@@ -9100,7 +9242,7 @@ function menu.onCloseElement(dueToClose)
 end
 
 -- kuertee start:
-function menu.registerCallback (callbackName, callbackFunction)
+function menu.registerCallback(callbackName, callbackFunction)
 	-- note 1: format is generally [function name]_[action]. e.g.: in kuertee_menu_transporter, "display_on_set_room_active" overrides the room's active property with the return of the callback.
 	-- note 2: events have the word "_on_" followed by a PRESENT TENSE verb. e.g.: in kuertee_menu_transporter, "display_on_set_buttontable" is called after all of the rows of buttontable are set.
 	-- note 3: new callbacks can be added or existing callbacks can be edited. but commit your additions/changes to the mod's GIT repository.

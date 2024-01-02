@@ -709,7 +709,7 @@ end
 function Helper.init_kuertee ()
 	Helper.initModLuas("Helper")
 	Helper.SWIUI_Init()
-	DebugError("uix: helper.xpl.init")
+	DebugError("uix init success: " .. tostring(debug.getinfo(1).source))
 end
 -- kuertee end
 
@@ -804,7 +804,8 @@ end
 
 -- kuertee start: more save games
 -- for i = 1, 10 do
-for i = 1, 20 do
+Helper.maxSaveFiles = 20
+for i = 1, Helper.maxSaveFiles do
 -- kuertee end: more save games
 	Helper.validSaveFilenames[string.format("save_%03d", i)] = true
 end
@@ -12710,9 +12711,20 @@ end
 
 -- kuertee start: SWI load lua
 function Helper.SWIUI_LoadLua(_, file)
-	Helper.debugText("Helper.SWIUI_LoadLua", file)
-    require(file)
-    AddUITriggeredEvent("SWIUI_OnLoad", file)
+	local extensions = GetExtensionList()
+	for _, extension in ipairs(extensions) do
+		if extension.id == "SW Interworlds" then
+			-- Helper.debugText_forced("SWIUI_LoadLua extension", extension)
+			if extension.enabled then
+				Helper.debugText("Helper.SWIUI_LoadLua", file)
+			    local isSuccess, errorMsg = require(file)
+			    if isSuccess ~= true then
+			    	DebugError("uix load failed: " .. tostring(errorMsg))
+			    end
+			    AddUITriggeredEvent("SWIUI_OnLoad", file)
+			end
+		end
+	end
 end
 
 function Helper.SWIUI_Init()
@@ -12793,9 +12805,17 @@ function Helper.loadModLuas(menuName, modLuaName)
 			if (not extension.error) and extension.enabled then
 				local file = "extensions." .. extension.location:gsub("%\\", "") .. ".ui." .. modLuaName
 				-- Helper.debugText_forced("Helper.loadModLuas file: " .. tostring(file))
-				if pcall(function() Helper.modLuas[menuName].byExtension[extension.location] = require(file) end) then
+				-- Helper.modLuas[menuName].byExtension[extension.location] = require(file)
+				local isSuccess, errorMsg = pcall(function() Helper.modLuas[menuName].byExtension[extension.location] = require(file) end)
+				-- Helper.debugText_forced("Helper.loadModLuas file: " .. tostring(file) .. " modLua: " .. tostring(Helper.modLuas[menuName].byExtension[extension.location]))
+				if isSuccess then
 					isModLuaLoaded = true
-					DebugError("uix: " .. tostring(file) .. " load success")
+					DebugError("uix load success: " .. tostring(debug.getinfo(Helper.modLuas[menuName].byExtension[extension.location].init).source:gsub("@.\\", "")))
+				else
+					local isFileMissing = string.find(errorMsg, "not found")
+					if not isFileMissing then
+						DebugError("uix load failed: " .. tostring(errorMsg))
+					end
 				end
 			end
 		end
@@ -12806,6 +12826,8 @@ function Helper.loadModLuas(menuName, modLuaName)
 	end
 end
 
+local isModLuaInited_general
+-- initModLuas () is called on show of a menu. assume all base luas have inited by then.
 function Helper.initModLuas(menuName)
 	-- init only mod luas for menuName
 	-- not ideal because some mod luas of menuName access other menuNames
@@ -12833,40 +12855,48 @@ function Helper.initModLuas(menuName)
 	-- 	AddUITriggeredEvent("uix_mod_lua", "init", menuName)
 	-- end
 	--
-	-- init all loaded mod luas regardless of menuName
+	-- brute force: init all loaded mod luas regardless of menuName
 	-- better because this ensures that mod luas of menuName can access other menuNames
-	for menuName, menuData in pairs(Helper.modLuas) do
+	for menuName_inList, menuData in pairs(Helper.modLuas) do
 		local isModLuaInited
 		local modLuaName = menuData.modLuaName
 		if menuData.isInited ~= true then
 			menuData.isInited = true
 			for extension, modLua in pairs(menuData.byExtension) do
 				local file = "extensions." .. extension:gsub("%\\", "") .. ".ui." .. modLuaName
-				if pcall(function () modLua.init() end) then
+				local isSuccess, errorMsg = pcall(function () modLua.init() end)
+				if isSuccess then
 					isModLuaInited = true
-					DebugError("uix: " .. tostring(file) .. " init success")
+					DebugError("uix init success: " .. tostring(debug.getinfo(modLua.init).source):gsub("@.\\", ""))
 				else
-					DebugError("uix: " .. tostring(file) .. " init failed")
+					DebugError("uix init failed: " .. tostring(errorMsg))
 					menuData.failedByExtension[extension] = modLua
 				end
 			end
 		end
-		-- try those that failed in the last init, e.g. some luas may be trying to access menus that are not open
+		-- try those that failed in the last init, e.g. some luas may be trying to access menus that need to be open
 		local extensionsToRemove = {}
 		for extension, modLua in pairs(menuData.failedByExtension) do
 			local file = "extensions." .. extension:gsub("%\\", "") .. ".ui." .. modLuaName
-			if pcall(function () modLua.init() end) then
+			local isSuccess, errorMsg = pcall(function () modLua.init() end)
+			if isSuccess then
 				isModLuaInited = true
-				DebugError("uix: " .. tostring(file) .. " init success - next try")
+				DebugError("uix init success: " .. tostring(debug.getinfo(modLua.init).source))
 				table.insert(extensionsToRemove, extension)
 			else
-				DebugError("uix: " .. tostring(file) .. " init failed - next try")
+				DebugError("uix init failed at next try: " .. tostring(errorMsg))
 			end
 		end
 		for _, extension in ipairs(extensionsToRemove) do
 			table.remove(menuData.failedByExtension, extension)
 		end
-		AddUITriggeredEvent("uix_mod_lua", "init", menuName)
+		if isModLuaInited then
+			AddUITriggeredEvent("uix_mod_lua", "init", menuName_inList)
+		end
+	end
+	if not isModLuaInited_general then
+		isModLuaInited_general = true
+		AddUITriggeredEvent("uix_mod_lua", "init")
 	end
 end
 -- kuertee end
