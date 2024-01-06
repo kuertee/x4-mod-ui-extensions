@@ -223,6 +223,16 @@ function menu.onUpdate()
 	end
 
 	local curtime = getElapsedTime()
+
+	-- kuertee start: callback
+	local isSaveFileOk = true
+	if menu.callbacks ["onUpdate_start"] then
+		for _, callback in ipairs (menu.callbacks ["onUpdate_start"]) do
+			callback(curtime)
+		end
+	end
+	-- kuertee end: callback
+
 	if menu.lock and (menu.lock + 0.11 < curtime) then
 		menu.lock = nil
 	end
@@ -342,6 +352,17 @@ function menu.registerCallback (callbackName, callbackFunction)
 		menu.callbacks [callbackName] = {}
 	end
 	table.insert (menu.callbacks [callbackName], callbackFunction)
+end
+
+function Helper.deregisterCallback(callbackName, callbackFunction)
+	-- for i, callback in ipairs(callbacks[callbackName]) do
+	if callbacks[callbackName] and #callbacks[callbackName] > 0 then
+		for i = #callbacks[callbackName], 1, -1 do
+			if callbacks[callbackName][1] == callbackFunction then
+				table.remove(callbacks[callbackName], i)
+			end
+		end
+	end
 end
 
 function menu.requestUpdate (adj)

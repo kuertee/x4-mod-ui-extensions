@@ -6047,6 +6047,17 @@ function menu.registerCallback (callbackName, callbackFunction)
 	table.insert (callbacks [callbackName], callbackFunction)
 end
 
+function Helper.deregisterCallback(callbackName, callbackFunction)
+	-- for i, callback in ipairs(callbacks[callbackName]) do
+	if callbacks[callbackName] and #callbacks[callbackName] > 0 then
+		for i = #callbacks[callbackName], 1, -1 do
+			if callbacks[callbackName][1] == callbackFunction then
+				table.remove(callbacks[callbackName], i)
+			end
+		end
+	end
+end
+
 local newCustomGroupId
 local newCustomGroupText
 function menu.Add_Custom_Actions_Group_Id(_, id)
@@ -6078,37 +6089,37 @@ function menu.Add_Custom_Actions_Group(id, text)
 		customActionsSection_isAddTo = true
 		customOrdersSection_isAddTo = true
 	end
-	Helper.debugText("menu_interactmenu.xpl.Add_Custom_Actions_Group id: " .. tostring(id) .. " text: " .. tostring(text))
+	Helper.debugText("Add_Custom_Actions_Group id: " .. tostring(id) .. " text: " .. tostring(text))
 	for _, section in ipairs(config.sections) do
 		if section.id == "custom_actions" or section.id == "custom_orders" then
-			Helper.debugText("menu_interactmenu.xpl.Add_Custom_Actions_Group    section.id: ", section.id)
+			Helper.debugText("Add_Custom_Actions_Group    section.id: ", section.id)
 			if section.id == "custom_actions" then
 				customActionsSection = section
 			else
 				customOrdersSection = section
 			end
 			for _, subsection in ipairs(section.subsections) do
-				Helper.debugText("menu_interactmenu.xpl.Add_Custom_Actions_Group        subsection.id: ", subsection.id)
+				Helper.debugText("Add_Custom_Actions_Group        subsection.id: ", subsection.id)
 				if subsection.id == id then
 					if section.id == "custom_actions" then
 						customActionsSection_isFound = true
 					else
 						customOrdersSection_isFound = true
 					end
-					Helper.debugText("menu_interactmenu.xpl.Add_Custom_Actions_Group customActionsSection.subsections", customActionsSection.subsections)
+					Helper.debugText("Add_Custom_Actions_Group customActionsSection.subsections", customActionsSection.subsections)
 				end
 			end
 		end
 	end
-	Helper.debugText("menu_interactmenu.xpl.Add_Custom_Actions_GroupcustomActionsSection_isFound: ", customActionsSection_isFound)
-	Helper.debugText("menu_interactmenu.xpl.Add_Custom_Actions_GroupcustomOrdersSection_isFound: ", customOrdersSection_isFound)
+	Helper.debugText("Add_Custom_Actions_GroupcustomActionsSection_isFound: ", customActionsSection_isFound)
+	Helper.debugText("Add_Custom_Actions_GroupcustomOrdersSection_isFound: ", customOrdersSection_isFound)
 	if customActionsSection and customActionsSection_isAddTo and (not customActionsSection_isFound) then
 		table.insert (customActionsSection.subsections, {id = id, text = text})
-		Helper.debugText("menu_interactmenu.xpl.Add_Custom_Actions_Group customActionsSection.subsections", customActionsSection.subsections)
+		Helper.debugText("Add_Custom_Actions_Group customActionsSection.subsections", customActionsSection.subsections)
 	end
 	if customOrdersSection and customOrdersSection_isAddTo and (not customOrdersSection_isFound) then
 		table.insert (customOrdersSection.subsections, {id = id, text = text})
-		Helper.debugText("menu_interactmenu.xpl.Add_Custom_Actions_Group customOrdersSection.subsections", customOrdersSection.subsections)
+		Helper.debugText("Add_Custom_Actions_Group customOrdersSection.subsections", customOrdersSection.subsections)
 	end
 end
 

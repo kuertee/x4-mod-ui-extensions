@@ -384,6 +384,17 @@ function menu.registerCallback (callbackName, callbackFunction)
 	table.insert (callbacks [callbackName], callbackFunction)
 end
 
+function Helper.deregisterCallback(callbackName, callbackFunction)
+	-- for i, callback in ipairs(callbacks[callbackName]) do
+	if callbacks[callbackName] and #callbacks[callbackName] > 0 then
+		for i = #callbacks[callbackName], 1, -1 do
+			if callbacks[callbackName][1] == callbackFunction then
+				table.remove(callbacks[callbackName], i)
+			end
+		end
+	end
+end
+
 function menu.createTable_kuertee(frame, tableProperties)
 	-- DebugError ("kuertee_menu_userquestion createTable menu.mode " .. tostring (menu.mode))
 	-- DebugError ("kuertee_menu_userquestion createTable #callbacks ['createTable_new_custom_table'] " .. tostring (#callbacks ["createTable_new_custom_table"]))

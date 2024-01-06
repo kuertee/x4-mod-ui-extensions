@@ -839,6 +839,14 @@ function onUpdate()
 	if onChatUpdateHandler then
 		onChatUpdateHandler()
 	end
+
+	-- kuertee start: callback
+	if callbacks ["onUpdate"] then
+		for _, callback in ipairs (callbacks ["onUpdate"]) do
+			name = callback ()
+		end
+	end
+	-- kuertee end: callback
 end
 
 local function createCustomHooks(menu)
@@ -12006,9 +12014,9 @@ function Helper.createCustomGraph(frame, container, tableProperties, refreshCall
 
 	func_getGraphData()
 
-	Helper.debugText_forced("helper.xpl.createCustomGraph #accountLogUnfiltered", #Helper.transactionLogData.accountLogUnfiltered)
-	Helper.debugText_forced("helper.xpl.createCustomGraph #accountLog", #Helper.transactionLogData.accountLog)
-	Helper.debugText_forced("helper.xpl.createCustomGraph #graphs", #Helper.transactionLogData.graphs)
+	Helper.debugText_forced("#accountLogUnfiltered", #Helper.transactionLogData.accountLogUnfiltered)
+	Helper.debugText_forced("#accountLog", #Helper.transactionLogData.accountLog)
+	Helper.debugText_forced("#graphs", #Helper.transactionLogData.graphs)
 	if #Helper.transactionLogData.accountLogUnfiltered < 1 then
 		return
 	end
@@ -12045,9 +12053,9 @@ function Helper.createCustomGraph(frame, container, tableProperties, refreshCall
 		end
 	end
 	-- local starttime = math.max(0, endtime - 60 * Helper.transactionLogConfig.zoomSteps[Helper.transactionLogData.xZoom].zoom)
-	Helper.debugText_forced("helper.xpl.createCustomGraph endtime", endtime)
+	Helper.debugText_forced("endtime", endtime)
 	local starttime = math.max(0, endtime - Helper.transactionLogData.xScale * Helper.transactionLogConfig.zoomSteps[Helper.transactionLogData.xZoom].zoom)
-	Helper.debugText_forced("helper.xpl.createCustomGraph starttime", starttime)
+	Helper.debugText_forced("starttime", starttime)
 
 	-- apply search
 	if Helper.transactionLogData.searchtext ~= "" then
@@ -12270,7 +12278,7 @@ function Helper.createCustomGraph(frame, container, tableProperties, refreshCall
 	local datarecords = {}
 	local minTime, maxTime = C.GetCurrentGameTime(), 0
 	for _, graph in ipairs(Helper.transactionLogData.graphs) do
-		Helper.debugText_forced("helper.xpl.createCustomGraph graph.id: ", graph.id .. " #graph.data: " .. tostring(#graph.data))
+		Helper.debugText_forced("graph.id: ", graph.id .. " #graph.data: " .. tostring(#graph.data))
 		local data = {}
 		local type = graph.type
 		local color = graph.color
@@ -12325,7 +12333,7 @@ function Helper.createCustomGraph(frame, container, tableProperties, refreshCall
 			end
 			-- Helper.debugText_forced("data", data)
 		end
-		Helper.debugText_forced("helper.xpl.createCustomGraph #data", #data)
+		Helper.debugText_forced("#data", #data)
 		if #data then
 			-- function Helper.createGraphDataRecord(markertype, markersize, markercolor, linetype, linewidth, linecolor, data, highlighted, mouseovertext)
 			-- table.insert(datarecords, Helper.createGraphDataRecord(config.graph.point.type, highlight and config.graph.point.highlightSize or config.graph.point.size, color, config.graph.line.type, highlight and config.graph.line.highlightSize or config.graph.line.size, color, data, false, ReadText(1001, 2916) .. ReadText(1001, 120) .. " " .. menu.graphdata[buyDataWeights[i].dataIdx].text))
@@ -12333,12 +12341,12 @@ function Helper.createCustomGraph(frame, container, tableProperties, refreshCall
 		end
 		-- break
 	end
-	Helper.debugText_forced("helper.xpl.createCustomGraph #datarecords", #datarecords)
-	-- Helper.debugText_forced("helper.xpl.createCustomGraph #datarecords", datarecords)
-	Helper.debugText_forced("helper.xpl.createCustomGraph minTime", minTime)
-	Helper.debugText_forced("helper.xpl.createCustomGraph maxTime", maxTime)
+	Helper.debugText_forced("#datarecords", #datarecords)
+	-- Helper.debugText_forced("#datarecords", datarecords)
+	Helper.debugText_forced("minTime", minTime)
+	Helper.debugText_forced("maxTime", maxTime)
 	endX = Helper.customGraph_getXValueOfTime(endtime, maxTime)
-	Helper.debugText_forced("helper.xpl.createCustomGraph endX", endX)
+	Helper.debugText_forced("endX", endX)
 
 	local mingranularity = (maxY - minY) / 12
 	local maxgranularity = (maxY - minY) / 8
@@ -12354,7 +12362,7 @@ function Helper.createCustomGraph(frame, container, tableProperties, refreshCall
 	minY = (math.floor(minY / granularity) - 0.5) * granularity
 
 	local xRange = (endtime - starttime) / Helper.transactionLogData.xScale
-	Helper.debugText_forced("helper.xpl.createCustomGraph xRange", xRange)
+	Helper.debugText_forced("xRange", xRange)
 	local xGranularity = Helper.transactionLogData.xGranularity
 	if endtime > starttime then
 		while (endtime - starttime) < xGranularity do
@@ -12369,9 +12377,9 @@ function Helper.createCustomGraph(frame, container, tableProperties, refreshCall
 	local xaxis = Helper.createGraphAxis(Helper.createGraphText(Helper.transactionLogData.xTitle, Helper.standardFont, 9, Helper.color.white), endX - xRange, endX, xGranularity, xOffset, true, Helper.color.white, { r = 96, g = 96, b = 96, a = 80 })
 	local yaxis = Helper.createGraphAxis(Helper.createGraphText(Helper.transactionLogData.yTitle, Helper.standardFont, 9, Helper.color.white), minY, maxY, granularity, yOffset, true, Helper.color.white, { r = 96, g = 96, b = 96, a = 80 })
 
-	Helper.debugText_forced("helper.xpl.createCustomGraph xaxis", xaxis)
-	Helper.debugText_forced("helper.xpl.createCustomGraph yaxis", yaxis)
-	Helper.debugText_forced("helper.xpl.createCustomGraph height", height)
+	Helper.debugText_forced("xaxis", xaxis)
+	Helper.debugText_forced("yaxis", yaxis)
+	Helper.debugText_forced("height", height)
 	-- graphrow[1]:setColSpan(9):createGraph("line", true, Helper.color.semitransparent, nil, xaxis, yaxis, datarecords, 0, 0, nil, height - table_graph:getFullHeight())
 	Helper.transactionLogData.graph = row[1]:setColSpan(4):createGraph("line", true, Helper.color.semitransparent, { text = title_graph, font = Helper.titleFont, size = Helper.scaleFont(Helper.titleFont, Helper.titleFontSize), color = Helper.color.white }, xaxis, yaxis, datarecords, 0, 0, nil, height)
 	row[1].handlers.onClick = function (_, data) return Helper.customGraph_onClickGraph(datarecords, refreshCallback) end
@@ -12716,7 +12724,7 @@ function Helper.SWIUI_LoadLua(_, file)
 		if extension.id == "SW Interworlds" then
 			-- Helper.debugText_forced("SWIUI_LoadLua extension", extension)
 			if extension.enabled then
-				Helper.debugText("Helper.SWIUI_LoadLua", file)
+				Helper.debugText("file" .. tostring(file))
 			    local isSuccess, errorMsg = require(file)
 			    if isSuccess ~= true then
 			    	DebugError("uix load failed: " .. tostring(errorMsg))
@@ -12728,7 +12736,7 @@ function Helper.SWIUI_LoadLua(_, file)
 end
 
 function Helper.SWIUI_Init()
-	Helper.debugText("Helper.SWIUI_Init")
+	Helper.debugText("")
 	RegisterEvent("SWIUI_LoadLua", Helper.SWIUI_LoadLua)
 	AddUITriggeredEvent("SWIUI_OnInit", "Init")
 end
@@ -12762,30 +12770,57 @@ function Helper.registerCallback (callbackName, callbackFunction)
 	table.insert (callbacks [callbackName], callbackFunction)
 end
 
-function Helper.debugText (data1, data2, indent, isForced)
+function Helper.deregisterCallback(callbackName, callbackFunction)
+	-- for i, callback in ipairs(callbacks[callbackName]) do
+	if callbacks[callbackName] and #callbacks[callbackName] > 0 then
+		for i = #callbacks[callbackName], 1, -1 do
+			if callbacks[callbackName][1] == callbackFunction then
+				table.remove(callbacks[callbackName], i)
+			end
+		end
+	end
+end
+
+function Helper.debugText (data1, data2, indent, isForced, getinfodata)
 	local isDebug = false
 	if isDebug == true or isForced == true then
 		if indent == nil then
 			indent = ""
 		end
-		if type (data1) == "table" then
-			for i, value in pairs (data1) do
-				DebugError ("kuertee " .. indent .. tostring (i) .. ReadText (1001, 120) .. " " .. tostring (value))
-				if type (value) == "table" then
-					Helper.debugText(value, nil, indent .. "    ", isForced)
-				end
-			end
-		else
-			DebugError ("kuertee " .. indent .. tostring (data1) .. " (" .. type(data1) .. ")")
+		if data1 == "" then
+			data1 = "(empty string)"
+		elseif not data1 then
+			data1 = "(nil)"
 		end
-		if data2 then
-			Helper.debugText(data2, nil, indent .. "    ", isForced)
+		if data2 == "" then
+			data2 = "(empty string)"
+		elseif not data2 then
+			data2 = "(nil)"
+		end
+		if not getinfodata then
+			getinfodata = debug.getinfo(3)
+		end
+		local funcName = getinfodata.name
+		if funcName == "callback" then
+			funcName = funcName .. " (inaccurate func name, check line + location)"
+		end
+		DebugError ("uix " .. tostring(funcName) .. " data1: " .. indent .. tostring (data1) .. " (" .. tostring(type(data1)) .. ") data2: " .. tostring(data2) .. " (" .. tostring(type(data2)) .. ") from line: " .. tostring(getinfodata.linedefined) .. " of: " .. tostring(getinfodata.short_src))
+		indent = indent .. "  "
+		if type(data1) == "table" then
+			for key, value in pairs(data1) do
+				Helper.debugText(key, value, indent, isForced, getinfodata)
+			end
+		end
+		if type(data2) == "table" then
+			Helper.debugText(data2, nil, indent, isForced, getinfodata)
 		end
 	end
 end
 
 function Helper.debugText_forced (data1, data2, indent)
-	return Helper.debugText(data1, data2, indent, true)
+	local getinfodata = debug.getinfo(2)
+	-- DebugError("func: " .. tostring(debug.getinfo(getinfodata.func).name) .. ", " .. tostring(debug.getinfo(getinfodata.func).linedefined) .. ", " .. tostring(debug.getinfo(getinfodata.func).short_src))
+	return Helper.debugText(data1, data2, indent, true, getinfodata)
 end
 
 Helper.modLuas = {}
@@ -12804,10 +12839,10 @@ function Helper.loadModLuas(menuName, modLuaName)
 		for _, extension in ipairs(extensions) do
 			if (not extension.error) and extension.enabled then
 				local file = "extensions." .. extension.location:gsub("%\\", "") .. ".ui." .. modLuaName
-				-- Helper.debugText_forced("Helper.loadModLuas file: " .. tostring(file))
+				-- Helper.debugText_forced("file: " .. tostring(file))
 				-- Helper.modLuas[menuName].byExtension[extension.location] = require(file)
 				local isSuccess, errorMsg = pcall(function() Helper.modLuas[menuName].byExtension[extension.location] = require(file) end)
-				-- Helper.debugText_forced("Helper.loadModLuas file: " .. tostring(file) .. " modLua: " .. tostring(Helper.modLuas[menuName].byExtension[extension.location]))
+				-- Helper.debugText_forced("file: " .. tostring(file) .. " modLua: " .. tostring(Helper.modLuas[menuName].byExtension[extension.location]))
 				if isSuccess then
 					isModLuaLoaded = true
 					DebugError("uix load success: " .. tostring(debug.getinfo(Helper.modLuas[menuName].byExtension[extension.location].init).source:gsub("@.\\", "")))
@@ -12820,7 +12855,7 @@ function Helper.loadModLuas(menuName, modLuaName)
 			end
 		end
 	end
-	-- Helper.debugText_forced("Helper.loadModLuas " .. tostring(menuName) .. " " .. tostring(modLuaName) .. " #extensions: " .. tostring(#extensions) .. " isModLuaLoaded: " .. tostring(isModLuaLoaded))
+	-- Helper.debugText_forced(tostring(menuName) .. " " .. tostring(modLuaName) .. " #extensions: " .. tostring(#extensions) .. " isModLuaLoaded: " .. tostring(isModLuaLoaded))
 	if isModLuaLoaded then
 		AddUITriggeredEvent("uix_mod_lua", "load", menuName)
 	end

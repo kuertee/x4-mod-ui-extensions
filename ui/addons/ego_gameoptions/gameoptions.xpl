@@ -252,6 +252,7 @@ local menu = {
 
 -- kuertee start:
 local callbacks = {}
+local GameIdManager = {}
 -- kuertee end:
 
 local function init()
@@ -302,6 +303,8 @@ end
 -- kuertee start:
 function menu.init_kuertee ()
 	menu.loadModLuas()
+	menu.GameIdManager = GameIdManager -- make this accessible
+	GameIdManager.init()
 	DebugError("uix init success: " .. tostring(debug.getinfo(init).source))
 end
 -- kuertee end
@@ -8710,6 +8713,16 @@ end
 menu.updateInterval = 0.1
 function menu.onUpdate()
 	local curtime = getElapsedTime()
+
+	-- kuertee start: callback
+	local isSaveFileOk = true
+	if callbacks ["onUpdate_start"] then
+		for _, callback in ipairs (callbacks ["onUpdate_start"]) do
+			callback(curtime)
+		end
+	end
+	-- kuertee end: callback
+
 	if menu.animationDelay ~= nil then
 		if (not menu.animationDelay[3]) and (curtime > menu.animationDelay[1] - menu.animationDelay[4]) then
 			menu.animationDelay[3] = true
@@ -8968,6 +8981,15 @@ function menu.newGameCallback(option, checked)
 				if menu.currentOption == "multiplayer_server" then
 					C.NewMultiplayerGame(option.id)
 				else
+
+				-- kuertee start: callback
+				if callbacks ["newGameCallback_preNewGame"] then
+					for _, callback in ipairs (callbacks ["newGameCallback_preNewGame"]) do
+						callback(option.id)
+					end
+				end
+				-- kuertee end: callback
+
 					NewGame(option.id)
 				end
 				menu.displayInit()
@@ -9254,11 +9276,242 @@ function menu.registerCallback(callbackName, callbackFunction)
 	table.insert (callbacks [callbackName], callbackFunction)
 end
 
+function Helper.deregisterCallback(callbackName, callbackFunction)
+	-- for i, callback in ipairs(callbacks[callbackName]) do
+	if callbacks[callbackName] and #callbacks[callbackName] > 0 then
+		for i = #callbacks[callbackName], 1, -1 do
+			if callbacks[callbackName][1] == callbackFunction then
+				table.remove(callbacks[callbackName], i)
+			end
+		end
+	end
+end
+
 function menu.loadModLuas()
 	if Helper then
 		Helper.loadModLuas(menu.name, "gameoptions_uix")
 	end
 end
 -- kuertee end
+
+-- kuertee start: create gameIds and tag save games with it
+-- used for alternative to death's ironman mode: load and save with one save file
+-- requires SN MSAPIs
+GameIdManager.ffi = require("ffi")
+GameIdManager.C = GameIdManager.ffi.C
+
+GameIdManager.ffi.cdef[[
+    typedef uint64_t UniverseID;
+    UniverseID GetPlayerID(void);
+]]
+
+function GameIdManager.init()
+	local optionsMenu = Helper.getMenu("OptionsMenu")
+	optionsMenu.registerCallback("newGameCallback_preNewGame", GameIdManager.setPendingGameStart)
+	optionsMenu.registerCallback("submenuHandler_preDisplayOptions", GameIdManager.unsetPendingGameStart)
+	optionsMenu.registerCallback("submenuHandler_preDisplayOptions", GameIdManager.unsetPendingLoadGame)
+	optionsMenu.registerCallback("addSavegameRow_changeSaveGameDisplayName", GameIdManager.changeSaveGameName)
+	optionsMenu.registerCallback("loadGameCallback_preLoadGame", GameIdManager.setPendingLoadGame)
+	optionsMenu.registerCallback("callbackSave_onSaveGame", GameIdManager.onSaveGame)
+	optionsMenu.registerCallback("callbackDeleteSave_onDeleteSave", GameIdManager.onDeleteSave)
+
+	Helper.registerCallback("onUpdate", GameIdManager.onUpdate_detectGameStart)
+end
+
+function GameIdManager.setPendingGameStart(gamestart)
+	Helper.debugText_forced("setPendingGameStart", gamestart)
+	GameIdManager.writeToUIXModData("pendingGameStart", gamestart)
+end
+
+function GameIdManager.unsetPendingGameStart()
+	GameIdManager.writeToUIXModData("pendingGameStart", nil)
+end
+
+function GameIdManager.setPendingLoadGame(filename)
+	Helper.debugText_forced("setPendingLoadGame", filename)
+	GameIdManager.writeToUIXModData("pendingLoadGame", filename)
+end
+
+function GameIdManager.unsetPendingLoadGame()
+	GameIdManager.writeToUIXModData("pendingLoadGame", nil)
+end
+
+function GameIdManager.onUpdate_detectGameStart()
+	-- when playerId is populated, then a game has started
+	local savedPlayerId = GameIdManager.readFromUIXModData("playerId")
+	local playerId = ConvertStringTo64Bit(tostring (GameIdManager.C.GetPlayerID()))
+	if savedPlayerId ~= playerId then
+		GameIdManager.writeToUIXModData("playerId", playerId)
+		Helper.debugText_forced("playerId", playerId)
+		if playerId and playerId > 0 then
+			Helper.deregisterCallback("onUpdate", GameIdManager.onUpdate_detectGameStart)
+			local pendingGameStart = GameIdManager.readFromUIXModData("pendingGameStart")
+			local pendingLoadGame = GameIdManager.readFromUIXModData("pendingLoadGame")
+			Helper.debugText_forced("pendingGameStart", pendingGameStart)
+			Helper.debugText_forced("pendingLoadGame", pendingLoadGame)
+			GameIdManager.unsetPendingGameStart()
+			GameIdManager.unsetPendingLoadGame()
+			if pendingGameStart then
+				-- a game start was highlighted JUST before the game started
+				-- assume a new game started
+				GameIdManager.onNewGame()
+			elseif pendingLoadGame then
+				-- a filename was highlighted JUST before the game started
+				-- assume a game was loaded
+				GameIdManager.onLoadGame(pendingLoadGame)
+			end
+		end
+	end
+end
+
+function GameIdManager.onDeleteSave(filename)
+	GameIdManager.tagSaveGameWithGameId(filename, nil)
+end
+
+function GameIdManager.writeToUIXModData(key, value)
+	local owner = "kuertee_uix"
+	__MOD_USERDATA = __MOD_USERDATA or {}
+	if __MOD_USERDATA[owner] == nil then
+		__MOD_USERDATA[owner] = {}
+	end
+	if type(__MOD_USERDATA[owner][key]) == "table" then
+		__MOD_USERDATA[owner][key] = 0
+	else
+		__MOD_USERDATA[owner][key] = nil
+	end
+	-- Helper.debugText_forced("delete previous owner: " .. tostring(owner) .. " key: " .. tostring(key) .. " value:", __MOD_USERDATA[owner][key])
+	__MOD_USERDATA[owner][key] = value
+	-- Helper.debugText_forced("save new owner: " .. tostring(owner) .. " key: " .. tostring(key) .. " value:", __MOD_USERDATA[owner][key])
+end
+
+function GameIdManager.readFromUIXModData(key)
+	local owner = "kuertee_uix"
+	local value
+	local isSuccess, errorMsg = pcall(function () value = __MOD_USERDATA[owner][key] end)
+	if isSuccess then
+		-- Helper.debugText_forced("owner: " .. tostring(owner) .. " key: " .. tostring(key) .. " value:", value)
+		return value
+	else
+		if key ~= "playerId" or (not string.find(errorMsg, "attempt to index a nil value")) then
+			Helper.debugText_forced("errorMsg: " .. tostring(errorMsg))
+			Helper.debugText_forced("    owner: " .. tostring(owner) .. " key: " .. tostring(key) .. " value:", value)
+		end
+		return nil
+	end
+end
+
+function GameIdManager.getNewGameId()
+	local gameIdsBySaveGame = GameIdManager.readFromUIXModData("gameIdsBySaveGame")
+	if type(gameIdsBySaveGame) ~= "table" then
+		gameIdsBySaveGame = {}
+	end
+	local filenamesByGameId = {}
+	for filename, gameId in pairs(gameIdsBySaveGame) do
+		filenamesByGameId[gameId] = filename
+	end
+	Helper.debugText_forced("filenamesByGameId", filenamesByGameId)
+	local i = 1
+	Helper.debugText_forced("filenamesByGameId[UIXGameId_1]", filenamesByGameId["UIXGameId_" .. tostring(i)])
+	while (filenamesByGameId["UIXGameId_" .. tostring(i)] ~= nil) do
+		i = i + 1
+	end
+	local gameId = "UIXGameId_" .. tostring(i)
+	return gameId
+end
+
+function GameIdManager.saveCurrentGameId(gameId)
+	Helper.debugText_forced("gameId", gameId)
+	GameIdManager.writeToUIXModData("gameId", gameId)
+end
+
+function GameIdManager.getCurrentGameId()
+	local gameId = GameIdManager.readFromUIXModData("gameId")
+	Helper.debugText_forced("gameId", gameId)
+	return gameId
+end
+
+function GameIdManager.getGameIdFromSaveGame(filename)
+	local gameIdsBySaveGame = GameIdManager.readFromUIXModData("gameIdsBySaveGame")
+	if type(gameIdsBySaveGame) ~= "table" then
+		gameIdsBySaveGame = {}
+	end
+	local gameId = gameIdsBySaveGame[filename]
+	Helper.debugText_forced("gameId", gameId)
+	return gameId
+end
+
+function GameIdManager.tagSaveGameWithGameId(filename, gameId)
+	Helper.debugText_forced("filename", filename)
+	Helper.debugText_forced("gameId", gameId)
+	local gameIdsBySaveGame = GameIdManager.readFromUIXModData("gameIdsBySaveGame")
+	if type(gameIdsBySaveGame) ~= "table" then
+		gameIdsBySaveGame = {}
+	end
+	gameIdsBySaveGame[filename] = gameId
+	GameIdManager.writeToUIXModData("gameIdsBySaveGame", gameIdsBySaveGame)
+	GameIdManager.saveGamesForGameId = GameIdManager.getSaveGamesForGameId(gameId)
+	GameIdManager.saveCurrentGameId(gameId)
+end
+
+function GameIdManager.getSaveGamesForGameId(gameId)
+	local saveGamesForGameId = {}
+	local optionsMenu = Helper.getMenu("OptionsMenu")
+	local savegames = optionsMenu.savegames
+	if savegames and #savegames then
+		for i, savegame in ipairs(savegames) do
+			local gameId_fromSaveGame = GameIdManager.getGameIdFromSaveGame(savegame.filename)
+			if gameId == gameId_fromSaveGame then
+				table.insert(saveGamesForGameId, savegame.filename)
+			end
+		end
+		table.sort(saveGamesForGameId, function (a, b) return a.rawtime > b.rawtime end)
+	end
+	return saveGamesForGameId
+end
+
+function GameIdManager.onNewGame()
+	local gameId = GameIdManager.getNewGameId()
+	Helper.debugText_forced("gameId (new)", gameId)
+	GameIdManager.writeToUIXModData("gameId", gameId)
+end
+
+function GameIdManager.onLoadGame(filename)
+	local gameId = GameIdManager.getGameIdFromSaveGame(filename)
+	Helper.debugText_forced("gameId", gameId)
+	if not gameId then
+		gameId = GameIdManager.getNewGameId()
+		Helper.debugText_forced("gameId (new)", gameId)
+		GameIdManager.writeToUIXModData("gameId", gameId)
+	end
+	GameIdManager.tagSaveGameWithGameId(filename, gameId)
+end
+
+function GameIdManager.onSaveGame(savegame, name)
+	local gameId = GameIdManager.getCurrentGameId()
+	Helper.debugText_forced("savegame.filename", savegame.filename)
+	Helper.debugText_forced("gameId", gameId)
+	if gameId then
+		GameIdManager.tagSaveGameWithGameId(savegame.filename, gameId)
+	end
+end
+
+function GameIdManager.changeSaveGameName(ftable, savegame, name, slot, name)
+	local optionsMenu = Helper.getMenu("OptionsMenu")
+	if optionsMenu.currentOption == "load" or optionsMenu.currentOption == "save" then
+		local gameId = GameIdManager.getCurrentGameId()
+		Helper.debugText_forced("gameId", gameId)
+		if gameId then
+			local gameIdInSaveGame = GameIdManager.getGameIdFromSaveGame(savegame.filename)
+			Helper.debugText_forced("gameIdInSaveGame", gameIdInSaveGame)
+			if gameId == gameIdInSaveGame then
+				name = Helper.convertColorToText(Helper.color.green) .. name .. "\27X"
+			elseif gameIdInSaveGame then
+				name = Helper.convertColorToText(Helper.color.blue) .. name .. "\27X"
+			end
+		end
+	end
+	return name
+end
+-- kuertee end: create gameIds and tag save games with it
 
 init()

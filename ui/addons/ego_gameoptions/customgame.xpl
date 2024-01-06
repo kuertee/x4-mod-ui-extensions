@@ -1911,7 +1911,7 @@ function menu.universeSector(current)
 
 	local buf = ffi.new("CustomGameStartStringPropertyState[1]")
 	local galaxymacro = ffi.string(C.GetCustomGameStartStringProperty(menu.customgamestart, "galaxy", buf))
-	Helper.debugText("universeSector galaxymacro: " .. tostring(galaxymacro))
+	Helper.debugText("galaxymacro: " .. tostring(galaxymacro))
 	local sectormacros = GetMacroData(galaxymacro, "sectors") or {}
 	table.sort(sectormacros, Helper.sortMacroName)
 	for _, sector in ipairs(sectormacros) do
@@ -5384,6 +5384,17 @@ function menu.registerCallback (callbackName, callbackFunction)
 		callbacks [callbackName] = {}
 	end
 	table.insert (callbacks [callbackName], callbackFunction)
+end
+
+function Helper.deregisterCallback(callbackName, callbackFunction)
+	-- for i, callback in ipairs(callbacks[callbackName]) do
+	if callbacks[callbackName] and #callbacks[callbackName] > 0 then
+		for i = #callbacks[callbackName], 1, -1 do
+			if callbacks[callbackName][1] == callbackFunction then
+				table.remove(callbacks[callbackName], i)
+			end
+		end
+	end
 end
 
 function menu.loadModLuas()
