@@ -12801,10 +12801,12 @@ function Helper.debugText (data1, data2, indent, isForced, getinfodata)
 			getinfodata = debug.getinfo(3)
 		end
 		local funcName = getinfodata.name
-		if funcName == "callback" then
-			funcName = funcName .. " (inaccurate func name, check line + location)"
+		local fromName = "at:"
+		if (not funcName) or funcName == "callback" or funcName == "nil" then
+			funcName = tostring(funcName) .. " (inaccurate)"
+			fromName = "(inaccurate funcName) at:"
 		end
-		DebugError ("uix " .. tostring(funcName) .. " data1: " .. indent .. tostring (data1) .. " (" .. tostring(type(data1)) .. ") data2: " .. tostring(data2) .. " (" .. tostring(type(data2)) .. ") from line: " .. tostring(getinfodata.linedefined) .. " of: " .. tostring(getinfodata.short_src))
+		DebugError ("uix funcName: " .. tostring(funcName) .. " data1: " .. indent .. tostring (data1) .. " (" .. tostring(type(data1)) .. ") data2: " .. tostring(data2) .. " (" .. tostring(type(data2)) .. ") " .. tostring(fromName) .. " line: " .. tostring(getinfodata.linedefined) .. " of: " .. tostring(getinfodata.short_src))
 		indent = indent .. "  "
 		if type(data1) == "table" then
 			for key, value in pairs(data1) do

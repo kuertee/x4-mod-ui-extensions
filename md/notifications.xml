@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<diff>
+	<!--
+		purpose: to tag the last game saved with the current game Id.
+		gameoptions.lua.callbackSave() is only for normal saves.
+		there is no trigger for autosaves and quicksaves.
+		MD.Notifications.kUIX_OnSaveGame raises the kUIX.OnSaveGame event so that the last game saved (autosave, quicksave, or normal save) is tagged with a game id.
+		<cue name="AutoSave" namespace="static">
+	-->
+	<add pos="after" sel="//cue[@name=&quot;AutoSave&quot;]">
+		<cue name="kUIX_OnSaveGame">
+			<conditions>
+				<event_game_saved success="true" />
+			</conditions>
+			<delay exact="1s" />
+			<actions>
+				<debug_text text="'event.name: ' + event.name" />
+				<raise_lua_event name="'kUIX.OnSaveGame'" />
+				<reset_cue cue="this" />
+			</actions>
+		</cue>
+	</add>
+</diff>
