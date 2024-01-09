@@ -12772,6 +12772,7 @@ end
 
 function Helper.deregisterCallback(callbackName, callbackFunction)
 	-- for i, callback in ipairs(callbacks[callbackName]) do
+	-- Helper.debugText_forced("#callbacks[" .. tostring(callbackName) .. "] (pre deregisterCallback)", #callbacks[callbackName])
 	if callbacks[callbackName] and #callbacks[callbackName] > 0 then
 		for i = #callbacks[callbackName], 1, -1 do
 			if callbacks[callbackName][1] == callbackFunction then
@@ -12779,6 +12780,7 @@ function Helper.deregisterCallback(callbackName, callbackFunction)
 			end
 		end
 	end
+	-- Helper.debugText_forced("#callbacks[" .. tostring(callbackName) .. "] (post deregisterCallback)", #callbacks[callbackName])
 end
 
 function Helper.debugText (data1, data2, indent, isForced, getinfodata)
@@ -12800,13 +12802,13 @@ function Helper.debugText (data1, data2, indent, isForced, getinfodata)
 		if not getinfodata then
 			getinfodata = debug.getinfo(3)
 		end
-		local funcName = getinfodata.name
-		local fromName = "at:"
-		if (not funcName) or funcName == "callback" or funcName == "nil" then
-			funcName = tostring(funcName) .. " (inaccurate)"
-			fromName = "(inaccurate funcName) at:"
+		local noteFuncName = ""
+		local noteLocation = ""
+		if (not noteFuncName) or noteFuncName == "callback" or noteFuncName == "nil" then
+			noteFuncName = " (inaccurate)"
+			noteLocation = " (location of inaccurate funcName)"
 		end
-		DebugError ("uix funcName: " .. tostring(funcName) .. " data1: " .. indent .. tostring (data1) .. " (" .. tostring(type(data1)) .. ") data2: " .. tostring(data2) .. " (" .. tostring(type(data2)) .. ") " .. tostring(fromName) .. " line: " .. tostring(getinfodata.linedefined) .. " of: " .. tostring(getinfodata.short_src))
+		DebugError ("uix funcName" .. tostring(noteFuncName) .. ": " .. tostring(getinfodata.name) .. " data1: " .. indent .. tostring (data1) .. " (" .. tostring(type(data1)) .. ") data2: " .. tostring(data2) .. " (" .. tostring(type(data2)) .. ") at" .. tostring(noteLocation) .. ": line: " .. tostring(getinfodata.linedefined) .. " of: " .. tostring(getinfodata.short_src))
 		indent = indent .. "  "
 		if type(data1) == "table" then
 			for key, value in pairs(data1) do

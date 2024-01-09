@@ -252,7 +252,7 @@ local menu = {
 
 -- kuertee start:
 local callbacks = {}
-local GameIdManager = {}
+GameIdManager = {}
 -- kuertee end:
 
 local function init()
@@ -303,7 +303,6 @@ end
 -- kuertee start:
 function menu.init_kuertee ()
 	menu.loadModLuas()
-	menu.GameIdManager = GameIdManager -- make this accessible
 	GameIdManager.init()
 	DebugError("uix init success: " .. tostring(debug.getinfo(init).source))
 end
@@ -9270,7 +9269,7 @@ function menu.registerCallback(callbackName, callbackFunction)
 	table.insert (callbacks [callbackName], callbackFunction)
 end
 
-function Helper.deregisterCallback(callbackName, callbackFunction)
+function menu.deregisterCallback(callbackName, callbackFunction)
 	-- for i, callback in ipairs(callbacks[callbackName]) do
 	if callbacks[callbackName] and #callbacks[callbackName] > 0 then
 		for i = #callbacks[callbackName], 1, -1 do
@@ -9336,13 +9335,12 @@ end
 
 function GameIdManager.onUpdate_detectGameStart()
 	-- when playerId is populated, then a game has started
-	local savedPlayerId = GameIdManager.readFromUIXModData("playerId")
+	-- local savedPlayerId = GameIdManager.readFromUIXModData("playerId")
 	local playerId = ConvertStringTo64Bit(tostring (GameIdManager.C.GetPlayerID()))
-	if savedPlayerId ~= playerId then
+	-- if savedPlayerId ~= playerId then
 		GameIdManager.writeToUIXModData("playerId", playerId)
 		Helper.debugText("playerId", playerId)
 		if playerId and playerId > 0 then
-			Helper.deregisterCallback("onUpdate", GameIdManager.onUpdate_detectGameStart)
 			local pendingGameStart = GameIdManager.readFromUIXModData("pendingGameStart")
 			local pendingLoadGame = GameIdManager.readFromUIXModData("pendingLoadGame")
 			Helper.debugText("pendingGameStart", pendingGameStart)
@@ -9358,8 +9356,11 @@ function GameIdManager.onUpdate_detectGameStart()
 				-- assume a game was loaded
 				GameIdManager.onLoadGame(pendingLoadGame)
 			end
+		else
+			GameIdManager.onMainMenu()
 		end
-	end
+		Helper.deregisterCallback("onUpdate", GameIdManager.onUpdate_detectGameStart)
+	-- end
 end
 
 function GameIdManager.onDeleteSave(filename)
@@ -9424,10 +9425,10 @@ end
 
 function GameIdManager.getCurrentGameId()
 	local gameId
-	local playerId = ConvertStringTo64Bit(tostring (GameIdManager.C.GetPlayerID()))
-	if playerId and playerId > 0 then
+	-- local playerId = ConvertStringTo64Bit(tostring (GameIdManager.C.GetPlayerID()))
+	-- if playerId and playerId > 0 then
 		gameId = GameIdManager.readFromUIXModData("gameId")
-	end
+	-- end
 	return gameId
 end
 
@@ -9441,7 +9442,7 @@ function GameIdManager.getGameIdFromSaveGame(filename)
 	return gameId
 end
 
-function GameIdManager.tagSaveGameWithGameId(filename, gameId)
+function GameIdManager.tagSaveGameWithGameId(filename, gameId, isCurrentSaveGame)
 	Helper.debugText_forced("filename", filename)
 	Helper.debugText_forced("gameId", gameId)
 	GameIdManager.saveCurrentGameId(gameId)
@@ -9452,6 +9453,9 @@ function GameIdManager.tagSaveGameWithGameId(filename, gameId)
 	gameIdsBySaveGame[filename] = gameId
 	GameIdManager.writeToUIXModData("gameIdsBySaveGame", gameIdsBySaveGame)
 	GameIdManager.saveGamesForGameId = GameIdManager.getSaveGamesForGameId(gameId)
+	if isCurrentSaveGame == true then
+		GameIdManager.writeToUIXModData("currentSaveGame", filename)
+	end
 end
 
 function GameIdManager.getSaveGamesForGameId(gameId)
@@ -9470,21 +9474,37 @@ function GameIdManager.getSaveGamesForGameId(gameId)
 	return saveGamesForGameId
 end
 
+function GameIdManager.onMainMenu()
+	-- main menu, get game id from most recent saved game
+	local savegames = GetSaveList(Helper.validSaveFilenames)
+	-- Helper.debugText_forced("#savegames", #savegames)
+	if savegames and #savegames > 0 then
+		table.sort(savegames, function (a, b) return a.rawtime > b.rawtime end)
+		local gameId = GameIdManager.getGameIdFromSaveGame(savegames[1].filename)
+		Helper.debugText_forced("gameId (from most recent save game)", gameId)
+		GameIdManager.writeToUIXModData("gameId", gameId)
+	end
+	GameIdManager.writeToUIXModData("currentSaveGame", nil)
+end
+
 function GameIdManager.onNewGame()
+	-- new game, generate new game id
 	local gameId = GameIdManager.getNewGameId()
-	Helper.debugText("gameId (new)", gameId)
+	Helper.debugText_forced("gameId (new game)", gameId)
 	GameIdManager.writeToUIXModData("gameId", gameId)
 end
 
 function GameIdManager.onLoadGame(filename)
+	-- loaded game, get game id from loaded game
 	local gameId = GameIdManager.getGameIdFromSaveGame(filename)
-	Helper.debugText("gameId", gameId)
+	Helper.debugText_forced("gameId (loaded game)", gameId)
 	if not gameId then
 		gameId = GameIdManager.getNewGameId()
-		Helper.debugText("gameId (new)", gameId)
+		Helper.debugText_forced("gameId (untagged, get new)", gameId)
 		GameIdManager.writeToUIXModData("gameId", gameId)
 	end
-	GameIdManager.tagSaveGameWithGameId(filename, gameId)
+	local isCurrentSaveGame = true
+	GameIdManager.tagSaveGameWithGameId(filename, gameId, isCurrentSaveGame)
 end
 
 -- function GameIdManager.onSaveGame(savegame, name)
@@ -9513,7 +9533,8 @@ function GameIdManager.onSaveGame_FromMD()
 		if savegames and #savegames then
 			table.sort(savegames, function(a, b) return a.rawtime > b.rawtime end)
 			-- Helper.debugText_forced("savegames[1].filename", savegames[1].filename)
-			GameIdManager.tagSaveGameWithGameId(savegames[1].filename, gameId)
+			local isCurrentSaveGame = true
+			GameIdManager.tagSaveGameWithGameId(savegames[1].filename, gameId, isCurrentSaveGame)
 		end
 	end
 end
@@ -9522,15 +9543,20 @@ function GameIdManager.changeSaveGameName(ftable, savegame, name, slot, name)
 	local optionsMenu = Helper.getMenu("OptionsMenu")
 	if optionsMenu.currentOption == "load" or optionsMenu.currentOption == "save" then
 		local gameId = GameIdManager.getCurrentGameId()
-		Helper.debugText("gameId", gameId)
+		Helper.debugText_forced("gameId", gameId)
 		if gameId then
 			if gameId then
 				local gameIdInSaveGame = GameIdManager.getGameIdFromSaveGame(savegame.filename)
 				Helper.debugText("gameIdInSaveGame", gameIdInSaveGame)
 				if gameId == gameIdInSaveGame then
+					-- <t id="3401">current</t>
+					local currentSaveGame = GameIdManager.readFromUIXModData("currentSaveGame")
+					if savegame.filename == currentSaveGame then
+						name = "* " .. name
+					end
 					name = Helper.convertColorToText(Helper.color.green) .. name .. "\27X"
-				elseif gameIdInSaveGame then
-					name = Helper.convertColorToText(Helper.color.blue) .. name .. "\27X"
+				-- elseif gameIdInSaveGame then
+				-- 	name = Helper.convertColorToText(Helper.color.blue) .. name .. "\27X"
 				end
 			end
 		end

@@ -28008,7 +28008,7 @@ function menu.registerCallback (callbackName, callbackFunction)
 	table.insert (callbacks [callbackName], callbackFunction)
 end
 
-function Helper.deregisterCallback(callbackName, callbackFunction)
+function menu.deregisterCallback(callbackName, callbackFunction)
 	-- for i, callback in ipairs(callbacks[callbackName]) do
 	if callbacks[callbackName] and #callbacks[callbackName] > 0 then
 		for i = #callbacks[callbackName], 1, -1 do
