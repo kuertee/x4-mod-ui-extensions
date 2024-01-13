@@ -7363,7 +7363,18 @@ function menu.displaySavegameOptions(optionParameter)
 		end
 	end
 	if next(menu.savegames) then
-		table.sort(menu.savegames, function (a, b) return a.rawtime > b.rawtime end)
+
+		-- table.sort(menu.savegames, function (a, b) return a.rawtime > b.rawtime end)
+		-- kuertee start: callback
+		if callbacks ["displaySaveGameOptions_sortSaveGames"] then
+			for _, callback in ipairs (callbacks ["displaySaveGameOptions_sortSaveGames"]) do
+				callback(menu.savegames, "rawtime", true)
+			end
+		else
+			table.sort(menu.savegames, function (a, b) return a.rawtime > b.rawtime end)
+		end
+		-- kuertee end: callback
+
 	end
 
 	local usedsavegamenames = {}
@@ -7518,15 +7529,66 @@ function menu.displaySavegameOptions(optionParameter)
 			end
 		else
 			if menu.saveSort == "date" then
-				table.sort(sortablesaves, function (a, b) return a.rawtime > b.rawtime end)
+
+				-- table.sort(sortablesaves, function (a, b) return a.rawtime > b.rawtime end)
+				-- kuertee start: callback
+				if callbacks ["displaySaveGameOptions_sortSaveGames"] then
+					for _, callback in ipairs (callbacks ["displaySaveGameOptions_sortSaveGames"]) do
+						callback(sortablesaves, "rawtime", true)
+					end
+				else
+					table.sort(sortablesaves, function (a, b) return a.rawtime > b.rawtime end)
+				end
+				-- kuertee end: callback
+
 			elseif menu.saveSort == "date_inv" then
-				table.sort(sortablesaves, function (a, b) return a.rawtime < b.rawtime end)
+
+				-- table.sort(sortablesaves, function (a, b) return a.rawtime < b.rawtime end)
+				-- kuertee start: callback
+				if callbacks ["displaySaveGameOptions_sortSaveGames"] then
+					for _, callback in ipairs (callbacks ["displaySaveGameOptions_sortSaveGames"]) do
+						callback(sortablesaves, "rawtime", false)
+					end
+				else
+					table.sort(sortablesaves, function (a, b) return a.rawtime < b.rawtime end)
+				end
+				-- kuertee end: callback
+
 			elseif menu.saveSort == "name" then
-				table.sort(sortablesaves, function (a, b) return a.displayedname < b.displayedname end)
+
+				-- table.sort(sortablesaves, function (a, b) return a.displayedname < b.displayedname end)
+				-- kuertee start: callback
+				if callbacks ["displaySaveGameOptions_sortSaveGames"] then
+					for _, callback in ipairs (callbacks ["displaySaveGameOptions_sortSaveGames"]) do
+						callback(sortablesaves, "displayedname", true)
+					end
+				else
+					table.sort(sortablesaves, function (a, b) return a.displayedname < b.displayedname end)
+				end
+				-- kuertee end: callback
+
 			elseif menu.saveSort == "name_inv" then
-				table.sort(sortablesaves, function (a, b) return a.displayedname > b.displayedname end)
+
+				-- table.sort(sortablesaves, function (a, b) return a.displayedname > b.displayedname end)
+				-- kuertee start: callback
+				if callbacks ["displaySaveGameOptions_sortSaveGames"] then
+					for _, callback in ipairs (callbacks ["displaySaveGameOptions_sortSaveGames"]) do
+						callback(sortablesaves, "displayedname", false)
+					end
+				else
+					table.sort(sortablesaves, function (a, b) return a.displayedname < b.displayedname end)
+				end
+				-- kuertee end: callback
 			end
 			for i, savegame in ipairs(sortablesaves) do
+				-- kuertee start: callback
+				if callbacks ["displaySaveGameOptions_preSaveGameRowAdd"] then
+					for _, callback in ipairs (callbacks ["displaySaveGameOptions_preSaveGameRowAdd"]) do
+						maxRowHeight = math.max(maxRowHeight, callback(ftable, savegame, savegame.displayedname, i, #sortablesaves))
+					end
+				end
+				-- kuertee end: callback
+
 				local idx = tonumber(string.match(savegame.filename, "^save_(%d+)"))
 				maxRowHeight = math.max(maxRowHeight, menu.addSavegameRow(ftable, savegame, savegame.displayedname, idx))
 			end
@@ -8770,7 +8832,18 @@ function menu.onUpdate()
 					end
 				end
 				if next(menu.savegames) then
-					table.sort(menu.savegames, function (a, b) return a.rawtime > b.rawtime end)
+
+					-- table.sort(menu.savegames, function (a, b) return a.rawtime > b.rawtime end)
+					-- kuertee start: callback
+					if callbacks ["displaySaveGameOptions_sortSaveGames"] then
+						for _, callback in ipairs (callbacks ["displaySaveGameOptions_sortSaveGames"]) do
+							callback(menu.savegames, "rawtime", true)
+						end
+					else
+						table.sort(menu.savegames, function (a, b) return a.rawtime > b.rawtime end)
+					end
+					-- kuertee end: callback
+
 				end
 				saveloadingcompleted = true
 				menu.autoReloadSave = nil
@@ -9299,13 +9372,17 @@ GameIdManager.ffi.cdef[[
 ]]
 
 function GameIdManager.init()
+	GameIdManager.isFirstInit = true
 	local optionsMenu = Helper.getMenu("OptionsMenu")
 	optionsMenu.registerCallback("newGameCallback_preNewGame", GameIdManager.setPendingGameStart)
 	optionsMenu.registerCallback("submenuHandler_preDisplayOptions", GameIdManager.unsetPendingGameStart)
-	optionsMenu.registerCallback("submenuHandler_preDisplayOptions", GameIdManager.unsetPendingLoadGame)
-	optionsMenu.registerCallback("addSavegameRow_changeSaveGameDisplayName", GameIdManager.changeSaveGameName)
 	optionsMenu.registerCallback("loadGameCallback_preLoadGame", GameIdManager.setPendingLoadGame)
+	optionsMenu.registerCallback("submenuHandler_preDisplayOptions", GameIdManager.unsetPendingLoadGame)
 	optionsMenu.registerCallback("callbackDeleteSave_onDeleteSave", GameIdManager.onDeleteSave)
+	optionsMenu.registerCallback("displaySaveGameOptions_sortSaveGames", GameIdManager.sortSaveGames)
+	optionsMenu.registerCallback("addSavegameRow_changeSaveGameDisplayName", GameIdManager.changeSaveGameDisplayName)
+	optionsMenu.registerCallback("displaySaveGameOptions_preSaveGameRowAdd", GameIdManager.preSaveGameRowAdd)
+
 	Helper.registerCallback("onUpdate", GameIdManager.onUpdate_detectGameStart)
 
 	-- optionsMenu.registerCallback("callbackSave_onSaveGame", GameIdManager.onSaveGame)
@@ -9316,7 +9393,7 @@ function GameIdManager.init()
 end
 
 function GameIdManager.setPendingGameStart(gamestart)
-	Helper.debugText("setPendingGameStart", gamestart)
+	Helper.debugText_forced("setPendingGameStart", gamestart)
 	GameIdManager.writeToUIXModData("pendingGameStart", gamestart)
 end
 
@@ -9325,7 +9402,7 @@ function GameIdManager.unsetPendingGameStart()
 end
 
 function GameIdManager.setPendingLoadGame(filename)
-	Helper.debugText("setPendingLoadGame", filename)
+	Helper.debugText_forced("setPendingLoadGame", filename)
 	GameIdManager.writeToUIXModData("pendingLoadGame", filename)
 end
 
@@ -9334,37 +9411,51 @@ function GameIdManager.unsetPendingLoadGame()
 end
 
 function GameIdManager.onUpdate_detectGameStart()
-	-- when playerId is populated, then a game has started
-	-- local savedPlayerId = GameIdManager.readFromUIXModData("playerId")
-	local playerId = ConvertStringTo64Bit(tostring (GameIdManager.C.GetPlayerID()))
-	-- if savedPlayerId ~= playerId then
-		GameIdManager.writeToUIXModData("playerId", playerId)
-		Helper.debugText("playerId", playerId)
-		if playerId and playerId > 0 then
-			local pendingGameStart = GameIdManager.readFromUIXModData("pendingGameStart")
-			local pendingLoadGame = GameIdManager.readFromUIXModData("pendingLoadGame")
-			Helper.debugText("pendingGameStart", pendingGameStart)
-			Helper.debugText("pendingLoadGame", pendingLoadGame)
-			GameIdManager.unsetPendingGameStart()
-			GameIdManager.unsetPendingLoadGame()
-			if pendingGameStart then
-				-- a game start was highlighted JUST before the game started
-				-- assume a new game started
-				GameIdManager.onNewGame()
-			elseif pendingLoadGame then
-				-- a filename was highlighted JUST before the game started
-				-- assume a game was loaded
-				GameIdManager.onLoadGame(pendingLoadGame)
+	if not GameIdManager.isDetectingGameStart then
+		GameIdManager.isDetectingGameStart = true
+
+		local savedPlayerId = GameIdManager.readFromUIXModData("playerId")
+		local playerId = ConvertStringTo64Bit(tostring (GameIdManager.C.GetPlayerID()))
+		if savedPlayerId ~= playerId or GameIdManager.isFirstInit then
+			GameIdManager.writeToUIXModData("playerId", playerId)
+			if playerId and playerId > 0 then
+				Helper.deregisterCallback("onUpdate", GameIdManager.onUpdate_detectGameStart)
+				Helper.debugText_forced("savedPlayerId", savedPlayerId)
+				Helper.debugText_forced("playerId", playerId)
+				-- when playerId is populated, then a game has started
+				local pendingGameStart = GameIdManager.readFromUIXModData("pendingGameStart")
+				local pendingLoadGame = GameIdManager.readFromUIXModData("pendingLoadGame")
+				Helper.debugText_forced("pendingGameStart", pendingGameStart)
+				Helper.debugText_forced("pendingLoadGame", pendingLoadGame)
+				GameIdManager.unsetPendingGameStart()
+				GameIdManager.unsetPendingLoadGame()
+				if pendingGameStart then
+					-- a game start was highlighted JUST before the game started
+					-- assume a new game started
+					GameIdManager.onNewGame()
+				elseif pendingLoadGame then
+					-- a filename was highlighted JUST before the game started
+					-- assume a game was loaded
+					GameIdManager.onLoadGame(pendingLoadGame)
+				end
+				GameIdManager.setSaveGamesForGameId(gameId)
+
+			elseif GameIdManager.isFirstInit then
+				-- in main menu at start
+				Helper.debugText_forced("GameIdManager.isFirstInit", GameIdManager.isFirstInit)
+				GameIdManager.onMainMenu()
+				GameIdManager.setSaveGamesForGameId(gameId)
 			end
-		else
-			GameIdManager.onMainMenu()
 		end
-		Helper.deregisterCallback("onUpdate", GameIdManager.onUpdate_detectGameStart)
-	-- end
+		GameIdManager.isFirstInit = false
+		GameIdManager.isDetectingGameStart = false
+	end
 end
 
 function GameIdManager.onDeleteSave(filename)
 	GameIdManager.tagSaveGameWithGameId(filename, nil)
+	local gameId = GameIdManager.getCurrentGameId()
+	GameIdManager.setSaveGamesForGameId(gameId)
 end
 
 function GameIdManager.writeToUIXModData(key, value)
@@ -9452,32 +9543,70 @@ function GameIdManager.tagSaveGameWithGameId(filename, gameId, isCurrentSaveGame
 	end
 	gameIdsBySaveGame[filename] = gameId
 	GameIdManager.writeToUIXModData("gameIdsBySaveGame", gameIdsBySaveGame)
-	GameIdManager.saveGamesForGameId = GameIdManager.getSaveGamesForGameId(gameId)
+	GameIdManager.setSaveGamesForGameId(gameId)
 	if isCurrentSaveGame == true then
 		GameIdManager.writeToUIXModData("currentSaveGame", filename)
 	end
 end
 
-function GameIdManager.getSaveGamesForGameId(gameId)
-	local saveGamesForGameId = {}
+function GameIdManager.setSaveGamesForGameId(gameId)
+	GameIdManager.saveGamesForGameId = {}
+	GameIdManager.mostRecentDatesByGameId = {}
+	GameIdManager.coloursByGameId = {}
+	-- red, orange, yellow, green, blue, purple
+	local orange = { r = 255, g = 224, b = 160, a = 100 }
+	local yellow = { r = 255, g = 255, b = 160, a = 100 }
+	local blue = { r = 160, g = 160, b = 255, a = 100 }
+	local purple = { r = 255, g = 160, b = 255, a = 100 }
+	local red = { r = 255, g = 160, b = 160, a = 100 }
+	local orange2 = { r = 224, g = 96, b = 160, a = 100 }
+	local yellow2 = { r = 224, g = 224, b = 160, a = 100 }
+	local blue2 = { r = 160, g = 160, b = 224, a = 100 }
+	local purple2 = { r = 224, g = 160, b = 224, a = 100 }
+	local red2 = { r = 224, g = 160, b = 160, a = 100 }
+	local colours = {
+		orange, yellow, blue, purple, red,
+		orange2, yellow2, blue2, purple2, red2,
+	}
+	local colourId = 1
+	C.ReloadSaveList()
+	while not C.IsSaveListLoadingComplete() do
+		-- wait until loading the savegame list is complete
+	end
 	local savegames = GetSaveList(Helper.validSaveFilenames)
 	Helper.debugText("#savegames", #savegames)
 	if savegames and #savegames then
 		table.sort(savegames, function (a, b) return a.rawtime > b.rawtime end)
 		for i, savegame in ipairs(savegames) do
 			local gameId_fromSaveGame = GameIdManager.getGameIdFromSaveGame(savegame.filename)
+			if gameId_fromSaveGame then
+				if not GameIdManager.mostRecentDatesByGameId[gameId_fromSaveGame] then
+					GameIdManager.mostRecentDatesByGameId[gameId_fromSaveGame] = savegame.rawtime
+				end
+				if not GameIdManager.coloursByGameId[gameId_fromSaveGame] then
+					GameIdManager.coloursByGameId[gameId_fromSaveGame] = colours[colourId]
+					colourId = colourId + 1
+					if colourId > #colours then
+						colourId = 1
+					end
+				end
+			end
 			if gameId == gameId_fromSaveGame then
-				table.insert(saveGamesForGameId, savegame)
+				table.insert(GameIdManager.saveGamesForGameId, savegame)
 			end
 		end
 	end
-	return saveGamesForGameId
+	return GameIdManager.saveGamesForGameId
 end
 
 function GameIdManager.onMainMenu()
 	-- main menu, get game id from most recent saved game
+	C.ReloadSaveList()
+	while not C.IsSaveListLoadingComplete() do
+		-- wait until loading the savegame list is complete
+	end
 	local savegames = GetSaveList(Helper.validSaveFilenames)
-	-- Helper.debugText_forced("#savegames", #savegames)
+	Helper.debugText_forced("#savegames", #savegames)
 	if savegames and #savegames > 0 then
 		table.sort(savegames, function (a, b) return a.rawtime > b.rawtime end)
 		local gameId = GameIdManager.getGameIdFromSaveGame(savegames[1].filename)
@@ -9490,14 +9619,14 @@ end
 function GameIdManager.onNewGame()
 	-- new game, generate new game id
 	local gameId = GameIdManager.getNewGameId()
-	Helper.debugText_forced("gameId (new game)", gameId)
+	Helper.debugText_forced("gameId (on new game)", gameId)
 	GameIdManager.writeToUIXModData("gameId", gameId)
 end
 
 function GameIdManager.onLoadGame(filename)
 	-- loaded game, get game id from loaded game
 	local gameId = GameIdManager.getGameIdFromSaveGame(filename)
-	Helper.debugText_forced("gameId (loaded game)", gameId)
+	Helper.debugText_forced("gameId (from loaded game)", gameId)
 	if not gameId then
 		gameId = GameIdManager.getNewGameId()
 		Helper.debugText_forced("gameId (untagged, get new)", gameId)
@@ -9528,6 +9657,10 @@ function GameIdManager.onSaveGame_FromMD()
 	local gameId = GameIdManager.getCurrentGameId()
 	-- Helper.debugText_forced("gameId", gameId)
 	if gameId then
+		C.ReloadSaveList()
+		while not C.IsSaveListLoadingComplete() do
+			-- wait until loading the savegame list is complete
+		end
 		local savegames = GetSaveList(Helper.validSaveFilenames)
 		-- Helper.debugText_forced("#savegames", #savegames)
 		if savegames and #savegames then
@@ -9539,29 +9672,95 @@ function GameIdManager.onSaveGame_FromMD()
 	end
 end
 
-function GameIdManager.changeSaveGameName(ftable, savegame, name, slot, name)
+function GameIdManager.sortSaveGames(saves, key, isDescending)
+	-- Helper.debugText_forced("GameIdManager.mostRecentDatesByGameId", GameIdManager.mostRecentDatesByGameId)
+	-- Helper.debugText_forced("=====")
+	table.sort (saves, function (a, b)
+		local gameId_a = GameIdManager.getGameIdFromSaveGame(a.filename)
+		local gameId_b = GameIdManager.getGameIdFromSaveGame(b.filename)
+		-- Helper.debugText_forced("filename     " .. tostring(a.filename) .. ": " .. tostring(gameId_a) .. " " .. tostring(GameIdManager.mostRecentDatesByGameId[gameId_a]) .. " " .. a[key])
+		-- Helper.debugText_forced("    filename " .. tostring(b.filename) .. ": " .. tostring(gameId_b) .. " " .. tostring(GameIdManager.mostRecentDatesByGameId[gameId_b]) .. " " .. a[key])
+		if (not gameId_a) or (not gameId_b) then
+			if gameId_a then
+				return true
+			else
+				return false
+			end
+		elseif gameId_a ~= gameId_b then
+			if GameIdManager.mostRecentDatesByGameId[gameId_a] and GameIdManager.mostRecentDatesByGameId[gameId_b] then
+				if isDescending then
+					return GameIdManager.mostRecentDatesByGameId[gameId_a] > GameIdManager.mostRecentDatesByGameId[gameId_b]
+				else
+					return GameIdManager.mostRecentDatesByGameId[gameId_a] < GameIdManager.mostRecentDatesByGameId[gameId_b]
+				end
+			else
+				if isDescending then
+					return gameId_a > gameId_b
+				else
+					return gameId_a < gameId_b
+				end
+			end
+		else
+			if isDescending then
+				return a[key] > b[key]
+			else
+				return a[key] < b[key]
+			end
+		-- elseif (not GameIdManager.mostRecentDatesByGameId[gameId_a]) or (not GameIdManager.mostRecentDatesByGameId[gameId_b]) then
+		-- elseif gameId_a == gameId_b then
+		-- 	return GameIdManager.mostRecentDatesByGameId[gameId_a] > GameIdManager.mostRecentDatesByGameId[gameId_b]
+		-- else
+		-- 	return gameId_a > gameId_b
+		end
+	end)
+end
+
+function GameIdManager.changeSaveGameDisplayName(ftable, savegame, name, slot, name)
 	local optionsMenu = Helper.getMenu("OptionsMenu")
 	if optionsMenu.currentOption == "load" or optionsMenu.currentOption == "save" then
 		local gameId = GameIdManager.getCurrentGameId()
-		Helper.debugText_forced("gameId", gameId)
+		-- Helper.debugText_forced("gameId", gameId)
 		if gameId then
-			if gameId then
-				local gameIdInSaveGame = GameIdManager.getGameIdFromSaveGame(savegame.filename)
-				Helper.debugText("gameIdInSaveGame", gameIdInSaveGame)
-				if gameId == gameIdInSaveGame then
+			local gameId_fromSaveGame = GameIdManager.getGameIdFromSaveGame(savegame.filename)
+			if gameId_fromSaveGame then
+				Helper.debugText("gameId_fromSaveGame", gameId_fromSaveGame)
+				-- if gameId_fromSaveGame then
+				-- 	name = gameId_fromSaveGame .. " " .. name
+				-- end
+				if gameId == gameId_fromSaveGame then
 					-- <t id="3401">current</t>
 					local currentSaveGame = GameIdManager.readFromUIXModData("currentSaveGame")
 					if savegame.filename == currentSaveGame then
 						name = "* " .. name
 					end
 					name = Helper.convertColorToText(Helper.color.green) .. name .. "\27X"
-				-- elseif gameIdInSaveGame then
-				-- 	name = Helper.convertColorToText(Helper.color.blue) .. name .. "\27X"
+				else
+					name = Helper.convertColorToText(GameIdManager.coloursByGameId[gameId_fromSaveGame]) .. name .. "\27X"
 				end
 			end
 		end
 	end
 	return name
+end
+
+GameIdManager.previousGameIdFromSave = nil
+function GameIdManager.preSaveGameRowAdd(ftable, savegame, displayedname, idx, max)
+	local gameId_fromSaveGame = GameIdManager.getGameIdFromSaveGame(savegame.filename)
+	local row
+	if idx > 1 and idx < max and GameIdManager.previousGameIdFromSave ~= gameId_fromSaveGame then
+		-- if previous gameId ~= this gameId, then this must be the start of a new set of gameIds
+		-- add a blank row to separate this set of gameIds
+		row = ftable:addRow(nil, { bgColor = Helper.color.transparent })
+		row[1]:createText("")
+		local row2 = ftable:addRow(nil, { bgColor = Helper.color.transparent })
+		row2[1]:createText("")
+	end
+	GameIdManager.previousGameIdFromSave = gameId_fromSaveGame
+	if row then
+		return row:getHeight() * 2
+	else
+		return 0
+	end
 end
 -- kuertee end: create gameIds and tag save games with it
 
