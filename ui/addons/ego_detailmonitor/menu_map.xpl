@@ -1,4 +1,4 @@
-﻿
+
 -- section == gMain_map
 -- param == { 0, 0, showzone, focuscomponent [, history] [, mode, modeparam] [, showmultiverse] [, focusoffset] }
  
@@ -12006,9 +12006,22 @@ function menu.setupInfoSubmenuRows(mode, inputtable, inputobject, instance)
 		locrowdata = { "info_name", ReadText(1001, 2809) .. ReadText(1001, 120), objectname }	-- Name
 		if isplayerowned then
 			row = inputtable:addRow(locrowdata[1], { bgColor = Helper.color.transparent })
-			row[2]:setColSpan(2):createText(locrowdata[2], { minRowHeight = config.mapRowHeight, fontsize = config.mapFontSize, font = Helper.standardFont, x = Helper.standardTextOffsetx + indentsize })
-			row[4]:setColSpan(5):createEditBox({ height = config.mapRowHeight, description = locrowdata[2] }):setText(objectname, { halign = "right" })
-			row[4].handlers.onEditBoxDeactivated = function(_, text, textchanged) return menu.infoChangeObjectName(inputobject, text, textchanged) end
+			
+			-- [UniTrader's Advanced Renaming] Forleyor start: callback
+			local utRenamingActive = false
+			if callbacks ["utRenaming_setupInfoSubmenuRows"] then
+				for _, callback in ipairs (callbacks ["utRenaming_setupInfoSubmenuRows"]) do
+					callback (row, instance, inputobject, objectname)
+				end
+				utRenamingActive = true
+			end
+			-- [UniTrader's Advanced Renaming] Forleyor end: callback
+
+			if not utRenamingActive then
+				row[2]:setColSpan(2):createText(locrowdata[2], { minRowHeight = config.mapRowHeight, fontsize = config.mapFontSize, font = Helper.standardFont, x = Helper.standardTextOffsetx + indentsize })
+				row[4]:setColSpan(5):createEditBox({ height = config.mapRowHeight, description = locrowdata[2] }):setText(objectname, { halign = "right" })
+				row[4].handlers.onEditBoxDeactivated = function(_, text, textchanged) return menu.infoChangeObjectName(inputobject, text, textchanged) end
+			end
 		else
 			row = menu.addInfoSubmenuRow(instance, inputtable, row, locrowdata, false, false, false, 1, indentsize, nil, nil, false)
 		end
@@ -21734,22 +21747,60 @@ function menu.createRenameContext(frame)
 	local title = menu.contextMenuData.fleetrename and ReadText(1001, 7895) or ReadText(1001, 1114)
 	local startname = menu.contextMenuData.fleetrename and ffi.string(C.GetFleetName(menu.contextMenuData.component)) or ffi.string(C.GetComponentName(menu.contextMenuData.component))
 
-	local shiptable = frame:addTable(2, { tabOrder = 2, x = Helper.borderSize, y = Helper.borderSize, width = menu.contextMenuData.width, highlightMode = "off" })
-
+	local shiptable
+	local utRenamingActive = false
+	-- [UniTrader's Advanced Renaming] Forleyor start: callback
+	if callbacks ["utRenaming_createRenameContext"] then
+		for _, callback in ipairs (callbacks ["utRenaming_createRenameContext"]) do
+			startname = callback (frame)
+		end
+		utRenamingActive = true
+		shiptable = frame:addTable(6, { tabOrder = 2, x = Helper.borderSize, y = Helper.borderSize, width = menu.contextMenuData.width, highlightMode = "off" })
+		-- [UniTrader's Advanced Renaming] Forleyor end: callback
+	else
+		shiptable = frame:addTable(2, { tabOrder = 2, x = Helper.borderSize, y = Helper.borderSize, width = menu.contextMenuData.width, highlightMode = "off" })
+	end
+	
 	-- title
 	local row = shiptable:addRow(nil, { fixed = true, bgColor = Helper.color.transparent })
-	row[1]:setColSpan(2):createText(title, Helper.headerRowCenteredProperties)
+
+	if utRenamingActive then
+		row[1]:setColSpan(6):createText(title, Helper.headerRowCenteredProperties)
+	else
+		row[1]:setColSpan(2):createText(title, Helper.headerRowCenteredProperties)
+	end
 
 	local row = shiptable:addRow(true, { fixed = true, bgColor = Helper.color.transparent })
-	menu.contextMenuData.nameEditBox = row[1]:setColSpan(2):createEditBox({ height = config.mapRowHeight, description = title }):setText(startname)
+
+	if utRenamingActive then
+		menu.contextMenuData.nameEditBox = row[1]:setColSpan(6):createEditBox({ height = config.mapRowHeight, description = title }):setText(startname)
+	else
+		menu.contextMenuData.nameEditBox = row[1]:setColSpan(2):createEditBox({ height = config.mapRowHeight, description = title }):setText(startname)
+	end
+
 	row[1].handlers.onTextChanged = function (_, text, textchanged) menu.contextMenuData.newtext = text end
 	row[1].handlers.onEditBoxDeactivated = menu.buttonRenameConfirm
 
 	local row = shiptable:addRow(true, { fixed = true, bgColor = Helper.color.transparent })
-	row[1]:createButton({  }):setText(ReadText(1001, 2821), { halign = "center" })
-	row[1].handlers.onClick = menu.buttonRenameConfirm
-	row[2]:createButton({  }):setText(ReadText(1001, 64), { halign = "center" })
-	row[2].handlers.onClick = function () return menu.closeContextMenu("back") end
+	if utRenamingActive then
+		row[1]:setColSpan(3):createButton({  }):setText(ReadText(1001, 2821), { halign = "center" })
+		row[1].handlers.onClick = menu.buttonRenameConfirm
+		row[4]:setColSpan(3):createButton({  }):setText(ReadText(1001, 64), { halign = "center" })
+		row[4].handlers.onClick = function () return menu.closeContextMenu("back") end
+	else
+		row[1]:createButton({  }):setText(ReadText(1001, 2821), { halign = "center" })
+		row[1].handlers.onClick = menu.buttonRenameConfirm
+		row[2]:createButton({  }):setText(ReadText(1001, 64), { halign = "center" })
+		row[2].handlers.onClick = function () return menu.closeContextMenu("back") end
+	end
+
+	-- [UniTrader's Advanced Renaming] Forleyor start: callback
+	if callbacks ["utRenaming_createRenameContextTwo"] then
+		for _, callback in ipairs (callbacks ["utRenaming_createRenameContextTwo"]) do
+			callback (frame, shiptable)
+		end
+	end
+	-- [UniTrader's Advanced Renaming] Forleyor end: callback
 
 	-- adjust frame position
 	local neededheight = shiptable.properties.y + shiptable:getVisibleHeight()
@@ -22323,7 +22374,15 @@ function menu.buttonRenameConfirm()
 		if menu.contextMenuData.fleetrename then
 			C.SetFleetName(menu.contextMenuData.component, menu.contextMenuData.newtext)
 		else
-			SetComponentName(menu.contextMenuData.component, menu.contextMenuData.newtext)
+			-- [UniTrader's Advanced Renaming] Forleyor start: callback
+			if callbacks ["utRenaming_buttonRenameConfirm"] then
+				for _, callback in ipairs (callbacks ["utRenaming_buttonRenameConfirm"]) do
+					callback (objectid, text)
+				end
+			else
+				SetComponentName(menu.contextMenuData.component, menu.contextMenuData.newtext)
+			end
+			-- [UniTrader's Advanced Renaming] Forleyor end: callback
 		end
 	end
 	menu.noupdate = false
@@ -26121,6 +26180,14 @@ function menu.infoChangeObjectName(objectid, text, textchanged)
 	if textchanged then
 		SetComponentName(objectid, text)
 	end
+
+	-- [UniTrader's Advanced Renaming] Forleyor start: callback
+	if callbacks ["utRenaming_infoChangeObjectName"] then
+		for _, callback in ipairs (callbacks ["utRenaming_infoChangeObjectName"]) do
+			callback (objectid, text)
+		end
+	end
+	-- [UniTrader's Advanced Renaming] Forleyor end: callback
 
 	menu.noupdate = false
 	menu.refreshInfoFrame()
