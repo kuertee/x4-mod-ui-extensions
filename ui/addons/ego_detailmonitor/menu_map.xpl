@@ -21752,9 +21752,11 @@ function menu.createRenameContext(frame)
 	-- [UniTrader's Advanced Renaming] Forleyor start: callback
 	if callbacks ["utRenaming_createRenameContext"] then
 		for _, callback in ipairs (callbacks ["utRenaming_createRenameContext"]) do
-			startname = callback (frame)
+			startname = callback (frame, nil)
 		end
 		utRenamingActive = true
+		index = 4
+		span = 6
 		shiptable = frame:addTable(6, { tabOrder = 2, x = Helper.borderSize, y = Helper.borderSize, width = menu.contextMenuData.width, highlightMode = "off" })
 		-- [UniTrader's Advanced Renaming] Forleyor end: callback
 	else
@@ -21763,40 +21765,34 @@ function menu.createRenameContext(frame)
 	
 	-- title
 	local row = shiptable:addRow(nil, { fixed = true, bgColor = Helper.color.transparent })
-
-	if utRenamingActive then
-		row[1]:setColSpan(6):createText(title, Helper.headerRowCenteredProperties)
-	else
-		row[1]:setColSpan(2):createText(title, Helper.headerRowCenteredProperties)
-	end
+	row[1]:setColSpan(span):createText(title, Helper.headerRowCenteredProperties)
 
 	local row = shiptable:addRow(true, { fixed = true, bgColor = Helper.color.transparent })
 
-	if utRenamingActive then
-		menu.contextMenuData.nameEditBox = row[1]:setColSpan(6):createEditBox({ height = config.mapRowHeight, description = title }):setText(startname)
-	else
-		menu.contextMenuData.nameEditBox = row[1]:setColSpan(2):createEditBox({ height = config.mapRowHeight, description = title }):setText(startname)
-	end
+	menu.contextMenuData.nameEditBox = row[1]:setColSpan(span):createEditBox({ height = config.mapRowHeight, description = title }):setText(startname)
 
 	row[1].handlers.onTextChanged = function (_, text, textchanged) menu.contextMenuData.newtext = text end
 	row[1].handlers.onEditBoxDeactivated = menu.buttonRenameConfirm
 
 	local row = shiptable:addRow(true, { fixed = true, bgColor = Helper.color.transparent })
+
+	row[1]:createButton({  }):setText(ReadText(1001, 2821), { halign = "center" })
+	row[index]:createButton({  }):setText(ReadText(1001, 64), { halign = "center" })
+
 	if utRenamingActive then
 		row[1]:setColSpan(3):createButton({  }):setText(ReadText(1001, 2821), { halign = "center" })
-		row[1].handlers.onClick = menu.buttonRenameConfirm
-		row[4]:setColSpan(3):createButton({  }):setText(ReadText(1001, 64), { halign = "center" })
-		row[4].handlers.onClick = function () return menu.closeContextMenu("back") end
+		row[index]:setColSpan(3):createButton({  }):setText(ReadText(1001, 64), { halign = "center" })
 	else
 		row[1]:createButton({  }):setText(ReadText(1001, 2821), { halign = "center" })
-		row[1].handlers.onClick = menu.buttonRenameConfirm
-		row[2]:createButton({  }):setText(ReadText(1001, 64), { halign = "center" })
-		row[2].handlers.onClick = function () return menu.closeContextMenu("back") end
+		row[index]:createButton({  }):setText(ReadText(1001, 64), { halign = "center" })
 	end
 
+	row[1].handlers.onClick = menu.buttonRenameConfirm
+	row[index].handlers.onClick = function () return menu.closeContextMenu("back") end
+
 	-- [UniTrader's Advanced Renaming] Forleyor start: callback
-	if callbacks ["utRenaming_createRenameContextTwo"] then
-		for _, callback in ipairs (callbacks ["utRenaming_createRenameContextTwo"]) do
+	if callbacks ["utRenaming_createRenameContext"] then
+		for _, callback in ipairs (callbacks ["utRenaming_createRenameContext"]) do
 			callback (frame, shiptable)
 		end
 	end
