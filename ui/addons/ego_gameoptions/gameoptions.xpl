@@ -9453,7 +9453,7 @@ function GameIdManager.onUpdate_detectGameStart()
 end
 
 function GameIdManager.onDeleteSave(filename)
-	GameIdManager.tagSaveGameWithGameId(filename, nil)
+	GameIdManager.tagSaveGameWithGameId(filename)
 	local gameId = GameIdManager.getCurrentGameId()
 	GameIdManager.setSaveGamesForGameId(gameId)
 end
@@ -9533,7 +9533,7 @@ function GameIdManager.getGameIdFromSaveGame(filename)
 	return gameId
 end
 
-function GameIdManager.tagSaveGameWithGameId(filename, gameId, isCurrentSaveGame)
+function GameIdManager.tagSaveGameWithGameId(filename, gameId, isCurrentSaveGame, operation)
 	Helper.debugText_forced("filename", filename)
 	Helper.debugText_forced("gameId", gameId)
 	GameIdManager.saveCurrentGameId(gameId)
@@ -9545,7 +9545,20 @@ function GameIdManager.tagSaveGameWithGameId(filename, gameId, isCurrentSaveGame
 	GameIdManager.writeToUIXModData("gameIdsBySaveGame", gameIdsBySaveGame)
 	GameIdManager.setSaveGamesForGameId(gameId)
 	if isCurrentSaveGame == true then
-		GameIdManager.writeToUIXModData("currentSaveGame", filename)
+		local isAutoSave = (string.find(filename, "autosave_", 1, true) == 1)
+		local isQuickSave = (filename == "quicksave")
+		if (not isAutoSave) and (not isQuickSave) then
+			-- do not clear currentSaveGame as on save menu, autosaves are not listed, and current save game still needs to be shown as current
+			GameIdManager.writeToUIXModData("currentSaveGame", filename)
+		else
+			if operation == "save" then
+				-- save partnerSaveGame so that it can be marked when quick and autosaves are not listed
+				local partnerSaveGame = GameIdManager.readFromUIXModData("currentSaveGame")
+				Helper.debugText_forced("partnerSaveGame", partnerSaveGame)
+				GameIdManager.writeToUIXModData(filename .. "_partnerSaveGame", partnerSaveGame)
+			end
+			GameIdManager.writeToUIXModData("currentSaveGame", filename)
+		end
 	end
 end
 
@@ -9621,6 +9634,7 @@ function GameIdManager.onNewGame()
 	local gameId = GameIdManager.getNewGameId()
 	Helper.debugText_forced("gameId (on new game)", gameId)
 	GameIdManager.writeToUIXModData("gameId", gameId)
+	GameIdManager.writeToUIXModData("currentSaveGame", nil)
 end
 
 function GameIdManager.onLoadGame(filename)
@@ -9633,7 +9647,7 @@ function GameIdManager.onLoadGame(filename)
 		GameIdManager.writeToUIXModData("gameId", gameId)
 	end
 	local isCurrentSaveGame = true
-	GameIdManager.tagSaveGameWithGameId(filename, gameId, isCurrentSaveGame)
+	GameIdManager.tagSaveGameWithGameId(filename, gameId, isCurrentSaveGame, "load")
 end
 
 -- function GameIdManager.onSaveGame(savegame, name)
@@ -9645,7 +9659,8 @@ end
 -- 		Helper.debugText_forced("savegame.filename", savegame.filename)
 -- 		Helper.debugText_forced("gameId", gameId)
 -- 		if gameId then
--- 			GameIdManager.tagSaveGameWithGameId(savegame.filename, gameId)
+--			local isCurrentSaveGame = true
+-- 			GameIdManager.tagSaveGameWithGameId(savegame.filename, gameId, isCurrentSaveGame, "save")
 -- 		end
 -- 	end
 -- end
@@ -9667,7 +9682,7 @@ function GameIdManager.onSaveGame_FromMD()
 			table.sort(savegames, function(a, b) return a.rawtime > b.rawtime end)
 			-- Helper.debugText_forced("savegames[1].filename", savegames[1].filename)
 			local isCurrentSaveGame = true
-			GameIdManager.tagSaveGameWithGameId(savegames[1].filename, gameId, isCurrentSaveGame)
+			GameIdManager.tagSaveGameWithGameId(savegames[1].filename, gameId, isCurrentSaveGame, "save")
 		end
 	end
 end
@@ -9730,8 +9745,33 @@ function GameIdManager.changeSaveGameDisplayName(ftable, savegame, name, slot, n
 				if gameId == gameId_fromSaveGame then
 					-- <t id="3401">current</t>
 					local currentSaveGame = GameIdManager.readFromUIXModData("currentSaveGame")
-					if savegame.filename == currentSaveGame then
-						name = "* " .. name
+					if optionsMenu.currentOption == "load" then
+						if savegame.filename == currentSaveGame then
+							if not savegame.originalName then
+								savegame.originalName = savegame.name
+							end
+							name = "* " .. savegame.originalName
+						end
+					else
+						-- note: in save menu, autosaves are not listed even if a more current autosave exists
+						local partnerSaveGame = GameIdManager.readFromUIXModData(currentSaveGame .. "_partnerSaveGame")
+						Helper.debugText_forced("partnerSaveGame", partnerSaveGame)
+						if partnerSaveGame then
+							if savegame.filename == partnerSaveGame then
+								if not savegame.originalName then
+									savegame.originalName = savegame.name
+								end
+								name = "* " .. savegame.originalName
+							end
+						else
+							-- otherwise, mark the currentSaveGame
+							if savegame.filename == currentSaveGame then
+								if not savegame.originalName then
+									savegame.originalName = savegame.name
+								end
+								name = "* " .. savegame.originalName
+							end
+						end
 					end
 					name = Helper.convertColorToText(Helper.color.green) .. name .. "\27X"
 				else
