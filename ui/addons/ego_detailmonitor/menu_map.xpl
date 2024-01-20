@@ -21749,6 +21749,7 @@ function menu.createRenameContext(frame)
 
 	local shiptable
 	local utRenamingActive = false
+	local index, span = 2, 2
 	-- [UniTrader's Advanced Renaming] Forleyor start: callback
 	if callbacks ["utRenaming_createRenameContext"] then
 		for _, callback in ipairs (callbacks ["utRenaming_createRenameContext"]) do
