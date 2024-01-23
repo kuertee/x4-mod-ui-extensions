@@ -9734,6 +9734,14 @@ function Helper.onTransactionLogEditBoxActivated(widget)
 end
 
 function Helper.createTransactionLog(frame, container, tableProperties, refreshCallback, selectionData)
+	-- mycu start: callback
+	if callbacks ["createTransactionLog_on_start"] then
+		for _, callback in ipairs (callbacks ["createTransactionLog_on_start"]) do
+			callback ()
+		end
+	end
+	-- mycu end: callback
+
 	Helper.transactionLogData = {
 		accountLog = {},
 		accountLogUnfiltered = {},
@@ -9820,6 +9828,14 @@ function Helper.createTransactionLog(frame, container, tableProperties, refreshC
 				entry.partnername = ""
 			end
 		end
+
+		-- mycu start: callback
+		if callbacks ["createTransactionLog_on_before_adding_entry"] then
+			for _, callback in ipairs (callbacks ["createTransactionLog_on_before_adding_entry"]) do
+				entry = callback (entry)
+			end
+		end
+		-- mycu end: callback
 
 		table.insert(Helper.transactionLogData.accountLog, entry)
 	end
