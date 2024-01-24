@@ -12804,11 +12804,12 @@ function Helper.debugText (data1, data2, indent, isForced, getinfodata)
 		end
 		local noteFuncName = ""
 		local noteLocation = ""
-		if (not noteFuncName) or noteFuncName == "callback" or noteFuncName == "nil" then
-			noteFuncName = " (inaccurate)"
-			noteLocation = " (location of inaccurate funcName)"
+		if (not noteFuncName) or tostring(getinfodata.name) == "callback" or tostring(getinfodata.name) == "nil" then
+			noteFuncName = " (approx)"
+			noteLocation = " (location of approx funcName)"
 		end
-		DebugError ("uix funcName" .. tostring(noteFuncName) .. ": " .. tostring(getinfodata.name) .. " data1: " .. indent .. tostring (data1) .. " (" .. tostring(type(data1)) .. ") data2: " .. tostring(data2) .. " (" .. tostring(type(data2)) .. ") at" .. tostring(noteLocation) .. ": line: " .. tostring(getinfodata.linedefined) .. " of: " .. tostring(getinfodata.short_src))
+		-- DebugError ("uix funcName" .. tostring(noteFuncName) .. ": " .. tostring(getinfodata.name) .. " data1: " .. indent .. tostring (data1) .. " (" .. tostring(type(data1)) .. ") data2: " .. tostring(data2) .. " (" .. tostring(type(data2)) .. ") at" .. tostring(noteLocation) .. ": line: " .. tostring(getinfodata.linedefined) .. " of: " .. tostring(getinfodata.short_src))
+		DebugError ("uix funcName" .. tostring(noteFuncName) .. ": " .. tostring(getinfodata.name) .. ": " .. indent .. tostring (data1) .. " = " .. tostring(data2) .. " at" .. tostring(noteLocation) .. ": line: " .. tostring(getinfodata.linedefined) .. " of: " .. tostring(getinfodata.short_src))
 		indent = indent .. "  "
 		if type(data1) == "table" then
 			for key, value in pairs(data1) do
