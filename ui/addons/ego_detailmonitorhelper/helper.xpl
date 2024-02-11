@@ -707,9 +707,19 @@ end
 
 -- kuertee start:
 function Helper.init_kuertee ()
-	Helper.initModLuas("Helper")
+	Helper.loadModLuas("Helper", "helper_uix")
 	Helper.SWIUI_Init()
-	DebugError("uix init success: " .. tostring(debug.getinfo(1).source))
+	-- if Helper.modLuas["Helper"] then
+	-- 	if not next(Helper.modLuas["Helper"].failedByExtension) then
+	-- 		DebugError("uix init success: " .. tostring(debug.getinfo(1).source))
+	-- 	else
+	-- 		for extension, modLua in pairs(Helper.modLuas["Helper"].failedByExtension) do
+	-- 			DebugError("uix init failed: " .. tostring(debug.getinfo(modLua.init).source):gsub("@.\\", ""))
+	-- 		end
+	-- 	end
+	-- else
+		DebugError("uix load success: " .. tostring(debug.getinfo(1).source))
+	-- end
 end
 -- kuertee end
 
@@ -839,6 +849,17 @@ function onUpdate()
 	if onChatUpdateHandler then
 		onChatUpdateHandler()
 	end
+
+	-- kuertee start: init mod luas after loading the last one
+	local curRealTime = GetCurRealTime()
+	if Helper.time_initModLuasNow and curRealTime > Helper.time_initModLuasNow then
+		Helper.time_initModLuasNow = nil
+		-- for menuName_inList, menuData in pairs(Helper.modLuas) do
+		-- 	Helper.debugText_forced(menuName_inList)
+		-- end
+		Helper.initModLuas2()
+	end
+	-- kuertee end: init mod luas after loading the last one
 
 	-- kuertee start: callback
 	if callbacks ["onUpdate"] then
@@ -1189,10 +1210,6 @@ local function createCustomHooks(menu)
 								end
 end
 
--- kuertee start: mod luas
-local isModLuaInited = {}
--- end
-
 function Helper.registerMenu(menu)
 	menu.rowDataMap = {}
 	menu.frameData = {}
@@ -1202,10 +1219,6 @@ function Helper.registerMenu(menu)
 
 	-- Create and register a closure that will be called when the menu should be started
 	menu.showMenuCallback = function(...)
-
-		-- kuertee start: mod luas
-		Helper.initModLuas(menu.name)
-		-- kuertee end
 
 		if C.IsGameOver() and (menu.name ~= "OptionsMenu") then
 			return
@@ -12837,11 +12850,13 @@ function Helper.debugText_forced (data1, data2, indent)
 end
 
 Helper.modLuas = {}
+Helper.time_initModLuasNow = nil
 function Helper.loadModLuas(menuName, modLuaName)
 	if not Helper.modLuas[menuName] then
 		Helper.modLuas[menuName] = {
-			modLuaName = modLuaName,
-			isInited = false,
+			menu = nil,
+			isInitedFirstTime = nil,
+			isTriggerUIEventNow = nil,
 			byExtension = {},
 			failedByExtension = {}
 		}
@@ -12858,7 +12873,11 @@ function Helper.loadModLuas(menuName, modLuaName)
 				-- Helper.debugText_forced("file: " .. tostring(file) .. " modLua: " .. tostring(Helper.modLuas[menuName].byExtension[extension.location]))
 				if isSuccess then
 					isModLuaLoaded = true
+					-- Helper.debugText_forced("Helper.modLuas[menuName]", tostring(Helper.modLuas[menuName]))
+					-- Helper.debugText_forced("Helper.modLuas[menuName].byExtension[extension.location]", tostring(Helper.modLuas[menuName].byExtension[extension.location]))
+					-- Helper.debugText_forced("Helper.modLuas[menuName].byExtension[extension.location].init", tostring(Helper.modLuas[menuName].byExtension[extension.location].init))
 					DebugError("uix load success: " .. tostring(debug.getinfo(Helper.modLuas[menuName].byExtension[extension.location].init).source:gsub("@.\\", "")))
+					Helper.time_initModLuasNow = GetCurRealTime() + 1
 				else
 					local isFileMissing = string.find(errorMsg, "not found")
 					if not isFileMissing then
@@ -12874,77 +12893,69 @@ function Helper.loadModLuas(menuName, modLuaName)
 	end
 end
 
-local isModLuaInited_general
--- initModLuas () is called on show of a menu. assume all base luas have inited by then.
-function Helper.initModLuas(menuName)
-	-- init only mod luas for menuName
-	-- not ideal because some mod luas of menuName access other menuNames
-	-- local isModLuaInited
-	-- if Helper.modLuas[menuName] then
-	-- 	if Helper.modLuas[menuName].modLuaName then
-	-- 		local modLuaName = Helper.modLuas[menuName].modLuaName
-	-- 		if Helper.modLuas[menuName].isInited ~= true then
-	-- 			Helper.modLuas[menuName].isInited = true
-	-- 			for extension, modLua in pairs(Helper.modLuas[menuName].byExtension) do
-	-- 				local file = "extensions." .. extension:gsub("%\\", "") .. ".ui." .. modLuaName
-	-- 				if pcall(function () modLua.init() end) then
-	-- 					isModLuaInited = true
-	-- 					DebugError("uix: " .. tostring(file) .. " init success")
-	-- 				else
-	-- 					DebugError("uix: " .. tostring(file) .. " init failed")
-	-- 					Helper.debugText_forced("Helper.initModLuas modLua", modLua)
-	-- 				end
-	-- 			end
-	-- 		end
-	-- 	end
-	-- end
-	-- Helper.debugText_forced("Helper.initModLuas " .. tostring(menuName) .. " " .. tostring(modLuaName) .. " #extensions: " .. tostring(#Helper.modLuas[menuName].byExtension) .. " isModLuaInited: " .. tostring(isModLuaInited))
-	-- if isModLuaInited then
-	-- 	AddUITriggeredEvent("uix_mod_lua", "init", menuName)
-	-- end
-	--
+Helper.isModLuaInited_general = nil
+function Helper.initModLuas()
+	-- make previous initModLuas() obsolete.
+	-- new initModLuas2() is triggered automatically one second after the last successful loadModLuas().
+	-- initialisation of custom luas do not depend on the menu being opened/triggered anymore like in the previous version of uix.
+	-- search for: time_initModLuasNow.
+end
+function Helper.initModLuas2()
 	-- brute force: init all loaded mod luas regardless of menuName
 	-- better because this ensures that mod luas of menuName can access other menuNames
+	local initedMenuDatasByMenuName = {}
 	for menuName_inList, menuData in pairs(Helper.modLuas) do
-		local isModLuaInited
-		local modLuaName = menuData.modLuaName
-		if menuData.isInited ~= true then
-			menuData.isInited = true
+		if not menuData.isInitedFirstTime then
+			menuData.isInitedFirstTime = true
 			for extension, modLua in pairs(menuData.byExtension) do
-				local file = "extensions." .. extension:gsub("%\\", "") .. ".ui." .. modLuaName
 				local isSuccess, errorMsg = pcall(function () modLua.init() end)
 				if isSuccess then
-					isModLuaInited = true
+					menuData.isTriggerUIEventNow = true
 					DebugError("uix init success: " .. tostring(debug.getinfo(modLua.init).source):gsub("@.\\", ""))
+					initedMenuDatasByMenuName[menuName_inList] = menuData
 				else
 					DebugError("uix init failed: " .. tostring(errorMsg))
 					menuData.failedByExtension[extension] = modLua
 				end
 			end
 		end
-		-- try those that failed in the last init, e.g. some luas may be trying to access menus that need to be open
-		local extensionsToRemove = {}
+	end
+	-- try those that failed in the last init, e.g. some luas may be trying to access menus that need to be open
+	for menuName_inList, menuData in pairs(Helper.modLuas) do
+		-- DebugError(menuName_inList .. " failedByExtension: " .. tostring(next(menuData.failedByExtension)))
 		for extension, modLua in pairs(menuData.failedByExtension) do
-			local file = "extensions." .. extension:gsub("%\\", "") .. ".ui." .. modLuaName
+			DebugError("uix retrying init " .. tostring(debug.getinfo(modLua.init).source):gsub("@.\\", ""))
 			local isSuccess, errorMsg = pcall(function () modLua.init() end)
 			if isSuccess then
-				isModLuaInited = true
-				DebugError("uix init success: " .. tostring(debug.getinfo(modLua.init).source))
-				table.insert(extensionsToRemove, extension)
+				menuData.isTriggerUIEventNow = true
+				DebugError("    uix init success at next try/tries: " .. tostring(debug.getinfo(modLua.init).source):gsub("@.\\", ""))
+				-- table.remove(menuData.failedByExtension, extension)
+				menuData.failedByExtension[extension] = nil
+				initedMenuDatasByMenuName[menuName_inList] = menuData
 			else
-				DebugError("uix init failed at next try: " .. tostring(errorMsg))
+				DebugError("    uix init failed at next try/tries: " .. tostring(errorMsg))
 			end
 		end
-		for _, extension in ipairs(extensionsToRemove) do
-			table.remove(menuData.failedByExtension, extension)
-		end
-		if isModLuaInited then
-			AddUITriggeredEvent("uix_mod_lua", "init", menuName_inList)
+	end
+	-- trigger ui events of any menu name that was inited successfully
+	local isAllInited = true
+	for menuName_inList, menuData in pairs(initedMenuDatasByMenuName) do
+		if not next(menuData.failedByExtension) then
+			if menuData.isTriggerUIEventNow then
+				menuData.isTriggerUIEventNow = nil
+				AddUITriggeredEvent("uix_mod_lua", "init", menuName_inList)
+				-- DebugError("AddUITriggeredEvent uix_mod_lua init: " .. tostring(menuName_inList))
+			end
+		else
+			isAllInited = nil
 		end
 	end
-	if not isModLuaInited_general then
-		isModLuaInited_general = true
-		AddUITriggeredEvent("uix_mod_lua", "init")
+	if isAllInited then
+		if not Helper.isModLuaInited_general then
+			Helper.isModLuaInited_general = true
+			AddUITriggeredEvent("uix_mod_lua", "init")
+			-- DebugError("AddUITriggeredEvent uix_mod_lua init")
+		end
 	end
 end
 -- kuertee end
