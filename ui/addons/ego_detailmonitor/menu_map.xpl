@@ -1,4 +1,4 @@
-
+﻿
 -- section == gMain_map
 -- param == { 0, 0, showzone, focuscomponent [, history] [, mode, modeparam] [, showmultiverse] [, focusoffset] }
  
@@ -14555,6 +14555,13 @@ function menu.setupLoadoutInfoSubmenuRows(mode, inputtable, inputobject, instanc
 			end
 		end
 	end
+
+    if callbacks["setupLoadoutInfoSubmenuRows_rows_between_ammo_and_countermeasures"] then
+        for _, callback in ipairs(callbacks["setupLoadoutInfoSubmenuRows_rows_between_ammo_and_countermeasures"]) do
+            callback(mode, inputtable, inputobject)
+        end
+    end
+
 	if mode == "ship" then
 		-- countermeasures
 		local numcountermeasuretypes = C.GetNumAllCountermeasures(inputobject)
