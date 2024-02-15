@@ -1246,6 +1246,13 @@ function menu.buttonSave(overwrite)
 		Helper.callLoadoutFunction(menu.upgradeplan, nil, function (loadout, _) return C.SaveLoadout2(macro, loadout, "local", loadoutid or "player", loadoutid ~= nil, menu.loadoutName, "") end, nil, "UILoadout2")
 		menu.getPresetLoadouts()
 	end
+
+	if callbacks["buttonSave_after_loadout_saved"] then
+		for _, callback in ipairs(callbacks["buttonSave_after_loadout_saved"]) do
+			callback(overwrite, macro)
+		end
+	end
+
 	menu.closeContextMenu()
 	menu.displayMenu()
 end
@@ -2077,7 +2084,16 @@ function menu.buttonAddPurchase(hasupgrades, hasrepairs)
 		groupstates = menu.objectgroup.states
 	end
 
-	table.insert(menu.shoppinglist, { objectgroup = objectgroup, groupstates = groupstates, object = object, macro = menu.macro, hasupgrades = hasupgrades, upgradeplan = menu.upgradeplan, crew = menu.crew, settings = menu.settings, amount = 1, price = menu.total, crewprice = menu.crewtotal, duration = menu.duration, warnings = menu.warnings, customshipname = menu.customshipname, useloadoutname = menu.useloadoutname, loadoutName = menu.loadoutName, playershipname = menu.playershipname })
+	local shoppingEntry = { objectgroup = objectgroup, groupstates = groupstates, object = object, macro = menu.macro, hasupgrades = hasupgrades, upgradeplan = menu.upgradeplan, crew = menu.crew, settings = menu.settings, amount = 1, price = menu.total, crewprice = menu.crewtotal, duration = menu.duration, warnings = menu.warnings, customshipname = menu.customshipname, useloadoutname = menu.useloadoutname, loadoutName = menu.loadoutName, playershipname = menu.playershipname }
+
+	-- updates shoppingEntry with required data after button "add to shopping list" pressed
+	if callbacks["buttonAddPurchase_update_shopping_list_table"] then
+		for _, callback in ipairs(callbacks["buttonAddPurchase_update_shopping_list_table"]) do
+			callback(shoppingEntry)
+		end
+	end
+
+	table.insert(menu.shoppinglist,shoppingEntry)
 	menu.object = 0
 	menu.objectgroup = nil
 	menu.damagedcomponents = {}
@@ -10328,6 +10344,12 @@ function menu.repairandupgrade(shoppinglistentry, object, macro, hasupgrades, ha
 			if (buildtaskid ~= 0) and haspaid then
 				C.SetBuildTaskTransferredMoney(buildtaskid, objectprice and (objectprice + objectcrewprice) or haspaid)
 			end
+
+            if callbacks["repairandupgrade_after_build_order_created"] then
+                for _, callback in ipairs(callbacks["repairandupgrade_after_build_order_created"]) do
+                    callback(shoppinglistentry, object, buildtaskid)
+                end
+            end
 		end
 	end
 end
