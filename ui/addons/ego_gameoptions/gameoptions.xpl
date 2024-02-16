@@ -2688,11 +2688,11 @@ function menu.addSavegameRow(ftable, savegame, name, slot)
 			end
 		end
 		if not isSaveFileOk then
-			savegame.isListed = nil
+			savegame.uix_isTakesSpace = nil
 			return 0
 		end
 	end
-	savegame.isListed = true
+	savegame.uix_isTakesSpace = true
 	-- kuertee end: callback
 
 	-- kuertee start: callback
@@ -7601,6 +7601,14 @@ function menu.displaySavegameOptions(optionParameter)
 
 				local idx = tonumber(string.match(savegame.filename, "^save_(%d+)"))
 				maxRowHeight = math.max(maxRowHeight, menu.addSavegameRow(ftable, savegame, savegame.displayedname, idx))
+
+				-- kuertee start: callback
+				if callbacks ["displaySaveGameOptions_postSaveGameRowAdd"] then
+					for _, callback in ipairs (callbacks ["displaySaveGameOptions_postSaveGameRowAdd"]) do
+						maxRowHeight = math.max(maxRowHeight, callback(ftable, savegame, savegame.displayedname, i, #sortablesaves))
+					end
+				end
+				-- kuertee end: callback
 			end
 
 			-- kuertee start: more save games
