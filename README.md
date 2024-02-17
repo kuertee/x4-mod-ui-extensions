@@ -1,16 +1,15 @@
 UI Extensions and HUD
 https://www.nexusmods.com/x4foundations/mods/552
 Code: https://github.com/kuertee/x4-mod-ui-extensions
-by kuertee. Contributors: Forleyor, Mycu, Runekn, AlexandreTK.
+by kuertee. Contributors: Erixon, Forleyor, Mycu, Runekn, AlexandreTK.
 
 Updates
 =======
-v6.2.010, 28 Dec 2023:
--New feature: New callback in the Map Menu for an upcoming mod.
-
-v6.2.0093, 24 Dec 2023:
--Bug-fix: Trigger an init event from UIX even if no mods have custom lua files loaded in case the event is required by a mod's MD.
--Bug-fix: The github releases were crashing the game due to github changing the line feed character in the XMLs and likely in the cat/dat files. ref: https://docs.github.com/en/get-started/getting-started-with-git/configuring-git-to-handle-line-endings
+v6.2.011, 18 Feb 2024:
+-New feature: (by Erixon) New callbacks for smart_supply mod to be released by Erixon soon after this release.
+-New feature: (by Forleyor) New callbacks for  UniTrader's Advanced Renaming mod (https://github.com/UniTrader/ut_advanced_renaming).
+-New feature: (by Mycu) New callbacks for 'Verbose transaction log' mod to be released by Erixon soon after this release.
+-New features: New callbacks for Grouped save files mod (https://www.nexusmods.com/x4foundations/mods/1310) that is required by the new Ironman mode feature of the Alternatives to death mod (https://www.nexusmods.com/x4foundations/mods/551).
 
 Instructions for players
 ========================
@@ -174,6 +173,13 @@ Troubleshooting
 
 History
 =======
+v6.2.010, 28 Dec 2023:
+-New feature: New callback in the Map Menu for an upcoming mod.
+
+v6.2.0093, 24 Dec 2023:
+-Bug-fix: Trigger an init event from UIX even if no mods have custom lua files loaded in case the event is required by a mod's MD.
+-Bug-fix: The github releases were crashing the game due to github changing the line feed character in the XMLs and likely in the cat/dat files. ref: https://docs.github.com/en/get-started/getting-started-with-git/configuring-git-to-handle-line-endings
+
 v6.2.009, 17 Dec 2023:
 -New feature: Lua files of mods are now loaded when the base-game lua files are loaded. i.e. They don't need a signal from the Mission Director like in previous versions. Mods that use the old method still work, so there's no need for the mod author to update their mod. This new version allows modifications to lua files that are not in-game specific. E.g. customgame.lua.
 
