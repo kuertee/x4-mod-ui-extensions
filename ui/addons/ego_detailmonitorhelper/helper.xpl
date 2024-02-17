@@ -12781,10 +12781,10 @@ function Helper.registerCallback (callbackName, callbackFunction)
 	-- note 3: new callbacks can be added or existing callbacks can be edited. but commit your additions/changes to the mod's GIT repository.
 	-- note 4: search for the callback names to see where they are executed.
 	-- note 5: if a callback requires a return value, return it in an object var. e.g. "display_on_set_room_active" requires a return of {active = true | false}.
-	-- available callbacks:
-	-- name = createLSOStorageNode_get_ware_name(ware)
-	-- onExpandLSOStorageNode_list_incoming_trade(row, name, reservation)
-	--
+
+	-- to find callbacks available for this menu,
+	-- reg-ex search for callbacks.*\[\".*\]
+
 	if callbacks [callbackName] == nil then
 		callbacks [callbackName] = {}
 	end

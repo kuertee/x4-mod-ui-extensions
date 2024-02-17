@@ -352,12 +352,10 @@ function menu.registerCallback (callbackName, callbackFunction)
 	-- note 3: new callbacks can be added or existing callbacks can be edited. but commit your additions/changes to the mod's GIT repository.
 	-- note 4: search for the callback names to see where they are executed.
 	-- note 5: if a callback requires a return value, return it in an object var. e.g. "display_on_set_room_active" requires a return of {active = true | false}.
-	-- available callbacks:
-	-- createInfoFrame_on_before_frame_display (frame)
-	-- createInfoFrame_onUpdate_before_frame_update (frame)
-	-- {ftables = {created ftable 1, created ftable 2, ...}} = kHUD_add_HUD_tables (frame)
-	-- kHUD_update_HUD_tables (frame, {created ftable 1, created ftable 2, ...})
-	--
+
+	-- to find callbacks available for this menu,
+	-- reg-ex search for callbacks.*\[\".*\]
+
 	if menu.callbacks [callbackName] == nil then
 		menu.callbacks [callbackName] = {}
 	end

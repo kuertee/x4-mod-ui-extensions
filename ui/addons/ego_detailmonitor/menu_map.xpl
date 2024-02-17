@@ -28055,34 +28055,10 @@ function menu.registerCallback (callbackName, callbackFunction)
 	-- note 3: new callbacks can be added or existing callbacks can be edited. but commit your additions/changes to the mod's GIT repository.
 	-- note 4: search for the callback names to see where they are executed.
 	-- note 5: if a callback requires a return value, return it in an object var. e.g. "display_on_set_room_active" requires a return of {active = true | false}.
-	-- available callbacks:
-	--
-	-- (true | false) = createInfoFrame_on_menu_infoTableMode (menu.infoFrame)
-	-- buttonMissionActivate_on_activate (missionid)
-	-- buttonToggleObjectList_on_start (objectlistparam, config)
-	-- createPropertyOwned_on_start (config)
-	-- createPropertyOwned_on_init_infoTableData (infoTableData)
-	-- createPropertyOwned_on_add_ship_infoTableData (infoTableData, object)
-	-- createPropertyOwned_on_add_other_objects_infoTableData (infoTableData)
-	-- {numdisplayed = numdisplayed} = createPropertyOwned_on_createPropertySection_unassignedships (numdisplayed, instance, ftable, infoTableData)
-	-- {maxicons = maxicons, subordinates = subordinates, dockedships = dockedships, constructions = constructions, convertedComponent = convertedComponent} = createPropertyRow_on_init_vars (maxicons, subordinates, dockedships, constructions, convertedComponent)
-	-- {locationtext = locationtext} = createPropertyRow_on_set_locationtext (locationtext, component)
-	-- {shipname = shipname, properties = createTextProperties} = createPropertyRow_override_row_shipname_createText (shipname, createTextProperties, component)
-	-- {locationtext = locationtext, properties = createTextProperties} = createPropertyRow_override_row_location_createText (locationtext, createTextProperties, component)
-	-- createSideBar_on_start (config)
-	-- createMissionMode_on_missionoffer_guild_start (ftable)
-	-- replacement ConvertStringTo64Bit (missionId) = createMissionMode_replaceMissionModeCurrent (current missionId)
-	-- createMissionContext_startDescriptionTable (ftable)
-	-- (true | false) = createMissionContext_getIsMissionAcceptable (missionid)
-	-- (true | false) = createMissionContext_getIsMissionBriefingAvailable (missionid)
-	-- createMissionContext_addMissionOfferButtons (ftable, missionid)
-	-- createMissionContext_addMissionAcceptedButtons (ftable, missionid)
-	-- refreshInfoFrame2_on_start ()
-	-- createInfoFrame2_on_menu_infoModeRight (menu.infoFrame2)
-	-- createRightBar_on_start (config)
-	-- getPropertyOwnedFleetDataInternal_addToFleetIcons (component, shiptyperanks, shiptypedata)
-	-- createMissionContext_on_end(frame)
-	-- displayDefaultBehaviour_change_param_behaviouractive (behaviouractive)
+
+	-- to find callbacks available for this menu,
+	-- reg-ex search for callbacks\[\".*\]
+
 	if callbacks [callbackName] == nil then
 		callbacks [callbackName] = {}
 	end

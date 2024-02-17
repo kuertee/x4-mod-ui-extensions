@@ -5154,13 +5154,10 @@ function menu.registerCallback (callbackName, callbackFunction)
 	-- note 3: new callbacks can be added or existing callbacks can be edited. but commit your additions/changes to the mod's GIT repository.
 	-- note 4: search for the callback names to see where they are executed.
 	-- note 5: if a callback requires a return value, return it in an object var. e.g. "display_on_set_room_active" requires a return of {active = true | false}.
-	-- available callbacks:
-	-- cleanup ()
-	-- setupFlowchartData_on_start ()
-	-- setupFlowchartData_pre_trade_wares_button(remainingcargonodes)
-	-- onExpandTradeWares_on_start()
-	-- onExpandTradeWares_insert_ware_to_allwares(allwares, ware)
-	--
+
+	-- to find callbacks available for this menu,
+	-- reg-ex search for callbacks.*\[\".*\]
+
 	if callbacks [callbackName] == nil then
 		callbacks [callbackName] = {}
 	end
