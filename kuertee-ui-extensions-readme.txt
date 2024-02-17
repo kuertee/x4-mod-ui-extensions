@@ -5,9 +5,11 @@ by kuertee. Contributors: Forleyor, Mycu, Runekn, AlexandreTK.
 
 Updates
 =======
-v6.2.01x, X 2024:
--New feature: Save files created with this version forward will be tagged for the different games that you play. They will be highlighted green in both the Save and Load menus.
--New feature: The currently loaded game will also be highlighted.
+v6.2.011, 18 Feb 2024:
+-New feature: (by Erixon) New callbacks for smart_supply mod to be released by Erixon soon after this release.
+-New feature: (by Forleyor) New callbacks for  UniTrader's Advanced Renaming mod (https://github.com/UniTrader/ut_advanced_renaming).
+-New feature: (by Mycu) New callbacks for 'Verbose transaction log' mod to be released by Erixon soon after this release.
+-New features: New callbacks for Grouped save files mod (https://www.nexusmods.com/x4foundations/mods/1310) that is required by the new Ironman mode feature of the Alternatives to death mod (https://www.nexusmods.com/x4foundations/mods/551).
 
 Instructions for players
 ========================
