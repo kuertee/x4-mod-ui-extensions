@@ -5,6 +5,9 @@ by kuertee. Contributors: Erixon, Forleyor, Mycu, Runekn, AlexandreTK.
 
 Updates
 =======
+v6.2.012, 19 Feb 2024:
+-Bug-fix: UIX wasn't properly getting initialised sometimes - i.e. when no other mod requests UIX functions. UIX should get initialised regardless. Fixed in this version.
+
 v6.2.011, 18 Feb 2024:
 -New feature: (by Erixon) New callbacks for smart_supply mod to be released by Erixon soon after this release.
 -New feature: (by Forleyor) New callbacks for  UniTrader's Advanced Renaming mod (https://github.com/UniTrader/ut_advanced_renaming).

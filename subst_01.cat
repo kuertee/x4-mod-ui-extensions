@@ -11,7 +11,7 @@ ui/addons/ego_detailmonitor/menu_toplevel.xpl 12403 1708079418 c59939e78fa319920
 ui/addons/ego_detailmonitor/menu_transactionlog.xpl 11059 1708096647 2e1448237455c52b2a143343b108215e
 ui/addons/ego_detailmonitor/menu_transporter.xpl 36505 1708079428 d59cfa099bbaf0f188ba65b459f20583
 ui/addons/ego_detailmonitor/menu_userquestion.xpl 20235 1708079434 8a5cc57579ad2c9a9f41d0df85a410c1
-ui/addons/ego_detailmonitorhelper/helper.xpl 536929 1708079439 c22a3ce1f5a29e444a117bab738384e9
+ui/addons/ego_detailmonitorhelper/helper.xpl 537157 1708322121 d83f89f7314c6d73c2ccd52fde86a0a8
 ui/addons/ego_gameoptions/customgame.xpl 226743 1707572922 38f09693ccf880d319b864407f6032e2
 ui/addons/ego_gameoptions/gameoptions.xpl 348656 1708179515 1919dcceb70d89781795ed067dfb6ed2
 ui/addons/ego_interactmenu/menu_interactmenu.xpl 292861 1708079447 48f62ccf6aeb74ae2783b76eb71bf4fe

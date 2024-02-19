@@ -706,7 +706,9 @@ local function init()
 end
 
 -- kuertee start:
+Helper.time_kuerteeInited = nil
 function Helper.init_kuertee ()
+	Helper.time_kuerteeInited = GetCurRealTime()
 	Helper.loadModLuas("Helper", "helper_uix")
 	Helper.SWIUI_Init()
 	-- if Helper.modLuas["Helper"] then
@@ -857,6 +859,9 @@ function onUpdate()
 		-- for menuName_inList, menuData in pairs(Helper.modLuas) do
 		-- 	Helper.debugText_forced(menuName_inList)
 		-- end
+		Helper.initModLuas2()
+	elseif Helper.time_kuerteeInited and curRealTime > Helper.time_kuerteeInited + 2 then
+		Helper.time_kuerteeInited = nil
 		Helper.initModLuas2()
 	end
 	-- kuertee end: init mod luas after loading the last one
