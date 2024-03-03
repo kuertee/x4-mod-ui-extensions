@@ -8813,7 +8813,7 @@ function menu.onUpdate()
 				-- kuertee start: callback
 				if callbacks ["newGameCallback_preNewGame"] then
 					for _, callback in ipairs (callbacks ["newGameCallback_preNewGame"]) do
-						callback(option.id)
+						callback(menu.animationDelay[2].id)
 					end
 				end
 				-- kuertee end: callback

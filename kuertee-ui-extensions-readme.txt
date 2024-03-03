@@ -5,14 +5,8 @@ by kuertee. Contributors: Erixon, Forleyor, Mycu, Runekn, AlexandreTK.
 
 Updates
 =======
-v6.2.012, 19 Feb 2024:
--Bug-fix: UIX wasn't properly getting initialised sometimes - i.e. when no other mod requests UIX functions. UIX should get initialised regardless. Fixed in this version.
-
-v6.2.011, 18 Feb 2024:
--New feature: (by Erixon) New callbacks for smart_supply mod to be released by Erixon soon after this release.
--New feature: (by Forleyor) New callbacks for  UniTrader's Advanced Renaming mod (https://github.com/UniTrader/ut_advanced_renaming).
--New feature: (by Mycu) New callbacks for 'Verbose transaction log' mod to be released by Erixon soon after this release.
--New features: New callbacks for Grouped save files mod (https://www.nexusmods.com/x4foundations/mods/1310) that is required by the new Ironman mode feature of the Alternatives to death mod (https://www.nexusmods.com/x4foundations/mods/551).
+v6.2.014, 4 Mar 2024:
+-Bug-fix: The callback for starting new games with an intro monologue (e.g. Segaris Pioneer gamestart) was sending an invalid variable causing the game to not proceed after the intro monologue.
 
 Instructions for players
 ========================
@@ -176,6 +170,15 @@ Troubleshooting
 
 History
 =======
+v6.2.012, 19 Feb 2024:
+-Bug-fix: UIX wasn't properly getting initialised sometimes - i.e. when no other mod requests UIX functions. UIX should get initialised regardless. Fixed in this version.
+
+v6.2.011, 18 Feb 2024:
+-New feature: (by Erixon) New callbacks for smart_supply mod to be released by Erixon soon after this release.
+-New feature: (by Forleyor) New callbacks for  UniTrader's Advanced Renaming mod (https://github.com/UniTrader/ut_advanced_renaming).
+-New feature: (by Mycu) New callbacks for 'Verbose transaction log' mod to be released by Erixon soon after this release.
+-New features: New callbacks for Grouped save files mod (https://www.nexusmods.com/x4foundations/mods/1310) that is required by the new Ironman mode feature of the Alternatives to death mod (https://www.nexusmods.com/x4foundations/mods/551).
+
 v6.2.010, 28 Dec 2023:
 -New feature: New callback in the Map Menu for an upcoming mod.
 

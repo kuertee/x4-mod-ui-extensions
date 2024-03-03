@@ -731,14 +731,18 @@ end
 
 Helper.texts  = {}
 local origreadtext = ReadText
-ReadText = function(page, line) 
-	local refstr = page .. "-" .. line
-	local text = Helper.texts[refstr]
-	if not text then
-		text = origreadtext(page, line)
-		Helper.texts[refstr] = text
+ReadText = function(page, line)
+	if page and line then
+		local refstr = page .. "-" .. line
+		local text = Helper.texts[refstr]
+		if not text then
+			text = origreadtext(page, line)
+			Helper.texts[refstr] = text
+		end
+		return text
+	else
+		return ""
 	end
-	return text
 end
 
 ---------------------------------------------------------------------------------
@@ -12745,26 +12749,28 @@ end
 
 -- kuertee start: SWI load lua
 function Helper.SWIUI_LoadLua(_, file)
-	local extensions = GetExtensionList()
-	for _, extension in ipairs(extensions) do
-		if extension.id == "SW Interworlds" then
-			-- Helper.debugText_forced("SWIUI_LoadLua extension", extension)
-			if extension.enabled then
-				Helper.debugText("file" .. tostring(file))
-			    local isSuccess, errorMsg = require(file)
-			    if isSuccess ~= true then
-			    	DebugError("uix load failed: " .. tostring(errorMsg))
-			    end
-			    AddUITriggeredEvent("SWIUI_OnLoad", file)
-			end
-		end
-	end
+	-- 24 feb 2024: no longer required.
+	-- local extensions = GetExtensionList()
+	-- for _, extension in ipairs(extensions) do
+	-- 	if extension.id == "SW Interworlds" then
+	-- 		-- Helper.debugText_forced("SWIUI_LoadLua extension", extension)
+	-- 		if extension.enabled then
+	-- 			Helper.debugText("file" .. tostring(file))
+	-- 		    local isSuccess, errorMsg = require(file)
+	-- 		    if isSuccess ~= true then
+	-- 		    	DebugError("uix load failed: " .. tostring(errorMsg))
+	-- 		    end
+	-- 		    AddUITriggeredEvent("SWIUI_OnLoad", file)
+	-- 		end
+	-- 	end
+	-- end
 end
 
 function Helper.SWIUI_Init()
-	Helper.debugText("")
-	RegisterEvent("SWIUI_LoadLua", Helper.SWIUI_LoadLua)
-	AddUITriggeredEvent("SWIUI_OnInit", "Init")
+	-- 24 feb 2024: no longer required.
+	-- Helper.debugText("")
+	-- RegisterEvent("SWIUI_LoadLua", Helper.SWIUI_LoadLua)
+	-- AddUITriggeredEvent("SWIUI_OnInit", "Init")
 end
 -- kuertee end: load lua
 
