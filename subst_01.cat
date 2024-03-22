@@ -2,7 +2,7 @@ t/0001.xml 167 1703252803 abd701dea2326d8bf710b3c49ab4dbea
 ui/addons/ego_chatwindow/chatwindow.xpl 36828 1703252803 e14cabc55fbfa1abe33324576e79f9b2
 ui/addons/ego_detailmonitor/menu_docked.xpl 77698 1708656694 fbbb328097df66920e9b738bc95bd157
 ui/addons/ego_detailmonitor/menu_encyclopedia.xpl 178701 1708656694 4441026a5d622b20a33739fb5ba88b9e
-ui/addons/ego_detailmonitor/menu_map.xpl 1371712 1708656694 b6671080f72ffc8a304d6b39d578b58f
+ui/addons/ego_detailmonitor/menu_map.xpl 1371712 1710348503 b6671080f72ffc8a304d6b39d578b58f
 ui/addons/ego_detailmonitor/menu_playerinfo.xpl 327156 1708656694 cd49b39e61a08ba41fc3791aeabf4c16
 ui/addons/ego_detailmonitor/menu_ship_configuration.xpl 449479 1708656694 61f0a200963e42c30c6938a691c05a2a
 ui/addons/ego_detailmonitor/menu_station_configuration.xpl 257906 1708656694 e7f08e892aa1106b36ba5234c02c5d45

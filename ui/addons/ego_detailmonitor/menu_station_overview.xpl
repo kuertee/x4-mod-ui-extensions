@@ -1737,7 +1737,35 @@ function menu.display()
 	row = ftable:addRow(false, rowproperties)
 	row[1]:createText(menu.title, Helper.headerRow1Properties)
 	row = ftable:addRow(false, rowproperties)
-	row[1]:createText(menu.container and GetComponentData(menu.containerid, "name") or "Flowchart Test")
+
+	-- kuertee start: callback
+	if callbacks ["display_get_station_name_extras"] then
+		local stationName = menu.container and GetComponentData(menu.containerid, "name") or "Flowchart Test"
+		local extraNames = {}
+		if menu.container then
+			for _, callback in ipairs (callbacks ["display_get_station_name_extras"]) do
+				table.insert(extraNames, callback(menu.container))
+			end
+			if #extraNames > 0 then
+				for i, extraName in ipairs(extraNames) do
+					if i == 1 then
+						stationName = stationName .. " (" .. extraName
+					else
+						stationName = stationName .. ", " .. extraName
+					end
+				end
+				stationName = stationName .. ")"
+			end
+		end
+		row[1]:createText(stationName)
+	else
+	-- kuertee end: callback
+
+		row[1]:createText(menu.container and GetComponentData(menu.containerid, "name") or "Flowchart Test")
+	-- kuertee start: callback
+	end
+	-- kuertee end: callback
+
 	--row = ftable:addRow(false, rowproperties)
 	--row[1]:createText("Antigone Memorial")
 

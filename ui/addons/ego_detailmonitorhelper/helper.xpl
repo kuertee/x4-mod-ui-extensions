@@ -11596,6 +11596,14 @@ function Helper.onCollapseLSOStorageNode(menu, nodedata)
 	menu.wareReservationRegistered = nil
 	Helper.LSOStorageNodeBuySlider = nil
 	Helper.LSOStorageNodeSellSlider = nil
+
+	-- kuertee start: callback
+	if callbacks ["onCollapseLSOStorageNode"] then
+		for _, callback in ipairs (callbacks ["onCollapseLSOStorageNode"]) do
+			callback (menu, nodedata)
+		end
+	end
+	-- kuertee end: callback
 end
 
 function Helper.onSliderChangedLSOStorageNode(container, node, nodedata, slideridx, value)
