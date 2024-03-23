@@ -11253,6 +11253,14 @@ function Helper.onExpandLSOStorageNode(menu, container, _, ftable, _, nodedata)
 		menu.selectedCols["nodeTable"] = nil
 	end
 	menu.restoreTableState("nodeTable", ftable)
+
+	-- kuertee start: callback
+	if callbacks ["onExpandLSOStorageNode"] then
+		for _, callback in ipairs (callbacks ["onExpandLSOStorageNode"]) do
+			callback(menu, container, ftable, nodedata)
+		end
+	end
+	-- kuertee end: callback
 end
 
 function Helper.getStorageAmount(container, nodedata, storageinfo_amounts, storageinfo_capacity, accuracy, showvolume)

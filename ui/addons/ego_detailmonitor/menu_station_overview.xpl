@@ -1738,6 +1738,7 @@ function menu.display()
 	row[1]:createText(menu.title, Helper.headerRow1Properties)
 	row = ftable:addRow(false, rowproperties)
 
+	-- row[1]:createText(menu.container and GetComponentData(menu.containerid, "name") or "Flowchart Test")
 	-- kuertee start: callback
 	if callbacks ["display_get_station_name_extras"] then
 		local stationName = menu.container and GetComponentData(menu.containerid, "name") or "Flowchart Test"
@@ -1759,10 +1760,7 @@ function menu.display()
 		end
 		row[1]:createText(stationName)
 	else
-	-- kuertee end: callback
-
 		row[1]:createText(menu.container and GetComponentData(menu.containerid, "name") or "Flowchart Test")
-	-- kuertee start: callback
 	end
 	-- kuertee end: callback
 
@@ -4290,11 +4288,27 @@ end
 
 function menu.updateExpandedNode(row, col)
 	if menu.expandedNode then
+		-- kuertee start: callback
+		if callbacks ["updateExpandedNode_at_start"] then
+			for _, callback in ipairs (callbacks ["updateExpandedNode_at_start"]) do
+				callback(row, col)
+			end
+		end
+		-- kuertee end: callback
+
 		menu.saveTableState("nodeTable", menu.expandedMenuTable, row, col)
 
 		local node = menu.expandedNode
 		node:collapse()
 		node:expand()
+
+		-- kuertee start: callback
+		if callbacks ["updateExpandedNode_at_end"] then
+			for _, callback in ipairs (callbacks ["updateExpandedNode_at_end"]) do
+				callback(row, col)
+			end
+		end
+		-- kuertee end: callback
 	end
 end
 
