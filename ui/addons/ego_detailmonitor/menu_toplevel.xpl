@@ -20,8 +20,6 @@ local config = {
 
 -- kuertee start:
 menu.callbacks = {}
-local pullDownArrowsHeight = Helper.sidebarWidth
-local isDisplayed = false
 -- end
 
 local function init()
@@ -37,6 +35,7 @@ local function init()
 
 	-- kuertee start:
 	menu.init_kuertee()
+	kHUD.init()
 	-- kuertee end
 end
 
@@ -96,9 +95,9 @@ function menu.cleanup()
 		menu.hasRegistered = nil
 	end
 
-	-- kuertee start:
-	isDisplayed = false
-	-- kuertee end
+	-- kuertee custom HUD start:
+	kHUD.cleanUp()
+	-- kuertee custom HUD end
 end
 
 function menu.buttonShowTopLevel()
@@ -129,15 +128,9 @@ function menu.createInfoFrame()
 		layer = config.layer,
 		startAnimation = false,
 		playerControls = true,
-
-		-- kuertee start:
-		-- 	useMiniWidgetSystem = (not menu.showTabs) and (not menu.over),
-		useMiniWidgetSystem = (not menu.showTabs) and (not menu.over) and (not isDisplayed),
-		-- kuertee end
-
+		useMiniWidgetSystem = (not menu.showTabs) and (not menu.over),
 		enableDefaultInteractions = false,
 	}
-	-- kuertee end
 
 	menu.infoFrame = Helper.createFrameHandle(menu, frameProperties)
 
@@ -172,21 +165,24 @@ function menu.createInfoFrame()
 			menu.hasRegistered = nil
 		end
 		local ftable = menu.createTable(menu.infoFrame, tableProperties)
+		menu.infoFrame.properties.height = ftable.properties.y + ftable:getVisibleHeight() + Helper.borderSize
 
-		-- kuertee start:
-		-- menu.infoFrame.properties.height = ftable.properties.y + ftable:getVisibleHeight() + Helper.borderSize
-		pullDownArrowsHeight = ftable:getVisibleHeight()
-		menu.infoFrame.properties.height = ftable.properties.y + pullDownArrowsHeight + Helper.borderSize
+		-- kuertee start: callback
 		if menu.callbacks ["createInfoFrame_on_before_frame_display"] then
 			for _, callback in ipairs (menu.callbacks ["createInfoFrame_on_before_frame_display"]) do
 				callback (menu.infoFrame)
 			end
-			menu.updateFrameHeight ()
-			menu.refresh = getElapsedTime()
 		end
-		-- kuertee end
+		-- kuertee end: callback
 
 	end
+
+
+	-- kuertee customHUD: start
+	if kHUD and kHUD.frame then
+		kHUD.frame:display()
+	end
+	-- kuertee customHUD: end
 
 	menu.infoFrame:display()
 end
@@ -235,7 +231,6 @@ function menu.onUpdate()
 	local curtime = getElapsedTime()
 
 	-- kuertee start: callback
-	local isSaveFileOk = true
 	if menu.callbacks ["onUpdate_start"] then
 		for _, callback in ipairs (menu.callbacks ["onUpdate_start"]) do
 			callback(curtime)
@@ -273,26 +268,25 @@ function menu.onUpdate()
 
 	if menu.refresh and menu.refresh <= curtime then
 		menu.createInfoFrame()
-
+		menu.refresh = nil
 
 		-- kuertee start: callback
-		-- menu.refresh = nil
-		local count_contentBeforeCallback = #menu.infoFrame.content
 		if menu.callbacks ["createInfoFrame_onUpdate_before_frame_update"] then
 			for _, callback in ipairs (menu.callbacks ["createInfoFrame_onUpdate_before_frame_update"]) do
 				callback (menu.infoFrame)
 			end
 		end
-
-		if #menu.infoFrame.content > count_contentBeforeCallback then
-			menu.refresh = getElapsedTime()
-		else
-			menu.refresh = nil
-		end
 		-- kuertee end: callback
 
 		return
 	end
+
+	-- kuertee customHUD: start
+	if kHUD.frame and kHUD.frame.content and #kHUD.frame.content > 0 then
+		-- Helper.debugText_forced("#kHUD.frame.content", tostring(#kHUD.frame.content))
+		kHUD.frame:update()
+	end
+	-- kuertee customHUD: end
 
 	menu.infoFrame:update()
 end
@@ -345,7 +339,95 @@ end
 
 -- menu helpers
 
+-- kuertee custom HUD start:
+kHUD = {
+	frame = nil,
+	layer = 4,
+}
+function kHUD.init()
+	menu.registerCallback ("createInfoFrame_on_before_frame_display", kHUD.createTables)
+end
+
+function kHUD.cleanUp()
+	kHUD.frame = nil
+end
+
+function kHUD.createFrame()
+	Helper.clearDataForRefresh(kHUD, kHUD.layer)
+	local frameProperties = {
+		x = 0,
+		y = 0,
+		width = Helper.viewWidth,
+		height = Helper.viewHeight,
+		layer = kHUD.layer,
+		backgroundColor = Helper.color.red,
+		standardButtons = {},
+		startAnimation = false,
+		playerControls = true,
+		useMiniWidgetSystem = true,
+		enableDefaultInteractions = false,
+	}
+	kHUD.frame = Helper.createFrameHandle(kHUD, frameProperties)
+	Helper.debugText_forced("kHUD.frame", tostring(kHUD.frame))
+end
+
+function kHUD.createTables()
+	if not menu.showTabs then
+		if menu.callbacks then
+			Helper.debugText_forced("menu.callbacks['kHUD_add_HUD_tables']", tostring(menu.callbacks["kHUD_add_HUD_tables"]))
+		end
+		if menu.callbacks and menu.callbacks["kHUD_add_HUD_tables"] then
+			Helper.debugText_forced("#menu.callbacks['kHUD_add_HUD_tables']", tostring(#menu.callbacks["kHUD_add_HUD_tables"]))
+			if not kHUD.frame then
+				kHUD.createFrame()
+			end
+			for i, callback in ipairs (menu.callbacks ["kHUD_add_HUD_tables"]) do
+				callback (kHUD.frame)
+			end
+			kHUD.updateFrameHeight()
+		end
+	end
+end
+
+function kHUD.updateFrameHeight ()
+	local yBottomMax = 0
+	local yBottomFTable = 0
+	local ftable
+	kHUD.frame.properties.y = menu.infoFrame.properties.height
+	Helper.debugText_forced("kHUD.frame.properties.y", kHUD.frame.properties.y)
+	for i = 1, #kHUD.frame.content do
+		if kHUD.frame.content [i].type == "table" then
+			ftable = kHUD.frame.content [i]
+			local visibleHeight = ftable:getVisibleHeight ()
+			-- debug start
+			if visibleHeight < 100 then
+				visibleHeight = 100
+			end
+			-- debug end
+			yBottomFTable = ftable.properties.y + visibleHeight
+			if yBottomFTable > yBottomMax then
+				yBottomMax = yBottomFTable
+			end
+		end
+	end
+	local frameHeight = yBottomMax - kHUD.frame.properties.y
+	Helper.debugText_forced("frameHeight", frameHeight)
+	if kHUD.frame.properties.height ~= frameHeight then
+		kHUD.frame.properties.height = frameHeight
+	end
+end
+-- kuertee custom HUD end
+
 -- kuertee start:
+function menu.requestUpdate (adj)
+	if adj == nil then
+		adj = 0
+	end
+	if menu.refresh == nil then
+		menu.refresh = getElapsedTime () + adj
+	end
+end
+
 function menu.registerCallback (callbackName, callbackFunction)
 	-- note 1: format is generally [function name]_[action]. e.g.: in kuertee_menu_transporter, "display_on_set_room_active" overrides the room's active property with the return of the callback.
 	-- note 2: events have the word "_on_" followed by a PRESET TENSE verb. e.g.: in kuertee_menu_transporter, "display_on_set_buttontable" is called after all of the rows of buttontable are set.
@@ -370,38 +452,6 @@ function menu.deregisterCallback(callbackName, callbackFunction)
 				table.remove(callbacks[callbackName], i)
 			end
 		end
-	end
-end
-
-function menu.requestUpdate (adj)
-	if adj == nil then
-		adj = 0
-	end
-	if menu.refresh == nil then
-		menu.refresh = getElapsedTime () + adj
-	end
-end
-
-function menu.updateFrameHeight ()
-	local yBottomMax = 0
-	local yBottomFTable = 0
-	local frame = menu.infoFrame
-	local ftable
-	for i = 1, #frame.content do
-		if frame.content [i].type == "table" then
-			ftable = frame.content [i]
-			yBottomFTable = ftable.properties.y + ftable:getVisibleHeight ()
-			if yBottomFTable > yBottomMax then
-				yBottomMax = yBottomFTable
-			end
-		end
-	end
-	local frameHeight = yBottomMax - frame.properties.y
-	isDisplayed = false
-	if menu.infoFrame.properties.height ~= frameHeight then
-		menu.infoFrame.properties.height = frameHeight
-		menu.height = Helper.scaleX (frameHeight)
-		isDisplayed = true
 	end
 end
 
