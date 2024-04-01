@@ -9266,6 +9266,19 @@ function Helper.checkTopLevelConditions(entry)
 	if (entry.isonline ~= nil) and (entry.isonline ~= (C.AreVenturesCompatible() and (C.IsVentureSeasonSupported() or C.WasSessionOnline()))) then
 		return false
 	end
+
+	-- kuertee start: callback
+	if callbacks ["checkTopLevelConditions_get_is_entry_available"] then
+		local isAvailable = true
+		for _, callback in ipairs (callbacks ["checkTopLevelConditions_get_is_entry_available"]) do
+			isAvailable = callback (entry)
+			if isAvailable ~= true then
+				return false
+			end
+		end
+	end
+	-- kuertee end: callback
+
 	return true
 end
 
