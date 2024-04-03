@@ -136,19 +136,15 @@ function menu.createInfoFrame()
 		layer = config.layer,
 		startAnimation = false,
 		playerControls = true,
+		-- kuertee custom HUD start:
+		-- useMiniWidgetSystem = (not menu.showTabs) and (not menu.over),
 		useMiniWidgetSystem = (not menu.showTabs) and (not menu.over) and (not isShowCustomHUD),
+		-- kuertee custom HUD end
+
 		enableDefaultInteractions = false,
 	}
 
 	menu.infoFrame = Helper.createFrameHandle(menu, frameProperties)
-
-	-- kuertee start: callback
-	if menu.callbacks ["createInfoFrame_on_create_frame"] then
-		for _, callback in ipairs (menu.callbacks ["createInfoFrame_on_create_frame"]) do
-			callback (menu.infoFrame)
-		end
-	end
-	-- kuertee end: callback
 
 	local tableProperties = {
 		width = menu.width,
@@ -196,27 +192,18 @@ function menu.createInfoFrame()
 			end
 		end
 		-- kuertee end: callback
-	end
 
-	-- kuertee start: callback
-	if menu.callbacks ["createInfoFrame_on_before_frame_display"] then
-		for _, callback in ipairs (menu.callbacks ["createInfoFrame_on_before_frame_display"]) do
-			callback (menu.infoFrame)
+		-- kuertee start: callback
+		if menu.callbacks ["createInfoFrame_on_before_frame_display"] then
+			for _, callback in ipairs (menu.callbacks ["createInfoFrame_on_before_frame_display"]) do
+				callback (menu.infoFrame)
+			end
 		end
+		-- kuertee end: callback
 	end
-	-- kuertee end: callback
 
 	menu.infoFrame:display()
-
-	-- kuertee start: callback
-	if menu.callbacks ["createInfoFrame_on_display_frame"] then
-		for _, callback in ipairs (menu.callbacks ["createInfoFrame_on_display_frame"]) do
-			callback (menu.infoFrame)
-		end
-	end
-	-- kuertee end: callback
 end
-
 
 function menu.createTable(frame, tableProperties)
 	local ftable = frame:addTable(1, { tabOrder = menu.over and 1 or 0, width = tableProperties.width, x = tableProperties.x, y = tableProperties.y })
@@ -312,14 +299,6 @@ function menu.onUpdate()
 	-- kuertee end: callback
 
 	menu.infoFrame:update()
-
-	-- kuertee start: callback
-	if menu.callbacks ["onUpdate"] then
-		for _, callback in ipairs (menu.callbacks ["onUpdate"]) do
-			callback (menu.infoFrame)
-		end
-	end
-	-- kuertee end: callback
 end
 
 -- kuertee custom HUD start:
