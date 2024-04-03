@@ -124,6 +124,10 @@ function menu.createInfoFrame()
 	-- remove old data
 	Helper.clearDataForRefresh(menu, config.infoLayer)
 
+	-- kuertee custom HUD start:
+	local isShowCustomHUD = kHUD.getIsOpenOrClose()
+	-- kuertee custom HUD end
+
 	local frameProperties = {
 		standardButtons = {},
 		width = menu.width + 2 * Helper.borderSize,
@@ -132,7 +136,7 @@ function menu.createInfoFrame()
 		layer = config.layer,
 		startAnimation = false,
 		playerControls = true,
-		useMiniWidgetSystem = (not menu.showTabs) and (not menu.over),
+		useMiniWidgetSystem = (not menu.showTabs) and (not menu.over) and (not isShowCustomHUD),
 		enableDefaultInteractions = false,
 	}
 
@@ -177,7 +181,13 @@ function menu.createInfoFrame()
 			menu.hasRegistered = nil
 		end
 		local ftable = menu.createTable(menu.infoFrame, tableProperties)
-		menu.infoFrame.properties.height = ftable.properties.y + ftable:getVisibleHeight() + Helper.borderSize
+
+		-- kuertee custom HUD start:
+		menu.infoFrame.properties.width = Helper.viewWidth
+		menu.infoFrame.properties.x = 0
+		ftable.properties.x = menu.infoFrame.properties.width / 2 - ftable.properties.width / 2
+		-- menu.infoFrame.properties.height = ftable.properties.y + ftable:getVisibleHeight() + Helper.borderSize
+		-- kuertee custom HUD end
 
 		-- kuertee start: callback
 		if menu.callbacks ["createInfoFrame_on_add_table"] then
@@ -312,8 +322,18 @@ function menu.onUpdate()
 	-- kuertee end: callback
 end
 
+-- kuertee custom HUD start:
+local onTableMouseOver_uitable = nil
+local onTableMouseOver_row = nil
+-- kuertee custom HUD end
+
 function menu.onTableMouseOut(uitable, row)
-	Helper.debugText_forced("menu.onTableMouseOut")
+	-- kuertee custom HUD start:
+	if uitable ~= onTableMouseOver_uitable or row ~= onTableMouseOver_row then
+		return
+	end
+	-- kuertee custom HUD end
+
 	if (not menu.showTabs) and (not menu.lock) then
 		menu.over = false
 		menu.lock = getElapsedTime()
@@ -322,8 +342,12 @@ function menu.onTableMouseOut(uitable, row)
 end
 
 function menu.onTableMouseOver(uitable, row)
-	Helper.debugText_forced("menu.onTableMouseOver")
 	if (not menu.showTabs) and (not menu.lock) then
+		-- kuertee custom HUD start:
+		onTableMouseOver_uitable = uitable
+		onTableMouseOver_row = row
+		-- kuertee custom HUD end
+
 		menu.over = true
 		menu.lock = getElapsedTime()
 		menu.createInfoFrame()
@@ -366,13 +390,13 @@ end
 -- note that custom HUD elements are only shown when the TopLevelMenu is collapsed.
 -- to add custom HUD elements, add these in your lua file:
 -- as an example, review "ui\menu_toplevel_uix.lua" of the kuertee_alternatives_to_death mod
--- 1. topLevelMenu.registerCallback("kHUD_get_is_create_HUD_frame", YourMenu.kHUD_get_is_create_HUD_frame)
--- 2. function YourMenu.kHUD_get_is_create_HUD_frame() return true|false depending on whether your custom HUD should be shown or not end
--- 3. topLevelMenu.registerCallback("kHUD_add_HUD_tables", YourMenu.kHUD_add_HUD_tables)
--- 4. function YourMenu.kHUD_add_HUD_tables(frame) local ftable = frame:addTable(); local row = ftable:addRow(); etc.; end
+-- 1. topLevelMenu.registerCallback("kHUD_get_is_show_custom_hud", YourMenu.kHUD_get_is_show_custom_hud)
+-- 2. function YourMenu.kHUD_get_is_show_custom_hud() return true|false depending on whether your custom HUD should be shown or not end
+-- 3. topLevelMenu.registerCallback("kHUD_add_tables", YourMenu.kHUD_add_tables)
+-- 4. function YourMenu.kHUD_add_tables(frame) local ftable = frame:addTable(); local row = ftable:addRow(); etc.; end
 kHUD = {
 	name = "kHUD",
-	refresh = 0,
+	isDebug = nil,
 }
 
 function kHUD.init()
@@ -381,14 +405,14 @@ function kHUD.init()
     if Helper then
         Helper.registerMenu(kHUD)
     end
-	menu.registerCallback ("createInfoFrame_on_display_frame", kHUD.OpenOrClose)
+	menu.registerCallback ("createInfoFrame_on_add_table", kHUD.OpenOrClose)
 end
 
 function kHUD.getIsOpenOrClose()
 	local isCreateHUDFrame
 	if isCreateHUDFrame ~= true then
-		if menu.callbacks["kHUD_get_is_create_HUD_frame"] and #menu.callbacks["kHUD_get_is_create_HUD_frame"] > 0 then
-			for i, callback in ipairs (menu.callbacks ["kHUD_get_is_create_HUD_frame"]) do
+		if menu.callbacks["kHUD_get_is_show_custom_hud"] and #menu.callbacks["kHUD_get_is_show_custom_hud"] > 0 then
+			for i, callback in ipairs (menu.callbacks ["kHUD_get_is_show_custom_hud"]) do
 				isCreateHUDFrame = callback ()
 				if isCreateHUDFrame == true then
 					break
@@ -396,97 +420,57 @@ function kHUD.getIsOpenOrClose()
 			end
 		end
 	end
-	Helper.debugText_forced("kHUD.getIsOpenOrClose isCreateHUDFrame", isCreateHUDFrame)
+	if isCreateHUDFrame ~= true then
+		isCreateHUDFrame = nil
+	end
 	return isCreateHUDFrame
 end
 
 function kHUD.OpenOrClose()
 	if kHUD.getIsOpenOrClose() then
-		if not kHUD.frame then
-			Helper.debugText_forced("kHUD.OpenOrClose OpenMenu")
-			OpenMenu("kHUD", { 0, 0 }, nil)
-		end
+		kHUD.display()
 	elseif kHUD.frame then
-		Helper.debugText_forced("kHUD.OpenOrClose onCloseElement")
-		kHUD.onCloseElement("close")
-	end
-end
-
-function kHUD.cleanup()
-	Helper.debugText_forced("kHUD.cleanUp")
-	kHUD.frame = nil
-end
-
-function kHUD.onShowMenu()
-	Helper.debugText_forced("kHUD.onShowMenu")
-	kHUD.display()
-end
-
-function kHUD.onCloseElement(dueToClose, allowAutoMenu)
-	if kHUD.frame then
-		Helper.debugText_forced("kHUD.onCloseElement")
-		Helper.closeMenu(kHUD, dueToClose)
 		kHUD.cleanup()
 	end
 end
 
-function kHUD.onUpdate()
-	if kHUD.frame then
-		Helper.debugText("kHUD.onUpdate")
-		local curtime = getElapsedTime()
-		if kHUD.refresh and kHUD.refresh <= curtime then
-			if kHUD.getIsOpenOrClose() then
-				kHUD.display()
-			else
-				kHUD.onCloseElement("close")
-			end
-			kHUD.refresh = nil
-			return
-		end
-
-		kHUD.frame:update()
-	end
-end
-
 function kHUD.display()
-	Helper.debugText_forced("kHUD.display")
+	if kHUD.isDebug then
+		Helper.debugText_forced("kHUD.display")
+	end
 	kHUD.createFrame()
 	kHUD.createTables()
-	kHUD.frame:display()
+end
+
+function kHUD.cleanup()
+	if kHUD.isDebug then
+		Helper.debugText_forced("kHUD.cleanUp")
+	end
+	kHUD.frame = nil
 end
 
 function kHUD.createFrame()
-	Helper.debugText_forced("createFrame menu.infoFrame", tostring(menu.infoFrame))
-	Helper.clearDataForRefresh(kHUD, kHUD.layer)
-	-- value names from Helper.defaultWidgetProperties.frame
-	local frameProperties = {
-		x = 0,
-		y = config.offsetY + 50,
-		exclusiveInteractions = false,
-		-- backgroundColor = "solid",
-		-- backgroundColor = Helper.color.white,
-		standardButtons = {},
-		autoFrameHeight = true,
-		playerControls = true,
-		startAnimation = false,
-		enableDefaultInteractions = false,
-		useMiniWidgetSystem = false,
-	}
-	kHUD.frame = Helper.createFrameHandle(kHUD, frameProperties)
-	-- Helper.debugText_forced("display kHUD.frame.properties", kHUD.frame.properties)
+	kHUD.frame = menu.infoFrame
+	if kHUD.isDebug then
+		Helper.debugText_forced("createFrame kHUD.frame", tostring(kHUD.frame))
+	end
 end
 
 function kHUD.createTables()
-	local frame_useThis = kHUD.frame
-	-- local frame_useThis = menu.infoFrame
-	if frame_useThis then
-		-- if frame_useThis == kHUD.frame then
-		-- 	frame_useThis.properties.y = menu.infoFrame.properties.y + menu.infoFrame.properties.height
-		-- end
+	if kHUD.frame then
 		local ftables_created = {}
-		if menu.callbacks["kHUD_add_HUD_tables"] and #menu.callbacks["kHUD_add_HUD_tables"] > 0 then
+		if (menu.callbacks["kHUD_add_tables"] and #menu.callbacks["kHUD_add_tables"] > 0) or (menu.callbacks["kHUD_add_HUD_tables"] and #menu.callbacks["kHUD_add_HUD_tables"] > 0) then
+			-- kHUD_add_HUD_tables is for backward compatibility
 			for i, callback in ipairs (menu.callbacks ["kHUD_add_HUD_tables"]) do
-				local ftables = callback (frame_useThis)
+				local ftables = callback (kHUD.frame)
+				if ftables and type(ftables) == "table" and #ftables > 0 then
+					for j, ftable in ipairs(ftables) do
+						table.insert(ftables_created, ftable)
+					end
+				end
+			end
+			for i, callback in ipairs (menu.callbacks ["kHUD_add_tables"]) do
+				local ftables = callback (kHUD.frame)
 				if ftables and type(ftables) == "table" and #ftables > 0 then
 					for j, ftable in ipairs(ftables) do
 						table.insert(ftables_created, ftable)
@@ -494,53 +478,68 @@ function kHUD.createTables()
 				end
 			end
 		end
-		if false and #ftables_created < 1 then
+		if kHUD.isDebug then
+			Helper.debugText_forced("createTables #ftables_created", #ftables_created)
+		end
+		if kHUD.isDebug and #ftables_created < 1 then
 			-- set to true to force a row for testing
-			local ftable = frame_useThis:addTable(1)
+			local ftable = kHUD.frame:addTable(1)
 			local row = ftable:addRow()
 			row[1]:createText("kHUD")
 		end
-		-- kHUD.updateFrameHeight(frame_useThis)
+		kHUD.updateFrameHeight()
 	end
 end
 
-function kHUD.updateFrameHeight (frame)
+function kHUD.updateFrameHeight()
+	local y_max = kHUD.getFrameHeight(kHUD.frame)
+	if kHUD.isDebug then
+		Helper.debugText_forced("updateFrameHeight kHUD.frame.properties.height (pre set)", kHUD.frame.properties.height)
+	end
+	if kHUD.frame.properties.height ~= y_max then
+		kHUD.frame.properties.height = y_max + Helper.borderSize
+	end
+	if kHUD.isDebug then
+		Helper.debugText_forced("updateFrameHeight kHUD.frame.properties.height", kHUD.frame.properties.height)
+	end
+end
+
+function kHUD.getFrameHeight(frame)
+	local y_max = 0
 	local y_tableBottom = 0
 	local ftable
-	local y_max = 0
 	for i = 1, #frame.content do
 		if frame.content [i].type == "table" then
 			ftable = frame.content [i]
 			local visibleHeight = ftable:getVisibleHeight ()
-			Helper.debugText_forced("visibleHeight", visibleHeight)
+			Helper.debugText("ftable.properties.x", ftable.properties.x)
+			Helper.debugText("ftable.properties.width", ftable.properties.width)
+			Helper.debugText("ftable.properties.y", ftable.properties.y)
+			Helper.debugText("visibleHeight", visibleHeight)
 			y_tableBottom = ftable.properties.y + visibleHeight
+			Helper.debugText("y_tableBottom", y_tableBottom)
 			if y_tableBottom > y_max then
 				y_max = y_tableBottom
+				Helper.debugText("y_max", y_max)
 			end
 		end
 	end
-	Helper.debugText_forced("updateFrameHeight frame.properties.y", frame.properties.y)
-	Helper.debugText_forced("updateFrameHeight y_max", y_max)
-	Helper.debugText_forced("updateFrameHeight frame.properties.height (pre set)", frame.properties.height)
-	if frame.properties.height ~= y_max then
-		frame.properties.height = y_max
-	end
-	Helper.debugText_forced("updateFrameHeight frame.properties.height", frame.properties.height)
+	return y_max
+end
+
+function kHUD.getNextY()
+	return kHUD.getFrameHeight(menu.infoFrame)
 end
 -- kuertee custom HUD end
 
 -- kuertee start:
 function menu.requestUpdate (adj)
+	Helper.debugText("menu.requestUpdate")
 	if adj == nil then
 		adj = 0
 	end
 	if menu.refresh == nil then
 		menu.refresh = getElapsedTime () + adj
-	end
-	if kHUD.frame then
-		if kHUD.refresh == nil then
-			kHUD.refresh = getElapsedTime () + adj
-		end
 	end
 end
 
