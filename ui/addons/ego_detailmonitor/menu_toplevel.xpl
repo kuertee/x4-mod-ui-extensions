@@ -438,9 +438,8 @@ end
 function kHUD.createTables()
 	if kHUD.frame then
 		local ftables_created = {}
-		if (menu.callbacks["kHUD_add_tables"] and #menu.callbacks["kHUD_add_tables"] > 0) or (menu.callbacks["kHUD_add_HUD_tables"] and #menu.callbacks["kHUD_add_HUD_tables"] > 0) then
-			-- kHUD_add_HUD_tables is for backward compatibility
-			for i, callback in ipairs (menu.callbacks ["kHUD_add_HUD_tables"]) do
+		if menu.callbacks["kHUD_add_tables"] and #menu.callbacks["kHUD_add_tables"] > 0 then
+			for i, callback in ipairs (menu.callbacks ["kHUD_add_tables"]) do
 				local ftables = callback (kHUD.frame)
 				if ftables and type(ftables) == "table" and #ftables > 0 then
 					for j, ftable in ipairs(ftables) do
@@ -448,7 +447,10 @@ function kHUD.createTables()
 					end
 				end
 			end
-			for i, callback in ipairs (menu.callbacks ["kHUD_add_tables"]) do
+		end
+		if menu.callbacks["kHUD_add_HUD_tables"] and #menu.callbacks["kHUD_add_HUD_tables"] > 0 then
+			-- kHUD_add_HUD_tables is for backward compatibility
+			for i, callback in ipairs (menu.callbacks ["kHUD_add_HUD_tables"]) do
 				local ftables = callback (kHUD.frame)
 				if ftables and type(ftables) == "table" and #ftables > 0 then
 					for j, ftable in ipairs(ftables) do
