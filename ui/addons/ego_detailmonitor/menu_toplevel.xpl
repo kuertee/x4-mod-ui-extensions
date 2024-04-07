@@ -1,4 +1,4 @@
--- ffi setup
+﻿-- ffi setup
 local ffi = require("ffi")
 local C = ffi.C
 ffi.cdef[[
@@ -131,7 +131,7 @@ function menu.createInfoFrame()
 	local frameProperties = {
 		standardButtons = {},
 		width = menu.width + 2 * Helper.borderSize,
-		x = (Helper.viewWidth - menu.width) / 2,
+		x = (Helper.viewWidth - menu.width - 2 * Helper.borderSize) / 2,
 		y = Helper.scaleY(config.offsetY),
 		layer = config.layer,
 		startAnimation = false,
@@ -209,12 +209,12 @@ function menu.createTable(frame, tableProperties)
 	local ftable = frame:addTable(1, { tabOrder = menu.over and 1 or 0, width = tableProperties.width, x = tableProperties.x, y = tableProperties.y })
 
 	if menu.over then
-		local row = ftable:addRow(true, { fixed = true, bgColor = Helper.color.transparent })
-		row[1]:createButton({ width = config.width, height = config.height, bgColor = Helper.color.transparent, highlightColor = Helper.color.transparent }):setText("\27[tlt_arrow]", { color = { r = 128, g = 196, b = 255, a = 100 }, halign = "center", fontsize = 18, x = 0, y = 5 })
+		local row = ftable:addRow(true, { fixed = true })
+		row[1]:createButton({ width = config.width, height = config.height - 10, bgColor = Color["button_background_hidden"], highlightColor = Color["button_highlight_hidden"] }):setText("\27[tlt_arrow]", { color = Color["toplevel_arrow"], halign = "center", fontsize = Helper.scaleFont(Helper.standardFont, 18), x = 0, y = 2, scaling = false })
 		row[1].handlers.onClick = menu.buttonShowTopLevel
 	else
-		local row = ftable:addRow(false, { fixed = true, bgColor = Helper.color.transparent })
-		row[1]:createText("\27[tlt_arrow]", { width = config.width, height = config.height, color = { r = 64, g = 98, b = 128, a = 100 }, halign = "center", fontsize = 18, x = 0, y = 0 })
+		local row = ftable:addRow(false, { fixed = true })
+		row[1]:createText("\27[tlt_arrow]", { width = config.width, height = config.height, color = Color["toplevel_arrow_inactive"], halign = "center", fontsize = 18, x = 0, y = 0 })
 	end
 
 	return ftable

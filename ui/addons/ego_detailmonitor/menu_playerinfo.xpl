@@ -8,6 +8,7 @@ ffi.cdef[[
 	typedef int32_t BlacklistID;
 	typedef int32_t FightRuleID;
 	typedef uint64_t MessageID;
+	typedef uint64_t TickerCacheID;
 	typedef int32_t TradeRuleID;
 	typedef uint64_t UniverseID;
 
@@ -110,6 +111,13 @@ ffi.cdef[[
 		const char* name;
 	} SoundInfo;
 	typedef struct {
+		TickerCacheID id;
+		double time;
+		const char* category;
+		const char* title;
+		const char* text;
+	} TickerCacheEntry;
+	typedef struct {
 		uint32_t numfactions;
 	} TradeRuleCounts;
 	typedef struct {
@@ -145,7 +153,8 @@ ffi.cdef[[
 		const char* desc;
 		const char* category;
 		bool enabled;
-	} UINotificationType;
+		bool enabledByDefault;
+	} UINotificationType2;
 	typedef struct {
 		const char* ID;
 		const char* Name;
@@ -153,12 +162,12 @@ ffi.cdef[[
 		const char* Icon;
 	} UIPaintTheme;
 	typedef struct {
-		const float x;
-		const float y;
-		const float z;
-		const float yaw;
-		const float pitch;
-		const float roll;
+		float x;
+		float y;
+		float z;
+		float yaw;
+		float pitch;
+		float roll;
 	} UIPosRot;
 	typedef struct {
 		const char* wareid;
@@ -179,17 +188,20 @@ ffi.cdef[[
 	uint32_t GetAvailableEquipmentMods(UIEquipmentMod* result, uint32_t resultlen);
 	uint32_t GetAvailableLockboxes(const char** result, uint32_t resultlen, UniverseID entityid);
 	uint32_t GetAvailablePaintThemes(UIPaintTheme* result, uint32_t resultlen);
+	float GetAveragePlayerNPCSkill(void);
 	const char* GetComponentName(UniverseID componentid);
 	UniverseID GetContextByClass(UniverseID componentid, const char* classname, bool includeself);
 	double GetCurrentGameTime(void);
 	UILogo GetCurrentPlayerLogo(void);
+	const char* GetDefaultResponseToSignalForFaction2(const char* signalid, const char* factionid, const char* purposeid);
+	const char* GetDefaultPlayerBuildMethod(void);
 	int32_t GetEntityCombinedSkill(UniverseID entityid, const char* role, const char* postid);
 	uint32_t GetEntitySkillsForAssignment(Skill2* result, UniverseID entityid, const char* role, const char* postid);
 	const char* GetFactionDefaultWeaponMode(const char* factionid);
 	UniverseID GetLastPlayerControlledShipID(void);
 	UIPosRot GetMessageInteractPosition(MessageID messageid);
 	uint32_t GetMessages(MessageInfo* result, uint32_t resultlen, size_t start, size_t count, const char* categoryname);
-	uint32_t GetNotificationTypes(UINotificationType* result, uint32_t resultlen);
+	uint32_t GetNotificationTypes2(UINotificationType2* result, uint32_t resultlen);
 	uint32_t GetNumAllFactionShips(const char* factionid);
 	uint32_t GetNumAllFactionStations(const char* factionid);
 	uint32_t GetNumAllRoles(void);
@@ -206,6 +218,7 @@ ffi.cdef[[
 	uint32_t GetNumPlayerLogos(bool includestandard, bool includecustom);
 	uint32_t GetNumSkills(void);
 	uint32_t GetNumStationModules(UniverseID stationid, bool includeconstructions, bool includewrecks);
+	uint32_t GetNumTickerCache(const char* categoryname);
 	uint32_t GetNumTransactionLog(UniverseID componentid, double starttime, double endtime);
 	int32_t GetPersonCombinedSkill(UniverseID controllableid, NPCSeed person, const char* role, const char* postid);
 	const char* GetPersonName(NPCSeed person, UniverseID controllableid);
@@ -229,15 +242,16 @@ ffi.cdef[[
 	UniverseID GetPlayerZoneID(void);
 	const char* GetPurposeName(const char* purposeid);
 	int32_t GetRelationRangeUIMaxValue(const char* relationrangeid);
-	uint32_t GetRoleTierNPCs(NPCSeed* result, uint32_t resultlen, UniverseID controllableid, const char* role, int32_t skilllevel);
 	uint32_t GetRoleTiers(RoleTierData* result, uint32_t resultlen, UniverseID controllableid, const char* role);
 	int64_t GetSupplyBudget(UniverseID containerid);
 	uint32_t GetStationModules(UniverseID* result, uint32_t resultlen, UniverseID stationid, bool includeconstructions, bool includewrecks);
 	float GetTextHeight(const char*const text, const char*const fontname, const float fontsize, const float wordwrapwidth);
+	uint32_t GetTickerCache(TickerCacheEntry* result, uint32_t resultlen, size_t start, size_t count, const char* categoryname);
 	bool GetTradeRuleInfo(TradeRuleInfo* info, TradeRuleID id);
 	TradeRuleCounts GetTradeRuleInfoCounts(TradeRuleID id);
 	int64_t GetTradeWareBudget(UniverseID containerid);
 	bool HasPersonArrived(UniverseID controllableid, NPCSeed person);
+	bool HasDefaultResponseToSignalForFaction(const char* signalid, const char* factionid, const char* purposeid);
 	bool IsComponentClass(UniverseID componentid, const char* classname);
 	bool IsComponentOperational(UniverseID componentid);
 	bool IsMouseEmulationActive(void);
@@ -254,6 +268,8 @@ ffi.cdef[[
 	void RemovePerson(UniverseID controllableid, NPCSeed person);
 	void RemovePlayerAlert(size_t index);
 	void RemoveTradeRule(TradeRuleID id);
+	void ResetDefaultResponseToSignalForFaction(const char* signalid, const char* factionid, const char* purposeid);
+	bool SetDefaultResponseToSignalForFaction2(const char* newresponse, bool ask, const char* signalid, const char* factionid, const char* purposeid);
 	void SetEditBoxText(const int editboxid, const char* text);
 	void SetFactionBuildMethod(const char* factionid, const char* buildmethodid);
 	void SetFactionRelationToPlayerFaction(const char* factionid, const char* reasonid, float boostvalue);
@@ -351,6 +367,8 @@ local config = {
 		{ name = ReadText(1001, 7730),		icon = function () return menu.messageSidebarIcon() end,		mode = "messages",			active = true, helpOverlayID = "playerinfo_sidebar_messages",		helpOverlayText = ReadText(1028, 7712),		iconcolor = function () return menu.messageSidebarIconColor() end },
 		{ name = ReadText(1001, 7702),		icon = "pi_transactionlog",			mode = "transactionlog",	active = true, helpOverlayID = "playerinfo_sidebar_transactions",	helpOverlayText = ReadText(1028, 7719) },
 		{ name = ReadText(1001, 5700),		icon = "pi_logbook",				mode = "logbook",			active = true, helpOverlayID = "playerinfo_sidebar_logbook",		helpOverlayText = ReadText(1028, 7711) },
+		--{ spacing = true,	condition = function () return OnlineHasSession() end },
+		--{ name = ReadText(1001, 11386),		icon = "vt_contactlist",			mode = "venturecontacts",	active = true, helpOverlayID = "playerinfo_sidebar_contacts",		helpOverlayText = ReadText(1028, 3275),	condition = function () return OnlineHasSession() end },
 	},
 	rightAlignTextProperties = {
 		halign = "right"
@@ -360,14 +378,15 @@ local config = {
 		halign = "right"
 	},
 	logbookCategories = {
-		{ name = ReadText(1001, 2963),	icon = "pi_logbook",		mode = "all" },
+		{ name = ReadText(1001, 2963),	icon = "pi_logbook",			mode = "all" },
 		{ empty = true },
-		{ name = ReadText(1001, 5701),	icon = "logbook_general",	mode = "general" },
-		{ name = ReadText(1001, 5702),	icon = "logbook_missions",	mode = "missions" },
-		{ name = ReadText(1001, 5721),	icon = "logbook_news",		mode = "news" },
-		{ name = ReadText(1001, 5714),	icon = "logbook_alerts",	mode = "alerts" },
-		{ name = ReadText(1001, 5704),	icon = "logbook_upkeep",	mode = "upkeep" },
-		{ name = ReadText(1001, 5708),	icon = "logbook_tips",		mode = "tips" },
+		{ name = ReadText(1001, 5701),	icon = "logbook_general",		mode = "general" },
+		{ name = ReadText(1001, 5702),	icon = "logbook_missions",		mode = "missions" },
+		{ name = ReadText(1001, 5721),	icon = "logbook_news",			mode = "news" },
+		{ name = ReadText(1001, 5714),	icon = "logbook_alerts",		mode = "alerts" },
+		{ name = ReadText(1001, 5704),	icon = "logbook_upkeep",		mode = "upkeep" },
+		{ name = ReadText(1001, 5708),	icon = "logbook_tips",			mode = "tips" },
+		{ name = ReadText(1001, 5727),	icon = "logbook_notifications",	mode = "ticker" },
 	},
 	logbookPage = 100,
 	logbookQueryLimit = 1000,
@@ -464,6 +483,8 @@ end
 function menu.cleanup()
 	unregisterForEvent("inputModeChanged", getElement("Scene.UIContract"), menu.onInputModeChanged)
 
+	UnregisterAddonBindings("ego_detailmonitor")
+
 	menu.mainFrame = nil
 	menu.infoFrame = nil
 	menu.contextFrame = nil
@@ -515,6 +536,8 @@ function menu.cleanup()
 	if Helper.hasExtension("multiverse") then
 		Helper.callExtensionFunction("multiverse", "unregisterOnlineEvents", menu)
 	end
+	Helper.unregisterVentureContactCallbacks()
+	menu.ventureContactCallbacksRegistered = nil
 
 	C.SetUICoverOverride(false)
 end
@@ -585,10 +608,10 @@ function menu.buttonTogglePlayerInfo(mode)
 		end
 	end
 	if newidx then
-		Helper.updateButtonColor(menu.mainTable, newidx + 2, 1, Helper.defaultArrowRowBackgroundColor)
+		Helper.updateButtonColor(menu.mainTable, newidx + 2, 1, Color["row_background_selected"])
 	end
 	if oldidx then
-		Helper.updateButtonColor(menu.mainTable, oldidx + 2, 1, Helper.defaultButtonBackgroundColor)
+		Helper.updateButtonColor(menu.mainTable, oldidx + 2, 1, Color["button_background_default"])
 	end
 
 	-- Mark items as read when hiding them
@@ -608,6 +631,9 @@ function menu.buttonTogglePlayerInfo(mode)
 		end
 		menu.messageData.showFullscreen = nil
 		menu.cleanupCutsceneRenderTarget()
+	elseif menu.mode == "venturecontacts" then
+		Helper.unregisterVentureContactCallbacks()
+		menu.ventureContactCallbacksRegistered = nil
 	end
 
 	AddUITriggeredEvent(menu.name, mode, menu.mode == mode and "off" or "on")
@@ -647,7 +673,7 @@ function menu.deactivatePlayerInfo()
 	end
 
 	if oldidx then
-		Helper.updateButtonColor(menu.mainTable, oldidx + 2, 1, Helper.defaultButtonBackgroundColor)
+		Helper.updateButtonColor(menu.mainTable, oldidx + 2, 1, Color["button_background_default"])
 	end
 
 	-- Mark items as read when hiding them
@@ -667,6 +693,9 @@ function menu.deactivatePlayerInfo()
 		end
 		menu.messageData.showFullscreen = nil
 		menu.cleanupCutsceneRenderTarget()
+	elseif menu.mode == "venturecontacts" then
+		Helper.unregisterVentureContactCallbacks()
+		menu.ventureContactCallbacksRegistered = nil
 	end
 	menu.personnelData.curEntry = {}
 
@@ -1089,7 +1118,7 @@ function menu.onSliderCellActivated()
 end
 
 -- mode: "factionresponses", "controllableresponses"
-function menu.checkboxOrdersSetAsk(factionorcontrollable, signalid, mode)
+function menu.checkboxOrdersSetAsk(factionorcontrollable, signalid, mode, row)
 	if mode ~= "factionresponses" and mode ~= "controllableresponses" then
 		DebugError("menu.checkboxOrdersSetAsk called with invalid mode set. only 'factionresponses' and 'controllableresponses' are supported at this time. mode: " .. tostring(mode))
 		return
@@ -1109,9 +1138,10 @@ function menu.checkboxOrdersSetAsk(factionorcontrollable, signalid, mode)
 		C.SetDefaultResponseToSignalForControllable(response, ask, signalid, factionorcontrollable)
 	else
 		ask = not C.GetAskToSignalForFaction(signalid, factionorcontrollable)
-		response = C.GetDefaultResponseToSignalForFaction(signalid, factionorcontrollable)
-		C.SetDefaultResponseToSignalForFaction(response, ask, signalid, factionorcontrollable)
+		response = C.GetDefaultResponseToSignalForFaction2(signalid, factionorcontrollable, "")
+		C.SetDefaultResponseToSignalForFaction2(response, ask, signalid, factionorcontrollable, "")
 	end
+	menu.setselectedrow2 = row
 	menu.refreshInfoFrame()
 end
 
@@ -1135,7 +1165,7 @@ function menu.checkboxNotification(notificationgroupdata, id, checked)
 end
 
 -- mode: "factionresponses", "controllableresponses"
-function menu.dropdownOrdersSetResponse(_, newresponseid, factionorcontrollable, signalid, mode)
+function menu.dropdownOrdersSetResponse(newresponseid, factionorcontrollable, signalid, mode, purposetype)
 	if mode ~= "factionresponses" and mode ~= "controllableresponses" then
 		DebugError("menu.dropdownOrdersSetResponse called with invalid mode set. only 'factionresponses' and 'controllableresponses' are supported at this time. mode: " .. tostring(mode))
 		return
@@ -1163,6 +1193,15 @@ function menu.dropdownOrdersSetResponse(_, newresponseid, factionorcontrollable,
 				end
 			end
 		end
+	elseif newresponseid == "default" then
+		if mode == "factionresponses" then
+			if purposetype == "military" then
+				C.ResetDefaultResponseToSignalForFaction(signalid, factionorcontrollable, "fight")
+				C.ResetDefaultResponseToSignalForFaction(signalid, factionorcontrollable, "auxiliary")
+			else
+				C.ResetDefaultResponseToSignalForFaction(signalid, factionorcontrollable, "")
+			end
+		end
 	else
 		local ask
 		if mode == "controllableresponses" then
@@ -1170,7 +1209,12 @@ function menu.dropdownOrdersSetResponse(_, newresponseid, factionorcontrollable,
 			C.SetDefaultResponseToSignalForControllable(newresponseid, ask, signalid, factionorcontrollable)
 		else
 			ask = C.GetAskToSignalForFaction(signalid, factionorcontrollable)
-			C.SetDefaultResponseToSignalForFaction(newresponseid, ask, signalid, factionorcontrollable)
+			if purposetype == "military" then
+				C.SetDefaultResponseToSignalForFaction2(newresponseid, ask, signalid, factionorcontrollable, "fight")
+				C.SetDefaultResponseToSignalForFaction2(newresponseid, ask, signalid, factionorcontrollable, "auxiliary")
+			else
+				C.SetDefaultResponseToSignalForFaction2(newresponseid, ask, signalid, factionorcontrollable, "")
+			end
 		end
 	end
 end
@@ -1187,6 +1231,12 @@ function menu.dropdownOrdersBuildRule(_, id)
 	C.SetFactionBuildMethod("player", id)
 end
 
+function menu.hotkey(action)
+	if action == "INPUT_ACTION_ADDON_DETAILMONITOR_CLOSE_PLAYERINFO" then
+		menu.closeMenu("close")
+	end
+end
+
 function menu.onShowMenu(state)
 	-- reset settings
 	C.SetUICoverOverride(false)
@@ -1194,6 +1244,10 @@ function menu.onShowMenu(state)
 	menu.topRows = {}
 	menu.selectedRows = {}
 	menu.selectedCols = {}
+
+	-- Register bindings
+	Helper.setKeyBinding(menu, menu.hotkey)
+	RegisterAddonBindings("ego_detailmonitor", "playerinfo")
 
 	-- Init
 	menu.playerInfoFullWidth = Helper.viewWidth - (Helper.playerInfoConfig.offsetX + Helper.frameBorder + Helper.borderSize)
@@ -1255,12 +1309,11 @@ function menu.createMainFrame()
 		x = 0,
 		y = 0,
 		layer = config.mainLayer,
-		backgroundID = "solid",
-		backgroundColor = Helper.color.semitransparent,
 		standardButtons = { back = true, close = true, help = true  },
 	}
 
 	menu.mainFrame = Helper.createFrameHandle(menu, frameProperties)
+	menu.mainFrame:setBackground("solid", { color = Color["frame_background_semitransparent"] })
 
 	menu.createPlayerInfo(menu.mainFrame, Helper.playerInfoConfig.width, Helper.playerInfoConfig.height, Helper.playerInfoConfig.offsetX, Helper.playerInfoConfig.offsetY)
 
@@ -1280,7 +1333,7 @@ function menu.createPlayerInfo(frame, width, height, offsetx, offsety)
 	ftable:setColWidth(1, menu.sideBarWidth, false)
 	ftable:setColWidth(2, width - menu.sideBarWidth - Helper.borderSize, false)
 
-	local row = ftable:addRow(false, { fixed = true, bgColor = Helper.color.transparent60 })
+	local row = ftable:addRow(false, { fixed = true, bgColor = Color["player_info_background"] })
 	local icon = row[1]:setColSpan(2):createIcon(function () local logo = C.GetCurrentPlayerLogo(); return ffi.string(logo.icon) end, { width = height, height = height, color = Helper.getPlayerLogoColor })
 
 	local textheight = math.ceil(C.GetTextHeight(Helper.playerInfoConfigTextLeft(), Helper.standardFont, Helper.playerInfoConfig.fontsize, width - height - Helper.borderSize))
@@ -1288,16 +1341,18 @@ function menu.createPlayerInfo(frame, width, height, offsetx, offsety)
 	icon:setText2(Helper.playerInfoConfigTextRight,	{ fontsize = Helper.playerInfoConfig.fontsize, halign = "right", x = Helper.borderSize,          y = (height - textheight) / 2 })
 
 	local spacingHeight = menu.sideBarWidth / 4
-	row = ftable:addRow(false, { fixed = true })
+	row = ftable:addRow(false, { fixed = true, bgColor = Color["row_background_blue"] })
 	row[1]:createText(" ", { minRowHeight = menu.sideBarWidth + Helper.scaleY(Helper.titleTextProperties.height) + 2 * Helper.borderSize })
 	for _, entry in ipairs(config.leftBar) do
-		if entry.spacing then
-			row = ftable:addRow(false, { fixed = true })
-			row[1]:createIcon("mapst_seperator_line", { width = menu.sideBarWidth, height = spacingHeight })
-		else
-			row = ftable:addRow(true, { fixed = true })
-			row[1]:createButton({ active = entry.active, height = menu.sideBarWidth, bgColor = (menu.mode == entry.mode) and Helper.defaultArrowRowBackgroundColor or Helper.defaultTitleBackgroundColor, mouseOverText = entry.name, helpOverlayID = entry.helpOverlayID, helpOverlayText = entry.helpOverlayText }):setIcon(entry.icon, { color = entry.iconcolor })
-			row[1].handlers.onClick = function () return menu.buttonTogglePlayerInfo(entry.mode) end
+		if not entry.condition or entry.condition() then
+			if entry.spacing then
+				row = ftable:addRow(false, { fixed = true, bgColor = Color["row_background_blue"] })
+				row[1]:createIcon("mapst_seperator_line", { width = menu.sideBarWidth, height = spacingHeight })
+			else
+				row = ftable:addRow(true, { fixed = true, bgColor = Color["row_background_blue"] })
+				row[1]:createButton({ active = entry.active, height = menu.sideBarWidth, bgColor = (menu.mode == entry.mode) and Color["row_background_selected"] or Color["row_title_background"], mouseOverText = entry.name, helpOverlayID = entry.helpOverlayID, helpOverlayText = entry.helpOverlayText }):setIcon(entry.icon, { color = entry.iconcolor })
+				row[1].handlers.onClick = function () return menu.buttonTogglePlayerInfo(entry.mode) end
+			end
 		end
 	end
 
@@ -1305,7 +1360,7 @@ function menu.createPlayerInfo(frame, width, height, offsetx, offsety)
 end
 
 function menu.createTopLevel(frame)
-	Helper.createTopLevelTab(menu, "playerinfo", frame, "", nil, true)
+	menu.topLevelHeight = Helper.createTopLevelTab(menu, "playerinfo", frame, "", nil, true)
 end
 
 function menu.onTabScroll(direction)
@@ -1359,7 +1414,7 @@ function menu.createInfoFrame()
 	local tableProperties = {
 		width = width - menu.sideBarWidth - Helper.borderSize,
 		x = Helper.playerInfoConfig.offsetX + menu.sideBarWidth + Helper.borderSize,
-		y = Helper.playerInfoConfig.offsetY + Helper.playerInfoConfig.height + Helper.borderSize,
+		y = math.max(Helper.playerInfoConfig.offsetY + Helper.playerInfoConfig.height + Helper.borderSize, menu.topLevelHeight),
 	}
 	tableProperties.height = Helper.viewHeight - tableProperties.y
 
@@ -1397,6 +1452,12 @@ function menu.createInfoFrame()
 		menu.createMessages(menu.infoFrame, tableProperties)
 	elseif menu.mode == "personnel" then
 		menu.createPersonnelInfo(menu.infoFrame, tableProperties)
+	elseif menu.mode == "venturecontacts" then
+		if not menu.ventureContactCallbacksRegistered then
+			menu.ventureContactCallbacksRegistered = true
+			Helper.registerVentureContactCallbacks(menu)
+		end
+		Helper.createVentureContacts(menu, menu.infoFrame, "left", tableProperties.width, tableProperties.x, tableProperties.y, tableProperties.x, tableProperties.y)
 	end
 
 	-- kuertee start: callback
@@ -1448,7 +1509,7 @@ function menu.createInventory(frame, tableProperties, mode, tabOrderOffset)
 		infotable:setDefaultBackgroundColSpan(1, 4)
 
 		-- title
-		local row = infotable:addRow(nil, { fixed = true, bgColor = Helper.defaultTitleBackgroundColor })
+		local row = infotable:addRow(nil, { fixed = true, bgColor = Color["row_title_background"] })
 		row[1]:setColSpan(4):createText((mode == "personalupgrade") and ReadText(1001, 7716) or ReadText(1001, 2202), Helper.titleTextProperties)
 
 		local wareCategories = {}
@@ -1494,13 +1555,13 @@ function menu.createInventory(frame, tableProperties, mode, tabOrderOffset)
 		local found = false
 		if next(menu.inventory) then
 			-- header
-			row = infotable:addRow(ware, { fixed = true, bgColor = Helper.color.unselectable })
+			row = infotable:addRow(ware, { fixed = true, bgColor = Color["row_background_unselectable"] })
 			row[1]:setBackgroundColSpan(4):createText(ReadText(1001, 95), { font = Helper.standardFontBold })
 			row[2]:createText(ReadText(1001, 1202), config.rightAlignBoldTextProperties)
 			row[3]:createText(ReadText(1001, 2413), config.rightAlignBoldTextProperties)
 			row[4]:createText(ReadText(1001, 2927), config.rightAlignBoldTextProperties)
 
-			row = infotable:addRow(false, { fixed = true, bgColor = Helper.color.grey })
+			row = infotable:addRow(false, { fixed = true, bgColor = Color["row_separator"] })
 			row[1]:setColSpan(4):createText("", {height = 1})
 
 			-- entries
@@ -1509,7 +1570,7 @@ function menu.createInventory(frame, tableProperties, mode, tabOrderOffset)
 					if (mode == "personalupgrade") == (entry.id == "upgrade") then
 						found = true
 						if mode ~= "personalupgrade" then
-							row = infotable:addRow(nil, { bgColor = Helper.color.transparent })
+							row = infotable:addRow(nil, {  })
 							row[1]:setColSpan(4):createText(entry.name, Helper.subHeaderTextProperties)
 							row[1].properties.halign = "center"
 						end
@@ -1527,7 +1588,7 @@ function menu.createInventory(frame, tableProperties, mode, tabOrderOffset)
 			end
 		end
 		if not found then
-			row = infotable:addRow(true, { bgColor = Helper.color.transparent, interactive = false })
+			row = infotable:addRow(true, { interactive = false })
 			row[1]:setColSpan(4):createText("-- " .. ReadText(1001, 32) .. " --", { halign = "center" })
 		end
 
@@ -1545,20 +1606,20 @@ function menu.createInventory(frame, tableProperties, mode, tabOrderOffset)
 		local buttontable = frame:addTable(3, { tabOrder = 2 + tabOrderOffset, borderEnabled = true, width = tableProperties.width, x = tableProperties.x, y = tableProperties.y })
 		menu.inventoryButtonTable = buttontable
 
-		local row = buttontable:addRow(false, { fixed = true, bgColor = Helper.color.transparent })
+		local row = buttontable:addRow(false, { fixed = true })
 		row[1]:setColSpan(3):createText("")
 
 		if mode ~= "personalupgrade" then
-			local row = buttontable:addRow(false, { fixed = true, bgColor = Helper.color.transparent })
-			row[1]:setColSpan(3):createText(" ", { titleColor = Helper.defaultSimpleBackgroundColor })
-			local row = buttontable:addRow(false, { fixed = true, bgColor = Helper.color.unselectable })
+			local row = buttontable:addRow(false, { fixed = true })
+			row[1]:setColSpan(3):createText(" ", { titleColor = Color["row_title"] })
+			local row = buttontable:addRow(false, { fixed = true, bgColor = Color["row_background_unselectable"] })
 			row[1]:setBackgroundColSpan(3):setColSpan(2):createText(ReadText(1001, 2442), {  })
 			row[3]:createText(ConvertMoneyString(totalprice, false, true, 0, true) .. " " .. ReadText(1001, 101), config.rightAlignTextProperties)
 
 			buttontable:addEmptyRow(Helper.standardTextHeight / 2)
 		end
 
-		local row = buttontable:addRow(nil, { fixed = true, bgColor = Helper.color.transparent })
+		local row = buttontable:addRow(nil, { fixed = true })
 		row[1]:setColSpan(3):createText(ReadText(1001, 7735), Helper.subHeaderTextProperties)
 		row[1].properties.halign = "center"
 
@@ -1579,25 +1640,25 @@ function menu.createInventory(frame, tableProperties, mode, tabOrderOffset)
 		if menu.inventoryData.mode == "drop" then
 			for _, entry in ipairs(menu.inventoryData.dropWares) do
 				local slidermax = entry.amount
-				row = buttontable:addRow(true, { fixed = true, bgColor = Helper.color.transparent })
-				row[1]:setColSpan(3):createSliderCell({ height = Helper.standardButtonHeight, valueColor = Helper.color.slidervalue, min = 0, minSelect = 1, max = slidermax, start = slidermax }):setText(GetWareData(entry.ware, "name"))
+				row = buttontable:addRow(true, { fixed = true })
+				row[1]:setColSpan(3):createSliderCell({ height = Helper.standardButtonHeight, valueColor = Color["slider_value"], min = 0, minSelect = 1, max = slidermax, start = slidermax }):setText(GetWareData(entry.ware, "name"))
 				row[1].handlers.onSliderCellChanged = function (_, value) return menu.slidercellInventoryDrop(entry.ware, value) end
 			end
 
-			row = buttontable:addRow(false, { fixed = true, bgColor = Helper.color.transparent })
+			row = buttontable:addRow(false, { fixed = true })
 			row[1]:setColSpan(3):createText("")
 
-			row = buttontable:addRow(true, { fixed = true, bgColor = Helper.color.transparent })
+			row = buttontable:addRow(true, { fixed = true })
 			row[1]:createText(ReadText(1001, 7732))
 			row[2]:setColSpan(2):createDropDown(options, { startOption = curOption })
 			row[2].handlers.onDropDownConfirmed = menu.dropdownInventoryLockbox
 
-			row = buttontable:addRow(true, { fixed = true, bgColor = Helper.color.transparent })
+			row = buttontable:addRow(true, { fixed = true })
 			-- cancel button
 			row[3]:createButton():setText(ReadText(1001, 64), { halign = "center" })
 			row[3].handlers.onClick = menu.buttonInventoryCancel
 		else
-			row = buttontable:addRow(true, { fixed = true, bgColor = Helper.color.transparent })
+			row = buttontable:addRow(true, { fixed = true })
 		end
 		-- drop item button
 		row[1]:createButton({ active = menu.inventoryData.mode == "drop" }):setText((menu.inventoryData.dropWares and (#menu.inventoryData.dropWares > 1)) and ReadText(1001, 7733) or ReadText(1001, 7705), { halign = "center" })
@@ -1612,7 +1673,7 @@ function menu.createInventory(frame, tableProperties, mode, tabOrderOffset)
 				end
 			end
 
-			row = buttontable:addRow(true, { fixed = true, bgColor = Helper.color.transparent })
+			row = buttontable:addRow(true, { fixed = true })
 			row[1]:createButton({ active = hasillegalwares }):setText(ReadText(1001, 7734), { halign = "center" })
 			row[1].handlers.onClick = function () return menu.buttonInventoryDropAll(true) end
 		end
@@ -1651,10 +1712,10 @@ function menu.createInventory(frame, tableProperties, mode, tabOrderOffset)
 			menu.inventoryData.activatecutscene = true
 
 			local descriptiontable = frame:addTable(1, { tabOrder = 0, width = width, x = Helper.viewWidth - width - Helper.frameBorder, y = tableProperties.y + height + Helper.borderSize })
-			local row = descriptiontable:addRow(nil, { fixed = true, bgColor = Helper.defaultTitleBackgroundColor })
+			local row = descriptiontable:addRow(nil, { fixed = true, bgColor = Color["row_title_background"] })
 			row[1]:createText(ReadText(1001, 2404), Helper.titleTextProperties)
 
-			local row = descriptiontable:addRow(nil, { fixed = true, bgColor = Helper.color.transparent })
+			local row = descriptiontable:addRow(nil, { fixed = true })
 			row[1]:createText(GetWareData(menu.inventoryData.curEntry[1], "description"), { wordwrap = true })
 		end
 	elseif menu.inventoryData.mode == "online" then
@@ -1683,14 +1744,14 @@ function menu.createInventoryHeader(frame, tableProperties)
 		end
 	end
 
-	local row = ftable:addRow("tabs", { fixed = true, bgColor = Helper.color.transparent })
+	local row = ftable:addRow("tabs", { fixed = true })
 	local count = 1
 	for _, entry in ipairs(categories) do
 		if not entry.empty then
-			local bgcolor = Helper.defaultTitleBackgroundColor
-			local color = Helper.color.white
+			local bgcolor = Color["row_title_background"]
+			local color = Color["text_normal"]
 			if entry.category == menu.inventoryData.mode then
-				bgcolor = Helper.defaultArrowRowBackgroundColor
+				bgcolor = Color["row_background_selected"]
 			end
 
 			local loccount = count
@@ -1723,7 +1784,7 @@ function menu.createCrafting(frame, tableProperties)
 	infotable:setDefaultBackgroundColSpan(1, 4)
 
 	-- title
-	local row = infotable:addRow(nil, { fixed = true, bgColor = Helper.defaultTitleBackgroundColor })
+	local row = infotable:addRow(nil, { fixed = true, bgColor = Color["row_title_background"] })
 	row[1]:setColSpan(4):createText(ReadText(1001, 7701), Helper.titleTextProperties)
 
 	menu.inventory = GetPlayerInventory()
@@ -1752,7 +1813,7 @@ function menu.createCrafting(frame, tableProperties)
 
 	if next(menu.craftable) then
 		-- header
-		row = infotable:addRow(ware, { bgColor = Helper.color.transparent })
+		row = infotable:addRow(ware, {  })
 		row[1]:createText(ReadText(1001, 45))
 		row[2]:createText(ReadText(1001, 1202), config.rightAlignTextProperties)
 		row[3]:createText(ReadText(1001, 2413), config.rightAlignTextProperties)
@@ -1769,7 +1830,7 @@ function menu.createCrafting(frame, tableProperties)
 			end
 		end
 	else
-		row = infotable:addRow(true, { bgColor = Helper.color.transparent })
+		row = infotable:addRow(true, {  })
 		row[1]:setColSpan(4):createText("-- " .. ReadText(1001, 32) .. " --", { halign = "center" })
 	end
 
@@ -1782,33 +1843,33 @@ function menu.createCrafting(frame, tableProperties)
 	local buttontable = frame:addTable(3, { tabOrder = 2, borderEnabled = true, width = tableProperties.width, x = tableProperties.x, y = tableProperties.y })
 	local row
 	if menu.inventoryData.craftingHistory[1] then
-		row = buttontable:addRow(nil, { fixed = true, bgColor = Helper.defaultTitleBackgroundColor })
+		row = buttontable:addRow(nil, { fixed = true, bgColor = Color["row_title_background"] })
 		row[1]:setColSpan(3):createText(ReadText(1001, 7707), Helper.titleTextProperties)
 
 		for i = 1, math.min(3, #menu.inventoryData.craftingHistory) do
 			local entry = menu.inventoryData.craftingHistory[i]
 
-			row = buttontable:addRow(nil, { fixed = true, bgColor = Helper.color.transparent })
+			row = buttontable:addRow(nil, { fixed = true })
 			row[1]:setColSpan(2):createText(entry.amount .. ReadText(1001, 42) .. " " .. entry.ware[2].name)
 			row[3]:createText(Helper.convertGameTimeToXTimeString(entry.time), config.rightAlignTextProperties)
 		end
 
-		row = buttontable:addRow(nil, { fixed = true, bgColor = Helper.color.transparent })
+		row = buttontable:addRow(nil, { fixed = true })
 		row[1]:setColSpan(3):createText("")
 	end
 	if menu.inventoryData.mode == "craft" then
-		row = buttontable:addRow(true, { fixed = true, bgColor = Helper.color.transparent })
+		row = buttontable:addRow(true, { fixed = true })
 
 		local slidermax = menu.inventoryData.craftWare[2].craftable
-		row[1]:setColSpan(3):createSliderCell({ height = Helper.standardButtonHeight, valueColor = Helper.color.slidervalue, min = 0, minSelect = 1, max = slidermax, start = 1 }):setText(menu.inventoryData.craftWare[2].name)
+		row[1]:setColSpan(3):createSliderCell({ height = Helper.standardButtonHeight, valueColor = Color["slider_value"], min = 0, minSelect = 1, max = slidermax, start = 1 }):setText(menu.inventoryData.craftWare[2].name)
 		row[1].handlers.onSliderCellChanged = menu.slidercellInventoryCraft
 
-		row = buttontable:addRow(true, { fixed = true, bgColor = Helper.color.transparent })
+		row = buttontable:addRow(true, { fixed = true })
 		-- cancel button
 		row[3]:createButton():setText(ReadText(1001, 64), { halign = "center" })
 		row[3].handlers.onClick = menu.buttonInventoryCancel
 	else
-		row = buttontable:addRow(true, { fixed = true, bgColor = Helper.color.transparent })
+		row = buttontable:addRow(true, { fixed = true })
 	end
 	-- craft item button
 	row[1]:createButton({ active = true }):setText(ReadText(1001, 7706), { halign = "center" })
@@ -1825,10 +1886,10 @@ function menu.createEquipmentMods(frame, tableProperties)
 	-- STATUS
 	local statustable = frame:addTable(1, { tabOrder = 0, width = tableProperties.width, x = tableProperties.x, y = 0 })
 
-	local row = statustable:addRow(false, { fixed = true, bgColor = Helper.defaultTitleBackgroundColor })
+	local row = statustable:addRow(false, { fixed = true, bgColor = Color["row_title_background"] })
 	row[1]:createText(ReadText(1001, 2427), Helper.titleTextProperties)
 
-	local row = statustable:addRow(false, { fixed = true, bgColor = Helper.color.transparent })
+	local row = statustable:addRow(false, { fixed = true })
 	row[1]:createText(ReadText(1001, 7715), { wordwrap = true })
 
 	statustable.properties.maxVisibleHeight = statustable:getFullHeight()
@@ -1848,7 +1909,7 @@ function menu.createEquipmentMods(frame, tableProperties)
 	infotable:setDefaultBackgroundColSpan(2, 5)
 
 	-- title
-	local row = infotable:addRow(nil, { fixed = true, bgColor = Helper.defaultTitleBackgroundColor })
+	local row = infotable:addRow(nil, { fixed = true, bgColor = Color["row_title_background"] })
 	row[1]:setColSpan(6):createText(ReadText(1001, 8031), Helper.titleTextProperties)
 
 	menu.inventory = GetPlayerInventory()
@@ -1901,7 +1962,7 @@ function menu.createEquipmentMods(frame, tableProperties)
 			end
 		end
 
-		local row = infotable:addRow(true, {  })
+		local row = infotable:addRow(true, { bgColor = Color["row_background_blue"] })
 		row[1]:createButton({ height = Helper.standardTextHeight }):setText(isclassexpanded and "-" or "+", { halign = "center" })
 		row[1].handlers.onClick = function () return menu.expandWeaponMod(entry.modclass, "", row.index) end
 		row[2]:setColSpan(2):createText(entry.name)
@@ -1948,13 +2009,13 @@ function menu.createEquipmentPropertyEntry(ftable, modclass, property)
 	table.sort(modwares[1], function (a, b) return GetWareData(a.ware, "name") < GetWareData(b.ware, "name") end)
 	table.sort(modwares[2], function (a, b) return GetWareData(a.ware, "name") < GetWareData(b.ware, "name") end)
 	table.sort(modwares[3], function (a, b) return GetWareData(a.ware, "name") < GetWareData(b.ware, "name") end)
-	local color = Helper.color.white
+	local color = Color["text_normal"]
 	if not expandable then
-		color = Helper.color.grey
+		color = Color["text_inactive"]
 	end
 
-	local row = ftable:addRow(true, {  })
-	row[1].properties.cellBGColor = Helper.color.transparent
+	local row = ftable:addRow(true, { bgColor = Color["row_background_blue"] })
+	row[1].properties.cellBGColor = Color["row_background"]
 	row[2]:setBackgroundColSpan(1):createButton({ active = expandable, height = Helper.standardTextHeight }):setText(isexpanded and "-" or "+", { halign = "center" })
 	row[2].handlers.onClick = function () return menu.expandWeaponMod(modclass, property.key, row.index) end
 	row[3]:setBackgroundColSpan(4):createText(property.text, { color = color })
@@ -1983,21 +2044,21 @@ end
 
 function menu.createEquipmentModEntry(ftable, modclass, moddata)
 	-- mod name
-	local row = ftable:addRow(true, { bgColor = Helper.defaultTitleBackgroundColor, interactive = false })
-	row[1].properties.cellBGColor = Helper.color.transparent
-	row[2].properties.cellBGColor = Helper.color.transparent
+	local row = ftable:addRow(true, { bgColor = Color["row_title_background"], interactive = false })
+	row[1].properties.cellBGColor = Color["row_background"]
+	row[2].properties.cellBGColor = Color["row_background"]
 	row[3]:setColSpan(4):createText("    " .. "\27[" .. Helper.modQualities[moddata.quality].icon2 .. "]" .. GetWareData(moddata.ware, "shortname"), { color = Helper.modQualities[moddata.quality].color })
 	-- Resources
 	for _, resource in ipairs(moddata.resources) do
-		local row = ftable:addRow(true, { bgColor = Helper.color.transparent, interactive = false })
-		local color = (resource.data.amount < resource.data.needed) and Helper.color.grey or Helper.color.white
+		local row = ftable:addRow(true, { interactive = false })
+		local color = (resource.data.amount < resource.data.needed) and Color["text_inactive"] or Color["text_normal"]
 		-- name
 		row[3]:setColSpan(2):createText("       " .. resource.data.name, { color = color })
 		-- amount
 		row[5]:setColSpan(2):createText(resource.data.amount .. " / " .. resource.data.needed, { halign = "right", color = color })
 	end
 	-- Effects
-	local row = ftable:addRow(true, { bgColor = Helper.color.transparent, interactive = false })
+	local row = ftable:addRow(true, { interactive = false })
 	row[3]:setColSpan(4):createText("     " .. ReadText(1001, 8034) .. ReadText(1001, 120))
 	-- Property
 	local moddef = C.GetEquipmentModInfo(moddata.ware)
@@ -2005,22 +2066,22 @@ function menu.createEquipmentModEntry(ftable, modclass, moddata)
 	for i, property in ipairs(Helper.modProperties[modclass]) do
 		if property.key == propertytype then
 			local minvalue = moddef["MinValue" .. property.type]
-			local mineffectcolor = Helper.color.white
+			local mineffectcolor = Color["text_normal"]
 			if minvalue > property.basevalue then
-				mineffectcolor = property.pos_effect and Helper.color.green or Helper.color.red
+				mineffectcolor = property.pos_effect and Color["text_positive"] or Color["text_negative"]
 			elseif minvalue < property.basevalue then
-				mineffectcolor = property.pos_effect and Helper.color.red or Helper.color.green
+				mineffectcolor = property.pos_effect and Color["text_negative"] or Color["text_positive"]
 			end
 
 			local maxvalue = moddef["MaxValue" .. property.type]
-			local maxeffectcolor = Helper.color.white
+			local maxeffectcolor = Color["text_normal"]
 			if maxvalue > property.basevalue then
-				maxeffectcolor = property.pos_effect and Helper.color.green or Helper.color.red
+				maxeffectcolor = property.pos_effect and Color["text_positive"] or Color["text_negative"]
 			elseif maxvalue < property.basevalue then
-				maxeffectcolor = property.pos_effect and Helper.color.red or Helper.color.green
+				maxeffectcolor = property.pos_effect and Color["text_negative"] or Color["text_positive"]
 			end
 
-			local row = ftable:addRow(true, { bgColor = Helper.color.transparent, interactive = false })
+			local row = ftable:addRow(true, { interactive = false })
 			row[3]:createText("       " .. property.text, { font = Helper.standardFontBold })
 			if property.pos_effect and (minvalue < maxvalue) or (minvalue > maxvalue) then
 				row[5]:setColSpan(2):createText(property.eval2(minvalue, mineffectcolor, maxvalue, maxeffectcolor), { font = Helper.standardFontBold, halign = "right" })
@@ -2042,7 +2103,7 @@ function menu.createEquipmentModEntry(ftable, modclass, moddata)
 			mouseovertext = mouseovertext .. "\n" .. string.format("%+d %s%s %4.1f%%", n, ReadText(1001, 6602), ReadText(1001, 120), probability * 100)
 		end
 
-		local row = ftable:addRow(true, { bgColor = Helper.color.transparent, interactive = false })
+		local row = ftable:addRow(true, { interactive = false })
 		row[3]:setColSpan(2):createText("       " .. ((moddef.BonusMax == 1) and ReadText(1001, 8039) or string.format(ReadText(1001, 8040), moddef.BonusMax)), { mouseOverText = mouseovertext })
 		row[5]:setColSpan(2):createText("???", { halign = "right" })
 	end
@@ -2073,7 +2134,7 @@ function menu.expandPersonnel(id, row)
 		menu.equipmentModsData.expandedProperties[tostring(id)] = true
 	end
 
-	if menu.personnelData.curEntry.id ~= id then
+	if tostring(menu.personnelData.curEntry.id) ~= tostring(id) then
 		menu.personnelData.curEntry = {}
 	end
 	menu.refreshInfoFrame(nil, row)
@@ -2100,13 +2161,13 @@ function menu.createFactions(frame, tableProperties)
 	infotable:setDefaultBackgroundColSpan(1, 3)
 
 	-- title
-	local row = infotable:addRow(nil, { fixed = true, bgColor = Helper.defaultTitleBackgroundColor })
+	local row = infotable:addRow(nil, { fixed = true, bgColor = Color["row_title_background"] })
 	row[1]:setColSpan(3):createText(ReadText(1001, 7703), Helper.titleTextProperties)
 	row[1].properties.height = row[1].properties.height + Helper.borderSize
 
 	-- cover override
 	if Helper.isPlayerCovered() then
-		local row = infotable:addRow(true, { fixed = true, bgColor = Helper.color.transparent })
+		local row = infotable:addRow(true, { fixed = true })
 		row[1]:createCheckBox(C.IsUICoverOverridden(), { width = Helper.standardTextHeight, height = Helper.standardTextHeight, mouseOverText = ReadText(1026, 7713) })
 		row[1].handlers.onClick = function(_, checked) C.SetUICoverOverride(checked); menu.refreshInfoFrame() end
 		row[2]:setColSpan(2):createText(ReadText(1001, 11604), { mouseOverText = ReadText(1026, 7713) })
@@ -2127,12 +2188,12 @@ function menu.createFactions(frame, tableProperties)
 	end
 
 	if #menu.relations == 0 then
-		row = infotable:addRow(true, { bgColor = Helper.color.transparent })
+		row = infotable:addRow(true, {  })
 		row[1]:setColSpan(3):createText("--- " .. ReadText(1001, 38) .. " ---", { halign = "center" })
 	else
 		for i, relation in ipairs(menu.relations) do
 			local shortname = GetFactionData(relation.id, "shortname")
-			row = infotable:addRow({ "faction", relation }, { bgColor = Helper.color.transparent })
+			row = infotable:addRow({ "faction", relation }, {  })
 			row[1]:createIcon((relation.icon ~= "") and relation.icon or "solid", { height = iconheight, x = iconoffset, color = function () return menu.relationColor(relation.id) end, mouseOverText = function () local prioritizedrelationrangename = GetFactionData(relation.id, "prioritizedrelationrangename"); return prioritizedrelationrangename end })
 			row[2]:createText("[" .. shortname .. "] " .. relation.name, { fontsize = 14, color = function () return menu.relationColor(relation.id) end, y = 2 * iconoffset, minRowHeight = iconheight + 2 * iconoffset, mouseOverText = function () local prioritizedrelationrangename = GetFactionData(relation.id, "prioritizedrelationrangename"); return prioritizedrelationrangename end })
 			row[3]:createText(
@@ -2151,7 +2212,7 @@ function menu.createFactions(frame, tableProperties)
 
 	local relation = menu.factionData.curEntry
 
-	local row = detailtable:addRow(nil, { fixed = true, bgColor = Helper.defaultTitleBackgroundColor })
+	local row = detailtable:addRow(nil, { fixed = true, bgColor = Color["row_title_background"] })
 	row[1]:setBackgroundColSpan(3):createText(next(relation) and ("\27[" .. relation.icon .. "]") or "", Helper.titleTextProperties)
 	local name
 	if next(relation) then
@@ -2165,7 +2226,7 @@ function menu.createFactions(frame, tableProperties)
 		local isrelationlocked, relationlockreason, willclaimspace = GetFactionData(relation.id, "isrelationlocked", "relationlockreason", "willclaimspace")
 		-- sector ownership
 		if not willclaimspace then
-			local row = detailtable:addRow(nil, { bgColor = Helper.color.transparent })
+			local row = detailtable:addRow(nil, {  })
 			row[1]:setColSpan(3):createText(ReadText(1001, 7784))
 
 			detailtable:addEmptyRow(Helper.standardTextHeight / 2)
@@ -2181,16 +2242,16 @@ function menu.createFactions(frame, tableProperties)
 
 		-- licences
 		if menu.licences[relation.id] and #menu.licences[relation.id] > 0 then
-			local row = detailtable:addRow(nil, { bgColor = Helper.color.transparent })
+			local row = detailtable:addRow(nil, {  })
 			row[1]:setBackgroundColSpan(3):setColSpan(2):createText(ReadText(1001, 62), Helper.subHeaderTextProperties)
 			row[3]:createText(ReadText(1001, 7748), Helper.subHeaderTextProperties)
 			row[3].properties.halign = "right"
 
 			for i, licence in ipairs(menu.licences[relation.id]) do
-				local row = detailtable:addRow({ "licence", licence.id }, { bgColor = Helper.color.transparent })
-				local color = Helper.color.grey
+				local row = detailtable:addRow({ "licence", licence.id }, {  })
+				local color = Color["text_inactive"]
 				if HasLicence("player", licence.type, relation.id) then
-					color = Helper.color.white
+					color = Color["text_normal"]
 				end
 				local name = licence.name
 				if licence.precursor then
@@ -2210,15 +2271,15 @@ function menu.createFactions(frame, tableProperties)
 			detailtable:addEmptyRow(Helper.standardTextHeight / 2)
 		end
 		-- relation
-		local row = detailtable:addRow(nil, { bgColor = Helper.color.transparent })
+		local row = detailtable:addRow(nil, {  })
 		row[1]:setColSpan(3):createText(ReadText(1001, 7749), Helper.subHeaderTextProperties)
 
-		local row = detailtable:addRow(true, { bgColor = Helper.color.transparent })
+		local row = detailtable:addRow(true, {  })
 		row[2]:setColSpan(2):createText(ffi.string(C.GenerateFactionRelationText(relation.id)))
 
 		detailtable:addEmptyRow(Helper.standardTextHeight / 2)
 		-- war declaration
-		local row = detailtable:addRow(true, { bgColor = Helper.color.transparent })
+		local row = detailtable:addRow(true, {  })
 		local active = true
 		local mouseovertext
 		if GetUIRelation(relation.id) <= -25 then
@@ -2259,11 +2320,11 @@ end
 
 function menu.relationColor(faction)
 	if GetFactionData(faction, "ishostile") then
-		return menu.holomapcolor.hostilecolor
+		return Color["text_hostile"]
 	elseif GetFactionData(faction, "isenemy") then
-		return menu.holomapcolor.enemycolor
+		return Color["text_enemy"]
 	else
-		return Helper.color.white
+		return Color["text_normal"]
 	end
 end
 
@@ -2276,14 +2337,14 @@ function menu.createStats(frame, tableProperties)
 	infotable:setColWidth(1, 2 * tableProperties.width / 3, false)
 
 	-- title
-	local row = infotable:addRow(nil, { fixed = true, bgColor = Helper.defaultTitleBackgroundColor })
+	local row = infotable:addRow(nil, { fixed = true, bgColor = Color["row_title_background"] })
 	row[1]:setColSpan(2):createText(ReadText(1001, 2500), Helper.titleTextProperties)
 
 	local stats = GetAllStatIDs()
 	for i = 1, #stats do
 		local hidden, displayname = GetStatData(stats[i], "hidden", "displayname")
 		if not hidden then
-			row = infotable:addRow(stats[i], {bgColor = Helper.color.transparent})
+			row = infotable:addRow(stats[i], {})
 			row[1]:createText(displayname)
 			row[2]:createText(function () return GetStatData(stats[i], "displayvalue") end, { halign = "right", font = Helper.standardFontMono })
 		end
@@ -2326,10 +2387,10 @@ function menu.createAccounts(frame, tableProperties, tabOrderOffset)
 	infotable:setColWidthPercent(1, 25)
 
 	-- title
-	local row = infotable:addRow(nil, { fixed = true, bgColor = Helper.defaultTitleBackgroundColor })
+	local row = infotable:addRow(nil, { fixed = true, bgColor = Color["row_title_background"] })
 	row[1]:setColSpan(5):createText(ReadText(1001, 7708), Helper.titleTextProperties)
 
-	row = infotable:addRow(nil, { fixed = true, bgColor = Helper.color.unselectable })
+	row = infotable:addRow(nil, { fixed = true, bgColor = Color["row_background_unselectable"] })
 	row[1]:setBackgroundColSpan(5)
 	row[2]:createText(ReadText(1001, 7773), { font = Helper.standardFontBold })
 	row[5]:createText(ReadText(1001, 6509), { font = Helper.standardFontBold })
@@ -2344,14 +2405,14 @@ function menu.createAccounts(frame, tableProperties, tabOrderOffset)
 			local station64 = ConvertIDTo64Bit(station)
 			-- station name
 			local mouseovertext = ReadText(20001, 201) .. ReadText(1001, 120) .. " " .. sector
-			local row = infotable:addRow(false, {  })
+			local row = infotable:addRow(false, { bgColor = Color["row_background_blue"] })
 			row[1]:setColSpan(5):createText(name .. " (" .. ffi.string(C.GetObjectIDCode(station64)) .. ")", Helper.subHeaderTextProperties)
 			row[1].properties.color = menu.holomapcolor.playercolor
 			row[1].properties.mouseOverText = mouseovertext
 
 			-- station account
 			local transaction = menu.findAccountTransaction(station)
-			local row = infotable:addRow(true, { bgColor = Helper.color.transparent })
+			local row = infotable:addRow(true, {  })
 			row[1]:createText(ReadText(1001, 7710) .. ReadText(1001, 120), { x = Helper.standardTextHeight })
 			row[2]:createText(ConvertMoneyString(stationmoney - transaction, false, true, nil, true) .. " " .. ReadText(1001, 101), { halign = "right" })
 			row[3]:setColSpan(2):createSliderCell({ min = math.min((-playermoney + transaction), transaction), max = math.max(stationmoney, transaction), start = transaction, fromCenter = true, suffix = ReadText(1001, 101), height = config.rowHeight })
@@ -2362,7 +2423,7 @@ function menu.createAccounts(frame, tableProperties, tabOrderOffset)
 			-- station estimated budget
 			local supplymoney = tonumber(C.GetSupplyBudget(station64)) / 100
 			local tradewaremoney = tonumber(C.GetTradeWareBudget(station64)) / 100
-			local row = infotable:addRow(true, { bgColor = Helper.color.transparent })
+			local row = infotable:addRow(true, {  })
 			row[1]:createText(ReadText(1001, 9434) .. ReadText(1001, 120), { x = Helper.standardTextHeight })
 			local mouseovertext =	ReadText(1001, 8420) .. ReadText(1001, 120) .. " " .. ConvertMoneyString(productionmoney, false, true, 0, true)	.. " " .. ReadText(1001, 101) .. "\n" ..
 									ReadText(1001, 8423) .. ReadText(1001, 120) .. " " .. ConvertMoneyString(supplymoney, false, true, 0, true)		.. " " .. ReadText(1001, 101) .. "\n" ..
@@ -2379,7 +2440,7 @@ function menu.createAccounts(frame, tableProperties, tabOrderOffset)
 				local buildstoragemoney, wantedmoney = GetComponentData(buildstorage64, "money", "wantedmoney")
 
 				local transaction = menu.findAccountTransaction(buildstorage)
-				local row = infotable:addRow(true, { bgColor = Helper.color.transparent })
+				local row = infotable:addRow(true, {  })
 				row[1]:createText(ReadText(1001, 9429) .. ReadText(1001, 120), { x = Helper.standardTextHeight })
 				row[2]:createText(ConvertMoneyString(buildstoragemoney - transaction, false, true, nil, true) .. " " .. ReadText(1001, 101), { halign = "right" })
 				row[3]:setColSpan(2):createSliderCell({ min = math.min((-playermoney + transaction), transaction), max = math.max(buildstoragemoney, transaction), start = transaction, fromCenter = true, suffix = ReadText(1001, 101), height = config.rowHeight })
@@ -2388,7 +2449,7 @@ function menu.createAccounts(frame, tableProperties, tabOrderOffset)
 				row[5]:createText(ConvertMoneyString(playermoney, false, true, nil, true) .. " " .. ReadText(1001, 101), { halign = "left" })
 
 				-- buildstorage estimated budget
-				local row = infotable:addRow(true, { bgColor = Helper.color.transparent })
+				local row = infotable:addRow(true, {  })
 				row[1]:createText(ReadText(1001, 9436) .. ReadText(1001, 120), { x = Helper.standardTextHeight })
 				row[2]:createText(ConvertMoneyString(wantedmoney, false, true, 0, true) .. " " .. ReadText(1001, 101), { halign = "right" })
 				row[5]:createButton({ active = function () local money, estimate = GetComponentData(buildstorage64, "money", "wantedmoney"); return (money + GetPlayerMoney()) > estimate end }):setText(ReadText(1001, 7965), { halign = "center", fontsize = config.mapFontSize })
@@ -2400,7 +2461,7 @@ function menu.createAccounts(frame, tableProperties, tabOrderOffset)
 			end
 		end
 	else
-		local row = infotable:addRow(true, { bgColor = Helper.color.transparent })
+		local row = infotable:addRow(true, {  })
 		row[1]:setColSpan(5):createText("--- " .. ReadText(1001, 33) .. " ---", { halign = "center" })
 	end
 
@@ -2416,10 +2477,10 @@ function menu.createAccounts(frame, tableProperties, tabOrderOffset)
 
 	local buttontable = frame:addTable(3, { tabOrder = 2 + tabOrderOffset, borderEnabled = false, width = tableProperties.width, x = tableProperties.x, y = tableProperties.y })
 
-	local row = buttontable:addRow(false, { fixed = true, bgColor = Helper.color.transparent })
+	local row = buttontable:addRow(false, { fixed = true })
 	row[1]:setColSpan(3):createText("")
 
-	local row = buttontable:addRow(true, { fixed = true })
+	local row = buttontable:addRow(true, { fixed = true, bgColor = Color["row_background_blue"] })
 	row[1]:createButton({ active = #menu.accountData.transactions > 0 }):setText(ReadText(1001, 2821), { halign = "center" })
 	row[1].handlers.onClick = menu.buttonAccountConfirm
 	row[2]:createButton():setText(ReadText(1001, 3318), { halign = "center" })
@@ -2479,17 +2540,17 @@ function menu.createLogbookHeader(frame, tableProperties)
 	end
 
 	-- title
-	local row = titletable:addRow(nil, { fixed = true, bgColor = Helper.defaultTitleBackgroundColor })
+	local row = titletable:addRow(nil, { fixed = true, bgColor = Color["row_title_background"] })
 	row[1]:setColSpan(numcols):createText(ReadText(1001, 5700), Helper.titleTextProperties)
 	-- categories
-	local row = titletable:addRow(true, { fixed = true, bgColor = Helper.color.transparent })
+	local row = titletable:addRow(true, { fixed = true })
 	for i, entry in ipairs(config.logbookCategories) do
 		if (entry.online == nil) or (entry.online == isonline) then
 			if not entry.empty then
-				local bgcolor = Helper.defaultTitleBackgroundColor
-				local color = Helper.color.white
+				local bgcolor = Color["row_title_background"]
+				local color = Color["text_normal"]
 				if entry.mode == menu.logbookData.category then
-					bgcolor = Helper.defaultArrowRowBackgroundColor
+					bgcolor = Color["row_background_selected"]
 				end
 
 				row[i]:createButton({ height = menu.sideBarWidth, bgColor = bgcolor, mouseOverText = entry.name, scaling = false }):setIcon(entry.icon, { color = color})
@@ -2538,16 +2599,42 @@ function menu.createLogbook(frame, tableProperties)
 		infotable:setColWidth(10, config.rowHeight)
 
 		-- entries
-		menu.logbookData.numEntries = GetNumLogbook(menu.logbookData.category)
+		menu.logbookData.numEntries = 0
+		if menu.logbookData.category == "ticker" then
+			menu.logbookData.numEntries = C.GetNumTickerCache("")
+		else
+			menu.logbookData.numEntries = GetNumLogbook(menu.logbookData.category)
+		end
 		if menu.logbookData.searchtext ~= "" then
 			menu.logbook = {}
 			for i = 1, math.ceil(menu.logbookData.numEntries / config.logbookQueryLimit) do
 				local numQuery = math.min(config.logbookQueryLimit, menu.logbookData.numEntries - (i - 1) * config.logbookQueryLimit)
-				local logbook = GetLogbook((i - 1) * config.logbookQueryLimit + 1, numQuery, menu.logbookData.category) or {}
-				if #logbook > 0 then
-					for _, entry in ipairs(logbook) do
+				if menu.logbookData.category == "ticker" then
+					local buf = ffi.new("TickerCacheEntry[?]", numQuery)
+					local n = C.GetTickerCache(buf, numQuery, (i - 1) * config.logbookQueryLimit + 1, numQuery, "");
+					for j = 0, n - 1 do
+						local entry = {
+							time = buf[i].time,
+							category = ffi.string(buf[i].category),
+							title = ffi.string(buf[i].title),
+							text = ffi.string(buf[i].text),
+							factionname = "",
+							entityname = "",
+							money = 0,
+							bonus = 0,
+						}
+
 						if menu.logbookSearchHelper(entry, menu.logbookData.searchtext) then
 							table.insert(menu.logbook, entry)
+						end
+					end
+				else
+					local logbook = GetLogbook((i - 1) * config.logbookQueryLimit + 1, numQuery, menu.logbookData.category) or {}
+					if #logbook > 0 then
+						for _, entry in ipairs(logbook) do
+							if menu.logbookSearchHelper(entry, menu.logbookData.searchtext) then
+								table.insert(menu.logbook, entry)
+							end
 						end
 					end
 				end
@@ -2576,38 +2663,58 @@ function menu.createLogbook(frame, tableProperties)
 					startIndex = 1
 				end
 			end
-			menu.logbook = GetLogbook(startIndex, numQuery, menu.logbookData.category) or {}
+			if menu.logbookData.category == "ticker" then
+				menu.logbook = {}
+				local buf = ffi.new("TickerCacheEntry[?]", numQuery)
+				local n = C.GetTickerCache(buf, numQuery, startIndex, numQuery, "");
+				for j = 0, n - 1 do
+					local entry = {
+						time = buf[j].time,
+						category = ffi.string(buf[j].category),
+						title = ffi.string(buf[j].title),
+						text = ffi.string(buf[j].text),
+						factionname = "",
+						entityname = "",
+						money = 0,
+						bonus = 0,
+					}
+
+					table.insert(menu.logbook, entry)
+				end
+			else
+				menu.logbook = GetLogbook(startIndex, numQuery, menu.logbookData.category) or {}
+			end
 		end
 		menu.logbookData.numPages = math.max(1, math.ceil(menu.logbookData.numEntries / config.logbookPage))
 
 		-- category title / pages
-		local row = infotable:addRow(nil, { fixed = true, bgColor = Helper.defaultTitleBackgroundColor })
+		local row = infotable:addRow(nil, { fixed = true, bgColor = Color["row_title_background"] })
 		row[1]:setColSpan(10):createText(menu.logbookData.name, {
 			scaling = false,
 			font = Helper.titleFont,
 			fontsize = Helper.scaleFont(Helper.titleFont, Helper.standardFontSize),
 			height = Helper.scaleY(Helper.subHeaderHeight),
-			cellBGColor = { r = 0, g = 0, b = 0, a = 0 },
-			titleColor = Helper.defaultSimpleBackgroundColor,
+			cellBGColor = Color["row_background"],
+			titleColor = Color["row_title"],
 		})
 		row[1].properties.x = (tableProperties.width - math.ceil(C.GetTextWidth(menu.logbookData.name, Helper.titleFont, Helper.scaleFont(Helper.standardFont, Helper.standardFontSize)))) / 2
-		row = infotable:addRow(true, { fixed = true, bgColor = Helper.color.transparent })
+		row = infotable:addRow(true, { fixed = true })
 		row[1]:setColSpan(3):createEditBox({ description = ReadText(1001, 7740), defaultText = ReadText(1001, 3250) }):setText(menu.logbookData.searchtext, { halign = "left", x = Helper.standardTextOffsetx }):setHotkey("INPUT_STATE_DETAILMONITOR_0", { displayIcon = true })
 		row[1].handlers.onEditBoxDeactivated = function (_, text) if text ~= menu.logbookData.searchtext then menu.logbookData.searchtext = text; menu.noupdate = nil; menu.refreshInfoFrame() end end
 
 		local buttonheight = math.max(Helper.editboxMinHeight, Helper.scaleY(Helper.subHeaderHeight))
-		row[4]:createButton({ scaling = false, width = buttonsize, height = buttonheight, cellBGColor = Helper.color.transparent }):setText("X", { halign = "center", font = Helper.standardFontBold })
+		row[4]:createButton({ scaling = false, width = buttonsize, height = buttonheight, cellBGColor = Color["row_background"] }):setText("X", { halign = "center", font = Helper.standardFontBold })
 		row[4].handlers.onClick = function () menu.logbookData.searchtext = ""; menu.refreshInfoFrame() end
 
-		row[5]:createButton({ scaling = false, active = menu.logbookData.curPage > 1, width = buttonsize, height = buttonheight, cellBGColor = Helper.color.transparent }):setIcon("widget_arrow_skip_left_01", { width = buttonsize, height = buttonsize, y = (row:getHeight() - buttonsize) / 2 })
+		row[5]:createButton({ scaling = false, active = menu.logbookData.curPage > 1, width = buttonsize, height = buttonheight, cellBGColor = Color["row_background"] }):setIcon("widget_arrow_skip_left_01", { width = buttonsize, height = buttonsize, y = (row:getHeight() - buttonsize) / 2 })
 		row[5].handlers.onClick = function () menu.logbookData.curPage = 1; menu.refreshInfoFrame() end
-		row[6]:createButton({ scaling = false, active = menu.logbookData.curPage > 1, width = buttonsize, height = buttonheight, cellBGColor = Helper.color.transparent }):setIcon("widget_arrow_left_01", { width = buttonsize, height = buttonsize, y = (row:getHeight() - buttonsize) / 2 })
+		row[6]:createButton({ scaling = false, active = menu.logbookData.curPage > 1, width = buttonsize, height = buttonheight, cellBGColor = Color["row_background"] }):setIcon("widget_arrow_left_01", { width = buttonsize, height = buttonsize, y = (row:getHeight() - buttonsize) / 2 })
 		row[6].handlers.onClick = function () menu.logbookData.curPage = menu.logbookData.curPage - 1; menu.refreshInfoFrame() end
 		menu.logbookPageEditBox = row[7]:setColSpan(2):createEditBox({ description = ReadText(1001, 7739) }):setText(menu.logbookData.curPage .. " / " .. menu.logbookData.numPages, { halign = "center" })
 		row[7].handlers.onEditBoxDeactivated = menu.editboxLogbookPage
-		row[9]:createButton({ scaling = false, active = menu.logbookData.curPage < menu.logbookData.numPages, width = buttonsize, height = buttonheight, cellBGColor = Helper.color.transparent }):setIcon("widget_arrow_right_01", { width = buttonsize, height = buttonsize, y = (row:getHeight() - buttonsize) / 2 })
+		row[9]:createButton({ scaling = false, active = menu.logbookData.curPage < menu.logbookData.numPages, width = buttonsize, height = buttonheight, cellBGColor = Color["row_background"] }):setIcon("widget_arrow_right_01", { width = buttonsize, height = buttonsize, y = (row:getHeight() - buttonsize) / 2 })
 		row[9].handlers.onClick = function () menu.logbookData.curPage = menu.logbookData.curPage + 1; menu.refreshInfoFrame() end
-		row[10]:createButton({ scaling = false, active = menu.logbookData.curPage < menu.logbookData.numPages, width = buttonsize, height = buttonheight, cellBGColor = Helper.color.transparent }):setIcon("widget_arrow_skip_right_01", { width = buttonsize, height = buttonsize, y = (row:getHeight() - buttonsize) / 2 })
+		row[10]:createButton({ scaling = false, active = menu.logbookData.curPage < menu.logbookData.numPages, width = buttonsize, height = buttonheight, cellBGColor = Color["row_background"] }):setIcon("widget_arrow_skip_right_01", { width = buttonsize, height = buttonsize, y = (row:getHeight() - buttonsize) / 2 })
 		row[10].handlers.onClick = function () menu.logbookData.curPage = menu.logbookData.numPages; menu.refreshInfoFrame() end
 
 		infotable:addEmptyRow(Helper.standardTextHeight / 2)
@@ -2615,22 +2722,22 @@ function menu.createLogbook(frame, tableProperties)
 		if #menu.logbook > 0 then
 			for i = #menu.logbook, 1, -1 do
 				local entry = menu.logbook[i]
-				local textcolor = entry.highlighted and Helper.color.red or Helper.standardColor
-				row = infotable:addRow(true, { bgColor = Helper.color.transparent, borderBelow = false })
+				local textcolor = entry.highlighted and Color["text_logbook_highlight"] or Color["text_normal"]
+				row = infotable:addRow(true, { borderBelow = false })
 				if entry.interaction and IsValidComponent(entry.interactioncomponent) then
 					local mouseoverobject = entry.interactioncomponent
 					if IsComponentClass(mouseoverobject, "zone") and not IsComponentClass(mouseoverobject, "highway") then
 						mouseoverobject = GetContextByClass(mouseoverobject, "sector")
 					end
 					row[1]:setColSpan(9):createText(entry.title, { font = Helper.standardFontBold, color = textcolor, wordwrap = true })
-					row[10]:createButton({ scaling = false, bgColor = Helper.color.transparent, mouseOverText = string.format(entry.interactiontext, GetComponentData(mouseoverobject, "name")), height = buttonsize }):setIcon("widget_arrow_right_01", { width = buttonsize, height = buttonsize })
+					row[10]:createButton({ scaling = false, bgColor = Color["button_background_hidden"], mouseOverText = string.format(entry.interactiontext, GetComponentData(mouseoverobject, "name")), height = buttonsize }):setIcon("widget_arrow_right_01", { width = buttonsize, height = buttonsize })
 					row[10].handlers.onClick = function () return menu.buttonLogbookInteraction(entry) end
 				else
 					row[1]:setColSpan(10):createText(entry.title, { font = Helper.standardFontBold, color = textcolor, wordwrap = true })
 				end
 
 				if (entry.entityname ~= "") or (entry.factionname ~= "") then
-					row = infotable:addRow(false, { bgColor = Helper.color.transparent, borderBelow = false })
+					row = infotable:addRow(false, { borderBelow = false })
 					if entry.entityname ~= "" then
 						row[1]:setColSpan(2):createText(ReadText(1001, 5711) .. " " .. entry.entityname, { x = config.rowHeight })
 					end
@@ -2638,30 +2745,30 @@ function menu.createLogbook(frame, tableProperties)
 				end
 
 				if entry.text ~= "" then
-					row = infotable:addRow(false, { bgColor = Helper.color.transparent, borderBelow = false })
+					row = infotable:addRow(false, { borderBelow = false })
 					row[1]:setColSpan(10):createText(entry.text, { x = config.rowHeight, color = textcolor, wordwrap = true })
 				end
 
-				row = infotable:addRow(false, { bgColor = Helper.color.transparent })
+				row = infotable:addRow(false, {  })
 				row[1]:setColSpan(2):createText(Helper.getPassedTime(entry.time), { mouseOverText = Helper.convertGameTimeToXTimeString(entry.time), x = config.rowHeight })
 				local moneystring = ""
 				if entry.money ~= 0 then
-					local moneycolor = (entry.money >= 0) and Helper.color.green or Helper.color.red
+					local moneycolor = (entry.money >= 0) and Color["text_positive"] or Color["text_negative"]
 					moneystring = moneystring .. Helper.convertColorToText(moneycolor) .. ((entry.bonus >= 0) and "+" or "-") .. ConvertMoneyString(entry.money, false, true, nil, true) .. " " .. ReadText(1001, 101)
 				end
 				if entry.bonus ~= 0 then
-					local bonuscolor = (entry.bonus >= 0) and Helper.color.green or Helper.color.red
+					local bonuscolor = (entry.bonus >= 0) and Color["text_positive"] or Color["text_negative"]
 					moneystring = moneystring .. " " .. Helper.convertColorToText(bonuscolor) .. "(" .. ((entry.bonus >= 0) and "+" or "-") .. " " .. ReadText(1001, 5712) .. " " .. ConvertMoneyString(entry.bonus, false, true, nil, true) .. " " .. ReadText(1001, 101) .. ")"
 				end
 				row[3]:setColSpan(8):createText(moneystring, config.rightAlignTextProperties)
 
 				if i ~= 1 then
-					row = infotable:addRow(false, { bgColor = Helper.defaultSimpleBackgroundColor })
+					row = infotable:addRow(false, { bgColor = Color["row_title"] })
 					row[1]:setColSpan(10):createText("", { fontsize = 1, minRowHeight = 1 })
 				end
 			end
 		else
-			row = infotable:addRow(false, { bgColor = Helper.color.transparent })
+			row = infotable:addRow(false, {  })
 			row[1]:setColSpan(10):createText("--- " .. ReadText(1001, 5705) .. " ---", { halign = "center" })
 		end
 
@@ -2672,10 +2779,10 @@ function menu.createLogbook(frame, tableProperties)
 
 		local buttontable = frame:addTable(3, { tabOrder = 2, borderEnabled = false, width = tableProperties.width, x = tableProperties.x, y = infotable.properties.y })
 
-		local row = buttontable:addRow(false, { fixed = true, bgColor = Helper.color.transparent })
+		local row = buttontable:addRow(false, { fixed = true })
 		row[1]:setColSpan(3):createText("")
 
-		local row = buttontable:addRow(true, { fixed = true })
+		local row = buttontable:addRow(true, { fixed = true, bgColor = Color["row_background_blue"] })
 		row[1]:createButton():setText(ReadText(1001, 5722), { halign = "center" })
 		row[1].handlers.onClick = menu.buttonLogbookClearQuestion
 
@@ -2689,10 +2796,10 @@ function menu.createLogbook(frame, tableProperties)
 
 		local width = Helper.playerInfoConfig.width - menu.sideBarWidth - Helper.borderSize
 		local descriptiontable = frame:addTable(1, { tabOrder = 0, width = width, x = Helper.viewWidth - width - Helper.frameBorder, y = Helper.viewHeight * 4 / 5 })
-		local row = descriptiontable:addRow(nil, { fixed = true, bgColor = Helper.defaultTitleBackgroundColor })
+		local row = descriptiontable:addRow(nil, { fixed = true, bgColor = Color["row_title_background"] })
 		row[1]:createText(ReadText(1001, 2427), Helper.titleTextProperties)
 
-		local row = descriptiontable:addRow(nil, { fixed = true, bgColor = Helper.color.transparent })
+		local row = descriptiontable:addRow(nil, { fixed = true })
 		row[1]:createText(ReadText(1001, 5726), { wordwrap = true })
 	end
 end
@@ -2762,8 +2869,8 @@ function menu.messageSidebarIconColor()
 				-- number between 0 and 1
 				x = (x * effectrepeat / effectduration) % 1
 
-				normalcolor = Helper.color.white
-				overridecolor = Helper.color.mission
+				normalcolor = Color["text_normal"]
+				overridecolor = Color["text_mission"]
 				local color = {
 					r = (1 - x) * overridecolor.r + x * normalcolor.r,
 					g = (1 - x) * overridecolor.g + x * normalcolor.g,
@@ -2775,7 +2882,7 @@ function menu.messageSidebarIconColor()
 		end
 	end
 	-- if there are no unread messages, use the normal icon color
-	return Helper.color.white
+	return Color["text_normal"]
 end
 
 function menu.createMessages(frame, tableProperties)
@@ -2825,21 +2932,21 @@ function menu.createMessages(frame, tableProperties)
 		end
 
 		-- category title / pages
-		local row = infotable:addRow(nil, { fixed = true, bgColor = Helper.defaultTitleBackgroundColor })
+		local row = infotable:addRow(nil, { fixed = true, bgColor = Color["row_title_background"] })
 		row[1]:setColSpan(10):createText(menu.messageData.name, {
 			font = Helper.titleFont,
 			fontsize = Helper.standardFontSize,
 			height = Helper.subHeaderHeight,
-			cellBGColor = { r = 0, g = 0, b = 0, a = 0 },
-			titleColor = Helper.defaultSimpleBackgroundColor,
+			cellBGColor = Color["row_background"],
+			titleColor = Color["row_title"],
 			halign = "center",
 		})
 
-		local row = infotable:addRow(true, { fixed = true, bgColor = Helper.color.transparent })
+		local row = infotable:addRow(true, { fixed = true })
 		row[1]:setColSpan(9):createEditBox({ description = ReadText(1001, 7740), defaultText = ReadText(1001, 3250) }):setText(menu.messageData.searchtext, { halign = "left", x = Helper.standardTextOffsetx }):setHotkey("INPUT_STATE_DETAILMONITOR_0", { displayIcon = true })
 		row[1].handlers.onEditBoxDeactivated = function (_, text) if text ~= menu.messageData.searchtext then menu.messageData.searchtext = text; menu.noupdate = nil; menu.refreshInfoFrame() end end
 		local buttonheight = math.max(Helper.editboxMinHeight, Helper.scaleY(Helper.subHeaderHeight))
-		row[10]:createButton({ scaling = false, width = buttonsize, height = buttonheight, cellBGColor = Helper.color.transparent }):setText("X", { halign = "center", font = Helper.standardFontBold })
+		row[10]:createButton({ scaling = false, width = buttonsize, height = buttonheight, cellBGColor = Color["row_background"] }):setText("X", { halign = "center", font = Helper.standardFontBold })
 		row[10].handlers.onClick = function () menu.messageData.searchtext = ""; menu.refreshInfoFrame() end
 
 		infotable:addEmptyRow(Helper.standardTextHeight / 2)
@@ -2852,8 +2959,8 @@ function menu.createMessages(frame, tableProperties)
 					numunread = numunread + 1
 				end
 				local font = entry.isread and Helper.standardFont or Helper.standardFontBold
-				local textcolor = entry.highlighted and Helper.color.red or Helper.standardColor
-				row = infotable:addRow(entry, { bgColor = Helper.color.transparent, borderBelow = false })
+				local textcolor = entry.highlighted and Color["text_logbook_highlight"] or Color["text_normal"]
+				row = infotable:addRow(entry, { borderBelow = false })
 				if entry.id == menu.messageData.curEntry.id then
 					infotable:setSelectedRow(row.index)
 				end
@@ -2862,7 +2969,7 @@ function menu.createMessages(frame, tableProperties)
 				row[7]:setColSpan(4):createText(Helper.getPassedTime(entry.time), { font = font, mouseOverText = Helper.convertGameTimeToXTimeString(entry.time), x = config.rowHeight, halign = "right" })
 			end
 		else
-			row = infotable:addRow(false, { bgColor = Helper.color.transparent })
+			row = infotable:addRow(false, {  })
 			row[1]:setColSpan(10):createText("--- " .. ReadText(1001, 5705) .. " ---", { halign = "center" })
 		end
 
@@ -2872,10 +2979,10 @@ function menu.createMessages(frame, tableProperties)
 		-- buttons
 		buttontable = frame:addTable(3, { tabOrder = 2, borderEnabled = false, width = narrowtablewidth, x = tableProperties.x, y = infotable.properties.y })
 
-		local row = buttontable:addRow(false, { fixed = true, bgColor = Helper.color.transparent })
+		local row = buttontable:addRow(false, { fixed = true })
 		row[1]:setColSpan(3):createText("")
 
-		local row = buttontable:addRow(true, { fixed = true })
+		local row = buttontable:addRow(true, { fixed = true, bgColor = Color["row_background_blue"] })
 		row[3]:createButton({ active = numunread > 0 }):setText(ReadText(1001, 7744), { halign = "center" })
 		row[3].handlers.onClick = menu.buttonMessagesRead
 
@@ -2890,16 +2997,16 @@ function menu.createMessages(frame, tableProperties)
 		end
 
 		-- title
-		local row = titletable:addRow(nil, { fixed = true, bgColor = Helper.defaultTitleBackgroundColor })
+		local row = titletable:addRow(nil, { fixed = true, bgColor = Color["row_title_background"] })
 		row[1]:setColSpan(numcols):createText(ReadText(1001, 7730), Helper.titleTextProperties)
 		-- categories
-		local row = titletable:addRow(true, { fixed = true, bgColor = Helper.color.transparent })
+		local row = titletable:addRow(true, { fixed = true })
 		for i, entry in ipairs(config.messageCategories) do
 			if not entry.empty then
-				local bgcolor = Helper.defaultTitleBackgroundColor
-				local color = Helper.color.white
+				local bgcolor = Color["row_title_background"]
+				local color = Color["icon_normal"]
 				if entry.mode == menu.messageData.category then
-					bgcolor = Helper.defaultArrowRowBackgroundColor
+					bgcolor = Color["row_background_selected"]
 				end
 
 				row[i]:createButton({ height = menu.sideBarWidth, bgColor = bgcolor, mouseOverText = entry.name, scaling = false }):setIcon(function () return menu.messageCategoryIcon(entry) end, { color = color})
@@ -2924,24 +3031,24 @@ function menu.createMessages(frame, tableProperties)
 
 		-- message details
 		detailtable = frame:addTable(3, { tabOrder = 3, width = tableProperties.width - 2 * (narrowtablewidth + Helper.borderSize), x = tableProperties.x + infotable.properties.width + Helper.borderSize, y = titletable.properties.y, highlightMode = "off" })
-		local row = detailtable:addRow(nil, { fixed = true, bgColor = Helper.defaultTitleBackgroundColor })
+		local row = detailtable:addRow(nil, { fixed = true, bgColor = Color["row_title_background"] })
 		row[1]:setColSpan(3):createText(menu.messageData.curEntry.title, Helper.titleTextProperties)
 
 		if next(menu.messageData.curEntry) then
-			local row = detailtable:addRow(nil, { fixed = true, bgColor = Helper.defaultTitleBackgroundColor })
+			local row = detailtable:addRow(nil, { fixed = true, bgColor = Color["row_title_background"] })
 			row[1]:setColSpan(2):setBackgroundColSpan(3):createText(ReadText(1001, 7745) .. ReadText(1001, 120) .. " " .. menu.messageData.curEntry.source, {
 				font = Helper.titleFont,
 				fontsize = Helper.standardFontSize,
 				height = Helper.subHeaderHeight,
-				cellBGColor = { r = 0, g = 0, b = 0, a = 0 },
-				titleColor = Helper.defaultSimpleBackgroundColor,
+				cellBGColor = Color["row_background"],
+				titleColor = Color["row_title"],
 			})
 			row[3]:createText(ReadText(1001, 2691) .. ReadText(1001, 120) .. " " .. Helper.convertGameTimeToXTimeString(menu.messageData.curEntry.time), {
 				font = Helper.titleFont,
 				fontsize = Helper.standardFontSize,
 				height = Helper.subHeaderHeight,
-				cellBGColor = { r = 0, g = 0, b = 0, a = 0 },
-				titleColor = Helper.defaultSimpleBackgroundColor,
+				cellBGColor = Color["row_background"],
+				titleColor = Color["row_title"],
 				halign = "right",
 			})
 
@@ -2956,9 +3063,9 @@ function menu.createMessages(frame, tableProperties)
 				end
 				local name = ffi.string(C.GetComponentName(interactioncomponent))
 
-				local row = interacttable:addRow(nil, { fixed = true, bgColor = Helper.color.transparent })
+				local row = interacttable:addRow(nil, { fixed = true })
 				row[1]:setColSpan(3):createText(name)
-				local row = interacttable:addRow(true, { fixed = true, bgColor = Helper.color.transparent })
+				local row = interacttable:addRow(true, { fixed = true })
 				row[3]:createButton({ mouseOverText = string.format(menu.messageData.curEntry.interactiontext, name) }):setText(menu.messageData.curEntry.interactionshorttext, { halign = "center" })
 				row[3].handlers.onClick = function () return menu.buttonMessagesInteraction(menu.messageData.curEntry) end
 
@@ -2972,7 +3079,7 @@ function menu.createMessages(frame, tableProperties)
 				lines = GetTextLines(menu.messageData.curEntry.text, Helper.standardFont, Helper.scaleFont(Helper.standardFont, Helper.standardFontSize), detailtable.properties.width - 2 * Helper.scaleX(Helper.standardTextOffsetx) - Helper.scrollbarWidth)
 			end
 			for linenum, line in ipairs(lines) do
-				local row = detailtable:addRow(true, { bgColor = Helper.color.transparent })
+				local row = detailtable:addRow(true, {  })
 				row[1]:setColSpan(3):createText(line)
 			end
 
@@ -3018,8 +3125,8 @@ function menu.createMessages(frame, tableProperties)
 			local buttonsize = 2 * config.rowHeight
 			local rendertargetbuttontable = frame:addTable(2, { tabOrder = 4, width = mediaProperties.width, x = mediaProperties.x, y = mediaProperties.y + mediaProperties.height - Helper.scaleX(buttonsize) })
 			rendertargetbuttontable:setColWidth(2, buttonsize)
-			local row = rendertargetbuttontable:addRow(true, { fixed = true, bgColor = Helper.color.transparent })
-			row[2]:createButton({ height = buttonsize, bgColor = Helper.color.transparent }):setIcon(menu.messageData.showFullscreen and "menu_minimize_video" or "menu_maximize_video")
+			local row = rendertargetbuttontable:addRow(true, { fixed = true })
+			row[2]:createButton({ height = buttonsize, bgColor = Color["button_background_hidden"] }):setIcon(menu.messageData.showFullscreen and "menu_minimize_video" or "menu_maximize_video")
 			row[2].handlers.onClick = menu.buttonMessagesToggleCutsceneFullscreen
 		else
 			print("Unsupported message cutscene key: '" .. menu.messageData.curEntry.cutscenekey .. "'")
@@ -3031,6 +3138,8 @@ function menu.createPersonnelInfo(frame, tableProperties)
 	if not menu.empireData.initialized or menu.empireData.init then
 		menu.initEmpireData()
 		menu.empireData.init = nil
+	else
+		menu.getEmployeeList()
 	end
 
 	local infotablewidth = 2 * (Helper.playerInfoConfig.width - menu.sideBarWidth - Helper.borderSize)
@@ -3056,30 +3165,26 @@ function menu.createPersonnelInfo(frame, tableProperties)
 	infotable:setDefaultColSpan(6, 3)
 	infotable:setDefaultColSpan(9, 3)
 
-	local row = infotable:addRow(nil, { fixed = true, bgColor = Helper.defaultTitleBackgroundColor })
+	local row = infotable:addRow(nil, { fixed = true, bgColor = Color["row_title_background"] })
 	row[1]:setColSpan(numCols):createText(ReadText(1001, 11034), Helper.titleTextProperties)
 
 	-- overview
-	local row = infotable:addRow(nil, { fixed = true, bgColor = Helper.defaultTitleBackgroundColor })
+	local row = infotable:addRow(nil, { fixed = true, bgColor = Color["row_title_background"] })
 	row[1]:setColSpan(numCols):createText(ReadText(1001, 11035), Helper.headerRowCenteredProperties)
 
-	local row = infotable:addRow(nil, { fixed = true, bgColor = Helper.color.darkgrey })
+	local row = infotable:addRow(nil, { fixed = true, bgColor = Color["row_background_unselectable"] })
 	row[1]:setColSpan(5):createText(ReadText(1001, 9113))	-- Number of hired personnel
 	row[6]:setColSpan(6):createText((ConvertIntegerString(menu.empireData.numhiredpersonnel, true)), { halign = "right" })
 
-	local row = infotable:addRow(nil, { fixed = true, bgColor = Helper.color.darkgrey })
+	local row = infotable:addRow(nil, { fixed = true, bgColor = Color["row_background_unselectable"] })
 	row[1]:setColSpan(5):createText(ReadText(1001, 9114))	-- Average personnel skill
-	row[6]:setColSpan(6):createText(Helper.displaySkill(menu.empireData.averagepersonnelskill), { color = Helper.color.brightyellow, halign = "right" })
+	row[6]:setColSpan(6):createText(Helper.displaySkill(menu.empireData.averagepersonnelskill), { color = Color["text_skills"], halign = "right" })
 
-	local row = infotable:addRow(nil, { fixed = true, bgColor = Helper.color.darkgrey })
-	row[1]:setColSpan(5):createText(ReadText(1001, 9115))	-- Total personnel skill
-	row[6]:setColSpan(6):createText((ConvertIntegerString(menu.empireData.totalpersonnelskill, true)), { halign = "right" })
-
-	local row = infotable:addRow(nil, { fixed = true, bgColor = Helper.color.transparent })
+	local row = infotable:addRow(nil, { fixed = true })
 	row[1]:createText("")
 
 	-- list
-	local employees = menu.getEmployeeList()
+	local employees = menu.empireData.filteredemployees
 	if menu.personnelData.sort == "name" then
 		table.sort(employees, function (a, b) return Helper.sortName(a, b, false) end)
 	elseif menu.personnelData.sort == "name_inv" then
@@ -3110,7 +3215,7 @@ function menu.createPersonnelInfo(frame, tableProperties)
 		employees = { table.unpack(employees, startIndex, endIndex) }
 	end
 
-	local row = infotable:addRow(nil, { fixed = true, bgColor = Helper.defaultTitleBackgroundColor })
+	local row = infotable:addRow(nil, { fixed = true, bgColor = Color["row_title_background"] })
 	row[1]:setColSpan(numCols):createText(ReadText(1001, 11036), Helper.headerRowCenteredProperties)
 
 	-- search & pages
@@ -3123,61 +3228,64 @@ function menu.createPersonnelInfo(frame, tableProperties)
 	}
 	table.sort(roleOptions, function (a, b) return a.text < b.text end)
 	table.insert(roleOptions, 1, { id = "current", text = ReadText(1001, 8373), icon = "", displayremoveoption = false })
-	local row = infotable:addRow(true, { fixed = true, bgColor = Helper.color.transparent })
+	local row = infotable:addRow(true, { fixed = true })
 	row[1]:setColSpan(2):createEditBox({ description = ReadText(1001, 11038), defaultText = ReadText(1001, 3250), height = config.rowHeight }):setText(menu.personnelData.searchtext, { halign = "left", x = Helper.standardTextOffsetx }):setHotkey("INPUT_STATE_DETAILMONITOR_0", { displayIcon = true })
-	row[1].handlers.onEditBoxDeactivated = function (_, text) if text ~= menu.personnelData.searchtext then menu.personnelData.searchtext = text; menu.personnelData.curPage = 1; menu.noupdate = nil; menu.refreshInfoFrame() end end
+	row[1].handlers.onEditBoxDeactivated = function (_, text) if text ~= menu.personnelData.searchtext then menu.personnelData.searchtext = text; menu.personnelData.curPage = 1; menu.noupdate = nil; menu.personnelData.curEntry = {}; menu.refreshInfoFrame() end end
 
 	local buttonheight = math.max(Helper.editboxMinHeight, Helper.scaleY(Helper.subHeaderHeight))
-	row[3]:createButton({ scaling = false, width = buttonsize, height = buttonheight, cellBGColor = Helper.color.transparent }):setText("X", { halign = "center", font = Helper.standardFontBold })
+	row[3]:createButton({ scaling = false, width = buttonsize, height = buttonheight, cellBGColor = Color["row_background"] }):setText("X", { halign = "center", font = Helper.standardFontBold })
 	row[3].handlers.onClick = function () if menu.personnelData.searchtext ~= "" then menu.personnelData.searchtext = ""; menu.personnelData.curPage = 1; menu.refreshInfoFrame() end end
 	row[4]:setColSpan(1):createText(ReadText(1001, 8399) .. ReadText(1001, 120), { halign = "right" })
 	row[5]:createDropDown(roleOptions, { height = config.rowHeight, startOption = menu.personnelData.role })
 	row[5].handlers.onDropDownConfirmed = function (_, newrole) if menu.personnelData.role ~= newrole then menu.personnelData.role = newrole; menu.personnelData.curPage = 1; menu.refreshInfoFrame() end end
 	row[6]:setColSpan(1)
-	row[7]:createButton({ scaling = false, active = menu.personnelData.curPage > 1, width = buttonsize, height = buttonheight, cellBGColor = Helper.color.transparent }):setIcon("widget_arrow_skip_left_01", { width = buttonsize, height = buttonsize, y = (row:getHeight() - buttonsize) / 2 })
+	row[7]:createButton({ scaling = false, active = menu.personnelData.curPage > 1, width = buttonsize, height = buttonheight, cellBGColor = Color["row_background"] }):setIcon("widget_arrow_skip_left_01", { width = buttonsize, height = buttonsize, y = (row:getHeight() - buttonsize) / 2 })
 	row[7].handlers.onClick = function () menu.personnelData.curPage = 1; menu.personnelData.curEntry = {}; menu.refreshInfoFrame(1, 1) end
-	row[8]:createButton({ scaling = false, active = menu.personnelData.curPage > 1, width = buttonsize, height = buttonheight, cellBGColor = Helper.color.transparent }):setIcon("widget_arrow_left_01", { width = buttonsize, height = buttonsize, y = (row:getHeight() - buttonsize) / 2 })
+	row[8]:createButton({ scaling = false, active = menu.personnelData.curPage > 1, width = buttonsize, height = buttonheight, cellBGColor = Color["row_background"] }):setIcon("widget_arrow_left_01", { width = buttonsize, height = buttonsize, y = (row:getHeight() - buttonsize) / 2 })
 	row[8].handlers.onClick = function () menu.personnelData.curPage = menu.personnelData.curPage - 1; menu.personnelData.curEntry = {}; menu.refreshInfoFrame(1, 1) end
 	menu.personnelPageEditBox = row[9]:setColSpan(1):createEditBox({ description = ReadText(1001, 7739) }):setText(menu.personnelData.curPage .. " / " .. menu.personnelData.numPages, { halign = "center" })
 	row[9].handlers.onEditBoxDeactivated = menu.editboxPersonnelPage
-	row[10]:createButton({ scaling = false, active = menu.personnelData.curPage < menu.personnelData.numPages, width = buttonsize, height = buttonheight, cellBGColor = Helper.color.transparent }):setIcon("widget_arrow_right_01", { width = buttonsize, height = buttonsize, y = (row:getHeight() - buttonsize) / 2 })
+	row[10]:createButton({ scaling = false, active = menu.personnelData.curPage < menu.personnelData.numPages, width = buttonsize, height = buttonheight, cellBGColor = Color["row_background"] }):setIcon("widget_arrow_right_01", { width = buttonsize, height = buttonsize, y = (row:getHeight() - buttonsize) / 2 })
 	row[10].handlers.onClick = function () menu.personnelData.curPage = menu.personnelData.curPage + 1; menu.personnelData.curEntry = {}; menu.refreshInfoFrame(1, 1) end
-	row[11]:createButton({ scaling = false, active = menu.personnelData.curPage < menu.personnelData.numPages, width = buttonsize, height = buttonheight, cellBGColor = Helper.color.transparent }):setIcon("widget_arrow_skip_right_01", { width = buttonsize, height = buttonsize, y = (row:getHeight() - buttonsize) / 2 })
+	row[11]:createButton({ scaling = false, active = menu.personnelData.curPage < menu.personnelData.numPages, width = buttonsize, height = buttonheight, cellBGColor = Color["row_background"] }):setIcon("widget_arrow_skip_right_01", { width = buttonsize, height = buttonsize, y = (row:getHeight() - buttonsize) / 2 })
 	row[11].handlers.onClick = function () menu.personnelData.curPage = menu.personnelData.numPages; menu.personnelData.curEntry = {}; menu.refreshInfoFrame(1, 1) end
 
 	-- sort
 	local arrowWidth = Helper.scaleY(config.rowHeight)
-	local row = infotable:addRow(true, { fixed = true, bgColor = Helper.color.transparent })
-	row[1]:setColSpan(3):createButton({ height = config.mapRowHeight }):setText(ReadText(1001, 2809), { x = Helper.standardTextOffsetx }):setIcon((menu.personnelData.sort == "name_inv") and "table_arrow_inv_up" or "table_arrow_inv_down", { scaling = false, width = arrowWidth, height = arrowWidth, x = row[1]:getColSpanWidth() - arrowWidth, color = ((menu.personnelData.sort == "name") or (menu.personnelData.sort == "name_inv")) and Helper.color.white or Helper.color.transparent })
+	local row = infotable:addRow(true, { fixed = true })
+	row[1]:setColSpan(3):createButton({ height = config.mapRowHeight }):setText(ReadText(1001, 2809), { x = Helper.standardTextOffsetx }):setIcon((menu.personnelData.sort == "name_inv") and "table_arrow_inv_up" or "table_arrow_inv_down", { scaling = false, width = arrowWidth, height = arrowWidth, x = row[1]:getColSpanWidth() - arrowWidth, color = ((menu.personnelData.sort == "name") or (menu.personnelData.sort == "name_inv")) and Color["icon_normal"] or Color["icon_hidden"] })
 	row[1].handlers.onClick = function () menu.personnelData.sort = (menu.personnelData.sort == "name") and "name_inv" or "name"; menu.personnelData.curPage = 1; menu.personnelData.curEntry = {}; menu.refreshInfoFrame(1, 1) end
-	row[4]:createButton({ height = config.mapRowHeight }):setText(ReadText(1001, 11037), { x = Helper.standardTextOffsetx }):setIcon((menu.personnelData.sort == "workplace_inv") and "table_arrow_inv_up" or "table_arrow_inv_down", { scaling = false, width = arrowWidth, height = arrowWidth, x = row[4]:getColSpanWidth() - arrowWidth, color = ((menu.personnelData.sort == "workplace") or (menu.personnelData.sort == "workplace_inv")) and Helper.color.white or Helper.color.transparent })
+	row[4]:createButton({ height = config.mapRowHeight }):setText(ReadText(1001, 11037), { x = Helper.standardTextOffsetx }):setIcon((menu.personnelData.sort == "workplace_inv") and "table_arrow_inv_up" or "table_arrow_inv_down", { scaling = false, width = arrowWidth, height = arrowWidth, x = row[4]:getColSpanWidth() - arrowWidth, color = ((menu.personnelData.sort == "workplace") or (menu.personnelData.sort == "workplace_inv")) and Color["icon_normal"] or Color["icon_hidden"] })
 	row[4].handlers.onClick = function () menu.personnelData.sort = (menu.personnelData.sort == "workplace") and "workplace_inv" or "workplace"; menu.personnelData.curPage = 1; menu.personnelData.curEntry = {}; menu.refreshInfoFrame(1, 1) end
-	row[6]:createButton({ height = config.mapRowHeight }):setText(ReadText(1001, 11200), { x = Helper.standardTextOffsetx }):setIcon((menu.personnelData.sort == "role_inv") and "table_arrow_inv_up" or "table_arrow_inv_down", { scaling = false, width = arrowWidth, height = arrowWidth, x = row[6]:getColSpanWidth() - arrowWidth, color = ((menu.personnelData.sort == "role") or (menu.personnelData.sort == "role_inv")) and Helper.color.white or Helper.color.transparent })
+	row[6]:createButton({ height = config.mapRowHeight }):setText(ReadText(1001, 11200), { x = Helper.standardTextOffsetx }):setIcon((menu.personnelData.sort == "role_inv") and "table_arrow_inv_up" or "table_arrow_inv_down", { scaling = false, width = arrowWidth, height = arrowWidth, x = row[6]:getColSpanWidth() - arrowWidth, color = ((menu.personnelData.sort == "role") or (menu.personnelData.sort == "role_inv")) and Color["icon_normal"] or Color["icon_hidden"] })
 	row[6].handlers.onClick = function () menu.personnelData.sort = (menu.personnelData.sort == "role") and "role_inv" or "role"; menu.personnelData.curPage = 1; menu.personnelData.curEntry = {}; menu.refreshInfoFrame(1, 1) end
-	row[9]:createButton({ height = config.mapRowHeight }):setText(ReadText(1001, 9124), { x = Helper.standardTextOffsetx }):setIcon((menu.personnelData.sort == "skill_inv") and "table_arrow_inv_up" or "table_arrow_inv_down", { scaling = false, width = arrowWidth, height = arrowWidth, x = row[9]:getColSpanWidth() - arrowWidth, color = ((menu.personnelData.sort == "skill") or (menu.personnelData.sort == "skill_inv")) and Helper.color.white or Helper.color.transparent })
+	row[9]:createButton({ height = config.mapRowHeight }):setText(ReadText(1001, 9124), { x = Helper.standardTextOffsetx }):setIcon((menu.personnelData.sort == "skill_inv") and "table_arrow_inv_up" or "table_arrow_inv_down", { scaling = false, width = arrowWidth, height = arrowWidth, x = row[9]:getColSpanWidth() - arrowWidth, color = ((menu.personnelData.sort == "skill") or (menu.personnelData.sort == "skill_inv")) and Color["icon_normal"] or Color["icon_hidden"] })
 	row[9].handlers.onClick = function () menu.personnelData.sort = (menu.personnelData.sort == "skill") and "skill_inv" or "skill"; menu.personnelData.curPage = 1; menu.personnelData.curEntry = {}; menu.refreshInfoFrame(1, 1) end
 
 	local found = false
 	for i, employeedata in ipairs(employees) do
 		if menu.personnelData.curEntry and next(menu.personnelData.curEntry) then
-			if employeedata.id == menu.personnelData.curEntry.id then
+			if tostring(employeedata.id) == tostring(menu.personnelData.curEntry.id) then
 				found = true
 			end
+		else
+			menu.personnelData.curEntry = employeedata
+			found = true
 		end
 
 		local name = employeedata.name
 		local namemouseovertext = ""
 		local namecolor
 		if GetComponentData(employeedata.container, "isonlineobject") then
-			namecolor = Helper.color.grey
+			namecolor = Color["text_inactive"]
 			namemouseovertext = ReadText(1026, 9118)
 		end
 		if employeedata.type == "person" then
-			if C.IsPersonTransferScheduled(employeedata.container, employeedata.id) then
-				name = Helper.convertColorToText(Helper.color.brightyellow) .. "\027[warning]" .. name
+			if C.IsPersonTransferScheduled(C.ConvertStringTo64Bit(tostring(employeedata.container)), C.ConvertStringTo64Bit(tostring(employeedata.id))) then
+				name = ColorText["crew_transfer"] .. "\027[warning]" .. name
 				namemouseovertext = ReadText(1026, 3228)
-			elseif not C.HasPersonArrived(employeedata.container, employeedata.id) then
-				namecolor = Helper.color.grey
+			elseif not C.HasPersonArrived(C.ConvertStringTo64Bit(tostring(employeedata.container)), C.ConvertStringTo64Bit(tostring(employeedata.id))) then
+				namecolor = Color["text_inactive"]
 				namemouseovertext = ReadText(1026, 3247)
 			end
 		end
@@ -3203,25 +3311,25 @@ function menu.createPersonnelInfo(frame, tableProperties)
 
 		local roleColor, mouseovertext
 		if (menu.personnelData.role ~= "current") and (role ~= employeedata.roleid) and (post ~= employeedata.roleid) then
-			roleColor = Helper.color.grey
+			roleColor = Color["text_inactive"]
 			mouseovertext = string.format(ReadText(1026, 3231), assignment)
 		end
 
 		local isexpanded = menu.isPersonnelExpanded(employeedata.id)
-		local row = infotable:addRow({"personnel_employee", employeedata}, { bgColor = Helper.color.transparent })
+		local row = infotable:addRow({"personnel_employee", employeedata}, {  })
 		row[1]:createButton({ height = config.mapRowHeight }):setText(function() return isexpanded and "-" or "+" end, { halign = "center" })
 		row[1].handlers.onClick = function() return menu.expandPersonnel(employeedata.id, row.index) end
 		row[2]:createText(name, { mouseOverText = namemouseovertext, color = namecolor })
 		row[4]:createText(workplace)
 		row[6]:createText(assignment, { color = roleColor, mouseOverText = mouseovertext })
-		row[9]:createText(Helper.displaySkill(adjustedskill), { color = Helper.color.brightyellow, halign = "right", mouseOverText = ReadText(1026, 2) })
+		row[9]:createText(Helper.displaySkill(adjustedskill), { color = Color["text_skills"], halign = "right", mouseOverText = ReadText(1026, 2) })
 		if isexpanded then
 			local numskills = C.GetNumSkills()
 			local skilltable = ffi.new("Skill2[?]", numskills + 1)
 			if employeedata.type == "person" then
-				numskills = C.GetPersonSkillsForAssignment(skilltable, employeedata.id, employeedata.container, role, post)
+				numskills = C.GetPersonSkillsForAssignment(skilltable, C.ConvertStringTo64Bit(tostring(employeedata.id)), C.ConvertStringTo64Bit(tostring(employeedata.container)), role, post)
 			else
-				numskills = C.GetEntitySkillsForAssignment(skilltable, employeedata.id, role, post)
+				numskills = C.GetEntitySkillsForAssignment(skilltable, C.ConvertStringTo64Bit(tostring(employeedata.id)), role, post)
 			end
 			local sortedskilltable = {}
 			for i = 1, numskills do
@@ -3232,9 +3340,9 @@ function menu.createPersonnelInfo(frame, tableProperties)
 				local skillname = ReadText(1013, skill.textid)
 				local printedskill = Helper.displaySkill(skill.value, skill.relevance > 0)
 				local mouseovertext = ReadText(1013, skill.descriptionid)
-				local row = infotable:addRow(nil, { bgColor = Helper.color.transparent })
-				row[2]:createText(skillname, { font = (skill.relevance > 0) and Helper.standardFontBold or nil, color = (skill.relevance > 0) and Helper.color.white or Helper.color.grey, mouseOverText = mouseovertext })
-				row[4]:createText(printedskill, { halign = "left", color = (skill.relevance > 0) and Helper.color.brightyellow or Helper.color.yellow, mouseOverText = mouseovertext })
+				local row = infotable:addRow(nil, {  })
+				row[2]:createText(skillname, { font = (skill.relevance > 0) and Helper.standardFontBold or nil, color = (skill.relevance > 0) and Color["text_normal"] or Color["text_inactive"], mouseOverText = mouseovertext })
+				row[4]:createText(printedskill, { halign = "left", color = (skill.relevance > 0) and Color["text_skills"] or Color["text_skills_irrelevant"], mouseOverText = mouseovertext })
 			end
 		end
 	end
@@ -3261,7 +3369,7 @@ function menu.createPersonnelInfo(frame, tableProperties)
 
 		if menu.personnelData.curEntry.type == "entity" then
 			menu.rendertarget = frame:addRenderTarget(mediaProperties)
-			if menu.personnelData.curEntry.id ~= menu.personnelData.renderobject then
+			if tostring(menu.personnelData.curEntry.id) ~= tostring(menu.personnelData.renderobject) then
 				menu.personnelData.activatecutscene = true
 			end
 		end
@@ -3271,23 +3379,23 @@ function menu.createPersonnelInfo(frame, tableProperties)
 		-- no video icon
 		if menu.personnelData.curEntry.type ~= "entity" then
 			descriptiontable.properties.y = tableProperties.y
-			local row = descriptiontable:addRow(nil, { fixed = true, bgColor = Helper.color.transparent })
+			local row = descriptiontable:addRow(nil, { fixed = true })
 			row[1]:setColSpan(2):createIcon("briefing_no_video", { width = width, height = height, scaling = false })
 		end
 		-- details
-		local row = descriptiontable:addRow(nil, { fixed = true, bgColor = Helper.defaultTitleBackgroundColor })
+		local row = descriptiontable:addRow(nil, { fixed = true, bgColor = Color["row_title_background"] })
 		row[1]:setColSpan(2):createText(ReadText(1001, 2961), Helper.titleTextProperties)
 		-- name
-		local row = descriptiontable:addRow(nil, { fixed = true, bgColor = Helper.color.transparent })
+		local row = descriptiontable:addRow(nil, { fixed = true })
 		row[1]:createText(ReadText(1001, 2809) .. ReadText(1001, 120))
 		row[2]:createText(menu.personnelData.curEntry.name, { halign = "right" })
 		-- skills
 		local numskills = C.GetNumSkills()
 		local skilltable = ffi.new("Skill2[?]", numskills + 1)
 		if menu.personnelData.curEntry.type == "person" then
-			numskills = C.GetPersonSkillsForAssignment(skilltable, menu.personnelData.curEntry.id, menu.personnelData.curEntry.container, role, post)
+			numskills = C.GetPersonSkillsForAssignment(skilltable, C.ConvertStringTo64Bit(tostring(menu.personnelData.curEntry.id)), C.ConvertStringTo64Bit(tostring(menu.personnelData.curEntry.container)), role, post)
 		else
-			numskills = C.GetEntitySkillsForAssignment(skilltable, menu.personnelData.curEntry.id, role, post)
+			numskills = C.GetEntitySkillsForAssignment(skilltable, C.ConvertStringTo64Bit(tostring(menu.personnelData.curEntry.id)), role, post)
 		end
 		local sortedskilltable = {}
 		for i = 1, numskills do
@@ -3298,33 +3406,33 @@ function menu.createPersonnelInfo(frame, tableProperties)
 			local skillname = ReadText(1013, skill.textid)
 			local printedskill = Helper.displaySkill(skill.value, skill.relevance > 0)
 			local mouseovertext = ReadText(1013, skill.descriptionid)
-			local row = descriptiontable:addRow(nil, { bgColor = Helper.color.transparent })
-			row[1]:createText("   " .. skillname, { font = (skill.relevance > 0) and Helper.standardFontBold or nil, color = (skill.relevance > 0) and Helper.color.white or Helper.color.grey, mouseOverText = mouseovertext })
-			row[2]:createText(printedskill, { halign = "right", color = (skill.relevance > 0) and Helper.color.brightyellow or Helper.color.yellow, mouseOverText = mouseovertext })
+			local row = descriptiontable:addRow(nil, {  })
+			row[1]:createText("   " .. skillname, { font = (skill.relevance > 0) and Helper.standardFontBold or nil, color = (skill.relevance > 0) and Color["text_normal"] or Color["text_inactive"], mouseOverText = mouseovertext })
+			row[2]:createText(printedskill, { halign = "right", color = (skill.relevance > 0) and Color["text_skills"] or Color["text_skills_irrelevant"], mouseOverText = mouseovertext })
 		end
 		-- workplace
-		local row = descriptiontable:addRow(nil, { fixed = true, bgColor = Helper.color.transparent })
+		local row = descriptiontable:addRow(nil, { fixed = true })
 		row[1]:createText(ReadText(1001, 11037) .. ReadText(1001, 120))
 		row[2]:createText(menu.personnelData.curEntry.containername, { halign = "right" })
 		-- location
-		local row = descriptiontable:addRow(nil, { fixed = true, bgColor = Helper.color.transparent })
+		local row = descriptiontable:addRow(nil, { fixed = true })
 		row[1]:createText(ReadText(1001, 11039) .. ReadText(1001, 120))
 		row[2]:createText(function () return GetComponentData(menu.personnelData.curEntry.container, "sector") end, { halign = "right" })
 		-- role
-		local row = descriptiontable:addRow(nil, { fixed = true, bgColor = Helper.color.transparent })
+		local row = descriptiontable:addRow(nil, { fixed = true })
 		row[1]:createText(ReadText(1001, 11200) .. ReadText(1001, 120))
 		row[2]:createText(menu.personnelData.curEntry.rolename, { halign = "right" })
 		-- current command
 		if (menu.personnelData.curEntry.type == "entity") and (menu.personnelData.curEntry.roleid == "aipilot") then
 			local aicommandstack, aicommand, aicommandparam, aicommandaction, aicommandactionparam = GetComponentData(menu.personnelData.curEntry.id, "aicommandstack", "aicommand", "aicommandparam", "aicommandaction", "aicommandactionparam")
-			local row = descriptiontable:addRow(nil, { fixed = true, bgColor = Helper.color.transparent })
+			local row = descriptiontable:addRow(nil, { fixed = true })
 			row[1]:createText(ReadText(1001, 78) .. ReadText(1001, 120))
 			if #aicommandstack > 0 then
 				aicommand = aicommandstack[1].command
 				aicommandparam = aicommandstack[1].param
 			end
 			row[2]:createText(string.format(aicommand, IsComponentClass(aicommandparam, "component") and GetComponentData(aicommandparam, "name") or nil), { halign = "right" })
-			local row = descriptiontable:addRow(nil, { fixed = true, bgColor = Helper.color.transparent })
+			local row = descriptiontable:addRow(nil, { fixed = true })
 			local numaicommands = #aicommandstack
 			if numaicommands > 1 then
 				aicommandaction = aicommandstack[numaicommands].command
@@ -3342,7 +3450,7 @@ function menu.roleSorter(a, b, invert)
 		if a.skill == b.skill then
 			return a.name < b.name
 		end
-		return a.currentskill > b.currentskill
+		return a.combinedskill > b.combinedskill
 	end
 	if invert then
 		return a.rolename > b.rolename
@@ -3374,8 +3482,6 @@ function menu.workplaceSorter(a, b, invert)
 end
 
 function menu.getEmployeeList()
-	local employees = {}
-
 	local role, post
 	if menu.crewRole ~= "current" then
 		local type, id = string.match(menu.personnelData.role, "(.+):(.+)")
@@ -3386,43 +3492,53 @@ function menu.getEmployeeList()
 		end
 	end
 
+	local numroles = C.GetNumAllRoles()
+	local peopletable = ffi.new("PeopleInfo[?]", numroles)
+
 	-- give the empire employee list an update to avoid referencing destroyed objects
+	local numhiredpersonnel = 0
 	local empireemployees = {}
+
 	local numownedships = C.GetNumAllFactionShips("player")
 	local allownedships = ffi.new("UniverseID[?]", numownedships)
 	numownedships = C.GetAllFactionShips(allownedships, numownedships, "player")
 	for i = 0, numownedships - 1 do
 		local locship = ConvertStringTo64Bit(tostring(allownedships[i]))
-		if (not C.IsUnit(locship)) and (C.IsComponentOperational(locship)) and (not GetMacroData(GetComponentData(locship, "macro"), "islasertower")) then
-			local shipname, shipmacro, pilot, isdeployable = GetComponentData(locship, "name", "macro", "assignedaipilot", "isdeployable")
+		local shipmacro, isdeployable = GetComponentData(locship, "macro", "isdeployable")
+		local islasertower, locshipware = GetMacroData(shipmacro, "islasertower", "ware")
+		local isunit = C.IsUnit(locship)
+		if locshipware and (not isunit) and (not islasertower) and (not isdeployable) then
+			local shipname, pilot, isdeployable = GetComponentData(locship, "name", "assignedaipilot", "isdeployable")
 			shipname = shipname .. " (" .. ffi.string(C.GetObjectIDCode(locship)) .. ")"
-			local locshipware = GetMacroData(shipmacro, "ware")
-			if locshipware and (not isdeployable) and (not C.IsUnit(locship)) then
 				if pilot and IsValidComponent(pilot) then
 					local name, combinedskill, poststring, postname = GetComponentData(pilot, "name", "combinedskill", "poststring", "postname")
-					table.insert(empireemployees, { id = ConvertIDTo64Bit(pilot), type = "entity", name = name, currentskill = combinedskill, roleid = poststring, rolename = postname, container = locship, containername = shipname })
+				table.insert(empireemployees, { id = ConvertIDTo64Bit(pilot), type = "entity", name = name, combinedskill = combinedskill, roleid = poststring, rolename = postname, container = locship, containername = shipname })
+				numhiredpersonnel = numhiredpersonnel + 1
 				end
-				local numroles = C.GetNumAllRoles()
-				local peopletable = ffi.new("PeopleInfo[?]", numroles)
-				numroles = C.GetPeople2(peopletable, numroles, locship, true)
-				for i = 0, numroles - 1 do
+			local locnumroles = C.GetPeople2(peopletable, numroles, locship, true)
+			for i = 0, locnumroles - 1 do
+				numhiredpersonnel = numhiredpersonnel + peopletable[i].amount
+
 					local roleid = ffi.string(peopletable[i].id)
 					local rolename = ffi.string(peopletable[i].name)
 					local numtiers = peopletable[i].numtiers
+				if numtiers > 0 then
 					local tiertable = ffi.new("RoleTierData[?]", numtiers)
 					numtiers = C.GetRoleTiers(tiertable, numtiers, locship, peopletable[i].id)
 					for j = 0, numtiers - 1 do
 						local numpersons = tiertable[j].amount
-						local persontable = ffi.new("NPCSeed[?]", numpersons)
-						numpersons = C.GetRoleTierNPCs(persontable, numpersons, locship, peopletable[i].id, tiertable[j].skilllevel)
-						for k = 0, numpersons - 1 do
-							table.insert(empireemployees, { id = persontable[k], type = "person", name = ffi.string(C.GetPersonName(persontable[k], locship)), currentskill = C.GetPersonCombinedSkill(locship, persontable[k], nil, nil), roleid = roleid, rolename = rolename, container = locship, containername = shipname })
+						if numpersons > 0 then
+							local persontable = GetRoleTierNPCs(locship, roleid, tiertable[j].skilllevel)
+							for k, person in ipairs(persontable) do
+								table.insert(empireemployees, { id = person.seed, type = "person", name = person.name, combinedskill = person.combinedskill, roleid = roleid, rolename = rolename, container = locship, containername = shipname })
 						end
 					end
 				end
 			end
 		end
 	end
+	end
+
 	local numownedstations = C.GetNumAllFactionStations("player")
 	local allownedstations = ffi.new("UniverseID[?]", numownedstations)
 	numownedstations = C.GetAllFactionStations(allownedstations, numownedstations, "player")
@@ -3432,31 +3548,34 @@ function menu.getEmployeeList()
 		stationname = stationname .. " (" .. ffi.string(C.GetObjectIDCode(locstation)) .. ")"
 		if manager then
 			local name, combinedskill, poststring, postname = GetComponentData(manager, "name", "combinedskill", "poststring", "postname")
-			table.insert(empireemployees, { id = ConvertIDTo64Bit(manager), type = "entity", name = name, currentskill = combinedskill, roleid = poststring, rolename = postname, container = locstation, containername = stationname })
+			table.insert(empireemployees, { id = ConvertIDTo64Bit(manager), type = "entity", name = name, combinedskill = combinedskill, roleid = poststring, rolename = postname, container = locstation, containername = stationname })
+			numhiredpersonnel = numhiredpersonnel + 1
 		end
 		if shiptrader then
 			local name, combinedskill, poststring, postname = GetComponentData(shiptrader, "name", "combinedskill", "poststring", "postname")
-			table.insert(empireemployees, { id = ConvertIDTo64Bit(shiptrader), type = "entity", name = name, currentskill = combinedskill, roleid = poststring, rolename = postname, container = locstation, containername = stationname })
+			table.insert(empireemployees, { id = ConvertIDTo64Bit(shiptrader), type = "entity", name = name, combinedskill = combinedskill, roleid = poststring, rolename = postname, container = locstation, containername = stationname })
+			numhiredpersonnel = numhiredpersonnel + 1
 		end
 	end
 	menu.empireData.employees = empireemployees
+	menu.empireData.numhiredpersonnel = numhiredpersonnel
 
+	local filteredemployees = {}
 	for _, employeedata in ipairs(menu.empireData.employees) do
 		if (menu.personnelData.searchtext == "") or menu.employeeSearchHelper(employeedata, menu.personnelData.searchtext) then
 			if menu.personnelData.role == "current" then
-				employeedata.skill = employeedata.currentskill
+				employeedata.skill = employeedata.combinedskill
 			else
 				if employeedata.type == "person" then
-					employeedata.skill = C.GetPersonCombinedSkill(employeedata.container, employeedata.id, role, post)
+					employeedata.skill = C.GetPersonCombinedSkill(C.ConvertStringTo64Bit(tostring(employeedata.container)), C.ConvertStringTo64Bit(tostring(employeedata.id)), role, post)
 				else
-					employeedata.skill = C.GetEntityCombinedSkill(employeedata.id, role, post)
+					employeedata.skill = C.GetEntityCombinedSkill(C.ConvertStringTo64Bit(tostring(employeedata.id)), role, post)
 				end
 			end
-			table.insert(employees, employeedata)
+			table.insert(filteredemployees, employeedata)
 		end
 	end
-
-	return employees
+	menu.empireData.filteredemployees = filteredemployees
 end
 
 function menu.employeeSearchHelper(entry, text)
@@ -3486,16 +3605,9 @@ function menu.initEmpireData()
 	local onlineworth = 0
 	local numonlineships = 0
 
-	-- NB: personnel here refers to pilots, managers, crew, and marines
-	local numhiredpersonnel = 0
-	-- NB: totalpersonnelskill and averagepersonnelskill uses skill values to five points max per skill
-	local totalpersonnelskill = 0
-	local averagepersonnelskill = 0
-	local numrelevantskills = 0
 	local ships = {}
 	local stations = {}
-	local employees = {}
-
+	
 	local numownedships = C.GetNumAllFactionShips("player")
 	local allownedships = ffi.new("UniverseID[?]", numownedships)
 	numownedships = C.GetAllFactionShips(allownedships, numownedships, "player")
@@ -3503,81 +3615,35 @@ function menu.initEmpireData()
 	for i = 0, numownedships - 1 do
 		--print(ffi.string(C.GetComponentName(allownedships[i])))
 		local locship = ConvertStringTo64Bit(tostring(allownedships[i]))
-		if (not C.IsUnit(locship)) and (not GetMacroData(GetComponentData(locship, "macro"), "islasertower")) then
-			local shipname, shipmacro, isonlineobject, pilot, isdeployable = GetComponentData(locship, "name", "macro", "isonlineobject", "assignedaipilot", "isdeployable")
+		local shipmacro, isdeployable = GetComponentData(locship, "macro", "isdeployable")
+		local islasertower, locshipware = GetMacroData(shipmacro, "islasertower", "ware")
+		local isunit = C.IsUnit(locship)
+		if locshipware and (not isunit) and (not islasertower) and (not isdeployable) then
+			local shipname, isonlineobject, shipsize = GetComponentData(locship, "name", "isonlineobject", "size")
 			shipname = shipname .. " (" .. ffi.string(C.GetObjectIDCode(locship)) .. ")"
-			local locshipware = GetMacroData(shipmacro, "ware")
-			if locshipware and not isdeployable and not C.IsUnit(locship) then
 				local locshipworth = GetWareData(locshipware, "avgprice")
 				shipworth = shipworth + locshipworth
-				table.insert(ships, locship)
+			table.insert(ships, { ship = locship, size = shipsize })
 
 				if isonlineobject then
 					numonlineships = numonlineships + 1
 				end
-
-				if pilot and IsValidComponent(pilot) then
-					local name, combinedskill, poststring, postname = GetComponentData(pilot, "name", "combinedskill", "poststring", "postname")
-					table.insert(employees, { id = ConvertIDTo64Bit(pilot), type = "entity", name = name, currentskill = combinedskill, roleid = poststring, rolename = postname, container = locship, containername = shipname })
-					numhiredpersonnel = numhiredpersonnel + 1
-					local skilltable = GetComponentData(pilot, "skills")
-					for _, skill in ipairs(skilltable) do
-						if skill.relevance > 0 then
-							--print("skill: " .. tostring(skill.name) .. ", rel: " .. tostring(skill.relevance))
-							totalpersonnelskill = totalpersonnelskill + skill.value
-							numrelevantskills = numrelevantskills + 1
 						end
 					end
-				end
-
-				local numroles = C.GetNumAllRoles()
-				local peopletable = ffi.new("PeopleInfo[?]", numroles)
-				numroles = C.GetPeople2(peopletable, numroles, locship, true)
-				for i = 0, numroles-1 do
-					numhiredpersonnel = numhiredpersonnel + peopletable[i].amount
-
-					local roleid = ffi.string(peopletable[i].id)
-					local rolename = ffi.string(peopletable[i].name)
-					local numtiers = peopletable[i].numtiers
-					local tiertable = ffi.new("RoleTierData[?]", numtiers)
-					numtiers = C.GetRoleTiers(tiertable, numtiers, locship, peopletable[i].id)
-					for j = 0, numtiers-1 do
-						local numpersons = tiertable[j].amount
-						local persontable = ffi.new("NPCSeed[?]", numpersons)
-						numpersons = C.GetRoleTierNPCs(persontable, numpersons, locship, peopletable[i].id, tiertable[j].skilllevel)
-						for k = 0, numpersons-1 do
-							--print("person " .. k)
-							table.insert(employees, { id = persontable[k], type = "person", name = ffi.string(C.GetPersonName(persontable[k], locship)), currentskill = C.GetPersonCombinedSkill(locship, persontable[k], nil, nil), roleid = roleid, rolename = rolename, container = locship, containername = shipname })
-							local numskills = C.GetNumSkills()
-							local skilltable = ffi.new("SkillInfo[?]", numskills)
-							numskills = C.GetPersonSkills3(skilltable, numskills, persontable[k], locship)
-							for l = 0, numskills - 1 do
-								if skilltable[l].relevance > 0 then
-									totalpersonnelskill = totalpersonnelskill + skilltable[l].value
-									numrelevantskills = numrelevantskills + 1
-									--print("adding skill " .. tostring(skilltable[l].value) .. ". new total: " .. tostring(totalpersonnelskill))
-								end
-							end
-						end
-					end
-				end
-			end
-		end
-	end
-	table.sort(ships, function (a, b) return GetComponentData(a, "size") > GetComponentData(b, "size") end)
+	table.sort(ships, function (a, b) return a.size > b.size end)
 
 	local numownedstations = C.GetNumAllFactionStations("player")
 	local allownedstations = ffi.new("UniverseID[?]", numownedstations)
 	numownedstations = C.GetAllFactionStations(allownedstations, numownedstations, "player")
 	local totalstationaccountcash = 0
-	for i = 0, numownedstations-1 do
+	for i = 0, numownedstations - 1 do
 		local locstation = ConvertStringTo64Bit(tostring(allownedstations[i]))
 		local stationname, buildstorage, manager, shiptrader = GetComponentData(locstation, "name", "buildstorage", "tradenpc", "shiptrader")
 		stationname = stationname .. " (" .. ffi.string(C.GetObjectIDCode(locstation)) .. ")"
 		if C.IsComponentClass(locstation, "container") then
 			totalstationaccountcash = totalstationaccountcash + (GetAccountData(locstation, "money") or 0)
 		end
-		table.insert(stations, locstation)
+		table.insert(stations, { station = locstation, name = stationname })
 
 		if buildstorage then
 			totalstationaccountcash = totalstationaccountcash + (GetAccountData(buildstorage, "money") or 0)
@@ -3593,40 +3659,10 @@ function menu.initEmpireData()
 				stationworth = stationworth + GetWareData(ware, "avgprice")
 			end
 		end
-
-		if manager then
-			local name, combinedskill, poststring, postname = GetComponentData(manager, "name", "combinedskill", "poststring", "postname")
-			table.insert(employees, { id = ConvertIDTo64Bit(manager), type = "entity", name = name, currentskill = combinedskill, roleid = poststring, rolename = postname, container = locstation, containername = stationname })
-			numhiredpersonnel = numhiredpersonnel + 1
-			local skilltable = GetComponentData(manager, "skills")
-			for _, skill in ipairs(skilltable) do
-				if skill.relevance > 0 then
-					--print("skill: " .. tostring(skill.name) .. ", rel: " .. tostring(skill.relevance))
-					totalpersonnelskill = totalpersonnelskill + skill.value
-					numrelevantskills = numrelevantskills + 1
 				end
-			end
-		end
-		if shiptrader then
-			local name, combinedskill, poststring, postname = GetComponentData(shiptrader, "name", "combinedskill", "poststring", "postname")
-			table.insert(employees, { id = ConvertIDTo64Bit(shiptrader), type = "entity", name = name, currentskill = combinedskill, roleid = poststring, rolename = postname, container = locstation, containername = stationname })
-			numhiredpersonnel = numhiredpersonnel + 1
-			local skilltable = GetComponentData(shiptrader, "skills")
-			for _, skill in ipairs(skilltable) do
-				if skill.relevance > 0 then
-					--print("skill: " .. tostring(skill.name) .. ", rel: " .. tostring(skill.relevance))
-					totalpersonnelskill = totalpersonnelskill + skill.value
-					numrelevantskills = numrelevantskills + 1
-				end
-			end
-		end
-	end
-	table.sort(stations, function (a, b) return GetComponentData(a, "name") < GetComponentData(b, "name") end)
+	table.sort(stations, function (a, b) return a.name < b.name end)
 
-	if numrelevantskills > 0 then
-		averagepersonnelskill = math.floor(totalpersonnelskill / numrelevantskills)
-		--print("average skill: " .. tostring(averagepersonnelskill) .. ", total skill: " .. tostring(totalpersonnelskill) .. ", num skills: " .. tostring(numrelevantskills) .. ", num personnel: " .. tostring(numhiredpersonnel))
-	end
+	menu.getEmployeeList()
 
 	local onlineitems = OnlineGetUserItems()
 
@@ -3665,13 +3701,10 @@ function menu.initEmpireData()
 
 	menu.empireData.ships = ships
 	menu.empireData.stations = stations
-	menu.empireData.employees = employees
 
 	menu.empireData.numonlineships = numonlineships
 
-	menu.empireData.numhiredpersonnel = numhiredpersonnel
-	menu.empireData.totalpersonnelskill = totalpersonnelskill
-	menu.empireData.averagepersonnelskill = averagepersonnelskill
+	menu.empireData.averagepersonnelskill = C.GetAveragePlayerNPCSkill() * 15 / 100
 
 	menu.empireData.numinventoryitems = numinventoryitems
 
@@ -3724,31 +3757,31 @@ function menu.createEmpire(frame, tableProperties)
 
 	if menu.mode == "empire" then
 		-- Empire Overview
-		local row = table_left:addRow(nil, { fixed = true, bgColor = Helper.defaultTitleBackgroundColor })
+		local row = table_left:addRow(nil, { fixed = true, bgColor = Color["row_title_background"] })
 		row[1]:setColSpan(3):createText(ReadText(1001, 9100), Helper.titleTextProperties)	-- Empire Overview
 
 		-- global properties
-		row = table_left:addRow(nil, { bgColor = Helper.defaultTitleBackgroundColor })
+		row = table_left:addRow(nil, { bgColor = Color["row_title_background"] })
 		row[1]:setColSpan(3):createText(ReadText(1001, 9101), Helper.headerRowCenteredProperties)	-- Global Properties
 
-		row = table_left:addRow({"empire", "name"}, { bgColor = Helper.color.transparent })
+		row = table_left:addRow({"empire", "name"}, {  })
 		row[1]:createText(ReadText(1001, 9102))	-- Player Name
 		row[2]:setColSpan(2):createEditBox({ description = ReadText(1001, 9102) }):setText(menu.empireData.name)
 		row[2].handlers.onEditBoxDeactivated = menu.editboxChangePlayerName
 
-		row = table_left:addRow({"empire", "name"}, { bgColor = Helper.color.transparent })
+		row = table_left:addRow({"empire", "name"}, {  })
 		row[1]:createText(ReadText(1001, 11006))	-- Player Name
 		row[2]:setColSpan(2):createEditBox({ description = ReadText(1001, 11006) }):setText(menu.empireData.factionname)
 		row[2].handlers.onEditBoxDeactivated = menu.editboxChangePlayerFactionName
 
-		row = table_left:addRow({"empire_grid", "logo"}, { bgColor = Helper.color.transparent })
+		row = table_left:addRow({"empire_grid", "logo"}, {  })
 		row[1]:setColSpan(2):createText(ReadText(1001, 9103))	-- Player Logo
 		row[3]:createIcon("widget_arrow_right_01", { height = config.rowHeight, width = config.rowHeight })
 
 		if #menu.empireData.ships > 0 then
-			row = table_left:addRow({"empire_grid", "painttheme"}, { bgColor = Helper.color.transparent })
+			row = table_left:addRow({"empire_grid", "painttheme"}, {  })
 		else
-			row = table_left:addRow(nil, { bgColor = Helper.color.unselectable })
+			row = table_left:addRow(nil, { bgColor = Color["row_background_unselectable"] })
 		end
 		row[1]:setColSpan(2):createText(ReadText(1001, 9104))	-- Default Ship Skin
 		row[3]:createIcon("widget_arrow_right_01", { height = config.rowHeight, width = config.rowHeight })
@@ -3757,9 +3790,9 @@ function menu.createEmpire(frame, tableProperties)
 		--[[
 		if (C.GetNumAvailableClothingThemes() > 0) then
 			if #menu.empireData.employees > 0 then
-				row = table_left:addRow({"empire_grid", "uniform"}, { bgColor = Helper.color.transparent })
+				row = table_left:addRow({"empire_grid", "uniform"}, {  })
 			else
-				row = table_left:addRow(nil, { bgColor = Helper.color.unselectable })
+				row = table_left:addRow(nil, { bgColor = Color["row_background_unselectable"] })
 			end
 			row[1]:setColSpan(2):createText(ReadText(1001, 9105))	-- Default Uniform
 			row[3]:createIcon("menu_edit", { height = config.rowHeight, width = config.rowHeight })
@@ -3767,79 +3800,75 @@ function menu.createEmpire(frame, tableProperties)
 		]]
 
 		-- player wealth
-		row = table_left:addRow(nil, { bgColor = Helper.defaultTitleBackgroundColor })
+		row = table_left:addRow(nil, { bgColor = Color["row_title_background"] })
 		row[1]:setColSpan(3):createText(ReadText(1001, 9106), Helper.headerRowCenteredProperties)	-- Player Wealth
 
-		row = table_left:addRow(nil, { bgColor = Helper.color.unselectable })
-		--row = table_left:addRow({"empire_call", "networth"}, { bgColor = Helper.color.transparent })
+		row = table_left:addRow(nil, { bgColor = Color["row_background_unselectable"] })
+		--row = table_left:addRow({"empire_call", "networth"}, {  })
 		row[1]:createText(ReadText(1001, 9107))	-- Player net worth
 		-- string = ConvertMoneyString(money [, showcents [, separators [, accuracy [, notrailingspaces [, colorprefix]]]]])
 		row[2]:setColSpan(2):createText((ConvertMoneyString(menu.empireData.networth, false, true) .. ReadText(1001, 101)), { halign = "right" })	-- Cr
 
-		row = table_left:addRow(nil, { bgColor = Helper.color.unselectable })
+		row = table_left:addRow(nil, { bgColor = Color["row_background_unselectable"] })
 		row[1]:createText(ReadText(1001, 9108), { x = Helper.standardIndentStep })	-- Total value of ships
 		row[2]:setColSpan(2):createText((ConvertMoneyString(menu.empireData.shipworth, false, true) .. ReadText(1001, 101)), { halign = "right" })	-- Cr
 
-		row = table_left:addRow(nil, { bgColor = Helper.color.unselectable })
+		row = table_left:addRow(nil, { bgColor = Color["row_background_unselectable"] })
 		row[1]:createText(ReadText(1001, 9109), { x = Helper.standardIndentStep })	-- Total value of stations
 		row[2]:setColSpan(2):createText((ConvertMoneyString(menu.empireData.stationworth, false, true) .. ReadText(1001, 101)), { halign = "right" })	-- Cr
 
-		row = table_left:addRow(nil, { bgColor = Helper.color.unselectable })
+		row = table_left:addRow(nil, { bgColor = Color["row_background_unselectable"] })
 		row[1]:createText(ReadText(1001, 2202), { x = Helper.standardIndentStep })	-- Inventory
 		row[2]:setColSpan(2):createText((ConvertMoneyString(menu.empireData.inventoryworth, false, true) .. ReadText(1001, 101)), { halign = "right" })	-- Cr
 
-		row = table_left:addRow(nil, { bgColor = Helper.color.unselectable })
-		--row = table_left:addRow({"empire_call", "cash"}, { bgColor = Helper.color.transparent })
+		row = table_left:addRow(nil, { bgColor = Color["row_background_unselectable"] })
+		--row = table_left:addRow({"empire_call", "cash"}, {  })
 		row[1]:createText(ReadText(1001, 9110), { x = Helper.standardIndentStep })	-- Available cash
 		row[2]:setColSpan(2):createText((ConvertMoneyString(menu.empireData.cash, false, true) .. ReadText(1001, 101)), { halign = "right" })	-- Cr
 
-		row = table_left:addRow(nil, { bgColor = Helper.color.unselectable })
+		row = table_left:addRow(nil, { bgColor = Color["row_background_unselectable"] })
 		row[1]:createText(ReadText(1001, 9111), { x = Helper.standardIndentStep })	-- Total cash in station accounts
 		row[2]:setColSpan(2):createText((ConvertMoneyString(menu.empireData.totalstationaccountcash, false, true) .. ReadText(1001, 101)), { halign = "right" })	-- Cr
 
 		-- personnel
-		row = table_left:addRow(nil, { bgColor = Helper.defaultTitleBackgroundColor })
+		row = table_left:addRow(nil, { bgColor = Color["row_title_background"] })
 		row[1]:setColSpan(3):createText(ReadText(1001, 9400), Helper.headerRowCenteredProperties)	-- Personnel
 
-		row = table_left:addRow(nil, { bgColor = Helper.color.darkgrey })
+		row = table_left:addRow(nil, { bgColor = Color["row_background_unselectable"] })
 		row[1]:createText(ReadText(1001, 9113))	-- Number of hired personnel
 		row[2]:setColSpan(2):createText((ConvertIntegerString(menu.empireData.numhiredpersonnel, true)), { halign = "right" })
 
-		row = table_left:addRow(nil, { bgColor = Helper.color.unselectable })
+		row = table_left:addRow(nil, { bgColor = Color["row_background_unselectable"] })
 		row[1]:createText(ReadText(1001, 9114))	-- Average personnel skill
-		row[2]:setColSpan(2):createText(Helper.displaySkill(menu.empireData.averagepersonnelskill), { color = Helper.color.brightyellow, halign = "right" })
-
-		row = table_left:addRow(nil, { bgColor = Helper.color.unselectable })
-		row[1]:createText(ReadText(1001, 9115))	-- Total personnel skill
-		row[2]:setColSpan(2):createText((ConvertIntegerString(menu.empireData.totalpersonnelskill, true)), { halign = "right" })
+		row[2]:setColSpan(2):createText(Helper.displaySkill(menu.empireData.averagepersonnelskill), { color = Color["text_skills"], halign = "right" })
 
 		-- online items
 		--[[
-		row = table_left:addRow(nil, { bgColor = Helper.defaultTitleBackgroundColor })
+		row = table_left:addRow(nil, { bgColor = Color["row_title_background"] })
 		row[1]:setColSpan(3):createText(ReadText(1041, 10141), Helper.headerRowCenteredProperties)	-- Online items
 
-		row = table_left:addRow({"empire_list", "onlineitems"}, { bgColor = Helper.color.transparent })
+		row = table_left:addRow({"empire_list", "onlineitems"}, {  })
 		row[1]:createText(ReadText(1001, 9122))	-- Venture Ships
 		row[2]:createText((ConvertIntegerString(menu.empireData.numonlineships, true)), { halign = "right" })
 		row[3]:createIcon("widget_arrow_right_01", { height = config.rowHeight, width = config.rowHeight }) --]]
 
 		-- sector ownership
-		row = table_left:addRow(nil, { bgColor = Helper.defaultTitleBackgroundColor })
+		row = table_left:addRow(nil, { bgColor = Color["row_title_background"] })
 		row[1]:setColSpan(3):createText(ReadText(1001, 9180), Helper.headerRowCenteredProperties)	-- Government
 
-		row = table_left:addRow({"empire_list", "sectorownership"}, { bgColor = Helper.color.transparent })
+		row = table_left:addRow({"empire_list", "sectorownership"}, {  })
 		row[1]:createText(ReadText(1001, 9601))	-- Police Authority
 		row[2]:createText((ConvertIntegerString(menu.empireData.numplayerpolicesectors, true)), { halign = "right" })
 		row[3]:createIcon("widget_arrow_right_01", { height = config.rowHeight, width = config.rowHeight })
 	else
-		local row = table_left:addRow(nil, { fixed = true, bgColor = Helper.defaultTitleBackgroundColor })
+		local row = table_left:addRow(nil, { fixed = true, bgColor = Color["row_title_background"] })
 		row[1]:setColSpan(4):createText(ReadText(1001, 9171), Helper.titleTextProperties)
 
-		row = table_left:addRow({ "empire_list", "standingorders" }, { bgColor = Helper.color.transparent })
+		row = table_left:addRow({ "empire_list", "standingorders" }, {  })
 		row[1]:setColSpan(4):createText(ReadText(1001, 9301))	-- Global standing orders
 
 		-- trade rules
-		row = table_left:addRow(nil, { bgColor = Helper.defaultTitleBackgroundColor })
+		row = table_left:addRow(nil, { bgColor = Color["row_title_background"] })
 		row[1]:setColSpan(4):createText(ReadText(1001, 11010), Helper.headerRowCenteredProperties)	-- Trade Rules
 
 		menu.traderules = {}
@@ -3871,7 +3900,7 @@ function menu.createEmpire(frame, tableProperties)
 		table.sort(menu.traderules, Helper.sortID)
 
 		for _, entry in ipairs(menu.traderules) do
-			row = table_left:addRow({ "empire_list", "traderule", entry }, { bgColor = Helper.color.transparent })
+			row = table_left:addRow({ "empire_list", "traderule", entry }, {  })
 			row[1]:createText(entry.name)
 			local defaulttext = ""
 			--print(entry.defaults.trade .. ", " .. entry.defaults.supply .. ", " .. entry.defaults.build)
@@ -3910,18 +3939,18 @@ function menu.createEmpire(frame, tableProperties)
 			row[4]:createIcon("menu_edit", { height = config.rowHeight, width = config.rowHeight })
 		end
 
-		row = table_left:addRow({ "empire_list", "traderule", {} }, { bgColor = Helper.color.transparent })
+		row = table_left:addRow({ "empire_list", "traderule", {} }, {  })
 		row[1]:setColSpan(3):createText(ReadText(1001, 11011))
 		row[4]:createIcon("menu_edit", { height = config.rowHeight, width = config.rowHeight })
 
 		-- blacklists
-		row = table_left:addRow(nil, { bgColor = Helper.defaultTitleBackgroundColor })
+		row = table_left:addRow(nil, { bgColor = Color["row_title_background"] })
 		row[1]:setColSpan(4):createText(ReadText(1001, 9143), Helper.headerRowCenteredProperties)	-- Blacklist
 
 		menu.blacklists = Helper.getBlackLists()
 
 		for _, entry in ipairs(menu.blacklists) do
-			row = table_left:addRow({ "empire_list", "blacklist", entry }, { bgColor = Helper.color.transparent })
+			row = table_left:addRow({ "empire_list", "blacklist", entry }, {  })
 			row[1]:createText(entry.name)
 			local text = ""
 			for _, option in ipairs(config.blacklistTypes) do
@@ -3942,18 +3971,18 @@ function menu.createEmpire(frame, tableProperties)
 			row[3]:createText(defaulttext, { halign = "right" })
 			row[4]:createIcon("menu_edit", { height = config.rowHeight, width = config.rowHeight })
 		end
-		row = table_left:addRow({ "empire_list", "blacklist", {} }, { bgColor = Helper.color.transparent })
+		row = table_left:addRow({ "empire_list", "blacklist", {} }, {  })
 		row[1]:setColSpan(3):createText(ReadText(1001, 9144))
 		row[4]:createIcon("menu_edit", { height = config.rowHeight, width = config.rowHeight })
 
 		-- Fire authorization
-		row = table_left:addRow(nil, { bgColor = Helper.defaultTitleBackgroundColor })
+		row = table_left:addRow(nil, { bgColor = Color["row_title_background"] })
 		row[1]:setColSpan(4):createText(ReadText(1001, 7753), Helper.headerRowCenteredProperties)
 
 		menu.fightrules = Helper.getFightRules()
 
 		for _, entry in ipairs(menu.fightrules) do
-			row = table_left:addRow({ "empire_list", "fightrule", entry }, { bgColor = Helper.color.transparent })
+			row = table_left:addRow({ "empire_list", "fightrule", entry }, {  })
 			row[1]:setColSpan(2):createText(entry.name)
 			local defaulttext = ""
 			if entry.defaults.attack then
@@ -3962,12 +3991,12 @@ function menu.createEmpire(frame, tableProperties)
 			row[3]:createText(defaulttext, { halign = "right" })
 			row[4]:createIcon("menu_edit", { height = config.rowHeight, width = config.rowHeight })
 		end
-		row = table_left:addRow({ "empire_list", "fightrule", {} }, { bgColor = Helper.color.transparent })
+		row = table_left:addRow({ "empire_list", "fightrule", {} }, {  })
 		row[1]:setColSpan(3):createText(ReadText(1001, 7754))
 		row[4]:createIcon("menu_edit", { height = config.rowHeight, width = config.rowHeight })
 
 		-- player alerts
-		row = table_left:addRow(nil, { bgColor = Helper.defaultTitleBackgroundColor })
+		row = table_left:addRow(nil, { bgColor = Color["row_title_background"] })
 		row[1]:setColSpan(4):createText(ReadText(1001, 9183), Helper.headerRowCenteredProperties)	-- Alerts
 
 		menu.playeralerts = {}
@@ -4012,14 +4041,14 @@ function menu.createEmpire(frame, tableProperties)
 		Helper.ffiClearNewHelper()
 
 		for _, entry in ipairs(menu.playeralerts) do
-			row = table_left:addRow({ "empire_list", "playeralert", entry }, { bgColor = Helper.color.transparent })
+			row = table_left:addRow({ "empire_list", "playeralert", entry }, {  })
 			row[1]:createText(entry.name)
 			local height = Helper.scaleY(config.rowHeight)
-			row[3]:createButton({ height = height, width = height, x = row[3]:getWidth() - height, scaling = false }):setIcon(entry.muted and "menu_sound_off" or "menu_sound_on", { color = entry.muted and Helper.color.white or Helper.color.white })
+			row[3]:createButton({ height = height, width = height, x = row[3]:getWidth() - height, scaling = false }):setIcon(entry.muted and "menu_sound_off" or "menu_sound_on")
 			row[3].handlers.onClick = function () if entry.muted then C.UnmutePlayerAlert(entry.index, false) else C.MutePlayerAlert(entry.index) end menu.refreshInfoFrame() end
 			row[4]:createIcon("menu_edit", { height = config.rowHeight, width = config.rowHeight })
 		end
-		row = table_left:addRow({ "empire_list", "playeralert", {} }, { bgColor = Helper.color.transparent })
+		row = table_left:addRow({ "empire_list", "playeralert", {} }, {  })
 		row[1]:setColSpan(3):createText(ReadText(1001, 9184))
 		row[4]:createIcon("menu_edit", { height = config.rowHeight, width = config.rowHeight })
 	end
@@ -4037,15 +4066,18 @@ function menu.createEmpire(frame, tableProperties)
 
 	if table_center then
 		-- table_center is nil if menu.empireData.mode[1] == "empire_call"
-		table_center:setTopRow(GetTopRow(menu.buttonTable))
+		table_center:setTopRow(menu.setcentertoprow or GetTopRow(menu.buttonTable))
+		menu.setcentertoprow = nil
 		if menu.setselectedrow2 then
-			local numvisiblerows = math.floor(tableProperties.height / (table_center.properties.width / 5 + Helper.borderSize) - 1)
 			--print("numvisiblerows: " .. tostring(numvisiblerows) .. ", total height: " .. tostring(tableProperties.height) .. ", row height: " .. tostring(table_center.properties.width / 5 + Helper.borderSize))
 			--print("set row: " .. tostring(menu.setselectedrow2))
 			table_center:setSelectedRow(menu.setselectedrow2)
-			if menu.setselectedrow2 > numvisiblerows then
-				--print("setting top row to: " .. tostring(menu.setselectedrow2 - numvisiblerows + 2))
-				table_center:setTopRow(menu.setselectedrow2 - numvisiblerows + 2)
+			if (menu.empireData.mode[2] == "logo") then
+				local numvisiblerows = math.floor(tableProperties.height / (table_center.properties.width / 5 + Helper.borderSize) - 1)
+				if menu.setselectedrow2 > numvisiblerows then
+					--print("setting top row to: " .. tostring(menu.setselectedrow2 - numvisiblerows + 2))
+					table_center:setTopRow(menu.setselectedrow2 - numvisiblerows + 2)
+				end
 			end
 			menu.setselectedrow2 = nil
 			if menu.setselectedcol2 then
@@ -4079,7 +4111,7 @@ function menu.setupEmpireDescription(table_bottomright)
 	--print("menu.setupEmpireDescription. object: " .. tostring(menu.empireData.selectedobject))
 
 	-- Description
-	local row = table_bottomright:addRow(nil, { fixed = true, bgColor = Helper.defaultTitleBackgroundColor })
+	local row = table_bottomright:addRow(nil, { fixed = true, bgColor = Color["row_title_background"] })
 	row[1]:createText(ReadText(1001, 2404), Helper.titleTextProperties)	-- Description
 
 	if menu.empireData.mode then
@@ -4110,7 +4142,7 @@ function menu.setupEmpireDescription(table_bottomright)
 			descrtext = ReadText(1001, 9182)
 		end
 
-		row = table_bottomright:addRow(nil, { bgColor = Helper.color.transparent })
+		row = table_bottomright:addRow(nil, {  })
 		row[1]:createText(tostring(descrtext), { wordwrap = true })
 	end
 end
@@ -4291,11 +4323,11 @@ function menu.setupEmpireRows(mode, properties_table_center, tabOrderOffset, tab
 				table.insert(logooptiondata[2][1], { file = ffi.string(logos[i].file), icon = ffi.string(logos[i].icon), ispersonal = logos[i].ispersonal })
 			end
 
-			local row = table_center:addRow(nil, { fixed = true, bgColor = Helper.defaultTitleBackgroundColor })
+			local row = table_center:addRow(nil, { fixed = true, bgColor = Color["row_title_background"] })
 			row[1]:setColSpan(5):createText(headertext, Helper.titleTextProperties)
 
 			for _, logodata in ipairs(logooptiondata) do
-				row = table_center:addRow(nil, { bgColor = Helper.defaultHeaderBackgroundColor })
+				row = table_center:addRow(nil, { bgColor = Color["player_info_background"] })
 				row[1]:setColSpan(5):createText(logodata[2], Helper.headerRowCenteredProperties)
 
 				local rowbuttoncounter = 6
@@ -4304,7 +4336,7 @@ function menu.setupEmpireRows(mode, properties_table_center, tabOrderOffset, tab
 						if rowbuttoncounter == 6 then
 							rowbuttoncounter = 1
 							rowcounter = rowcounter + 1
-							row = table_center:addRow(("empire_standardlogoselect_" .. rowcounter), { bgColor = Helper.color.transparent })
+							row = table_center:addRow(("empire_standardlogoselect_" .. rowcounter), {  })
 						end
 
 						-- NB: icon more reliable than file name for comparison because file extensions vary.
@@ -4323,7 +4355,7 @@ function menu.setupEmpireRows(mode, properties_table_center, tabOrderOffset, tab
 						rowbuttoncounter = rowbuttoncounter + 1
 					end
 				else
-					row = table_center:addRow("empire_standardlogoselect_none", { bgColor = Helper.color.transparent })
+					row = table_center:addRow("empire_standardlogoselect_none", {  })
 					row[1]:setColSpan(5):createText("--- " .. ReadText(1001, 9132) .. " ---")
 				end
 			end
@@ -4367,7 +4399,7 @@ function menu.setupEmpireRows(mode, properties_table_center, tabOrderOffset, tab
 				table.insert(themeoptions, { id = "", text = nonetext, icon = "" })
 			end
 
-			local row = table_center:addRow(nil, { fixed = true, bgColor = Helper.defaultTitleBackgroundColor })
+			local row = table_center:addRow(nil, { fixed = true, bgColor = Color["row_title_background"] })
 			row[1]:setColSpan(5):createText(headertext, Helper.titleTextProperties)
 
 			local rowbuttoncounter = 6
@@ -4376,7 +4408,7 @@ function menu.setupEmpireRows(mode, properties_table_center, tabOrderOffset, tab
 				if rowbuttoncounter == 6 then
 					rowbuttoncounter = 1
 					rowcounter = rowcounter + 1
-					row = table_center:addRow(("empire_themeselect_" .. rowcounter), { bgColor = Helper.color.transparent })
+					row = table_center:addRow(("empire_themeselect_" .. rowcounter), {  })
 				end
 
 				local icon2
@@ -4444,12 +4476,12 @@ function menu.setupEmpireRows(mode, properties_table_center, tabOrderOffset, tab
 			table.sort(themeoptions, function (a, b) return a.text < b.text end)
 			table.insert(themeoptions, { id = "", text = nonetext, icon = "" })
 
-			local row = table_center:addRow(nil, { fixed = true, bgColor = Helper.defaultTitleBackgroundColor })
+			local row = table_center:addRow(nil, { fixed = true, bgColor = Color["row_title_background"] })
 			row[1]:setColSpan(5):createText(headertext, Helper.titleTextProperties)
 
 			for i, theme in ipairs(themeoptions) do
 				--print("adding " .. tostring(locmode) .. " theme: " .. tostring(theme.id))
-				row = table_center:addRow({locmode, theme.id}, { bgColor = Helper.color.transparent })
+				row = table_center:addRow({locmode, theme.id}, {  })
 				row[1]:setColSpan(5):createText(theme.text)
 
 				--print("current theme: " .. tostring(currentthemeid) .. ", this theme: " .. tostring(theme.id))
@@ -4458,41 +4490,44 @@ function menu.setupEmpireRows(mode, properties_table_center, tabOrderOffset, tab
 				end
 			end
 		elseif locmode == "ships" then
-			local row = table_center:addRow(nil, { fixed = true, bgColor = Helper.defaultTitleBackgroundColor })
+			local row = table_center:addRow(nil, { fixed = true, bgColor = Color["row_title_background"] })
 			row[1]:setColSpan(5):createText(ReadText(1001, 6), Helper.titleTextProperties)	-- Ships
 
-			row = table_center:addRow(nil, { fixed = true, bgColor = Helper.color.transparent })
+			row = table_center:addRow(nil, { fixed = true })
 			row[1]:setColSpan(3):createText(ReadText(1001, 2809))	-- Name
 			row[4]:createText(ReadText(1001, 9051))	-- Ship Type
 			row[5]:createText(ReadText(1001, 2943))	-- Location
 			for i, ship in ipairs(menu.empireData.ships) do
-				local name, shiptype, location = GetComponentData(ship, "name", "shiptypename", "sector")
-				if GetComponentData(ship, "isonlineobject") then
+				local name, shiptype, location, isonlineobject = GetComponentData(ship.ship, "name", "shiptypename", "sector", "isonlineobject")
+				if isonlineobject then
 					location = ReadText(1001, 9121)	-- On venture
 				end
-				row = table_center:addRow({"empire_ship", ship}, { bgColor = Helper.color.transparent })
+				row = table_center:addRow({ "empire_ship", ship.ship }, {  })
 				row[1]:setColSpan(3):createText(name)
 				row[4]:createText(shiptype)
 				row[5]:createText(location)
 			end
 		elseif locmode == "stations" then
-			local row = table_center:addRow(nil, { fixed = true, bgColor = Helper.defaultTitleBackgroundColor })
+			local row = table_center:addRow(nil, { fixed = true, bgColor = Color["row_title_background"] })
 			row[1]:setColSpan(5):createText(ReadText(1001, 4), Helper.titleTextProperties)	-- Stations
 
-			row = table_center:addRow(nil, { fixed = true, bgColor = Helper.color.transparent })
+			row = table_center:addRow(nil, { fixed = true })
 			row[1]:setColSpan(4):createText(ReadText(1001, 2809))	-- Name
 			row[5]:createText(ReadText(1001, 2943))	-- Location
 
 			for i, station in ipairs(menu.empireData.stations) do
-				local name, sector = GetComponentData(station, "name", "sector")
-				row = table_center:addRow({"empire_station", station}, { bgColor = Helper.color.transparent })
+				local name, sector = GetComponentData(station.station, "name", "sector")
+				row = table_center:addRow({"empire_station", station.station}, {  })
 				row[1]:setColSpan(4):createText(name)
 				row[5]:createText(sector)
 			end
 		elseif locmode == "standingorders" then
 			table_center:setColWidth(1, Helper.standardTextHeight)
+			table_center:setColWidthPercent(2, 45)
+			table_center:setColWidthPercent(4, 20)
+			table_center:setColWidthPercent(5, 20)
 
-			local row = table_center:addRow(nil, { fixed = true, bgColor = Helper.defaultTitleBackgroundColor })
+			local row = table_center:addRow(nil, { fixed = true, bgColor = Color["row_title_background"] })
 			row[1]:setColSpan(5):createText(ReadText(1001, 9301), Helper.titleTextProperties)	-- Global Standing Orders
 
 			local faction = "player"
@@ -4502,43 +4537,55 @@ function menu.setupEmpireRows(mode, properties_table_center, tabOrderOffset, tab
 			numsignals = C.GetAllSignals(allsignals, numsignals)
 			for i = 0, numsignals - 1 do
 				local signalid = ffi.string(allsignals[i].id)
-				table.insert(menu.signals, {id = signalid, name = ffi.string(allsignals[i].name), description = ffi.string(allsignals[i].description), responses = {}})
+				table.insert( menu.signals, {id = signalid, name = ffi.string(allsignals[i].name), description = ffi.string(allsignals[i].description), defaultresponse = ffi.string(allsignals[i].defaultresponse), ask = allsignals[i].ask, responses = {} })
 
 				local numresponses = C.GetNumAllResponsesToSignal(signalid)
 				local allresponses = ffi.new("ResponseInfo[?]", numresponses)
 				numresponses = C.GetAllResponsesToSignal(allresponses, numresponses, signalid)
 				for j = 0, numresponses - 1 do
-					table.insert(menu.signals[#menu.signals].responses, {id = ffi.string(allresponses[j].id), name = ffi.string(allresponses[j].name), description = ffi.string(allresponses[j].description)})
+					table.insert(menu.signals[#menu.signals].responses, { id = ffi.string(allresponses[j].id), name = ffi.string(allresponses[j].name), description = ffi.string(allresponses[j].description) })
 				end
 			end
 
 			for _, signalentry in ipairs(menu.signals) do
 				local signalid = signalentry.id
 				local defask = C.GetAskToSignalForFaction(signalid, faction)
-				local defresponse = ffi.string(C.GetDefaultResponseToSignalForFaction(signalid, faction))
+				local defresponse = ffi.string(C.GetDefaultResponseToSignalForFaction2(signalid, faction, ""))
+				local defresponse_military = ffi.string(C.GetDefaultResponseToSignalForFaction2(signalid, faction, "fight"))
+				if not C.HasDefaultResponseToSignalForFaction(signalid, faction, "fight") then
+					defresponse_military = "default"
+				end
 				local locresponses = {}
+				local locresponses_military = {
+					{ id = "default", text = ReadText(1001, 7789), icon = "", displayremoveoption = false },
+				}
 				for _, responseentry in ipairs(signalentry.responses) do
 					table.insert(locresponses, { id = responseentry.id, text = responseentry.name, icon = "", displayremoveoption = false })
+					table.insert(locresponses_military, { id = responseentry.id, text = responseentry.name, icon = "", displayremoveoption = false })
 				end
-				table.insert(locresponses, { id = "reset", text = ReadText(1001, 9310), icon = "", displayremoveoption = false })	-- Reset standing orders of all ships for this scenario
 
-				local row = table_center:addRow(false, {bgColor = Helper.color.unselectable})
-				row[1]:setColSpan(5):createText(ReadText(1001, 9320) .. " " .. tostring(signalentry.name) .. ReadText(1001, 120), textproperties)	-- Default global response to, :
+				local row = table_center:addRow("orders_" .. tostring(signalid) .. "_response")
+				row[1]:setColSpan(2):createText(ReadText(1001, 9320) .. " " .. tostring(signalentry.name) .. ReadText(1001, 120), textproperties)	-- Default global response to, :
+				row[3]:setColSpan(3):createDropDown(locresponses, { height = Helper.standardTextHeight, startOption = defresponse }):setTextProperties({ fontsize = config.mapFontSize })
+				row[3].handlers.onDropDownConfirmed = function(_, newresponseid) return menu.dropdownOrdersSetResponse(newresponseid, faction, signalid, "factionresponses", "all") end
 
-				local row = table_center:addRow("orders_" .. tostring(signalid) .. "_response", {bgColor = Helper.color.transparent})
-				row[1]:setColSpan(5):createDropDown(locresponses, {height = Helper.standardTextHeight, startOption = defresponse}):setTextProperties({fontsize = config.mapFontSize})
-				row[1].handlers.onDropDownConfirmed = function(_, newresponseid) return menu.dropdownOrdersSetResponse(_, newresponseid, faction, signalid, "factionresponses") end
+				local row = table_center:addRow("orders_" .. tostring(signalid) .. "_response_military")
+				row[2]:createText(ReadText(1001, 9150) .. ReadText(1001, 120))
+				row[3]:setColSpan(3):createDropDown(locresponses_military, { height = Helper.standardTextHeight, startOption = defresponse_military, active = hasmilitaryoverride }):setTextProperties({ fontsize = config.mapFontSize })
+				row[3].handlers.onDropDownConfirmed = function(_, newresponseid) return menu.dropdownOrdersSetResponse(newresponseid, faction, signalid, "factionresponses", "military") end
 
-				local row = table_center:addRow("orders_" .. tostring(signalid) .. "_ask", {bgColor = Helper.color.transparent})
+				local row = table_center:addRow("orders_" .. tostring(signalid) .. "_ask")
 				row[1]:createCheckBox(defask, { width = Helper.standardTextHeight, height = Helper.standardTextHeight })
-				row[1].handlers.onClick = function() return menu.checkboxOrdersSetAsk(faction, signalid, "factionresponses") end
-				row[2]:setColSpan(4):createText(ReadText(1001, 9330), textproperties)	-- Notify me if incident occurs
+				row[1].handlers.onClick = function() return menu.checkboxOrdersSetAsk(faction, signalid, "factionresponses", row.index) end
+				row[2]:setColSpan(2):createText(ReadText(1001, 9330), textproperties)	-- Notify me if incident occurs
+				row[4]:setColSpan(2):createButton({ height = Helper.standardTextHeight, mouseOverText = ReadText(1026, 7714) }):setText(ReadText(1001, 7788), { halign = "center" })
+				row[4].handlers.onClick = function () return menu.dropdownOrdersSetResponse("reset", faction, signalid, "factionresponses") end
 
 				table_center:addEmptyRow()
 			end
 
 			-- preferred build method
-			local row = table_center:addRow(false, { bgColor = Helper.color.unselectable })
+			local row = table_center:addRow(false, { bgColor = Color["row_background_unselectable"] })
 			row[1]:setColSpan(5):createText(ReadText(1001, 7775) .. ReadText(1001, 120), textproperties)
 
 			local cursetting = ffi.string(C.GetPlayerBuildMethod())
@@ -4562,14 +4609,14 @@ function menu.setupEmpireRows(mode, properties_table_center, tabOrderOffset, tab
 				cursetting = "default"
 			end
 
-			local row = table_center:addRow("orders_buildmethod", { bgColor = Helper.color.transparent })
+			local row = table_center:addRow("orders_buildmethod", {  })
 			row[1]:setColSpan(5):createDropDown(locresponses, { height = Helper.standardTextHeight, startOption = cursetting }):setTextProperties({ fontsize = config.mapFontSize })
 			row[1].handlers.onDropDownConfirmed = menu.dropdownOrdersBuildRule
 
 			table_center:addEmptyRow()
 
 			-- resupply
-			local row = table_center:addRow(false, { bgColor = Helper.color.unselectable })
+			local row = table_center:addRow(false, { bgColor = Color["row_background_unselectable"] })
 			row[1]:setColSpan(5):createText(ReadText(1001, 7721) .. ReadText(1001, 120), textproperties)
 
 			local locresponses = {
@@ -4578,97 +4625,106 @@ function menu.setupEmpireRows(mode, properties_table_center, tabOrderOffset, tab
 				{ id = 0.5, text = ReadText(1001, 7737), icon = "", displayremoveoption = false },
 				{ id = 1.0, text = ReadText(1001, 7738), icon = "", displayremoveoption = false },
 			}
-			local row = table_center:addRow("orders_resupply", { bgColor = Helper.color.transparent })
+			local row = table_center:addRow("orders_resupply", {})
 			row[1]:setColSpan(5):createDropDown(locresponses, { height = Helper.standardTextHeight, startOption = Helper.round(C.GetPlayerGlobalLoadoutLevel(), 1) }):setTextProperties({ fontsize = config.mapFontSize })
 			row[1].handlers.onDropDownConfirmed = menu.dropdownOrdersResupply
 
 			table_center:addEmptyRow()
 
-			-- resupply
-			local row = table_center:addRow(false, { bgColor = Helper.color.unselectable })
+			-- trade loop
+			local row = table_center:addRow(false, { bgColor = Color["row_background_unselectable"] })
 			row[1]:setColSpan(5):createText(ReadText(1001, 7785) .. ReadText(1001, 120), textproperties)
 
 			local locresponses = {
 				{ id = "off",   text = ReadText(1001, 7726),  icon = "", displayremoveoption = false, mouseovertext = ReadText(1026, 3276) },
 				{ id = "on",    text = ReadText(1001, 11643), icon = "", displayremoveoption = false },
 			}
-			local row = table_center:addRow("orders_cargoreservations", { bgColor = Helper.color.transparent })
+			local row = table_center:addRow("orders_cargoreservations", {  })
 			row[1]:setColSpan(5):createDropDown(locresponses, { height = Helper.standardTextHeight, startOption = C.GetPlayerGlobalTradeLoopCargoReservationSetting() and "on" or "off" }):setTextProperties({ fontsize = config.mapFontSize })
 			row[1].handlers.onDropDownConfirmed = menu.dropdownOrdersCargoReservations
 
 			table_center:addEmptyRow()
 
 			-- default weapon mode
-			local row = table_center:addRow(false, { bgColor = Helper.color.unselectable })
+			local row = table_center:addRow(false, { bgColor = Color["row_background_unselectable"] })
 			row[1]:setColSpan(5):createText(ReadText(1001, 7774) .. ReadText(1001, 120), textproperties)
 
 			local weaponmodes = {
 				[1] = { id = "defend",			text = ReadText(1001, 8613),	icon = "",	displayremoveoption = false },
 				[2] = { id = "attackenemies",	text = ReadText(1001, 8614),	icon = "",	displayremoveoption = false },
-				[3] = { id = "attackcapital",	text = ReadText(1001, 8624),	icon = "",	displayremoveoption = false },
-				[4] = { id = "attackfighters",	text = ReadText(1001, 8625),	icon = "",	displayremoveoption = false },
+				[3] = { id = "attackcapital",	text = ReadText(1001, 8634),	icon = "",	displayremoveoption = false },
+				[4] = { id = "prefercapital",	text = ReadText(1001, 8637),	icon = "",	displayremoveoption = false },
+				[5] = { id = "attackfighters",	text = ReadText(1001, 8635),	icon = "",	displayremoveoption = false },
+				[6] = { id = "preferfighters",	text = ReadText(1001, 8638),	icon = "",	displayremoveoption = false },
+				[7] = { id = "missiledefence",	text = ReadText(1001, 8636),	icon = "",	displayremoveoption = false },
+				[8] = { id = "prefermissiles",	text = ReadText(1001, 8639),	icon = "",	displayremoveoption = false },
 			}
-			local row = table_center:addRow("orders_weaponmode", {bgColor = Helper.color.transparent})
+			local row = table_center:addRow("orders_weaponmode", {})
 			row[1]:setColSpan(5):createDropDown(weaponmodes, { height = Helper.standardTextHeight, startOption = ffi.string(C.GetFactionDefaultWeaponMode("player")) }):setTextProperties({ fontsize = config.mapFontSize })
 			row[1].handlers.onDropDownConfirmed = function (_, id) return C.SetFactionDefaultWeaponMode("player", id) end
 
 			table_center:addEmptyRow()
 
 			-- wait for undock/signal
-			local row = table_center:addRow(false, { bgColor = Helper.color.unselectable })
+			local row = table_center:addRow(false, { bgColor = Color["row_background_unselectable"] })
 			row[1]:setColSpan(5):createText(ReadText(1001, 9331) .. ReadText(1001, 120), textproperties)
 
-			local row = table_center:addRow("playershipswait", { bgColor = Helper.color.transparent })
+			local row = table_center:addRow("playershipswait", {})
 			local waiting = C.ShouldPlayerShipsWaitForPlayer()
 			row[1]:createCheckBox(waiting, { width = Helper.standardTextHeight, height = Helper.standardTextHeight })
 			row[1].handlers.onClick = function(_, checked) C.SetPlayerShipsWaitForPlayer(checked) end
 			row[1].properties.uiTriggerID = "playershipswait"
 			row[2]:setColSpan(4):createText(ReadText(1001, 9332), textproperties)
 
-			local row = table_center:addRow("playertaxiwait", { bgColor = Helper.color.transparent })
+			local row = table_center:addRow("playertaxiwait", {})
 			local waiting = C.ShouldPlayerTaxiWaitForPlayer()
 			row[1]:createCheckBox(waiting, { width = Helper.standardTextHeight, height = Helper.standardTextHeight })
 			row[1].handlers.onClick = function(_, checked) C.SetPlayerTaxiWaitsForPlayer(checked) end
 			row[1].properties.uiTriggerID = "playertaxiwait"
 			row[2]:setColSpan(4):createText(ReadText(1001, 9333), textproperties)
 
+			local row = table_center:addRow("global_standing_orders_reset", {  })
+			row[4]:setColSpan(2):createButton({  }):setText(ReadText(1001, 7786), { halign = "center" })
+			row[4].handlers.onClick = menu.buttonResetGlobalStandingOrders
+
 			table_center:addEmptyRow()
 
 			-- notifications
-			local row = table_center:addRow(nil, { bgColor = Helper.defaultTitleBackgroundColor })
+			local row = table_center:addRow(nil, { bgColor = Color["row_title_background"] })
 			row[1]:setColSpan(5):createText(ReadText(1001, 7727), Helper.titleTextProperties)	-- Notification Settings
 
-			local typecategories = {
+			menu.typecategories = {
 				[1] = { category = "npc_interactive",	name = ReadText(1001, 7728),	types = {} },
 				[2] = { category = "npc_info",			name = ReadText(1001, 7729),	types = {} },
 				[3] = { category = "ticker",			name = ReadText(1001, 7743),	types = {} },
 			}
 			local n = C.GetNumNotificationTypes()
-			local buf = ffi.new("UINotificationType[?]", n)
-			n = C.GetNotificationTypes(buf, n)
+			local buf = ffi.new("UINotificationType2[?]", n)
+			n = C.GetNotificationTypes2(buf, n)
 			for i = 0, n - 1 do
 				local category = ffi.string(buf[i].category)
-				for _, entry in ipairs(typecategories) do
+				for _, entry in ipairs(menu.typecategories) do
 					if entry.category == category then
-						table.insert(entry.types, { id = ffi.string(buf[i].id), name = ffi.string(buf[i].name), desc = ffi.string(buf[i].desc), enabled = buf[i].enabled })
+						table.insert(entry.types, { id = ffi.string(buf[i].id), name = ffi.string(buf[i].name), desc = ffi.string(buf[i].desc), enabled = buf[i].enabled, enabledByDefault = buf[i].enabledByDefault })
 						if entry.checkedcounts == nil then
 							entry.checkedcounts = 0
 						end
 						if buf[i].enabled then
 							entry.checkedcounts = entry.checkedcounts + 1
 						end
+						break
 					end
 				end
 			end
 
 			local hasrows = false
-			for i, entry in ipairs(typecategories) do
+			for i, entry in ipairs(menu.typecategories) do
 				if #entry.types ~= 0 then
 					if hasrows then
 						table_center:addEmptyRow()
 					end
 
-					local row = table_center:addRow(true, { bgColor = Helper.color.unselectable })
+					local row = table_center:addRow(true, { bgColor = Color["row_background_unselectable"] })
 					row[1]:createCheckBox(function () return entry.checkedcounts == #entry.types end, { width = Helper.standardTextHeight, height = Helper.standardTextHeight })
 					row[1].handlers.onClick = function (_, checked) return menu.toggleAllNotificationSettings(entry, checked) end
 					row[2]:setColSpan(4):createText(entry.name, Helper.subHeaderTextProperties)
@@ -4676,7 +4732,7 @@ function menu.setupEmpireRows(mode, properties_table_center, tabOrderOffset, tab
 					hasrows = true
 
 					for _, type in ipairs(entry.types) do
-						local row = table_center:addRow(true, { bgColor = Helper.color.transparent })
+						local row = table_center:addRow(true, {  })
 						row[1]:createCheckBox(function () return type.enabled end, { width = Helper.standardTextHeight, height = Helper.standardTextHeight })
 						row[1].handlers.onClick = function (_, checked) return menu.checkboxNotification(entry, type.id, checked) end
 						row[2]:setColSpan(4):createText(type.name, textproperties)
@@ -4684,18 +4740,22 @@ function menu.setupEmpireRows(mode, properties_table_center, tabOrderOffset, tab
 					end
 				end
 			end
+
+			local row = table_center:addRow("notification_settings_reset", {  })
+			row[4]:setColSpan(2):createButton({  }):setText(ReadText(1001, 7787), { halign = "center" })
+			row[4].handlers.onClick = menu.buttonResetNotificationSettings
 		elseif locmode == "onlineitems" then
-			local row = table_center:addRow(nil, { fixed = true, bgColor = Helper.defaultTitleBackgroundColor })
+			local row = table_center:addRow(nil, { fixed = true, bgColor = Color["row_title_background"] })
 			row[1]:setColSpan(5):createText(ReadText(1001, 9122), Helper.titleTextProperties)	-- Venture Ships
 
-			row = table_center:addRow(nil, { fixed = true, bgColor = Helper.color.unselectable })
+			row = table_center:addRow(nil, { fixed = true, bgColor = Color["row_background_unselectable"] })
 			row[1]:setColSpan(4):createText(ReadText(1001, 2809), { font = Helper.standardFontBold })	-- Name
 			row[5]:createText(ReadText(1001, 9051), { font = Helper.standardFontBold })	-- Ship Type
 
 			for i, ship in ipairs(menu.empireData.ships) do
-				if GetComponentData(ship, "isonlineobject") then
-					local name, shiptype = GetComponentData(ship, "name", "shiptypename")
-					row = table_center:addRow({"empire_onlineship", ship}, { bgColor = Helper.color.transparent, interative = false })
+				local name, shiptype, isonlineobject = GetComponentData(ship.ship, "name", "shiptypename", "isonlineobject")
+				if isonlineobject then
+					row = table_center:addRow({ "empire_onlineship", ship.ship }, { interative = false })
 					row[1]:setColSpan(4):createText(name)
 					row[5]:createText(shiptype)
 				end
@@ -4718,76 +4778,76 @@ function menu.setupEmpireRows(mode, properties_table_center, tabOrderOffset, tab
 			end
 			menu.editedTradeRule = mode[4] or Helper.tableCopy(menu.traderule)
 			-- title
-			local row = table_center:addRow(nil, { fixed = true, bgColor = Helper.defaultTitleBackgroundColor })
+			local row = table_center:addRow(nil, { fixed = true, bgColor = Color["row_title_background"] })
 			row[1]:setColSpan(5):createText(ReadText(1001, 11010), Helper.titleTextProperties)
 			-- name
-			row = table_center:addRow(nil, { fixed = true, bgColor = Helper.color.transparent })
+			row = table_center:addRow(nil, { fixed = true })
 			row[1]:createText(ReadText(1001, 2809) .. ReadText(1001, 120))
 			row[2]:setColSpan(4):createEditBox({ description = ReadText(1001, 2809) }):setText(menu.editedTradeRule.name)
 			row[2].handlers.onTextChanged = menu.editboxTradeRuleNameChanged
 
 			if menu.traderule.id then
 				-- confirm, cancel
-				row = table_center:addRow(true, { fixed = true, bgColor = Helper.color.transparent })
+				row = table_center:addRow(true, { fixed = true })
 				row[2]:createButton({ active = menu.buttonTradeRuleCheckChanges, mouseOverText = ReadText(1026, 9116) }):setText(ReadText(1001, 9146), { halign = "center" })
 				row[2].handlers.onClick = menu.buttonTradeRuleConfirm
 				row[4]:setColSpan(2):createButton({ active = menu.buttonTradeRuleCheckChanges, mouseOverText = ReadText(1026, 9117) }):setText(ReadText(1001, 9147), { halign = "center" })
 				row[4].handlers.onClick = menu.buttonTradeRuleReset
 				-- delete
-				row = table_center:addRow(true, { fixed = true, bgColor = Helper.color.transparent })
+				row = table_center:addRow(true, { fixed = true })
 				row[2]:createButton({ mouseOverText = ReadText(1026, 9115) }):setText(ReadText(1001, 11014), { halign = "center" })
 				row[2].handlers.onClick = menu.buttonTradeRuleRemove
 			else
 				-- save
-				row = table_center:addRow(true, { fixed = true, bgColor = Helper.color.transparent })
+				row = table_center:addRow(true, { fixed = true })
 				row[4]:setColSpan(2):createButton({  }):setText(ReadText(1001, 11015), { halign = "center" })
 				row[4].handlers.onClick = menu.buttonTradeRuleConfirm
 
-				row = table_center:addRow(false, { fixed = true, bgColor = Helper.color.transparent })
+				row = table_center:addRow(false, { fixed = true })
 				row[2]:createText("")
 			end
 
 			-- defaults
-			row = table_center:addRow(false, { bgColor = Helper.color.transparent })
+			row = table_center:addRow(false, {  })
 			row[2]:createText("")
 			-- trade
-			row = table_center:addRow(true, { bgColor = Helper.color.transparent })
+			row = table_center:addRow(true, {  })
 			row[1]:createText(ReadText(1001, 11016) .. ReadText(1001, 120))
 			row[2]:setColSpan(3):createText(ReadText(1001, 11017))
 			row[5]:createCheckBox(menu.editedTradeRule.defaults.trade, {  })
 			row[5].handlers.onClick = function (_, checked) return menu.checkboxTradeRuleDefault("trade", checked) end
 			-- supply
-			row = table_center:addRow(true, { bgColor = Helper.color.transparent })
+			row = table_center:addRow(true, {  })
 			row[2]:setColSpan(3):createText(ReadText(1001, 11018))
 			row[5]:createCheckBox(menu.editedTradeRule.defaults.supply, {  })
 			row[5].handlers.onClick = function (_, checked) return menu.checkboxTradeRuleDefault("supply", checked) end
 			-- build
-			row = table_center:addRow(true, { bgColor = Helper.color.transparent })
+			row = table_center:addRow(true, {  })
 			row[2]:setColSpan(3):createText(ReadText(1001, 11019))
 			row[5]:createCheckBox(menu.editedTradeRule.defaults.build, {  })
 			row[5].handlers.onClick = function (_, checked) return menu.checkboxTradeRuleDefault("build", checked) end
 
 			-- data
-			row = table_center:addRow(false, { bgColor = Helper.color.transparent })
+			row = table_center:addRow(false, {  })
 			row[2]:createText("")
 			-- use whitelist
-			row = table_center:addRow(true, { bgColor = Helper.color.transparent })
+			row = table_center:addRow(true, {  })
 			row[2]:setColSpan(3):createText(ReadText(1001, 11020))
 			row[5]:createCheckBox(menu.editedTradeRule.iswhitelist, {  })
 			row[5].handlers.onClick = menu.checkboxTradeRuleUseWhitelist
-			row = table_center:addRow(false, { bgColor = Helper.color.transparent })
+			row = table_center:addRow(false, {  })
 			row[2]:createText("")
 			-- factions
-			row = table_center:addRow(false, { bgColor = Helper.color.unselectable })
-			row[1].properties.cellBGColor = Helper.color.transparent
+			row = table_center:addRow(false, { bgColor = Color["row_background_unselectable"] })
+			row[1].properties.cellBGColor = Color["row_background"]
 			row[2]:setColSpan(4):createText((menu.editedTradeRule.iswhitelist and ReadText(1001, 11022) or ReadText(1001, 11021)) .. ReadText(1001, 120))
 			for _, faction in ipairs(menu.editedTradeRule.factions) do
-				row = table_center:addRow(true, { bgColor = Helper.color.transparent })
-				row[2]:setColSpan(3):createText("    " .. GetFactionData(faction, "name"), { color = (faction == "player") and Helper.color.green or nil })
+				row = table_center:addRow(true, {  })
+				row[2]:setColSpan(3):createText("    " .. GetFactionData(faction, "name"), { color = (faction == "player") and Color["text_player"] or nil })
 				row[5]:createButton({  }):setText("x", { halign = "center" })
 				row[5].handlers.onClick = function () return menu.buttonTradeRuleRemoveFaction(faction) end
 			end
-			row = table_center:addRow(true, { bgColor = Helper.color.transparent })
+			row = table_center:addRow(true, {  })
 			row[2]:setColSpan(4):createButton({  }):setText(ReadText(1001, 9156), { halign = "center" })
 			row[2].handlers.onClick = function () return menu.buttonTradeRuleAddFaction(table_center.properties.x + table_center.properties.width + Helper.borderSize, table_center.properties.y) end
 
@@ -4809,27 +4869,27 @@ function menu.setupEmpireRows(mode, properties_table_center, tabOrderOffset, tab
 			end
 			menu.editedBlacklist = mode[4] or Helper.tableCopy(menu.blacklist)
 			-- title
-			local row = table_center:addRow(nil, { fixed = true, bgColor = Helper.defaultTitleBackgroundColor })
+			local row = table_center:addRow(nil, { fixed = true, bgColor = Color["row_title_background"] })
 			row[1]:setColSpan(5):createText(ReadText(1001, 9143), Helper.titleTextProperties)
 			-- name
-			row = table_center:addRow(nil, { fixed = true, bgColor = Helper.color.transparent })
+			row = table_center:addRow(nil, { fixed = true })
 			row[1]:createText(ReadText(1001, 2809) .. ReadText(1001, 120))
 			row[2]:setColSpan(4):createEditBox({ description = ReadText(1001, 2809) }):setText(menu.editedBlacklist.name)
 			row[2].handlers.onTextChanged = menu.editboxBlacklistNameChanged
 
 			if menu.blacklist.id then
 				-- confirm, cancel
-				row = table_center:addRow(true, { fixed = true, bgColor = Helper.color.transparent })
+				row = table_center:addRow(true, { fixed = true })
 				row[2]:createButton({ active = menu.buttonBlacklistCheckChanges, mouseOverText = ReadText(1026, 9107) }):setText(ReadText(1001, 9146), { halign = "center" })
 				row[2].handlers.onClick = menu.buttonBlacklistConfirm
 				row[4]:setColSpan(2):createButton({ active = menu.buttonBlacklistCheckChanges, mouseOverText = ReadText(1026, 9108) }):setText(ReadText(1001, 9147), { halign = "center" })
 				row[4].handlers.onClick = menu.buttonBlacklistReset
 				-- delete
-				row = table_center:addRow(true, { fixed = true, bgColor = Helper.color.transparent })
+				row = table_center:addRow(true, { fixed = true })
 				row[2]:createButton({ mouseOverText = ReadText(1026, 9106) }):setText(ReadText(1001, 9148), { halign = "center" })
 				row[2].handlers.onClick = menu.buttonBlacklistRemove
 				-- type
-				row = table_center:addRow(false, { bgColor = Helper.color.transparent })
+				row = table_center:addRow(false, {  })
 				row[1]:createText(ReadText(1001, 9161) .. ReadText(1001, 120))
 				local text, mouseovertext = "", ""
 				for _, option in ipairs(config.blacklistTypes) do
@@ -4842,41 +4902,41 @@ function menu.setupEmpireRows(mode, properties_table_center, tabOrderOffset, tab
 				row[2]:setColSpan(4):createText(text, { mouseOverText = mouseovertext })
 			else
 				-- save
-				row = table_center:addRow(true, { fixed = true, bgColor = Helper.color.transparent })
+				row = table_center:addRow(true, { fixed = true })
 				row[4]:setColSpan(2):createButton({ active = menu.editedBlacklist.type ~= nil, mouseOverText = (menu.editedBlacklist.type == nil) and ReadText(1026, 9109) or ReadText(1026, 9105) }):setText(ReadText(1001, 9160), { halign = "center" })
 				row[4].handlers.onClick = menu.buttonBlacklistConfirm
 
-				row = table_center:addRow(false, { fixed = true, bgColor = Helper.color.transparent })
+				row = table_center:addRow(false, { fixed = true })
 				row[2]:createText("")
 				-- type
-				row = table_center:addRow(true, { bgColor = Helper.color.transparent })
+				row = table_center:addRow(true, {  })
 				row[1]:createText(ReadText(1001, 9161) .. ReadText(1001, 120))
 				row[2]:setColSpan(4):createDropDown(config.blacklistTypes, { height = Helper.standardTextHeight, startOption = menu.editedBlacklist.type })
 				row[2].handlers.onDropDownConfirmed = menu.dropdownBlacklistType
 			end
 
 			if menu.editedBlacklist.type ~= nil then
-				row = table_center:addRow(false, { bgColor = Helper.color.transparent })
+				row = table_center:addRow(false, {  })
 				row[2]:createText("")
 				-- military
-				row = table_center:addRow(true, { bgColor = Helper.color.transparent })
+				row = table_center:addRow(true, {  })
 				row[1]:createText(ReadText(1001, 9149) .. ReadText(1001, 120))
 				row[2]:setColSpan(3):createText(ReadText(1001, 9150))
 				row[5]:createCheckBox(menu.editedBlacklist.defaults.military, {  })
 				row[5].handlers.onClick = function (_, checked) return menu.checkboxBlacklistDefault("military", checked) end
 				-- civilian
-				row = table_center:addRow(true, { bgColor = Helper.color.transparent })
+				row = table_center:addRow(true, {  })
 				row[2]:setColSpan(3):createText(ReadText(1001, 9151))
 				row[5]:createCheckBox(menu.editedBlacklist.defaults.civilian, {  })
 				row[5].handlers.onClick = function (_, checked) return menu.checkboxBlacklistDefault("civilian", checked) end
 			end
 
-			row = table_center:addRow(false, { bgColor = Helper.color.transparent })
+			row = table_center:addRow(false, {  })
 			row[2]:createText("")
 
 			if menu.editedBlacklist.type == "sectortravel" then
 				-- hazardous
-				row = table_center:addRow(true, { bgColor = Helper.color.transparent })
+				row = table_center:addRow(true, {  })
 				row[1]:createText(ReadText(1001, 9168) .. ReadText(1001, 120))
 				row[2]:setColSpan(3):createText(ReadText(1001, 9152))
 				row[5]:createCheckBox(menu.editedBlacklist.hazardous, {  })
@@ -4884,7 +4944,7 @@ function menu.setupEmpireRows(mode, properties_table_center, tabOrderOffset, tab
 			end
 			if (menu.editedBlacklist.type == "sectortravel") or (menu.editedBlacklist.type == "sectoractivity") then
 				-- relation
-				row = table_center:addRow(true, { bgColor = Helper.color.transparent })
+				row = table_center:addRow(true, {  })
 				row[2]:setColSpan(3):createText(ReadText(1001, 9153))
 				row[5]:createCheckBox(menu.editedBlacklist.relation == "enemy", {  })
 				row[5].handlers.onClick = menu.checkboxBlacklistRelation
@@ -4892,40 +4952,40 @@ function menu.setupEmpireRows(mode, properties_table_center, tabOrderOffset, tab
 			if menu.editedBlacklist.type ~= nil then
 				table_center:addEmptyRow()
 				-- factions
-				row = table_center:addRow(true, { bgColor = Helper.color.transparent })
+				row = table_center:addRow(true, {  })
 				row[2]:setColSpan(3):createText(ReadText(1001, 11020))
 				row[5]:createCheckBox(menu.editedBlacklist.usefactionwhitelist, {  })
 				row[5].handlers.onClick = menu.checkboxBlacklistUseFactionWhitelist
-				row = table_center:addRow(false, { bgColor = Helper.color.unselectable })
-				row[1].properties.cellBGColor = Helper.color.transparent
+				row = table_center:addRow(false, { bgColor = Color["row_background_unselectable"] })
+				row[1].properties.cellBGColor = Color["row_background"]
 				row[2]:setColSpan(4):createText(((menu.editedBlacklist.type == "objectactivity") and (menu.editedBlacklist.usefactionwhitelist and ReadText(1001, 11041) or ReadText(1001, 9179)) or (menu.editedBlacklist.usefactionwhitelist and ReadText(1001, 11040) or ReadText(1001, 9154))) .. ReadText(1001, 120))
 				for _, faction in ipairs(menu.editedBlacklist.factions) do
-					row = table_center:addRow(true, { bgColor = Helper.color.transparent })
-					row[2]:setColSpan(3):createText("    " .. GetFactionData(faction, "name"), { color = (faction == "player") and Helper.color.green or nil })
+					row = table_center:addRow(true, {  })
+					row[2]:setColSpan(3):createText("    " .. GetFactionData(faction, "name"), { color = (faction == "player") and Color["text_player"] or nil })
 					row[5]:createButton({  }):setText("x", { halign = "center" })
 					row[5].handlers.onClick = function () return menu.buttonBlacklistRemoveFaction(faction) end
 				end
-				row = table_center:addRow(true, { bgColor = Helper.color.transparent })
+				row = table_center:addRow(true, {  })
 				row[2]:setColSpan(4):createButton({  }):setText(ReadText(1001, 9156), { halign = "center" })
 				row[2].handlers.onClick = function () return menu.buttonBlacklistAddFaction(table_center.properties.x + table_center.properties.width + Helper.borderSize, table_center.properties.y) end
 			end
 			if (menu.editedBlacklist.type == "sectortravel") or (menu.editedBlacklist.type == "sectoractivity") then
 				table_center:addEmptyRow()
 				-- macros
-				row = table_center:addRow(true, { bgColor = Helper.color.transparent })
+				row = table_center:addRow(true, {  })
 				row[2]:setColSpan(3):createText(ReadText(1001, 11043))
 				row[5]:createCheckBox(menu.editedBlacklist.usemacrowhitelist, {  })
 				row[5].handlers.onClick = menu.checkboxBlacklistUseMacroWhitelist
-				row = table_center:addRow(false, { bgColor = Helper.color.unselectable })
-				row[1].properties.cellBGColor = Helper.color.transparent
+				row = table_center:addRow(false, { bgColor = Color["row_background_unselectable"] })
+				row[1].properties.cellBGColor = Color["row_background"]
 				row[2]:setColSpan(4):createText((menu.editedBlacklist.usemacrowhitelist and ReadText(1001, 11042) or ReadText(1001, 9155)) .. ReadText(1001, 120))
 				for _, spaceid in ipairs(menu.editedBlacklist.spaces) do
-					row = table_center:addRow(true, { bgColor = Helper.color.transparent })
+					row = table_center:addRow(true, {  })
 					row[2]:setColSpan(3):createText("    " .. ffi.string(C.GetComponentName(spaceid)))
 					row[5]:createButton({  }):setText("x", { halign = "center" })
 					row[5].handlers.onClick = function () return menu.buttonBlacklistRemoveMacro(spaceid) end
 				end
-				row = table_center:addRow(true, { bgColor = Helper.color.transparent })
+				row = table_center:addRow(true, {  })
 				row[2]:setColSpan(4):createButton({  }):setText(ReadText(1001, 9157), { halign = "center" })
 				row[2].handlers.onClick = function () return menu.buttonBlacklistAddMacro(table_center.properties.x + table_center.properties.width + Helper.borderSize, table_center.properties.y) end
 			end
@@ -4947,47 +5007,47 @@ function menu.setupEmpireRows(mode, properties_table_center, tabOrderOffset, tab
 			end
 			menu.editedFightRule = mode[4] or Helper.tableCopy(menu.fightrule, 3)
 			-- title
-			local row = table_center:addRow(nil, { fixed = true, bgColor = Helper.defaultTitleBackgroundColor })
+			local row = table_center:addRow(nil, { fixed = true, bgColor = Color["row_title_background"] })
 			row[1]:setColSpan(5):createText(ReadText(1001, 7753), Helper.titleTextProperties)
 			-- name
-			row = table_center:addRow(nil, { fixed = true, bgColor = Helper.color.transparent })
+			row = table_center:addRow(nil, { fixed = true })
 			row[1]:createText(ReadText(1001, 2809) .. ReadText(1001, 120))
 			row[2]:setColSpan(4):createEditBox({ description = ReadText(1001, 2809) }):setText(menu.editedFightRule.name)
 			row[2].handlers.onTextChanged = menu.editboxFightRuleNameChanged
 
 			if menu.fightrule.id then
 				-- confirm, cancel
-				row = table_center:addRow(true, { fixed = true, bgColor = Helper.color.transparent })
+				row = table_center:addRow(true, { fixed = true })
 				row[2]:createButton({ active = menu.buttonFightRuleCheckChanges, mouseOverText = ReadText(1026, 7703) }):setText(ReadText(1001, 9146), { halign = "center" })
 				row[2].handlers.onClick = menu.buttonFightRuleConfirm
 				row[4]:setColSpan(2):createButton({ active = menu.buttonFightRuleCheckChanges, mouseOverText = ReadText(1026, 7704) }):setText(ReadText(1001, 9147), { halign = "center" })
 				row[4].handlers.onClick = menu.buttonFightRuleReset
 				-- delete
-				row = table_center:addRow(true, { fixed = true, bgColor = Helper.color.transparent })
+				row = table_center:addRow(true, { fixed = true })
 				row[2]:createButton({ mouseOverText = ReadText(1026, 7705) }):setText(ReadText(1001, 7757), { halign = "center" })
 				row[2].handlers.onClick = menu.buttonFightRuleRemove
 			else
 				-- save
-				row = table_center:addRow(true, { fixed = true, bgColor = Helper.color.transparent })
+				row = table_center:addRow(true, { fixed = true })
 				row[4]:setColSpan(2):createButton({  }):setText(ReadText(1001, 7758), { halign = "center" })
 				row[4].handlers.onClick = menu.buttonFightRuleConfirm
 
-				row = table_center:addRow(false, { fixed = true, bgColor = Helper.color.transparent })
+				row = table_center:addRow(false, { fixed = true })
 				row[2]:createText("")
 			end
 
-			row = table_center:addRow(false, { bgColor = Helper.color.transparent })
+			row = table_center:addRow(false, {  })
 			row[2]:createText("")
 			-- default
-			row = table_center:addRow(true, { bgColor = Helper.color.transparent })
+			row = table_center:addRow(true, {  })
 			row[1]:setColSpan(4):createText(ReadText(1001, 7766) .. ReadText(1001, 120))
 			row[5]:createCheckBox(menu.editedFightRule.defaults.attack, {  })
 			row[5].handlers.onClick = function (_, checked) return menu.checkboxFightRuleDefault("attack", checked) end
 
-			row = table_center:addRow(false, { bgColor = Helper.color.transparent })
+			row = table_center:addRow(false, {  })
 			row[2]:createText("")
 
-			row = table_center:addRow(false, { bgColor = Helper.color.unselectable })
+			row = table_center:addRow(false, { bgColor = Color["row_background_unselectable"] })
 			row[1]:setBackgroundColSpan(5):createText(ReadText(1001, 44), { font = Helper.standardFontBold })
 			row[2]:createText(ReadText(1001, 2809), { font = Helper.standardFontBold })
 			row[3]:createText(ReadText(1001, 7749), { font = Helper.standardFontBold, halign = "center" })
@@ -5019,7 +5079,7 @@ function menu.setupEmpireRows(mode, properties_table_center, tabOrderOffset, tab
 					startoption = menu.editedFightRule.settings[faction].civilian .. "/" .. menu.editedFightRule.settings[faction].military
 				end
 
-				local row = table_center:addRow(true, { bgColor = Helper.color.transparent })
+				local row = table_center:addRow(true, {  })
 				row[2]:setColSpan(1):createText("[" .. shortname .. "] " .. name)
 				row[3]:createText(function () return string.format("%+d", GetUIRelation(faction)) end, { halign = "right", font = Helper.standardFontMono, color = function () return menu.relationColor(faction) end })
 				row[4]:setColSpan(2):createDropDown(overrideoptions, { height = Helper.standardTextHeight, startOption = startoption }):setTextProperties({ halign = "center" })
@@ -5049,40 +5109,40 @@ function menu.setupEmpireRows(mode, properties_table_center, tabOrderOffset, tab
 			end
 			menu.editedPlayerAlert = mode[4] or Helper.tableCopy(menu.playeralert)
 			-- title
-			local row = table_center:addRow(nil, { fixed = true, bgColor = Helper.defaultTitleBackgroundColor })
+			local row = table_center:addRow(nil, { fixed = true, bgColor = Color["row_title_background"] })
 			row[1]:setColSpan(5):createText(ReadText(1001, 9183), Helper.titleTextProperties)
 			-- name
-			row = table_center:addRow(true, { fixed = true, bgColor = Helper.color.transparent })
+			row = table_center:addRow(true, { fixed = true })
 			row[1]:createText(ReadText(1001, 2809) .. ReadText(1001, 120))
 			row[2]:setColSpan(4):createEditBox({ description = ReadText(1001, 2809) }):setText(menu.editedPlayerAlert.name)
 			row[2].handlers.onTextChanged = menu.editboxPlayerAlertNameChanged
 
 			if menu.playeralert.index then
 				-- confirm, cancel
-				row = table_center:addRow(true, { fixed = true, bgColor = Helper.color.transparent })
+				row = table_center:addRow(true, { fixed = true })
 				row[2]:createButton({ active = menu.buttonPlayerAlertCheckChanges, mouseOverText = ReadText(1026, 9111) }):setText(ReadText(1001, 9146), { halign = "center" })
 				row[2].handlers.onClick = menu.buttonPlayerAlertConfirm
 				row[4]:setColSpan(2):createButton({ active = menu.buttonPlayerAlertCheckChanges, mouseOverText = ReadText(1026, 9112) }):setText(ReadText(1001, 9147), { halign = "center" })
 				row[4].handlers.onClick = menu.buttonPlayerAlertReset
 				-- delete
-				row = table_center:addRow(true, { fixed = true, bgColor = Helper.color.transparent })
+				row = table_center:addRow(true, { fixed = true })
 				row[2]:createButton({ mouseOverText = ReadText(1026, 9110) }):setText(ReadText(1001, 9187), { halign = "center" })
 				row[2].handlers.onClick = menu.buttonPlayerAlertRemove
 			else
 				-- save
-				row = table_center:addRow(true, { fixed = true, bgColor = Helper.color.transparent })
+				row = table_center:addRow(true, { fixed = true })
 				row[4]:setColSpan(2):createButton({  }):setText(ReadText(1001, 9188), { halign = "center" })
 				row[4].handlers.onClick = menu.buttonPlayerAlertConfirm
 
-				row = table_center:addRow(false, { fixed = true, bgColor = Helper.color.transparent })
+				row = table_center:addRow(false, { fixed = true })
 				row[2]:createText("")
 			end
 
-			row = table_center:addRow(false, { bgColor = Helper.color.transparent })
+			row = table_center:addRow(false, {  })
 			row[2]:createText("")
 
 			-- notification text
-			row = table_center:addRow(true, { fixed = true, bgColor = Helper.color.transparent })
+			row = table_center:addRow(true, { fixed = true })
 			row[1]:createText(ReadText(1001, 11009) .. ReadText(1001, 120))
 			row[2]:setColSpan(4):createEditBox({ description = ReadText(1001, 11009) }):setText(menu.editedPlayerAlert.message)
 			row[2].handlers.onTextChanged = menu.editboxPlayerAlertMessageChanged
@@ -5099,34 +5159,34 @@ function menu.setupEmpireRows(mode, properties_table_center, tabOrderOffset, tab
 			if (menu.editedPlayerAlert.soundid == "") and options[1] then
 				menu.editedPlayerAlert.soundid = options[1].id
 			end
-			row = table_center:addRow(true, { bgColor = Helper.color.transparent })
+			row = table_center:addRow(true, {  })
 			row[1]:createText(ReadText(1001, 9192) .. ReadText(1001, 120))
 			row[2]:setColSpan(3):createDropDown(options, { height = Helper.standardTextHeight, startOption = menu.editedPlayerAlert.soundid })
 			row[2].handlers.onDropDownConfirmed = menu.dropdownPlayerAlertSound
 			row[5]:createButton({ height = Helper.standardTextHeight }):setIcon("menu_sound_on")
 			row[5].handlers.onClick = menu.buttonPlayerAlertSoundTest
 
-			row = table_center:addRow(false, { bgColor = Helper.color.transparent })
+			row = table_center:addRow(false, {  })
 			row[2]:createText("")
 
 			-- interval
-			row = table_center:addRow(true, { bgColor = Helper.color.transparent })
+			row = table_center:addRow(true, {  })
 			row[1]:createText(ReadText(1001, 9193) .. ReadText(1001, 120), { mouseOverText = ReadText(1026, 9113) })
 			row[2]:setColSpan(4):createSliderCell({ min = 1, max = 60, start = menu.editedPlayerAlert.interval / 60, suffix = ReadText(1001, 103), hideMaxValue = true, exceedMaxValue = true, height = Helper.standardTextHeight })
 			row[2].handlers.onSliderCellChanged = menu.slidercellPlayerAlertInterval
 			-- repeats
-			row = table_center:addRow(true, { bgColor = Helper.color.transparent })
+			row = table_center:addRow(true, {  })
 			row[1]:createText(ReadText(1001, 9194) .. ReadText(1001, 120), { mouseOverText = ReadText(1026, 9114) })
 			row[2]:setColSpan(4):createCheckBox(menu.editedPlayerAlert.repeats, { width = Helper.standardTextHeight, height = Helper.standardTextHeight })
 			row[2].handlers.onClick = menu.checkboxPlayerAlertRepeat
 
-			row = table_center:addRow(false, { bgColor = Helper.color.transparent })
+			row = table_center:addRow(false, {  })
 			row[2]:createText("")
 
 			-- spaces
 			if #menu.editedPlayerAlert.spaces > 0 then
 				for i, spaceid in ipairs(menu.editedPlayerAlert.spaces) do
-					row = table_center:addRow(true, { bgColor = Helper.color.transparent })
+					row = table_center:addRow(true, {  })
 						if i == 1 then
 							row[1]:createText(ReadText(1001, 9190).. ReadText(1001, 120))
 						end
@@ -5134,20 +5194,20 @@ function menu.setupEmpireRows(mode, properties_table_center, tabOrderOffset, tab
 					row[5]:createButton({  }):setText("x", { halign = "center" })
 					row[5].handlers.onClick = function () return menu.buttonPlayerAlertRemoveSpace(spaceid) end
 				end
-				row = table_center:addRow(true, { bgColor = Helper.color.transparent })
+				row = table_center:addRow(true, {  })
 			else
-				row = table_center:addRow(true, { bgColor = Helper.color.transparent })
+				row = table_center:addRow(true, {  })
 				row[1]:createText(ReadText(1001, 9190).. ReadText(1001, 120))
 				row[2]:createText("    " .. ReadText(1001, 9191))
 			end
-			row = table_center:addRow(true, { bgColor = Helper.color.transparent })
+			row = table_center:addRow(true, {  })
 			row[2]:setColSpan(4):createButton({  }):setText(ReadText(1001, 9157), { halign = "center" })
 			row[2].handlers.onClick = function () return menu.buttonPlayerAlertAddSpace(table_center.properties.x + table_center.properties.width + Helper.borderSize, table_center.properties.y) end
 
 			-- owner
 			if #menu.editedPlayerAlert.objectowners > 0 then
 				for i, faction in ipairs(menu.editedPlayerAlert.objectowners) do
-					row = table_center:addRow(true, { bgColor = Helper.color.transparent })
+					row = table_center:addRow(true, {  })
 					if i == 1 then
 						row[1]:createText(ReadText(1001, 9195).. ReadText(1001, 120))
 					end
@@ -5155,9 +5215,9 @@ function menu.setupEmpireRows(mode, properties_table_center, tabOrderOffset, tab
 					row[5]:createButton({  }):setText("x", { halign = "center" })
 					row[5].handlers.onClick = function () return menu.buttonPlayerAlertRemoveFaction(faction) end
 				end
-				row = table_center:addRow(true, { bgColor = Helper.color.transparent })
+				row = table_center:addRow(true, {  })
 			else
-				row = table_center:addRow(true, { bgColor = Helper.color.transparent })
+				row = table_center:addRow(true, {  })
 				row[1]:createText(ReadText(1001, 9195).. ReadText(1001, 120))
 			end
 			row[2]:setColSpan(4):createButton({  }):setText(ReadText(1001, 9156), { halign = "center" })
@@ -5165,7 +5225,7 @@ function menu.setupEmpireRows(mode, properties_table_center, tabOrderOffset, tab
 			-- class
 			if #menu.editedPlayerAlert.objectclasses > 0 then
 				for i, class in ipairs(menu.editedPlayerAlert.objectclasses) do
-					row = table_center:addRow(true, { bgColor = Helper.color.transparent })
+					row = table_center:addRow(true, {  })
 					if i == 1 then
 						row[1]:createText(ReadText(1001, 9197).. ReadText(1001, 120))
 					end
@@ -5173,9 +5233,9 @@ function menu.setupEmpireRows(mode, properties_table_center, tabOrderOffset, tab
 					row[5]:createButton({  }):setText("x", { halign = "center" })
 					row[5].handlers.onClick = function () return menu.buttonPlayerAlertRemoveClass(class) end
 				end
-				row = table_center:addRow(true, { bgColor = Helper.color.transparent })
+				row = table_center:addRow(true, {  })
 			else
-				row = table_center:addRow(true, { bgColor = Helper.color.transparent })
+				row = table_center:addRow(true, {  })
 				row[1]:createText(ReadText(1001, 9197).. ReadText(1001, 120))
 			end
 			row[2]:setColSpan(4):createButton({  }):setText(ReadText(1001, 11008), { halign = "center" })
@@ -5188,21 +5248,21 @@ function menu.setupEmpireRows(mode, properties_table_center, tabOrderOffset, tab
 			for _, purpose in ipairs(purposes) do
 				table.insert(options, { id = purpose, text = ffi.string(C.GetPurposeName(purpose)), icon = "", displayremoveoption = false })
 			end
-			row = table_center:addRow(true, { bgColor = Helper.color.transparent })
+			row = table_center:addRow(true, {  })
 			row[1]:createText(ReadText(1001, 9199) .. ReadText(1001, 120))
 			row[2]:setColSpan(4):createDropDown(options, { height = Helper.standardTextHeight, startOption = (menu.editedPlayerAlert.objectpurpose ~= "") and menu.editedPlayerAlert.objectpurpose or "default" })
 			row[2].handlers.onDropDownConfirmed = menu.dropdownPlayerAlertPurpose
 			-- idcode
-			row = table_center:addRow(true, { bgColor = Helper.color.transparent })
+			row = table_center:addRow(true, {  })
 			row[1]:createText(ReadText(1001, 11005) .. ReadText(1001, 120))
 			row[2]:setColSpan(4):createEditBox({ description = ReadText(1001, 11005) }):setText(menu.editedPlayerAlert.objectidcode)
 			row[2].handlers.onTextChanged = menu.editboxPlayerAlertIDCodeChanged
 		elseif locmode == "sectorownership" then
 			-- title
-			local row = table_center:addRow(nil, { fixed = true, bgColor = Helper.defaultTitleBackgroundColor })
+			local row = table_center:addRow(nil, { fixed = true, bgColor = Color["row_title_background"] })
 			row[1]:setColSpan(5):createText(ReadText(1001, 9601), Helper.titleTextProperties)
 			-- owned sectors
-			local row = table_center:addRow(true, { bgColor = Helper.color.transparent, interactive = false })
+			local row = table_center:addRow(true, { interactive = false })
 			row[1]:setBackgroundColSpan(5):createText(ReadText(1001, 9181))
 
 			local skiprow = true
@@ -5212,7 +5272,7 @@ function menu.setupEmpireRows(mode, properties_table_center, tabOrderOffset, tab
 				for _, sector in ipairs(sectors) do
 					if GetComponentData(sector, "isplayerowned") then
 						if not skiprow then
-							row = table_center:addRow(true, { bgColor = Helper.color.transparent, interactive = false })
+							row = table_center:addRow(true, { interactive = false })
 							row[1]:setBackgroundColSpan(5)
 						end
 						skiprow = false
@@ -5221,7 +5281,7 @@ function menu.setupEmpireRows(mode, properties_table_center, tabOrderOffset, tab
 				end
 			end
 
-			local row = table_center:addRow(nil, { bgColor = Helper.defaultHeaderBackgroundColor })
+			local row = table_center:addRow(nil, { bgColor = Color["player_info_background"] })
 			row[1]:setColSpan(5):createText(ReadText(1001, 2435), Helper.headerRowCenteredProperties)
 			-- illegal wares
 			local illegalWares = {}
@@ -5239,15 +5299,15 @@ function menu.setupEmpireRows(mode, properties_table_center, tabOrderOffset, tab
 
 			if #illegalWares > 0 then
 				for _, entry in ipairs(illegalWares) do
-					local row = table_center:addRow(true, { bgColor = Helper.color.transparent, interactive = false })
+					local row = table_center:addRow(true, { interactive = false })
 					row[1]:createText(entry.name)
 				end
 			else
-				local row = table_center:addRow(true, { bgColor = Helper.color.transparent, interactive = false })
+				local row = table_center:addRow(true, { interactive = false })
 				row[1]:createText("--- " .. ReadText(1001, 32) .. " ---")
 			end
 			-- button
-			local row = table_center:addRow(true, { bgColor = Helper.color.transparent })
+			local row = table_center:addRow(true, {  })
 			row[1]:setColSpan(2):createButton({}):setText(ReadText(1001, 8378), { halign = "center" })
 			row[1].handlers.onClick = function () return menu.buttonIllegalWares(table_center.properties.x + table_center.properties.width + Helper.borderSize, table_center.properties.y) end
 		end
@@ -5273,9 +5333,9 @@ end
 
 function menu.logoButtonIcon2Color(logo)
 	if (logo.icon == menu.empireData.currentlogo.icon) and (logo.ispersonal == menu.empireData.currentlogo.ispersonal) then
-		return Helper.color.green
+		return Color["text_positive"]
 	end
-	return Helper.color.transparent
+	return Color["icon_hidden"]
 end
 
 function menu.buttonTradeRuleConfirm()
@@ -5868,6 +5928,33 @@ function menu.buttonPlayerAlertAddSpace(x, y)
 	menu.createContext(x, y)
 end
 
+function menu.buttonResetGlobalStandingOrders()
+	for _, signalentry in ipairs(menu.signals) do
+		C.SetDefaultResponseToSignalForFaction2(signalentry.defaultresponse, signalentry.ask, signalentry.id, "player", "")
+		C.SetDefaultResponseToSignalForFaction2(signalentry.defaultresponse, signalentry.ask, signalentry.id, "player", "fight")
+		C.SetDefaultResponseToSignalForFaction2(signalentry.defaultresponse, signalentry.ask, signalentry.id, "player", "auxiliary")
+		menu.dropdownOrdersSetResponse("reset", "player", signalentry.id, "factionresponses")
+	end
+
+	C.SetFactionBuildMethod("player", C.GetDefaultPlayerBuildMethod())
+	C.SetPlayerGlobalLoadoutLevel(0)
+	C.SetPlayerTradeLoopCargoReservationSetting(true)
+	C.SetFactionDefaultWeaponMode("player", "defend")
+	C.SetPlayerShipsWaitForPlayer(true)
+	C.SetPlayerTaxiWaitsForPlayer(true)
+
+	menu.refreshInfoFrame()
+end
+
+function menu.buttonResetNotificationSettings()
+	for i, entry in ipairs(menu.typecategories) do
+		for _, type in ipairs(entry.types) do
+			C.SetNotificationTypeEnabled(type.id, type.enabledByDefault)
+		end
+	end
+	menu.refreshInfoFrame()
+end
+
 function menu.dropdownPlayerAlertSpace(_, newspace)
 	menu.editedPlayerAlert.spaceid = ConvertStringTo64Bit(newspace)
 end
@@ -5909,14 +5996,13 @@ function menu.createContext(x, y)
 
 	menu.contextFrame = Helper.createFrameHandle(menu, {
 		layer = config.contextLayer,
-		backgroundID = "solid",
-		backgroundColor = Helper.color.semitransparent,
 		standardButtons = { close = true },
 		width = 1.5 * menu.contextMenuWidth,
 		x = x,
 		y = y,
 		autoFrameHeight = true,
 	})
+	menu.contextFrame:setBackground("solid", { color = Color["frame_background_semitransparent"] })
 
 	menu.contextMenuData = { data = {} , selectedData = {}, origSelectedData = {}}
 	if menu.contextMenuMode == "blacklistfaction" then
@@ -6014,7 +6100,7 @@ function menu.createContext(x, y)
 	ftable:setColWidth(1, Helper.standardTextHeight)
 	ftable:setColWidthPercent(3, 50)
 
-	local row = ftable:addRow(true, { fixed = true, bgColor = Helper.color.transparent })
+	local row = ftable:addRow(true, { fixed = true })
 	row[1]:createCheckBox(function () local count = 0; for _ in pairs(menu.contextMenuData.selectedData) do count = count + 1 end; return #menu.contextMenuData.data == count end, { height = Helper.standardTextHeight })
 	row[1].handlers.onClick = function (_, checked) return menu.checkboxSelectContextToggleList(checked) end
 	local text = ""
@@ -6037,14 +6123,14 @@ function menu.createContext(x, y)
 
 	if #menu.contextMenuData.data > 0 then
 		for _, entry in ipairs(menu.contextMenuData.data) do
-			local row = ftable:addRow(true, { bgColor = Helper.color.transparent })
+			local row = ftable:addRow(true, {  })
 			row[1]:createCheckBox(function () return menu.contextMenuData.selectedData[entry] or false end, {  })
 			row[1].handlers.onClick = function (_, checked) return menu.checkboxSelectContextSetList(entry, checked) end
 			local text, color = ""
 			if menu.contextMenuMode == "blacklistfaction" then
 				text = GetFactionData(entry, "name")
 				if entry == "player" then
-					color = Helper.color.green
+					color = Color["text_player"]
 				end
 			elseif menu.contextMenuMode == "blacklistsector" then
 				text = ffi.string(C.GetComponentName(entry))
@@ -6059,7 +6145,7 @@ function menu.createContext(x, y)
 			elseif menu.contextMenuMode == "traderulefaction" then
 				text = GetFactionData(entry, "name")
 				if entry == "player" then
-					color = Helper.color.green
+					color = Color["text_player"]
 				end
 			end
 			row[2]:setColSpan(2):createText(text, { color = color })
@@ -6067,7 +6153,7 @@ function menu.createContext(x, y)
 
 		local buttontable = menu.contextFrame:addTable(2, { tabOrder = 5 })
 
-		local row = buttontable:addRow(true, { fixed = true, bgColor = Helper.color.transparent })
+		local row = buttontable:addRow(true, { fixed = true })
 		row[1]:createButton({ active = menu.isDataSelectionChanged }):setText(ReadText(1001, 14), { halign = "center" })
 		row[1].handlers.onClick = function () return menu.buttonSelectContextSetList(menu.contextMenuData.selectedData) end
 		row[2]:createButton({  }):setText(ReadText(1001, 64), { halign = "center" })
@@ -6078,14 +6164,14 @@ function menu.createContext(x, y)
 		if menu.contextFrame.properties.y + ftable.properties.y + dataheight + buttonheight + Helper.frameBorder > Helper.viewHeight then
 			buttontable.properties.y = Helper.viewHeight - menu.contextFrame.properties.y - Helper.frameBorder - buttonheight
 			ftable.properties.maxVisibleHeight = buttontable.properties.y - Helper.borderSize - ftable.properties.y
-		else
+	else
 			buttontable.properties.y = ftable.properties.y + dataheight + Helper.borderSize
 		end
 
 		ftable:addConnection(1, 4, true)
 		buttontable:addConnection(2, 4)
 	else
-		local row = ftable:addRow(false, { bgColor = Helper.color.transparent })
+		local row = ftable:addRow(false, {  })
 		row[1]:setColSpan(3):createText("--- " .. ReadText(1001, 32) .. " ---", { halign = "center" })
 	end
 
@@ -6126,14 +6212,13 @@ function menu.createContextFrame(data, x, y, width, nomouseout)
 
 	menu.contextFrame = Helper.createFrameHandle(menu, {
 		layer = config.contextLayer,
-		backgroundID = "solid",
-		backgroundColor = Helper.color.semitransparent,
 		standardButtons = { close = true },
 		width = contextmenuwidth,
 		x = x,
 		y = 0,
 		autoFrameHeight = true,
 	})
+	menu.contextFrame:setBackground("solid", { color = Color["frame_background_semitransparent"] })
 
 	local ftable = menu.contextFrame:addTable(1, { tabOrder = 4, highlightMode = "off" })
 
@@ -6159,24 +6244,24 @@ function menu.createContextFrame(data, x, y, width, nomouseout)
 			title = string.format(ReadText(1001, 7713), counter)
 		end
 
-		local row = ftable:addRow(false, { fixed = true })
+		local row = ftable:addRow(false, { fixed = true, bgColor = Color["row_background_blue"] })
 		row[1]:createText(title, Helper.titleTextProperties)
 
-		row = ftable:addRow(true, { fixed = true, bgColor = Helper.color.transparent })
-		row[1]:createButton({ active = allowencyclopedia, bgColor = allowencyclopedia and Helper.color.transparent or Helper.color.darkgrey }):setText(ReadText(1001, 2400), { color = allowencyclopedia and Helper.color.white or Helper.color.lightgrey })
+		row = ftable:addRow(true, { fixed = true })
+		row[1]:createButton({ active = allowencyclopedia, bgColor = allowencyclopedia and Color["button_background_hidden"] or Color["button_background_inactive"] }):setText(ReadText(1001, 2400), { color = allowencyclopedia and Color["text_normal"] or Color["text_inactive"] })
 		row[1].handlers.onClick = function () return menu.buttonInventoryEncyclopedia(data[1]) end
 
-		row = ftable:addRow(true, { fixed = true, bgColor = Helper.color.transparent })
-		row[1]:createButton({ active = allowdrop > 0, bgColor = allowdrop > 0 and Helper.color.transparent or Helper.color.darkgrey, mouseOverText = (allowdrop == counter) and "" or dropmouseovertext }):setText((allowdrop == counter) and ReadText(1001, 7711) or string.format(ReadText(1001, 7712), allowdrop, counter), { color = allowdrop > 0 and Helper.color.white or Helper.color.lightgrey })
+		row = ftable:addRow(true, { fixed = true })
+		row[1]:createButton({ active = allowdrop > 0, bgColor = allowdrop > 0 and Color["button_background_hidden"] or Color["button_background_inactive"], mouseOverText = (allowdrop == counter) and "" or dropmouseovertext }):setText((allowdrop == counter) and ReadText(1001, 7711) or string.format(ReadText(1001, 7712), allowdrop, counter), { color = allowdrop > 0 and Color["text_normal"] or Color["text_inactive"] })
 		row[1].handlers.onClick = function () return menu.buttonInventoryDropAll(false) end
 	elseif menu.contextMenuMode == "personnel" then
-		local row = ftable:addRow(false, { fixed = true })
+		local row = ftable:addRow(false, { fixed = true, bgColor = Color["row_background_blue"] })
 		row[1]:createText(menu.personnelData.curEntry.name, Helper.titleTextProperties)
 
-		local controllable = menu.personnelData.curEntry.container
+		local controllable = C.ConvertStringTo64Bit(tostring(menu.personnelData.curEntry.container))
 		local entity, person
 		if menu.personnelData.curEntry.type == "person" then
-			person = menu.personnelData.curEntry.id
+			person = C.ConvertStringTo64Bit(tostring(menu.personnelData.curEntry.id))
 		else
 			entity = menu.personnelData.curEntry.id
 		end
@@ -6193,37 +6278,37 @@ function menu.createContextFrame(data, x, y, width, nomouseout)
 			personrole = ffi.string(C.GetPersonRole(person, controllable))
 		end
 
-		local oldpilot, isonlineobject = GetComponentData(controllable, "assignedaipilot", "isonlineobject")
+		local oldpilot, isonlineobject = GetComponentData(menu.personnelData.curEntry.container, "assignedaipilot", "isonlineobject")
 		if oldpilot then
 			oldpilot = ConvertStringTo64Bit(tostring(oldpilot))
 		end
 
 		if isonlineobject then
-			local row = ftable:addRow(false, { fixed = true, bgColor = Helper.color.transparent })
-			row[1]:createButton({ bgColor = Helper.color.transparent, active = false, height = Helper.standardTextHeight }):setText(ReadText(1026, 9118))
+			local row = ftable:addRow(false, { fixed = true })
+			row[1]:createButton({ bgColor = Color["button_background_hidden"], active = false, height = Helper.standardTextHeight }):setText(ReadText(1026, 9118))
 		else
-			local row = ftable:addRow("info_person_containerinfo", { fixed = true, bgColor = Helper.color.transparent })
-			row[1]:createButton({ bgColor = Helper.color.transparent, height = Helper.standardTextHeight }):setText(C.IsComponentClass(controllable, "station") and ReadText(1001, 8350) or ReadText(1001, 8602))
+			local row = ftable:addRow("info_person_containerinfo", { fixed = true })
+			row[1]:createButton({ bgColor = Color["button_background_hidden"], height = Helper.standardTextHeight }):setText(C.IsComponentClass(controllable, "station") and ReadText(1001, 8350) or ReadText(1001, 8602))
 			row[1].handlers.onClick = function () return menu.buttonContainerInfo(controllable) end
 
 			if person then
 				if transferscheduled then
-					local row = ftable:addRow("info_person_cancel_transfer", { fixed = true, bgColor = Helper.color.transparent })
-					row[1]:createButton({ bgColor = Helper.color.transparent, height = Helper.standardTextHeight }):setText(ReadText(1001, 9435))	-- Cancel all scheduled transfers
+					local row = ftable:addRow("info_person_cancel_transfer", { fixed = true })
+					row[1]:createButton({ bgColor = Color["button_background_hidden"], height = Helper.standardTextHeight }):setText(ReadText(1001, 9435))	-- Cancel all scheduled transfers
 					row[1].handlers.onClick = function () return menu.buttonPersonnelCancelTransfer(controllable, person) end
 				elseif hasarrived and ((personrole == "service") or (personrole == "marine")) then
 					local printedtitle = C.IsComponentClass(controllable, "ship_s") and ReadText(1001, 4847) or ReadText(1001, 4848)	-- Pilot, Captain
 					-- promote
-					local row = ftable:addRow("info_person_promote", { fixed = true, bgColor = Helper.color.transparent })
-					row[1]:createButton({ bgColor = Helper.color.transparent, height = Helper.standardTextHeight }):setText(ReadText(1001, 9433) .. " " .. printedtitle)	-- Promote to(followed by "captain" or "pilot")
+					local row = ftable:addRow("info_person_promote", { fixed = true })
+					row[1]:createButton({ bgColor = Color["button_background_hidden"], height = Helper.standardTextHeight }):setText(ReadText(1001, 9433) .. " " .. printedtitle)	-- Promote to(followed by "captain" or "pilot")
 					row[1].handlers.onClick = function () return menu.buttonPersonnelReplacePilot(controllable, oldpilot, person) end
 				end
 			end
 			if menu.personnelData.curEntry.roleid ~= "shiptrader" then
 				if hasarrived then
 					-- work somewhere else
-					local row = ftable:addRow("info_person_worksomewhere", { fixed = true, bgColor = Helper.color.transparent })
-					row[1]:createButton({ bgColor = Helper.color.transparent, height = Helper.standardTextHeight }):setText(ReadText(1002, 3008))
+					local row = ftable:addRow("info_person_worksomewhere", { fixed = true })
+					row[1]:createButton({ bgColor = Color["button_background_hidden"], height = Helper.standardTextHeight }):setText(ReadText(1002, 3008))
 					if entity then
 						row[1].handlers.onClick = function () Helper.closeMenuAndOpenNewMenu(menu, "MapMenu", { 0, 0, true, controllable, nil, "hire", { "signal", entity, 0 } }); menu.cleanup() end
 					else
@@ -6231,8 +6316,8 @@ function menu.createContextFrame(data, x, y, width, nomouseout)
 					end
 				end
 				-- fire
-				local row = ftable:addRow("info_person_fire", { fixed = true, bgColor = Helper.color.transparent })
-				row[1]:createButton({ bgColor = Helper.color.transparent, height = Helper.standardTextHeight }):setText(ReadText(1002, 15800))
+				local row = ftable:addRow("info_person_fire", { fixed = true })
+				row[1]:createButton({ bgColor = Color["button_background_hidden"], height = Helper.standardTextHeight }):setText(ReadText(1002, 15800))
 				row[1].handlers.onClick = function () return menu.buttonPersonnelFireNPCConfirm(controllable, entity, person, menu.personnelData.curEntry.name) end
 			end
 
@@ -6244,8 +6329,8 @@ function menu.createContextFrame(data, x, y, width, nomouseout)
 				conversationactor = { context = ConvertStringToLuaID(tostring(controllable)), person = ConvertStringToLuaID(tostring(person)) }
 			end
 			if (not transferscheduled) and hasarrived then
-				row = ftable:addRow("info_actor_comm", { fixed = true, bgColor = Helper.color.transparent })
-				row[1]:createButton({ bgColor = Helper.color.transparent, height = Helper.standardTextHeight, active = (person ~= nil) or (entity and GetComponentData(entity, "caninitiatecomm")) }):setText(ReadText(1001, 3216))	-- (initiate comm)Comm
+				row = ftable:addRow("info_actor_comm", { fixed = true })
+				row[1]:createButton({ bgColor = Color["button_background_hidden"], height = Helper.standardTextHeight, active = (person ~= nil) or (entity and GetComponentData(entity, "caninitiatecomm")) }):setText(ReadText(1001, 3216))	-- (initiate comm)Comm
 				row[1].handlers.onClick = function () menu.buttonPersonnelCommWithActor(conversationactor) end
 			end
 		end
@@ -6264,15 +6349,22 @@ function menu.createContextFrame(data, x, y, width, nomouseout)
 		row[1]:createText(text, Helper.headerRowCenteredProperties)
 		row[1].properties.mouseOverText = entry.partnername
 
-		row = ftable:addRow(true, { fixed = true, bgColor = Helper.color.transparent })
-		row[1]:createButton({ active = active, bgColor = active and Helper.color.transparent or Helper.color.darkgrey }):setText(ReadText(1001, 2427), { color = active and Helper.color.white or Helper.color.lightgrey })
+		row = ftable:addRow(true, { fixed = true })
+		row[1]:createButton({ active = active, bgColor = active and Color["button_background_default"] or Color["button_background_inactive"] }):setText(ReadText(1001, 2427), { color = active and Color["text_normal"] or Color["text_inactive"] })
 		row[1].handlers.onClick = function () return menu.buttonContainerInfo(entry.partner) end
 
 		if active and GetComponentData(ConvertStringTo64Bit(tostring(entry.partner)), "isplayerowned") then
-			row = ftable:addRow(true, { fixed = true, bgColor = Helper.color.transparent })
-			row[1]:createButton({ active = active, bgColor = active and Helper.color.transparent or Helper.color.darkgrey }):setText(ReadText(1001, 7702), { color = active and Helper.color.white or Helper.color.lightgrey })
+			row = ftable:addRow(true, { fixed = true })
+			row[1]:createButton({ active = active, bgColor = active and Color["button_background_default"] or Color["button_background_inactive"] }):setText(ReadText(1001, 7702), { color = active and Color["text_normal"] or Color["text_inactive"] })
 			row[1].handlers.onClick = function () return menu.buttonTransactionLog(entry.partner) end
 		end
+	elseif menu.contextMenuMode == "venturecontactcontext" then
+		Helper.createVentureContactContext(menu, menu.contextFrame)
+	elseif menu.contextMenuMode == "venturefriendlist" then
+		Helper.showVentureFriendListContext(menu, menu.contextFrame)
+	elseif menu.contextMenuMode == "venturereport" then
+		print(nomouseout)
+		Helper.createUserQuestionContext(menu, menu.contextFrame)
 	end
 
 	if menu.contextFrame.properties.x + contextmenuwidth > Helper.viewWidth then
@@ -6294,6 +6386,8 @@ function menu.createContextFrame(data, x, y, width, nomouseout)
 			y1 = - menu.contextFrame.properties.y + Helper.viewHeight / 2                    + config.mouseOutRange,
 			y2 = - menu.contextFrame.properties.y + Helper.viewHeight / 2 - height           - config.mouseOutRange
 		}
+	else
+		menu.mouseOutBox = nil
 	end
 end
 
@@ -6303,14 +6397,13 @@ function menu.refreshContextFrame(setrow, setcol)
 	local y = menu.contextFrame.properties.y
 	menu.contextFrame = Helper.createFrameHandle(menu, {
 		layer = config.contextLayer,
-		backgroundID = "solid",
-		backgroundColor = Helper.color.semitransparent,
 		standardButtons = { close = true },
 		width = menu.contextFrame.properties.width,
 		x = menu.contextFrame.properties.x,
 		y = 0,
 		autoFrameHeight = true,
 	})
+	menu.contextFrame:setBackground("solid", { color = Color["frame_background_semitransparent"] })
 
 	if menu.contextMenuMode == "dropwares" then
 		Helper.createDropWaresContext(menu, menu.contextFrame, "left")
@@ -6437,40 +6530,40 @@ function menu.createUserQuestionFrame()
 		y = menu.contextMenuData.yoffset,
 		width = menu.contextMenuData.width + 2 * Helper.borderSize,
 		layer = config.contextLayer,
-		backgroundID = "solid",
-		backgroundColor = Helper.color.semitransparent,
 		standardButtons = { close = true },
 	})
+	menu.contextFrame:setBackground("solid", { color = Color["frame_background_semitransparent"] })
 
 	local ftable = menu.contextFrame:addTable(5, { tabOrder = 5, reserveScrollBar = false, highlightMode = "off" })
 
 	if menu.contextMenuData.mode == "fire" then
-		local row = ftable:addRow(false, { fixed = true, bgColor = Helper.color.transparent })
+		local row = ftable:addRow(false, { fixed = true })
 		row[1]:setColSpan(5):createText(string.format(ReadText(1001, 11202), menu.contextMenuData.name), Helper.headerRowCenteredProperties)
 
-		local row = ftable:addRow(false, { fixed = true, bgColor = Helper.color.transparent })
+		local row = ftable:addRow(false, { fixed = true })
 		row[1]:setColSpan(5):createText(ReadText(1001, 11201), { wordwrap = true })
 	elseif menu.contextMenuData.mode == "wardeclaration" then
-		local row = ftable:addRow(false, { fixed = true, bgColor = Helper.color.transparent })
+		local row = ftable:addRow(false, { fixed = true })
 		row[1]:setColSpan(5):createText(string.format(ReadText(1001, 7751), menu.contextMenuData.name), Helper.headerRowCenteredProperties)
 
-		local row = ftable:addRow(false, { fixed = true, bgColor = Helper.color.transparent })
+		local row = ftable:addRow(false, { fixed = true })
 		row[1]:setColSpan(5):createText(ReadText(1001, 7752), { wordwrap = true })
 	elseif menu.contextMenuData.mode == "clearlogbook" then
-		local row = ftable:addRow(false, { fixed = true, bgColor = Helper.color.transparent })
+		local row = ftable:addRow(false, { fixed = true })
 		row[1]:setColSpan(5):createText(string.format(ReadText(1001, 5722), menu.contextMenuData.name), Helper.headerRowCenteredProperties)
 
-		local row = ftable:addRow(false, { fixed = true, bgColor = Helper.color.transparent })
+		local row = ftable:addRow(false, { fixed = true })
 		row[1]:setColSpan(5):createText((menu.contextMenuData.category == "all") and ReadText(1001, 5723) or ReadText(1001, 5724), { wordwrap = true })
 	end
 
 	ftable:addEmptyRow(Helper.standardTextHeight)
 
-	local row = ftable:addRow(true, { fixed = true, bgColor = Helper.color.transparent })
+	local row = ftable:addRow(true, { fixed = true })
 	row[2]:createButton():setText(ReadText(1001, 2617), { halign = "center" })
 	row[2].handlers.onClick = menu.buttonUserQuestionConfirm
 	row[4]:createButton():setText(ReadText(1001, 2618), { halign = "center" })
 	row[4].handlers.onClick = menu.closeContextMenu
+	ftable:setSelectedCol(4)
 
 	-- only add one border as the table y offset already is part of frame:getUsedHeight()
 	menu.contextFrame.properties.height = math.min(Helper.viewHeight - menu.contextFrame.properties.y, menu.contextFrame:getUsedHeight() + Helper.borderSize)
@@ -6533,7 +6626,14 @@ function menu.onUpdate()
 
 	menu.mainFrame:update()
 	menu.infoFrame:update()
-	if (menu.contextMenuMode == "blacklistfaction") or (menu.contextMenuMode == "blacklistsector") or (menu.contextMenuMode == "illegalwares") or (menu.contextMenuMode == "playeralertclass") or (menu.contextMenuMode == "playeralertfaction") or (menu.contextMenuMode == "playeralertsector") or (menu.contextMenuMode == "traderulefaction") then
+	if (menu.contextMenuMode == "blacklistfaction") or
+	   (menu.contextMenuMode == "blacklistsector") or
+	   (menu.contextMenuMode == "illegalwares") or
+	   (menu.contextMenuMode == "playeralertclass") or
+	   (menu.contextMenuMode == "playeralertfaction") or
+	   (menu.contextMenuMode == "playeralertsector") or
+	   (menu.contextMenuMode == "traderulefaction")  or
+	   (menu.contextMenuMode == "venturefriendlist") then
 		menu.contextFrame:update()
 	end
 
@@ -6634,12 +6734,10 @@ function menu.onRowChanged(row, rowdata, uitable, modified, input)
 							mot_craft = ReadText(1026, 3901)
 						end
 
-						Helper.removeButtonScripts(menu, menu.buttonTable, row, 1)
-						SetCellContent(menu.buttonTable, Helper.createButton(Helper.createTextInfo(ReadText(1001, 7706), "center", Helper.standardFont, Helper.standardFontSize, 255, 255, 255, 100), nil, false, active, 0, 0, 0, Helper.standardButtonHeight, nil, nil, nil, mot_craft), row, 1)
-						Helper.setButtonScript(menu, nil, menu.buttonTable, row, 1, menu.buttonInventoryCraft)
+						local desc = Helper.createButton(Helper.createTextInfo(ReadText(1001, 7706), "center", Helper.standardFont, Helper.standardFontSize, 255, 255, 255, 100), nil, false, active, 0, 0, 0, Helper.standardButtonHeight, nil, nil, nil, mot_craft)
+						Helper.setCellContent(menu, menu.buttonTable, desc, row, 1, nil, "button", nil, menu.buttonInventoryCraft)
 					else
-						Helper.removeButtonScripts(menu, menu.buttonTable, row, 1)
-						SetCellContent(menu.buttonTable, Helper.getEmptyCellDescriptor(), row, 1)
+						Helper.setCellContent(menu, menu.buttonTable, Helper.getEmptyCellDescriptor(), row, 1, true, "button")
 					end
 				end
 			end
@@ -6665,7 +6763,7 @@ function menu.onRowChanged(row, rowdata, uitable, modified, input)
 			end
 		elseif menu.mode == "personnel" then
 			if type(rowdata) == "table" then
-				if rowdata[2].id ~= menu.personnelData.curEntry.id then
+				if tostring(rowdata[2].id) ~= tostring(menu.personnelData.curEntry.id) then
 					menu.personnelData.curEntry = rowdata[2]
 					menu.refresh = getElapsedTime()
 				end
@@ -6681,6 +6779,7 @@ function menu.onRowChanged(row, rowdata, uitable, modified, input)
 					C.ReadAllInventoryWares()
 				end
 				menu.empireData.mode = rowdata
+				menu.setcentertoprow = 0
 
 				-- always clear the selected object when changing modes. selectedobject will be populated right after as appropriate.
 				menu.empireData.selectedobject = nil
@@ -6705,8 +6804,8 @@ function menu.onRowChanged(row, rowdata, uitable, modified, input)
 
 				if (not menu.empireData.selectedobject) and (#menu.empireData.ships > 0) then
 					for _, ship in ipairs(menu.empireData.ships) do
-						if menu.empireCanShowObject(ship) and (not GetComponentData(ship, "paintmodlocked")) then
-							menu.empireData.selectedobject = ship
+						if menu.empireCanShowObject(ship.ship) and (not GetComponentData(ship.ship, "paintmodlocked")) then
+							menu.empireData.selectedobject = ship.ship
 							menu.empireData.objecttype = "object"
 							changed = true
 							break
@@ -6749,8 +6848,8 @@ function menu.onRowChanged(row, rowdata, uitable, modified, input)
 
 					if not menu.empireData.selectedobject and #menu.empireData.ships > 0 then
 						for _, ship in ipairs(menu.empireData.ships) do
-							if menu.empireCanShowObject(ship) then
-								menu.empireData.selectedobject = ship
+							if menu.empireCanShowObject(ship.ship) then
+								menu.empireData.selectedobject = ship.ship
 								menu.empireData.objecttype = "object"
 								changed = true
 								break
@@ -6802,7 +6901,7 @@ function menu.onRowChanged(row, rowdata, uitable, modified, input)
 							--print("selected entity: " .. rowdata[2].name .. " " .. tostring(rowdata[2].id))
 						end
 					elseif (rowdata[2].type == "person") then
-						local instantiatedperson = ConvertStringTo64Bit(tostring(C.GetInstantiatedPerson(rowdata[2].id, rowdata[2].container)))
+						local instantiatedperson = ConvertStringTo64Bit(tostring(C.GetInstantiatedPerson(rowdata[2].id, C.ConvertStringTo64Bit(tostring(rowdata[2].container)))))
 						if (instantiatedperson ~= 0) and menu.empireCanShowObject(instantiatedperson) and (menu.empireData.selectedobject ~= instantiatedperson) then
 							menu.empireData.selectedobject = instantiatedperson
 							menu.empireData.objecttype = "npc"
@@ -6870,7 +6969,6 @@ function menu.onInventoryRowChange(row, rowdata, input, mode)
 
 		if menu.inventoryData.mode ~= "drop" then
 			local buttonrow = (mode == "inventory") and 6 or 3
-			Helper.removeButtonScripts(menu, menu.inventoryButtonTable.id, buttonrow, 1)
 			local count = 0
 			local allowdrop = false
 			for ware in pairs(menu.inventoryData.selectedWares) do
@@ -6880,8 +6978,8 @@ function menu.onInventoryRowChange(row, rowdata, input, mode)
 				end
 			end
 			local active = GetWareData(rowdata[1], "allowdrop") and (not menu.onlineitems[rowdata[1]])
-			SetCellContent(menu.inventoryButtonTable.id, Helper.createButton(Helper.createTextInfo((count > 1) and ReadText(1001, 7733) or ReadText(1001, 7705), "center", Helper.standardFont, Helper.standardFontSize, 255, 255, 255, 100), nil, false, active, 0, 0, 0, Helper.standardButtonHeight, nil), buttonrow, 1)
-			Helper.setButtonScript(menu, nil, menu.inventoryButtonTable.id, buttonrow, 1, menu.buttonInventoryDrop)
+			local desc = Helper.createButton(Helper.createTextInfo((count > 1) and ReadText(1001, 7733) or ReadText(1001, 7705), "center", Helper.standardFont, Helper.standardFontSize, 255, 255, 255, 100), nil, false, active, 0, 0, 0, Helper.standardButtonHeight, nil)
+			Helper.setCellContent(menu, menu.inventoryButtonTable.id, desc, buttonrow, 1, nil, "button", nil, menu.buttonInventoryDrop)
 
 			if rowdata[1] ~= menu.inventoryData.curEntry[1] then
 				menu.inventoryData.curEntry = rowdata
@@ -6975,6 +7073,25 @@ function menu.onTableRightMouseClick(uitable, row, posx, posy)
 				menu.createContextFrame(rowdata, x + Helper.viewWidth / 2, Helper.viewHeight / 2 - y, Helper.scaleX(260))
 			end
 		end
+	elseif menu.mode == "venturecontacts" then
+		if uitable == menu.infoTable then
+			local rowdata = menu.rowDataMap[uitable] and menu.rowDataMap[uitable][row]
+			if type(rowdata) == "table" then
+				if not rowdata.isplayer then
+					menu.closeContextMenu()
+
+					local x, y = GetLocalMousePosition()
+					if x == nil then
+						-- gamepad case
+						x = posx
+						y = -posy
+					end
+					menu.contextMenuMode = "venturecontactcontext"
+					menu.contextMenuData = { contact = rowdata, xoffset = x + Helper.viewWidth / 2, yoffset = Helper.viewHeight / 2 - y }
+					menu.createContextFrame(nil, menu.contextMenuData.xoffset, menu.contextMenuData.yoffset, Helper.scaleX(260))
+				end
+			end
+		end
 	end
 end
 
@@ -7010,21 +7127,21 @@ function menu.getInventoryName(ware, waredata, showunread)
 	local volatile, gift, unread = GetWareData(ware, "volatile", "gift", "isunreadinventory")
 
 	local name = waredata.name .. (volatile and " [" .. ReadText(1001, 3902) .. "]" or "") .. (gift and " [" .. ReadText(1001, 3903) .. "]" or "")
-	local color = Helper.standardColor
+	local color = Color["text_normal"]
 	if menu.inventoryData.policefaction and IsWareIllegalTo(ware, "player", menu.inventoryData.policefaction) then
-		color = Helper.color.illegal
+		color = Color["text_illegal"]
 	end
 	if showunread and unread then
-		name = Helper.convertColorToText(Helper.color.orange) .. "\027[workshop_error]\027X " .. name
+		name = ColorText["text_warning"] .. "\027[workshop_error]\027X " .. name
 	end
 
 	return name, color
 end
 
 function menu.addInventoryWareEntry(ftable, ware, waredata, iscrafting, isresource, hideprice, isonline)
-	local bgColor = Helper.color.transparent
+	local bgColor
 	if iscrafting and (not isresource) then
-		bgColor = Helper.defaultTitleBackgroundColor
+		bgColor = Color["row_title_background"]
 	end
 	local row = ftable:addRow({ware, waredata}, { bgColor = bgColor, multiSelected = menu.inventoryData.selectedWares[ware] })
 

@@ -45,6 +45,12 @@ ffi.cdef[[
 		MissionID missionid;
 	} MissionWareDeliveryCounts;
 	typedef struct {
+		float x;
+		float y;
+		float width;
+		float height;
+	} MonitorExtents;
+	typedef struct {
 		size_t queueidx;
 		const char* state;
 		const char* statename;
@@ -74,6 +80,18 @@ ffi.cdef[[
 		bool canhire;
 	} PeopleInfo;
 	typedef struct {
+		float x;
+		float y;
+	} Position2D;
+	typedef struct {
+		float x;
+		float y;
+		float z;
+		float yaw;
+		float pitch;
+		float roll;
+	} PosRot;
+	typedef struct {
 		uint32_t id;
 		const char* text;
 		const char* type;
@@ -94,13 +112,18 @@ ffi.cdef[[
 		size_t maxShipsPerLine;
 	} UIFormationInfo;
 	typedef struct {
-		const float x;
-		const float y;
-		const float z;
-		const float yaw;
-		const float pitch;
-		const float roll;
+		float x;
+		float y;
+		float z;
+		float yaw;
+		float pitch;
+		float roll;
 	} UIPosRot;
+	typedef struct {
+		UniverseID contextid;
+		const char* path;
+		const char* group;
+	} UpgradeGroup2;
 	typedef struct {
 		const char* wareid;
 		int32_t amount;
@@ -142,6 +165,7 @@ ffi.cdef[[
 	uint32_t GetMineablesAtSectorPos(YieldInfo* result, uint32_t resultlen, UniverseID sectorid, Coord3D position);
 	void GetMissionDeliveryWares(MissionWareDeliveryInfo* result, MissionID missionid);
 	uint32_t GetMissionThreadSubMissions(MissionID* result, uint32_t resultlen, MissionID missionid);
+	MonitorExtents GetMonitorExtents(const char* monitorid);
 	uint32_t GetNumAllLaserTowers(UniverseID defensibleid);
 	uint32_t GetNumAllMines(UniverseID defensibleid);
 	uint32_t GetNumAllRoles(void);
@@ -176,6 +200,7 @@ ffi.cdef[[
 	uint32_t GetSubordinatesOfGroup(UniverseID* result, uint32_t resultlen, UniverseID commanderid, int group);
 	bool GetSyncPointAutoRelease(uint32_t syncid, bool checkall);
 	bool GetSyncPointAutoReleaseFromOrder(UniverseID controllableid, size_t orderidx, bool checkall);
+	Position2D GetUIAnchorScreenPosition(const char* presentationid, uint32_t index, PosRot additionaloffset);
 	uint32_t GetUpgradeGroups2(UpgradeGroup2* result, uint32_t resultlen, UniverseID destructibleid, const char* macroname);
 	UniverseID GetUpgradeSlotCurrentComponent(UniverseID destructibleid, const char* upgradetypename, size_t slot);
 	UpgradeGroup GetUpgradeSlotGroup(UniverseID destructibleid, const char* macroname, const char* upgradetypename, size_t slot);
@@ -192,12 +217,14 @@ ffi.cdef[[
 	bool IsBuilderBusy(UniverseID shipid);
 	bool IsComponentWrecked(const UniverseID componentid);
 	bool IsDefensibleBeingBoardedBy(UniverseID defensibleid, const char* factionid);
+	bool IsExternalViewDisabled();
 	bool IsMissionLimitReached(bool includeupkeep, bool includeguidance, bool includeplot);
 	bool IsMouseEmulationActive(void);
 	bool IsObjectKnown(const UniverseID componentid);
 	bool IsOrderLoopable(const char* orderdefid);
 	bool IsPlayerCameraTargetViewPossible(UniverseID targetid, bool force);
 	bool IsShipAtExternalDock(UniverseID shipid);
+	bool IsSurfaceElement(const UniverseID componentid);
 	bool IsUnit(UniverseID controllableid);
 	void LaunchLaserTower(UniverseID defensibleid, const char* lasertowermacroname);
 	void LaunchMine(UniverseID defensibleid, const char* minemacroname);
@@ -463,6 +490,8 @@ function menu.cleanup()
 	menu.selectedRows = {}
 	menu.topRows = {}
 	menu.mouseOutBox = {}
+	menu.wasMonitorAdjusted = {}
+	menu.forceSubSectionToLeft = nil
 
 	Helper.ffiClearNewHelper()
 end
@@ -895,6 +924,40 @@ function menu.orderRemove(ship, removedefaultorder, removeassignment, removedock
 	end
 end
 
+function menu.orderRescueInRange(component, sector, offset, clear)
+	if (not C.IsOrderSelectableFor("RescueInRange", component)) or (not GetComponentData(component, "assignedpilot")) then
+		return
+	end
+
+	if clear then
+		C.RemoveAllOrders(component)
+	end
+	local orderidx = C.CreateOrder(component, "RescueInRange", false)
+	if orderidx > 0 then
+		SetOrderParam(component, orderidx, 1, nil, { ConvertStringToLuaID(tostring(sector)), {offset.x, offset.y, offset.z} } )
+		C.EnableOrder(component, orderidx)
+	end
+
+	return orderidx
+end
+
+function menu.orderRescueShip(component, targetobject, clear)
+	if (not C.IsOrderSelectableFor("RescueShip", component)) or (not GetComponentData(component, "assignedpilot")) then
+		return
+	end
+
+	if clear then
+		C.RemoveAllOrders(component)
+	end
+	local orderidx = C.CreateOrder(component, "RescueShip", false)
+	if orderidx > 0 then
+		SetOrderParam(component, orderidx, 1, nil, ConvertStringToLuaID(tostring(targetobject)))
+		C.EnableOrder(component, orderidx)
+	end
+
+	return orderidx
+end
+
 function menu.orderSalvageCollect(component, target, clear)
 	if (not C.IsOrderSelectableFor("SalvageCollect", component)) or (not GetComponentData(component, "assignedpilot")) then
 		return
@@ -1189,7 +1252,7 @@ end
 function menu.buttonArmTurrets(armed)
 	local convertedComponent = ConvertStringTo64Bit(tostring(menu.componentSlot.component))
 	local isplayerownedtarget = GetComponentData(convertedComponent, "isplayerowned")
-	
+
 	if isplayerownedtarget and C.IsComponentClass(menu.componentSlot.component, "ship") and (not GetComponentData(ConvertStringTo64Bit(tostring(menu.componentSlot.component)), "isdeployable")) then
 		C.SetAllTurretsArmed(menu.componentSlot.component, armed)
 	end
@@ -1605,7 +1668,26 @@ function menu.buttonDeployToStation(selectedbuilder, clear, target)
 end
 
 function menu.buttonDepositInventoryAtHQ()
-	menu.orderDepositInventoryAtHQ(menu.componentSlot.component, clear)
+	local convertedComponent = ConvertStringToLuaID(tostring(menu.componentSlot.component))
+	local isdeployable, pilot = GetComponentData(convertedComponent, "isdeployable", "pilot")
+	if (not C.IsUnit(menu.componentSlot.component)) and (not isdeployable) then
+		if pilot and (pilot ~= 0) then
+			if next(GetInventory(pilot)) ~= nil then
+				menu.orderDepositInventoryAtHQ(menu.componentSlot.component, clear)
+			end
+		end
+	end
+
+	for _, ship in ipairs(menu.selectedplayerships) do
+		local isdeployable, pilot = GetComponentData(ship, "isdeployable", "pilot")
+		if (not C.IsUnit(ship)) and (not isdeployable) then
+			if pilot and (pilot ~= 0) then
+				if next(GetInventory(pilot)) ~= nil then
+					menu.orderDepositInventoryAtHQ(ship, clear)
+				end
+			end
+		end
+	end
 
 	menu.onCloseElement("close")
 end
@@ -1803,11 +1885,11 @@ function menu.buttonGetSupplies()
 end
 
 function menu.buttonGuidance(useoffset)
-	if useoffset then 
+	if useoffset then
 		menu.plotCourse(menu.offsetcomponent, menu.offset)
-	else 
+	else
 		menu.plotCourse(menu.componentSlot.component, nil)
-	end 
+	end
 
 	menu.onCloseElement("close")
 end
@@ -1964,7 +2046,7 @@ function menu.buttonMissionShow(missionid)
 		entry.missionGroup.id = ffi.string(missionGroup.id)
 		entry.missionGroup.name = ffi.string(missionGroup.name)
 	end
-	
+
 	local mode
 	if entry.maintype == "upkeep" then
 		mode = "upkeep"
@@ -2254,6 +2336,22 @@ function menu.buttonRequestShip()
 	end
 end
 
+function menu.buttonRescueInRange(clear)
+	for _, ship in ipairs(menu.selectedplayerships) do
+		menu.orderRescueInRange(ship, menu.offsetcomponent, menu.offset, clear)
+	end
+
+	menu.onCloseElement("close")
+end
+
+function menu.buttonRescueShip(clear)
+	for _, ship in ipairs(menu.selectedplayerships) do
+		menu.orderRescueShip(ship, menu.componentSlot.component, clear)
+	end
+
+	menu.onCloseElement("close")
+end
+
 function menu.buttonSalvageCollect(clear)
 	for _, ship in ipairs(menu.selectedplayerships) do
 		if GetComponentData(ship, "shiptype") == "tug" then
@@ -2505,7 +2603,8 @@ function menu.buttonTravelMode(activate)
 	if activate then
 		C.StartPlayerActivity("travel")
 	else
-		C.StopPlayerActivity(GetPlayerActivity())
+		local currentactivity = GetPlayerActivity()
+		C.StopPlayerActivity(currentactivity)
 	end
 	menu.onCloseElement("close")
 end
@@ -2662,6 +2761,9 @@ function menu.onShowMenu(_, _, serializedArg)
 		serializedArg = string.sub(serializedArg, string.find(serializedArg, ";") + 1)
 		menu.componentSlot = ffi.new("UIComponentSlot")
 		menu.componentSlot.component = ConvertStringTo64Bit(string.match(serializedArg, "%d+"))
+		if C.IsSurfaceElement(menu.componentSlot.component) then
+			menu.componentSlot.component = C.GetContextByClass(menu.componentSlot.component, "container", false)
+		end
 		local connection = string.sub(serializedArg, string.find(serializedArg, ";") + 1)
 		menu.connection = Helper.ffiNewString(connection)	-- store string here to keep it alive during lifetime of menu.componentSlot
 		menu.componentSlot.connection = menu.connection
@@ -2740,9 +2842,9 @@ function menu.draw()
 	if menu.subsection then
 		width = 2 * width + Helper.borderSize
 	end
-	
-	menu.frameX = math.max(0, menu.posX)
-	menu.frameY = math.max(0, menu.posY)
+
+	menu.frameX = menu.wasMonitorAdjusted and menu.wasMonitorAdjusted.x or math.max(0, menu.posX)
+	menu.frameY = menu.wasMonitorAdjusted and menu.wasMonitorAdjusted.y or math.max(0, menu.posY)
 	menu.frame = Helper.createFrameHandle(menu, {
 		x = menu.frameX,
 		y = 0,
@@ -2760,7 +2862,12 @@ function menu.draw()
 	local content_position = "left"
 	local subsection_position = "right"
 	if menu.subsection then
-		if frame.properties.x + menu.width > Helper.viewWidth then
+		if menu.forceSubSectionToLeft then
+			-- content table is at the right border of a monitor -> subsection table goes to the left
+			menu.frameX = menu.frameX - menu.width - Helper.borderSize
+			content_position = "right"
+			subsection_position = "left"
+		elseif frame.properties.x + menu.width > Helper.viewWidth then
 			-- content table is at the right border -> subsection table goes to the left
 			menu.frameX = Helper.viewWidth - width - config.border
 			content_position = "right"
@@ -2799,29 +2906,198 @@ function menu.draw()
 	frame.properties.y = menu.frameY
 	if menu.subsection then
 		subsectionHeight = subsectionTable:getFullHeight()
-		if frame.properties.y + menu.subsection.y + subsectionHeight > Helper.viewHeight then
-			subsectionTable.properties.y = menu.subsection.y - subsectionHeight + (config.rowHeight + Helper.borderSize)
-			if subsectionTable.properties.y < 0 then
-				local diff = -subsectionTable.properties.y
-				menu.frameY = frame.properties.y - diff
-				frame.properties.y = menu.frameY
-				frame.properties.standardButtonY = diff
-				contentTable.properties.y = diff
-				subsectionTable.properties.y = 0
+		subsectionTable.properties.y = menu.subsection.y - subsectionHeight + (config.rowHeight + Helper.borderSize)
+		if subsectionTable.properties.y < 0 then
+			local diff = -subsectionTable.properties.y
+			menu.frameY = frame.properties.y - diff
+			frame.properties.y = menu.frameY
+			frame.properties.standardButtonY = diff
+			contentTable.properties.y = diff
+			subsectionTable.properties.y = 0
+		end
+	end
+
+	local frameheight = frame:getUsedHeight()
+
+	local mouseOutBoxExtension = {
+		left = 0,
+		right = 0,
+		top = 0,
+		bottom = 0,
+	}
+
+	-- in HUD prevent overlap with monitors (but do not update if we are showing a subsection, we do not want the interact menu to jump around)
+	if menu.shown and (not menu.subsection) then
+		--[[ comment this line to enable debug visualisation
+		local visframe = Helper.createFrameHandle(menu, {
+			x = 0,
+			y = 0,
+			width = Helper.viewWidth,
+			height = Helper.viewHeight,
+			layer = config.layer + 1,
+			standardButtons = {  },
+			playerControls = true,
+			startAnimation = false,
+		})--]]
+
+		local monitors = {
+			{ offsetid = "targetmonitor",	uianchorindex = 0 },
+			{ offsetid = "radar",			uianchorindex = 2,		noright = true },
+			{ offsetid = "messageticker",	uianchorindex = 3,		noright = true },
+		}
+
+		-- keep original frame position for comparision with new position to judge convenience
+		local origFrameX, origFrameY = menu.frameX, menu.frameY
+		for _, monitor in ipairs(monitors) do
+			-- get the monitor extents (in worldspace coordinates)
+			local monitoroffset = C.GetMonitorExtents(monitor.offsetid)
+			if (monitoroffset.width ~= 0) and (monitoroffset.height ~= 0) then
+				-- get monitor extents in screen position coordinates
+				local minX, maxX, minY, maxY = menu.getMonitorExtents(monitoroffset, monitor.uianchorindex, visframe)
+				local monitorexclusionzone = {
+					x = math.floor(minX),
+					y = math.floor(minY),
+					width = math.ceil(maxX - minX),
+				}
+
+				if visframe then
+					-- debug visualization
+					local vistable = visframe:addTable(1, { tabOrder = 100, x = monitorexclusionzone.x, y = monitorexclusionzone.y, width = math.min(monitorexclusionzone.width, Helper.viewWidth - monitorexclusionzone.x), backgroundID = "solid", backgroundColor = Color["text_error"], highlightMode = "off" })
+					local visrow = vistable:addRow(false, {})
+					visrow[1]:createText(" ", { minRowHeight = Helper.viewHeight - monitorexclusionzone.y, scaling = false, x = 0 })
+				end
+
+				-- move interact menu out of exclusion zone
+				menu.excludeMonitorZone(frame, monitorexclusionzone, width, frameheight, origFrameX, origFrameY, mouseOutBoxExtension, monitor.noright)
 			end
-		else
-			subsectionTable.properties.y = menu.subsection.y
+		end
+		
+		if visframe then
+			visframe:display()
 		end
 	end
 
 	menu.mouseOutBox = {
-		x1 =   frame.properties.x -  Helper.viewWidth / 2                                      - config.mouseOutRange,
-		x2 =   frame.properties.x -  Helper.viewWidth / 2 + width                              + config.mouseOutRange,
-		y1 = - frame.properties.y + Helper.viewHeight / 2                                      + config.mouseOutRange,
-		y2 = - frame.properties.y + Helper.viewHeight / 2 - frame:getUsedHeight()              - config.mouseOutRange
+		x1 =   frame.properties.x -  Helper.viewWidth / 2                                      - config.mouseOutRange - mouseOutBoxExtension.left,
+		x2 =   frame.properties.x -  Helper.viewWidth / 2 + width                              + config.mouseOutRange + mouseOutBoxExtension.right,
+		y1 = - frame.properties.y + Helper.viewHeight / 2                                      + config.mouseOutRange + mouseOutBoxExtension.top,
+		y2 = - frame.properties.y + Helper.viewHeight / 2 - frameheight                        - config.mouseOutRange - mouseOutBoxExtension.bottom,
 	}
-	
+
 	frame:display()
+end
+
+function menu.getMonitorExtents(monitoroffset, uianchorindex, visframe)
+	local minX, maxX, minY, maxY
+	for i = 1, 4 do
+		local offset = ffi.new("PosRot")
+		if i == 1 then
+			-- upper left corner
+			offset.x = monitoroffset.x - monitoroffset.width / 2
+			offset.y = monitoroffset.y + monitoroffset.height / 2
+		elseif i == 2 then
+			-- upper right corner
+			offset.x = monitoroffset.x + monitoroffset.width / 2
+			offset.y = monitoroffset.y + monitoroffset.height / 2
+		elseif i == 3 then
+			-- lower right corner
+			offset.x = monitoroffset.x + monitoroffset.width / 2
+			offset.y = monitoroffset.y - monitoroffset.height / 2
+		elseif i == 4 then
+			-- lower left corner
+			offset.x = monitoroffset.x - monitoroffset.width / 2
+			offset.y = monitoroffset.y - monitoroffset.height / 2
+		end
+		local anchoroffset = C.GetUIAnchorScreenPosition("monitors", uianchorindex, offset)
+		minX = minX and math.min(anchoroffset.x, minX) or anchoroffset.x
+		maxX = maxX and math.max(anchoroffset.x, maxX) or anchoroffset.x
+		minY = minY and math.min(anchoroffset.y, minY) or anchoroffset.y
+		maxY = maxY and math.max(anchoroffset.y, maxY) or anchoroffset.y
+
+		if visframe then
+			-- debug visualization
+			local vistable = visframe:addTable(1, { tabOrder = 100 + i, x = anchoroffset.x, y = math.min(anchoroffset.y, Helper.viewHeight - 5), width = 5, backgroundID = "solid", backgroundColor = Color["text_warning"], highlightMode = "off", reserveScrollBar = false })
+			local visrow = vistable:addRow(false, {})
+			visrow[1]:createText(" ", { fontsize = 1, minRowHeight = 5, scaling = false, x = 0 })
+		end
+	end
+	return minX, maxX, minY, maxY
+end
+
+function menu.excludeMonitorZone(frame, monitorexclusionzone, framewidth, frameheight, origFrameX, origFrameY, mouseOutBoxExtension, noright)
+	local needschange = true
+	-- check y coord first
+	if menu.frameY + frameheight > monitorexclusionzone.y then
+		if needschange and (menu.frameX < monitorexclusionzone.x) then
+			-- clicked left of the monitor, check if overlapping
+			if menu.frameX + framewidth > monitorexclusionzone.x + monitorexclusionzone.width then
+				-- interact menu extends beyond the monitor on both sides, move it up
+				local newY = monitorexclusionzone.y - frameheight
+				mouseOutBoxExtension.bottom = origFrameY - newY
+				menu.frameY = newY
+				needschange = false
+			elseif menu.frameX + framewidth > monitorexclusionzone.x then
+				-- overlapping with the minitor, flip to left from cursor
+				local newX = menu.frameX - framewidth
+				-- make sure we have enough space left for a subsection on the left
+				if newX > menu.width + Helper.borderSize then
+					menu.frameX = newX
+					needschange = false
+					menu.forceSubSectionToLeft = true
+				end
+			elseif  menu.frameX + 2 * menu.width + Helper.borderSize > monitorexclusionzone.x then
+				-- ok, but no space for subsection -> force to left
+				needschange = false
+				menu.forceSubSectionToLeft = true
+			else
+				needschange = false
+			end
+		end
+		if needschange and (menu.frameX < monitorexclusionzone.x + monitorexclusionzone.width) then
+			-- clicked inside the monitor or left to the monitor but no space on the left
+			-- check whether to move left, up or right
+			local newX1 = monitorexclusionzone.x - framewidth
+			if newX1 < menu.width + Helper.borderSize then
+				-- doesn't fit a potential subsection, make impossible
+				newX1 = -1000000000
+			end
+			local newX2 = monitorexclusionzone.x + monitorexclusionzone.width
+			if noright or (newX2 + framewidth > Helper.viewWidth) then
+				-- doesn't fit, make impossible
+				newX2 = 1000000000
+			end
+			local newY = monitorexclusionzone.y - frameheight
+
+			local diffX1 = origFrameX - newX1
+			local diffX2 = newX2 - origFrameX
+			local diffY = origFrameY - newY
+
+			if (diffX1 < diffX2) and (diffX1 < diffY) then
+				-- moving left
+				mouseOutBoxExtension.right = diffX1
+				menu.frameX = newX1
+				needschange = false
+				menu.forceSubSectionToLeft = true
+			elseif (not diffX1) or (diffX2 < diffX1) and (diffX2 < diffY) then
+				-- moving right
+				mouseOutBoxExtension.left = diffX2
+				needschange = false
+				menu.frameX = newX2
+			elseif (diffY < diffX1) and (diffY < diffX2) then
+				-- moving up
+				mouseOutBoxExtension.bottom = diffY
+				menu.frameY = newY
+				needschange = false
+			end
+		end
+	end
+
+	if not needschange then
+		menu.wasMonitorAdjusted = { x = menu.frameX, y = menu.frameY }
+		frame.properties.x = menu.frameX
+		frame.properties.y = menu.frameY
+	end
+
 end
 
 function menu.addSectionTitle(ftable, section, first)
@@ -2857,10 +3133,10 @@ function menu.addSectionTitle(ftable, section, first)
 			text = utf8.char(8734) .. " " .. text
 		end
 
-		local row = ftable:addRow(false, { bgColor = Helper.color.transparent })
+		local row = ftable:addRow(false, {  })
 		if section.id == "main_assignments" then
-			row[1]:createText(string.format(text, menu.texts.commanderShortName), { font = Helper.standardFontBold, mouseOverText = menu.texts.commanderName, titleColor = Helper.defaultSimpleBackgroundColor })
-			row[4]:createText("[" .. GetComponentData(convertedComponent, "assignmentname") .. "]", { font = Helper.standardFontBold, halign = "right", height = Helper.subHeaderHeight, titleColor = Helper.defaultSimpleBackgroundColor })
+			row[1]:createText(string.format(text, menu.texts.commanderShortName), { font = Helper.standardFontBold, mouseOverText = menu.texts.commanderName, titleColor = Color["row_title"] })
+			row[4]:createText("[" .. GetComponentData(convertedComponent, "assignmentname") .. "]", { font = Helper.standardFontBold, halign = "right", height = Helper.subHeaderHeight, titleColor = Color["row_title"] })
 		elseif section.id == "main_assignments_subsections" then
 			if menu.subordinategroup then
 				local selectiontext = menu.texts.selectedName
@@ -2874,28 +3150,28 @@ function menu.addSectionTitle(ftable, section, first)
 					local first = true
 					fullselectiontext = ""
 					for _, shipentry in ipairs(menu.groupShips) do
-						fullselectiontext = fullselectiontext .. (first and "" or "\n") .. string.format("\027#FF%02x%02x%02x#%s", color.r, color.g, color.b, shipentry.name .. " (" .. shipentry.objectid .. ")")
+						fullselectiontext = fullselectiontext .. (first and "" or "\n") .. Helper.convertColorToText(color) .. shipentry.name .. " (" .. shipentry.objectid .. ")"
 						first = false
 					end
 				end
-				row[1]:createText(text, { font = Helper.standardFontBold, mouseOverText = fullselectiontext, titleColor = Helper.defaultSimpleBackgroundColor })
-				row[4]:createText(selectiontext, { font = Helper.standardFontBold, halign = "right", color = menu.holomapcolor.playercolor, mouseOverText = fullselectiontext, height = Helper.subHeaderHeight, titleColor = Helper.defaultSimpleBackgroundColor })
+				row[1]:createText(text, { font = Helper.standardFontBold, mouseOverText = fullselectiontext, titleColor = Color["row_title"] })
+				row[4]:createText(selectiontext, { font = Helper.standardFontBold, halign = "right", color = menu.holomapcolor.playercolor, mouseOverText = fullselectiontext, height = Helper.subHeaderHeight, titleColor = Color["row_title"] })
 			elseif menu.showPlayerInteractions or ((#menu.selectedplayerships == 0) and (not menu.shown)) then
 				if (not commander) or (commander == 0) then
-					row[1]:setColSpan(5):createText(ReadText(1010, 1), { font = Helper.standardFontBold, mouseOverText = fullselectiontext, titleColor = Helper.defaultSimpleBackgroundColor })
+					row[1]:setColSpan(5):createText(ReadText(1010, 1), { font = Helper.standardFontBold, mouseOverText = fullselectiontext, titleColor = Color["row_title"] })
 				end
 			end
 		elseif section.id == "player_interaction" then
 			if not first then
-				row[1]:createText(text, { font = Helper.standardFontBold, mouseOverText = text .. " " .. menu.texts.targetName, titleColor = Helper.defaultSimpleBackgroundColor })
-				row[4]:createText(menu.texts.targetBaseName or menu.texts.targetShortName, { font = Helper.standardFontBold, halign = "right", color = menu.colors.target, mouseOverText = text .. " " .. menu.texts.targetName, height = Helper.subHeaderHeight, titleColor = Helper.defaultSimpleBackgroundColor })
+				row[1]:createText(text, { font = Helper.standardFontBold, mouseOverText = text .. " " .. menu.texts.targetName, titleColor = Color["row_title"] })
+				row[4]:createText(menu.texts.targetBaseName or menu.texts.targetShortName, { font = Helper.standardFontBold, halign = "right", color = menu.colors.target, mouseOverText = text .. " " .. menu.texts.targetName, height = Helper.subHeaderHeight, titleColor = Color["row_title"] })
 			end
 		elseif (section.id == "selected_orders_all") or (section.id == "selected_assignments_all") then
-			row[1]:createText(text, { font = Helper.standardFontBold, mouseOverText = menu.texts.selectedFullNamesAll, titleColor = Helper.defaultSimpleBackgroundColor })
-			row[4]:createText(menu.texts.selectedNameAll, { font = Helper.standardFontBold, halign = "right", color = menu.colors.selected, mouseOverText = menu.texts.selectedFullNamesAll, height = Helper.subHeaderHeight, titleColor = Helper.defaultSimpleBackgroundColor })
+			row[1]:createText(text, { font = Helper.standardFontBold, mouseOverText = menu.texts.selectedFullNamesAll, titleColor = Color["row_title"] })
+			row[4]:createText(menu.texts.selectedNameAll, { font = Helper.standardFontBold, halign = "right", color = menu.colors.selected, mouseOverText = menu.texts.selectedFullNamesAll, height = Helper.subHeaderHeight, titleColor = Color["row_title"] })
 		elseif (section.id == "selected_orders") or (section.id == "trade_orders") then
-			row[1]:createText(text, { font = Helper.standardFontBold, mouseOverText = menu.texts.selectedFullNames, titleColor = Helper.defaultSimpleBackgroundColor })
-			row[4]:createText(menu.texts.selectedName, { font = Helper.standardFontBold, halign = "right", color = menu.colors.selected, mouseOverText = menu.texts.selectedFullNames, height = Helper.subHeaderHeight, titleColor = Helper.defaultSimpleBackgroundColor })
+			row[1]:createText(text, { font = Helper.standardFontBold, mouseOverText = menu.texts.selectedFullNames, titleColor = Color["row_title"] })
+			row[4]:createText(menu.texts.selectedName, { font = Helper.standardFontBold, halign = "right", color = menu.colors.selected, mouseOverText = menu.texts.selectedFullNames, height = Helper.subHeaderHeight, titleColor = Color["row_title"] })
 		elseif (section.id == "selected_assignments") or (section.id == "selected_change_assignments") then
 			local selectiontext = menu.texts.selectedName
 			local fullselectiontext = menu.texts.selectedFullNames
@@ -2910,26 +3186,26 @@ function menu.addSectionTitle(ftable, section, first)
 					local first = true
 					fullselectiontext = ""
 					for _, ship in ipairs(menu.shipswithcurrentcommander) do
-						fullselectiontext = fullselectiontext .. (first and "" or "\n") .. string.format("\027#FF%02x%02x%02x#%s", color.r, color.g, color.b, GetComponentData(ship, "name") .. " (" .. ffi.string(C.GetObjectIDCode(ship)) .. ")")
+						fullselectiontext = fullselectiontext .. (first and "" or "\n") .. Helper.convertColorToText(color) .. GetComponentData(ship, "name") .. " (" .. ffi.string(C.GetObjectIDCode(ship)) .. ")"
 						first = false
 					end
 				end
 			end
 
-			row[1]:createText(text, { font = Helper.standardFontBold, mouseOverText = fullselectiontext, titleColor = Helper.defaultSimpleBackgroundColor })
-			row[4]:createText(selectiontext, { font = Helper.standardFontBold, halign = "right", color = menu.colors.selected, mouseOverText = fullselectiontext, height = Helper.subHeaderHeight, titleColor = Helper.defaultSimpleBackgroundColor })
+			row[1]:createText(text, { font = Helper.standardFontBold, mouseOverText = fullselectiontext, titleColor = Color["row_title"] })
+			row[4]:createText(selectiontext, { font = Helper.standardFontBold, halign = "right", color = menu.colors.selected, mouseOverText = fullselectiontext, height = Helper.subHeaderHeight, titleColor = Color["row_title"] })
 		elseif section.id == "overrideorderoption" then
-			row[1]:createText("\27R" .. text, { font = Helper.standardFontBold, mouseOverText = menu.texts.selectedFullNames, titleColor = Helper.defaultSimpleBackgroundColor })
-			row[4]:createText(menu.texts.overrideordername, { font = Helper.standardFontBold, halign = "right", color = menu.colors.selected, mouseOverText = menu.texts.selectedFullNames, height = Helper.subHeaderHeight, titleColor = Helper.defaultSimpleBackgroundColor })
+			row[1]:createText(ColorText["text_error"] .. text, { font = Helper.standardFontBold, mouseOverText = menu.texts.selectedFullNames, titleColor = Color["row_title"] })
+			row[4]:createText(menu.texts.overrideordername, { font = Helper.standardFontBold, halign = "right", color = menu.colors.selected, mouseOverText = menu.texts.selectedFullNames, height = Helper.subHeaderHeight, titleColor = Color["row_title"] })
 		else
-			row[1]:setColSpan(5):createText(text, { font = Helper.standardFontBold, height = Helper.subHeaderHeight, titleColor = Helper.defaultSimpleBackgroundColor })
+			row[1]:setColSpan(5):createText(text, { font = Helper.standardFontBold, height = Helper.subHeaderHeight, titleColor = Color["row_title"] })
 		end
 		height = height + row:getHeight() + Helper.borderSize
 	elseif section.id == "shipconsole" then
 		if not first then
 			local row = ftable:addEmptyRow(config.rowHeight / 2)
 			height = height + row:getHeight() + Helper.borderSize
-			local row = ftable:addRow(false, { bgColor = Helper.color.transparent })
+			local row = ftable:addRow(false, {  })
 			row[1]:setColSpan(5):createText(ffi.string(C.GetComponentName(menu.isdockedship and C.GetContextByClass(menu.componentSlot.component, "dockingbay", false) or menu.componentSlot.component)), Helper.headerRowCenteredProperties)
 			height = height + row:getHeight() + Helper.borderSize
 		end
@@ -2943,7 +3219,7 @@ function menu.createContentTable(frame, position)
 		x = menu.width + Helper.borderSize
 	end
 
-	local ftable = frame:addTable(5, { tabOrder = menu.subsection and 2 or 1, x = x, width = menu.width, backgroundID = "solid", backgroundColor = Helper.color.semitransparent, highlightMode = "off" })
+	local ftable = frame:addTable(5, { tabOrder = menu.subsection and 2 or 1, x = x, width = menu.width, backgroundID = "solid", backgroundColor = Color["frame_background_semitransparent"], highlightMode = "off" })
 	ftable:setDefaultCellProperties("text",   { minRowHeight = config.rowHeight, fontsize = config.entryFontSize, x = config.entryX })
 	ftable:setDefaultCellProperties("button", { height = config.rowHeight })
 	ftable:setDefaultCellProperties("checkbox", { height = config.rowHeight, width = config.rowHeight })
@@ -3031,24 +3307,24 @@ function menu.createContentTable(frame, position)
 	local height = 0
 	if (((not menu.showPlayerInteractions) and (#menu.selectedplayerships > 0)) or ((#menu.selectedplayerships == 0) and (#menu.selectedotherobjects > 0))) and (not menu.syncpoint) and (not menu.syncpointorder) and (not menu.intersectordefencegroup) and (not menu.mission) and (not menu.missionoffer) then
 		-- modemarker
-		local row = ftable:addRow(false, { bgColor = Helper.color.transparent })
-		row[1]:setBackgroundColSpan(5):setColSpan(2):createIcon("be_diagonal_01", { width = bordericonsize, height = bordericonsize, x = borderwidth - bordericonsize + Helper.borderSize, scaling = false, color = Helper.defaultTitleTrapezoidBackgroundColor })
+		local row = ftable:addRow(false, {  })
+		row[1]:setBackgroundColSpan(5):setColSpan(2):createIcon("be_diagonal_01", { width = bordericonsize, height = bordericonsize, x = borderwidth - bordericonsize + Helper.borderSize, scaling = false, color = Color["row_background_blue_opaque"] })
 		row[4]:setColSpan(1)
 		row[3]:setColSpan(2)
 		local width = row[3]:getColSpanWidth() + Helper.scrollbarWidth + Helper.borderSize
-		row[3]:createIcon("solid", { height = bordericonsize, width = width, scaling = false, color = Helper.defaultTitleTrapezoidBackgroundColor }):setText(modetext, { font = Helper.headerRow1Font, fontsize = Helper.scaleFont(Helper.headerRow1Font, Helper.headerRow1FontSize, true), halign = "center", x = math.ceil((width- Helper.borderSize) / 2) })
-		row[5]:setColSpan(1):createIcon("be_diagonal_02", { width = bordericonsize, height = bordericonsize, scaling = false, color = Helper.defaultTitleTrapezoidBackgroundColor })
+		row[3]:createIcon("solid", { height = bordericonsize, width = width, scaling = false, color = Color["row_background_blue_opaque"] }):setText(modetext, { font = Helper.headerRow1Font, fontsize = Helper.scaleFont(Helper.headerRow1Font, Helper.headerRow1FontSize, true), halign = "center", x = math.ceil((width - Helper.borderSize) / 2) })
+		row[5]:setColSpan(1):createIcon("be_diagonal_02", { width = bordericonsize, height = bordericonsize, scaling = false, color = Color["row_background_blue_opaque"] })
 		height = height + row:getHeight() + Helper.borderSize
 	end
 	-- title
-	local row = ftable:addRow(false, { bgColor = Helper.color.transparent })
+	local row = ftable:addRow(false, {  })
 	text = TruncateText(text, Helper.standardFontBold, Helper.scaleFont(Helper.standardFontBold, Helper.headerRow1FontSize), menu.width - Helper.scaleX(Helper.standardButtonWidth) - 2 * config.entryX)
 	row[1]:setColSpan(5):createText(text, Helper.headerRowCenteredProperties)
 	row[1].properties.color = color
 	height = height + row:getHeight() + Helper.borderSize
 	if (menu.subordinategroup or menu.intersectordefencegroup) and (#menu.selectedplayerships == 0) then
 		row[1].properties.titleColor = nil
-		local row = ftable:addRow(nil, { bgColor = Helper.color.transparent })
+		local row = ftable:addRow(nil, {  })
 		row[1]:setColSpan(5):createText(string.format(ReadText(1001, 8398), ReadText(20401, menu.subordinategroup or menu.intersectordefencegroup)), Helper.headerRowCenteredProperties)
 		row[1].properties.color = color
 	end
@@ -3108,24 +3384,24 @@ function menu.createContentTable(frame, position)
 				reason = reason .. menu.noopreason[3]
 			end
 
-			local row = ftable:addRow(true, { bgColor = Helper.color.darkgrey })
-			row[1]:setColSpan(5):createText(reason, { wordwrap = true, color = Helper.color.grey })
+			local row = ftable:addRow(true, { bgColor = Color["row_background_unselectable"] })
+			row[1]:setColSpan(5):createText(reason, { wordwrap = true, color = Color["text_inactive"] })
 			skipped = true
 		elseif isonlinetarget and isplayerownedtarget then
-			local row = ftable:addRow(true, { fixed = true, bgColor = Helper.color.darkgrey })
-			row[1]:setColSpan(5):createText(ReadText(1001, 7868), { wordwrap = true, color = Helper.color.grey })
+			local row = ftable:addRow(true, { fixed = true, bgColor = Color["row_background_unselectable"] })
+			row[1]:setColSpan(5):createText(ReadText(1001, 7868), { wordwrap = true, color = Color["text_inactive"] })
 			skipped = true
 		elseif (#menu.ventureships > 0) and (#menu.selectedplayerships == 0) then
-			local row = ftable:addRow(true, { fixed = true, bgColor = Helper.color.darkgrey })
-			row[1]:setColSpan(5):createText(ReadText(1001, 7868), { wordwrap = true, color = Helper.color.grey })
+			local row = ftable:addRow(true, { fixed = true, bgColor = Color["row_background_unselectable"] })
+			row[1]:setColSpan(5):createText(ReadText(1001, 7868), { wordwrap = true, color = Color["text_inactive"] })
 			skipped = true
 		elseif (menu.numorderloops > 0) and (#menu.selectedplayerships ~= menu.numorderloops) then
-			local row = ftable:addRow(true, { fixed = true, bgColor = Helper.color.darkgrey })
-			row[1]:setColSpan(5):createText(ReadText(1001, 11108), { wordwrap = true, color = Helper.color.grey })
+			local row = ftable:addRow(true, { fixed = true, bgColor = Color["row_background_unselectable"] })
+			row[1]:setColSpan(5):createText(ReadText(1001, 11108), { wordwrap = true, color = Color["text_inactive"] })
 			skipped = true
 		elseif (menu.numorderloops > 1) then
-			local row = ftable:addRow(true, { fixed = true, bgColor = Helper.color.darkgrey })
-			row[1]:setColSpan(5):createText(ReadText(1001, 11109), { wordwrap = true, color = Helper.color.grey })
+			local row = ftable:addRow(true, { fixed = true, bgColor = Color["row_background_unselectable"] })
+			row[1]:setColSpan(5):createText(ReadText(1001, 11109), { wordwrap = true, color = Color["text_inactive"] })
 			skipped = true
 		end
 	end
@@ -3152,16 +3428,16 @@ function menu.createContentTable(frame, position)
 								hastitle = true
 							end
 							local data = { id = subsection.id, y = height }
-							local row = ftable:addRow(data, { bgColor = Helper.color.transparent })
+							local row = ftable:addRow(data, {  })
 							local iconHeight = Helper.scaleY(config.rowHeight)
 							local button = row[1]:setColSpan(5):createButton({
-								bgColor = #menu.actions[subsection.id] > 0 and Helper.color.transparent or Helper.color.darkgrey,
-								highlightColor = #menu.actions[subsection.id] > 0 and Helper.defaultButtonHighlightColor or Helper.defaultUnselectableButtonHighlightColor,
+								bgColor = #menu.actions[subsection.id] > 0 and Color["button_background_hidden"] or Color["button_background_inactive"],
+								highlightColor = #menu.actions[subsection.id] > 0 and Color["button_highlight_default"] or Color["button_highlight_inactive"],
 								mouseOverText = (#menu.actions[subsection.id] > 0) and "" or menu.forceSubSection[subsection.id],
 								helpOverlayID = subsection.helpOverlayID,
 								helpOverlayText = subsection.helpOverlayText,
 								helpOverlayHighlightOnly = subsection.helpOverlayHighlightOnly,
-							}):setText((subsection.orderid and menu.orderIconText(subsection.orderid) or "") .. subsection.text, { color = Helper.color.white }):setIcon("table_arrow_inv_right", { scaling = false, width = iconHeight, height = iconHeight, x = menu.width - iconHeight })
+							}):setText((subsection.orderid and menu.orderIconText(subsection.orderid) or "") .. subsection.text):setIcon("table_arrow_inv_right", { scaling = false, width = iconHeight, height = iconHeight, x = menu.width - iconHeight })
 							row[1].handlers.onClick = function () return menu.handleSubSectionOption(data, true) end
 							height = height + row:getHeight() + Helper.borderSize
 						end
@@ -3184,12 +3460,12 @@ function menu.createContentTable(frame, position)
 						if entry.active == nil then
 							entry.active = true
 						end
-						local row = ftable:addRow(true, { bgColor = Helper.color.transparent })
+						local row = ftable:addRow(true, {  })
 						if entry.checkbox ~= nil then
 							row[1]:setColSpan(1):createCheckBox(entry.checkbox, { active = entry.active, mouseOverText = entry.mouseOverText })
 							row[1].properties.uiTriggerID = entry.type
 							row[2]:setColSpan(4):createText(entry.text, {
-								color = entry.active and Helper.color.white or Helper.color.lightgrey,
+								color = entry.active and Color["text_normal"] or Color["text_inactive"],
 								mouseOverText = entry.mouseOverText,
 								helpOverlayID = entry.helpOverlayID,
 								helpOverlayText = entry.helpOverlayText,
@@ -3197,13 +3473,13 @@ function menu.createContentTable(frame, position)
 							})
 						else
 							local button = row[1]:setColSpan(5):createButton({
-								bgColor = entry.active and Helper.color.transparent or Helper.color.darkgrey,
-								highlightColor = entry.active and Helper.defaultButtonHighlightColor or Helper.defaultUnselectableButtonHighlightColor,
+								bgColor = entry.active and Color["button_background_hidden"] or Color["button_background_inactive"],
+								highlightColor = entry.active and Color["button_highlight_default"] or Color["button_highlight_inactive"],
 								mouseOverText = entry.mouseOverText,
 								helpOverlayID = entry.helpOverlayID,
 								helpOverlayText = entry.helpOverlayText,
 								helpOverlayHighlightOnly = entry.helpOverlayHighlightOnly,
-							}):setText(entry.text, { color = entry.active and Helper.color.white or Helper.color.lightgrey })
+							}):setText(entry.text, { color = entry.active and Color["text_normal"] or Color["text_inactive"] })
 							button.properties.uiTriggerID = entry.type
 							if (section.id == "selected_orders") or (section.id == "trade_orders") or (section.id == "selected_assignments") or (section.id == "player_interaction") or (section.id == "trade") then
 								if not entry.hidetarget then
@@ -3240,8 +3516,8 @@ function menu.createContentTable(frame, position)
 			end
 		end
 		if first then
-			local row = ftable:addRow(true, { bgColor = Helper.color.transparent })
-			local button = row[1]:setColSpan(5):createButton({ active = false, bgColor = Helper.color.darkgrey }):setText("---", { halign = "center", color = Helper.color.red })
+			local row = ftable:addRow(true, {  })
+			local button = row[1]:setColSpan(5):createButton({ active = false, bgColor = Color["button_background_inactive"] }):setText("---", { halign = "center", color = Color["text_error"] })
 		end
 	end
 
@@ -3259,7 +3535,7 @@ function menu.createSubSectionTable(frame, position)
 		x = menu.width + Helper.borderSize
 	end
 
-	local ftable = frame:addTable(2, { tabOrder = 1, x = x, width = menu.width, backgroundID = "solid", backgroundColor = Helper.color.semitransparent, highlightMode = "off" })
+	local ftable = frame:addTable(2, { tabOrder = 1, x = x, width = menu.width, backgroundID = "solid", backgroundColor = Color["frame_background_semitransparent"], highlightMode = "off" })
 	ftable:setDefaultCellProperties("text",   { minRowHeight = config.rowHeight, fontsize = config.entryFontSize, x = config.entryX })
 	ftable:setDefaultCellProperties("button", { height = config.rowHeight })
 	ftable:setDefaultComplexCellProperties("button", "text", { fontsize = config.entryFontSize, x = config.entryX })
@@ -3271,7 +3547,7 @@ function menu.createSubSectionTable(frame, position)
 		if entry.active == nil then
 			entry.active = true
 		end
-		row = ftable:addRow(true, { bgColor = Helper.color.transparent })
+		row = ftable:addRow(true, {  })
 		local maxtextwidth = 0
 		if entry.text2 then
 			maxtextwidth = C.GetTextWidth(entry.text2 .. " ", entry.text2font or Helper.standardFont, Helper.scaleFont(Helper.standardFont, config.entryFontSize, true))
@@ -3280,7 +3556,7 @@ function menu.createSubSectionTable(frame, position)
 
 		local button = row[1]:setColSpan(2):createButton({
 			active = entry.active,
-			bgColor = entry.active and Helper.color.transparent or Helper.color.darkgrey,
+			bgColor = entry.active and Color["button_background_hidden"] or Color["button_background_inactive"],
 			helpOverlayID = entry.helpOverlayID,
 			helpOverlayText = entry.helpOverlayText,
 			helpOverlayHighlightOnly = entry.helpOverlayHighlightOnly,
@@ -3292,10 +3568,10 @@ function menu.createSubSectionTable(frame, position)
 		elseif text ~= entry.text then
 			button.properties.mouseOverText = entry.text
 		end
-		button:setText(text, { color = entry.active and Helper.color.white or Helper.color.lightgrey })
+		button:setText(text, { color = entry.active and Color["text_normal"] or Color["text_inactive"] })
 		row[1].handlers.onClick = entry.script
 		if entry.text2 then
-			button:setText2(entry.text2, { halign = "right", color = entry.active and Helper.color.white or Helper.color.lightgrey, font = entry.text2font or Helper.standardFont }) 
+			button:setText2(entry.text2, { halign = "right", color = entry.active and Color["text_normal"] or Color["text_inactive"], font = entry.text2font or Helper.standardFont })
 		end
 	end
 
@@ -3426,6 +3702,8 @@ function menu.processSelectedPlayerShips()
 		["Player_DockToTrade"] = false,
 		["ProtectStation"] = false,
 		["Repair"] = false,
+		["RescueInRange"] = false,
+		["RescueShip"] = false,
 		["SalvageCrush"] = false,
 		["SalvageCollect"] = false,
 		["SalvageDeliver"] = false,
@@ -3455,6 +3733,7 @@ function menu.processSelectedPlayerShips()
 	menu.numdockingatplayerpossible = 0
 	menu.numshipswithcommander = 0
 	menu.numhaveturret = 0
+	menu.numshipsexcludingspacesuits = 0
 	menu.ventureships = {}
 	menu.numorderloops = 0
 	menu.dockingerrors = {}
@@ -3462,7 +3741,7 @@ function menu.processSelectedPlayerShips()
 
 	for i = #menu.selectedplayerships, 1, -1 do
 		local ship = menu.selectedplayerships[i]
-		
+
 		local isdocked, isdocking, hasturret, isonlineobject = GetComponentData(ship, "isdocked", "isdocking", "hasturret", "isonlineobject")
 		if (not C.IsUnit(ship)) and (not isonlineobject) then
 			local commander = ConvertIDTo64Bit(GetCommander(ship))
@@ -3725,7 +4004,7 @@ function menu.insertLuaAction(actiontype, istobedisplayed)
 	local istargetinplayersquad = menu.data.istargetinplayersquad
 	local istargetplayeroccupiedship = menu.data.istargetplayeroccupiedship
 	local hastargetpilot = menu.data.hastargetpilot
-	
+
 	if actiontype == "armturrets" then
 		if istobedisplayed and (menu.numhaveturret > 0) then
 			local allarmed = true
@@ -3792,7 +4071,7 @@ function menu.insertLuaAction(actiontype, istobedisplayed)
 			end
 			if isstation then
 				-- trading
-				menu.insertAssignSubActions("selected_assignments_trade", "trade", menu.buttonAssignCommander, groups, isstation, true, nil, (menu.numassignableminingships > 0) and (Helper.convertColorToText(Helper.color.warningorange) .. ReadText(1026, 8609)) or "")
+				menu.insertAssignSubActions("selected_assignments_trade", "trade", menu.buttonAssignCommander, groups, isstation, true, nil, (menu.numassignableminingships > 0) and (ColorText["text_warning"] .. ReadText(1026, 8609)) or "")
 				-- mining
 				if menu.numassignableminingships > 0 then
 					menu.insertAssignSubActions("selected_assignments_mining", "mining", menu.buttonAssignCommander, groups, isstation, true)
@@ -3879,13 +4158,17 @@ function menu.insertLuaAction(actiontype, istobedisplayed)
 			menu.insertInteractionContent("selected_orders", { type = actiontype, text = ReadText(1001, 7833), helpOverlayID = "interactmenu_build", helpOverlayText = " ", helpOverlayHighlightOnly = true, script = function () return menu.buttonDeployToStation(menu.selectedplayerships[1], true) end, active = (#constructionvessels == 0) and (not C.IsBuilderBusy(menu.selectedplayerships[1])) and menu.hasPlayerShipPilot, mouseOverText = mouseovertext })
 		end
 	elseif actiontype == "buildships" then
-		local canbuildships, shiptrader, isdock = GetComponentData(convertedComponent, "canbuildships", "shiptrader", "isdock")
+		local canbuildships, shiptrader, isdock, owner = GetComponentData(convertedComponent, "canbuildships", "shiptrader", "isdock", "owner")
+		local doessellshipstoplayer = GetFactionData(owner, "doessellshipstoplayer")
 		if canbuildships then
 			-- don't show option for npcs if they are missing the shiptrader, but do for player objects
 			if shiptrader or isplayerownedtarget then
 				local active = true
 				local mouseovertext = ""
-				if not isdock then
+				if not doessellshipstoplayer then
+					active = false
+					mouseovertext = ReadText(1026, 7865)
+				elseif not isdock then
 					active = false
 					mouseovertext = ReadText(1026, 8014)
 				elseif shiptrader == nil then
@@ -3911,7 +4194,7 @@ function menu.insertLuaAction(actiontype, istobedisplayed)
 				local isplayer = pilot == C.GetPlayerID()
 				local adjustedskill = (pilot and (pilot ~= 0)) and math.floor(C.GetEntityCombinedSkill(pilot, nil, isplayer and "playerpilot" or "aipilot") * 15 / 100) or 0
 				for _, data in ipairs(formationshapes) do
-					menu.insertInteractionContent("formationshape", { type = actiontype, text = data.name, text2 = ((data.requiredSkill <= adjustedskill) and Helper.convertColorToText(Helper.color.brightyellow) or Helper.convertColorToText(Helper.color.grey)) .. Helper.displaySkill(data.requiredSkill), helpOverlayID = "interactmenu_changeformation", helpOverlayText = " ", helpOverlayHighlightOnly = true, script = function () return menu.buttonFormationShape(data.shape, subordinates) end, active = data.requiredSkill <= adjustedskill })
+					menu.insertInteractionContent("formationshape", { type = actiontype, text = data.name, text2 = ((data.requiredSkill <= adjustedskill) and ColorText["text_skills"] or ColorText["text_inactive"]) .. Helper.displaySkill(data.requiredSkill), helpOverlayID = "interactmenu_changeformation", helpOverlayText = " ", helpOverlayHighlightOnly = true, script = function () return menu.buttonFormationShape(data.shape, subordinates) end, active = data.requiredSkill <= adjustedskill })
 				end
 			end
 		end
@@ -4016,7 +4299,7 @@ function menu.insertLuaAction(actiontype, istobedisplayed)
 		end
 	elseif actiontype == "crewtransfer" then
 		if (#menu.selectedplayerships == 1) and GetComponentData(convertedComponent, "isdock") and (not GetComponentData(convertedComponent, "isdeployable")) and (not C.IsUnit(convertedComponent)) and (not C.IsComponentClass(convertedComponent, "ship_xs")) and (C.GetPeopleCapacity(convertedComponent, "", true) > 0) then
-			if not GetComponentData(menu.selectedplayerships[1], "isdeployable") then
+			if (not GetComponentData(menu.selectedplayerships[1], "isdeployable")) and (not C.IsComponentClass(menu.selectedplayerships[1], "spacesuit")) then
 				if C.IsComponentClass(menu.componentSlot.component, "container") then
 					if C.IsComponentClass(menu.componentSlot.component, "station") or isplayerownedtarget then
 						local active = true
@@ -4066,7 +4349,7 @@ function menu.insertLuaAction(actiontype, istobedisplayed)
 				for _, entry in ipairs(wares) do
 					if (cargo[entry.ware] or 0) == 0 then
 						active = false
-						mouseovertext = mouseovertext .. "\n\27R" .. ReadText(1026, 3406)
+						mouseovertext = mouseovertext .. "\n" .. ColorText["text_error"] .. ReadText(1026, 3406)
 						break
 					end
 				end
@@ -4162,19 +4445,40 @@ function menu.insertLuaAction(actiontype, istobedisplayed)
 			end
 		end
 	elseif actiontype == "depositinventory" then
-		if istobedisplayed and isplayerownedtarget and (not istargetplayeroccupiedship) and (not C.IsUnit(convertedComponent)) and (not GetComponentData(convertedComponent, "isdeployable")) then
-			local stationhqlist = {}
-			Helper.ffiVLA(stationhqlist, "UniverseID", C.GetNumHQs, C.GetHQs, "player")
-			-- show the button once the player gets the HQ since that's a bigger state change.
-			if #stationhqlist > 0 then
-				local inventory = {}
-				local pilot = ConvertIDTo64Bit(GetComponentData(convertedComponent, "pilot"))
-				if pilot and (pilot ~= 0) then
-					-- NB: button requires that convertedComponent have a pilot, that that pilot have stuff in his or her pockets, and that the player has an HQ. Otherwise, show the button but keep it inactive.
-					inventory = GetInventory(pilot)
+		local stationhqlist = {}
+		Helper.ffiVLA(stationhqlist, "UniverseID", C.GetNumHQs, C.GetHQs, "player")
+		-- show the button once the player gets the HQ since that's a bigger state change.
+		-- NB: button requires that ship have a pilot, that that pilot have stuff in his or her pockets, and that the player has an HQ. Otherwise, show the button but keep it inactive.
+		if #stationhqlist > 0 then
+			if istobedisplayed then
+				local hasinventory, haspilot = false, false
+
+				local isdeployable, pilot = GetComponentData(convertedComponent, "isdeployable", "pilot")
+				if (not C.IsUnit(menu.componentSlot.component)) and (not isdeployable) then
+					if pilot and (pilot ~= 0) then
+						haspilot = true
+						if next(GetInventory(pilot)) ~= nil then
+							hasinventory = true
+						end
+					end
 				end
 
-				menu.insertInteractionContent("main_orders", { type = actiontype, text = menu.orderIconText("DepositInventory") .. ReadText(1041, 651), helpOverlayID = "interactmenu_depositinventory", helpOverlayText = " ", helpOverlayHighlightOnly = true, script = function () return menu.buttonDepositInventoryAtHQ() end, active = (next(inventory) ~= nil) and hastargetpilot, mouseOverText = (not hastargetpilot) and ReadText(1026, 7801) or ReadText(1026, 7829) })
+				if not hasinventory then
+					for _, ship in ipairs(menu.selectedplayerships) do
+						local isdeployable, pilot = GetComponentData(ship, "isdeployable", "pilot")
+						if (not C.IsUnit(ship)) and (not isdeployable) then
+							if pilot and (pilot ~= 0) then
+								haspilot = true
+								if next(GetInventory(pilot)) ~= nil then
+									hasinventory = true
+									break
+								end
+							end
+						end
+					end
+				end
+
+				menu.insertInteractionContent(((not menu.showPlayerInteractions) and (#menu.selectedplayerships > 0)) and "selected_orders_all" or "main_orders", { type = actiontype, text = menu.orderIconText("DepositInventory") .. ReadText(1041, 651), helpOverlayID = "interactmenu_depositinventory", helpOverlayText = " ", helpOverlayHighlightOnly = true, script = function () return menu.buttonDepositInventoryAtHQ() end, active = hasinventory, mouseOverText = (not haspilot) and ReadText(1026, 7801) or ReadText(1026, 7829) })
 			end
 		end
 	elseif actiontype == "dockat" then
@@ -4299,7 +4603,7 @@ function menu.insertLuaAction(actiontype, istobedisplayed)
 			if isdockingbay then
 				dockcontainer = ConvertStringTo64Bit(tostring(C.GetContextByClass(dockcontainer, "container", false)))
 			end
-			local mouseovertext = ffi.string(C.GetMappedInputName("INPUT_ACTION_DOCK_ACTION"))
+			local mouseovertext = Helper.getInputMouseOverText("INPUT_ACTION_DOCK_ACTION")
 			if IsDockingPossible(ConvertStringTo64Bit(tostring(C.GetPlayerOccupiedShipID())), dockcontainer) then
 				local dockrequestreason = ffi.string(C.RequestDockAtReason(dockcontainer, true))
 				-- "granted" -> OK
@@ -4381,7 +4685,7 @@ function menu.insertLuaAction(actiontype, istobedisplayed)
 					firstorder.orderdef = { id = "", icon = "", name = "" }
 				end
 			end
-			
+
 			if (menu.showPlayerInteractions or (#menu.selectedplayerships == 0)) and firstorder and firstorder.isoverride then
 				firstorder.params = GetOrderParams(convertedComponent, 1)
 
@@ -4481,7 +4785,7 @@ function menu.insertLuaAction(actiontype, istobedisplayed)
 				text = ReadText(1001, 3242)
 				useoffset = true
 			end
-			menu.insertInteractionContent((menu.showPlayerInteractions and (not menu.shown)) and "player_interaction" or "interaction", { type = actiontype, text = IsSameComponent(GetActiveGuidanceMissionComponent(), convertedComponent) and ReadText(1001, 3243) or text, helpOverlayID = "interactmenu_guidance", helpOverlayText = " ", helpOverlayHighlightOnly = true, script = function () return menu.buttonGuidance(useoffset) end, mouseOverText = ffi.string(C.GetMappedInputName("INPUT_ACTION_TOGGLE_GUIDANCE")) })
+			menu.insertInteractionContent((menu.showPlayerInteractions and (not menu.shown)) and "player_interaction" or "interaction", { type = actiontype, text = IsSameComponent(GetActiveGuidanceMissionComponent(), convertedComponent) and ReadText(1001, 3243) or text, helpOverlayID = "interactmenu_guidance", helpOverlayText = " ", helpOverlayHighlightOnly = true, script = function () return menu.buttonGuidance(useoffset) end, mouseOverText = Helper.getInputMouseOverText("INPUT_ACTION_TOGGLE_GUIDANCE") })
 		end
 	elseif actiontype == "hire" then
 		if GetComponentData(convertedComponent, "primarypurpose") == "build" then
@@ -4505,7 +4809,7 @@ function menu.insertLuaAction(actiontype, istobedisplayed)
 				elseif C.IsBuilderBusy(menu.componentSlot.component) then
 					menu.forceSubSection[section] = ReadText(1026, 7820)
 				else
-					local mouseover = (not isplayerownedtarget) and (((fee > playermoney) and "\027R" or "\027G") .. ReadText(1001, 7940) .. ReadText(1001, 120) .. " " .. ConvertMoneyString(fee, false, true, nil, true) .. " " .. ReadText(1001, 101) .. "\027X") or ""
+					local mouseover = (not isplayerownedtarget) and (((fee > playermoney) and ColorText["text_error"] or ColorText["text_success"]) .. ReadText(1001, 7940) .. ReadText(1001, 120) .. " " .. ConvertMoneyString(fee, false, true, nil, true) .. " " .. ReadText(1001, 101) .. "\027X") or ""
 					for i, station in ipairs(stations) do
 						local station64 = ConvertIDTo64Bit(station)
 						menu.insertInteractionContent(section, { type = actiontype, text = Helper.convertColorToText(menu.holomapcolor.playercolor) .. ffi.string(C.GetComponentName(station64)) .. " (" .. ffi.string(C.GetObjectIDCode(station64)) .. ")", helpOverlayID = "interactmenu_hire", helpOverlayText = " ", helpOverlayHighlightOnly = true, script = function () return menu.buttonDeployToStation(menu.componentSlot.component, false, station64) end, mouseOverText = mouseover })
@@ -4528,7 +4832,7 @@ function menu.insertLuaAction(actiontype, istobedisplayed)
 	elseif actiontype == "livestream" then
 		if (menu.mode ~= "shipconsole") then
 			local active = true
-			local mouseovertext = ffi.string(C.GetMappedInputName("INPUT_ACTION_CINEMATIC_CAMERA"))
+			local mouseovertext = Helper.getInputMouseOverText("INPUT_ACTION_CINEMATIC_CAMERA")
 			local isinternallystored, isinnormalspace, isinliveview, isfriend, isally = GetComponentData(convertedComponent, "isinternallystored", "isinnormalspace", "isinliveview", "isfriend", "isally")
 			if isinternallystored then
 				active = false
@@ -4542,7 +4846,7 @@ function menu.insertLuaAction(actiontype, istobedisplayed)
 					local iswharf, isshipyard, isdefencestation, istradestation = GetComponentData(convertedComponent, "iswharf", "isshipyard", "isdefencestation", "istradestation")
 					--print("iswharf: " .. tostring(iswharf) .. ", isshipyard: " .. tostring(isshipyard) .. ", isdefencestation: " .. tostring(isdefencestation))
 					ismilitary = (iswharf or isshipyard or isdefencestation) and not istradestation
-				elseif C.IsComponentClass(convertedComponent, "ship") then 
+				elseif C.IsComponentClass(convertedComponent, "ship") then
 					local purpose = GetComponentData(convertedComponent, "primarypurpose")
 					ismilitary = (purpose == "fight" or purpose == "auxiliary")
 				end
@@ -4580,7 +4884,7 @@ function menu.insertLuaAction(actiontype, istobedisplayed)
 				end
 				if isstation then
 					-- trading
-					menu.insertAssignSubActions("main_assignments_trade", "trade", menu.buttonChangeAssignment, groups, isstation, true, currentgroup, (purpose == "mine") and (Helper.convertColorToText(Helper.color.warningorange) .. ReadText(1026, 8608)) or "")
+					menu.insertAssignSubActions("main_assignments_trade", "trade", menu.buttonChangeAssignment, groups, isstation, true, currentgroup, (purpose == "mine") and (ColorText["text_warning"] .. ReadText(1026, 8608)) or "")
 					if purpose == "mine" then
 						-- mining
 						menu.insertAssignSubActions("main_assignments_mining", "mining", menu.buttonChangeAssignment, groups, isstation, true, currentgroup)
@@ -4650,7 +4954,7 @@ function menu.insertLuaAction(actiontype, istobedisplayed)
 				end
 				if isstation then
 					-- trading
-					menu.insertAssignSubActions("selected_change_assignments_trade", "trade", menu.buttonChangeAssignment, groups, isstation, true, nil, (not allnomining) and (Helper.convertColorToText(Helper.color.warningorange) .. ReadText(1026, 8609)) or "")
+					menu.insertAssignSubActions("selected_change_assignments_trade", "trade", menu.buttonChangeAssignment, groups, isstation, true, nil, (not allnomining) and (ColorText["text_warning"] .. ReadText(1026, 8609)) or "")
 					if allmining then
 						-- mining
 						menu.insertAssignSubActions("selected_change_assignments_mining", "mining", menu.buttonChangeAssignment, groups, isstation, true)
@@ -4756,10 +5060,10 @@ function menu.insertLuaAction(actiontype, istobedisplayed)
 					infotext = ""
 				else
 					-- target ship and selected ships
-					infotext = " \27G(" .. menu.texts.targetShortName .. " + " .. ((menu.numwaitingforsignal == 1) and ReadText(1001, 7851) or string.format(ReadText(1001, 7801), menu.numwaitingforsignal)) .. ")"
+					infotext = " " .. ColorText["text_negative"] .. "(" .. menu.texts.targetShortName .. " + " .. ((menu.numwaitingforsignal == 1) and ReadText(1001, 7851) or string.format(ReadText(1001, 7801), menu.numwaitingforsignal)) .. ")"
 				end
 			elseif menu.numwaitingforsignal > 0 then
-				infotext = " \27G(" .. ((menu.numwaitingforsignal == 1) and ReadText(1001, 7851) or string.format(ReadText(1001, 7801), menu.numwaitingforsignal)) .. ")"
+				infotext = " " .. ColorText["text_positive"] .. "(" .. ((menu.numwaitingforsignal == 1) and ReadText(1001, 7851) or string.format(ReadText(1001, 7801), menu.numwaitingforsignal)) .. ")"
 			end
 			if iswaitingforsignal or (menu.numwaitingforsignal > 0) then
 				menu.insertInteractionContent(((not menu.showPlayerInteractions) and (#menu.selectedplayerships > 0) and (menu.numremovableorders > 0)) and "selected_orders" or "main_orders", { type = actiontype, text = ReadText(1002, 2033) .. infotext, helpOverlayID = "interactmenu_proceedwithorders", helpOverlayText = " ", helpOverlayHighlightOnly = true, script = menu.buttonProceedWithOrders, hidetarget = true })
@@ -4894,6 +5198,20 @@ function menu.insertLuaAction(actiontype, istobedisplayed)
 		if istobedisplayed then
 			menu.insertInteractionContent("interaction", { type = actiontype, text = ReadText(1001, 1114), script = function () return menu.buttonRename(false) end })
 		end
+	elseif actiontype == "rescueinrange" then
+		if menu.offsetcomponent and (menu.offsetcomponent ~= 0) then
+			if #menu.selectedplayerships > 0 and menu.possibleorders["RescueInRange"] then
+				local active = (C.GetFreePeopleCapacity(menu.selectedplayerships[1]) > 0)
+				local mouseovertext = active and "" or ReadText(1026, 7864)
+				menu.insertInteractionContent("selected_orders", { type = actiontype, text = menu.orderIconText("RescueInRange") .. ReadText(1041, 901), helpOverlayID = "interactmenu_rescueinrange", helpOverlayText = " ", helpOverlayHighlightOnly = true, script = function () return menu.buttonRescueInRange(false) end, hidetarget = true, orderid = "RescueInRange", active = active, mouseOverText = mouseovertext } )
+			end
+		end
+	elseif actiontype == "rescueship" then
+		if #menu.selectedplayerships > 0 and menu.possibleorders["RescueShip"] and GetComponentData(convertedComponent, "isreallyplayerowned") then
+			local active = (C.GetFreePeopleCapacity(menu.selectedplayerships[1]) > 0)
+			local mouseovertext = active and "" or ReadText(1026, 7864)
+			menu.insertInteractionContent("selected_orders", { type = actiontype, text = menu.orderIconText("RescueShip") .. ReadText(1041, 891), helpOverlayID = "interactmenu_rescueship", helpOverlayText = " ", helpOverlayHighlightOnly = true, script = function () return menu.buttonRescueShip(false) end, orderid = "RescueShip", active = active, mouseOverText = mouseovertext })
+		end
 	elseif actiontype == "salvagecollect" then
 		if (#menu.selectedplayerships > 0) and menu.possibleorders["SalvageCollect"] and C.CanBeTowed(menu.componentSlot.component) then
 			menu.insertInteractionContent("selected_orders", { type = actiontype, text = menu.orderIconText("SalvageCollect") .. ReadText(1041, 801), helpOverlayID = "interactmenu_salvagecollect", helpOverlayText = " ", helpOverlayHighlightOnly = true, script = function () return menu.buttonSalvageCollect(false) end, orderid = "SalvageCollect" })
@@ -4971,7 +5289,7 @@ function menu.insertLuaAction(actiontype, istobedisplayed)
 			local numMissions = GetNumMissions()
 			for i = 1, numMissions do
 				local missionID, name, description, difficulty, threadtype, maintype, subtype, subtypename, faction, reward, rewardtext, _, _, _, _, _, missiontime, _, abortable, disableguidance, associatedcomponent, alertLevel = GetMissionDetails(i)
-				
+
 				if maintype == "upkeep" then
 					if associatedcomponent then
 						local rawcontainer = C.GetContextByRealClass(ConvertIDTo64Bit(associatedcomponent), "container", true)
@@ -4992,8 +5310,18 @@ function menu.insertLuaAction(actiontype, istobedisplayed)
 		end
 	elseif actiontype == "singletrade" then
 		if (#menu.selectedplayerships > 0) and (menu.numorderloops > 0) then
-			local active = menu.hasPlayerShipPilot
-			local mouseovertext = (not menu.hasPlayerShipPilot) and ReadText(1026, 7830) or ""
+			local owner = GetComponentData(convertedComponent, "owner")
+			local hastradeoffers = GetFactionData(owner, "hastradeoffers")
+
+			local active = true
+			local mouseOverText = ""
+			if not hastradeoffers then
+				active = false
+				mouseOverText = ReadText(1026, 7866)
+			elseif not menu.hasPlayerShipPilot then
+				active = false
+				mouseOverText = ReadText(1026, 7830)
+			end
 
 			local hasbuy, hassell
 			local tradeoffers = GetTradeList(convertedComponent, menu.selectedplayerships[1], false)
@@ -5049,10 +5377,13 @@ function menu.insertLuaAction(actiontype, istobedisplayed)
 			end
 			local targetsector = C.GetContextByClass(target, "sector", false)
 			local active = true
-			local mouseovertext = ffi.string(C.GetMappedInputName("INPUT_ACTION_TARGET_VIEW"))
+			local mouseovertext = Helper.getInputMouseOverText("INPUT_ACTION_TARGET_VIEW")
 			if GetComponentData(convertedComponent, "isdockedinternally") then
 				active = false
 				mouseovertext = ReadText(1026, 7811)
+			elseif C.IsExternalViewDisabled() then
+				active = false
+				mouseovertext = ReadText(1026, 7812)
 			elseif (not C.IsPlayerCameraTargetViewPossible(target, true)) or (playersector ~= targetsector) then
 				active = false
 				mouseovertext = ReadText(1026, 7809)
@@ -5067,7 +5398,7 @@ function menu.insertLuaAction(actiontype, istobedisplayed)
 		if (isplayerownedtarget or (C.IsComponentClass(menu.componentSlot.component, "station") and isally)) and (not isdeployable) and (not C.IsUnit(menu.componentSlot.component)) then
 			if menu.componentSlot.component ~= ConvertStringTo64Bit(tostring(C.GetPlayerOccupiedShipID())) then
 				local active = false
-				local mouseovertext = ffi.string(C.GetMappedInputName("INPUT_ACTION_TELEPORT_ACTION"))
+				local mouseovertext = Helper.getInputMouseOverText("INPUT_ACTION_TELEPORT_ACTION")
 				local teleportrequest = ffi.string(C.CanTeleportPlayerTo(menu.componentSlot.component, false, (menu.mode == "shipconsole") and isplayerownedtarget))
 				if teleportrequest == "granted" then
 					active = true
@@ -5100,7 +5431,8 @@ function menu.insertLuaAction(actiontype, istobedisplayed)
 			menu.insertInteractionContent("interaction", { type = actiontype, text = (currentactivity == "travel") and ReadText(1001, 11116) or ReadText(1001, 11115), script = function () return menu.buttonTravelMode(currentactivity ~= "travel") end })
 		end
 	elseif actiontype == "upgrade" then
-		local shiptrader, isdock, issupplyship = GetComponentData(convertedComponent, "shiptrader", "isdock", "issupplyship")
+		local shiptrader, isdock, issupplyship, owner = GetComponentData(convertedComponent, "shiptrader", "isdock", "issupplyship", "owner")
+		local doessellshipstoplayer = GetFactionData(owner, "doessellshipstoplayer")
 		if (#menu.selectedplayerships > 0) and menu.possibleorders["Repair"] and isdock and (C.IsComponentClass(menu.componentSlot.component, "station") or issupplyship) and (menu.numorderloops == 0) then
 			local active = false
 			local haspilot = false
@@ -5117,7 +5449,10 @@ function menu.insertLuaAction(actiontype, istobedisplayed)
 			-- don't show option for npcs if they are missing the shiptrader, but do for player objects
 			if (C.IsComponentClass(menu.componentSlot.component, "station") and shiptrader) or isplayerownedtarget then
 				local mouseovertext
-				if not shiptrader then
+				if not doessellshipstoplayer then
+					active = false
+					mouseovertext = ReadText(1026, 7865)
+				elseif not shiptrader then
 					active = false
 					mouseovertext = ReadText(1026, 7827)
 				elseif not haspilot then
@@ -5135,7 +5470,8 @@ function menu.insertLuaAction(actiontype, istobedisplayed)
 			end
 		end
 	elseif actiontype == "upgradeships" then
-		local shiptrader, isdock, issupplyship = GetComponentData(convertedComponent, "shiptrader", "isdock", "issupplyship")
+		local shiptrader, isdock, issupplyship, owner = GetComponentData(convertedComponent, "shiptrader", "isdock", "issupplyship", "owner")
+		local doessellshipstoplayer = GetFactionData(owner, "doessellshipstoplayer")
 		local dockedships = {}
 		if C.IsComponentClass(menu.componentSlot.component, "container") then
 			Helper.ffiVLA(dockedships, "UniverseID", C.GetNumDockedShips, C.GetDockedShips, menu.componentSlot.component, "player")
@@ -5151,7 +5487,10 @@ function menu.insertLuaAction(actiontype, istobedisplayed)
 			-- don't show option for npcs if they are missing the shiptrader, but do for player objects
 			if (C.IsComponentClass(menu.componentSlot.component, "station") and shiptrader) or isplayerownedtarget then
 				local mouseovertext
-				if not shiptrader then
+				if not doessellshipstoplayer then
+					active = false
+					mouseovertext = ReadText(1026, 7865)
+				elseif not shiptrader then
 					active = false
 					mouseovertext = ReadText(1026, 7827)
 				elseif not active then
@@ -5253,7 +5592,7 @@ function menu.insertLuaAction(actiontype, istobedisplayed)
 		if (#menu.selectedplayerships > 0) and isplayerownedtarget and (not GetComponentData(convertedComponent, "isdeployable")) and (not C.IsUnit(convertedComponent)) and (menu.numorderloops == 0) then
 			local hasrealship = false
 			for _, ship in ipairs(menu.selectedplayerships) do
-				if not GetComponentData(ship, "isdeployable") then
+				if (not GetComponentData(ship, "isdeployable")) and (not C.IsComponentClass(ship, "spacesuit")) then
 					hasrealship = true
 					break
 				end
@@ -5344,7 +5683,7 @@ function menu.prepareActions()
 
 	menu.prepareData()
 	local convertedComponent = menu.data.convertedComponent
-	
+
 	local hasanydisplayed = false
 	-- player actions
 	if (not menu.componentOrder) and (not menu.syncpoint) and (not menu.syncpointorder) and (not menu.intersectordefencegroup) and (not menu.construction) and (not menu.mission) and (not menu.missionoffer) and (not menu.subordinategroup) and (menu.mode ~= "shipconsole" or (menu.isdockedship)) then
@@ -5383,40 +5722,48 @@ function menu.prepareActions()
 					menu.insertLuaAction(luatype, istobedisplayed)
 				elseif istobedisplayed then
 					if actiontype == "containertrade" then
+						local owner = GetComponentData(convertedComponent, "owner")
+						local hastradeoffers = GetFactionData(owner, "hastradeoffers")
+						if not hastradeoffers then
+							entry.active = false
+							entry.mouseOverText = ReadText(1026, 7866)
+						end
 						if (not menu.showPlayerInteractions) and (#menu.selectedplayerships > 0) then
-							if C.IsComponentClass(menu.componentSlot.component, "container") then
-								entry.active = entry.active and menu.hasPlayerShipPilot
-								entry.mouseOverText = (not menu.hasPlayerShipPilot) and ReadText(1026, 7830) or ""
-								if menu.numorderloops == 0 then
-									entry.text = menu.orderIconText("TradePerform") .. entry.text
-									menu.insertInteractionContent("trade_orders", entry)
-								else
-									local hasbuy, hassell
-									local tradeoffers = GetTradeList(convertedComponent, menu.selectedplayerships[1], false)
-									for _, tradedata in pairs(tradeoffers) do
-										if tradedata.isselloffer then
-											hassell = true
+							if menu.numshipsexcludingspacesuits > 0 then
+								if C.IsComponentClass(menu.componentSlot.component, "container") then
+									entry.active = entry.active and menu.hasPlayerShipPilot
+									entry.mouseOverText = (not menu.hasPlayerShipPilot) and ReadText(1026, 7830) or ""
+									if menu.numorderloops == 0 then
+										entry.text = menu.orderIconText("TradePerform") .. entry.text
+										menu.insertInteractionContent("trade_orders", entry)
+									else
+										local hasbuy, hassell
+										local tradeoffers = GetTradeList(convertedComponent, menu.selectedplayerships[1], false)
+										for _, tradedata in pairs(tradeoffers) do
+											if tradedata.isselloffer then
+												hassell = true
+											end
+											if tradedata.isbuyoffer then
+												hasbuy = true
+											end
+											if hassell and hasbuy then
+												break
+											end
 										end
-										if tradedata.isbuyoffer then
-											hasbuy = true
+										if hassell then
+											menu.insertInteractionContent("trade_orders", { text = menu.orderIconText("SingleBuy")  .. ReadText(1001, 11110), script = function () return menu.buttonTrade(false, nil, "SingleBuy") end,  active = entry.active, mouseOverText = entry.mouseOverText })
 										end
-										if hassell and hasbuy then
-											break
+										if hasbuy then
+											menu.insertInteractionContent("trade_orders", { text = menu.orderIconText("SingleSell") .. ReadText(1001, 11111), script = function () return menu.buttonTrade(false, nil, "SingleSell") end, active = entry.active, mouseOverText = entry.mouseOverText })
 										end
-									end
-									if hassell then
-										menu.insertInteractionContent("trade_orders", { text = menu.orderIconText("SingleBuy")  .. ReadText(1001, 11110), script = function () return menu.buttonTrade(false, nil, "SingleBuy") end,  active = entry.active, mouseOverText = entry.mouseOverText })
-									end
-									if hasbuy then
-										menu.insertInteractionContent("trade_orders", { text = menu.orderIconText("SingleSell") .. ReadText(1001, 11111), script = function () return menu.buttonTrade(false, nil, "SingleSell") end, active = entry.active, mouseOverText = entry.mouseOverText })
 									end
 								end
-							end
-							if menu.buildstorage then
-								if menu.numorderloops == 0 then
-									menu.insertInteractionContent("trade_orders", { text = menu.orderIconText("TradePerform") .. ReadText(1001, 7819), script = function () return menu.buttonTrade(false, menu.buildstorage) end, buildstorage = true, active = menu.hasPlayerShipPilot, mouseOverText = (not menu.hasPlayerShipPilot) and ReadText(1026, 7830) or "" })
-								else
-									menu.insertInteractionContent("trade_orders", { text = menu.orderIconText("SingleSell") .. ReadText(1001, 11111), script = function () return menu.buttonTrade(false, menu.buildstorage, "SingleSell") end, buildstorage = true, active = entry.active, mouseOverText = entry.mouseOverText })
+								if menu.buildstorage then
+									if menu.numorderloops == 0 then
+										menu.insertInteractionContent("trade_orders", { text = menu.orderIconText("TradePerform") .. ReadText(1001, 7819), script = function () return menu.buttonTrade(false, menu.buildstorage) end, buildstorage = true, active = entry.active and menu.hasPlayerShipPilot, mouseOverText = (entry.mouseOverText ~= "") and entry.mouseOverText or ((not menu.hasPlayerShipPilot) and ReadText(1026, 7830) or "") })
+									else
+										menu.insertInteractionContent("trade_orders", { text = menu.orderIconText("SingleSell") .. ReadText(1001, 11111), script = function () return menu.buttonTrade(false, menu.buildstorage, "SingleSell") end, buildstorage = true, active = entry.active, mouseOverText = entry.mouseOverText })
+									end
 								end
 							end
 						else
@@ -5426,7 +5773,7 @@ function menu.prepareActions()
 								menu.insertInteractionContent("trade", entry)
 							end
 							if menu.buildstorage then
-								menu.insertInteractionContent("trade", { text = menu.orderIconText("TradePerform") .. ReadText(1001, 1113), script = function () return menu.buttonTrade(false, menu.buildstorage) end, buildstorage = true })
+								menu.insertInteractionContent("trade", { text = menu.orderIconText("TradePerform") .. ReadText(1001, 1113), script = function () return menu.buttonTrade(false, menu.buildstorage) end, buildstorage = true, active = entry.active, mouseOverText = entry.mouseOverText })
 							end
 						end
 					elseif actiontype == "hack" then
@@ -5442,7 +5789,7 @@ function menu.prepareActions()
 									entry.mouseOverText = ReadText(1026, 7809)
 								end
 							else
-								entry.mouseOverText = ffi.string(C.GetMappedInputName("INPUT_ACTION_SCAN_ACTION"))
+								entry.mouseOverText = Helper.getInputMouseOverText("INPUT_ACTION_SCAN_ACTION")
 							end
 							entry.helpOverlayID = "interactmenu_scan"
 							entry.helpOverlayText = " "
@@ -5458,7 +5805,7 @@ function menu.prepareActions()
 								entry.mouseOverText = ReadText(1026, 7801)
 							end
 						else
-							entry.mouseOverText = ffi.string(C.GetMappedInputName("INPUT_ACTION_COMM_ACTION"))
+							entry.mouseOverText = Helper.getInputMouseOverText("INPUT_ACTION_COMM_ACTION")
 						end
 						menu.insertInteractionContent("interaction", entry)
 					elseif (actiontype == "detach") then
@@ -5473,13 +5820,13 @@ function menu.prepareActions()
 							menu.insertInteractionContent("main", entry)
 						end
 					elseif (actiontype == "info") then
-						entry.mouseOverText = ffi.string(C.GetMappedInputName("INPUT_ACTION_INFO_ACTION"))
+						entry.mouseOverText = Helper.getInputMouseOverText("INPUT_ACTION_INFO_ACTION")
 						menu.insertInteractionContent("main", entry)
 					elseif (actiontype == "matchspeed") then
 						if not entry.active then
 							entry.mouseOverText = ReadText(1026, 7802)
 						else
-							entry.mouseOverText = ffi.string(C.GetMappedInputName("INPUT_STATE_MATCH_SPEED"))
+							entry.mouseOverText = Helper.getInputMouseOverText("INPUT_STATE_MATCH_SPEED")
 						end
 						menu.insertInteractionContent("main", entry)
 					elseif actiontype == "tow" then
@@ -5539,7 +5886,7 @@ function menu.prepareActions()
 			end
 		end
 		local mouseovertext = hasremoveableorders and ReadText(1026, 7841) or ReadText(1026, 7833)
-		menu.insertInteractionContent("order", { type = "removeallorders", text = ReadText(1001, 7832), script = function () return menu.buttonRemoveAllOrders(false, false) end, active = hasremoveableorders, mouseOverText = mouseovertext })
+		menu.insertInteractionContent("order", { type = "removeallorders", text = ReadText(1001, 7832), helpOverlayID = "interactmenu_removeallorders", helpOverlayText = " ", helpOverlayHighlightOnly = true, script = function () return menu.buttonRemoveAllOrders(false, false) end, active = hasremoveableorders, mouseOverText = mouseovertext })
 
 		local currentdefaultorder = ffi.new("Order")
 		if C.GetDefaultOrder(currentdefaultorder, menu.componentSlot.component) then
@@ -5676,7 +6023,7 @@ function menu.prepareActions()
 			end
 			if isstation then
 				-- trading
-				menu.insertAssignSubActions("main_assignments_trade", "trade", menu.buttonChangeAssignment, groups, isstation, true, nil, (not allnomining) and (Helper.convertColorToText(Helper.color.warningorange) .. ReadText(1026, 8607)) or "")
+				menu.insertAssignSubActions("main_assignments_trade", "trade", menu.buttonChangeAssignment, groups, isstation, true, nil, (not allnomining) and (ColorText["text_warning"] .. ReadText(1026, 8607)) or "")
 				if allmining then
 					-- mining
 					menu.insertAssignSubActions("main_assignments_mining", "mining", menu.buttonChangeAssignment, groups, isstation, true)
@@ -5765,9 +6112,9 @@ function menu.prepareTexts()
 		menu.texts.targetShortName = iswreck and ReadText(1001, 27) or Helper.unlockInfo(name_unlocked, ffi.string(C.GetComponentName(menu.componentSlot.component)))
 		menu.texts.targetName = sectorprefix .. Helper.unlockInfo(name_unlocked, ffi.string(C.GetComponentName(menu.componentSlot.component)) .. gatedestination .. idcode)
 		local isplayerowned, isenemy, ishostile = GetComponentData(convertedComponent, "isplayerowned", "isenemy", "ishostile")
-		menu.colors.target = Helper.color.white
+		menu.colors.target = Color["text_normal"]
 		if iswreck then
-			menu.colors.target = Helper.color.grey
+			menu.colors.target = Color["text_inactive"]
 		elseif isplayerowned then
 			menu.colors.target = (menu.componentSlot.component == playerObject) and menu.holomapcolor.currentplayershipcolor or menu.holomapcolor.playercolor
 		elseif ishostile then
@@ -5775,7 +6122,7 @@ function menu.prepareTexts()
 		elseif isenemy then
 			menu.colors.target = menu.holomapcolor.enemycolor
 		end
-		menu.texts.targetName = string.format("\027#FF%02x%02x%02x#%s", menu.colors.target.r, menu.colors.target.g, menu.colors.target.b, menu.texts.targetName)
+		menu.texts.targetName = Helper.convertColorToText(menu.colors.target) .. menu.texts.targetName
 		if C.IsComponentClass(menu.componentSlot.component, "ship") then
 			menu.texts.targetBaseName = Helper.unlockInfo(name_unlocked, GetComponentData(convertedComponent, "basename"))
 		end
@@ -5797,12 +6144,12 @@ function menu.prepareTexts()
 					idcode = " (" .. ffi.string(C.GetObjectIDCode(commander)) .. ")"
 				end
 				menu.texts.commanderName = sectorprefix .. Helper.unlockInfo(IsInfoUnlockedForPlayer(commander, "name"), ffi.string(C.GetComponentName(commander)) .. idcode)
-				menu.colors.commander = GetComponentData(commander, "isplayerowned") and ((commander == playerObject) and menu.holomapcolor.currentplayershipcolor or menu.holomapcolor.playercolor) or Helper.color.white
-				menu.texts.commanderShortName = string.format("\027#FF%02x%02x%02x#%s", menu.colors.commander.r, menu.colors.commander.g, menu.colors.commander.b, menu.texts.commanderShortName)
-				menu.texts.commanderName = string.format("\027#FF%02x%02x%02x#%s", menu.colors.commander.r, menu.colors.commander.g, menu.colors.commander.b, menu.texts.commanderName)
+				menu.colors.commander = GetComponentData(commander, "isplayerowned") and ((commander == playerObject) and menu.holomapcolor.currentplayershipcolor or menu.holomapcolor.playercolor) or Color["text_normal"]
+				menu.texts.commanderShortName = Helper.convertColorToText(menu.colors.commander) .. menu.texts.commanderShortName
+				menu.texts.commanderName = Helper.convertColorToText(menu.colors.commander) .. menu.texts.commanderName
 			end
 		end
-	
+
 		menu.texts.selectedFullNames = ""
 		if #menu.selectedplayerships > 0 then
 			menu.texts.selectedName = GetComponentData(menu.selectedplayerships[1], "name")
@@ -5814,7 +6161,7 @@ function menu.prepareTexts()
 			for _, selectedcomponent in ipairs(menu.selectedplayerships) do
 				local isCurrentPlayerObject = (selectedcomponent == playerObject)
 				local color = isCurrentPlayerObject and menu.holomapcolor.currentplayershipcolor or menu.holomapcolor.playercolor
-				menu.texts.selectedFullNames = menu.texts.selectedFullNames .. (first and "" or "\n") .. string.format("\027#FF%02x%02x%02x#%s", color.r, color.g, color.b, GetComponentData(selectedcomponent, "name") .. " (" .. ffi.string(C.GetObjectIDCode(selectedcomponent)) .. ")" .. (isCurrentPlayerObject and (" (" .. ReadText(1001, 7836) .. ")") or ""))
+				menu.texts.selectedFullNames = menu.texts.selectedFullNames .. (first and "" or "\n") .. Helper.convertColorToText(color) .. GetComponentData(selectedcomponent, "name") .. " (" .. ffi.string(C.GetObjectIDCode(selectedcomponent)) .. ")" .. (isCurrentPlayerObject and (" (" .. ReadText(1001, 7836) .. ")") or "")
 				first = false
 			end
 		end
@@ -5823,7 +6170,7 @@ function menu.prepareTexts()
 			menu.texts.selectedNameAll = string.format(ReadText(1001, 7801), #menu.selectedplayerships + 1)
 			local isCurrentPlayerObject = (convertedComponent == playerObject)
 			local color = isCurrentPlayerObject and menu.holomapcolor.currentplayershipcolor or menu.holomapcolor.playercolor
-			menu.texts.selectedFullNamesAll = menu.texts.selectedFullNames .. "\n" .. string.format("\027#FF%02x%02x%02x#%s", color.r, color.g, color.b, GetComponentData(convertedComponent, "name") .. " (" .. ffi.string(C.GetObjectIDCode(convertedComponent)) .. ")" .. ((isCurrentPlayerObject) and (" (" .. ReadText(1001, 7836) .. ")") or ""))
+			menu.texts.selectedFullNamesAll = menu.texts.selectedFullNames .. "\n" .. Helper.convertColorToText(color) .. GetComponentData(convertedComponent, "name") .. " (" .. ffi.string(C.GetObjectIDCode(convertedComponent)) .. ")" .. ((isCurrentPlayerObject) and (" (" .. ReadText(1001, 7836) .. ")") or "")
 		end
 
 		if #menu.selectedotherobjects > 0 then
@@ -5834,8 +6181,8 @@ function menu.prepareTexts()
 			menu.texts.otherFullNames = ""
 			local first = true
 			for _, selectedcomponent in ipairs(menu.selectedotherobjects) do
-				local color = Helper.color.white
-				menu.texts.otherFullNames = menu.texts.otherFullNames .. (first and "" or "\n") .. string.format("\027#FF%02x%02x%02x#%s", color.r, color.g, color.b, GetComponentData(selectedcomponent, "name") .. " (" .. ffi.string(C.GetObjectIDCode(selectedcomponent)) .. ")")
+				local color = Color["text_normal"]
+				menu.texts.otherFullNames = menu.texts.otherFullNames .. (first and "" or "\n") .. Helper.convertColorToText(color) .. GetComponentData(selectedcomponent, "name") .. " (" .. ffi.string(C.GetObjectIDCode(selectedcomponent)) .. ")"
 				first = false
 			end
 		end
@@ -5847,7 +6194,7 @@ function menu.prepareTexts()
 		end
 
 		menu.texts.ventureName = ""
-		menu.colors.venture = Helper.color.green
+		menu.colors.venture = Color["text_player"]
 		if #menu.ventureships > 0 then
 			menu.texts.ventureName = GetComponentData(menu.ventureships[1], "name")
 			if #menu.ventureships > 1 then
@@ -6005,19 +6352,20 @@ function menu.onCloseElement(dueToClose, layer, allowAutoMenu)
 		end
 	end
 
+	if menu.interactMenuID then
+		C.NotifyInteractMenuHidden(menu.interactMenuID, true)
+	end
 	if menu.shown then
-		if menu.interactMenuID then
-			C.NotifyInteractMenuHidden(menu.interactMenuID, true)
-		end
 		Helper.closeMenu(menu, dueToClose, allowAutoMenu, false)
-		menu.cleanup()
 	else
 		Helper.resetUpdateHandler()
 		Helper.clearFrame(menu, config.layer)
-		Helper.interactMenuCallbacks.onTableMouseOut(menu.currentOverTable)
+		if Helper.interactMenuCallbacks.onTableMouseOut then
+			Helper.interactMenuCallbacks.onTableMouseOut(menu.currentOverTable)
+		end
 		Helper.resetInteractMenuCallbacks()
-		menu.cleanup()
 	end
+	menu.cleanup()
 end
 
 function menu.onRowChanged()
@@ -6027,14 +6375,18 @@ end
 function menu.onTableMouseOut(uitable, row)
 	menu.pendingSubSection = nil
 	if not menu.shown then
-		Helper.interactMenuCallbacks.onTableMouseOut(uitable, row)
+		if Helper.interactMenuCallbacks.onTableMouseOut then
+			Helper.interactMenuCallbacks.onTableMouseOut(uitable, row)
+		end
 	end
 end
 
 function menu.onTableMouseOver(uitable, row)
 	if not menu.shown then
 		menu.currentOverTable = uitable
-		Helper.interactMenuCallbacks.onTableMouseOver(uitable, row)
+		if Helper.interactMenuCallbacks.onTableMouseOver then
+			Helper.interactMenuCallbacks.onTableMouseOver(uitable, row)
+		end
 	end
 end
 

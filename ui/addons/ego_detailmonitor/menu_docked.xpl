@@ -33,7 +33,8 @@ ffi.cdef[[
 	typedef struct {
 		UniverseID softtargetID;
 		const char* softtargetConnectionName;
-	} SofttargetDetails;
+		uint32_t messageID;
+	} SofttargetDetails2;
 	typedef struct {
 		const char* file;
 		const char* icon;
@@ -91,8 +92,7 @@ ffi.cdef[[
 	UniverseID GetPlayerID(void);
 	UniverseID GetPlayerObjectID(void);
 	UniverseID GetPlayerOccupiedShipID(void);
-	UniverseID GetPlayerShipID(void);
-	SofttargetDetails GetSofttarget(void);
+	SofttargetDetails2 GetSofttarget2(void);
 	const char* GetSubordinateGroupAssignment(UniverseID controllableid, int group);
 	float GetTextHeight(const char*const text, const char*const fontname, const float fontsize, const float wordwrapwidth);
 	UniverseID GetTopLevelContainer(UniverseID componentid);
@@ -156,9 +156,9 @@ local config = {
 		{ id = "lasertower",	type = "military",	getnum = C.GetNumAllLaserTowers,	getdata = C.GetAllLaserTowers,		callback = C.LaunchLaserTower },
 		{ id = "mine",			type = "military",	getnum = C.GetNumAllMines,			getdata = C.GetAllMines,			callback = C.LaunchMine },
 	},
-	inactiveButtonProperties = { bgColor = Helper.defaultUnselectableButtonBackgroundColor, highlightColor = Helper.defaultUnselectableButtonHighlightColor },
+	inactiveButtonProperties = { bgColor = Color["button_background_inactive"], highlightColor = Color["button_highlight_inactive"] },
 	activeButtonTextProperties = { halign = "center" },
-	inactiveButtonTextProperties = { halign = "center", color = Helper.color.grey },
+	inactiveButtonTextProperties = { halign = "center", color = Color["text_inactive"] },
 	dronetypes = {
 		{ id = "orecollector",	name = ReadText(20214, 500) },
 		{ id = "gascollector",	name = ReadText(20214, 400) },
@@ -307,7 +307,8 @@ function menu.display()
 	local xoffset = 0
 	local yoffset = 0
 
-	menu.frame = Helper.createFrameHandle(menu, { width = width, x = xoffset, y = yoffset, backgroundID = "solid", backgroundColor = Helper.color.semitransparent, standardButtons = (((menu.mode == "docked") and (menu.currentplayership ~= 0)) or menu.secondarycontrolpost) and {} or { close = true, back = true } })
+	menu.frame = Helper.createFrameHandle(menu, { width = width, x = xoffset, y = yoffset, standardButtons = (((menu.mode == "docked") and (menu.currentplayership ~= 0)) or menu.secondarycontrolpost) and {} or { close = true, back = true }, showTickerPermanently = true })
+	menu.frame:setBackground("solid", { color = Color["frame_background_semitransparent"] })
 
 	menu.createTopLevel(menu.frame)
 
@@ -339,7 +340,7 @@ function menu.display()
 	-- set up a new table
 	table_topleft = menu.frame:addTable(1, { tabOrder = 0, width = Helper.playerInfoConfig.width, height = Helper.playerInfoConfig.height, x = Helper.playerInfoConfig.offsetX, y = Helper.playerInfoConfig.offsetY, scaling = false })
 
-	row = table_topleft:addRow(false, { fixed = true, bgColor = Helper.color.transparent60 })
+	row = table_topleft:addRow(false, { fixed = true, bgColor = Color["player_info_background"] })
 	local icon = row[1]:createIcon(function () local logo = C.GetCurrentPlayerLogo(); return ffi.string(logo.icon) end, { width = Helper.playerInfoConfig.height, height = Helper.playerInfoConfig.height, color = Helper.getPlayerLogoColor })
 
 	local textheight = math.ceil(C.GetTextHeight(Helper.playerInfoConfigTextLeft(), Helper.standardFont, Helper.playerInfoConfig.fontsize, Helper.playerInfoConfig.width - Helper.playerInfoConfig.height - Helper.borderSize))
@@ -364,13 +365,13 @@ function menu.display()
 	table_header:setDefaultColSpan(7, 5)
 	table_header:setDefaultBackgroundColSpan(1, 11)
 
-	local row = table_header:addRow(false, { fixed = true, bgColor = Helper.color.transparent })
-	local color = Helper.color.white
+	local row = table_header:addRow(false, { fixed = true })
+	local color = Color["text_normal"]
 	if isplayerowned then
 		if menu.currentcontainer == C.GetPlayerObjectID() then
-			color = Helper.color.playergreen
+			color = Color["text_player_current"]
 		else
-			color = Helper.color.green
+			color = Color["text_player"]
 		end
 	end
 	row[1]:setColSpan(11):createText(menu.currentcontainer and ffi.string(C.GetComponentName(menu.currentcontainer)) or "", Helper.headerRowCenteredProperties)
@@ -378,7 +379,7 @@ function menu.display()
 
 	height = Helper.scaleY(Helper.standardTextHeight)
 
-	local row = table_header:addRow(false, { fixed = true, bgColor = Helper.color.unselectable })
+	local row = table_header:addRow(false, { fixed = true, bgColor = Color["row_background_unselectable"] })
 	if menu.mode == "cockpit" then
 		row[2]:createText(ffi.string(C.GetObjectIDCode(menu.currentcontainer)), { halign = "center", color = color })
 	else
@@ -390,7 +391,7 @@ function menu.display()
 	table_header:addEmptyRow(yoffset)
 
 	if menu.mode == "cockpit" then
-		local row = table_header:addRow("buttonRow1", { bgColor = Helper.color.transparent, fixed = true })
+		local row = table_header:addRow("buttonRow1", { fixed = true })
 		row[1]:createButton(config.inactiveButtonProperties):setText("", config.inactiveButtonTextProperties)	-- dummy
 		local active = ((menu.currentplayership ~= 0) or menu.secondarycontrolpost) and C.CanPlayerStandUp()
 		row[2]:createButton(active and { mouseOverText = GetLocalizedKeyName("action", 277), helpOverlayID = "docked_getup", helpOverlayText = " ", helpOverlayHighlightOnly = true } or config.inactiveButtonProperties):setText(ReadText(1002, 20014), active and config.activeButtonTextProperties or config.inactiveButtonTextProperties)	-- "Get Up"
@@ -400,7 +401,7 @@ function menu.display()
 		row[7]:createButton({ mouseOverText = GetLocalizedKeyName("action", 316), helpOverlayID = "docked_shipinformation", helpOverlayText = " ", helpOverlayHighlightOnly = true }):setText(ReadText(1001, 8602), { halign = "center" })	-- "Ship Information"
 		row[7].handlers.onClick = menu.buttonShipInfo
 
-		local row = table_header:addRow("buttonRow3", { bgColor = Helper.color.transparent, fixed = true })
+		local row = table_header:addRow("buttonRow3", { fixed = true })
 		local currentactivity = GetPlayerActivity()
 		if currentactivity ~= "none" then
 			local text = ""
@@ -442,8 +443,8 @@ function menu.display()
 				height = Helper.standardButtonHeight,
 				startOption = "",
 				textOverride = ReadText(1002, 1001),
-				bgColor = active and Helper.defaultButtonBackgroundColor or Helper.defaultUnselectableButtonBackgroundColor,
-				highlightColor = active and Helper.defaultButtonHighlightColor or Helper.defaultUnselectableButtonHighlightColor
+				bgColor = active and Color["dropdown_background_default"] or Color["dropdown_background_inactive"],
+				highlightColor = active and Color["dropdown_highlight_default"] or Color["dropdown_highlight_inactive"]
 			}):setTextProperties(active and config.activeButtonTextProperties or config.inactiveButtonTextProperties)	-- Modes
 			if active then
 				row[2].handlers.onDropDownConfirmed = menu.dropdownMode
@@ -486,8 +487,8 @@ function menu.display()
 			startOption = "",
 			textOverride = ReadText(1001, 8607),
 			text2Override = " ",
-			bgColor = active and Helper.defaultButtonBackgroundColor or Helper.defaultUnselectableButtonBackgroundColor,
-			highlightColor = active and Helper.defaultButtonHighlightColor or Helper.defaultUnselectableButtonHighlightColor,
+			bgColor = active and Color["dropdown_background_default"] or Color["dropdown_background_inactive"],
+			highlightColor = active and Color["dropdown_highlight_default"] or Color["dropdown_highlight_inactive"],
 			mouseOverText = mouseovertext,
 		}):setTextProperties(active and config.activeButtonTextProperties or config.inactiveButtonTextProperties):setText2Properties(active and config.activeButtonTextProperties or config.inactiveButtonTextProperties)	-- Deploy Civilian
 		row[1].properties.text2.halign = "right"
@@ -510,8 +511,8 @@ function menu.display()
 			startOption = "",
 			textOverride = ReadText(1001, 8608),
 			text2Override = " ",
-			bgColor = active and Helper.defaultButtonBackgroundColor or Helper.defaultUnselectableButtonBackgroundColor,
-			highlightColor = active and Helper.defaultButtonHighlightColor or Helper.defaultUnselectableButtonHighlightColor,
+			bgColor = active and Color["dropdown_background_default"] or Color["dropdown_background_inactive"],
+			highlightColor = active and Color["dropdown_highlight_default"] or Color["dropdown_highlight_inactive"],
 			mouseOverText = mouseovertext,
 		}):setTextProperties(active and config.activeButtonTextProperties or config.inactiveButtonTextProperties):setText2Properties(active and config.activeButtonTextProperties or config.inactiveButtonTextProperties)	-- Deploy Military
 		row[7].properties.text2.halign = "right"
@@ -520,7 +521,7 @@ function menu.display()
 			row[7].handlers.onDropDownConfirmed = menu.dropdownDeploy
 		end
 
-		local row = table_header:addRow("buttonRow2", { bgColor = Helper.color.transparent, fixed = true })
+		local row = table_header:addRow("buttonRow2", { fixed = true })
 		local active = (menu.currentplayership ~= 0) and C.HasShipFlightAssist(menu.currentplayership)
 		row[1]:createButton(active and { mouseOverText = GetLocalizedKeyName("action", 221), helpOverlayID = "docked_flightassist", helpOverlayText = " ", helpOverlayHighlightOnly = true } or config.inactiveButtonProperties):setText(ReadText(1001, 8604), active and config.activeButtonTextProperties or config.inactiveButtonTextProperties)	-- "Flight Assist"
 		if active then
@@ -557,7 +558,7 @@ function menu.display()
 			if #weapons > 0 then
 				table_header:addEmptyRow(yoffset)
 
-				local titlerow = table_header:addRow(false, { bgColor = Helper.color.transparent })
+				local titlerow = table_header:addRow(false, {  })
 				titlerow[1]:setColSpan(11):createText(ReadText(1001, 9409), Helper.headerRowCenteredProperties)
 				titlerow[1].properties.helpOverlayID = "docked_weaponconfig"
 				titlerow[1].properties.helpOverlayText = " "
@@ -565,13 +566,13 @@ function menu.display()
 				titlerow[1].properties.helpOverlayHighlightOnly = true
 				titlerow[1].properties.helpOverlayScaling = false
 
-				local row = table_header:addRow(false, { bgColor = Helper.color.unselectable })
+				local row = table_header:addRow(false, { bgColor = Color["row_background_unselectable"] })
 				row[2]:createText(ReadText(1001, 9410), { font = Helper.standardFontBold, halign = "center" })
 				row[7]:createText(ReadText(1001, 9411), { font = Helper.standardFontBold, halign = "center" })
 				titlerow[1].properties.helpOverlayHeight = titlerow[1].properties.helpOverlayHeight + row:getHeight() + Helper.borderSize
 
 				-- active weapon groups
-				local row = table_header:addRow("weaponconfig_active", { bgColor = Helper.color.transparent })
+				local row = table_header:addRow("weaponconfig_active", {  })
 				row[1]:setColSpan(2):createText(ReadText(1001, 11218))
 				row[7]:setColSpan(1)
 				for j = 1, 4 do
@@ -582,7 +583,10 @@ function menu.display()
 					row[7 + j]:createCheckBox(function () return C.GetDefensibleActiveWeaponGroup(menu.currentplayership, false) == j end, { width = Helper.standardTextHeight, height = Helper.standardTextHeight, symbol = "arrow", bgColor = function () return menu.checkboxWeaponGroupColor(j, false) end })
 					row[7 + j].handlers.onClick = function () C.SetDefensibleActiveWeaponGroup(menu.currentplayership, false, j) end
 				end
-				table_header:addEmptyRow(Helper.standardTextHeight / 2)
+				titlerow[1].properties.helpOverlayHeight = titlerow[1].properties.helpOverlayHeight + row:getHeight() + Helper.borderSize
+
+				local row = table_header:addEmptyRow(Helper.standardTextHeight / 2)
+				titlerow[1].properties.helpOverlayHeight = titlerow[1].properties.helpOverlayHeight + row:getHeight() + Helper.borderSize
 
 				for _, weapon in ipairs(weapons) do
 					local numweapongroups = C.GetNumWeaponGroupsByWeapon(menu.currentplayership, weapon)
@@ -597,7 +601,7 @@ function menu.display()
 						end
 					end
 
-					local row = table_header:addRow("weaponconfig", { bgColor = Helper.color.transparent })
+					local row = table_header:addRow("weaponconfig", {  })
 					row[1]:setColSpan(2):createText(ffi.string(C.GetComponentName(weapon)))
 					row[7]:setColSpan(1)
 					for j = 1, 4 do
@@ -617,10 +621,10 @@ function menu.display()
 
 						local weaponmacro = GetComponentData(ConvertStringTo64Bit(tostring(weapon)), "macro")
 						local dropdowndata = {}
-						for j = 0, nummissiletypes-1 do
+						for j = 0, nummissiletypes - 1 do
 							local ammomacro = ffi.string(missilestoragetable[j].macro)
 							if C.IsAmmoMacroCompatible(weaponmacro, ammomacro) then
-								table.insert(dropdowndata, {id = ammomacro, text = GetMacroData(ammomacro, "name"), icon = "", displayremoveoption = false})
+								table.insert(dropdowndata, {id = ammomacro, text = GetMacroData(ammomacro, "name") .. " (" .. ConvertIntegerString(missilestoragetable[j].amount, true, 0, true) .. ")", icon = "", displayremoveoption = false})
 							end
 						end
 
@@ -635,7 +639,7 @@ function menu.display()
 							menu.currentammo[tostring(weapon)] = ffi.string(C.GetCurrentAmmoOfWeapon(weapon))
 						end
 
-						local row = table_header:addRow("ammo_config", { bgColor = Helper.color.transparent })
+						local row = table_header:addRow("ammo_config", {  })
 						row[1]:createText("    " .. ReadText(1001, 2800) .. ReadText(1001, 120))	-- Ammunition, :
 						row[2]:setColSpan(10):createDropDown(dropdowndata, { startOption = function () return menu.getDropDownOption(weapon) end, active = dropdownactive })
 						row[2].handlers.onDropDownConfirmed = function(_, newammomacro) C.SetAmmoOfWeapon(weapon, newammomacro) end
@@ -648,10 +652,10 @@ function menu.display()
 
 						local weaponmacro = GetComponentData(ConvertStringTo64Bit(tostring(weapon)), "macro")
 						local dropdowndata = {}
-						for j = 0, numbombtypes-1 do
+						for j = 0, numbombtypes - 1 do
 							local ammomacro = ffi.string(bombstoragetable[j].macro)
 							if C.IsAmmoMacroCompatible(weaponmacro, ammomacro) then
-								table.insert(dropdowndata, { id = ammomacro, text = GetMacroData(ammomacro, "name"), icon = "", displayremoveoption = false })
+								table.insert(dropdowndata, { id = ammomacro, text = GetMacroData(ammomacro, "name") .. " (" .. ConvertIntegerString(bombstoragetable[j].amount, true, 0, true) .. ")", icon = "", displayremoveoption = false })
 							end
 						end
 
@@ -666,7 +670,7 @@ function menu.display()
 							menu.currentammo[tostring(weapon)] = ffi.string(C.GetCurrentAmmoOfWeapon(weapon))
 						end
 
-						local row = table_header:addRow("ammo_config", { bgColor = Helper.color.transparent })
+						local row = table_header:addRow("ammo_config", {  })
 						row[1]:createText("    " .. ReadText(1001, 2800) .. ReadText(1001, 120))	-- Ammunition, :
 						row[2]:setColSpan(10):createDropDown(dropdowndata, { startOption = function () return menu.getDropDownOption(weapon) end, active = dropdownactive })
 						row[2].handlers.onDropDownConfirmed = function(_, newammomacro) C.SetAmmoOfWeapon(weapon, newammomacro) end
@@ -732,14 +736,14 @@ function menu.display()
 			if (#menu.turrets > 0) or (#menu.turretgroups > 0) then
 				table_header:addEmptyRow(yoffset)
 
-				local row = table_header:addRow(false, { bgColor = Helper.color.transparent })
+				local row = table_header:addRow(false, {  })
 				row[1]:setColSpan(11):createText(ReadText(1001, 8612), Helper.headerRowCenteredProperties)
 
-				local row = table_header:addRow(false, { bgColor = Helper.color.unselectable })
+				local row = table_header:addRow(false, { bgColor = Color["row_background_unselectable"] })
 				row[2]:createText(ReadText(1001, 8620), { font = Helper.standardFontBold, halign = "center" })
 				row[7]:createText(ReadText(1001, 12),   { font = Helper.standardFontBold, halign = "center" })
 
-				local row = table_header:addRow("turret_config", { bgColor = Helper.color.transparent })
+				local row = table_header:addRow("turret_config", {  })
 				row[1]:createText(ReadText(1001, 2963))
 
 				-- Start Subsystem Targeting Orders callback
@@ -759,7 +763,7 @@ function menu.display()
 
 				local turretscounter = 0
 				for i, turret in ipairs(menu.turrets) do
-					local row = table_header:addRow("turret_config", { bgColor = Helper.color.transparent })
+					local row = table_header:addRow("turret_config", {  })
 					turretscounter = turretscounter + 1
 					local turretname = ffi.string(C.GetComponentName(turret))
 					local mouseovertext = ""
@@ -776,7 +780,7 @@ function menu.display()
 
 				local turretgroupscounter = 0
 				for i, group in ipairs(menu.turretgroups) do
-					local row = table_header:addRow("turret_config", { bgColor = Helper.color.transparent })
+					local row = table_header:addRow("turret_config", {  })
 					turretgroupscounter = turretgroupscounter + 1
 					local groupname = ReadText(1001, 8023) .. " " .. Helper.getSlotSizeText(group.slotsize) .. group.sizecount .. ((group.currentmacro ~= "") and (" (" .. Helper.getSlotSizeText(group.slotsize) .. " " .. GetMacroData(group.currentmacro, "shortname") .. ")") or "")
 					local mouseovertext = ""
@@ -784,7 +788,7 @@ function menu.display()
 					if (textwidth > row[1]:getWidth()) then
 						mouseovertext = groupname
 					end
-					row[1]:createText(groupname, { color = (group.operational > 0) and Helper.color.white or Helper.color.red, mouseOverText = mouseovertext })
+					row[1]:createText(groupname, { color = (group.operational > 0) and Color["text_normal"] or Color["text_error"], mouseOverText = mouseovertext })
 					row[2]:setColSpan(5):createDropDown(Helper.getTurretModes(group.currentcomponent ~= 0 and group.currentcomponent or nil), { startOption = function () return menu.getDropDownTurretModeOption(menu.currentplayership, group.context, group.path, group.group) end, active = group.operational > 0, helpOverlayID = "docked_turretgroups_modes".. turretgroupscounter, helpOverlayText = " ", helpOverlayHighlightOnly = true  })
 					row[2].handlers.onDropDownConfirmed = function(_, newturretmode) C.SetTurretGroupMode2(menu.currentplayership, group.context, group.path, group.group, newturretmode) end
 					row[7]:setColSpan(5):createButton({ helpOverlayID = "docked_turretgroups_arm" .. turretgroupscounter, helpOverlayText = " ", helpOverlayHighlightOnly = true  }):setText(function () return C.IsTurretGroupArmed(menu.currentplayership, group.context, group.path, group.group) and ReadText(1001, 8631) or ReadText(1001, 8632) end, { halign = "center" })
@@ -817,17 +821,17 @@ function menu.display()
 			if #menu.drones > 0 then
 				table_header:addEmptyRow(yoffset)
 
-				local row = table_header:addRow(false, { bgColor = Helper.color.transparent })
+				local row = table_header:addRow(false, {  })
 				row[1]:setColSpan(11):createText(ReadText(1001, 8619), Helper.headerRowCenteredProperties)
 
-				local row = table_header:addRow(false, { bgColor = Helper.color.unselectable })
+				local row = table_header:addRow(false, { bgColor = Color["row_background_unselectable"] })
 				row[2]:createText(ReadText(1001, 8620), { font = Helper.standardFontBold, halign = "center" })
 				row[7]:createText(ReadText(1001, 12), { font = Helper.standardFontBold, halign = "center" })
 
 				for _, entry in ipairs(menu.drones) do
 					local isblocked = C.IsDroneTypeBlocked(menu.currentplayership, entry.type)
-					local row = table_header:addRow("drone_config", { bgColor = Helper.color.transparent })
-					row[1]:createText(function () return entry.name .. " (" .. (C.IsDroneTypeArmed(menu.currentplayership, entry.type) and (C.GetNumUnavailableUnits(menu.currentplayership, entry.type) .. "/") or "") .. C.GetNumStoredUnits(menu.currentplayership, entry.type, false) ..")" end, { color = isblocked and Helper.color.warningorange or nil })
+					local row = table_header:addRow("drone_config", {  })
+					row[1]:createText(function () return entry.name .. " (" .. (C.IsDroneTypeArmed(menu.currentplayership, entry.type) and (C.GetNumUnavailableUnits(menu.currentplayership, entry.type) .. "/") or "") .. C.GetNumStoredUnits(menu.currentplayership, entry.type, false) ..")" end, { color = isblocked and Color["text_warning"] or nil })
 					row[2]:setColSpan(5):createDropDown(entry.modes, { startOption = function () return ffi.string(C.GetCurrentDroneMode(menu.currentplayership, entry.type)) end, active = not isblocked })
 					row[2].handlers.onDropDownConfirmed = function (_, newdronemode) C.SetDroneMode(menu.currentplayership, entry.type, newdronemode) end
 					row[7]:setColSpan(5):createButton({ active = not isblocked }):setText(function () return C.IsDroneTypeArmed(menu.currentplayership, entry.type) and ReadText(1001, 8622) or ReadText(1001, 8623) end, { halign = "center" })
@@ -867,10 +871,10 @@ function menu.display()
 			if #subordinates > 0 then
 				table_header:addEmptyRow(yoffset)
 
-				local row = table_header:addRow(false, { bgColor = Helper.color.transparent })
+				local row = table_header:addRow(false, {  })
 				row[1]:setColSpan(11):createText(ReadText(1001, 8626), Helper.headerRowCenteredProperties)
 
-				local row = table_header:addRow(false, { bgColor = Helper.color.unselectable })
+				local row = table_header:addRow(false, { bgColor = Color["row_background_unselectable"] })
 				row[1]:createText(ReadText(1001, 8627), { font = Helper.standardFontBold, halign = "center" })
 				row[2]:createText(ReadText(1001, 8373), { font = Helper.standardFontBold, halign = "center" })
 				row[7]:createText(ReadText(1001, 8628), { font = Helper.standardFontBold, halign = "center" })
@@ -887,7 +891,7 @@ function menu.display()
 							local miningactive = (groups[i].numassignableminingships == #groups[i].subordinates) and ((not usedassignments["mining"]) or (usedassignments["mining"] == i))
 							table.insert(subordinateassignments, { id = "mining", text = ReadText(20208, 40201), icon = "", displayremoveoption = false, active = miningactive, mouseovertext = miningactive and "" or ReadText(1026, 8602) })
 							local tradeactive = (not usedassignments["trade"]) or (usedassignments["trade"] == i)
-							table.insert(subordinateassignments, { id = "trade", text = ReadText(20208, 40101), icon = "", displayremoveoption = false, active = tradeactive, mouseovertext = tradeactive and ((groups[i].numassignableminingships > 0) and (Helper.convertColorToText(Helper.color.warningorange) .. ReadText(1026, 8607)) or "") or ReadText(1026, 7840) })
+							table.insert(subordinateassignments, { id = "trade", text = ReadText(20208, 40101), icon = "", displayremoveoption = false, active = tradeactive, mouseovertext = tradeactive and ((groups[i].numassignableminingships > 0) and (ColorText["text_warning"] .. ReadText(1026, 8607)) or "") or ReadText(1026, 7840) })
 							local tradeforbuildstorageactive = (groups[i].numassignableminingships == 0) and ((not usedassignments["tradeforbuildstorage"]) or (usedassignments["tradeforbuildstorage"] == i))
 							table.insert(subordinateassignments, { id = "tradeforbuildstorage", text = ReadText(20208, 40801), icon = "", displayremoveoption = false, active = tradeforbuildstorageactive, mouseovertext = tradeforbuildstorageactive and "" or ReadText(1026, 8603) })
 							local salvageactive = (groups[i].numassignabletugships == #groups[i].subordinates) and ((not usedassignments["salvage"]) or (usedassignments["salvage"] == i))
@@ -934,9 +938,9 @@ function menu.display()
 							mouseovertext = ReadText(1026, 8605)
 						end
 
-						local row = table_header:addRow("subordinate_config", { bgColor = Helper.color.transparent })
-						row[1]:createText(function () menu.updateSubordinateGroupInfo(); return ReadText(20401, i) .. (menu.subordinategroups[i] and (" (" .. ((not C.ShouldSubordinateGroupDockAtCommander(menu.currentplayership, i)) and ((#menu.subordinategroups[i].subordinates - menu.subordinategroups[i].numdockedatcommander) .. "/") or "") .. #menu.subordinategroups[i].subordinates ..")") or "") end, { color = isblocked and Helper.color.warningorange or nil })
-						row[2]:setColSpan(5):createDropDown(subordinateassignments, { startOption = function () menu.updateSubordinateGroupInfo(); return menu.subordinategroups[i] and menu.subordinategroups[i].assignment or "" end })
+						local row = table_header:addRow("subordinate_config", {  })
+						row[1]:createText(function () menu.updateSubordinateGroupInfo(); return ReadText(20401, i) .. (menu.subordinategroups[i] and (" (" .. ((not C.ShouldSubordinateGroupDockAtCommander(menu.currentplayership, i)) and ((#menu.subordinategroups[i].subordinates - menu.subordinategroups[i].numdockedatcommander) .. "/") or "") .. #menu.subordinategroups[i].subordinates ..")") or "") end, { color = isblocked and Color["text_warning"] or nil })
+						row[2]:setColSpan(5):createDropDown(subordinateassignments, { startOption = function () menu.updateSubordinateGroupInfo(); return menu.subordinategroups[i] and menu.subordinategroups[i].assignment or "" end, uiTriggerID = "subordinate_group_role_" .. i })
 						row[2].handlers.onDropDownConfirmed = function(_, newassignment) Helper.dropdownAssignment(_, nil, i, menu.currentplayership, newassignment) end
 						
 						-- Start Reactive Docking callback
@@ -956,7 +960,7 @@ function menu.display()
 			end
 		end
 	else
-		local row = table_header:addRow("buttonRow1", { bgColor = Helper.color.transparent, fixed = true })
+		local row = table_header:addRow("buttonRow1", { fixed = true })
 		local active = canwareexchange
 		local mouseovertext
 		if (not active) and isplayerowned then
@@ -979,21 +983,39 @@ function menu.display()
 			row[7].handlers.onClick = menu.buttonDockedShipInfo
 		end
 
-		local row = table_header:addRow("buttonRow2", { bgColor = Helper.color.transparent, fixed = true })
-		local active = canbuyship
-		row[1]:createButton(active and {helpOverlayID = "docked_buyships", helpOverlayText = " ", helpOverlayHighlightOnly = true } or config.inactiveButtonProperties):setText(ReadText(1002, 8008), active and config.activeButtonTextProperties or config.inactiveButtonTextProperties)	-- "Buy Ships"
+		local row = table_header:addRow("buttonRow2", { fixed = true })
+
+		local doessellshipstoplayer = GetFactionData(owner, "doessellshipstoplayer")
+		local active = canbuyship and doessellshipstoplayer
+		local mouseovertext = ""
+		if not doessellshipstoplayer then
+			mouseovertext = ReadText(1026, 7865)
+		end
+
+		row[1]:createButton(active and { helpOverlayID = "docked_buyships", helpOverlayText = " ", helpOverlayHighlightOnly = true } or config.inactiveButtonProperties):setText(ReadText(1002, 8008), active and config.activeButtonTextProperties or config.inactiveButtonTextProperties)	-- "Buy Ships"
+		row[1].properties.mouseOverText = mouseovertext
 		if active then
 			row[1].handlers.onClick = menu.buttonBuyShip
 		end
-		local active = cantrade
+
+		local hastradeoffers = GetFactionData(owner, "hastradeoffers")
+		local active = cantrade and hastradeoffers
+		local mouseovertext = ""
+		if not hastradeoffers then
+			mouseovertext = ReadText(1026, 7866)
+		end
+
 		row[2]:createButton(active and {helpOverlayID = "docked_trade", helpOverlayText = " ", helpOverlayHighlightOnly = true } or config.inactiveButtonProperties):setText(ReadText(1002, 9005), active and config.activeButtonTextProperties or config.inactiveButtonTextProperties)	-- "Trade"
+		row[2].properties.mouseOverText = mouseovertext
 		if active then
 			row[2].handlers.onClick = function() return menu.buttonTrade(false) end
 			row[2].properties.uiTriggerID = "docked_trade"
 		end
-		local active = canmodifyship
+		local active = canmodifyship and doessellshipstoplayer
 		row[7]:createButton(active and {helpOverlayID = "docked_upgrade_repair", helpOverlayText = " ", helpOverlayHighlightOnly = true } or config.inactiveButtonProperties):setText(issupplyship and ReadText(1001, 7877) or ReadText(1001, 7841), active and config.activeButtonTextProperties or config.inactiveButtonTextProperties)	-- Upgrade / Repair Ship
-		if dockedplayerships[1] and (not canequip) then
+		if not doessellshipstoplayer then
+			row[7].properties.mouseOverText = ReadText(1026, 7865)
+		elseif dockedplayerships[1] and (not canequip) then
 			row[7].properties.mouseOverText = (C.IsComponentClass(dockedplayerships[1], "ship_l") or C.IsComponentClass(dockedplayerships[1], "ship_xl")) and ReadText(1026, 7807) or ReadText(1026, 7806)
 		elseif not isdock then
 			row[7].properties.mouseOverText = ReadText(1026, 8014)
@@ -1002,7 +1024,7 @@ function menu.display()
 			row[7].handlers.onClick = menu.buttonModifyShip
 		end
 
-		local row = table_header:addRow("buttonRow3", { bgColor = Helper.color.transparent, fixed = true })
+		local row = table_header:addRow("buttonRow3", { fixed = true })
 		local currentactivity = GetPlayerActivity()
 		if currentactivity ~= "none" then
 			local text = ""
@@ -1044,8 +1066,8 @@ function menu.display()
 				height = Helper.standardButtonHeight,
 				startOption = "",
 				textOverride = ReadText(1002, 1001),
-				bgColor = active and Helper.defaultButtonBackgroundColor or Helper.defaultUnselectableButtonBackgroundColor,
-				highlightColor = active and Helper.defaultButtonHighlightColor or Helper.defaultUnselectableButtonHighlightColor
+				bgColor = active and Color["button_background_default"] or Color["button_background_inactive"],
+				highlightColor = active and Color["button_highlight_default"] or Color["button_highlight_inactive"],
 			}):setTextProperties(active and config.activeButtonTextProperties or config.inactiveButtonTextProperties)	-- Modes
 			if active then
 				row[1].handlers.onDropDownConfirmed = menu.dropdownMode
@@ -1069,8 +1091,8 @@ function menu.display()
   		end
 		-- end: kuertee call-back
 
-		local row = table_header:addRow(false, { bgColor = Helper.color.transparent, fixed = true })
-		row[1]:setColSpan(11):createBoxText(menu.infoText, { halign = "center", color = Helper.color.warningorange, boxColor = menu.infoBoxColor })
+		local row = table_header:addRow(false, { fixed = true })
+		row[1]:setColSpan(11):createBoxText(menu.infoText, { halign = "center", color = Color["icon_warning"], boxColor = menu.infoBoxColor })
 	end
 
 
@@ -1099,7 +1121,7 @@ end
 
 function menu.isDockButtonActive()
 	local docktarget = 0
-	local softtarget = C.GetSofttarget().softtargetID
+	local softtarget = C.GetSofttarget2().softtargetID
 	local environmenttarget = C.GetEnvironmentObject()
 	if softtarget ~= 0 then
 		docktarget = C.GetContextByClass(softtarget, "container", true)
@@ -1110,15 +1132,15 @@ function menu.isDockButtonActive()
 end
 
 function menu.dockButtonBGColor()
-	return menu.isDockButtonActive() and Helper.defaultButtonBackgroundColor or Helper.defaultUnselectableButtonBackgroundColor
+	return menu.isDockButtonActive() and Color["button_background_default"] or Color["button_background_inactive"]
 end
 
 function menu.dockButtonHighlightColor()
-	return menu.isDockButtonActive() and Helper.defaultButtonHighlightColor or Helper.defaultUnselectableButtonHighlightColor
+	return menu.isDockButtonActive() and Color["button_highlight_default"] or Color["button_highlight_inactive"]
 end
 
 function menu.dockButtonTextColor()
-	return menu.isDockButtonActive() and Helper.color.white or Helper.color.grey
+	return menu.isDockButtonActive() and Color["text_normal"] or Color["text_inactive"]
 end
 
 function menu.isUndockButtonActive()
@@ -1126,15 +1148,15 @@ function menu.isUndockButtonActive()
 end
 
 function menu.undockButtonBGColor()
-	return menu.isUndockButtonActive() and Helper.defaultButtonBackgroundColor or Helper.defaultUnselectableButtonBackgroundColor
+	return menu.isUndockButtonActive() and Color["button_background_default"] or Color["button_background_inactive"]
 end
 
 function menu.undockButtonHighlightColor()
-	return menu.isUndockButtonActive() and Helper.defaultButtonHighlightColor or Helper.defaultUnselectableButtonHighlightColor
+	return menu.isUndockButtonActive() and Color["button_highlight_default"] or Color["button_highlight_inactive"]
 end
 
 function menu.undockButtonTextColor()
-	return menu.isUndockButtonActive() and Helper.color.white or Helper.color.grey
+	return menu.isUndockButtonActive() and Color["text_normal"] or Color["text_inactive"]
 end
 
 function menu.updateSubordinateGroupInfo()
@@ -1211,13 +1233,13 @@ end
 
 function menu.infoBoxColor()
 	if menu.haswarning then
-		return Helper.color.warningorange
+		return Color["icon_warning"]
 	end
-	return Helper.color.transparent
+	return Color["boxtext_box_hidden"]
 end
 
 function menu.checkboxWeaponGroupColor(groupidx, primary)
-	return (C.GetDefensibleActiveWeaponGroup(menu.currentplayership, primary) == groupidx) and Helper.color.checkboxgroup or Helper.defaultCheckBoxBackgroundColor
+	return (C.GetDefensibleActiveWeaponGroup(menu.currentplayership, primary) == groupidx) and Color["weapon_group_highlight"] or Color["checkbox_background_default"]
 end
 
 function menu.getDropDownOption(weapon)
@@ -1374,7 +1396,8 @@ function menu.buttonFlightAssist()
 end
 
 function menu.buttonStopMode()
-	C.StopPlayerActivity(GetPlayerActivity())
+	local currentactivity = GetPlayerActivity()
+	C.StopPlayerActivity(currentactivity)
 	menu.display()
 end
 

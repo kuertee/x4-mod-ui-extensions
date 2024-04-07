@@ -10,9 +10,40 @@ ffi.cdef[[
 		float factor;
 	} AutosaveIntervalInfo;
 	typedef struct {
+		uint32_t red;
+		uint32_t green;
+		uint32_t blue;
+		uint32_t alpha;
+	} Color;
+	typedef struct {
+		const char* id;
+		const char* referenceid;
+		Color color;
+		float glowfactor;
+		bool ispersonal;
+		bool isdeletable;
+	} EditableColorMapEntry;
+	typedef struct {
 		int32_t id;
 		const char* name;
 	} GameStartGroupInfo;
+	typedef struct {
+		int32_t source;
+		int32_t code;
+		int32_t signum;
+		bool istoggle;
+	} InputData;
+	typedef struct {
+		const char* type;
+		uint32_t id;
+		const char* idname;
+		const char* textoption;
+		const char* voiceoption;
+	} InputFeedbackConfig;
+	typedef struct {
+		const char* key;
+		const char* value;
+	} NewGameParameter;
 	typedef struct {
 		int32_t id;
 		const char* name;
@@ -46,6 +77,7 @@ ffi.cdef[[
 		bool invalidversion;
 		uint32_t numinvalidpatches;
 	} UISaveInfo;
+	void AddColorMapColorDefinition(const char* colorid);
 	bool AllowPersonalizedData(void);
 	bool AreGfxSettingsTooHigh(void);
 	bool AreVenturesEnabled(void);
@@ -54,16 +86,28 @@ ffi.cdef[[
 	const char* ConvertInputString(const char* text, const char* defaultvalue);
 	bool DeleteSavegame(const char* filename);
 	void DisableAutoMouseEmulation(void);
+	bool DoesColorMapNeedRestart(void);
 	void EnableAutoMouseEmulation(void);
-	void FadeScreen(float fadeouttime, float fadeintime);
+	void EnableScenarioLoading(bool reverse, const char* gamestartid);
+	void ExportColorMap(void);
+	void ExportInputFeedbackConfig(void);
+	void FadeScreen2(float fadeouttime, float fadeintime, float holdtime);
 	const char* GetAAOption(bool useconfig);
 	float GetAdaptiveSamplingOption(void);
+	uint32_t GetAllColorMapColors(EditableColorMapEntry* result, uint32_t resultlen);
+	uint32_t GetAllColorMapMappings(EditableColorMapEntry* result, uint32_t resultlen);
+	uint32_t GetAllInputFeedback(InputFeedbackConfig* result, uint32_t resultlen);
 	AutosaveIntervalInfo GetAutosaveIntervalOption(void);
 	const char* GetBuildVersionSuffix(void);
 	float GetCockpitCameraScaleOption(void);
+	uint32_t GetCatalogMacros(const char** result, uint32_t resultlen, const char* classid);
 	bool GetChromaticAberrationOption(void);
+	const char* GetColorBlindOption(void);
+	float GetColorBlindOptionStrength(void);
+	uint32_t GetConfiguredModifierKeys(InputData* result, uint32_t resultlen, const char* uimodifier);
 	int32_t GetCurrentLanguage(void);
 	const char* GetCurrentSoundDevice(void);
+	const char* GetDisplayedModifierKey(const char* uimodifier);
 	bool GetEmergencyEjectOption(void);
 	const char* GetEnemyWarningAttackSound(void);
 	const char* GetEnemyWarningNearbySound(void);
@@ -73,31 +117,46 @@ ffi.cdef[[
 	const char* GetExtensionVersion(const char* extensionid, bool personal);
 	bool GetForceShootingAtCursorOption(void);
 	uint32_t GetGameStartGroups(GameStartGroupInfo* result, uint32_t resultlen);
+	const char* GetGameStartName();
+	const char* GetGameStartUIName();
 	float GetGlobalLightScale(void);
 	const char* GetGPUNiceName(uint32_t idx);
+	const char* GetHUDScaleOption(void);
 	bool GetHUDSeparateRadar(void);
+	const char* GetInputAxisDirectionSuffix(uint32_t sourceid, uint32_t codeid, int32_t sgn);
+	const char* GetInputFeedbackOption(void);
 	uint32_t GetLanguages(LanguageInfo* result, uint32_t resultlen);
 	UISaveInfo GetLastSaveInfo(void);
 	const char* GetLocalizedInputName(uint32_t sourceid, uint32_t codeid);
-	const char* GetLocalizedRawMouseButtonName(uint32_t keycodeid);
+	const char* GetLocalizedRawMouseAxisName(uint32_t codeid);
+	const char* GetLocalizedRawMouseButtonName(uint32_t codeid);
 	bool GetLongRangeScanIndicatorOption(void);
 	uint32_t GetLUTMode(void);
+	uint32_t GetMapEditorMacros(const char** result, uint32_t resultlen);
+	float GetMenuWidthScale(void);
 	bool GetMouseOverTextOption(void);
-	uint32_t GetMouseHUDModeOption(void);
 	bool GetMouseSteeringInvertedOption(const char* paramname);
+	uint32_t GetNumAllColorMapColors(void);
+	uint32_t GetNumAllColorMapMappings(void);
+	uint32_t GetNumAllInputFeedback(void);
+	uint32_t GetNumCatalogMacros(const char* classid);
+	uint32_t GetNumConfiguredModifierKeys(const char* modifier);
 	uint32_t GetNumGameStartGroups(void);
 	uint32_t GetNumGPUs(void);
 	uint32_t GetNumLanguages(void);
+	uint32_t GetNumMapEditorMacros(void);
 	uint32_t GetNumPlayerAlertSounds2(const char* tags);
 	uint32_t GetNumSoundDevices(void);
 	uint32_t GetNumStartmenuBackgrounds(void);
 	uint32_t GetPlayerAlertSounds2(SoundInfo* result, uint32_t resultlen, const char* tags);
 	const char* GetPOMOption(void);
 	const char* GetPresentModeOption(void);
+	double GetReducedSpeedModeOption(void);
 	ResolutionInfo GetRenderResolutionOption(void);
 	uint32_t GetRequestedGPU(void);
 	int32_t GetRequestedLanguage(void);
 	const char* GetSaveFolderPath(void);
+	const char* GetSaveInquiryReason(void);
 	const char* GetSaveInquiryText();
 	const char* GetSaveLocationName(void);
 	bool GetScreenDisplayOption(void);
@@ -109,6 +168,7 @@ ffi.cdef[[
 	uint32_t GetStartmenuBackgrounds(StartmenuBackgroundInfo* result, uint32_t resultlen);
 	const char* GetSteamID(void);
 	const char* GetTextureQualityOption(void);
+	bool GetThirdPersonFlightOption(void);
 	const char* GetTobiiMode(void);
 	float GetTobiiAngleFactor(void);
 	float GetTobiiDeadzoneAngle(void);
@@ -118,20 +178,25 @@ ffi.cdef[[
 	size_t GetTobiiGazeFilterStrength(void);
 	size_t GetTobiiHeadFilterStrength(void);
 	float GetTobiiHeadPositionFactor(void);
-	const char* GetUpscalingOption(bool useconfig);
-	uint32_t GetVentureDLCStatus(void);
-	bool GetVisitorNamesShownOption(void);
-	int GetVRVivePointerHand(void);
 	const char* GetTrackerNameOption(void);
 	const char* GetTrackerSDKOption(void);
+	uint32_t GetUIGlowOption(void);
 	float GetUIScaleFactor();
+	const char* GetUpscalingOption(bool useconfig);
+	const char* GetUserData(const char* name);
+	uint32_t GetVentureDLCStatus(void);
+	bool GetVisitorNamesShownOption(void);
 	int32_t GetVolumetricFogOption(void);
+	int GetVRVivePointerHand(void);
 	bool HasExtension(const char* extensionid, bool personal);
 	bool HasSavegame(void);
 	void HidePromo(void);
+	void ImportColorMap(bool usedefault);
+	void ImportInputFeedbackConfig(bool usedefault);
 	bool IsAAOptionSupported(const char* mode);
 	bool IsAppStoreVersion(void);
 	bool IsClientModified(void);
+	bool IsControlPressed(void);
 	bool IsCurrentGPUDiscrete(void);
 	bool IsDemoVersion(void);
 	bool IsExtensionEnabled(const char* extensionid, bool personal);
@@ -154,7 +219,9 @@ ffi.cdef[[
 	bool IsRequestedGPUCurrent(void);
 	bool IsRunningOnSteamDeck(void);
 	bool IsSaveValid(const char* filename);
+	bool IsShiftPressed(void);
 	bool IsStartmenu();
+	bool IsTimelinesScenario(void);
 	bool IsTobiiAvailable(void);
 	bool IsTradeShowVersion(void);
 	bool IsUpscalingOptionSupported(const char* mode);
@@ -166,15 +233,19 @@ ffi.cdef[[
 	bool IsVRVersion(void);
 	bool IsSaveListLoadingComplete(void);
 	bool IsThrottleBidirectional(void);
+	bool MapModifierKey(const char* uimodifier, int32_t keycode, bool checkonly);
+	void NewGame(const char* modulename, uint32_t numparams, NewGameParameter* uiparams);
 	void NewMultiplayerGame(const char* modulename, const char* difficulty);
 	void OpenWebBrowser(const char* url);
 	bool QueryGameServers(void);
 	void ReloadSaveList(void);
+	void RemoveColorMapColorDefinition(const char* colorid);
 	void RequestGPU(uint32_t idx);
 	void RequestGPUAutomaticallySelected(void);
 	void RequestLanguageChange(int32_t id);
 	void RequestSoundDeviceSwitch(const char* device);
 	void ResetEncryptedDirectInputData(void);
+	void ResetTimelinesProgress(void);
 	void RestoreAccessibilityOptions(void);
 	void RestoreMiscOptions(void);
 	void SaveAAOption(void);
@@ -185,6 +256,10 @@ ffi.cdef[[
 	void SetAutosaveIntervalOption(float factor);
 	void SetChromaticAberrationOption(bool value);
 	void SetCockpitCameraScaleOption(float value);
+	void SetColorBlindOption(const char* mode);
+	void SetColorBlindOptionStrength(float value);
+	void SetColorMapDefinition(const char* colorid, Color color, float glowfactor);
+	void SetColorMapReference(const char* mappingid, const char* colorid);
 	void SetEditBoxText(const int editboxid, const char* text);
 	void SetEmergencyEjectOption(bool setting);
 	void SetEnemyWarningAttackSound(const char* soundid);
@@ -197,21 +272,28 @@ ffi.cdef[[
 	void SetGlobalLightScale(float value);
 	void SetHUDRadarActive(bool setting);
 	void SetHUDRadarSeparate(bool setting);
+	void SetHUDScaleOption(const char* value);
+	void SetInputFeedbackOption(const char* value);
+	void SetInputFeedbackTextOption(const char* type, const char* idname, const char* textoption);
+	void SetInputFeedbackVoiceOption(const char* type, const char* idname, const char* voiceoption);
 	void SetJoystickSteeringAdapative(bool value);
 	void SetLUTMode(uint32_t mode);
-	void SetMouseHUDModeOption(uint32_t value);
+	void SetMenuWidthScale(float value);
+	bool SetModifierKeyPosition(const char* uimodifier, int32_t keycode, size_t pos, bool checkonly);
 	void SetMouseSteeringAdapative(bool value);
 	void SetMouseSteeringLine(bool value);
 	void SetMouseSteeringPersistent(bool value);
 	void SetMouseSteeringInvertedOption(const char* paramname, bool value);
 	void SetPOMOption(const char* quality);
 	void SetPresentModeOption(const char* mode);
+	void SetReducedSpeedModeOption(double value);
 	void SetSceneCameraActive(bool active);
 	void SetSignalLeakIndicatorOption(bool shown);
 	void SetSpeakTargetNameOption(bool value);
 	void SetSSROption2(const char* value);
 	void SetStartmenuBackgroundOption(const char* value);
 	void SetTextureQualityOption(const char* mode);
+	void SetThirdPersonFlightOption(bool value);
 	void SetThrottleBidirectional(bool newsetting);
 	void SetTobiiMode(const char* mode);
 	void SetTobiiAngleFactor(float value);
@@ -225,6 +307,7 @@ ffi.cdef[[
 	void SetVisitorNamesShownOption(bool setting);
 	void SetVRVivePointerHand(int hand);
 	void SetVolumetricFogOption(int32_t setting);
+	void SetUIGlowOption(uint32_t value);
 	void SetUIScaleFactor(const float scale);
 	void SetUpscalingOption(const char* mode);
 	void ShowPromo(void);
@@ -235,6 +318,7 @@ ffi.cdef[[
 	void StopStartMenuBGMusic(void);
 	void StopVoiceSequence(void);
 	void ToggleScreenDisplayOption(void);
+	bool UnmapModifierKey(const char* uimodifier, int32_t keycode, bool checkonly);
 	bool WasSessionOnline(void);
 ]]
 
@@ -248,6 +332,10 @@ local menu = {
 	saveSort = "slot",
 	lastSaveUpdateTime = 0,
 	searchtext = "",
+	controlsFilter = "",
+	selectedRows = {},
+	selectedCols = {},
+	topRows = {},
 }
 
 -- kuertee start:
@@ -279,6 +367,9 @@ local function init()
 	if Helper then
 		Helper.registerMenu(menu)
 	end
+
+	-- only need to do this once as it cannot change between UI reloads
+	menu.getDefaultControlsData()
 
 	-- restore handling
 	if __CORE_GAMEOPTIONS_RESTORE or menu.isStartmenu then
@@ -326,9 +417,6 @@ local config = {
 	backarrow = "table_arrow_inv_left",
 	backarrowOffsetX = 3,
 
-	sliderCellValueColor = { r = 71, g = 136, b = 184, a = 100 },
-	greySliderCellValueColor = { r = 55, g = 55, b = 55, a = 100 },
-
 	font = "Zekton outlined",
 	fontBold = "Zekton bold outlined",
 
@@ -348,6 +436,11 @@ local config = {
 	idleTime = 10,
 
 	saveReloadInterval = 60,
+
+	hubFadeOutTime = 2,
+	hubFadeOutHoldDuration = 0.1,
+
+	numRecommendedGamestarts = 2,
 }
 
 config.frame = {
@@ -377,7 +470,7 @@ config.headerTextProperties = {
 	x = config.headerTextOffsetX,
 	y = 6,
 	minRowHeight = config.headerTextHeight,
-	titleColor = Helper.defaultSimpleBackgroundColor,
+	titleColor = Color["row_title"],
 }
 
 config.subHeaderTextProperties = {
@@ -387,7 +480,16 @@ config.subHeaderTextProperties = {
 	y = 2,
 	minRowHeight = config.subHeaderTextHeight,
 	halign = "center",
-	titleColor = Helper.defaultSimpleBackgroundColor,
+	titleColor = Color["row_title"],
+}
+
+config.subHeaderLeftTextProperties = {
+	font = config.fontBold,
+	fontsize = config.standardFontSize,
+	x = config.standardTextOffsetX,
+	y = 2,
+	minRowHeight = config.subHeaderTextHeight,
+	titleColor = Color["row_title"],
 }
 
 config.infoTextProperties = {
@@ -397,7 +499,7 @@ config.infoTextProperties = {
 	y = 2,
 	wordwrap = true,
 	minRowHeight = config.infoTextHeight,
-	titleColor = Helper.defaultSimpleBackgroundColor,
+	titleColor = Color["row_title"],
 }
 
 config.warningTextProperties = {
@@ -429,7 +531,7 @@ config.disabledTextProperties = {
 	fontsize = config.standardFontSize,
 	x = config.standardTextOffsetX,
 	y = 2,
-	color = Helper.color.grey,
+	color = Color["text_inactive"],
 }
 
 config.input = {
@@ -438,18 +540,22 @@ config.input = {
 		["states"]  = 1006,
 		["ranges"]  = 1007,
 	},
+	modifiers = {
+		[1] = { id = "shift", name = ReadText(1001, 12644), offset = 256 },
+		[2] = { id = "ctrl",  name = ReadText(1001, 12645), offset = 512 },
+	},
+	modifierFilter = 256,
 	forbiddenKeys = {
 		[1]   = true, -- Escape
 		[211] = true, -- Delete
 		[466] = true, -- Shift+Insert
 		[467] = true, -- Shift+Delete
-		[1069] = true, -- Ctrl+X
-		[1070] = true, -- Ctrl+C
-		[1071] = true, -- Ctrl+V
-		[1234] = true, -- Ctrl+Insert
+		[557] = true, -- Ctrl+X
+		[558] = true, -- Ctrl+C
+		[559] = true, -- Ctrl+V
+		[722] = true, -- Ctrl+Insert
 	},
 	forbiddenMouseButtons = {
-		[1]  = true, -- LMB
 		[2]  = true, -- LMB doubleclick
 		[4]  = true, -- RMB doubleclick
 		[6]  = true, -- MMB doubleclick
@@ -465,100 +571,103 @@ config.input = {
 }
 	-- Define input functions here (serveral actions, states or ranges which can only be changed at the same time)
 	-- entry: [keycode] = { ["actions"] = { action1, action2, ... }, ["states"] = {}, ["name"] = name for display }
-config.input.controlFunctions = { 
-	[1] = { 
+config.input.controlFunctions = {
+	[1] = {
 		["name"] = ReadText(1005, 16),	-- "Menu back"
 		--["name"] = ReadText(1001, 2669),	-- "Back"
-		["definingcontrol"] = {"actions", 16}, 
-		["actions"] = { 2, 15, 16, 103, 326 }, 
-		["states"] = {}, 
+		["definingcontrol"] = {"actions", 16},
+		["actions"] = { 16, 103, 375 },
+		["states"] = {},
 		["ranges"] = {},
-		["contexts"]= { 1, 2, 3, 4, 5 }
-	},  
-
-	[2] = { 
+		["contexts"]= { 1, 2, 3, 4, 5 },
+	},
+	[2] = {
 		["name"] = ReadText(1001, 2670),	-- "Close"
-		["definingcontrol"] = {"actions", 19}, 
-		["actions"] = { 2, 15, 19, 104, 326 }, 
-		["states"] = {}, 
+		["definingcontrol"] = {"actions", 19},
+		["actions"] = { 19, 104, 326 },
+		["states"] = {},
 		["ranges"] = {},
-		["contexts"]= { 1, 2, 3, 4, 5 }
+		["contexts"]= { 1, 2, 3, 4, 5 },
 	},
-	[3] = { 
-		["name"] = ReadText(1001, 2671), 
-		["definingcontrol"] = {"states", 22}, 
-		["actions"] = { 124 }, 
-		["states"] = { 1, 22, 23 }, 
-		["ranges"] = {} 
-	},
-	[4] = { 
-		["name"] = ReadText(1006, 12), 
-		["definingcontrol"] = {"states", 12}, 
-		["actions"] = { 133 }, 
-		["states"] = { 12 }, 
+	[3] = {
+		["name"] = ReadText(1001, 2671),
+		["definingcontrol"] = {"states", 22},
+		["actions"] = { 124 },
+		["states"] = { 1, 22, 23 },
 		["ranges"] = {},
-		["contexts"]= { 2 }
+		["contexts"]= { 1, 2 },
 	},
-	[5] = { 
-		["name"] = ReadText(1005, 128), 
-		["definingcontrol"] = {"actions", 128}, 
-		["actions"] = { 128, 163 }, 
-		["states"] = {}, 
+	[4] = {
+		["name"] = ReadText(1006, 12),
+		["definingcontrol"] = {"states", 12},
+		["actions"] = {},
+		["states"] = { 12 },
 		["ranges"] = {},
-		["contexts"]= { 1, 2 }
+		["contexts"]= { 2 },
 	},
-	[6] = { 
-		["name"] = ReadText(1005, 129), 
-		["definingcontrol"] = {"actions", 129}, 
-		["actions"] = { 129, 164 }, 
-		["states"] = {}, 
+	[5] = {
+		["name"] = ReadText(1005, 128),
+		["definingcontrol"] = {"actions", 128},
+		["actions"] = { 128, 163 },
+		["states"] = {},
 		["ranges"] = {},
-		["contexts"]= { 1, 2 } 
+		["contexts"]= { 1, 2, 10 },
 	},
-	[7] = { 
-		["name"] = ReadText(1006, 10), 
-		["definingcontrol"] = {"states", 10}, 
-		["actions"] = { 187, 218 }, 
-		["states"] = { 10 }, 
+	[6] = {
+		["name"] = ReadText(1005, 129),
+		["definingcontrol"] = {"actions", 129},
+		["actions"] = { 129, 164 },
+		["states"] = {},
 		["ranges"] = {},
-		["contexts"]= { 2 }
+		["contexts"]= { 1, 2, 10 },
 	},
-	[8] = { 
-		["name"] = ReadText(1006, 11), 
-		["definingcontrol"] = {"states", 11}, 
-		["actions"] = { 186, 217 }, 
-		["states"] = { 11 }, 
+	[7] = {
+		["name"] = ReadText(1006, 10),
+		["definingcontrol"] = {"states", 10},
+		["actions"] = { 218 },
+		["states"] = { 10 },
 		["ranges"] = {},
-		["contexts"]= { 2 }
+		["contexts"]= { 2 },
 	},
-	[9] = { 
-		["name"] = ReadText(1005, 179), 
-		["definingcontrol"] = {"actions", 179}, 
-		["actions"] = { 179, 208 }, 
-		["states"] = {}, 
+	[8] = {
+		["name"] = ReadText(1006, 11),
+		["definingcontrol"] = {"states", 11},
+		["actions"] = { 217 },
+		["states"] = { 11 },
 		["ranges"] = {},
-		["contexts"]= { 1, 2 } 
+		["contexts"]= { 2 },
 	},
-	[10] = { 
-		["name"] = ReadText(1005, 175), 
-		["definingcontrol"] = {"actions", 175}, 
-		["actions"] = { 175, 211 }, 
-		["states"] = {}, 
-		["ranges"] = {} 
+	[9] = {
+		["name"] = ReadText(1005, 179),
+		["definingcontrol"] = {"actions", 179},
+		["actions"] = { 179, 208 },
+		["states"] = {},
+		["ranges"] = {},
+		["contexts"]= { 1, 2, 10 },
+	},
+	[10] = {
+		["name"] = ReadText(1005, 175),
+		["definingcontrol"] = {"actions", 175},
+		["actions"] = { 175, 211 },
+		["states"] = {},
+		["ranges"] = {},
+		["contexts"]= { 1, 2 },
 	},
 	[11] = {
 		["name"] = ReadText(1005, 180),
 		["definingcontrol"] = {"actions", 180},
 		["actions"] = { 180, 231 },
 		["states"] = {},
-		["ranges"] = {}
+		["ranges"] = {},
+		["contexts"]= { 1, 2 },
 	},
 	[12] = {
 		["name"] = ReadText(1005, 182),
 		["definingcontrol"] = {"actions", 182},
 		["actions"] = { 182, 232 },
 		["states"] = {},
-		["ranges"] = {}
+		["ranges"] = {},
+		["contexts"]= { 1, 2 },
 	},
 	[13] = {
 		["name"] = ReadText(1005, 113),
@@ -566,7 +675,7 @@ config.input.controlFunctions = {
 		["actions"] = { 113, 312 },
 		["states"] = {},
 		["ranges"] = {},
-		["contexts"]= { 1, 2 },
+		["contexts"]= { 1, 2, 10 },
 	},
 	[14] = {
 		["name"] = ReadText(1005, 314),
@@ -574,31 +683,31 @@ config.input.controlFunctions = {
 		["actions"] = { 314, 315 },
 		["states"] = {},
 		["ranges"] = {},
-		["contexts"]= { 1, 2 },
+		["contexts"]= { 1, 2, 10 },
 	},
-	[15] = { 
-		["name"] = ReadText(1005, 319), 
-		["definingcontrol"] = {"actions", 319}, 
-		["actions"] = { 319, 222 }, 
-		["states"] = {}, 
+	[15] = {
+		["name"] = ReadText(1005, 319),
+		["definingcontrol"] = {"actions", 319},
+		["actions"] = { 319, 222 },
+		["states"] = {},
 		["ranges"] = {},
-		["contexts"]= { 1, 2 } 
+		["contexts"]= { 1, 2, 10 },
 	},
-	[16] = { 
-		["name"] = ReadText(1005, 303), 
-		["definingcontrol"] = {"actions", 303}, 
-		["actions"] = { 303, 322 }, 
-		["states"] = {}, 
+	[16] = {
+		["name"] = ReadText(1005, 303),
+		["definingcontrol"] = {"actions", 303},
+		["actions"] = { 303, 322 },
+		["states"] = {},
 		["ranges"] = {},
-		["contexts"]= { 1, 2 } 
+		["contexts"]= { 1, 2, 10 },
 	},
-	[17] = { 
-		["name"] = ReadText(1005, 225), 
-		["definingcontrol"] = {"actions", 225}, 
-		["actions"] = { 225, 323 }, 
-		["states"] = {}, 
+	[17] = {
+		["name"] = ReadText(1005, 225),
+		["definingcontrol"] = {"actions", 225},
+		["actions"] = { 225, 323 },
+		["states"] = {},
 		["ranges"] = {},
-		["contexts"]= { 1, 2 } 
+		["contexts"]= { 1, 2, 10 },
 	},
 	[18] = {
 		["name"] = ReadText(1005, 363),
@@ -606,7 +715,7 @@ config.input.controlFunctions = {
 		["actions"] = { 332, 363 },
 		["states"] = {},
 		["ranges"] = {},
-		["contexts"]= { 1, 2 },
+		["contexts"]= { 1, 2, 10 },
 	},
 	[19] = {
 		["name"] = ReadText(1005, 364),
@@ -614,7 +723,39 @@ config.input.controlFunctions = {
 		["actions"] = { 364, 365 },
 		["states"] = {},
 		["ranges"] = {},
-		["contexts"]= { 1, 2 },
+		["contexts"]= { 1, 2, 10 },
+	},
+	[20] = {
+		["name"] = ReadText(1005, 209),
+		["definingcontrol"] = {"actions", 209},
+		["actions"] = { 209, 369 },
+		["states"] = {},
+		["ranges"] = {},
+		["contexts"]= { 1, 2, 10 },
+	},
+	[21] = {
+		["name"] = ReadText(1005, 316),
+		["definingcontrol"] = {"actions", 316},
+		["actions"] = { 316, 370 },
+		["states"] = {},
+		["ranges"] = {},
+		["contexts"]= { 1, 2, 10 },
+	},
+	[23] = {
+		["name"] = ReadText(1005, 210),
+		["definingcontrol"] = {"actions", 210},
+		["actions"] = { 210, 372 },
+		["states"] = {},
+		["ranges"] = {},
+		["contexts"]= { 1, 2, 10 },
+	},
+	[22] = {
+		["name"] = ReadText(1005, 320),
+		["definingcontrol"] = {"actions", 320},
+		["actions"] = { 320, 373 },
+		["states"] = {},
+		["ranges"] = {},
+		["contexts"]= { 1, 2, 10 },
 	},
 }
 
@@ -628,8 +769,9 @@ config.input.controlsorder = {
 			{ "ranges", 2 },
 			{ "ranges", 5 },
 			{ "ranges", 6 },
-			{ "ranges", 4 },
-			{ "states", 90 },
+			{ "ranges", 4, { 1, 2 } },
+			{ "ranges", 10, { 1, 2 }, nil, true, mousewheelonly = true },
+			{ "states", 90, { 1, 2 } },
 			{ "ranges", 32, 2, ReadText(1026, 2629), true },
 			{ "ranges", 33, 2, ReadText(1026, 2630), true },
 			{ "ranges", 30, 2, nil, true },
@@ -637,170 +779,190 @@ config.input.controlsorder = {
 		[2] = {
 			["title"] = ReadText(1001, 4866),	-- "Steering: Digital"
 			["mapable"] = true,
-			{ "states", 4 },
-			{ "states", 5 },
-			{ "states", 2 },
-			{ "states", 3 },
-			{ "states", 112 },
-			{ "states", 113 },
-			{ "states", 114 },
-			{ "states", 115 },
-			{ "states", 8 },
-			{ "states", 9 },
-			{ "states", 6 },
-			{ "states", 7 },
-			{ "states", 116 },
-			{ "states", 117 },
-			{ "states", 118 },
-			{ "states", 119 },
-			{ "states", 13 },
-			{ "states", 14 },
-			{ "states", 15 },
-			{ "states", 16 },
-			{ "states", 91 },
-			{ "actions", 123 },
-			{ "states", 17 },
-			{ "states", 18 },
-			{ "states", 19 },
-			{ "actions", 7, nil, ReadText(1026, 2600) },
-			{ "actions", 221, nil, ReadText(1026, 2601) },
-			{ "actions", 261 },
-			{ "actions", 324 },
-			{ "actions", 330 },
+			{ "states", 4, { 1, 2 } },
+			{ "states", 5, { 1, 2 } },
+			{ "states", 2, { 1, 2 } },
+			{ "states", 3, { 1, 2 } },
+			{ "states", 112, { 1, 2 } },
+			{ "states", 113, { 1, 2 } },
+			{ "states", 114, { 1, 2 } },
+			{ "states", 115, { 1, 2 } },
+			{ "states", 8, { 1, 2 } },
+			{ "states", 9, { 1, 2 } },
+			{ "states", 6, { 1, 2 } },
+			{ "states", 7, { 1, 2 } },
+			{ "states", 116, { 1, 2 } },
+			{ "states", 117, { 1, 2 } },
+			{ "states", 118, { 1, 2 } },
+			{ "states", 119, { 1, 2 } },
+			{ "states", 13, { 1, 2 } },
+			{ "states", 14, { 1, 2 } },
+			{ "states", 15, { 1, 2 } },
+			{ "states", 16, { 1, 2 } },
+			{ "states", 91, { 1, 2 } },
+			{ "actions", 123, { 1, 2 } },
+			{ "states", 17, { 1, 2 } },
+			{ "states", 18, { 1, 2 } },
+			{ "states", 19, { 1, 2 } },
+			{ "states", 20, { 1, 2 } },
+			{ "actions", 7, { 1, 2 }, ReadText(1026, 2600) },
+			{ "actions", 324, { 1, 2 }, ReadText(1026, 2692) },
+			{ "actions", 221, { 1, 2 }, ReadText(1026, 2601) },
+			{ "actions", 261, { 1, 2 } },
+			{ "actions", 330, { 1, 2 } },
 		},
 		[3] = {
 			["title"] = ReadText(1001, 2663),	-- "Weapons"
 			["mapable"] = true,
-			{ "states", 24 },
-			{ "states", 48 },
-			{ "states", 25 },
-			{ "actions", 8 },
-			{ "actions", 9 },	-- "Previous weapon"
-			{ "actions", 10 },
-			{ "actions", 11 },	-- "Previous missile"
-			{ "actions", 331 },
-			{ "actions", 321 },	-- "Next ammo"
-			{ "actions", 307 },
-			{ "actions", 139 },
-			{ "actions", 140 },
-			{ "actions", 141 },
-			{ "actions", 142 },
-			{ "actions", 149 },
-			{ "actions", 150 },
-			{ "actions", 151 },
-			{ "actions", 152 },
+			{ "states", 24, { 1, 2 } },
+			{ "states", 48, { 1, 2 } },
+			{ "states", 25, { 1, 2 } },
+			{ "actions", 8, { 1, 2 } },
+			{ "actions", 9, { 1, 2 } },	-- "Previous weapon"
+			{ "actions", 10, { 1, 2 } },
+			{ "actions", 11, { 1, 2 } },	-- "Previous missile"
+			{ "actions", 331, { 1, 2 } },
+			{ "actions", 321, { 1, 2 } },	-- "Next ammo"
+			{ "actions", 307, { 1, 2 } },
+			{ "actions", 139, { 1, 2 } },
+			{ "actions", 140, { 1, 2 } },
+			{ "actions", 141, { 1, 2 } },
+			{ "actions", 142, { 1, 2 } },
+			{ "actions", 149, { 1, 2 } },
+			{ "actions", 150, { 1, 2 } },
+			{ "actions", 151, { 1, 2 } },
+			{ "actions", 152, { 1, 2 } },
 		},
 		[4] = {
 			["title"] = ReadText(1002, 1001),	-- "Modes"
 			["mapable"] = true,
 			{ "states", 84, display = function () return C.IsVROculusTouchActive() or C.IsVRViveControllerActive() end },
 			{ "functions", 16 },
-			{ "actions", 304 },
-			{ "actions", 305 },
+			{ "actions", 304, { 1, 2 } },
+			{ "actions", 305, { 1, 2 } },
 			{ "functions", 17, nil, ReadText(1026, 2610) },
 		},
-		[5] = { 
+		[5] = {
 			["title"] = ReadText(1001, 7245),	-- "Menu Access"
 			["mapable"] = true,
-			{ "actions", 317 },
+			{ "states", 126, { 1, 2 } },
+			{ "states", 127, { 1, 2 } },
+			{ "actions", 317, { 1, 2 } },
 			{ "functions", 13 },
 			{ "functions", 14 },
-			{ "actions", 209 },
+			{ "functions", 20 },
 			{ "functions", 18 },
-			{ "actions", 210 },
-			{ "actions", 316 },
-			{ "actions", 320 },
+			{ "functions", 22 },
+			{ "functions", 21 },
+			{ "functions", 23 },
 			{ "functions", 3 },
 			{ "functions", 5, nil, ReadText(1026, 2602) },
 			{ "functions", 6, nil, ReadText(1026, 2603) },
-			{ "actions", 327, nil, ReadText(1026, 2651) },
+			{ "actions", 327, { 1, 2 }, ReadText(1026, 2651) },
 			{ "functions", 19, nil, ReadText(1026, 2667) },
-			{ "actions", 216, 2 },
+			{ "actions", 216, 10 },
+			{ "actions", 371, 10 },
 		},
-		[6] = { 
+		[6] = {
 			["title"] = ReadText(1001, 2600),	-- "Options Menu"
 			["mapable"] = true,
-			{ "actions", 132 },
-			{ "actions", 160 },
-			{ "actions", 161 },
-			{ "actions", 162 },
-			{ "actions", 130 },
-			{ "actions", 131 },
-			{ "actions", 260, display = C.IsVRVersion },
+			{ "actions", 132, { 1, 2 } },
+			{ "actions", 160, { 1, 2 } },
+			{ "actions", 161, { 1, 2 } },
+			{ "actions", 162, { 1, 2 } },
+			{ "actions", 130, { 1, 2 } },
+			{ "actions", 131, { 1, 2 } },
 		},
-		[7] = { 
+		[7] = {
 			["title"] = ReadText(1001, 4860),	-- "Camera"
 			["mapable"] = true,
-			{ "states", 81 },
-			{ "functions", 11, nil, ReadText(1026, 2605) },
-			{ "actions", 181, nil, ReadText(1026, 2606) },
-			{ "functions", 12, nil, ReadText(1026, 2607) },
-			{ "actions", 262 },
-			{ "actions", 353 },
-			{ "states", 70 },
-			{ "states", 71 },
-			{ "states", 72 },
-			{ "states", 73 },
-			{ "states", 74 },
-			{ "states", 75 },
-			{ "states", 76 },
-			{ "states", 77 },
-			{ "states", 78 },
-			{ "states", 79 },
-			{ "actions", 183 },
-			{ "actions", 184 },
-			{ "actions", 318 },
+			{ "states", 81, { 1, 2, 9 } },
+			{ "functions", 11, { 1, 2, 9 }, ReadText(1026, 2605) },
+			{ "actions", 181, { 1, 2, 9 }, ReadText(1026, 2606) },
+			{ "functions", 12, { 1, 2, 9 }, ReadText(1026, 2607) },
+			{ "actions", 262, { 1, 2, 9 } },
+			{ "actions", 353, { 1, 2, 9 } },
+			{ "states", 70, 9 },
+			{ "states", 71, 9 },
+			{ "states", 72, { 1, 2, 9 } },
+			{ "states", 73, { 1, 2, 9 } },
+			{ "states", 74, { 1, 2, 9 } },
+			{ "states", 75, { 1, 2, 9 } },
+			{ "states", 76, { 1, 2, 9 } },
+			{ "states", 77, { 1, 2, 9 } },
+			{ "states", 78, { 1, 2, 9 } },
+			{ "states", 79, { 1, 2, 9 } },
+			{ "actions", 184, { 1, 2, 9 } },
+			{ "actions", 318, { 1, 2, 9 } },
+			{ "actions", 368, 9 },
+			{ "actions", 366, { 1, 2 } },
+			{ "actions", 367, { 1, 2 } },
 		},
 		[8] = {
-			["title"] = ReadText(1001, 7282),	--"Target Management"
+			["title"] = ReadText(1001, 12696),	--"Target Management (Mouse)"
 			["mapable"] = true,
-			{ "actions", 167 },
-			{ "actions", 168, nil, ReadText(1026, 2604) },	-- "Target Object" (near crosshair)
-			{ "actions", 289 },
-			{ "actions", 169 },
-			{ "actions", 170 },
-			{ "actions", 213 },
-			{ "actions", 214 },
-			{ "actions", 275 },
+			["mouseonly"] = true,
+			["filter"] = { [""] = true, ["keyboard"] = true },
+			["compassmenusupport"] = false,
+			{ "states", 130, 7 },
+			{ "states", 131, 8 },
 		},
 		[9] = {
+			["title"] = ReadText(1001, 7282),	--"Target Management"
+			["mapable"] = true,
+			{ "actions", 167, { 1, 2 } },
+			{ "actions", 168, { 1, 2 }, ReadText(1026, 2604) },	-- "Target Object" (near crosshair)
+			{ "functions", 3 },
+			{ "actions", 289, { 1, 2 } },
+			{ "actions", 169, { 1, 2 } },
+			{ "actions", 170, { 1, 2 } },
+			{ "actions", 213, { 1, 2 } },
+			{ "actions", 214, { 1, 2 } },
+			{ "actions", 275, { 1, 2 } },
+		},
+		[10] = {
+			["title"] = ReadText(1001, 12655),	--"Accessibility"
+			["mapable"] = true,
+			{ "actions", 374, { 1, 2 }, ReadText(1026, 2675) },
+		},
+		[11] = {
 			["title"] = ReadText(1001, 2664),	--"Misc"
 			["mapable"] = true,
 			{ "functions", 10 },
-			{ "actions", 277 },
-			{ "actions", 178, nil, ReadText(1026, 2609) },
+			{ "actions", 277, { 1, 2 } },
+			{ "actions", 178, { 1, 2 }, ReadText(1026, 2609) },
 			{ "functions", 9 },
 			{ "functions", 15 },
-			{ "actions", 117 },
-			{ "actions", 120 },
-			{ "actions", 219 },
-			{ "states", 80, nil, ReadText(1026, 2612) },
-			{ "actions", 260 },
-			{ "actions", 325 },
-			{ "actions", 328 },
-			{ "actions", 329 },
-			{ "actions", 343 },
-			{ "actions", 344 },
-			{ "actions", 345 },
-			{ "actions", 346 },
-			{ "actions", 347 },
-			{ "actions", 348 },
-			{ "actions", 349 },
-			{ "actions", 350 },
-			{ "actions", 351 },
-			{ "actions", 352 },
+			{ "actions", 117, { 1, 2 } },
+			{ "actions", 120, { 1, 2 } },
+			{ "actions", 219, { 1, 2 } },
+			{ "states", 80, { 1, 2 }, ReadText(1026, 2612) },
+			{ "actions", 260, { 1, 2 } },
+			{ "actions", 325, { 1, 2 } },
+			{ "actions", 328, { 1, 2 } },
+			{ "actions", 329, { 1, 2 } },
+			{ "actions", 343, { 1, 2 } },
+			{ "actions", 344, { 1, 2 } },
+			{ "actions", 345, { 1, 2 } },
+			{ "actions", 346, { 1, 2 } },
+			{ "actions", 347, { 1, 2 } },
+			{ "actions", 348, { 1, 2 } },
+			{ "actions", 349, { 1, 2 } },
+			{ "actions", 350, { 1, 2 } },
+			{ "actions", 351, { 1, 2 } },
+			{ "actions", 352, { 1, 2 } },
 		},
-		[10] = {
+		[12] = {
 			["title"] = ReadText(1001, 4815),	-- "Expert Settings - Use with Caution!"
 			["mapable"] = true,
-			{ "actions", 310 },
-			{ "states", 96 },
-			{ "actions", 137 },
-			{ "actions", 121 },
-			{ "actions", 166 },
-			{ "actions", 224 },
-			{ "actions", 306 },
-			{ "actions", 223, nil, ReadText(1026, 2611) },
+			{ "actions", 310, { 1, 2 } },
+			{ "states", 96, { 1, 2 } },
+			{ "actions", 137, { 1, 2 } },
+			{ "actions", 121, { 1, 2 } },
+			{ "actions", 166, { 1, 2 } },
+			{ "actions", 224, { 1, 2 } },
+			{ "actions", 306, { 1, 2 } },
+			{ "actions", 223, { 1, 2 }, ReadText(1026, 2611) },
 		},
 	},
 	["menus"] = {
@@ -821,15 +983,17 @@ config.input.controlsorder = {
 			{ "actions", 20, 2 },
 			{ "functions", 7 },
 			{ "functions", 8 },
-			{ "functions", 4 },
+			{ "functions", 4, nil, nil, nil, true },
 			{ "states", 97, 2 },
 			{ "actions", 18, 2 },
 			{ "actions", 17, 2 },
 			{ "actions", 22, 2 },
 			{ "actions", 308, 2 },
 			{ "actions", 309, 2 },
-			{ "functions", 1 },
-			{ "functions", 2 },
+			{ "functions", 1, nil, nil, nil, true },
+			{ "functions", 2, nil, nil, nil, true },
+			{ "states", 128, 2 },
+			{ "states", 129, 2 },
 			{ "states", 92, 6 },
 			{ "states", 93, 6 },
 			{ "states", 94, 6 },
@@ -841,16 +1005,16 @@ config.input.controlsorder = {
 			{ "states", 104, { 2, 6 } },
 			{ "states", 105, { 2, 6 } },
 			{ "states", 106, { 2, 6 } },
-			{ "states", 39, 2 },
-			{ "states", 40, 2 },
-			{ "states", 41, 2 },
-			{ "states", 42, 2 },
-			{ "states", 43, 2 },
-			{ "states", 44, 2 },
-			{ "states", 45, 2 },
-			{ "states", 46, 2 },
-			{ "states", 37, 2 },
-			{ "states", 38, 2 },
+			{ "states", 39, 6 },
+			{ "states", 40, 6 },
+			{ "states", 41, 6 },
+			{ "states", 42, 6 },
+			{ "states", 43, 6 },
+			{ "states", 44, 6 },
+			{ "states", 45, 6 },
+			{ "states", 46, 6 },
+			{ "states", 37, 6 },
+			{ "states", 38, 6 },
 		},
 		[3] = {
 			["title"] = ReadText(1001, 2666),
@@ -892,7 +1056,7 @@ config.input.controlsorder = {
 			{ "actions", 337, 7 },
 		},
 		[6] = {
-			["title"] = "Menu Hotkeys",
+			["title"] = ReadText(1001, 11788),
 			["mapable"] = true,
 			{ "states", 98, 2 },
 			{ "states", 121, 2 },
@@ -902,7 +1066,7 @@ config.input.controlsorder = {
 	},
 	["firstperson"] = {
 		[1] = {
-			["title"] = ReadText(1001, 4877),
+			["title"] = ReadText(1001, 12689),
 			["mapable"] = true,
 			{ "ranges", 15 },
 			{ "ranges", 16 },
@@ -910,7 +1074,7 @@ config.input.controlsorder = {
 			{ "ranges", 14 },
 		},
 		[2] = {
-			["title"] = ReadText(1001, 4878),
+			["title"] = ReadText(1001, 12690),
 			["mapable"] = true,
 			{ "states", 26 },
 			{ "states", 27 },
@@ -958,6 +1122,19 @@ for i, entry in ipairs(config.input.directInputHookDefinitions) do
 	table.insert(config.input.directInputHooks, function (_, keycode) menu.remapInput(entry[2], keycode, entry[3]) end)
 end
 
+config.input.filters = {
+	{ id = "", sources = {} },
+	{ id = "keyboard",		sources = { [1] = true, [18] = true, [19] = true } },
+	{ id = "controller_1",	sources = { [2] = true, [10] = true } },
+	{ id = "controller_2",	sources = { [3] = true, [11] = true } },
+	{ id = "controller_3",	sources = { [4] = true, [12] = true } },
+	{ id = "controller_4",	sources = { [5] = true, [13] = true } },
+	{ id = "controller_5",	sources = { [6] = true, [14] = true } },
+	{ id = "controller_6",	sources = { [7] = true, [15] = true } },
+	{ id = "controller_7",	sources = { [8] = true, [16] = true } },
+	{ id = "controller_8",	sources = { [9] = true, [17] = true } },
+}
+
 config.ventureDLCStates = {
 	[0] = "valid",
 	[1] = "userdisabled",
@@ -970,17 +1147,35 @@ config.ventureDLCStates = {
 	[8] = "unknownerror",
 }
 
+config.inputfeedback = {
+	options = {
+		{ id = "off",				text = ReadText(1001, 12641),	icon = "", displayremoveoption = false },
+		{ id = "text",				text = ReadText(1001, 12633),	icon = "", displayremoveoption = false },
+		{ id = "voice",				text = ReadText(1001, 12634),	icon = "", displayremoveoption = false },
+		{ id = "textandvoice",		text = ReadText(1001, 12635),	icon = "", displayremoveoption = false },
+	},
+	textoptions = {
+		{ id = "off",				text = ReadText(1001, 12641),	icon = "", displayremoveoption = false },
+		{ id = "ticker",			text = ReadText(1001, 12629),	icon = "", displayremoveoption = false },
+		{ id = "controlmessage",	text = ReadText(1001, 12630),	icon = "", displayremoveoption = false },
+	},
+	voiceoptions = {
+		{ id = "off",				text = ReadText(1001, 12641),	icon = "", displayremoveoption = false },
+		{ id = "on",				text = ReadText(1001, 12642),	icon = "", displayremoveoption = false },
+	},
+}
+
 config.optionDefinitions = {
 	["main"] = {
 		name = function () return menu.isStartmenu and ReadText(1001, 2681) or ReadText(1001, 2600) end,
-		info = function () return ReadText(1001, 2655) .. ReadText(1001, 120) .. " " .. GetVersionString() .. "\n" .. ffi.string(C.GetBuildVersionSuffix()) .. (C.IsGameModified() and (Helper.convertColorToText(Helper.color.warningorange) .. "(" .. ReadText(1001, 8901) .. ")") or "") end,
+		info = function () return ReadText(1001, 2655) .. ReadText(1001, 120) .. " " .. GetVersionString() .. "\n" .. ffi.string(C.GetBuildVersionSuffix()) .. (C.IsGameModified() and (ColorText["text_warning"] .. "(" .. ReadText(1001, 8901) .. ")") or "") end,
 		[1] = {
 			id = "onlineseason",
 			name = function () return menu.nameOnlineSeason() end,
 			callback = function () return menu.callbackOnlineSeason() end,
 			selectable = function () return menu.selectableOnlineSeason() end,
 			wordwrap = true,
-			display = function () return C.IsVentureSeasonSupported() end,
+			display = function () return C.IsVentureSeasonSupported() and (not C.IsTimelinesScenario()) and (ffi.string(C.GetGameStartName()) ~= "x4ep1_gamestart_hub") end,
 		},
 		[2] = {
 			id = "continue",
@@ -990,63 +1185,59 @@ config.optionDefinitions = {
 			wordwrap = true,
 		},
 		[3] = {
-			id = "new",
-			name = ReadText(1001, 2603),
-			submenu = "new",
-		},
-		[4] = {
-			id = "load",
-			name = function () return (menu.autoReloadSave or C.IsSaveListLoadingComplete()) and ReadText(1001, 2604) or ReadText(1001, 7203) end,
-			submenu = "load",
-			selectable = function () return C.IsSaveListLoadingComplete() and C.HasSavegame() end,
-		},
-		[5] = {
 			id = "save",
 			name = ReadText(1001, 2605),
 			submenu = "save",
 			selectable = IsSavingPossible,
 			display = function () return not menu.isStartmenu end,
-			mouseOverText = function () return IsSavingPossible(false) and "" or ffi.string(C.GetSaveInquiryText()) end
+			mouseOverText = function () return menu.saveMouseOverText() end,
+		},
+		[4] = {
+			id = "line",
+			linecolor = Color["row_background"],
+		},
+		[5] = {
+			id = "tutorials",
+			name = ReadText(1001, 12660),
+			submenu = "tutorials",
 		},
 		[6] = {
-			id = "multiplayer",
-			name = ReadText(1001,7283),
-			submenu = "multiplayer",
-			display = C.IsNetworkEngineEnabled,
+			id = "timelines",
+			name = ReadText(1001, 12661),
+			prefixicon = function () return "menu_recommended", Color["gamestart_recommended"] end,
+			mouseOverText = ReadText(1026, 2681),
+			submenu = "timelines",
+			selectable = function () return ffi.string(C.GetGameStartName()) ~= "x4ep1_gamestart_hub" end,
 		},
 		[7] = {
-			id = "online",
-			name = function () return menu.nameOnline() end,
-			submenu = "online",
-			selectable = C.IsOnlineEnabled,
-			mouseOverText = function () return C.IsOnlineEnabled() and "" or ReadText(1001, 11592) end,
+			id = "sandbox",
+			name = ReadText(1001, 12662),
+			submenu = "sandbox",
 		},
 		[8] = {
-			id = "extensions",
-			name = function () return menu.nameExtension() end,
-			submenu = "extensions",
-			display = function () return not C.IsDemoVersion() end,
+			id = "line",
+			linecolor = Color["row_background"],
 		},
 		[9] = {
-			id = "bonus",
-			name = ReadText(1001, 4800),
-			submenu = "bonus",
-			display = function () return false end, -- hidden, not needed in X4
-		},
-		[10] = {
 			id = "settings",
 			name = function () return menu.nameSettings() end,
 			submenu = "settings",
 		},
-		[11] = {
+		[10] = {
 			id = "credits",
 			name = ReadText(1001, 4811),
 			submenu = "credits",
 			display = function () return menu.isStartmenu end,
 		},
+		[11] = {
+			id = "returntohub",
+			name = function () return menu.nameReturnToHub() end,
+			callback = function () return menu.callbackReturnToHub() end,
+			display = function () return (not menu.isStartmenu) and C.IsTimelinesScenario() end,
+		},
 		[12] = {
 			id = "exit",
-			name = ReadText(1001, 2616),
+			name = ReadText(1001, 11791),
 			submenu = "exit",
 			display = function () return not menu.isStartmenu end,
 		},
@@ -1054,6 +1245,41 @@ config.optionDefinitions = {
 			id = "quit",
 			name = ReadText(1001, 4876),
 			submenu = "quit",
+		},
+	},
+	["timelines"] = {
+		name = ReadText(1021, 67),
+		[1] = {
+			id = "timelines_start",
+			name = function () return (ffi.string(C.GetUserData("timelines_scenarios_finished")) ~= "") and ReadText(1001, 12620) or ReadText(1001, 12619) end,
+			callback = function () return menu.callbackTimelines() end,
+			selectable = function () return C.IsExtensionEnabled("ego_dlc_timelines", false) end,
+		},
+		[2] = {
+			id = "timelines_reset",
+			name = ReadText(1001, 12621),
+			submenu = "timelines_reset",
+			selectable = function () return C.IsExtensionEnabled("ego_dlc_timelines", false) and (ffi.string(C.GetUserData("timelines_scenarios_finished")) ~= "") end,
+		},
+	},
+	["sandbox"] = {
+		name = ReadText(1001, 11790),
+		[1] = {
+			id = "new",
+			name = ReadText(1001, 2603),
+			submenu = "new",
+		},
+		[2] = {
+			id = "load",
+			name = function () return (menu.autoReloadSave or C.IsSaveListLoadingComplete()) and ReadText(1001, 2604) or ReadText(1001, 7203) end,
+			submenu = "load",
+			selectable = function () return C.IsSaveListLoadingComplete() and C.HasSavegame() end,
+		},
+		[3] = {
+			id = "multiplayer",
+			name = ReadText(1001,7283),
+			submenu = "multiplayer",
+			display = C.IsNetworkEngineEnabled,
 		},
 	},
 	["load"] = {
@@ -1174,45 +1400,67 @@ config.optionDefinitions = {
 		name = ReadText(1001, 2679),
 		warning = function () return menu.warningSettings() end,
 		[1] = {
+			id = "online",
+			name = function () return menu.nameOnline() end,
+			submenu = "online",
+			selectable = C.IsOnlineEnabled,
+			mouseOverText = function () return C.IsOnlineEnabled() and "" or ReadText(1001, 11592) end,
+		},
+		[2] = {
+			id = "extensions",
+			name = function () return menu.nameExtension() end,
+			submenu = "extensions",
+			display = function () return not C.IsDemoVersion() end,
+		},
+		[3] = {
+			id = "bonus",
+			name = ReadText(1001, 4800),
+			submenu = "bonus",
+			display = function () return false end, -- hidden, not needed in X4
+		},
+		[4] = {
+			id = "line",
+		},
+		[5] = {
 			id = "gfx",
 			name = function () return menu.nameGfx() end,
 			submenu = "gfx",
 		},
-		[2] = {
+		[6] = {
 			id = "sfx",
 			name = ReadText(1001, 2611),
 			submenu = "sfx",
 		},
-		[3] = {
+		[7] = {
 			id = "game",
 			name = ReadText(1001, 2613),
 			submenu = "game",
 		},
-		[4] = {
+		[8] = {
 			id = "accessibility",
-			name = ReadText(1001, 8994),
+			name = function () return menu.nameAccessibility() end,
 			submenu = "accessibility",
 		},
-		[5] = {
+		[9] = {
 			id = "input",
 			name = function () return menu.nameInput() end,
 			submenu = "input",
 		},
-		[6] = {
+		[10] = {
 			id = "privacy",
 			name = ReadText(1001, 4870),
 			submenu = "privacy",
 		},
-		[7] = {
+		[11] = {
 			id = "language",
 			name = function () return menu.nameLanguage() end,
 			submenu = "language",
 			display = function () return menu.isStartmenu and C.IsLanguageSettingEnabled() end
 		},
-		[8] = {
+		[12] = {
 			id = "line",
 		},
-		[9] = {
+		[13] = {
 			id = "defaults",
 			name = ReadText(1001, 8981),
 			submenu = "defaults",
@@ -1247,7 +1495,7 @@ config.optionDefinitions = {
 		[4] = {
 			id = "upscaling",
 			name = ReadText(1001, 11726),
-			mouseOverText = function () return menu.selectableGfxUpscaling() and "" or ("\27R" ..  ReadText(1026, 2657)) end,
+			mouseOverText = function () return menu.selectableGfxUpscaling() and "" or (ColorText["text_error"] ..  ReadText(1026, 2657)) end,
 			valuetype = "dropdown",
 			value = function () return menu.valueGfxUpscaling() end,
 			callback = function (id, option) return menu.callbackGfxUpscaling(id, option) end,
@@ -1264,13 +1512,13 @@ config.optionDefinitions = {
 		[6] = {
 			id = "hmd_fullscreen",
 			name = ReadText(1001, 4817),
-			value = function () return ReadText(1001, 2622), Helper.color.white end,
+			value = function () return ReadText(1001, 2622), Color["text_normal"] end,
 			display = C.IsVRVersion,
 		},
 		[7] = {
 			id = "hmd_sdk",
 			name = ReadText(1001, 7214),
-			value = function () return ffi.string(C.GetTrackerSDKOption()), Helper.color.white end,
+			value = function () return ffi.string(C.GetTrackerSDKOption()), Color["text_normal"] end,
 			display = C.IsVRVersion,
 		},
 		[8] = {
@@ -1280,7 +1528,7 @@ config.optionDefinitions = {
 		[9] = {
 			id = "hmd_adapter",
 			name = ReadText(1001, 2623),
-			value = function () return ffi.string(C.GetTrackerNameOption()), Helper.color.white end,
+			value = function () return ffi.string(C.GetTrackerNameOption()), Color["text_normal"] end,
 			display = C.IsVRVersion,
 		},
 		[10] = {
@@ -1354,16 +1602,23 @@ config.optionDefinitions = {
 			callback = function (value) return menu.callbackGfxGamma(value) end,
 		},
 		[19] = {
-			id = "line",
+			id = "fov",
+			name = ReadText(1001, 4814),
+			valuetype = "slidercell",
+			value = function () return menu.valueGfxFOV() end,
+			callback = function (value) return menu.callbackGfxFOV(value) end,
 		},
 		[20] = {
+			id = "line",
+		},
+		[21] = {
 			id = "gfx_preset",
 			name = ReadText(1001, 4840),
 			valuetype = "dropdown",
 			value = function () return menu.valueGfxPreset() end,
 			callback = function (id, option) return menu.callbackGfxPreset(id, option) end,
 		},
-		[21] = {
+		[22] = {
 			id = "texturequality",
 			name = ReadText(1001, 8900),
 			valuetype = "dropdown",
@@ -1371,7 +1626,7 @@ config.optionDefinitions = {
 			callback = function (id, option) return menu.callbackGfxTexture(id, option) end,
 			selectable = function () return menu.selectableGfxPreset() end,
 		},
-		[22] = {
+		[23] = {
 			id = "shadows",
 			name = ReadText(1001, 2625),
 			valuetype = "dropdown",
@@ -1379,7 +1634,7 @@ config.optionDefinitions = {
 			callback = function (id, option) return menu.callbackGfxShadows(id, option) end,
 			selectable = function () return menu.selectableGfxPreset() end,
 		},
-		[23] = {
+		[24] = {
 			id = "softshadows",
 			name = ReadText(1001, 4841),
 			valuetype = "button",
@@ -1387,7 +1642,7 @@ config.optionDefinitions = {
 			callback = function () return menu.callbackGfxSoftShadows() end,
 			selectable = function () return menu.selectableGfxPreset() end,
 		},
-		[24] = {
+		[25] = {
 			id = "ssao",
 			name = ReadText(1001, 2626),
 			valuetype = "dropdown",
@@ -1395,7 +1650,7 @@ config.optionDefinitions = {
 			callback = function (id, option) return menu.callbackGfxSSAO(id, option) end,
 			selectable = function () return menu.selectableGfxPreset() end,
 		},
-		[25] = {
+		[26] = {
 			id = "glow",
 			name = ReadText(1001, 11752),
 			valuetype = "dropdown",
@@ -1403,7 +1658,15 @@ config.optionDefinitions = {
 			callback = function (id, option) return menu.callbackGfxGlow(id, option) end,
 			selectable = function () return menu.selectableGfxPreset() end,
 		},
-		[26] = {
+		[27] = {
+			id = "uiglow",
+			name = ReadText(1001, 11779),
+			valuetype = "dropdown",
+			value = function () return menu.valueGfxUIGlow() end,
+			callback = function (id, option) return menu.callbackGfxUIGlow(id, option) end,
+			selectable = function () return menu.selectableGfxPreset() end,
+		},
+		[28] = {
 			id = "chromaticaberration",
 			name = ReadText(1001, 8987),
 			valuetype = "button",
@@ -1411,7 +1674,7 @@ config.optionDefinitions = {
 			callback = function () return menu.callbackGfxChromaticAberration() end,
 			selectable = function () return menu.selectableGfxPreset() end,
 		},
-		[27] = {
+		[29] = {
 			id = "distortion",
 			name = ReadText(1001, 4822),
 			valuetype = "button",
@@ -1419,7 +1682,7 @@ config.optionDefinitions = {
 			callback = function () return menu.callbackGfxDistortion() end,
 			selectable = function () return menu.selectableGfxPreset() end,
 		},
-		[28] = {
+		[30] = {
 			id = "pom",
 			name = ReadText(1001, 11731),
 			valuetype = "dropdown",
@@ -1427,7 +1690,7 @@ config.optionDefinitions = {
 			callback = function (id, option) return menu.callbackGfxPOM(id, option) end,
 			selectable = function () return menu.selectableGfxPreset() end,
 		},
-		[29] = {
+		[31] = {
 			id = "lod",
 			name = ReadText(1001, 2628),
 			valuetype = "slidercell",
@@ -1435,7 +1698,7 @@ config.optionDefinitions = {
 			callback = function (value) return menu.callbackGfxLOD(value) end,
 			selectable = function () return menu.selectableGfxPreset() end,
 		},
-		[30] = {
+		[32] = {
 			id = "effectdist",
 			name = ReadText(1001, 2699),
 			valuetype = "slidercell",
@@ -1443,7 +1706,7 @@ config.optionDefinitions = {
 			callback = function (value) return menu.callbackGfxEffectDistance(value) end,
 			selectable = function () return menu.selectableGfxPreset() end,
 		},
-		[31] = {
+		[33] = {
 			id = "shaderquality",
 			name = ReadText(1001, 2680),
 			valuetype = "dropdown",
@@ -1452,7 +1715,7 @@ config.optionDefinitions = {
 			selectable = function () return menu.selectableGfxPreset() end,
 			display = function () return false end, -- TEMP hidden until we get shaders with different quality
 		},
-		[32] = {
+		[34] = {
 			id = "radar",
 			name = ReadText(1001, 1706),
 			valuetype = "dropdown",
@@ -1460,7 +1723,7 @@ config.optionDefinitions = {
 			callback = function (id, option) return menu.callbackGfxRadar(id, option) end,
 			selectable = function () return menu.selectableGfxPreset() end,
 		},
-		[33] = {
+		[35] = {
 			id = "ssr",
 			name = ReadText(1001, 7288),
 			valuetype = "dropdown",
@@ -1468,7 +1731,7 @@ config.optionDefinitions = {
 			callback = function (id, option) return menu.callbackGfxSSR(id, option) end,
 			selectable = function () return menu.selectableGfxPreset() end,
 		},
-		[34] = {
+		[36] = {
 			id = "envmapprobes",
 			name = ReadText(1001, 11733),
 			valuetype = "dropdown",
@@ -1476,7 +1739,7 @@ config.optionDefinitions = {
 			callback = function (id, option) return menu.callbackGfxEnvMapProbes(id, option) end,
 			selectable = function () return menu.selectableGfxPreset() end,
 		},
-		[35] = {
+		[37] = {
 			id = "volumetric",
 			name = ReadText(1001, 8990),
 			valuetype = "dropdown",
@@ -1484,27 +1747,27 @@ config.optionDefinitions = {
 			callback = function (id, option) return menu.callbackGfxVolumetric(id, option) end,
 			selectable = function () return menu.selectableGfxPreset() end,
 		},
-		[36] = {
+		[38] = {
 			id = "line",
 		},
-		[37] = {
+		[39] = {
 			id = "envmapprobesinsideglassfade",
 			name = ReadText(1001, 11754),
 			valuetype = "slidercell",
 			value = function () return menu.valueGfxEnvMapProbesInsideGlassFade() end,
 			callback = function (value) return menu.callbackGfxEnvMapProbesInsideGlassFade(value) end,
 		},
-		[38] = {
+		[40] = {
 			id = "capturehq",
 			name = ReadText(1001, 4816),
 			valuetype = "button",
 			value = function () return GetCaptureHQOption() and ReadText(1001, 2648) or ReadText(1001, 2649) end,
 			callback = function () return menu.callbackGfxCaptureHQ() end,
 		},
-		[39] = {
+		[41] = {
 			id = "line",
 		},
-		[40] = {
+		[42] = {
 			id = "gfx_defaults",
 			name = ReadText(1001, 8982),
 			submenu = "gfx_defaults",
@@ -1669,20 +1932,27 @@ config.optionDefinitions = {
 			callback = function () return menu.callbackGameSpeakTargetName() end,
 		},
 		[15] = {
+			id = "inputfeedback",
+			name = ReadText(1001, 12632),
+			valuetype = "dropdown",
+			value = function () return menu.valueGameInputFeedback() end,
+			callback = function (id, option) return menu.callbackGameInputFeedback(id, option) end,
+		},
+		[16] = {
 			id = "mouselook",
 			name = ReadText(1001, 4895),
 			valuetype = "button",
 			value = function () return GetMouseLookToggleOption() and ReadText(1001, 2648) or ReadText(1001, 2649) end,
 			callback = function () return menu.callbackGameMouselook() end,
 		},
-		[16] = {
+		[17] = {
 			id = "rumble",
 			name = ReadText(1001, 2678),
 			valuetype = "slidercell",
 			value = function () return menu.valueGameRumble() end,
 			callback = function (value) return menu.callbackGameRumble(value) end,
 		},
-		[17] = {
+		[18] = {
 			id = "forceshoottocursor",
 			name = ReadText(1001, 7218),
 			valuetype = "button",
@@ -1690,21 +1960,26 @@ config.optionDefinitions = {
 			callback = function () return menu.callbackGameShootAtCursor() end,
 			display = C.IsVRVersion,
 		},
-		[18] = {
+		[19] = {
 			id = "mouseover",
 			name = ReadText(1001, 4882),
 			valuetype = "button",
 			value = function () return C.GetMouseOverTextOption() and ReadText(1001, 2648) or ReadText(1001, 2649) end,
 			callback = function () return menu.callbackGameMouseOver() end,
 		},
-		[19] = {
+		[20] = {
 			id = "radardisplay",
 			name = ReadText(1001, 7258),
 			valuetype = "dropdown",
 			value = function () return menu.valueGameRadar() end,
 			callback = function (id, option) return menu.callbackGameRadar(id, option) end,
 		},
-		[20] = {
+		[21] = {
+			id = "line",
+			linecolor = Color["row_background"],
+			lineheight = 4,
+		},
+		[22] = {
 			id = "uiscale",
 			name = ReadText(1001, 7209),
 			mouseOverText = ReadText(1026, 2626),
@@ -1720,14 +1995,48 @@ config.optionDefinitions = {
 				neg_selectable = function () return menu.selectableGameUIScaleConfirm() end,
 			},
 		},
-		[21] = {
+		[23] = {
+			id = "hudscale",
+			name = ReadText(1001, 12624),
+			mouseOverText = ReadText(1026, 2671),
+			valuetype = "dropdown",
+			value = function () return menu.valueGameHUDScale() end,
+			callback = function (id, option) return menu.callbackGameHUDScale(id, option) end,
+		},
+		[24] = {
+			id = "line",
+			linecolor = Color["row_background"],
+			lineheight = 4,
+		},
+		[25] = {
+			id = "menuwidthscale",
+			name = ReadText(1001, 11792),
+			mouseOverText = ReadText(1026, 2669),
+			valuetype = "slidercell",
+			value = function () return menu.valueGameMenuWidthScale() end,
+			callback = function (value) return menu.callbackGameMenuWidthScale(value) end,
+			confirmline = {
+				positive = function () return menu.callbackGameMenuWidthScaleConfirm() end,
+				pos_name = ReadText(1001, 2821),
+				pos_selectable = function () return menu.selectableGameMenuWidthScaleConfirm() end,
+				negative = function () return menu.callbackGameMenuWidthScaleReset() end,
+				neg_name = ReadText(1001, 3318),
+				neg_selectable = function () return menu.selectableGameMenuWidthScaleConfirm() end,
+			},
+		},
+		[26] = {
+			id = "line",
+			linecolor = Color["row_background"],
+			lineheight = 4,
+		},
+		[27] = {
 			id = "controlmodemessages",
 			name = ReadText(1001, 4861),
 			valuetype = "button",
 			value = function () return GetSteeringNoteOption() and ReadText(1001, 2648) or ReadText(1001, 2649) end,
 			callback = function () return menu.callbackGameControlModeMessages() end,
 		},
-		[22] = {
+		[28] = {
 			id = "resetuserquestions",
 			name = ReadText(1001, 8985),
 			mouseOverText = ReadText(1026, 2652),
@@ -1737,21 +2046,21 @@ config.optionDefinitions = {
 			selectable = function () return menu.selectableGameResetUserQuestions() end,
 			inactive_text = ReadText(1026, 2653),
 		},
-		[23] = {
+		[29] = {
 			id = "enemywarning_nearby",
 			name = ReadText(1001, 11729),
 			valuetype = "sounddropdown",
 			value = function () return menu.valueGameEnemyNearby() end,
 			callback = function (id, option) return menu.callbackGameEnemyNearby(id, option) end,
 		},
-		[24] = {
+		[30] = {
 			id = "enemywarning_attack",
 			name = ReadText(1001, 11730),
 			valuetype = "sounddropdown",
 			value = function () return menu.valueGameEnemyAttack() end,
 			callback = function (id, option) return menu.callbackGameEnemyAttack(id, option) end,
 		},
-		[25] = {
+		[31] = {
 			id = "startmenu_background",
 			name = ReadText(1001, 11761),
 			valuetype = "dropdown",
@@ -1764,22 +2073,30 @@ config.optionDefinitions = {
 				pos_selectable = function () return menu.selectableGameStartmenuBackgroundConfirm() end,
 			},
 		},
-		[26] = {
+		[32] = {
 			id = "header",
 			name = ReadText(1001, 4860),
 		},
-		[27] = {
+		[33] = {
+			id = "thirdpersonflight",
+			name = ReadText(1001, 11785),
+			valuetype = "dropdown",
+			value = function () return menu.valueGameThirdPersonFlight() end,
+			callback = function (id, option) return menu.callbackThirdPersonFlight(id, option) end,
+			display = function () return false end, -- hidden due to not being used for the moment
+		},
+		[34] = {
 			id = "cockpitcamera",
 			name = ReadText(1001, 7289),
 			valuetype = "slidercell",
 			value = function () return menu.valueGameCockpitCamera() end,
 			callback = function (value) return menu.callbackGameCockpitCamera(value) end,
 		},
-		[28] = {
+		[35] = {
 			id = "header",
 			name = ReadText(1001, 2661),
 		},
-		[29] = {
+		[36] = {
 			id = "game_defaults",
 			name = ReadText(1001, 8984),
 			submenu = "game_defaults",
@@ -1817,9 +2134,30 @@ config.optionDefinitions = {
 			display = function () return false end, -- TODO Florian
 		},
 		[5] = {
-			id = "line",
+			id = "reducedspeedmode",
+			name = ReadText(1001, 12654),
+			mouseOverText = ReadText(1026, 2676),
+			valuetype = "slidercell",
+			value = function () return menu.valueAccessibilityReducedSpeedMode() end,
+			callback = function (value) return menu.callbackAccessibilityReducedSpeedMode(value) end,
 		},
 		[6] = {
+			id = "line",
+		},
+		[7] = {
+			id = "colorlibrary",
+			name = function () return menu.nameColorBlind() end,
+			submenu = "colorlibrary",
+		},
+		[8] = {
+			id = "inputfeedback",
+			name = ReadText(1001, 12628),
+			submenu = "inputfeedback",
+		},
+		[9] = {
+			id = "line",
+		},
+		[10] = {
 			id = "accessibility_defaults",
 			name = ReadText(1001, 8998),
 			submenu = "accessibility_defaults",
@@ -1835,13 +2173,13 @@ config.optionDefinitions = {
 		},
 		[2] = {
 			id = "vrtouch_space",
-			name = ReadText(1001, 2658),
+			name = ReadText(1001, 12686),
 			submenu = "vrtouch_space",
 			display = C.IsVROculusTouchActive,
 		},
 		[3] = {
 			id = "vrtouch_firstperson",
-			name = ReadText(1001, 2659),
+			name = ReadText(1001, 12687),
 			submenu = "vrtouch_firstperson",
 			display = C.IsVROculusTouchActive,
 		},
@@ -1852,29 +2190,35 @@ config.optionDefinitions = {
 			display = C.IsVROculusTouchActive,
 		},
 		[5] = {
+			id = "line",
+			linecolor = Color["row_background"],
+			lineheight = 4,
+			display = C.IsVROculusTouchActive,
+		},
+		[6] = {
 			id = "header",
 			name = ReadText(1001, 7228),
 			display = C.IsVRViveControllerActive,
 		},
-		[6] = {
+		[7] = {
 			id = "vrvive_space",
-			name = ReadText(1001, 2658),
+			name = ReadText(1001, 12686),
 			submenu = "vrvive_space",
 			display = C.IsVRViveControllerActive,
 		},
-		[7] = {
+		[8] = {
 			id = "vrvive_firstperson",
-			name = ReadText(1001, 2659),
+			name = ReadText(1001, 12687),
 			submenu = "vrvive_firstperson",
 			display = C.IsVRViveControllerActive,
 		},
-		[8] = {
+		[9] = {
 			id = "vrvive_menus",
 			name = ReadText(1001, 2660),
 			submenu = "vrvive_menus",
 			display = C.IsVRViveControllerActive,
 		},
-		[9] = {
+		[10] = {
 			id = "vrvive_pointingdevice",
 			name = ReadText(1001, 7224),
 			valuetype = "dropdown",
@@ -1882,127 +2226,166 @@ config.optionDefinitions = {
 			callback = function (id, option) return menu.callbackInputVivePointingDevice(id, option) end,
 			display = C.IsVRViveControllerActive,
 		},
-		[10] = {
+		[11] = {
+			id = "line",
+			linecolor = Color["row_background"],
+			lineheight = 4,
+			display = C.IsVRViveControllerActive,
+		},
+		[12] = {
 			id = "header",
 			name = function () return (C.IsVROculusTouchActive() or C.IsVRViveControllerActive()) and ReadText(1001, 7229) or ReadText(1001, 2656) end,
 		},
-		[11] = {
+		[13] = {
 			id = "keyboard_space",
-			name = ReadText(1001, 2658),
+			name = ReadText(1001, 12686),
 			submenu = "keyboard_space",
 		},
-		[12] = {
+		[14] = {
 			id = "keyboard_firstperson",
-			name = ReadText(1001, 2659),
+			name = ReadText(1001, 12687),
 			submenu = "keyboard_firstperson",
 		},
-		[13] = {
+		[15] = {
 			id = "keyboard_menus",
 			name = ReadText(1001, 2660),
 			submenu = "keyboard_menus",
 		},
-		[14] = {
-			id = "header",
-			name = ReadText(1001, 2674),
+		[16] = {
+			id = "line",
+			linecolor = Color["row_background"],
+			lineheight = 4,
 		},
-		[15] = {
+		[17] = {
+			id = "header",
+			name = ReadText(1001, 4857),
+		},
+		[18] = {
+			id = "profile_load",
+			name = ReadText(1001, 12684),
+			submenu = "profile_load",
+		},
+		[19] = {
+			id = "profile_save",
+			name = ReadText(1001, 12685),
+			submenu = "profile_save",
+		},
+		[20] = {
+			id = "line",
+			linecolor = Color["row_background"],
+			lineheight = 4,
+		},
+		[21] = {
+			id = "header",
+			name = ReadText(1001, 12691),
+		},
+		[22] = {
 			id = "joysticks",
 			name = ReadText(1001, 4856),
 			submenu = "joysticks",
 		},
-		[16] = {
+		[23] = {
 			id = "joystick_invert",
-			name = ReadText(1001, 2675),
+			name = ReadText(1001, 12678),
 			submenu = "joystick_invert",
 		},
-		[17] = {
+		[24] = {
 			id = "joystick_sensitivity",
-			name = ReadText(1001, 2684),
+			name = ReadText(1001, 12680),
 			submenu = "joystick_sensitivity",
 		},
-		[18] = {
+		[25] = {
 			id = "joystick_deadzone",
 			name = ReadText(1001, 4835),
 			valuetype = "slidercell",
 			value = function () return menu.valueInputJoystickDeadzone() end,
 			callback = function(value) return menu.callbackInputJoystickDeadzone(value) end,
 		},
-		[19] = {
+		[26] = {
 			id = "joystick_bidirectional_throttle",
 			name = ReadText(1001, 7261),
+			mouseOverText = ReadText(1026, 2683),
 			valuetype = "button",
 			value = function () return C.IsThrottleBidirectional() and ReadText(1001, 2648) or ReadText(1001, 2649) end,
 			callback = function () return menu.callbackInputJoystickBidirectionalThrottle() end,
 		},
-		[20] = {
+		[27] = {
 			id = "gamepadmode",
 			name = ReadText(1001, 4867),
+			mouseOverText = ReadText(1026, 2684),
 			valuetype = "dropdown",
 			value = function () return menu.valueInputGamepadMode() end,
 			callback = function (id, option) return menu.callbackInputGamepadMode(id, option) end,
 		},
-		[21] = {
+		[28] = {
 			id = "joystick_steering_adaptive",
-			name = ReadText(1001, 7264),
+			name = ReadText(1001, 12682),
+			mouseOverText = ReadText(1026, 2682),
 			valuetype = "button",
 			value = function () return C.IsJoystickSteeringAdapative() and ReadText(1001, 2648) or ReadText(1001, 2649) end,
 			callback = function () return menu.callbackInputJoystickSteeringAdaptive() end,
 		},
-		[22] = {
-			id = "header",
-			name = ReadText(1001, 2683),
+		[29] = {
+			id = "line",
+			linecolor = Color["row_background"],
+			lineheight = 4,
 		},
-		[23] = {
+		[30] = {
+			id = "header",
+			name = ReadText(1001, 12692),
+		},
+		[31] = {
 			id = "mouse_invert",
-			name = ReadText(1001, 2675),
+			name = ReadText(1001, 12679),
 			submenu = "mouse_invert",
 		},
-		[24] = {
+		[32] = {
 			id = "mouse_sensitivity",
-			name = ReadText(1001, 2684),
+			name = ReadText(1001, 12681),
 			submenu = "mouse_sensitivity",
 		},
-		[25] = {
+		[33] = {
 			id = "mouse_capture",
 			name = ReadText(1001, 4820),
 			valuetype = "button",
 			value = function () return GetConfineMouseOption() and ReadText(1001, 2648) or ReadText(1001, 2649) end,
 			callback = function () return menu.callbackInputMouseCapture() end,
 		},
-		[26] = {
+		[34] = {
 			id = "mouse_steering_adaptive",
-			name = ReadText(1001, 7264),
+			name = ReadText(1001, 12683),
+			mouseOverText = ReadText(1026, 2682),
 			valuetype = "button",
 			value = function () return C.IsMouseSteeringAdapative() and ReadText(1001, 2648) or ReadText(1001, 2649) end,
 			callback = function () return menu.callbackInputMouseSteeringAdaptive() end,
 		},
-		[27] = {
+		[35] = {
 			id = "mouse_steering_persistent",
 			name = ReadText(1001, 11768),
+			mouseOverText = ReadText(1026, 2685),
 			valuetype = "button",
 			value = function () return C.IsMouseSteeringPersistent() and ReadText(1001, 2648) or ReadText(1001, 2649) end,
 			callback = function () return menu.callbackInputMouseSteeringPersistent() end,
 		},
-		[28] = {
+		[36] = {
 			id = "mouse_steering_line",
 			name = ReadText(1001, 11769),
+			mouseOverText = ReadText(1026, 2686),
 			valuetype = "button",
 			value = function () return C.IsMouseSteeringLineEnabled() and ReadText(1001, 2648) or ReadText(1001, 2649) end,
 			callback = function () return menu.callbackInputMouseSteeringLine() end,
 		},
-		[29] = {
-			id = "mouse_hud_mode",
-			name = ReadText(1001, 8937),
-			valuetype = "dropdown",
-			value = function () return menu.valueInputMouseHUDMode() end,
-			callback = function (id, option) return menu.callbackInputMouseHUDMode(id, option) end,
+		[37] = {
+			id = "line",
+			linecolor = Color["row_background"],
+			lineheight = 4,
 		},
-		[30] = {
+		[38] = {
 			id = "header",
 			name = ReadText(1001, 8940),
 			display = C.IsTobiiAvailable,
 		},
-		[31] = {
+		[39] = {
 			id = "tobii_mode",
 			name = ReadText(1001, 8941),
 			valuetype = "dropdown",
@@ -2010,7 +2393,7 @@ config.optionDefinitions = {
 			callback = function (id, option) return menu.callbackInputTobiiMode(id, option) end,
 			display = C.IsTobiiAvailable,
 		},
-		[32] = {
+		[40] = {
 			id = "tobii_headfilterstrength",
 			name = ReadText(1001, 8954),
 			mouseOverText = ReadText(1026, 2647),
@@ -2019,7 +2402,7 @@ config.optionDefinitions = {
 			callback = function(value) return menu.callbackInputTobiiHeadFilterStrength(value) end,
 			display = function () return menu.displayTobiiHeadTracking() end,
 		},
-		[33] = {
+		[41] = {
 			id = "tobii_anglefactor",
 			name = ReadText(1001, 8950),
 			mouseOverText = ReadText(1026, 2644),
@@ -2028,7 +2411,7 @@ config.optionDefinitions = {
 			callback = function(value) return menu.callbackInputTobiiAngleFactor(value) end,
 			display = function () return menu.displayTobiiHeadTracking() end,
 		},
-		[34] = {
+		[42] = {
 			id = "tobii_deadzoneangle",
 			name = ReadText(1001, 8952),
 			mouseOverText = ReadText(1026, 2645),
@@ -2037,7 +2420,7 @@ config.optionDefinitions = {
 			callback = function(value) return menu.callbackInputTobiiDeadzoneAngle(value) end,
 			display = function () return menu.displayTobiiHeadTracking() end,
 		},
-		[35] = {
+		[43] = {
 			id = "tobii_positionfactor",
 			name = ReadText(1001, 8958),
 			mouseOverText = ReadText(1026, 2650),
@@ -2046,7 +2429,7 @@ config.optionDefinitions = {
 			callback = function(value) return menu.callbackInputTobiiPositionFactor(value) end,
 			display = function () return menu.displayTobiiHeadTracking() end,
 		},
-		[36] = {
+		[44] = {
 			id = "tobii_deadzoneposition",
 			name = ReadText(1001, 8953),
 			mouseOverText = ReadText(1026, 2646),
@@ -2055,7 +2438,7 @@ config.optionDefinitions = {
 			callback = function(value) return menu.callbackInputTobiiDeadzonePosition(value) end,
 			display = function () return menu.displayTobiiHeadTracking() end,
 		},
-		[37] = {
+		[45] = {
 			id = "tobii_gazefilterstrength",
 			name = ReadText(1001, 8955),
 			mouseOverText = ReadText(1026, 2648),
@@ -2064,7 +2447,7 @@ config.optionDefinitions = {
 			callback = function(value) return menu.callbackInputTobiiGazeFilterStrength(value) end,
 			display = function () return menu.displayTobiiGazeContinous() end,
 		},
-		[38] = {
+		[46] = {
 			id = "tobii_gazeanglefactor",
 			name = ReadText(1001, 8951),
 			mouseOverText = ReadText(1026, 2644),
@@ -2073,7 +2456,7 @@ config.optionDefinitions = {
 			callback = function(value) return menu.callbackInputTobiiGazeAngleFactor(value) end,
 			display = function () return menu.displayTobiiGazeContinous() end,
 		},
-		[39] = {
+		[47] = {
 			id = "tobii_gazedeadzone",
 			name = ReadText(1001, 8949),
 			mouseOverText = ReadText(1026, 2649),
@@ -2082,101 +2465,114 @@ config.optionDefinitions = {
 			callback = function(value) return menu.callbackInputTobiiGazeDeadzone(value) end,
 			display = function () return menu.displayTobiiGazeContinous() end,
 		},
-		[40] = {
+		[48] = {
+			id = "line",
+			linecolor = Color["row_background"],
+			lineheight = 4,
+			display = C.IsTobiiAvailable,
+		},
+		[49] = {
 			id = "header",
-			name = ReadText(1001, 4857),
+			name = function () return ReadText(1001, 4815) end,
 		},
-		[41] = {
-			id = "profile_load",
-			name = ReadText(1001, 4859),
-			submenu = "profile_load",
-		},
-		[42] = {
-			id = "profile_save",
-			name = ReadText(1001, 4858),
-			submenu = "profile_save",
+		[50] = {
+			id = "input_modifiers",
+			name = ReadText(1001, 12643),
+			submenu = "input_modifiers",
 		},
 	},
 	["joystick_invert"] = {
 		name = ReadText(1001, 2674) .. ReadText(1001, 120) .. " " .. ReadText(1001, 2675),
 		[1] = {
+			id = "header",
+			name = ReadText(1001, 2662),
+		},
+		[2] = {
 			id = "invert_steering_yaw",
 			name = ReadText(config.input.controltextpage.ranges, 1),
 			valuetype = "button",
 			value = function () return menu.valueInputInvert(1) end,
 			callback = function () return menu.callbackInputInvert(1, "invert_steering_yaw") end,
 		},
-		[2] = {
+		[3] = {
 			id = "invert_steering_pitch",
 			name = ReadText(config.input.controltextpage.ranges, 2),
 			valuetype = "button",
 			value = function () return menu.valueInputInvert(2) end,
 			callback = function () return menu.callbackInputInvert(2, "invert_steering_pitch") end,
 		},
-		[3] = {
+		[4] = {
 			id = "invert_steering_roll",
 			name = ReadText(config.input.controltextpage.ranges, 3),
 			valuetype = "button",
 			value = function () return menu.valueInputInvert(3) end,
 			callback = function () return menu.callbackInputInvert(3, "invert_steering_roll") end,
 		},
-		[4] = {
+		[5] = {
 			id = "invert_throttle",
 			name = ReadText(config.input.controltextpage.ranges, 4),
 			valuetype = "button",
 			value = function () return menu.valueInputInvert(4) end,
 			callback = function () return menu.callbackInputInvert(4, "invert_throttle") end,
 		},
-		[5] = {
+		[6] = {
 			id = "invert_strafe_left_right",
 			name = ReadText(config.input.controltextpage.ranges, 5),
 			valuetype = "button",
 			value = function () return menu.valueInputInvert(5) end,
 			callback = function () return menu.callbackInputInvert(5, "invert_strafe_left_right") end,
 		},
-		[6] = {
+		[7] = {
 			id = "invert_strafe_up_down",
 			name = ReadText(config.input.controltextpage.ranges, 6),
 			valuetype = "button",
 			value = function () return menu.valueInputInvert(6) end,
 			callback = function () return menu.callbackInputInvert(6, "invert_strafe_up_down") end,
 		},
-		[7] = {
+		[8] = {
+			id = "header",
+			name = ReadText(1001, 12688),
+		},
+		[9] = {
 			id = "invert_fp_yaw",
 			name = ReadText(config.input.controltextpage.ranges, 13),
 			valuetype = "button",
 			value = function () return menu.valueInputInvert(13) end,
 			callback = function () return menu.callbackInputInvert(13, "invert_fp_yaw") end,
 		},
-		[8] = {
+		[10] = {
 			id = "invert_fp_pitch",
 			name = ReadText(config.input.controltextpage.ranges, 14),
 			valuetype = "button",
 			value = function () return menu.valueInputInvert(14) end,
 			callback = function () return menu.callbackInputInvert(14, "invert_fp_pitch") end,
 		},
-		[9] = {
+		[11] = {
 			id = "invert_fp_walk",
 			name = ReadText(config.input.controltextpage.ranges, 15),
 			valuetype = "button",
 			value = function () return menu.valueInputInvert(15) end,
 			callback = function () return menu.callbackInputInvert(15, "invert_fp_walk") end,
 		},
-		[10] = {
+		[12] = {
 			id = "invert_fp_strafe",
 			name = ReadText(config.input.controltextpage.ranges, 16),
 			valuetype = "button",
 			value = function () return menu.valueInputInvert(16) end,
 			callback = function () return menu.callbackInputInvert(16, "invert_fp_strafe") end,
 		},
-		[11] = {
+		[13] = {
+			id = "header",
+			name = ReadText(1001, 4836),
+		},
+		[14] = {
 			id = "invert_controllermouse_x",
 			name = ReadText(config.input.controltextpage.ranges, 23),
 			valuetype = "button",
 			value = function () return menu.valueInputInvert(23) end,
 			callback = function () return menu.callbackInputInvert(23, "invert_direct_mouse_steering_roll") end,
 		},
-		[12] = {
+		[15] = {
 			id = "invert_controllermouse_y",
 			name = ReadText(config.input.controltextpage.ranges, 24),
 			valuetype = "button",
@@ -2187,13 +2583,17 @@ config.optionDefinitions = {
 	["joystick_sensitivity"] = {
 		name = ReadText(1001, 2674) .. ReadText(1001, 120) .. " " .. ReadText(1001, 2684),
 		[1] = {
+			id = "header",
+			name = ReadText(1001, 12688),
+		},
+		[2] = {
 			id = "sensitivity_fp_yaw",
 			name = ReadText(config.input.controltextpage.ranges, 13),
 			valuetype = "slidercell",
 			value = function () return menu.valueInputSensitivity(13) end,
 			callback = function (value) return menu.callbackInputSensitivity(13, "sensitivity_fp_yaw", value) end,
 		},
-		[2] = {
+		[3] = {
 			id = "sensitivity_fp_pitch",
 			name = ReadText(config.input.controltextpage.ranges, 14),
 			valuetype = "slidercell",
@@ -2204,98 +2604,114 @@ config.optionDefinitions = {
 	["mouse_invert"] = {
 		name = ReadText(1001, 2683) .. ReadText(1001, 120) .. " " .. ReadText(1001, 2675),
 		[1] = {
+			id = "header",
+			name = ReadText(1001, 2662),
+		},
+		[2] = {
 			id = "invert_mouse_pitch",
 			name = ReadText(1001, 8975),
 			valuetype = "button",
 			value = function () return menu.valueInputMouseSteeringInvert("invert_mouse_pitch") end,
 			callback = function () return menu.callbackInputMouseSteeringInvert("invert_mouse_pitch") end,
 		},
-		[2] = {
+		[3] = {
 			id = "invert_mouse_yaw",
 			name = ReadText(1001, 8976),
 			valuetype = "button",
 			value = function () return menu.valueInputMouseSteeringInvert("invert_mouse_yaw") end,
 			callback = function () return menu.callbackInputMouseSteeringInvert("invert_mouse_yaw") end,
 		},
-		[3] = {
+		[4] = {
 			id = "invert_mouse_roll",
 			name = ReadText(1001, 8977),
 			valuetype = "button",
 			value = function () return menu.valueInputMouseSteeringInvert("invert_mouse_roll") end,
 			callback = function () return menu.callbackInputMouseSteeringInvert("invert_mouse_roll") end,
 		},
-		[4] = {
-			id = "invert_fp_mouse_yaw",
-			name = ReadText(config.input.controltextpage.ranges, 7),
-			valuetype = "button",
-			value = function () return menu.valueInputInvert(7) end,
-			callback = function () return menu.callbackInputInvert(7, "invert_fp_mouse_yaw") end,
-		},
 		[5] = {
-			id = "invert_fp_mouse_pitch",
-			name = ReadText(config.input.controltextpage.ranges, 8),
-			valuetype = "button",
-			value = function () return menu.valueInputInvert(8) end,
-			callback = function () return menu.callbackInputInvert(8, "invert_fp_mouse_pitch") end,
-		},
-		[6] = {
 			id = "invert_direct_mouse_steering_yaw",
 			name = ReadText(config.input.controltextpage.ranges, 29),
 			valuetype = "button",
 			value = function () return menu.valueInputInvert(29) end,
 			callback = function () return menu.callbackInputInvert(29, "invert_direct_mouse_steering_yaw") end,
 		},
-		[7] = {
+		[6] = {
 			id = "invert_direct_mouse_steering_pitch",
 			name = ReadText(config.input.controltextpage.ranges, 30),
 			valuetype = "button",
 			value = function () return menu.valueInputInvert(30) end,
 			callback = function () return menu.callbackInputInvert(30, "invert_direct_mouse_steering_pitch") end,
 		},
-		[8] = {
+		[7] = {
 			id = "invert_direct_mouse_steering_roll",
 			name = ReadText(config.input.controltextpage.ranges, 31),
 			valuetype = "button",
 			value = function () return menu.valueInputInvert(31) end,
 			callback = function () return menu.callbackInputInvert(31, "invert_direct_mouse_steering_roll") end,
 		},
+		[8] = {
+			id = "header",
+			name = ReadText(1001, 12688),
+		},
+		[9] = {
+			id = "invert_fp_mouse_yaw",
+			name = ReadText(config.input.controltextpage.ranges, 7),
+			valuetype = "button",
+			value = function () return menu.valueInputInvert(7) end,
+			callback = function () return menu.callbackInputInvert(7, "invert_fp_mouse_yaw") end,
+		},
+		[10] = {
+			id = "invert_fp_mouse_pitch",
+			name = ReadText(config.input.controltextpage.ranges, 8),
+			valuetype = "button",
+			value = function () return menu.valueInputInvert(8) end,
+			callback = function () return menu.callbackInputInvert(8, "invert_fp_mouse_pitch") end,
+		},
 	},
 	["mouse_sensitivity"] = {
 		name = ReadText(1001, 2683) .. ReadText(1001, 120) .. " " .. ReadText(1001, 2684),
 		[1] = {
-			id = "sensitivity_fp_mouse_yaw",
-			name = ReadText(config.input.controltextpage.ranges, 7),
-			valuetype = "slidercell",
-			value = function () return menu.valueInputSensitivity(7) end,
-			callback = function (value) return menu.callbackInputSensitivity(7, "sensitivity_fp_mouse_yaw", value) end,
+			id = "header",
+			name = ReadText(1001, 2662),
 		},
 		[2] = {
-			id = "sensitivity_fp_mouse_pitch",
-			name = ReadText(config.input.controltextpage.ranges, 8),
-			valuetype = "slidercell",
-			value = function () return menu.valueInputSensitivity(8) end,
-			callback = function (value) return menu.callbackInputSensitivity(8, "sensitivity_fp_mouse_pitch", value) end,
-		},
-		[3] = {
 			id = "sensitivity_direct_mouse_steering_yaw",
 			name = ReadText(config.input.controltextpage.ranges, 29),
 			valuetype = "slidercell",
 			value = function () return menu.valueInputSensitivity(29) end,
 			callback = function (value) return menu.callbackInputSensitivity(29, "sensitivity_direct_mouse_steering_yaw", value) end,
 		},
-		[4] = {
+		[3] = {
 			id = "sensitivity_direct_mouse_steering_pitch",
 			name = ReadText(config.input.controltextpage.ranges, 30),
 			valuetype = "slidercell",
 			value = function () return menu.valueInputSensitivity(30) end,
 			callback = function (value) return menu.callbackInputSensitivity(30, "sensitivity_direct_mouse_steering_pitch", value) end,
 		},
-		[5] = {
+		[4] = {
 			id = "sensitivity_direct_mouse_steering_roll",
 			name = ReadText(config.input.controltextpage.ranges, 31),
 			valuetype = "slidercell",
 			value = function () return menu.valueInputSensitivity(31) end,
 			callback = function (value) return menu.callbackInputSensitivity(31, "sensitivity_direct_mouse_steering_roll", value) end,
+		},
+		[5] = {
+			id = "header",
+			name = ReadText(1001, 12688),
+		},
+		[6] = {
+			id = "sensitivity_fp_mouse_yaw",
+			name = ReadText(config.input.controltextpage.ranges, 7),
+			valuetype = "slidercell",
+			value = function () return menu.valueInputSensitivity(7) end,
+			callback = function (value) return menu.callbackInputSensitivity(7, "sensitivity_fp_mouse_yaw", value) end,
+		},
+		[7] = {
+			id = "sensitivity_fp_mouse_pitch",
+			name = ReadText(config.input.controltextpage.ranges, 8),
+			valuetype = "slidercell",
+			value = function () return menu.valueInputSensitivity(8) end,
+			callback = function (value) return menu.callbackInputSensitivity(8, "sensitivity_fp_mouse_pitch", value) end,
 		},
 	},
 	["privacy"] = {
@@ -2356,7 +2772,6 @@ function menu.loadSaveCallback(_, filename)
 		DebugError("Lua Event 'loadSave' got an invalid filename '" .. tostring(filename) .. "'.")
 		return
 	end
-
 	C.SkipNextStartAnimation()
 	menu.delayedLoadGame = filename
 	menu.displayInit()
@@ -2388,7 +2803,7 @@ function menu.onCutsceneStopped()
 			end
 			menu.cutscenedesc = nil
 			menu.cutsceneid = nil
-	
+
 			menu.preselectOption = "credits"
 			menu.submenuHandler("main")
 			if menu.isStartmenu then
@@ -2449,11 +2864,172 @@ end
 function menu.buttonControl(row, data)
 	if data and not menu.remapControl then
 		-- set update to blink "_" and pass variables on to menu.remapInput
-		menu.remapControl = { row = row, col = data[6], controltype = data[1], controlcode = data[2], controlcontext = data[8] or 1, oldinputtype = data[3], oldinputcode = data[4], oldinputsgn = data[5], nokeyboard = data[7], allowmouseaxis = data[9] }
+		menu.remapControl = { row = row, col = data[6], controltype = data[1], controlcode = data[2], controlcontext = data[8] or 1, oldinputtype = data[3], oldinputcode = data[4], oldinputsgn = data[5], nokeyboard = data[7], allowmouseaxis = data[9], checklastnonkeyboard = data[10], mouseonly = data[11], disableremove = data[12], isdblclick = data[13], mousewheelonly = data[14] }
+
+		-- open popup
+		menu.contextMenuMode = "directinput"
+		menu.contextMenuData = { width = Helper.scaleX(400), height = Helper.scaleY(200), y = Helper.scaleY(300) }
+		menu.createContextMenu()
 
 		-- call function listening to input and get result
 		menu.registerDirectInput()
 	end
+end
+
+function menu.buttonAddControl(row, data)
+	if data and not menu.remapControl then
+		-- set update to blink "_" and pass variables on to menu.remapInput
+		menu.remapControl = { row = row, col = data[6], controltype = data[1], controlcode = data[2], controlcontext = data[8] or 1, oldinputtype = data[3], oldinputcode = data[4], oldinputsgn = data[5], nokeyboard = data[7], allowmouseaxis = data[9], mouseonly = data[11] }
+
+		-- open popup
+		menu.contextMenuMode = "directinput"
+		menu.contextMenuData = { width = Helper.scaleX(400), height = Helper.scaleY(200), y = Helper.scaleY(300) }
+		menu.createContextMenu()
+
+		-- call function listening to input and get result
+		menu.registerDirectInput()
+
+		menu.preselectTopRow = GetTopRow(menu.optionTable)
+		menu.preselectOption = menu.remapControl.row
+		menu.preselectCol = menu.remapControl.col
+		menu.submenuHandler(menu.currentOption)
+	end
+end
+
+function menu.buttonRemoveControl(row, data)
+	if data and not menu.remapControl then
+		-- set update to blink "_" and pass variables on to menu.remapInput
+		menu.remapControl = { row = row, col = data[6], controltype = data[1], controlcode = data[2], controlcontext = data[8] or 1, oldinputtype = data[3], oldinputcode = data[4], oldinputsgn = data[5], nokeyboard = data[7], allowmouseaxis = data[9], checklastnonkeyboard = data[10] }
+
+		if menu.remapControl.checklastnonkeyboard then
+			if not menu.isInputSourceKeyboardMouse(menu.remapControl.oldinputtype) then
+				if menu.getNumNonKeyboardInputs(menu.remapControl.controltype, menu.remapControl.controlcode) == 1 then
+					-- show popup
+					menu.contextMenuMode = "removeControllerInput"
+					menu.contextMenuData = { width = Helper.scaleX(400), height = Helper.scaleY(200), y = Helper.scaleY(300), removed = true }
+					menu.createContextMenu()
+					return
+				end
+			end
+		end
+
+		menu.removeInput()
+
+		menu.preselectTopRow = GetTopRow(menu.optionTable)
+		menu.preselectOption = menu.remapControl.row
+		menu.preselectCol = menu.remapControl.col
+		menu.remapControl = nil
+		menu.submenuHandler(menu.currentOption)
+		AddUITriggeredEvent(menu.name, "remap_removed")
+	end
+end
+
+function menu.buttonResetControl(row, data)
+	if data and not menu.remapControl then
+		menu.remapControl = { row = row, col = data[3], controltype = data[1], controlcode = data[2], controlcontext = data[4] or 1, reset = true }
+
+		local conflicts = {}
+		if menu.remapControl.controltype == "functions" then
+			local definingcontrol = menu.defaultcontrols[menu.remapControl.controltype][menu.remapControl.controlcode].definingcontrol
+			conflicts = menu.getDefaultControlConflicts(menu.defaultcontrols[definingcontrol[1]][definingcontrol[2]], conflicts)
+		else
+			conflicts = menu.getDefaultControlConflicts(menu.defaultcontrols[menu.remapControl.controltype][menu.remapControl.controlcode], conflicts)
+		end
+
+		if #conflicts == 0 then
+			menu.removeAllMappings()
+			if menu.remapControl.controltype == "functions" then
+				local definingcontrol = menu.defaultcontrols[menu.remapControl.controltype][menu.remapControl.controlcode].definingcontrol
+				if type(menu.defaultcontrols[definingcontrol[1]][definingcontrol[2]]) == "table" then
+					for _, entry in ipairs(menu.defaultcontrols[definingcontrol[1]][definingcontrol[2]]) do
+						menu.remapInputInternal(entry[1], entry[2], entry[3], entry[4], true)
+					end
+				end
+			else
+				if type(menu.defaultcontrols[menu.remapControl.controltype][menu.remapControl.controlcode]) == "table" then
+					for _, entry in ipairs(menu.defaultcontrols[menu.remapControl.controltype][menu.remapControl.controlcode]) do
+						menu.remapInputInternal(entry[1], entry[2], entry[3], entry[4], true)
+					end
+				end
+			end
+			SaveInputSettings(menu.controls.actions, menu.controls.states, menu.controls.ranges)
+			menu.preselectTopRow = GetTopRow(menu.optionTable)
+			menu.preselectOption = menu.remapControl.row
+			menu.preselectCol = menu.remapControl.col
+			menu.remapControl = nil
+			menu.submenuHandler(menu.currentOption)
+		else
+			-- show popup
+			menu.contextMenuMode = "remap"
+			menu.contextMenuData = { width = Helper.scaleX(400), height = Helper.scaleY(200), y = Helper.scaleY(300), conflicts = conflicts, reset = true }
+
+			menu.createContextMenu()
+		end
+	end
+end
+
+function menu.getDefaultControlConflicts(defaultmappings, conflicts)
+	if type(defaultmappings) == "table" then
+		for _, entry in ipairs(defaultmappings) do
+			local loc_conflicts = menu.checkForConflicts(entry[1], entry[2], entry[3])
+			for _, v in ipairs(loc_conflicts) do
+				if (v.control[1] ~= menu.remapControl.controltype) or (v.control[2] ~= menu.remapControl.controlcode) then
+					table.insert(conflicts, v)
+				end
+			end
+		end
+	end
+
+	return conflicts
+end
+
+function menu.removeAllMappings(save)
+	if menu.remapControl.controltype == "functions" then
+		for _, functionaction in ipairs(menu.controls[menu.remapControl.controltype][menu.remapControl.controlcode].actions) do
+			menu.controls["actions"][functionaction] = {}
+		end
+		for _, functionstate in ipairs(menu.controls[menu.remapControl.controltype][menu.remapControl.controlcode].states) do
+			menu.controls["states"][functionstate] = {}
+		end
+		for _, functionrange in ipairs(menu.controls[menu.remapControl.controltype][menu.remapControl.controlcode].ranges) do
+			menu.controls["ranges"][functionrange] = {}
+		end
+	else
+		menu.controls[menu.remapControl.controltype][menu.remapControl.controlcode] = {}
+	end
+end
+
+function menu.dropdownControl(row, data, id)
+	local newinputtype, newinputcode = string.match(id, "(%d*):(%d*)")
+	newinputtype = tonumber(newinputtype)
+	newinputcode = tonumber(newinputcode)
+	local newinputsgn = nil
+	if data and not menu.remapControl then
+		menu.remapControl = { row = row, col = data[6], controltype = data[1], controlcode = data[2], controlcontext = data[8] or 1, oldinputtype = data[3], oldinputcode = data[4], oldinputsgn = data[5], nokeyboard = data[7], allowmouseaxis = data[9] }
+
+		menu.remapInput(newinputtype, newinputcode, newinputsgn)
+	end
+end
+
+function menu.checkboxControlDblClick(data, checked)
+	for i, input in ipairs(menu.controls[data.controltype][data.controlcode]) do
+		if (input[1] == data.inputtype) and (input[2] == data.inputcode) then
+			if checked then
+				menu.controls[data.controltype][data.controlcode][i][2] = menu.controls[data.controltype][data.controlcode][i][2] + 1
+			else
+				menu.controls[data.controltype][data.controlcode][i][2] = menu.controls[data.controltype][data.controlcode][i][2] - 1
+			end
+		end
+	end
+
+	SaveInputSettings(menu.controls.actions, menu.controls.states, menu.controls.ranges)
+
+	-- reload controls menu
+	menu.preselectTopRow = GetTopRow(menu.optionTable)
+	menu.preselectOption = data.row
+	menu.preselectCol = data.col
+	menu.remapControl = nil
+	menu.submenuHandler(menu.currentOption)
 end
 
 function menu.buttonInputProfileSave(profile)
@@ -2708,7 +3284,7 @@ function menu.addSavegameRow(ftable, savegame, name, slot)
 		invalid = savegame.error or savegame.invalidgameid or savegame.invalidversion or savegame.invalidpatches
 	end
 
-	local row = ftable:addRow(savegame, { bgColor = Helper.color.transparent })
+	local row = ftable:addRow(savegame, {  })
 	if menu.preselectOption == nil then
 		menu.preselectOption = savegame.filename
 	end
@@ -2722,7 +3298,6 @@ function menu.addSavegameRow(ftable, savegame, name, slot)
 		row[2].properties.halign = "right"
 	end
 	local nametruncated = TruncateText(name, config.fontBold, Helper.scaleFont(config.font, config.standardFontSize), row[3]:getWidth() - Helper.scaleX(config.standardTextOffsetX))
-
 	local mouseovertext = ""
 	if nametruncated ~= name then
 		mouseovertext = name
@@ -2738,12 +3313,11 @@ function menu.addSavegameRow(ftable, savegame, name, slot)
 	local warningicon = ""
 	if savegame.isonline then
 		if C.IsClientModified() or (not OnlineHasSession()) or (C.GetVentureDLCStatus() ~= 0) then
-			warningicon = Helper.convertColorToText(Helper.color.warningorange) .. "\27[workshop_error]\27X"
+			warningicon = ColorText["icon_warning"] .. "\27[workshop_error]\27X"
 		end
 	end
 
-	icon = row[3]:createIcon("solid", { width = row[3]:getWidth(), height = height, color = { r = 0, g = 0, b = 0, a = 1 }, scaling = false, mouseOverText = mouseovertext }):setText(warningicon .. nametruncated, (not invalid) and config.standardTextProperties or config.disabledTextProperties)
-
+	local icon = row[3]:createIcon("solid", { width = row[3]:getWidth(), height = height, color = Color["icon_transparent"], scaling = false, mouseOverText = mouseovertext }):setText(warningicon .. nametruncated, (not invalid) and config.standardTextProperties or config.disabledTextProperties)
 	row[3].properties.text.font = config.fontBold
 	row[3].properties.text.scaling = true
 	if invalid then
@@ -2751,11 +3325,11 @@ function menu.addSavegameRow(ftable, savegame, name, slot)
 		row[3].properties.text2.y = config.standardTextHeight
 		row[3].properties.text2.scaling = true
 	elseif savegame.modified then
-		icon:setText2(Helper.convertColorToText(Helper.color.warningorange) .. ReadText(1001, 8901) .. "\27X", (not invalid) and config.standardTextProperties or config.disabledTextProperties)
+		icon:setText2(ColorText["text_warning"] .. ReadText(1001, 8901) .. "\27X", (not invalid) and config.standardTextProperties or config.disabledTextProperties)
 		row[3].properties.text2.y = config.standardTextHeight
 		row[3].properties.text2.scaling = true
 	elseif isonlinesaveinofflineslot then
-		icon:setText2(Helper.convertColorToText(Helper.color.brightyellow) .. ReadText(1001, 11570) .. "\27X", (not invalid) and config.standardTextProperties or config.disabledTextProperties)
+		icon:setText2(ColorText["text_online_save"] .. ReadText(1001, 11570) .. "\27X", (not invalid) and config.standardTextProperties or config.disabledTextProperties)
 		row[3].properties.text2.y = config.standardTextHeight
 		row[3].properties.text2.scaling = true
 	end
@@ -2766,8 +3340,24 @@ function menu.addSavegameRow(ftable, savegame, name, slot)
 end
 
 function menu.checkInputSource(sourceid)
+	if (sourceid == 30) or (sourceid == 31) then
+		-- radial menus are always possible
+		return true
+	end
+
+	if (menu.controlsFilter ~= "") then
+		for _, entry in ipairs(config.input.filters) do
+			if entry.id == menu.controlsFilter then
+				if not entry.sources[sourceid] then
+					return false
+				end
+				break
+			end
+		end
+	end
+
 	if (menu.currentOption == "keyboard_space") or (menu.currentOption == "keyboard_firstperson") or (menu.currentOption == "keyboard_menus") then
-		return sourceid < 20
+		return (sourceid < 20)
 	elseif (menu.currentOption == "vrtouch_space") or (menu.currentOption == "vrtouch_firstperson") or (menu.currentOption == "vrtouch_menus") then
 		return (sourceid == 20) or (sourceid == 24)
 	elseif (menu.currentOption == "vrvive_space") or (menu.currentOption == "vrvive_firstperson") or (menu.currentOption == "vrvive_menus") then
@@ -2799,11 +3389,16 @@ function menu.cleanup()
 	menu.preselectCol = nil
 	menu.animationDelay = nil
 
+	menu.selectedRows = {}
+	menu.selectedCols = {}
+	menu.topRows = {}
+
 	menu.history = {}
 	menu.savegames = nil
 	menu.onlinesave = nil
 	menu.languagedata = {}
 	menu.remapControl = nil
+	menu.directInputActive = nil
 	menu.lobby = {}
 	menu.updateServers = nil
 	menu.selectedExtension = {}
@@ -2844,10 +3439,10 @@ function menu.createOptionsFrame(extrawide)
 		y = menu.frameOffsetY,
 		width = extrawide and menu.widthExtraWide or menu.width,
 		height = menu.height,
-		backgroundID = menu.isStartmenu and config.frame.bgTexture or nil,
-		overlayID = config.frame.fgTexture,
 		standardButtons = {},
 	})
+	menu.optionsFrame:setBackground(menu.isStartmenu and config.frame.bgTexture or nil)
+	menu.optionsFrame:setOverlay(config.frame.fgTexture)
 
 	return menu.optionsFrame
 end
@@ -2862,9 +3457,8 @@ function menu.createTopLevel()
 		height = Helper.viewHeight,
 		layer = config.topLevelLayer,
 		standardButtons = {},
-		backgroundID = (not menu.isStartmenu) and "solid" or nil,
-		backgroundColor = Helper.color.semitransparent,
 	})
+	frame:setBackground((not menu.isStartmenu) and "solid" or nil, { color = Color["frame_background_semitransparent"] })
 
 	local height = Helper.createTopLevelTab(menu, "options", frame, "", nil, true)
 	local optionsheight = Helper.viewHeight - config.frame.y - height
@@ -2880,7 +3474,7 @@ function menu.createContextMenu()
 
 	local sizeextension = 2 * Helper.borderSize
 	local xoffset = menu.frameOffsetX + (menu.width - menu.contextMenuData.width) / 2
-	if (menu.contextMenuMode == "modified") or (menu.contextMenuMode == "ventureextension") then
+	if (menu.contextMenuMode == "modified") or (menu.contextMenuMode == "ventureextension") or (menu.contextMenuMode == "info") then
 		sizeextension = 6 * Helper.borderSize
 		xoffset = (Helper.viewWidth - menu.contextMenuData.width) / 2
 	end
@@ -2891,64 +3485,348 @@ function menu.createContextMenu()
 		y = menu.contextMenuData.y,
 		layer = config.contextLayer,
 		standardButtons = { close = true },
-		backgroundID = "solid",
-		backgroundColor = Helper.color.black,
 	})
+	menu.contextFrame:setBackground("solid", { color = Color["frame_background_black"] })
 
 	local height = 0
 	if menu.contextMenuMode == "remap" then
 		height = menu.createContextMenuRemap(menu.contextFrame)
+		menu.contextFrame:setBackground2("gradient_alpha_04", { color = Color["frame_background_semitransparent"], width = Helper.viewWidth, height = Helper.viewHeight })
 	elseif menu.contextMenuMode == "modified" then
 		height = menu.createContextMenuModified(menu.contextFrame)
 	elseif menu.contextMenuMode == "ventureextension" then
 		height = menu.createContextMenuVentureExtension(menu.contextFrame)
+	elseif menu.contextMenuMode == "editcolor" then
+		height = menu.createContextMenuEditColor(menu.contextFrame)
+	elseif menu.contextMenuMode == "info" then
+		height = menu.createContextMenuInfo(menu.contextFrame)
+	elseif menu.contextMenuMode == "directinput" then
+		height = menu.createContextMenuDirectInput(menu.contextFrame)
+		menu.contextFrame.standardButtons = {}
+		menu.contextFrame:setBackground2("gradient_alpha_04", { color = Color["frame_background_semitransparent"], width = Helper.viewWidth, height = Helper.viewHeight })
+	elseif menu.contextMenuMode == "removeControllerInput" then
+		height = menu.createContextMenuRemoveControllerInput(menu.contextFrame)
+		menu.contextFrame:setBackground2("gradient_alpha_04", { color = Color["frame_background_semitransparent"], width = Helper.viewWidth, height = Helper.viewHeight })
 	end
 
 	menu.contextFrame.properties.height = height + sizeextension
-	if (menu.contextMenuMode == "modified") or (menu.contextMenuMode == "ventureextension") then
+	if (menu.contextMenuMode == "modified") or (menu.contextMenuMode == "ventureextension") or (menu.contextMenuMode == "info") then
 		menu.contextFrame.properties.y = menu.contextFrame.properties.y - menu.contextFrame.properties.height / 2
+	elseif menu.contextMenuMode == "editcolor" then
+		menu.contextFrame.properties.x = math.min(menu.contextFrame.properties.x, Helper.viewWidth - menu.contextMenuData.width - Helper.frameBorder)
+		menu.contextFrame.properties.y = math.min(menu.contextFrame.properties.y, Helper.viewHeight - height - Helper.frameBorder)
+	elseif (menu.contextMenuMode == "remap") or (menu.contextMenuMode == "directinput") or (menu.contextMenuMode == "removeControllerInput") then
+		menu.contextFrame.properties.x = (Helper.viewWidth - menu.contextMenuData.width) / 2
+		menu.contextFrame.properties.y = (Helper.viewHeight - height) / 2
 	end
 	menu.contextFrame:display()
 end
 
+function menu.isInputSourceKeyboardMouse(source)
+	return (source == 1) or (source == 18) or (source == 19)
+end
+
+function menu.getNumNonKeyboardInputs(controltype, code)
+	local count = 0
+	if controltype == "functions" then
+		local definingcontrol = menu.controls[controltype][code].definingcontrol
+		local inputs = menu.controls[definingcontrol[1]][definingcontrol[2]]
+
+		if type(inputs) == "table" then
+			for _, input in ipairs(inputs) do
+				if menu.checkInputSource(input[1]) then
+					if not menu.isInputSourceKeyboardMouse(input[1]) then
+						count = count + 1
+					end
+				end
+			end
+		end
+	else
+		if type(menu.controls[controltype][code]) == "table" then
+			for _, input in ipairs(menu.controls[controltype][code]) do
+				if menu.checkInputSource(input[1]) then
+					if not menu.isInputSourceKeyboardMouse(input[1]) then
+						count = count + 1
+					end
+				end
+			end
+		end
+	end
+	return count
+end
+
 function menu.createContextMenuRemap(frame)
-	local ftable = frame:addTable(5, { tabOrder = 1, x = Helper.borderSize, y = Helper.borderSize, width = menu.contextMenuData.width, highlightMode = "off" })
-
-	local row = ftable:addRow(nil, { fixed = true, bgColor = Helper.color.transparent })
-	row[1]:setColSpan(5):createText(ReadText(1001, 8978), config.subHeaderTextProperties)
-
-	local row = ftable:addRow(nil, { fixed = true, bgColor = Helper.color.transparent })
-	row[1]:setColSpan(5):createText(ReadText(1001, 8979), { wordwrap = true })
+	local ftable = frame:addTable(5, { tabOrder = 2, x = Helper.borderSize, y = Helper.borderSize, width = menu.contextMenuData.width, highlightMode = "off" })
 
 	local active = true
-	local mouseovertext = ""
+	local warning
 	for _, conflict in ipairs(menu.contextMenuData.conflicts) do
-		local row = ftable:addRow(nil, { fixed = true, bgColor = Helper.color.transparent })
-
-		local name
-		if conflict.control[1] == "functions" then
-			name = menu.controls[conflict.control[1]][conflict.control[2]].name
-		else
-			name = ReadText(config.input.controltextpage[conflict.control[1]], conflict.control[2])
-		end
-		row[1]:setColSpan(5):createText("· " .. name, { color = (not conflict.mapable) and Helper.color.red or nil })
 		if not conflict.mapable then
 			active = false
-			mouseovertext = ReadText(1026, 2662)
+		end
+		if conflict.control[6] then
+			local isnonkeyboardmouseaffected = false
+			if menu.contextMenuData.reset then
+				if menu.remapControl.controltype == "functions" then
+					local definingcontrol = menu.defaultcontrols[menu.remapControl.controltype][menu.remapControl.controlcode].definingcontrol
+					for _, entry in ipairs(menu.defaultcontrols[definingcontrol[1]][definingcontrol[2]]) do
+						if not menu.isInputSourceKeyboardMouse(entry[1]) then
+							isnonkeyboardmouseaffected = true
+							break
+						end
+					end
+				else
+					for _, entry in ipairs(menu.defaultcontrols[menu.remapControl.controltype][menu.remapControl.controlcode]) do
+						if not menu.isInputSourceKeyboardMouse(entry[1]) then
+							isnonkeyboardmouseaffected = true
+							break
+						end
+					end
+				end
+			else
+				isnonkeyboardmouseaffected = not menu.isInputSourceKeyboardMouse(menu.contextMenuData.newinput[1])
+			end
+
+			if isnonkeyboardmouseaffected then
+				if menu.getNumNonKeyboardInputs(conflict.control[1], conflict.control[2]) == 1 then
+					warning = ReadText(1001, 12675)
+				end
+			end
 		end
 	end
 
-	local row = ftable:addRow(nil, { fixed = true, bgColor = Helper.color.transparent })
-	row[1]:setColSpan(5):createText(" ")
+	local row = ftable:addRow(nil, { fixed = true })
+	local title = ReadText(1001, 8978)
+	if menu.contextMenuData.modifier then
+		title = ReadText(1001, 12647)
+	elseif menu.contextMenuData.removemodifier then
+		title = ReadText(1001, 12649)
+	end
+	row[1]:setColSpan(5):createText(title, config.subHeaderTextProperties)
 
-	local row = ftable:addRow(true, { fixed = true, bgColor = Helper.color.transparent })
-	row[2]:createButton({ active = active, mouseOverText = mouseovertext }):setText(ReadText(1001, 2821), { halign = "center" })
-	row[2].handlers.onClick = function () menu.remapInputInternal(menu.contextMenuData.newinput[1], menu.contextMenuData.newinput[2], menu.contextMenuData.newinput[3]); menu.closeContextMenu() end
+	local row = ftable:addRow(nil, { fixed = true })
+	row[1]:setColSpan(5):createText(menu.getControlName(menu.remapControl.controltype, menu.remapControl.controlcode), { font = config.fontBold, halign = "center" })
 
-	row[4]:createButton({  }):setText(ReadText(1001, 64), {halign = "center" })
-	row[4].handlers.onClick = menu.closeContextMenu
+	if not menu.contextMenuData.reset then
+		local keyname, keyicon = menu.getInputName(menu.contextMenuData.newinput[1], menu.contextMenuData.newinput[2], menu.contextMenuData.newinput[3] or 0)
+		local newinputname = keyname .. " " .. keyicon
+		local row = ftable:addRow(nil, { fixed = true })
+		row[1]:setColSpan(5):createText(ReadText(1001, 12673) .. ReadText(1001, 120) .. " " .. newinputname, { halign = "center" })
+	end
+
+	ftable:addEmptyRow()
+
+	local row = ftable:addRow(nil, { fixed = true })
+	local desc = ReadText(1001, 8979)
+	if not active then
+		desc = ReadText(1001, 12658)
+	elseif menu.contextMenuData.modifier then
+		desc = ReadText(1001, 12648)
+	elseif menu.contextMenuData.removemodifier then
+		desc = ReadText(1001, 12650)
+	end
+	row[1]:setColSpan(5):createText(desc, { wordwrap = true })
+
+	ftable:addEmptyRow()
+
+	if warning then
+		local row = ftable:addRow(nil, { fixed = true })
+		row[1]:setColSpan(5):createText(warning, { wordwrap = true, color = Color["text_warning"] })
+
+		ftable:addEmptyRow()
+	end
+
+	for _, conflict in ipairs(menu.contextMenuData.conflicts) do
+		local row = ftable:addRow(true, {  })
+		row[1]:setColSpan(5):createText("· " .. menu.getControlName(conflict.control[1], conflict.control[2]), { color = (not conflict.mapable) and Color["text_error"] or nil })
+	end
+
+	local buttontable = frame:addTable(5, { tabOrder = 1, x = Helper.borderSize, y = Helper.borderSize, width = menu.contextMenuData.width, highlightMode = "off", defaultInteractiveObject = true })
+
+	local row = buttontable:addRow(true, { fixed = true })
+	if active then
+		row[2]:createButton({  }):setText(ReadText(1001, 2821), { halign = "center" })
+		row[2].handlers.onClick = function () menu.buttonContextRemapConfirm() end
+
+		row[4]:createButton({  }):setText(ReadText(1001, 64), { halign = "center" })
+		row[4].handlers.onClick = menu.closeContextMenu
+		buttontable:setSelectedCol(4)
+	else
+		row[3]:createButton({  }):setText(ReadText(1001, 14), { halign = "center" })
+		row[3].handlers.onClick = menu.closeContextMenu
+	end
+
+	if ftable:getFullHeight() + buttontable:getFullHeight() + Helper.scaleY(Helper.standardTextHeight) + 2 * Helper.borderSize + Helper.frameBorder > (Helper.viewHeight - frame.properties.y) then
+		ftable.properties.maxVisibleHeight = Helper.viewHeight - frame.properties.y - buttontable:getFullHeight() - Helper.scaleY(Helper.standardTextHeight) - 2 * Helper.borderSize - Helper.frameBorder
+	end
+	buttontable.properties.y = ftable:getVisibleHeight() + Helper.scaleY(Helper.standardTextHeight) + 2 * Helper.borderSize
+
+	return buttontable.properties.y + buttontable:getFullHeight()
+end
+
+function menu.buttonContextRemapConfirm()
+	if menu.contextMenuData.modifier then
+		-- fix for conflicts with existing mappings
+		local _, unmodified = math.modf(menu.contextMenuData.newinput[2] / config.input.modifierFilter)
+		unmodified = unmodified * config.input.modifierFilter
+
+		local conflicts = {}
+		for i = 0, math.pow(2, #config.input.modifiers) - 1 do
+			local offset = 0
+			for j, modifierentry in ipairs(config.input.modifiers) do
+				if math.floor(i / math.pow(2, j - 1)) % 2 == 1 then
+					offset = offset + modifierentry.offset
+				end
+			end
+			menu.fixInputConflicts({ menu.contextMenuData.newinput[1], unmodified + offset, menu.contextMenuData.newinput[3] }, true)
+		end
+		SaveInputSettings(menu.controls.actions, menu.controls.states, menu.controls.ranges)
+
+		menu.remapInputInternal(menu.contextMenuData.newinput[1], menu.contextMenuData.newinput[2], menu.contextMenuData.newinput[3])
+	elseif menu.contextMenuData.removemodifier then
+		menu.checkForModifier(menu.contextMenuData.removemodifier[1], false)
+		SaveInputSettings(menu.controls.actions, menu.controls.states, menu.controls.ranges)
+
+		C.UnmapModifierKey(menu.contextMenuData.removemodifier[1], menu.contextMenuData.removemodifier[2], false)
+
+		menu.topRows["input_modifiers"] = GetTopRow(menu.optionTable)
+		menu.selectedRows["input_modifiers"] = Helper.currentTableRow[menu.optionTable]
+		menu.selectedCols["input_modifiers"] = Helper.currentTableCol[menu.optionTable]
+		menu.refresh()
+	elseif menu.contextMenuData.reset then
+		menu.removeAllMappings()
+		if menu.remapControl.controltype == "functions" then
+			local definingcontrol = menu.defaultcontrols[menu.remapControl.controltype][menu.remapControl.controlcode].definingcontrol
+			for _, entry in ipairs(menu.defaultcontrols[definingcontrol[1]][definingcontrol[2]]) do
+				menu.remapInputInternal(entry[1], entry[2], entry[3], entry[4], true)
+			end
+		else
+			for _, entry in ipairs(menu.defaultcontrols[menu.remapControl.controltype][menu.remapControl.controlcode]) do
+				menu.remapInputInternal(entry[1], entry[2], entry[3], entry[4], true)
+			end
+		end
+		SaveInputSettings(menu.controls.actions, menu.controls.states, menu.controls.ranges)
+		menu.preselectTopRow = GetTopRow(menu.optionTable)
+		menu.preselectOption = menu.remapControl.row
+		menu.preselectCol = menu.remapControl.col
+		menu.remapControl = nil
+		menu.submenuHandler(menu.currentOption)
+	else
+		menu.remapInputInternal(menu.contextMenuData.newinput[1], menu.contextMenuData.newinput[2], menu.contextMenuData.newinput[3])
+	end
+	menu.closeContextMenu()
+end
+
+function menu.createContextMenuDirectInput(frame)
+	local ftable = frame:addTable(5, { tabOrder = 2, x = Helper.borderSize, y = Helper.borderSize, width = menu.contextMenuData.width, highlightMode = "off" })
+	ftable:setColWidthPercent(2, 47)
+	ftable:setColWidthPercent(4, 47)
+
+	local row = ftable:addRow(nil, { fixed = true })
+	row[1]:setColSpan(5):createText(ReadText(1001, 12670), config.subHeaderTextProperties)
+
+	local row = ftable:addRow(nil, { fixed = true })
+	row[1]:setColSpan(5):createText(ReadText(1001, 12671), { wordwrap = true })
+
+	ftable:addEmptyRow()
+
+	local row = ftable:addRow(nil, { fixed = true })
+	row[2]:setColSpan(3):createText(menu.getControlName(menu.remapControl.controltype, menu.remapControl.controlcode), { font = config.fontBold, halign = "center" })
+
+	local currentinputname = ""
+	if menu.remapControl.oldinputtype ~= -1 then
+		local keyname, keyicon = menu.getInputName(menu.remapControl.oldinputtype, menu.remapControl.oldinputcode, menu.remapControl.oldinputsgn)
+		currentinputname = keyname .. " " .. keyicon
+	end
+	local row = ftable:addRow(nil, { fixed = true })
+	row[2]:setColSpan(2):createText(ReadText(1001, 12672) .. ReadText(1001, 120))
+	row[4]:createText(currentinputname)
+
+	local row = ftable:addRow(nil, { fixed = true })
+	row[2]:setColSpan(2):createText(ReadText(1001, 12673) .. ReadText(1001, 120))
+	row[4]:createText(menu.nameNewAssignment)
+
+	local row = ftable:addRow(nil, { fixed = true })
+	row[1]:setColSpan(5):createText(" ", { titleColor = Color["row_title"] })
+
+	if not C.IsRunningOnSteamDeck() then
+		local row = ftable:addRow(nil, { fixed = true })
+		row[1]:setColSpan(5):createText(" ", { titleColor = Color["row_title"] })
+
+		local row = ftable:addRow(nil, { fixed = true })
+		if not menu.remapControl.disableremove then
+			row[2]:createText("\27[keyboard_input_keycode_delete] " .. ReadText(1001, 12674))
+		end
+		row[4]:createText("\27[keyboard_input_keycode_escape] " .. ReadText(1001, 64))
+	end
+
+	ftable:addEmptyRow()
 
 	return ftable:getVisibleHeight()
+end
+
+function menu.nameNewAssignment()
+	local text = ""
+	if C.IsControlPressed() then
+		text = text .. ffi.string(C.GetDisplayedModifierKey("ctrl")) .. "+"
+	end
+	if C.IsShiftPressed() then
+		text = text .. ffi.string(C.GetDisplayedModifierKey("shift")) .. "+"
+	end
+	local _, secondfraction = math.modf(getElapsedTime())
+	if secondfraction > 0.5 then
+		text = text .. "_"
+	end
+	return text
+end
+
+function menu.createContextMenuRemoveControllerInput(frame)
+	local ftable = frame:addTable(5, { tabOrder = 2, x = Helper.borderSize, y = Helper.borderSize, width = menu.contextMenuData.width, highlightMode = "off" })
+
+	local row = ftable:addRow(nil, { fixed = true })
+	row[1]:setColSpan(5):createText(ReadText(1001, 12676), config.subHeaderTextProperties)
+
+	local row = ftable:addRow(nil, { fixed = true })
+	row[1]:setColSpan(5):createText(menu.getControlName(menu.remapControl.controltype, menu.remapControl.controlcode), { font = config.fontBold, halign = "center" })
+
+	local currentinputname = ""
+	if menu.remapControl.oldinputtype ~= -1 then
+		local keyname, keyicon = menu.getInputName(menu.remapControl.oldinputtype, menu.remapControl.oldinputcode, menu.remapControl.oldinputsgn)
+		currentinputname = keyname .. " " .. keyicon
+	end
+	local row = ftable:addRow(nil, { fixed = true })
+	row[1]:setColSpan(5):createText(ReadText(1001, 12672) .. ReadText(1001, 120) .. " " .. currentinputname, { halign = "center" })
+
+	ftable:addEmptyRow()
+
+	local row = ftable:addRow(nil, { fixed = true })
+	row[1]:setColSpan(5):createText(ReadText(1001, 12677), { wordwrap = true, color = Color["text_warning"] })
+
+	local row = ftable:addRow(true, { fixed = true })
+	row[2]:createButton({  }):setText(ReadText(1001, 2821), { halign = "center" })
+	row[2].handlers.onClick = function () menu.buttonContextRemoveControllerInputConfirm() end
+
+	row[4]:createButton({  }):setText(ReadText(1001, 64), { halign = "center" })
+	row[4].handlers.onClick = function () menu.remapControl = nil; menu.closeContextMenu() end
+	ftable:setSelectedCol(4)
+
+	return ftable:getVisibleHeight()
+end
+
+function menu.buttonContextRemoveControllerInputConfirm()
+	if menu.contextMenuData.removed then
+		menu.removeInput()
+
+		menu.preselectTopRow = GetTopRow(menu.optionTable)
+		menu.preselectOption = menu.remapControl.row
+		menu.preselectCol = menu.remapControl.col
+		menu.remapControl = nil
+		menu.submenuHandler(menu.currentOption)
+		AddUITriggeredEvent(menu.name, "remap_removed")
+	else
+		menu.remapInput(menu.contextMenuData.newinput[1], menu.contextMenuData.newinput[2], menu.contextMenuData.newinput[3], true)
+	end
+	menu.closeContextMenu()
 end
 
 function menu.createContextMenuModified(frame)
@@ -2957,18 +3835,18 @@ function menu.createContextMenuModified(frame)
 	ftable:setColWidthPercent(5, 25, false)
 	ftable:setColWidthPercent(6, 25, false)
 
-	local row = ftable:addRow(false, { fixed = true, bgColor = Helper.color.transparent })
+	local row = ftable:addRow(false, { fixed = true })
 	row[1]:setColSpan(6):createText(menu.contextMenuData.thirdparty and ReadText(1001, 9713) or ReadText(1001, 9716), Helper.headerRowCenteredProperties)
 
-	local row = ftable:addRow(false, { fixed = true, bgColor = Helper.color.transparent })
+	local row = ftable:addRow(false, { fixed = true })
 	row[1]:setColSpan(6):createText(ReadText(1001, 9717) .. ((not menu.contextMenuData.thirdparty) and ("\n\n" .. ReadText(1001, 9718)) or ""), { wordwrap = true })
 
 	ftable:addEmptyRow()
 
-	local row = ftable:addRow(true, { fixed = true, bgColor = Helper.color.transparent })
+	local row = ftable:addRow(true, { fixed = true })
 	row[1]:createCheckBox(function () return menu.contextMenuData.saveOption == true end, { height = Helper.standardButtonHeight })
 	row[1].handlers.onClick = function () menu.contextMenuData.saveOption = not menu.contextMenuData.saveOption end
-	row[2]:setColSpan(3):createButton({ bgColor = Helper.color.transparent }):setText(ReadText(1001, 9711))
+	row[2]:setColSpan(3):createButton({ bgColor = Color["button_background_hidden"] }):setText(ReadText(1001, 9711))
 	row[2].handlers.onClick = function () menu.contextMenuData.saveOption = not menu.contextMenuData.saveOption end
 	row[6]:createButton({ helpOverlayID = "modified_client_confirm", helpOverlayText = " ", helpOverlayHighlightOnly = true }):setText(ReadText(1001, 14), { halign = "center" })
 	row[6].handlers.onClick = function() __CORE_DETAILMONITOR_USERQUESTION[menu.contextMenuMode] = menu.contextMenuData.saveOption; menu.closeContextMenu() end
@@ -2983,40 +3861,117 @@ function menu.createContextMenuVentureExtension(frame)
 	ftable:setColWidthPercent(5, 25, false)
 	ftable:setColWidthPercent(6, 25, false)
 
-	local row = ftable:addRow(false, { fixed = true, bgColor = Helper.color.transparent })
+	local row = ftable:addRow(false, { fixed = true })
 	row[1]:setColSpan(6):createText(ReadText(1001, 11359), Helper.headerRowCenteredProperties)
 
-	local row = ftable:addRow(false, { fixed = true, bgColor = Helper.color.transparent })
+	local row = ftable:addRow(false, { fixed = true })
 	row[1]:setColSpan(6):createText(ReadText(1001, 11360), { wordwrap = true })
 
 	ftable:addEmptyRow()
 
-	local row = ftable:addRow(true, { fixed = true, bgColor = Helper.color.transparent })
+	local row = ftable:addRow(true, { fixed = true })
 	row[1]:createCheckBox(function () return menu.contextMenuData.saveOption == true end, { height = Helper.standardButtonHeight })
 	row[1].handlers.onClick = function () menu.contextMenuData.saveOption = not menu.contextMenuData.saveOption end
-	row[2]:setColSpan(3):createButton({ bgColor = Helper.color.transparent }):setText(ReadText(1001, 9711))
+	row[2]:setColSpan(3):createButton({  }):setText(ReadText(1001, 9711))
 	row[2].handlers.onClick = function () menu.contextMenuData.saveOption = not menu.contextMenuData.saveOption end
 	row[5]:createButton({ helpOverlayID = "venture_extension_download_confirm", helpOverlayText = " ", helpOverlayHighlightOnly = true }):setText(ReadText(1001, 2617), { halign = "center" })
 	row[5].handlers.onClick = function()
-			if menu.contextMenuData.saveOption then OnlineSetVentureConfig("disable_popup", true) end
-			OnlineSetVentureConfig("allow_validation", true)
-			OnlineSetVentureConfig("allow_update", true)
-			if menu.contextMenuData.refreshOnClose then
-				menu.displayOnlineLogin()
-			end
-			menu.closeContextMenu()
+	if menu.contextMenuData.saveOption then OnlineSetVentureConfig("disable_popup", true) end
+		OnlineSetVentureConfig("allow_validation", true)
+		OnlineSetVentureConfig("allow_update", true)
+		if menu.contextMenuData.refreshOnClose then
+			menu.displayOnlineLogin()
 		end
+		menu.closeContextMenu()
+	end
 	row[6]:createButton({ helpOverlayID = "venture_extension_download_cancel", helpOverlayText = " ", helpOverlayHighlightOnly = true }):setText(ReadText(1001, 2618), { halign = "center" })
-	row[6].handlers.onClick = function() 
-			if menu.contextMenuData.saveOption then OnlineSetVentureConfig("disable_popup", true) end
-			menu.closeContextMenu()
-		end
+	row[6].handlers.onClick = function()
+	if menu.contextMenuData.saveOption then OnlineSetVentureConfig("disable_popup", true) end
+		menu.closeContextMenu()
+	end
 	ftable:setSelectedCol(6)
 
 	return ftable:getVisibleHeight()
 end
 
+function menu.createContextMenuEditColor(frame)
+	local ftable = frame:addTable(3, { tabOrder = 1, x = Helper.borderSize, y = Helper.borderSize, width = menu.contextMenuData.width, highlightMode = "off" })
+	ftable:setColWidthPercent(1, 20)
+	ftable:setColWidthPercent(3, 50)
+
+	local row = ftable:addRow(nil, { fixed = true })
+	row[1]:setColSpan(3):createText(ReadText(1001, 12603), config.subHeaderTextProperties)
+
+	local coloridx = menu.colorLibSettings.colorIndices[menu.contextMenuData.colorid]
+	menu.contextMenuData.color = Helper.tableCopy(menu.colorLibSettings.colors[coloridx].color)
+
+	local row = ftable:addRow(true, { fixed = true, borderBelow = false })
+	row[1]:createIcon("solid", { color = function () return menu.getColorMapColor(menu.contextMenuData.color) end, height = Helper.scaleY(config.standardTextHeight) + Helper.borderSize, scaling = false })
+	row[2]:setColSpan(2):createSliderCell({ height = config.standardTextHeight, min = 0, max = 255, start = menu.contextMenuData.color.r, step = 1, hideMaxValue = true }):setText(ReadText(1001, 12604))
+	row[2].handlers.onSliderCellChanged = function (_, value) menu.contextMenuData.color.r = value end
+
+	local row = ftable:addRow(true, { fixed = true, borderBelow = false })
+	row[1]:createIcon("solid", { color = function () return menu.getColorMapColor(menu.contextMenuData.color) end, height = Helper.scaleY(config.standardTextHeight) + Helper.borderSize, scaling = false })
+	row[2]:setColSpan(2):createSliderCell({ height = config.standardTextHeight, min = 0, max = 255, start = menu.contextMenuData.color.g, step = 1, hideMaxValue = true }):setText(ReadText(1001, 12605))
+	row[2].handlers.onSliderCellChanged = function (_, value) menu.contextMenuData.color.g = value end
+
+	local row = ftable:addRow(true, { fixed = true, borderBelow = false })
+	row[1]:createIcon("solid", { color = function () return menu.getColorMapColor(menu.contextMenuData.color) end, height = Helper.scaleY(config.standardTextHeight) + Helper.borderSize, scaling = false })
+	row[2]:setColSpan(2):createSliderCell({ height = config.standardTextHeight, min = 0, max = 255, start = menu.contextMenuData.color.b, step = 1, hideMaxValue = true }):setText(ReadText(1001, 12606))
+	row[2].handlers.onSliderCellChanged = function (_, value) menu.contextMenuData.color.b = value end
+
+	local row = ftable:addRow(true, { fixed = true })
+	row[1]:createIcon("solid", { color = function () return menu.getColorMapColor(menu.contextMenuData.color) end, height = Helper.scaleY(config.standardTextHeight), scaling = false })
+	row[2]:setColSpan(2):createSliderCell({ height = config.standardTextHeight, min = 0, max = 255, start = menu.contextMenuData.color.a, step = 1, hideMaxValue = true }):setText(ReadText(1001, 12607))
+	row[2].handlers.onSliderCellChanged = function (_, value) menu.contextMenuData.color.a = value end
+
+	local row = ftable:addRow(true, { fixed = true })
+	row[2]:setColSpan(2):createSliderCell({ height = config.standardTextHeight, min = 0, max = 1, start = menu.contextMenuData.color.glow, step = 0.01, hideMaxValue = true }):setText(ReadText(1001, 12608))
+	row[2].handlers.onSliderCellChanged = function (_, value) menu.contextMenuData.color.glow = value end
+
+	local row = ftable:addRow(true, { fixed = true })
+	row[1]:setColSpan(2):createButton({  }):setText(ReadText(1001, 14), { halign = "center" })
+	row[1].handlers.onClick = menu.buttonConfirmColor
+	row[3]:createButton({  }):setText(ReadText(1001, 64), { halign = "center" })
+	row[3].handlers.onClick = menu.closeContextMenu
+
+	return ftable:getVisibleHeight()
+end
+
+function menu.buttonConfirmColor()
+	C.SetColorMapDefinition(menu.contextMenuData.colorid, Helper.ffiColor(menu.contextMenuData.color), menu.contextMenuData.color.glow)
+	local coloridx = menu.colorLibSettings.colorIndices[menu.contextMenuData.colorid]
+	menu.colorLibSettings.colors[coloridx].color = menu.contextMenuData.color
+
+	menu.closeContextMenu()
+end
+
+function menu.createContextMenuInfo(frame)
+	local ftable = frame:addTable(3, { tabOrder = 1, width = menu.contextMenuData.width, x = 3 * Helper.borderSize, y = 3 * Helper.borderSize, defaultInteractiveObject = true })
+
+	local row = ftable:addRow(false, { fixed = true })
+	row[1]:setColSpan(3):createText(menu.contextMenuData.infotitle, Helper.headerRowCenteredProperties)
+
+	local row = ftable:addRow(false, { fixed = true })
+	row[1]:setColSpan(3):createText(menu.contextMenuData.infotext, { wordwrap = true })
+
+	ftable:addEmptyRow()
+
+	local row = ftable:addRow(true, { fixed = true })
+	row[2]:createButton({  }):setText(ReadText(1001, 14), { halign = "center" })
+	row[2].handlers.onClick = function() menu.closeContextMenu() end
+
+	return ftable:getVisibleHeight()
+end
+
 function menu.onTabScroll(direction)
+	menu.closeContextMenu()
+	if menu.remapControl then
+		if menu.directInputActive then
+			menu.unregisterDirectInput()
+		end
+		menu.remapControl = nil
+	end
 	if direction == "right" then
 		Helper.scrollTopLevel(menu, "options", 1)
 	elseif direction == "left" then
@@ -3028,12 +3983,41 @@ function menu.onInputModeChanged(_, mode)
 	menu.createTopLevel()
 end
 
-function menu.displayControlRow(ftable, controlsgroup, controltype, code, context, mouseovertext, mapable, isdoubleclickmode, allowmouseaxis)
+function menu.getMappedButtons(buttons, compassmenubutton, displayed, input, mapable)
+	local loc_mapable = mapable
+	if (type(input[1]) == "number") and menu.checkInputSource(input[1]) then
+		if (input[1] == 30) or (input[1] == 31) then -- INPUT_SOURCE_COMPASSMENU, INPUT_SOURCE_COMPASSMENU_2
+			local keyname, keyicon = menu.getInputName(input[1], input[2], input[3])
+			if keyname ~= "" then
+				compassmenubutton = { keyname = keyname, keyicon = keyicon, input1 = input[1], input2 = input[2], input3 = input[3] }
+			end
+		elseif menu.checkInputSource(input[1]) then
+			local keyname, keyicon = menu.getInputName(input[1], input[2], input[3])
+			if keyname ~= "" then
+				displayed = displayed + 1
+				if (not loc_mapable) and (input[1] == 1) then
+					if displayed == 1 then
+						buttons[displayed] = { keyname = keyname, keyicon = keyicon, input1 = input[1], input2 = input[2], input3 = input[3], notmapable = true }
+					else
+						buttons[displayed] = buttons[1]
+						buttons[1] = { keyname = keyname, keyicon = keyicon, input1 = input[1], input2 = input[2], input3 = input[3], notmapable = true }
+					end
+					loc_mapable = true
+				else
+					buttons[displayed] = { keyname = keyname, keyicon = keyicon, input1 = input[1], input2 = input[2], input3 = input[3] }
+				end
+			end
+		end
+	end
+	return buttons, compassmenubutton, displayed
+end
+
+function menu.displayControlRow(ftable, controlsgroup, controltype, code, context, mouseovertext, mapable, allowmouseaxis, first, checklastnonkeyboard, compassmenusupport, mouseonly, mousewheelonly)
 	local buttons = {}
-	local name = ""
+	local compassmenubutton = nil
+	local name = menu.getControlName(controltype, code)
 	local context = context
 	if controltype == "functions" then
-		name = menu.controls[controltype][code].name
 		context = menu.controls[controltype][code].contexts
 
 		local definingcontrol = menu.controls[controltype][code].definingcontrol
@@ -3042,53 +4026,40 @@ function menu.displayControlRow(ftable, controlsgroup, controltype, code, contex
 		if type(inputs) == "table" then
 			local displayed = 0
 			for _, input in ipairs(inputs) do
-				if type(input[1]) == "number" and menu.checkInputSource(input[1]) then
-					local keyname, keyicon = menu.getInputName(input[1], input[2], input[3])
-					if keyname ~= "" then
-						displayed = displayed + 1
-						if (not mapable) and (input[1] == 1) then
-							if displayed == 1 then
-								buttons[displayed] = { keyname = keyname, keyicon = keyicon, input1 = input[1], input2 = input[2], input3 = input[3], notmapable = true }
-							else
-								buttons[displayed] = buttons[1]
-								buttons[1] = { keyname = keyname, keyicon = keyicon, input1 = input[1], input2 = input[2], input3 = input[3], notmapable = true }
-							end
-							mapable = true
-						else
-							buttons[displayed] = { keyname = keyname, keyicon = keyicon, input1 = input[1], input2 = input[2], input3 = input[3], inactive = (not isdoubleclickmode) and (input[1] == 19) and (input[2] == 3) }
-						end
-					end
-				end
+				buttons, compassmenubutton, displayed = menu.getMappedButtons(buttons, compassmenubutton, displayed, input, mapable)
 			end
 		end
 	else
-		name = ReadText(config.input.controltextpage[controltype], code)
 		if type(menu.controls[controltype][code]) == "table" then
 			local displayed = 0
 			for _, input in ipairs(menu.controls[controltype][code]) do
-				if type(input[1]) == "number" and menu.checkInputSource(input[1]) then
-					local keyname, keyicon = menu.getInputName(input[1], input[2], input[3])
-					if keyname ~= "" then
-						displayed = displayed + 1
-						if (not mapable) and (input[1] == 1) then
-							if displayed == 1 then
-								buttons[displayed] = { keyname = keyname, keyicon = keyicon, input1 = input[1], input2 = input[2], input3 = input[3], notmapable = true }
-							else
-								buttons[displayed] = buttons[1]
-								buttons[1] = { keyname = keyname, keyicon = keyicon, input1 = input[1], input2 = input[2], input3 = input[3], notmapable = true }
-							end
-							mapable = true
-						else
-							buttons[displayed] = {keyname = keyname, keyicon = keyicon, input1 = input[1], input2 = input[2], input3 = input[3], inactive = (not isdoubleclickmode) and (input[1] == 19) and (input[2] == 3) }
-						end
-					end
-				end
+				buttons, compassmenubutton, displayed = menu.getMappedButtons(buttons, compassmenubutton, displayed, input, mapable)
 			end
 		end
 	end
-			
-	for i = 1, (next(buttons) and #buttons or 1), 2 do
-		local row = ftable:addRow(true, { bgColor = Helper.color.transparent })
+
+	if not first then
+		local row = ftable:addRow(nil, {  })
+		row[2]:setColSpan(7):createText(" ", { fontsize = 1, height = Helper.scaleY(config.standardTextHeight) / 2 - 2 * Helper.borderSize, scaling = false })
+	end
+
+	local numbuttons = next(buttons) and #buttons or 1
+	if next(buttons) and menu.remapControl then
+		if (menu.remapControl.controltype == controltype) and (menu.remapControl.controlcode == code) and (menu.remapControl.oldinputtype == -1) and (menu.remapControl.oldinputcode == -1) then
+			numbuttons = numbuttons + 1
+		end
+	end
+	for i = 1, numbuttons do
+		local row = ftable:addRow(true, {  })
+
+		-- preselect row and col
+		if i == numbuttons then
+			-- check if the next row would be preselected (it would be an unselectable row) and choose this row instead
+			if row.index + 1 == menu.preselectOption then
+				menu.preselectOption = row.index
+			end
+		end
+
 		if row.index == menu.preselectOption then
 			ftable:setSelectedRow(row.index)
 			if menu.preselectCol == 3 then
@@ -3096,94 +4067,304 @@ function menu.displayControlRow(ftable, controlsgroup, controltype, code, contex
 					ftable:setSelectedCol(3)
 				end
 			elseif menu.preselectCol == 4 then
-				if buttons[i+1] and (buttons[i+1].notmapable == nil) then
+				if buttons[i] and (buttons[i].notmapable == nil) then
 					ftable:setSelectedCol(4)
+				end
+			elseif menu.preselectCol == 7 then
+				ftable:setSelectedCol(7)
+			end
+		end
+
+		local text = buttons[i] and buttons[i].keyname or " "
+		local isdblclick = buttons[i] and (buttons[i].input1 == 19) and (buttons[i].input2 % 2 == 0)
+
+		local hasextramousebuttoninfo = false
+		if (menu.currentOption == "keyboard_space") or (menu.currentOption == "vrtouch_space") or (menu.currentOption == "vrvive_space") then
+			if buttons[i] then
+				if mouseonly then
+					if menu.mappedmousebuttons.targetselect[buttons[i].input2] and menu.mappedmousebuttons.targetinteract[buttons[i].input2] then
+						if mouseovertext then
+							mouseovertext = mouseovertext .. "\n\n"
+						else
+							mouseovertext = ""
+						end
+						if not hasextramousebuttoninfo then
+							mouseovertext = mouseovertext .. "\27[menu_info] "
+						end
+						hasextramousebuttoninfo = true
+
+						if isdblclick then
+							mouseovertext = mouseovertext .. ReadText(1026, 2691)
+						else
+							mouseovertext = mouseovertext .. ReadText(1026, 2690)
+						end
+					else
+						if mouseovertext then
+							mouseovertext = mouseovertext .. "\n\n"
+						else
+							mouseovertext = ""
+						end
+
+						mouseovertext = mouseovertext .. ReadText(1026, 2695)
+					end
+
+					if menu.mappedmousebuttons[buttons[i].input2] then
+						if mouseovertext then
+							mouseovertext = mouseovertext .. "\n\n"
+						else
+							mouseovertext = ""
+						end
+						if not hasextramousebuttoninfo then
+							mouseovertext = mouseovertext .. "\27[menu_info] "
+						end
+						hasextramousebuttoninfo = true
+
+						mouseovertext = mouseovertext .. ReadText(1026, 2687) .. ReadText(1001, 120)
+						local showboth = false
+						if code == 130 then
+							if menu.mappedmousebuttons.targetinteract[buttons[i].input2] then
+								mouseovertext = mouseovertext .. "\n· " .. text .. " (" .. ReadText(1026, 2688) .. ")" .. ReadText(1001, 120) .. " " .. menu.getControlName("states", 132)
+								showboth = true
+							end
+						elseif code == 131 then
+							if menu.mappedmousebuttons.targetselect[buttons[i].input2] then
+								mouseovertext = mouseovertext .. "\n· " .. text .. " (" .. ReadText(1026, 2688) .. ")" .. ReadText(1001, 120) .. " " .. menu.getControlName("states", 132)
+								showboth = true
+							end
+						end
+						if not showboth then
+							mouseovertext = mouseovertext .. "\n· " .. text .. " (" .. ReadText(1026, 2688) .. ")" .. ReadText(1001, 120) .. " " .. name
+						end
+						for _, control in ipairs(menu.mappedmousebuttons[buttons[i].input2]) do
+							mouseovertext = mouseovertext .. "\n· " .. text .. " (" .. ReadText(1026, 2689) .. ")" .. ReadText(1001, 120) .. " " .. menu.getControlName(control[1], control[2])
+						end
+					end
+				else
+					local _, unmodified = math.modf(buttons[i].input2 / config.input.modifierFilter)
+					unmodified = unmodified * config.input.modifierFilter
+					if (buttons[i].input1 == 18) and ((unmodified == 1) or (unmodified == 2)) then
+						if mouseovertext then
+							mouseovertext = mouseovertext .. "\n\n"
+						else
+							mouseovertext = ""
+						end
+						if not hasextramousebuttoninfo then
+							mouseovertext = mouseovertext .. "\27[menu_info] "
+						end
+						hasextramousebuttoninfo = true
+
+						local directsteeringshortcut = ffi.string(C.GetMappedInputName("INPUT_ACTION_TOGGLEDIRECTMOUSESTEERING"))
+						if directsteeringshortcut ~= "" then
+							mouseovertext = mouseovertext .. string.format(ReadText(1026, 2693), directsteeringshortcut)
+						else
+							mouseovertext = mouseovertext .. ReadText(1026, 2694)
+						end
+					elseif buttons[i].input1 == 19 then
+						if menu.mappedmousebuttons.targetselect[buttons[i].input2] and menu.mappedmousebuttons.targetinteract[buttons[i].input2] then
+							if mouseovertext then
+								mouseovertext = mouseovertext .. "\n\n"
+							else
+								mouseovertext = ""
+							end
+							if not hasextramousebuttoninfo then
+								mouseovertext = mouseovertext .. "\27[menu_info] "
+							end
+							hasextramousebuttoninfo = true
+
+							mouseovertext = mouseovertext .. ReadText(1026, 2687) .. ReadText(1001, 120)
+							mouseovertext = mouseovertext .. "\n· " .. text .. " (" .. ReadText(1026, 2688) .. ")" .. ReadText(1001, 120) .. " " .. menu.getControlName("states", 132)
+							mouseovertext = mouseovertext .. "\n· " .. text .. " (" .. ReadText(1026, 2689) .. ")" .. ReadText(1001, 120) .. " " .. name
+						elseif menu.mappedmousebuttons.targetselect[buttons[i].input2] then
+							if mouseovertext then
+								mouseovertext = mouseovertext .. "\n\n"
+							else
+								mouseovertext = ""
+							end
+							if not hasextramousebuttoninfo then
+								mouseovertext = mouseovertext .. "\27[menu_info] "
+							end
+							hasextramousebuttoninfo = true
+
+							mouseovertext = mouseovertext .. ReadText(1026, 2687) .. ReadText(1001, 120)
+							mouseovertext = mouseovertext .. "\n· " .. text .. " (" .. ReadText(1026, 2688) .. ")" .. ReadText(1001, 120) .. " " .. menu.getControlName("states", 130)
+							mouseovertext = mouseovertext .. "\n· " .. text .. " (" .. ReadText(1026, 2689) .. ")" .. ReadText(1001, 120) .. " " .. name
+						elseif menu.mappedmousebuttons.targetinteract[buttons[i].input2] then
+							if mouseovertext then
+								mouseovertext = mouseovertext .. "\n\n"
+							else
+								mouseovertext = ""
+							end
+							if not hasextramousebuttoninfo then
+								mouseovertext = mouseovertext .. "\27[menu_info] "
+							end
+							hasextramousebuttoninfo = true
+
+							mouseovertext = mouseovertext .. ReadText(1026, 2687) .. ReadText(1001, 120)
+							mouseovertext = mouseovertext .. "\n· " .. text .. " (" .. ReadText(1026, 2688) .. ")" .. ReadText(1001, 120) .. " " .. menu.getControlName("states", 131)
+							mouseovertext = mouseovertext .. "\n· " .. text .. " (" .. ReadText(1026, 2689) .. ")" .. ReadText(1001, 120) .. " " .. name
+						end
+					end
 				end
 			end
 		end
-		row[2]:createText(name, config.standardTextProperties)
+
+		-- control name
+		if i == 1 then
+			row[2]:createText(name, config.standardTextProperties)
+		end
 		if mouseovertext then
 			row[2].properties.mouseOverText = mouseovertext
 		end
+
+		-- normal mapping
 		if buttons[i] and (buttons[i].notmapable ~= nil) then
-			local text = buttons[i].keyname
 			if buttons[i].keyicon then
 				local iconwidth = C.GetTextWidth(" " .. buttons[i].keyicon, config.font, Helper.scaleFont(config.font, config.standardFontSize))
 				text = TruncateText(text, config.font, Helper.scaleFont(config.font, config.standardFontSize), row[3]:getWidth() - 2 * Helper.scaleX(config.standardTextOffsetX) - iconwidth)
 			end
-			local button = row[3]:createButton({ bgColor = Helper.color.transparent, highlightColor = Helper.color.grey, mouseOverText = buttons[i].inactive and ReadText(1026, 2634) or "" }):setText(function () return menu.nameControl(text, row.index, 3) end, { color = buttons[i].inactive and Helper.color.red or Helper.color.white })
+			local button = row[3]:createButton({ bgColor = Color["button_background_hidden"], highlightColor = Color["button_highlight_inactive"] }):setText(text)
 			if buttons[i].keyicon then
-				button:setText2(buttons[i].keyicon, { halign = "right" })
+				button:setText2((hasextramousebuttoninfo and "\27[menu_info]" or "") .. buttons[i].keyicon, { halign = "right" })
 			end
 		else
-			local text = buttons[i] and buttons[i].keyname or " "
 			if buttons[i] and buttons[i].keyicon then
 				local iconwidth = C.GetTextWidth(" " .. buttons[i].keyicon, config.font, Helper.scaleFont(config.font, config.standardFontSize))
 				text = TruncateText(text, config.font, Helper.scaleFont(config.font, config.standardFontSize), row[3]:getWidth() - 2 * Helper.scaleX(config.standardTextOffsetX) - iconwidth)
 			end
-			local button = row[3]:createButton({ mouseOverText = (buttons[i] and buttons[i].inactive) and ReadText(1026, 2634) or "" }):setText(function () return menu.nameControl(text, row.index, 3) end, { color = buttons[i] and (buttons[i].inactive and Helper.color.red or Helper.color.white) or Helper.color.red })
+			local button = row[3]:createButton({  }):setText(text, { color = buttons[i] and Color["text_normal"] or Color["text_negative"] })
 			if buttons[i] and buttons[i].keyicon then
-				button:setText2(buttons[i].keyicon, { halign = "right" })
+				button:setText2((hasextramousebuttoninfo and "\27[menu_info]" or "") .. buttons[i].keyicon, { halign = "right" })
 			end
 			if buttons[i] then
-				row[3].handlers.onClick = function () return menu.buttonControl(row.index, {controltype, code, buttons[i].input1, buttons[i].input2, buttons[i].input3, 3, not mapable, context, allowmouseaxis}) end
-				row[3].properties.uiTriggerID = "remapcontrol1a" 
+				row[3].handlers.onClick = function () return menu.buttonControl(row.index, { controltype, code, buttons[i].input1, buttons[i].input2, buttons[i].input3, 3, not mapable, context, allowmouseaxis, checklastnonkeyboard, mouseonly, mouseonly and (numbuttons == 1), isdblclick, mousewheelonly }) end
+				row[3].properties.uiTriggerID = "remapcontrol1a"
 			else
-				row[3].handlers.onClick = function () return menu.buttonControl(row.index, {controltype, code, -1, -1, 0, 3, not mapable, context, allowmouseaxis}) end
-				row[3].properties.uiTriggerID = "remapcontrol1b" 
+				row[3].handlers.onClick = function () return menu.buttonControl(row.index, { controltype, code, -1, -1, 0, 3, not mapable, context, allowmouseaxis, checklastnonkeyboard, mouseonly, mouseonly and (numbuttons == 1), isdblclick, mousewheelonly }) end
+				row[3].properties.uiTriggerID = "remapcontrol1b"
 			end
 		end
 		if mouseovertext then
 			row[3].properties.mouseOverText = mouseovertext
 		end
-		if buttons[i+1] and (buttons[i+1].notmapable ~= nil) then
-			local text = buttons[i+1].keyname
-			if buttons[i+1].keyicon then
-				local iconwidth = C.GetTextWidth(" " .. buttons[i+1].keyicon, config.font, Helper.scaleFont(config.font, config.standardFontSize))
-				text = TruncateText(text, config.font, Helper.scaleFont(config.font, config.standardFontSize), row[4]:getWidth() - 2 * Helper.scaleX(config.standardTextOffsetX) - iconwidth)
-			end
-			local button = row[4]:createButton({ bgColor = Helper.color.transparent, highlightColor = Helper.color.grey, mouseOverText = buttons[i+1].inactive and ReadText(1026, 2634) or "" }):setText(function () return menu.nameControl(text, row.index, 3) end, { color = buttons[i+1].inactive and Helper.color.red or Helper.color.white })
-			if buttons[i+1].keyicon then
-				button:setText2(buttons[i+1].keyicon, { halign = "right" })
-			end
-		else
-			local text = buttons[i+1] and buttons[i+1].keyname or " "
-			if buttons[i+1] and buttons[i+1].keyicon then
-				local iconwidth = C.GetTextWidth(" " .. buttons[i+1].keyicon, config.font, Helper.scaleFont(config.font, config.standardFontSize))
-				text = TruncateText(text, config.font, Helper.scaleFont(config.font, config.standardFontSize), row[4]:getWidth() - 2 * Helper.scaleX(config.standardTextOffsetX) - iconwidth)
-			end
-			local button = row[4]:createButton({ mouseOverText = (buttons[i+1] and buttons[i+1].inactive) and ReadText(1026, 2634) or "" }):setText(function () return menu.nameControl(text, row.index, 4) end, { color = buttons[i+1] and (buttons[i+1].inactive and Helper.color.red or Helper.color.white) or Helper.color.red })
-			if buttons[i+1] and buttons[i+1].keyicon then
-				button:setText2(buttons[i+1].keyicon, { halign = "right" })
-			end
-			if buttons[i+1] then
-				row[4].handlers.onClick = function () return menu.buttonControl(row.index, {controltype, code, buttons[i+1].input1, buttons[i+1].input2, buttons[i+1].input3, 4, not mapable, context, allowmouseaxis}) end
-				row[4].properties.uiTriggerID = "remapcontrol2a" 
-			else
-				row[4].handlers.onClick = function () return menu.buttonControl(row.index, {controltype, code, -1, -1, 0, 4, not mapable, context, allowmouseaxis}) end
-				row[4].properties.uiTriggerID = "remapcontrol2b" 
-			end
+
+		-- remove
+		row[4]:createButton({ active = ((buttons[i] and (buttons[i].notmapable == nil)) == true) and ((not mouseonly) or (numbuttons > 1)), width = config.standardTextHeight, mouseOverText = ReadText(1026, 2677) }):setText("X", { halign = "center", x = 0 })
+		if buttons[i] then
+			row[4].handlers.onClick = function () return menu.buttonRemoveControl(row.index, { controltype, code, buttons[i].input1, buttons[i].input2, buttons[i].input3, 4, not mapable, context, allowmouseaxis, checklastnonkeyboard }) end
 		end
-		if mouseovertext then
-			row[4].properties.mouseOverText = mouseovertext
+
+		-- add
+		if i == 1 then
+			row[5]:createButton({ width = config.standardTextHeight, mouseOverText = ReadText(1026, 2678) }):setText("+", { halign = "center", x = 0 })
+			row[5].handlers.onClick = function () return menu.buttonAddControl(row.index + (next(buttons) and numbuttons or 0), { controltype, code, -1, -1, 0, 3, not mapable, context, allowmouseaxis, nil, mouseonly }) end
+		end
+
+		-- reset
+		if i == 1 then
+			local isdefault = true
+			if controltype == "functions" then
+				if isdefault then
+					for _, functionaction in ipairs(menu.controls[controltype][code].actions) do
+						if not menu.isControlDefault("actions", functionaction) then
+							isdefault = false
+							break
+						end
+					end
+				end
+				if isdefault then
+					for _, functionstate in ipairs(menu.controls[controltype][code].states) do
+						if not menu.isControlDefault("states", functionstate) then
+							isdefault = false
+							break
+						end
+					end
+				end
+				if isdefault then
+					for _, functionrange in ipairs(menu.controls[controltype][code].ranges) do
+						if not menu.isControlDefault("ranges", functionrange) then
+							isdefault = false
+							break
+						end
+					end
+				end
+			else
+				isdefault = menu.isControlDefault(controltype, code)
+			end
+
+			row[6]:createButton({ active = not isdefault, width = config.standardTextHeight, mouseOverText = ReadText(1026, 2679) }):setIcon("menu_reset_view", {  })
+			row[6].handlers.onClick = function () return menu.buttonResetControl(row.index, { controltype, code, 6, context }) end
+		end
+
+		if compassmenusupport ~= false then
+			-- compass menu
+			if i == 1 then
+				local showcompassmenuoption = true
+				if controltype == "ranges" then
+					showcompassmenuoption = false
+				elseif controltype == "states" then
+					if (code == 126) or (code == 127) then
+						showcompassmenuoption = false
+					end
+				end
+
+				if showcompassmenuoption then
+					local options = {
+						{ id = "30:0", text = "", icon = "", displayremoveoption = false },
+					}
+					for i = 1, 8 do
+						table.insert(options, { id = "30:" .. i, text = ReadText(1030, i), icon = "", text2 = string.format("\27[input_device_radial_1_%d]", i), displayremoveoption = false })
+					end
+					for i = 1, 8 do
+						table.insert(options, { id = "31:" .. i, text = ReadText(1030, i), icon = "", text2 = string.format("\27[input_device_radial_2_%d]", i), displayremoveoption = false })
+					end
+
+					row[7]:setColSpan(2):createDropDown(options, { startOption = compassmenubutton and (compassmenubutton.input1 .. ":" .. compassmenubutton.input2) or "30:0" })
+					if compassmenubutton then
+						row[7].handlers.onDropDownConfirmed = function(_, id) return menu.dropdownControl(row.index, { controltype, code, compassmenubutton.input1, compassmenubutton.input2, compassmenubutton.input3, 7, false, context, false }, id) end
+					else
+						row[7].handlers.onDropDownConfirmed = function(_, id) return menu.dropdownControl(row.index, { controltype, code, -1, -1, 0, 7, false, context, false }, id) end
+					end
+					if mouseovertext then
+						row[7].properties.mouseOverText = mouseovertext
+					end
+				end
+			end
+		elseif mouseonly then
+			row[7]:createCheckBox(isdblclick, { width = config.standardTextHeight, height = config.standardTextHeight })
+			row[7].handlers.onClick = function (_, checked) return menu.checkboxControlDblClick({ row = row.index, col = 7, controltype = controltype, controlcode = code, inputtype = buttons[i].input1, inputcode = buttons[i].input2, inputsgn = buttons[i].input3 }, checked) end
+
+			row[8]:createText(ReadText(1001, 12697), config.standardTextProperties)
 		end
 	end
 end
 
-function menu.nameControl(name, row, col)
-	if menu.remapControl then
-		if (row == menu.remapControl.row) and (col == menu.remapControl.col) then
-			local _, secondfraction = math.modf(getElapsedTime())
-			if secondfraction < 0.5 then
-				menu.remapControl.shown = false
-				return ""
+function menu.getControlName(controltype, controlcode)
+	if controltype == "functions" then
+		return menu.controls[controltype][controlcode].name
+	else
+		return ReadText(config.input.controltextpage[controltype], controlcode)
+	end
+end
+
+function menu.isControlDefault(controltype, code)
+	local hascontrols = type(menu.controls[controltype][code]) == "table"
+	local hasdefaultcontrols = type(menu.defaultcontrols[controltype][code]) == "table"
+	if hascontrols == hasdefaultcontrols then
+		if hascontrols then
+			if #menu.controls[controltype][code] == #menu.defaultcontrols[controltype][code] then
+				for i, input in ipairs(menu.controls[controltype][code]) do
+					if (input[1] ~= menu.defaultcontrols[controltype][code][i][1]) or (input[2] ~= menu.defaultcontrols[controltype][code][i][2]) or (input[3] ~= menu.defaultcontrols[controltype][code][i][3]) or (input[4] ~= menu.defaultcontrols[controltype][code][i][4]) then
+						return false
+					end
+				end
 			else
-				menu.remapControl.shown = true
-				return "_"
+				return false
 			end
 		end
+	else
+		return false
 	end
-	return name
+	return true
 end
 
 function menu.displayOption(ftable, option, numCols)
@@ -3194,14 +4375,14 @@ function menu.displayOption(ftable, option, numCols)
 	local row, row2
 	if (option.display == nil) or option.display() then
 		if option.id == "line" then
-			row = ftable:addRow(false, { bgColor = Helper.color.transparent })
-			row[2]:setColSpan(numCols - 1):createText(" ", { fontsize = 1, height = Helper.borderSize, cellBGColor = Helper.color.transparent60 })
+			row = ftable:addRow(false, {  })
+			row[2]:setColSpan(numCols - 1):createText(" ", { fontsize = 1, height = (option.lineheight or 1) * Helper.borderSize, cellBGColor = option.linecolor or Color["row_separator"] })
 		elseif option.id == "header" then
-			row = ftable:addRow(false, { bgColor = Helper.color.transparent })
+			row = ftable:addRow(false, {  })
 			row[2]:setColSpan(numCols - 1):createText(option.name, config.subHeaderTextProperties)
 		else
 			local isselectable = (not option.selectable) or option.selectable()
-			row = ftable:addRow(isselectable and option or {}, { bgColor = Helper.color.transparent })
+			row = ftable:addRow(isselectable and option or {}, { interactive = isselectable })
 			if isselectable and (option.id == menu.preselectOption) then
 				ftable:setSelectedRow(row.index)
 			end
@@ -3232,7 +4413,7 @@ function menu.displayOption(ftable, option, numCols)
 					row[numCols].handlers.onClick = function () return menu.buttonSoundTest(option.id) end
 				elseif option.valuetype == "slidercell" then
 					local scale = option.value()
-					row[nextCol]:createSliderCell({ valueColor = isselectable and config.sliderCellValueColor or config.greySliderCellValueColor, min = scale.min, minSelect = scale.minSelect, max = scale.max, maxSelect = scale.maxSelect, start = scale.start, step = scale.step, suffix = scale.suffix, exceedMaxValue = scale.exceedMaxValue, hideMaxValue = scale.hideMaxValue, readOnly = scale.readOnly }):setText(text, { color = isselectable and Helper.color.white or Helper.color.grey })
+					row[nextCol]:createSliderCell({ valueColor = isselectable and Color["slider_value"] or Color["slider_value_inactive"], min = scale.min, minSelect = scale.minSelect, max = scale.max, maxSelect = scale.maxSelect, start = scale.start, step = scale.step, accuracyOverride = scale.accuracyOverride, suffix = scale.suffix, exceedMaxValue = scale.exceedMaxValue, hideMaxValue = scale.hideMaxValue, readOnly = scale.readOnly }):setText(text, { color = isselectable and Color["text_normal"] or Color["text_inactive"] })
 					row[nextCol].handlers.onSliderCellChanged = function(_, value) return option.callback(value) end
 				else
 					row[nextCol]:createText(function () local text = option.value() return text end, isselectable and config.standardTextProperties or config.disabledTextProperties)
@@ -3242,7 +4423,7 @@ function menu.displayOption(ftable, option, numCols)
 				end
 				if option.confirmline then
 					if (option.confirmline.display == nil) or option.confirmline.display() then
-						row2 = ftable:addRow(isselectable and option or {}, { bgColor = Helper.color.transparent })
+						row2 = ftable:addRow(isselectable and option or {}, {  })
 						row2[nextCol]:setColSpan(numCols - 4):createButton({ active = option.confirmline.pos_selectable }):setText(option.confirmline.pos_name, { halign = "center" })
 						row2[nextCol].handlers.onClick = option.confirmline.positive
 						if option.confirmline.negative then
@@ -3252,6 +4433,11 @@ function menu.displayOption(ftable, option, numCols)
 					end
 				end
 			else
+				if option.prefixicon then
+					local icon, color = option.prefixicon()
+					local iconsize = Helper.scaleY(config.infoTextHeight)
+					row[1]:createIcon(icon, { color = color, width = iconsize, height = iconsize, x = row[1]:getWidth() - iconsize, scaling = false })
+				end
 				row[2]:setColSpan(numCols - 1):createText(option.name, isselectable and config.standardTextProperties or config.disabledTextProperties)
 				if option.wordwrap then
 					row[2].properties.wordwrap = option.wordwrap
@@ -3263,6 +4449,9 @@ function menu.displayOption(ftable, option, numCols)
 				if type(mouseovertext) == "function" then
 					mouseovertext = mouseovertext()
 				end
+				if option.prefixicon then
+					row[1].properties.mouseOverText = mouseovertext
+				end
 				row[2].properties.mouseOverText = mouseovertext
 			end
 		end
@@ -3273,6 +4462,92 @@ end
 
 function menu.getControlsData()
 	menu.controls = { ["actions"] = GetInputActionMap(), ["states"] = GetInputStateMap(), ["ranges"] = GetInputRangeMap(), ["functions"] = config.input.controlFunctions }
+
+	menu.mappedmousebuttons = {
+		targetselect = {},
+		targetinteract = {},
+	}
+
+	for _, controlgroup in ipairs(config.input.controlsorder.space) do
+		for _, control in ipairs(controlgroup) do
+			local controltype = control[1]
+			local controlcode = control[2]
+			if controltype == "functions" then
+				for _, functionaction in ipairs(menu.controls[controltype][controlcode].actions) do
+					local inputs = menu.controls.actions[functionaction]
+					if type(inputs) == "table" then
+						for i, input in ipairs(inputs) do
+							if input[1] == 19 then
+								if menu.mappedmousebuttons[input[2]] then
+									table.insert(menu.mappedmousebuttons[input[2]], { controltype, controlcode })
+								else
+									menu.mappedmousebuttons[input[2]] = { { controltype, controlcode } }
+								end
+							end
+						end
+					end
+				end
+				for _, functionstate in ipairs(menu.controls[controltype][controlcode].states) do
+					local inputs = menu.controls.states[functionstate]
+					if type(inputs) == "table" then
+						for i, input in ipairs(inputs) do
+							if input[1] == 19 then
+								if controlcode == 130 then -- INPUT_STATE_TARGETMOUSE_SELECT
+									menu.mappedmousebuttons.targetselect[input[2]] = true
+								elseif controlcode == 131 then -- INPUT_STATE_TARGETMOUSE_INTERACTION_MENU
+									menu.mappedmousebuttons.targetinteract[input[2]] = true
+								else
+									if menu.mappedmousebuttons[input[2]] then
+										table.insert(menu.mappedmousebuttons[input[2]], { controltype, controlcode })
+									else
+										menu.mappedmousebuttons[input[2]] = { { controltype, controlcode } }
+									end
+								end
+							end
+						end
+					end
+				end
+				for _, functionrange in ipairs(menu.controls[controltype][controlcode].ranges) do
+					local inputs = menu.controls.ranges[functionrange]
+					if type(inputs) == "table" then
+						for i, input in ipairs(inputs) do
+							if input[1] == 19 then
+								if menu.mappedmousebuttons[input[2]] then
+									table.insert(menu.mappedmousebuttons[input[2]], { controltype, controlcode })
+								else
+									menu.mappedmousebuttons[input[2]] = { { controltype, controlcode } }
+								end
+							end
+						end
+					end
+				end
+			else
+				if type(menu.controls[controltype][controlcode]) == "table" then
+					for i, input in ipairs(menu.controls[controltype][controlcode]) do
+						if input[1] == 19 then
+							if (controltype == "states") and (controlcode == 120) then -- INPUT_STATE_FP_INTERACTION_MENU_MOUSECLICK
+								-- hardcoded LMB in first person -> do nothing
+							elseif (controltype == "states") and (controlcode == 130) then -- INPUT_STATE_TARGETMOUSE_SELECT
+								menu.mappedmousebuttons.targetselect[input[2]] = true
+							elseif (controltype == "states") and (controlcode == 131) then -- INPUT_STATE_TARGETMOUSE_INTERACTION_MENU
+								menu.mappedmousebuttons.targetinteract[input[2]] = true
+							else
+								if menu.mappedmousebuttons[input[2]] then
+									table.insert(menu.mappedmousebuttons[input[2]], { controltype, controlcode })
+								else
+									menu.mappedmousebuttons[input[2]] = { { controltype, controlcode } }
+								end
+							end
+						end
+					end
+				end
+			end
+		end
+	end
+end
+
+function menu.getDefaultControlsData()
+	menu.defaultcontrols = { ["actions"] = GetInputActionMap(true), ["states"] = GetInputStateMap(true), ["ranges"] = GetInputRangeMap(true), ["functions"] = config.input.controlFunctions }
 end
 
 function menu.getInputDeviceIcon(device)
@@ -3283,50 +4558,51 @@ function menu.getInputDeviceIcon(device)
 end
 
 function menu.getInputName(source, code, signum)
-	local signumstr = ""
-	if signum == 1 then
-		signumstr = " (+)"
-	elseif signum == -1 then
-		signumstr = " (-)"
+	if signum == nil then
+		print(TraceBack())
 	end
+	local signumstr = ffi.string(C.GetInputAxisDirectionSuffix(source, code, signum))
 	if source == 1 then
 		-- keyboard
 		local name = GetLocalizedRawKeyName(code)
-		local icon = Helper.convertColorToText(Helper.color.blue) .. menu.getInputDeviceIcon("keyboard")
+		local icon = ColorText["text_input_device_keyboard"] .. menu.getInputDeviceIcon("keyboard")
 		return name, icon
 	elseif source >= 2 and source <= 9 then
 		if menu.mappedjoysticks[source - 1].xinput then
 			-- xinput axis
-			local name = ffi.string(C.GetLocalizedInputName(source, code)) .. ((code ~= 3 and code ~= 6) and signumstr or "")
-			local icon = Helper.convertColorToText(Helper.color.orange) .. menu.getInputDeviceIcon("controller") .. ((source > 2) and menu.getInputDeviceIcon("number_" .. (source - 1)) or "")
+			local name = ffi.string(C.GetLocalizedInputName(source, code)) .. signumstr
+			local icon = ColorText["text_input_device_controller"] .. menu.getInputDeviceIcon("controller") .. ((source > 2) and menu.getInputDeviceIcon("number_" .. (source - 1)) or "")
 			return name, icon
 		else
-			-- dircetinput axis
+			-- directinput axis
 			local name = ReadText(1017, code) .. signumstr
-			local icon = Helper.convertColorToText(Helper.color.brightyellow) .. menu.getInputDeviceIcon("joystick") .. ((source > 2) and menu.getInputDeviceIcon("number_" .. (source - 1)) or "")
+			local icon = ColorText["text_input_device_joystick"] .. menu.getInputDeviceIcon("joystick") .. ((source > 2) and menu.getInputDeviceIcon("number_" .. (source - 1)) or "")
 			return name, icon
 		end
 	elseif source >= 10 and source <= 17 then
 		if menu.mappedjoysticks[source - 9].xinput then
 			-- xinput buttons
 			local name = ffi.string(C.GetLocalizedInputName(source, code)) --string.format(ReadText(1001, 2673), ReadText(1009, code))
-			local icon = Helper.convertColorToText(Helper.color.orange) .. menu.getInputDeviceIcon("controller") .. ((source > 10) and menu.getInputDeviceIcon("number_" .. (source - 9)) or "")
+			local icon = ColorText["text_input_device_controller"] .. menu.getInputDeviceIcon("controller") .. ((source > 10) and menu.getInputDeviceIcon("number_" .. (source - 9)) or "")
 			return name, icon
 		else
 			-- directinput buttons
 			local name = ffi.string(C.GetLocalizedInputName(source, code)) --ReadText(1022, code)
-			local icon = Helper.convertColorToText(Helper.color.brightyellow) .. menu.getInputDeviceIcon("joystick") .. ((source > 10) and menu.getInputDeviceIcon("number_" .. (source - 9)) or "")
+			local icon = ColorText["text_input_device_joystick"] .. menu.getInputDeviceIcon("joystick") .. ((source > 10) and menu.getInputDeviceIcon("number_" .. (source - 9)) or "")
 			return name, icon
 		end
 	elseif source == 18 then
 		-- mouse axis
-		local name = ReadText(1018, code) .. signumstr
-		local icon = Helper.convertColorToText(Helper.color.green) .. menu.getInputDeviceIcon("mouse")
+		local name = ffi.string(C.GetLocalizedRawMouseAxisName(code))
+		if name ~= "" then
+			name = name .. signumstr
+		end
+		local icon = ColorText["text_input_device_mouse"] .. menu.getInputDeviceIcon("mouse")
 		return name, icon
 	elseif source == 19 then
 		-- mouse buttons
 		local name = ffi.string(C.GetLocalizedRawMouseButtonName(code))
-		local icon = Helper.convertColorToText(Helper.color.green) .. menu.getInputDeviceIcon("mouse")
+		local icon = ColorText["text_input_device_mouse"] .. menu.getInputDeviceIcon("mouse")
 		return name, icon
 	elseif source == 20 then
 		-- oculus touch Axes
@@ -3352,6 +4628,9 @@ function menu.getInputName(source, code, signum)
 	elseif source == 27 then
 		-- vive left buttons
 		return ReadText(1009, code)
+	elseif source >= 30 and source <= 31 then
+		-- compass menu buttons
+		return ReadText(1030, code), ColorText["text_input_device_compassmenu"] .. string.format("\27[input_device_radial_%d_%d]", source - 29, code)
 	else
 		DebugError("unknown input source '".. source .. "' - this should never happen [Florian]")
 		return ""
@@ -3410,6 +4689,15 @@ function menu.refresh()
 				menu.preselectOption = rowdata.filename
 			end
 		end
+	elseif menu.currentOption == "colorlibrary" then
+		menu.topRows["colorblindcolors"] = GetTopRow(menu.colorTable)
+		menu.selectedRows["colorblindcolors"] = Helper.currentTableRow[menu.colorTable]
+		menu.topRows["colorblindmappings"] = GetTopRow(menu.mappingTable)
+		menu.selectedRows["colorblindmappings"] = Helper.currentTableRow[menu.mappingTable]
+	elseif menu.currentOption == "inputfeedback" then
+		menu.topRows["inputfeedbackconfig"] = GetTopRow(menu.optionTable)
+		menu.selectedRows["inputfeedbackconfig"] = Helper.currentTableRow[menu.optionTable]
+		menu.selectedCols["inputfeedbackconfig"] = Helper.currentTableCol[menu.optionTable]
 	end
 	if menu.currentOption then
 		menu.submenuHandler(menu.currentOption)
@@ -3452,7 +4740,9 @@ function menu.submenuHandler(optionParameter)
 		end
 		menu.displayOptions(optionParameter)
 	elseif optionParameter == "new" then
-		menu.displayNewGame(false)
+		menu.displayNewGame(false, false, false)
+	elseif optionParameter == "tutorials" then
+		menu.displayNewGame(false, false, true)
 	elseif optionParameter == "load" then
 		menu.displaySavegameOptions(optionParameter)
 	elseif optionParameter == "save" then
@@ -3460,7 +4750,9 @@ function menu.submenuHandler(optionParameter)
 	elseif optionParameter == "saveoffline" then
 		menu.displaySavegameOptions(optionParameter)
 	elseif optionParameter == "multiplayer_server" then
-		menu.displayNewGame(true)
+		menu.displayNewGame(true, false, false)
+	elseif optionParameter == "new_timelines" then
+		menu.displayNewGame(false, true, false)
 	elseif optionParameter == "lobby" then
 		menu.displayLobby()
 	elseif optionParameter == "online" then
@@ -3480,6 +4772,8 @@ function menu.submenuHandler(optionParameter)
 		menu.displayUserQuestion(ReadText(1001, 2653), function () return menu.callbackGameDefaults() end)
 	elseif optionParameter == "accessibility_defaults" then
 		menu.displayUserQuestion(ReadText(1001, 2653), function () return menu.callbackAccessibilityDefaults() end)
+	elseif optionParameter == "timelines_reset" then
+		menu.displayUserQuestion(ReadText(1001, 12622), function () return menu.callbackResetTimelines() end, nil, nil, nil, nil, nil, ReadText(1001, 12623))
 	elseif	(optionParameter == "vrtouch_space") or
 			(optionParameter == "vrtouch_firstperson") or
 			(optionParameter == "vrtouch_menus") or
@@ -3511,6 +4805,14 @@ function menu.submenuHandler(optionParameter)
 		menu.displayUserQuestion(ReadText(1001, 4876), function () return menu.callbackExit(true) end)
 	elseif optionParameter == "privacy" then
 		menu.displayOptionsInfo(optionParameter)
+	elseif optionParameter == "mapeditor" then
+		menu.displayMapEditor()
+	elseif optionParameter == "colorlibrary" then
+		menu.displayColorLibrary()
+	elseif optionParameter == "inputfeedback" then
+		menu.displayInputFeedback()
+	elseif optionParameter == "input_modifiers" then
+		menu.displayInputModifiers()
 	elseif config.optionDefinitions[optionParameter] then
 		menu.displayOptions(optionParameter)
 	end
@@ -3573,11 +4875,13 @@ function menu.registerDirectInput()
 		RegisterEvent(entry[1], config.input.directInputHooks[i])
 	end
 
+	menu.directInputActive = true
 	ListenForInput(true)
 end
 
 function menu.unregisterDirectInput()
 	ListenForInput(false)
+	menu.directInputActive = nil
 
 	for i, entry in ipairs(config.input.directInputHookDefinitions) do
 		UnregisterEvent(entry[1], config.input.directInputHooks[i])
@@ -3585,24 +4889,49 @@ function menu.unregisterDirectInput()
 	C.EnableAutoMouseEmulation()
 end
 
-function menu.remapInput(newinputtype, newinputcode, newinputsgn)
-	menu.unregisterDirectInput()
+function menu.remapInput(newinputtype, newinputcode, newinputsgn, checked)
+	if (not checked) and (newinputtype ~= 30) and (newinputtype ~= 31) then -- INPUT_SOURCE_COMPASSMENU, INPUT_SOURCE_COMPASSMENU_2
+		menu.unregisterDirectInput()
+	end
+
+	if menu.remapControl.controltype == "ranges" then
+		newinputsgn = 0
+	end
 
 	-- Delete -> Remove mapping
-	if (newinputtype == 1 and newinputcode == 211) and menu.remapControl.oldinputcode ~= -1 then
-		menu.removeInput()
+	if ((newinputtype == 1 and newinputcode == 211) or (newinputtype == 30 and newinputcode == 0)) and (menu.remapControl.oldinputcode ~= -1) then
+		if menu.remapControl.checklastnonkeyboard then
+			if not menu.isInputSourceKeyboardMouse(menu.remapControl.oldinputtype) then
+				if menu.getNumNonKeyboardInputs(menu.remapControl.controltype, menu.remapControl.controlcode) == 1 then
+					-- show popup
+					menu.contextMenuMode = "removeControllerInput"
+					menu.contextMenuData = { width = Helper.scaleX(400), height = Helper.scaleY(200), y = Helper.scaleY(300), removed = true }
+					menu.createContextMenu()
+					return
+				end
+			end
+		end
 
-		menu.preselectTopRow = GetTopRow(menu.optionTable)
-		menu.preselectOption = menu.remapControl.row
-		menu.preselectCol = menu.remapControl.col
-		menu.remapControl = nil
-		menu.submenuHandler(menu.currentOption)
-		AddUITriggeredEvent(menu.name, "remap_removed")
-		return
+		if not menu.remapControl.disableremove then
+			menu.removeInput()
+
+			menu.closeContextMenu()
+			menu.preselectTopRow = GetTopRow(menu.optionTable)
+			menu.preselectOption = menu.remapControl.row
+			menu.preselectCol = menu.remapControl.col
+			menu.remapControl = nil
+			menu.submenuHandler(menu.currentOption)
+			AddUITriggeredEvent(menu.name, "remap_removed")
+			return
+		else
+			menu.registerDirectInput()
+			return
+		end
 	end
 
 	-- Forbidden input -> Do nothing
 	if (newinputtype == 1 and (config.input.forbiddenKeys[newinputcode] or menu.remapControl.nokeyboard)) then
+		menu.closeContextMenu()
 		menu.preselectTopRow = GetTopRow(menu.optionTable)
 		menu.preselectOption = menu.remapControl.row
 		menu.preselectCol = menu.remapControl.col
@@ -3612,12 +4941,25 @@ function menu.remapInput(newinputtype, newinputcode, newinputsgn)
 		return
 	end
 
+	-- We want to map a range but didn't get an axis - OR - got forbidden mouseinput -> Keep listening
+	if ((menu.remapControl.controltype == "ranges") and not ((newinputtype >= 2 and newinputtype <= 9) or ((newinputtype == 18) and menu.remapControl.allowmouseaxis) or (newinputtype >= 20 and newinputtype <= 23))) or (newinputtype == 19 and config.input.forbiddenMouseButtons[newinputcode]) then
+		menu.registerDirectInput()
+		return
+	end
+
+	if menu.remapControl.isdblclick then
+		if newinputcode % 2 == 1 then
+			newinputcode = newinputcode + 1
+		end
+	end
+
 	-- Same mapping -> Check for broken function mappings, otherwise do nothing
-	if (newinputtype == menu.remapControl.oldinputtype and newinputcode == menu.remapControl.oldinputcode) then
+	if (newinputtype == menu.remapControl.oldinputtype) and (newinputcode == menu.remapControl.oldinputcode) and ((newinputsgn == 0) or (newinputsgn == menu.remapControl.oldinputsgn)) then
 		if menu.remapControl.controltype == "functions" then
 			menu.checkFunctionMapping(newinputtype, newinputcode, newinputsgn)
 		end
 
+		menu.closeContextMenu()
 		menu.preselectTopRow = GetTopRow(menu.optionTable)
 		menu.preselectOption = menu.remapControl.row
 		menu.preselectCol = menu.remapControl.col
@@ -3627,24 +4969,107 @@ function menu.remapInput(newinputtype, newinputcode, newinputsgn)
 		return
 	end
 
-	-- We want to map a range but didn't get an axis - OR - got forbidden mouseinput -> Keep listening
-	if ((menu.remapControl.controltype == "ranges") and not ((newinputtype >= 2 and newinputtype <= 9) or ((newinputtype == 18) and menu.remapControl.allowmouseaxis) or (newinputtype >= 20 and newinputtype <= 23))) or (newinputtype == 19 and config.input.forbiddenMouseButtons[newinputcode]) then
-		menu.registerDirectInput()
+	-- setting modifier
+	if menu.remapControl.modifier then
+		if newinputtype == menu.remapControl.modifiersource then
+			-- check for conflicts with existing mappings -> popup
+			local _, unmodified = math.modf(newinputcode / config.input.modifierFilter)
+			unmodified = unmodified * config.input.modifierFilter
+
+			local conflicts = {}
+			for i = 0, math.pow(2, #config.input.modifiers) - 1 do
+				local offset = 0
+				for j, modifierentry in ipairs(config.input.modifiers) do
+					if math.floor(i / math.pow(2, j - 1)) % 2 == 1 then
+						offset = offset + modifierentry.offset
+					end
+				end
+				local loc_conflicts = menu.checkForConflicts(newinputtype, unmodified + offset, newinputsgn, true)
+				for _, v in ipairs(loc_conflicts) do
+					table.insert(conflicts, v)
+				end
+			end
+
+			if #conflicts == 0 then
+				menu.remapInputInternal(newinputtype, newinputcode, newinputsgn)
+			else
+				-- show popup
+				menu.contextMenuMode = "remap"
+				menu.contextMenuData = { width = Helper.scaleX(400), height = Helper.scaleY(200), y = Helper.scaleY(300), conflicts = conflicts, newinput = { newinputtype, newinputcode, newinputsgn }, modifier = menu.remapControl.modifier }
+
+				menu.createContextMenu()
+			end
+		else
+			-- wrong source -> Keep listening
+			menu.registerDirectInput()
+		end
 		return
+	end
+
+	-- Accept only mouse buttons
+	if menu.remapControl.mouseonly then
+		for i, input in ipairs(menu.controls[menu.remapControl.controltype][menu.remapControl.controlcode]) do
+			local convertedinputcode = (math.floor((input[2] - 1) / 2) * 2) + 1
+			if (input[1] == newinputtype) and (convertedinputcode == newinputcode) then
+				-- already mapped to this mouse button (or its double click) -> ignore
+				menu.registerDirectInput()
+				return
+			end
+		end
+
+		local _, unmodified = math.modf(newinputcode / config.input.modifierFilter)
+		unmodified = unmodified * config.input.modifierFilter
+
+		if (newinputtype ~= 19) or (unmodified >= 11) then
+			menu.registerDirectInput()
+			return
+		end
+	end
+
+	-- Accept only the mouse wheel
+	if menu.remapControl.mousewheelonly then
+		local _, unmodified = math.modf(newinputcode / config.input.modifierFilter)
+		unmodified = unmodified * config.input.modifierFilter
+
+		if (newinputtype ~= 18) or (unmodified ~= 3) then
+			menu.registerDirectInput()
+			return
+		end
 	end
 
 	if not menu.checkInputSource(newinputtype) then
 		menu.registerDirectInput()
 		return
 	end
+
+	if menu.remapControl.checklastnonkeyboard and (not checked) then
+		if (not menu.isInputSourceKeyboardMouse(menu.remapControl.oldinputtype)) and menu.isInputSourceKeyboardMouse(newinputtype) then
+			if menu.getNumNonKeyboardInputs(menu.remapControl.controltype, menu.remapControl.controlcode) == 1 then
+				-- show popup
+				menu.contextMenuMode = "removeControllerInput"
+				menu.contextMenuData = { width = Helper.scaleX(400), height = Helper.scaleY(200), y = Helper.scaleY(300), newinput = { newinputtype, newinputcode, newinputsgn } }
+				menu.createContextMenu()
+				return
+			end
+		end
+	end
+
 	AddUITriggeredEvent(menu.name, "remap")
 
 	if menu.remapControl.controltype == "ranges" then
 		newinputsgn = 0
 	end
 	local conflicts = menu.checkForConflicts(newinputtype, newinputcode, newinputsgn)
+	-- remove conflicts with the same control
+	for i = #conflicts, 1, -1 do
+		if (conflicts[i].control[1] == menu.remapControl.controltype) and (conflicts[i].control[2] == menu.remapControl.controlcode) then
+			table.remove(conflicts, i)
+		end
+	end
+
 	if #conflicts == 0 then
 		menu.remapInputInternal(newinputtype, newinputcode, newinputsgn)
+		menu.closeContextMenu()
 	else
 		menu.contextMenuMode = "remap"
 		menu.contextMenuData = { width = Helper.scaleX(400), height = Helper.scaleY(200), y = Helper.scaleY(300), conflicts = conflicts, newinput = { newinputtype, newinputcode, newinputsgn } }
@@ -3732,48 +5157,77 @@ function menu.checkInput(inputtable, entry, input, newinput, checkonly)
 	end
 end
 
-function menu.checkForConflicts(newinputtype, newinputcode, newinputsgn)
+function menu.checkForConflicts(newinputtype, newinputcode, newinputsgn, checkall)
+	local returnvalue = {}
+	if checkall then
+		for k, controlsorder in pairs(config.input.controlsorder) do
+			returnvalue = menu.checkForConflictsInternal(controlsorder, returnvalue, newinputtype, newinputcode, newinputsgn, checkall)
+		end
+	else
+		returnvalue = menu.checkForConflictsInternal(menu.controlsorder, returnvalue, newinputtype, newinputcode, newinputsgn, checkall)
+	end
+	return returnvalue
+end
+
+function menu.checkForConflictsInternal(controlsorder, returnvalue, newinputtype, newinputcode, newinputsgn, checkall)
 	local newinput = { newinputtype, newinputcode, newinputsgn }
 
-	local returnvalue = {}
-
-	for _, controlgroup in ipairs(menu.controlsorder) do
+	for _, controlgroup in ipairs(controlsorder) do
 		for _, control in ipairs(controlgroup) do
 			if control[1] == "functions" then
-				if menu.hasContext(menu.controls[control[1]][control[2]].contexts or 1) then
-					for _, functionaction in ipairs(menu.controls[control[1]][control[2]].actions) do
-						local inputs = menu.controls.actions[functionaction]
-						if type(inputs) == "table" then
-							for i, input in ipairs(inputs) do
-								if menu.checkInput(inputs, i, input, newinput, true) then
-									table.insert(returnvalue, { control = control, mapable = controlgroup.mapable or newinputtype ~= 1 })
+				if checkall or menu.hasContext(menu.controls[control[1]][control[2]].contexts or 1) then
+					local found = false
+					if not found then
+						for _, functionaction in ipairs(menu.controls[control[1]][control[2]].actions) do
+							local inputs = menu.controls.actions[functionaction]
+							if type(inputs) == "table" then
+								for i, input in ipairs(inputs) do
+									if menu.checkInput(inputs, i, input, newinput, true) then
+										table.insert(returnvalue, { control = control, mapable = controlgroup.mapable or newinputtype ~= 1 })
+										found = true
+									end
 								end
+							end
+							if found then
+								break
 							end
 						end
 					end
-					for _, functionstate in ipairs(menu.controls[control[1]][control[2]].states) do
-						local inputs = menu.controls.states[functionstate]
-						if type(inputs) == "table" then
-							for i, input in ipairs(inputs) do
-								if menu.checkInput(inputs, i, input, newinput, true) then
-									table.insert(returnvalue, { control = control, mapable = controlgroup.mapable or newinputtype ~= 1 })
+					if not found then
+						for _, functionstate in ipairs(menu.controls[control[1]][control[2]].states) do
+							local inputs = menu.controls.states[functionstate]
+							if type(inputs) == "table" then
+								for i, input in ipairs(inputs) do
+									if menu.checkInput(inputs, i, input, newinput, true) then
+										table.insert(returnvalue, { control = control, mapable = controlgroup.mapable or newinputtype ~= 1 })
+										found = true
+									end
 								end
+							end
+							if found then
+								break
 							end
 						end
 					end
-					for _, functionrange in ipairs(menu.controls[control[1]][control[2]].ranges) do
-						local inputs = menu.controls.ranges[functionrange]
-						if type(inputs) == "table" then
-							for i, input in ipairs(inputs) do
-								if menu.checkInput(inputs, i, input, newinput, true) then
-									table.insert(returnvalue, { control = control, mapable = controlgroup.mapable or newinputtype ~= 1 })
+					if not found then
+						for _, functionrange in ipairs(menu.controls[control[1]][control[2]].ranges) do
+							local inputs = menu.controls.ranges[functionrange]
+							if type(inputs) == "table" then
+								for i, input in ipairs(inputs) do
+									if menu.checkInput(inputs, i, input, newinput, true) then
+										table.insert(returnvalue, { control = control, mapable = controlgroup.mapable or newinputtype ~= 1 })
+										found = true
+									end
 								end
+							end
+							if found then
+								break
 							end
 						end
 					end
 				end
 			else
-				if menu.hasContext(control[3] or 1) then
+				if checkall or menu.hasContext(control[3] or 1) then
 					if type(menu.controls[control[1]][control[2]]) == "table" then
 						for i, input in ipairs(menu.controls[control[1]][control[2]]) do
 							if menu.checkInput(menu.controls[control[1]][control[2]], i, input, newinput, true) then
@@ -3785,48 +5239,56 @@ function menu.checkForConflicts(newinputtype, newinputcode, newinputsgn)
 			end
 		end
 	end
-
 	return returnvalue
 end
 
-function menu.remapInputInternal(newinputtype, newinputcode, newinputsgn)
-	-- check for resulting conflicts and change control map appropriatly
-	local newinput = { newinputtype, newinputcode, newinputsgn }
-	for _, controlgroup in ipairs(menu.controlsorder) do
-		if controlgroup.mapable or (newinputtype ~= 1) then
+function menu.fixInputConflicts(newinput, checkall)
+	if checkall then
+		for k, controlsorder in pairs(config.input.controlsorder) do
+			menu.fixInputConflictsInternal(controlsorder, newinput, checkall)
+		end
+	else
+		menu.fixInputConflictsInternal(menu.controlsorder, newinput, checkall)
+	end
+end
+
+function menu.fixInputConflictsInternal(controlsorder, newinput, checkall)
+	for _, controlgroup in ipairs(controlsorder) do
+		if controlgroup.mapable or (newinput[1] ~= 1) then
 			for _, control in ipairs(controlgroup) do
 				if control[1] == "functions" then
-					if menu.hasContext(menu.controls[control[1]][control[2]].contexts or 1) then
+					if checkall or menu.hasContext(menu.controls[control[1]][control[2]].contexts or 1) then
 						for _, functionaction in ipairs(menu.controls[control[1]][control[2]].actions) do
 							local inputs = menu.controls.actions[functionaction]
 							if type(inputs) == "table" then
-								for i, input in ipairs(inputs) do
-									menu.checkInput(inputs, i, input, newinput)
+								for i = #inputs, 1, -1 do
+									menu.checkInput(inputs, i, inputs[i], newinput)
 								end
 							end
 						end
 						for _, functionstate in ipairs(menu.controls[control[1]][control[2]].states) do
 							local inputs = menu.controls.states[functionstate]
 							if type(inputs) == "table" then
-								for i, input in ipairs(inputs) do
-									menu.checkInput(inputs, i, input, newinput)
+								for i = #inputs, 1, -1 do
+									menu.checkInput(inputs, i, inputs[i], newinput)
 								end
 							end
 						end
 						for _, functionrange in ipairs(menu.controls[control[1]][control[2]].ranges) do
 							local inputs = menu.controls.ranges[functionrange]
 							if type(inputs) == "table" then
-								for i, input in ipairs(inputs) do
-									menu.checkInput(inputs, i, input, newinput)
+								for i = #inputs, 1, -1 do
+									menu.checkInput(inputs, i, inputs[i], newinput)
 								end
 							end
 						end
 					end
 				else
-					if menu.hasContext(control[3] or 1) then
-						if type(menu.controls[control[1]][control[2]]) == "table" then
-							for i, input in ipairs(menu.controls[control[1]][control[2]]) do
-								menu.checkInput(menu.controls[control[1]][control[2]], i, input, newinput)
+					if checkall or menu.hasContext(control[3] or 1) then
+						local inputs = menu.controls[control[1]][control[2]]
+						if type(inputs) == "table" then
+							for i = #inputs, 1, -1 do
+								menu.checkInput(inputs, i, inputs[i], newinput)
 							end
 						end
 					end
@@ -3834,9 +5296,41 @@ function menu.remapInputInternal(newinputtype, newinputcode, newinputsgn)
 			end
 		end
 	end
+end
 
-	local function insertInput(controltype, controlcode)
+function menu.remapInputInternal(newinputtype, newinputcode, newinputsgn, newinputtoggle, nosave)
+	if menu.remapControl.modifier then
+		C.MapModifierKey(menu.remapControl.modifier, newinputcode, false)
+		menu.remapControl = nil
+
+		menu.topRows["input_modifiers"] = GetTopRow(menu.optionTable)
+		menu.selectedRows["input_modifiers"] = Helper.currentTableRow[menu.optionTable]
+		menu.selectedCols["input_modifiers"] = Helper.currentTableCol[menu.optionTable]
+		menu.submenuHandler(menu.currentOption)
+
+		AddUITriggeredEvent(menu.name, "remap_newmodifier")
+		return
+	end
+
+	local newinput = { newinputtype, newinputcode, newinputsgn, newinputtoggle }
+
+	-- check for resulting conflicts and change control map appropriatly
+	menu.fixInputConflicts(newinput)
+
+	local function insertInput(controltype, controlcode, newinput)
 		if not menu.controls[controltype][controlcode] then
+			-- copy input toggle flag from default for now until we make this configureable by the user
+			if newinput[4] == nil then
+				if type(menu.defaultcontrols[controltype][controlcode]) == "table" then
+					for _, input in ipairs(menu.defaultcontrols[controltype][controlcode]) do
+						if input[4] then
+							newinput[4] = true
+							break
+						end
+					end
+				end
+			end
+
 			menu.controls[controltype][controlcode] = { newinput }
 		else
 			-- copy input toggle flag from other inputs for now until we make this configureable by the user
@@ -3851,66 +5345,66 @@ function menu.remapInputInternal(newinputtype, newinputcode, newinputsgn)
 		end
 	end
 
-	local function resolveInput(input)
+	local function resolveInput(input, newinput)
 		if input[1] == 0 and input[2] == 0 then
-			input[1] = newinputtype
-			input[2] = newinputcode
-			input[3] = newinputsgn
+			input[1] = newinput[1]
+			input[2] = newinput[2]
+			input[3] = newinput[3]
 			return true
 		end
 		return false
 	end
 
-	local function resolveOrFixFunctionInput(controltype, controlcode, functioncontrol)
+	local function resolveOrFixFunctionInput(controltype, controlcode, functioncontrol, newinput)
 		local inputs = menu.controls[controltype][controlcode]
 		if inputs then
 			local found = false
 			for i, input in ipairs(inputs) do
-				found = found or resolveInput(input)
+				found = found or resolveInput(input, newinput)
 			end
 			if not found then
 				if (functioncontrol[1] == menu.remapControl.controltype) and (functioncontrol[2] == menu.remapControl.controlcode) then
-					insertInput(controltype, controlcode)
+					insertInput(controltype, controlcode, newinput)
 				end
 			end
 		else
 			if (functioncontrol[1] == menu.remapControl.controltype) and (functioncontrol[2] == menu.remapControl.controlcode) then
-				insertInput(controltype, controlcode)
+				insertInput(controltype, controlcode, newinput)
 			end
 		end
 	end
 
-	if menu.remapControl.oldinputcode == -1 then
+	if (menu.remapControl.oldinputcode == -1) or menu.remapControl.reset then
 		if menu.remapControl.controltype == "functions" then
 			for _, functionaction in ipairs(menu.controls[menu.remapControl.controltype][menu.remapControl.controlcode].actions) do
-				insertInput("actions", functionaction)
+				insertInput("actions", functionaction, newinput)
 			end
 			for _, functionstate in ipairs(menu.controls[menu.remapControl.controltype][menu.remapControl.controlcode].states) do
-				insertInput("states", functionstate)
+				insertInput("states", functionstate, newinput)
 			end
 			for _, functionrange in ipairs(menu.controls[menu.remapControl.controltype][menu.remapControl.controlcode].ranges) do
-				insertInput("ranges", functionrange)
+				insertInput("ranges", functionrange, newinput)
 			end
 		else
-			insertInput(menu.remapControl.controltype, menu.remapControl.controlcode)
+			insertInput(menu.remapControl.controltype, menu.remapControl.controlcode, newinput)
 		end
 	else
 		for _, controlgroup in ipairs(menu.controlsorder) do
 			for _, control in ipairs(controlgroup) do
 				if control[1] == "functions" then
 					for _, functionaction in ipairs(menu.controls[control[1]][control[2]].actions) do
-						resolveOrFixFunctionInput("actions", functionaction, control)
+						resolveOrFixFunctionInput("actions", functionaction, control, newinput)
 					end
 					for _, functionstate in ipairs(menu.controls[control[1]][control[2]].states) do
-						resolveOrFixFunctionInput("states", functionstate, control)
+						resolveOrFixFunctionInput("states", functionstate, control, newinput)
 					end
 					for _, functionrange in ipairs(menu.controls[control[1]][control[2]].ranges) do
-						resolveOrFixFunctionInput("ranges", functionrange, control)
+						resolveOrFixFunctionInput("ranges", functionrange, control, newinput)
 					end
 				else
 					if type(menu.controls[control[1]][control[2]]) == "table" then
 						for i, input in ipairs(menu.controls[control[1]][control[2]]) do
-							resolveInput(input)
+							resolveInput(input, newinput)
 						end
 					end
 				end
@@ -3918,15 +5412,17 @@ function menu.remapInputInternal(newinputtype, newinputcode, newinputsgn)
 		end
 	end
 
-	-- save new controls
-	SaveInputSettings(menu.controls.actions, menu.controls.states, menu.controls.ranges)
+	if not nosave then
+		-- save new controls
+		SaveInputSettings(menu.controls.actions, menu.controls.states, menu.controls.ranges)
 
-	-- reload controls menu
-	menu.preselectTopRow = GetTopRow(menu.optionTable)
-	menu.preselectOption = menu.remapControl.row
-	menu.preselectCol = menu.remapControl.col
-	menu.remapControl = nil
-	menu.submenuHandler(menu.currentOption)
+		-- reload controls menu
+		menu.preselectTopRow = GetTopRow(menu.optionTable)
+		menu.preselectOption = menu.remapControl.row
+		menu.preselectCol = menu.remapControl.col
+		menu.remapControl = nil
+		menu.submenuHandler(menu.currentOption)
+	end
 end
 
 function menu.displayTobiiHeadTracking()
@@ -4000,7 +5496,7 @@ function menu.nameContinue()
 						elseif isautosave then
 							name = name .. " (" .. ReadText(1001, 406) .. ")"
 						end
-						return name .. " - " .. entry.time .. (entry.modified and (Helper.convertColorToText(Helper.color.warningorange) .. " (" .. ReadText(1001, 8901) .. ")\27X") or "") .. "\n(" .. entry.playername .. " - " .. money .. " - " .. timestamp .. " - " .. ReadText(1001, 2655) .. ReadText(1001, 120) .. " " .. entry.version .. ")"
+						return name .. " - " .. entry.time .. (entry.modified and (ColorText["text_warning"] .. " (" .. ReadText(1001, 8901) .. ")\27X") or "") .. "\n(" .. entry.playername .. " - " .. money .. " - " .. timestamp .. " - " .. ReadText(1001, 2655) .. ReadText(1001, 120) .. " " .. entry.version .. ")"
 					end
 				else
 					return ReadText(1001, 2614)
@@ -4024,9 +5520,9 @@ function menu.nameContinue()
 	end
 end
 
-function menu.nameExtension()
+function menu.warningIconExtension()
 	local extensions = GetExtensionList()
-	local iconcolor = Helper.color.brightyellow
+	local iconcolor = Color["icon_warning"]
 	local haserror = false
 	if menu.extensionSettingsChanged == nil then
 		menu.extensionSettingsChanged = HaveExtensionSettingsChanged()
@@ -4036,7 +5532,7 @@ function menu.nameExtension()
 	for _, extension in ipairs(extensions) do
 		if extension.error and extension.enabled then
 			haserror = true
-			iconcolor = Helper.color.red
+			iconcolor = Color["icon_error"]
 			break
 		end
 		if extension.warning then
@@ -4047,8 +5543,11 @@ function menu.nameExtension()
 	if haserror or haswarning then
 		icon = Helper.convertColorToText(iconcolor) .. "\027[workshop_error]\027X"
 	end
+	return icon
+end
 
-	return icon .. ReadText(1001, 2697)
+function menu.nameExtension()
+	return menu.warningIconExtension() .. ReadText(1001, 2697)
 end
 
 function menu.nameExtensionSettings()
@@ -4059,27 +5558,55 @@ function menu.nameExtensionSettingEnabled()
 	return (menu.selectedExtension.isworkshop and menu.selectedExtension.sync) and ReadText(1001, 4832) or ReadText(1001, 4825)
 end
 
-function menu.nameInput()
+function menu.warningIconColorBlind()
 	local icon = ""
-	local iconcolor = Helper.color.brightyellow
-	if CheckInputProfileRegression() then
-		icon = Helper.convertColorToText(iconcolor) .. "\027[workshop_error]\027X"
+	if C.DoesColorMapNeedRestart() then
+		icon = ColorText["icon_warning"] .. "\027[workshop_error]\027X"
 	end
-	return icon .. ReadText(1001, 2656)
+	return icon
+end
+
+function menu.nameColorBlind()
+	return menu.warningIconColorBlind() .. ReadText(1001, 11793)
+end
+
+function menu.nameAccessibility()
+	local text = ReadText(1001, 8994)
+
+	local coloricon = menu.warningIconColorBlind()
+	if coloricon ~= "" then
+		return coloricon .. text
+	end
+
+	return text
+end
+
+function menu.warningIconInput()
+	local icon = ""
+	if CheckInputProfileRegression() then
+		icon = ColorText["icon_warning"] .. "\027[workshop_error]\027X"
+	end
+	return icon
+end
+
+function menu.nameInput()
+	return menu.warningIconInput() .. ReadText(1001, 2656)
+end
+
+function menu.warningIconGfx()
+	local icon = ""
+	if ((not C.IsCurrentGPUDiscrete()) and (not C.IsRunningOnSteamDeck())) or C.AreGfxSettingsTooHigh() then
+		icon = ColorText["icon_error"] .. "\027[workshop_error]\027X"
+	end
+	return icon
 end
 
 function menu.nameGfx()
-	local icon = ""
-	local iconcolor = Helper.color.red
-	if ((not C.IsCurrentGPUDiscrete()) and (not C.IsRunningOnSteamDeck())) or C.AreGfxSettingsTooHigh() then
-		icon = Helper.convertColorToText(iconcolor) .. "\027[workshop_error]\027X"
-	end
-	return icon .. ReadText(1001, 2606)
+	return menu.warningIconGfx() .. ReadText(1001, 2606)
 end
 
-function menu.nameLanguage()
+function menu.warningIconLanguage()
 	local icon = ""
-	local iconcolor = Helper.color.brightyellow
 
 	local languageWarning = false
 	if menu.isStartmenu and C.IsLanguageSettingEnabled() then
@@ -4096,10 +5623,14 @@ function menu.nameLanguage()
 	end
 
 	if languageWarning then
-		icon = Helper.convertColorToText(iconcolor) .. "\027[workshop_error]\027X"
+		icon = ColorText["icon_warning"] .. "\027[workshop_error]\027X"
 	end
 
-	return icon .. ReadText(1001, 7236)
+	return icon
+end
+
+function menu.nameLanguage()
+	return menu.warningIconLanguage() .. ReadText(1001, 7236)
 end
 
 function menu.nameLogin()
@@ -4125,9 +5656,9 @@ function menu.nameOnlineSeason()
 		if state ~= 0 then
 			local basename = entry and (menu.isStartmenu and ReadText(1001, 11717) or ReadText(1001, 11572)) or ReadText(1001, 11300)
 			if state == 1 then
-				return basename .. "\n   " .. Helper.convertColorToText(Helper.color.red) .. ReadText(1001, 11351)
+				return basename .. "\n   " .. ColorText["text_error"] .. ReadText(1001, 11351)
 			elseif state == 2 then
-				return basename .. "\n   " .. Helper.convertColorToText(Helper.color.red) .. ReadText(1001, 11353)
+				return basename .. "\n   " .. ColorText["text_error"] .. ReadText(1001, 11353)
 			end
 		else
 			local basename = menu.isStartmenu and ReadText(1001, 11717) or ReadText(1001, 11572)
@@ -4140,7 +5671,7 @@ function menu.nameOnlineSeason()
 
 				local savename = menu.getExplicitSavegameName(entry) or entry.location
 				local name = basename --.. ReadText(1001, 120) .. " " .. savename
-				return name .. " - " .. entry.time .. (entry.modified and (Helper.convertColorToText(Helper.color.warningorange) .. " (" .. ReadText(1001, 8901) .. ")\27X") or "") .. "\n(" .. entry.playername .. " - " .. money .. " - " .. timestamp .. " - " .. ReadText(1001, 2655) .. ReadText(1001, 120) .. " " .. entry.version .. ")"
+				return name .. " - " .. entry.time .. (entry.modified and (ColorText["text_warning"] .. " (" .. ReadText(1001, 8901) .. ")\27X") or "") .. "\n(" .. entry.playername .. " - " .. money .. " - " .. timestamp .. " - " .. ReadText(1001, 2655) .. ReadText(1001, 120) .. " " .. entry.version .. ")"
 			end
 		end
 	else
@@ -4170,9 +5701,9 @@ function menu.savegameInfoVersion()
 	if (menu.selectedOption ~= nil) and (next(menu.selectedOption) ~= nil) and menu.selectedOption.playername then
 		result = menu.selectedOption.version
 		if menu.selectedOption.modified then
-			result = result .. Helper.convertColorToText(Helper.color.warningorange) .. " (" .. ReadText(1001, 8901) .. ")\27X"
+			result = result .. ColorText["text_warning"] .. " (" .. ReadText(1001, 8901) .. ")\27X"
 		elseif IsCheatVersion() and menu.selectedOption.isonline and not menu.selectedOption.isonlinesavefilename then
-			result = result .. Helper.convertColorToText(Helper.color.brightyellow) .. " (" .. ReadText(1001, 11570) .. ")\27X"
+			result = result .. ColorText["text_online_save"] .. " (" .. ReadText(1001, 11570) .. ")\27X"
 		end
 	end
 	return result
@@ -4205,11 +5736,11 @@ function menu.errorSavegameInfo()
 					end
 				end
 			elseif menu.selectedOption.isonline and C.IsClientModified() then
-				error = error .. "\n" .. Helper.convertColorToText(Helper.color.warningorange) .. ReadText(1001, 11734) .. "\27X"
+				error = error .. "\n" .. ColorText["text_warning"] .. ReadText(1001, 11734) .. "\27X"
 			elseif menu.selectedOption.isonline and (not OnlineHasSession()) then
-				error = error .. "\n" .. Helper.convertColorToText(Helper.color.warningorange) .. ReadText(1001, 11735) .. "\27X"
+				error = error .. "\n" .. ColorText["text_warning"] .. ReadText(1001, 11735) .. "\27X"
 			elseif menu.selectedOption.isonline and (C.GetVentureDLCStatus() ~= 0) then
-				error = error .. "\n" .. Helper.convertColorToText(Helper.color.warningorange) .. ReadText(1001, 11751) .. "\27X"
+				error = error .. "\n" .. ColorText["text_warning"] .. ReadText(1001, 11751) .. "\27X"
 			end
 		else
 			if not menu.selectedOption.empty then
@@ -4223,44 +5754,79 @@ function menu.errorSavegameInfo()
 	return error
 end
 
-function menu.nameSettings()
-	local icon = ""
-	local iconcolor = Helper.color.brightyellow
-
-	if ((not C.IsCurrentGPUDiscrete()) and (not C.IsRunningOnSteamDeck())) or C.AreGfxSettingsTooHigh() then
-		iconcolor = Helper.color.red
-		icon = Helper.convertColorToText(iconcolor) .. "\027[workshop_error]\027X"
-	elseif CheckInputProfileRegression() then
-		icon = Helper.convertColorToText(iconcolor) .. "\027[workshop_error]\027X"
-	elseif menu.isStartmenu and C.IsLanguageSettingEnabled() then
-		menu.getLanguageData()
-		if menu.languagedata.haswarning then
-			icon = Helper.convertColorToText(iconcolor) .. "\027[workshop_error]\027X"
+function menu.nameReturnToHub()
+	local issetpiecescenario = false
+	local scenarioid = ffi.string(C.GetGameStartName())
+	local gamemodules = GetRegisteredModules()
+	for _, module in ipairs(gamemodules) do
+		if module.id == scenarioid then
+			issetpiecescenario = module.scenariochapterfinale
+			break
 		end
 	end
 
-	return icon .. ReadText(1001, 2679)
+	return issetpiecescenario and ReadText(1001, 12504) or ReadText(1001, 12501)
 end
 
-function menu.nameOnline()
+function menu.nameSettings()
+	local text = ReadText(1001, 2679)
+
+	local gfxicon = menu.warningIconGfx()
+	if gfxicon ~= "" then
+		return gfxicon .. text
+	end
+
+	local inputicon = menu.warningIconInput()
+	if inputicon ~= "" then
+		return inputicon .. text
+	end
+
+	local extensionicon = menu.warningIconExtension()
+	if extensionicon ~= "" then
+		return extensionicon .. text
+	end
+
+	local languageicon = menu.warningIconLanguage()
+	if menu.isStartmenu and (languageicon ~= "") then
+		return languageicon .. text
+	end
+
+	local onlineicon = menu.warningIconOnline()
+	if onlineicon ~= "" then
+		return onlineicon .. text
+	end
+
+	local coloricon = menu.warningIconColorBlind()
+	if coloricon ~= "" then
+		return coloricon .. text
+	end
+
+	return text
+end
+
+function menu.warningIconOnline()
 	local icon = ""
-	local iconcolor = Helper.color.warningorange
+	local iconcolor = Color["icon_warning"]
 
 	local state = OnlineGetVersionIncompatibilityState()
 	local dlcstate = config.ventureDLCStates[C.GetVentureDLCStatus()] or "unknownerror"
 	if state ~= 0 then
-		iconcolor = Helper.color.red
+		iconcolor = Color["icon_error"]
 		icon = Helper.convertColorToText(iconcolor) .. "\027[workshop_error]\027X"
 	elseif menu.isVentureExtensionRestartRequired() then
 		icon = Helper.convertColorToText(iconcolor) .. "\027[workshop_error]\027X"
 	elseif (dlcstate == "notpossible") or (dlcstate == "updatenotpossible") or (dlcstate == "unknownerror") then
-		iconcolor = Helper.color.red
+		iconcolor = Color["icon_error"]
 		icon = Helper.convertColorToText(iconcolor) .. "\027[workshop_error]\027X"
 	elseif dlcstate == "updatedisabled" then
 		icon = Helper.convertColorToText(iconcolor) .. "\027[workshop_error]\027X"
 	end
 
-	return icon .. ReadText(1001, 7252)
+	return icon
+end
+
+function menu.nameOnline()
+	return menu.warningIconOnline() .. ReadText(1001, 7252)
 end
 
 function menu.nameUserQuestion()
@@ -4271,6 +5837,21 @@ function menu.nameUserQuestion()
 		return menu.userQuestion.question
 	end
 	return ""
+end
+
+function menu.saveMouseOverText()
+	local text = ""
+	if not IsSavingPossible(false) then
+		text = ffi.string(C.GetSaveInquiryText())
+		if ffi.string(C.GetSaveInquiryReason()) == "gamestartflag" then
+			if C.IsTimelinesScenario() or (ffi.string(C.GetGameStartName()) == "x4ep1_gamestart_hub") then
+				text = ReadText(1026, 2670)
+			else
+			text = text .. " " .. ffi.string(C.GetGameStartUIName())
+		end
+	end
+	end
+	return text
 end
 
 function menu.iconNewGame()
@@ -4302,7 +5883,7 @@ function menu.descriptionExtension()
 			info = info .. menu.selectedOption.warningtext .. "\n \n"
 		end
 		if menu.selectedOption.error then
-			info = info .. "\027R" .. menu.selectedOption.errortext .. "\027X\n \n"
+			info = info .. ColorText["text_error"] .. menu.selectedOption.errortext .. "\027X\n \n"
 		end
 		info = info .. ReadText(1001, 2404) .. ReadText(1001, 120) .. " " .. AdjustMultilineString(menu.selectedOption.desc)
 		info = info .. "\n" .. ReadText(1001, 2690) .. ReadText(1001, 120) .. " " .. menu.selectedOption.author
@@ -4330,32 +5911,39 @@ function menu.warningExtensions()
 		menu.extensionSettingsChanged = HaveExtensionSettingsChanged()
 	end
 	if menu.extensionSettingsChanged then
-		return basetext .. "\n\n\27R" .. ReadText(1001, 2689)
+		return basetext .. "\n\n" .. ColorText["text_error"] .. ReadText(1001, 2689)
 	else
 		local warning = GetExtensionUpdateWarningText("", false)
-		return basetext .. (warning and ("\n\n\27Y" .. warning) or "\n\n ")
+		return basetext .. (warning and ("\n\n" .. ColorText["text_warning"] .. warning) or "\n\n ")
 	end
+end
+
+function menu.warningColorBlind()
+	if C.DoesColorMapNeedRestart() then
+		return ColorText["text_warning"] .. ReadText(1001, 12609)
+	end
+	return ""
 end
 
 function menu.warningExtensionSettings()
 	if menu.selectedExtension.error then
-		return "\27R" .. menu.selectedExtension.errortext
+		return ColorText["text_error"] .. menu.selectedExtension.errortext
 	elseif menu.selectedExtension.warningtext then
-		return "\27Y" .. menu.selectedExtension.warningtext
+		return ColorText["text_warning"] .. menu.selectedExtension.warningtext
 	else
 		if menu.extensionSettingsChanged == nil then
 			menu.extensionSettingsChanged = HaveExtensionSettingsChanged()
 		end
-		return menu.extensionSettingsChanged and ("\27R" .. ReadText(1001, 2689)) or ""
+		return menu.extensionSettingsChanged and (ColorText["text_error"] .. ReadText(1001, 2689)) or ""
 	end
 end
 
 function menu.warningGfx()
 	local warning = ""
 	if (not C.IsCurrentGPUDiscrete()) and (not C.IsRunningOnSteamDeck()) then
-		warning = "\27R" .. ReadText(1001, 8980)
+		warning = ColorText["text_error"] .. ReadText(1001, 8980)
 	elseif C.AreGfxSettingsTooHigh() then
-		warning = "\27R" .. ReadText(1001, 8919)
+		warning = ColorText["text_error"] .. ReadText(1001, 8919)
 	end
 
 	if C.GetVolumetricFogOption() > 0 then
@@ -4364,7 +5952,7 @@ function menu.warningGfx()
 			if warning ~= "" then
 				warning = warning .. "\n"
 			end
-			warning = warning .. Helper.convertColorToText(Helper.color.warningorange) .. ReadText(1001, 11704)
+			warning = warning .. ColorText["text_warning"] .. ReadText(1001, 11704)
 		end
 	end
 
@@ -4372,21 +5960,21 @@ function menu.warningGfx()
 		if warning ~= "" then
 			warning = warning .. "\n"
 		end
-		warning = warning .. Helper.convertColorToText(Helper.color.warningorange) .. ReadText(1001, 11727)
+		warning = warning .. ColorText["text_warning"] .. ReadText(1001, 11727)
 	end
 
 	if not C.IsRequestedGPUCurrent() then
 		if warning ~= "" then
 			warning = warning .. "\n"
 		end
-		warning = warning .. "\27R" .. ReadText(1001, 2689)
+		warning = warning .. ColorText["text_error"] .. ReadText(1001, 2689)
 	end
 	return warning
 end
 
 function menu.warningInput()
 	if CheckInputProfileRegression() then
-		return "\27Y" .. ReadText(1001, 4879)
+		return ColorText["text_warning"] .. ReadText(1001, 4879)
 	end
 	return ""
 end
@@ -4397,14 +5985,14 @@ function menu.warningOnline()
 	local state = OnlineGetVersionIncompatibilityState()
 	if state ~= 0 then
 		if state == 1 then
-			warningtext = Helper.convertColorToText(Helper.color.red) .. ReadText(1001, 11351) .. "\27X"
+			warningtext = ColorText["text_error"] .. ReadText(1001, 11351) .. "\27X"
 		elseif state == 2 then
-			warningtext = Helper.convertColorToText(Helper.color.red) .. ReadText(1001, 11353) .. "\27X"
+			warningtext = ColorText["text_error"] .. ReadText(1001, 11353) .. "\27X"
 		end
 	end
 
 	if menu.isVentureExtensionRestartRequired() then
-		warningtext = Helper.convertColorToText(Helper.color.warningorange) .. ReadText(1001, 2689) .. "\27X"
+		warningtext = ColorText["text_warning"] .. ReadText(1001, 2689) .. "\27X"
 	end
 
 	return warningtext
@@ -4419,7 +6007,7 @@ function menu.warningSettings()
 		for _, language in ipairs(menu.languagedata) do
 			if language.id == menu.languagedata.requestedID then
 				if menu.languagedata.haswarning then
-					languageWarning = "\27Y" .. language.warning
+					languageWarning = ColorText["text_warning"] .. language.warning
 					menu.selectedrow = 3
 					if language.font ~= "" then
 						languageFont = language.font
@@ -4452,13 +6040,31 @@ function menu.valueAccessibilityGlobalLightScale()
 	return scale
 end
 
+function menu.valueAccessibilityReducedSpeedMode()
+	local uivalue = C.GetReducedSpeedModeOption() -- 0.1 - 1.0
+	local start = math.floor(uivalue * 100)
+
+	local scale = {
+		min            = 0,
+		minSelect      = 25,
+		max            = 100,
+		start          = start,
+		step           = 25,
+		suffix         = "%",
+		exceedMaxValue = false,
+		hideMaxValue   = true,
+	}
+
+	return scale
+end
+
 function menu.valueExtensionGlobalSync()
 	local globalsync
-	local globalsynccolor = Helper.color.white
+	local globalsynccolor = Color["text_normal"]
 	if menu.extensionSettings[0] ~= nil and menu.extensionSettings[0].sync ~= nil then
 		globalsync = menu.extensionSettings[0].sync
 		if globalsync ~= GetGlobalSyncSetting() then
-			globalsynccolor = Helper.color.red
+			globalsynccolor = Color["text_negative"]
 		end
 	else
 		globalsync = GetGlobalSyncSetting()
@@ -4467,7 +6073,7 @@ function menu.valueExtensionGlobalSync()
 end
 
 function menu.valueExtensionStatus(extension)
-	local statuscolor = Helper.color.white
+	local statuscolor = Color["text_normal"]
 	local enabled
 	if menu.extensionSettings[extension.index] ~= nil and menu.extensionSettings[extension.index].enabled ~= nil then
 		enabled = menu.extensionSettings[extension.index].enabled
@@ -4475,14 +6081,14 @@ function menu.valueExtensionStatus(extension)
 		enabled = extension.enabledbydefault
 	end
 	if enabled ~= extension.enabled then
-		statuscolor = Helper.color.red
+		statuscolor = Color["text_negative"]
 	end
 	return enabled and ReadText(1001, 2648) or ReadText(1001, 2649), statuscolor
 end
 
 function menu.valueExtensionSettingEnabled()
 	local status
-	local statuscolor = Helper.color.white
+	local statuscolor = Color["text_normal"]
 	local enabled
 	if menu.extensionSettings[menu.selectedExtension.index] ~= nil and menu.extensionSettings[menu.selectedExtension.index].enabled ~= nil then
 		enabled = menu.extensionSettings[menu.selectedExtension.index].enabled
@@ -4490,7 +6096,7 @@ function menu.valueExtensionSettingEnabled()
 		enabled = menu.selectedExtension.enabledbydefault
 	end
 	if enabled ~= menu.selectedExtension.enabled then
-		statuscolor = Helper.color.red
+		statuscolor = Color["text_negative"]
 	end
 	status = enabled and ReadText(1001, 2617) or ReadText(1001, 2618)
 	return status, statuscolor
@@ -4498,7 +6104,7 @@ end
 
 function menu.valueExtensionSettingSync()
 	local status
-	local statuscolor = Helper.color.white
+	local statuscolor = Color["text_normal"]
 	local sync
 	if menu.extensionSettings[menu.selectedExtension.index] ~= nil and menu.extensionSettings[menu.selectedExtension.index].sync ~= nil then
 		sync = menu.extensionSettings[menu.selectedExtension.index].sync
@@ -4506,7 +6112,7 @@ function menu.valueExtensionSettingSync()
 		sync = menu.selectedExtension.syncbydefault
 	end
 	if sync ~= menu.selectedExtension.sync then
-		statuscolor = Helper.color.red
+		statuscolor = Color["text_negative"]
 	end
 	status = sync and ReadText(1001, 2617) or ReadText(1001, 2618)
 	return status, statuscolor
@@ -4606,6 +6212,44 @@ function menu.valueGameEnemyNearby()
 	end
 
 	return options, currentOption
+end
+
+function menu.valueGameHUDScale()
+	local options = {}
+	local currentOption = ffi.string(C.GetHUDScaleOption())
+
+	local settings = {
+		[1] = { "off",		ReadText(1001, 12625) },
+		[2] = { "noradar",	ReadText(1001, 12626) },
+		[3] = { "all",		ReadText(1001, 12627) },
+	}
+	for i, entry in ipairs(settings) do
+		table.insert(options, { id = entry[1], text = entry[2], icon = "", displayremoveoption = false })
+	end
+
+	return options, currentOption
+end
+
+function menu.valueGameInputFeedback()
+	local currentOption = ffi.string(C.GetInputFeedbackOption())
+
+	return config.inputfeedback.options, currentOption
+end
+
+function menu.valueGameMenuWidthScale()
+	menu.newMenuWidthScale = math.max(0.1, math.min(1.0, Helper.round(C.GetMenuWidthScale(), 2)))
+
+	local scale = {
+		min            = 0.1,
+		max            = 1.0,
+		start          = menu.newMenuWidthScale,
+		step           = 0.01,
+		suffix         = "",
+		exceedMaxValue = false,
+		hideMaxValue   = true,
+	}
+
+	return scale
 end
 
 function menu.valueGameRadar()
@@ -4711,6 +6355,18 @@ function menu.valueGameSubtitles()
 	return options, currentOption
 end
 
+function menu.valueGameThirdPersonFlight()
+	local options = {}
+	local currentOption = C.GetThirdPersonFlightOption() and "externalview" or "firstperson"
+
+	options = {
+		[1] = { id = "firstperson",		text = ReadText(1001, 11786),	icon = "",	displayremoveoption = false },
+		[2] = { id = "externalview",	text = ReadText(1001, 11787),	icon = "",	displayremoveoption = false },
+	}
+
+	return options, currentOption
+end
+
 function menu.valueGameUIScale()
 	local maxUIScale = (Helper.viewWidth <= 1280) and 1.4 or 1.5
 	local max = 1.5
@@ -4751,6 +6407,8 @@ function menu.valueGfxAA()
 		{"ssaa_4x"		, ReadText(1001, 7274)}, -- SSAA 4x
 		--{"ssaa_6x"		, ReadText(1001, 7276)}, -- SSAA 6x
 		--{"ssaa_9x"		, ReadText(1001, 7277)}, -- SSAA 9x
+		{"temporal"			, ReadText(1001, 12659)}, -- TAA
+		--{"taa_half"		, ReadText(1001, 12659)}, -- TAA half (testing only)
 	}
 
 	local currentUpscalingOption = ffi.string(C.GetUpscalingOption(false))
@@ -4758,13 +6416,13 @@ function menu.valueGfxAA()
 		entry.id = i
 		entry.active = C.IsAAOptionSupported(entry[1])
 		if not entry.active then
-			entry.mouseovertext = "\27R" .. ReadText(1026, 2627)
+			entry.mouseovertext = ColorText["text_error"] .. ReadText(1026, 2627)
 		end
 		if (entry[1] == "ssaa_2x") or (entry[1] == "ssaa_4x") or (entry[1] == "ssaa_6x") or (entry[1] == "ssaa_9x") then
 			local oldactive = entry.active
 			entry.active = entry.active and (currentUpscalingOption == "none")
 			if oldactive and (not entry.active) then
-				entry.mouseovertext = "\27R" .. ReadText(1026, 2656)
+				entry.mouseovertext = ColorText["text_error"] .. ReadText(1026, 2656)
 			end
 		end
 	end
@@ -4866,6 +6524,30 @@ function menu.valueGfxEnvMapProbesInsideGlassFade()
 	return scale
 end
 
+function menu.valueGfxFOV()
+	local fov = Helper.round(GetFOVOption() * 90)
+	local start = nil
+	if fov < 60 then
+		start = 60
+	elseif fov >= 120 then
+		start = 120
+	else
+		start = fov
+	end
+
+	local scale = {
+		min            = 60,
+		max            = 120,
+		start          = start,
+		step           = 1,
+		suffix         = ReadText(1001, 109),
+		exceedMaxValue = false,
+		hideMaxValue   = true,
+	}
+
+	return scale
+end
+
 function menu.valueGfxFullscreen()
 	local options = {}
 	local currentOption = ""
@@ -4933,6 +6615,23 @@ function menu.valueGfxGlow()
 	return options, currentOption
 end
 
+function menu.valueGfxUIGlow()
+	local options = {}
+	local currentOption = C.GetUIGlowOption() + 1
+
+	local settings = {
+		[1] = ReadText(1001, 2649),
+		[2] = ReadText(1001, 2650),
+		[3] = ReadText(1001, 2652),
+		[4] = ReadText(1001, 2651),
+	}
+	for i, entry in Helper.orderedPairs(settings) do
+		table.insert(options, { id = i, text = entry, icon = "", displayremoveoption = false })
+	end
+
+	return options, currentOption
+end
+
 function menu.valueGfxGPU()
 	local options = {}
 	local currentOption = C.GetRequestedGPU()
@@ -4946,7 +6645,7 @@ end
 
 function menu.valueGfxHMDResolution()
 	local renderresolution = C.GetRenderResolutionOption()
-	return renderresolution.x .. ReadText(1001, 42) .. renderresolution.y, Helper.color.white
+	return renderresolution.x .. ReadText(1001, 42) .. renderresolution.y, Color["text_normal"]
 end
 
 function menu.valueGfxLOD()
@@ -4971,7 +6670,7 @@ function menu.valueGfxLUT(accessibility)
 	local currentOption = C.GetLUTMode()
 
 	local settings = {
-		[1] = { text = ReadText(1001, 7239) }, 
+		[1] = { text = ReadText(1001, 7239) },
 		[2] = { text = ReadText(1001, 7240), accessibility = false },
 		[3] = { text = ReadText(1001, 7241), accessibility = false },
 		[4] = { text = ReadText(1001, 7242), accessibility = false },
@@ -5041,14 +6740,14 @@ end
 function menu.valueGfxResolution()
 	local options = {}
 	local currentOption = ""
-	
+
 	local oldresolution = GetResolutionOption()
 	local resolutions = GetPossibleResolutions()
 	function resolutionsort (a, b)
 		local result = false
-		if a.width < b.width then 
-			result = true 
-		elseif a.width == b.width then 
+		if a.width < b.width then
+			result = true
+		elseif a.width == b.width then
 			result = a.height < b. height
 		end
 		return result
@@ -5107,8 +6806,9 @@ function menu.valueGfxSSAO()
 	local settings = {
 		[1] = ReadText(1001, 2649),
 		[2] = ReadText(1001, 2650),
-		[3] = ReadText(1001, 2652),
+		[3] = ReadText(1001, 4838),
 		[4] = ReadText(1001, 2651),
+		[5] = ReadText(1001, 4837),
 	}
 	for i, entry in ipairs(settings) do
 		table.insert(options, { id = i, text = entry, icon = "", displayremoveoption = false })
@@ -5150,7 +6850,7 @@ function menu.valueGfxPresentMode()
 	table.sort(settings, menu.sortActiveEntries)
 
 	for i, entry in ipairs(settings) do
-		table.insert(options, { id = entry[1], text = entry[2], icon = "", displayremoveoption = false, active = entry.active, mouseovertext = entry.active and "" or ("\27R" .. ReadText(1026, 2627)) })
+		table.insert(options, { id = entry[1], text = entry[2], icon = "", displayremoveoption = false, active = entry.active, mouseovertext = entry.active and "" or (ColorText["text_error"] .. ReadText(1026, 2627)) })
 	end
 
 	return options, currentOption
@@ -5191,7 +6891,7 @@ function menu.valueGfxUpscaling()
 	table.sort(settings, menu.sortActiveEntries)
 
 	for i, entry in ipairs(settings) do
-		table.insert(options, { id = entry[1], text = entry[2], icon = "", displayremoveoption = false, active = entry.active, mouseovertext = entry.active and (entry[3] or "") or ("\27R" .. ReadText(1026, 2627)) })
+		table.insert(options, { id = entry[1], text = entry[2], icon = "", displayremoveoption = false, active = entry.active, mouseovertext = entry.active and (entry[3] or "") or (ColorText["text_error"] .. ReadText(1026, 2627)) })
 	end
 
 	return options, currentOption
@@ -5248,21 +6948,6 @@ function menu.valueInputJoystickDeadzone()
 	}
 
 	return scale
-end
-
-function menu.valueInputMouseHUDMode()
-	local options = {}
-	local currentOption = C.GetMouseHUDModeOption()
-
-	local settings = {
-		[1] = { name = ReadText(1001, 8938), mouseover = ReadText(1026, 2632) },
-		[2] = { name = ReadText(1001, 8939), mouseover = ReadText(1026, 2633) },
-	}
-	for i, entry in ipairs(settings) do
-		table.insert(options, { id = i, text = entry.name, icon = "", displayremoveoption = false, mouseovertext = entry.mouseover })
-	end
-
-	return options, currentOption
 end
 
 function menu.valueInputMouseSteeringInvert(configname)
@@ -5599,6 +7284,10 @@ function menu.selectableContinue()
 	return true
 end
 
+function menu.selectableGameMenuWidthScaleConfirm()
+	return menu.newMenuWidthScale ~= Helper.round(C.GetMenuWidthScale(), 2)
+end
+
 function menu.selectableGameResetUserQuestions()
 	for questiontype in pairs(__CORE_DETAILMONITOR_USERQUESTION) do
 		if questiontype ~= "version" then
@@ -5680,6 +7369,13 @@ function menu.callbackAccessibilityGlobalLightScale(value)
 	end
 end
 
+function menu.callbackAccessibilityReducedSpeedMode(uivalue)
+	if uivalue then
+		local value = uivalue / 100
+		C.SetReducedSpeedModeOption(value)
+	end
+end
+
 function menu.callbackAccessibilityLongRangeScan()
 	C.SetLongRangeScanIndicatorOption(not C.GetLongRangeScanIndicatorOption())
 end
@@ -5741,6 +7437,21 @@ function menu.callbackContinue()
 	else
 		menu.onCloseElement()
 	end
+end
+
+function menu.callbackResetTimelines()
+	C.ResetTimelinesProgress()
+	menu.onCloseElement("back")
+end
+
+function menu.callbackReturnToHub()
+	Helper.closeMenuAndOpenNewMenu(menu, "ScenarioDebriefingMenu", { 0, 0 })
+	menu.cleanup()
+end
+
+function menu.callbackTimelines()
+	NewGame("x4ep1_gamestart_hub")
+	menu.closeMenu("close")
 end
 
 function menu.callbackOnlineSeason()
@@ -5895,6 +7606,27 @@ function menu.callbackGameEmergencyEject()
 	C.SetEmergencyEjectOption(not C.GetEmergencyEjectOption())
 end
 
+function menu.callbackGameHUDScale(id, option)
+	if option ~= menu.curDropDownOption[id] then
+		menu.curDropDownOption[id] = option
+
+		table.insert(menu.history, 1, { optionParameter = menu.currentOption, topRow = GetTopRow(menu.optionTable), selectedOption = "hudscale" })
+		__CORE_GAMEOPTIONS_RESTORE = true
+		__CORE_GAMEOPTIONS_RESTOREINFO.optionParameter = nil
+		__CORE_GAMEOPTIONS_RESTOREINFO.history = menu.history
+
+		C.SetHUDScaleOption(option)
+		menu.displayInit(ReadText(1001, 409))
+	end
+end
+
+function menu.callbackGameInputFeedback(id, option)
+	if option ~= menu.curDropDownOption[id] then
+		menu.curDropDownOption[id] = option
+		C.SetInputFeedbackOption(option)
+	end
+end
+
 function menu.callbackGameMouselook()
 	SetMouseLookToggleOption()
 end
@@ -5933,6 +7665,28 @@ function menu.callbackGameEnemyNearby(id, option)
 	end
 end
 
+function menu.callbackGameMenuWidthScale(value)
+	if value then
+		menu.newMenuWidthScale = Helper.round(value, 2)
+	end
+end
+
+function menu.callbackGameMenuWidthScaleConfirm()
+	if menu.newMenuWidthScale ~= Helper.round(C.GetMenuWidthScale(), 2) then
+		table.insert(menu.history, 1, { optionParameter = menu.currentOption, topRow = GetTopRow(menu.optionTable), selectedOption = "menuwidthscale" })
+		__CORE_GAMEOPTIONS_RESTORE = true
+		__CORE_GAMEOPTIONS_RESTOREINFO.optionParameter = nil
+		__CORE_GAMEOPTIONS_RESTOREINFO.history = menu.history
+		C.SetMenuWidthScale(menu.newMenuWidthScale)
+		menu.displayInit(ReadText(1001, 409))
+	end
+end
+
+function menu.callbackGameMenuWidthScaleReset()
+	menu.newMenuWidthScale = math.max(0.1, math.min(1.0, Helper.round(C.GetMenuWidthScale(), 2)))
+	menu.refresh()
+end
+
 function menu.callbackGameResetUserQuestions()
 	__CORE_DETAILMONITOR_USERQUESTION = {
 		version = __CORE_DETAILMONITOR_USERQUESTION.version,
@@ -5969,6 +7723,13 @@ function menu.callbackGameSubtitles(id, option)
 	if option ~= menu.curDropDownOption[id] then
 		menu.curDropDownOption[id] = option
 		SetSubtitleOption(option)
+	end
+end
+
+function menu.callbackThirdPersonFlight(id, option)
+	if option ~= menu.curDropDownOption[id] then
+		menu.curDropDownOption[id] = option
+		C.SetThirdPersonFlightOption(option == "externalview")
 	end
 end
 
@@ -6035,6 +7796,16 @@ function menu.callbackGamestartPlayerMacro(customgamestart, propertyid, option)
 	end
 end
 
+function menu.callbackGamestartGalaxyMacro(customgamestart, propertyid, option)
+	C.SetCustomGameStartStringProperty(customgamestart, propertyid, option)
+	if option == "xu_ep2_universe_macro" then
+		C.SetCustomGameStartStringProperty(customgamestart, "sector", "cluster_01_sector001_macro")
+	else
+		local prefix = string.match(option, "^(.-)galaxy_macro")
+		C.SetCustomGameStartStringProperty(customgamestart, "sector", prefix .. "cluster_001_sector_001_macro")
+	end
+end
+
 function menu.callbackGfxAA(id, option)
 	if option ~= menu.curDropDownOption[id] then
 		menu.curDropDownOption[id] = option
@@ -6049,7 +7820,7 @@ function menu.callbackGfxAA(id, option)
 			negCallback = "callbackGfxAACancel",
 			timer = 15.9,
 			waitforgfx = true,
-			
+
 		}
 		__CORE_GAMEOPTIONS_RESTOREINFO.optionParameter = "question"
 	end
@@ -6135,6 +7906,12 @@ function menu.callbackGfxEnvMapProbesInsideGlassFade(value)
 	end
 end
 
+function menu.callbackGfxFOV(value)
+	if value then
+		SetFOVOption(value / 90)
+	end
+end
+
 function menu.callbackGfxFullscreen(id, option)
 	if option ~= menu.curDropDownOption[id] then
 		local fullscreen, borderless = GetFullscreenOption()
@@ -6194,6 +7971,13 @@ function menu.callbackGfxGlow(id, option)
 	if option ~= menu.curDropDownOption[id] then
 		menu.curDropDownOption[id] = option
 		SetGlowOption(tonumber(option) - 1)
+	end
+end
+
+function menu.callbackGfxUIGlow(id, option)
+	if option ~= menu.curDropDownOption[id] then
+		menu.curDropDownOption[id] = option
+		C.SetUIGlowOption(tonumber(option) - 1)
 	end
 end
 
@@ -6340,7 +8124,7 @@ function menu.callbackGfxUpscaling(id, option)
 			negCallback = "callbackGfxUpscalingCancel",
 			timer = 15.9,
 			waitforgfx = true,
-			
+
 		}
 		__CORE_GAMEOPTIONS_RESTOREINFO.optionParameter = "question"
 	end
@@ -6397,13 +8181,6 @@ end
 
 function menu.callbackInputMouseCapture()
 	SetConfineMouseOption()
-end
-
-function menu.callbackInputMouseHUDMode(id, option)
-	if option ~= menu.curDropDownOption[id] then
-		menu.curDropDownOption[id] = option
-		C.SetMouseHUDModeOption(tonumber(option))
-	end
 end
 
 function menu.callbackInputMouseSteeringAdaptive()
@@ -6661,7 +8438,7 @@ function menu.displayOptions(optionParameter)
 	ftable:setDefaultComplexCellProperties("slidercell", "text", { x = config.standardTextOffsetX, fontsize = config.standardFontSize })
 
 	-- title
-	local row = ftable:addRow(menu.currentOption ~= "main", { fixed = true, bgColor = Helper.color.transparent })
+	local row = ftable:addRow(menu.currentOption ~= "main", { fixed = true })
 	row[1]:setBackgroundColSpan(5)
 	local colOffset = 1
 	if menu.currentOption ~= "main" then
@@ -6679,7 +8456,7 @@ function menu.displayOptions(optionParameter)
 	-- warning
 	if options.warning then
 		local warning, warningFont = options.warning()
-		local row = ftable:addRow(false, { fixed = true, bgColor = Helper.color.transparent })
+		local row = ftable:addRow(false, { fixed = true })
 		row[1]:setColSpan(5):createText(function () local text = options.warning() return text end, config.warningTextProperties)
 		if warningFont then
 			row[1].properties.font = warningFont
@@ -6715,7 +8492,7 @@ function menu.displayOptionsInfo(optionParameter)
 	titletable:setDefaultColSpan(3, 2)
 
 	-- title
-	local row = titletable:addRow({}, { fixed = true, bgColor = Helper.color.transparent })
+	local row = titletable:addRow({}, { fixed = true })
 	row[1]:setBackgroundColSpan(4)
 	row[1]:createButton({ height = config.headerTextHeight }):setIcon(config.backarrow, { x = config.backarrowOffsetX })
 	row[1].handlers.onClick = function () return menu.onCloseElement("back") end
@@ -6730,7 +8507,7 @@ function menu.displayOptionsInfo(optionParameter)
 	-- warning
 	if options.warning then
 		local warning, warningFont = options.warning()
-		local row = titletable:addRow(false, { fixed = true, bgColor = Helper.color.transparent })
+		local row = titletable:addRow(false, { fixed = true })
 		row[1]:setColSpan(3):createText(function () local text = options.warning() return text end, config.warningTextProperties)
 		if warningFont then
 			row[1].properties.font = warningFont
@@ -6766,7 +8543,7 @@ function menu.displayOptionsInfo(optionParameter)
 	local offsetx = menu.table.x + menu.table.widthWithExtraInfo + Helper.borderSize
 	local infotable = frame:addTable(1, { tabOrder = 0, x = offsetx, y = offsety, width = width, maxVisibleHeight = height })
 
-	local row = infotable:addRow(false, { bgColor = Helper.color.transparent60 })
+	local row = infotable:addRow(false, { bgColor = Color["optionsmenu_cell_background"] })
 	row[1]:createText(menu.infoHandler, { scaling = false, width = width, height = height, wordwrap = true, fontsize = Helper.scaleFont(config.font, config.infoFontSize) })
 
 	titletable.properties.nextTable = optiontable.index
@@ -6775,35 +8552,58 @@ function menu.displayOptionsInfo(optionParameter)
 	frame:display()
 end
 
-function menu.displayNewGame(createAsServer)
+function menu.displayNewGame(createAsServer, displayTimelinesScenarios, displayTutorials)
 	-- remove old data
 	Helper.clearDataForRefresh(menu, config.optionsLayer)
 	menu.selectedOption = nil
 
-	menu.currentOption = createAsServer and "multiplayer_server" or "new"
+	menu.currentOption = nil
+	if createAsServer then
+		menu.currentOption = "multiplayer_server"
+	elseif displayTimelinesScenarios then
+		menu.currentOption = "new_timelines"
+	elseif displayTutorials then
+		menu.currentOption = "tutorials"
+	else
+		menu.currentOption = "new"
+	end
 	local gamemodules = GetRegisteredModules()
 	local groups = {}
+	local recommendedstarts = {}
 	for _, module in ipairs(gamemodules) do
 		if (not module.unlockhidden) or module.unlocked then
-			if not menu.selectedOption then
-				menu.selectedOption = module
-			end
-			if module.id == menu.preselectOption then
-				menu.selectedOption = module
-			end
-			local index
-			for i, group in ipairs(groups) do
-				if group.group == module.group then
-					index = i
-					break
+			if ((displayTimelinesScenarios == module.timelinesscenario) or (IsCheatVersion() and (not displayTimelinesScenarios))) and (displayTutorials == module.tutorial) then
+				if not menu.selectedOption then
+					menu.selectedOption = module
+				end
+				if module.id == menu.preselectOption then
+					menu.selectedOption = module
+				end
+				local index
+				for i, group in ipairs(groups) do
+					if group.group == module.group then
+						index = i
+						break
+					end
+				end
+
+				if index then
+					table.insert(groups[index], module)
+				else
+					table.insert(groups, { group = module.group, [1] = module })
+				end
+
+				if module.recommendationscore > 0 then
+					table.insert(recommendedstarts, { score = module.recommendationscore, id = module.id })
 				end
 			end
+		end
+	end
 
-			if index then
-				table.insert(groups[index], module)
-			else
-				table.insert(groups, { group = module.group, [1] = module })
-			end
+	table.sort(recommendedstarts, function (a, b) return a.score > b.score end)
+	for i = 1, config.numRecommendedGamestarts do
+		if recommendedstarts[i] then
+			recommendedstarts[recommendedstarts[i].id] = true
 		end
 	end
 
@@ -6821,14 +8621,14 @@ function menu.displayNewGame(createAsServer)
 	titletable:setColWidth(1, menu.table.arrowColumnWidth, false)
 
 	-- title
-	local row = titletable:addRow(true, { fixed = true, bgColor = Helper.color.transparent })
+	local row = titletable:addRow(true, { fixed = true })
 	row[1]:setBackgroundColSpan(2)
 	row[1]:createButton({ height = config.headerTextHeight }):setIcon(config.backarrow, { x = config.backarrowOffsetX })
 	row[1].handlers.onClick = function () return menu.onCloseElement("back") end
-	row[2]:createText(ReadText(1001, 2603), config.headerTextProperties)
+	row[2]:createText(displayTutorials and ReadText(1001, 7208) or ReadText(1001, 2603), config.headerTextProperties)
 
-	local row = titletable:addRow(false, { fixed = true, bgColor = Helper.color.transparent })
-	row[2]:createText(ReadText(1001, 11718), config.warningTextProperties)
+	local row = titletable:addRow(false, { fixed = true })
+	row[2]:createText(displayTutorials and "" or ReadText(1001, 11718), config.warningTextProperties)
 
 	local offsety = titletable.properties.y + titletable:getVisibleHeight() + Helper.borderSize
 	local height = math.min(Helper.viewHeight - offsety - Helper.frameBorder, menu.table.height - offsety)
@@ -6840,15 +8640,15 @@ function menu.displayNewGame(createAsServer)
 	for i, group in ipairs(groups) do
 		if gamestartgroups[group.group] then
 			optiontable:addEmptyRow(config.subHeaderTextHeight / 4)
-			local row = optiontable:addRow(false, { bgColor = Helper.color.transparent })
+			local row = optiontable:addRow(false, {  })
 			row[2]:createText(gamestartgroups[group.group], config.subHeaderTextProperties)
 		elseif i ~= 1 then
-			local row = optiontable:addRow(false, { bgColor = Helper.color.transparent })
-			row[2]:createText(" ", { fontsize = 1, height = Helper.borderSize, cellBGColor = Helper.color.transparent60 })
+			local row = optiontable:addRow(false, {  })
+			row[2]:createText(" ", { fontsize = 1, height = Helper.borderSize, cellBGColor = Color["row_separator"] })
 		end
 		for _, module in ipairs(group) do
 			if module.available or showunavailable then
-				local row = optiontable:addRow(module, { bgColor = Helper.color.transparent })
+				local row = optiontable:addRow(module, {  })
 				if module.id == menu.preselectOption then
 					optiontable:setSelectedRow(row.index)
 				end
@@ -6869,7 +8669,21 @@ function menu.displayNewGame(createAsServer)
 					available = false
 					mouseovertext = ReadText(1026, 2666)
 				end
-				row[2]:createText(name, available and module.unlocked and config.standardTextProperties or config.disabledTextProperties)
+				local recommended = ""
+				if available and module.unlocked then
+					if recommendedstarts[module.id] then
+						local iconsize = Helper.scaleY(config.infoTextHeight)
+						row[1]:createIcon("menu_recommended", { color = Color["gamestart_recommended"], mouseOverText = ReadText(1026, 2680), width = iconsize, height = iconsize, x = row[1]:getWidth() - iconsize, scaling = false })
+						mouseovertext = ReadText(1026, 2680)
+					end
+				end
+				if module.tutorial then
+					if tonumber(ffi.string(C.GetUserData(module.id .. "_completed"))) == 1 then
+						local iconsize = Helper.scaleY(config.infoTextHeight)
+						row[1]:createIcon("widget_tick_01", { color = Color["tutorial_completed"], width = iconsize, height = iconsize, x = row[1]:getWidth() - iconsize, scaling = false })
+					end
+				end
+				row[2]:createText(name .. recommended, available and module.unlocked and config.standardTextProperties or config.disabledTextProperties)
 				if mouseovertext then
 					row[2].properties.mouseOverText = mouseovertext
 				end
@@ -6908,18 +8722,18 @@ function menu.displayNewGame(createAsServer)
 	local infotable = frame:addTable(1, { tabOrder = 3, x = offsetx, y = offsety, width = width, maxVisibleHeight = maxVisibleHeight, highlightMode = "off" })
 
 	if not showCutscene then
-		local row = infotable:addRow(false, { bgColor = Helper.color.black, fixed = true })
+		local row = infotable:addRow(false, { bgColor = Color["optionsmenu_cell_background_icon"], fixed = true })
 		row[1]:createIcon(menu.iconNewGame, { scaling = false, width = width, height = iconheight })
 	end
 
 	local hasdescription = false
 	if menu.selectedOption then
-		local row = infotable:addRow(true, { bgColor = Helper.color.transparent60, fixed = true })
+		local row = infotable:addRow(true, { bgColor = Color["optionsmenu_cell_background"], fixed = true })
 		if menu.selectedOption.requirement ~= "" then
 			local canopenstore = (menu.selectedOption.extensionid ~= "") and (not C.HasExtension(menu.selectedOption.extensionid, menu.selectedOption.isextensionpersonal)) and (IsSteamworksEnabled() or (C.IsGOGVersion() and C.CanOpenWebBrowser()))
 			if canopenstore then
 				local iconsize = Helper.scaleY(Helper.standardButtonHeight)
-				row[1]:createButton({ bgColor = Helper.color.red, highlightColor = canopenstore and Helper.defaultButtonHighlightColor or Helper.color.transparent }):setText(menu.selectedOption.requirement, { x = config.infoTextOffsetX, font = config.fontBold }):setIcon("mm_externallink", { scaling = false, x = width - iconsize, height = iconsize, width = iconsize })
+				row[1]:createButton({ bgColor = Color["icon_error"], highlightColor = canopenstore and Color["button_highlight_default"] or Color["row_background"] }):setText(menu.selectedOption.requirement, { x = config.infoTextOffsetX, font = config.fontBold }):setIcon("mm_externallink", { scaling = false, x = width - iconsize, height = iconsize, width = iconsize })
 				local storeicon = ""
 				if IsSteamworksEnabled() then
 					storeicon = "optionsmenu_steam"
@@ -6931,25 +8745,23 @@ function menu.displayNewGame(createAsServer)
 				end
 				row[1].handlers.onClick = function () return menu.buttonOpenStore(menu.selectedOption.extensionsource) end
 			else
-				row[1]:createText(menu.selectedOption.requirement, { x = config.infoTextOffsetX, y = (Helper.standardButtonHeight - Helper.standardTextHeight) / 2, font = config.fontBold, cellBGColor = Helper.color.red, minRowHeight = Helper.standardButtonHeight })
-			end
+				row[1]:createText(menu.selectedOption.requirement, { x = config.infoTextOffsetX, y = (Helper.standardButtonHeight - Helper.standardTextHeight) / 2, font = config.fontBold, cellBGColor = Color["icon_error"], minRowHeight = Helper.standardButtonHeight })
+		end
 		else
-			row[1]:createText(ReadText(1001, 11732) .. ReadText(1001, 120) .. " " .. menu.selectedOption.typename, { mouseOverText = menu.selectedOption.typedescription, x = config.infoTextOffsetX, y = (Helper.standardButtonHeight - Helper.standardTextHeight) / 2, font = config.fontBold, cellBGColor = Helper.color.black, minRowHeight = Helper.standardButtonHeight })
+			row[1]:createText(ReadText(1001, 11732) .. ReadText(1001, 120) .. " " .. menu.selectedOption.typename, { mouseOverText = menu.selectedOption.typedescription, x = config.infoTextOffsetX, y = (Helper.standardButtonHeight - Helper.standardTextHeight) / 2, font = config.fontBold, cellBGColor = Color["optionsmenu_cell_background_icon"], minRowHeight = Helper.standardButtonHeight })
 		end
 
 		local text = menu.selectedOption.description
-		local descriptiontext = GetTextLines(text, config.font, Helper.scaleFont(config.font, config.infoFontSize), width - 2 * Helper.scaleX(config.infoTextOffsetX))
+		local descriptiontext = GetTextLines(text, Helper.standardFont, Helper.scaleFont(Helper.standardFont, config.infoFontSize), width - 2 * Helper.scaleX(config.infoTextOffsetX))
 		if #descriptiontext > numlines then
 			-- scrollbar case
-			descriptiontext = GetTextLines(text, config.font, Helper.scaleFont(config.font, config.infoFontSize), width - 2 * Helper.scaleX(config.infoTextOffsetX) - Helper.scrollbarWidth)
+			descriptiontext = GetTextLines(text, Helper.standardFont, Helper.scaleFont(Helper.standardFont, config.infoFontSize), width - 2 * Helper.scaleX(config.infoTextOffsetX) - Helper.scrollbarWidth)
 		end
 
 		-- now that we know the actual text height, update the maxVisibleHeight so that numlines lines will fit
 		if #descriptiontext > 0 then
-			local descriptiontextheight = math.ceil(C.GetTextHeight(descriptiontext[1], config.font, config.infoFontSize, 0))
-			infotable.properties.maxVisibleHeight = baseMaxVisibleHeight + numlines * descriptiontextheight
 			for linenum, descline in ipairs(descriptiontext) do
-				local row = infotable:addRow(true, { bgColor = Helper.color.transparent60, borderBelow = false })
+				local row = infotable:addRow(true, { bgColor = Color["optionsmenu_cell_background"], borderBelow = false })
 				row[1]:createText(descline)
 
 				hasdescription = true
@@ -6958,7 +8770,7 @@ function menu.displayNewGame(createAsServer)
 	end
 	local fullheight = infotable:getFullHeight() + (hasdescription and 0 or Helper.borderSize) -- if there is no description, the border between icon row and the new empty row has to be accounted for
 	if fullheight < infotable.properties.maxVisibleHeight then
-		local row = infotable:addRow(nil, { bgColor = Helper.color.transparent60, borderBelow = false })
+		local row = infotable:addRow(nil, { bgColor = Color["optionsmenu_cell_background"], borderBelow = false })
 		row[1]:createText("", { scaling = false, minRowHeight = infotable.properties.maxVisibleHeight - fullheight, fontsize = 1 })
 	end
 
@@ -6969,13 +8781,13 @@ function menu.displayNewGame(createAsServer)
 	infotable2:setDefaultBackgroundColSpan(1, 3)
 
 	if menu.selectedOption then
-		local row = infotable2:addRow(nil, { bgColor = Helper.color.transparent })
-		row[1]:setColSpan(3):createText(" ", { fontsize = 1, height = Helper.borderSize, cellBGColor = Helper.defaultSimpleBackgroundColor })
+		local row = infotable2:addRow(nil, {  })
+		row[1]:setColSpan(3):createText(" ", { fontsize = 1, height = Helper.borderSize, cellBGColor = Color["row_background_blue"] })
 
 		if IsCheatVersion() then
-			local row = infotable2:addRow(nil, { bgColor = Helper.color.transparent60, borderBelow = false })
+			local row = infotable2:addRow(nil, { bgColor = Color["optionsmenu_cell_background"], borderBelow = false })
 			row[1]:createText("Gamestart ID:") -- (cheat only)
-			row[2]:createText("\027A" .. menu.selectedOption.id, { halign = "right" })
+			row[2]:createText(ColorText["text_inactive"] .. menu.selectedOption.id, { halign = "right" })
 		end
 
 		local playermacro = ""
@@ -7023,11 +8835,12 @@ function menu.displayNewGame(createAsServer)
 		for i, entry in ipairs(menu.selectedOption.info) do
 			local row
 			if entry.info == "@name" then
-				row = infotable2:addRow(nil, { bgColor = Helper.color.transparent60, borderBelow = false })
+				row = infotable2:addRow(nil, { bgColor = Color["optionsmenu_cell_background"], borderBelow = false })
 				row[1]:createText(ReadText(1021, 8) .. ReadText(1001, 120))
-				row[2]:createText(function () local buf = ffi.new("CustomGameStartStringPropertyState[1]"); return "\027A" .. ffi.string(C.GetCustomGameStartStringProperty(menu.selectedOption.id, "playername", buf)) end, { halign = "right" })
+				local gamestartid = menu.selectedOption.id
+				row[2]:createText(function () local buf = ffi.new("CustomGameStartStringPropertyState[1]"); return ColorText["text_inactive"] .. ffi.string(C.GetCustomGameStartStringProperty(gamestartid, "playername", buf)) end, { halign = "right" })
 			elseif entry.info == "@player" then
-				row = infotable2:addRow(true, { bgColor = Helper.color.transparent60, borderBelow = false })
+				row = infotable2:addRow(true, { bgColor = Color["optionsmenu_cell_background"], borderBelow = false })
 				if #playermacrooptions > 0 then
 					row[1]:createText(ReadText(1021, 11007) .. ReadText(1001, 120))
 					row[2]:createDropDown(playermacrooptions, { startOption = playermacro, height = Helper.standardTextHeight }):setTextProperties({ halign = "right", x = Helper.standardTextOffsetx })
@@ -7037,25 +8850,25 @@ function menu.displayNewGame(createAsServer)
 				end
 			elseif entry.info == "@unlock" then
 				if not menu.selectedOption.unlocked then
-					row = infotable2:addRow(nil, { bgColor = Helper.color.transparent60, borderBelow = false })
+					row = infotable2:addRow(nil, { bgColor = Color["optionsmenu_cell_background"], borderBelow = false })
 					row[1]:createText(ReadText(1004, 45) .. ReadText(1001, 120))
-					row[2]:createText("\027A" .. entry.description, { halign = "right" })
+					row[2]:createText(ColorText["text_inactive"] .. entry.description, { halign = "right" })
 				end
 			elseif entry.info ~= "" then
-				row = infotable2:addRow(nil, { bgColor = Helper.color.transparent60, borderBelow = false })
+				row = infotable2:addRow(nil, { bgColor = Color["optionsmenu_cell_background"], borderBelow = false })
 				row[1]:createText(entry.info .. ReadText(1001, 120))
-				row[2]:createText("\027A" .. entry.description, { halign = "right" })
+				row[2]:createText(ColorText["text_inactive"] .. entry.description, { halign = "right" })
 			elseif menu.selectedOption.info[i + 1].info ~= "@unlock" or (not menu.selectedOption.unlocked) then
 				-- do not show the empty line before @unlock if @unlock is not shown
-				row = infotable2:addRow(nil, { bgColor = Helper.color.transparent60, borderBelow = false })
+				row = infotable2:addRow(nil, { bgColor = Color["optionsmenu_cell_background"], borderBelow = false })
 				row[1]:createText("")
 			end
 		end
 	end
 
-	local row = infotable2:addRow(nil, { bgColor = Helper.color.transparent60, borderBelow = false })
+	local row = infotable2:addRow(nil, { bgColor = Color["optionsmenu_cell_background"], borderBelow = false })
 	row[1]:createText(" ", { fontsize = 1, minRowHeight = config.standardTextHeight / 2 })
-	local row = infotable2:addRow(true, { bgColor = Helper.color.transparent60, fixed = true })
+	local row = infotable2:addRow(true, { bgColor = Color["optionsmenu_cell_background"], fixed = true })
 	row[1]:setColSpan(3):createButton({ active = menu.buttonStartGameActive(), height = config.standardTextHeight }):setText(ReadText(1001, 9902), { halign = "center" })
 	row[1].handlers.onClick = function () return menu.buttonStartGame(menu.selectedOption) end
 
@@ -7128,14 +8941,14 @@ function menu.displayExtensions()
 	titletable:setColWidth(1, menu.table.arrowColumnWidth, false)
 
 	-- title
-	local row = titletable:addRow(true, { fixed = true, bgColor = Helper.color.transparent })
+	local row = titletable:addRow(true, { fixed = true })
 	row[1]:setBackgroundColSpan(2)
 	row[1]:createButton({ height = config.headerTextHeight }):setIcon(config.backarrow, { x = config.backarrowOffsetX })
 	row[1].handlers.onClick = function () return menu.onCloseElement("back") end
 	row[2]:createText(ReadText(1001, 2697), config.headerTextProperties)
 
 	-- warning
-	local row = titletable:addRow(false, { fixed = true, bgColor = Helper.color.transparent })
+	local row = titletable:addRow(false, { fixed = true })
 	row[2]:createText(menu.warningExtensions, config.warningTextProperties)
 
 	local offsety = titletable.properties.y + titletable:getVisibleHeight() + Helper.borderSize
@@ -7155,19 +8968,19 @@ function menu.displayExtensions()
 	if IsSteamworksEnabled() then
 		addline = true
 
-		local row = optiontable:addRow("globalsync", { bgColor = Helper.color.transparent })
+		local row = optiontable:addRow("globalsync", {  })
 		row[2]:createText(ReadText(1001, 4830), config.standardTextProperties)
 		row[6]:createButton({  }):setText(function () local text = menu.valueExtensionGlobalSync() return text end, { fontsize = config.standardFontSize, halign = "center", color = function () local _, color = menu.valueExtensionGlobalSync() return color end })
 		row[6].handlers.onClick = menu.buttonExtensionGlobalSync
-		
-		local row = optiontable:addRow("workshop", { bgColor = Helper.color.transparent })
+
+		local row = optiontable:addRow("workshop", {  })
 		row[2]:setColSpan(5):createText(ReadText(1001, 4831), config.standardTextProperties)
 	end
 
 	if #extensions > 0 then
 		addline = true
-		
-		local row = optiontable:addRow( "defaults", { bgColor = Helper.color.transparent })
+
+		local row = optiontable:addRow( "defaults", {  })
 		row[2]:setColSpan(6):createText(ReadText(1001, 2647), config.standardTextProperties)
 		if menu.preselectOption == "defaults" then
 			optiontable:setSelectedRow(row.index)
@@ -7175,11 +8988,11 @@ function menu.displayExtensions()
 	end
 
 	if addline then
-		local row = optiontable:addRow(false, { bgColor = Helper.color.transparent })
-		row[2]:setColSpan(6):createText(" ", { fontsize = 1, height = Helper.borderSize, cellBGColor = Helper.color.transparent60 })
+		local row = optiontable:addRow(false, {  })
+		row[2]:setColSpan(6):createText(" ", { fontsize = 1, height = Helper.borderSize, cellBGColor = Color["row_separator"] })
 	end
 
-	row = optiontable:addRow(false, { bgColor = Helper.color.transparent })
+	row = optiontable:addRow(false, {  })
 	row[2]:createText(ReadText(1001, 8999), config.subHeaderTextProperties)
 	row[2].properties.halign = "left"
 	row[3]:createText(ReadText(1001, 4823), config.subHeaderTextProperties)
@@ -7189,19 +9002,30 @@ function menu.displayExtensions()
 		table.sort(extensions, Helper.sortName)
 
 		for _, extension in ipairs(extensions) do
-			if extension.egosoftextension then
+			if extension.egosoftextension and extension.enabledbydefault then
 				menu.displayExtensionRow(optiontable, extension, menu.extensionSettings[extension.index])
 			end
 		end
-		row = optiontable:addRow(false, { bgColor = Helper.color.transparent })
-		row[2]:setColSpan(6):createText(" ", { fontsize = 1, height = Helper.borderSize, cellBGColor = Helper.color.transparent60 })
+		row = optiontable:addRow(false, {  })
+		row[2]:setColSpan(6):createText(" ", { fontsize = 1, height = Helper.borderSize, cellBGColor = Color["row_separator"] })
+		local extraseparator = false
+		for _, extension in ipairs(extensions) do
+			if extension.egosoftextension and not extension.enabledbydefault then
+				menu.displayExtensionRow(optiontable, extension, menu.extensionSettings[extension.index])
+				extraseparator = true
+			end
+		end
+		if extraseparator then
+			row = optiontable:addRow(false, {  })
+			row[2]:setColSpan(6):createText(" ", { fontsize = 1, height = Helper.borderSize, cellBGColor = Color["row_separator"] })
+		end
 		for _, extension in ipairs(extensions) do
 			if not extension.egosoftextension then
 				menu.displayExtensionRow(optiontable, extension, menu.extensionSettings[extension.index])
 			end
 		end
 	else
-		local row = optiontable:addRow(false, { bgColor = Helper.color.transparent })
+		local row = optiontable:addRow(false, {  })
 		row[2]:setColSpan(2):createText(ReadText(1001, 2693), config.disabledTextProperties)
 	end
 
@@ -7212,7 +9036,7 @@ function menu.displayExtensions()
 	local offsetx = menu.table.x + menu.table.widthExtraWide - infowidth
 	local infotable = frame:addTable(1, { tabOrder = 0, x = offsetx, y = offsety, width = infowidth, maxVisibleHeight = height })
 
-	local row = infotable:addRow(false, { bgColor = Helper.color.transparent60 })
+	local row = infotable:addRow(false, { bgColor = Color["optionsmenu_cell_background"] })
 	row[1]:createText(menu.descriptionExtension, { scaling = false, width = infowidth, height = height, wordwrap = true, fontsize = Helper.scaleFont(config.font, config.infoFontSize) })
 
 	titletable.properties.nextTable = optiontable.index
@@ -7222,16 +9046,16 @@ function menu.displayExtensions()
 end
 
 function menu.displayExtensionRow(ftable, extension, extensionSetting)
-	local row = ftable:addRow(extension, { bgColor = Helper.color.transparent })
+	local row = ftable:addRow(extension, {  })
 	if extension.id == menu.preselectOption then
 		ftable:setSelectedRow(row.index)
 	end
 
-	local textcolor = Helper.color.white
+	local textcolor = Color["text_normal"]
 	if extension.error and extension.enabled then
-		textcolor = Helper.color.red
+		textcolor = Color["text_error"]
 	elseif extension.warning then
-		textcolor = Helper.color.brightyellow
+		textcolor = Color["text_warning"]
 
 	-- kuertee start: gray disabled extensions
 	elseif not extension.enabled then
@@ -7278,7 +9102,7 @@ function menu.displayBonusContent()
 		titletable:setColWidth(1, menu.table.arrowColumnWidth, false)
 
 		-- title
-		local row = titletable:addRow(true, { fixed = true, bgColor = Helper.color.transparent })
+		local row = titletable:addRow(true, { fixed = true })
 		row[1]:setBackgroundColSpan(2)
 		row[1]:createButton({ height = config.headerTextHeight }):setIcon(config.backarrow, { x = config.backarrowOffsetX })
 		row[1].handlers.onClick = function () return menu.onCloseElement("back") end
@@ -7293,7 +9117,7 @@ function menu.displayBonusContent()
 
 		if #bonuscontent > 0 then
 			for i, bonus in ipairs(bonuscontent) do
-				local row = optiontable:addRow(bonus, { bgColor = Helper.color.transparent })
+				local row = optiontable:addRow(bonus, {  })
 				if bonus.appid == menu.preselectOption then
 					optiontable:setSelectedRow(row.index)
 				end
@@ -7320,7 +9144,7 @@ function menu.displayBonusContent()
 				row[3]:createText(status, config.standardTextProperties)
 			end
 		else
-			local row = ftable:addRow(false, { bgColor = Helper.color.transparent })
+			local row = ftable:addRow(false, {  })
 			row[2]:setColSpan(2):createText(ReadText(1001, 2693), config.disabledTextProperties)
 		end
 
@@ -7332,7 +9156,7 @@ function menu.displayBonusContent()
 		local offsetx = menu.table.x + menu.table.widthWithExtraInfo + Helper.borderSize
 		local infotable = frame:addTable(1, { tabOrder = 0, x = offsetx, y = offsety, width = width, maxVisibleHeight = height })
 
-		local row = infotable:addRow(false, { bgColor = Helper.color.transparent60 })
+		local row = infotable:addRow(false, { bgColor = Color["optionsmenu_cell_background"] })
 		row[1]:createText(menu.descriptionBonusContent, { scaling = false, width = width, height = height, wordwrap = true, fontsize = Helper.scaleFont(config.font, config.infoFontSize) })
 
 		titletable.properties.nextTable = optiontable.index
@@ -7341,6 +9165,932 @@ function menu.displayBonusContent()
 		frame:display()
 	else
 		OpenSteamOverlayStorePage()
+	end
+end
+
+function menu.displayMapEditor()
+	Helper.clearDataForRefresh(menu, config.optionsLayer)
+	menu.selectedOption = nil
+
+	menu.currentOption = "mapeditor"
+
+	local frame = menu.createOptionsFrame()
+
+	local titletable = frame:addTable(2, { tabOrder = 2, x = menu.table.x, y = menu.table.y, width = menu.table.width, skipTabChange = true })
+	titletable:setColWidth(1, menu.table.arrowColumnWidth, false)
+
+	-- title
+	local row = titletable:addRow(true, { fixed = true })
+	row[1]:setBackgroundColSpan(2)
+	row[1]:createButton({ height = config.headerTextHeight }):setIcon(config.backarrow, { x = config.backarrowOffsetX })
+	row[1].handlers.onClick = function () return menu.onCloseElement("back") end
+	row[2]:createText(ReadText(1021, 8100), config.headerTextProperties)
+
+	local offsety = titletable.properties.y + titletable:getVisibleHeight() + Helper.borderSize
+	local height = menu.table.height - (titletable:getVisibleHeight() + Helper.borderSize)
+
+	local optiontable = frame:addTable(3, { tabOrder = 1, x = menu.table.x, y = offsety, width = menu.table.width, maxVisibleHeight = height })
+	optiontable:setColWidth(2, menu.table.arrowColumnWidth, false)
+	optiontable:setColWidthPercent(3, 60)
+	optiontable:setDefaultCellProperties("button", { height = config.standardTextHeight })
+	optiontable:setDefaultComplexCellProperties("button", "text", { x = config.standardTextOffsetX, fontsize = config.standardFontSize })
+	optiontable:setDefaultCellProperties("dropdown", { height = config.standardTextHeight })
+	optiontable:setDefaultComplexCellProperties("dropdown", "text", { x = config.standardTextOffsetX, fontsize = config.standardFontSize })
+	optiontable:setDefaultCellProperties("slidercell", { height = config.standardTextHeight })
+	optiontable:setDefaultComplexCellProperties("slidercell", "text", { x = config.standardTextOffsetX, fontsize = config.standardFontSize })
+
+	local buf = ffi.new("CustomGameStartStringPropertyState[1]")
+	local mapeditormacro = ffi.string(C.GetCustomGameStartStringProperty(menu.mapEditorSettings.gamestartid, "galaxy", buf))
+	if mapeditormacro == "editor_empty_galaxy_macro" then
+		mapeditormacro = ""
+	end
+
+	local mapeditormacrooptions = {}
+	table.insert(mapeditormacrooptions, { id = "editor_galaxy_macro", text = ReadText(1001, 11780), icon = "", displayremoveoption = false })
+	table.insert(mapeditormacrooptions, { id = "xu_ep2_universe_macro", text = ReadText(1001, 11789), icon = "", displayremoveoption = false })
+	local n = C.GetNumMapEditorMacros()
+	if n > 0 then
+		local buf = ffi.new("const char*[?]", n)
+		n = C.GetMapEditorMacros(buf, n)
+		for i = 0, n - 1 do
+			local macro = ffi.string(buf[i])
+			local name = GetMacroData(macro, "name")
+			table.insert(mapeditormacrooptions, { id = macro, text = name, icon = "", displayremoveoption = false, mouseovertext = macro })
+		end
+	end
+
+	local row = optiontable:addRow(true, {  })
+	row[1]:createText(ReadText(1001, 11781) .. ReadText(1001, 120), config.standardTextProperties)
+	row[2]:setColSpan(2):createDropDown(mapeditormacrooptions, { startOption = mapeditormacro }):setTextProperties({ x = Helper.standardTextOffsetx })
+	row[2].handlers.onDropDownConfirmed = function(_, id) menu.callbackGamestartGalaxyMacro(menu.mapEditorSettings.gamestartid, "galaxy", id); menu.refresh() end
+
+	local row = optiontable:addRow(true, {  })
+	row[2]:setColSpan(2):createButton({ active = mapeditormacro ~= "" }):setText(ReadText(1001, 11782), { halign = "center" })
+	row[2].handlers.onClick = function () NewGame(menu.mapEditorSettings.gamestartid); menu.displayInit() end
+
+	optiontable:addEmptyRow()
+
+	local clusteroptions = {}
+	local n = C.GetNumCatalogMacros("cluster")
+	if n > 0 then
+		local buf = ffi.new("const char*[?]", n)
+		n = C.GetCatalogMacros(buf, n, "cluster")
+		for i = 0, n - 1 do
+			local macro = ffi.string(buf[i])
+			local name, sectors = GetMacroData(macro, "name", "sectors")
+			if #sectors == 1 then
+				name = GetMacroData(sectors[1], "name")
+			end
+
+			table.insert(clusteroptions, { id = macro, text = name, icon = "", displayremoveoption = false, mouseovertext = macro })
+		end
+	end
+	table.sort(clusteroptions, function (a, b) return a.text < b.text end)
+
+	local row = optiontable:addRow(true, {  })
+	row[1]:createText(ReadText(1001, 11783) .. ReadText(1001, 120), config.standardTextProperties)
+	row[2]:setColSpan(2):createDropDown(clusteroptions, { startOption = menu.mapEditorSettings.cluster or "" }):setTextProperties({ x = Helper.standardTextOffsetx })
+	row[2].handlers.onDropDownConfirmed = function(_, id) menu.mapEditorSettings.cluster = id; menu.refresh() end
+
+	local sectoroptions = {}
+	if menu.mapEditorSettings.cluster then
+		local sectors = GetMacroData(menu.mapEditorSettings.cluster, "sectors") or {}
+		table.sort(sectors, Helper.sortMacroName)
+		if menu.mapEditorSettings.sectors["all"] then
+			for _, sector in ipairs(sectors) do
+				menu.mapEditorSettings.sectors[sector] = true
+			end
+		end
+
+		local row = optiontable:addRow(true, {  })
+		row[2]:createCheckBox(function () return menu.mapEditorSettings.sectors["all"] end)
+		row[2].handlers.onClick = function (_, value) menu.checkboxMapEditorSector("all", value) end
+		row[3]:createText(ReadText(1001, 11784))
+
+		for _, sector in ipairs(sectors) do
+			local row = optiontable:addRow(true, {  })
+			row[2]:createCheckBox(function () return menu.mapEditorSettings.sectors[sector] or menu.mapEditorSettings.sectors["all"] end)
+			row[2].handlers.onClick = function (_, value) menu.checkboxMapEditorSector(sector, value) end
+			row[3]:createText(GetMacroData(sector, "name"), { mouseOverText = sector })
+		end
+	end
+
+	local row = optiontable:addRow(true, {  })
+	row[2]:setColSpan(2):createButton({ active = menu.buttonMapEditorClusterCopyActive }):setText(ReadText(1001, 11782), { halign = "center" })
+	row[2].handlers.onClick = menu.startMapEditorWithCopy
+
+	optiontable:setTopRow(menu.preselectTopRow)
+	menu.preselectTopRow = nil
+	menu.preselectOption = nil
+
+	titletable.properties.nextTable = optiontable.index
+	optiontable.properties.prevTable = titletable.index
+
+	frame:display()
+end
+
+function menu.sortMappingsByRef(a, b)
+	local a_ref_order = menu.colorLibSettings.sortedColors[a.ref]
+	local b_ref_order = menu.colorLibSettings.sortedColors[b.ref]
+	if a_ref_order == b_ref_order then
+		return menu.colorLibSettings.sortedMappings[a.id] < menu.colorLibSettings.sortedMappings[b.id]
+	end
+	return a_ref_order < b_ref_order
+end
+
+function menu.displayColorLibrary()
+	Helper.clearDataForRefresh(menu, config.optionsLayer)
+	menu.selectedOption = nil
+
+	menu.currentOption = "colorlibrary"
+
+	local frame = menu.createOptionsFrame()
+	frame:setBackground("solid", { color = Color["frame_background_black"] })
+	frame.properties.x = 0
+	frame.properties.width = Helper.viewWidth
+
+	local titletablewidth = 0.75 * Helper.viewWidth
+	local colortablewidth = 0.25 * Helper.viewWidth
+	local mappingtablewidth = 0.5 * Helper.viewWidth
+
+	local numcols = 2
+	local titletable = frame:addTable(numcols, { tabOrder = 5, x = menu.table.x, y = menu.table.y, width = titletablewidth, skipTabChange = true })
+	titletable:setColWidth(1, menu.table.arrowColumnWidth, false)
+
+	-- title
+	local row = titletable:addRow(true, { fixed = true })
+	row[1]:setBackgroundColSpan(numcols)
+	row[1]:createButton({ height = config.headerTextHeight }):setIcon(config.backarrow, { x = config.backarrowOffsetX })
+	row[1].handlers.onClick = function () return menu.onCloseElement("back") end
+	row[2]:createText(ReadText(1001, 11793), config.headerTextProperties)
+
+	-- warning
+	local row = titletable:addRow(false, { fixed = true })
+	row[2]:createText(menu.warningColorBlind, config.warningTextProperties)
+
+	-- explanation
+	local row = titletable:addRow(false, { fixed = true })
+	row[2]:createText(ReadText(1001, 12618), config.warningTextProperties)
+
+	titletable:addEmptyRow()
+
+	local offsety = titletable.properties.y + titletable:getVisibleHeight() + Helper.borderSize
+
+	local numcols = 3
+	local optiontable = frame:addTable(numcols, { tabOrder = 1, x = menu.table.x, y = offsety, width = titletablewidth / 2 })
+	optiontable:setColWidth(1, menu.table.arrowColumnWidth, false)
+	optiontable:setColWidthPercent(2, 40)
+	optiontable:setDefaultCellProperties("dropdown", { height = Helper.scaleY(config.standardTextHeight), scaling = false })
+	optiontable:setDefaultComplexCellProperties("dropdown", "text", { x = config.standardTextOffsetX, fontsize = config.standardFontSize, scaling = true })
+	optiontable:setDefaultCellProperties("slidercell", { height = Helper.scaleY(config.standardTextHeight), scaling = false })
+	optiontable:setDefaultComplexCellProperties("slidercell", "text", { x = config.standardTextOffsetX, fontsize = config.standardFontSize, scaling = true })
+
+	menu.colorLibSettings = {
+		colors = {},
+		colorIndices = {},
+		colorsUsedCount = {},
+		sortedColors = {},
+		mappings = {},
+		mappingsByID = {},
+		sortedMappings = {},
+		colorDropdownOptions = {},
+		newColorDefinition = "",
+		colorblindstrength = 100,
+		sortByReference = menu.colorLibSettings and menu.colorLibSettings.sortByReference or false,
+	}
+
+	local mode = ffi.string(C.GetColorBlindOption())
+	local modes = {
+		{ id = "none", text = ReadText(1001, 12612), icon = "", displayremoveoption = false },
+		{ id = "protanopia", text = ReadText(1001, 12613), icon = "", displayremoveoption = false },
+		{ id = "deuteranopia", text = ReadText(1001, 12614), icon = "", displayremoveoption = false },
+		{ id = "tritanopia", text = ReadText(1001, 12615), icon = "", displayremoveoption = false },
+	}
+	local modestrength = math.max(0, math.min(100, C.GetColorBlindOptionStrength() * 100))
+
+	-- color blind mode
+	local row = optiontable:addRow(true, {  })
+	row[2]:createText(ReadText(1001, 12616), config.standardTextProperties)
+	row[3]:createDropDown(modes, { startOption = mode })
+	row[3].handlers.onDropDownConfirmed = function(_, id) if id ~= mode then C.SetColorBlindOption(id); menu.refresh() end end
+
+	-- color blind mode strength
+	local row = optiontable:addRow(true, {  })
+	row[2]:createText(ReadText(1001, 12617), config.standardTextProperties)
+	row[3]:createSliderCell({ min = 0, max = 100, start = modestrength, step = 1, hideMaxValue = true })
+	row[3].handlers.onSliderCellChanged = function (_, value) menu.colorLibSettings.colorblindstrength = value end
+	row[3].handlers.onSliderCellDeactivated = function () if menu.colorLibSettings.colorblindstrength ~= modestrength then C.SetColorBlindOptionStrength(Helper.round(menu.colorLibSettings.colorblindstrength / 100, 2)); menu.refresh() end end
+
+	optiontable:addEmptyRow()
+
+	offsety = optiontable.properties.y + optiontable:getVisibleHeight() + Helper.borderSize
+
+	local n = C.GetNumAllColorMapColors()
+	if n > 0 then
+		local buf = ffi.new("EditableColorMapEntry[?]", n)
+		n = C.GetAllColorMapColors(buf, n)
+		for i = 0, n - 1 do
+			local id = ffi.string(buf[i].id)
+			local color = {
+				["r"] = buf[i].color.red,
+				["g"] = buf[i].color.green,
+				["b"] = buf[i].color.blue,
+				["a"] = buf[i].color.alpha,
+				["glow"] = buf[i].glowfactor,
+			}
+			table.insert(menu.colorLibSettings.colors, { id = id, color = color, ispersonal = buf[i].ispersonal, isdeletable = buf[i].isdeletable })
+			menu.colorLibSettings.colorIndices[id] = #menu.colorLibSettings.colors
+			table.insert(menu.colorLibSettings.colorDropdownOptions, { id = id, text = id, icon = "", displayremoveoption = false })
+			menu.colorLibSettings.sortedColors[id] = i + 1
+		end
+	end
+
+	local n = C.GetNumAllColorMapMappings()
+	if n > 0 then
+		local buf = ffi.new("EditableColorMapEntry[?]", n)
+		n = C.GetAllColorMapMappings(buf, n)
+		for i = 0, n - 1 do
+			local id = ffi.string(buf[i].id)
+			local ref = ffi.string(buf[i].referenceid)
+			table.insert(menu.colorLibSettings.mappings, { id = id, ref = ref })
+			menu.colorLibSettings.colorsUsedCount[ref] = (menu.colorLibSettings.colorsUsedCount[ref] or 0) + 1
+			menu.colorLibSettings.mappingsByID[id] = ref
+			menu.colorLibSettings.sortedMappings[id] = i + 1
+		end
+	end
+	if menu.colorLibSettings.sortByReference then
+		table.sort(menu.colorLibSettings.mappings, menu.sortMappingsByRef)
+	end
+
+	local numcols = 4
+	local colortable = frame:addTable(numcols, { tabOrder = 2, x = menu.table.x, y = offsety, width = colortablewidth })
+	colortable:setColWidthPercent(2, 20)
+	colortable:setColWidth(3, config.standardTextHeight)
+	colortable:setColWidth(4, config.standardTextHeight)
+	colortable:setDefaultCellProperties("button", { height = config.standardTextHeight })
+	colortable:setDefaultComplexCellProperties("button", "text", { x = config.standardTextOffsetX, fontsize = config.standardFontSize })
+	colortable:setDefaultCellProperties("dropdown", { height = config.standardTextHeight })
+	colortable:setDefaultComplexCellProperties("dropdown", "text", { x = config.standardTextOffsetX, fontsize = config.standardFontSize })
+	colortable:setDefaultCellProperties("slidercell", { height = config.standardTextHeight })
+	colortable:setDefaultComplexCellProperties("slidercell", "text", { x = config.standardTextOffsetX, fontsize = config.standardFontSize })
+
+	local row = colortable:addRow(false, { fixed = true })
+	row[1]:setColSpan(numcols):createText(ReadText(1001, 11794), config.subHeaderTextProperties)
+
+	local row = colortable:addRow(false, { fixed = true })
+	row[1]:setColSpan(numcols):createText(ReadText(1001, 11795), config.warningTextProperties)
+
+	local row = colortable:addRow(false, { fixed = true })
+	row[1]:setBackgroundColSpan(numcols):createText(ReadText(1001, 11798), config.subHeaderLeftTextProperties)
+	row[2]:setColSpan(3):createText(ReadText(1001, 11799), config.subHeaderLeftTextProperties)
+
+	for _, entry in ipairs(menu.colorLibSettings.colors) do
+		local row = colortable:addRow(true, {  })
+		row[1]:createText(entry.id, config.standardTextProperties)
+		row[2]:createButton({ bgColor = Color["button_background_white"], highlightColor = Color["button_highlight_hidden"] }):setIcon2("solid", { color = function () return menu.getDefinitionColor(entry.id) end }):setIcon("menu_checker", { scaling = false, width = row[2]:getWidth() / 2, height = Helper.scaleY(config.standardTextHeight), x = row[2]:getWidth() / 2 })
+		row[3]:createButton({  }):setIcon("menu_edit")
+		row[3].handlers.onClick = function () menu.buttonEditColor(entry.id) end
+		if entry.isdeletable then
+			row[4]:createButton({ active = function () return (menu.colorLibSettings.colorsUsedCount[entry.id] or 0) == 0 end }):setText("x")
+			row[4].handlers.onClick = function () C.RemoveColorMapColorDefinition(entry.id); menu.refresh() end
+		end
+	end
+
+	colortable:setTopRow(menu.topRows["colorblindcolors"])
+	colortable:setSelectedRow(menu.selectedRows["colorblindcolors"])
+	menu.topRows["colorblindcolors"] = nil
+	menu.selectedRows["colorblindcolors"] = nil
+
+	local numcols = 4
+	local mappingtable = frame:addTable(numcols, { tabOrder = 3, x = menu.table.x + colortablewidth + Helper.borderSize, y = offsety, width = mappingtablewidth - Helper.borderSize })
+	mappingtable:setColWidthPercent(1, 45)
+	mappingtable:setColWidthPercent(2, 10)
+	mappingtable:setColWidth(4, config.subHeaderTextHeight)
+	mappingtable:setDefaultCellProperties("button", { height = config.standardTextHeight })
+	mappingtable:setDefaultComplexCellProperties("button", "text", { x = config.standardTextOffsetX, fontsize = config.standardFontSize })
+	mappingtable:setDefaultCellProperties("dropdown", { height = config.standardTextHeight })
+	mappingtable:setDefaultComplexCellProperties("dropdown", "text", { x = config.standardTextOffsetX, fontsize = config.standardFontSize })
+	mappingtable:setDefaultCellProperties("slidercell", { height = config.standardTextHeight })
+	mappingtable:setDefaultComplexCellProperties("slidercell", "text", { x = config.standardTextOffsetX, fontsize = config.standardFontSize })
+
+	local row = mappingtable:addRow(false, { fixed = true })
+	row[1]:setColSpan(numcols):createText(ReadText(1001, 11796), config.subHeaderTextProperties)
+
+	local row = mappingtable:addRow(false, { fixed = true })
+	row[1]:setColSpan(numcols):createText(ReadText(1001, 11797), config.warningTextProperties)
+
+	local row = mappingtable:addRow(true, { fixed = true })
+	row[1]:setBackgroundColSpan(numcols):createText(ReadText(1001, 12601), config.subHeaderLeftTextProperties)
+	row[2]:createText(ReadText(1001, 11799), config.subHeaderLeftTextProperties)
+	row[3]:createText(ReadText(1001, 12602), config.subHeaderLeftTextProperties)
+	row[4]:createButton({ height = config.subHeaderTextHeight, width = config.subHeaderTextHeight, bgColor = menu.colorLibSettings.sortByReference and Color["button_background_active"] or nil }):setIcon("widget_arrow_down_01")
+	row[4].handlers.onClick = function () menu.colorLibSettings.sortByReference = not menu.colorLibSettings.sortByReference; menu.refresh() end
+
+	for i, entry in ipairs(menu.colorLibSettings.mappings) do
+		local row = mappingtable:addRow(true, {  })
+		row[1]:createText(entry.id, config.standardTextProperties)
+		row[2]:createButton({ bgColor = Color["button_background_white"], highlightColor = Color["button_highlight_hidden"] }):setIcon2("solid", { color = function () return menu.getMappingColor(entry.id) end }):setIcon("menu_checker", { scaling = false, width = row[2]:getWidth() / 2, height = Helper.scaleY(config.standardTextHeight), x = row[2]:getWidth() / 2 })
+		row[3]:setColSpan(2):createDropDown(menu.colorLibSettings.colorDropdownOptions, { startOption = entry.ref })
+		row[3].handlers.onDropDownConfirmed = function (_, id) return menu.dropdownColorMapping(i, id) end
+
+		if i == 39 then -- dropdown limit
+			mappingtable.properties.maxVisibleHeight = mappingtable:getFullHeight()
+			colortable.properties.maxVisibleHeight = mappingtable.properties.maxVisibleHeight
+		end
+	end
+
+	mappingtable:setTopRow(menu.topRows["colorblindmappings"])
+	mappingtable:setSelectedRow(menu.selectedRows["colorblindmappings"])
+	menu.topRows["colorblindmappings"] = nil
+	menu.selectedRows["colorblindmappings"] = nil
+
+	local buttontable = frame:addTable(5, { tabOrder = 4, x = menu.table.x, y = 0, width = titletablewidth })
+	buttontable:setDefaultCellProperties("button", { height = config.standardTextHeight })
+	buttontable:setDefaultComplexCellProperties("button", "text", { x = config.standardTextOffsetX, fontsize = config.standardFontSize })
+
+	local row = buttontable:addRow(true, { fixed = true })
+	row[1]:createEditBox({ height = config.standardTextHeight, description = ReadText(1001, 12610) }):setText(menu.colorLibSettings.newColorDefinition, { fontsize = config.standardFontSize })
+	row[1].handlers.onTextChanged = function (_, text) menu.colorLibSettings.newColorDefinition = text end
+	row[2]:createButton({ active = function () return (menu.colorLibSettings.newColorDefinition ~= "") and (menu.colorLibSettings.colorIndices[menu.colorLibSettings.newColorDefinition] == nil) end }):setText(ReadText(1001, 12611), { halign = "center" })
+	row[2].handlers.onClick = function () C.AddColorMapColorDefinition(menu.colorLibSettings.newColorDefinition); menu.colorLibSettings.newColorDefinition = ""; menu.refresh() end
+
+	local row = buttontable:addRow(true, { fixed = true })
+	row[1]:createButton({  }):setText(ReadText(1001, 8967), { halign = "center" })
+	row[1].handlers.onClick = function() C.ExportColorMap() end
+	row[2]:createButton({  }):setText(ReadText(1001, 2647), { halign = "center" })
+	row[2].handlers.onClick = function() C.ImportColorMap(true); menu.refresh() end
+
+	local buttonheight = buttontable:getFullHeight()
+	buttontable.properties.y = Helper.viewHeight - menu.frameOffsetY - buttonheight - menu.table.x
+
+	mappingtable.properties.maxVisibleHeight = math.min(mappingtable.properties.maxVisibleHeight, buttontable.properties.y - mappingtable.properties.y - Helper.borderSize)
+	colortable.properties.maxVisibleHeight = math.min(colortable.properties.maxVisibleHeight, buttontable.properties.y - colortable.properties.y - Helper.borderSize)
+
+	optiontable:addConnection(1, 1, true)
+	colortable:addConnection(2, 1)
+	buttontable:addConnection(3, 1)
+	mappingtable:addConnection(1, 2, true)
+
+	frame:display()
+end
+
+function menu.dropdownColorMapping(i, newrefid)
+	local mappingid = menu.colorLibSettings.mappings[i].id
+	local oldref = menu.colorLibSettings.mappings[i].ref
+	C.SetColorMapReference(mappingid, newrefid)
+
+	menu.colorLibSettings.mappings[i].ref = newrefid
+	menu.colorLibSettings.mappingsByID[mappingid] = newrefid
+
+	menu.colorLibSettings.colorsUsedCount[oldref] = menu.colorLibSettings.colorsUsedCount[oldref] - 1
+	menu.colorLibSettings.colorsUsedCount[newrefid] = (menu.colorLibSettings.colorsUsedCount[newrefid] or 0) + 1
+end
+
+function menu.getColorMapColor(color)
+	local convertcolor = Helper.tableCopy(color)
+	convertcolor.a = math.max(1, Helper.round(convertcolor.a * 100 / 255))
+	return convertcolor
+end
+
+function menu.getDefinitionColor(colorid)
+	local coloridx = menu.colorLibSettings.colorIndices[colorid]
+	return menu.getColorMapColor(menu.colorLibSettings.colors[coloridx].color)
+end
+
+function menu.getMappingColor(mappingid)
+	local colorid = menu.colorLibSettings.mappingsByID[mappingid]
+	local coloridx = menu.colorLibSettings.colorIndices[colorid]
+	return menu.getColorMapColor(menu.colorLibSettings.colors[coloridx].color)
+end
+
+function menu.buttonEditColor(colorid)
+	local mousepos = C.GetCenteredMousePos()
+	menu.contextMenuMode = "editcolor"
+	menu.contextMenuData = { width = Helper.scaleX(400), x = mousepos.x + Helper.viewWidth / 2, y = mousepos.y + Helper.viewHeight / 2, colorid = colorid }
+	menu.createContextMenu()
+end
+
+function menu.displayInputFeedback()
+	Helper.clearDataForRefresh(menu, config.optionsLayer)
+	Helper.clearTableConnectionColumn(menu, 2)
+	menu.selectedOption = nil
+
+	menu.currentOption = "inputfeedback"
+
+	menu.getControlsData()
+
+	local frame = menu.createOptionsFrame()
+
+	local numcols = 5
+	local optiontable = frame:addTable(numcols, { tabOrder = 1, x = menu.table.x, y = menu.table.y, width = menu.table.width })
+	optiontable:setColWidth(1, menu.table.arrowColumnWidth, false)
+	local columnwidth = math.floor((menu.table.width - menu.table.arrowColumnWidth - 3 * Helper.borderSize) / 3)
+	optiontable:setColWidth(2, columnwidth, false)
+	optiontable:setColWidth(4, menu.table.infoColumnWidth - columnwidth - Helper.borderSize, false)
+	optiontable:setColWidth(5, columnwidth, false)
+	optiontable:setDefaultColSpan(3, 2)
+	optiontable:setDefaultCellProperties("button", { height = config.standardTextHeight })
+	optiontable:setDefaultComplexCellProperties("button", "text", { x = config.standardTextOffsetX, fontsize = config.standardFontSize })
+	optiontable:setDefaultCellProperties("dropdown", { height = Helper.scaleY(config.standardTextHeight), scaling = false })
+	optiontable:setDefaultComplexCellProperties("dropdown", "text", { x = config.standardTextOffsetX, fontsize = config.standardFontSize, scaling = true })
+	optiontable:setDefaultCellProperties("slidercell", { height = Helper.scaleY(config.standardTextHeight), scaling = false })
+	optiontable:setDefaultComplexCellProperties("slidercell", "text", { x = config.standardTextOffsetX, fontsize = config.standardFontSize, scaling = true })
+
+	-- title
+	local row = optiontable:addRow(true, { fixed = true })
+	row[1]:setBackgroundColSpan(numcols)
+	row[1]:createButton({ height = config.headerTextHeight }):setIcon(config.backarrow, { x = config.backarrowOffsetX })
+	row[1].handlers.onClick = function () return menu.onCloseElement("back") end
+	row[2]:setColSpan(4):createText(ReadText(1001, 12628), config.headerTextProperties)
+
+	-- options
+	local options, curoption = menu.valueGameInputFeedback()
+	menu.curDropDownOption["inputfeedback"] = tostring(curoption)
+	local row = optiontable:addRow(true, { fixed = true })
+	row[2]:setColSpan(2):createText(ReadText(1001, 12632), config.standardTextProperties)
+	row[4]:setColSpan(2):createDropDown(options, { startOption = curoption })
+	row[4].handlers.onDropDownConfirmed = function (_, option) return menu.callbackGameInputFeedback("inputfeedback", option) end
+
+	optiontable:addEmptyRow()
+
+	-- list
+	menu.inputFeedbackSettings = {
+		config = {
+			actions = {},
+			states = {},
+			ranges = {},
+		}
+	}
+	local n = C.GetNumAllInputFeedback()
+	if n > 0 then
+		local buf = ffi.new("InputFeedbackConfig[?]", n)
+		n = C.GetAllInputFeedback(buf, n)
+		for i = 0, n - 1 do
+			local type = ffi.string(buf[i].type)
+			local id = buf[i].id
+			local idname = ffi.string(buf[i].idname)
+			local textoption = ffi.string(buf[i].textoption)
+			local voiceoption = ffi.string(buf[i].voiceoption)
+
+			local control
+			if type == "action" then
+				control = "actions"
+			elseif type == "state" then
+				control = "states"
+			elseif type == "range" then
+				control = "ranges"
+			end
+
+			if control then
+				menu.inputFeedbackSettings.config[control][id] = { type = type, idname = idname, textoption = textoption, voiceoption = voiceoption }
+			end
+		end
+	end
+
+	local row = optiontable:addRow(false)
+	row[2]:setBackgroundColSpan(4):createText(ReadText(1001, 2656), config.subHeaderLeftTextProperties)
+	row[3]:createText(ReadText(1001, 12637), config.subHeaderLeftTextProperties)
+	row[5]:createText(ReadText(1001, 12638), config.subHeaderLeftTextProperties)
+
+	local row = optiontable:addRow(true)
+	row[2]:createText(ReadText(1001, 12640) .. ReadText(1001, 120), config.standardTextProperties)
+	row[3]:createButton({  }):setText(ReadText(1001, 12641), { halign = "center" })
+	row[3].handlers.onClick = function () return menu.buttonSetAllInputFeedbackTextOption("off") end
+	row[5]:createButton({  }):setText(ReadText(1001, 12641), { halign = "center" })
+	row[5].handlers.onClick = function () return menu.buttonSetAllInputFeedbackVoiceOption("off") end
+	local row = optiontable:addRow(true)
+	row[3]:createButton({  }):setText(ReadText(1001, 12629), { halign = "center" })
+	row[3].handlers.onClick = function () return menu.buttonSetAllInputFeedbackTextOption("ticker") end
+	row[5]:createButton({  }):setText(ReadText(1001, 12642), { halign = "center" })
+	row[5].handlers.onClick = function () return menu.buttonSetAllInputFeedbackVoiceOption("on") end
+	local row = optiontable:addRow(true)
+	row[3]:createButton({  }):setText(ReadText(1001, 12630), { halign = "center" })
+	row[3].handlers.onClick = function () return menu.buttonSetAllInputFeedbackTextOption("controlmessage") end
+
+	local row = optiontable:addRow(true, { fixed = true })
+	row[2]:setColSpan(4):createEditBox({ defaultText = ReadText(1001, 3250) }):setText(menu.searchtext, { x = Helper.standardTextOffsetx }):setHotkey("INPUT_STATE_DETAILMONITOR_0", { displayIcon = true })
+	row[2].handlers.onEditBoxDeactivated = menu.editboxControlsSearchUpdateText
+
+	local count = 0
+	for i, controls in ipairs(config.input.controlsorder.space) do
+		local first = true
+		for _, control in ipairs(controls) do
+			if menu.filterControl(control[1], control[2], menu.searchtext) then
+				if (not control.display) or control.display() then
+					if not config.input.cheatControls[control[1]][control[2]] then
+						local definingcontroltype, definingcontrolcode = control[1], control[2]
+						if definingcontroltype == "functions" then
+							local definingcontrol = menu.controls[definingcontroltype][definingcontrolcode].definingcontrol
+							definingcontroltype, definingcontrolcode = definingcontrol[1], definingcontrol[2]
+						end
+
+						local configentry = menu.inputFeedbackSettings.config[definingcontroltype][definingcontrolcode]
+						if configentry then
+							if first then
+								first = false
+
+								local row = optiontable:addRow(false, {  })
+								row[2]:setColSpan(4):createText(controls.title, config.subHeaderTextProperties)
+							end
+							menu.displayInputFeedbackRow(optiontable, control[1], control[2], configentry)
+							count = count + 1
+							if count == 18 then
+								optiontable.properties.maxVisibleHeight = optiontable:getFullHeight()
+							end
+						end
+					end
+				end
+			end
+		end
+	end
+
+	optiontable:setTopRow(menu.topRows["inputfeedbackconfig"])
+	optiontable:setSelectedRow(menu.selectedRows["inputfeedbackconfig"])
+	optiontable:setSelectedCol(menu.selectedCols["inputfeedbackconfig"] or 0)
+	menu.topRows["inputfeedbackconfig"] = nil
+	menu.selectedRows["inputfeedbackconfig"] = nil
+	menu.selectedCols["inputfeedbackconfig"] = nil
+
+	local buttontable = frame:addTable(4, { tabOrder = 2, x = menu.table.x, y = 0, width = menu.table.width })
+	buttontable:setColWidth(1, menu.table.arrowColumnWidth, false)
+	buttontable:setDefaultCellProperties("button", { height = config.standardTextHeight })
+	buttontable:setDefaultComplexCellProperties("button", "text", { x = config.standardTextOffsetX, fontsize = config.standardFontSize })
+
+	local row = buttontable:addRow(nil, {  })
+	row[2]:setColSpan(3):createText(" ", { fontsize = 1, height = Helper.borderSize, cellBGColor = Color["row_separator"] })
+
+	local row = buttontable:addRow(true, { fixed = true })
+	row[2]:createButton({  }):setText(ReadText(1001, 2647), { halign = "center" })
+	row[2].handlers.onClick = function() C.ImportInputFeedbackConfig(true); menu.refresh() end
+
+	local optionheight = optiontable:getVisibleHeight()
+	local buttonheight = buttontable:getFullHeight()
+	buttontable.properties.y = math.min(optiontable.properties.y + optionheight + Helper.borderSize, Helper.viewHeight - menu.frameOffsetY - buttonheight - menu.table.x)
+
+	optiontable.properties.maxVisibleHeight = math.min(optiontable.properties.maxVisibleHeight, buttontable.properties.y - optiontable.properties.y - Helper.borderSize)
+
+	optiontable:addConnection(1, 1, true)
+	buttontable:addConnection(2, 1)
+
+	frame:display()
+end
+
+function menu.displayInputFeedbackRow(ftable, controltype, controlcode, configentry)
+	local row = ftable:addRow(true)
+	row[2]:createText(menu.getControlName(controltype, controlcode), config.standardTextProperties)
+	if configentry.textoption ~= "" then
+		row[3]:createDropDown(config.inputfeedback.textoptions, { startOption = configentry.textoption })
+		row[3].handlers.onDropDownConfirmed = function (_, option) menu.dropdownSetInputFeedbackTextOption(option, controltype, controlcode) end
+	else
+		row[3]:createText(ReadText(1001, 12636), config.standardTextProperties)
+		row[3].properties.cellBGColor = Color["row_background_unselectable"]
+	end
+	if configentry.voiceoption ~= "" then
+		row[5]:createDropDown(config.inputfeedback.voiceoptions, { startOption = configentry.voiceoption })
+		row[5].handlers.onDropDownConfirmed = function (_, option) menu.dropdownSetInputFeedbackVoiceOption(option, controltype, controlcode) end
+	else
+		row[5]:createText(ReadText(1001, 12639), config.standardTextProperties)
+		row[5].properties.cellBGColor = Color["row_background_unselectable"]
+	end
+end
+
+function menu.dropdownSetInputFeedbackTextOption(option, controltype, controlcode)
+	if controltype == "functions" then
+		local functiondef = menu.controls[controltype][controlcode]
+		for _, actionid in ipairs(functiondef.actions) do
+			menu.setInputFeedbackTextOption(option, "actions", actionid)
+		end
+		for _, stateid in ipairs(functiondef.states) do
+			menu.setInputFeedbackTextOption(option, "states", stateid)
+		end
+		for _, rangeid in ipairs(functiondef.ranges) do
+			menu.setInputFeedbackTextOption(option, "ranges", rangeid)
+		end
+	else
+		menu.setInputFeedbackTextOption(option, controltype, controlcode)
+	end
+	C.ExportInputFeedbackConfig()
+end
+
+function menu.setInputFeedbackTextOption(option, controltype, controlcode)
+	local configentry = menu.inputFeedbackSettings.config[controltype][controlcode]
+	configentry.textoption = option
+	C.SetInputFeedbackTextOption(configentry.type, configentry.idname, option)
+end
+
+function menu.dropdownSetInputFeedbackVoiceOption(option, controltype, controlcode)
+	if controltype == "functions" then
+		local functiondef = menu.controls[controltype][controlcode]
+		for _, actionid in ipairs(functiondef.actions) do
+			menu.setInputFeedbackVoiceOption(option, "actions", actionid)
+		end
+		for _, stateid in ipairs(functiondef.states) do
+			menu.setInputFeedbackVoiceOption(option, "states", stateid)
+		end
+		for _, rangeid in ipairs(functiondef.ranges) do
+			menu.setInputFeedbackVoiceOption(option, "ranges", rangeid)
+		end
+	else
+		menu.setInputFeedbackVoiceOption(option, controltype, controlcode)
+	end
+	C.ExportInputFeedbackConfig()
+end
+
+function menu.setInputFeedbackVoiceOption(option, controltype, controlcode)
+	local configentry = menu.inputFeedbackSettings.config[controltype][controlcode]
+	configentry.voiceoption = option
+	C.SetInputFeedbackVoiceOption(configentry.type, configentry.idname, option)
+end
+
+function menu.buttonSetAllInputFeedbackTextOption(option)
+	for _, entry in pairs(menu.inputFeedbackSettings.config.actions) do
+		if entry.textoption ~= "" then
+			entry.textoption = option
+			C.SetInputFeedbackTextOption(entry.type, entry.idname, option)
+		end
+	end
+	for _, entry in pairs(menu.inputFeedbackSettings.config.states) do
+		if entry.textoption ~= "" then
+			entry.textoption = option
+			C.SetInputFeedbackTextOption(entry.type, entry.idname, option)
+		end
+	end
+	for _, entry in pairs(menu.inputFeedbackSettings.config.ranges) do
+		if entry.textoption ~= "" then
+			entry.textoption = option
+			C.SetInputFeedbackTextOption(entry.type, entry.idname, option)
+		end
+	end
+	C.ExportInputFeedbackConfig()
+	menu.refresh()
+end
+
+function menu.buttonSetAllInputFeedbackVoiceOption(option)
+	for _, entry in pairs(menu.inputFeedbackSettings.config.actions) do
+		if entry.voiceoption ~= "" then
+			entry.voiceoption = option
+			C.SetInputFeedbackVoiceOption(entry.type, entry.idname, option)
+		end
+	end
+	for _, entry in pairs(menu.inputFeedbackSettings.config.states) do
+		if entry.voiceoption ~= "" then
+			entry.voiceoption = option
+			C.SetInputFeedbackVoiceOption(entry.type, entry.idname, option)
+		end
+	end
+	for _, entry in pairs(menu.inputFeedbackSettings.config.ranges) do
+		if entry.voiceoption ~= "" then
+			entry.voiceoption = option
+			C.SetInputFeedbackVoiceOption(entry.type, entry.idname, option)
+		end
+	end
+	C.ExportInputFeedbackConfig()
+	menu.refresh()
+end
+
+function menu.displayInputModifiers()
+	Helper.clearDataForRefresh(menu, config.optionsLayer)
+	Helper.clearTableConnectionColumn(menu, 2)
+	menu.selectedOption = nil
+
+	menu.currentOption = "input_modifiers"
+
+	menu.getControlsData()
+
+	local frame = menu.createOptionsFrame()
+
+	local numcols = 5
+	local optiontable = frame:addTable(numcols, { tabOrder = 1, x = menu.table.x, y = menu.table.y, width = menu.table.width })
+	optiontable:setColWidth(1, menu.table.arrowColumnWidth, false)
+	local columnwidth = Helper.scaleY(config.infoTextHeight)
+	optiontable:setColWidth(3, menu.table.infoColumnWidth - 2 * (columnwidth + Helper.borderSize), false)
+	optiontable:setColWidth(4, columnwidth, false)
+	optiontable:setColWidth(5, columnwidth, false)
+	optiontable:setDefaultCellProperties("button", { height = config.standardTextHeight })
+	optiontable:setDefaultComplexCellProperties("button", "text", { x = config.standardTextOffsetX, fontsize = config.standardFontSize })
+	optiontable:setDefaultCellProperties("dropdown", { height = Helper.scaleY(config.standardTextHeight), scaling = false })
+	optiontable:setDefaultComplexCellProperties("dropdown", "text", { x = config.standardTextOffsetX, fontsize = config.standardFontSize, scaling = true })
+	optiontable:setDefaultCellProperties("slidercell", { height = Helper.scaleY(config.standardTextHeight), scaling = false })
+	optiontable:setDefaultComplexCellProperties("slidercell", "text", { x = config.standardTextOffsetX, fontsize = config.standardFontSize, scaling = true })
+
+	-- title
+	local row = optiontable:addRow(true, { fixed = true })
+	row[1]:setBackgroundColSpan(numcols)
+	row[1]:createButton({ height = config.headerTextHeight }):setIcon(config.backarrow, { x = config.backarrowOffsetX })
+	row[1].handlers.onClick = function () return menu.onCloseElement("back") end
+	row[2]:setColSpan(4):createText(ReadText(1001, 12643), config.headerTextProperties)
+
+	-- explanation
+	local row = optiontable:addRow(false, { fixed = true })
+	row[2]:setColSpan(4):createText(ReadText(1001, 12651) .. "\n\n" .. ReadText(1001, 12652) .. "\n\n" .. ReadText(1001, 12653), config.warningTextProperties)
+
+	for j, modifier in ipairs(config.input.modifiers) do
+		if j ~= 1 then
+			optiontable:addEmptyRow()
+		end
+
+		local modifierkeys = {}
+		local n = C.GetNumConfiguredModifierKeys(modifier.id)
+		if n > 0 then
+			local buf = ffi.new("InputData[?]", n)
+			n = C.GetConfiguredModifierKeys(buf, n, modifier.id)
+			for i = 0, n - 1 do
+				table.insert(modifierkeys, { buf[i].source, buf[i].code, buf[i].signum })
+			end
+		end
+
+		if #modifierkeys > 0 then
+			for i, input in ipairs(modifierkeys) do
+				local row = optiontable:addRow(true, {  })
+				local keyname, keyicon = menu.getInputName(input[1], input[2], input[3])
+				if i == 1 then
+					row[2]:createText(modifier.name--[[ .. " - " .. keyname--]], config.standardTextProperties)
+				end
+				row[3]:setColSpan((i == 1) and 2 or 1):createText(keyname, config.standardTextProperties)
+				if i ~= 1 then
+					row[4]:createButton({ mouseOverText = ReadText(1026, 2672) }):setIcon("widget_arrow_up_01")
+					row[4].handlers.onClick = function () menu.buttonPrimaryModifier(modifier.id, input[2]) end
+				end
+				row[5]:createButton({ mouseOverText = ReadText(1026, 2673) }):setText("x", { x = 0, y = 1, halign = "center" })
+				row[5].handlers.onClick = function () return menu.buttonDeleteModifier(modifier.id, input[2], #modifierkeys == 1) end
+
+				if i == 1 then
+					local row = optiontable:addRow(nil, {  })
+					row[3]:setColSpan(3):createText(" ", { fontsize = 1, height = Helper.borderSize, cellBGColor = Color["row_separator"] })
+				end
+			end
+
+			local row = optiontable:addRow(true, {  })
+			local active = #modifierkeys < 8
+			row[3]:setColSpan(3):createButton({ active = active, mouseOverText = (not active) and ReadText(1026, 2674) or "" }):setText(function () return menu.nameModifier(ReadText(1001, 12647), row.index) end, { halign = "center" })
+			row[3].handlers.onClick = function () return menu.buttonAddModifier(row.index, modifier.id) end
+		else
+			local row = optiontable:addRow(true, {  })
+			row[2]:createText(modifier.name, config.standardTextProperties)
+			row[3]:setColSpan(3):createButton({  }):setText(function () return menu.nameModifier(ReadText(1001, 12647), row.index) end, { halign = "center" })
+			row[3].handlers.onClick = function () return menu.buttonAddModifier(row.index, modifier.id) end
+		end
+	end
+
+	optiontable:setTopRow(menu.topRows["input_modifiers"])
+	optiontable:setSelectedRow(menu.selectedRows["input_modifiers"])
+	optiontable:setSelectedCol(menu.selectedCols["input_modifiers"] or 0)
+	menu.topRows["input_modifiers"] = nil
+	menu.selectedRows["input_modifiers"] = nil
+	menu.selectedCols["input_modifiers"] = nil
+
+	frame:display()
+end
+
+function menu.buttonPrimaryModifier(modifier, keycode)
+	C.SetModifierKeyPosition(modifier, keycode, 0, false)
+	menu.topRows["input_modifiers"] = GetTopRow(menu.optionTable)
+	menu.selectedRows["input_modifiers"] = Helper.currentTableRow[menu.optionTable]
+	menu.selectedCols["input_modifiers"] = Helper.currentTableCol[menu.optionTable]
+	menu.refresh()
+end
+
+function menu.nameModifier(name, row, col)
+	if menu.remapControl then
+		if (row == menu.remapControl.row) and (col == menu.remapControl.col) then
+			local _, secondfraction = math.modf(getElapsedTime())
+			if secondfraction < 0.5 then
+				return ""
+			else
+				return "_"
+			end
+		end
+	end
+	return name
+end
+
+function menu.buttonAddModifier(row, modifier)
+	if modifier and (not menu.remapControl) then
+		-- set update to blink "_" and pass variables on to menu.remapInput
+		menu.remapControl = { row = row, modifier = modifier, oldinputcode = -1, modifiersource = 1 }
+
+		-- restore selection after mapping
+		menu.topRows["input_modifiers"] = GetTopRow(menu.optionTable)
+		menu.selectedRows["input_modifiers"] = Helper.currentTableRow[menu.optionTable]
+		menu.selectedCols["input_modifiers"] = Helper.currentTableCol[menu.optionTable]
+
+		-- call function listening to input and get result
+		menu.registerDirectInput()
+	end
+end
+
+function menu.checkModifier(inputtable, entry, modifier, input, checkonly)
+	local containsmodifier = false
+
+	local keycode = input[2]
+	for _, modifierentry in ipairs(config.input.modifiers) do
+		if modifierentry.id == modifier then
+			containsmodifier = math.floor(keycode / modifierentry.offset) % 2 == 1
+			break
+		end
+	end
+
+	if checkonly then
+		return containsmodifier
+	elseif containsmodifier then
+		table.remove(inputtable, entry)
+		return true
+	end
+	return false
+end
+
+function menu.checkForModifier(modifier, checkonly)
+	local returnvalue = {}
+	for k, controlsorder in pairs(config.input.controlsorder) do
+		for _, controlgroup in ipairs(controlsorder) do
+			for _, control in ipairs(controlgroup) do
+				if control[1] == "functions" then
+					local found = false
+					if not found then
+						for _, functionaction in ipairs(menu.controls[control[1]][control[2]].actions) do
+							local inputs = menu.controls.actions[functionaction]
+							if type(inputs) == "table" then
+								for i, input in ipairs(inputs) do
+									if menu.checkModifier(inputs, i, modifier, input, checkonly) then
+										table.insert(returnvalue, { control = control, mapable = controlgroup.mapable or newinputtype ~= 1 })
+										found = true
+									end
+								end
+							end
+							if found then
+								break
+							end
+						end
+					end
+					if not found then
+						for _, functionstate in ipairs(menu.controls[control[1]][control[2]].states) do
+							local inputs = menu.controls.states[functionstate]
+							if type(inputs) == "table" then
+								for i, input in ipairs(inputs) do
+									if menu.checkModifier(inputs, i, modifier, input, checkonly) then
+										table.insert(returnvalue, { control = control, mapable = controlgroup.mapable or newinputtype ~= 1 })
+										found = true
+									end
+								end
+							end
+							if found then
+								break
+							end
+						end
+					end
+					if not found then
+						for _, functionrange in ipairs(menu.controls[control[1]][control[2]].ranges) do
+							local inputs = menu.controls.ranges[functionrange]
+							if type(inputs) == "table" then
+								for i, input in ipairs(inputs) do
+									if menu.checkModifier(inputs, i, modifier, input, checkonly) then
+										table.insert(returnvalue, { control = control, mapable = controlgroup.mapable or newinputtype ~= 1 })
+										found = true
+									end
+								end
+							end
+							if found then
+								break
+							end
+						end
+					end
+				else
+					if type(menu.controls[control[1]][control[2]]) == "table" then
+						for i, input in ipairs(menu.controls[control[1]][control[2]]) do
+							if menu.checkModifier(menu.controls[control[1]][control[2]], i, modifier, input, checkonly) then
+								table.insert(returnvalue, { control = control, mapable = controlgroup.mapable or newinputtype ~= 1 })
+							end
+						end
+					end
+				end
+			end
+		end
+	end
+	return returnvalue
+end
+
+function menu.buttonDeleteModifier(modifier, keycode, lastkey)
+	if not lastkey then
+		C.UnmapModifierKey(modifier, keycode, false)
+		menu.topRows["input_modifiers"] = GetTopRow(menu.optionTable)
+		menu.selectedRows["input_modifiers"] = Helper.currentTableRow[menu.optionTable]
+		menu.selectedCols["input_modifiers"] = Helper.currentTableCol[menu.optionTable]
+		menu.refresh()
+	else
+		local conflicts = menu.checkForModifier(modifier, true)
+		if #conflicts == 0 then
+			C.UnmapModifierKey(modifier, keycode, false)
+			menu.topRows["input_modifiers"] = GetTopRow(menu.optionTable)
+			menu.selectedRows["input_modifiers"] = Helper.currentTableRow[menu.optionTable]
+			menu.selectedCols["input_modifiers"] = Helper.currentTableCol[menu.optionTable]
+			menu.refresh()
+		else
+			-- show popup
+			menu.contextMenuMode = "remap"
+			menu.contextMenuData = { width = Helper.scaleX(400), height = Helper.scaleY(200), y = Helper.scaleY(300), conflicts = conflicts, removemodifier = { modifier, keycode } }
+
+			menu.createContextMenu()
+		end
 	end
 end
 
@@ -7437,7 +10187,7 @@ function menu.displaySavegameOptions(optionParameter)
 	local showonlinesave = C.IsVentureExtensionSupported() and menu.onlinesave and ((menu.currentOption == "load") or isonline) and (menu.currentOption ~= "saveoffline")
 
 	if showonlinesave then
-		local row = ftable:addRow({ titlerow = "reload2" }, { fixed = true, bgColor = Helper.color.transparent })
+		local row = ftable:addRow({ titlerow = "reload2" }, { fixed = true })
 		if menu.preselectOption == "reload2" then
 			ftable:setSelectedRow(row.index)
 		end
@@ -7447,14 +10197,14 @@ function menu.displaySavegameOptions(optionParameter)
 
 		maxRowHeight = math.max(maxRowHeight, menu.addSavegameRow(ftable, menu.onlinesave, menu.onlinesave.displayedname))
 
-		local row = ftable:addRow(nil, { bgColor = Helper.color.transparent })
+		local row = ftable:addRow(nil, {  })
 		row[2]:setColSpan(3):setBackgroundColSpan(4):createText(ReadText(1001, 11711), config.subHeaderTextProperties)
 		row[5]:createText(" ", config.subHeaderTextProperties)
 	end
 
 	local nameSortButton
 	if isonline and (menu.currentOption == "save") and (not menu.showofflinesaves) then
-		local row = ftable:addRow({ submenu = "saveoffline" }, { bgColor = Helper.color.transparent })
+		local row = ftable:addRow({ submenu = "saveoffline" }, {  })
 		if menu.preselectOption == "saveoffline" then
 			ftable:setSelectedRow(row.index)
 		end
@@ -7462,15 +10212,15 @@ function menu.displaySavegameOptions(optionParameter)
 	else
 		-- reload
 		local arrowWidth = Helper.scaleY(config.infoTextHeight)
-		local row = ftable:addRow({ titlerow = "reload" }, { fixed = not showonlinesave, bgColor = Helper.color.transparent })
+		local row = ftable:addRow({ titlerow = "reload" }, { fixed = not showonlinesave })
 		if menu.preselectOption == "reload" then
 			ftable:setSelectedRow(row.index)
 		end
-		row[2]:createButton({ height = config.infoTextHeight }):setIcon((menu.saveSort == "slot_inv") and "table_arrow_inv_up" or "table_arrow_inv_down", { scaling = false, width = arrowWidth, height = arrowWidth, x = (row[2]:getColSpanWidth() - arrowWidth) / 2, color = ((menu.saveSort == "slot") or (menu.saveSort == "slot_inv")) and Helper.color.white or Helper.color.transparent })
+		row[2]:createButton({ height = config.infoTextHeight }):setIcon((menu.saveSort == "slot_inv") and "table_arrow_inv_up" or "table_arrow_inv_down", { scaling = false, width = arrowWidth, height = arrowWidth, x = (row[2]:getColSpanWidth() - arrowWidth) / 2, color = ((menu.saveSort == "slot") or (menu.saveSort == "slot_inv")) and Color["icon_normal"] or Color["icon_hidden"] })
 		row[2].handlers.onClick = function () menu.saveSort = (menu.saveSort == "slot") and "slot_inv" or "slot"; menu.refresh() end
-		nameSortButton = row[3]:createButton({ height = config.infoTextHeight }):setText(ReadText(1001, 2809)):setIcon((menu.saveSort == "name_inv") and "table_arrow_inv_up" or "table_arrow_inv_down", { scaling = false, width = arrowWidth, height = arrowWidth, x = row[3]:getColSpanWidth() + Helper.scrollbarWidth - arrowWidth, color = ((menu.saveSort == "name") or (menu.saveSort == "name_inv")) and Helper.color.white or Helper.color.transparent })
+		nameSortButton = row[3]:createButton({ height = config.infoTextHeight }):setText(ReadText(1001, 2809)):setIcon((menu.saveSort == "name_inv") and "table_arrow_inv_up" or "table_arrow_inv_down", { scaling = false, width = arrowWidth, height = arrowWidth, x = row[3]:getColSpanWidth() + Helper.scrollbarWidth - arrowWidth, color = ((menu.saveSort == "name") or (menu.saveSort == "name_inv")) and Color["icon_normal"] or Color["icon_hidden"] })
 		row[3].handlers.onClick = function () menu.saveSort = (menu.saveSort == "name") and "name_inv" or "name"; menu.refresh() end
-		row[4]:setColSpan(showonlinesave and 2 or 1):createButton({ height = config.infoTextHeight }):setText(ReadText(1001, 2691)):setIcon((menu.saveSort == "date_inv") and "table_arrow_inv_up" or "table_arrow_inv_down", { scaling = false, width = arrowWidth, height = arrowWidth, x = row[4]:getColSpanWidth() - arrowWidth, color = ((menu.saveSort == "date") or (menu.saveSort == "date_inv")) and Helper.color.white or Helper.color.transparent })
+		row[4]:setColSpan(showonlinesave and 2 or 1):createButton({ height = config.infoTextHeight }):setText(ReadText(1001, 2691)):setIcon((menu.saveSort == "date_inv") and "table_arrow_inv_up" or "table_arrow_inv_down", { scaling = false, width = arrowWidth, height = arrowWidth, x = row[4]:getColSpanWidth() - arrowWidth, color = ((menu.saveSort == "date") or (menu.saveSort == "date_inv")) and Color["icon_normal"] or Color["icon_hidden"] })
 		row[4].handlers.onClick = function () menu.saveSort = (menu.saveSort == "date") and "date_inv" or "date"; menu.refresh() end
 		if not showonlinesave then
 			row[5]:createButton({ height = config.infoTextHeight, width = config.infoTextHeight }):setIcon("menu_reload", {  })
@@ -7493,16 +10243,9 @@ function menu.displaySavegameOptions(optionParameter)
 					end
 				end
 			end
-
-			-- kuertee start: more save games
-			-- local startIdx = (menu.saveSort == "slot_inv") and 10 or 1
-			-- local endIdx = (menu.saveSort == "slot_inv") and 1 or 10
-			-- local direction = (menu.saveSort == "slot_inv") and -1 or 1
-			local startIdx = (menu.saveSort == "slot_inv") and Helper.maxSaveFiles or 1
-			local endIdx = (menu.saveSort == "slot_inv") and 1 or Helper.maxSaveFiles
+			local startIdx = (menu.saveSort == "slot_inv") and 10 or 1
+			local endIdx = (menu.saveSort == "slot_inv") and 1 or 10
 			local direction = (menu.saveSort == "slot_inv") and -1 or 1
-			-- kuertee end: more save games
-
 			for i = startIdx, endIdx, direction do
 				local savegamestring = string.format("%03d", i)
 				if usedsavegamenames["save_" .. savegamestring] then
@@ -7522,14 +10265,14 @@ function menu.displaySavegameOptions(optionParameter)
 					end
 					-- kuertee end: callback
 
-					local row = ftable:addRow({ empty = savegamestring }, { bgColor = Helper.color.transparent })
+					local row = ftable:addRow({ empty = savegamestring }, {  })
 					if string.format("save_%03d", i) == menu.preselectOption then
 						ftable:setSelectedRow(row.index)
 						menu.selectedOption = { empty = savegamestring }
 					end
 					row[2]:createText(i, ((menu.currentOption == "save") or (menu.currentOption == "saveoffline")) and config.standardTextProperties or config.disabledTextProperties)
 					row[2].properties.halign = "right"
-					row[3]:setColSpan(3):createText(ReadText(1001, 4812), { scaling = false, font = config.font, fontsize = Helper.scaleFont(config.font, config.standardFontSize), x = Helper.scaleX(config.standardTextOffsetX), y = Helper.scaleY(2), color = (menu.currentOption == "load") and Helper.color.grey or nil, minRowHeight = Helper.scaleY(config.standardTextHeight) + Helper.borderSize })
+					row[3]:setColSpan(3):createText(ReadText(1001, 4812), { scaling = false, font = config.font, fontsize = Helper.scaleFont(config.font, config.standardFontSize), x = Helper.scaleX(config.standardTextOffsetX), y = Helper.scaleY(2), color = (menu.currentOption == "load") and Color["text_inactive"] or nil, minRowHeight = Helper.scaleY(config.standardTextHeight) + Helper.borderSize })
 					maxRowHeight = math.max(maxRowHeight, row:getHeight())
 				end
 
@@ -7631,14 +10374,14 @@ function menu.displaySavegameOptions(optionParameter)
 					end
 					-- kuertee end: callback
 
-					local row = ftable:addRow({ empty = savegamestring }, { bgColor = Helper.color.transparent })
+					local row = ftable:addRow({ empty = savegamestring }, {  })
 					if string.format("save_%03d", i) == menu.preselectOption then
 						ftable:setSelectedRow(row.index)
 						menu.selectedOption = { empty = savegamestring }
 					end
 					row[2]:createText(i, ((menu.currentOption == "save") or (menu.currentOption == "saveoffline")) and config.standardTextProperties or config.disabledTextProperties)
 					row[2].properties.halign = "right"
-					row[3]:setColSpan(3):createText(ReadText(1001, 4812), { scaling = false, font = config.font, fontsize = Helper.scaleFont(config.font, config.standardFontSize), x = Helper.scaleX(config.standardTextOffsetX), y = Helper.scaleY(2), color = (menu.currentOption == "load") and Helper.color.grey or nil, minRowHeight = Helper.scaleY(config.standardTextHeight) + Helper.borderSize })
+					row[3]:setColSpan(3):createText(ReadText(1001, 4812), { scaling = false, font = config.font, fontsize = Helper.scaleFont(config.font, config.standardFontSize), x = Helper.scaleX(config.standardTextOffsetX), y = Helper.scaleY(2), color = (menu.currentOption == "load") and Color["text_inactive"] or nil, minRowHeight = Helper.scaleY(config.standardTextHeight) + Helper.borderSize })
 					maxRowHeight = math.max(maxRowHeight, row:getHeight())
 
 					-- kuertee start: callback
@@ -7651,7 +10394,7 @@ function menu.displaySavegameOptions(optionParameter)
 
 	local customsavetitlerow
 	if (menu.currentOption == "load") and (#customsaves > 0) and IsCheatVersion() then
-		customsavetitlerow = ftable:addRow(nil, { bgColor = Helper.color.transparent })
+		customsavetitlerow = ftable:addRow(nil, {  })
 		customsavetitlerow[2]:setColSpan(4):createText("Custom Saves", config.subHeaderTextProperties) -- (cheat only)
 		-- sort by name, but don't care whether customsave prefix is followed by _ or -
 		local prefixlen = string.len("customsave_")
@@ -7669,7 +10412,7 @@ function menu.displaySavegameOptions(optionParameter)
 	titletable:setColWidth(3, Helper.scaleY(config.infoTextHeight), false)
 
 	-- title
-	local row = titletable:addRow({ titlerow = "title" }, { fixed = true, bgColor = Helper.color.transparent })
+	local row = titletable:addRow({ titlerow = "title" }, { fixed = true })
 	if menu.preselectOption == "title" then
 		titletable:setSelectedRow(row.index)
 	end
@@ -7697,10 +10440,10 @@ function menu.displaySavegameOptions(optionParameter)
 	local buttontable = frame:addTable(4, { tabOrder = 2, x = menu.table.x + ftable.properties.width + Helper.borderSize, y = offsety, width = ftable.properties.width - Helper.borderSize, maxVisibleHeight = menu.table.height - offsety, highlightMode = "off" })
 	buttontable:setColWidthPercent(2, 16)
 	buttontable:setColWidthPercent(3, 16)
-	local row = buttontable:addRow(nil, { bgColor = Helper.color.transparent })
+	local row = buttontable:addRow(nil, {  })
 	row[1]:setColSpan(4):createText(" ")
 	-- save name
-	local row = buttontable:addRow((menu.currentOption == "save") or (menu.currentOption == "saveoffline"), { bgColor = Helper.color.transparent })
+	local row = buttontable:addRow((menu.currentOption == "save") or (menu.currentOption == "saveoffline"), {  })
 	row[1]:setColSpan(2):createText(ReadText(1001, 8970) .. ReadText(1001, 120))
 	if (menu.currentOption == "save") or (menu.currentOption == "saveoffline") then
 		menu.saveNameEditBox = row[3]:setColSpan(2):createEditBox({ height = config.standardTextHeight, description = ReadText(1001, 8970), active = function () return (menu.selectedOption ~= nil) and (next(menu.selectedOption) ~= nil) and (not menu.selectedOption.isonline) end }):setText(menu.savegameName, { fontsize = config.standardFontSize, halign = "right" }):setHotkey("INPUT_STATE_DETAILMONITOR_Y", { displayIcon = true, x = 0 })
@@ -7710,43 +10453,43 @@ function menu.displaySavegameOptions(optionParameter)
 	end
 	local inforows = {}
 	-- player name
-	local row = buttontable:addRow(nil, { bgColor = Helper.color.transparent })
+	local row = buttontable:addRow(nil, {  })
 	table.insert(inforows, row)
 	row[1]:setColSpan(2):createText(ReadText(1001, 2809) .. ReadText(1001, 120))
 	row[3]:setColSpan(2):createText(function () return ((menu.selectedOption ~= nil) and (next(menu.selectedOption) ~= nil)) and menu.selectedOption.playername or "" end, config.standardRightTextProperties)
 	-- money
-	local row = buttontable:addRow(nil, { bgColor = Helper.color.transparent })
+	local row = buttontable:addRow(nil, {  })
 	table.insert(inforows, row)
 	row[1]:setColSpan(2):createText(ReadText(1001, 2003) .. ReadText(1001, 120))
 	row[3]:setColSpan(2):createText(function () return ((menu.selectedOption ~= nil) and (next(menu.selectedOption) ~= nil) and menu.selectedOption.playername) and (ConvertMoneyString(menu.selectedOption.money, false, true, 0, true, false).. " " .. ReadText(1001, 101)) or "" end, config.standardRightTextProperties)
 	-- location
-	local row = buttontable:addRow(nil, { bgColor = Helper.color.transparent })
+	local row = buttontable:addRow(nil, {  })
 	table.insert(inforows, row)
 	row[1]:setColSpan(2):createText(ReadText(1001, 2943) .. ReadText(1001, 120))
 	row[3]:setColSpan(2):createText(function () return ((menu.selectedOption ~= nil) and (next(menu.selectedOption) ~= nil) and menu.selectedOption.playername) and menu.selectedOption.location or "" end, config.standardRightTextProperties)
 	-- game time
-	local row = buttontable:addRow(nil, { bgColor = Helper.color.transparent })
+	local row = buttontable:addRow(nil, {  })
 	table.insert(inforows, row)
 	row[1]:setColSpan(2):createText(ReadText(1001, 8969) .. ReadText(1001, 120))
 	row[3]:setColSpan(2):createText(function () return ((menu.selectedOption ~= nil) and (next(menu.selectedOption) ~= nil) and menu.selectedOption.playername) and ConvertTimeString(menu.selectedOption.playtime, "%d" .. ReadText(1001, 104) .. " %H" .. ReadText(1001, 102) .. " %M" .. ReadText(1001, 103)) or "" end, config.standardRightTextProperties)
 	-- version
-	local row = buttontable:addRow(nil, { bgColor = Helper.color.transparent })
+	local row = buttontable:addRow(nil, {  })
 	table.insert(inforows, row)
 	row[1]:setColSpan(2):createText(ReadText(1001, 2655) .. ReadText(1001, 120))
 	row[3]:setColSpan(2):createText(menu.savegameInfoVersion, config.standardRightTextProperties)
 	-- gamestart
-	local row = buttontable:addRow(nil, { bgColor = Helper.color.transparent })
+	local row = buttontable:addRow(nil, {  })
 	table.insert(inforows, row)
 	row[1]:setColSpan(2):createText(ReadText(1001, 8988) .. ReadText(1001, 120))
 	row[3]:setColSpan(2):createText(function () return ((menu.selectedOption ~= nil) and (next(menu.selectedOption) ~= nil) and menu.selectedOption.gamestart) and menu.selectedOption.gamestart or "" end, config.standardRightTextProperties)
 	-- errors
-	local row = buttontable:addRow(nil, { bgColor = Helper.color.transparent })
+	local row = buttontable:addRow(nil, {  })
 	table.insert(inforows, row)
-	row[1]:setColSpan(4):createText(menu.errorSavegameInfo(), { color = (menu.currentOption == "load") and Helper.color.red or Helper.color.warningorange, wordwrap = true })
+	row[1]:setColSpan(4):createText(menu.errorSavegameInfo(), { color = (menu.currentOption == "load") and Color["text_error"] or Color["text_warning"], wordwrap = true })
 	-- buttons
-	local row = buttontable:addRow(true, { bgColor = Helper.color.transparent })
+	local row = buttontable:addRow(true, {  })
 	if menu.currentOption == "load" then
-		row[1]:createButton({ bgColor = function () return menu.isValidSaveSelected() and Helper.defaultButtonBackgroundColor or Helper.defaultUnselectableButtonBackgroundColor end, highlightColor = function () return menu.isValidSaveSelected() and Helper.defaultButtonHighlightColor or Helper.defaultUnselectableButtonHighlightColor end }):setText(ReadText(1001, 8966), { halign = "center", color = function () return menu.isValidSaveSelected() and Helper.color.white or Helper.color.grey end })
+		row[1]:createButton({ bgColor = function () return menu.isValidSaveSelected() and Color["button_background_default"] or Color["button_background_inactive"] end, highlightColor = function () return menu.isValidSaveSelected() and Color["button_highlight_default"] or Color["button_highlight_inactive"] end }):setText(ReadText(1001, 8966), { halign = "center", color = function () return menu.isValidSaveSelected() and Color["text_normal"] or Color["text_inactive"] end })
 		row[1].handlers.onClick = function () if menu.isValidSaveSelected() then menu.loadGameCallback(menu.selectedOption.filename, false) end end
 	else
 		row[1]:createButton({ active = function () return (menu.selectedOption ~= nil) and (next(menu.selectedOption) ~= nil) and (menu.selectedOption.titlerow == nil) and (menu.selectedOption.submenu == nil) end }):setText(function () local isempty = menu.selectedOption and menu.selectedOption.empty; local isonlinesave = menu.selectedOption and menu.selectedOption.isonline; return (Helper.isOnlineGame() and (not isonlinesave)) and (isempty and ReadText(1001, 11701) or ReadText(1001, 11702)) or (isempty and ReadText(1001, 8967) or ReadText(1001, 8968)) end, { halign = "center" })
@@ -7793,25 +10536,25 @@ function menu.drawLobby()
 	ftable:setColWidth(3, Helper.scaleY(config.infoTextHeight), false)
 
 	-- title
-	local row = ftable:addRow({}, { fixed = true, bgColor = Helper.color.transparent })
+	local row = ftable:addRow({}, { fixed = true })
 	row[1]:setBackgroundColSpan(2)
 	row[1]:createButton({ height = config.headerTextHeight }):setIcon(config.backarrow, { x = config.backarrowOffsetX })
 	row[1].handlers.onClick = function () return menu.onCloseElement("back") end
 	row[2]:setColSpan(2):createText(ReadText(1001,7286), config.headerTextProperties)
 
 	-- info
-	local row = ftable:addRow({}, { fixed = true, bgColor = Helper.color.transparent })
+	local row = ftable:addRow({}, { fixed = true })
 	row[3]:createButton({ height = config.infoTextHeight }):setIcon("menu_reload", {  })
 	row[3].handlers.onClick = menu.buttonReloadLobby
 
 	if #menu.lobby > 0 then
 		-- #networkHigh - should display roomname instead of ip-address (maybe "[roomname] ([IP])")
 		for _, entry in ipairs(menu.lobby) do
-			local row = ftable:addRow(entry, { bgColor = Helper.color.transparent })
+			local row = ftable:addRow(entry, {  })
 			row[2]:setColSpan(2):createText(entry.address, config.standardTextProperties)
 		end
 	else
-		local row = ftable:addRow(false, { bgColor = Helper.color.transparent })
+		local row = ftable:addRow(false, {  })
 		row[2]:setColSpan(2):createText(ReadText(1001,7287), config.disabledTextProperties)
 	end
 
@@ -7865,14 +10608,14 @@ function menu.displayOnlineLogin()
 	ftable:setDefaultComplexCellProperties("slidercell", "text", { x = config.standardTextOffsetX, fontsize = config.standardFontSize })
 
 	-- title
-	local row = ftable:addRow(true, { fixed = true, bgColor = Helper.color.transparent })
+	local row = ftable:addRow(true, { fixed = true })
 	row[1]:setBackgroundColSpan(2)
 	row[1]:createButton({ height = config.headerTextHeight }):setIcon(config.backarrow, { x = config.backarrowOffsetX })
 	row[1].handlers.onClick = function () return menu.onCloseElement("back") end
 	row[2]:setColSpan(10):createText(ReadText(1001, 7252), config.headerTextProperties)
 
 	-- warning
-	local row = ftable:addRow(false, { fixed = true, bgColor = Helper.color.transparent })
+	local row = ftable:addRow(false, { fixed = true })
 	row[2]:setColSpan(10):createText(menu.warningOnline, config.warningTextProperties)
 
 	local state = OnlineGetVersionIncompatibilityState()
@@ -7880,13 +10623,13 @@ function menu.displayOnlineLogin()
 	local active = (not hassession) and (not menu.onlineData.loginAttempt) and (state ~= 1)
 
 	-- sub title
-	local row = ftable:addRow(false, { bgColor = Helper.color.transparent })
+	local row = ftable:addRow(false, {  })
 	row[2]:setColSpan(10):createText(hassession and string.format(ReadText(1001, 8993), menu.onlineData.username) or ReadText(1001, 8962), config.standardTextProperties)
 	if hassession then
 		row[2].properties.font = Helper.standardFontBold
 	end
 	-- username
-	local row = ftable:addRow(true, { bgColor = Helper.color.transparent })
+	local row = ftable:addRow(true, {  })
 	row[2]:setColSpan(5):createText(ReadText(1001, 7246), config.standardTextProperties)
 	row[7]:setColSpan(4):createEditBox({ description = ReadText(1001, 7246), active = active, textHidden = function () return menu.onlineData.usernameHidden end }):setText(menu.onlineData.username, { fontsize = config.standardFontSize })
 	if active then
@@ -7897,7 +10640,7 @@ function menu.displayOnlineLogin()
 	row[11]:createButton({ active = function () return not menu.onlineData.usernameEditBoxActive end }):setIcon("menu_hidden")
 	row[11].handlers.onClick = function () menu.onlineData.usernameHidden = not menu.onlineData.usernameHidden end
 	-- password
-	local row = ftable:addRow(true, { bgColor = Helper.color.transparent })
+	local row = ftable:addRow(true, {  })
 	row[2]:setColSpan(5):createText(ReadText(1001, 7247), config.standardTextProperties)
 	row[7]:setColSpan(5):createEditBox({ textHidden = true, encrypted = true, description = ReadText(1001, 7247), active = active }):setText(active and menu.onlineData.password or "      ", { fontsize = config.standardFontSize })
 	if active then
@@ -7905,23 +10648,23 @@ function menu.displayOnlineLogin()
 		row[7].handlers.onEditBoxDeactivated = menu.editboxOnlinePasswordDeactivated
 	end
 	-- remember me
-	local row = ftable:addRow(true, { bgColor = Helper.color.transparent })
+	local row = ftable:addRow(true, {  })
 	row[7]:createCheckBox(menu.onlineData.remember, { active = active })
 	row[7].handlers.onClick = menu.checkboxOnlineRemember
 	row[8]:setColSpan(4):createText(ReadText(1001, 7248), config.standardTextProperties)
 	if not active then
-		row[8].properties.color = Helper.color.grey
+		row[8].properties.color = Color["text_inactive"]
 	end
 	-- privacy policy
-	local row = ftable:addRow(true, { bgColor = Helper.color.transparent })
+	local row = ftable:addRow(true, {  })
 	row[2]:createCheckBox(__CORE_GAMEOPTIONS_PRIVACYPOLICY or (not active), { active = active })
 	row[2].handlers.onClick = menu.checkboxOnlinePrivacyPolicy
 	row[3]:setColSpan(8):createText(ReadText(1001, 7308), config.standardTextProperties)
 	if not active then
-		row[3].properties.color = Helper.color.grey
+		row[3].properties.color = Color["text_inactive"]
 	end
 	-- login button
-	local row = ftable:addRow(true, { bgColor = Helper.color.transparent })
+	local row = ftable:addRow(true, {  })
 	if OnlineHasSession() then
 		local isonline = Helper.isOnlineGame()
 		row[2]:setColSpan(5):createButton({ height = config.standardTextHeight, active = not isonline, mouseOverText = isonline and ReadText(1026, 2654) or "" }):setText(ReadText(1001, 7250), { fontsize = config.standardFontSize, halign = "center" })
@@ -7952,10 +10695,10 @@ function menu.displayOnlineLogin()
 			errortext = ReadText(1001, 8929)
 		elseif errorcode == "ERR_CONNECT_FAILED" then
 			errortext = ReadText(1001, 8911)
-			errormouseovertext = "\27R" .. ReadText(1001, 8912)
+			errormouseovertext = ColorText["text_error"] .. ReadText(1001, 8912)
 		elseif errorcode == "ERR_ACCESS_DENIED" then
 			errortext = ReadText(1001, 8914)
-			errormouseovertext = "\27R" .. ReadText(1001, 8915)
+			errormouseovertext = ColorText["text_error"] .. ReadText(1001, 8915)
 		elseif errorcode == "ERR_SERVICE_UNAVAILABLE" then
 			errortext = ReadText(1001, 8913)
 		elseif errorcode == "INCOMPATIBLE_CLIENT_VERSION" then
@@ -7967,26 +10710,26 @@ function menu.displayOnlineLogin()
 		end
 		row[7]:setColSpan(showhelpbutton and 3 or 5):createText(errortext, config.standardTextProperties)
 		row[7].properties.wordwrap = true
-		row[7].properties.color = Helper.color.red
+		row[7].properties.color = Color["text_error"]
 		row[7].properties.mouseOverText = errormouseovertext
 		if showhelpbutton then
 			row[10]:setColSpan(2):createButton({ height = config.standardTextHeight, active = C.CanOpenWebBrowser() }):setText(ReadText(1001, 8992) .. " \27[mm_externallink]", { fontsize = config.standardFontSize, halign = "center" })
 			row[10].handlers.onClick = menu.buttonOnlineHelp
 		end
 	end
-	
+
 	if (not OnlineHasSession()) or (menu.onlineData.hasRegisteredGame == false) then
 		ftable:addEmptyRow()
 		-- create account
-		local row = ftable:addRow(false, { bgColor = Helper.color.transparent })
+		local row = ftable:addRow(false, {  })
 		row[1]:setColSpan(11):createText((menu.onlineData.hasRegisteredGame == false) and ReadText(1001, 8965) or ReadText(1001, 8963), config.subHeaderTextProperties)
 		-- no account text / not registered
-		local row = ftable:addRow(false, { bgColor = Helper.color.transparent })
+		local row = ftable:addRow(false, {  })
 		row[2]:setColSpan(10):createText((menu.onlineData.hasRegisteredGame == false) and ReadText(1001, 8907) or ReadText(1001, 7291))
 	end
 
 	if (not OnlineHasSession()) or (menu.onlineData.hasRegisteredGame == false) then
-		row = ftable:addRow(true, { bgColor = Helper.color.transparent })
+		row = ftable:addRow(true, {  })
 		-- register
 		row[2]:setColSpan(5):createButton({ height = config.standardTextHeight, active = C.CanOpenWebBrowser() }):setText(ReadText(1001, 7290) .. " \27[mm_externallink]", { fontsize = config.standardFontSize, halign = "center" })
 		row[2].handlers.onClick = menu.buttonOnlineRegister
@@ -7996,10 +10739,10 @@ function menu.displayOnlineLogin()
 	row[7].handlers.onClick = menu.buttonPrivacyPolicy
 
 	if not OnlineHasSession() then
-		local row = ftable:addRow(false, { bgColor = Helper.color.transparent })
+		local row = ftable:addRow(false, {  })
 		row[2]:setColSpan(10):createText(ReadText(1001, 8964) .. "\n" .. ReadText(1001, 8923), { wordwrap = true })
 	elseif menu.onlineData.hasRegisteredGame == false then
-		local row = ftable:addRow(false, { bgColor = Helper.color.transparent })
+		local row = ftable:addRow(false, {  })
 		row[2]:setColSpan(10):createText(ReadText(1001, 8923), { wordwrap = true })
 	end
 
@@ -8009,54 +10752,54 @@ function menu.displayOnlineLogin()
 		local isinstalled = C.IsExtensionEnabled(ventureextensionid, false)
 		local dlcstate = config.ventureDLCStates[C.GetVentureDLCStatus()] or "unknownerror"
 
-		local row = ftable:addRow(false, { bgColor = Helper.color.transparent })
+		local row = ftable:addRow(false, {  })
 		row[1]:createText("", config.standardTextProperties)
 		-- header
-		local row = ftable:addRow(false, { bgColor = Helper.color.transparent })
+		local row = ftable:addRow(false, {  })
 		row[1]:setColSpan(11):createText(ReadText(1001, 11736), config.subHeaderTextProperties)
 		-- info
 		if (dlcstate ~= "valid") and (not C.WasSessionOnline()) then
-			local row = ftable:addRow(false, { fixed = true, bgColor = Helper.color.transparent })
+			local row = ftable:addRow(false, { fixed = true })
 			row[2]:setColSpan(10):createText(ReadText(1001, 11774), config.warningTextProperties)
 		end
 		-- installed
-		local row = ftable:addRow(false, { bgColor = Helper.color.transparent })
+		local row = ftable:addRow(false, {  })
 		row[2]:setColSpan(5):createText(ReadText(1001, 4805), config.standardTextProperties)
 		row[7]:setColSpan(5):createText(isinstalled and ReadText(1001, 2617) or ReadText(1001, 2618), config.standardTextProperties)
 		-- version
-		local row = ftable:addRow(false, { bgColor = Helper.color.transparent })
+		local row = ftable:addRow(false, {  })
 		row[2]:setColSpan(5):createText(ReadText(1001, 2655), config.standardTextProperties)
 		row[7]:setColSpan(5):createText(isinstalled and ffi.string(C.GetExtensionVersion(ventureextensionid, false)) or "---", config.standardTextProperties)
 		-- status
-		local row = ftable:addRow(false, { bgColor = Helper.color.transparent })
+		local row = ftable:addRow(false, {  })
 		row[2]:setColSpan(5):createText(ReadText(1001, 11737), config.standardTextProperties)
 
 		local statusstring = "---"
 		if dlcstate == "valid" then
 			statusstring = ReadText(1001, 11738)
 		elseif dlcstate == "userdisabled" then
-			statusstring = Helper.convertColorToText(Helper.color.warningorange) .. ReadText(1001, 11739) .. "\27X"
+			statusstring = ColorText["text_warning"] .. ReadText(1001, 11739) .. "\27X"
 		elseif dlcstate == "userskipped" then
-			statusstring = Helper.convertColorToText(Helper.color.warningorange) .. ReadText(1001, 11740) .. "\27X"
+			statusstring = ColorText["text_warning"] .. ReadText(1001, 11740) .. "\27X"
 		elseif dlcstate == "notpossible" then
-			statusstring = Helper.convertColorToText(Helper.color.red) .. ReadText(1001, 11741) .. "\27X"
+			statusstring = ColorText["text_error"] .. ReadText(1001, 11741) .. "\27X"
 		elseif dlcstate == "updatedisabled" then
-			statusstring = Helper.convertColorToText(Helper.color.warningorange) .. ReadText(1001, 11742) .. "\27X"
+			statusstring = ColorText["text_warning"] .. ReadText(1001, 11742) .. "\27X"
 		elseif dlcstate == "updateskipped" then
-			statusstring = Helper.convertColorToText(Helper.color.warningorange) .. ReadText(1001, 11743) .. "\27X"
+			statusstring = ColorText["text_warning"] .. ReadText(1001, 11743) .. "\27X"
 		elseif dlcstate == "updatenotpossible" then
-			statusstring = Helper.convertColorToText(Helper.color.red) .. ReadText(1001, 11744) .. "\27X"
+			statusstring = ColorText["text_error"] .. ReadText(1001, 11744) .. "\27X"
 		else
-			statusstring = Helper.convertColorToText(Helper.color.red) .. ReadText(1001, 11745) .. "\27X"
+			statusstring = ColorText["text_error"] .. ReadText(1001, 11745) .. "\27X"
 		end
 
 		row[7]:setColSpan(5):createText(isinstalled and statusstring or "---", config.standardTextProperties)
 		row[7].properties.wordwrap = true
 		-- line
-		local row = ftable:addRow(nil, { bgColor = Helper.color.transparent })
-		row[2]:setColSpan(10):createText(" ", { fontsize = 1, height = Helper.borderSize, cellBGColor = Helper.color.transparent60 })
+		local row = ftable:addRow(nil, {  })
+		row[2]:setColSpan(10):createText(" ", { fontsize = 1, height = Helper.borderSize, cellBGColor = Color["row_separator"] })
 		-- download settings
-		local row = ftable:addRow(true, { bgColor = Helper.color.transparent })
+		local row = ftable:addRow(true, {  })
 		row[2]:setColSpan(5):createText(ReadText(1001, 11746), config.standardTextProperties)
 
 		local options = {
@@ -8078,7 +10821,7 @@ function menu.displayOnlineLogin()
 		row[7].handlers.onDropDownConfirmed = menu.dropdownVentureExtensionDownload
 		if (curoption == "manual") and ((dlcstate ~= "valid") or (state ~= 0)) then
 			-- download once
-			local row = ftable:addRow(true, { bgColor = Helper.color.transparent })
+			local row = ftable:addRow(true, {  })
 			row[7]:createCheckBox(OnlineGetVentureConfig("allow_update_once"), {  })
 			row[7].handlers.onClick = menu.checkboxScheduleVentureExtensionDownload
 			row[8]:setColSpan(4):createText(ReadText(1001, 11750), config.standardTextProperties)
@@ -8087,10 +10830,10 @@ function menu.displayOnlineLogin()
 
 	-- options
 	if C.IsVentureExtensionSupported() then
-		local row = ftable:addRow(false, { bgColor = Helper.color.transparent })
+		local row = ftable:addRow(false, {  })
 		row[1]:createText("", config.standardTextProperties)
 
-		local row = ftable:addRow(false, { bgColor = Helper.color.transparent })
+		local row = ftable:addRow(false, {  })
 		row[1]:setColSpan(11):createText(ReadText(1001, 7299), config.subHeaderTextProperties)
 
 		local offsety = ftable.properties.y + ftable:getVisibleHeight() + Helper.borderSize
@@ -8117,7 +10860,7 @@ function menu.displayOnlineLogin()
 		end
 		local infotable = frame:addTable(1, { tabOrder = 0, x = offsetx, y = offsety, width = width, maxVisibleHeight = height })
 
-		local row = infotable:addRow(false, { bgColor = Helper.color.transparent60 })
+		local row = infotable:addRow(false, { bgColor = Color["optionsmenu_cell_background"] })
 		row[1]:createText(menu.infoHandler, { scaling = false, width = width, height = height, wordwrap = true, fontsize = Helper.scaleFont(config.font, config.infoFontSize) })
 	end
 
@@ -8138,14 +10881,25 @@ function menu.displayControls(optionParameter)
 
 	menu.getControlsData()
 
-	local frame = menu.createOptionsFrame()
+	local frame = menu.createOptionsFrame(true)
 
-	local ftable = frame:addTable(4, { tabOrder = 1, x = menu.table.x, y = menu.table.y, width = menu.table.width, maxVisibleHeight = menu.table.height - menu.table.y })
+	local ftable = frame:addTable(8, { tabOrder = 1, x = menu.table.x, y = menu.table.y, width = menu.table.widthExtraWide, maxVisibleHeight = menu.table.height - menu.table.y })
 	ftable:setColWidth(1, menu.table.arrowColumnWidth, false)
 	ftable:setColWidthPercent(3, 30)
-	ftable:setColWidthPercent(4, 30)
+	ftable:setColWidth(4, 1.5 * Helper.scaleY(config.standardTextHeight) - Helper.borderSize, false)
+	ftable:setColWidth(5, 1.5 * Helper.scaleY(config.standardTextHeight) - Helper.borderSize, false)
+	ftable:setColWidth(6, 1.5 * Helper.scaleY(config.standardTextHeight) - Helper.borderSize, false)
+	ftable:setColWidth(7, Helper.scaleY(config.standardTextHeight), false)
+	ftable:setColWidthPercent(8, 30)
 	ftable:setDefaultCellProperties("button", { height = config.standardTextHeight })
 	ftable:setDefaultComplexCellProperties("button", "text", { x = config.standardTextOffsetX, fontsize = config.standardFontSize })
+	ftable:setDefaultCellProperties("dropdown", { height = config.standardTextHeight })
+	ftable:setDefaultComplexCellProperties("dropdown", "text", { x = config.standardTextOffsetX, fontsize = config.standardFontSize })
+	ftable:setDefaultComplexCellProperties("dropdown", "text2", { x = config.standardTextOffsetX, fontsize = config.standardFontSize, halign = "right" })
+
+	local numheadercols = 6
+	local headertable = frame:addTable(numheadercols, { tabOrder = 2, x = menu.table.x, y = menu.table.y, width = menu.table.widthExtraWide, maxVisibleHeight = menu.table.height - menu.table.y })
+	headertable:setColWidth(1, menu.table.arrowColumnWidth, false)
 
 	-- title
 	local firstpart = ""
@@ -8162,14 +10916,14 @@ function menu.displayControls(optionParameter)
 	elseif (optionParameter == "keyboard_menus") or (optionParameter == "vrtouch_menus") or (optionParameter == "vrvive_menus") then
 		secondpart = ReadText(1001, 2660)
 	elseif (optionParameter == "keyboard_firstperson") or (optionParameter == "vrtouch_firstperson") or (optionParameter == "vrvive_firstperson") then
-		secondpart = ReadText(1001, 2659)
+		secondpart = ReadText(1001, 12688)
 	end
 
-	local row = ftable:addRow({}, { fixed = true, bgColor = Helper.color.transparent })
+	local row = headertable:addRow({}, { fixed = true })
 	row[1]:setBackgroundColSpan(2)
 	row[1]:createButton({ height = config.headerTextHeight }):setIcon(config.backarrow, { x = config.backarrowOffsetX })
 	row[1].handlers.onClick = function () return menu.onCloseElement("back") end
-	row[2]:setColSpan(3):createText(firstpart .. ReadText(1001, 120) .. " " .. secondpart, config.headerTextProperties)
+	row[2]:setColSpan(numheadercols - 1):createText(firstpart .. ReadText(1001, 120) .. " " .. secondpart, config.headerTextProperties)
 
 	menu.controlsorder = {}
 	if (optionParameter == "keyboard_space") or (optionParameter == "vrtouch_space") or (optionParameter == "vrvive_space") then
@@ -8190,27 +10944,53 @@ function menu.displayControls(optionParameter)
 		end
 	end
 
-	local row = ftable:addRow(true, { bgColor = Helper.color.transparent, fixed = true })
-	row[2]:setColSpan(3):createEditBox({ defaultText = ReadText(1001, 3250) }):setText(menu.searchtext, { x = Helper.standardTextOffsetx }):setHotkey("INPUT_STATE_DETAILMONITOR_0", { displayIcon = true })
+	local row
+	local i = 1
+	for _, entry in ipairs(config.input.filters) do
+		local name, mouseovertext = menu.filterName(entry.id)
+		if name then
+			local col = (i % (numheadercols - 1)) + 1
+			if col == 1 then
+				col = numheadercols
+			end
+
+			if i % (numheadercols - 1) == 1 then
+				row = headertable:addRow(true, { fixed = true })
+			end
+			row[col]:createButton({ bgColor = (menu.controlsFilter == entry.id) and Color["row_background_selected"] or Color["row_title_background"], mouseOverText = mouseovertext }):setText(name, { halign = "center" })
+			row[col].handlers.onClick = function () menu.controlsFilter = entry.id; menu.refresh() end
+
+			i = i + 1
+		end
+	end
+
+	local row = headertable:addRow(true, { fixed = true })
+	row[2]:setColSpan(numheadercols - 1):createEditBox({ defaultText = ReadText(1001, 3250) }):setText(menu.searchtext, { x = Helper.standardTextOffsetx }):setHotkey("INPUT_STATE_DETAILMONITOR_0", { displayIcon = true })
 	row[2].handlers.onEditBoxDeactivated = menu.editboxControlsSearchUpdateText
+
+	local row = ftable:addRow(nil, { fixed = true })
+	row[2]:createText(ReadText(1001, 12663), config.headerTextProperties)
+	row[3]:setColSpan(4):createText(ReadText(1001, 12664), config.headerTextProperties)
+	row[7]:setColSpan(2):createText(ReadText(1001, 12665), config.headerTextProperties)
+
 	local searchrowindex = row.index
 	local found = false
-	local isdoubleclickmode = C.GetMouseHUDModeOption() == 2
 	for i, controls in ipairs(menu.controlsorder) do
 		local first = true
-		for _, control in ipairs(controls) do
-			if menu.filterControl(control[1], control[2], menu.searchtext) then
-				found = true
-				if first then
-					first = false
-
-					local row = ftable:addRow(false, { bgColor = Helper.color.transparent })
-					row[2]:setColSpan(3):createText(controls.title, config.subHeaderTextProperties)
-				end
-				if (not control.display) or control.display() then
-					if IsCheatVersion() or (not config.input.cheatControls[control[1]][control[2]]) then
-						menu.displayControlRow(ftable, i, control[1], control[2], control[3], control[4], controls.mapable, isdoubleclickmode, control[5])
+		if (not controls.filter) or controls.filter[menu.controlsFilter] then
+			for _, control in ipairs(controls) do
+				if menu.filterControl(control[1], control[2], menu.searchtext) then
+					found = true
+					if first then
+						local row = ftable:addRow(false, {  })
+						row[2]:setColSpan(7):createText(controls.title, config.subHeaderTextProperties)
 					end
+					if (not control.display) or control.display() then
+						if IsCheatVersion() or (not config.input.cheatControls[control[1]][control[2]]) then
+							menu.displayControlRow(ftable, i, control[1], control[2], control[3], control[4], controls.mapable, control[5], first, control[6], controls.compassmenusupport, controls.mouseonly, control.mousewheelonly)
+						end
+					end
+					first = false
 				end
 			end
 		end
@@ -8223,20 +11003,37 @@ function menu.displayControls(optionParameter)
 	menu.preselectTopRow = nil
 	menu.preselectOption = nil
 
+	ftable.properties.y = headertable.properties.y + headertable:getFullHeight() + Helper.borderSize
+
+	headertable:addConnection(1, 1, true)
+	ftable:addConnection(2, 1)
+
 	frame:display()
 end
 
-function menu.filterControl(controltype, code, text)
-	local name
-	if controltype == "functions" then
-		name = menu.controls[controltype][code].name
+function menu.filterName(id)
+	if id == "" then
+		return ReadText(1001, 12666)
+	elseif id == "keyboard" then
+		return ReadText(1001, 12667) .. " " ..ColorText["text_input_device_keyboard"] .. menu.getInputDeviceIcon("keyboard") .. ColorText["text_input_device_mouse"] .. menu.getInputDeviceIcon("mouse")
 	else
-		name = ReadText(config.input.controltextpage[controltype], code)
+		local joystickid = tonumber(string.match(id, "controller_(%d)"))
+		if menu.mappedjoysticks[joystickid] and next(menu.mappedjoysticks[joystickid]) then
+			if menu.mappedjoysticks[joystickid].xinput then
+				-- xinput axis
+				return  ReadText(1001, 12668) .. " " ..ColorText["text_input_device_controller"] .. menu.getInputDeviceIcon("controller") .. ((joystickid > 1) and menu.getInputDeviceIcon("number_" .. joystickid) or ""), menu.mappedjoysticks[joystickid].name
+			else
+				-- directinput axis
+				return  ReadText(1001, 12669) .. " " ..ColorText["text_input_device_joystick"] .. menu.getInputDeviceIcon("joystick") .. ((joystickid > 1) and menu.getInputDeviceIcon("number_" .. joystickid) or ""), menu.mappedjoysticks[joystickid].name
+			end
+		end
 	end
+end
 
+function menu.filterControl(controltype, code, text)
 	text = utf8.lower(text)
 
-	if string.find(utf8.lower(name), text, 1, true) then
+	if string.find(utf8.lower(menu.getControlName(controltype, code)), text, 1, true) then
 		return true
 	end
 	return false
@@ -8265,7 +11062,7 @@ function menu.displayJoysticks()
 	ftable:setDefaultComplexCellProperties("dropdown", "text", { x = config.standardTextOffsetX, fontsize = config.standardFontSize })
 
 	-- title
-	local row = ftable:addRow({}, { fixed = true, bgColor = Helper.color.transparent })
+	local row = ftable:addRow({}, { fixed = true })
 	row[1]:setBackgroundColSpan(2)
 	row[1]:createButton({ height = config.headerTextHeight }):setIcon(config.backarrow, { x = config.backarrowOffsetX })
 	row[1].handlers.onClick = function () return menu.onCloseElement("back") end
@@ -8280,7 +11077,7 @@ function menu.displayJoysticks()
 			local icon = ""
 			for source, joystickindex in ipairs(mappedjoysticks) do
 				if (joystickindex <= 8) and (joystickindex == i) then
-					icon = (joystick.xinput and (Helper.convertColorToText(Helper.color.orange) .. menu.getInputDeviceIcon("controller")) or (Helper.convertColorToText(Helper.color.brightyellow) .. menu.getInputDeviceIcon("joystick"))) .. ((source > 1) and menu.getInputDeviceIcon("number_" .. source) or "")
+					icon = (joystick.xinput and (ColorText["text_input_device_controller"] .. menu.getInputDeviceIcon("controller")) or (ColorText["text_input_device_joystick"] .. menu.getInputDeviceIcon("joystick"))) .. ((source > 1) and menu.getInputDeviceIcon("number_" .. source) or "")
 				end
 			end
 			table.insert(options, { id = joystick.guid, text = joystick.name, text2 = icon, icon = "", displayremoveoption = false })
@@ -8295,8 +11092,8 @@ function menu.displayJoysticks()
 				currentOption = joystickdata.guid
 			end
 		end
-		
-		local row = ftable:addRow({ id = i }, { bgColor = Helper.color.transparent })
+
+		local row = ftable:addRow({ id = i }, {  })
 		row[2]:createDropDown(options, { active = isselectable, startOption = currentOption }):setTextProperties():setText2Properties({ halign = "right" })
 		row[2].handlers.onDropDownConfirmed = function(_, id) return menu.callbackJoystick(i, id) end
 	end
@@ -8313,44 +11110,84 @@ function menu.displayInputProfiles(optionParameter)
 
 	local frame = menu.createOptionsFrame()
 
-	local ftable = frame:addTable(3, { tabOrder = 1, x = menu.table.x, y = menu.table.y, width = menu.table.width, maxVisibleHeight = menu.table.height })
-	ftable:setColWidth(1, menu.table.arrowColumnWidth, false)
-	ftable:setColWidth(3, config.standardTextHeight)
+	local titletable = frame:addTable(4, { tabOrder = 2, x = menu.table.x, y = menu.table.y, width = menu.table.width, skipTabChange = true })
+	titletable:setColWidth(1, menu.table.arrowColumnWidth, false)
+	titletable:setColWidth(3, menu.table.infoColumnWidth / 2, false)
+	titletable:setColWidth(4, menu.table.infoColumnWidth / 2, false)
 
 	-- title
-	local row = ftable:addRow({}, { fixed = true, bgColor = Helper.color.transparent })
+	local row = titletable:addRow({}, { fixed = true })
 	row[1]:setBackgroundColSpan(2)
 	row[1]:createButton({ height = config.headerTextHeight }):setIcon(config.backarrow, { x = config.backarrowOffsetX })
 	row[1].handlers.onClick = function () return menu.onCloseElement("back") end
-	row[2]:setColSpan(2):createText((menu.currentOption == "profile_load") and ReadText(1001, 4859) or ReadText(1001, 4858), config.headerTextProperties)
+	row[2]:setColSpan(3):createText((menu.currentOption == "profile_load") and ReadText(1001, 12684) or ReadText(1001, 12685), config.headerTextProperties)
+
+	local offsety = titletable.properties.y + titletable:getVisibleHeight() + Helper.borderSize
+	local height = menu.table.height - (titletable:getVisibleHeight() + Helper.borderSize)
+
+	local ftable = frame:addTable(3, { tabOrder = 1, x = menu.table.x, y = offsety, width = menu.table.widthWithExtraInfo, maxVisibleHeight = height })
+	ftable:setColWidth(1, menu.table.arrowColumnWidth, false)
+	ftable:setColWidth(3, config.standardTextHeight)
 
 	local userprofiles = {}
 	local inputprofiles = GetInputProfiles()
 
+	local mouseprofiles = {}
+	local otherprofiles = {}
+
 	for i, profile in ipairs(inputprofiles) do
 		if not profile.personal then
 			if menu.currentOption == "profile_load" then
-				local row = ftable:addRow(profile, { bgColor = Helper.color.transparent })
-				row[2]:setColSpan(2):createText(profile.name, config.standardTextProperties)
-				if profile.id == menu.preselectOption then
-					ftable:setSelectedRow(row.index)
+				if profile.mouseprofile then
+					table.insert(mouseprofiles, profile)
+				else
+					table.insert(otherprofiles, profile)
 				end
 			end
-		else 
+		else
 			userprofiles[profile.filename] = i
 		end
 	end
 
-	if menu.currentOption == "profile_load" then
-		local row = ftable:addRow(false, { bgColor = Helper.color.transparent })
-		row[2]:setColSpan(2):createText(" ", { fontsize = 1, height = Helper.borderSize, cellBGColor = Helper.color.transparent60 })
+	if next(mouseprofiles) then
+		local row = ftable:addRow(nil, {  })
+		row[2]:setColSpan(2):createText(ReadText(1001, 12693), config.subHeaderTextProperties)
+
+		for _, profile in ipairs(mouseprofiles) do
+			local row = ftable:addRow(profile, {  })
+			row[2]:setColSpan(2):createText(profile.name, config.standardTextProperties)
+			if profile.id == menu.preselectOption then
+				ftable:setSelectedRow(row.index)
+			end
+		end
+
+		local row = ftable:addRow(nil, {  })
+		row[2]:setColSpan(2):createText(" ", { fontsize = 1, height = 4 * Helper.borderSize })
 	end
+	if next(otherprofiles) then
+		local row = ftable:addRow(nil, {  })
+		row[2]:setColSpan(2):createText(ReadText(1001, 12694), config.subHeaderTextProperties)
+
+		for _, profile in ipairs(otherprofiles) do
+			local row = ftable:addRow(profile, {  })
+			row[2]:setColSpan(2):createText(profile.name, config.standardTextProperties)
+			if profile.id == menu.preselectOption then
+				ftable:setSelectedRow(row.index)
+			end
+		end
+
+		local row = ftable:addRow(nil, {  })
+		row[2]:setColSpan(2):createText(" ", { fontsize = 1, height = 4 * Helper.borderSize })
+	end
+
+	local row = ftable:addRow(false, {  })
+	row[2]:setColSpan(2):createText(ReadText(1001, 12695), config.subHeaderTextProperties)
 
 	for i = 1, 5 do
 		local filename = "inputmap_" .. i
 		if userprofiles[filename] then
 			local profile = inputprofiles[userprofiles[filename]]
-			local row = ftable:addRow(profile, { bgColor = Helper.color.transparent })
+			local row = ftable:addRow(profile, {  })
 			if profile.id == menu.preselectOption then
 				ftable:setSelectedRow(row.index)
 			end
@@ -8363,7 +11200,7 @@ function menu.displayInputProfiles(optionParameter)
 				row[3].handlers.onClick = function () return menu.buttonInputProfileSave(profile) end
 			end
 		else
-			local row = ftable:addRow({ id = 100 + i, empty = true }, { bgColor = Helper.color.transparent })
+			local row = ftable:addRow({ id = 100 + i, empty = true }, {  })
 			if (100 + i) == menu.preselectOption then
 				ftable:setSelectedRow(row.index)
 			end
@@ -8381,7 +11218,24 @@ function menu.displayInputProfiles(optionParameter)
 	menu.preselectTopRow = nil
 	menu.preselectOption = nil
 
+	local width = menu.table.width - menu.table.widthWithExtraInfo - Helper.borderSize
+	local offsetx = menu.table.x + menu.table.widthWithExtraInfo + Helper.borderSize
+	local infotable = frame:addTable(1, { tabOrder = 0, x = offsetx, y = offsety, width = width, maxVisibleHeight = height })
+
+	local row = infotable:addRow(false, { bgColor = Color["optionsmenu_cell_background"] })
+	row[1]:createText(menu.inputProfileDescription, { scaling = false, width = width, height = height, wordwrap = true, fontsize = Helper.scaleFont(config.font, config.infoFontSize) })
+
+	titletable.properties.nextTable = ftable.index
+	ftable.properties.prevTable = titletable.index
+
 	frame:display()
+end
+
+function menu.inputProfileDescription()
+	if menu.selectedOption and (type(menu.selectedOption) == "table") then
+		return menu.selectedOption.description or ""
+	end
+	return ""
 end
 
 function menu.displayLanguageOptions()
@@ -8398,7 +11252,7 @@ function menu.displayLanguageOptions()
 	ftable:setColWidth(3, config.standardTextHeight)
 
 	-- title
-	local row = ftable:addRow(not menu.firstlanguageselection, { fixed = true, bgColor = Helper.color.transparent })
+	local row = ftable:addRow(not menu.firstlanguageselection, { fixed = true })
 	row[1]:setBackgroundColSpan(2)
 	if menu.firstlanguageselection then
 		row[1]:setColSpan(3):createText(ReadText(1001, 7236), config.headerTextProperties)
@@ -8409,13 +11263,13 @@ function menu.displayLanguageOptions()
 	end
 
 	-- info
-	local row = ftable:addRow(false, { fixed = true, bgColor = Helper.color.transparent })
+	local row = ftable:addRow(false, { fixed = true })
 	row[1]:setColSpan(3):createText(menu.warningLanguage, config.warningTextProperties)
 
 	menu.getLanguageData()
 
 	for i, language in ipairs(menu.languagedata) do
-		local row = ftable:addRow(language, { bgColor = Helper.color.transparent })
+		local row = ftable:addRow(language, {  })
 		if language.id == menu.languagedata.requestedID then
 			ftable:setSelectedRow(row.index)
 		end
@@ -8456,22 +11310,22 @@ function menu.displayUserQuestion(question, callback, negCallback, timer, waitfo
 	ftable:setColWidth(3, 0.3 * menu.table.width - 0.5 * menu.table.arrowColumnWidth - 1.5 * Helper.borderSize, false)
 
 	-- title
-	local row = ftable:addRow({}, { fixed = true, bgColor = Helper.color.transparent })
+	local row = ftable:addRow({}, { fixed = true })
 	row[1]:setBackgroundColSpan(2)
 	row[1]:createButton({ height = config.headerTextHeight }):setIcon(config.backarrow, { x = config.backarrowOffsetX })
 	row[1].handlers.onClick = function () return menu.onCloseElement("back") end
 	row[2]:setColSpan(3):createText(menu.nameUserQuestion, config.headerTextProperties)
 
 	if infotext then
-		local row = ftable:addRow(true, { fixed = true, bgColor = Helper.color.transparent })
+		local row = ftable:addRow(true, { fixed = true })
 		row[2]:setColSpan(3):createText(infotext, config.warningTextProperties)
-		row[2].properties.color = Helper.color.warningorange
+		row[2].properties.color = Color["text_warning"]
 
 		ftable:addEmptyRow()
 	end
 
 	if editboxHook then
-		local row = ftable:addRow(true, { fixed = true, bgColor = Helper.color.transparent })
+		local row = ftable:addRow(true, { fixed = true })
 		row[2]:createText(ReadText(1001, 8936) .. ReadText(1001, 120))
 		menu.userQuestion.editboxText = editboxHook()
 		menu.questionEditBox = row[3]:setColSpan(2):createEditBox({ height = config.standardTextHeight, description = ReadText(1001, 8936) }):setText(menu.userQuestion.editboxText, { fontsize = config.standardFontSize })
@@ -8480,20 +11334,20 @@ function menu.displayUserQuestion(question, callback, negCallback, timer, waitfo
 		ftable:setSelectedRow(row.index)
 
 		if editboxNote then
-			local row = ftable:addRow(false, { fixed = true, bgColor = Helper.color.transparent })
-			row[2]:setColSpan(3):createText(editboxNote, { color = Helper.color.warningorange })
+			local row = ftable:addRow(false, { fixed = true })
+			row[2]:setColSpan(3):createText(editboxNote, { color = Color["text_warning"] })
 		end
 
-		local row = ftable:addRow({ positive = false }, { fixed = true, bgColor = Helper.color.transparent })
+		local row = ftable:addRow({ positive = false }, { fixed = true })
 		row[2]:setColSpan(2):createButton({  }):setText(ReadText(1001, 2821), { halign = "center" })
 		row[2].handlers.onClick = menu.buttonUserQuestionPositive
 		row[4]:createButton({  }):setText(ReadText(1001, 64), { halign = "center" })
 		row[4].handlers.onClick = menu.buttonUserQuestionNegative
 	else
-		local row = ftable:addRow({ positive = false }, { bgColor = Helper.color.transparent })
+		local row = ftable:addRow({ positive = false }, {  })
 		row[2]:setColSpan(3):createText(ReadText(1001, 2618), config.standardTextProperties)
 
-		local row = ftable:addRow({ positive = true }, { bgColor = Helper.color.transparent })
+		local row = ftable:addRow({ positive = true }, {  })
 		row[2]:setColSpan(3):createText(ReadText(1001, 2617), config.standardTextProperties)
 	end
 
@@ -8513,32 +11367,32 @@ function menu.displayOnlineSeason(option)
 	ftable:setColWidth(3, config.standardTextHeight)
 
 	-- title
-	local row = ftable:addRow(not menu.firstlanguageselection, { fixed = true, bgColor = Helper.color.transparent })
+	local row = ftable:addRow(not menu.firstlanguageselection, { fixed = true })
 	row[1]:setBackgroundColSpan(2):createButton({ height = config.headerTextHeight }):setIcon(config.backarrow, { x = config.backarrowOffsetX })
 	row[1].handlers.onClick = function () return menu.onCloseElement("back") end
 	row[2]:setColSpan(2):createText(ReadText(1001, 11300), config.headerTextProperties)
 
 	-- steps
-	local row = ftable:addRow(nil, { bgColor = Helper.color.transparent })
+	local row = ftable:addRow(nil, {  })
 	row[2]:setColSpan(2):createText(ReadText(1001, 11306) .. ReadText(1001, 120), config.standardTextProperties)
 
 	local counter = 1
 
 	local completed = OnlineHasSession()
-	local row = ftable:addRow(nil, { bgColor = Helper.color.transparent })
-	row[2]:setColSpan(2):createText((completed and "\27G" or "") .. counter .. ". " .. ReadText(1001, 11301) .. (completed and " \27[widget_tick_01]" or ""), config.standardTextProperties)
+	local row = ftable:addRow(nil, {  })
+	row[2]:setColSpan(2):createText((completed and ColorText["text_positive"] or "") .. counter .. ". " .. ReadText(1001, 11301) .. (completed and " \27[widget_tick_01]" or ""), config.standardTextProperties)
 	row[2].properties.x = 3 * config.standardTextOffsetX
 	counter = counter + 1
 
 	completed = C.GetVentureDLCStatus() == 0
-	local row = ftable:addRow(nil, { bgColor = Helper.color.transparent })
-	row[2]:setColSpan(2):createText((completed and "\27G" or "") .. counter .. ". " .. ReadText(1001, 11358) .. (completed and " \27[widget_tick_01]" or ""), config.standardTextProperties)
+	local row = ftable:addRow(nil, {  })
+	row[2]:setColSpan(2):createText((completed and ColorText["text_positive"] or "") .. counter .. ". " .. ReadText(1001, 11358) .. (completed and " \27[widget_tick_01]" or ""), config.standardTextProperties)
 	row[2].properties.x = 3 * config.standardTextOffsetX
 	counter = counter + 1
 
 	completed = not menu.isStartmenu
-	local row = ftable:addRow(nil, { bgColor = Helper.color.transparent })
-	row[2]:setColSpan(2):createText((completed and "\27G" or "") .. counter .. ". " .. ReadText(1001, 11302) .. (completed and " \27[widget_tick_01]" or ""), config.standardTextProperties)
+	local row = ftable:addRow(nil, {  })
+	row[2]:setColSpan(2):createText((completed and ColorText["text_positive"] or "") .. counter .. ". " .. ReadText(1001, 11302) .. (completed and " \27[widget_tick_01]" or ""), config.standardTextProperties)
 	row[2].properties.x = 3 * config.standardTextOffsetX
 	counter = counter + 1
 
@@ -8553,14 +11407,14 @@ function menu.displayOnlineSeason(option)
 	end
 
 	completed = hasdocks
-	local row = ftable:addRow(nil, { bgColor = Helper.color.transparent })
-	row[2]:setColSpan(2):createText((completed and "\27G" or "") .. counter .. ". " .. ReadText(1001, 11573) .. (completed and " \27[widget_tick_01]" or ""), config.standardTextProperties)
+	local row = ftable:addRow(nil, {  })
+	row[2]:setColSpan(2):createText((completed and ColorText["text_positive"] or "") .. counter .. ". " .. ReadText(1001, 11573) .. (completed and " \27[widget_tick_01]" or ""), config.standardTextProperties)
 	row[2].properties.x = 3 * config.standardTextOffsetX
 	counter = counter + 1
 
 	completed = false
-	local row = ftable:addRow(nil, { bgColor = Helper.color.transparent })
-	row[2]:setColSpan(2):createText((completed and "\27G" or "") .. counter .. ". " .. ReadText(1001, 11575) .. (completed and " \27[widget_tick_01]" or ""), config.standardTextProperties)
+	local row = ftable:addRow(nil, {  })
+	row[2]:setColSpan(2):createText((completed and ColorText["text_positive"] or "") .. counter .. ". " .. ReadText(1001, 11575) .. (completed and " \27[widget_tick_01]" or ""), config.standardTextProperties)
 	row[2].properties.x = 3 * config.standardTextOffsetX
 	counter = counter + 1
 
@@ -8593,7 +11447,7 @@ function menu.displayCredits(option)
 	})
 
 	menu.optionsFrame:addTable(1, { tabOrder = 1 })
-	
+
 	menu.optionsFrame:addRenderTarget({ width = Helper.viewWidth, height = Helper.viewHeight, x = 0, y = 0, alpha = 100 })
 
 	menu.optionsFrame:display()
@@ -8619,7 +11473,7 @@ function menu.displayInit(text)
 
 	local ftable = menu.optionsFrame:addTable(1, { tabOrder = 0, width = math.floor(Helper.viewWidth / 2), x = math.floor(Helper.viewWidth / 4), y = math.floor(Helper.viewHeight / 2) })
 
-	local row = ftable:addRow(false, { fixed = true, bgColor = Helper.color.transparent })
+	local row = ftable:addRow(false, { fixed = true })
 	row[1]:createText(text or ReadText(1001, 7230), { halign = "center", font = config.fontBold, fontsize = config.headerFontSize, x = 0, y = 0 })
 
 	ftable.properties.y = math.floor((Helper.viewHeight - ftable:getVisibleHeight()) / 2)
@@ -8649,7 +11503,7 @@ function menu.displayEmptyMenu(cleanup)
 
 	local ftable = menu.optionsFrame:addTable(1, { tabOrder = 1, width = math.floor(Helper.viewWidth / 2), x = math.floor(Helper.viewWidth / 4), y = math.floor(Helper.viewHeight / 2) })
 
-	local row = ftable:addRow(true, { fixed = true, bgColor = Helper.color.transparent })
+	local row = ftable:addRow(true, { fixed = true })
 	row[1]:createText("", { halign = "center", font = config.fontBold, fontsize = config.headerFontSize, x = 0, y = 0 })
 
 	ftable.properties.y = math.floor((Helper.viewHeight - ftable:getVisibleHeight()) / 2)
@@ -8675,7 +11529,7 @@ function menu.onShowMenu()
 	if menu.param == "toplevel" then
 		menu.param = nil
 	end
-	
+
 	-- put options menu in center position
 	menu.width = math.min(Helper.viewWidth, Helper.scaleX(config.frame.width))
 	menu.widthExtraWide = math.min(Helper.viewWidth, Helper.scaleX(config.frame.widthExtraWide))
@@ -8749,7 +11603,7 @@ function menu.onShowMenu()
 		menu.submenuHandler(menu.param)
 	else
 		if not menu.isStartmenu then
-			menu.preselectOption = "exit"
+			menu.preselectOption = C.IsTimelinesScenario() and "returntohub" or "exit"
 		end
 		menu.submenuHandler("main")
 	end
@@ -8763,18 +11617,22 @@ end
 
 function menu.viewCreated(layer, ...)
 	if layer == config.optionsLayer then
-		if (menu.currentOption == "new") or (menu.currentOption == "multiplayer_server") then
+		if (menu.currentOption == "new") or (menu.currentOption == "multiplayer_server") or (menu.currentOption == "new_timelines") or (menu.currentOption == "tutorials") then
 			if menu.playNewGameCutscene then
 				menu.titleTable, menu.optionTable, menu.rendertarget, menu.infoTable = ...
 			else
 				menu.titleTable, menu.optionTable, menu.infoTable = ...
 			end
-		elseif (menu.currentOption == "extensions") or (menu.currentOption == "bonus") or (menu.currentOption == "privacy") then
+		elseif (menu.currentOption == "extensions") or (menu.currentOption == "bonus") or (menu.currentOption == "privacy") or (menu.currentOption == "profile_load") or (menu.currentOption == "profile_save") then
 			menu.titleTable, menu.optionTable, menu.infoTable = ...
 		elseif (menu.currentOption == "credits") or (menu.currentOption == "idle") then
 			menu.optionTable, menu.rendertarget = ...
 		elseif (menu.currentOption == "save") or (menu.currentOption == "load") or (menu.currentOption == "saveoffline") then
 			menu.optionTable, menu.titleTable, menu.infoTable = ...
+		elseif menu.currentOption == "colorlibrary" then
+			menu.titleTable, menu.optionTable, menu.colorTable, menu.mappingTable, menu.buttonTable = ...
+		elseif menu.currentOption == "inputfeedback" then
+			menu.optionTable, menu.buttonTable = ...
 		else
 			menu.optionTable = ...
 		end
@@ -8799,7 +11657,7 @@ function menu.onUpdate()
 	if menu.animationDelay ~= nil then
 		if (not menu.animationDelay[3]) and (curtime > menu.animationDelay[1] - menu.animationDelay[4]) then
 			menu.animationDelay[3] = true
-			C.FadeScreen(menu.animationDelay[4], 0)
+			C.FadeScreen2(menu.animationDelay[4], 0, menu.animationDelay[5] or 0)
 			C.StopVoiceSequence()
 			if menu.isStartmenu then
 				C.StartStartMenuBGMusic()
@@ -8877,15 +11735,15 @@ function menu.onUpdate()
 			end
 		end
 
-		if menu.currentOption == "main" then
+		if (menu.currentOption == "main") or (menu.currentOption == "sandbox") then
 			if saveloadingcompleted then
 				-- rebuild the menu (since the current rows are simple (aka: fontstring/unselectable) rows and we cannot just reset them to selectable ones
 				-- TODO: #Florian - add support to change whether a row is selectable or not and then replace rebuilding the menu here with simply adjusting the two relevant rows
 				menu.preselectOption = Helper.getCurrentRowData(menu, menu.optionTable).id
-				menu.submenuHandler("main")
+				menu.submenuHandler(menu.currentOption)
 				return
 			end
-		elseif (menu.currentOption == "new") or (menu.currentOption == "multiplayer_server") then
+		elseif (menu.currentOption == "new") or (menu.currentOption == "multiplayer_server") or (menu.currentOption == "new_timelines") or (menu.currentOption == "tutorials") then
 			if menu.playNewGameCutscene and menu.playNewGameCutscene.movie then
 				if not menu.playNewGameCutscene.cutsceneid then
 					menu.playNewGameCutscene.cutscenedesc = CreateCutsceneDescriptor(menu.playNewGameCutscene.movie, {})
@@ -8950,6 +11808,19 @@ function menu.onUpdate()
 			end
 		end
 
+		if menu.remapControl and menu.remapControl.modifier then
+			if menu.directInputActive and (C.IsShiftPressed() or C.IsControlPressed()) then
+				menu.unregisterDirectInput()
+				menu.remapControl = nil
+
+				-- show popup
+				menu.contextMenuMode = "info"
+				menu.contextMenuData = { width = Helper.scaleX(400), height = Helper.scaleY(200), y = Helper.scaleY(300), infotitle = ReadText(1001, 12656), infotext = ReadText(1001, 12657) }
+
+				menu.createContextMenu()
+			end
+		end
+
 		menu.optionsFrame:update()
 		if menu.contextFrame then
 			menu.contextFrame:update()
@@ -8962,7 +11833,7 @@ function menu.onRowChanged(row, rowdata, uitable, modified, input, source)
 	menu.idleTimer = curtime
 	if uitable == menu.optionTable then
 		menu.selectedOption = rowdata
-		if (menu.currentOption == "new") or (menu.currentOption == "multiplayer_server") then
+		if (menu.currentOption == "new") or (menu.currentOption == "multiplayer_server") or (menu.currentOption == "new_timelines") or (menu.currentOption == "tutorials") then
 			if menu.playNewGameCutscene and menu.playNewGameCutscene.cutsceneid then
 				-- cutscene was playing and we changed row, kill cutscene
 				StopCutscene(menu.playNewGameCutscene.cutsceneid)
@@ -9005,7 +11876,19 @@ function menu.onRowChanged(row, rowdata, uitable, modified, input, source)
 						end
 					end
 				end
-				SetCellContent(menu.optionTable, Helper.createFontString(languageWarning, true, "left", 255, 0, 0, 100, languageFont, config.infoFontSize, false, config.infoTextOffsetX, 0, config.infoTextHeight), 2, 1)
+
+				local fontStringDescriptor = {
+					text = languageWarning,
+					alignment = "left",
+					fontname = languageFont,
+					fontsize = Helper.scaleFont(languageFont, config.infoFontSize),
+					color = Color["text_error"],
+					wordwrap = false,
+					mouseovertext = "",
+					offset = { x = Helper.scaleX(config.infoTextOffsetX), y = 0 },
+					size = { width = 0, height = config.infoTextHeight },
+				}
+				Helper.setCellContent(menu, menu.optionTable, CreateFontString(fontStringDescriptor), 2, 1)
 			end
 		elseif (menu.currentOption == "save") or (menu.currentOption == "load") or (menu.currentOption == "saveoffline") then
 			if menu.selectedOption and next(menu.selectedOption) and (menu.selectedOption.titlerow == nil) and (menu.selectedOption.submenu == nil) then
@@ -9048,6 +11931,12 @@ function menu.newGameCallback(option, checked)
 			__CORE_GAMEOPTIONS_RESTOREINFO.returnhistory = menu.history
 			Helper.closeMenuAndOpenNewMenu(menu, "CustomGameMenu", { 0, 0, option.id, menu.currentOption == "multiplayer_server", option.id == "custom_creative", menu.paused ~= nil })
 			menu.cleanup()
+		elseif option.mapeditor then
+			menu.mapEditorSettings = {
+				gamestartid = option.id,
+				sectors = { all = true },
+			}
+			menu.openSubmenu("mapeditor", option.id)
 		else
 			local playerinventory = GetPlayerInventory()
 			local onlineitems = OnlineGetUserItems()
@@ -9075,14 +11964,13 @@ function menu.newGameCallback(option, checked)
 					C.NewMultiplayerGame(option.id)
 				else
 
-				-- kuertee start: callback
-				if callbacks ["newGameCallback_preNewGame"] then
-					for _, callback in ipairs (callbacks ["newGameCallback_preNewGame"]) do
-						callback(option.id)
+					-- kuertee start: callback
+					if callbacks ["newGameCallback_preNewGame"] then
+						for _, callback in ipairs (callbacks ["newGameCallback_preNewGame"]) do
+							callback(option.id)
+						end
 					end
-				end
-				-- kuertee end: callback
-
+					-- kuertee end: callback
 					NewGame(option.id)
 				end
 				menu.displayInit()
@@ -9091,12 +11979,70 @@ function menu.newGameCallback(option, checked)
 	end
 end
 
-function menu.onSelectElement(uitable, modified, row)
+function menu.startMapEditorWithCopy()
+	C.SetCustomGameStartStringProperty(menu.mapEditorSettings.gamestartid, "galaxy", "editor_empty_galaxy_macro")
+
+	local sectors = ""
+	if menu.mapEditorSettings.sectors and (menu.mapEditorSettings.sectors["all"] ~= true) then
+		for sector, value in pairs(menu.mapEditorSettings.sectors) do
+			if value then
+				if sectors == "" then
+					C.SetCustomGameStartStringProperty(menu.mapEditorSettings.gamestartid, "sector", sector)
+				else
+					sectors = sectors .. " "
+				end
+				sectors = sectors .. sector
+			end
+		end
+	else
+		local sectors = GetMacroData(menu.mapEditorSettings.cluster, "sectors") or {}
+		C.SetCustomGameStartStringProperty(menu.mapEditorSettings.gamestartid, "sector", sectors[1] or "")
+	end
+
+	local numparams = 2
+	local params = ffi.new("NewGameParameter[?]", numparams)
+	params[0].key = Helper.ffiNewString("cluster")
+	params[0].value = Helper.ffiNewString(menu.mapEditorSettings.cluster)
+	params[1].key = Helper.ffiNewString("sectors")
+	params[1].value = Helper.ffiNewString(sectors)
+	C.NewGame(menu.mapEditorSettings.gamestartid, numparams, params)
+	menu.displayInit()
+end
+
+function menu.buttonMapEditorClusterCopyActive()
+	if not menu.mapEditorSettings.cluster then
+		return false
+	end
+	for _, value in pairs(menu.mapEditorSettings.sectors) do
+		if value then
+			return true
+		end
+	end
+	return false
+end
+
+function menu.checkboxMapEditorSector(sector, value)
+	menu.mapEditorSettings.sectors[sector] = value
+	if sector == "all" then
+		local sectors = GetMacroData(menu.mapEditorSettings.cluster, "sectors") or {}
+		for _, sector in ipairs(sectors) do
+			menu.mapEditorSettings.sectors[sector] = value
+		end
+	else
+		if not value then
+			menu.mapEditorSettings.sectors["all"] = false
+		end
+	end
+end
+
+function menu.onSelectElement(uitable, modified, row, isdblclick, input)
 	row = row or Helper.currentTableRow[uitable]
 	if uitable == menu.optionTable then
 		local option = menu.rowDataMap[uitable][row]
-		if (menu.currentOption == "new") or (menu.currentOption == "multiplayer_server") then
-			menu.buttonStartGame(option)
+		if (menu.currentOption == "new") or (menu.currentOption == "multiplayer_server") or (menu.currentOption == "new_timelines") or (menu.currentOption == "tutorials") then
+			if isdblclick or (input ~= "mouse") then
+				menu.buttonStartGame(option)
+			end
 		elseif menu.currentOption == "load" then
 			if option and next(option) and option.filename and ((not option.error and not option.invalidpatches and not option.invalidversion and not option.invalidgameid) or IsCheatVersion()) then
 				menu.loadGameCallback(option.filename, false)
@@ -9295,7 +12241,7 @@ function menu.onCloseElement(dueToClose)
 		C.StopVoiceSequence()
 		menu.playNewGameCutscene.id = nil
 	end
-	if (menu.currentOption == "new") or (menu.currentOption == "multiplayer_server") then
+	if (menu.currentOption == "new") or (menu.currentOption == "multiplayer_server") or (menu.currentOption == "tutorials") then
 		if menu.isStartmenu then
 			C.StartStartMenuBGMusic()
 		end

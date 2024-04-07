@@ -109,11 +109,10 @@ function menu.createFrame(toprow, selectedrow)
 		height = Helper.viewHeight,
 		x = 0,
 		y = 0,
-		backgroundID = "solid",
-		backgroundColor = Helper.color.semitransparent,
 		standardButtons = { back = true, close = true, help = true  }
 	}
 	menu.infoFrame = Helper.createFrameHandle(menu, frameProperties)
+	menu.infoFrame:setBackground("solid", { color = Color["frame_background_semitransparent"] })
 
 	menu.sidebarWidth = Helper.scaleX(Helper.sidebarWidth)
 
@@ -155,14 +154,13 @@ function menu.createContextFrame(data, x, y, width, nomouseout)
 
 	menu.contextFrame = Helper.createFrameHandle(menu, {
 		layer = config.contextLayer,
-		backgroundID = "solid",
-		backgroundColor = Helper.color.semitransparent,
 		standardButtons = { close = true },
 		width = contextmenuwidth,
 		x = x,
 		y = 0,
 		autoFrameHeight = true,
 	})
+	menu.contextFrame:setBackground("solid", { color = Color["frame_background_semitransparent"] })
 
 	local ftable = menu.contextFrame:addTable(1, { tabOrder = 4, highlightMode = "off" })
 	local entryIdx = Helper.transactionLogData.transactionsByIDUnfiltered[data]
@@ -177,13 +175,13 @@ function menu.createContextFrame(data, x, y, width, nomouseout)
 	row[1]:createText(text, Helper.headerRowCenteredProperties)
 	row[1].properties.mouseOverText = entry.partnername
 
-	row = ftable:addRow(true, { fixed = true, bgColor = Helper.color.transparent })
-	row[1]:createButton({ active = active, bgColor = active and Helper.color.transparent or Helper.color.darkgrey }):setText(ReadText(1001, 2427), { color = active and Helper.color.white or Helper.color.lightgrey })
+	row = ftable:addRow(true, { fixed = true })
+	row[1]:createButton({ active = active, bgColor = active and Color["button_background_default"] or Color["button_background_inactive"] }):setText(ReadText(1001, 2427), { color = active and Color["text_normal"] or Color["text_inactive"] })
 	row[1].handlers.onClick = function () return menu.buttonContainerInfo(entry.partner) end
 
 	if active and GetComponentData(ConvertStringTo64Bit(tostring(entry.partner)), "isplayerowned") then
-		row = ftable:addRow(true, { fixed = true, bgColor = Helper.color.transparent })
-		row[1]:createButton({ active = active, bgColor = active and Helper.color.transparent or Helper.color.darkgrey }):setText(ReadText(1001, 7702), { color = active and Helper.color.white or Helper.color.lightgrey })
+		row = ftable:addRow(true, { fixed = true })
+		row[1]:createButton({ active = active, bgColor = active and Color["button_background_default"] or Color["button_background_inactive"] }):setText(ReadText(1001, 7702), { color = active and Color["text_normal"] or Color["text_inactive"] })
 		row[1].handlers.onClick = function () return menu.buttonTransactionLog(entry.partner) end
 	end
 

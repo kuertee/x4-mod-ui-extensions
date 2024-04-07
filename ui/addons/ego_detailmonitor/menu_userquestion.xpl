@@ -205,16 +205,16 @@ function menu.createInfoFrame()
 			x = (Helper.viewWidth - Helper.scaleX(config.width)) / 2,
 			y = Helper.viewHeight / 2,
 			layer = config.layer,
-			backgroundID = "solid",
-			backgroundColor = Helper.color.semitransparent,
 			startAnimation = false,
 			playerControls = menu.mode == "markashostile",
 		}
+
 	-- kuertee start: callback
 	end
 	-- kuertee end: callback
 
 	menu.infoFrame = Helper.createFrameHandle(menu, frameProperties)
+	menu.infoFrame:setBackground("solid", { color = Color["frame_background_semitransparent"] })
 
 	local tableProperties = {
 		width = Helper.scaleX(config.width),
@@ -242,9 +242,11 @@ function menu.createInfoFrame()
 end
 
 function menu.createTable(frame, tableProperties)
+	-- kuertee start: custom mode
 	if string.find ("" .. tostring (menu.mode), "custom") then
 		return menu.createTable_kuertee (frame, tableProperties)
 	end
+	-- kuertee end: custom mode
 
 	local numCols = (menu.mode == "custom") and 5 or 6
 	local ftable = frame:addTable(numCols, { tabOrder = 1, borderEnabled = true, width = tableProperties.width, x = tableProperties.x, y = tableProperties.y, defaultInteractiveObject = true })
@@ -264,51 +266,51 @@ function menu.createTable(frame, tableProperties)
 	end
 
 	if menu.mode == "hackpanel" then
-		local row = ftable:addRow(false, { fixed = true, bgColor = Helper.color.transparent })
+		local row = ftable:addRow(false, { fixed = true })
 		row[1]:setColSpan(numCols):createText(ReadText(1001, 9701), Helper.headerRowCenteredProperties)
 
-		local row = ftable:addRow(false, { fixed = true, bgColor = Helper.color.transparent })
+		local row = ftable:addRow(false, { fixed = true })
 		row[1]:setColSpan(numCols):createText(ReadText(1001, 9702) .. ReadText(1001, 120))
 		
-		local row = ftable:addRow(false, { fixed = true, bgColor = Helper.color.transparent })
+		local row = ftable:addRow(false, { fixed = true })
 		row[1]:setColSpan(numCols):createText(ffi.string(C.GetControlPanelName(menu.hacktarget)))
 	elseif menu.mode == "abortupgrade" then
-		local row = ftable:addRow(false, { fixed = true, bgColor = Helper.color.transparent })
+		local row = ftable:addRow(false, { fixed = true })
 		row[1]:setColSpan(numCols):createText(ReadText(1001, 9703), Helper.headerRowCenteredProperties)
 
-		local row = ftable:addRow(false, { fixed = true, bgColor = Helper.color.transparent })
+		local row = ftable:addRow(false, { fixed = true })
 		row[1]:setColSpan(numCols):createText(ReadText(1001, 9704), { wordwrap = true })
 	elseif menu.mode == "transporter" then
-		local row = ftable:addRow(false, { fixed = true, bgColor = Helper.color.transparent })
+		local row = ftable:addRow(false, { fixed = true })
 		row[1]:setColSpan(numCols):createText(ReadText(1001, 9707), Helper.headerRowCenteredProperties)
 
-		local row = ftable:addRow(false, { fixed = true, bgColor = Helper.color.transparent })
+		local row = ftable:addRow(false, { fixed = true })
 		row[1]:setColSpan(numCols):createText(ReadText(1001, 9708), { wordwrap = true })
 	elseif menu.mode == "markashostile" then
-		local row = ftable:addRow(false, { fixed = true, bgColor = Helper.color.transparent })
+		local row = ftable:addRow(false, { fixed = true })
 		row[1]:setColSpan(numCols):createText(ReadText(1001, 11114), Helper.headerRowCenteredProperties)
 
-		local row = ftable:addRow(false, { fixed = true, bgColor = Helper.color.transparent })
+		local row = ftable:addRow(false, { fixed = true })
 		row[1]:setColSpan(numCols):createText(ReadText(1001, 9710), { wordwrap = true })
 	elseif menu.mode == "discardstationeditor" then
-		local row = ftable:addRow(false, { fixed = true, bgColor = Helper.color.transparent })
+		local row = ftable:addRow(false, { fixed = true })
 		row[1]:setColSpan(numCols):createText(ReadText(1001, 9721), Helper.headerRowCenteredProperties)
 
-		local row = ftable:addRow(false, { fixed = true, bgColor = Helper.color.transparent })
+		local row = ftable:addRow(false, { fixed = true })
 		row[1]:setColSpan(numCols):createText(ReadText(1001, 9722), { wordwrap = true })
 	elseif menu.mode == "custom" then
-		local row = ftable:addRow(false, { fixed = true, bgColor = Helper.color.transparent })
+		local row = ftable:addRow(false, { fixed = true })
 		row[1]:setColSpan(numCols):createText(menu.modeparam[1] or "", Helper.headerRowCenteredProperties)
 
-		local row = ftable:addRow(false, { fixed = true, bgColor = Helper.color.transparent })
+		local row = ftable:addRow(false, { fixed = true })
 		row[1]:setColSpan(numCols):createText(menu.modeparam[2] or "", { wordwrap = true })
 	end
 
-	local row = ftable:addRow(false, { fixed = true, bgColor = Helper.color.transparent })
+	local row = ftable:addRow(false, { fixed = true })
 	row[1]:setColSpan(numCols):createText("")
 
 	if menu.mode == "custom" then
-		local row = ftable:addRow(true, { fixed = true, bgColor = Helper.color.transparent })
+		local row = ftable:addRow(true, { fixed = true })
 		row[2]:createButton({ helpOverlayID = "custom_" .. menu.mode .. "_confirm", helpOverlayText = " ", helpOverlayHighlightOnly = true }):setText(menu.modeparam[3][2] or "", { halign = "center" })
 		row[2].handlers.onClick = function () return menu.customOption(menu.modeparam[3][1], menu.modeparam[3]) end
 		row[4]:createButton({ helpOverlayID = "custom_" .. menu.mode .. "_confirm", helpOverlayText = " ", helpOverlayHighlightOnly = true }):setText(menu.modeparam[4][2] or "", { halign = "center" })
@@ -320,16 +322,16 @@ function menu.createTable(frame, tableProperties)
 			ftable:setSelectedCol(2)
 		end
 	else
-		local row = ftable:addRow(true, { fixed = true, bgColor = Helper.color.transparent })
+		local row = ftable:addRow(true, { fixed = true })
 		row[1]:createCheckBox(function () return menu.saveOption end, { height = Helper.standardButtonHeight })
 		row[1].handlers.onClick = function () menu.saveOption = not menu.saveOption end
-		row[2]:setColSpan(3):createButton({ bgColor = Helper.color.transparent }):setText(ReadText(1001, 9709))
+		row[2]:setColSpan(3):createButton({ bgColor = Color["button_background_hidden"] }):setText(ReadText(1001, 9709))
 		row[2].handlers.onClick = function () menu.saveOption = not menu.saveOption end
 		row[5]:createButton({ helpOverlayID = "custom_" .. menu.mode .. "_confirm", helpOverlayText = " ", helpOverlayHighlightOnly = true }):setText(ReadText(1001, 2821), { halign = "center" })
 		row[5].handlers.onClick = menu.confirm
 		row[6]:createButton({ helpOverlayID = "custom_" .. menu.mode .. "_cancel", helpOverlayText = " ", helpOverlayHighlightOnly = true }):setText(ReadText(1001, 64), { halign = "center" })
 		row[6].handlers.onClick = function () return menu.onCloseElement("back", true) end
-		ftable:setSelectedCol(5)
+		ftable:setSelectedCol(6)
 	end
 
 	return ftable

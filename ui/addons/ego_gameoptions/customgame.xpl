@@ -155,12 +155,25 @@ ffi.cdef[[
 	typedef struct {
 		const char* id;
 		const char* name;
+		int32_t state;
+		const char* requiredversion;
+		const char* installedversion;
+	} InvalidPatchInfo;
+	typedef struct {
+		const char* id;
+		const char* name;
 	} ProductionMethodInfo;
 	typedef struct {
 		const char* macro;
 		const char* ware;
 		const char* productionmethodid;
 	} UIBlueprint;
+	typedef struct {
+		const char* name;
+		const char* id;
+		const char* source;
+		bool deleteable;
+	} UIConstructionPlan;
 	typedef struct {
 		const char* macro;
 		uint32_t amount;
@@ -194,6 +207,16 @@ ffi.cdef[[
 		UIWareInfo* cargo;
 		uint32_t count;
 	} CustomGameStartPlayerProperty3;
+	typedef struct {
+		size_t idx;
+		const char* macroid;
+		UniverseID componentid;
+		UIPosRot offset;
+		const char* connectionid;
+		size_t predecessoridx;
+		const char* predecessorconnectionid;
+		bool isfixed;
+	} UIConstructionPlanEntry;
 	bool AreConstructionPlanLoadoutsCompatible(const char* constructionplanid);
 	bool CanPlayerUseRace(const char* raceid, const char* postid);
 	void ExportCustomGameStart(const char* filename, const char* id, const char* name);
@@ -202,6 +225,8 @@ ffi.cdef[[
 	uint32_t GetAllRaces(RaceInfo* result, uint32_t resultlen);
 	uint32_t GetAvailableCustomGameStarts(CustomGameStartInfo* result, uint32_t resultlen, const char* id);
 	size_t GetConstructionPlanInfo(UIConstructionPlanEntry* result, size_t resultlen, const char* constructionplanid);
+	uint32_t GetConstructionPlanInvalidPatches(InvalidPatchInfo* result, uint32_t resultlen, const char* constructionplanid);
+	uint32_t GetConstructionPlans(UIConstructionPlan* result, uint32_t resultlen);
 	uint32_t GetCustomGameStartBlueprintDefaultProperty(CustomGameStartBlueprint* result, uint32_t resultlen, const char* id, const char* propertyid);
 	uint32_t GetCustomGameStartBlueprintProperty(CustomGameStartBlueprint* result, uint32_t resultlen, const char* id, const char* propertyid);
 	CustomGameStartBlueprintPropertyState GetCustomGameStartBlueprintPropertyState(const char* id, const char* propertyid);
@@ -255,6 +280,7 @@ ffi.cdef[[
 	uint32_t GetNumAllRaces(void);
 	uint32_t GetNumAvailableCustomGameStarts(const char* id);
 	size_t GetNumConstructionPlanInfo(const char* constructionplanid);
+	uint32_t GetNumConstructionPlans(void);
 	uint32_t GetNumCustomGameStartBudgetGroups(const char* id);
 	uint32_t GetNumCustomGameStartPaintThemes(const char* id);
 	uint32_t GetNumCustomGameStartStoryBudgets(const char* id);
@@ -269,6 +295,7 @@ ffi.cdef[[
 	bool HasCustomGameStartBudget(const char* id, const char* budgetid);
 	void ImportCustomGameStart(const char* id, const char* filename, const char* gamestartid);
 	bool IsConstructionPlanAvailableInCustomGameStart(const char* constructionplanid);
+	bool IsConstructionPlanValid(const char* constructionplanid, uint32_t* numinvalidpatches);
 	bool IsCustomGameStartPropertyChanged(const char* id, const char* propertyid);
 	bool IsGameStartModified(const char* id);
 	void NewMultiplayerGame(const char* modulename, const char* difficulty);
@@ -304,8 +331,6 @@ ffi.cdef[[
 	void StartPanMap(UniverseID holomapid);
 	bool StopPanMap(UniverseID holomapid);
 	void ZoomMap(UniverseID holomapid, float zoomstep);
-	uint32_t GetNumSectorsByOwner(const char* factionid);
-	uint32_t GetSectorsByOwner(UniverseID* result, uint32_t resultlen, const char* factionid);
 ]]
 
 local utf8 = require("utf8")
@@ -470,7 +495,7 @@ config.headerTextProperties = {
 	x = config.headerTextOffsetX,
 	y = 6,
 	minRowHeight = config.headerTextHeight,
-	titleColor = Helper.defaultSimpleBackgroundColor,
+	titleColor = Color["row_title"],
 }
 
 config.subHeaderTextProperties = {
@@ -480,7 +505,7 @@ config.subHeaderTextProperties = {
 	y = 2,
 	minRowHeight = config.subHeaderTextHeight,
 	halign = "center",
-	titleColor = Helper.defaultSimpleBackgroundColor,
+	titleColor = Color["row_title"],
 }
 
 config.standardTextProperties = {
@@ -670,12 +695,12 @@ config.categories = {
 }
 
 menu.budgets = {
-	{ id = "money",		name = ReadText(1001, 9923),	desc = ReadText(1026, 9917),	icon = "gamestart_custom_credits",		color = Helper.color.blue,			suffix = " " .. ReadText(1001, 101),	details = {} },
-	{ id = "people",	name = ReadText(1001, 9929),	desc = ReadText(1026, 9918),	icon = "gamestart_custom_people",		color = Helper.color.red,			suffix = "",							details = {} },
-	{ id = "known",		name = ReadText(1001, 9924),	desc = ReadText(1026, 9919),	icon = "gamestart_custom_knowledge",	color = Helper.color.lightgreen,	suffix = "",							details = {} },
-	{ id = "relations",	name = ReadText(1001, 9928),	desc = ReadText(1026, 9920),	icon = "gamestart_custom_relations",	color = Helper.color.brightyellow,	suffix = "",							details = {} },
-	{ id = "story",		name = ReadText(1021, 10006),	desc = ReadText(1026, 9921),	icon = "gamestart_custom_story",		color = Helper.color.cyan,			suffix = "",							details = {},	type = "story",		property = "universestorystates" },
-	{ id = "research",	name = ReadText(1021, 10004),	desc = ReadText(1026, 9922),	icon = "gamestart_custom_research",		color = Helper.color.white,			suffix = "",							details = {},	type = "research",	property = "universestorystates" },
+	{ id = "money",		name = ReadText(1001, 9923),	desc = ReadText(1026, 9917),	icon = "gamestart_custom_credits",		color = Color["customgamestart_budget_money"],		suffix = " " .. ReadText(1001, 101),	details = {} },
+	{ id = "people",	name = ReadText(1001, 9929),	desc = ReadText(1026, 9918),	icon = "gamestart_custom_people",		color = Color["customgamestart_budget_people"],		suffix = "",							details = {} },
+	{ id = "known",		name = ReadText(1001, 9924),	desc = ReadText(1026, 9919),	icon = "gamestart_custom_knowledge",	color = Color["customgamestart_budget_known"],		suffix = "",							details = {} },
+	{ id = "relations",	name = ReadText(1001, 9928),	desc = ReadText(1026, 9920),	icon = "gamestart_custom_relations",	color = Color["customgamestart_budget_relations"],	suffix = "",							details = {} },
+	{ id = "story",		name = ReadText(1021, 10006),	desc = ReadText(1026, 9921),	icon = "gamestart_custom_story",		color = Color["customgamestart_budget_story"],		suffix = "",							details = {},	type = "story",		property = "universestorystates" },
+	{ id = "research",	name = ReadText(1021, 10004),	desc = ReadText(1026, 9922),	icon = "gamestart_custom_research",		color = Color["customgamestart_budget_research"],	suffix = "",							details = {},	type = "research",	property = "universestorystates" },
 }
 menu.propertybudgets = {}
 
@@ -1912,7 +1937,7 @@ function menu.playerresearchMouseOver()
 		end
 	end
 	missingdependencies = "\n- " .. menu.storiesbyid["story_hq_boso"].name .. "\n- " .. menu.storiesbyid["story_hq_dal"].name
-	return ReadText(1001, 9938) .. ReadText(1001, 120) .. "\27R" .. missingdependencies .. "\27X"
+	return ReadText(1001, 9938) .. ReadText(1001, 120) .. ColorText["text_error"] .. missingdependencies .. "\27X"
 end
 
 function menu.universeSector(current)
@@ -1921,7 +1946,6 @@ function menu.universeSector(current)
 
 	local buf = ffi.new("CustomGameStartStringPropertyState[1]")
 	local galaxymacro = ffi.string(C.GetCustomGameStartStringProperty(menu.customgamestart, "galaxy", buf))
-	Helper.debugText("galaxymacro: " .. tostring(galaxymacro))
 	local sectormacros = GetMacroData(galaxymacro, "sectors") or {}
 	table.sort(sectormacros, Helper.sortMacroName)
 	for _, sector in ipairs(sectormacros) do
@@ -1956,7 +1980,7 @@ function menu.universeSector(current)
 						missingdependencies = missingdependencies .. "\n- " .. menu.storiesbyid[dependency].name
 					end
 					if not found then
-						mouseovertext = ((mouseovertext ~= "") and (mouseovertext .. "\n\n") or "") .. ReadText(1001, 9951) .. ReadText(1001, 120) .. "\27R" .. missingdependencies .. "\27X"
+						mouseovertext = ((mouseovertext ~= "") and (mouseovertext .. "\n\n") or "") .. ReadText(1001, 9951) .. ReadText(1001, 120) .. ColorText["text_error"] .. missingdependencies .. "\27X"
 						active = false
 					end
 				end
@@ -2280,7 +2304,7 @@ function menu.displayMultiSelection(property)
 	menu.contextTable:setColWidth(1, config.standardTextHeight)
 	menu.contextTable:setColWidthPercent(3, 33)
 
-	local row = menu.contextTable:addRow(true, { fixed = true, bgColor = Helper.color.transparent })
+	local row = menu.contextTable:addRow(true, { fixed = true })
 	row[1]:createCheckBox(function () local count = 0; for _ in pairs(menu.contextMenuData.selectedOptions) do count = count + 1 end; return menu.contextMenuData.optionCount == count end, { height = Helper.standardTextHeight })
 	row[1].handlers.onClick = function (_, checked) return menu.checkboxToggleMultiSelect(checked) end
 	row[2]:setColSpan(2):createText(property.selectionText, Helper.headerRowCenteredProperties)
@@ -2290,8 +2314,8 @@ function menu.displayMultiSelection(property)
 			menu.contextTable:addEmptyRow(config.standardTextHeight / 2)
 		end
 		if data.name ~= "" then
-			local row = menu.contextTable:addRow(nil, { bgColor = Helper.color.transparent })
-			row[1]:setColSpan(3):createText(data.name, { titleColor = Helper.defaultSimpleBackgroundColor })
+			local row = menu.contextTable:addRow(nil, {  })
+			row[1]:setColSpan(3):createText(data.name, { titleColor = Color["row_title"] })
 		end
 		for _, entry in ipairs(data.wares) do
 			local unlocked = true
@@ -2307,11 +2331,15 @@ function menu.displayMultiSelection(property)
 					budgetvalue = tonumber(knownitem.budgetvalue)
 					unlocked = knownitem.unlocked
 					hidden = knownitem.hidden
+					if hidden then
+						menu.contextMenuData.propertyLockedWares[entry.id] = true
+						menu.contextMenuData.optionCount = menu.contextMenuData.optionCount - 1
+					end
 				end
 			end
 
 			if not hidden then
-				local row = menu.contextTable:addRow(entry.id, { bgColor = Helper.color.transparent })
+				local row = menu.contextTable:addRow(entry.id, {  })
 				local active = true
 				local mouseovertext = ""
 				if not unlocked then
@@ -2332,8 +2360,10 @@ function menu.displayMultiSelection(property)
 							missingdependencies = missingdependencies .. "\n- " .. menu.storiesbyid[dependency].name
 						end
 						if not found then
-							mouseovertext = ((mouseovertext ~= "") and (mouseovertext .. "\n\n") or "") .. ReadText(1001, 9951) .. ReadText(1001, 120) .. "\27R" .. missingdependencies .. "\27X"
+							mouseovertext = ((mouseovertext ~= "") and (mouseovertext .. "\n\n") or "") .. ReadText(1001, 9951) .. ReadText(1001, 120) .. ColorText["text_error"] .. missingdependencies .. "\27X"
 							active = false
+							menu.contextMenuData.propertyLockedWares[entry.id] = true
+							menu.contextMenuData.optionCount = menu.contextMenuData.optionCount - 1
 						end
 					end
 				end
@@ -2366,7 +2396,7 @@ function menu.displayMultiSelection(property)
 	end
 
 	menu.contextTable2 = menu.contextFrame:addTable(2, { tabOrder = 4, y = Helper.borderSize })
-	local row = menu.contextTable2:addRow(true, { bgColor = Helper.color.transparent, fixed = true })
+	local row = menu.contextTable2:addRow(true, { fixed = true })
 	row[1]:createButton({ active = menu.isOptionSelectionChanged }):setText(ReadText(1001, 14), { halign = "center" })
 	row[1].handlers.onClick = function () return menu.buttonMultiSelectConfirm(property) end
 	row[2]:createButton({  }):setText(ReadText(1001, 64), { halign = "center" })
@@ -2399,9 +2429,9 @@ function menu.displayMapContext(offset, sectormacro, sectorpos)
 		standardButtons = { close = true },
 	})
 
-	menu.contextTable = menu.contextFrame:addTable(1, { tabOrder = 3, backgroundID = "solid", backgroundColor = Helper.color.semitransparent })
+	menu.contextTable = menu.contextFrame:addTable(1, { tabOrder = 3, backgroundID = "solid", backgroundColor = Color["frame_background_semitransparent"] })
 
-	local row = menu.contextTable:addRow(nil, { fixed = true, bgColor = Helper.color.transparent })
+	local row = menu.contextTable:addRow(nil, { fixed = true })
 	row[1]:createText(GetMacroData(sectormacro, "name"), Helper.headerRowCenteredProperties)
 
 	if menu.category.id == "universe" then
@@ -2447,19 +2477,19 @@ function menu.displayMapContext(offset, sectormacro, sectorpos)
 				end
 			end
 
-			local row = menu.contextTable:addRow({ bgColor = Helper.color.transparent })
+			local row = menu.contextTable:addRow({  })
 			row[1]:createButton({ height = Helper.standardTextHeight, active = not locked, mouseOverText = locked and ReadText(1026, 9915) or "" }):setText(found and ReadText(1001, 9940) or ReadText(1001, 9939))
 			row[1].handlers.onClick = function () return menu.buttonMapContextSelectSector(sectormacro, found) end
 
 			if found then
 				-- known stations
 				local checked = menu.getKnownValue("playerknownobjects", sectormacro)
-				local row = menu.contextTable:addRow({ bgColor = Helper.color.transparent })
+				local row = menu.contextTable:addRow({  })
 				row[1]:createButton({ height = Helper.standardTextHeight }):setText(checked and ReadText(1001, 9941) or ReadText(1001, 9944))
 				row[1].handlers.onClick = function () return menu.buttonMapContextKnownStations(sectormacro, not checked) end
 
 				-- satelitte coverage
-				local row = menu.contextTable:addRow({ bgColor = Helper.color.transparent })
+				local row = menu.contextTable:addRow({  })
 				row[1]:createButton({ height = Helper.standardTextHeight }):setText(menu.satellites[sectormacro] and ReadText(1001, 9943) or ReadText(1001, 9942))
 				row[1].handlers.onClick = function () return menu.buttonMapContextSatelliteCoverage(sectormacro, not menu.satellites[sectormacro]) end
 			end
@@ -2481,30 +2511,29 @@ function menu.displayExportContext()
 		width = width + 2 * Helper.borderSize,
 		layer = config.contextFrameLayer,
 		standardButtons = { close = true },
-		backgroundID = "solid",
-		backgroundColor = Helper.color.black,
 	})
+	menu.contextFrame:setBackground("solid", { color = Color["frame_background_black"] })
 
 	menu.contextTable = menu.contextFrame:addTable(3, { tabOrder = 6, reserveScrollBar = false, x = Helper.borderSize, y = Helper.borderSize, width = width })
 	menu.contextTable:setDefaultCellProperties("button", { height = Helper.standardTextHeight })
 	menu.contextTable:setDefaultComplexCellProperties("button", "text", { fontsize = Helper.standardFontSize, halign = "center" })
 
-	local row = menu.contextTable:addRow(nil, { fixed = true, bgColor = Helper.color.transparent })
+	local row = menu.contextTable:addRow(nil, { fixed = true })
 	row[1]:setColSpan(3):createText(ReadText(1001, 9946), Helper.headerRowCenteredProperties)
 
-	local row = menu.contextTable:addRow(true, { fixed = true, bgColor = Helper.color.transparent })
+	local row = menu.contextTable:addRow(true, { fixed = true })
 	row[1]:setColSpan(3):createEditBox({ height = Helper.headerRow1Height, defaultText = ReadText(1001, 9947) }):setText(menu.gamestartName or "", { fontsize = Helper.headerRow1FontSize, x = Helper.standardTextOffsetx })
 	row[1].handlers.onTextChanged = menu.editboxNameUpdateText
 
-	local row = menu.contextTable:addRow(nil, { fixed = true, bgColor = Helper.color.transparent })
+	local row = menu.contextTable:addRow(nil, { fixed = true })
 	row[1]:setColSpan(3):createText(ReadText(1001, 9948), { wordwrap = true })
 
 	--[[
-	local row = menu.contextTable:addRow(true, { fixed = true, bgColor = Helper.color.transparent })
+	local row = menu.contextTable:addRow(true, { fixed = true })
 	row[1]:setColSpan(3):createButton({ active = C.CanOpenWebBrowser(), mouseOverText = ReadText(1026, 7918) }):setText(ReadText(1001, 7974)):setText2("\27[mm_externallink]", { halign = "right" })
 	row[1].handlers.onClick = menu.buttonConstructionCommunity--]]
 
-	local row = menu.contextTable:addRow(true, { fixed = true, bgColor = Helper.color.transparent })
+	local row = menu.contextTable:addRow(true, { fixed = true })
 	row[1]:createButton({ active = function () return menu.checkExportActive(true) end }):setText(ReadText(1001, 9949), {  })
 	row[1].handlers.onClick = function () return menu.buttonExport(true) end
 	row[2]:createButton({ active = function () return menu.checkExportActive(false) end }):setText(ReadText(1001, 7909), {  })
@@ -2546,7 +2575,7 @@ function menu.displayHint(text)
 		standardButtons = { close = true },
 	})
 	menu.contextFrame:setBackground("tut_gradient_hint_01", {
-		color = Helper.color.orange,
+		color = Color["hint_background_orange"],
 		rotationRate = 360,
 		rotationStart = 135,
 		rotationDuration = 1,
@@ -2555,7 +2584,7 @@ function menu.displayHint(text)
 		scaleDuration = 0.5,
 	})
 	menu.contextFrame:setBackground2("solid", {
-		color = Helper.color.black,
+		color = Color["hint_background2_black"],
 		width = width,
 		height = height,
 		initialScaleFactor = 3,
@@ -2563,7 +2592,7 @@ function menu.displayHint(text)
 	})
 
 	menu.contextTable = menu.contextFrame:addTable(1, { tabOrder = 3, x = borderwidth, y = borderwidth, width = width, reserveScrollBar = false })
-	local row = menu.contextTable:addRow(nil, { fixed = true, bgColor = Helper.color.transparent })
+	local row = menu.contextTable:addRow(nil, { fixed = true })
 	row[1]:createText(text, { scaling = false, fontsize = Helper.scaleFont(config.font, config.standardFontSize), x = Helper.scaleX(config.standardTextOffsetX), y = Helper.standardButtons_Size, wordwrap = true })
 
 	menu.contextFrame:display()
@@ -2707,10 +2736,9 @@ function menu.display()
 		width = Helper.viewWidth,
 		height = Helper.viewHeight,
 		standardButtons = {},
-		backgroundID = "solid",
-		backgroundColor = Helper.color.semitransparent,
 		layer = config.mainFrameLayer,
 	})
+	menu.mainFrame:setBackground("solid", { color = Color["frame_background_semitransparent"] })
 
 	local width = math.min(0.25 * Helper.viewWidth, Helper.scaleX(800))
 
@@ -2725,7 +2753,7 @@ function menu.display()
 	menu.categoryTable:setDefaultCellProperties("slidercell", { height = config.standardTextHeight })
 	menu.categoryTable:setDefaultComplexCellProperties("slidercell", "text", { x = config.standardTextOffsetX, fontsize = config.standardFontSize })
 
-	local row = menu.categoryTable:addRow({}, { fixed = true, bgColor = Helper.color.transparent })
+	local row = menu.categoryTable:addRow({}, { fixed = true })
 	row[1]:createButton({ height = config.headerTextHeight }):setIcon(config.backarrow, { x = config.backarrowOffsetX })
 	row[1].handlers.onClick = function () return menu.closeMenu("back") end
 	row[2]:setColSpan(3):createText(ReadText(1001, 9901), config.headerTextProperties)
@@ -2771,7 +2799,7 @@ function menu.display()
 			end
 		end
 		if shown then
-			local row = menu.categoryTable:addRow(category, { bgColor = Helper.color.transparent })
+			local row = menu.categoryTable:addRow(category, {  })
 			row[2]:setColSpan(category.budget and 2 or 3):createText(category.name, config.standardTextProperties)
 			row[2].properties.color = function () return menu.getCategoryColor(category) end
 			if category.mouseovertext then
@@ -2808,7 +2836,7 @@ function menu.display()
 		end
 	end
 
-	local row = menu.categoryTable:addRow(nil, { bgColor = Helper.color.transparent })
+	local row = menu.categoryTable:addRow(nil, {  })
 	row[2]:setColSpan(2):createText("")
 
 	menu.availablecustomgamestarts = {}
@@ -2896,7 +2924,7 @@ function menu.display()
 		end
 	end
 
-	local row = menu.categoryTable:addRow(true, { bgColor = Helper.color.transparent })
+	local row = menu.categoryTable:addRow(true, {  })
 	row[2]:createDropDown(menu.availablecustomgamestarts, { textOverride = ReadText(1001, 9945), optionWidth = width - Helper.scaleY(config.table.arrowColumnWidth) - Helper.borderSize, scaling = false, height = Helper.scaleY(config.standardTextHeight), active = #menu.availablecustomgamestarts > 0 }):setTextProperties({ halign = "center", scaling = true })
 	row[2].handlers.onDropDownConfirmed = function(_, id) return menu.dropdownImport(id) end
 	row[3]:setColSpan(2):createButton({  }):setText(ReadText(1001, 9946), { halign = "center" })
@@ -2904,8 +2932,8 @@ function menu.display()
 
 	menu.exportButtonPos = { x = menu.categoryTable.properties.x + row[1]:getWidth() + row[2]:getWidth() + 2 * Helper.borderSize, y = menu.categoryTable.properties.y + menu.categoryTable:getFullHeight() }
 
-	local row = menu.categoryTable:addRow(true, { bgColor = Helper.color.transparent })
-	row[2]:createButton({ active = function () return menu.creative or (not C.IsGameStartModified(menu.customgamestart)) end, mouseOverText = function () return C.IsGameStartModified(menu.customgamestart) and (menu.creative and ReadText(1026, 9904) or ReadText(1026, 9905)) or "" end }):setText(function () return (menu.creative and C.IsGameStartModified(menu.customgamestart)) and ReadText(1001, 9905) or ReadText(1001, 9902) end, { halign = "center", color = function () return C.IsGameStartModified(menu.customgamestart) and Helper.color.warningorange or Helper.color.white end })
+	local row = menu.categoryTable:addRow(true, {  })
+	row[2]:createButton({ active = function () return menu.creative or (not C.IsGameStartModified(menu.customgamestart)) end, mouseOverText = function () return C.IsGameStartModified(menu.customgamestart) and (menu.creative and ReadText(1026, 9904) or ReadText(1026, 9905)) or "" end }):setText(function () return (menu.creative and C.IsGameStartModified(menu.customgamestart)) and ReadText(1001, 9905) or ReadText(1001, 9902) end, { halign = "center", color = function () return C.IsGameStartModified(menu.customgamestart) and Color["text_warning"] or Color["text_normal"] end })
 	row[2].handlers.onClick = menu.buttonNewGame
 	row[3]:setColSpan(2):createButton({  }):setText(ReadText(1001, 9904), { halign = "center" })
 	row[3].handlers.onClick = menu.buttonReset
@@ -2937,13 +2965,13 @@ function menu.display()
 	menu.budgetTable:setDefaultComplexCellProperties("button", "text", { x = config.standardTextOffsetX, fontsize = config.standardFontSize })
 
 	if hasanybudget then
-		local row = menu.budgetTable:addRow(nil, { fixed = true, bgColor = Helper.color.transparent })
+		local row = menu.budgetTable:addRow(nil, { fixed = true })
 		row[1]:setColSpan(2 * #menu.budgets):createText(ReadText(1001, 9922), config.headerTextProperties)
 		row[1].properties.halign = "center"
 
 		local rows = {}
 		for i = 1, maxdetails + 2 do
-			rows[i] = menu.budgetTable:addRow(true, { fixed = true, bgColor = Helper.color.transparent })
+			rows[i] = menu.budgetTable:addRow(true, { fixed = true })
 		end
 		for i, budget in ipairs(menu.budgets) do
 			if not budget.inactive then
@@ -3024,7 +3052,7 @@ function menu.display()
 		menu.propertyTable:setDefaultCellProperties("slidercell", { height = config.standardTextHeight })
 		menu.propertyTable:setDefaultComplexCellProperties("slidercell", "text", { x = config.standardTextOffsetX, fontsize = config.standardFontSize })
 
-		local row = menu.propertyTable:addRow(nil, { fixed = true, bgColor = Helper.color.transparent })
+		local row = menu.propertyTable:addRow(nil, { fixed = true })
 		row[1]:setColSpan(numCols):createText(menu.category.name, config.headerTextProperties)
 
 		if menu.category.type == "list" then
@@ -3035,7 +3063,6 @@ function menu.display()
 				elseif property.propertyType == "Internal" then
 					property.value = property.get()
 				elseif property.get then
-					DebugError("property: " .. tostring(property.id) .. " propertyType: " .. tostring(property.propertyType))
 					local buf = ffi.new("CustomGameStart" .. property.propertyType .. "PropertyState[1]")
 					property.value = property.get(menu.customgamestart, property.id, buf)
 					property.state = ffi.string(buf[0].state)
@@ -3053,7 +3080,7 @@ function menu.display()
 				end
 
 				if property.name and (property.state ~= "") then
-					local row = menu.propertyTable:addRow(property, { bgColor = Helper.color.transparent })
+					local row = menu.propertyTable:addRow(property, {  })
 					local propertyname = property.name .. (((not menu.creative) and (property.state == "modified")) and (" [" .. ReadText(1001, 9903) .. "]") or "")
 					row[1]:setColSpan(property.budget and 1 or 2):createText(propertyname .. ReadText(1001, 120), config.standardTextProperties)
 					row[1].properties.mouseOverText = property.mouseOverText
@@ -3109,7 +3136,7 @@ function menu.display()
 					elseif property.type == "multiselectslider" then
 						for i, entry in ipairs(property.value) do
 							if i ~= 1 then
-								row = menu.propertyTable:addRow(property, { bgColor = Helper.color.transparent })
+								row = menu.propertyTable:addRow(property, {  })
 							end
 							local name = entry.name
 
@@ -3118,12 +3145,12 @@ function menu.display()
 								name = name .. (budgetsuffix and (" (" .. ConvertIntegerString(GetWareData(entry.id, "avgprice"), true, 3, true) .. budgetsuffix .. ")") or "")
 							end
 
-							row[3]:createSliderCell({ min = 0, max = 10000, start = entry.amount, step = 1, hideMaxValue = true }):setText(name, { color = (entry.amount ~= entry.defaultamount) and Helper.color.changedvalue or Helper.color.white })
+							row[3]:createSliderCell({ min = 0, max = 10000, start = entry.amount, step = 1, hideMaxValue = true }):setText(name, { color = (entry.amount ~= entry.defaultamount) and Color["customgamestart_property_changed"] or Color["text_normal"] })
 							row[3].handlers.onSliderCellChanged = function (_, value) return menu.slidercellMultiSelect(property, entry.id, row.index, value) end
 							row[3].handlers.onSliderCellConfirm = function () menu.refresh = getElapsedTime() end
 						end
 						if #property.value > 0 then
-							row = menu.propertyTable:addRow(property, { bgColor = Helper.color.transparent })
+							row = menu.propertyTable:addRow(property, {  })
 						end
 						local text = property.formatValue(#property.value)
 						row[3]:createButton({  }):setText(text, { halign = "center" })
@@ -3131,35 +3158,35 @@ function menu.display()
 					elseif property.type == "multiselect" then
 						for i, entry in ipairs(property.value) do
 							if i ~= 1 then
-								row = menu.propertyTable:addRow(property, { bgColor = Helper.color.transparent })
+								row = menu.propertyTable:addRow(property, {  })
 							end
 							
 							if property.id == "playerknownspace" then
 								row[3]:setColSpan(1):createButton({ helpOverlayID = "knownsector_expand", helpOverlayText = " ", helpOverlayHighlightOnly = true }):setText(menu.expandedProperty["knownsector_" .. entry.id] and "-" or "+", { halign = "center", x = 0 })
 								row[3].handlers.onClick = function () return menu.buttonExpandProperty("knownsector_" .. entry.id) end
-								row[4]:setColSpan(2):createText(function () return menu.getMultiSelectEntryName(property, entry) end, { color = (not entry.default) and Helper.color.changedvalue or Helper.color.white })
+								row[4]:setColSpan(2):createText(function () return menu.getMultiSelectEntryName(property, entry) end, { color = (not entry.default) and Color["customgamestart_property_changed"] or Color["text_normal"] })
 								if menu.expandedProperty["knownsector_" .. entry.id] then
 									local budgetsuffix = menu.getBudgetSuffix("known")
 									local checked, budgetvalue = menu.getKnownValue("playerknownobjects", entry.id)
-									local row = menu.propertyTable:addRow(property, { bgColor = Helper.color.transparent })
+									local row = menu.propertyTable:addRow(property, {  })
 									row[3]:setColSpan(1)
 									row[4]:setColSpan(1):createText(ReadText(1001, 9937) .. (budgetsuffix and (" (" .. ConvertIntegerString(checked and budgetvalue or 0, true, 3, true) .. budgetsuffix .. ")") or "") .. ReadText(1001, 120), { x = config.standardTextHeight })
 									row[5]:createCheckBox(checked, { mouseOverText = ReadText(1026, 9903) })
 									row[5].handlers.onClick = function (_, checked) return menu.checkboxKnownStations(entry.id, checked) end
 
 									local budgetsuffix = menu.getBudgetSuffix("money")
-									local row = menu.propertyTable:addRow(property, { bgColor = Helper.color.transparent })
+									local row = menu.propertyTable:addRow(property, {  })
 									row[3]:setColSpan(1)
 									row[4]:setColSpan(1):createText(ReadText(1001, 9936) .. (budgetsuffix and (" (" .. ConvertIntegerString(menu.satellites[entry.id] and menu.satellites[entry.id].totalvalue or 0, true, 3, true) .. budgetsuffix .. ")") or "") .. ReadText(1001, 120), { x = config.standardTextHeight })
 									row[5]:createCheckBox(menu.satellites[entry.id] ~= nil)
 									row[5].handlers.onClick = function (_, checked) return menu.checkboxSatelliteCoverage(entry.id, checked) end
 								end
 							else
-								row[3]:createText(function () return menu.getMultiSelectEntryName(property, entry) end, { color = (not entry.default) and Helper.color.changedvalue or Helper.color.white })
+								row[3]:createText(function () return menu.getMultiSelectEntryName(property, entry) end, { color = (not entry.default) and Color["customgamestart_property_changed"] or Color["text_normal"] })
 							end
 						end
 						if #property.value > 0 then
-							row = menu.propertyTable:addRow(property, { bgColor = Helper.color.transparent })
+							row = menu.propertyTable:addRow(property, {  })
 						end
 						local text = property.formatValue(#property.value)
 						row[3]:createButton({  }):setText(text, { halign = "center" })
@@ -3245,7 +3272,7 @@ function menu.display()
 			})
 			if menu.category.id == "playerresearch" then
 				for col = 2, menu.flowchartCols, 2 do
-					menu.flowchart:setColBackgroundColor(col, Helper.defaultSimpleBackgroundColor)
+					menu.flowchart:setColBackgroundColor(col, Color["row_title"])
 				end
 			end
 
@@ -3268,11 +3295,11 @@ function menu.display()
 							end
 							local color
 							if not techentry.completed then
-								color = Helper.color.grey
+								color = Color["lso_node_inactive"]
 							end
 							techentry.node = menu.flowchart:addNode(rowCounter + j - 1, col, { data = { mainIdx = i, col = col, techdata = techentry }, expandHandler = menu.expandNodeResearch }, { shape = "stadium", value = value, max = max }):setText(GetWareData(techentry.tech, "name"))
 							techentry.node.properties.outlineColor = color
-							techentry.node.properties.text.color = (techentry.completed == techentry.origCompleted) and color or Helper.color.changedvalue
+							techentry.node.properties.text.color = (techentry.completed == techentry.origCompleted) and color or Color["customgamestart_property_changed"]
 
 							techentry.node.handlers.onExpanded = menu.onFlowchartNodeExpanded
 							techentry.node.handlers.onCollapsed = menu.onFlowchartNodeCollapsed
@@ -3287,8 +3314,8 @@ function menu.display()
 									-- print("adding edge from node " .. previousentry.tech .. " to " .. techentry.tech)
 									local edge = previousentry.node:addEdgeTo(techentry.node)
 									if not previousentry.completed then
-										edge.properties.sourceSlotColor = Helper.color.grey
-										edge.properties.color = Helper.color.grey
+										edge.properties.sourceSlotColor = Color["lso_node_inactive"]
+										edge.properties.color = Color["lso_node_inactive"]
 									end
 									edge.properties.destSlotColor = color
 								end
@@ -3312,7 +3339,7 @@ function menu.display()
 				end
 				-- Disabled npc / npc relation changes for now
 				local factionnode = menu.flowchart:addNode(1, 1, { data = {}, --[[expandHandler = menu.expandNodeCurrentFaction]] }, { shape = "stadium", value = 1, max = 1, expandedFrameLayer = 0 }):setText(name)
-				factionnode.properties.text.color = (menu.currentfaction.id == "player") and Helper.color.green or nil
+				factionnode.properties.text.color = (menu.currentfaction.id == "player") and Color["text_player"] or nil
 
 				-- factionnode.handlers.onExpanded = menu.onFlowchartNodeExpanded
 				-- factionnode.handlers.onCollapsed = menu.onFlowchartNodeCollapsed
@@ -3346,10 +3373,10 @@ function menu.display()
 						local relationFunction = function () return (menu.category.value and menu.category.value[menu.currentfaction.id]) and menu.category.value[menu.currentfaction.id][entry.id] or entry.relation end
 
 						local node = menu.flowchart:addNode(row, 3, { data = { faction = entry, relation = relation, relationFunction = relationFunction, origRelation = entry.origRelation }, expandHandler = menu.expandNodeFaction }, { shape = "stadium", value = function () return relationFunction() + 30 end, max = 60 }):setText(name):setStatusText(relationFunction)
-						node.properties.valueColor = (relation <= -10) and Helper.color.red or nil
-						node.properties.outlineColor = (relation <= -10) and Helper.color.red or nil
-						node.properties.text.color = (entry.id == "player") and Helper.color.green or nil
-						node.properties.statustext.color = (relation ~= entry.origRelation) and Helper.color.changedvalue or nil
+						node.properties.valueColor = (relation <= -10) and Color["text_enemy"] or nil
+						node.properties.outlineColor = (relation <= -10) and Color["text_enemy"] or nil
+						node.properties.text.color = (entry.id == "player") and Color["text_player"] or nil
+						node.properties.statustext.color = (relation ~= entry.origRelation) and Color["customgamestart_property_changed"] or nil
 
 						node.handlers.onExpanded = menu.onFlowchartNodeExpanded
 						node.handlers.onCollapsed = menu.onFlowchartNodeCollapsed
@@ -3361,8 +3388,8 @@ function menu.display()
 
 						local edge = factionnode:addEdgeTo(node)
 						if relation <= -10 then
-							edge.properties.destSlotColor = Helper.color.red
-							edge.properties.color = Helper.color.red
+							edge.properties.destSlotColor = Color["text_enemy"]
+							edge.properties.color = Color["text_enemy"]
 						end
 					end
 				end
@@ -3543,14 +3570,14 @@ function menu.display()
 				table.sort(menu.constructionplans, function (a, b) return a.text < b.text end)
 				table.sort(menu.hqconstructionplans, function (a, b) return a.text < b.text end)
 
-				local row = menu.propertyTable:addRow(nil, { bgColor = Helper.color.transparent })
+				local row = menu.propertyTable:addRow(nil, {  })
 				row[1]:setColSpan(4):createText(ReadText(1001, 4), config.subHeaderTextProperties)
 
 				for _, entry in ipairs(stationdata) do
 					menu.displayPlayerPropertyEntry(menu.propertyTable, entry, 0)
 				end
 
-				local row = menu.propertyTable:addRow(true, { bgColor = Helper.color.transparent })
+				local row = menu.propertyTable:addRow(true, {  })
 				row[1]:setColSpan(4):createDropDown(menu.constructionplans, { textOverride = ReadText(1001, 9921), text2Override = " " })
 				row[1].handlers.onDropDownConfirmed = function(_, id) return menu.dropdownPlayerPropertyAddStation("station" .. #stationdata, id, nil, true) end
 				if row.index == menu.selectedRows.propertyTable then
@@ -3559,20 +3586,20 @@ function menu.display()
 
 				menu.propertyTable:addEmptyRow(config.standardTextHeight / 2)
 
-				local row = menu.propertyTable:addRow(nil, { bgColor = Helper.color.darkgrey })
+				local row = menu.propertyTable:addRow(nil, { bgColor = Color["row_background_unselectable"] })
 				row[1]:setColSpan(4):createText("", { fontsize = 1, minRowHeight = 3 })
 
 				menu.propertyTable:addEmptyRow(config.standardTextHeight / 2)
 
 				--fleets
-				local row = menu.propertyTable:addRow(nil, { bgColor = Helper.color.transparent })
+				local row = menu.propertyTable:addRow(nil, {  })
 				row[1]:setColSpan(4):createText(ReadText(1001, 8326), config.subHeaderTextProperties)
 
 				for _, entry in ipairs(fleetdata) do
 					menu.displayPlayerPropertyEntry(menu.propertyTable, entry, 0)
 				end
 
-				local row = menu.propertyTable:addRow(true, { bgColor = Helper.color.transparent })
+				local row = menu.propertyTable:addRow(true, {  })
 				row[1]:setColSpan(4):createButton({  }):setText(ReadText(1001, 9918))
 				row[1].handlers.onClick = function () return menu.openPlayerPropertyShipConfig(row.index, "fleet" .. #fleetdata) end
 				if row.index == menu.selectedRows.propertyTable then
@@ -3618,7 +3645,7 @@ function menu.display()
 
 				local lockedStories = menu.getLockedStories()
 
-				local row = menu.propertyTable:addRow(true, { bgColor = Helper.color.transparent })
+				local row = menu.propertyTable:addRow(true, {  })
 				row[1]:createCheckBox(menu.hidestoryspoilers)
 				row[1].handlers.onClick = function (_, checked) menu.hidestoryspoilers = checked; menu.refreshMenu() end
 				row[2]:setColSpan(3):createText(ReadText(1001, 9933), config.standardTextProperties)
@@ -3629,10 +3656,10 @@ function menu.display()
 					local groupinfo = C.GetCustomGameStartBudgetGroupInfo(menu.customgamestart, groupid)
 					if (not groupinfo.isresearch) and menu.stories[groupid] then
 						local entry = menu.stories[groupid]
-						local row = menu.propertyTable:addRow(true, { bgColor = Helper.color.transparent })
+						local row = menu.propertyTable:addRow(true, {  })
 						row[1]:setColSpan(2):createText(ffi.string(groupinfo.name), config.standardTextProperties)
 						row[1].properties.mouseOverText = ffi.string(groupinfo.description)
-						row[1].properties.color = (entry.currentstory ~= entry.defaultstory) and Helper.color.changedvalue or nil
+						row[1].properties.color = (entry.currentstory ~= entry.defaultstory) and Color["customgamestart_property_changed"] or nil
 
 						local startoption = entry.currentstory
 
@@ -3664,7 +3691,7 @@ function menu.display()
 											missingdependencies = missingdependencies .. "\n- " .. menu.storiesbyid[dependency].name
 										end
 										if not found then
-											mouseovertext = mouseovertext .. "\n\n" .. ReadText(1001, 9932) .. ReadText(1001, 120) .. "\27R" .. missingdependencies .. "\27X"
+											mouseovertext = mouseovertext .. "\n\n" .. ReadText(1001, 9932) .. ReadText(1001, 120) .. ColorText["text_error"] .. missingdependencies .. "\27X"
 											active = false
 										end
 									end
@@ -3901,7 +3928,7 @@ function menu.budgetHeaderName(budgetid)
 	menu.updateBudgets()
 	for i, budget in ipairs(menu.budgets) do
 		if budget.id == budgetid then
-			return Helper.convertColorToText(budget.color) .. "\27[" .. budget.icon .. "]\27X " .. (menu.isBudgetOverBudget(budget) and Helper.convertColorToText(Helper.color.warningorange) or "") .. budget.name
+			return Helper.convertColorToText(budget.color) .. "\27[" .. budget.icon .. "]\27X " .. (menu.isBudgetOverBudget(budget) and ColorText["text_warning"] or "") .. budget.name
 		end
 	end
 	return ""
@@ -3912,7 +3939,7 @@ function menu.budgetHeaderText(budgetid)
 	for i, budget in ipairs(menu.budgets) do
 		if budget.id == budgetid then
 			if not budget.type then
-				return (menu.isBudgetOverBudget(budget) and Helper.convertColorToText(Helper.color.warningorange) or "") .. ConvertIntegerString(budget.value, true, 3, true) .. "\27X / " .. ConvertIntegerString(budget.limit, true, 3, true) .. budget.suffix
+				return (menu.isBudgetOverBudget(budget) and ColorText["text_warning"] or "") .. ConvertIntegerString(budget.value, true, 3, true) .. "\27X / " .. ConvertIntegerString(budget.limit, true, 3, true) .. budget.suffix
 			end
 		end
 	end
@@ -3959,22 +3986,22 @@ function menu.isBudgetOverBudget(budget)
 end
 
 function menu.getCategoryColor(category)
-	local color = Helper.color.white
+	local color = Color["text_normal"]
 	if category.budget then
 		if type(category.budget) == "table" then
 			for _, categorybudget in ipairs(category.budget) do
 				if menu.isBudgetIDOverBudget(categorybudget) then
-					color = Helper.color.warningorange
+					color = Color["text_warning"]
 					break
 				end
 			end
 		else
 			if menu.isBudgetIDOverBudget(category.budget) then
-				color = Helper.color.warningorange
+				color = Color["text_warning"]
 			end
 		end
 	end
-	return ((not category.active) or category.active()) and color or Helper.color.grey
+	return ((not category.active) or category.active()) and color or Color["text_inactive"]
 end
 
 function menu.setStationManager(property, entryid, manager)
@@ -3995,7 +4022,7 @@ function menu.setStationManager(property, entryid, manager)
 end
 
 function menu.displayPlayerPropertyEntry(ftable, entry, iteration)
-	local row = ftable:addRow(entry.id, { bgColor = Helper.color.transparent })
+	local row = ftable:addRow(entry.id, {  })
 	row[1]:createButton({ helpOverlayID = "property_expand", helpOverlayText = " ", helpOverlayHighlightOnly = true }):setText(menu.expandedProperty[entry.id] and "-" or "+", { halign = "center", x = 0 })
 	row[1].handlers.onClick = function () return menu.buttonExpandProperty(entry.id) end
 	local isHQentry = string.find(entry.id, "player_HQ_%d+", 1)
@@ -4022,14 +4049,14 @@ function menu.displayPlayerPropertyEntry(ftable, entry, iteration)
 	row[4].handlers.onClick = function () return menu.buttonRemovePlayerProperty(entry.id)  end
 	if menu.expandedProperty[entry.id] then
 		-- name
-		local row = ftable:addRow(entry.id, { bgColor = Helper.color.transparent })
+		local row = ftable:addRow(entry.id, {  })
 		row[2]:createText(ReadText(1021, 11003) .. ReadText(1001, 120), config.standardTextProperties)
 		row[2].properties.x = row[2].properties.x + (iteration + 1) * config.standardTextHeight
 		row[3]:setColSpan(2):createEditBox({ description = ReadText(1021, 11003) }):setText(entry.name, { fontsize = config.standardFontSize })
 		row[3].handlers.onTextChanged = function(_, text) return menu.editboxPlayerPropertyName(entry.id, text) end
 		row[3].handlers.onEditBoxDeactivated = function () menu.refresh = getElapsedTime() end
 		-- sector
-		local row = ftable:addRow(entry.id, { bgColor = Helper.color.transparent })
+		local row = ftable:addRow(entry.id, {  })
 		row[2]:createText(ReadText(1001, 11284) .. ReadText(1001, 120), config.standardTextProperties)
 		row[2].properties.x = row[2].properties.x + (iteration + 1) * config.standardTextHeight
 		local buf = ffi.new("CustomGameStartStringPropertyState[1]")
@@ -4039,7 +4066,7 @@ function menu.displayPlayerPropertyEntry(ftable, entry, iteration)
 		row[3].handlers.onDropDownConfirmed = function(_, id) return menu.dropdownPlayerPropertySetSector(entry.id, id, entry.offset) end
 		-- count
 		if entry.type == "ship" then
-			local row = ftable:addRow(entry.id, { bgColor = Helper.color.transparent })
+			local row = ftable:addRow(entry.id, {  })
 			row[2]:createText(ReadText(1001, 1202) .. ReadText(1001, 120), config.standardTextProperties)
 			row[2].properties.x = row[2].properties.x + (iteration + 1) * config.standardTextHeight
 			local options = {}
@@ -4054,14 +4081,14 @@ function menu.displayPlayerPropertyEntry(ftable, entry, iteration)
 		end
 		-- price
 		if showmoney then
-			local row = ftable:addRow(entry.id, { bgColor = Helper.color.transparent })
+			local row = ftable:addRow(entry.id, {  })
 			row[2]:createText(ReadText(1001, 2808) .. ReadText(1001, 120), config.standardTextProperties)
 			row[2].properties.x = row[2].properties.x + (iteration + 1) * config.standardTextHeight
 			row[3]:setColSpan(2):createText(ConvertMoneyString(entry.budgetvalue["money"], false, true, 0, true, false) .. " " .. ReadText(1001, 101), config.standardTextProperties)
 		end
 		-- crew
 		if (entry.type == "ship") and showpeople then
-			local row = ftable:addRow(entry.id, { bgColor = Helper.color.transparent })
+			local row = ftable:addRow(entry.id, {  })
 			row[2]:createText(ReadText(1001, 80) .. ReadText(1001, 120), config.standardTextProperties)
 			row[2].properties.x = row[2].properties.x + (iteration + 1) * config.standardTextHeight
 			row[3]:setColSpan(2):createText(ConvertIntegerString(entry.budgetvalue["people"], true, 0, true) .. menu.getBudgetSuffix("people"), config.standardTextProperties)
@@ -4086,7 +4113,7 @@ function menu.displayPlayerPropertyEntry(ftable, entry, iteration)
 			end
 
 			local budgetsuffix = menu.getBudgetSuffix("people")
-			local row = ftable:addRow(nil, { bgColor = Helper.color.transparent })
+			local row = ftable:addRow(nil, {  })
 			row[2]:createText(ReadText(20208, 30301) .. ReadText(1001, 120), config.standardTextProperties)
 			row[2].properties.x = row[2].properties.x + (iteration + 1) * config.standardTextHeight
 			row[3]:setColSpan(2):createText(budgetsuffix and (ConvertIntegerString(value, true, 0, true)  .. budgetsuffix) or "", config.standardTextProperties)
@@ -4105,7 +4132,7 @@ function menu.displayPlayerPropertyEntry(ftable, entry, iteration)
 			table.sort(raceoptions, function (a, b) return a.text < b.text end)
 			table.insert(raceoptions, 1, { id = "any", text = ReadText(1001, 9930), icon = "", displayremoveoption = false })
 
-			local row = ftable:addRow(entry.id, { bgColor = Helper.color.transparent })
+			local row = ftable:addRow(entry.id, {  })
 			row[2]:createText(ReadText(1001, 2428) .. ReadText(1001, 120), config.standardTextProperties)
 			row[2].properties.x = row[2].properties.x + (iteration + 2) * config.standardTextHeight
 			row[3]:setColSpan(2):createDropDown(raceoptions, { startOption = (manager.race and (manager.race ~= "")) and manager.race or "any", height = config.standardTextHeight })
@@ -4117,18 +4144,18 @@ function menu.displayPlayerPropertyEntry(ftable, entry, iteration)
 			for i = 0, numskills - 1 do
 				local id = ffi.string(buf[i].id)
 
-				local row = ftable:addRow(entry.id, { bgColor = Helper.color.transparent })
+				local row = ftable:addRow(entry.id, {  })
 				if i == 0 then
 					row[2]:createText(ReadText(1001, 1918) .. ReadText(1001, 120), config.standardTextProperties)
 					row[2].properties.x = row[2].properties.x + (iteration + 2) * config.standardTextHeight
 				end
-				row[3]:setColSpan(2):createSliderCell({ height = config.standardTextHeight, valueColor = Helper.color.slidervalue, min = 0, max = 15, start = manager.skills and manager.skills[id] or 0, step = 1 }):setText(ReadText(1013, buf[i].textid))
+				row[3]:setColSpan(2):createSliderCell({ height = config.standardTextHeight, valueColor = Color["slider_value"], min = 0, max = 15, start = manager.skills and manager.skills[id] or 0, step = 1 }):setText(ReadText(1013, buf[i].textid))
 				row[3].handlers.onSliderCellChanged = function(_, newamount) if manager.skills then manager.skills[id] = newamount else manager.skills = { [id] = newamount } end; menu.setStationManager("playerproperty", entry.id, manager) end
 				row[3].handlers.onSliderCellConfirm = menu.refreshMenu
 			end
 		end
 		-- subordinates
-		local row = ftable:addRow(nil, { bgColor = Helper.color.transparent })
+		local row = ftable:addRow(nil, {  })
 		row[2]:createText(ReadText(1001, 1503) .. ReadText(1001, 120), config.standardTextProperties)
 		row[2].properties.x = row[2].properties.x + (iteration + 1) * config.standardTextHeight
 		row[3]:setColSpan(2):createText((count == 1) and ReadText(1001, 7897) or string.format(ReadText(1001, 7898), count), config.standardTextProperties)
@@ -4141,7 +4168,7 @@ function menu.displayPlayerPropertyEntry(ftable, entry, iteration)
 			end
 		end
 
-		local row = ftable:addRow(true, { bgColor = Helper.color.transparent })
+		local row = ftable:addRow(true, {  })
 		row[2]:setColSpan(3):createButton({ x = (iteration + 1) * config.standardTextHeight }):setText(ReadText(1001, 9920))
 		row[2].handlers.onClick = function () return menu.openPlayerPropertyShipConfig(row.index, string.match(entry.id, "(.*)_%d+") .. "_sub" .. subcount, nil, entry.id) end
 
@@ -4182,7 +4209,7 @@ function menu.propertyColor(property)
 			end
 		end
 	end
-	return modified and Helper.color.changedvalue or (((property.active == nil) or property.active()) and Helper.color.white or Helper.color.grey)
+	return modified and Color["customgamestart_property_changed"] or (((property.active == nil) or property.active()) and Color["text_normal"] or Color["text_inactive"])
 end
 
 function menu.findTech(ftable, tech)
@@ -4224,10 +4251,10 @@ end
 function menu.expandNodeResearch(_, ftable, _, data)
 	local description, researchtime = GetWareData(data.techdata.tech, "description", "researchtime")
 	-- description
-	local row = ftable:addRow(nil, { fixed = true, bgColor = Helper.color.transparent })
+	local row = ftable:addRow(nil, { fixed = true })
 	row[1]:setColSpan(2):createText(description .. "\n ", { wordwrap = true })
 	-- select button
-	local row = ftable:addRow(true, { fixed = true, bgColor = Helper.color.transparent })
+	local row = ftable:addRow(true, { fixed = true })
 
 	local storyentry = menu.researchstoriesbyid[data.techdata.tech]
 	row[1]:setColSpan(2):createButton({ mouseOverText = mouseovertext }):setText(data.techdata.completed and ReadText(1001, 9909) or ReadText(1001, 9908)):setText2(((storyentry and (storyentry.budgetvalue == 0)) or menu.creative) and ("[" .. ReadText(1001, 9903) .. "]") or "", { halign = "right" })
@@ -4236,10 +4263,10 @@ end
 
 function menu.expandNodeCurrentFaction(_, ftable, _, data)
 	-- ui range
-	local row = ftable:addRow(true, { fixed = true, bgColor = Helper.color.transparent })
+	local row = ftable:addRow(true, { fixed = true })
 	row[1]:setColSpan(2):createText(ReadText(1001, 9911) .. ReadText(1001, 120))
 	-- faction selection
-	local row = ftable:addRow(true, { fixed = true, bgColor = Helper.color.transparent })
+	local row = ftable:addRow(true, { fixed = true })
 
 	local options = {}
 	local currentOption = menu.currentfaction.id
@@ -4273,15 +4300,15 @@ function menu.expandNodeFaction(_, ftable, _, data)
 	ftable:setColWidth(1, config.standardTextHeight)
 
 	-- ui range
-	local row = ftable:addRow(true, { fixed = true, bgColor = Helper.color.transparent })
+	local row = ftable:addRow(true, { fixed = true })
 	row[1]:setColSpan(2):createText(ReadText(1001, 9910) .. ReadText(1001, 120))
 	-- slider
-	local row = ftable:addRow(true, { fixed = true, bgColor = Helper.color.transparent })
+	local row = ftable:addRow(true, { fixed = true })
 	row[1]:setColSpan(2):createSliderCell({ min = -30, max = 30, start = data.relation, step = 1, suffix = "", hideMaxValue = true, height = config.standardTextHeight })
 	row[1].handlers.onSliderCellChanged = function (_, value) return menu.slidercellFaction(data.faction, value) end
 	row[1].handlers.onSliderCellConfirm = function () menu.saveFlowchartState("flowchart", menu.flowchart); menu.restoreNodeFaction = data.faction.id; menu.refresh = getElapsedTime() end
 	-- relation description
-	local row = ftable:addRow(true, { fixed = true, bgColor = Helper.color.transparent })
+	local row = ftable:addRow(true, { fixed = true })
 	row[1]:setColSpan(2):createText(function () return menu.relationText(data.relationFunction(), ftable.properties.width) end, { wordwrap = true })
 	-- budget
 	local budgetsuffix = menu.getBudgetSuffix("relations")
@@ -4291,7 +4318,7 @@ function menu.expandNodeFaction(_, ftable, _, data)
 		relation.otherfactionid = Helper.ffiNewString(data.faction.id)
 		relation.relation = data.relation
 
-		local row = ftable:addRow(nil, { fixed = true, bgColor = Helper.color.transparent })
+		local row = ftable:addRow(nil, { fixed = true })
 		row[1]:setColSpan(2):createText(((data.relation ~= data.origRelation) and ConvertIntegerString(tonumber(C.GetCustomGameStartRelationsPropertyBudgetValue(menu.customgamestart, menu.category.id, relation)), true, 3, true) or 0) .. budgetsuffix)
 	end
 	-- known faction
@@ -4302,7 +4329,7 @@ function menu.expandNodeFaction(_, ftable, _, data)
 		end
 	end
 	if (menu.currentfaction.id == "player") and knownentry and (knownentry.state ~= "") then
-		local row = ftable:addRow(true, { fixed = true, bgColor = Helper.color.transparent })
+		local row = ftable:addRow(true, { fixed = true })
 		local checked = menu.getKnownValue("playerknownfactions", data.faction.id)
 		row[1]:createCheckBox(checked)
 		row[1].handlers.onClick = function (_, checked) return menu.checkboxKnownFaction(data.faction.id, checked) end
@@ -4317,7 +4344,7 @@ function menu.expandNodeFaction(_, ftable, _, data)
 			end
 		end
 
-		row[2]:createText(ReadText(1001, 9912) .. budgetinfo, { color = function () return menu.isKnownValueItemChanged("playerknownfactions", data.faction.id) and Helper.color.changedvalue or Helper.color.white end })
+		row[2]:createText(ReadText(1001, 9912) .. budgetinfo, { color = function () return menu.isKnownValueItemChanged("playerknownfactions", data.faction.id) and Color["customgamestart_property_changed"] or Color["text_normal"] end })
 	end
 end
 
@@ -4904,7 +4931,7 @@ function menu.displayInit()
 
 	local ftable = menu.mainFrame:addTable(1, { tabOrder = 0, width = math.floor(Helper.viewWidth / 2), x = math.floor(Helper.viewWidth / 4), y = math.floor(Helper.viewHeight / 2) })
 
-	local row = ftable:addRow(false, { fixed = true, bgColor = Helper.color.transparent })
+	local row = ftable:addRow(false, { fixed = true })
 	row[1]:createText(ReadText(1001, 7230), { halign = "center", font = config.fontBold, fontsize = config.headerFontSize, x = 0, y = 0 })
 
 	ftable.properties.y = math.floor((Helper.viewHeight - ftable:getVisibleHeight()) / 2)

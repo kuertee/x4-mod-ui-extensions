@@ -108,12 +108,12 @@ ffi.cdef[[
 		uint32_t amount;
 	} UIMacroCount;
 	typedef struct {
-		const float x;
-		const float y;
-		const float z;
-		const float yaw;
-		const float pitch;
-		const float roll;
+		float x;
+		float y;
+		float z;
+		float yaw;
+		float pitch;
+		float roll;
 	} UIPosRot;
 	typedef struct {
 		const char* ware;
@@ -258,6 +258,7 @@ ffi.cdef[[
 	void SetConstructionMapBuildAngleStep(UniverseID holomapid, float angle);
 	void SetConstructionMapCollisionDetection(UniverseID holomapid, bool value);
 	void SetConstructionMapRenderSectorBackground(UniverseID holomapid, bool value);
+	void SetConstructionMapRenderTransformGizmo(UniverseID holomapid, bool value);
 	void SetConstructionSequenceFromConstructionMap(UniverseID containerid, UniverseID holomapid);
 	void SetContainerGlobalPriceFactor(UniverseID containerid, float value);
 	void SetContainerTradeRule(UniverseID containerid, TradeRuleID id, const char* ruletype, const char* wareid, bool value);
@@ -268,7 +269,7 @@ ffi.cdef[[
 	void SetupConstructionSequenceModulesCache(UniverseID holomapid, UniverseID defensibleid, bool enable);
 	void ShowConstructionMap(UniverseID holomapid, UniverseID stationid, const char* constructionplanid, bool restore);
 	void ShowObjectConfigurationMap2(UniverseID holomapid, UniverseID defensibleid, UniverseID moduleid, const char* macroname, bool ismodule, UILoadout uiloadout, size_t cp_idx);
-	bool ShuffleMapConstructionPlan(UniverseID holomapid, bool checkonly);
+	bool ShuffleMapConstructionPlan2(UniverseID holomapid, bool checkonly, const char* raceid);
 	void StartPanMap(UniverseID holomapid);
 	void StartRotateMap(UniverseID holomapid);
 	bool StopPanMap(UniverseID holomapid);
@@ -300,6 +301,7 @@ local menu = {
 	usedLimitedModules = {},
 	currentConstructions = {},
 	dirtyreservations = {},
+	shuffleconnectionrace = "all",
 }
 
 local config = {
@@ -307,15 +309,15 @@ local config = {
 	infoLayer = 4,
 	contextLayer = 2,
 	leftBar = {
-		{ name = ReadText(1001, 2421),	icon = "stationbuildst_production",		mode = "moduletypes_production",	helpOverlayID = "stationbuildst_production",	helpOverlayText = ReadText(1028, 3250) },
-		{ name = ReadText(1001, 2439),	icon = "stationbuildst_buildmodule",	mode = "moduletypes_build",			helpOverlayID = "stationbuildst_buildmodule",	helpOverlayText = ReadText(1028, 3251) },
-		{ name = ReadText(1001, 2422),	icon = "stationbuildst_storage",		mode = "moduletypes_storage",		helpOverlayID = "stationbuildst_storage",		helpOverlayText = ReadText(1028, 3252) },
-		{ name = ReadText(1001, 2451),	icon = "stationbuildst_habitation",		mode = "moduletypes_habitation",	helpOverlayID = "stationbuildst_habitation",	helpOverlayText = ReadText(1028, 3253) },
-		{ name = ReadText(1001, 9620),	icon = "stationbuildst_welfare",		mode = "moduletypes_welfare",		helpOverlayID = "stationbuildst_welfare",		helpOverlayText = ReadText(1028, 3258) },
-		{ name = ReadText(1001, 2452),	icon = "stationbuildst_dock",			mode = "moduletypes_dock",			helpOverlayID = "stationbuildst_dock",			helpOverlayText = ReadText(1028, 3254) },
-		{ name = ReadText(1001, 2424),	icon = "stationbuildst_defense",		mode = "moduletypes_defence",		helpOverlayID = "stationbuildst_defense",		helpOverlayText = ReadText(1028, 3255) },
-		{ name = ReadText(1001, 9621),	icon = "stationbuildst_processing",		mode = "moduletypes_processing",	helpOverlayID = "stationbuildst_processing",	helpOverlayText = ReadText(1028, 3259) },
-		{ name = ReadText(1001, 2453),	icon = "stationbuildst_other",			mode = "moduletypes_other",			helpOverlayID = "stationbuildst_other",			helpOverlayText = ReadText(1028, 3256) },
+		{ name = ReadText(1001, 2421),	icon = "stationbuildst_production",		mode = "moduletypes_production",	helpOverlayID = "stationbuildst_production",	helpOverlayText = ReadText(1028, 3250)  },
+		{ name = ReadText(1001, 2439),	icon = "stationbuildst_buildmodule",	mode = "moduletypes_build",			helpOverlayID = "stationbuildst_buildmodule",	helpOverlayText = ReadText(1028, 3251)  },
+		{ name = ReadText(1001, 2422),	icon = "stationbuildst_storage",		mode = "moduletypes_storage",		helpOverlayID = "stationbuildst_storage",		helpOverlayText = ReadText(1028, 3252)  },
+		{ name = ReadText(1001, 2451),	icon = "stationbuildst_habitation",		mode = "moduletypes_habitation",	helpOverlayID = "stationbuildst_habitation",	helpOverlayText = ReadText(1028, 3253)  },
+		{ name = ReadText(1001, 9620),	icon = "stationbuildst_welfare",		mode = "moduletypes_welfare",		helpOverlayID = "stationbuildst_welfare",		helpOverlayText = ReadText(1028, 3258)  },
+		{ name = ReadText(1001, 2452),	icon = "stationbuildst_dock",			mode = "moduletypes_dock",			helpOverlayID = "stationbuildst_dock",			helpOverlayText = ReadText(1028, 3254)  },
+		{ name = ReadText(1001, 2424),	icon = "stationbuildst_defense",		mode = "moduletypes_defence",		helpOverlayID = "stationbuildst_defense",		helpOverlayText = ReadText(1028, 3255)  },
+		{ name = ReadText(1001, 9621),	icon = "stationbuildst_processing",		mode = "moduletypes_processing",	helpOverlayID = "stationbuildst_processing",	helpOverlayText = ReadText(1028, 3259)  },
+		{ name = ReadText(1001, 2453),	icon = "stationbuildst_other",			mode = "moduletypes_other",			helpOverlayID = "stationbuildst_other",			helpOverlayText = ReadText(1028, 3256)  },
 		{ name = ReadText(1001, 2454),	icon = "stationbuildst_venture",		mode = "moduletypes_venture",		helpOverlayID = "stationbuildst_venture",		helpOverlayText = ReadText(1028, 3257),		condition = C.IsVentureSeasonSupported },
 	},
 	leftBarLoadout = {
@@ -330,7 +332,7 @@ local config = {
 		halign = "center",
 		font = Helper.standardFont,
 		fontsize = Helper.scaleFont(Helper.standardFont, Helper.standardFontSize),
-		color = Helper.color.white,
+		color = Color["text_normal"],
 		x = 0,
 		y = 0
 	},
@@ -359,7 +361,7 @@ local config = {
 		["small"]		= 4,
 	},
 	compatibilityFontSize = 5,
-	mapfilterversion = 1,
+	mapfilterversion = 2,
 	discreteAngleSlider = {
 		min = 5,
 		max = 180,
@@ -373,6 +375,7 @@ __CORE_DETAILMONITOR_STATIONBUILD = __CORE_DETAILMONITOR_STATIONBUILD or {
 	["discreteanglestep"] = 15.,
 	["moduleoverlap"] = false,
 	["environment"] = true,
+	["gizmo"] = true,
 }
 
 -- kuertee start:
@@ -542,6 +545,20 @@ function menu.buttonLeftBarLoadout(mode, row)
 	menu.displayMenu()
 end
 
+function menu.buttonLeftBarColor(mode)
+	if menu.loadoutMode then
+		return Color["icon_normal"]
+	else
+		local modules = menu.modules[mode] or {}
+		for i, module in ipairs(modules) do
+			if (#menu.modulesearchtext == 0) or menu.filterModuleByText(module, menu.modulesearchtext) then
+				return Color["icon_normal"]
+			end
+		end
+	end
+	return Color["icon_inactive"]
+end
+
 function menu.deactivateModulesMode()
 	menu.prevModulesMode = menu.modulesMode
 	PlaySound("ui_negative_back")
@@ -603,6 +620,7 @@ function menu.buttonSelectSlot(slot, row, col)
 end
 
 function menu.buttonSelectGroupUpgrade(type, group, macro, row, col, keepcontext)
+	local oldcontextmode = Helper.tableCopy(menu.contextMode)
 	if not keepcontext then
 		menu.closeContextMenu()
 	end
@@ -634,7 +652,7 @@ function menu.buttonSelectGroupUpgrade(type, group, macro, row, col, keepcontext
 	if keepcontext then
 		menu.topRows.context = GetTopRow(menu.contexttable)
 		menu.selectedRows.context = keepcontext
-		menu.displayContextMenu()
+		menu.displayContextFrame("slot", oldcontextmode.width, oldcontextmode.x, oldcontextmode.y)
 	end
 end
 
@@ -1247,9 +1265,8 @@ function menu.editboxNameUpdateText(_, text, textchanged)
 		SetComponentName(ConvertStringToLuaID(tostring(menu.container)), name)
 	end
 	if text == "" then
-		Helper.removeEditBoxScripts(menu, menu.titlebartable, 1, 1)
-		SetCellContent(menu.titlebartable, Helper.createEditBox(Helper.createTextInfo(ffi.string(C.GetComponentName(menu.container)), "center", Helper.headerRow1Font, Helper.scaleFont(Helper.headerRow1Font, Helper.headerRow1FontSize), 255, 255, 255, 100), true, 0, 0, 0, 0, nil, nil, false), 1, 1)
-		Helper.setEditBoxScript(menu, nil, menu.titlebartable, 1, 1, menu.editboxNameUpdateText)
+		local desc = Helper.createEditBox(Helper.createTextInfo(ffi.string(C.GetComponentName(menu.container)), "center", Helper.headerRow1Font, Helper.scaleFont(Helper.headerRow1Font, Helper.headerRow1FontSize), 255, 255, 255, 100), true, 0, 0, 0, 0, nil, nil, false)
+		Helper.setCellContent(menu, menu.titlebartable, desc, 1, 1, nil, "editbox", nil, menu.editboxNameUpdateText)
 	end
 end
 
@@ -1264,6 +1281,7 @@ function menu.editboxLoadoutNameUpdateText(_, text)
 end
 
 function menu.slidercellSelectAmount(type, group, row, keepcontext, value)
+	local oldcontextmode = Helper.tableCopy(menu.contextMode)
 	if not keepcontext then
 		menu.closeContextMenu()
 	end
@@ -1285,7 +1303,7 @@ function menu.slidercellSelectAmount(type, group, row, keepcontext, value)
 	if keepcontext then
 		menu.topRows.context = GetTopRow(menu.contexttable)
 		menu.selectedRows.context = keepcontext
-		menu.displayContextMenu()
+		menu.displayContextFrame("slot", oldcontextmode.width, oldcontextmode.x, oldcontextmode.y)
 	end
 end
 
@@ -1489,8 +1507,8 @@ function menu.onShowMenu(state)
 		y = math.floor((menu.titleData.height - Helper.scaleY(Helper.headerRow1Height)) / 2 + Helper.scaleY(Helper.headerRow1Offsety)),
 		minRowHeight = menu.titleData.height,
 		scaling = false,
-		cellBGColor = { r = 0, g = 0, b = 0, a = 0 },
-		titleColor = Helper.defaultSimpleBackgroundColor,
+		cellBGColor = Color["row_background"],
+		titleColor = Color["row_title"],
 	}
 
 	menu.headerCenteredTextProperties = {
@@ -1501,8 +1519,8 @@ function menu.onShowMenu(state)
 		minRowHeight = menu.titleData.height,
 		scaling = false,
 		halign = "center",
-		cellBGColor = { r = 0, g = 0, b = 0, a = 0 },
-		titleColor = Helper.defaultSimpleBackgroundColor,
+		cellBGColor = Color["row_background"],
+		titleColor = Color["row_title"],
 	}
 
 	menu.slidercellTextProperties = {
@@ -1530,6 +1548,7 @@ function menu.onShowMenu(state)
 	-- prepare modules
 	menu.modules = {}
 	local races = {}
+	local connectionmoduleraces = {}
 	for _, entry in ipairs(config.leftBar) do
 		menu.modules[entry.mode] = {}
 		local n = C.GetNumBlueprints(menu.set, entry.mode, "")
@@ -1540,6 +1559,9 @@ function menu.onShowMenu(state)
 			local makerrace, makerracename = GetMacroData(macro, "makerraceid", "makerracename")
 			for i, race in ipairs(makerrace) do
 				races[race] = makerracename[i]
+				if IsMacroClass(macro, "connectionmodule") then
+					connectionmoduleraces[race] = makerracename[i]
+				end
 			end
 			table.insert(menu.modules[entry.mode], macro)
 		end
@@ -1553,6 +1575,13 @@ function menu.onShowMenu(state)
 	end
 	table.sort(menu.races, Helper.sortName)
 	table.insert(menu.races, 1, { id = "generic", name = ReadText(1001, 11916) })
+
+	menu.connectionmoduleraces = {}
+	for race, name in pairs(connectionmoduleraces) do
+		table.insert(menu.connectionmoduleraces, { id = race, text = name, icon = "", displayremoveoption = false })
+	end
+	table.sort(menu.connectionmoduleraces, function (a, b) return a.text < b.text end)
+	table.insert(menu.connectionmoduleraces, 1, { id = "all", text = ReadText(1001, 11922), icon = "", displayremoveoption = false })
 
 	-- assemble possible upgrades (wares, macros)
 	menu.upgradewares = {}
@@ -1648,13 +1677,13 @@ function menu.displayLeftBar(frame)
 			active = entry.active and ((not entry.condition) or entry.condition())
 			if entry.mode == "moduletypes_venture" then
 				if entry.condition and (not entry.condition()) then
-					mouseovertext = mouseovertext .. "\n\27R" .. ReadText(1026, 7930)
+					mouseovertext = mouseovertext .. "\n" .. ColorText["text_error"] .. ReadText(1026, 7930)
 				end
 			end
 			selected = entry.mode == menu.modulesMode
 			prevSelected = entry.mode == menu.prevModulesMode
 		end
-		local row = ftable:addRow(active, { fixed = true })
+		local row = ftable:addRow(active, { fixed = true, bgColor = Color["row_background_blue"] })
 
 		-- if nothing selected yet, select this one if active
 		if (not found) and active then
@@ -1673,7 +1702,7 @@ function menu.displayLeftBar(frame)
 		elseif prevSelected then
 			menu.selectedRows.left = row.index
 		end
-		row[1]:createButton({helpOverlayID = entry.helpOverlayID, helpOverlayText = entry.helpOverlayText,  active = active, height = menu.frameworkData.sidebarWidth, mouseOverText = mouseovertext, bgColor = selected and Helper.defaultArrowRowBackgroundColor or Helper.defaultButtonBackgroundColor}):setIcon(entry.icon)
+		row[1]:createButton({ helpOverlayID = entry.helpOverlayID, helpOverlayText = entry.helpOverlayText,  active = active, height = menu.frameworkData.sidebarWidth, mouseOverText = mouseovertext, bgColor = selected and Color["row_background_selected"] or Color["button_background_default"] }):setIcon(entry.icon, { color = function () return menu.buttonLeftBarColor(entry.mode) end })
 		if not menu.loadoutMode then
 			row[1].handlers.onClick = function () return menu.buttonLeftBar(entry.mode, row.index) end
 		else
@@ -1806,7 +1835,7 @@ function menu.createTitleBar(frame)
 	ftable:setColWidth(8, menu.titleData.height)
 	ftable:setColWidth(9, menu.titleData.height)
 	
-	local row = ftable:addRow(true, { fixed = true })
+	local row = ftable:addRow(true, { fixed = true, bgColor = Color["row_background_blue"] })
 	if not menu.loadoutMode then
 		-- name
 		row[1]:createEditBox({ scaling = true }):setText(ffi.string(C.GetComponentName(menu.container)), { halign = "center", font = Helper.headerRow1Font, fontsize = Helper.headerRow1FontSize })
@@ -1877,7 +1906,7 @@ function menu.refreshTitleBar()
 		alignment = "center",
 		fontname = Helper.standardFont,
 		fontsize = Helper.scaleFont(Helper.standardFont, Helper.standardFontSize),
-		color = Helper.color.white,
+		color = Color["text_normal"],
 		x = 0,
 		y = 0
 	}
@@ -1894,17 +1923,14 @@ function menu.refreshTitleBar()
 		table.sort(loadOptions, function (a, b) return a.text < b.text end)
 		
 		-- editbox
-		Helper.removeEditBoxScripts(menu, menu.titlebartable, 1, 1)
-		SetCellContent(menu.titlebartable, Helper.createEditBox(Helper.createTextInfo(ffi.string(C.GetComponentName(menu.container)), "center", Helper.headerRow1Font, Helper.scaleFont(Helper.headerRow1Font, Helper.headerRow1FontSize), 255, 255, 255, 100), true, 0, 0, 0, 0, nil, nil, false), 1, 1)
-		Helper.setEditBoxScript(menu, nil, menu.titlebartable, 1, 1, menu.editboxNameUpdateText)
+		local desc = Helper.createEditBox(Helper.createTextInfo(ffi.string(C.GetComponentName(menu.container)), "center", Helper.headerRow1Font, Helper.scaleFont(Helper.headerRow1Font, Helper.headerRow1FontSize), 255, 255, 255, 100), true, 0, 0, 0, 0, nil, nil, false)
+		Helper.setCellContent(menu, menu.titlebartable, desc, 1, 1, nil, "editbox", nil, menu.editboxNameUpdateText)
 		-- dropdown
-		Helper.removeDropDownScripts(menu, menu.titlebartable, 1, 2)
-		SetCellContent(menu.titlebartable, Helper.createDropDown(loadOptions, "", text, nil, true, true, 0, 0, 0, 0, nil, nil, "", menu.titleData.dropdownWidth + menu.titleData.height + Helper.borderSize), 1, 2)
-		Helper.setDropDownScript(menu, nil, menu.titlebartable, 1, 2, nil, menu.dropdownLoad, menu.dropdownRemovedCP)
+		local desc = Helper.createDropDown(loadOptions, "", text, nil, true, true, 0, 0, 0, 0, nil, nil, "", menu.titleData.dropdownWidth + menu.titleData.height + Helper.borderSize)
+		Helper.setCellContent(menu, menu.titlebartable, desc, 1, 2, nil, "dropdown", nil, nil, menu.dropdownLoad, menu.dropdownRemovedCP)
 		-- save
-		Helper.removeButtonScripts(menu, menu.titlebartable, 1, 3)
-		SetCellContent(menu.titlebartable, Helper.createButton(nil, Helper.createButtonIcon("menu_save", nil, 255, 255, 255, 100), true, true, 0, 0, 0, menu.titleData.height, nil, nil, nil, ReadText(1026, 7901)), 1, 3)
-		Helper.setButtonScript(menu, nil, menu.titlebartable, 1, 3, menu.buttonTitleSave)
+		local desc = Helper.createButton(nil, Helper.createButtonIcon("menu_save", nil, 255, 255, 255, 100), true, true, 0, 0, 0, menu.titleData.height, nil, nil, nil, ReadText(1026, 7901))
+		Helper.setCellContent(menu, menu.titlebartable, desc, 1, 3, nil, "button", nil, menu.buttonTitleSave)
 	else
 		text.override = ReadText(1001, 7905)
 		local loadoutOptions = {}
@@ -1915,17 +1941,14 @@ function menu.refreshTitleBar()
 		end
 		
 		-- editbox
-		Helper.removeEditBoxScripts(menu, menu.titlebartable, 1, 1)
-		SetCellContent(menu.titlebartable, Helper.createEditBox(Helper.createTextInfo(ffi.string(C.GetComponentName(menu.container)), "center", Helper.headerRow1Font, Helper.scaleFont(Helper.headerRow1Font, Helper.headerRow1FontSize), 255, 255, 255, 100), true, 0, 0, 0, 0, nil, nil, false), 1, 1)
-		Helper.setEditBoxScript(menu, nil, menu.titlebartable, 1, 1, menu.editboxNameUpdateText)
+		local desc = Helper.createEditBox(Helper.createTextInfo(ffi.string(C.GetComponentName(menu.container)), "center", Helper.headerRow1Font, Helper.scaleFont(Helper.headerRow1Font, Helper.headerRow1FontSize), 255, 255, 255, 100), true, 0, 0, 0, 0, nil, nil, false)
+		Helper.setCellContent(menu, menu.titlebartable, desc, 1, 1, nil, "editbox", nil, menu.editboxNameUpdateText)
 		-- dropdown
-		Helper.removeDropDownScripts(menu, menu.titlebartable, 1, 2)
-		SetCellContent(menu.titlebartable, Helper.createDropDown(loadoutOptions, "", text, nil, true, next(menu.loadouts) ~= nil, 0, 0, 0, 0, nil, nil, "", menu.titleData.dropdownWidth + 4 * (menu.titleData.height + Helper.borderSize)), 1, 2)
-		Helper.setDropDownScript(menu, nil, menu.titlebartable, 1, 2, nil, menu.dropdownLoadout, menu.dropdownRemovedLoadout)
+		local desc = Helper.createDropDown(loadoutOptions, "", text, nil, true, next(menu.loadouts) ~= nil, 0, 0, 0, 0, nil, nil, "", menu.titleData.dropdownWidth + 4 * (menu.titleData.height + Helper.borderSize))
+		Helper.setCellContent(menu, menu.titlebartable, desc, 1, 2, nil, "dropdown", nil, nil, menu.dropdownLoadout, menu.dropdownRemovedLoadout)
 		-- save
-		Helper.removeButtonScripts(menu, menu.titlebartable, 1, 8)
-		SetCellContent(menu.titlebartable, Helper.createButton(nil, Helper.createButtonIcon("menu_save", nil, 255, 255, 255, 100), true, true, 0, 0, 0, menu.titleData.height, nil, nil, nil, ReadText(1026, 7905)), 1, 8)
-		Helper.setButtonScript(menu, nil, menu.titlebartable, 1, 8, menu.buttonTitleSaveLoadout)
+		local desc = Helper.createButton(nil, Helper.createButtonIcon("menu_save", nil, 255, 255, 255, 100), true, true, 0, 0, 0, menu.titleData.height, nil, nil, nil, ReadText(1026, 7905))
+		Helper.setCellContent(menu, menu.titlebartable, desc, 1, 8, nil, "button", nil, menu.buttonTitleSaveLoadout)
 	end
 end
 
@@ -2106,9 +2129,9 @@ function menu.getUpgradeData(upgradeplan)
 end
 
 function menu.ventureModuleUnavailableMouseOverText()
-	local mouseovertext = "\27R" .. ReadText(1026, 7913)
+	local mouseovertext = ColorText["text_error"] .. ReadText(1026, 7913)
 	if not C.IsVentureExtensionSupported() then
-		mouseovertext = "\27R" .. ReadText(1026, 7930)
+		mouseovertext = ColorText["text_error"] .. ReadText(1026, 7930)
 	elseif not OnlineHasSession() then
 		mouseovertext = mouseovertext .. "\n\n" .. ReadText(1026, 7921)
 	end
@@ -2197,7 +2220,7 @@ function menu.displayModules(frame, firsttime)
 			local maxColumnWidth = math.floor((menu.modulesData.width - 2 * Helper.borderSize) / 3)
 			local columnWidth = maxColumnWidth - math.floor(((count / 3 > 6) and Helper.scrollbarWidth or 0) / 3)
 
-			local ftable = frame:addTable(5, { tabOrder = 1, width = menu.modulesData.width, height = 0, x = menu.modulesData.offsetX, y = menu.modulesData.offsetY, scaling = false, reserveScrollBar = false, highlightMode = "column", backgroundID = "solid", backgroundColor = Helper.color.transparent60 })
+			local ftable = frame:addTable(5, { tabOrder = 1, width = menu.modulesData.width, height = 0, x = menu.modulesData.offsetX, y = menu.modulesData.offsetY, scaling = false, reserveScrollBar = false, highlightMode = "column", backgroundID = "solid", backgroundColor = Color["table_background_3d_editor"] })
 			if menu.setdefaulttable then
 				ftable.properties.defaultInteractiveObject = true
 				menu.setdefaulttable = nil
@@ -2209,17 +2232,17 @@ function menu.displayModules(frame, firsttime)
 			ftable:setDefaultColSpan(3, 3)
 
 			local name = menu.getLeftBarEntry(menu.modulesMode).name or ""
-			local row = ftable:addRow(false, { fixed = true, bgColor = Helper.defaultTitleBackgroundColor })
+			local row = ftable:addRow(false, { fixed = true, bgColor = Color["row_title_background"] })
 			row[1]:setColSpan(5):createText(name, menu.headerTextProperties)
 
 			local rowy = ftable:getFullHeight()
-			local row = ftable:addRow(true, { fixed = true })
+			local row = ftable:addRow(true, { fixed = true, bgColor = Color["row_background_blue"] })
 			row[1]:setColSpan(4):createEditBox({ defaultText = ReadText(1001, 3250), scaling = true }):setText("", { x = Helper.standardTextOffsetx }):setHotkey("INPUT_STATE_DETAILMONITOR_0", { displayIcon = true })
 			row[1].handlers.onEditBoxDeactivated = menu.editboxModuleSearchUpdateText
 			row[5]:createButton({ height = editboxheight }):setIcon("menu_filter")
 			row[5].handlers.onClick = function () return menu.buttonModuleFilter(menu.modulesData.offsetY + rowy + Helper.borderSize) end
 
-			local row = ftable:addRow((#menu.modulesearchtext > 0), { fixed = true, bgColor = Helper.color.transparent })
+			local row = ftable:addRow((#menu.modulesearchtext > 0), { fixed = true })
 			local searchindex = 0
 			for i = 1, math.min(3, #menu.modulesearchtext) do
 				local col = i
@@ -2241,15 +2264,15 @@ function menu.displayModules(frame, firsttime)
 			if next(menu.groupedmodules) then
 				local storagecounter_solid, dockareacounter, storagecounter_container, counter_shipyard, counter_wharf, counter_pier, counter_struct = 0, 0, 0, 0, 0, 0, 0
 				for _, group in ipairs(menu.groupedmodules) do
-					local row = ftable:addRow(true, { bgColor = Helper.color.transparent, borderBelow = false })
-					local row2 = ftable:addRow(false, { bgColor = Helper.color.transparent })
+					local row = ftable:addRow(true, { borderBelow = false })
+					local row2 = ftable:addRow(false, {  })
 					for i = 1, 3 do
 						if group[i] then
-							local shortname, makericon, infolibrary, canclaimownership = GetMacroData(group[i], "shortname", "makericon", "infolibrary", "canclaimownership")
+							local name, shortname, makericon, infolibrary, canclaimownership = GetMacroData(group[i], "name", "shortname", "makericon", "infolibrary", "canclaimownership")
 							AddKnownItem(infolibrary, group[i])
 							local icon = C.IsIconValid("module_" .. group[i]) and ("module_" .. group[i]) or "module_notfound"
 							local active = true
-							row[i]:createButton({ width = columnWidth, height = columnWidth, active = active }):setIcon(icon)
+							row[i]:createButton({ width = columnWidth, height = columnWidth, active = active, highlightColor = Color["button_highlight_bigbutton"], mouseOverText = name }):setIcon(icon)
 
 							-- Tutorial solar panels (shared)
 							if group[i] == "prod_gen_energycells_macro" then
@@ -2348,13 +2371,13 @@ function menu.displayModules(frame, firsttime)
 							if menu.modulesMode == "moduletypes_production" then
 								local icon = GetMacroData(group[i], "waregroupicon")
 								if icon ~= "" then
-									row[i]:setIcon2(icon, { color = Helper.defaultSliderCellValueColor })
+									row[i]:setIcon2(icon, { color = Color["slider_value"] })
 								end
 							elseif (menu.modulesMode == "moduletypes_storage") or (menu.modulesMode == "moduletypes_habitation") then
 								local icon = "be_upgrade_size_" .. GetMacroData(group[i], "size")
-								row[i]:setIcon2(icon, { color = Helper.defaultSliderCellValueColor })
+								row[i]:setIcon2(icon, { color = Color["slider_value"] })
 							elseif canclaimownership then
-								row[i]:setIcon2("be_upgrade_claiming", { color = Helper.defaultSliderCellValueColor })
+								row[i]:setIcon2("be_upgrade_claiming", { color = Color["slider_value"] })
 							end
 							if #makericon > 0 then
 								local makertext = ""
@@ -2363,7 +2386,7 @@ function menu.displayModules(frame, firsttime)
 								end
 								local fontsize = Helper.scaleFont(Helper.standardFont, Helper.largeIconFontSize)
 								local y = columnWidth / 2 - Helper.scaleY(Helper.largeIconTextHeight) / 2 - Helper.configButtonBorderSize
-								row[i]:setText(makertext, { y = y, halign = "right", color = Helper.defaultSliderCellValueColor, fontsize = fontsize })
+								row[i]:setText(makertext, { y = y, halign = "right", color = Color["slider_value"], fontsize = fontsize })
 							end
 							if menu.modulesMode == "moduletypes_venture" then
 								local amount
@@ -2377,13 +2400,13 @@ function menu.displayModules(frame, firsttime)
 								row[i].properties.active = active
 								if not active then
 									if (not isventureplatform) and (not hasventureplatform) then
-										row[i].properties.mouseOverText = ReadText(1026, 7931)
+										row[i].properties.mouseOverText = name .. "\n\n" .. ReadText(1026, 7931)
 									else
-										row[i].properties.mouseOverText = menu.ventureModuleUnavailableMouseOverText()
+										row[i].properties.mouseOverText = name .. "\n\n" .. menu.ventureModuleUnavailableMouseOverText()
 									end
 								else
 									if not isventureplatform then
-										row[i].properties.mouseOverText = ReadText(1026, 7922)
+										row[i].properties.mouseOverText = name .. "\n\n" .. ReadText(1026, 7922)
 									end
 								end
 							end
@@ -2392,7 +2415,7 @@ function menu.displayModules(frame, firsttime)
 								row[i].handlers.onRightClick = function (...) return menu.buttonInteract({ type = "module", name = GetMacroData(group[i], "name"), macro = group[i] }, ...) end
 							end
 							local extraText = TruncateText(shortname, Helper.standardFont, menu.extraFontSize, columnWidth - 2 * Helper.borderSize)
-							row2[i]:createBoxText(extraText, { width = columnWidth, fontsize = menu.extraFontSize, boxColor = active and Helper.defaultButtonBackgroundColor or Helper.defaultUnselectableButtonBackgroundColor, mouseOverText = (extraText ~= shortname) and shortname or "" })
+							row2[i]:createBoxText(extraText, { width = columnWidth, fontsize = menu.extraFontSize, boxColor = active and Color["button_background_default"] or Color["button_background_inactive"], mouseOverText = name })
 						end
 					end
 				end
@@ -2424,7 +2447,7 @@ function menu.displayModules(frame, firsttime)
 			end
 			local slidercellWidth = menu.modulesData.width - math.floor((count / 3 > 6) and Helper.scrollbarWidth or 0)
 
-			local ftable = frame:addTable(10, { tabOrder = 1, width = menu.modulesData.width, height = 0, x = menu.modulesData.offsetX, y = menu.modulesData.offsetY, scaling = false, reserveScrollBar = false, highlightMode = "column", backgroundID = "solid", backgroundColor = Helper.color.transparent60 })
+			local ftable = frame:addTable(10, { tabOrder = 1, width = menu.modulesData.width, height = 0, x = menu.modulesData.offsetX, y = menu.modulesData.offsetY, scaling = false, reserveScrollBar = false, highlightMode = "column", backgroundID = "solid", backgroundColor = Color["table_background_3d_editor"] })
 			if menu.setdefaulttable then
 				ftable.properties.defaultInteractiveObject = true
 				menu.setdefaulttable = nil
@@ -2442,7 +2465,7 @@ function menu.displayModules(frame, firsttime)
 			local upgradetype = Helper.findUpgradeType(menu.upgradetypeMode)
 
 			local name = menu.getLeftBarLoadoutEntry(menu.upgradetypeMode).name or ""
-			local row = ftable:addRow(false, { fixed = true, bgColor = Helper.defaultTitleBackgroundColor })
+			local row = ftable:addRow(false, { fixed = true, bgColor = Color["row_title_background"] })
 			row[1]:setColSpan(10):createText(name, menu.headerTextProperties)
 
 			if menu.upgradetypeMode == "turretgroup" then
@@ -2481,14 +2504,14 @@ function menu.displayModules(frame, firsttime)
 			end
 
 			for _, group in ipairs(menu.groupedslots) do
-				local row = ftable:addRow(true, { bgColor = Helper.color.transparent })
+				local row = ftable:addRow(true, {  })
 				for i = 1, 9 do
 					if group[i] then
 						local colspan = (i == 9) and 2 or 1
 
-						local bgcolor = Helper.defaultTitleBackgroundColor
+						local bgcolor = Color["row_title_background"]
 						if group[i][1] == menu.currentSlot then
-							bgcolor = Helper.defaultArrowRowBackgroundColor
+							bgcolor = Color["row_background_selected"]
 						end
 
 						local count, total = 0, 0
@@ -2518,7 +2541,7 @@ function menu.displayModules(frame, firsttime)
 						row[i]:setColSpan(colspan):createButton({ height = slotWidths[i], bgColor = bgcolor, mouseOverText = mouseovertext }):setText(group[i][3], { halign = "center", fontsize = Helper.scaleFont(Helper.standardFont, Helper.standardFontSize) })
 						if total > 0 then
 							local width = math.max(1, math.floor(count * (slotWidths[i] - 2 * menu.scaleSize) / total))
-							row[i]:setIcon("solid", { color = Helper.color.white, width = width + 2 * Helper.configButtonBorderSize, height = menu.scaleSize + 2 * Helper.configButtonBorderSize, x = menu.scaleSize - Helper.configButtonBorderSize, y = slotWidths[i] - 2 * menu.scaleSize - Helper.configButtonBorderSize })
+							row[i]:setIcon("solid", { width = width + 2 * Helper.configButtonBorderSize, height = menu.scaleSize + 2 * Helper.configButtonBorderSize, x = menu.scaleSize - Helper.configButtonBorderSize, y = slotWidths[i] - 2 * menu.scaleSize - Helper.configButtonBorderSize })
 						end
 						if group[i].compatibilities then
 							local compatibilitytext = ""
@@ -2547,7 +2570,7 @@ function menu.displayModules(frame, firsttime)
 			end
 
 			if currentSlotInfo.compatibilities then
-				local row = ftable:addRow(nil, { fixed = true, bgColor = Helper.color.transparent, scaling = true })
+				local row = ftable:addRow(nil, { fixed = true, scaling = true })
 				row[1]:setBackgroundColSpan(10):setColSpan(5):createText(ReadText(1001, 8548) .. ReadText(1001, 120))
 				local compatibilitytext = ""
 				for _, entry in ipairs(Helper.equipmentCompatibilities) do
@@ -2571,7 +2594,7 @@ function menu.displayModules(frame, firsttime)
 									name = upgradetype.headertext[slotsize]
 								end
 
-								local row = ftable:addRow(nil, { fixed = true, bgColor = Helper.color.transparent, scaling = true })
+								local row = ftable:addRow(nil, { fixed = true, scaling = true })
 								row[1]:setBackgroundColSpan(10):setColSpan(5):createText(name .. ReadText(1001, 120))
 								row[6]:setColSpan(5):createText(plandata.count .. " / " .. menu.groups[menu.currentSlot][upgradetype.grouptype].total, { halign = "right" })
 							end
@@ -2582,7 +2605,7 @@ function menu.displayModules(frame, firsttime)
 
 			ftable:addEmptyRow(Helper.standardTextHeight / 2)
 
-			local row = ftable:addRow(true, { fixed = true })
+			local row = ftable:addRow(true, { fixed = true, bgColor = Color["row_background_blue"] })
 			row[1]:setColSpan(9):createEditBox({ defaultText = ReadText(1001, 3250), scaling = true }):setText(menu.searchtext, { x = Helper.standardTextOffsetx }):setHotkey("INPUT_STATE_DETAILMONITOR_0", { displayIcon = true })
 			row[1].handlers.onEditBoxDeactivated = menu.editboxSearchUpdateText
 			row[10]:createButton({ height = editboxheight }):setText("X", { halign = "center", font = Helper.standardFontBold })
@@ -2604,7 +2627,7 @@ function menu.displayModules(frame, firsttime)
 
 								local slotsize = menu.groups[menu.currentSlot][upgradetype.grouptype].slotsize
 
-								local row = ftable:addRow(true, {  })
+								local row = ftable:addRow(true, { bgColor = Color["row_background_blue"] })
 								local name = upgradetype.text.default
 								if plandata.macro == "" then
 									if slotsize ~= "" then
@@ -2619,24 +2642,24 @@ function menu.displayModules(frame, firsttime)
 									sizeicon = "be_upgrade_size_" .. slotsize
 								end
 
-								row[1]:setColSpan(10):createSliderCell({ width = slidercellWidth, height = Helper.headerRow1Height, valueColor = Helper.color.slidervalue, min = scale.min, minSelect = scale.minSelect, max = scale.max, maxSelect = scale.maxSelect, start = scale.start }):setText(name, menu.slidercellTextProperties)
+								row[1]:setColSpan(10):createSliderCell({ width = slidercellWidth, height = Helper.headerRow1Height, valueColor = Color["slider_value"], min = scale.min, minSelect = scale.minSelect, max = scale.max, maxSelect = scale.maxSelect, start = scale.start }):setText(name, menu.slidercellTextProperties)
 								row[1].handlers.onSliderCellChanged = function (_, ...) return menu.slidercellSelectAmount(upgradetype.type, menu.currentSlot, row.index, false, ...) end
 								row[1].handlers.onSliderCellActivated = function() menu.noupdate = true end
 								row[1].handlers.onSliderCellDeactivated = function() menu.noupdate = false end
 
 								for _, group in ipairs(menu.groupedupgrades[upgradetype.grouptype]) do
-									local row = ftable:addRow(true, { bgColor = Helper.color.transparent, borderBelow = false })
-									local row2 = ftable:addRow(false, { bgColor = Helper.color.transparent })
+									local row = ftable:addRow(true, { borderBelow = false })
+									local row2 = ftable:addRow(false, {  })
 									for i = 1, 3 do
 										if group[i] then
 											local installicon, installcolor = (group[i].macro ~= "") and (sizeicon or "") or ""
 											if (group[i].macro ~= "") then
 												if (group[i].macro == menu.groups[menu.currentSlot][upgradetype.grouptype].currentmacro) and (group[i].macro ~= plandata.macro) then
 													installicon = "be_upgrade_uninstalled"
-													installcolor = Helper.color.red
+													installcolor = Color["text_negative"]
 												elseif (group[i].macro == plandata.macro) then
 													installicon = "be_upgrade_installed"
-													installcolor = Helper.color.green
+													installcolor = Color["text_positive"]
 												end
 											end
 
@@ -2647,7 +2670,7 @@ function menu.displayModules(frame, firsttime)
 												weaponicon = ""
 											end
 											if compatibility then
-												local color = Helper.color.white
+												local color = Color["text_normal"]
 												for _, entry in ipairs(Helper.equipmentCompatibilities) do
 													if entry.tag == compatibility then
 														color = entry.color
@@ -2657,24 +2680,15 @@ function menu.displayModules(frame, firsttime)
 												weaponicon = Helper.convertColorToText(color) .. "\27[menu_weaponmount]\27X" .. weaponicon
 											end
 
-											local column = i * 3 - 2
-											row[column]:createButton({ width = columnWidths[i], height = maxColumnWidth }):setIcon(group[i].icon):setIcon2(installicon, { color = installcolor }):setText2(weaponicon, { x = 3, y = -maxColumnWidth / 2 + Helper.scaleY(Helper.standardTextHeight) / 2 + Helper.configButtonBorderSize, fontsize = Helper.scaleFont(Helper.standardFont, Helper.standardFontSize) })
-											row[column].handlers.onClick = function () return menu.buttonSelectGroupUpgrade(upgradetype.type, menu.currentSlot, group[i].macro, row.index, column) end
-											if group[i].macro ~= "" then
-												row[column].handlers.onRightClick = function (...) return menu.buttonInteract({ type = upgradetype.type, name = group[i].name, macro = group[i].macro }, ...) end
-											end
-
 											local extraText = ""
 											local untruncatedExtraText = ""
 											if group[i].macro ~= "" then
-												local shortname, makerrace, infolibrary = GetMacroData(group[i].macro, "shortname", "makerrace", "infolibrary")
+												local name, shortname, makerrace, infolibrary = GetMacroData(group[i].macro, "name", "shortname", "makerrace", "infolibrary")
 												extraText = TruncateText(shortname, Helper.standardFont, menu.extraFontSize, columnWidths[i] - 2 * Helper.borderSize)
-												if extraText ~= shortname then
-													untruncatedExtraText = shortname
-												end
+												untruncatedExtraText = name
 												for i, racestring in ipairs(makerrace) do
 													extraText = extraText .. ((i == 1) and "\n" or " - ") .. racestring
-													if untruncatedExtraText ~= "" then
+													if #makerrace > 1 then
 														untruncatedExtraText = untruncatedExtraText .. ((i == 1) and "\n" or " - ") .. racestring
 													end
 												end
@@ -2682,9 +2696,14 @@ function menu.displayModules(frame, firsttime)
 											else
 												local truncatedtext = TruncateText(group[i].name, Helper.standardFont, menu.extraFontSize, columnWidths[i] - 2 * Helper.borderSize)
 												extraText = truncatedtext .. "\n"
-												if truncatedtext ~= group[i].name then
-													untruncatedExtraText = group[i].name .. "\n"
-												end
+												untruncatedExtraText = group[i].name
+											end
+
+											local column = i * 3 - 2
+											row[column]:createButton({ width = columnWidths[i], height = maxColumnWidth, mouseOverText = untruncatedExtraText }):setIcon(group[i].icon):setIcon2(installicon, { color = installcolor }):setText2(weaponicon, { x = 3, y = -maxColumnWidth / 2 + Helper.scaleY(Helper.standardTextHeight) / 2 + Helper.configButtonBorderSize, fontsize = Helper.scaleFont(Helper.standardFont, Helper.standardFontSize) })
+											row[column].handlers.onClick = function () return menu.buttonSelectGroupUpgrade(upgradetype.type, menu.currentSlot, group[i].macro, row.index, column) end
+											if group[i].macro ~= "" then
+												row[column].handlers.onRightClick = function (...) return menu.buttonInteract({ type = upgradetype.type, name = group[i].name, macro = group[i].macro }, ...) end
 											end
 											row2[column]:createBoxText(extraText, { width = columnWidths[i], fontsize = menu.extraFontSize, mouseOverText = untruncatedExtraText })
 										end
@@ -2960,7 +2979,7 @@ function menu.displayPlan(frame)
 		local statusBars = {}
 		if menu.planMode == "construction" then
 			-- MODULE CHANGES
-			ftable = frame:addTable(5, { tabOrder = 3, width = menu.planData.width, maxVisibleHeight = 0.4 * Helper.viewHeight, x = menu.planData.offsetX, y = menu.planData.offsetY, reserveScrollBar = true, backgroundID = "solid", backgroundColor = Helper.color.transparent60 })
+			ftable = frame:addTable(5, { tabOrder = 3, width = menu.planData.width, maxVisibleHeight = 0.4 * Helper.viewHeight, x = menu.planData.offsetX, y = menu.planData.offsetY, reserveScrollBar = true, backgroundID = "solid", backgroundColor = Color["table_background_3d_editor"] })
 			ftable:setColWidth(1, Helper.scaleY(Helper.standardTextHeight), false)
 			ftable:setColWidth(2, Helper.scaleY(Helper.standardTextHeight), false)
 			ftable:setColWidth(4, 0.25 * menu.planData.width, false)
@@ -2968,7 +2987,7 @@ function menu.displayPlan(frame)
 
 			local prevfullheight = 0
 			-- modules
-			local row = ftable:addRow(false, { bgColor = Helper.defaultTitleBackgroundColor, fixed = true })
+			local row = ftable:addRow(false, { bgColor = Color["row_title_background"], fixed = true, bgColor = Color["row_background_blue"] })
 			row[1]:setColSpan(5):createText(ReadText(1001, 7924), menu.headerTextProperties)
 			-- unchanged modules
 			local sortedModules = {}
@@ -2996,7 +3015,7 @@ function menu.displayPlan(frame)
 				if sortedModules[entry.mode] then
 					local isextended = menu.isEntryExtended(menu.container, entry.mode)
 
-					local row = ftable:addRow(true, { bgColor = Helper.defaultTitleBackgroundColor })
+					local row = ftable:addRow(true, { bgColor = Color["row_title_background"] })
 					row[1]:createButton({  }):setText(isextended and "-" or "+", { halign = "center" })
 					row[1].handlers.onClick = function () return menu.buttonExtendEntry(entry.mode, row.index) end
 					row[2]:setColSpan(2):setBackgroundColSpan(4):createText(entry.name, Helper.subHeaderTextProperties)
@@ -3015,13 +3034,13 @@ function menu.displayPlan(frame)
 							local workforceinfo = C.GetWorkForceInfo(menu.container, "");
 
 							ftable:addEmptyRow()
-							local row = ftable:addRow(true, { bgColor = Helper.color.transparent })
+							local row = ftable:addRow(true, {  })
 							row[2]:setColSpan(2):createText("   " .. ReadText(1001, 9611))
 							row[4]:createText(ConvertIntegerString(workforceinfo.capacity, true, 0, true, false) .. ((habitationadded > 0) and (" (" .. ConvertIntegerString(workforceinfo.capacity + habitationadded, true, 0, true, false) .. ")") or ""), { halign = "right" })
-							local row = ftable:addRow(true, { bgColor = Helper.color.transparent })
+							local row = ftable:addRow(true, {  })
 							row[2]:setColSpan(2):createText("   " .. ReadText(1001, 8412))
 							row[4]:createText(ConvertIntegerString(workforceinfo.current, true, 0, true, false), { halign = "right" })
-							local row = ftable:addRow(true, { bgColor = Helper.color.transparent })
+							local row = ftable:addRow(true, {  })
 							row[2]:setColSpan(2):createText("   " .. ReadText(1001, 8413))
 							row[4]:createText(ConvertIntegerString(workforceinfo.optimal, true, 0, true, false) .. ((workforceneedadded > 0) and (" (" .. ConvertIntegerString(workforceinfo.optimal + workforceneedadded, true, 0, true, false) .. ")") or ""), { halign = "right" })
 						end
@@ -3032,11 +3051,11 @@ function menu.displayPlan(frame)
 			if #menu.removedModules > 0 then
 				local isextended = menu.isEntryExtended(menu.container, "removed")
 
-				local row = ftable:addRow(true, { bgColor = Helper.defaultTitleBackgroundColor })
+				local row = ftable:addRow(true, { bgColor = Color["row_title_background"] })
 				row[1]:createButton({  }):setText(isextended and "-" or "+", { halign = "center" })
 				row[1].handlers.onClick = function () return menu.buttonExtendEntry("removed", row.index) end
 				row[2]:setColSpan(2):setBackgroundColSpan(4):createText(ReadText(1001, 7964), Helper.subHeaderTextProperties)
-				row[2].properties.color = Helper.color.red
+				row[2].properties.color = Color["text_negative"]
 				row[4]:setColSpan(2):createText(#menu.removedModules, Helper.subHeaderTextProperties)
 				row[4].properties.halign = "right"
 				prevfullheight = menu.moduleHeightHelper(ftable, prevfullheight)
@@ -3051,11 +3070,11 @@ function menu.displayPlan(frame)
 			if changedCount > 0 then
 				local isextended = menu.isEntryExtended(menu.container, "planned")
 
-				local row = ftable:addRow(true, { bgColor = Helper.defaultTitleBackgroundColor })
+				local row = ftable:addRow(true, { bgColor = Color["row_title_background"] })
 				row[1]:createButton({  }):setText(isextended and "-" or "+", { halign = "center" })
 				row[1].handlers.onClick = function () return menu.buttonExtendEntry("planned", row.index) end
 				row[2]:setColSpan(2):setBackgroundColSpan(4):createText(ReadText(1001, 7963), Helper.subHeaderTextProperties)
-				row[2].properties.color = Helper.color.green
+				row[2].properties.color = Color["text_positive"]
 				row[4]:setColSpan(2):createText(changedCount, Helper.subHeaderTextProperties)
 				row[4].properties.halign = "right"
 				prevfullheight = menu.moduleHeightHelper(ftable, prevfullheight)
@@ -3097,7 +3116,7 @@ function menu.displayPlan(frame)
 
 			-- MODULE LOADOUTS & STATUS
 			local yoffset = ftable.properties.y + ftable:getVisibleHeight() + 2 * Helper.borderSize
-			modulestatustable = frame:addTable(6, { tabOrder = 4, width = menu.planData.width, x = menu.planData.offsetX, y = yoffset, reserveScrollBar = true, backgroundID = "solid", backgroundColor = Helper.color.transparent60 })
+			modulestatustable = frame:addTable(6, { tabOrder = 4, width = menu.planData.width, x = menu.planData.offsetX, y = yoffset, reserveScrollBar = true, backgroundID = "solid", backgroundColor = Color["table_background_3d_editor"] })
 			local smallColWidth = Helper.scaleY(Helper.standardTextHeight)
 			modulestatustable:setColWidth(1, smallColWidth, false)
 			modulestatustable:setColWidth(2, smallColWidth, false)
@@ -3106,10 +3125,10 @@ function menu.displayPlan(frame)
 			modulestatustable:setColWidth(6, smallColWidth, false)
 
 			-- station-wide loadout
-			local row = modulestatustable:addRow(false, { bgColor = Helper.defaultTitleBackgroundColor })
+			local row = modulestatustable:addRow(false, { bgColor = Color["row_title_background"] })
 			row[1]:setColSpan(6):createText(ReadText(1001, 7966), menu.headerTextProperties)
 			-- selection
-			local row = modulestatustable:addRow(true, { bgColor = Helper.color.transparent })
+			local row = modulestatustable:addRow(true, {  })
 			row[1]:setColSpan(4):createText(ReadText(1001, 7967) .. ReadText(1001, 120))
 			local loadoutOptions = {
 				{ id = 0,	text = ReadText(1001, 7990), icon = "", displayremoveoption = false },
@@ -3122,7 +3141,7 @@ function menu.displayPlan(frame)
 			row[5].handlers.onDropDownConfirmed = menu.dropdownDefaultLoadout
 
 			-- preferred build method
-			local row = modulestatustable:addRow(false, { bgColor = Helper.defaultTitleBackgroundColor })
+			local row = modulestatustable:addRow(false, { bgColor = Color["row_title_background"] })
 			row[1]:setColSpan(6):createText(ReadText(1001, 11298), menu.headerTextProperties)
 
 			local cursetting = ffi.string(C.GetContainerBuildMethod(menu.buildstorage))
@@ -3149,51 +3168,51 @@ function menu.displayPlan(frame)
 			local hasownsetting = cursetting ~= ""
 
 			local rowdata = "info_buildrule_global"
-			local row = modulestatustable:addRow({ rowdata }, { bgColor = Helper.color.transparent })
+			local row = modulestatustable:addRow({ rowdata }, {  })
 			row[1]:setColSpan(5):createText(ReadText(1001, 8367))
 			row[6]:createCheckBox(not hasownsetting, { width = config.mapRowHeight, height = config.mapRowHeight })
 			row[6].handlers.onClick = function(_, checked) return menu.checkboxSetBuildRuleOverride(menu.buildstorage, checked, curglobalsetting) end
 
-			local row = modulestatustable:addRow("info_buildrule", { bgColor = Helper.color.transparent })
+			local row = modulestatustable:addRow("info_buildrule", {  })
 			row[1]:setColSpan(6):createDropDown(locresponses, { height = Helper.standardTextHeight, startOption = hasownsetting and cursetting or curglobalsetting, active = hasownsetting }):setTextProperties({ fontsize = config.mapFontSize })
 			row[1].handlers.onDropDownConfirmed = function (_, id) return menu.dropdownBuildRule(menu.buildstorage, id) end
 			row[1].handlers.onDropDownActivated = function () menu.noupdate = true end
 
 			-- module status here
-			local row = modulestatustable:addRow(false, { fixed = true, bgColor = Helper.defaultTitleBackgroundColor })
+			local row = modulestatustable:addRow(false, { fixed = true, bgColor = Color["row_title_background"] })
 			row[1]:setColSpan(6):createText(ReadText(1001, 7991), menu.headerTextProperties)
 		
 			local infoCount = 0
 			local visibleHeight
 			for _, errorentry in Helper.orderedPairs(menu.criticalmoduleerrors) do
-				row = modulestatustable:addRow(true, { bgColor = Helper.color.transparent })
-				row[1]:setColSpan(6):createText(errorentry, { color = Helper.color.red, wordwrap = true })
+				row = modulestatustable:addRow(true, {  })
+				row[1]:setColSpan(6):createText(errorentry, { color = Color["text_criticalerror"], wordwrap = true })
 			end
 			for _, errorentry in Helper.orderedPairs(menu.moduleerrors) do
-				row = modulestatustable:addRow(true, { bgColor = Helper.color.transparent })
-				row[1]:setColSpan(6):createText(errorentry, { color = Helper.color.red, wordwrap = true })
+				row = modulestatustable:addRow(true, {  })
+				row[1]:setColSpan(6):createText(errorentry, { color = Color["text_error"], wordwrap = true })
 			end
 			for _, warningentry in Helper.orderedPairs(menu.modulewarnings) do
-				row = modulestatustable:addRow(true, { bgColor = Helper.color.transparent })
-				row[1]:setColSpan(6):createText(warningentry, { color = Helper.color.orange, wordwrap = true })
+				row = modulestatustable:addRow(true, {  })
+				row[1]:setColSpan(6):createText(warningentry, { color = Color["text_warning"], wordwrap = true })
 			end
 			if (not next(menu.criticalmoduleerrors)) and (not next(menu.moduleerrors)) and (not next(menu.modulewarnings)) then
-				row = modulestatustable:addRow(true, { bgColor = Helper.color.transparent })
-				row[1]:setColSpan(6):createText(ReadText(1001, 7923), { color = Helper.color.green })
+				row = modulestatustable:addRow(true, {  })
+				row[1]:setColSpan(6):createText(ReadText(1001, 7923), { color = Color["text_success"] })
 			end
 
 			-- BUTTONS
 			if menu.cancelRequested then
-				local row = modulestatustable:addRow(false, { fixed = true, bgColor = Helper.defaultTitleBackgroundColor })
+				local row = modulestatustable:addRow(false, { fixed = true, bgColor = Color["row_title_background"] })
 				row[1]:setColSpan(6):createText(ReadText(1001, 9705), menu.headerTextProperties)
 
-				local row = modulestatustable:addRow(true, { fixed = true, bgColor = Helper.defaultTitleBackgroundColor })
+				local row = modulestatustable:addRow(true, { fixed = true, bgColor = Color["row_title_background"] })
 				row[1]:setColSpan(3):createButton({  }):setText(ReadText(1001, 2617), { halign = "center" })
 				row[1].handlers.onClick = menu.buttonCancelConfirm
 				row[4]:setColSpan(3):createButton({  }):setText(ReadText(1001, 2618), { halign = "center" })
 				row[4].handlers.onClick = menu.buttonCancelCancel
 			else
-				local row = modulestatustable:addRow(true, { fixed = true, bgColor = Helper.defaultTitleBackgroundColor })
+				local row = modulestatustable:addRow(true, { fixed = true, bgColor = Color["row_title_background"] })
 				if (ffi.string(C.GetGameStartName()) == "x4ep1_gamestart_workshop") and (not menu.confirmModuleChangesActive()) and ((C.GetCurrentBuildProgress(menu.container) >= 0) or C.IsBuildWaitingForSecondaryComponentResources(menu.container)) then
 					row[1]:setColSpan(3):createButton({ helpOverlayID = "force_modulechanges", helpOverlayText = " ",  helpOverlayHighlightOnly = true, active = true }):setText(ReadText(1001, 11919), { halign = "center" })
 					row[1].handlers.onClick = menu.buttonForceBuild
@@ -3209,7 +3228,7 @@ function menu.displayPlan(frame)
 
 			-- BUILD RESOURCES
 			local yoffset = modulestatustable.properties.y + modulestatustable:getVisibleHeight() + 2 * Helper.borderSize
-			resourcetable = frame:addTable(6, { tabOrder = 5, width = menu.planData.width, x = menu.planData.offsetX, y = yoffset, reserveScrollBar = true, backgroundID = "solid", backgroundColor = Helper.color.transparent60 })
+			resourcetable = frame:addTable(6, { tabOrder = 5, width = menu.planData.width, x = menu.planData.offsetX, y = yoffset, reserveScrollBar = true, backgroundID = "solid", backgroundColor = Color["table_background_3d_editor"] })
 			resourcetable:setColWidth(1, smallColWidth, false)
 			resourcetable:setColWidth(2, smallColWidth, false)
 			resourcetable:setColWidth(3, 0.5 * menu.planData.width - 2 * smallColWidth, false)
@@ -3225,17 +3244,17 @@ function menu.displayPlan(frame)
 			end
 
 			-- resources
-			local row = resourcetable:addRow(false, { bgColor = Helper.defaultTitleBackgroundColor })
+			local row = resourcetable:addRow(false, { bgColor = Color["row_title_background"] })
 			row[1]:setColSpan(6):createText(ReadText(1001, 7925), menu.headerTextProperties)
 			-- have
-			local row = resourcetable:addRow(true, { bgColor = Helper.defaultTitleBackgroundColor })
+			local row = resourcetable:addRow(true, { bgColor = Color["row_title_background"] })
 			if not menu.selectedRows.planresources then
 				menu.selectedRows.planresources = row.index
 			end
 			local isextended = menu.isResourceEntryExtended("buildstorage")
 			row[1]:createButton({ helpOverlayID = "plot_resources_available", helpOverlayText = " ",  helpOverlayHighlightOnly = true  }):setText(isextended and "-" or "+", { halign = "center" })
 			row[1].handlers.onClick = function () return menu.buttonExtendResourceEntry("buildstorage", row.index) end
-			row[2]:setColSpan(5):createText(ReadText(1001, 7927) .. (menu.newWareReservation and " \27G[+" .. menu.newWareReservation .. "]" or ""), Helper.subHeaderTextProperties)
+			row[2]:setColSpan(5):createText(ReadText(1001, 7927) .. (menu.newWareReservation and " " .. ColorText["text_positive"] .. "[+" .. menu.newWareReservation .. "]" or ""), Helper.subHeaderTextProperties)
 
 			if isextended then
 				-- reservations
@@ -3324,37 +3343,37 @@ function menu.displayPlan(frame)
 				table.sort(resources, Helper.sortName)
 
 				for i, resource in ipairs(resources) do
-					local row = resourcetable:addRow(true, { bgColor = Helper.color.transparent })
+					local row = resourcetable:addRow(true, {  })
 					local xoffset = row[1]:getWidth() + row[2]:getWidth() + row[3]:getWidth() + 3 * Helper.borderSize
-					statusBars[i] = row[1]:createStatusBar({ current = resource.current + resource.reserved, start = resource.current, max = resource.needed, cellBGColor = Helper.color.transparent, valueColor = Helper.defaultSliderCellValueColor, posChangeColor = Helper.defaultSimpleBackgroundColor, width = menu.planData.width - xoffset, x = xoffset, scaling = false })
+					statusBars[i] = row[1]:createStatusBar({ current = resource.current + resource.reserved, start = resource.current, max = resource.needed, cellBGColor = Color["row_background"], valueColor = Color["slider_value"], posChangeColor = Color["statusbar_diff_pos"], width = menu.planData.width - xoffset, x = xoffset, scaling = false })
 					row[2]:setColSpan(2):createText(GetWareData(resource.ware, "name"))
-					row[4]:setColSpan(3):createText(((resource.current < resource.needed) and "\27R" or "") .. ConvertIntegerString(resource.current, true, 0, true) .. "\27X" .. ((resource.reserved > 0) and (" (\27G+" .. ConvertIntegerString(resource.reserved, true, 0, true) .. "\27X)") or "") .. " / " .. ConvertIntegerString(resource.needed, true, 0, true), { halign = "right", cellBGColor = Helper.color.darkgrey })
+					row[4]:setColSpan(3):createText(((resource.current < resource.needed) and ColorText["text_negative"] or "") .. ConvertIntegerString(resource.current, true, 0, true) .. "\27X" .. ((resource.reserved > 0) and (" (" .. ColorText["text_positive"] .. "+" .. ConvertIntegerString(resource.reserved, true, 0, true) .. "\27X)") or "") .. " / " .. ConvertIntegerString(resource.needed, true, 0, true), { halign = "right", cellBGColor = Color["row_background_unselectable"] })
 				end
 
 				menu.newWareReservation = nil
 				if next(reservations) then
-					local row = resourcetable:addRow(true, { bgColor = Helper.color.transparent })
+					local row = resourcetable:addRow(true, {  })
 					row[1]:setColSpan(6):createText(ReadText(1001, 7946), Helper.subHeaderTextProperties)
 					row[1].properties.halign = "center"
 					for _, ware in ipairs(menu.tradewares) do
 						if reservations[ware.ware] then
 							local isextended = menu.isResourceEntryExtended("reservation" .. ware.ware, true)
-							local titlerow = resourcetable:addRow(true, { bgColor = Helper.color.transparent })
+							local titlerow = resourcetable:addRow(true, {  })
 							titlerow[1]:createButton({  }):setText(isextended and "-" or "+", { halign = "center" })
 							titlerow[1].handlers.onClick = function () return menu.buttonExtendResourceEntry("reservation" .. ware.ware, titlerow.index) end
-							local color = Helper.color.white
+							local color = Color["text_normal"]
 							if menu.newWareReservationWares[ware.ware] then
-								color = Helper.color.green
+								color = Color["text_positive"]
 							end
 							titlerow[2]:setColSpan(3):createText(GetWareData(ware.ware, "name"), { color = color })
 							local total = 0
 							for _, reservation in ipairs(reservations[ware.ware]) do
 								total = total + reservation.amount
 								if isextended then
-									local row = resourcetable:addRow(true, { bgColor = Helper.color.transparent })
+									local row = resourcetable:addRow(true, {  })
 									local reserverid = ConvertStringTo64Bit(tostring(reservation.reserver))
 									local name = ffi.string(C.GetComponentName(reservation.reserver)) .. " (" .. ffi.string(C.GetObjectIDCode(reservation.reserver)) .. ")"
-									local colorprefix = GetComponentData(reserverid, "isplayerowned") and "\27G" or ""
+									local colorprefix = GetComponentData(reserverid, "isplayerowned") and ColorText["text_player"] or ""
 
 									-- kuertee start: callback
 									-- row[2]:setColSpan(3):createText(function () return Helper.getETAString(colorprefix .. name, reservation.eta) end, { font = Helper.standardFontMono })
@@ -3370,9 +3389,9 @@ function menu.displayPlan(frame)
 									end
 									-- kuertee end: callback
 
-									local color = Helper.color.white
+									local color = Color["text_normal"]
 									if menu.newWareReservationWares[ware.ware] and menu.newWareReservationWares[ware.ware][tostring(reserverid)] then
-										color = Helper.color.green
+										color = Color["text_positive"]
 									end
 									row[5]:createText(ConvertIntegerString(reservation.amount, true, 0, false), { halign = "right", color = color })
 									row[6]:createButton({ active = function () return menu.buttonCancelTradeActive(reservation.tradedeal) end, mouseOverText = ReadText(1026, 7924) }):setText("X", { halign = "center" })
@@ -3388,14 +3407,14 @@ function menu.displayPlan(frame)
 			end
 
 			-- config
-			local row = resourcetable:addRow(true, { bgColor = Helper.defaultTitleBackgroundColor })
+			local row = resourcetable:addRow(true, { bgColor = Color["row_title_background"] })
 			local isextended = menu.isResourceEntryExtended("resourceconfig")
 			row[1]:createButton({ helpOverlayID = "plot_resources_buyoffers", helpOverlayText = " ",  helpOverlayHighlightOnly = true }):setText(isextended and "-" or "+", { halign = "center" })
 			row[1].handlers.onClick = function () return menu.buttonExtendResourceEntry("resourceconfig", row.index) end
 			row[1].properties.uiTriggerID = "extendresourceentry"
 			row[2]:setColSpan(5):createText(ReadText(1001, 7928), Helper.subHeaderTextProperties)
 			if isextended then
-				local row = resourcetable:addRow(false, { bgColor = Helper.color.transparent })
+				local row = resourcetable:addRow(false, {  })
 				row[2]:setColSpan(5):createText(ReadText(1001, 7944), Helper.subHeaderTextProperties)
 				row[2].properties.halign = "center"
 
@@ -3405,16 +3424,16 @@ function menu.displayPlan(frame)
 				if traderuleid ~= C.GetContainerTradeRuleID(menu.buildstorage, "sell", "") then
 					DebugError("Mismatch between buy and sell trade rule on supply ship: " .. tostring(traderuleid) .. " vs " .. tostring(C.GetContainerTradeRuleID(menu.buildstorage, "sell", "")))
 				end
-				local row = resourcetable:addRow(nil, { bgColor = Helper.color.unselectable })
-				row[1].properties.cellBGColor = Helper.color.transparent
+				local row = resourcetable:addRow(nil, { bgColor = Color["row_background_unselectable"] })
+				row[1].properties.cellBGColor = Color["row_background"]
 				row[2]:setColSpan(5):createText(ReadText(1001, 11013) .. ReadText(1001, 120), textproperties)
 				-- global
-				local row = resourcetable:addRow("order_wares_global", { bgColor = Helper.color.transparent })
+				local row = resourcetable:addRow("order_wares_global", {  })
 				row[2]:setColSpan(4):createText(ReadText(1001, 8367) .. ReadText(1001, 120), textproperties)
 				row[6]:createCheckBox(not hasownlist, { height = config.mapRowHeight })
 				row[6].handlers.onClick = function(_, checked) return menu.checkboxSetTradeRuleOverride(menu.buildstorage, "trade", checked) end
 				-- current
-				local row = resourcetable:addRow("order_wares_current", { bgColor = Helper.color.transparent })
+				local row = resourcetable:addRow("order_wares_current", {  })
 				row[2]:setColSpan(4):createDropDown(Helper.traderuleOptions, { startOption = (traderuleid ~= 0) and traderuleid or -1, active = hasownlist }):setTextProperties({ fontsize = config.mapFontSize })
 				row[2].handlers.onDropDownConfirmed = function (_, id) return menu.dropdownTradeRule(menu.buildstorage, "trade", id, "", true) end
 				row[2].handlers.onSliderCellActivated = function() menu.noupdate = true end
@@ -3425,26 +3444,26 @@ function menu.displayPlan(frame)
 				resourcetable:addEmptyRow()
 
 				-- global price modifier
-				local row = resourcetable:addRow(true, { bgColor = Helper.color.transparent })
+				local row = resourcetable:addRow(true, {  })
 				menu.globalpricefactor = C.GetContainerGlobalPriceFactor(menu.buildstorage)
 				local hasvalidmodifier = menu.globalpricefactor >= 0
 				row[2]:createCheckBox(hasvalidmodifier, { })
 				row[2].handlers.onClick = menu.checkboxToggleGlobalWarePriceModifier
 				row[3]:setColSpan(4):createText(ReadText(1001, 7945))
-				local row = resourcetable:addRow(true, { bgColor = Helper.color.transparent })
+				local row = resourcetable:addRow(true, {  })
 				local currentfactor = menu.globalpricefactor * 100
-				row[2]:setColSpan(5):createSliderCell({ height = Helper.standardTextHeight, valueColor = hasvalidmodifier and Helper.color.slidervalue or Helper.color.grey, min = 0, max = 100, start = hasvalidmodifier and currentfactor or 100, suffix = "%", readOnly = not hasvalidmodifier, hideMaxValue = true }):setText(ReadText(1001, 2808))
+				row[2]:setColSpan(5):createSliderCell({ height = Helper.standardTextHeight, valueColor = hasvalidmodifier and Color["slider_value"] or Color["slider_value_inactive"], min = 0, max = 100, start = hasvalidmodifier and currentfactor or 100, suffix = "%", readOnly = not hasvalidmodifier, hideMaxValue = true }):setText(ReadText(1001, 2808))
 				row[2].handlers.onSliderCellChanged = function (_, ...) return menu.slidercellGlobalWarePriceFactor(row.index, ...) end
 				row[2].handlers.onSliderCellActivated = function() menu.noupdate = true end
 				row[2].handlers.onSliderCellDeactivated = function() menu.noupdate = false end
 				-- trade restrictions
-				local row = resourcetable:addRow(false, { bgColor = Helper.color.transparent })
+				local row = resourcetable:addRow(false, {  })
 				row[2]:setColSpan(5):createText(ReadText(1001, 7931), Helper.subHeaderTextProperties)
 				row[2].properties.halign = "center"
 
 				for i, ware in ipairs(menu.tradewares) do
 					local isextended = menu.isResourceEntryExtended("resourceconfig" .. ware.ware)
-					local row = resourcetable:addRow(true, { bgColor = Helper.color.transparent })
+					local row = resourcetable:addRow(true, {  })
 					row[2]:createButton({ helpOverlayID = "plot_resources_resourceconfig" .. ware.ware, helpOverlayText = " ",  helpOverlayHighlightOnly = true }):setText(isextended and "-" or "+", { halign = "center" })
 					row[2].handlers.onClick = function () return menu.buttonExtendResourceEntry("resourceconfig" .. ware.ware, row.index) end
 					row[2].properties.uiTriggerID = "extendresourceentry" .. ware.ware
@@ -3467,7 +3486,7 @@ function menu.displayPlan(frame)
 					-- kuertee end: callback
 
 					if C.GetContainerTradeRuleID(menu.buildstorage, "buy", ware.ware) > 0 then
-						row[5]:setColSpan(2):createText("\27[lso_error]", { halign = "right", color = Helper.color.warningorange, mouseOverText = ReadText(1026, 8404) })
+						row[5]:setColSpan(2):createText("\27[lso_error]", { halign = "right", color = Color["text_warning"], mouseOverText = ReadText(1026, 8404) })
 					end
 				
 					ware.minprice, ware.maxprice = GetWareData(ware.ware, "minprice", "maxprice")
@@ -3478,17 +3497,17 @@ function menu.displayPlan(frame)
 						if traderuleid ~= C.GetContainerTradeRuleID(menu.buildstorage, "sell", ware.ware) then
 							DebugError("Mismatch between buy and sell trade rule on supply ship: " .. tostring(traderuleid) .. " vs " .. tostring(C.GetContainerTradeRuleID(menu.buildstorage, "sell", ware.ware)))
 						end
-						local row = resourcetable:addRow(nil, { bgColor = Helper.color.unselectable })
-						row[1].properties.cellBGColor = Helper.color.transparent
-						row[2].properties.cellBGColor = Helper.color.transparent
+						local row = resourcetable:addRow(nil, { bgColor = Color["row_background_unselectable"] })
+						row[1].properties.cellBGColor = Color["row_background"]
+						row[2].properties.cellBGColor = Color["row_background"]
 						row[3]:setColSpan(4):createText(ReadText(1001, 11013) .. ReadText(1001, 120), textproperties)
 						-- global
-						local row = resourcetable:addRow("order_wares_global", { bgColor = Helper.color.transparent })
+						local row = resourcetable:addRow("order_wares_global", {  })
 						row[3]:setColSpan(3):createText(ReadText(1001, 11033) .. ReadText(1001, 120), textproperties)
 						row[6]:createCheckBox(not hasownlist, { height = config.mapRowHeight })
 						row[6].handlers.onClick = function(_, checked) return menu.checkboxSetTradeRuleOverride(menu.buildstorage, "trade", checked, ware.ware) end
 						-- current
-						local row = resourcetable:addRow("order_wares_current", { bgColor = Helper.color.transparent })
+						local row = resourcetable:addRow("order_wares_current", {  })
 						row[3]:setColSpan(3):createDropDown(Helper.traderuleOptions, { startOption = (traderuleid ~= 0) and traderuleid or -1, active = hasownlist }):setTextProperties({ fontsize = config.mapFontSize })
 						row[3].handlers.onDropDownConfirmed = function (_, id) return menu.dropdownTradeRule(menu.buildstorage, "trade", id, ware.ware, true) end
 						row[3].handlers.onSliderCellActivated = function() menu.noupdate = true end
@@ -3498,10 +3517,10 @@ function menu.displayPlan(frame)
 
 						resourcetable:addEmptyRow(Helper.standardTextHeight / 2)
 
-						local row = resourcetable:addRow(true, { bgColor = Helper.color.transparent })
+						local row = resourcetable:addRow(true, {  })
 						ware.row = row.index
 						local currentprice = math.max(ware.minprice, math.min(ware.maxprice, GetContainerWarePrice(menu.buildstorage, ware.ware, true, true)))
-						row[3]:setColSpan(4):createSliderCell({ height = Helper.standardTextHeight, valueColor = Helper.color.slidervalue, min = ware.minprice, max = ware.maxprice, start = currentprice, suffix = ReadText(1001, 101), readOnly = restricted, hideMaxValue = true }):setText(ReadText(1001, 2808))
+						row[3]:setColSpan(4):createSliderCell({ height = Helper.standardTextHeight, valueColor = Color["slider_value"], min = ware.minprice, max = ware.maxprice, start = currentprice, suffix = ReadText(1001, 101), readOnly = restricted, hideMaxValue = true }):setText(ReadText(1001, 2808))
 						row[3].handlers.onSliderCellChanged = function (_, ...) return menu.slidercellWarePriceOverride(ware.ware, row.index, ...) end
 						row[3].handlers.onSliderCellActivated = function() menu.noupdate = true end
 						row[3].handlers.onSliderCellDeactivated = function() menu.noupdate = false end
@@ -3512,29 +3531,29 @@ function menu.displayPlan(frame)
 					end
 				end
 				-- price
-				local row = resourcetable:addRow(false, { bgColor = Helper.color.transparent })
+				local row = resourcetable:addRow(false, {  })
 				row[2]:setColSpan(5):createText(ReadText(1001, 7929), Helper.subHeaderTextProperties)
 				row[2].properties.halign = "center"
-				local row = resourcetable:addRow(true, { bgColor = Helper.color.transparent })
+				local row = resourcetable:addRow(true, {  })
 				row[2]:setColSpan(5):createText(ConvertMoneyString(menu.totalprice, false, true, 0, true) .. " " .. ReadText(1001, 101), { halign = "right" })
 				-- account
-				local row = resourcetable:addRow(false, { bgColor = Helper.color.transparent })
+				local row = resourcetable:addRow(false, {  })
 				row[2]:setColSpan(5):createText(ReadText(1001, 7930), Helper.subHeaderTextProperties)
 				row[2].properties.halign = "center"
 				row[2].properties.helpOverlayID = "construction_available_funds"
 				row[2].properties.helpOverlayText = " "
 				row[2].properties.helpOverlayHighlightOnly = true
-				local row = resourcetable:addRow(true, { bgColor = Helper.color.transparent })
+				local row = resourcetable:addRow(true, {  })
 				local buildstoragemoney = GetComponentData(ConvertStringTo64Bit(tostring(menu.buildstorage)), "money")
 				local playermoney = GetPlayerMoney()
 				local min = 0
 				local max = buildstoragemoney + playermoney
 				local start = math.max(min, math.min(max, menu.newAccountValue or buildstoragemoney))
-				row[2]:setColSpan(5):createSliderCell({ height = Helper.standardTextHeight, valueColor = Helper.color.slidervalue, min = min, max = max, start = start, suffix = ReadText(1001, 101), hideMaxValue = true })
+				row[2]:setColSpan(5):createSliderCell({ height = Helper.standardTextHeight, valueColor = Color["slider_value"], min = min, max = max, start = start, suffix = ReadText(1001, 101), hideMaxValue = true })
 				row[2].handlers.onSliderCellChanged = menu.slidercellMoney
 				row[2].handlers.onSliderCellActivated = function() menu.noupdate = true end
 				row[2].handlers.onSliderCellDeactivated = function() menu.noupdate = false end
-				local row = resourcetable:addRow(true, { bgColor = Helper.color.transparent })
+				local row = resourcetable:addRow(true, {  })
 				row[2]:setColSpan(3):createButton({ helpOverlayID = "confirm_credits", helpOverlayText = " ", helpOverlayHighlightOnly = true, active = function () return (menu.newAccountValue ~= nil) and (menu.newAccountValue ~= buildstoragemoney) and GetComponentData(ConvertStringTo64Bit(tostring(menu.buildstorage)), "isplayerowned") end }):setText(ReadText(1001, 2821), { halign = "center" })
 				row[2].handlers.onClick = menu.buttonConfirmMoney
 				row[2].properties.uiTriggerID = "confirmcredits"
@@ -3543,7 +3562,7 @@ function menu.displayPlan(frame)
 			end
 
 			-- CVs
-			local row = resourcetable:addRow(false, { bgColor = Helper.defaultTitleBackgroundColor })
+			local row = resourcetable:addRow(false, { bgColor = Color["row_title_background"] })
 			row[1]:setColSpan(6):createText(ReadText(1001, 7932), menu.headerTextProperties)
 			row[1].properties.halign = "center"
 			row[1].properties.helpOverlayID = "construction_builders_header"
@@ -3552,14 +3571,14 @@ function menu.displayPlan(frame)
 
 			if #menu.constructionvessels > 0 then
 				for _, component in ipairs(menu.constructionvessels) do
-					row = resourcetable:addRow(true, { bgColor = Helper.color.transparent })
+					row = resourcetable:addRow(true, {  })
 					row[1]:setColSpan(6):createText(ffi.string(C.GetComponentName(component)) .. " (" .. ffi.string(C.GetObjectIDCode(component)) .. ")")
 				end
 			else
-				row = resourcetable:addRow(true, { bgColor = Helper.color.transparent })
+				row = resourcetable:addRow(true, {  })
 				row[1]:setColSpan(6):createText(ReadText(1001, 7933))
 			end
-			row = resourcetable:addRow(true, { bgColor = Helper.color.transparent })
+			row = resourcetable:addRow(true, {  })
 			if #menu.constructionvessels == 0 then
 				local active = C.DoesConstructionSequenceRequireBuilder(menu.container)
 				row[1]:setColSpan(6):createButton({ active = active, helpOverlayID = "assign_hire_builder", helpOverlayText = " ",  helpOverlayHighlightOnly = true, mouseOverText = active and "" or ReadText(1026, 7923) }):setText(ReadText(1001, 7934), { halign = "center" })
@@ -3589,32 +3608,32 @@ function menu.displayPlan(frame)
 		end
 
 		-- STATUS
-		local statustable = frame:addTable(2, { tabOrder = 6, width = menu.planData.width, x = menu.planData.offsetX, y = 0, reserveScrollBar = false, highlightMode = "off", skipTabChange = true, backgroundID = "solid", backgroundColor = Helper.color.transparent60 })
+		local statustable = frame:addTable(2, { tabOrder = 6, width = menu.planData.width, x = menu.planData.offsetX, y = 0, reserveScrollBar = false, highlightMode = "off", skipTabChange = true, backgroundID = "solid", backgroundColor = Color["table_background_3d_editor"] })
 		statustable:setDefaultColSpan(1, 2)
 
-		local row = statustable:addRow(false, { fixed = true, bgColor = Helper.defaultTitleBackgroundColor })
+		local row = statustable:addRow(false, { fixed = true, bgColor = Color["row_title_background"] })
 		row[1]:createText(ReadText(1001, 7922), menu.headerTextProperties)
 		
 		for _, errorentry in Helper.orderedPairs(menu.criticalerrors) do
-			row = statustable:addRow(true, { bgColor = Helper.color.transparent })
-			row[1]:createText(errorentry, { color = Helper.color.red, wordwrap = true })
+			row = statustable:addRow(true, {  })
+			row[1]:createText(errorentry, { color = Color["text_criticalerror"], wordwrap = true })
 		end
 		for _, errorentry in Helper.orderedPairs(menu.errors) do
-			row = statustable:addRow(true, { bgColor = Helper.color.transparent })
-			row[1]:createText(errorentry, { color = Helper.color.red, wordwrap = true })
+			row = statustable:addRow(true, {  })
+			row[1]:createText(errorentry, { color = Color["text_error"], wordwrap = true })
 		end
 		for _, warningentry in Helper.orderedPairs(menu.warnings) do
-			row = statustable:addRow(true, { bgColor = Helper.color.transparent })
-			row[1]:createText(warningentry, { color = Helper.color.orange, wordwrap = true })
+			row = statustable:addRow(true, {  })
+			row[1]:createText(warningentry, { color = Color["text_warning"], wordwrap = true })
 		end
 		if (not next(menu.criticalerrors)) and (not next(menu.errors)) and (not next(menu.warnings)) then
-			row = statustable:addRow(true, { bgColor = Helper.color.transparent })
-			row[1]:createText(ReadText(1001, 7923), { color = Helper.color.green })
+			row = statustable:addRow(true, {  })
+			row[1]:createText(ReadText(1001, 7923), { color = Color["text_success"] })
 		end
 
-		local row = statustable:addRow(true, { bgColor = Helper.color.transparent })
+		local row = statustable:addRow(true, {  })
 		row[1]:setColSpan(1)
-		row[2]:createButton({ helpOverlayID = "menu_close", helpOverlayText = " ",  helpOverlayHighlightOnly = true }):setText(ReadText(1001, 8035), { halign = "center" })
+		row[2]:createButton({  }):setText(ReadText(1001, 8035), { halign = "center" })
 		row[2].handlers.onClick = function () menu.modulesMode = nil; return menu.onCloseElement("back") end
 
 		statustable.properties.y = Helper.viewHeight - statustable:getFullHeight() - Helper.frameBorder
@@ -3635,32 +3654,34 @@ function menu.displayPlan(frame)
 		end
 
 		-- guarantee 20% of height for resourcetable
-		local maxmoduletableheight = statustable.properties.y - ftable.properties.y - modulestatustable:getFullHeight() - 2 * Helper.borderSize - 0.2 * Helper.viewHeight
-		if maxmoduletableheight < ftable.properties.maxVisibleHeight then
-			ftable.properties.maxVisibleHeight = maxmoduletableheight
-			modulestatustable.properties.y = ftable.properties.y + ftable:getVisibleHeight() + 2 * Helper.borderSize
-			resourcetable.properties.y = modulestatustable.properties.y + modulestatustable:getVisibleHeight() + 2 * Helper.borderSize
-			resourcetable.properties.maxVisibleHeight = statustable.properties.y - resourcetable.properties.y - 2 * Helper.borderSize
-			if resourcetable.properties.maxVisibleHeight < resourcetable:getFullHeight() then
-				for _, statusbar in ipairs(statusBars) do
-					statusbar.properties.width = statusbar.properties.width - Helper.scrollbarWidth
+		if menu.planMode == "construction" then
+			local maxmoduletableheight = statustable.properties.y - ftable.properties.y - modulestatustable:getFullHeight() - 2 * Helper.borderSize - 0.2 * Helper.viewHeight
+			if maxmoduletableheight < ftable.properties.maxVisibleHeight then
+				ftable.properties.maxVisibleHeight = maxmoduletableheight
+				modulestatustable.properties.y = ftable.properties.y + ftable:getVisibleHeight() + 2 * Helper.borderSize
+				resourcetable.properties.y = modulestatustable.properties.y + modulestatustable:getVisibleHeight() + 2 * Helper.borderSize
+				resourcetable.properties.maxVisibleHeight = statustable.properties.y - resourcetable.properties.y - 2 * Helper.borderSize
+				if resourcetable.properties.maxVisibleHeight < resourcetable:getFullHeight() then
+					for _, statusbar in ipairs(statusBars) do
+						statusbar.properties.width = statusbar.properties.width - Helper.scrollbarWidth
+					end
 				end
 			end
 		end
 	else
 		-- BUTTONS
-		local buttontable = frame:addTable(2, { tabOrder = 7, width = menu.planData.width, height = Helper.scaleY(Helper.standardButtonHeight), x = menu.planData.offsetX, y = Helper.viewHeight - Helper.scaleY(Helper.standardButtonHeight) - Helper.frameBorder, reserveScrollBar = false, backgroundID = "solid", backgroundColor = Helper.color.transparent60 })
+		local buttontable = frame:addTable(2, { tabOrder = 7, width = menu.planData.width, height = Helper.scaleY(Helper.standardButtonHeight), x = menu.planData.offsetX, y = Helper.viewHeight - Helper.scaleY(Helper.standardButtonHeight) - Helper.frameBorder, reserveScrollBar = false, backgroundID = "solid", backgroundColor = Color["table_background_3d_editor"] })
 		if menu.cancelRequested then
-			local row = buttontable:addRow(false, { fixed = true, bgColor = Helper.defaultTitleBackgroundColor })
+			local row = buttontable:addRow(false, { fixed = true, bgColor = Color["row_title_background"] })
 			row[1]:setColSpan(2):createText(ReadText(1001, 9705), menu.headerTextProperties)
 
-			local row = buttontable:addRow(true, { fixed = true, bgColor = Helper.defaultTitleBackgroundColor })
+			local row = buttontable:addRow(true, { fixed = true, bgColor = Color["row_title_background"] })
 			row[1]:createButton({  }):setText(ReadText(1001, 2617), { halign = "center" })
 			row[1].handlers.onClick = menu.buttonCancelLoadout
 			row[2]:createButton({  }):setText(ReadText(1001, 2618), { halign = "center" })
 			row[2].handlers.onClick = menu.buttonCancelCancel
 		else
-			local row = buttontable:addRow(true, { fixed = true, bgColor = Helper.defaultTitleBackgroundColor })
+			local row = buttontable:addRow(true, { fixed = true, bgColor = Color["row_title_background"] })
 			row[1]:createButton({  }):setText(ReadText(1001, 7921), { halign = "center" })
 			row[1].handlers.onClick = menu.buttonConfirmLoadout
 			row[2]:createButton({  }):setText(ReadText(1001, 7920), { halign = "center" })
@@ -3670,13 +3691,13 @@ function menu.displayPlan(frame)
 
 		if menu.loadoutPlanMode == "normal" then
 			-- EQUIPMENT
-			local ftable = frame:addTable(5, { tabOrder = 3, width = menu.planData.width, maxVisibleHeight = buttontable.properties.y - menu.planData.offsetY, x = menu.planData.offsetX, y = menu.planData.offsetY, reserveScrollBar = true, skipTabChange = true, highlightMode = "off", backgroundID = "solid", backgroundColor = Helper.color.transparent60 })
+			local ftable = frame:addTable(5, { tabOrder = 3, width = menu.planData.width, maxVisibleHeight = buttontable.properties.y - menu.planData.offsetY, x = menu.planData.offsetX, y = menu.planData.offsetY, reserveScrollBar = true, skipTabChange = true, highlightMode = "off", backgroundID = "solid", backgroundColor = Color["table_background_3d_editor"] })
 			ftable:setColWidth(1, Helper.standardTextHeight)
 			ftable:setColWidth(2, Helper.standardTextHeight)
 			ftable:setColWidth(4, 0.3 * menu.planData.width)
 			ftable:setColWidth(5, Helper.standardTextHeight)
 
-			local row = ftable:addRow(false, { bgColor = Helper.defaultTitleBackgroundColor })
+			local row = ftable:addRow(false, { bgColor = Color["row_title_background"] })
 			row[1]:setColSpan(5):createText(ReadText(1001, 7935), menu.headerTextProperties)
 
 			local removedEquipment = {}
@@ -3749,19 +3770,19 @@ function menu.displayPlan(frame)
 
 			if (#removedEquipment > 0) or (#currentEquipment > 0) or (#newEquipment > 0) then
 				for _, entry in ipairs(removedEquipment) do
-					row = ftable:addRow(true, { bgColor = Helper.color.transparent })
-					row[1]:setColSpan(5):createText(entry.amount .. ReadText(1001, 42) .. " " .. GetWareData(entry.ware, "name"), { color = Helper.color.red })
+					row = ftable:addRow(true, {  })
+					row[1]:setColSpan(5):createText(entry.amount .. ReadText(1001, 42) .. " " .. GetWareData(entry.ware, "name"), { color = Color["text_negative"] })
 				end
 				for _, entry in ipairs(currentEquipment) do
-					row = ftable:addRow(true, { bgColor = Helper.color.transparent })
+					row = ftable:addRow(true, {  })
 					row[1]:setColSpan(5):createText(entry.amount .. ReadText(1001, 42) .. " " .. GetWareData(entry.ware, "name"))
 				end
 				for _, entry in ipairs(newEquipment) do
-					row = ftable:addRow(true, { bgColor = Helper.color.transparent })
-					row[1]:setColSpan(5):createText(entry.amount .. ReadText(1001, 42) .. " " .. GetWareData(entry.ware, "name"), { color = Helper.color.green })
+					row = ftable:addRow(true, {  })
+					row[1]:setColSpan(5):createText(entry.amount .. ReadText(1001, 42) .. " " .. GetWareData(entry.ware, "name"), { color = Color["text_positive"] })
 				end
 			else
-				row = ftable:addRow(true, { bgColor = Helper.color.transparent })
+				row = ftable:addRow(true, {  })
 				row[1]:setColSpan(5):createText("--- " .. ReadText(1001, 7936) .. " ---", { halign = "center" } )
 			end
 
@@ -3814,11 +3835,11 @@ function menu.confirmModuleChangesActive()
 end
 
 function menu.displayModuleInfo(frame)
-	local ftable = frame:addTable(2, { tabOrder = 0, width = menu.statsData.width, x = menu.statsData.offsetX, y = 0, reserveScrollBar = false, backgroundID = "solid", backgroundColor = Helper.color.transparent60 })
+	local ftable = frame:addTable(2, { tabOrder = 0, width = menu.statsData.width, x = menu.statsData.offsetX, y = 0, reserveScrollBar = false, backgroundID = "solid", backgroundColor = Color["table_background_3d_editor"] })
 
 	local name, infolibrary = GetMacroData(menu.selectedModule.macro, "name", "infolibrary")
 
-	local row = ftable:addRow(false, { bgColor = Helper.color.transparent })
+	local row = ftable:addRow(false, {  })
 	row[1]:setColSpan(2):createText(name, menu.headerCenteredTextProperties)
 
 	local data = GetLibraryEntry(infolibrary, menu.selectedModule.macro)
@@ -3830,7 +3851,7 @@ function menu.displayModuleInfo(frame)
 		end
 		-- products
 		for i, proddata in ipairs(data.products) do
-			local row = ftable:addRow(false, { bgColor = Helper.color.transparent })
+			local row = ftable:addRow(false, {  })
 			local categoryname = ReadText(1001, 1624)
 			if #data.products > 1 then
 				categoryname = categoryname .. " " .. ReadText(20402, i)
@@ -3842,7 +3863,7 @@ function menu.displayModuleInfo(frame)
 			local resources = proddata.resources
 			if #resources > 0 then
 				for j, resource in ipairs(resources) do
-					local row = ftable:addRow(false, { bgColor = Helper.color.transparent })
+					local row = ftable:addRow(false, {  })
 					if j == 1 then
 						row[1]:createText("   " .. ReadText(1001, 7403))
 					end
@@ -3850,7 +3871,7 @@ function menu.displayModuleInfo(frame)
 					row[2]:createText(amount .. ReadText(1001, 42) .. " " .. GetWareData(resource.ware, "name") .. " / " .. ReadText(1001, 102))
 				end
 			else
-				local row = ftable:addRow(false, { bgColor = Helper.color.transparent })
+				local row = ftable:addRow(false, {  })
 				row[1]:createText("   " .. ReadText(1001, 7403))
 				row[2]:createText("---")
 			end
@@ -3859,25 +3880,25 @@ function menu.displayModuleInfo(frame)
 
 		if infolibrary == "moduletypes_production" then
 			-- workforce
-			local row = ftable:addRow(false, { bgColor = Helper.color.transparent })
+			local row = ftable:addRow(false, {  })
 			row[1]:createText(ReadText(1001, 7992))
 			row[2]:createText(ConvertIntegerString(data.maxworkforce, true, 0, true))
 		end
 	elseif infolibrary == "moduletypes_storage" then
 		if data.storagecapacity > 0 then
-			local row = ftable:addRow(false, { bgColor = Helper.color.transparent })
+			local row = ftable:addRow(false, {  })
 			row[1]:createText(ReadText(1001, 9063))
 			row[2]:createText(ConvertIntegerString(data.storagecapacity, true, 0, true) .. " " .. ReadText(1001, 110))
 		end
 	elseif infolibrary == "moduletypes_habitation" then
 		if data.workforcecapacity > 0 then
-			local row = ftable:addRow(false, { bgColor = Helper.color.transparent })
+			local row = ftable:addRow(false, {  })
 			row[1]:createText(ReadText(1001, 9611))
 			row[2]:createText(ConvertIntegerString(data.workforcecapacity, true, 0, true))
 		end
 		if #data.workforceresources > 0 then
 			for i, resource in ipairs(data.workforceresources) do
-				local row = ftable:addRow(false, { bgColor = Helper.color.transparent })
+				local row = ftable:addRow(false, {  })
 				if i == 1 then
 					row[1]:createText(string.format(ReadText(1001, 7957), ConvertIntegerString(data.workforcecapacity, true, 0, true, false)))
 				end
@@ -3890,7 +3911,7 @@ function menu.displayModuleInfo(frame)
 	if (data.docks_xl > 0) or (data.docks_l > 0) or (data.docks_m > 0) or (data.docks_s > 0) then
 		local first = true
 		if data.docks_xl > 0 then
-			local row = ftable:addRow(false, { bgColor = Helper.color.transparent })
+			local row = ftable:addRow(false, {  })
 			if first then
 				first = false
 				row[1]:createText(ReadText(1001, 7949))
@@ -3898,7 +3919,7 @@ function menu.displayModuleInfo(frame)
 			row[2]:createText(data.docks_xl .. ReadText(1001, 42) .. " " .. ReadText(1001, 7950))
 		end
 		if data.docks_l > 0 then
-			local row = ftable:addRow(false, { bgColor = Helper.color.transparent })
+			local row = ftable:addRow(false, {  })
 			if first then
 				first = false
 				row[1]:createText(ReadText(1001, 7949))
@@ -3906,7 +3927,7 @@ function menu.displayModuleInfo(frame)
 			row[2]:createText(data.docks_l .. ReadText(1001, 42) .. " " .. ReadText(1001, 7951))
 		end
 		if data.docks_m > 0 then
-			local row = ftable:addRow(false, { bgColor = Helper.color.transparent })
+			local row = ftable:addRow(false, {  })
 			if first then
 				first = false
 				row[1]:createText(ReadText(1001, 7949))
@@ -3914,7 +3935,7 @@ function menu.displayModuleInfo(frame)
 			row[2]:createText(data.docks_m .. ReadText(1001, 42) .. " " .. ReadText(1001, 7952))
 		end
 		if data.docks_s > 0 then
-			local row = ftable:addRow(false, { bgColor = Helper.color.transparent })
+			local row = ftable:addRow(false, {  })
 			if first then
 				first = false
 				row[1]:createText(ReadText(1001, 7949))
@@ -3926,7 +3947,7 @@ function menu.displayModuleInfo(frame)
 	if (data.launchtubes_m > 0) or (data.launchtubes_s > 0) then
 		local first = true
 		if data.launchtubes_m > 0 then
-			local row = ftable:addRow(false, { bgColor = Helper.color.transparent })
+			local row = ftable:addRow(false, {  })
 			if first then
 				first = false
 				row[1]:createText(ReadText(1001, 7954))
@@ -3934,7 +3955,7 @@ function menu.displayModuleInfo(frame)
 			row[2]:createText(data.launchtubes_m .. ReadText(1001, 42) .. " " .. ReadText(1001, 7955))
 		end
 		if data.launchtubes_s > 0 then
-			local row = ftable:addRow(false, { bgColor = Helper.color.transparent })
+			local row = ftable:addRow(false, {  })
 			if first then
 				first = false
 				row[1]:createText(ReadText(1001, 7954))
@@ -3944,14 +3965,14 @@ function menu.displayModuleInfo(frame)
 	end
 	-- ship storage
 	if data.shipstoragecapacity > 0 then
-		local row = ftable:addRow(false, { bgColor = Helper.color.transparent })
+		local row = ftable:addRow(false, {  })
 		row[1]:createText(ReadText(1001, 9612))
 		row[2]:createText(data.shipstoragecapacity)
 	end
 	-- turrets
 	local numturrets = C.GetNumUpgradeSlots(menu.selectedModule.component, menu.selectedModule.macro, "turret")
 	if numturrets > 0 then
-		local row = ftable:addRow(false, { bgColor = Helper.color.transparent })
+		local row = ftable:addRow(false, {  })
 		row[1]:createText(ReadText(1001, 1319))
 		row[2]:createText(tonumber(numturrets))
 	end
@@ -3962,14 +3983,14 @@ end
 function menu.displayModuleRow(ftable, index, entry, added, removed)
 	local isextended = menu.isEntryExtended(menu.container, (removed and "rem" or "") .. index)
 
-	local color = Helper.color.white
+	local color = Color["text_normal"]
 	if removed then
-		color = Helper.color.red
+		color = Color["text_negative"]
 	elseif added then
-		color = Helper.color.green
+		color = Color["text_positive"]
 	end
 
-	local row = ftable:addRow({ ismodule = true, idx = entry.idx, module = entry, removed = removed }, { bgColor = Helper.color.transparent })
+	local row = ftable:addRow({ ismodule = true, idx = entry.idx, module = entry, removed = removed }, {  })
 	if removed or added then
 		row[1]:createButton({ height = Helper.standardTextHeight }):setText(isextended and "-" or "+", { halign = "center" })
 		row[1].handlers.onClick = function () return menu.buttonExtendEntry((removed and "rem" or "") .. index, row.index) end
@@ -4015,7 +4036,7 @@ function menu.displayModuleRow(ftable, index, entry, added, removed)
 		if removed or added then
 			if isextended then
 				for _, resource in ipairs(entry.resources) do
-					local row = ftable:addRow(true, { bgColor = Helper.color.transparent })
+					local row = ftable:addRow(true, {  })
 					row[2]:setColSpan(2):createText("      " .. GetWareData(resource.ware, "name"))
 					row[4]:setColSpan(2):createText(resource.amount, { halign = "right" })
 				end
@@ -4093,7 +4114,7 @@ function menu.getBuildProgress(component, added, removed)
 			end
 		end
 		if found then
-			buildprogress = (ismissingresources and "\27Y\27[warning](" or "(") .. ConvertTimeString(C.GetBuildProcessorEstimatedTimeLeft(ConvertIDTo64Bit(buildingprocessor)), "%h:%M:%S") .. ")\27X  " .. buildprogress
+			buildprogress = (ismissingresources and (ColorText["text_warning"] .. "\27[warning](") or "(") .. ConvertTimeString(C.GetBuildProcessorEstimatedTimeLeft(ConvertIDTo64Bit(buildingprocessor)), "%h:%M:%S") .. ")\27X  " .. buildprogress
 		else
 			buildprogress = "-"
 		end
@@ -4162,7 +4183,114 @@ function menu.displayContextFrame(mode, width, x, y)
 		menu.createSettingsContext()
 	elseif mode == "modulefilter" then
 		menu.createModuleFilterContext()
+	elseif mode == "slot" then
+		menu.createSlotContext()
 	end
+end
+
+function menu.createSlotContext()
+	Helper.removeAllWidgetScripts(menu, config.contextLayer)
+
+	menu.contextFrame = Helper.createFrameHandle(menu, {
+		layer = config.contextLayer,
+		standardButtons = { close = true },
+		width = menu.contextMode.width,
+		x = menu.contextMode.x,
+		y = menu.contextMode.y,
+		autoFrameHeight = true,
+	})
+	menu.contextFrame:setBackground("solid", { color = Color["frame_background_semitransparent"] })
+
+	local ftable = menu.contextFrame:addTable(1, { tabOrder = 5, reserveScrollBar = false, highlightMode = "off" })
+
+	local upgradetype = Helper.findUpgradeType(menu.contextData.upgradetype)
+	local upgradetype2 = Helper.findUpgradeTypeByGroupType(upgradetype.type)
+	local slotdata
+	if menu.upgradetypeMode == "turretgroup" then
+		slotdata = menu.groups[menu.currentSlot][upgradetype2.grouptype]
+	end
+	local plandata
+	if menu.upgradetypeMode == "turretgroup" then
+		plandata = menu.constructionplan[menu.loadoutMode].upgradeplan[upgradetype2.type][menu.currentSlot]
+	end
+	local prefix = ""
+	if upgradetype.mergeslots then
+		prefix = #menu.slots[upgradetype.type] .. ReadText(1001, 42) .. " "
+	end
+
+	if menu.upgradetypeMode == "turretgroup" then
+		local name = upgradetype2.text.default
+		if plandata.macro == "" then
+			if slotdata.slotsize ~= "" then
+				name = upgradetype2.text[slotdata.slotsize]
+			end
+		else
+			name = GetMacroData(plandata.macro, "name")
+		end
+		if not upgradetype2.mergeslots then
+			local minselect = (plandata.macro == "") and 0 or 1
+			local maxselect = (plandata.macro == "") and 0 or slotdata.total
+
+			local scale = {
+				min       = 0,
+				minselect = minselect,
+				max       = slotdata.total,
+				maxselect = maxselect,
+				start     = math.max(minselect, math.min(maxselect, plandata.count)),
+				step      = 1,
+				suffix    = "",
+				exceedmax = false
+			}
+
+			local row = ftable:addRow(true)
+			row[1]:createSliderCell({ height = Helper.headerRow1Height, valueColor = Color["slider_value"], min = scale.min, minSelect = scale.minselect, max = scale.max, maxSelect = scale.maxselect, start = scale.start, step = scale.step, suffix = scale.suffix, exceedMaxValue = scale.exceedmax }):setText(name, { font = Helper.headerRow1Font, fontsize = Helper.headerRow1FontSize })
+			row[1].handlers.onSliderCellChanged = function (_, ...) return menu.slidercellSelectAmount(upgradetype2.type, menu.currentSlot, nil, row.index, ...) end
+		else
+			local row = ftable:addRow(nil)
+			row[1]:createText(name)
+		end
+	end
+
+	for k, macro in ipairs(slotdata.possiblemacros) do
+		local name = prefix .. GetMacroData(macro, "name")
+
+		local color = Color["text_normal"]
+		if (macro == slotdata.currentmacro) and (macro ~= plandata.macro) then
+			color = Color["text_negative"]
+		elseif (macro == plandata.macro) then
+			color = Color["text_positive"]
+		end
+
+		local row = ftable:addRow(true)
+		row[1]:createButton({ height = Helper.standardTextHeight }):setText(name, { color = color })
+		if menu.upgradetypeMode == "turretgroup" then
+			row[1].handlers.onClick = function () return menu.buttonSelectGroupUpgrade(upgradetype2.type, menu.currentSlot, macro, nil, nil, row.index) end
+		end
+	end
+
+	if upgradetype.allowempty then
+		local name = ReadText(1001, 7906)
+
+		local color = Color["text_normal"]
+		if ("" == slotdata.currentmacro) and ("" ~= plandata) then
+			color = Color["text_negative"]
+		elseif ("" == plandata) then
+			color = Color["text_positive"]
+		end
+
+		local row = ftable:addRow(true)
+		row[1]:createButton({ height = Helper.standardTextHeight }):setText(name, { color = color })
+		if menu.upgradetypeMode == "turretgroup" then
+			row[1].handlers.onClick = function () return menu.buttonSelectGroupUpgrade(upgradetype2.type, menu.currentSlot, "", nil, nil, row.index) end
+		end
+	end
+
+	ftable:setTopRow(menu.topRows.context)
+	ftable:setSelectedRow(menu.selectedRows.context)
+	menu.topRows.context = nil
+	menu.selectedRows.context = nil
+
+	menu.contextFrame:display()
 end
 
 function menu.createUserQuestionContext()
@@ -4171,30 +4299,30 @@ function menu.createUserQuestionContext()
 	menu.contextFrame = Helper.createFrameHandle(menu, {
 		layer = config.contextLayer,
 		standardButtons = {},
-		backgroundID = "solid",
-		backgroundColor = Helper.color.semitransparent,
 		width = menu.contextMode.width,
 		x = menu.contextMode.x,
 		y = menu.contextMode.y,
 		autoFrameHeight = true,
 	})
+	menu.contextFrame:setBackground("solid", { color = Color["frame_background_semitransparent"] })
 
 	local ftable = menu.contextFrame:addTable(5, { tabOrder = 5, reserveScrollBar = false, highlightMode = "off" })
 
-	local row = ftable:addRow(false, { fixed = true, bgColor = Helper.color.transparent })
+	local row = ftable:addRow(false, { fixed = true })
 	row[1]:setColSpan(5):createText(ReadText(1001, 8035), Helper.headerRowCenteredProperties)
 
-	local row = ftable:addRow(false, { fixed = true, bgColor = Helper.color.transparent })
+	local row = ftable:addRow(false, { fixed = true })
 	row[1]:setColSpan(5):createText(ReadText(1001, 9705))
 
-	local row = ftable:addRow(false, { fixed = true, bgColor = Helper.color.transparent })
+	local row = ftable:addRow(false, { fixed = true })
 	row[1]:setColSpan(5):createText("")
 
-	local row = ftable:addRow(true, { fixed = true, bgColor = Helper.color.transparent })
+	local row = ftable:addRow(true, { fixed = true })
 	row[2]:createButton():setText(ReadText(1001, 2617), { halign = "center" })
 	row[2].handlers.onClick = function () menu.resetDefaultLoadout() return menu.closeMenu(menu.contextData.dueToClose) end
 	row[4]:createButton():setText(ReadText(1001, 2618), { halign = "center" })
 	row[4].handlers.onClick = menu.closeContextMenu
+	ftable:setSelectedCol(4)
 
 	menu.contextFrame:display()
 end
@@ -4205,46 +4333,46 @@ function menu.createOverwriteQuestionContext()
 	menu.contextFrame = Helper.createFrameHandle(menu, {
 		layer = config.contextLayer,
 		standardButtons = {},
-		backgroundID = "solid",
-		backgroundColor = Helper.color.semitransparent,
 		width = menu.contextMode.width,
 		x = menu.contextMode.x,
 		y = menu.contextMode.y,
 		autoFrameHeight = true,
 	})
+	menu.contextFrame:setBackground("solid", { color = Color["frame_background_semitransparent"] })
 
 	local ftable = menu.contextFrame:addTable(5, { tabOrder = 5, reserveScrollBar = false, highlightMode = "off" })
 
-	local row = ftable:addRow(false, { fixed = true, bgColor = Helper.color.transparent })
+	local row = ftable:addRow(false, { fixed = true })
 	row[1]:setColSpan(5):createText((menu.contextData.mode == "export") and ReadText(1001, 7977) or ReadText(1001, 7985), Helper.headerRowCenteredProperties)
 
 	if menu.contextData.mode == "export" then
 		local canoverwrite, cansaveasnew, source = menu.checkCPNameID()
 		if canoverwrite then
-			local row = ftable:addRow(false, { fixed = true, bgColor = Helper.color.transparent })
+			local row = ftable:addRow(false, { fixed = true })
 			row[1]:setColSpan(5):createText(string.format(ReadText(1001, 7978), menu.currentCPName), { wordwrap = true })
 		end
 		local filename = utf8.gsub(menu.currentCPName, "[^%w_%-%() ]", "_")
 		if menu.importableplansbyfile[filename] then
-			local row = ftable:addRow(false, { fixed = true, bgColor = Helper.color.transparent })
+			local row = ftable:addRow(false, { fixed = true })
 			row[1]:setColSpan(5):createText(string.format(ReadText(1001, 7984), filename), { wordwrap = true })
 		end
 	else
 		local id = menu.contextData.selectedEntry.id
 		if menu.constructionplansbyID[id] then
-			local row = ftable:addRow(false, { fixed = true, bgColor = Helper.color.transparent })
+			local row = ftable:addRow(false, { fixed = true })
 			row[1]:setColSpan(5):createText(string.format(ReadText(1001, 7978), menu.constructionplansbyID[id].name), { wordwrap = true })
 		end
 	end
 
-	local row = ftable:addRow(false, { fixed = true, bgColor = Helper.color.transparent })
+	local row = ftable:addRow(false, { fixed = true })
 	row[1]:setColSpan(5):createText("")
 
-	local row = ftable:addRow(true, { fixed = true, bgColor = Helper.color.transparent })
+	local row = ftable:addRow(true, { fixed = true })
 	row[2]:createButton():setText(ReadText(1001, 14), { halign = "center" })
 	row[2].handlers.onClick = (menu.contextData.mode == "export") and function () menu.buttonExport(true) end or function () menu.buttonImport(true) end
 	row[4]:createButton():setText(ReadText(1001, 64), { halign = "center" })
 	row[4].handlers.onClick = function () return menu.displayContextFrame((menu.contextData.mode == "export") and "exportCP" or "importCP", menu.titleData.dropdownWidth + 7 * (menu.titleData.height + Helper.borderSize), menu.titleData.offsetX + menu.titleData.nameWidth + Helper.borderSize, menu.titleData.offsetY + menu.titleData.height + Helper.borderSize) end
+	ftable:setSelectedCol(4)
 
 	menu.contextFrame:display()
 end
@@ -4255,17 +4383,16 @@ function menu.createModuleContext()
 	menu.contextFrame = Helper.createFrameHandle(menu, {
 		layer = config.contextLayer,
 		standardButtons = { close = true },
-		backgroundID = "solid",
-		backgroundColor = Helper.color.semitransparent,
 		width = menu.contextMode.width,
 		x = menu.contextMode.x,
 		y = menu.contextMode.y,
 		autoFrameHeight = true,
 	})
+	menu.contextFrame:setBackground("solid", { color = Color["frame_background_semitransparent"] })
 
 	local ftable = menu.contextFrame:addTable(1, { tabOrder = 5, reserveScrollBar = false, highlightMode = "off" })
 
-	local row = ftable:addRow(false, { fixed = true, bgColor = Helper.color.transparent })
+	local row = ftable:addRow(false, { fixed = true })
 	row[1]:createText(GetMacroData(ffi.string(menu.contextData.item.macro), "name"), Helper.subHeaderTextProperties)
 
 	local active = false
@@ -4278,16 +4405,20 @@ function menu.createModuleContext()
 		end
 	end
 	if active then
-		local row = ftable:addRow(true, { fixed = true, bgColor = Helper.color.transparent })
-		row[1]:createButton({ active = true, bgColor = Helper.color.transparent }):setText(ReadText(1001, 7938), { color = Helper.color.white })
+		local row = ftable:addRow(true, { fixed = true })
+		row[1]:createButton({ active = true, bgColor = Color["button_background_hidden"] }):setText(ReadText(1001, 7938))
 		row[1].handlers.onClick = function () return menu.buttonEditLoadout(menu.contextData.item) end
 	end
 
-	local row = ftable:addRow(true, { fixed = true, bgColor = Helper.color.transparent })
-	row[1]:createButton({ active = not menu.contextData.item.isfixed, bgColor = Helper.color.transparent }):setText(ReadText(1001, 7999), { color = Helper.color.white })
+	local row = ftable:addRow(true, { fixed = true })
+	row[1]:createButton({ bgColor = Color["button_background_hidden"] }):setText(ReadText(1001, 2400))
+	row[1].handlers.onClick = function () return menu.buttonContextEncyclopedia({ type = "module", macro = menu.contextData.item.macro }) end
+
+	local row = ftable:addRow(true, { fixed = true })
+	row[1]:createButton({ active = not menu.contextData.item.isfixed, bgColor = Color["button_background_hidden"] }):setText(ReadText(1001, 7999))
 	row[1].handlers.onClick = function () return menu.buttonResetModuleRotation(menu.contextData.item) end
 
-	local row = ftable:addRow(true, { fixed = true, bgColor = Helper.color.transparent })
+	local row = ftable:addRow(true, { fixed = true })
 	local macro = menu.contextData.item.macro
 	local active = not menu.contextData.item.isfixed
 	local mouseovertext = ""
@@ -4301,10 +4432,10 @@ function menu.createModuleContext()
 			end
 		end
 	end
-	row[1]:createButton({ active = active, bgColor = Helper.color.transparent, mouseOverText = mouseovertext }):setText(ReadText(1001, 7947), { color = Helper.color.white })
+	row[1]:createButton({ active = active, bgColor = Color["button_background_hidden"], mouseOverText = mouseovertext }):setText(ReadText(1001, 7947))
 	row[1].handlers.onClick = function () return menu.buttonCopyModule(menu.contextData.item, false) end
 
-	local row = ftable:addRow(true, { fixed = true, bgColor = Helper.color.transparent })
+	local row = ftable:addRow(true, { fixed = true })
 	local active = not menu.contextData.item.isfixed
 	local mouseovertext = ""
 	if active then
@@ -4329,15 +4460,15 @@ function menu.createModuleContext()
 			end
 		end
 	end
-	row[1]:createButton({ active = active, bgColor = Helper.color.transparent, mouseOverText = mouseovertext }):setText(ReadText(1001, 7948), { color = Helper.color.white })
+	row[1]:createButton({ active = active, bgColor = Color["button_background_hidden"], mouseOverText = mouseovertext }):setText(ReadText(1001, 7948))
 	row[1].handlers.onClick = function () return menu.buttonCopyModule(menu.contextData.item, true) end
 
-	local row = ftable:addRow(true, { fixed = true, bgColor = Helper.color.transparent })
-	row[1]:createButton({ active = not menu.contextData.item.isfixed, bgColor = Helper.color.transparent }):setText(ReadText(1001, 7937), { color = Helper.color.white })
+	local row = ftable:addRow(true, { fixed = true })
+	row[1]:createButton({ active = not menu.contextData.item.isfixed, bgColor = Color["button_background_hidden"] }):setText(ReadText(1001, 7937))
 	row[1].handlers.onClick = function () return menu.buttonRemoveModule(menu.contextData.item, false) end
 
-	local row = ftable:addRow(true, { fixed = true, bgColor = Helper.color.transparent })
-	row[1]:createButton({ active = not menu.contextData.item.isfixed, bgColor = Helper.color.transparent }):setText(ReadText(1001, 7995), { color = Helper.color.white })
+	local row = ftable:addRow(true, { fixed = true })
+	row[1]:createButton({ active = not menu.contextData.item.isfixed, bgColor = Color["button_background_hidden"] }):setText(ReadText(1001, 7995))
 	row[1].handlers.onClick = function () return menu.buttonRemoveModule(menu.contextData.item, true) end
 
 	if ftable.properties.y + ftable:getFullHeight() > Helper.viewHeight - menu.contextFrame.properties.y then
@@ -4353,21 +4484,20 @@ function menu.createEquipmentContext()
 	menu.contextFrame = Helper.createFrameHandle(menu, {
 		layer = config.contextLayer,
 		standardButtons = { close = true },
-		backgroundID = "solid",
-		backgroundColor = Helper.color.semitransparent,
 		width = menu.contextMode.width,
 		x = menu.contextMode.x,
 		y = menu.contextMode.y,
 		autoFrameHeight = true,
 	})
+	menu.contextFrame:setBackground("solid", { color = Color["frame_background_semitransparent"] })
 
 	local ftable = menu.contextFrame:addTable(1, { tabOrder = 5, reserveScrollBar = false, highlightMode = "off" })
 
-	local row = ftable:addRow(false, { fixed = true, bgColor = Helper.color.transparent })
+	local row = ftable:addRow(false, { fixed = true })
 	row[1]:createText(menu.selectedUpgrade.name, Helper.subHeaderTextProperties)
 
-	local row = ftable:addRow(true, { fixed = true, bgColor = Helper.color.transparent })
-	row[1]:createButton({ active = true, bgColor = Helper.color.transparent }):setText(ReadText(1001, 2400), { color = Helper.color.white })
+	local row = ftable:addRow(true, { fixed = true })
+	row[1]:createButton({ active = true, bgColor = Color["button_background_hidden"] }):setText(ReadText(1001, 2400))
 	row[1].handlers.onClick = function () return menu.buttonContextEncyclopedia(menu.selectedUpgrade) end
 
 	menu.contextFrame:display()
@@ -4423,9 +4553,8 @@ function menu.createCPSaveContext()
 		x = menu.contextMode.x,
 		y = menu.contextMode.y,
 		autoFrameHeight = true,
-		backgroundID = "solid",
-		backgroundColor = Helper.color.transparent60,
 	})
+	menu.contextFrame:setBackground("solid", { color = Color["frame_background_semitransparent"] })
 
 	local ftable = menu.contextFrame:addTable(3, { tabOrder = 6, reserveScrollBar = false })
 	ftable:setDefaultCellProperties("button", { height = Helper.standardTextHeight })
@@ -4433,14 +4562,14 @@ function menu.createCPSaveContext()
 
 	local canoverwrite, cansaveasnew, source = menu.checkCPNameID()
 
-	local row = ftable:addRow(nil, { fixed = true, bgColor = Helper.color.transparent })
+	local row = ftable:addRow(nil, { fixed = true })
 	row[1]:setColSpan(3):createText(ReadText(1001, 7969), Helper.headerRowCenteredProperties)
 
-	local row = ftable:addRow(true, { fixed = true, bgColor = Helper.color.transparent })
+	local row = ftable:addRow(true, { fixed = true })
 	menu.contextMode.nameEditBox = row[1]:setColSpan(3):createEditBox({ height = Helper.headerRow1Height, defaultText = ReadText(1001, 7979) }):setText(menu.currentCPName or "", { fontsize = Helper.headerRow1FontSize, x = Helper.standardTextOffsetx })
 	row[1].handlers.onTextChanged = menu.editboxCPNameUpdateText
 
-	row = ftable:addRow(true, { fixed = true, bgColor = Helper.color.transparent })
+	row = ftable:addRow(true, { fixed = true })
 	row[1]:createButton({ active = menu.checkOverwriteActive, mouseOverText = ReadText(1026, 7906) }):setText(ReadText(1001, 7907), {  })
 	row[1].handlers.onClick = function () return menu.buttonSave(true) end
 	row[2]:createButton({ active = menu.checkSaveNewActive, mouseOverText = ReadText(1026, 7907) }):setText(ReadText(1001, 7909), {  })
@@ -4461,9 +4590,8 @@ function menu.createSettingsContext()
 		x = menu.contextMode.x,
 		y = menu.contextMode.y,
 		autoFrameHeight = true,
-		backgroundID = "solid",
-		backgroundColor = Helper.color.transparent60,
 	})
+	menu.contextFrame:setBackground("solid", { color = Color["frame_background_semitransparent"] })
 
 	local ftable = menu.contextFrame:addTable(3, { tabOrder = 6, reserveScrollBar = false })
 	ftable:setColWidth(1, Helper.standardTextHeight)
@@ -4471,21 +4599,26 @@ function menu.createSettingsContext()
 	ftable:setDefaultCellProperties("button", { height = Helper.standardTextHeight })
 
 	-- settings
-	local row = ftable:addRow(nil, { fixed = true, bgColor = Helper.color.transparent })
+	local row = ftable:addRow(nil, { fixed = true })
 	row[1]:setColSpan(3):createText(ReadText(1001, 11904), Helper.headerRowCenteredProperties)
 	-- environment
-	local row = ftable:addRow(true, { fixed = true, bgColor = Helper.color.transparent })
+	local row = ftable:addRow(true, { fixed = true })
 	row[1]:createCheckBox(__CORE_DETAILMONITOR_STATIONBUILD.environment, { height = Helper.standardTextHeight })
 	row[1].handlers.onClick = function(_, checked) __CORE_DETAILMONITOR_STATIONBUILD.environment = checked; menu.applySettings() end
 	row[2]:setColSpan(2):createText(ReadText(1001, 11905), { mouseOverText = ReadText(1026, 7927) })
+	-- gizmo
+	local row = ftable:addRow(true, { fixed = true })
+	row[1]:createCheckBox(__CORE_DETAILMONITOR_STATIONBUILD.gizmo, { height = Helper.standardTextHeight })
+	row[1].handlers.onClick = function (_, checked) __CORE_DETAILMONITOR_STATIONBUILD.gizmo = checked; menu.applySettings() end
+	row[2]:setColSpan(2):createText(ReadText(1001, 11920), { mouseOverText = ReadText(1026, 7932) })
 	-- module overlap
-	local row = ftable:addRow(true, { fixed = true, bgColor = Helper.color.transparent })
+	local row = ftable:addRow(true, { fixed = true })
 	row[1]:createCheckBox(__CORE_DETAILMONITOR_STATIONBUILD.moduleoverlap, { height = Helper.standardTextHeight })
 	row[1].handlers.onClick = function(_, checked) __CORE_DETAILMONITOR_STATIONBUILD.moduleoverlap = checked; menu.applySettings() end
 	row[2]:setColSpan(2):createText(ReadText(1001, 11907), { mouseOverText = ReadText(1026, 7928) })
 	ftable:addEmptyRow(Helper.standardTextHeight / 2)
 	-- rotation angle snap
-	local row = ftable:addRow(true, { fixed = true, bgColor = Helper.color.transparent })
+	local row = ftable:addRow(true, { fixed = true })
 	row[1]:setColSpan(3):createSliderCell({ min = 0, minSelect = config.discreteAngleSlider.min, max = config.discreteAngleSlider.max, start = math.max(config.discreteAngleSlider.min, math.min(config.discreteAngleSlider.max, __CORE_DETAILMONITOR_STATIONBUILD.discreteanglestep)), step = config.discreteAngleSlider.step, mouseOverText = ReadText(1026, 7926), height = Helper.standardTextHeight, suffix = ReadText(1001, 109), hideMaxValue = true }):setText(ReadText(1001, 7998))
 	row[1].handlers.onSliderCellChanged = function (_, value) __CORE_DETAILMONITOR_STATIONBUILD.discreteanglestep = value; menu.applySettings() end
 	row[1].handlers.onSliderCellActivated = function() menu.noupdate = true end
@@ -4494,12 +4627,17 @@ function menu.createSettingsContext()
 	ftable:addEmptyRow()
 
 	-- options
-	local row = ftable:addRow(nil, { fixed = true, bgColor = Helper.color.transparent })
+	local row = ftable:addRow(nil, { fixed = true })
 	row[1]:setColSpan(3):createText(ReadText(1001, 11914), Helper.headerRowCenteredProperties)
 	-- shuffle
-	local row = ftable:addRow(true, { fixed = true, bgColor = Helper.color.transparent })
+	local row = ftable:addRow(true, { fixed = true })
+	row[1]:setColSpan(2):createText(ReadText(1001, 11923) .. ReadText(1001, 120))
+	row[3]:createDropDown(menu.connectionmoduleraces, { startOption = menu.shuffleconnectionrace })
+	row[3].handlers.onDropDownActivated = function() menu.noupdate = true end
+	row[3].handlers.onDropDownConfirmed = function (_, id) menu.shuffleconnectionrace = id; menu.noupdate = false end
+	local row = ftable:addRow(true, { fixed = true })
 	row[1]:setColSpan(2):createButton({ helpOverlayID = "shuffle_modules", helpOverlayText = " ", helpOverlayHighlightOnly = true, mouseOverText = ReadText(1026, 7910) }):setText(ReadText(1001, 11911), { halign = "center" })
-	row[1].handlers.onClick = function () C.ShuffleMapConstructionPlan(menu.holomap, false); menu.refreshPlan(); menu.displayMenu() end
+	row[1].handlers.onClick = function () C.ShuffleMapConstructionPlan2(menu.holomap, false, (menu.shuffleconnectionrace == "all") and "" or menu.shuffleconnectionrace); menu.refreshPlan(); menu.displayMenu() end
 
 	menu.contextFrame:display()
 end
@@ -4514,20 +4652,19 @@ function menu.createModuleFilterContext()
 		x = menu.contextMode.x,
 		y = menu.contextMode.y,
 		autoFrameHeight = true,
-		backgroundID = "solid",
-		backgroundColor = Helper.color.transparent60,
 	})
+	menu.contextFrame:setBackground("solid", { color = Color["frame_background_semitransparent"] })
 
 	local ftable = menu.contextFrame:addTable(2, { tabOrder = 6, reserveScrollBar = false })
 	ftable:setColWidth(1, Helper.standardTextHeight)
 
-	local row = ftable:addRow(true, { fixed = true, bgColor = Helper.color.transparent })
+	local row = ftable:addRow(true, { fixed = true })
 	row[1]:createCheckBox(menu.checkAllRacesSelected, { height = Helper.standardTextHeight })
 	row[1].handlers.onClick = menu.checkboxSelectAllRaces
 	row[2]:createText(ReadText(1001, 11912), Helper.headerRowCenteredProperties)
 
 	for i, race in ipairs(menu.races) do
-		local row = ftable:addRow(true, { fixed = true, bgColor = Helper.color.transparent })
+		local row = ftable:addRow(true, { fixed = true })
 		row[1]:createCheckBox(function () return menu.checkRacesSelected(race) end, { height = Helper.standardTextHeight })
 		row[1].handlers.onClick = function(_, checked) menu.checkboxSelectRace(i, race, checked) end
 		row[2]:createText(race.name)
@@ -4647,9 +4784,8 @@ function menu.createCPImportContext()
 		x = menu.contextMode.x,
 		y = menu.contextMode.y,
 		autoFrameHeight = true,
-		backgroundID = "solid",
-		backgroundColor = Helper.color.transparent60,
 	})
+	menu.contextFrame:setBackground("solid", { color = Color["frame_background_semitransparent"] })
 
 	local ftable = menu.contextFrame:addTable(4, { tabOrder = 6, reserveScrollBar = false, maxVisibleHeight = Helper.viewHeight / 2 })
 	ftable:setDefaultCellProperties("button", { height = Helper.standardTextHeight })
@@ -4658,14 +4794,14 @@ function menu.createCPImportContext()
 	ftable:setColWidth(3, 0.25 * (menu.contextMode.width - Helper.borderSize) - Helper.scaleY(Helper.standardTextHeight), false)
 	ftable:setColWidth(4, math.max(20, Helper.scaleY(Helper.standardTextHeight)), false)
 
-	local row = ftable:addRow(true, { fixed = true, bgColor = Helper.color.transparent })
+	local row = ftable:addRow(true, { fixed = true })
 	row[1]:setColSpan(3):createText(ReadText(1001, 7971), Helper.headerRowCenteredProperties)
 	row[4]:createButton({ width = Helper.standardTextHeight, y = Helper.headerRow1Height - Helper.standardTextHeight }):setIcon("menu_reload")
 	row[4].handlers.onClick = menu.buttonReloadImportable
 
 	menu.importableplans = menu.importableplans or {}
 	for _, entry in ipairs(menu.importableplans) do
-		local row = ftable:addRow(entry, { bgColor = Helper.color.transparent })
+		local row = ftable:addRow(entry, {  })
 		if entry.imported then
 			row[1]:setColSpan(2):setBackgroundColSpan(4):createText(entry.name, { mouseOverText = entry.filename .. config.fileExtension })
 			row[3]:setColSpan(2):createText("[" .. ReadText(1001, 7983) .. "]", { halign = "right", mouseOverText = entry.filename .. config.fileExtension })
@@ -4683,20 +4819,20 @@ function menu.createCPImportContext()
 	buttontable:setDefaultCellProperties("button", { height = Helper.standardTextHeight })
 	buttontable:setDefaultComplexCellProperties("button", "text", { fontsize = Helper.standardFontSize, halign = "center" })
 	
-	local row = buttontable:addRow(nil, { fixed = true, bgColor = Helper.color.transparent })
+	local row = buttontable:addRow(nil, { fixed = true })
 	row[1]:setColSpan(2):createText(" ")
 
-	local row = buttontable:addRow(nil, { fixed = true, bgColor = Helper.color.transparent })
+	local row = buttontable:addRow(nil, { fixed = true })
 	row[1]:setColSpan(2):createText(ReadText(1001, 7981), { wordwrap = true })
 
 	if menu.contextData.selectedEntry and menu.contextData.selectedEntry.imported then
 		buttontable:addEmptyRow(Helper.standardTextHeight / 2)
 
-		local row = buttontable:addRow(nil, { fixed = true, bgColor = Helper.color.transparent })
+		local row = buttontable:addRow(nil, { fixed = true })
 		row[1]:setColSpan(2):createText(ReadText(1001, 7982), { wordwrap = true })
 	end
 
-	local row = buttontable:addRow(true, { fixed = true, bgColor = Helper.color.transparent })
+	local row = buttontable:addRow(true, { fixed = true })
 	row[1]:createButton({ active = function () return menu.contextData.selectedEntry ~= nil end }):setText(ReadText(1001, 7980), {  })
 	row[1].handlers.onClick = function () return menu.buttonImport(false) end
 	row[2]:createButton({  }):setText(ReadText(1001, 64))
@@ -4722,29 +4858,28 @@ function menu.createCPExportContext()
 		x = menu.contextMode.x,
 		y = menu.contextMode.y,
 		autoFrameHeight = true,
-		backgroundID = "solid",
-		backgroundColor = Helper.color.transparent60,
 	})
+	menu.contextFrame:setBackground("solid", { color = Color["frame_background_semitransparent"] })
 
 	local ftable = menu.contextFrame:addTable(2, { tabOrder = 6, reserveScrollBar = false })
 	ftable:setDefaultCellProperties("button", { height = Helper.standardTextHeight })
 	ftable:setDefaultComplexCellProperties("button", "text", { fontsize = Helper.standardFontSize, halign = "center" })
 
-	local row = ftable:addRow(nil, { fixed = true, bgColor = Helper.color.transparent })
+	local row = ftable:addRow(nil, { fixed = true })
 	row[1]:setColSpan(2):createText(ReadText(1001, 7972), Helper.headerRowCenteredProperties)
 
-	local row = ftable:addRow(true, { fixed = true, bgColor = Helper.color.transparent })
+	local row = ftable:addRow(true, { fixed = true })
 	menu.contextMode.nameEditBox = row[1]:setColSpan(2):createEditBox({ height = Helper.headerRow1Height, defaultText = ReadText(1001, 7979) }):setText(menu.currentCPName or "", { fontsize = Helper.headerRow1FontSize, x = Helper.standardTextOffsetx })
 	row[1].handlers.onTextChanged = menu.editboxCPNameUpdateText
 
-	local row = ftable:addRow(nil, { fixed = true, bgColor = Helper.color.transparent })
+	local row = ftable:addRow(nil, { fixed = true })
 	row[1]:setColSpan(2):createText(ReadText(1001, 7973), { wordwrap = true })
 
-	local row = ftable:addRow(true, { fixed = true, bgColor = Helper.color.transparent })
+	local row = ftable:addRow(true, { fixed = true })
 	row[1]:setColSpan(2):createButton({ active = C.CanOpenWebBrowser(), mouseOverText = ReadText(1026, 7918) }):setText(ReadText(1001, 7974)):setText2("\27[mm_externallink]", { halign = "right" })
 	row[1].handlers.onClick = menu.buttonConstructionCommunity
 
-	local row = ftable:addRow(true, { fixed = true, bgColor = Helper.color.transparent })
+	local row = ftable:addRow(true, { fixed = true })
 	row[1]:createButton({ active = menu.checkExportActive }):setText(ReadText(1001, 7975), {  })
 	row[1].handlers.onClick = function () return menu.buttonExport(false) end
 	row[2]:createButton({  }):setText(ReadText(1001, 64))
@@ -4763,9 +4898,8 @@ function menu.createLoadoutSaveContext()
 		x = menu.contextMode.x,
 		y = menu.contextMode.y,
 		autoFrameHeight = true,
-		backgroundID = "solid",
-		backgroundColor = Helper.color.transparent60,
 	})
+	menu.contextFrame:setBackground("solid", { color = Color["frame_background_semitransparent"] })
 
 	local ftable = menu.contextFrame:addTable(3, { tabOrder = 6, reserveScrollBar = false })
 	ftable:setDefaultCellProperties("button", { height = Helper.standardTextHeight })
@@ -4774,14 +4908,14 @@ function menu.createLoadoutSaveContext()
 	-- magic
 	local canoverwrite, cansaveasnew = menu.checkLoadoutNameID()
 
-	local row = ftable:addRow(nil, { fixed = true, bgColor = Helper.color.transparent })
+	local row = ftable:addRow(nil, { fixed = true })
 	row[1]:setColSpan(3):createText(ReadText(1001, 7970), Helper.headerRowCenteredProperties)
 
-	local row = ftable:addRow(true, { fixed = true, bgColor = Helper.color.transparent })
+	local row = ftable:addRow(true, { fixed = true })
 	menu.contextMode.nameEditBox = row[1]:setColSpan(3):createEditBox({ scaling = false, height = menu.titleData.height }):setText(menu.loadoutName or "", { halign = "center", font = Helper.headerRow1Font, fontsize = Helper.scaleFont(Helper.headerRow1Font, Helper.headerRow1FontSize) })
 	row[1].handlers.onTextChanged = menu.editboxLoadoutNameUpdateText
 
-	row = ftable:addRow(true, { fixed = true, bgColor = Helper.color.transparent })
+	row = ftable:addRow(true, { fixed = true })
 	row[1]:createButton({ active = menu.checkLoadoutOverwriteActive, mouseOverText = ReadText(1026, 7908) }):setText(ReadText(1001, 7908), {  })
 	row[1].handlers.onClick = function () return menu.buttonSaveLoadout(true) end
 	row[2]:createButton({ active = menu.checkLoadoutSaveNewActive, mouseOverText = ReadText(1026, 7909) }):setText(ReadText(1001, 7909), {  })
@@ -4830,135 +4964,6 @@ function menu.displayMenu(firsttime)
 	menu.infoFrame:display()
 end
 
-function menu.displayContextMenu()
-	-- Remove possible button scripts from previous view
-	Helper.removeAllWidgetScripts(menu, config.contextLayer)
-	PlaySound("ui_positive_click")
-
-	local width = 0
-	local setup = Helper.createTableSetup(menu)
-	
-	if menu.contextMode == 2 then
-		width = 300
-
-		local upgradetype = Helper.findUpgradeType(menu.contextData.upgradetype)
-		local upgradetype2 = Helper.findUpgradeTypeByGroupType(upgradetype.type)
-		local slotdata
-		if menu.upgradetypeMode == "turretgroup" then
-			slotdata = menu.groups[menu.currentSlot][upgradetype2.grouptype]
-		end
-		local plandata
-		if menu.upgradetypeMode == "turretgroup" then
-			plandata = menu.constructionplan[menu.loadoutMode].upgradeplan[upgradetype2.type][menu.currentSlot]
-		end
-		local prefix = ""
-		if upgradetype.mergeslots then
-			prefix = #menu.slots[upgradetype.type] .. ReadText(1001, 42) .. " "
-		end
-
-		if menu.upgradetypeMode == "turretgroup" then
-			local name = upgradetype2.text.default
-			if plandata.macro == "" then
-				if slotdata.slotsize ~= "" then
-					name = upgradetype2.text[slotdata.slotsize]
-				end
-			else
-				name = GetMacroData(plandata.macro, "name")
-			end
-			if not upgradetype2.mergeslots then
-				local minselect = (plandata.macro == "") and 0 or 1
-				local maxselect = (plandata.macro == "") and 0 or slotdata.total
-
-				local scale = {
-					min       = 0,
-					minselect = minselect,
-					max       = slotdata.total,
-					maxselect = maxselect,
-					start     = math.max(minselect, math.min(maxselect, plandata.count)),
-					step      = 1,
-					suffix    = "",
-					exceedmax = false
-				}
-				setup:addSimpleRow({
-					Helper.createSliderCell(Helper.createTextInfo(name, "left", Helper.headerRow1Font, Helper.headerRow1FontSize, 255, 255, 255, 100), false, 0, 0, 0, Helper.headerRow1Height, nil, Helper.color.slidervalue, scale, "")
-				}, nil, {1})
-			else
-				setup:addSimpleRow({
-					Helper.createFontString(name, false, "left", 255, 255, 255, 100)
-				}, nil, {1})
-			end
-		end
-
-		for k, macro in ipairs(slotdata.possiblemacros) do
-			local name = prefix .. GetMacroData(macro, "name")
-
-			local color = Helper.color.white
-			if (macro == slotdata.currentmacro) and (macro ~= plandata.macro) then
-				color = Helper.color.red
-			elseif (macro == plandata.macro) then
-				color = Helper.color.green
-			end
-
-			setup:addSimpleRow({
-				Helper.createButton(Helper.createTextInfo(name, "left", Helper.standardFont, Helper.scaleFont(Helper.standardFont, Helper.standardFontSize), color.r, color.g, color.b, color.a, Helper.standardTextOffsetx), nil, true, true, 0, 0, width, Helper.standardTextHeight)
-			}, nil, {1})
-		end
-
-		if upgradetype.allowempty then
-			local name = ReadText(1001, 7906)
-
-			local color = Helper.color.white
-			if ("" == slotdata.currentmacro) and ("" ~= plandata) then
-				color = Helper.color.red
-			elseif ("" == plandata) then
-				color = Helper.color.green
-			end
-
-			setup:addSimpleRow({
-				Helper.createButton(Helper.createTextInfo(name, "left", Helper.standardFont, Helper.scaleFont(Helper.standardFont, Helper.standardFontSize), color.r, color.g, color.b, color.a, Helper.standardTextOffsetx), nil, true, true, 0, 0, width, Helper.standardTextHeight)
-			}, nil, {1})
-		end
-	end
-	
-	local contextdesc = setup:createCustomWidthTable({width}, false, true, true, 4, 0, menu.contextData.offsetX, menu.contextData.offsetY, 0, true, menu.topRows.context, menu.selectedRows.context, nil, nil, "off")
-	menu.topRows.context = nil
-	menu.selectedRows.context = nil
-
-	Helper.displayFrame(menu, {contextdesc}, false, "", "", {}, nil, config.contextLayer)
-end
-
-function menu.setUpContextMenuScripts(uitable)
-	local nooflines = 1
-	if menu.contextMode == 2 then
-		local upgradetype = Helper.findUpgradeType(menu.contextData.upgradetype)
-		local upgradetype2 = Helper.findUpgradeTypeByGroupType(upgradetype.type)
-		local slotdata = menu.slots[upgradetype.type][menu.contextData.slot]
-
-		if menu.upgradetypeMode == "turretgroup" then
-			if not upgradetype.mergeslots then
-				local line = nooflines
-				Helper.setSliderCellScript(menu, nil, uitable, nooflines, 1, function (_, ...) return menu.slidercellSelectAmount(upgradetype2.type, menu.currentSlot, nil, line, ...) end)
-			end
-			nooflines = nooflines + 1
-		end
-
-		for k, macro in ipairs(slotdata.possiblemacros) do
-			local line = nooflines
-			if menu.upgradetypeMode == "turretgroup" then
-				Helper.setButtonScript(menu, nil, uitable, nooflines, 1, function () return menu.buttonSelectGroupUpgrade(upgradetype2.type, menu.currentSlot, macro, nil, nil, line) end)
-			end
-			nooflines = nooflines + 1
-		end
-
-		if upgradetype.allowempty then
-			local line = nooflines
-			if menu.upgradetypeMode == "turretgroup" then
-				Helper.setButtonScript(menu, nil, uitable, nooflines, 1, function () return menu.buttonSelectGroupUpgrade(upgradetype2.type, menu.currentSlot, "", nil, nil, line) end)
-			end
-		end
-	end
-end
-
 function menu.viewCreated(layer, ...)
 	if layer == config.mainLayer then
 		menu.rightbartable, menu.titlebartable, menu.map = ...
@@ -4982,12 +4987,7 @@ function menu.viewCreated(layer, ...)
 		end
 	elseif layer == config.contextLayer then
 		menu.contexttable = ...
-
-		menu.setUpContextMenuScripts(menu.contexttable)
 	end
-
-	-- clear descriptors again
-	Helper.releaseDescriptors()
 end
 
 menu.updateInterval = 0.01
@@ -5134,21 +5134,23 @@ function menu.onUpdate()
 			end
 		end
 
-		if haspick then
-			local macro = ffi.string(pickedentry.macroid)
-			if macro ~= menu.mouseOverMacro then
-				menu.mouseOverMacro = macro
-				SetMouseOverOverride(menu.map, GetMacroData(macro, "name"))
-				local selectedIdx = C.GetSelectedBuildMapEntry(menu.holomap)
-				if ((pickedentry.idx == selectedIdx) or (pickedentry.idx == #menu.constructionplan)) and (not pickedentry.isfixed) then
-					SetMouseCursorOverride("crossarrows")
+		if menu.picking then
+			if haspick then
+				local macro = ffi.string(pickedentry.macroid)
+				if macro ~= menu.mouseOverMacro then
+					menu.mouseOverMacro = macro
+					SetMouseOverOverride(menu.map, GetMacroData(macro, "name"))
+					local selectedIdx = C.GetSelectedBuildMapEntry(menu.holomap)
+					if ((pickedentry.idx == selectedIdx) or (pickedentry.idx == #menu.constructionplan)) and (not pickedentry.isfixed) then
+						SetMouseCursorOverride("crossarrows")
+					end
 				end
-			end
-		elseif menu.mouseOverMacro then
-			menu.mouseOverMacro = nil
-			SetMouseOverOverride(menu.map, nil)
-			if not menu.keepcursor then
-				SetMouseCursorOverride("default")
+			elseif menu.mouseOverMacro then
+				menu.mouseOverMacro = nil
+				SetMouseOverOverride(menu.map, nil)
+				if not menu.keepcursor then
+					SetMouseCursorOverride("default")
+				end
 			end
 		end
 
@@ -5156,17 +5158,15 @@ function menu.onUpdate()
 			local canundo = C.CanUndoConstructionMapChange(menu.holomap)
 			if canundo ~= menu.canundo then
 				menu.canundo = canundo
-				Helper.removeButtonScripts(menu, menu.titlebartable, 1, 7)
-				SetCellContent(menu.titlebartable, Helper.createButton(nil, Helper.createButtonIcon("menu_undo", nil, 255, 255, 255, 100, nil, nil, 0, 0), true, canundo, 0, 0, 0, menu.titleData.height, nil, nil, nil, ReadText(1026, 7903) .. Helper.formatOptionalShortcut(" (%s)", "action", 278)), 1, 7)
-				Helper.setButtonScript(menu, nil, menu.titlebartable, 1, 7, function () return menu.undoHelper(true) end)
+				local desc = Helper.createButton(nil, Helper.createButtonIcon("menu_undo", nil, 255, 255, 255, 100, nil, nil, 0, 0), true, canundo, 0, 0, 0, menu.titleData.height, nil, nil, nil, ReadText(1026, 7903) .. Helper.formatOptionalShortcut(" (%s)", "action", 278))
+				Helper.setCellContent(menu, menu.titlebartable, desc, 1, 7, nil, "button", nil, function () return menu.undoHelper(true) end)
 			end
 			
 			local canredo = C.CanRedoConstructionMapChange(menu.holomap)
 			if canredo ~= menu.canredo then
 				menu.canredo = canredo
-				Helper.removeButtonScripts(menu, menu.titlebartable, 1, 8)
-				SetCellContent(menu.titlebartable, Helper.createButton(nil, Helper.createButtonIcon("menu_redo", nil, 255, 255, 255, 100, nil, nil, 0, 0), true, canredo, 0, 0, 0, menu.titleData.height, nil, nil, nil, ReadText(1026, 7904) .. Helper.formatOptionalShortcut(" (%s)", "action", 279)), 1, 8)
-				Helper.setButtonScript(menu, nil, menu.titlebartable, 1, 8, function () return menu.undoHelper(false) end)
+				local desc = Helper.createButton(nil, Helper.createButtonIcon("menu_redo", nil, 255, 255, 255, 100, nil, nil, 0, 0), true, canredo, 0, 0, 0, menu.titleData.height, nil, nil, nil, ReadText(1026, 7904) .. Helper.formatOptionalShortcut(" (%s)", "action", 279))
+				Helper.setCellContent(menu, menu.titlebartable, desc, 1, 8, nil, "button", nil, function () return menu.undoHelper(false) end)
 			end
 		end
 	end
@@ -5461,9 +5461,8 @@ function menu.onRenderTargetRightMouseUp()
 				end
 				menu.displayMenu()
 
-				menu.contextMode = 2
-				menu.contextData = { offsetX = offset[1] + Helper.viewWidth / 2, offsetY = Helper.viewHeight / 2 - offset[2], upgradetype = ffi.string(pickedslot.upgradetype), slot = tonumber(pickedslot.slot) }
-				menu.displayContextMenu()
+				menu.contextData = { upgradetype = ffi.string(pickedslot.upgradetype), slot = tonumber(pickedslot.slot) }
+				menu.displayContextFrame("slot", Helper.scaleX(300), offset[1] + Helper.viewWidth / 2, Helper.viewHeight / 2 - offset[2])
 			end
 		end
 	end
@@ -5628,7 +5627,10 @@ function menu.filterModuleByText(module, texts)
 			hasadditionalfilter = true
 			text = utf8.lower(textentry.text)
 
-			local shortname, makerracenames = GetMacroData(module, "shortname", "makerracename")
+			local name, shortname, makerracenames = GetMacroData(module, "name", "shortname", "makerracename")
+			if string.find(utf8.lower(name), text, 1, true) then
+				filtermatch = true
+			end
 			if string.find(utf8.lower(shortname), text, 1, true) then
 				filtermatch = true
 			end
@@ -5650,7 +5652,10 @@ end
 function menu.filterUpgradeByText(upgrade, text)
 	text = utf8.lower(text)
 
-	local shortname, makerracenames = GetMacroData(upgrade, "shortname", "makerracename")
+	local name, shortname, makerracenames = GetMacroData(upgrade, "name", "shortname", "makerracename")
+	if string.find(utf8.lower(name), text, 1, true) then
+		return true
+	end
 	if string.find(utf8.lower(shortname), text, 1, true) then
 		return true
 	end
@@ -5770,7 +5775,7 @@ function menu.upgradeSettingsVersion()
 	local oldversion = __CORE_DETAILMONITOR_STATIONBUILD.version
 
 	if oldversion < 2 then
-		
+		__CORE_DETAILMONITOR_STATIONBUILD.gizmo = true
 	end
 
 	__CORE_DETAILMONITOR_STATIONBUILD.version = config.mapfilterversion
@@ -5778,9 +5783,10 @@ end
 
 function menu.applySettings()
 	if menu.holomap and (menu.holomap ~= 0) then
-		C.SetConstructionMapBuildAngleStep(menu.holomap, __CORE_DETAILMONITOR_STATIONBUILD.discreteanglestep);
-		C.SetConstructionMapCollisionDetection(menu.holomap, not __CORE_DETAILMONITOR_STATIONBUILD.moduleoverlap);
-		C.SetConstructionMapRenderSectorBackground(menu.holomap, __CORE_DETAILMONITOR_STATIONBUILD.environment);
+		C.SetConstructionMapBuildAngleStep(menu.holomap, __CORE_DETAILMONITOR_STATIONBUILD.discreteanglestep)
+		C.SetConstructionMapCollisionDetection(menu.holomap, not __CORE_DETAILMONITOR_STATIONBUILD.moduleoverlap)
+		C.SetConstructionMapRenderSectorBackground(menu.holomap, __CORE_DETAILMONITOR_STATIONBUILD.environment)
+		C.SetConstructionMapRenderTransformGizmo(menu.holomap, __CORE_DETAILMONITOR_STATIONBUILD.gizmo)
 	end
 end
 

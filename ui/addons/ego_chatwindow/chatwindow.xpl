@@ -5,12 +5,13 @@ ffi.cdef[[
 	const char* ConvertInputString(const char* text, const char* defaultvalue);
 	uint64_t ConvertStringTo64Bit(const char* idstring);
 	const char* FormatDateTimeString(int64_t time, const char* uiformat);
-	Color GetChatAuthorColor(const char* authorname);
+	const char* GetChatAuthorColor2(const char* authorname);
 	int64_t GetCurrentUTCDataTime(void);
 	const char* GetUserData(const char* name);
 	bool IsVentureSeasonSupported(void);
 	void NotifyChatMessageRead(void);
 	void SetUserData(const char* name, const char* value);
+	void TriggerInputFeedback(const char* type, const char* idname, const char* triggerid, const char* contextid);
 ]]
 
 local menu = {
@@ -85,6 +86,8 @@ __CORE_CHAT_WINDOW.version = config.currentVersion
 
 function menu.onHotkey(action)
 	if action == "INPUT_ACTION_SHOW_CHAT_WINDOW" then
+		local active = (not menu.shown) or (not menu.active) or next(Helper.chatParams)
+		C.TriggerInputFeedback("action", "INPUT_ACTION_SHOW_CHAT_WINDOW", active and "active" or "inactive", "")
 		menu.toggleChatWindow()
 	end
 end
@@ -122,7 +125,7 @@ end
 function menu.onAnnouncementReceived(_, message)
 	if (#__CORE_CHAT_WINDOW.announcements == 0) or (__CORE_CHAT_WINDOW.announcements[#__CORE_CHAT_WINDOW.announcements].text ~= message) then
 		-- have to convert timestamp to string for saving in uidata.xml
-		table.insert(__CORE_CHAT_WINDOW.announcements, { text = message, prefix = "\27M" .. ReadText(1001, 12109) .. ReadText(1001, 120) .. " ", timestamp = tostring(C.GetCurrentUTCDataTime() * 1000), announcement = true })
+		table.insert(__CORE_CHAT_WINDOW.announcements, { text = message, prefix = ColorText["text_chat_message_server"] .. ReadText(1001, 12109) .. ReadText(1001, 120) .. " ", timestamp = tostring(C.GetCurrentUTCDataTime() * 1000), announcement = true })
 		if not menu.shown then
 			menu.toggleChatWindow(true)
 		end
@@ -184,10 +187,10 @@ end
 function menu.getChatColor(author, authorid, userid)
 	if not menu.userColors[author] then
 		if authorid == userid then
-			menu.userColors[author] = Helper.color.playergreen
+			menu.userColors[author] = Color["text_player"]
 		else
-			local color = C.GetChatAuthorColor(author)
-			menu.userColors[author] = { r = color.red, g = color.green, b = color.blue, a = color.alpha }
+			local colorid = ffi.string(C.GetChatAuthorColor2(author))
+			menu.userColors[author] = Color[colorid]
 		end
 	end
 	return menu.userColors[author]
@@ -255,7 +258,7 @@ function menu.getChatMessages()
 
 			local lines = GetTextLines(message.reported and ReadText(1001, 12116) or message.text, Helper.standardFont, fontsize, menu.width - indent - Helper.scaleX(Helper.standardTextOffsetx) - Helper.scrollbarWidth)
 			for j, line in ipairs(lines) do
-				local text = message.reported and (Helper.convertColorToText(Helper.color.grey) .. line .. "\27X") or line
+				local text = message.reported and (ColorText["text_inactive"] .. line .. "\27X") or line
 
 				if message.isprivate then
 					local receiverid, receivername = menu.getMessageReceiverID(userid, message.groupid)
@@ -280,7 +283,7 @@ function menu.getChatMessages()
 				local lines = GetTextLines(announcement.text, Helper.standardFont, fontsize, menu.width - indent - Helper.scaleX(Helper.standardTextOffsetx) - Helper.scrollbarWidth)
 				for j, line in ipairs(lines) do
 					local announcementline = Helper.tableCopy(announcement)
-					announcementline.text = "\27M" .. line .. "\27X"
+					announcementline.text = ColorText["text_chat_message_server"] .. line .. "\27X"
 					if j > 1 then
 						announcementline.prefix = nil
 					end
@@ -377,6 +380,9 @@ function menu.checkboxMute(_, checked)
 end
 
 function menu.editboxActivated()
+	if not menu.activateeditbox then
+		C.TriggerInputFeedback("state", "INPUT_STATE_ADDON_CHATWINDOW_COMMANDBAR", "active", "")
+	end
 	menu.typing = true
 	if menu.normalBackground then
 		menu.activateeditbox = true
@@ -449,7 +455,7 @@ function menu.tabIconColor(messageindex)
 		userdataid = entry.groupid and ("chat_group_" .. entry.groupid .. "_muted") or ""
 	end
 	local muted = ffi.string(C.GetUserData(userdataid)) == "1"
-	return muted and Helper.color.white or Helper.color.transparent
+	return muted and Color["icon_normal"] or Color["icon_hidden"]
 end
 
 function menu.closeContextMenu(skiptoplevelmenu)
@@ -472,10 +478,10 @@ end
 function menu.displayChat()
 	Helper.clearDataForRefresh(menu, config.layer)
 
-	local framebackgroundcolor = Helper.tableCopy(Helper.color.semitransparent)
-	local textcolor = Helper.tableCopy(Helper.color.grey)
-	local boxtextcolor = Helper.tableCopy(Helper.defaultEditBoxBackgroundColor)
-	local linecolor = Helper.tableCopy(Helper.defaultSimpleBackgroundColor)
+	local framebackgroundcolor = Helper.tableCopy(Color["chat_background"])
+	local textcolor = Helper.tableCopy(Color["text_inactive"])
+	local boxtextcolor = Helper.tableCopy(Color["row_background_unselectable"])
+	local linecolor = Helper.tableCopy(Color["row_background_blue"])
 	if menu.fadefactor then
 		framebackgroundcolor.a = menu.fadefactor * framebackgroundcolor.a
 		textcolor.a = math.max(1, menu.fadefactor * textcolor.a)
@@ -522,7 +528,7 @@ function menu.displayChat()
 	ftable:setColWidth(10, math.max(buttonWidth, Helper.scrollbarWidth), false)
 
 	-- header
-	local row = ftable:addRow(menu.active, { fixed = true, bgColor = Helper.color.transparent })
+	local row = ftable:addRow(menu.active, { fixed = true })
 	row[1]:createButton({ active = menu.active and (menu.selectedPrivateMessages > 0) }):setIcon("widget_arrow_left_01")
 	row[1].handlers.onClick = menu.buttonPrevChannel
 
@@ -532,7 +538,7 @@ function menu.displayChat()
 	local messageindex = menu.privateMessageIndex
 	while (shown < 3) and (messageindex <= #menu.privatemessages) do
 		if messageindex == 0 then
-			row[col]:setColSpan(2):createButton({ active = menu.active, bgColor = (menu.selectedPrivateMessages == 0) and Helper.defaultArrowRowBackgroundColor or nil }):setText(C.IsVentureSeasonSupported() and ReadText(1001, 11648) or ReadText(1001, 12101)):setIcon("menu_sound_off", { scaling = false, color = function () return menu.tabIconColor(0) end, width = buttonWidth, height = buttonWidth, x = tabWidth - buttonWidth })
+			row[col]:setColSpan(2):createButton({ active = menu.active, bgColor = (menu.selectedPrivateMessages == 0) and Color["row_background_blue"] or nil }):setText(C.IsVentureSeasonSupported() and ReadText(1001, 11648) or ReadText(1001, 12101)):setIcon("menu_sound_off", { scaling = false, color = function () return menu.tabIconColor(0) end, width = buttonWidth, height = buttonWidth, x = tabWidth - buttonWidth })
 			row[col].handlers.onClick = function () menu.selectedPrivateMessages = 0; menu.settoprow = nil; menu.onShowMenu() end
 			col = col + 2
 			shown = shown + 1
@@ -542,9 +548,9 @@ function menu.displayChat()
 			local entry = menu.privatemessages[i]
 			if not entry.hidden then
 				local width = row[col]:getWidth() + Helper.borderSize
-				row[col]:setBackgroundColSpan(2):createButton({ scaling = false, active = menu.active, bgColor = (menu.selectedPrivateMessages == i) and Helper.defaultArrowRowBackgroundColor or nil, width = width, height = Helper.scaleY(Helper.standardButtonHeight) }):setText(entry.name, { scaling = true }):setIcon("menu_sound_off", { color = function () return menu.tabIconColor(i) end, width = buttonWidth, height = buttonWidth, x = width - buttonWidth })
+				row[col]:setBackgroundColSpan(2):createButton({ scaling = false, active = menu.active, bgColor = (menu.selectedPrivateMessages == i) and Color["row_background_blue"] or nil, width = width, height = Helper.scaleY(Helper.standardButtonHeight) }):setText(entry.name, { scaling = true }):setIcon("menu_sound_off", { color = function () return menu.tabIconColor(i) end, width = buttonWidth, height = buttonWidth, x = width - buttonWidth })
 				row[col].handlers.onClick = function () menu.selectedPrivateMessages = i; menu.settoprow = nil; menu.onShowMenu() end
-				row[col + 1]:createButton({ active = menu.active, bgColor = (menu.selectedPrivateMessages == i) and Helper.defaultArrowRowBackgroundColor or nil, width = Helper.standardButtonHeight }):setIcon("widget_cross_01")
+				row[col + 1]:createButton({ active = menu.active, bgColor = (menu.selectedPrivateMessages == i) and Color["row_background_blue"] or nil, width = Helper.standardButtonHeight }):setIcon("widget_cross_01")
 				row[col + 1].handlers.onClick = function () menu.buttonClosePrivateChat(i) end
 				col = col + 2
 				shown = shown + 1
@@ -558,8 +564,8 @@ function menu.displayChat()
 
 	row[9]:createButton({
 		active = menu.active,
-		bgColor = function () return menu.dragging and Helper.color.green or Helper.defaultButtonBackgroundColor end,
-		highlightColor = function () return menu.dragging and Helper.color.green or Helper.defaultButtonHighlightColor end,
+		bgColor = function () return menu.dragging and Color["chat_move_background"] or Color["button_background_default"] end,
+		highlightColor = function () return menu.dragging and Color["chat_move_background"] or Color["button_highlight_default"] end,
 		mouseOverText = ReadText(1026, 12101),
 	}):setIcon("menu_move")
 	row[9].handlers.onClick = menu.buttonDrag
@@ -580,7 +586,7 @@ function menu.displayChat()
 	-- empty lines
 	if #messagetexts < menu.numchatlines then
 		for i = 1, menu.numchatlines - #messagetexts do
-			local row = ftable:addRow(menu.active, { bgColor = Helper.color.transparent })
+			local row = ftable:addRow(menu.active, {  })
 			row[1]:setColSpan(numcols):createText("")
 		end
 	end
@@ -590,15 +596,15 @@ function menu.displayChat()
 	local fontsize = Helper.scaleFont(Helper.standardFont, Helper.standardFontSize)
 	for i, entry in ipairs(messagetexts) do
 		if menu.active or (i >= menu.fadetoprow - 2) and (i < menu.fadetoprow - 2 + menu.numchatlines) then
-			local row = ftable:addRow((menu.active and (not entry.datedivider) and (not entry.announcement)) and { timestamp = entry.timestamp, author = entry.author, authorcolor = entry.authorcolor, reported = entry.reported, announcement = entry.announcement, authorid = entry.authorid } or nil, { bgColor = Helper.color.transparent })
+			local row = ftable:addRow((menu.active and (not entry.datedivider) and (not entry.announcement)) and { timestamp = entry.timestamp, author = entry.author, authorcolor = entry.authorcolor, reported = entry.reported, announcement = entry.announcement, authorid = entry.authorid } or nil, {  })
 			if entry.prefix then
 				indent = C.GetTextWidth(entry.prefix, Helper.standardFont, fontsize) + Helper.scaleX(Helper.standardTextOffsetx)
-				row[1]:setColSpan(numcols):createText(entry.prefix .. entry.text, { color = menu.active and Helper.color.white or textcolor })
+				row[1]:setColSpan(numcols):createText(entry.prefix .. entry.text, { color = menu.active and Color["text_normal"] or textcolor })
 			elseif entry.datedivider then
 				
-				row[1]:setColSpan(numcols):createText(entry.text, { color = menu.active and Helper.color.white or textcolor, halign = "center" })
+				row[1]:setColSpan(numcols):createText(entry.text, { color = menu.active and Color["text_normal"] or textcolor, halign = "center" })
 			else
-				row[1]:setColSpan(numcols):createText(entry.text, { scaling = false, x = indent, fontsize = fontsize, minRowHeight = Helper.scaleY(Helper.standardTextHeight), color = menu.active and Helper.color.white or Helper.color.grey })
+				row[1]:setColSpan(numcols):createText(entry.text, { scaling = false, x = indent, fontsize = fontsize, minRowHeight = Helper.scaleY(Helper.standardTextHeight), color = menu.active and Color["text_normal"] or textcolor })
 			end
 		end
 	end
@@ -621,7 +627,7 @@ function menu.displayChat()
 	local ftable2 = menu.chatFrame:addTable(numcols, { tabOrder = menu.active and 1 or 0, x = menu.table.x, width = menu.table.width })
 	ftable2:setColWidth(1, Helper.standardButtonHeight)
 
-	local row = ftable2:addRow(menu.active, { fixed = true, bgColor = Helper.color.transparent })
+	local row = ftable2:addRow(menu.active, { fixed = true })
 	if menu.active then
 		row[1]:setColSpan(numcols):createEditBox({ height = Helper.standardButtonHeight, description = ReadText(1001, 12108), maxChars = 255, selectTextOnActivation = false }):setText(menu.editboxstate.text, {  }):setHotkey("INPUT_STATE_ADDON_CHATWINDOW_COMMANDBAR", { displayIcon = true })
 		row[1].handlers.onEditBoxActivated = menu.editboxActivated
@@ -632,12 +638,12 @@ function menu.displayChat()
 		row[1]:setColSpan(numcols):createBoxText("", { boxColor = boxtextcolor })
 	end
 
-	--local row = ftable2:addRow(menu.active, { fixed = true, bgColor = Helper.color.transparent })
+	--local row = ftable2:addRow(menu.active, { fixed = true })
 	--row[1]:createButton({ active = menu.active }):setText(ReadText(1001, 12106), { halign = "center" })
 	--row[1].handlers.onClick = function () menu.options = not menu.options; menu.onShowMenu() end
 
 	--if menu.options then
-		local row = ftable2:addRow(menu.active, { fixed = true, bgColor = Helper.color.transparent })
+		local row = ftable2:addRow(menu.active, { fixed = true })
 		local userdataid = "chat_general_muted"
 		if menu.selectedPrivateMessages > 0 then
 			local entry = menu.privatemessages[menu.selectedPrivateMessages]
@@ -668,7 +674,7 @@ function menu.displayChat()
 	ftable2.properties.y = ftable.properties.y + height + Helper.borderSize
 	menu.chatFrame.properties.height = menu.height
 	if menu.activateeditbox then
-		menu.chatFrame:setBackground("solid", { color = Helper.color.semitransparent, width = 2 * Helper.viewWidth, height = 2 * Helper.viewHeight })
+		menu.chatFrame:setBackground("solid", { color = Color["frame_background_semitransparent"], width = 2 * Helper.viewWidth, height = 2 * Helper.viewHeight })
 		menu.chatFrame.properties.playerControls = false
 		menu.normalBackground = false
 	else
@@ -704,8 +710,6 @@ function menu.createContextFrame(data, x, y, width, nomouseout)
 
 	menu.contextFrame = Helper.createFrameHandle(menu, {
 		layer = config.contextLayer,
-		backgroundID = "solid",
-		backgroundColor = Helper.color.semitransparent,
 		standardButtons = { close = true },
 		width = contextmenuwidth,
 		x = x,
@@ -715,6 +719,7 @@ function menu.createContextFrame(data, x, y, width, nomouseout)
 		playerControls = true,
 		viewHelperType = "Chat",
 	})
+	menu.contextFrame:setBackground("solid", { color = Color["frame_background_semitransparent"] })
 
 	if menu.contextMenuMode == "report" then
 		menu.createReportContext(menu.contextFrame)
@@ -753,21 +758,21 @@ function menu.createReportContext(frame)
 
 	local _, userid = OnlineGetUserName()
 	if data.authorid ~= userid then
-		local row = ftable:addRow(true, { fixed = true, bgColor = Helper.color.transparent })
+		local row = ftable:addRow(true, { fixed = true })
 		row[1]:createButton({  }):setText(ReadText(1001, 12115))
 		row[1].handlers.onClick = function () return menu.buttonContactMessage(menu, data.authorid, data.author) end
 	end
 
 	ftable:addEmptyRow(Helper.standardTextHeight / 2)
 
-	local row = ftable:addRow(nil, { fixed = true, bgColor = Helper.color.transparent })
+	local row = ftable:addRow(nil, { fixed = true })
 	row[1]:createText(ReadText(1001, 12110), Helper.subHeaderTextProperties)
 
-	local row = ftable:addRow(true, { fixed = true, bgColor = Helper.color.transparent })
+	local row = ftable:addRow(true, { fixed = true })
 	row[1]:createButton({  }):setText(ReadText(1001, 12111))
 	row[1].handlers.onClick = function () return menu.buttonReportUser(data.authorid) end
 	
-	local row = ftable:addRow(true, { fixed = true, bgColor = Helper.color.transparent })
+	local row = ftable:addRow(true, { fixed = true })
 	row[1]:createButton({ active = (not data.reported) and (not data.announcement) }):setText(ReadText(1001, 12112))
 	row[1].handlers.onClick = function () return menu.buttonReportMessage(data.timestamp, data.author) end
 end
@@ -861,8 +866,8 @@ function menu.onUpdate()
 	end
 
 	if menu.activateeditbox then
-		menu.activateeditbox = nil
 		Helper.activateEditBox(menu.optionTable, 1, 1, menu.editboxstate.cursorpos, menu.editboxstate.shiftstartpos)
+		menu.activateeditbox = nil
 	end
 
 	menu.chatFrame:update()

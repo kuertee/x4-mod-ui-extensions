@@ -168,10 +168,10 @@ local config = {
 		numdatapoints = 21,
 		factors = { 0.2, 0.5, 1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000, 50000, 100000, 200000, 500000, 1000000, 2000000, 5000000, 10000000, 20000000, 50000000, 100000000 },
 		datarecordcolors = {
-			[1] = { buy = { r = 253, g =  91, b =  91, a = 100 }, buyhex = "\27#FFFD5B5B#", sell = { r = 252, g = 171, b =  92, a = 100 }, sellhex = "\27#FFFCAB5C#" },
-			[2] = { buy = { r =  85, g = 172, b =   0, a = 100 }, buyhex = "\27#FF55AC00#", sell = { r = 180, g = 250, b = 200, a = 100 }, sellhex = "\27#FFB4FAC8#" },
-			[3] = { buy = { r =   0, g = 175, b = 180, a = 100 }, buyhex = "\27#FF00AFB4#", sell = { r =  91, g = 133, b = 253, a = 100 }, sellhex = "\27#FF5B85FD#" },
-			[4] = { buy = { r = 171, g =  91, b = 253, a = 100 }, buyhex = "\27#FFAB5BFD#", sell = { r = 253, g =  91, b = 213, a = 100 }, sellhex = "\27#FFFD5BD5#" }
+			[1] = { buy = Color["graph_data_1"], sell = Color["graph_data_2"] },
+			[2] = { buy = Color["graph_data_3"], sell = Color["graph_data_4"] },
+			[3] = { buy = Color["graph_data_5"], sell = Color["graph_data_6"] },
+			[4] = { buy = Color["graph_data_7"], sell = Color["graph_data_8"] },
 		},
 		point = {
 			type = "square",
@@ -1366,7 +1366,7 @@ end
 function menu.displayIndexRow(inputtable, entry)
 	local show, searchcount, searchunread = menu.filterIndexCategory(menu.searchtext, entry, true)
 	if show then
-		local locrow = inputtable:addRow(entry.rowdata, { bgColor = Helper.color.transparent })
+		local locrow = inputtable:addRow(entry.rowdata, {  })
 	
 		local arrow
 		if (type(entry.rowdata) == "table") and (#entry.rowdata >= 3) then
@@ -1380,7 +1380,7 @@ function menu.displayIndexRow(inputtable, entry)
 				numentriestext = (numentries > 0) and string.format(ReadText(1001, 9619), numentries) or ""
 			end
 			local numunread = searchunread or entry.numunread
-			local numunreadtext = ((numunread ~= 0) and (" \27G(" .. numunread .. " " .. ReadText(1001, 9001) .. ")") or "")
+			local numunreadtext = ((numunread ~= 0) and (" " .. ColorText["text_positive"] .. "(" .. numunread .. " " .. ReadText(1001, 9001) .. ")") or "")
 			locrow[5]:createText(numentriestext .. numunreadtext, { halign = "right" })
 			locrow[2 + coloffset]:setColSpan(3 - coloffset):setBackgroundColSpan(4 - coloffset)
 
@@ -1408,7 +1408,7 @@ function menu.displayIndexRow(inputtable, entry)
 			end
 		elseif entry.item then
 			if entry.isunread then
-				locrow[5]:createText("\27G(" .. ReadText(1001, 9001) .. ")", { halign = "right" })
+				locrow[5]:createText(ColorText["text_positive"] .. "(" .. ReadText(1001, 9001) .. ")", { halign = "right" })
 				locrow[2 + coloffset]:setColSpan(3 - coloffset):setBackgroundColSpan(4 - coloffset)
 			else
 				locrow[2 + coloffset]:setColSpan(4 - coloffset)
@@ -1471,7 +1471,8 @@ function menu.display()
 	local xoffset = 0
 	local yoffset = 0
 
-	menu.frame = Helper.createFrameHandle(menu, { height = frameheight, width = framewidth, x = xoffset, y = yoffset, backgroundID = "solid", backgroundColor = Helper.color.semitransparent, standardButtons = { back = true, close = true, help = true  } })
+	menu.frame = Helper.createFrameHandle(menu, { height = frameheight, width = framewidth, x = xoffset, y = yoffset, standardButtons = { back = true, close = true, help = true  } })
+	menu.frame:setBackground("solid", { color = Color["frame_background_semitransparent"] })
 
 	menu.sidebarWidth = Helper.scaleX(Helper.sidebarWidth)
 
@@ -1498,10 +1499,10 @@ function menu.display()
 		table_index:setColWidthPercent(5, 33)
 		table_index:setColWidth(6, Helper.standardTextHeight)
 
-		row = table_index:addRow(false, { fixed = true, bgColor = Helper.defaultTitleBackgroundColor })
+		row = table_index:addRow(false, { fixed = true, bgColor = Color["row_title_background"] })
 		row[1]:setColSpan(6):createText(ReadText(1001, 9000), Helper.headerRow1Properties)	-- "Encyclopedia Index"
 
-		local row = table_index:addRow(true, { fixed = true })
+		local row = table_index:addRow(true, { fixed = true, bgColor = Color["row_background_blue"] })
 		row[1]:setColSpan(5):createEditBox({ height = Helper.standardTextHeight }):setText(menu.searchtext or "", {  }):setHotkey("INPUT_STATE_DETAILMONITOR_0", { displayIcon = true })
 		row[1].handlers.onEditBoxActivated = function () menu.noupdate = true end
 		row[1].handlers.onEditBoxDeactivated = menu.editboxSearchUpdateText
@@ -1543,7 +1544,7 @@ function menu.display()
 
 		table_description.properties.y = rendertargetproperties.y + rendertargetproperties.height
 
-		row = table_description:addRow(false, { fixed = true, bgColor = Helper.defaultTitleBackgroundColor })
+		row = table_description:addRow(false, { fixed = true, bgColor = Color["row_title_background"] })
 		row[1]:createText(ReadText(1001, 2404), Helper.headerRow1Properties)
 		table_description.properties.maxVisibleHeight = Helper.viewHeight - Helper.frameBorder - table_description.properties.y
 
@@ -1555,7 +1556,7 @@ function menu.display()
 			description = GetTextLines(descriptiontext, Helper.standardFont, Helper.scaleFont(Helper.standardFont, Helper.standardFontSize), descriptiontablewidth - 2 * Helper.scaleX(Helper.standardTextOffsetx) - Helper.scrollbarWidth)
 		end
 		for linenum, descline in ipairs(description) do
-			local row = table_description:addRow(true, { bgColor = Helper.color.transparent })
+			local row = table_description:addRow(true, {  })
 			row[1]:createText(descline)
 		end
 
@@ -1571,7 +1572,7 @@ function menu.display()
 		table_detail:setColWidthMin(3, 0, 20)
 		table_detail:setColWidthMin(4, 0, 20)
 
-		row = table_detail:addRow(false, { bgColor = Helper.color.transparent })
+		row = table_detail:addRow(false, {  })
 		row[1]:createIcon(function () return menu.detailIcon(false) end, { width = Helper.headerRow1Height, height = Helper.headerRow1Height, color = function () return menu.detailIconColor(false) end })
 		row[2]:setColSpan(3):createText(menu.detailText, Helper.headerRow1Properties)
 
@@ -1584,8 +1585,8 @@ function menu.display()
 		end
 
 		local gapcenter = Helper.borderSize * 1.25
-		Helper.drawLine( {x = table_detail.properties.x - gapcenter, y = topborder}, {x = table_detail.properties.x - gapcenter, y = frameheight}, nil, nil, Helper.color.available, true )
-		Helper.drawLine( {x = table_description.properties.x - gapcenter, y = topborder}, {x = table_description.properties.x - gapcenter, y = frameheight}, nil, nil, Helper.color.available, true )
+		Helper.drawLine( {x = table_detail.properties.x - gapcenter, y = topborder}, {x = table_detail.properties.x - gapcenter, y = frameheight}, nil, nil, Color["row_separator_encyclopedia"], true )
+		Helper.drawLine( {x = table_description.properties.x - gapcenter, y = topborder}, {x = table_description.properties.x - gapcenter, y = frameheight}, nil, nil, Color["row_separator_encyclopedia"], true )
 
 		local createrendertarget = true
 		if menu.rendertargetmode then
@@ -1596,7 +1597,7 @@ function menu.display()
 				end
 
 				local table_rendertarget = menu.frame:addTable(1, rendertargetproperties)
-				row = table_rendertarget:addRow(false, { bgColor = Helper.color.transparent })
+				row = table_rendertarget:addRow(false, {  })
 				row[1]:createIcon(function () return menu.detailIcon(true) end, { width = table_rendertarget.properties.width * factor, height = table_rendertarget.properties.height * factor, x = (table_rendertarget.properties.width * (1 - factor)) / 2, y = table_rendertarget.properties.height * (1 - factor) / 4, scaling = false, color = function () return menu.detailIconColor(true) end })
 				createrendertarget = false
 			end
@@ -1619,9 +1620,9 @@ function menu.display()
 
 		local table_button = menu.frame:addTable(2, { width = tablewidth * 2 - Helper.borderSize, x = Helper.frameBorder + menu.sidebarWidth + Helper.borderSize, y = yoffset + topborder, tabOrder = 1 } )
 
-		local row = table_button:addRow(nil, { fixed = true, bgColor = Helper.color.transparent })
+		local row = table_button:addRow(nil, { fixed = true })
 		row[1]:setColSpan(2):createText("")
-		local row = table_button:addRow(true, { fixed = true, bgColor = Helper.color.transparent })
+		local row = table_button:addRow(true, { fixed = true })
 		row[2]:createButton({ active = menu.hasUnreadEntries }):setText(ReadText(1001, 7744), { halign = "center" })
 		row[2].handlers.onClick = menu.buttonReadAll
 
@@ -1704,21 +1705,21 @@ end
 
 -- Suppress icons for licences for now, they are used for the ship config menu and if they should have any, we need to change the setup there first
 function menu.detailIconColor(isrendertargeticon)
-	local color = Helper.color.transparent60
+	local color = Color["icon_inactive"]
 	if (menu.mode == "Galaxy") and menu.object then
 		if isrendertargeticon then
-			color = Helper.color.white
+			color = Color["icon_normal"]
 		end
 	elseif menu.library then
 		if (menu.library ~= "licences") and (menu.object.icon ~= "") then
-			color = Helper.color.white
+			color = Color["icon_normal"]
 		elseif isrendertargeticon then
 			if menu.library == "licences" then
-				color = Helper.color.white
+				color = Color["icon_normal"]
 			elseif (menu.library == "weapons_lasers") or (menu.library == "weapons_missilelaunchers") then
-				color = Helper.color.white
+				color = Color["icon_normal"]
 			elseif isrendertargeticon then
-				color = Helper.color.white
+				color = Color["icon_normal"]
 			end
 		end
 	end
@@ -1775,13 +1776,13 @@ function menu.createSideBar(frame)
 
 	for _, entry in ipairs(config.leftBar) do
 		local mode = entry.mode
-		local row = ftable:addRow(true, { fixed = true })
+		local row = ftable:addRow(true, { fixed = true, bgColor = Color["row_background_blue"] })
 		local active = true
-		local bgcolor = Helper.defaultTitleBackgroundColor
+		local bgcolor = Color["row_title_background"]
 		if entry.mode == "encyclopedia" then
-			bgcolor = Helper.defaultArrowRowBackgroundColor
+			bgcolor = Color["row_background_selected"]
 		end
-		local color = Helper.color.white
+		local color = Color["icon_normal"]
 		row[1]:createButton({ active = active, height = menu.sidebarWidth, bgColor = bgcolor, mouseOverText = entry.name, helpOverlayID = entry.helpOverlayID, helpOverlayText = entry.helpOverlayText }):setIcon(entry.icon, { color = color })
 		row[1].handlers.onClick = function () return menu.buttonToggleEncyclopediaMode(mode) end
 	end
@@ -2385,7 +2386,7 @@ function menu.addDetailRow(ftable, col1, col2, col3, offsetx, iswordwrap, proper
 	properties3.halign = "right"
 	properties3.wordwrap = iswordwrap
 
-	local row = ftable:addRow(("detailrow_" .. menu.numDetailRows), { bgColor = Helper.color.transparent, interactive = false })
+	local row = ftable:addRow(("detailrow_" .. menu.numDetailRows), { interactive = false })
 	if col3 then
 		row[2]:createText(col1, properties1)
 		row[3]:createText(col2, properties2)
@@ -2402,15 +2403,15 @@ function menu.addEngineDetailRow(ftable, name, thruster, hasdefaultloadout)
 	menu.addDetailRow(ftable, name .. ((not hasdefaultloadout) and " (" .. thruster.name .. ")" or ""), ConvertIntegerString(thruster.value, true, 0, true) .. " " .. thruster.unit)
 end
 
-function menu.addProductionMethodDetails(ftable, resourcestring, showtime, showamount)
+function menu.addProductionMethodDetails(ftable, resourcestring, methodstring, showtime, showamount)
 	-- title
-	local row = ftable:addRow(false, { bgColor = Helper.color.transparent })
+	local row = ftable:addRow(false, {  })
 	row[2]:setColSpan(3):createText(resourcestring, Helper.subHeaderTextProperties)
 	row[2].properties.halign = "center"
 
 	menu.numDetailRows = menu.numDetailRows + 1
-	local row = ftable:addRow(("detailrow_" .. menu.numDetailRows), { bgColor = Helper.color.transparent, interactive = false })
-	row[2]:createText(ReadText(1001, 2408) .. ReadText(1001, 120))
+	local row = ftable:addRow(("detailrow_" .. menu.numDetailRows), { interactive = false })
+	row[2]:createText(methodstring .. ReadText(1001, 120))
 	local productionmethodoptions = {}
 	local currentMethodIdx = 0
 	for i, entry in ipairs(menu.details.productionmethods) do
@@ -2614,7 +2615,7 @@ function menu.addDetailRows(ftable)
 				-- empty line
 				menu.addDetailRow(ftable, "")
 				-- header
-				local row = ftable:addRow(false, { bgColor = Helper.color.transparent })
+				local row = ftable:addRow(false, {  })
 				row[2]:setColSpan(3):createText(ReadText(1001, 2491), Helper.headerRow1Properties)
 				if data.space then
 					-- space environment
@@ -2633,7 +2634,7 @@ function menu.addDetailRows(ftable)
 							-- empty line
 							menu.addDetailRow(ftable, "")
 						end
-						local row = ftable:addRow(true, { bgColor = Helper.color.transparent })
+						local row = ftable:addRow(true, {  })
 						row[2]:createText("\27[ency_planet_01]" .. planet.name, { x = 25 })
 						if planet.hasterraforming then
 							row[3]:setColSpan(2):createButton({  }):setText(ReadText(1001, 9099), { halign = "center" })
@@ -2649,7 +2650,7 @@ function menu.addDetailRows(ftable)
 						if planet.moons and (#planet.moons > 0) then
 							-- moons
 							for _, moon in ipairs(planet.moons) do
-								local row = ftable:addRow(true, { bgColor = Helper.color.transparent })
+								local row = ftable:addRow(true, {  })
 								row[2]:createText("\27[ency_moon_01]" .. moon.name, { x = 50 })
 								if moon.hasterraforming then
 									row[3]:setColSpan(2):createButton({  }):setText(ReadText(1001, 9099), { halign = "center" })
@@ -2800,7 +2801,7 @@ function menu.addDetailRows(ftable)
 						queueduration = queueduration + proddata.cycle
 					end
 					for i, proddata in ipairs(menu.object.products) do
-						local row = ftable:addRow(false, { bgColor = Helper.color.transparent })
+						local row = ftable:addRow(false, {  })
 						row[2]:setColSpan(3):createText(proddata.name, Helper.subHeaderTextProperties)
 						row[2].properties.halign = "center"
 
@@ -2829,7 +2830,7 @@ function menu.addDetailRows(ftable)
 				if menu.details.productionmethods and (#menu.details.productionmethods > 0) then
 					-- empty line
 					menu.addDetailRow(ftable, "")
-					menu.addProductionMethodDetails(ftable, ReadText(1001, 9613), ReadText(1001, 8508))
+					menu.addProductionMethodDetails(ftable, ReadText(1001, 9613), ReadText(1001, 9652), ReadText(1001, 8508))
 				end
 			end
 
@@ -3104,14 +3105,16 @@ function menu.addDetailRows(ftable)
 				end
 				-- resources
 				menu.addDetailRow(ftable, "")
-				menu.addProductionMethodDetails(ftable, ReadText(1001, 9613))
+				menu.addProductionMethodDetails(ftable, ReadText(1001, 9613), ReadText(1001, 9652))
 			end
 
 		elseif menu.mode == "Weapons" then
 			-- overridden for component types that have to be constructed in situ or those that have to be crafted with inventory wares
-			local prodmethodstring = (ReadText(1001, 9607))	-- Resources needed for manufacture, :
+			local prodmethodstring = ReadText(1001, 9607)	-- Resources needed for manufacture, :
+			local methodtypestring = ReadText(1001, 2408)
 			if menu.library == "weapons_lasers" then
-				prodmethodstring = (ReadText(1001, 9613))	-- Resources needed for construction, :
+				prodmethodstring = ReadText(1001, 9613)	-- Resources needed for construction, :
+				methodtypestring = ReadText(1001, 9652)
 				-- burst damage
 				menu.addDetailRow(ftable, ReadText(1001, 9092), ConvertIntegerString(menu.object.dps, true, 0, true) .. " " .. ReadText(1001, 119))
 				-- sustained damage
@@ -3235,12 +3238,14 @@ function menu.addDetailRows(ftable)
 				end
 
 			elseif menu.library == "weapons_missilelaunchers" then
-				prodmethodstring = (ReadText(1001, 9613))	-- Resources needed for construction, :
+				prodmethodstring = ReadText(1001, 9613)	-- Resources needed for construction, :
+				methodtypestring = ReadText(1001, 9652)
 				-- storage capacity
 				menu.addDetailRow(ftable, ReadText(1001, 9063), "+" .. ConvertIntegerString(menu.object.storagecapacity, true, 0, true))
 
 			elseif menu.library == "weapons_turrets" then
-				prodmethodstring = (ReadText(1001, 9613))	-- Resources needed for construction, :
+				prodmethodstring = ReadText(1001, 9613)	-- Resources needed for construction, :
+				methodtypestring = ReadText(1001, 9652)
 				-- hull
 				menu.addDetailRow(ftable, ReadText(1001, 9083), ConvertIntegerString(menu.object.hull, true, 0, true) .. " " .. ReadText(1001, 118))
 				-- empty line
@@ -3349,7 +3354,8 @@ function menu.addDetailRows(ftable)
 				end
 
 			elseif menu.library == "weapons_missileturrets" then
-				prodmethodstring = (ReadText(1001, 9613))	-- Resources needed for construction, :
+				prodmethodstring = ReadText(1001, 9613)	-- Resources needed for construction, :
+				methodtypestring = ReadText(1001, 9652)
 				-- hull
 				menu.addDetailRow(ftable, ReadText(1001, 9083), ConvertIntegerString(menu.object.hull, true, 0, true) .. " " .. ReadText(1001, 118))
 				-- empty line
@@ -3381,6 +3387,10 @@ function menu.addDetailRows(ftable)
 				end
 				-- range
 				menu.addDetailRow(ftable, ReadText(1001, 9087), menu.formatRange(menu.object.range) .. " " .. ReadText(1001, 108))
+				-- lock range
+				menu.addDetailRow(ftable, ReadText(1001, 9649), menu.formatRange(menu.object.maxlockrange) .. " " .. ReadText(1001, 108))
+				-- lock time
+				menu.addDetailRow(ftable, ReadText(1001, 9650), ConvertIntegerString(menu.object.locktime, true, 0, true) .. " " .. ReadText(1001, 100))
 				-- empty line
 				menu.addDetailRow(ftable, "")
 				-- speed
@@ -3402,6 +3412,11 @@ function menu.addDetailRows(ftable)
 					menu.addDetailRow(ftable, "")
 					menu.addDetailRow(ftable, ReadText(1001, 9628), tostring(menu.object.influencename))
 					menu.addDetailRow(ftable, "", tostring(menu.object.influencedescription), null, null, true)
+				end
+				-- counter measure resilience
+				if menu.object.guided then
+					menu.addDetailRow(ftable, "")
+					menu.addDetailRow(ftable, ReadText(1001, 9651), ConvertIntegerString(menu.object.countermeasureresilience * 100, true, 0, true) .. "%")
 				end
 
 			elseif menu.library == "mines" then
@@ -3431,7 +3446,7 @@ function menu.addDetailRows(ftable)
 				menu.addDetailRow(ftable, ReadText(1001, 9091), (menu.object.proximityrange > 0) and (Helper.round(menu.object.proximityrange) .. " " .. ReadText(1001, 107)) or ReadText(1001, 2618))
 
 			elseif menu.library == "bombs" then
-				prodmethodstring = (ReadText(1001, 9605))	-- Resources needed to craft, :
+				prodmethodstring = ReadText(1001, 9605)	-- Resources needed to craft, :
 				-- explosion
 				if menu.object.explosiondamage > 0 or (menu.object.hullexplosiondamage < 1 and menu.object.shieldexplosiondamage < 1) then
 					menu.addDetailRow(ftable, ReadText(1001, 9088), ConvertIntegerString(menu.object.explosiondamage, true, 0, true) .. " " .. ReadText(1001, 118))
@@ -3450,15 +3465,17 @@ function menu.addDetailRows(ftable)
 			if menu.details.productionmethods and (#menu.details.productionmethods > 0) then
 				-- empty line
 				menu.addDetailRow(ftable, "")
-				menu.addProductionMethodDetails(ftable, prodmethodstring)
+				menu.addProductionMethodDetails(ftable, prodmethodstring, methodtypestring)
 			end
 
 		elseif menu.mode == "Equipment" then
 			-- TODO #nick: add equipment mods?
 			-- overridden for component types that have to be constructed in situ
-			local prodmethodstring = (ReadText(1001, 9607))	-- Resources needed for manufacture, :
+			local prodmethodstring = ReadText(1001, 9607)	-- Resources needed for manufacture, :
+			local methodtypestring = ReadText(1001, 2408)
 			if menu.library == "enginetypes" or menu.library == "thrustertypes" then
-				prodmethodstring = (ReadText(1001, 9613))	-- Resources needed for construction, :
+				prodmethodstring = ReadText(1001, 9613)	-- Resources needed for construction, :
+				methodtypestring = ReadText(1001, 9652)
 				local isvirtual = GetMacroData(menu.details.id, "isvirtual")
 				if not isvirtual then
 					-- hull
@@ -3527,7 +3544,8 @@ function menu.addDetailRows(ftable)
 				end
 
 			elseif menu.library == "shieldgentypes" then
-				prodmethodstring = (ReadText(1001, 9613))	-- Resources needed for construction, :
+				prodmethodstring = ReadText(1001, 9613)	-- Resources needed for construction, :
+				methodtypestring = ReadText(1001, 9652)
 				if not GetMacroData(menu.details.id, "isintegrated") then
 					-- hull
 					menu.addDetailRow(ftable, ReadText(1001, 9083), ConvertIntegerString(menu.object.hull, true, 0, true) .. " " .. ReadText(1001, 118))
@@ -3567,7 +3585,8 @@ function menu.addDetailRows(ftable)
 
 			elseif menu.library == "software" then
 				if menu.object.isscanner then
-					prodmethodstring = (ReadText(1001, 9613))	-- Resources needed for construction, :
+					prodmethodstring = ReadText(1001, 9613)	-- Resources needed for construction, :
+					methodtypestring = ReadText(1001, 9652)
 					-- scan resolution
 					menu.addDetailRow(ftable, ReadText(1001, 9080), menu.object.scanlevel)
 					-- long range
@@ -3615,7 +3634,7 @@ function menu.addDetailRows(ftable)
 			if menu.details.productionmethods and (#menu.details.productionmethods > 0) then
 				-- empty line
 				menu.addDetailRow(ftable, "")
-				menu.addProductionMethodDetails(ftable, prodmethodstring)
+				menu.addProductionMethodDetails(ftable, prodmethodstring, methodtypestring)
 			end
 
 		elseif menu.mode == "Licences" then
@@ -3645,7 +3664,6 @@ function menu.addDetailRows(ftable)
 
 		elseif menu.mode == "Wares" then
 			local locware = menu.object
-			local numillegal = #menu.object.illegalto
 			if menu.library == "wares" then
 				-- volume
 				menu.addDetailRow(ftable, ReadText(1001, 1407), locware.volume .. " " .. ReadText(1001, 110))
@@ -3655,7 +3673,7 @@ function menu.addDetailRows(ftable)
 				if menu.details.productionmethods and (#menu.details.productionmethods > 0) then
 					-- empty line
 					menu.addDetailRow(ftable, "")
-					menu.addProductionMethodDetails(ftable, ReadText(1001, 9421), ReadText(1001, 2411), ReadText(1001, 9418))
+					menu.addProductionMethodDetails(ftable, ReadText(1001, 9421), ReadText(1001, 2408), ReadText(1001, 2411), ReadText(1001, 9418))
 				end
 				-- products
 				if menu.details.products and (#menu.details.products > 0) then
@@ -3668,12 +3686,16 @@ function menu.addDetailRows(ftable)
 					end
 				end
 				-- illegal
-				if numillegal > 0 then
-					-- empty line
-					menu.addDetailRow(ftable, "")
-					-- title
-					menu.addDetailRow(ftable, ReadText(1001, 2437) .. ReadText(1001, 120))
-					for i, entry in ipairs(menu.object.illegalto) do
+				local first = true
+				for i, entry in ipairs(menu.object.illegalto) do
+					if entry.known then
+						if first then
+							-- empty line
+							menu.addDetailRow(ftable, "")
+							-- title
+							menu.addDetailRow(ftable, ReadText(1001, 2437) .. ReadText(1001, 120))
+							first = false
+						end
 						menu.addDetailRow(ftable, "", entry.name)
 					end
 				end
@@ -3711,15 +3733,19 @@ function menu.addDetailRows(ftable)
 					end
 				end
 				-- illegal
-				if numillegal > 0 then
-					if not first then
-						-- empty line
-						menu.addDetailRow(ftable, "")
-					end
-					first = false
-					-- title
-					menu.addDetailRow(ftable, ReadText(1001, 2437) .. ReadText(1001, 120))
-					for i, entry in ipairs(menu.object.illegalto) do
+				local firstillegal = true
+				for _, entry in ipairs(menu.object.illegalto) do
+					if entry.known then
+						if firstillegal then
+							if not first then
+								-- empty line
+								menu.addDetailRow(ftable, "")
+							end
+							first = false
+							-- title
+							menu.addDetailRow(ftable, ReadText(1001, 2437) .. ReadText(1001, 120))
+							firstillegal = false
+						end
 						menu.addDetailRow(ftable, "", entry.name)
 					end
 				end
@@ -3760,7 +3786,7 @@ function menu.addDetailRows(ftable)
 						menu.addDetailRow(ftable, "")
 					end
 					-- header
-					local row = ftable:addRow(false, { bgColor = Helper.color.transparent })
+					local row = ftable:addRow(false, {  })
 					row[2]:setColSpan(2):setBackgroundColSpan(3):createText(data.name, Helper.headerRow1Properties)
 					local unlocked, count, owned = 0, 0, 0
 					for i, entry in ipairs(data) do
@@ -3780,9 +3806,9 @@ function menu.addDetailRows(ftable)
 					for i, entry in ipairs(data) do
 						if entry.unlocked then
 							menu.numDetailRows = menu.numDetailRows + 1
-							local row = ftable:addRow(("detailrow_" .. menu.numDetailRows), { bgColor = Helper.color.transparent, interactive = false })
-							row[2]:createText(entry.name, { color = entry.owned and Helper.color.white or Helper.color.grey, mouseOverText = entry.owned and "" or ReadText(1001, 9622) })
-							row[3]:setColSpan(2):createText(entry.owned and (Helper.convertColorToText(Helper.color.green) .. ReadText(1001, 84)) or "", { halign = "right" })
+							local row = ftable:addRow(("detailrow_" .. menu.numDetailRows), { interactive = false })
+							row[2]:createText(entry.name, { color = entry.owned and Color["text_normal"] or Color["text_inactive"], mouseOverText = entry.owned and "" or ReadText(1001, 9622) })
+							row[3]:setColSpan(2):createText(entry.owned and (ColorText["text_player"] .. ReadText(1001, 84)) or "", { halign = "right" })
 						end
 					end
 					if unlocked < count then
@@ -3846,43 +3872,89 @@ function menu.createGraph(width, height, x, y)
 	end
 	table.sort(sellDataWeights, function (a, b) return a.amount > b.amount end)
 
+	-- table
+	local table_graph = menu.frame:addTable(9, { y = y, tabOrder = 4, width = width, x = x })
+	for i = 1, 4 do
+		table_graph:setColWidth(2 * i, Helper.standardTextHeight)
+	end
+
+	local row = table_graph:addRow(false, { fixed = true })
+	row[1]:setColSpan(9):createText(ReadText(1001, 2489), Helper.headerRow1Properties)
+
+	local graphrow = table_graph:addRow(false, { fixed = true })
+
+	local row = table_graph:addRow(true, { fixed = true })
+	row[1]:createText(ReadText(1001, 2954) .. ReadText(1001, 120))
+	for i = 1, 4 do
+		if buyDataWeights[i] and (buyDataWeights[i].amount > 0) then
+			row[2 * i]:createCheckBox(not menu.hiddenData.buy[i])
+			row[2 * i].handlers.onClick = function (id) return menu.checkboxGraphData(id, "buy", i) end
+			row[2 * i + 1]:createText(GetWareData(buyDataWeights[i].ware, "name"), { color = config.graph.datarecordcolors[i].buy })
+		end
+	end
+
+	local row = table_graph:addRow(true, { fixed = true })
+	row[1]:createText(ReadText(1001, 2955) .. ReadText(1001, 120))
+	for i = 1, 4 do
+		if sellDataWeights[i] and (sellDataWeights[i].amount > 0) then
+			row[2 * i]:createCheckBox(not menu.hiddenData.sell[i])
+			row[2 * i].handlers.onClick = function (id) return menu.checkboxGraphData(id, "sell", i) end
+			row[2 * i + 1]:createText(GetWareData(sellDataWeights[i].ware, "name"), { color = config.graph.datarecordcolors[i].sell })
+		end
+	end
+
+	local graph = graphrow[1]:setColSpan(9):createGraph({ height = height - table_graph:getFullHeight(), scaling = false })
+
 	-- graph setup
 	local minY, maxY = 0, 1
-	local datarecords = {}
 	for i = 1, 4 do
 		if buyDataWeights[i] and (buyDataWeights[i].amount > 0) and (not menu.hiddenData.buy[i]) then
-			local data = {}
-			for i, point in pairs(menu.graphdata[buyDataWeights[i].dataIdx].buydata) do
-				minY = math.min(minY, point.y)
-				maxY = math.max(maxY, point.y)
-				table.insert(data, Helper.createGraphDataPoint((point.t - menu.xEnd) / menu.xScale, point.y, nil, nil))
-			end
+			if next(menu.graphdata[buyDataWeights[i].dataIdx].buydata) then
+				local highlight = menu.selectedrowdata == entry
+				local color = config.graph.datarecordcolors[i].buy
+				if hashighlight and (not highlight) then
+					color.a = 50
+				end
+				local datarecord = graph:addDataRecord({
+					markertype = config.graph.point.type,
+					markersize = highlight and config.graph.point.highlightSize or config.graph.point.size,
+					markercolor = color,
+					linetype = config.graph.line.type,
+					linewidth = highlight and config.graph.line.highlightSize or config.graph.line.size,
+					linecolor = color,
+					mouseOverText = ReadText(1001, 2916) .. ReadText(1001, 120) .. " " .. menu.graphdata[buyDataWeights[i].dataIdx].text,
+				})
 
-			local highlight = menu.selectedrowdata == entry
-			local color = { r = config.graph.datarecordcolors[i].buy.r, g = config.graph.datarecordcolors[i].buy.g, b = config.graph.datarecordcolors[i].buy.b, a = config.graph.datarecordcolors[i].buy.a }
-			if hashighlight and (not highlight) then
-				color.a = 50
-			end
-			if #data > 0 then
-				table.insert(datarecords, Helper.createGraphDataRecord(config.graph.point.type, highlight and config.graph.point.highlightSize or config.graph.point.size, color, config.graph.line.type, highlight and config.graph.line.highlightSize or config.graph.line.size, color, data, false, ReadText(1001, 2916) .. ReadText(1001, 120) .. " " .. menu.graphdata[buyDataWeights[i].dataIdx].text))
+				for i, point in pairs(menu.graphdata[buyDataWeights[i].dataIdx].buydata) do
+					minY = math.min(minY, point.y)
+					maxY = math.max(maxY, point.y)
+					datarecord:addData((point.t - menu.xEnd) / menu.xScale, point.y, nil, nil)
+				end
 			end
 		end
 		
 		if sellDataWeights[i] and (sellDataWeights[i].amount > 0) and (not menu.hiddenData.sell[i]) then
-			local data = {}
-			for i, point in pairs(menu.graphdata[sellDataWeights[i].dataIdx].selldata) do
-				minY = math.min(minY, point.y)
-				maxY = math.max(maxY, point.y)
-				table.insert(data, Helper.createGraphDataPoint((point.t - menu.xEnd) / menu.xScale, point.y, nil, nil))
-			end
+			if next(menu.graphdata[buyDataWeights[i].dataIdx].selldata) then
+				local highlight = menu.selectedrowdata == entry
+				local color = config.graph.datarecordcolors[i].sell
+				if hashighlight and (not highlight) then
+					color.a = 50
+				end
+				local datarecord = graph:addDataRecord({
+					markertype = config.graph.point.type,
+					markersize = highlight and config.graph.point.highlightSize or config.graph.point.size,
+					markercolor = color,
+					linetype = config.graph.line.type,
+					linewidth = highlight and config.graph.line.highlightSize or config.graph.line.size,
+					linecolor = color,
+					mouseOverText = ReadText(1001, 2917) .. ReadText(1001, 120) .. " " .. menu.graphdata[sellDataWeights[i].dataIdx].text,
+				})
 
-			local highlight = menu.selectedrowdata == entry
-			local color = { r = config.graph.datarecordcolors[i].sell.r, g = config.graph.datarecordcolors[i].sell.g, b = config.graph.datarecordcolors[i].sell.b, a = config.graph.datarecordcolors[i].sell.a }
-			if hashighlight and (not highlight) then
-				color.a = 50
-			end
-			if #data > 0 then
-				table.insert(datarecords, Helper.createGraphDataRecord(config.graph.point.type, highlight and config.graph.point.highlightSize or config.graph.point.size, color, config.graph.line.type, highlight and config.graph.line.highlightSize or config.graph.line.size, color, data, false, ReadText(1001, 2917) .. ReadText(1001, 120) .. " " .. menu.graphdata[sellDataWeights[i].dataIdx].text))
+				for i, point in pairs(menu.graphdata[sellDataWeights[i].dataIdx].selldata) do
+					minY = math.min(minY, point.y)
+					maxY = math.max(maxY, point.y)
+					datarecord:addData((point.t - menu.xEnd) / menu.xScale, point.y, nil, nil)
+				end
 			end
 		end
 	end
@@ -3903,41 +3975,10 @@ function menu.createGraph(width, height, x, y)
 	local xGranularity = Helper.round(menu.xGranularity / menu.xScale, 3)
 	local xOffset = xRange % xGranularity
 
-	local xaxis = Helper.createGraphAxis(Helper.createGraphText(menu.xTitle, Helper.standardFont, 9, menu.white), -xRange, 0, xGranularity, xOffset, true, menu.white, {r = 96, g = 96, b = 96, a = 80})
-	local yaxis = Helper.createGraphAxis(Helper.createGraphText(menu.yTitle, Helper.standardFont, 9, menu.white), 0, maxY, granularity, 0, true, menu.white, {r = 96, g = 96, b = 96, a = 80})
-
-	-- table
-	local table_graph = menu.frame:addTable(9, { y = y, tabOrder = 4, width = width, x = x })
-	for i = 1, 4 do
-		table_graph:setColWidth(2 * i, Helper.standardTextHeight)
-	end
-
-	local row = table_graph:addRow(false, { bgColor = Helper.color.transparent, fixed = true })
-	row[1]:setColSpan(9):createText(ReadText(1001, 2489), Helper.headerRow1Properties)
-
-	local graphrow = table_graph:addRow(false, { bgColor = Helper.color.transparent, fixed = true })
-
-	local row = table_graph:addRow(true, { bgColor = Helper.color.transparent, fixed = true })
-	row[1]:createText(ReadText(1001, 2954) .. ReadText(1001, 120))
-	for i = 1, 4 do
-		if buyDataWeights[i] and (buyDataWeights[i].amount > 0) then
-			row[2 * i]:createCheckBox(not menu.hiddenData.buy[i])
-			row[2 * i].handlers.onClick = function (id) return menu.checkboxGraphData(id, "buy", i) end
-			row[2 * i + 1]:createText(GetWareData(buyDataWeights[i].ware, "name"), { color = config.graph.datarecordcolors[i].buy })
-		end
-	end
-
-	local row = table_graph:addRow(true, { bgColor = Helper.color.transparent, fixed = true })
-	row[1]:createText(ReadText(1001, 2955) .. ReadText(1001, 120))
-	for i = 1, 4 do
-		if sellDataWeights[i] and (sellDataWeights[i].amount > 0) then
-			row[2 * i]:createCheckBox(not menu.hiddenData.sell[i])
-			row[2 * i].handlers.onClick = function (id) return menu.checkboxGraphData(id, "sell", i) end
-			row[2 * i + 1]:createText(GetWareData(sellDataWeights[i].ware, "name"), { color = config.graph.datarecordcolors[i].sell })
-		end
-	end
-
-	graphrow[1]:setColSpan(9):createGraph("line", true, Helper.color.semitransparent, nil, xaxis, yaxis, datarecords, 0, 0, nil, height - table_graph:getFullHeight())
+	graph:setXAxis({ startvalue = -xRange, endvalue = 0, granularity = xGranularity, offset = xOffset, gridcolor = Color["graph_grid"] })
+	graph:setXAxisLabel(menu.xTitle, { fontsize = 9 })
+	graph:setYAxis({ startvalue = 0, endvalue = maxY, granularity = granularity, offset = 0, gridcolor = Color["graph_grid"] })
+	graph:setYAxisLabel(menu.yTitle, { fontsize = 9 })
 end
 
 function menu.getDataIdxByWare(ware)

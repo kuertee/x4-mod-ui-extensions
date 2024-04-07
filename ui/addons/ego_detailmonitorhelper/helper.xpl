@@ -125,12 +125,12 @@ ffi.cdef[[
 		const char* militarysetting;
 	} UIFightRuleSetting;
 	typedef struct {
-		const float x;
-		const float y;
-		const float z;
-		const float yaw;
-		const float pitch;
-		const float roll;
+		float x;
+		float y;
+		float z;
+		float yaw;
+		float pitch;
+		float roll;
 	} UIPosRot;
 	typedef struct {
 		const char* Name;
@@ -298,6 +298,7 @@ ffi.cdef[[
 	uint32_t GetDockedShips(UniverseID* result, uint32_t resultlen, UniverseID dockingbayorcontainerid, const char* factionid);
 	bool GetFightRuleInfo(FightRuleInfo* info, FightRuleID id);
 	FightRuleCounts GetFightRuleInfoCounts(FightRuleID id);
+	const char* GetGameStartName();
 	bool GetInstalledEngineMod(UniverseID objectid, UIEngineMod* enginemod);
 	bool GetInstalledGroupedWeaponMod(UniverseID defensibleid, UniverseID contextid, const char* group, UIWeaponMod* weaponmod);
 	bool GetInstalledShieldMod(UniverseID defensibleid, UniverseID contextid, const char* group, UIShieldMod* shieldmod);
@@ -360,7 +361,9 @@ ffi.cdef[[
 	bool IsSetaActive();
 	bool IsStartmenu();
 	bool IsTerraformingProjectOngoing(UniverseID clusterid, const char* projectid);
+	bool IsTimelinesScenario(void);
 	bool IsValidTrade(TradeID tradeid);
+	bool IsVentureSeasonSupported(void);
 	bool IsVRMode(void);
 	bool IsWeaponModeCompatible(UniverseID weaponid, const char* macroname, const char* weaponmodeid);
 	void ReleaseConstructionMapState(void);
@@ -369,29 +372,40 @@ ffi.cdef[[
 	void SetBoxText(const int boxtextid, const char* text);
 	void SetBoxTextBoxColor(const int boxtextid, Color color);
 	void SetBoxTextColor(const int boxtextid, Color color);
+	void SetBoxTextGlowFactor(const int boxtextid, float factor);
 	void SetButtonActive(const int buttonid, bool active);
+	void SetButtonGlowFactor(const int buttonid, float factor);
 	void SetButtonHighlightColor(const int buttonid, Color color);
+	void SetButtonHighlightGlowFactor(const int buttonid, float factor);
 	void SetButtonIconColor(const int buttonid, Color color);
 	void SetButtonIcon2Color(const int buttonid, Color color);
+	void SetButtonIconGlowFactor(const int buttonid, float factor);
+	void SetButtonIcon2GlowFactor(const int buttonid, float factor);
 	void SetButtonIconID(const int buttonid, const char* iconid);
 	void SetButtonIcon2ID(const int buttonid, const char* iconid);
 	void SetButtonTextColor(const int buttonid, Color color);
+	void SetButtonTextGlowFactor(const int buttonid, float factor);
 	void SetButtonText2(const int buttonid, const char* text);
 	void SetButtonText2Color(const int buttonid, Color color);
+	void SetButtonText2GlowFactor(const int buttonid, float factor);
 	void SetCheckBoxChecked2(const int checkboxid, bool checked, bool update);
 	void SetCheckBoxColor(const int checkboxid, Color color);
+	void SetCheckBoxSymbolGlowFactor(const int checkboxid, float factor);
 	void SetContainerBuyLimitOverride(UniverseID containerid, const char* wareid, int32_t amount);
 	void SetContainerSellLimitOverride(UniverseID containerid, const char* wareid, int32_t amount);
 	void SetContainerTradeRule(UniverseID containerid, TradeRuleID id, const char* ruletype, const char* wareid, bool value);
 	void SetContainerWareIsBuyable(UniverseID containerid, const char* wareid, bool allowed);
 	void SetContainerWareIsSellable(UniverseID containerid, const char* wareid, bool allowed);
 	void SetDropDownCurOption(const int dropdownid, const char* id);
+	void SetDropDownOptionTexts(const int dropdownid, const char** texts, uint32_t numtexts);
+	void SetDropDownOptionTexts2(const int dropdownid, const char** texts, uint32_t numtexts);
 	void SetEditBoxActive(const int editboxid, bool active);
 	void SetEditBoxText(const int editboxid, const char* text);
 	void SetEditBoxTextHidden(const int editboxid, bool hidden);
 	void SetFlowChartEdgeColor(const int flowchartedgeid, Color color);
 	void SetFlowChartNodeCaptionText(const int flowchartnodeid, const char* text);
 	void SetFlowChartNodeCaptionTextColor(const int flowchartnodeid, Color color);
+	void SetFlowChartNodeCaptionTextGlowFactor(const int flowchartnodeid, float factor);
 	void SetFlowChartNodeCurValue(const int flowchartnodeid, double value);
 	void SetFlowchartNodeExpanded(const int flowchartnodeid, const int frameid, bool expandedabove);
 	void SetFlowChartNodeMaxValue(const int flowchartnodeid, double value);
@@ -404,15 +418,26 @@ ffi.cdef[[
 	void SetFlowChartNodeStatusIconMouseOverText(const int flowchartnodeid, const char* mouseovertext);
 	void SetFlowChartNodeStatusText(const int flowchartnodeid, const char* text);
 	void SetFlowChartNodeStatusColor(const int flowchartnodeid, Color color);
+	void SetFlowChartNodeStatusGlowFactor(const int flowchartnodeid, float factor);
+	void SetFontStringGlowFactor(const int fontstringid, float factor);
 	void SetIcon(const int widgeticonid, const char* iconid);
 	void SetIconColor(const int widgeticonid, Color color);
+	void SetIconGlowFactor(const int widgeticonid, float factor);
 	void SetIconText(const int widgeticonid, const char* text);
 	void SetIconText2(const int widgeticonid, const char* text);
+	void SetIconTextColor(const int widgeticonid, Color color);
+	void SetIconText2Color(const int widgeticonid, Color color);
+	void SetIconTextGlowFactor(const int widgeticonid, float factor);
+	void SetIconText2GlowFactor(const int widgeticonid, float factor);
+	void SetMouseInputBlockedByAnarkElement(int32_t mousebuttonid, const char* modifiers, bool blocked);
 	void SetMouseOverText(int widgetid, const char* text);
+	void SetShieldHullBarGlowFactor(const int shieldhullbarid, float factor);
 	void SetShieldHullBarHullPercent(const int shieldhullbarid, float hullpercent);
 	void SetShieldHullBarShieldPercent(const int shieldhullbarid, float shieldpercent);
 	void SetSliderCellMaxSelectValue(const int slidercellid, double value);
 	void SetSliderCellMaxValue(const int slidercellid, double value);
+	void SetSliderCellMinSelectValue(const int slidercellid, double value);
+	void SetSliderCellMinValue(const int slidercellid, double value);
 	void SetSubordinateGroupAssignment(UniverseID controllableid, int group, const char* assignment);
 	void SetSubordinateGroupProtectedLocation(UniverseID controllableid, int group, UniverseID sectorid, UIPosRot offset);
 	void SetStatusBarCurrentValue(const int statusbarid, float value);
@@ -436,7 +461,6 @@ local utf8 = require("utf8")
 
 Helper = {
 	standardHalignment = "left",
-	standardColor = { r = 255, g = 255, b = 255, a = 100 },
 	standardFontBold = "Zekton bold",
 	standardFontMono = "Zekton fixed",
 	standardFontBoldMono = "Zekton bold fixed",
@@ -473,52 +497,12 @@ Helper = {
 	-- large icon text properties
 	largeIconFontSize = 16,
 	largeIconTextHeight = 32,
-	-- default colors
-	defaultHeaderBackgroundColor = { r = 0, g = 0, b = 0, a = 60 },
-	defaultSimpleBackgroundColor = { r = 66, g = 92, b = 111, a = 60 },
-	defaultTitleBackgroundColor = { r = 49, g = 69, b = 83, a = 60 },
-	defaultArrowRowBackgroundColor = { r = 83, g = 116, b = 139, a = 60 },
-	defaultUnselectableBackgroundColor = { r = 35, g = 53, b = 71, a = 60 },
-	defaultUnselectableFontColor = { r = 163, g = 193, b = 227, a = 100 },
-	defaultButtonBackgroundColor = { r = 49, g = 69, b = 83, a = 60 },
-	defaultUnselectableButtonBackgroundColor = { r = 31, g = 31, b = 31, a = 100 },
-	defaultButtonHighlightColor = { r = 71, g = 136, b = 184, a = 100 },
-	defaultUnselectableButtonHighlightColor = { r = 80, g = 80, b = 80, a = 100 },
-	defaultCheckBoxBackgroundColor = { r = 66, g = 92, b = 111, a = 100 },
-	defaultEditBoxBackgroundColor = { r = 49, g = 69, b = 83, a = 60 },
-	defaultSliderCellBackgroundColor = { r = 22, g = 34, b = 41, a = 60 },
-	defaultSliderCellInactiveBackgroundColor = { r = 40, g = 40, b = 40, a = 60 },
-	defaultSliderCellValueColor = { r = 99, g = 138, b = 166, a = 100 },
-	defaultSliderCellPositiveValueColor = { r = 29, g = 216, b = 35, a = 30 },
-	defaultSliderCellNegativeValueColor = { r = 216, g = 68, b = 29, a = 30 },
-	defaultStatusBarValueColor = { r = 71, g = 136, b = 184, a = 100 },
-	defaultStatusBarPosChangeColor = { r = 20, g = 222, b = 20, a = 30 },
-	defaultStatusBarNegChangeColor = { r = 236, g = 53, b = 0, a = 30 },
-	defaultStatusBarMarkerColor = { r = 151, g = 192, b = 223, a = 100 },
-	defaultBoxTextBoxColor = { r = 49, g = 69, b = 83, a = 60 },
-	defaultFlowchartOutlineColor = { r = 90, g = 146, b = 186, a = 100 },			-- light cyan
-	defaultFlowchartBackgroundColor = { r = 25, g = 25, b = 25, a = 100 },			-- dark grey
-	defaultFlowchartValueColor = { r = 0, g = 116, b = 153, a = 100 },				-- cyan
-	defaultFlowchartSlider1Color = { r = 225, g = 149, b = 0, a = 100 },			-- orange
-	defaultFlowchartDiff1Color = { r = 89, g = 52, b = 0, a = 100 },				-- brown
-	defaultFlowchartSlider2Color = { r = 66, g = 171, b = 61, a = 100 },			-- green
-	defaultFlowchartDiff2Color = { r = 4, g = 89, b = 0, a = 100 },					-- dark green
-	defaultFlowchartConnector1Color = { r = 255, g = 220, b = 0, a = 100 },			-- yellow
-	defaultFlowchartConnector2Color = { r = 0, g = 154, b = 204, a = 100 },			-- light cyan
-	defaultFlowchartConnector3Color = { r = 224, g = 79, b = 0, a = 100 },			-- dark orange
-	defaultFlowchartConnector4Color = { r = 255, g = 153, b = 255, a = 100 },		-- pink
-	defaultTitleTrapezoidBackgroundColor = { r = 66, g = 92, b = 111, a = 100 },
-	statusRed = {r = 255, g = 0, b = 0, a = 100},
-	statusOrange = {r = 255, g = 64, b = 0, a = 100},
-	statusYellow = {r = 255, g = 255, b = 0, a = 100},
-	statusGreen = {r = 0, g = 255, b = 0, a = 100},
 	-- rows, cols and rowdata
 	currentTableRow = {},
 	currentTableCol = {},
 	-- misc
 	configButtonBorderSize = 2,
 	scrollbarWidth = 19,
-	yScalingFactor = 0.4,
 	borderSize = 3,
 	buttonMinHeight = 23,
 	slidercellMinHeight = 16,
@@ -531,6 +515,8 @@ Helper = {
 	standardButtons_Size = 18,
 	maxTableCols = 13,
 	maxTextIcons = 15,
+	fallbackFont = "Terrakana",
+	fallbackFontBold = "Terrakana Bold",
 }
 
 Helper.titleTextProperties = {
@@ -540,8 +526,8 @@ Helper.titleTextProperties = {
 	y = Helper.titleOffsetY,
 	height = Helper.titleHeight,
 	halign = "center",
-	cellBGColor = { r = 0, g = 0, b = 0, a = 0 },
-	titleColor = Helper.defaultSimpleBackgroundColor,
+	cellBGColor = Color["row_background"],
+	titleColor = Color["row_title"],
 }
 Helper.headerRow1Properties = {
 	font = Helper.headerRow1Font,
@@ -549,8 +535,8 @@ Helper.headerRow1Properties = {
 	x = Helper.headerRow1Offsetx,
 	y = Helper.headerRow1Offsety,
 	height = Helper.headerRow1Height - Helper.headerRow1Offsety,
-	cellBGColor = { r = 0, g = 0, b = 0, a = 0 },
-	titleColor = Helper.defaultSimpleBackgroundColor,
+	cellBGColor = Color["row_background"],
+	titleColor = Color["row_title"],
 }
 Helper.headerRowCenteredProperties = {
 	font = Helper.headerRow1Font,
@@ -559,50 +545,15 @@ Helper.headerRowCenteredProperties = {
 	y = Helper.headerRow1Offsety,
 	height = Helper.headerRow1Height - Helper.headerRow1Offsety,
 	halign = "center",
-	cellBGColor = { r = 0, g = 0, b = 0, a = 0 },
-	titleColor = Helper.defaultSimpleBackgroundColor,
+	cellBGColor = Color["row_background"],
+	titleColor = Color["row_title"],
 }
 Helper.subHeaderTextProperties = {
 	font = Helper.titleFont,
 	fontsize = Helper.standardFontSize,
 	height = Helper.subHeaderHeight,
-	cellBGColor = { r = 0, g = 0, b = 0, a = 0 },
-	titleColor = Helper.defaultSimpleBackgroundColor,
-}
-
-Helper.color = {
-	black = { r = 0, g = 0, b = 0, a = 100 },
-	slidervalue = { r = 71, g = 136, b = 184, a = 100 },
-	green = { r = 0, g = 255, b = 0, a = 100 },
-	playergreen = { r = 170, g = 255, b = 139, a = 100 },
-	grey = { r = 128, g = 128, b = 128, a = 100 },
-	lightgreen = { r = 100, g = 225, b = 0, a = 100 },
-	lightgrey = { r = 192, g = 192, b = 192, a = 100 },
-	orange = { r = 255, g = 192, b = 0, a = 100 },
-	darkorange = { r = 128, g = 95, b = 0, a = 100 },
-	red = { r = 255, g = 0, b = 0, a = 100 },
-	semitransparent = { r = 0, g = 0, b = 0, a = 95 },
-	transparent60 = { r = 0, g = 0, b = 0, a = 60 },
-	transparent = { r = 0, g = 0, b = 0, a = 0 },
-	white = { r = 255, g = 255, b = 255, a = 100 },
-	yellow = { r = 144, g = 144, b = 0, a = 100 },
-	brightyellow = { r = 255, g = 255, b = 0, a = 100 },
-	warning = { r = 192, g = 192, b = 0, a = 100 },
-	done = { r = 38, g = 61, b = 78, a = 100 },
-	available = { r = 7, g = 29, b = 46, a = 100 },
-	darkgrey = { r = 32, g = 32, b = 32, a = 100 },
-	mission = { r = 255, g = 190, b = 0, a = 100 },
-	warningorange = { r = 255, g = 138, b = 0, a = 100 },
-	blue = { r = 90, g = 146, b = 186, a = 100 },
-	changedvalue = { r = 255, g = 236, b = 81, a = 100 },
-	cyan = { r = 46, g = 209, b = 255, a = 100 },
-	checkboxgroup = { r = 0, g = 102, b = 238, a = 60 },
-	unselectable = { r = 32, g = 32, b = 32, a = 100 },
-	cover = { r = 231, g = 244, b = 70, a = 100 },
-	textred = { r = 255, g = 80, b = 80, a = 100 },
-	grey64 = { r = 64, g = 64, b = 64, a = 100 },
-	illegal = { r = 255, g = 64, b = 0, a = 100 },
-	illegaldark = { r = 128, g = 32, b = 0, a = 100 },
+	cellBGColor = Color["row_background"],
+	titleColor = Color["row_title"],
 }
 
 Helper.intersectorDefenceFactor = 3000
@@ -619,6 +570,7 @@ Helper.classOrder = {
 	["ship_m"]		= 4,
 	["ship_s"]		= 5,
 	["ship_xs"]		= 6,
+	["spacesuit"]	= 7,
 }
 Helper.purposeOrder = {
 	["fight"]		= 1,
@@ -654,11 +606,6 @@ Helper.slotTypeOrder = {
 	["turrets"]		= 3
 }
 
-Helper.autoFrameHeight = 0
-
-local objDescriptors = { }
-local viewDescriptors = { }
-
 -- forward declarations of local functions
 local onUpdate								-- callback, delegates to onUpdateHandler
 local onUpdateHandler = nil					-- a function will be called once per frame when assigned to this variable
@@ -667,11 +614,6 @@ local onChatUpdateHandler = nil				-- a function will be called once per frame w
 local getSectionBaseParam
 
 local closeMenu
-
-local registerObjDescriptor
-local registerViewDescriptor
-local releaseObjectDescriptors
-local releaseViewDescriptors
 
 -- kuertee start:
 local callbacks = {}
@@ -731,7 +673,8 @@ end
 
 Helper.texts  = {}
 local origreadtext = ReadText
-ReadText = function(page, line)
+ReadText = function(page, line) 
+	-- kuertee start:
 	if page and line then
 		local refstr = page .. "-" .. line
 		local text = Helper.texts[refstr]
@@ -743,6 +686,7 @@ ReadText = function(page, line)
 	else
 		return ""
 	end
+	-- kuertee end
 end
 
 ---------------------------------------------------------------------------------
@@ -830,7 +774,17 @@ end
 -- empty cell descriptors
 ---------------------------------------------------------------------------------
 
-Helper.emptyCellDescriptor = CreateFontString("", Helper.standardHalignment, Helper.standardColor.r, Helper.standardColor.g, Helper.standardColor.b, Helper.standardColor.a, Helper.standardFont, Helper.standardFontSize, false, Helper.standardTextOffsetx, Helper.standardTextOffsety)
+local emptyText = {
+	text = "",
+	alignment = Helper.standardHalignment,
+	color = Color["text_normal"],
+	fontname = Helper.standardFont,
+	fontsize = Helper.standardFontSize,
+	wordwrap = false,
+	offset = { x = Helper.standardTextOffsetx, y = Helper.standardTextOffsety },
+	size = { width = 0, height = 0 },
+}
+Helper.emptyCellDescriptor = CreateFontString(emptyText)
 
 function Helper.getEmptyCellDescriptor()
 	return Helper.emptyCellDescriptor
@@ -882,7 +836,7 @@ end
 local function createCustomHooks(menu)
 	menu.rowChanged = function(uitable, row, modified, input, source)
 							Helper.currentTableRow[uitable] = row
-							-- row data is data provided in addSelectRow(), or nil otherwise
+							-- row data is data provided in addRow(), or nil otherwise
 							local rowdata = menu.rowDataMap[uitable] and menu.rowDataMap[uitable][row]
 							local layer = Helper.findFrameLayer(menu, uitable)
 							if menu.onRowChangedSound then
@@ -947,6 +901,10 @@ local function createCustomHooks(menu)
 	menu.renderTargetMiddleMouseDown = function(rendertarget, modified)
 							if menu.onRenderTargetMiddleMouseDown then
 								menu.onRenderTargetMiddleMouseDown(modified)
+								-- block MMB handling in input system (MMB input does not get blocked by default, unlike LMB and RMB)
+								C.SetMouseInputBlockedByAnarkElement(5, modified, true)	-- 5 == MMB
+							elseif menu.onRenderTargetMiddleMouseUp then
+								C.SetMouseInputBlockedByAnarkElement(5, modified, true)	-- 5 == MMB
 							end
 						end
 	menu.renderTargetMiddleMouseUp = function(rendertarget, modified)
@@ -1007,9 +965,9 @@ local function createCustomHooks(menu)
 								end
 							end
 						end
-	menu.editBoxActivated = function(widget)
+	menu.editBoxActivated = function(widget, oldtext)
 							if menu.onEditBoxActivated then
-								menu.onEditBoxActivated(widget)
+								menu.onEditBoxActivated(widget, oldtext)
 							end
 						end
 	menu.editBoxCursorChanged = function(widget)
@@ -1073,6 +1031,11 @@ local function createCustomHooks(menu)
 	menu.buttonRightMouseClick = function(button, row, col, posx, posy)
 							if menu.onButtonRightMouseClick then
 								menu.onButtonRightMouseClick(button, row, col, posx, posy)
+							end
+						end
+	menu.buttonDblMouseClick = function(button)
+							if menu.onButtonDblMouseClick then
+								menu.onButtonDblMouseClick(button)
 							end
 						end
 	menu.buttonOver = function(input, button)
@@ -1228,8 +1191,7 @@ function Helper.registerMenu(menu)
 
 	-- Create and register a closure that will be called when the menu should be started
 	menu.showMenuCallback = function(...)
-
-		if C.IsGameOver() and (menu.name ~= "OptionsMenu") then
+		if C.IsGameOver() and (menu.name ~= "OptionsMenu") and (menu.name ~= "ScenarioDebriefingMenu") then
 			return
 		end
 		if not menu.shown then
@@ -1347,7 +1309,7 @@ function Helper.registerMenu(menu)
 			Helper.restoreMenu(menu)
 		else
 			if menu.name == "InteractMenu" then
-				Helper.closeMenu(menu, "close")
+				menu.onCloseElement("close")
 			end
 			C.SetWidgetViewScheduled(false)
 		end
@@ -1482,7 +1444,7 @@ function Helper.clearMenu(menu, UpdateHandler)
 	Helper.removeAllTabScrollCallbacks(menu)
 	Helper.removeAllMenuScripts(menu)
 	-- unregister callbacks
-	if not menu.minimized then
+	if menu.shown and (not menu.minimized) then
 		UnregisterEvent("conversationCancelled", menu.onConversationCancelled)
 		UnregisterEvent("dialogOptionSelected", menu.onDialogOptionSelected)
 	end
@@ -1788,211 +1750,8 @@ function closeMenu(menu, resultfunc, allowAutoMenu)
 end
 
 ---------------------------------------------------------------------------------
--- Descriptor reference management
----------------------------------------------------------------------------------
-
-function registerObjDescriptor(descriptor)
-	if not descriptor then DebugError(TraceBack()) end
-	-- Avoid duplicates
-	objDescriptors[descriptor] = true
-	return descriptor
-end
-
-function registerViewDescriptor(descriptor)
-	if not descriptor then DebugError(TraceBack()) end
-	-- Avoid duplicates
-	viewDescriptors[descriptor] = true
-	return descriptor
-end
-
-function releaseObjectDescriptors()
-	for descriptor, _ in pairs(objDescriptors) do
-		if not ReleaseDescriptor(descriptor) then
-			DebugError("Presentation error. Failed to free a UI object descriptor. Skipping that one.")
-		end
-	end
-	objDescriptors = { }
-end
-
-function releaseViewDescriptors()
-	for descriptor, _ in pairs(viewDescriptors) do
-		if not ReleaseViewDescriptor(descriptor) then
-			DebugError("Presentation error. Failed to free a UI view descriptor. Skipping that one.")
-		end
-	end
-	viewDescriptors = { }
-end
-
-function Helper.releaseDescriptors()
-	releaseViewDescriptors()
-	releaseObjectDescriptors()
-end
-
----------------------------------------------------------------------------------
 -- Object descriptor creation wrappers
 ---------------------------------------------------------------------------------
-
-function Helper.createFontString(text, noscaling, halignment, textred, textgreen, textblue, textalpha, fontname, fontsize, wordwrap, offsetx, offsety, height, width, mouseovertext)
-	if halignment == nil then
-		halignment = Helper.standardHalignment
-	end
-	if textred == nil then
-		textred = Helper.standardColor.r
-	end
-	if textgreen == nil then
-		textgreen = Helper.standardColor.g
-	end
-	if textblue == nil then
-		textblue = Helper.standardColor.b
-	end
-	if textalpha == nil then
-		textalpha = Helper.standardColor.a
-	end
-	if fontname == nil then
-		fontname = Helper.standardFont
-	end
-	if fontsize == nil then
-		fontsize = Helper.standardFontSize
-	end
-	if offsetx == nil then
-		offsetx = Helper.standardTextOffsetx
-	end
-	if offsety == nil then
-		offsety = Helper.standardTextOffsety
-	end
-	if height == nil then
-		height = Helper.standardTextHeight
-	end
-	if width == nil then
-		width = Helper.standardTextWidth
-	end
-	if mouseovertext == nil then
-		mouseovertext = ""
-	end
-	if not noscaling then
-		fontsize	= Helper.scaleFont(fontname, fontsize)
-		offsetx		= Helper.scaleX(offsetx)
-		offsety		= Helper.scaleY(offsety)
-		height		= Helper.scaleY(height)
-		width		= Helper.scaleX(width)
-	end
-	if height and height ~= 0 then
-		height = height - offsety
-	end
-	if width and width ~= 0 then
-		width = width - offsetx
-	end
-	local desc = CreateFontString(text, halignment, textred, textgreen, textblue, textalpha, fontname, fontsize, wordwrap, offsetx, offsety, height, width, mouseovertext)
-	return registerObjDescriptor(desc)
-end
-
-function Helper.createGraph(type, noscaling, bgcolor, title, xaxis, yaxis, datarecords, offsetx, offsety, width, height, mouseovertext)
-	local graphDescriptor = {}
-	graphDescriptor.type = type
-	graphDescriptor.bgcolor = bgcolor
-	graphDescriptor.title = title
-	graphDescriptor.xAxis = xaxis
-	graphDescriptor.yAxis = yaxis
-	graphDescriptor.offset = { x = offsetx or 0, y = offsety or 0 }
-	graphDescriptor.size = { width = width or 0, height = height or 0 }
-	graphDescriptor.mouseovertext = mouseovertext
-
-	graphDescriptor.datarecords = {}
-	graphDescriptor.icons = {}
-	for datarecordidx, datarecord in ipairs(datarecords) do
-		for dataidx, datapoint in ipairs(datarecord.data) do
-			if datapoint.icon then
-				table.insert(graphDescriptor.icons, { datarecord = datarecordidx, data = dataidx, icon = datapoint.icon, mouseovertext = datapoint.mouseovertext })
-				datarecord.data.icon = nil
-				datarecord.data.mouseovertext = nil
-			end
-		end
-		table.insert(graphDescriptor.datarecords, datarecord)
-	end
-
-	if not noscaling then
-		graphDescriptor.offset.x		= Helper.scaleX(graphDescriptor.offset.x)
-		graphDescriptor.offset.y		= Helper.scaleY(graphDescriptor.offset.y)
-		graphDescriptor.size.width		= Helper.scaleX(graphDescriptor.size.width)
-		graphDescriptor.size.height		= Helper.scaleY(graphDescriptor.size.height)
-
-		if graphDescriptor.title then
-			graphDescriptor.title.size = Helper.scaleFont(graphDescriptor.title.font, graphDescriptor.title.size)
-		end
-		if graphDescriptor.xAxis.label then
-			graphDescriptor.xAxis.label.size = Helper.scaleFont(graphDescriptor.xAxis.label.font, graphDescriptor.xAxis.label.size)
-		end
-		if graphDescriptor.yAxis.label then
-			graphDescriptor.yAxis.label.size = Helper.scaleFont(graphDescriptor.yAxis.label.font, graphDescriptor.yAxis.label.size)
-		end
-		for _, datarecord in ipairs(graphDescriptor.datarecords) do
-			if datarecord.marker then
-				datarecord.marker.size = Helper.scaleX(datarecord.marker.size)
-			end
-			if datarecord.line then
-				datarecord.line.width = math.floor(Helper.scaleY(datarecord.line.width) / 2) * 2
-			end
-		end
-	end
-
-	local desc = CreateGraph(graphDescriptor)
-	return registerObjDescriptor(desc)
-end
-
-function Helper.createGraphText(text, fontname, fontsize, color)
-	return { text = text or "", font = fontname or Helper.standardFont, size = fontsize or Helper.standardFontSize, color = color or Helper.standardColor }
-end
-
-function Helper.createGraphAxis(label, startvalue, endvalue, granularity, offset, grid, color, gridcolor)
-	return { label = label, startvalue = startvalue, endvalue = endvalue, granularity = granularity, offset = offset, grid = grid, color = color or Helper.standardColor, gridcolor = gridcolor or Helper.standardColor}
-end
-
-function Helper.createGraphDataRecord(markertype, markersize, markercolor, linetype, linewidth, linecolor, data, highlighted, mouseovertext)
-	local marker
-	if markertype then
-		marker = { type = markertype, size = markersize or 1, color = markercolor or 1 }
-	end
-
-	local line
-	if linetype then
-		line = { type = linetype, width = linewidth or 1, color = linecolor or 1 }
-	end
-
-	return { marker = marker, line = line, data = data, highlighted = highlighted, mouseovertext = mouseovertext }
-end
-
-function Helper.createGraphDataPoint(x, y, icon, mouseovertext, inactive)
-	return { x = x, y = y, icon = icon, mouseovertext = mouseovertext, inactive = inactive }
-end
-
-function Helper.createIcon(texturename, noscaling, red, green, blue, alpha, offsetx, offsety, height, width, mouseovertext, text, text2)
-	if not noscaling then
-		if text then
-			text.fontsize = text.fontsize and Helper.scaleFont(text.fontname, text.fontsize) or text.fontsize
-		end
-		if text2 then
-			text2.fontsize = text2.fontsize and Helper.scaleFont(text2.fontname, text2.fontsize) or text2.fontsize
-		end
-
-		offsetx		= offsetx	and Helper.scaleX(offsetx)		or offsetx
-		offsety		= offsety	and Helper.scaleY(offsety)		or offsety
-		height		= height	and Helper.scaleY(height)		or height
-		width		= width		and Helper.scaleX(width)		or width
-	end
-
-	if width and width ~= 0 then
-		if text then
-			text.text = TruncateText(text.text, text.fontname, text.fontsize, width - (text.x and (2 * text.x) or 0))
-		end
-		if text2 then
-			text2.text = TruncateText(text2.text, text2.fontname, text2.fontsize, width - (text2.x and (2 * text2.x) or 0))
-		end
-	end
-
-	local desc = CreateIcon(texturename, red, green, blue, alpha, offsetx, offsety, height, width, mouseovertext, text, text2)
-
-	return registerObjDescriptor(desc)
-end
 
 --    [icon] = {                   -- icon and text are mutually exclusive
 --        [iconID]     = string,   -- the iconID
@@ -2043,7 +1802,7 @@ function Helper.createButton(text, icon, noscaling, active, offsetx, offsety, wi
 	buttonDescriptor.icon2 = icon2
 	buttonDescriptor.mouseovertext = mouseovertext
 
-	buttonDescriptor.color = color or Helper.defaultButtonBackgroundColor
+	buttonDescriptor.color = color or Color["button_background_default"]
 	buttonDescriptor.hotkey = hotkey
 	if hotkey then
 		if not buttonDescriptor.hotkey.x then
@@ -2084,30 +1843,7 @@ function Helper.createButton(text, icon, noscaling, active, offsetx, offsety, wi
 	buttonDescriptor.offset = {x = offsetx, y = offsety}
 	buttonDescriptor.size = {width = width , height = height}
 
-	local desc = CreateButton(buttonDescriptor)
-	return registerObjDescriptor(desc)
-end
-
-function Helper.createCheckBox(checked, noscaling, color, active, offsetx, offsety, width, height, mouseovertext)
-	local checkboxDescriptor = {}
-	checkboxDescriptor.mouseovertext = mouseovertext
-
-	checkboxDescriptor.color = color or Helper.defaultCheckBoxBackgroundColor
-
-	if not noscaling then
-		offsetx		= offsetx	and Helper.scaleX(offsetx)		or offsetx
-		offsety		= offsety	and Helper.scaleY(offsety)		or offsety
-		height		= height	and Helper.scaleY(height)		or height
-		width		= width		and Helper.scaleX(width)		or width
-	end
-	
-	checkboxDescriptor.checked = checked
-	checkboxDescriptor.active = active
-	checkboxDescriptor.offset = {x = offsetx, y = offsety}
-	checkboxDescriptor.size = {width = width , height = height}
-
-	local desc = CreateCheckBox(checkboxDescriptor)
-	return registerObjDescriptor(desc)
+	return CreateButton(buttonDescriptor)
 end
 
 --    [offset] = {                    -- the checkbox offset (optional - defaults to 0/0)
@@ -2199,8 +1935,8 @@ function Helper.createDropDown(options, startoption, text, icon, noscaling, acti
 	dropdownDescriptor.icon = icon
 	dropdownDescriptor.mouseovertext = mouseovertext
 
-	dropdownDescriptor.color = color or Helper.defaultButtonBackgroundColor
-	dropdownDescriptor.optioncolor = Helper.color.black
+	dropdownDescriptor.color = color or Color["dropdown_background_default"]
+	dropdownDescriptor.optioncolor = Color["dropdown_background_options"]
 	dropdownDescriptor.hotkey = hotkey
 	if hotkey then
 		if not dropdownDescriptor.hotkey.x then
@@ -2237,8 +1973,7 @@ function Helper.createDropDown(options, startoption, text, icon, noscaling, acti
 	dropdownDescriptor.optionwidth = optionwidth or 0
 	dropdownDescriptor.optionheight = optionheight or 0
 
-	local desc = CreateDropDown(dropdownDescriptor)
-	return registerObjDescriptor(desc)
+	return CreateDropDown(dropdownDescriptor)
 end
 
 --    [text] = {                   -- text and icon are mutually exclusive
@@ -2258,7 +1993,7 @@ function Helper.createEditBox(text, noscaling, offsetx, offsety, width, height, 
 	editboxDescriptor.text = text
 	editboxDescriptor.defaulttext = defaulttext
 	editboxDescriptor.mouseovertext = mouseovertext
-	editboxDescriptor.color = color or Helper.defaultEditBoxBackgroundColor
+	editboxDescriptor.color = color or Color["editbox_background_default"]
 	editboxDescriptor.hotkey = hotkey
 	if hotkey then
 		if not editboxDescriptor.hotkey.x then
@@ -2282,8 +2017,7 @@ function Helper.createEditBox(text, noscaling, offsetx, offsety, width, height, 
 	editboxDescriptor.closemenu = closemenuonback
 	editboxDescriptor.texthidden = texthidden
 
-	local desc = CreateEditBox(editboxDescriptor)
-	return registerObjDescriptor(desc)
+	return CreateEditBox(editboxDescriptor)
 end
 
 function Helper.createTextInfo(text, alignment, fontname, fontsize, red, green, blue, alpha, offsetx, offsety)
@@ -2302,48 +2036,6 @@ function Helper.createButtonIcon(icon, swapicon, red, green, blue, alpha, width,
 		end
 	end
 	return {iconID = icon, swapIconID = swapicon, color = {r = red, g = green, b = blue, a = alpha}, width = width, height = height, x = offsetx, y = offsety}
-end
-
-function Helper.createButtonHotkey(state, displayicon, offsetx, offsety)
-	return {action = state, displayIcon = displayicon, x = offsetx, y = offsety}
-end
-
--- TODO: Add full arguments again when nil is supported for all optional arguments
-function Helper.createTable(...) --(header, content, numcolumns, borderenabled, taborder, skiptabchange, defaultinteractiveobject, offsetx, offsety, height)
-	local desc = CreateTable(...)
-	return registerObjDescriptor(desc)
-end
-
-function Helper.createCustomWidthTable(...) --(header, content, columnwidths, columnwidthpercent, borderenabled, taborder, skiptabchange, defaultinteractiveobject, fixedrows, offsetx, offsety, height)
-	local desc = CreateTable(...)
-	return registerObjDescriptor(desc)
-end
-
--- shieldHullBarDescription = {
---		[offset] = {				-- the offset (optional - defaults to 0/0)
---			[x] = number,			-- x-offset in px - relative to the parent's upper left corner (optional - defaults to 0)
---			[y] = number			-- y-offset in px - relative to the parent's upper left corner  (optional - defaults to 0)
---		},
---		[size] = {					-- dimensions (optional - defaults to parent width/height)
---			[width] = number,		-- width (optional - defaults to parent width)
---			[height] = number,		-- height (optional - defaults to parent height)
---		},
---		[shield] = number,			-- shield percentage
---		[hull] = number				-- hull percentage
--- }
-function Helper.createShieldHullBar(shield, hull, noscaling, offsetx, offsety, width, height, mouseovertext)
-	local shieldHullBarDescriptor = { shield = shield, hull = hull, mouseovertext = mouseovertext }
-	if not noscaling then
-		offsetx		= offsetx	and Helper.scaleX(offsetx)		or offsetx
-		offsety		= offsety	and Helper.scaleY(offsety)		or offsety
-		height		= height	and Helper.scaleY(height)		or height
-		width		= width		and Helper.scaleX(width)		or width
-	end
-	shieldHullBarDescriptor.offset = { x = offsetx, y = offsety }
-	shieldHullBarDescriptor.size = { width = width , height = height }
-
-	local desc = CreateShieldHullBar(shieldHullBarDescriptor)
-	return registerObjDescriptor(desc)
 end
 
 -- slidercellDescription = {
@@ -2403,13 +2095,13 @@ function Helper.createSliderCell(text, noscaling, offsetx, offsety, width, heigh
 	local slidercellDescriptor = {}
 	slidercellDescriptor.text = text
 	slidercellDescriptor.mouseovertext = mouseovertext
-	slidercellDescriptor.bgcolor = bgcolor or Helper.defaultSliderCellBackgroundColor
-	slidercellDescriptor.inactivebgcolor = Helper.defaultSliderCellInactiveBackgroundColor
+	slidercellDescriptor.bgcolor = bgcolor or Color["slider_background_default"]
+	slidercellDescriptor.inactivebgcolor = Color["slider_background_inactive"]
 	if not valuecolor and scale.fromcenter then
-		slidercellDescriptor.valuecolor = Helper.defaultSliderCellPositiveValueColor
-		slidercellDescriptor.negativevaluecolor = Helper.defaultSliderCellNegativeValueColor
+		slidercellDescriptor.valuecolor = Color["slider_diff_pos"]
+		slidercellDescriptor.negativevaluecolor = Color["slider_diff_neg"]
 	else
-		slidercellDescriptor.valuecolor = valuecolor or Helper.defaultSliderCellValueColor
+		slidercellDescriptor.valuecolor = valuecolor or Color["slider_value"]
 	end
 
 	if not noscaling then
@@ -2432,21 +2124,7 @@ function Helper.createSliderCell(text, noscaling, offsetx, offsety, width, heigh
 
 	slidercellDescriptor.scale = scale
 
-	local desc = CreateSliderCell(slidercellDescriptor)
-	return registerObjDescriptor(desc)
-end
-
-function Helper.createRenderTarget(width, height, offsetx, offsety, noscaling, alpha, mouseovertext)
-	if not noscaling then
-		width		= width		and Helper.scaleX(width)		or width
-		height		= height	and Helper.scaleY(height)		or height
-		offsetx		= offsetx	and Helper.scaleX(offsetx)		or offsetx
-		offsety		= offsety	and Helper.scaleY(offsety)		or offsety
-	end
-	
-	Helper.autoFrameHeight = math.max(Helper.autoFrameHeight, offsety + height)
-	local desc = CreateRenderTarget(width, height, offsetx, offsety, alpha, mouseovertext)
-	return registerObjDescriptor(desc)
+	return CreateSliderCell(slidercellDescriptor)
 end
 
 ---------------------------------------------------------------------------------
@@ -2529,24 +2207,6 @@ function Helper.handleCreatedTables(menu, tables)
 	menu.rowDataMapPerTableIndex = {}
 end
 
-function Helper.viewCreated(menu, layer, frames)
-	menu.frames = menu.frames or {}
-	if frames[1] then
-		menu.frames[layer] = frames[1]
-		local children = table.pack(GetChildren(menu.frames[layer]))
-
-		Helper.setScripts(menu, layer, menu.frames[layer], children)
-		Helper.handleCreatedTables(menu, children)
-		if menu.viewCreated then
-			menu.viewCreated(layer, table.unpack(children))
-		end
-	else
-		DebugError(TraceBack())
-		ScheduleReloadUI()
-		error("Failed to create view for menu " .. menu.name .. ". Reloading UI ...")
-	end
-end
-
 function Helper.clearDataForRefresh(menu, layer)
 	Helper.removeAllWidgetScripts(menu, layer)
 	if layer then
@@ -2568,37 +2228,6 @@ function Helper.getCurrentRowData(menu, uitable)
 	return menu.rowDataMap[uitable] and menu.rowDataMap[uitable][row]
 end
 
-function Helper.displayFrame(menu, tabledescs, exclusiveinteractions, backgroundID, overlayID, standardButtons, closeOnUnhandledClick, layer, backgroundColor, overlayColor, showBrackets, autoFrameHeight, playerControls, enableDefaultInteractions, width, height, xoffset, yoffset)
-	layer = layer or 4
-	exclusiveinteractions = exclusiveinteractions or false
-	backgroundID = backgroundID or ""
-	backgroundColor = backgroundColor or Helper.color.white
-	overlayID = overlayID or ""
-	overlayColor = overlayColor or Helper.color.white
-	standardButtons = standardButtons or { back = true, close = true }
-	showBrackets = showBrackets or false
-	closeOnUnhandledClick = closeOnUnhandledClick or false
-	enableDefaultInteractions = (enableDefaultInteractions == nil and true) or enableDefaultInteractions
-
-	menu.frameData[layer] = {
-		width = width or Helper.viewWidth,
-		height = height or Helper.viewHeight,
-		x = xoffset or 0,
-		y = yoffset or 0,
-	}
-	if autoFrameHeight then
-		menu.frameData[layer].height = Helper.autoFrameHeight
-	end
-	Helper.autoFrameHeight = 0
-
-	local framedesc = CreateFrame(tabledescs, layer, backgroundID, backgroundColor, overlayID, overlayColor, menu.frameData[layer].width, menu.frameData[layer].height, menu.frameData[layer].x, menu.frameData[layer].y, standardButtons, { x = 0, y = 0 }, showBrackets, enableDefaultInteractions, nil, closeOnUnhandledClick)
-
-	Helper.handleTableDesc(menu, tabledescs)
-
-	Helper.closeMinimizedMenus()
-	View.registerMenu("Helper" .. layer, "Helper", function (frames) return Helper.viewCreated(menu, layer, frames) end, function () return menu.onCloseElement("close", nil, true) end, {[layer] = framedesc}, exclusiveinteractions, closeOnUnhandledClick, nil, playerControls, false, true)
-end
-
 ---------------------------------------------------------------------------------
 -- Draw geometry
 ---------------------------------------------------------------------------------
@@ -2611,7 +2240,7 @@ function Helper.drawLine(startpos, endpos, thickness, z, color, noscaling)
 		z = 0
 	end
 	if not color then
-		color = Helper.standardColor
+		color = Color["shape_default"]
 	end
 
 	if not noscaling then
@@ -2652,7 +2281,7 @@ function Helper.drawRectangle(width, height, offsetx, offsety, angle, z, color, 
 		z = 0
 	end
 	if not color then
-		color = Helper.standardColor
+		color = Color["shape_default"]
 	end
 
 	if not noscaling then
@@ -2682,7 +2311,7 @@ function Helper.drawCircle(radius, centerx, centery, z, color, noscaling)
 		z = 0
 	end
 	if not color then
-		color = Helper.standardColor
+		color = Color["shape_default"]
 	end
 
 	if not noscaling then
@@ -2714,7 +2343,7 @@ function Helper.drawEllipse(radiusx, radiusy, centerx, centery, z, color, noscal
 		z = 0
 	end
 	if not color then
-		color = Helper.standardColor
+		color = Color["shape_default"]
 	end
 
 	if not noscaling then
@@ -2750,7 +2379,7 @@ function Helper.drawTriangle(width, height, offsetx, offsety, angle, z, color, n
 		z = 0
 	end
 	if not color then
-		color = Helper.standardColor
+		color = Color["shape_default"]
 	end
 
 	if not noscaling then
@@ -2770,6 +2399,39 @@ end
 -- Table updates
 ---------------------------------------------------------------------------------
 
+function Helper.setCellContent(menu, tableID, descriptor, row, column, norelease, type, id, ...)
+	if menu and type then
+		if type == "button" then
+			Helper.removeButtonScripts(menu, tableID, row, column)
+		elseif type == "editbox" then
+			Helper.removeEditBoxScripts(menu, tableID, row, column)
+		elseif type == "dropdown" then
+			Helper.removeDropDownScripts(menu, tableID, row, column)
+		elseif type == "slidercell" then
+			Helper.removeSliderCellScripts(menu, tableID, row, column)
+		end
+	end
+
+	local success = SetCellContent(tableID, descriptor, row, column)
+	if not norelease then
+		ReleaseDescriptor(descriptor)
+	end
+
+	if menu and type and (select('#', ...) > 0) then
+		if type == "button" then
+			Helper.setButtonScript(menu, id, tableID, row, column, ...)
+		elseif type == "editbox" then
+			Helper.setEditBoxScript(menu, id, tableID, row, column, ...)
+		elseif type == "dropdown" then
+			Helper.setDropDownScript(menu, id, tableID, row, column, ...)
+		elseif type == "slidercell" then
+			Helper.setSliderCellScript(menu, id, tableID, row, column, ...)
+		end
+	end
+
+	return success
+end
+
 function Helper.updateCellText(tableobj, row, col, newtext, newcolor)
 	local cell = GetCellText(tableobj, row, col)
 	if not cell then
@@ -2782,11 +2444,6 @@ function Helper.updateCellText(tableobj, row, col, newtext, newcolor)
 	end
 end
 
-function Helper.updateButtonText(tableobj, row, col, newtext)
-	local cell = GetCellContent(tableobj, row, col)
-	SetButtonText(cell, newtext)
-end
-
 function Helper.updateButtonColor(tableobj, row, col, newcolor)
 	local cell = GetCellContent(tableobj, row, col)
 	SetButtonColor(cell, newcolor.r, newcolor.g, newcolor.b, newcolor.a)
@@ -2797,12 +2454,7 @@ function Helper.updateEditBoxText(tableobj, row, col, newtext)
 	C.SetEditBoxText(cell, newtext)
 end
 
-function Helper.updateDropDownCurrentOption(tableobj, row, col, id)
-	local cell = GetCellContent(tableobj, row, col)
-	C.SetDropDownCurOption(cell, id)
-end
-
-function Helper.setButtonScript(menu, id, tableobj, row, col, script, onRightClickScript)
+function Helper.setButtonScript(menu, id, tableobj, row, col, script, onRightClickScript, onDblClickScript)
 	menu.buttonScriptMap = menu.buttonScriptMap or { }
 	local layer = Helper.findFrameLayer(menu, tableobj)
 
@@ -2813,6 +2465,9 @@ function Helper.setButtonScript(menu, id, tableobj, row, col, script, onRightCli
 	local upSound = menu.buttonUp
 	if onRightClickScript == nil then
 		onRightClickScript = menu.buttonRightMouseClick
+	end
+	if onDblClickScript == nil then
+		onDblClickScript = menu.buttonDblMouseClick
 	end
 
 	local scriptWrapper = function (...)
@@ -2827,6 +2482,7 @@ function Helper.setButtonScript(menu, id, tableobj, row, col, script, onRightCli
 	local cell = GetCellContent(tableobj, row, col)
 
 	table.insert(menu.buttonScriptMap, { layer = layer, tableobj = tableobj, button = cell, row = row, col = col, type = "onClick", script = scriptWrapper })
+	table.insert(menu.buttonScriptMap, { layer = layer, tableobj = tableobj, button = cell, row = row, col = col, type = "onDoubleClick", script = onDblClickScript })
 	table.insert(menu.buttonScriptMap, { layer = layer, tableobj = tableobj, button = cell, row = row, col = col, type = "onRightClick", script = onRightClickScript })
 	table.insert(menu.buttonScriptMap, { layer = layer, tableobj = tableobj, button = cell, row = row, col = col, type = "onButtonMouseOver", script = overSoundMouse })
 	table.insert(menu.buttonScriptMap, { layer = layer, tableobj = tableobj, button = cell, row = row, col = col, type = "onButtonMouseOut", script = outSoundMouse })
@@ -2835,6 +2491,7 @@ function Helper.setButtonScript(menu, id, tableobj, row, col, script, onRightCli
 	table.insert(menu.buttonScriptMap, { layer = layer, tableobj = tableobj, button = cell, row = row, col = col, type = "onButtonUp", script = upSound })
 
 	SetScript(cell, "onClick", scriptWrapper)
+	SetScript(cell, "onDoubleClick", onDblClickScript)
 	SetScript(cell, "onRightClick", onRightClickScript)
 	SetScript(cell, "onButtonMouseOver", overSoundMouse)
 	SetScript(cell, "onButtonMouseOut", outSoundMouse)
@@ -2879,6 +2536,15 @@ function Helper.setDropDownScript(menu, id, tableobj, row, col, activateScript, 
 		removedScript = menu.dropdownRemoved
 	end
 
+	local activateWrapper = function (widgetid, ...)
+		if id then
+			AddUITriggeredEvent(menu.name, id, "activated")
+		end
+		if activateScript then
+			return activateScript(widgetid, value, ...)
+		end
+	end
+
 	local scriptWrapper = function (widgetid, value, ...)
 		if id then
 			AddUITriggeredEvent(menu.name, id, value)
@@ -2888,12 +2554,12 @@ function Helper.setDropDownScript(menu, id, tableobj, row, col, activateScript, 
 		end
 	end
 
-	table.insert(menu.dropdownScriptMap, { layer = layer, tableobj = tableobj, row = row, col = col, type = "onDropDownActivated", script = activateScript })
+	table.insert(menu.dropdownScriptMap, { layer = layer, tableobj = tableobj, row = row, col = col, type = "onDropDownActivated", script = activateWrapper })
 	table.insert(menu.dropdownScriptMap, { layer = layer, tableobj = tableobj, row = row, col = col, type = "onDropDownConfirmed", script = scriptWrapper })
 	table.insert(menu.dropdownScriptMap, { layer = layer, tableobj = tableobj, row = row, col = col, type = "onDropDownRemoved", script = removedScript })
 
 	local cell = GetCellContent(tableobj, row, col)
-	SetScript(cell, "onDropDownActivated", activateScript)
+	SetScript(cell, "onDropDownActivated", activateWrapper)
 	SetScript(cell, "onDropDownConfirmed", scriptWrapper)
 	SetScript(cell, "onDropDownRemoved", removedScript)
 end
@@ -3017,10 +2683,10 @@ function Helper.setSliderCellScript(menu, id, tableobj, row, col, changedScript,
 	SetScript(cell, "onSliderCellLeftDown", menu.slidercellLeftDown)
 end
 
-function Helper.setSliderCellValue(tableobj, row, col, value)
+function Helper.setSliderCellValue(tableobj, row, col, value, newmaxselect)
 	local cell = GetCellContent(tableobj, row, col)
 	if cell then
-		SetSliderCellValue(cell, value)
+		SetSliderCellValue(cell, value, newmaxselect)
 	end
 end
 
@@ -3142,21 +2808,6 @@ function Helper.removeAllWidgetScripts(menu, layer)
 	Helper.removeAllFlowchartNodeScripts(menu, layer)
 end
 
-function Helper.removeButton(menu, tableobj, row, col)
-	menu.buttonScriptMap = menu.buttonScriptMap or {}
-	local foundentries = {}
-	for i, scriptdata in ipairs(menu.buttonScriptMap) do
-		if scriptdata.tableobj == tableobj and scriptdata.row == row and scriptdata.col == col then
-			Helper.removeTableScript(scriptdata.tableobj, scriptdata.row, scriptdata.col, scriptdata.type, scriptdata.script)
-			table.insert(foundentries, i)
-		end
-	end
-	for i = #foundentries, 1, -1 do
-		table.remove(menu.buttonScriptMap, foundentries[i])
-	end
-	local success = SetCellContent(tableobj, Helper.getEmptyCellDescriptor(), row, col)
-end
-
 function Helper.setKeyBinding(menu, script)
 	menu.keyBindingMap = menu.keyBindingMap or { }
 	table.insert(menu.keyBindingMap, { script = script })
@@ -3181,279 +2832,22 @@ function Helper.setTabScrollCallback(menu, script)
 	table.insert(menu.tabScrollMap, { script = script })
 	
 	SetScript("onTabScroll", script)
+
+	AddUITriggeredEvent("MenuTabScroll", menu.name, "enabled")
 end
 
-function Helper.removeTabScrollCallback(script)
+function Helper.removeTabScrollCallback(menu, script)
 	RemoveScript("onTabScroll", script)
+
+	AddUITriggeredEvent("MenuTabScroll", menu.name, "disabled")
 end
 
 function Helper.removeAllTabScrollCallbacks(menu)
 	menu.tabScrollMap = menu.tabScrollMap or {}
 	for _, scriptdata in ipairs(menu.tabScrollMap) do
-		Helper.removeTabScrollCallback(scriptdata.script)
+		Helper.removeTabScrollCallback(menu, scriptdata.script)
 	end
 	menu.tabScrollMap = {}
-end
-
----------------------------------------------------------------------------------
--- Table setup
----------------------------------------------------------------------------------
-
-function Helper.createTableSetup(menu, header)
-	-- create and return helper object for table setup
-	-- both arguments optional but menu will be needed if row data is used in addSelectRow()
-	local setup = {
-		header = header or "",
-		rows = { },
-		noscalingRows = { },
-		numFillRows = 0,
-		rowDataMap = {}
-	}
-
-	-- add setup member functions
-
-	-- all arguments optional, returns row number
-	function setup:addRow(selectable, cells, rowdata, colspans, noscaling, bgColor)
-		local row = { color = bgColor, selectable = selectable, cols = {} }
-		if colspans then
-			for i, cell in ipairs(cells) do
-				table.insert(row.cols, { colspan = colspans[i], content = cell })
-				for j = 1, colspans[i] - 1 do
-					table.insert(row.cols, { colspan = 0, content = nil })
-				end
-			end
-		else
-			for i, cell in ipairs(cells) do
-				table.insert(row.cols, { colspan = 1, content = cell })
-			end
-		end
-		table.insert(self.rows, row)
-		local curRow = #self.rows
-		if noscaling then
-			self.noscalingRows[curRow] = noscaling
-		end
-		if rowdata and menu then
-			self.rowDataMap[curRow] = rowdata
-		end
-		return curRow
-	end
-
-	-- shortcut for selectable rows without arrow
-	function setup:addSimpleRow(cells, rowdata, colspans, noscaling, bgColor)
-		return self:addRow(true, cells, rowdata, colspans, noscaling, bgColor or Helper.defaultSimpleBackgroundColor)
-	end
-
-	-- shortcut for header row (with default header background color)
-	function setup:addHeaderRow(cells, rowdata, colspans, noscaling, bgColor)
-		return self:addRow(false, cells, rowdata, colspans, noscaling, bgColor or Helper.defaultHeaderBackgroundColor)
-	end
-
-	-- shortcut for title row ( with default title background color)
-	function setup:addTitleRow(cells, rowdata, colspans, noscaling, bgColor)
-		return self:addRow(false, cells, rowdata, colspans, noscaling, bgColor or Helper.defaultTitleBackgroundColor)
-	end
-
-	-- shortcut for selectable row with arrow
-	function setup:addSelectRow(cells, rowdata, colspans, noscaling, bgColor)
-		return self:addRow(true, cells, rowdata, colspans, noscaling, bgColor or Helper.defaultArrowRowBackgroundColor, true)
-	end
-	
-	-- fill the menu with empty rows up to maxrows
-	function setup:addFillRows(maxrows, noscaling, colspans, color)
-		local currows = #self.rows
-		if noscaling then
-			maxrows = Helper.scaleY(maxrows)
-		end
-		local emptystrings = {""}
-		if colspans and #colspans > 1 then
-			for i = 2, #colspans do
-				table.insert(emptystrings, "")
-			end
-		end
-		if not color then
-			color = Helper.defaultUnselectableBackgroundColor
-		end
-		self.numFillRows = math.max(0, maxrows - currows)
-		for i = 1, self.numFillRows do
-			self:addHeaderRow(emptystrings, nil, colspans, noscaling, color)
-		end
-	end
-
-	-- create table content from rows array, can also handle incomplete row definitions
-	-- (recommended to use setup:create[...]Table() instead)
-	function setup:createTableContent(numcolumns)
-		for rownumber, row in ipairs(self.rows) do
-			for col = 1, numcolumns do
-				local cell
-				if row.cols[col] then
-					cell = row.cols[col].content
-					if type(cell) == "string" or type(cell) == "number" then
-						self.rows[rownumber].cols[col].content = Helper.createFontString(tostring(cell), self.noscalingRows[rownumber])
-					end
-				else
-					cell = Helper.createFontString("", self.noscalingRows[rownumber])
-					self.rows[rownumber].cols[col] = { colspan = 1, content = cell }
-				end
-			end
-		end
-		return self.rows
-	end
-
-	function setup:createTable(numcolumns, noscaling, borderenabled, taborder, fixedrows, offsetx, offsety, height, ignorefixedrowchanges, toprow, selectedrow, selectedcol, wraparound, highlightmode, skiptabchange, defaultinteractiveobject)
-		if borderenabled == nil then
-			borderenabled = true
-		end
-		if taborder == nil then
-			taborder = 0
-		end
-		if fixedrows == nil then
-			fixedrows = 0
-		end
-		if offsetx == nil then
-			offsetx = 0
-		end
-		if offsety == nil then
-			offsety = 0
-		end
-		if height == nil then
-			height = 0
-		end
-
-		if not noscaling then
-			offsetx		= Helper.scaleX(offsetx)
-			offsety		= Helper.scaleY(offsety)
-			height		= Helper.scaleY(height)
-		end
-		if toprow == nil and selectedrow == nil and taborder == 1 then
-			if menu.param then
-				toprow = menu.param[1]
-				selectedrow = menu.param[2]
-			else
-				toprow = 0
-				selectedrow = 0
-			end
-		else
-			if toprow == nil then
-				toprow = 0
-			end
-			if selectedrow == nil then
-				selectedrow = 0
-			end
-		end
-		if selectedcol == nil then
-			selectedcol = 0
-		end
-		if wraparound == nil then
-			wraparound = false
-		end
-		if skiptabchange == nil then
-			skiptabchange = false
-		end
-		if defaultinteractiveobject == nil then
-			defaultinteractiveobject = false
-		end
-
-		local content = self:createTableContent(numcolumns)
-		Helper.autoFrameHeight = math.max(Helper.autoFrameHeight, offsety + height)
-		local initialSelection = {
-			toprow		= math.min(toprow, #content) <= fixedrows and 0 or math.min(toprow, #content),
-			selectedrow	= math.min(selectedrow, #content - self.numFillRows),
-			selectedcol	= math.min(selectedcol, numcolumns)
-		}
-
-		local desc = Helper.createTable(self.header, content, numcolumns, borderenabled, taborder, skiptabchange, defaultinteractiveobject, fixedrows, offsetx, offsety, height, initialSelection, wraparound, highlightmode)
-		if taborder == 1 then
-			menu.defaulttable = desc
-		end
-		Helper.addTableDescRowDataMap(menu, desc, self.rowDataMap)
-		return desc
-	end
-
-	function setup:createCustomWidthTable(columnwidths, columnwidthpercent, noscaling, borderenabled, taborder, fixedrows, offsetx, offsety, height, ignorefixedrowchanges, toprow, selectedrow, selectedcol, wraparound, highlightmode, skiptabchange, defaultinteractiveobject)
-		if borderenabled == nil then
-			borderenabled = true
-		end
-		if taborder == nil then
-			taborder = 0
-		end
-		if fixedrows == nil then
-			fixedrows = 0
-		end
-		if offsetx == nil then
-			offsetx = 0
-		end
-		if offsety == nil then
-			offsety = 0
-		end
-		if height == nil then
-			height = 0
-		end
-
-		if not noscaling then
-			offsetx		= Helper.scaleX(offsetx)
-			offsety		= Helper.scaleY(offsety)
-			height		= Helper.scaleY(height)
-			if not columnwidthpercent then
-				for i, width in ipairs(columnwidths) do
-					columnwidths[i] = Helper.scaleX(width)
-				end
-			end
-		end
-		if toprow == nil and selectedrow == nil and taborder == 1 then
-			if menu.param then
-				toprow = menu.param[1]
-				selectedrow = menu.param[2]
-			else
-				toprow = 0
-				selectedrow = 0
-			end
-		end
-		if toprow == nil then
-			toprow = 0
-		end
-		if selectedrow == nil then
-			selectedrow = 0
-		end
-		if selectedcol == nil then
-			selectedcol = 0
-		end
-		if wraparound == nil then
-			wraparound = false
-		end
-		if highlightmode == nil then
-			highlightmode = "on"
-		end
-		if skiptabchange == nil then
-			skiptabchange = false
-		end
-		if defaultinteractiveobject == nil then
-			defaultinteractiveobject = false
-		end
-
-		local content = self:createTableContent(#columnwidths)
-		--[[
-		for i, row in ipairs(content) do
-			print(i .. ": " .. (row.color and "Color: r = " .. tostring(row.color.r) .. ", g = " .. tostring(row.color.g) .. ", b = " .. tostring(row.color.b) .. "; " or "") .. "Selectable: " .. tostring(row.selectable))
-			for j, col in ipairs(row.cols) do
-				print("   " .. j .. ": Colspan: " .. tostring(col.colspan) .. "; Content: " .. tostring(col.content))
-			end
-		end --]]
-		Helper.autoFrameHeight = math.max(Helper.autoFrameHeight, offsety + height)
-		local initialSelection = {
-			toprow		= math.min(toprow, #content) <= fixedrows and 0 or math.min(toprow, #content),
-			selectedrow	= math.min(selectedrow, #content - self.numFillRows),
-			selectedcol	= math.min(selectedcol, #columnwidths)
-		}
-
-		local desc = Helper.createCustomWidthTable(self.header, content, columnwidths, columnwidthpercent, borderenabled, taborder, skiptabchange, defaultinteractiveobject, fixedrows, offsetx, offsety, height, initialSelection, wraparound, highlightmode)
-		if taborder == 1 then
-			menu.defaulttable = desc
-		end
-		Helper.addTableDescRowDataMap(menu, desc, self.rowDataMap)
-		return desc
-	end
-
-	return setup
 end
 
 ---------------------------------------------------------------------------------
@@ -3512,12 +2906,6 @@ local defaultWidgetProperties = {
 	["frame"] = {
 		layer = 4,												-- frame layer index
 		exclusiveInteractions = false,							-- whether interactions (i.e. any input) will be exclusive to the view
-		backgroundID = "",										-- the background texture (using an icon ID) to be used (empty = no background)
-		backgroundColor = Helper.color.white,					-- color of the background texture
-		background2ID = "",										-- the background2 texture (using an icon ID) to be used (empty = no background)
-		background2Color = Helper.color.white,					-- color of the background2 texture
-		overlayID = "",											-- the texture to be used for the overlay effect (empty = no overlay)
-		overlayColor = Helper.color.white,						-- color of the overlay texture
 		standardButtons = Helper.standardButtons_CloseBack,		-- which standard buttons should be displayed (close / back / minimize)
 		standardButtonX = 0,									-- x offset for the standardbuttons
 		standardButtonY = 0,									-- y offset for the standardbuttons
@@ -3529,6 +2917,9 @@ local defaultWidgetProperties = {
 		startAnimation = true,									-- whether the start animation is played
 		enableDefaultInteractions = true,						-- whether default input handling (f.e. ESC/DEL) is enabled
 		useMiniWidgetSystem = false,							-- whether the frame should use the mini widgetsystem
+		keepHUDVisible = false,									-- whether the HUD should be visible
+		keepCrosshairVisible = false,							-- whether the crosshair should be visible (only works if the HUD is visible)
+		showTickerPermanently = false,							-- whether the ticker should be permanently visible when the HUD is hidden
 		viewHelperType = "Helper",
 		_basetype = "widget"
 	},
@@ -3550,7 +2941,7 @@ local defaultWidgetProperties = {
 		highlightMode = "on",									-- how to highlight the table selection ("on", "column", "off", "grey")
 		multiSelect = false,									-- whether the the table allows multiselection
 		backgroundID = "",										-- the background texture (using an icon ID) to be used (empty = no background)
-		backgroundColor = Helper.color.white,					-- color of the background texture
+		backgroundColor = Color["table_background_default"],	-- color of the background texture
 		prevTable = 0,											-- point to the index of the previous connected table (aka pressing UP on the first row jumps the input to the last row of the prevTable)
 		nextTable = 0,											-- point to the index of the next connected table (aka pressing DOWN on the last row jumps the input to the first row of the nextTable)
 		prevHorizontalTable = 0,								-- point to the index of the previous horizontal connected table (aka pressing LEFT on the first selectable column jumps the input to the prevHorizontalTable)
@@ -3562,19 +2953,20 @@ local defaultWidgetProperties = {
 		fixed = false,											-- row is fixed, not scrollable (requires all previous rows to be fixed as well)
 		borderBelow = true,										-- show border between this and the following row (ignored on the last row)
 		interactive = true,										-- non-interactive, but selectable rows (rowdata ~= nil or false) (used for grey highlight border)
-		bgColor = Helper.defaultSimpleBackgroundColor,			-- row background color
+		bgColor = Color["row_background"],						-- row background color
 		multiSelected = false									-- row is part of preselection in a multiselect table
 	},
 	-- table cells
 	["cell"] = {
-		cellBGColor = Helper.defaultSimpleBackgroundColor,		-- background color
+		cellBGColor = Color["row_background"],					-- background color
 		uiTriggerID = propertyDefaultValue,						-- ID for UITriggered events
 		_basetype = "widget"
 	},
 	["text"] = {
 		text = "",												-- text string
 		halign = Helper.standardHalignment,						-- horizontal text alignment ("left", "center", "right")
-		color = Helper.standardColor,							-- text color
+		color = Color["text_normal"],							-- text color
+		glowfactor = Color["text_normal"].glow,					-- text glow
 		titleColor = propertyDefaultValue,						-- title line color, also enables the title mode of the fontstring widget
 		font = Helper.standardFont,								-- font
 		fontsize = Helper.standardFontSize,						-- font size
@@ -3586,19 +2978,20 @@ local defaultWidgetProperties = {
 	},
 	["icon"] = {
 		icon = "",												-- icon ID
-		color = Helper.standardColor,							-- icon color
+		color = Color["icon_normal"],							-- icon color
+		glowfactor = Color["icon_normal"].glow,					-- icon glow
 		affectRowHeight = true,									-- whether the icon height is allowed to affect the rowHeight
 		_basetype = "cell"
 	},
 	["button"] = {
 		active = true,											-- whether the button is active
-		bgColor = Helper.defaultButtonBackgroundColor,			-- button backbround color
-		highlightColor = Helper.defaultButtonHighlightColor,	-- button highlight color
+		bgColor = Color["button_background_default"],			-- button background color
+		highlightColor = Color["button_highlight_default"],		-- button highlight color
 		height = Helper.standardButtonHeight,					-- button height (overrides basetype height)
 		_basetype = "cell"
 	},
 	["editbox"] = {
-		bgColor = Helper.defaultEditBoxBackgroundColor,			-- editbox background color
+		bgColor = Color["editbox_background_default"],			-- editbox background color
 		closeMenuOnBack = false,								-- whether the menu should be closed on back while the editbox is active
 		defaultText = "",										-- the text to be displayed if text is empty
 		description = "",										-- description shown in input overlay when using Steam Big Picture
@@ -3613,19 +3006,30 @@ local defaultWidgetProperties = {
 	["shieldhullbar"] = {
 		shield = 0,
 		hull = 0,
+		glowfactor = Color["icon_normal"].glow,
 		_basetype = "cell"
 	},
 	["graph"] = {
-		-- HACK
-		graphdesc = propertyDefaultValue,
+		graphtype = "line",
+		bgColor = Color["graph_background"],
 		_basetype = "cell"
 	},
+	["graphdatarecord"] = {
+		markertype = propertyDefaultValue,
+		markersize = 1,
+		markercolor = Color["icon_normal"],
+		linetype = propertyDefaultValue,
+		linewidth = 1,
+		linecolor = Color["icon_normal"],
+		highlighted = false,
+		mouseOverText = "",
+	},
 	["slidercell"] = {
-		bgColor = Helper.defaultSliderCellBackgroundColor,					-- slidercell background color
-		inactiveBGColor = Helper.defaultSliderCellInactiveBackgroundColor,	-- slidercell background color for inactive directions if fromCenter is set
-		valueColor = Helper.defaultSliderCellValueColor,					-- slidercell value color
-		posValueColor = Helper.defaultSliderCellPositiveValueColor,			-- slidercell positive value color if fromCenter is set
-		negValueColor = Helper.defaultSliderCellNegativeValueColor,			-- slidercell negative value color if fromCenter is set
+		bgColor = Color["slider_background_default"],						-- slidercell background color
+		inactiveBGColor = Color["slider_background_inactive"],				-- slidercell background color for inactive directions if fromCenter is set
+		valueColor = Color["slider_value"],									-- slidercell value color
+		posValueColor = Color["slider_diff_pos"],							-- slidercell positive value color if fromCenter is set
+		negValueColor = Color["slider_diff_neg"],							-- slidercell negative value color if fromCenter is set
 		min = 0,															-- minimum value
 		minSelect = propertyDefaultValue,									-- min selectable value (optional, defaults to min)
 		max = 0,															-- maximum value
@@ -3640,6 +3044,7 @@ local defaultWidgetProperties = {
 		rightToLeft = false,												-- Right-to-left (mirrored) scale
 		fromCenter = false,													-- Slider bar extends from zero in the center
 		readOnly = false,													-- Slider is read-only (non-interactive), only used as output
+		forceArrows = false,												-- force arrows displayed (for readOnly case)
 		useInfiniteValue = false,											-- Slider shows infinity symbol if value == InfiniteValue
 		useTimeFormat = false,												-- Slider uses time format
 		_basetype = "cell"
@@ -3648,9 +3053,9 @@ local defaultWidgetProperties = {
 		options = {},
 		startOption = "",
 		active = true,
-		bgColor = Helper.defaultButtonBackgroundColor,
-		highlightColor = Helper.defaultButtonHighlightColor,
-		optionColor = Helper.color.black,
+		bgColor = Color["dropdown_background_default"],
+		highlightColor = Color["dropdown_highlight_default"],
+		optionColor = Color["dropdown_background_options"],
 		optionWidth = 0,
 		optionHeight = 0,
 		allowMouseOverInteraction = false,
@@ -3660,33 +3065,35 @@ local defaultWidgetProperties = {
 	},
 	["checkbox"] = {
 		checked = false,
-		bgColor = Helper.defaultCheckBoxBackgroundColor,
+		bgColor = Color["checkbox_background_default"],
 		active = true,
 		symbol = "circle",													-- The symbol the checkbox uses. Valid values: "circle", "arrow" (optional - default to "circle")
+		glowfactor = Color["icon_normal"].glow,
 		_basetype = "cell"
 	},
 	["statusbar"] = {
 		current = 0,
 		start = 0,
 		max = 0,
-		valueColor = Helper.defaultStatusBarValueColor,
-		posChangeColor = Helper.defaultStatusBarPosChangeColor,
-		negChangeColor = Helper.defaultStatusBarNegChangeColor,
-		markerColor = Helper.defaultStatusBarMarkerColor,
+		valueColor = Color["statusbar_value_default"],
+		posChangeColor = Color["statusbar_diff_pos_default"],
+		negChangeColor = Color["statusbar_diff_neg_default"],
+		markerColor = Color["statusbar_marker_default"],
 		titleColor = propertyDefaultValue,
 		_basetype = "cell"
 	},
 	["boxtext"] = {
 		text = "",												-- text string
 		halign = Helper.standardHalignment,						-- horizontal text alignment ("left", "center", "right")
-		color = Helper.standardColor,							-- text color
-		boxColor = Helper.defaultBoxTextBoxColor,				-- title line color, also enables the title mode of the fontstring widget
+		color = Color["text_normal"],							-- text color
+		boxColor = Color["boxtext_box_default"],				-- title line color, also enables the title mode of the fontstring widget
 		font = Helper.standardFont,								-- font
 		fontsize = Helper.standardFontSize,						-- font size
 		wordwrap = false,										-- word wrap
 		textX = Helper.standardTextOffsetx,						-- text X offset
 		textY = Helper.standardTextOffsety,						-- text Y offset
 		minRowHeight = Helper.standardTextHeight,				-- minimal row height (including Y offset)
+		glowfactor = Color["text_normal"].glow,					-- glow factor
 		_basetype = "cell"
 	},
 	-- flowchart widgets
@@ -3695,7 +3102,7 @@ local defaultWidgetProperties = {
 		skipTabChange = false,									-- skips the flowchart when tabbing if true
 		defaultInteractiveObject = false,						-- Set this object as the interactive object of the frame on creation if true
 		borderHeight = 0,										-- height of flowchart border at top and bottom (default 0 = no border)
-		borderColor = Helper.color.transparent,					-- flowchart border color
+		borderColor = Color["flowchart_border_default"],		-- flowchart border color
 		maxVisibleHeight = 0,									-- maximum visible height of flowchart (enables scrollbar if required height for all rows exceeds max height, 0 = use available height in frame)
 		minRowHeight = 0,										-- minimal row height
 		minColWidth = 0,										-- minimal column width (can be overridden with flowchart:setColWidthMin())
@@ -3727,13 +3134,13 @@ local defaultWidgetProperties = {
 		statusColor = propertyDefaultValue,						-- override color for statustext or statusicon
 		statusBgIconID = "",									-- optional ID of background icon behind statusicon, with same size, position and color as statusicon
 		statusBgIconRotating = false,							-- whether status background icon is rotating, if statusBgIconID provided
-		bgColor = Helper.defaultFlowchartBackgroundColor,		-- color of node background
-		outlineColor = Helper.defaultFlowchartOutlineColor,		-- color of node outline
-		valueColor = Helper.defaultFlowchartValueColor,			-- color of value bar
-		slider1Color = Helper.defaultFlowchartSlider1Color,		-- color of interactive top slider handle
-		slider2Color = Helper.defaultFlowchartSlider2Color,		-- color of interactive bottom slider handle
-		diff1Color = Helper.defaultFlowchartDiff1Color,			-- color of diff-range between current value and top slider handle (if greater than current value)
-		diff2Color = Helper.defaultFlowchartDiff2Color,			-- color of diff-range between current value and bottom slider handle (if less than current value)
+		bgColor = Color["flowchart_node_background"],			-- color of node background
+		outlineColor = Color["flowchart_node_default"],			-- color of node outline
+		valueColor = Color["flowchart_value_default"],			-- color of value bar
+		slider1Color = Color["flowchart_slider_value1"],		-- color of interactive top slider handle
+		slider2Color = Color["flowchart_slider_value2"],		-- color of interactive bottom slider handle
+		diff1Color = Color["flowchart_slider_diff1"],			-- color of diff-range between current value and top slider handle (if greater than current value)
+		diff2Color = Color["flowchart_slider_diff2"],			-- color of diff-range between current value and bottom slider handle (if less than current value)
 		slider1MouseOverText = "",								-- mouse-over text string for the top slider handle
 		slider2MouseOverText = "",								-- mouse-over text string for the bottom slider handle
 		statusIconMouseOverText = "",							-- mouse-over text string for the status icon
@@ -3747,7 +3154,7 @@ local defaultWidgetProperties = {
 		_basetype = "flowchartcell"
 	},
 	["flowchartedge"] = {
-		color = Helper.standardColor,							-- edge color
+		color = Color["flowchart_edge_default"],				-- edge color
 		sourceSlotColor = propertyDefaultValue,					-- color of output slot of source node/junction (if provided, the same color must be used by all outgoing edges from that slot)
 		sourceSlotRank = 1,										-- rank value from 1 to 3, used for assignment of an output slot at the source node, in case there are multiple outgoing edges (edges of same rank connect to the same slot)
 		destSlotColor = propertyDefaultValue,					-- color of input slot of destination node/junction (if provided, the same color must be used by all incoming edges to that slot)
@@ -3760,7 +3167,8 @@ local defaultWidgetProperties = {
 		x = 0,													-- X offset
 		y = 0,													-- Y offset
 		halign = Helper.standardHalignment,						-- horizontal text alignment ("left", "center", "right")
-		color = Helper.standardColor,							-- text color
+		color = Color["text_normal"],							-- text color
+		glowfactor = Color["text_normal"].glow,					-- text glowfactor
 		font = Helper.standardFont,								-- font
 		fontsize = Helper.standardFontSize,						-- font size
 		scaling = true,											-- scaling
@@ -3772,7 +3180,8 @@ local defaultWidgetProperties = {
 		height = 0,												-- widget height
 		x = 0,													-- X offset
 		y = 0,													-- Y offset
-		color = Helper.standardColor,							-- icon color
+		color = Color["icon_normal"],							-- icon color
+		glowfactor = Color["icon_normal"].glow,					-- icon glowfactor
 		scaling = true,											-- scaling
 	},
 	["hotkeyproperty"] = {
@@ -3782,7 +3191,8 @@ local defaultWidgetProperties = {
 		y = 0													-- Y offset for the hotkey icon (only used if displayIcon is set to true)
 	},
 	["frametextureproperty"] = {
-		-- TODO Florian - move icon and color here
+		icon = "",												-- the texture (using an icon ID) to be used (empty = no background)
+		color = Color["frame_background_default"],				-- color of the texture
 		width = 0,												-- override texture width (0 -> use frame width)
 		height = 0,												-- override texture height (0 -> use frame width)
 		rotationRate = 0,										-- rate of rotation in deg/s
@@ -3791,6 +3201,17 @@ local defaultWidgetProperties = {
 		rotationInterval = 0,									-- time until rotation repeats (0 -> never repeat)
 		initialScaleFactor = 1,									-- scale change relative to end scale
 		scaleDuration = 0,										-- duration of the scale change
+		glowfactor = Color["frame_background_default"].glow,	-- glowfactor of the texture
+	},
+	["axisproperty"] = {
+		startvalue = 0,
+		endvalue = 1,
+		granularity = 1,
+		offset = 0,
+		grid = true,
+		color = Color["text_normal"],
+		gridcolor = Color["text_normal"],
+		glowfactor = Color["text_normal"].glow,
 	},
 }
 
@@ -3829,6 +3250,13 @@ local complexCellProperties = {
 		text =			"textproperty",
 		statustext =	"textproperty",
 		statusicon =	"iconproperty",
+	},
+	["graph"] = {
+		title =			"textproperty",
+		xAxis =			"axisproperty",
+		xAxisLabel =	"textproperty",
+		yAxis =			"axisproperty",
+		yAxisLabel =	"textproperty",
 	},
 }
 
@@ -3893,12 +3321,40 @@ function createTextPropertyInfo(cell, textproperty)
 	if type(color) == "function" then
 		color = color(cell)
 	end
+	local glowfactor = rawget(textproperty, "glowfactor")
+	if not glowfactor then
+		glowfactor = color.glow or textproperty.glowfactor
+	end
+	if type(glowfactor) == "function" then
+		glowfactor = glowfactor(cell)
+	end
 	local halign = textproperty.halign
 	local font = textproperty.font
 	local fontsize = Helper.scaleFont(font, textproperty.fontsize, textproperty.scaling)
 	local offsetx = Helper.scaleX(textproperty.x, textproperty.scaling)
 	local offsety = Helper.scaleY(textproperty.y, textproperty.scaling)
-	return { text = text, alignment = halign, fontname = font, fontsize = fontsize, color = color, x = offsetx, y = offsety }
+	return { text = text, alignment = halign, fontname = font, fontsize = fontsize, color = color, x = offsetx, y = offsety, glowfactor = glowfactor }
+end
+
+function isTextPropertyFunctionCell(cell, textproperty)
+	local text = textproperty.text
+	if not text then
+		return nil
+	end
+	if type(text) == "function" then
+		return true
+	end
+	local color = textproperty.color
+	if type(color) == "function" then
+		return true
+	end
+	local glowfactor = rawget(textproperty, "glowfactor")
+	if not glowfactor then
+		glowfactor = color.glow or textproperty.glowfactor
+	end
+	if type(glowfactor) == "function" then
+		return true
+	end
 end
 
 function createIconPropertyInfo(cell, iconproperty)
@@ -3913,6 +3369,13 @@ function createIconPropertyInfo(cell, iconproperty)
 	if type(color) == "function" then
 		color = color(cell)
 	end
+	local glowfactor = rawget(iconproperty, "glowfactor")
+	if not glowfactor then
+		glowfactor = color.glow or iconproperty.glowfactor
+	end
+	if type(glowfactor) == "function" then
+		glowfactor = glowfactor(cell)
+	end
 	local swapicon = iconproperty.swapicon
 	local width = Helper.scaleX(iconproperty.width, iconproperty.scaling)
 	local height = Helper.scaleY(iconproperty.height, iconproperty.scaling)
@@ -3924,7 +3387,28 @@ function createIconPropertyInfo(cell, iconproperty)
 		offsetx = offsetx + Helper.configButtonBorderSize
 		offsety = offsety + Helper.configButtonBorderSize
 	end
-	return { iconID = icon, swapIconID = swapicon, color = color, width = width, height = height, x = offsetx, y = offsety }
+	return { iconID = icon, swapIconID = swapicon, color = color, width = width, height = height, x = offsetx, y = offsety, glowfactor = glowfactor }
+end
+
+function isIconPropertyFunctionCell(cell, iconproperty)
+	local icon = iconproperty.icon
+	if icon == "" then
+		return nil
+	end
+	if type(icon) == "function" then
+		return true
+	end
+	local color = iconproperty.color
+	if type(color) == "function" then
+		return true
+	end
+	local glowfactor = rawget(iconproperty, "glowfactor")
+	if not glowfactor then
+		glowfactor = color.glow or iconproperty.glowfactor
+	end
+	if type(glowfactor) == "function" then
+		return true
+	end
 end
 
 function createHotkeyPropertyInfo(cell, hotkeyproperty, width, height, scaling)
@@ -3968,10 +3452,16 @@ function createOverlayPropertyInfo(widget)
 	return { text = text, id = widget.properties.helpOverlayID, size = { width = width, height = height }, offset = { x = offsetx, y = offsety }, highlightOnly = widget.properties.helpOverlayHighlightOnly, useBackgroundSpan = widget.properties.helpOverlayUseBackgroundSpan }
 end
 
-function createFrameTexturePropertyInfo(icon, color, textureproperty)
+function createFrameTexturePropertyInfo(textureproperty)
+	local glowfactor = rawget(textureproperty, "glowfactor")
+	if not glowfactor then
+		glowfactor = textureproperty.color.glow or textureproperty.glowfactor
+	end
+
 	return {
-		icon = icon,
-		color = color,
+		icon = textureproperty.icon,
+		color = textureproperty.color,
+		glowfactor = glowfactor,
 		size = {
 			width = textureproperty.width,
 			height = textureproperty.height,
@@ -3989,11 +3479,29 @@ function createFrameTexturePropertyInfo(icon, color, textureproperty)
 	}
 end
 
+function createAxisPropertyInfo(axisproperty)
+	local glowfactor = rawget(axisproperty, "glowfactor")
+	if not glowfactor then
+		glowfactor = axisproperty.color.glow or axisproperty.glowfactor
+	end
+
+	return {
+		startvalue = axisproperty.startvalue,
+		endvalue = axisproperty.endvalue,
+		granularity = axisproperty.granularity,
+		offset = axisproperty.offset,
+		grid = axisproperty.grid,
+		color = axisproperty.color,
+		gridcolor = axisproperty.gridcolor,
+		glowfactor = glowfactor,
+	}
+end
+
 ---------- Create frame handle ----------
 
 -- Example usage:
 --   local frame = Helper.createFrameHandle()
---   local frame = Helper.createFrameHandle(nil, { layer = 4, backgroundID = "solid", standardButtons = Helper.standardButtons_Close })
+--   local frame = Helper.createFrameHandle(nil, { layer = 4, standardButtons = Helper.standardButtons_Close })
 function Helper.createFrameHandle(menu, properties)
 	local frame = {
 		menu = menu,
@@ -4056,7 +3564,7 @@ function widgetPrototypes.frame:addRenderTarget(properties)
 	return rendertarget
 end
 
---   local flowchart = frame:addFlowchart(5, { borderHeight = 4, borderColor = Helper.defaultSimpleBackgroundColor })
+--   local flowchart = frame:addFlowchart(5, { borderHeight = 4, borderColor = Color["foo"] })
 function widgetPrototypes.frame:addFlowchart(numrows, numcolumns, properties)
 	local flowchart = {
 		frame = self,
@@ -4157,34 +3665,19 @@ function widgetPrototypes.frame:addTable(numcolumns, properties)
 end
 
 function widgetPrototypes.frame:setBackground(icon, properties)
-	self.properties.backgroundID = icon
-	-- remove when we moved icon and color to complex property
-	if properties.color then
-		self.properties.backgroundColor = properties.color
-		properties.color = nil
-	end
+	self.properties.background.icon = icon
 	self.properties.background:apply(properties)
 	return self
 end
 
 function widgetPrototypes.frame:setBackground2(icon, properties)
-	self.properties.background2ID = icon
-	-- remove when we moved icon and color to complex property
-	if properties.color then
-		self.properties.background2Color = properties.color
-		properties.color = nil
-	end
+	self.properties.background2.icon = icon
 	self.properties.background2:apply(properties)
 	return self
 end
 
 function widgetPrototypes.frame:setOverlay(icon, properties)
-	self.properties.overlayID = icon
-	-- remove when we moved icon and color to complex property
-	if properties.color then
-		self.properties.overlayColor = properties.color
-		properties.color = nil
-	end
+	self.properties.overlay.icon = icon
 	self.properties.overlay:apply(properties)
 	return self
 end
@@ -4239,6 +3732,9 @@ function widgetPrototypes.frame:display()
 	local closeOnUnhandledClick = self.properties.closeOnUnhandledClick
 	local playerControls = self.properties.playerControls
 	local startAnimation = self.properties.startAnimation
+	local keepHUDVisible = self.properties.keepHUDVisible
+	local keepCrosshairVisible = self.properties.keepCrosshairVisible
+	local showTickerPermanently = self.properties.showTickerPermanently
 	local enableDefaultInteractions = self.properties.enableDefaultInteractions
 	local helpoverlay = createOverlayPropertyInfo(self)
 	local standardButtonHelpOverlays = {}
@@ -4264,9 +3760,9 @@ function widgetPrototypes.frame:display()
 		},
 		contentdescriptors = framewidgetdescriptors,
 		layer = layer,
-		background = createFrameTexturePropertyInfo(self.properties.backgroundID, self.properties.backgroundColor, self.properties.background),
-		background2 = createFrameTexturePropertyInfo(self.properties.background2ID, self.properties.background2Color, self.properties.background2),
-		overlay = createFrameTexturePropertyInfo(self.properties.overlayID, self.properties.overlayColor, self.properties.overlay),
+		background = createFrameTexturePropertyInfo(self.properties.background),
+		background2 = createFrameTexturePropertyInfo(self.properties.background2),
+		overlay = createFrameTexturePropertyInfo(self.properties.overlay),
 		standardButtons = self.properties.standardButtons,
 		standardButtonOffset = {
 			x = self.properties.standardButtonX,
@@ -4292,7 +3788,7 @@ function widgetPrototypes.frame:display()
 
 	Helper.closeMinimizedMenus()
 	-- TODO: Adjust callbacks
-	View.registerMenu("Helper" .. layer, self.properties.viewHelperType, function (frames) return onFrameHandleViewCreated(self, frames) end, function () return menu.onCloseElement("close", nil, true) end, {[layer] = framedesc}, exclusiveInteractions, closeOnUnhandledClick, nil, playerControls, self.properties.useMiniWidgetSystem, startAnimation)
+	View.registerMenu("Helper" .. layer, self.properties.viewHelperType, function (frames) return onFrameHandleViewCreated(self, frames) end, function () return menu.onCloseElement("close", nil, true) end, {[layer] = framedesc}, exclusiveInteractions, closeOnUnhandledClick, nil, playerControls, self.properties.useMiniWidgetSystem, startAnimation, keepHUDVisible, keepCrosshairVisible, showTickerPermanently)
 end
 
 function onFrameHandleViewCreated(framehandle, frames)
@@ -4333,7 +3829,7 @@ function onFrameHandleViewCreated(framehandle, frames)
 							if cell.type == "checkbox" then
 								Helper.setCheckBoxScript(menu, triggerid, widgetid, rowidx, cellidx, cell.handlers.onClick)
 							elseif cell.type == "button" then
-								Helper.setButtonScript(menu, triggerid, widgetid, rowidx, cellidx, cell.handlers.onClick, cell.handlers.onRightClick)
+								Helper.setButtonScript(menu, triggerid, widgetid, rowidx, cellidx, cell.handlers.onClick, cell.handlers.onRightClick, cell.handlers.onDoubleClick)
 							elseif cell.type == "editbox" then
 								Helper.setEditBoxScript(menu, triggerid, widgetid, rowidx, cellidx, cell.handlers.onEditBoxDeactivated, cell.handlers.onTextChanged, cell.handlers.onEditBoxActivated, cell.handlers.onCursorChanged)
 							elseif cell.type == "slidercell" then
@@ -4456,6 +3952,14 @@ function widgetPrototypes.frame:update()
 				if type(mouseovertext) == "function" then
 					C.SetMouseOverText(cell.id, mouseovertext(cell))
 				end
+				if (cell.type ~= "flowchartnode") and (cell.type ~= "flowchartedge") then
+					local cellbgcolor = cell.properties.cellBGColor
+					if type(cellbgcolor) == "function" then
+						cellbgcolor = cellbgcolor(cell)
+						SetTableCellColor(cell.row.table.id, cell.row.index, cell.index, cellbgcolor.r, cellbgcolor.g, cellbgcolor.b, cellbgcolor.a)
+					end
+				end
+
 				if cell.type == "text" then
 					local text = cell.properties.text
 					if type(text) == "function" then
@@ -4465,6 +3969,13 @@ function widgetPrototypes.frame:update()
 					if type(color) == "function" then
 						color = color(cell)
 						SetTextColor(cell.id, color.r, color.g, color.b, color.a)
+						if (not rawget(cell.properties, "glowfactor")) and color.glow then
+							C.SetFontStringGlowFactor(cell.id, color.glow)
+						end
+					end
+					local glowfactor = cell.properties.glowfactor
+					if type(glowfactor) == "function" then
+						C.SetFontStringGlowFactor(cell.id, glowfactor(cell))
 					end
 				elseif cell.type == "boxtext" then
 					local text = cell.properties.text
@@ -4475,6 +3986,13 @@ function widgetPrototypes.frame:update()
 					if type(color) == "function" then
 						color = color(cell)
 						C.SetBoxTextColor(cell.id, Helper.ffiColor(color))
+						if (not rawget(cell.properties, "glowfactor")) and color.glow then
+							C.SetBoxTextGlowFactor(cell.id, color.glow)
+						end
+					end
+					local glowfactor = cell.properties.glowfactor
+					if type(glowfactor) == "function" then
+						C.SetBoxTextGlowFactor(cell.id, glowfactor(cell))
 					end
 					local boxcolor = cell.properties.boxColor
 					if type(boxcolor) == "function" then
@@ -4497,6 +4015,13 @@ function widgetPrototypes.frame:update()
 					if type(color) == "function" then
 						color = color(cell)
 						C.SetButtonTextColor(cell.id, Helper.ffiColor(color))
+						if (not rawget(textproperty, "glowfactor")) and color.glow then
+							C.SetButtonTextGlowFactor(cell.id, color.glow)
+						end
+					end
+					local glowfactor = textproperty.glowfactor
+					if type(glowfactor) == "function" then
+						C.SetButtonTextGlowFactor(cell.id, glowfactor(cell))
 					end
 					local text2property = cell.properties.text2
 					local text2 = text2property.text
@@ -4513,6 +4038,13 @@ function widgetPrototypes.frame:update()
 					if type(color2) == "function" then
 						color2 = color2(cell)
 						C.SetButtonTextColor(cell.id, Helper.ffiColor(color2))
+						if (not rawget(text2property, "glowfactor")) and color2.glow then
+							C.SetButtonText2GlowFactor(cell.id, color2.glow)
+						end
+					end
+					local glowfactor = text2property.glowfactor
+					if type(glowfactor) == "function" then
+						C.SetButtonText2GlowFactor(cell.id, glowfactor(cell))
 					end
 					local iconproperty = cell.properties.icon
 					local iconid = iconproperty.icon
@@ -4524,6 +4056,13 @@ function widgetPrototypes.frame:update()
 					if type(iconcolor) == "function" then
 						iconcolor = iconcolor(cell)
 						C.SetButtonIconColor(cell.id, Helper.ffiColor(iconcolor))
+						if (not rawget(iconproperty, "glowfactor")) and iconcolor.glow then
+							C.SetButtonIconGlowFactor(cell.id, iconcolor.glow)
+						end
+					end
+					local glowfactor = iconproperty.glowfactor
+					if type(glowfactor) == "function" then
+						C.SetButtonIconGlowFactor(cell.id, glowfactor(cell))
 					end
 					local icon2property = cell.properties.icon2
 					local icon2id = icon2property.icon
@@ -4535,6 +4074,13 @@ function widgetPrototypes.frame:update()
 					if type(icon2color) == "function" then
 						icon2color = icon2color(cell)
 						C.SetButtonIcon2Color(cell.id, Helper.ffiColor(icon2color))
+						if (not rawget(icon2property, "glowfactor")) and icon2color.glow then
+							C.SetButtonIcon2GlowFactor(cell.id, icon2color.glow)
+						end
+					end
+					local glowfactor = icon2property.glowfactor
+					if type(glowfactor) == "function" then
+						C.SetButtonIcon2GlowFactor(cell.id, glowfactor(cell))
 					end
 					local active = cell.properties.active
 					if type(active) == "function" then
@@ -4544,11 +4090,13 @@ function widgetPrototypes.frame:update()
 					if type(bgColor) == "function" then
 						bgColor = bgColor(cell)
 						SetButtonColor(cell.id, bgColor.r, bgColor.g, bgColor.b, bgColor.a)
+						C.SetButtonGlowFactor(cell.id, bgColor.glow)
 					end
 					local highlightColor = cell.properties.highlightColor
 					if type(highlightColor) == "function" then
 						highlightColor = highlightColor(cell)
 						C.SetButtonHighlightColor(cell.id, Helper.ffiColor(highlightColor))
+						C.SetButtonHighlightGlowFactor(cell.id, highlightColor.glow)
 					end
 				elseif cell.type == "editbox" then
 					local active = cell.properties.active
@@ -4567,6 +4115,10 @@ function widgetPrototypes.frame:update()
 					local hull = cell.properties.hull
 					if type(hull) == "function" then
 						C.SetShieldHullBarHullPercent(cell.id, hull(cell))
+					end
+					local glowfactor = cell.properties.glowfactor
+					if type(glowfactor) == "function" then
+						C.SetShieldHullBarGlowFactor(cell.id, glowfactor(cell))
 					end
 				elseif cell.type == "statusbar" then
 					local current = cell.properties.current
@@ -4587,15 +4139,46 @@ function widgetPrototypes.frame:update()
 					if type(text) == "function" then
 						C.SetIconText(cell.id, text(cell))
 					end
+					local color = textproperty.color
+					if type(color) == "function" then
+						color = color(cell)
+						C.SetIconTextColor(cell.id, Helper.ffiColor(color))
+						if (not rawget(textproperty, "glowfactor")) and color.glow then
+							C.SetIconTextGlowFactor(cell.id, color.glow)
+						end
+					end
+					local glowfactor = textproperty.glowfactor
+					if type(glowfactor) == "function" then
+						C.SetIconTextGlowFactor(cell.id, glowfactor(cell))
+					end
 					local text2property = cell.properties.text2
 					local text2 = text2property.text
 					if type(text2) == "function" then
 						C.SetIconText2(cell.id, text2(cell))
 					end
+					local color = text2property.color
+					if type(color) == "function" then
+						color = color(cell)
+						C.SetIconText2Color(cell.id, Helper.ffiColor(color))
+						if (not rawget(text2property, "glowfactor")) and color.glow then
+							C.SetIconText2GlowFactor(cell.id, color.glow)
+						end
+					end
+					local glowfactor = text2property.glowfactor
+					if type(glowfactor) == "function" then
+						C.SetIconText2GlowFactor(cell.id, glowfactor(cell))
+					end
 					local color = cell.properties.color
 					if type(color) == "function" then
 						color = color(cell)
 						C.SetIconColor(cell.id, Helper.ffiColor(color))
+						if (not rawget(cell.properties, "glowfactor")) and color.glow then
+							C.SetIconGlowFactor(cell.id, color.glow)
+						end
+					end
+					local glowfactor = cell.properties.glowfactor
+					if type(glowfactor) == "function" then
+						C.SetIconGlowFactor(cell.id, glowfactor(cell))
 					end
 					local icon = cell.properties.icon
 					if type(icon) == "function" then
@@ -4605,6 +4188,33 @@ function widgetPrototypes.frame:update()
 					local curOption = cell.properties.startOption
 					if type(curOption) == "function" then
 						C.SetDropDownCurOption(cell.id, curOption(cell))
+					end
+					local hasfunctiontexts = false
+					local numtexts = #cell.properties.options
+					local optiontexts = ffi.new("const char*[?]", numtexts)
+					for i, option in ipairs(cell.properties.options) do
+						if type(option.text) == "function" then
+							optiontexts[i - 1] = Helper.ffiNewString(option.text(self))
+							hasfunctiontexts = true
+						else
+							optiontexts[i - 1] = Helper.ffiNewString(option.text or "")
+						end
+					end
+					if hasfunctiontexts then
+						C.SetDropDownOptionTexts(cell.id, optiontexts, numtexts)
+					end
+					hasfunctiontexts = false
+					local optiontexts2 = ffi.new("const char*[?]", numtexts)
+					for i, option in ipairs(cell.properties.options) do
+						if type(option.text2) == "function" then
+							optiontexts2[i - 1] = Helper.ffiNewString(option.text2(self))
+							hasfunctiontexts = true
+						else
+							optiontexts2[i - 1] = Helper.ffiNewString(option.text2 or "")
+						end
+					end
+					if hasfunctiontexts then
+						C.SetDropDownOptionTexts2(cell.id, optiontexts2, numtexts)
 					end
 				elseif cell.type == "flowchartnode" then
 					local color = cell.properties.outlineColor
@@ -4620,22 +4230,44 @@ function widgetPrototypes.frame:update()
 					if type(color) == "function" then
 						color = color(cell)
 						C.SetFlowChartNodeCaptionTextColor(cell.id, Helper.ffiColor(color))
+						if (not rawget(cell.properties.text, "glowfactor")) and color.glow then
+							C.SetFlowChartNodeCaptionTextGlowFactor(cell.id, color.glow)
+						end
+					end
+					local glowfactor = cell.properties.text.glowfactor
+					if type(glowfactor) == "function" then
+						C.SetFlowChartNodeCaptionTextGlowFactor(cell.id, glowfactor(cell))
 					end
 					-- status
 					local statuscolor = cell.properties.statusColor
+					local statusglowfactor, rawstatusglowfactor
 					local text = cell.properties.statustext.text
 					if type(text) == "function" then
 						text = text(cell)
-						if text ~= "" and not statuscolor then
+						C.SetFlowChartNodeStatusText(cell.id, tostring(text))
+					end
+					if text ~= "" then
+						if not statuscolor then
 							statuscolor = cell.properties.statustext.color
 						end
-						C.SetFlowChartNodeStatusText(cell.id, tostring(text))
-					elseif text ~= "" and not statuscolor then
-						statuscolor = cell.properties.statustext.color
+						if not statusglowfactor then
+							rawstatusglowfactor = rawget(cell.properties.statustext, "glowfactor")
+							statusglowfactor = cell.properties.statustext.glowfactor
+						end
 					end
 					local icon = cell.properties.statusicon.icon
 					if type(icon) == "function" then
-						C.SetFlowChartNodeStatusIcon(cell.id, icon(cell))
+						icon = icon(cell)
+						C.SetFlowChartNodeStatusIcon(cell.id, icon)
+					end
+					if icon ~= "" then
+						if not statuscolor then
+							statuscolor = cell.properties.statusicon.color
+						end
+						if not statusglowfactor then
+							rawstatusglowfactor = rawget(cell.properties.statusicon, "glowfactor")
+							statusglowfactor = cell.properties.statusicon.glowfactor
+						end
 					end
 					local bgicon = cell.properties.statusBgIconID
 					if type(bgicon) == "function" then
@@ -4644,6 +4276,12 @@ function widgetPrototypes.frame:update()
 					if type(statuscolor) == "function" then
 						statuscolor = statuscolor(cell)
 						C.SetFlowChartNodeStatusColor(cell.id, Helper.ffiColor(statuscolor))
+						if (not rawstatusglowfactor) and statuscolor.glow then
+							C.SetFlowChartNodeStatusGlowFactor(cell.id, statuscolor.glow)
+						end
+					end
+					if type(statusglowfactor) == "function" then
+						C.SetFlowChartNodeStatusGlowFactor(cell.id, statusglowfactor(cell))
 					end
 					-- value
 					local value = cell.properties.value
@@ -4664,6 +4302,10 @@ function widgetPrototypes.frame:update()
 					local bgcolor = cell.properties.bgColor
 					if type(bgcolor) == "function" then
 						C.SetCheckBoxColor(cell.id, Helper.ffiColor(bgcolor(cell)))
+					end
+					local glowfactor = cell.properties.glowfactor
+					if type(glowfactor) == "function" then
+						C.SetCheckBoxSymbolGlowFactor(cell.id, glowfactor(cell))
 					end
 				end
 			end
@@ -4870,7 +4512,7 @@ function widgetPrototypes.table:hasScrollBar()
 end
 
 -- Example usage:
---   local row = ftable:addRow("foo", { fixed = true, bgColor = Helper.defaultHeaderBackgroundColor })
+--   local row = ftable:addRow("foo", { fixed = true, bgColor = Color["foo"] })
 -- (rowdata == nil or false: Not selectable. For selectable row without specific rowdata, use e.g. true)
 function widgetPrototypes.table:addRow(rowdata, properties)
 	finalizeTableColumnWidths(self)
@@ -4938,7 +4580,7 @@ function widgetPrototypes.table:addRow(rowdata, properties)
 end
 
 function widgetPrototypes.table:addEmptyRow(height)
-	local row = self:addRow(nil, { bgColor = Helper.color.transparent })
+	local row = self:addRow(nil, {  })
 	row[1]:createText(" ", { fontsize = 1, minRowHeight = height })
 	return row
 end
@@ -5070,7 +4712,18 @@ function widgetHelpers.table:createDescriptor()
 				ReleaseDescriptor(cell.descriptor)
 			end
 			cell.descriptor = desc
-			contentcells[cellidx] = { colspan = cell.colspan, bgcolspan = cell.bgcolspan, cellbgcolor = cell.properties.cellBGColor, content = desc }
+
+			local isfunctioncell = false
+			local cellbgcolor = cell.properties.cellBGColor
+			if type(cellbgcolor) == "function" then
+				cellbgcolor = cellbgcolor(self)
+				isfunctioncell = true
+			end
+			if isfunctioncell then
+				table.insert(self.frame.functionCells, cell)
+			end
+
+			contentcells[cellidx] = { colspan = cell.colspan, bgcolspan = cell.bgcolspan, cellbgcolor = cellbgcolor, content = desc }
 		end
 		tablecontent[rowidx] = {
 			color = row.properties.bgColor,
@@ -5228,6 +4881,16 @@ function widgetPrototypes.cell:getColSpanWidth()
 	return colspanwidth
 end
 
+function widgetPrototypes.cell:getOffsetX()
+	local columndata = self.row.table.columndata
+	local offset = 0
+	for i = 1, self.index - 1 do
+		local cell = self.row[i]
+		offset = offset + columndata[cell.index].width + Helper.borderSize
+	end
+	return offset
+end
+
 function widgetPrototypes.cell:getWidth()
 	if self.properties.width ~= 0 then
 		return Helper.scaleX(self.properties.width, self.properties.scaling)
@@ -5250,11 +4913,22 @@ end
 
 function widgetHelpers.cell:createDescriptor()
 	-- create empty cell descriptor
-	local color = Helper.standardColor
+	local color = Color["text_normal"]
 	local font = Helper.standardFont
 	local fontsize = Helper.scaleFont(font, Helper.standardFontSize, self.properties.scaling)
 	-- force cell size to minimum 1x1
-	return CreateFontString("", Helper.standardHalignment, color.r, color.g, color.b, color.a, font, fontsize, false, 0, 0, 1, 1)
+
+	local emptyText = {
+		text = "",
+		alignment = Helper.standardHalignment,
+		color = color,
+		fontname = font,
+		fontsize = fontsize,
+		wordwrap = false,
+		offset = { x = 0, y = 0 },
+		size = { width = 1, height = 1 },
+	}
+	return CreateFontString(emptyText)
 end
 
 function initTableCell(cell, widgettype, properties)
@@ -5337,6 +5011,14 @@ function widgetHelpers.text:createDescriptor()
 		color = color(self)
 		isfunctioncell = true
 	end
+	local glowfactor = rawget(self.properties, "glowfactor")
+	if not glowfactor then
+		glowfactor = color.glow or self.properties.glowfactor
+	end
+	if type(glowfactor) == "function" then
+		glowfactor = glowfactor(self)
+		isfunctioncell = true
+	end
 	local mouseovertext = self.properties.mouseOverText
 	if type(mouseovertext) == "function" then
 		mouseovertext = mouseovertext(self)
@@ -5349,18 +5031,30 @@ function widgetHelpers.text:createDescriptor()
 	if titlecolor == propertyDefaultValue then
 		titlecolor = nil
 	end
+	local titleglowfactor = titlecolor and titlecolor.glow or 0
 	local scaling = self.properties.scaling
-	local halign = self.properties.halign
-	local font = self.properties.font
-	local fontsize = Helper.scaleFont(font, self.properties.fontsize, scaling)
-	local wordwrap = self.properties.wordwrap
 	local offsetx = Helper.scaleX(self.properties.x, scaling)
 	local offsety = Helper.scaleY(self.properties.y, scaling)
 	local width = self:getWidth()
 	local height = self:getHeight()
 	local helpoverlay = createOverlayPropertyInfo(self)
 
-	return CreateFontString(text, halign, color.r, color.g, color.b, color.a, font, fontsize, wordwrap, offsetx, offsety, height, width, mouseovertext, titlecolor, helpoverlay)
+	local fontStringDescriptor = {}
+	fontStringDescriptor.text = text
+	fontStringDescriptor.alignment = self.properties.halign
+	fontStringDescriptor.fontname = self.properties.font
+	fontStringDescriptor.fontsize = Helper.scaleFont(font, self.properties.fontsize, scaling)
+	fontStringDescriptor.color = color
+	fontStringDescriptor.glowfactor = glowfactor
+	fontStringDescriptor.titleglowfactor = titleglowfactor
+	fontStringDescriptor.wordwrap = self.properties.wordwrap
+	fontStringDescriptor.titlecolor = titlecolor
+	fontStringDescriptor.mouseovertext = mouseovertext
+	fontStringDescriptor.offset = { x = offsetx, y = offsety }
+	fontStringDescriptor.size = { width = width, height = height }
+	fontStringDescriptor.helpoverlay = helpoverlay
+
+	return CreateFontString(fontStringDescriptor)
 end
 
 -- boxtext
@@ -5401,6 +5095,14 @@ function widgetHelpers.boxtext:createDescriptor()
 		color = color(self)
 		isfunctioncell = true
 	end
+	local glowfactor = rawget(self.properties, "glowfactor")
+	if not glowfactor then
+		glowfactor = color.glow or self.properties.glowfactor
+	end
+	if type(glowfactor) == "function" then
+		glowfactor = glowfactor(self)
+		isfunctioncell = true
+	end
 	local boxcolor = self.properties.boxColor
 	if type(boxcolor) == "function" then
 		boxcolor = boxcolor(self)
@@ -5434,7 +5136,8 @@ function widgetHelpers.boxtext:createDescriptor()
 		fontsize = fontsize,
 		color = color,
 		x = textoffsetx,
-		y = textoffsety
+		y = textoffsety,
+		glowfactor = glowfactor,
 	}
 	boxTextDescriptor.wordwrap = wordwrap
 	boxTextDescriptor.boxcolor = boxcolor
@@ -5486,6 +5189,7 @@ function widgetHelpers.icon:createDescriptor()
 	local scaling = self.properties.scaling
 	local icon = self.properties.icon
 	local color = self.properties.color
+	local glowfactor = rawget(self.properties, "glowfactor")
 	local offsetx = Helper.scaleX(self.properties.x, scaling)
 	local offsety = Helper.scaleY(self.properties.y, scaling)
 	local width = self:getWidth()
@@ -5494,12 +5198,9 @@ function widgetHelpers.icon:createDescriptor()
 	local affectrowheight = self.properties.affectRowHeight
 
 	local isfunctioncell = false
-	if type(self.properties.text.text) == "function" then
-		isfunctioncell = true
-	end
-	if type(self.properties.text2.text) == "function" then
-		isfunctioncell = true
-	end
+	isfunctioncell = isfunctioncell or isTextPropertyFunctionCell(self, self.properties.text)
+	isfunctioncell = isfunctioncell or isTextPropertyFunctionCell(self, self.properties.text2)
+
 	if (icon == nil) or (icon == "") then
 		DebugError("widget icon:createDescriptor(): Texture name is empty! Falling back to solid icon.")
 		icon = "solid"
@@ -5511,6 +5212,13 @@ function widgetHelpers.icon:createDescriptor()
 		color = color(self)
 		isfunctioncell = true
 	end
+	if not glowfactor then
+		glowfactor = color.glow or self.properties.glowfactor
+	end
+	if type(glowfactor) == "function" then
+		glowfactor = glowfactor(self)
+		isfunctioncell = true
+	end
 	if type(mouseovertext) == "function" then
 		mouseovertext = mouseovertext(self)
 		isfunctioncell = true
@@ -5519,10 +5227,18 @@ function widgetHelpers.icon:createDescriptor()
 		table.insert(self.row.table.frame.functionCells, self)
 	end
 
-	local text = createTextPropertyInfo(self, self.properties.text)
-	local text2 = createTextPropertyInfo(self, self.properties.text2)
+	local iconDescriptor = {}
+	iconDescriptor.text = createTextPropertyInfo(self, self.properties.text)
+	iconDescriptor.text2 = createTextPropertyInfo(self, self.properties.text2)
+	iconDescriptor.icon = icon
+	iconDescriptor.color = color
+	iconDescriptor.mouseovertext = mouseovertext
+	iconDescriptor.offset = { x = offsetx, y = offsety }
+	iconDescriptor.size = { width = width, height = height }
+	iconDescriptor.affectrowheight = affectrowheight
+	iconDescriptor.glowfactor = glowfactor
 
-	return CreateIcon(icon, color.r, color.g, color.b, color.a, offsetx, offsety, height, width, mouseovertext, text, text2, nil, affectrowheight)
+	return CreateIcon(iconDescriptor)
 end
 
 -- button
@@ -5592,30 +5308,10 @@ function widgetHelpers.button:createDescriptor()
 	local helpoverlay = createOverlayPropertyInfo(self)
 
 	local isfunctioncell = false
-	if type(self.properties.text.text) == "function" then
-		isfunctioncell = true
-	end
-	if type(self.properties.text2.text) == "function" then
-		isfunctioncell = true
-	end
-	if type(self.properties.text.color) == "function" then
-		isfunctioncell = true
-	end
-	if type(self.properties.text2.color) == "function" then
-		isfunctioncell = true
-	end
-	if type(self.properties.icon.icon) == "function" then
-		isfunctioncell = true
-	end
-	if type(self.properties.icon.color) == "function" then
-		isfunctioncell = true
-	end
-	if type(self.properties.icon2.icon) == "function" then
-		isfunctioncell = true
-	end
-	if type(self.properties.icon2.color) == "function" then
-		isfunctioncell = true
-	end
+	isfunctioncell = isfunctioncell or isTextPropertyFunctionCell(self, self.properties.text)
+	isfunctioncell = isfunctioncell or isTextPropertyFunctionCell(self, self.properties.text2)
+	isfunctioncell = isfunctioncell or isIconPropertyFunctionCell(self, self.properties.icon)
+	isfunctioncell = isfunctioncell or isIconPropertyFunctionCell(self, self.properties.icon2)
 	if type(active) == "function" then
 		active = active(self)
 		isfunctioncell = true
@@ -5644,7 +5340,9 @@ function widgetHelpers.button:createDescriptor()
 	buttonDescriptor.hotkey = createHotkeyPropertyInfo(self, self.properties.hotkey, width, height, scaling)
 	buttonDescriptor.mouseovertext = mouseovertext
 	buttonDescriptor.color = bgColor
+	buttonDescriptor.colorglowfactor = bgColor.glow
 	buttonDescriptor.highlightcolor = highlightColor
+	buttonDescriptor.highlightcolorglowfactor = highlightColor.glow
 	buttonDescriptor.helpoverlay = helpoverlay
 
 	if buttonDescriptor.text.text ~= "" then
@@ -5695,6 +5393,7 @@ end
 function widgetHelpers.shieldhullbar:createDescriptor()
 	local shield = self.properties.shield
 	local hull = self.properties.hull
+	local glowfactor = self.properties.glowfactor
 	local mouseovertext = self.properties.mouseOverText
 
 	local isfunctioncell = false
@@ -5704,6 +5403,10 @@ function widgetHelpers.shieldhullbar:createDescriptor()
 	end
 	if type(hull) == "function" then
 		hull = hull()
+		isfunctioncell = true
+	end
+	if type(glowfactor) == "function" then
+		glowfactor = glowfactor(self)
 		isfunctioncell = true
 	end
 	if type(mouseovertext) == "function" then
@@ -5729,9 +5432,10 @@ function widgetHelpers.shieldhullbar:createDescriptor()
 	local shieldHullBarDescriptor = {}
 	shieldHullBarDescriptor.shield = shield
 	shieldHullBarDescriptor.hull = hull
+	shieldHullBarDescriptor.glowfactor = glowfactor
 	shieldHullBarDescriptor.mouseovertext = mouseovertext
 	shieldHullBarDescriptor.offset = { x = offsetx, y = offsety }
-	shieldHullBarDescriptor.size = { width = width , height = height }
+	shieldHullBarDescriptor.size = { width = width, height = height }
 	return CreateShieldHullBar(shieldHullBarDescriptor)
 end
 
@@ -5809,6 +5513,7 @@ function widgetHelpers.editbox:createDescriptor()
 	editboxDescriptor.hotkey = createHotkeyPropertyInfo(self, self.properties.hotkey, width, height, scaling)
 	editboxDescriptor.mouseovertext = mouseovertext
 	editboxDescriptor.color = bgColor
+	editboxDescriptor.glowfactor = bgColor.glow
 	
 	editboxDescriptor.closemenu = closeMenuOnBack
 	editboxDescriptor.texthidden = textHidden
@@ -5847,6 +5552,20 @@ function widgetPrototypes.slidercell:updateMaxValue(value)
 	if self.id then
 		self.properties.max = value
 		C.SetSliderCellMaxValue(self.id, value)
+	end
+end
+
+function widgetPrototypes.slidercell:updateMinSelectValue(value)
+	if self.id then
+		self.properties.min = value
+		C.SetSliderCellMinSelectValue(self.id, value)
+	end
+end
+
+function widgetPrototypes.slidercell:updateMinValue(value)
+	if self.id then
+		self.properties.min = value
+		C.SetSliderCellMinValue(self.id, value)
 	end
 end
 
@@ -5898,6 +5617,7 @@ function widgetHelpers.slidercell:createDescriptor()
 		righttoleft = self.properties.rightToLeft,
 		fromcenter = self.properties.fromCenter,
 		readonly = self.properties.readOnly,
+		forcearrows = self.properties.forceArrows,
 		useinfinitevalue = self.properties.useInfiniteValue,
 		infinitevalue = self.properties.infiniteValue,
 		usetimeformat = self.properties.useTimeFormat,
@@ -5917,9 +5637,12 @@ function widgetHelpers.slidercell:createDescriptor()
 	slidercellDescriptor.inactivebgcolor = inactiveBGColor
 	if slidercellDescriptor.scale.fromcenter then
 		slidercellDescriptor.valuecolor = posValueColor
+		slidercellDescriptor.valueglowfactor = posValueColor.glow
 		slidercellDescriptor.negativevaluecolor = negValueColor
+		slidercellDescriptor.negativevalueglowfactor = negValueColor.glow
 	else
 		slidercellDescriptor.valuecolor = valueColor
+		slidercellDescriptor.valueglowfactor = valueColor.glow
 	end
 
 	slidercellDescriptor.offset = {x = offsetx, y = offsety}
@@ -5974,6 +5697,7 @@ function widgetHelpers.dropdown:createDescriptor()
 	local mouseovertext = self.properties.mouseOverText
 	local startOption = self.properties.startOption
 	local helpoverlay = createOverlayPropertyInfo(self)
+	local options = Helper.tableCopy(self.properties.options)
 
 	local isfunctioncell = false
 	if type(startOption) == "function" then
@@ -5984,12 +5708,24 @@ function widgetHelpers.dropdown:createDescriptor()
 		mouseovertext = mouseovertext(self)
 		isfunctioncell = true
 	end
+	if not isfunctioncell then
+		for _, option in ipairs(options) do
+			if type(option.text) == "function" then
+				option.text = option.text(self)
+				isfunctioncell = true
+			end
+			if type(option.text2) == "function" then
+				option.text2 = option.text2(self)
+				isfunctioncell = true
+			end
+		end
+	end
 	if isfunctioncell then
 		table.insert(self.row.table.frame.functionCells, self)
 	end
 
 	local dropdownDescriptor = {}
-	dropdownDescriptor.options = self.properties.options
+	dropdownDescriptor.options = options
 	dropdownDescriptor.startoption = startOption
 	dropdownDescriptor.text = createTextPropertyInfo(self, self.properties.text)
 	dropdownDescriptor.textoverride = self.properties.textOverride
@@ -6000,8 +5736,11 @@ function widgetHelpers.dropdown:createDescriptor()
 
 	dropdownDescriptor.mouseovertext = mouseovertext
 	dropdownDescriptor.color = bgColor
+	dropdownDescriptor.glowfactor = bgColor.glow
 	dropdownDescriptor.highlightcolor = highlightColor
+	dropdownDescriptor.highlightglowfactor = highlightColor.glow
 	dropdownDescriptor.optioncolor = optionColor
+	dropdownDescriptor.optionglowfactor = optionColor.glow
 	dropdownDescriptor.active = self.properties.active
 	dropdownDescriptor.allowmouseoverinteraction = self.properties.allowMouseOverInteraction
 	dropdownDescriptor.helpoverlay = helpoverlay
@@ -6031,6 +5770,7 @@ function widgetHelpers.checkbox:createDescriptor()
 	local height = self:getHeight()
 	local mouseovertext = self.properties.mouseOverText
 	local checked = self.properties.checked
+	local glowfactor = self.properties.glowfactor
 
 	local isfunctioncell = false
 	if type(checked) == "function" then
@@ -6045,6 +5785,10 @@ function widgetHelpers.checkbox:createDescriptor()
 		mouseovertext = mouseovertext(self)
 		isfunctioncell = true
 	end
+	if type(glowfactor) == "function" then
+		glowfactor = glowfactor(self)
+		isfunctioncell = true
+	end
 	if isfunctioncell then
 		table.insert(self.row.table.frame.functionCells, self)
 	end
@@ -6055,6 +5799,8 @@ function widgetHelpers.checkbox:createDescriptor()
 	checkboxDescriptor.active = self.properties.active
 	checkboxDescriptor.checked = checked
 	checkboxDescriptor.symbol = self.properties.symbol
+	checkboxDescriptor.glowfactor = bgColor.glow
+	checkboxDescriptor.symbolglowfactor = glowfactor
 
 	checkboxDescriptor.offset = { x = offsetx, y = offsety }
 	checkboxDescriptor.size = { width = width , height = height }
@@ -6124,10 +5870,15 @@ function widgetHelpers.statusbar:createDescriptor()
 	end
 	statusBarDescriptor.max = math.max(0, max)
 	statusBarDescriptor.valueColor = valueColor
+	statusBarDescriptor.valueGlowFactor = valueColor.glow
 	statusBarDescriptor.posChangeColor = posChangeColor
+	statusBarDescriptor.posChangeGlowFactor = posChangeColor.glow
 	statusBarDescriptor.negChangeColor = negChangeColor
+	statusBarDescriptor.negChangeGlowFactor = negChangeColor.glow
 	statusBarDescriptor.markerColor = markerColor
+	statusBarDescriptor.markerGlowFactor = markerColor.glow
 	statusBarDescriptor.titleColor = titleColor
+	statusBarDescriptor.titleGlowFactor = titleColor and titleColor.glow or 0
 	statusBarDescriptor.mouseovertext = mouseovertext
 	statusBarDescriptor.offset = { x = offsetx, y = offsety }
 	statusBarDescriptor.size = { width = width , height = height }
@@ -6135,32 +5886,124 @@ function widgetHelpers.statusbar:createDescriptor()
 end
 
 -- graph
-function widgetPrototypes.cell:createGraph(graphtype, noscaling, bgcolor, title, xaxis, yaxis, datarecords, offsetx, offsety, width, height, mouseovertext, helpOverlayID, helpOverlayText)
-	initTableCell(self, "graph", { scaling = (noscaling == false), x = offsetx, y = offsety, width = width, height = height, mouseOverText = mouseovertext })
+function widgetPrototypes.cell:createGraph(properties)
+	initTableCell(self, "graph", properties)
 	self.selected = {}
+	self.datarecords = {}
+	self.defaultDataRecordProperties = {}
+	return self
+end
 
+function widgetPrototypes.graph:setDefaultDataRecordProperties(properties)
+	if not self.defaultDataRecordProperties then
+		self.defaultDataRecordProperties = { }
+		setmetatable(self.defaultDataRecordProperties, widgetPropertyMetatables.graphdatarecord)
+	end
+	self.defaultDataRecordProperties:apply(properties)
+	return self
+end
+
+function widgetPrototypes.graph:setTitle(title, properties)
+	self.properties.title.text = title
+	self.properties.title.scaling = self.properties.scaling
+	self.properties.title:apply(properties)
+	return self
+end
+
+function widgetPrototypes.graph:setXAxis(properties)
+	self.properties.xAxis:apply(properties)
+	return self
+end
+
+function widgetPrototypes.graph:setXAxisLabel(label, properties)
+	self.properties.xAxisLabel.text = label
+	self.properties.xAxisLabel.scaling = self.properties.scaling
+	self.properties.xAxisLabel:apply(properties)
+	return self
+end
+
+function widgetPrototypes.graph:setYAxis(properties)
+	self.properties.yAxis:apply(properties)
+	return self
+end
+
+function widgetPrototypes.graph:setYAxisLabel(label, properties)
+	self.properties.yAxisLabel.text = label
+	self.properties.yAxisLabel.scaling = self.properties.scaling
+	self.properties.yAxisLabel:apply(properties)
+	return self
+end
+
+function widgetPrototypes.graph:addDataRecord(properties)
+	local datarecord = {
+		graph = self,
+		data = {},
+		properties = {},					-- datarecord properties
+	}
+	table.insert(self.datarecords, datarecord)
+
+	-- set metatables to enable member functions and default properties
+	setmetatable(datarecord, widgetMetatables.graphdatarecord)
+	setmetatable(datarecord.properties, widgetPropertyMetatables.graphdatarecord)
+
+	-- apply default node properties
+	if self.defaultDataRecordProperties then
+		datarecord.properties:apply(self.defaultDataRecordProperties)
+	end
+	-- apply custom properties
+	datarecord.properties:apply(properties)
+	return datarecord
+end
+
+function widgetPrototypes.graphdatarecord:addData(x, y, icon, mouseovertext, inactive)
+	table.insert(self.data, { x = x, y = y, icon = icon, mouseovertext = mouseovertext, inactive = inactive })
+	return self
+end
+
+function widgetHelpers.graph:createDescriptor()
 	local graphDescriptor = {}
-	graphDescriptor.type = graphtype
-	graphDescriptor.bgcolor = bgcolor
-	graphDescriptor.title = title
-	graphDescriptor.xAxis = xaxis
-	graphDescriptor.yAxis = yaxis
-	graphDescriptor.offset = { x = offsetx or 0, y = offsety or 0 }
-	graphDescriptor.size = { width = width or 0, height = height or 0 }
-	graphDescriptor.mouseovertext = mouseovertext
-	graphDescriptor.helpoverlay = { text = helpOverlayText, id = helpOverlayID, size = { width = 0, height = 0 }, offset = { x = 0, y = 0 } }
+	graphDescriptor.type = self.properties.graphtype
+	graphDescriptor.bgcolor = self.properties.bgColor
+	graphDescriptor.title = createTextPropertyInfo(self, self.properties.title)
+	graphDescriptor.xAxis = createAxisPropertyInfo(self.properties.xAxis)
+	graphDescriptor.xAxisLabel = createTextPropertyInfo(self, self.properties.xAxisLabel)
+	graphDescriptor.yAxis = createAxisPropertyInfo(self.properties.yAxis)
+	graphDescriptor.yAxisLabel = createTextPropertyInfo(self, self.properties.xAxisLabel)
+	graphDescriptor.offset = { x = self.properties.x or 0, y = self.properties.y or 0 }
+	graphDescriptor.size = { width = self.properties.width or 0, height = self.properties.height or 0 }
+	graphDescriptor.mouseovertext = self.properties.mouseOverText
+	graphDescriptor.helpoverlay = createOverlayPropertyInfo(self)
 
 	graphDescriptor.datarecords = {}
 	graphDescriptor.icons = {}
-	for datarecordidx, datarecord in ipairs(datarecords) do
+	for datarecordidx, datarecord in ipairs(self.datarecords) do
+		local marker
+		if datarecord.properties.markertype then
+			marker = { type = datarecord.properties.markertype, size = datarecord.properties.markersize, color = datarecord.properties.markercolor, glowfactor = datarecord.properties.markercolor.glow }
+		end
+
+		local line
+		if datarecord.properties.linetype then
+			line = { type = datarecord.properties.linetype, width = datarecord.properties.linewidth, color = datarecord.properties.linecolor, glowfactor = datarecord.properties.linecolor.glow }
+		end
+
+		local desc_record = {
+			marker = marker,
+			line = line,
+			data = {},
+			highlighted = datarecord.properties.highlighted,
+			mouseovertext = datarecord.properties.mouseOverText
+		}
+
 		for dataidx, datapoint in ipairs(datarecord.data) do
+			table.insert(desc_record.data, datapoint)
 			if datapoint.icon then
 				table.insert(graphDescriptor.icons, { datarecord = datarecordidx, data = dataidx, icon = datapoint.icon, mouseovertext = datapoint.mouseovertext })
-				datarecord.data.icon = nil
-				datarecord.data.mouseovertext = nil
+				desc_record.data[dataidx].icon = nil
+				desc_record.data[dataidx].mouseovertext = nil
 			end
 		end
-		table.insert(graphDescriptor.datarecords, datarecord)
+		table.insert(graphDescriptor.datarecords, desc_record)
 	end
 
 	if self.properties.scaling then
@@ -6169,15 +6012,6 @@ function widgetPrototypes.cell:createGraph(graphtype, noscaling, bgcolor, title,
 		graphDescriptor.size.width		= Helper.scaleX(graphDescriptor.size.width)
 		graphDescriptor.size.height		= Helper.scaleY(graphDescriptor.size.height)
 
-		if graphDescriptor.title then
-			graphDescriptor.title.size = Helper.scaleFont(graphDescriptor.title.font, graphDescriptor.title.size)
-		end
-		if graphDescriptor.xAxis.label then
-			graphDescriptor.xAxis.label.size = Helper.scaleFont(graphDescriptor.xAxis.label.font, graphDescriptor.xAxis.label.size)
-		end
-		if graphDescriptor.yAxis.label then
-			graphDescriptor.yAxis.label.size = Helper.scaleFont(graphDescriptor.yAxis.label.font, graphDescriptor.yAxis.label.size)
-		end
 		for _, datarecord in ipairs(graphDescriptor.datarecords) do
 			if datarecord.marker then
 				datarecord.marker.size = Helper.scaleX(datarecord.marker.size)
@@ -6188,12 +6022,7 @@ function widgetPrototypes.cell:createGraph(graphtype, noscaling, bgcolor, title,
 		end
 	end
 
-	self.properties.graphdesc = graphDescriptor
-	return self
-end
-
-function widgetHelpers.graph:createDescriptor()
-	return CreateGraph(self.properties.graphdesc)
+	return CreateGraph(graphDescriptor)
 end
 
 function widgetPrototypes.graph:selectDataPoint(recordIdx, dataIdx, selected)
@@ -6471,7 +6300,7 @@ function finalizeFlowchartCellSlots(cell, slottype, edges, colorprop, rankprop, 
 		-- Use slot 2
 		rankslotassignment[usedranks[1]] = 2
 		-- validate and set junction color
-		local color = rankcolors[usedranks[1]] or Helper.standardColor
+		local color = rankcolors[usedranks[1]] or Color["flowchart_junction_default"]
 		local prevcolor = cell.junctionColor
 		if color and prevcolor then
 			if color.r ~= prevcolor.r or color.g ~= prevcolor.g or color.b ~= prevcolor.b or color.a ~= prevcolor.a then
@@ -6494,7 +6323,7 @@ function finalizeFlowchartCellSlots(cell, slottype, edges, colorprop, rankprop, 
 			rankslotassignment[usedranks[3]] = 3
 		end
 		for rank, slot in pairs(rankslotassignment) do
-			cell.slotcolors[slottype][slot] = rankcolors[rank] or Helper.standardColor
+			cell.slotcolors[slottype][slot] = rankcolors[rank] or Color["flowchart_slot_default"]
 		end
 	end
 	-- Store assigned slot also in edges
@@ -6505,7 +6334,7 @@ function finalizeFlowchartCellSlots(cell, slottype, edges, colorprop, rankprop, 
 end
 
 -- Example usage:
---   local node = flowchart:addNode(1, 1, { custom = "foo", bar = "baz" }, { shape = "stadium", bgColor = Helper.color.black })
+--   local node = flowchart:addNode(1, 1, { custom = "foo", bar = "baz" }, { shape = "stadium", bgColor = Color["foo"] })
 function widgetPrototypes.flowchart:addNode(row, col, customdata, properties)
 	local rowcells = self.rows[row]
 	if not rowcells then
@@ -6622,7 +6451,7 @@ function widgetPrototypes.flowchart:setColumnCaption(col, text, properties)
 		text = text,
 		fontname = properties.font or Helper.standardFont,
 		fontsize = properties.fontsize or Helper.headerRow1FontSize,
-		color = properties.color or Helper.color.white,
+		color = properties.color or Color["flowchart_column_caption_default"],
 	}
 end
 
@@ -6758,7 +6587,7 @@ end
 ---------- Generic flowchart cell member functions ----------
 
 -- Example usage:
---   local edge = flowchartcell:addEdgeTo(destcell, { color = Helper.color.red })
+--   local edge = flowchartcell:addEdgeTo(destcell, { color = Color["foo"] })
 function widgetPrototypes.flowchartcell:addEdgeTo(destcell, properties)
 	if not (destcell and destcell.flowchart and destcell.flowchart == self.flowchart and destcell.row and destcell.col) then
 		DebugError(string.format("flowchartcell:addEdgeTo(): Invalid destination cell %s (source row %d, column %d)", tostring(destcell), self.row, self.col))
@@ -6877,10 +6706,11 @@ function widgetHelpers.flowchartnode:createDescriptor()
 	local helpoverlay = createOverlayPropertyInfo(self)
 
 	local isfunctioncell = false
-	if type(self.properties.text.text) == "function" or type(self.properties.text.color) == "function" then
-		isfunctioncell = true
-	end
-	if type(self.properties.statustext.text) == "function" or type(self.properties.statustext.color) == "function" or type(self.properties.statusColor) == "function" then
+	isfunctioncell = isfunctioncell or isTextPropertyFunctionCell(self, self.properties.text)
+	isfunctioncell = isfunctioncell or isTextPropertyFunctionCell(self, self.properties.statustext)
+	isfunctioncell = isfunctioncell or isIconPropertyFunctionCell(self, self.properties.statusicon)
+
+	if type(self.properties.statusColor) == "function" then
 		isfunctioncell = true
 	end
 	if type(value) == "function" then
@@ -7838,9 +7668,9 @@ function Helper.interpolatePriceColor(ware, price, isselloffer, darkbasecolor)
 	-- In that case prefer selloffer data (for buying - change to buyoffer when player attempts to sell)
 	local avgprice, minprice, maxprice = GetWareData(ware, "avgprice", "minprice", "maxprice")
 	-- Get interpolated price color
-	local avgcolor = Helper.color.white
-	local mincolor = (isselloffer and Helper.color.lightgreen or Helper.color.orange)
-	local maxcolor = (isselloffer and Helper.color.orange or Helper.color.lightgreen)
+	local avgcolor = Color["text_price_average"]
+	local mincolor = isselloffer and Color["text_price_good"] or Color["text_price_bad"]
+	local maxcolor = isselloffer and Color["text_price_bad"] or Color["text_price_good"]
 	local color = avgcolor
 	local lerpfactor = 0
 	if avgprice ~= 0 and minprice < avgprice and maxprice > avgprice and price ~= avgprice then
@@ -7855,12 +7685,13 @@ function Helper.interpolatePriceColor(ware, price, isselloffer, darkbasecolor)
 		--print(ware .. " min=" .. minprice .. " avg=" .. avgprice .. " max=" .. maxprice .. " (price=" .. price .. " => lerpfactor " .. lerpfactor .. ")")
 	end
 	-- Make price color darker if requested
-	darkbasecolor = darkbasecolor or Helper.color.white
+	darkbasecolor = darkbasecolor or Color["text_normal"]
+	local refcolor = Color["text_normal"]
 	return {
-		r = (avgcolor.r - lerpfactor * (avgcolor.r - color.r)) * darkbasecolor.r / Helper.color.white.r,
-		g = (avgcolor.g - lerpfactor * (avgcolor.g - color.g)) * darkbasecolor.g / Helper.color.white.g,
-		b = (avgcolor.b - lerpfactor * (avgcolor.b - color.b)) * darkbasecolor.b / Helper.color.white.b,
-		a = (avgcolor.a - lerpfactor * (avgcolor.a - color.a)) * darkbasecolor.a / Helper.color.white.a
+		r = (avgcolor.r - lerpfactor * (avgcolor.r - color.r)) * darkbasecolor.r / refcolor.r,
+		g = (avgcolor.g - lerpfactor * (avgcolor.g - color.g)) * darkbasecolor.g / refcolor.g,
+		b = (avgcolor.b - lerpfactor * (avgcolor.b - color.b)) * darkbasecolor.b / refcolor.b,
+		a = (avgcolor.a - lerpfactor * (avgcolor.a - color.a)) * darkbasecolor.a / refcolor.a
 	}
 end
 
@@ -7884,26 +7715,7 @@ function Helper.timeDuration(x)
 		return x .. " " .. ReadText(1001, 100) -- seconds
 	end
 end
-		
-function Helper.getStatusBar(hullpercentage, height, fullwidth, noscaling, nogradient)
-	local color = Helper.color.slidervalue
-	if not nogradient then
-		if hullpercentage <= 33 then
-			color = Helper.statusRed
-		elseif hullpercentage <= 66 then
-			color = Helper.statusOrange
-		elseif hullpercentage <= 99 then
-			color = Helper.statusYellow
-		else
-			color = Helper.statusGreen
-		end
-	end
-	if hullpercentage == 0 then
-		hullpercentage = 1
-	end
-	return Helper.createIcon("solid", noscaling, color.r, color.g, color.b, color.a, 0, 0, height, hullpercentage * fullwidth / 100)
-end
-		
+
 function Helper.unlockInfo(unlocked, cellcontent)
 	if unlocked then
 		return cellcontent
@@ -7911,7 +7723,7 @@ function Helper.unlockInfo(unlocked, cellcontent)
 		return ReadText(1001, 3210)
 	end
 end
-		
+
 function Helper.estimateString(estimated)
 	if estimated then
 		return ReadText(1001, 70) .. " "
@@ -8356,7 +8168,7 @@ function Helper.comparePositions(pos1, pos2, deviation)
 end
 
 function Helper.convertColorToText(color)
-	return string.format("\027#FF%02x%02x%02x#", color.r, color.g, color.b)
+	return string.format("\027#%02x%02x%02x%02x#", math.floor(color.a * 255 / 100 + 0.5), color.r, color.g, color.b)
 end
 
 function Helper.formatOptionalShortcut(format, inputtype, inputid, fallback)
@@ -8397,6 +8209,26 @@ function Helper.displaySkill(skill, usebold, noemptystars)
 	if not noemptystars then
 		if 5 - int - 1 > 0 then
 			result = result .. string.rep("\27[menu_star_01" .. bold .. "]", 5 - int - 1)
+		end
+	end
+
+	return result
+end
+
+function Helper.displayStars(progress, total, usebold, noemptystars)
+	local result = ""
+
+	local bold = ""
+	if usebold then
+		bold = "_bold"
+	end
+
+	-- full stars
+	result = result .. string.rep("\27[menu_star_04" .. bold .. "]", progress)
+	-- empty stars
+	if not noemptystars then
+		if total - progress > 0 then
+			result = result .. string.rep("\27[menu_star_01" .. bold .. "]", total - progress)
 		end
 	end
 
@@ -9151,9 +8983,9 @@ for class, entries in pairs(Helper.modProperties) do
 end
 
 Helper.modQualities = {
-	[1] = { name = ReadText(20110, 1001), nonetext = ReadText(1001, 8576), paintname = ReadText(1001, 8580), paintnonetext = ReadText(1001, 8511), icon = "mods_grade_circle_01", icon2 = "mods_grade_01", category = "basic",		color = { r =  30, g = 255, b =   0, a = 100 }, price =  50000 },
-	[2] = { name = ReadText(20110, 1101), nonetext = ReadText(1001, 8577), paintname = ReadText(1001, 8581), paintnonetext = ReadText(1001, 8512), icon = "mods_grade_circle_02", icon2 = "mods_grade_02", category = "advanced",		color = { r =  64, g = 154, b = 255, a = 100 }, price = 100000 },
-	[3] = { name = ReadText(20110, 1201), nonetext = ReadText(1001, 8578), paintname = ReadText(1001, 8582), paintnonetext = ReadText(1001, 8513), icon = "mods_grade_circle_03", icon2 = "mods_grade_03", category = "exceptional",	color = { r = 181, g =  72, b = 208, a = 100 }, price = 250000 },
+	[1] = { name = ReadText(20110, 1001), nonetext = ReadText(1001, 8576), paintname = ReadText(1001, 8580), paintnonetext = ReadText(1001, 8511), icon = "mods_grade_circle_01", icon2 = "mods_grade_01", category = "basic",		color = Color["equipmentmod_quality_basic"], price =  50000 },
+	[2] = { name = ReadText(20110, 1101), nonetext = ReadText(1001, 8577), paintname = ReadText(1001, 8581), paintnonetext = ReadText(1001, 8512), icon = "mods_grade_circle_02", icon2 = "mods_grade_02", category = "advanced",		color = Color["equipmentmod_quality_advanced"], price = 100000 },
+	[3] = { name = ReadText(20110, 1201), nonetext = ReadText(1001, 8578), paintname = ReadText(1001, 8582), paintnonetext = ReadText(1001, 8513), icon = "mods_grade_circle_03", icon2 = "mods_grade_03", category = "exceptional",	color = Color["equipmentmod_quality_exceptional"], price = 250000 },
 }
 
 function Helper.getInstalledModInfo(type, component, context, group, isgroup)
@@ -9199,16 +9031,16 @@ function Helper.getInstalledModInfo(type, component, context, group, isgroup)
 end
 
 Helper.topLevelMenus = {
-	{ id = "options",		name = ReadText(1001, 8105),	icon = "tlt_optionsmenu",		menu = "OptionsMenu",		helpOverlayID = "toplevel_options",			helpOverlayText = ReadText(1028, 8101), param = "toplevel", },
-	{ id = "terraforming",	name = ReadText(1001, 3800),	icon = "tlt_terraforming",		menu = "TerraformingMenu",	helpOverlayID = "toplevel_terraforming",	helpOverlayText = ReadText(1028, 8109), param = {0, 0, "$hqcluster$" },						canterraform = true },
-	{ id = "research",		name = ReadText(1001, 8103),	icon = "tlt_research",			menu = "ResearchMenu",		helpOverlayID = "toplevel_research",		helpOverlayText = ReadText(1028, 8102), param = {0, 0},										canresearch = true },
-	{ id = "playerinfo",	name = ReadText(1001, 8102),	icon = "tlt_playerinfo",		menu = "PlayerInfoMenu",	helpOverlayID = "toplevel_playerinfo",		helpOverlayText = ReadText(1028, 8103), param = {0, 0} },
-	{ id = "docked",		name = ReadText(1001, 8106),	icon = "tlt_docked",			menu = "DockedMenu",		helpOverlayID = "toplevel_docked",			helpOverlayText = ReadText(1028, 8104), param = {0, 0},										needsdock = true },
-	{ id = "cockpit",		name = ReadText(1001, 8601),	icon = "tlt_shipinteractions",	menu = "DockedMenu",		helpOverlayID = "toplevel_cockpit",			helpOverlayText = ReadText(1028, 8105), param = {0, 0},										needsdock = false },
-	{ id = "map",			name = ReadText(1001, 8101),	icon = "tlt_map",				menu = "MapMenu",			helpOverlayID = "toplevel_map",				helpOverlayText = ReadText(1028, 8106), param = {0, 0, true} },
-	{ id = "multiversemap",	name = ReadText(1001, 11623),	icon = "vt_season",				menu = "MapMenu",			helpOverlayID = "toplevel_multiversemap",	helpOverlayText = ReadText(1028, 8110), param = {0, 0, true, nil, nil, nil, nil, true},		isonline = true },
-	{ id = "encyclopedia",	name = ReadText(1001, 8104),	icon = "tlt_encyclopedia",		menu = "EncyclopediaMenu",	helpOverlayID = "toplevel_encyclopedia",	helpOverlayText = ReadText(1028, 8107), param = {0, 0} },
-	{ id = "help",			name = ReadText(1001, 8701),	icon = "tlt_help",				menu = "HelpMenu",			helpOverlayID = "toplevel_help",			helpOverlayText = ReadText(1028, 8108), param = {0, 0},										demo = false },
+	{ id = "options",		name = ReadText(1001, 8105),	icon = "tlt_optionsmenu",		shortcut = "INPUT_ACTION_OPTIONSMENU",					menu = "OptionsMenu",		helpOverlayID = "toplevel_options",			helpOverlayText = ReadText(1028, 8101), param = "toplevel", },
+	{ id = "terraforming",	name = ReadText(1001, 3800),	icon = "tlt_terraforming",		shortcut = "",											menu = "TerraformingMenu",	helpOverlayID = "toplevel_terraforming",	helpOverlayText = ReadText(1028, 8109), param = {0, 0, "$hqcluster$" },						canterraform = true },
+	{ id = "research",		name = ReadText(1001, 8103),	icon = "tlt_research",			shortcut = "",											menu = "ResearchMenu",		helpOverlayID = "toplevel_research",		helpOverlayText = ReadText(1028, 8102), param = {0, 0},										canresearch = true },
+	{ id = "playerinfo",	name = ReadText(1001, 8102),	icon = "tlt_playerinfo",		shortcut = "INPUT_ACTION_OPEN_PLAYER_INVENTORY_MENU",	menu = "PlayerInfoMenu",	helpOverlayID = "toplevel_playerinfo",		helpOverlayText = ReadText(1028, 8103), param = {0, 0} },
+	{ id = "docked",		name = ReadText(1001, 8106),	icon = "tlt_docked",			shortcut = "INPUT_ACTION_OPEN_COCKPIT_MENU",			menu = "DockedMenu",		helpOverlayID = "toplevel_docked",			helpOverlayText = ReadText(1028, 8104), param = {0, 0},										needsdock = true },
+	{ id = "cockpit",		name = ReadText(1001, 8601),	icon = "tlt_shipinteractions",	shortcut = "INPUT_ACTION_OPEN_COCKPIT_MENU",			menu = "DockedMenu",		helpOverlayID = "toplevel_cockpit",			helpOverlayText = ReadText(1028, 8105), param = {0, 0},										needsdock = false },
+	{ id = "map",			name = ReadText(1001, 8101),	icon = "tlt_map",				shortcut = "INPUT_ACTION_OPEN_MAP",						menu = "MapMenu",			helpOverlayID = "toplevel_map",				helpOverlayText = ReadText(1028, 8106), param = {0, 0, true} },
+	{ id = "multiversemap",	name = ReadText(1001, 11623),	icon = "vt_season",				shortcut = "INPUT_ACTION_OPEN_MULTIVERSE",				menu = "MapMenu",			helpOverlayID = "toplevel_multiversemap",	helpOverlayText = ReadText(1028, 8110), param = {0, 0, true, nil, nil, nil, nil, true},		isonline = true,		istimelinescenario = false },
+	{ id = "encyclopedia",	name = ReadText(1001, 8104),	icon = "tlt_encyclopedia",		shortcut = "",											menu = "EncyclopediaMenu",	helpOverlayID = "toplevel_encyclopedia",	helpOverlayText = ReadText(1028, 8107), param = {0, 0} },
+	{ id = "help",			name = ReadText(1001, 8701),	icon = "tlt_help",				shortcut = "INPUT_ACTION_HELP",							menu = "HelpMenu",			helpOverlayID = "toplevel_help",			helpOverlayText = ReadText(1028, 8108), param = {0, 0},										demo = false },
 }
 
 function Helper.createTopLevelConfig()
@@ -9217,9 +9049,9 @@ function Helper.createTopLevelConfig()
 		iconSize = Helper.scaleX(Helper.sidebarWidth),
 		arrowWidth = Helper.scaleX(10),
 		inputSize = Helper.scaleX(100),
-		y = 25,
+		y = Helper.borderSize,
 		font = Helper.standardFontOutlined,
-		bgColor = Helper.color.transparent,
+		bgColor = Color["toplevel_background_default"],
 		scrolling = false,
 	}
 	Helper.topLevelConfig.numColumns = Helper.topLevelConfig.numDisplayedIcons + 4
@@ -9352,6 +9184,8 @@ function Helper.createTopLevelTab(menu, id, frame, overrideText, locked, noretur
 		return
 	end
 
+	AddUITriggeredEvent("TopLevelTabs", id, "displayed")
+
 	local numDisplayedIcons = Helper.topLevelConfig.numDisplayedIcons
 	local numColumns = Helper.topLevelConfig.numColumns
 	local countoffset = 2
@@ -9377,6 +9211,19 @@ function Helper.createTopLevelTab(menu, id, frame, overrideText, locked, noretur
 		ftable:setColWidth(numColumns - 1, Helper.topLevelConfig.arrowWidth)
 	end
 
+	-- close button
+	local row = ftable:addRow(true, { fixed = true, borderBelow = false, bgColor = Helper.topLevelConfig.bgColor })
+	if numColumns % 2 == 0 then
+		local col = numColumns / 2
+		local colwidth = row[col]:getWidth()
+		row[col]:setColSpan(2):createButton({ width = Helper.topLevelConfig.iconSize, height = Helper.topLevelConfig.iconSize - Helper.scaleX(10), bgColor = Color["button_background_hidden"], highlightColor = Color["button_highlight_hidden"], x = colwidth - Helper.topLevelConfig.iconSize / 2 }):setText("\27[tlt_arrow_inv]", { color = Color["toplevel_arrow"], halign = "center", fontsize = Helper.scaleFont(Helper.standardFont, 18), x = 0, y = 2 })
+		row[col].handlers.onClick = function () return menu.onCloseElement("close") end
+	else
+		local col = math.ceil(numColumns / 2)
+		row[col]:createButton({ width = Helper.topLevelConfig.iconSize, height = Helper.topLevelConfig.iconSize - Helper.scaleX(10), bgColor = Color["button_background_hidden"], highlightColor = Color["button_highlight_hidden"] }):setText("\27[tlt_arrow_inv]", { color = Color["toplevel_arrow"], halign = "center", fontsize = Helper.scaleFont(Helper.standardFont, 18), x = 0, y = 2 })
+		row[col].handlers.onClick = function () return menu.onCloseElement("close") end
+	end
+
 	-- icons
 	local row = ftable:addRow(true, { fixed = true, borderBelow = false, bgColor = Helper.topLevelConfig.bgColor })
 	local name = ffi.string(C.GetMappedInputName("INPUT_ACTION_WIDGET_TABSCROLL_LEFT"))
@@ -9384,17 +9231,18 @@ function Helper.createTopLevelTab(menu, id, frame, overrideText, locked, noretur
 		row[1]:createText(name, { scaling = true, fontsize = Helper.titleFontSize, y = (Helper.sidebarWidth - Helper.titleHeight) / 2, halign = "right" })
 	end
 	for i, menuEntry in ipairs(displayedMenus) do
-		local color = Helper.color.grey
+		local color = Color["icon_inactive"]
 		if Helper.topLevelConfig.scrolling then
 			if i == 3 then
-				color = Helper.color.white
+				color = Color["icon_normal"]
 			end
 		else
 			if menuEntry.index == currentIndex then
-				color = Helper.color.white
+				color = Color["icon_normal"]
 			end
 		end
-		row[i + countoffset]:createButton({ active = not locked, height = Helper.topLevelConfig.iconSize, bgColor = Helper.color.transparent, mouseOverText = menuEntry.data.name, helpOverlayID = menuEntry.data.helpOverlayID, helpOverlayText = menuEntry.data.helpOverlayText }):setIcon(menuEntry.data.icon, { color = color })
+		local shortcut = ffi.string(C.GetMappedInputName(menuEntry.data.shortcut))
+		row[i + countoffset]:createButton({ active = not locked, height = Helper.topLevelConfig.iconSize, bgColor = Color["toplevel_button_background"], mouseOverText = menuEntry.data.name .. ((shortcut ~= "") and (" - " .. shortcut) or ""), helpOverlayID = menuEntry.data.helpOverlayID, helpOverlayText = menuEntry.data.helpOverlayText }):setIcon(menuEntry.data.icon, { color = color })
 		if Helper.topLevelConfig.scrolling then
 			if i ~= 3 then
 				row[i + countoffset].handlers.onClick = function() return Helper.scrollTopLevelInternal(menu, currentIndex, i - 3, noreturn) end
@@ -9414,9 +9262,9 @@ function Helper.createTopLevelTab(menu, id, frame, overrideText, locked, noretur
 		row[numColumns]:createText(name, { scaling = true, fontsize = Helper.titleFontSize, y = (Helper.sidebarWidth - Helper.titleHeight) / 2 })
 	end
 	if Helper.topLevelConfig.scrolling then
-		row[2]:createButton({ height = Helper.topLevelConfig.iconSize, bgColor = Helper.color.transparent }):setIcon("table_arrow_inv_left")
+		row[2]:createButton({ height = Helper.topLevelConfig.iconSize, bgColor = Color["toplevel_button_background"] }):setIcon("table_arrow_inv_left")
 		row[2].handlers.onClick = function() return Helper.scrollTopLevelInternal(menu, currentIndex, -1) end
-		row[numColumns - 1]:createButton({ height = Helper.topLevelConfig.iconSize, bgColor = Helper.color.transparent }):setIcon("table_arrow_inv_right")
+		row[numColumns - 1]:createButton({ height = Helper.topLevelConfig.iconSize, bgColor = Color["toplevel_button_background"] }):setIcon("table_arrow_inv_right")
 		row[numColumns - 1].handlers.onClick = function() return Helper.scrollTopLevelInternal(menu, currentIndex, 1) end
 	end
 
@@ -9494,7 +9342,7 @@ end
 function Helper.playerInfoConfigTextLeft(_, width, ismultiverse)
 	local playername = ffi.string(C.GetPlayerName())
 	if Helper.isPlayerCovered() then
-		playername = Helper.convertColorToText(Helper.color.cover) .. GetFactionData(ffi.string(C.GetPlayerCoverFaction()), "name") .. " (" .. ReadText(1001, 11603) .. ")\27X"
+		playername = ColorText["player_cover"] .. GetFactionData(ffi.string(C.GetPlayerCoverFaction()), "name") .. " (" .. ReadText(1001, 11603) .. ")\27X"
 	end
 
 	local connectionStatus = ""
@@ -9508,7 +9356,7 @@ function Helper.playerInfoConfigTextLeft(_, width, ismultiverse)
 		return playername .. "\n" .. ReadText(1001, 11340) .. ReadText(1001, 120) .. "\n" .. ReadText(1001, 11325) .. ReadText(1001, 120)
 	else
 		local playermoney = ConvertMoneyString(GetPlayerMoney(), false, true, nil, true) .. " " .. ReadText(1001, 101)
-		local gametime = Helper.convertGameTimeToXTimeString(C.GetCurrentGameTime()) .. (C.IsSetaActive() and " \27G(" .. ReadText(1001, 3255) .. ")\27X" or "")
+		local gametime = Helper.convertGameTimeToXTimeString(C.GetCurrentGameTime()) .. (C.IsSetaActive() and " " .. ColorText["text_positive"] .. "(" .. ReadText(1001, 3255) .. ")\27X" or "")
 
 		return playername .. "\n" .. gametime .. "\n" .. playermoney
 	end
@@ -9518,9 +9366,9 @@ function Helper.playerInfoConfigTextRight(_, ismultiverse)
 	local connectionStatus = ""
 	if C.AreVenturesEnabled() then
 		if OnlineIsCurrentTeamValid() then
-			connectionStatus = (Helper.isOnlineGame() and OnlineHasSession()) and "\27[vt_connected]" or "\27O\27[vt_disconnected]\27X"
+			connectionStatus = (Helper.isOnlineGame() and OnlineHasSession()) and "\27[vt_connected]" or (ColorText["text_warning"] .. "\27[vt_disconnected]\27X")
 		else
-			connectionStatus = (Helper.isOnlineGame() and OnlineHasSession()) and (ReadText(1001, 11624) .. " \27[vt_connected]") or ("\27O" .. ReadText(1001, 11625) .. " \27[vt_disconnected]\27X")
+			connectionStatus = (Helper.isOnlineGame() and OnlineHasSession()) and (ReadText(1001, 11624) .. " \27[vt_connected]") or (ColorText["text_warning"] .. ReadText(1001, 11625) .. " \27[vt_disconnected]\27X")
 		end
 	end
 
@@ -9565,9 +9413,9 @@ function Helper.playerInfoConfigTextRight(_, ismultiverse)
 end
 
 function Helper.getPlayerLogoColor()
-	local color = Helper.color.white
+	local color = Color["icon_normal"]
 	if Helper.isPlayerCovered() then
-		color = Helper.color.cover
+		color = Color["player_cover"]
 	end
 	return color
 end
@@ -9599,10 +9447,10 @@ function Helper.createScriptValueWrapper(type, value)
 end
 
 Helper.equipmentCompatibilities = {
-	[1] = { tag = "standard",		color = { r = 255, g = 255, b = 255, a = 100 } },
-	[2] = { tag = "missile",		color = { r = 129, g = 214, b = 139, a = 100 } },
-	[3] = { tag = "mining",			color = { r = 52,  g = 129, b = 187, a = 100 } },
-	[4] = { tag = "highpower",		color = { r = 214, g = 129, b = 187, a = 100 } },
+	[1] = { tag = "standard",		color = Color["equipment_comp_standard"] },
+	[2] = { tag = "missile",		color = Color["equipment_comp_missile"] },
+	[3] = { tag = "mining",			color = Color["equipment_comp_mining"] },
+	[4] = { tag = "highpower",		color = Color["equipment_comp_highpower"] },
 	[5] = { tag = "venture",		color = { r = 196, g = 147, b = 84,  a = 100 } },
 	[6] = { tag = "boron",			color = { r = 84,  g = 196, b = 188, a = 100 } },
 }
@@ -9934,27 +9782,27 @@ function Helper.createTransactionLog(frame, container, tableProperties, refreshC
 	table_data:setColWidth(8, Helper.standardTextHeight)
 	table_data:setColWidth(9, Helper.standardTextHeight)
 
-	local row = table_data:addRow(nil, { fixed = true, bgColor = Helper.defaultTitleBackgroundColor })
+	local row = table_data:addRow(nil, { fixed = true, bgColor = Color["row_title_background"] })
 	row[1]:setColSpan(9):createText(ReadText(1001, 7702), Helper.titleTextProperties)
 
-	local row = table_data:addRow("search", { fixed = true })
+	local row = table_data:addRow("search", { fixed = true, bgColor = Color["row_background_blue"] })
 	-- searchbar
 	row[1]:setColSpan(2):createEditBox({ description = ReadText(1001, 7740), defaultText = ReadText(1001, 3250), height = Helper.subHeaderHeight }):setText(Helper.transactionLogData.searchtext, { halign = "left", x = Helper.standardTextOffsetx }):setHotkey("INPUT_STATE_DETAILMONITOR_0", { displayIcon = true })
 	row[1].handlers.onEditBoxDeactivated = function (_, text) if text ~= Helper.transactionLogData.searchtext then Helper.transactionLogData.searchtext = text; Helper.transactionLogData.noupdate = nil; refreshCallback() end end
 	-- clear search
 	local buttonheight = math.max(Helper.editboxMinHeight, Helper.scaleY(Helper.subHeaderHeight))
-	row[3]:createButton({ scaling = false, width = buttonsize, height = buttonheight, cellBGColor = Helper.color.transparent }):setText("X", { halign = "center", font = Helper.standardFontBold })
+	row[3]:createButton({ scaling = false, width = buttonsize, height = buttonheight, cellBGColor = Color["row_background"] }):setText("X", { halign = "center", font = Helper.standardFontBold })
 	row[3].handlers.onClick = function () Helper.transactionLogData.searchtext = ""; refreshCallback() end
 	-- pages
-	row[4]:createButton({ scaling = false, active = Helper.transactionLogData.curPage > 1, width = buttonsize, height = buttonheight, cellBGColor = Helper.color.transparent }):setIcon("widget_arrow_skip_left_01", { width = buttonsize, height = buttonsize, y = (row:getHeight() - buttonsize) / 2 })
+	row[4]:createButton({ scaling = false, active = Helper.transactionLogData.curPage > 1, width = buttonsize, height = buttonheight, cellBGColor = Color["row_background"] }):setIcon("widget_arrow_skip_left_01", { width = buttonsize, height = buttonsize, y = (row:getHeight() - buttonsize) / 2 })
 	row[4].handlers.onClick = function () Helper.transactionLogData.curEntry = nil; Helper.transactionLogData.curPage = 1; refreshCallback() end
-	row[5]:createButton({ scaling = false, active = Helper.transactionLogData.curPage > 1, width = buttonsize, height = buttonheight, cellBGColor = Helper.color.transparent }):setIcon("widget_arrow_left_01", { width = buttonsize, height = buttonsize, y = (row:getHeight() - buttonsize) / 2 })
+	row[5]:createButton({ scaling = false, active = Helper.transactionLogData.curPage > 1, width = buttonsize, height = buttonheight, cellBGColor = Color["row_background"] }):setIcon("widget_arrow_left_01", { width = buttonsize, height = buttonsize, y = (row:getHeight() - buttonsize) / 2 })
 	row[5].handlers.onClick = function () Helper.transactionLogData.curEntry = nil; Helper.transactionLogData.curPage = Helper.transactionLogData.curPage - 1; refreshCallback() end
 	Helper.transactionLogData.pageEditBox = row[6]:setColSpan(2):createEditBox({ description = ReadText(1001, 7739) }):setText(Helper.transactionLogData.curPage .. " / " .. Helper.transactionLogData.numPages, { halign = "center" })
 	row[6].handlers.onEditBoxDeactivated = function (_, text, textchanged) Helper.transactionLogData.noupdate = nil; return Helper.editboxTransactionLogPage(text, textchanged, refreshCallback) end
-	row[8]:createButton({ scaling = false, active = Helper.transactionLogData.curPage < Helper.transactionLogData.numPages, width = buttonsize, height = buttonheight, cellBGColor = Helper.color.transparent }):setIcon("widget_arrow_right_01", { width = buttonsize, height = buttonsize, y = (row:getHeight() - buttonsize) / 2 })
+	row[8]:createButton({ scaling = false, active = Helper.transactionLogData.curPage < Helper.transactionLogData.numPages, width = buttonsize, height = buttonheight, cellBGColor = Color["row_background"] }):setIcon("widget_arrow_right_01", { width = buttonsize, height = buttonsize, y = (row:getHeight() - buttonsize) / 2 })
 	row[8].handlers.onClick = function () Helper.transactionLogData.curEntry = nil; Helper.transactionLogData.curPage = Helper.transactionLogData.curPage + 1; refreshCallback() end
-	row[9]:createButton({ scaling = false, active = Helper.transactionLogData.curPage < Helper.transactionLogData.numPages, width = buttonsize, height = buttonheight, cellBGColor = Helper.color.transparent }):setIcon("widget_arrow_skip_right_01", { width = buttonsize, height = buttonsize, y = (row:getHeight() - buttonsize) / 2 })
+	row[9]:createButton({ scaling = false, active = Helper.transactionLogData.curPage < Helper.transactionLogData.numPages, width = buttonsize, height = buttonheight, cellBGColor = Color["row_background"] }):setIcon("widget_arrow_skip_right_01", { width = buttonsize, height = buttonsize, y = (row:getHeight() - buttonsize) / 2 })
 	row[9].handlers.onClick = function () Helper.transactionLogData.curEntry = nil; Helper.transactionLogData.curPage = Helper.transactionLogData.numPages; refreshCallback() end
 
 	local headerHeight = table_data:getFullHeight()
@@ -9963,7 +9811,7 @@ function Helper.createTransactionLog(frame, container, tableProperties, refreshC
 		local total = 0
 		for i = startIndex, endIndex, -1 do
 			local entry = Helper.transactionLogData.accountLog[i]
-			local row = table_data:addRow(entry.entryid, { bgColor = Helper.color.transparent })
+			local row = table_data:addRow(entry.entryid, {  })
 			if Helper.transactionLogData.curEntry == entry.entryid then
 				local numLines = (table_data.properties.maxVisibleHeight - headerHeight) / (Helper.scaleY(Helper.standardTextHeight) + Helper.borderSize)
 				if selectionData.toprow and ((selectionData.toprow > row.index - numLines) and (selectionData.toprow < row.index + numLines + 1)) then
@@ -9978,20 +9826,20 @@ function Helper.createTransactionLog(frame, container, tableProperties, refreshC
 				row[1]:createButton({ height = Helper.standardTextHeight }):setText(function() return Helper.transactionLogData.expandedEntries[entry.entryid] and "-" or "+" end, { halign = "center" })
 				row[1].handlers.onClick = function() return Helper.buttonExpandTransactionEntry(entry.entryid, row.index, refreshCallback) end
 			end
-			row[2]:createText(((entry.partnername ~= "") and (entry.partnername .. " - ") or "") .. entry.eventtypename, { color = entry.destroyedpartner and Helper.color.grey or nil, mouseOverText = entry.destroyedpartner and ReadText(1026, 5701) or "" })
+			row[2]:createText(((entry.partnername ~= "") and (entry.partnername .. " - ") or "") .. entry.eventtypename, { color = entry.destroyedpartner and Color["text_inactive"] or nil, mouseOverText = entry.destroyedpartner and ReadText(1026, 5701) or "" })
 			row[3]:setColSpan(4):createText(Helper.getPassedTime(entry.time), { halign = "right" })
-			row[7]:setColSpan(3):createText(((entry.money > 0) and "+" or "") .. ConvertMoneyString(entry.money, false, true, 0, true) .. " " .. ReadText(1001, 101), { halign = "right", color = (entry.money > 0) and Helper.color.green or Helper.color.red })
+			row[7]:setColSpan(3):createText(((entry.money > 0) and "+" or "") .. ConvertMoneyString(entry.money, false, true, 0, true) .. " " .. ReadText(1001, 101), { halign = "right", color = (entry.money > 0) and Color["text_positive"] or Color["text_negative"] })
 			total = total + entry.money
 			if Helper.transactionLogData.expandedEntries[entry.entryid] then
-				local row = table_data:addRow(nil, { bgColor = Helper.color.unselectable })
-				row[1].properties.cellBGColor = Helper.color.transparent
-				row[2]:setColSpan(8):createText(entry.description, { x = Helper.standardTextHeight, wordwrap = true, color = entry.destroyedpartner and Helper.color.grey or nil })
+				local row = table_data:addRow(nil, { bgColor = Color["row_background_unselectable"] })
+				row[1].properties.cellBGColor = Color["row_background"]
+				row[2]:setColSpan(8):createText(entry.description, { x = Helper.standardTextHeight, wordwrap = true, color = entry.destroyedpartner and Color["text_inactive"] or nil })
 			end
 		end
 
 		if Helper.transactionLogData.xZoom < #Helper.transactionLogConfig.zoomSteps then
-			local row = table_data:addRow("showmore", { bgColor = Helper.color.transparent })
-			row[1]:setColSpan(9):createButton({ bgColor = Helper.color.transparent }):setText(ReadText(1001, 7778), { halign = "center" })
+			local row = table_data:addRow("showmore", {  })
+			row[1]:setColSpan(9):createButton({ bgColor = Color["button_background_hidden"] }):setText(ReadText(1001, 7778), { halign = "center" })
 			if endIndex == 1 then
 				row[1].handlers.onClick = function () return Helper.buttonTransactionLogZoom(1, refreshCallback) end
 			else
@@ -10004,12 +9852,12 @@ function Helper.createTransactionLog(frame, container, tableProperties, refreshC
 
 		table_total:addEmptyRow()
 
-		local row = table_total:addRow(nil, { bgColor = Helper.color.lightgrey })
+		local row = table_total:addRow(nil, { bgColor = Color["row_separator"] })
 		row[1]:setColSpan(2):createText("", { fontsize = 1, minRowHeight = 2 })
 
-		local row = table_total:addRow(nil, { bgColor = Helper.color.transparent })
+		local row = table_total:addRow(nil, {  })
 		row[1]:createText(ReadText(1001, 7776) .. ReadText(1001, 120))
-		row[2]:createText(((total > 0) and "+" or "") .. ConvertMoneyString(total, false, true, 0, true) .. " " .. ReadText(1001, 101), { halign = "right", color = (total > 0) and Helper.color.green or Helper.color.red })
+		row[2]:createText(((total > 0) and "+" or "") .. ConvertMoneyString(total, false, true, 0, true) .. " " .. ReadText(1001, 101), { halign = "right", color = (total > 0) and Color["text_positive"] or Color["text_negative"] })
 
 		local maxVisibleHeight = table_data.properties.maxVisibleHeight - table_total:getFullHeight() - Helper.frameBorder
 		table_total.properties.y = table_total.properties.y + math.min(maxVisibleHeight, table_data:getFullHeight())
@@ -10018,12 +9866,12 @@ function Helper.createTransactionLog(frame, container, tableProperties, refreshC
 		table_data:addConnection(1, 2, true)
 		table_total:addConnection(2, 2)
 	else
-		local row = table_data:addRow("none", { bgColor = Helper.color.transparent })
+		local row = table_data:addRow("none", {  })
 		row[1]:setColSpan(9):createText("--- " .. ReadText(1001, 5705) .. " ---", { halign = "center" })
 
 		if Helper.transactionLogData.xZoom < #Helper.transactionLogConfig.zoomSteps then
-			local row = table_data:addRow("showmore", { bgColor = Helper.color.transparent })
-			row[1]:setColSpan(9):createButton({ bgColor = Helper.color.transparent }):setText(ReadText(1001, 7778), { halign = "center" })
+			local row = table_data:addRow("showmore", {  })
+			row[1]:setColSpan(9):createButton({ bgColor = Color["button_background_hidden"] }):setText(ReadText(1001, 7778), { halign = "center" })
 			row[1].handlers.onClick = function () return Helper.buttonTransactionLogZoom(1, refreshCallback) end
 		end
 
@@ -10038,24 +9886,33 @@ function Helper.createTransactionLog(frame, container, tableProperties, refreshC
 	-- graph table
 	local xoffset = tableProperties.x + tableProperties.width + Helper.borderSize + Helper.frameBorder
 	local width = Helper.viewWidth - xoffset - tableProperties.x2
-
-	-- kuertee start: ensure graph is only half viewHeight so that trade analytics can fit
-	-- local height = math.min(Helper.viewHeight - tableProperties.y - Helper.frameBorder - Helper.scaleY(Helper.standardTextHeight) - Helper.borderSize, math.floor(width * 9 / 16))
-	-- local table_graph = frame:addTable(4, { tabOrder = 3, width = width, x = xoffset, y = tableProperties.y })
-	local height = Helper.viewHeight * 0.5 - tableProperties.y - Helper.frameBorder - Helper.scaleY(Helper.standardTextHeight) - Helper.borderSize
-	local table_graph = frame:addTable(4, { tabOrder = 3, width = width, height = height, x = xoffset, y = tableProperties.y })
-	-- kuertee end: ensure graph is only half viewHeight so that trade analytics can fit
-
+	local height = math.min(Helper.viewHeight - tableProperties.y - Helper.frameBorder - Helper.scaleY(Helper.standardTextHeight) - Helper.borderSize, math.floor(width * 9 / 16))
+	local table_graph = frame:addTable(4, { tabOrder = 3, width = width, x = xoffset, y = tableProperties.y })
 	table_graph:setColWidthPercent(2, 15)
 	table_graph:setColWidthPercent(3, 15)
 
 	-- graph cell
-	local row = table_graph:addRow(false, { fixed = true, bgColor = Helper.color.transparent })
+	local row = table_graph:addRow(false, { fixed = true })
+
+	-- graph
+	local title = ffi.string(C.GetComponentName(container))
+	if container ~= C.GetPlayerID() then
+		title = title .. " (" .. ffi.string(C.GetObjectIDCode(container)) .. ")"
+	end
+	Helper.transactionLogData.graph = row[1]:setColSpan(4):createGraph({ height = height, scaling = false }):setTitle(title, { font = Helper.titleFont, fontsize = Helper.scaleFont(Helper.titleFont, Helper.titleFontSize) })
+	row[1].handlers.onClick = function (_, data) return Helper.graphDataSelection(data, refreshCallback) end
 
 	local minY, maxY = 0, 1
-	local datarecords = {}
 
-	local data = {}
+	local datarecord = Helper.transactionLogData.graph:addDataRecord({
+		markertype = Helper.transactionLogConfig.point.type,
+		markersize = Helper.transactionLogConfig.point.size,
+		markercolor = Color["transactionlog_graph_data"],
+		linetype = Helper.transactionLogConfig.line.type,
+		linewidth = Helper.transactionLogConfig.line.size,
+		linecolor = Color["transactionlog_graph_data"],
+	})
+
 	local firstNonZeroY = true
 	for i, point in pairs(Helper.transactionLogData.graphdata) do
 		if (point.y > 0) or (minY > 0) then
@@ -10093,10 +9950,8 @@ function Helper.createTransactionLog(frame, container, tableProperties, refreshC
 				end
 			end
 		end
-		table.insert(data, Helper.createGraphDataPoint((point.t - endtime) / Helper.transactionLogData.xScale, point.y, nil, nil, inactive))
+		datarecord:addData((point.t - endtime) / Helper.transactionLogData.xScale, point.y, nil, inactive)
 	end
-
-	table.insert(datarecords, Helper.createGraphDataRecord(Helper.transactionLogConfig.point.type, Helper.transactionLogConfig.point.size, Helper.color.brightyellow, Helper.transactionLogConfig.line.type, Helper.transactionLogConfig.line.size, Helper.color.brightyellow, data, false))
 
 	local mingranularity = (maxY - minY) / 12
 	local maxgranularity = (maxY - minY) / 8
@@ -10122,19 +9977,13 @@ function Helper.createTransactionLog(frame, container, tableProperties, refreshC
 	local xOffset = xRange % xGranularity
 	local yOffset = (math.ceil(minY / granularity) * granularity) - minY		-- offset is distance from minY to next multiple of granularity (value of first Y axis label)
 
-	local xaxis = Helper.createGraphAxis(Helper.createGraphText(Helper.transactionLogData.xTitle, Helper.standardFont, 9, Helper.color.white), -xRange, 0, xGranularity, xOffset, true, Helper.color.white, { r = 96, g = 96, b = 96, a = 80 })
-	local yaxis = Helper.createGraphAxis(Helper.createGraphText(ReadText(1001, 7773) .. " [" .. ReadText(1001, 101) .. "]", Helper.standardFont, 9, Helper.color.white), minY, maxY, granularity, yOffset, true, Helper.color.white, { r = 96, g = 96, b = 96, a = 80 })
-
-	-- graph
-	local title = ffi.string(C.GetComponentName(container))
-	if container ~= C.GetPlayerID() then
-		title = title .. " (" .. ffi.string(C.GetObjectIDCode(container)) .. ")"
-	end
-	Helper.transactionLogData.graph = row[1]:setColSpan(4):createGraph("line", true, Helper.color.semitransparent, { text = title, font = Helper.titleFont, size = Helper.scaleFont(Helper.titleFont, Helper.titleFontSize), color = Helper.color.white }, xaxis, yaxis, datarecords, 0, 0, nil, height)
-	row[1].handlers.onClick = function (_, data) return Helper.graphDataSelection(data, refreshCallback) end
+	Helper.transactionLogData.graph:setXAxis({ startvalue = -xRange, endvalue = 0, granularity = xGranularity, offset = xOffset, gridcolor = Color["graph_grid"] })
+	Helper.transactionLogData.graph:setXAxisLabel(Helper.transactionLogData.xTitle, { fontsize = 9 })
+	Helper.transactionLogData.graph:setYAxis({ startvalue = minY, endvalue = maxY, granularity = granularity, offset = yOffset, gridcolor = Color["graph_grid"] })
+	Helper.transactionLogData.graph:setYAxisLabel(ReadText(1001, 7773) .. " [" .. ReadText(1001, 101) .. "]", { fontsize = 9 })
 
 	-- zoom
-	local row = table_graph:addRow(true, { fixed = true, bgColor = Helper.color.transparent })
+	local row = table_graph:addRow(true, { fixed = true })
 	row[2]:createButton({ active = Helper.transactionLogData.xZoom > 1 }):setText(ReadText(1001, 7777), { halign = "center" })
 	row[2].handlers.onClick = function () return Helper.buttonTransactionLogZoom(-1, refreshCallback) end
 	row[3]:createButton({ active = Helper.transactionLogData.xZoom < #Helper.transactionLogConfig.zoomSteps }):setText(ReadText(1001, 7778), { halign = "center" })
@@ -10168,7 +10017,7 @@ function Helper.updateVenturePlatforms()
 			local missioninfo
 			if isbusy then
 				local info = C.GetCurrentVentureInfo(platform)
-				missioninfo = { name = ffi.string(info.name), remainingtime = tonumber(info.remainingtime) }
+				missioninfo = { name = ffi.string(info.name), remainingtime = tonumber(info.remainingtime), rawname = ffi.string(info.rawname) }
 				local n = info.numships
 				local buf = ffi.new("UniverseID[?]", n)
 				n = C.GetCurrentVentureShips(buf, n, platform)
@@ -10189,8 +10038,12 @@ function Helper.updateVenturePlatforms()
 				end
 			end
 
-			table.insert(Helper.ventureplatforms, { id = platform, stationid = station64, docks = docks, ships = ships, errors = {}, isbusy = isbusy, missioninfo = missioninfo })
+			local stationname = ffi.string(C.GetComponentName(station64)) .. " (" .. ffi.string(C.GetObjectIDCode(station64)) .. ")"
+			local platformname = ffi.string(C.GetComponentName(platform))
+
+			table.insert(Helper.ventureplatforms, { id = platform, stationid = station64, stationname = stationname, platformname = platformname, docks = docks, ships = ships, errors = {}, isbusy = isbusy, missioninfo = missioninfo })
 		end
+		table.sort(Helper.ventureplatforms, function (a, b) return (a.stationname .. a.platformname) < (b.stationname .. b.platformname) end)
 	end
 end
 
@@ -10363,6 +10216,12 @@ function Helper.ventureSeasonTimeLeftText()
 	return seasontimestring
 end
 
+function Helper.ventureEndTimeLeftText(endtime)
+	local curtime = C.GetCurrentUTCDataTime()
+	local timeleft = tonumber(endtime - curtime)
+	return Helper.ventureTimeLeft((timeleft > 0) and timeleft or 0)
+end
+
 Helper.rightSideBar = {
 	{ name = ReadText(1001, 7902), icon = "mapst_plotmanagement",			mode = "construction", 				helpOverlayID = "mapst_plotmanagement",			helpOverlayText = ReadText(1028, 3261) },
 	{ name = ReadText(1001, 7903), icon = "stationbuildst_lsov",			mode = "logical",					helpOverlayID = "stationbuildst_lsov",			helpOverlayText = ReadText(1028, 3260) },
@@ -10404,16 +10263,16 @@ function Helper.createRightSideBar(frame, container, condition, currentmode, cal
 		end
 
 		if display then
-			local row = ftable:addRow(true, { fixed = true })
+			local row = ftable:addRow(true, { fixed = true, bgColor = Color["row_background_blue"] })
 
 			local active = (entry.active == nil) or entry.active
 			if (entry.mode == "construction") or (entry.mode == "transactions") then
 				active = active and isplayerowned and condition
 			end
 
-			local bgcolor = Helper.defaultTitleBackgroundColor
+			local bgcolor = Color["row_title_background"]
 			if entry.mode == currentmode then
-				bgcolor = Helper.defaultArrowRowBackgroundColor
+				bgcolor = Color["row_background_selected"]
 			end
 			row[1]:createButton({ active = active, height = sidebarWidth, mouseOverText = entry.name, bgColor = bgcolor, helpOverlayID = entry.helpOverlayID, helpOverlayText = entry.helpOverlayText }):setIcon(entry.icon)
 			row[1].handlers.onClick = function () return Helper.buttonRightBar(container, currentmode, callback, selfcallback, entry.mode, row.index) end
@@ -10535,7 +10394,7 @@ function Helper.updateTradeRules()
 	for _, traderule in ipairs(traderules) do
 		local mouseovertext = (traderule.iswhitelist and ReadText(1001, 11027) or ReadText(1001, 11026)) .. ReadText(1001, 120)
 		for _, faction in ipairs(traderule.factions) do
-			mouseovertext = mouseovertext .. "\n· " .. ((faction == "player") and Helper.convertColorToText(Helper.color.green) or "") .. GetFactionData(faction, "name") .. "\27X"
+			mouseovertext = mouseovertext .. "\n· " .. ((faction == "player") and ColorText["text_player"] or "") .. GetFactionData(faction, "name") .. "\27X"
 		end
 		table.insert(Helper.traderuleOptions, { id = traderule.id, text = traderule.name, icon = "", displayremoveoption = false, mouseovertext = mouseovertext })
 	end
@@ -10613,8 +10472,8 @@ function Helper.createLSOStorageNode(menu, container, ware, planned, hasstorage,
 			expandHandler = function (...) return Helper.onExpandLSOStorageNode(menu, container, ...) end,
 			collapseHandler = function (...) return Helper.onCollapseLSOStorageNode(menu, ...) end,
 			sliderHandler = function (...) return Helper.onSliderChangedLSOStorageNode(container, ...) end,
-			color = (not hasstorage) and Helper.color.grey or nil,
-			statuscolor = (not iscargo) and ((not hasstorage) and Helper.color.red or (hasrestrictions and Helper.color.warningorange or nil) or nil),
+			color = (not hasstorage) and Color["lso_node_inactive"] or nil,
+			statuscolor = (not iscargo) and ((not hasstorage) and Color["icon_error"] or (hasrestrictions and Color["icon_warning"] or nil) or nil),
 			statusIcon = (not iscargo) and ((not hasstorage) and "lso_warning" or (hasrestrictions and "lso_error" or nil) or nil),
 		}
 	}
@@ -10624,38 +10483,38 @@ end
 function Helper.updateLSOStorageNode(menu, node, container, ware)
 	local hasrestrictions = Helper.isTradeRestricted(container, ware)
 	local hasstorage = node.customdata.nodedata.hasstorage
-	local edgecolor = Helper.color.white
+	local edgecolor = Color["flowchart_edge_default"]
 	
 	local statusicon = hasrestrictions and "lso_error" or nil
-	local statusiconmouseovertext = hasrestrictions and (Helper.convertColorToText(Helper.color.warningorange) .. ReadText(1026, 8404)) or ""
-	local statuscolor = hasrestrictions and Helper.color.warningorange or nil
+	local statusiconmouseovertext = hasrestrictions and (ColorText["text_warning"] .. ReadText(1026, 8404)) or ""
+	local statuscolor = hasrestrictions and Color["icon_warning"] or nil
 
 	if not hasstorage then
 		statusicon = "lso_warning"
-		statuscolor = Helper.color.red
-		statusiconmouseovertext = Helper.convertColorToText(Helper.color.red) .. ReadText(1001, 8416)
+		statuscolor = Color["icon_error"]
+		statusiconmouseovertext = ColorText["text_error"] .. ReadText(1001, 8416)
 	elseif menu.resourcesmissing[ware] then
 		statusicon = "lso_warning"
-		statuscolor = Helper.color.red
-		statusiconmouseovertext = Helper.convertColorToText(Helper.color.red) .. ReadText(1001, 8437)
+		statuscolor = Color["icon_error"]
+		statusiconmouseovertext = ColorText["text_error"] .. ReadText(1001, 8437)
 	elseif menu.storagemissing[ware] then
 		statusicon = "lso_warning"
-		statuscolor = Helper.color.red
-		statusiconmouseovertext = Helper.convertColorToText(Helper.color.red) .. ReadText(1001, 8438)
+		statuscolor = Color["icon_error"]
+		statusiconmouseovertext = ColorText["text_error"] .. ReadText(1001, 8438)
 	end
 
 	if not statusicon then
 		if C.IsComponentClass(container, "container") then
 			if HasContainerStockLimitOverride(container, ware) then
 				statusicon = "lso_override"
-				statuscolor = Helper.defaultFlowchartOutlineColor
+				statuscolor = Color["flowchart_node_default"]
 				statusiconmouseovertext = ReadText(1026, 8410)
 
 				local currentlimit = GetWareProductionLimit(container, ware)
 				local defaultlimit = C.GetContainerWareMaxProductionStorageForTime(container, ware, 7200, true)
 				if currentlimit < defaultlimit then
-					statuscolor = Helper.color.warningorange
-					statusiconmouseovertext = Helper.convertColorToText(Helper.color.warningorange) .. ReadText(1001, 8467)
+					statuscolor = Color["icon_warning"]
+					statusiconmouseovertext = ColorText["text_warning"] .. ReadText(1001, 8467)
 				end
 			end
 		end
@@ -10667,7 +10526,7 @@ function Helper.updateLSOStorageNode(menu, node, container, ware)
 	end
 
 	if menu.storagemissing[ware] then
-		edgecolor = Helper.color.red
+		edgecolor = Color["lso_node_error"]
 	end
 
 	local storageinfo_amounts = C.IsInfoUnlockedForPlayer(container, "storage_amounts")
@@ -10803,16 +10662,16 @@ function Helper.onExpandLSOStorageNode(menu, container, _, ftable, _, nodedata)
 			local shown = false
 			if menu.resourcesmissing[nodedata.ware] then
 				shown = true
-				row = ftable:addRow(nil, { bgColor = Helper.color.transparent })
-				row[1]:setColSpan(3):createText(ReadText(1001, 8437), { color = Helper.color.red })
+				row = ftable:addRow(nil, {  })
+				row[1]:setColSpan(3):createText(ReadText(1001, 8437), { color = Color["text_error"] })
 			end
 			if menu.storagemissing[nodedata.ware] then
 				shown = true
-				row = ftable:addRow(nil, { bgColor = Helper.color.transparent })
-				row[1]:setColSpan(3):createText(ReadText(1001, 8438), { color = Helper.color.red })
+				row = ftable:addRow(nil, {  })
+				row[1]:setColSpan(3):createText(ReadText(1001, 8438), { color = Color["text_error"] })
 			end
 			if shown then
-				row = ftable:addRow(nil, { bgColor = Helper.color.transparent })
+				row = ftable:addRow(nil, {  })
 				row[1]:setColSpan(3):createText("")
 			end
 		end
@@ -10821,36 +10680,36 @@ function Helper.onExpandLSOStorageNode(menu, container, _, ftable, _, nodedata)
 	local limitslider
 	if isprocessed then
 		-- resource buffer
-		row = ftable:addRow(nil, { bgColor = Helper.color.transparent })
+		row = ftable:addRow(nil, {  })
 		row[1]:createText(ReadText(1001, 2415) .. ReadText(1001, 120))
 		row[2]:setColSpan(2):createText(ReadText(20206, 1301), { halign = "right" })
 		-- amount
-		row = ftable:addRow(nil, { bgColor = Helper.color.transparent })
+		row = ftable:addRow(nil, {  })
 		row[1]:createText(ReadText(1001, 6521) .. ReadText(1001, 120))
 		row[2]:setColSpan(2):createText(function () return Helper.getResourceBufferAmount(container, nodedata.ware, storageinfo_amounts) end, { halign = "right" })
 	else
 		-- storage
-		row = ftable:addRow(nil, { bgColor = Helper.color.transparent })
+		row = ftable:addRow(nil, {  })
 		row[1]:createText(ReadText(1001, 2415) .. ReadText(1001, 120))
 		row[2]:setColSpan(2):createText(storagename, { halign = "right" })
 		-- missing storage type
 		if not nodedata.hasstorage then
-			row = ftable:addRow(nil, { bgColor = Helper.color.transparent })
-			row[1]:setColSpan(3):createText(ReadText(1001, 8416), { color = Helper.color.red, wordwrap = true })
+			row = ftable:addRow(nil, {  })
+			row[1]:setColSpan(3):createText(ReadText(1001, 8416), { color = Color["text_error"], wordwrap = true })
 		end
 		if C.IsComponentClass(container, "container") then
 			if not isprocessed then
 				-- amount
-				row = ftable:addRow(nil, { bgColor = Helper.color.transparent })
+				row = ftable:addRow(nil, {  })
 				row[1]:createText(ReadText(1001, 6521) .. ReadText(1001, 120))
 				row[2]:setColSpan(2):createText(function () return Helper.getStorageAmount(container, nodedata, storageinfo_amounts, storageinfo_capacity) end, { halign = "right", mouseOverText = function () return Helper.getStorageAmount(container, nodedata, storageinfo_amounts, storageinfo_capacity, 0, true) end })
-		
+
 				ftable:addEmptyRow(Helper.standardTextHeight / 2)
 
-				row = ftable:addRow(nil, { bgColor = Helper.color.transparent })
+				row = ftable:addRow(nil, {  })
 				row[1]:createText(ReadText(1001, 1600) .. " / " .. ReadText(1001, 102) .. ReadText(1001, 120))
 				row[2]:setColSpan(2):createText(function () local production = C.GetContainerWareProduction(container, nodedata.ware, false); return Helper.unlockInfo(storageinfo_amounts, (production > 0) and ConvertIntegerString(production, true, 3, true, true) or "-") end, { halign = "right" })
-				row = ftable:addRow(nil, { bgColor = Helper.color.transparent })
+				row = ftable:addRow(nil, {  })
 				row[1]:createText(ReadText(1001, 1609) .. " / " .. ReadText(1001, 102) .. ReadText(1001, 120))
 				row[2]:setColSpan(2):createText(function () local consumption = C.GetContainerWareConsumption(container, nodedata.ware, false) + Helper.getWorkforceConsumption(container, nodedata.ware); return Helper.unlockInfo(storageinfo_amounts, (consumption > 0) and ConvertIntegerString(consumption, true, 3, true, true) or "-") end, { halign = "right" })
 				ftable:addEmptyRow(Helper.standardTextHeight / 2)
@@ -10875,9 +10734,9 @@ function Helper.onExpandLSOStorageNode(menu, container, _, ftable, _, nodedata)
 							end
 						end
 
-						row = ftable:addRow(nil, { bgColor = Helper.color.transparent })
+						row = ftable:addRow(nil, {  })
 						row[1]:setColSpan(3):createText(ReadText(1001, 8444) .. ReadText(1001, 120), { mouseOverText = ReadText(1026, 8403) })
-						row = ftable:addRow(nil, { bgColor = Helper.color.transparent })
+						row = ftable:addRow(nil, {  })
 						row[1]:createText(name)
 						row[2]:setColSpan(2):createText(
 							function()
@@ -10893,11 +10752,11 @@ function Helper.onExpandLSOStorageNode(menu, container, _, ftable, _, nodedata)
 									end
 								end
 								local available = math.max(0, capacity - total)
-								local color = Helper.color.white
+								local color = Color["text_normal"]
 								if available == 0 then
-									color = Helper.color.red
+									color = Color["text_error"]
 								elseif available < 0.1 * capacity then
-									color = Helper.color.warningorange
+									color = Color["text_warning"]
 								end
 								return Helper.unlockInfo(storageinfo_amounts, Helper.convertColorToText(color) .. ConvertIntegerString(available, true, 3, true, true) .. " " .. ReadText(1001, 110))
 							end,
@@ -10905,7 +10764,7 @@ function Helper.onExpandLSOStorageNode(menu, container, _, ftable, _, nodedata)
 						)
 					end
 					-- automatic storage level
-					local row = ftable:addRow("autostoragecheckbox", { bgColor = Helper.color.transparent })
+					local row = ftable:addRow("autostoragecheckbox", {  })
 					if menu.selectedRowData["nodeTable"] == "autostoragecheckbox" then
 						menu.selectedRows["nodeTable"] = row.index
 						menu.selectedRowData["nodeTable"] = nil
@@ -10915,7 +10774,7 @@ function Helper.onExpandLSOStorageNode(menu, container, _, ftable, _, nodedata)
 					row[3].handlers.onClick = function (_, checked) return Helper.checkboxStorageLevelOverride(menu, container, nodedata.ware, row.index, currentlimit, checked) end
 					if haslimitoverride then
 						-- price
-						local row = ftable:addRow("autostorageslider", { bgColor = Helper.color.transparent })
+						local row = ftable:addRow("autostorageslider", {  })
 						if menu.selectedRowData["nodeTable"] == "autostorageslider" then
 							menu.selectedRows["nodeTable"] = row.index
 							menu.selectedRowData["nodeTable"] = nil
@@ -10923,13 +10782,15 @@ function Helper.onExpandLSOStorageNode(menu, container, _, ftable, _, nodedata)
 						local max = GetWareCapacity(container, nodedata.ware)
 						limitslider = row[1]:setColSpan(3):createSliderCell({
 							height = Helper.standardTextHeight,
-							valueColor = haslimitoverride and Helper.defaultSliderCellValueColor or Helper.color.grey,
+							bgColor = haslimitoverride and Color["slider_background_default"] or Color["slider_background_inactive"],
+							valueColor = haslimitoverride and Color["slider_value"] or Color["slider_value_inactive"],
 							min = 0,
 							minSelect = 1,
 							max = max,
 							start = math.max(1, math.min(max, currentlimit)),
 							hideMaxValue = true,
 							readOnly = not haslimitoverride,
+							forceArrows = true,
 						})
 					end
 				end
@@ -10947,12 +10808,12 @@ function Helper.onExpandLSOStorageNode(menu, container, _, ftable, _, nodedata)
 			local currentlimit = C.GetContainerBuyLimit(container, nodedata.ware)
 			local haslimitoverride = C.HasContainerBuyLimitOverride(container, nodedata.ware)
 			-- title
-			row = ftable:addRow(nil, { bgColor = Helper.color.transparent })
+			row = ftable:addRow(nil, {  })
 			row[1]:setColSpan(3):createText(ReadText(1001, 8309), Helper.subHeaderTextProperties)
 			row[1].properties.halign = "center"
 			if (waretype == "resource") or (waretype == "intermediate") or istradewarebought or haslimitoverride then
 				-- automatic buy limit
-				local row = ftable:addRow("autobuylimitcheckbox", { bgColor = Helper.color.transparent })
+				local row = ftable:addRow("autobuylimitcheckbox", {  })
 				if menu.selectedRowData["nodeTable"] == "autobuylimitcheckbox" then
 					menu.selectedRows["nodeTable"] = row.index
 					menu.selectedRowData["nodeTable"] = nil
@@ -10974,27 +10835,27 @@ function Helper.onExpandLSOStorageNode(menu, container, _, ftable, _, nodedata)
 					row[3]:createCheckBox(not haslimitoverride, { height = Helper.standardButtonHeight })
 					row[3].handlers.onClick = function (_, checked) return Helper.checkboxBuyLimitOverride(menu, container, nodedata.ware, row.index, currentlimit, checked) end
 				end
-				if haslimitoverride then
-					-- buy limit
-					local row = ftable:addRow("autobuylimitslider", { bgColor = Helper.color.transparent })
-					if menu.selectedRowData["nodeTable"] == "autobuylimitslider" then
-						menu.selectedRows["nodeTable"] = row.index
-						menu.selectedRowData["nodeTable"] = nil
-					end
-					local max = GetWareProductionLimit(container, nodedata.ware)
-					Helper.LSOStorageNodeBuySlider = { ware = nodedata.ware, widget = row[1]:setColSpan(3):createSliderCell({
-						height = Helper.standardTextHeight,
-						valueColor = haslimitoverride and Helper.defaultSliderCellValueColor or Helper.color.grey,
-						min = 0,
-						minSelect = max == 0 and 0 or 1,
-						max = max,
-						start = math.min(max, currentlimit),
-						hideMaxValue = true,
-						readOnly = not haslimitoverride,
-					})}
+				-- buy limit
+				local row = ftable:addRow("autobuylimitslider", {  })
+				if menu.selectedRowData["nodeTable"] == "autobuylimitslider" then
+					menu.selectedRows["nodeTable"] = row.index
+					menu.selectedRowData["nodeTable"] = nil
 				end
+				local max = GetWareProductionLimit(container, nodedata.ware)
+				Helper.LSOStorageNodeBuySlider = { ware = nodedata.ware, widget = row[1]:setColSpan(3):createSliderCell({
+					height = Helper.standardTextHeight,
+					bgColor = haslimitoverride and Color["slider_background_default"] or Color["slider_background_inactive"],
+					valueColor = haslimitoverride and Color["slider_value"] or Color["slider_value_inactive"],
+					min = 0,
+					minSelect = max == 0 and 0 or 1,
+					max = max,
+					start = math.min(max, currentlimit),
+					hideMaxValue = true,
+					readOnly = not haslimitoverride,
+					forceArrows = true,
+				})}
 				-- automatic pricing
-				local row = ftable:addRow("autobuypricecheckbox", { bgColor = Helper.color.transparent })
+				local row = ftable:addRow("autobuypricecheckbox", {  })
 				if menu.selectedRowData["nodeTable"] == "autobuypricecheckbox" then
 					menu.selectedRows["nodeTable"] = row.index
 					menu.selectedRowData["nodeTable"] = nil
@@ -11003,26 +10864,28 @@ function Helper.onExpandLSOStorageNode(menu, container, _, ftable, _, nodedata)
 					row[1]:setColSpan(2):createText(ReadText(1001, 8402) .. ReadText(1001, 120), { wordwrap = true })
 				else
 					row[1]:createText(ReadText(1001, 8402) .. ReadText(1001, 120), { wordwrap = true })
-					row[2]:createText(function () return math.max(minprice, math.min(maxprice, RoundTotalTradePrice(GetContainerWarePrice(container, nodedata.ware, true)))) .. " " .. ReadText(1001, 101) end, { halign = "right" })
+					row[2]:createText(function () return ConvertMoneyString(math.max(minprice, math.min(maxprice, GetContainerWarePrice(container, nodedata.ware, true))), true, true, 2, true) .. " " .. ReadText(1001, 101) end, { halign = "right" })
 				end
 				row[3]:createCheckBox(not haspriceoverride, { height = Helper.standardButtonHeight })
 				row[3].handlers.onClick = function (_, checked) return Helper.checkboxStorageWarePriceOverride(menu, container, nodedata.ware, row.index, true, currentprice, checked) end
 				if haspriceoverride then
 					-- price
-					local row = ftable:addRow("autobuypriceslider", { bgColor = Helper.color.transparent })
+					local row = ftable:addRow("autobuypriceslider", {  })
 					if menu.selectedRowData["nodeTable"] == "autobuypriceslider" then
 						menu.selectedRows["nodeTable"] = row.index
 						menu.selectedRowData["nodeTable"] = nil
 					end
 					row[1]:setColSpan(3):createSliderCell({
 						height = Helper.standardTextHeight,
-						valueColor = haspriceoverride and Helper.defaultSliderCellValueColor or Helper.color.grey,
+						bgColor = haslimitoverride and Color["slider_background_default"] or Color["slider_background_inactive"],
+						valueColor = haspriceoverride and Color["slider_value"] or Color["slider_value_inactive"],
 						min = minprice,
 						max = maxprice,
 						start = currentprice,
 						hideMaxValue = true,
 						suffix = ReadText(1001, 101),
 						readOnly = not haspriceoverride,
+						forceArrows = true,
 					})
 					row[1].handlers.onSliderCellChanged = function(_, value) return Helper.slidercellStorageWarePriceOverride(container, nodedata.ware, true, value) end
 					row[1].handlers.onSliderCellActivated = function (id) menu.noupdate = true end
@@ -11031,15 +10894,15 @@ function Helper.onExpandLSOStorageNode(menu, container, _, ftable, _, nodedata)
 				-- trade rule
 				local hasownlist = C.HasContainerOwnTradeRule(container, "buy", nodedata.ware)
 				local traderuleid = C.GetContainerTradeRuleID(container, "buy", nodedata.ware)
-				local row = ftable:addRow(nil, { bgColor = Helper.color.transparent })
+				local row = ftable:addRow(nil, {  })
 				row[1]:setColSpan(3):createText(ReadText(1001, 11013) .. ReadText(1001, 120), textproperties)
 				-- global
-				local row = ftable:addRow("buytraderule_global", { bgColor = Helper.color.transparent })
+				local row = ftable:addRow("buytraderule_global", {  })
 				row[1]:setColSpan(2):createText(ReadText(1001, 11025) .. ReadText(1001, 120), textproperties)
 				row[3]:createCheckBox(not hasownlist, { height = Helper.standardButtonHeight })
 				row[3].handlers.onClick = function(_, checked) return Helper.checkboxSetTradeRuleOverride(menu, container, "buy", nodedata.ware, checked) end
 				-- current
-				local row = ftable:addRow("buytraderule_current", { bgColor = Helper.color.transparent })
+				local row = ftable:addRow("buytraderule_current", {  })
 				row[1]:setColSpan(2):createDropDown(Helper.traderuleOptions, { startOption = (traderuleid ~= 0) and traderuleid or -1, active = hasownlist }):setTextProperties({ fontsize = config.mapFontSize })
 				row[1].handlers.onDropDownConfirmed = function (_, id) return Helper.dropdownTradeRule(menu, container, "buy", nodedata.ware, id) end
 				row[3]:createButton({ mouseOverText = ReadText(1026, 8407) }):setIcon("menu_edit")
@@ -11047,7 +10910,7 @@ function Helper.onExpandLSOStorageNode(menu, container, _, ftable, _, nodedata)
 			end
 			-- create / remove offer
 			if (waretype == "trade") or (waretype == "product") then
-				row = ftable:addRow("tradebuy", { bgColor = Helper.color.transparent })
+				row = ftable:addRow("tradebuy", {  })
 				if menu.selectedRowData["nodeTable"] == "trade" then
 					menu.selectedRows["nodeTable"] = row.index
 					menu.selectedRowData["nodeTable"] = nil
@@ -11063,16 +10926,16 @@ function Helper.onExpandLSOStorageNode(menu, container, _, ftable, _, nodedata)
 			-- reservations
 			if reservations[nodedata.ware] and (#reservations[nodedata.ware].buyoffer > 0) then
 				-- title
-				row = ftable:addRow(nil, { bgColor = Helper.color.transparent })
+				row = ftable:addRow(nil, {  })
 				row[1]:setColSpan(3):createText(string.format(ReadText(1001, 7994), GetWareData(nodedata.ware, "name")) .. ReadText(1001, 120), { wordwrap = true })
 				for i, reservation in ipairs(reservations[nodedata.ware].buyoffer) do
-					row = ftable:addRow("buyreservation" .. i, { bgColor = Helper.color.transparent })
+					row = ftable:addRow("buyreservation" .. i, {  })
 					if menu.selectedRowData["nodeTable"] == "buyreservation" then
 						menu.selectedRows["nodeTable"] = row.index
 						menu.selectedRowData["nodeTable"] = nil
 					end
 					local isplayerowned = GetComponentData(ConvertStringTo64Bit(tostring(reservation.reserver)), "isplayerowned")
-					local name = (isplayerowned and Helper.convertColorToText(Helper.color.green) or "") .. ffi.string(C.GetComponentName(reservation.reserver)) .. " (" .. ffi.string(C.GetObjectIDCode(reservation.reserver)) .. ")\27X"
+					local name = (isplayerowned and ColorText["text_player"] or "") .. ffi.string(C.GetComponentName(reservation.reserver)) .. " (" .. ffi.string(C.GetObjectIDCode(reservation.reserver)) .. ")\27X"
 
 					-- kuertee start: callback
 					-- row[1]:createText(function () return Helper.getETAString(name, reservation.eta) end, { font = Helper.standardFontMono })
@@ -11100,12 +10963,12 @@ function Helper.onExpandLSOStorageNode(menu, container, _, ftable, _, nodedata)
 			local currentlimit = C.GetContainerSellLimit(container, nodedata.ware)
 			local haslimitoverride = C.HasContainerSellLimitOverride(container, nodedata.ware)
 			-- title
-			row = ftable:addRow(nil, { bgColor = Helper.color.transparent })
+			row = ftable:addRow(nil, {  })
 			row[1]:setColSpan(3):createText(ReadText(1001, 8308), Helper.subHeaderTextProperties)
 			row[1].properties.halign = "center"
 			if (waretype == "product") or (waretype == "intermediate") or istradewaresold or haslimitoverride then
 				-- automatic sell limit
-				local row = ftable:addRow("autoselllimitcheckbox", { bgColor = Helper.color.transparent })
+				local row = ftable:addRow("autoselllimitcheckbox", {  })
 				if menu.selectedRowData["nodeTable"] == "autoselllimitcheckbox" then
 					menu.selectedRows["nodeTable"] = row.index
 					menu.selectedRowData["nodeTable"] = nil
@@ -11126,27 +10989,27 @@ function Helper.onExpandLSOStorageNode(menu, container, _, ftable, _, nodedata)
 					row[3]:createCheckBox(not haslimitoverride, { height = Helper.standardButtonHeight })
 					row[3].handlers.onClick = function (_, checked) return Helper.checkboxSellLimitOverride(menu, container, nodedata.ware, row.index, currentlimit, checked) end
 				end
-				if haslimitoverride then
-					-- sell limit
-					local row = ftable:addRow("autoselllimitslider", { bgColor = Helper.color.transparent })
-					if menu.selectedRowData["nodeTable"] == "autoselllimitslider" then
-						menu.selectedRows["nodeTable"] = row.index
-						menu.selectedRowData["nodeTable"] = nil
-					end
-					local max = GetWareProductionLimit(container, nodedata.ware)
-					Helper.LSOStorageNodeSellSlider = { ware = nodedata.ware, widget = row[1]:setColSpan(3):createSliderCell({
-						height = Helper.standardTextHeight,
-						valueColor = haslimitoverride and Helper.defaultSliderCellValueColor or Helper.color.grey,
-						min = 0,
-						minSelect = max == 0 and 0 or 1,
-						max = max,
-						start = math.min(max, currentlimit),
-						hideMaxValue = true,
-						readOnly = not haslimitoverride,
-					})}
+				-- sell limit
+				local row = ftable:addRow("autoselllimitslider", {  })
+				if menu.selectedRowData["nodeTable"] == "autoselllimitslider" then
+					menu.selectedRows["nodeTable"] = row.index
+					menu.selectedRowData["nodeTable"] = nil
 				end
+				local max = GetWareProductionLimit(container, nodedata.ware)
+				Helper.LSOStorageNodeSellSlider = { ware = nodedata.ware, widget = row[1]:setColSpan(3):createSliderCell({
+					height = Helper.standardTextHeight,
+					bgColor = haslimitoverride and Color["slider_background_default"] or Color["slider_background_inactive"],
+					valueColor = haslimitoverride and Color["slider_value"] or Color["slider_value_inactive"],
+					min = 0,
+					minSelect = max == 0 and 0 or 1,
+					max = max,
+					start = math.min(max, currentlimit),
+					hideMaxValue = true,
+					readOnly = not haslimitoverride,
+					forceArrows = true,
+				})}
 				-- automatic pricing
-				local row = ftable:addRow("autosellpricecheckbox", { bgColor = Helper.color.transparent })
+				local row = ftable:addRow("autosellpricecheckbox", {  })
 				if menu.selectedRowData["nodeTable"] == "autosellpricecheckbox" then
 					menu.selectedRows["nodeTable"] = row.index
 					menu.selectedRowData["nodeTable"] = nil
@@ -11155,26 +11018,28 @@ function Helper.onExpandLSOStorageNode(menu, container, _, ftable, _, nodedata)
 					row[1]:createText(ReadText(1001, 8402) .. ReadText(1001, 120), { wordwrap = true })
 				else
 					row[1]:createText(ReadText(1001, 8402) .. ReadText(1001, 120), { wordwrap = true })
-					row[2]:createText(function () return math.max(minprice, math.min(maxprice, RoundTotalTradePrice(GetContainerWarePrice(container, nodedata.ware, false)))) .. " " .. ReadText(1001, 101) end, { halign = "right" })
+					row[2]:createText(function () return ConvertMoneyString(math.max(minprice, math.min(maxprice, GetContainerWarePrice(container, nodedata.ware, false))), true, true, 2, true) .. " " .. ReadText(1001, 101) end, { halign = "right" })
 				end
 				row[3]:createCheckBox(not haspriceoverride, { height = Helper.standardButtonHeight })
 				row[3].handlers.onClick = function (_, checked) return Helper.checkboxStorageWarePriceOverride(menu, container, nodedata.ware, row.index, false, currentprice, checked) end
 				if haspriceoverride then
 					-- price
-					local row = ftable:addRow("autosellpriceslider", { bgColor = Helper.color.transparent })
+					local row = ftable:addRow("autosellpriceslider", {  })
 					if menu.selectedRowData["nodeTable"] == "autosellpriceslider" then
 						menu.selectedRows["nodeTable"] = row.index
 						menu.selectedRowData["nodeTable"] = nil
 					end
 					row[1]:setColSpan(3):createSliderCell({
 						height = Helper.standardTextHeight,
-						valueColor = haspriceoverride and Helper.defaultSliderCellValueColor or Helper.color.grey,
+						bgColor = haslimitoverride and Color["slider_background_default"] or Color["slider_background_inactive"],
+						valueColor = haspriceoverride and Color["slider_value"] or Color["slider_value_inactive"],
 						min = minprice,
 						max = maxprice,
 						start = currentprice,
 						hideMaxValue = true,
 						suffix = ReadText(1001, 101),
 						readOnly = not haspriceoverride,
+						forceArrows = true,
 					})
 					row[1].handlers.onSliderCellChanged = function(_, value) return Helper.slidercellStorageWarePriceOverride(container, nodedata.ware, false, value) end
 					row[1].handlers.onSliderCellActivated = function (id) menu.noupdate = true end
@@ -11183,15 +11048,15 @@ function Helper.onExpandLSOStorageNode(menu, container, _, ftable, _, nodedata)
 				-- trade rule
 				local hasownlist = C.HasContainerOwnTradeRule(container, "sell", nodedata.ware)
 				local traderuleid = C.GetContainerTradeRuleID(container, "sell", nodedata.ware)
-				local row = ftable:addRow(nil, { bgColor = Helper.color.transparent })
+				local row = ftable:addRow(nil, {  })
 				row[1]:setColSpan(3):createText(ReadText(1001, 11013) .. ReadText(1001, 120), textproperties)
 				-- global
-				local row = ftable:addRow("selltraderule_global", { bgColor = Helper.color.transparent })
+				local row = ftable:addRow("selltraderule_global", {  })
 				row[1]:setColSpan(2):createText(ReadText(1001, 11025) .. ReadText(1001, 120), textproperties)
 				row[3]:createCheckBox(not hasownlist, { height = Helper.standardButtonHeight })
 				row[3].handlers.onClick = function(_, checked) return Helper.checkboxSetTradeRuleOverride(menu, container, "sell", nodedata.ware, checked) end
 				-- current
-				local row = ftable:addRow("selltraderule_current", { bgColor = Helper.color.transparent })
+				local row = ftable:addRow("selltraderule_current", {  })
 				row[1]:setColSpan(2):createDropDown(Helper.traderuleOptions, { startOption = (traderuleid ~= 0) and traderuleid or -1, active = hasownlist }):setTextProperties({ fontsize = config.mapFontSize })
 				row[1].handlers.onDropDownConfirmed = function (_, id) return Helper.dropdownTradeRule(menu, container, "sell", nodedata.ware, id) end
 				row[3]:createButton({ mouseOverText = ReadText(1026, 8407) }):setIcon("menu_edit")
@@ -11199,7 +11064,7 @@ function Helper.onExpandLSOStorageNode(menu, container, _, ftable, _, nodedata)
 			end
 			-- create / remove offer
 			if (waretype == "trade") or (waretype == "resource") then
-				row = ftable:addRow("tradesell", { bgColor = Helper.color.transparent })
+				row = ftable:addRow("tradesell", {  })
 				if menu.selectedRowData["nodeTable"] == "trade" then
 					menu.selectedRows["nodeTable"] = row.index
 					menu.selectedRowData["nodeTable"] = nil
@@ -11215,16 +11080,16 @@ function Helper.onExpandLSOStorageNode(menu, container, _, ftable, _, nodedata)
 			-- reservations
 			if reservations[nodedata.ware] and (#reservations[nodedata.ware].selloffer > 0) then
 				-- title
-				row = ftable:addRow(nil, { bgColor = Helper.color.transparent })
+				row = ftable:addRow(nil, {  })
 				row[1]:setColSpan(3):createText(string.format(ReadText(1001, 7993), GetWareData(nodedata.ware, "name")) .. ReadText(1001, 120), { wordwrap = true })
 				for i, reservation in ipairs(reservations[nodedata.ware].selloffer) do
-					row = ftable:addRow("sellreservation" .. i, { bgColor = Helper.color.transparent })
+					row = ftable:addRow("sellreservation" .. i, {  })
 					if menu.selectedRowData["nodeTable"] == "sellreservation" then
 						menu.selectedRows["nodeTable"] = row.index
 						menu.selectedRowData["nodeTable"] = nil
 					end
 					local isplayerowned = GetComponentData(ConvertStringTo64Bit(tostring(reservation.reserver)), "isplayerowned")
-					local name = (isplayerowned and Helper.convertColorToText(Helper.color.green) or "") .. ffi.string(C.GetComponentName(reservation.reserver)) .. " (" .. ffi.string(C.GetObjectIDCode(reservation.reserver)) .. ")\27X"
+					local name = (isplayerowned and ColorText["text_player"] or "") .. ffi.string(C.GetComponentName(reservation.reserver)) .. " (" .. ffi.string(C.GetObjectIDCode(reservation.reserver)) .. ")\27X"
 
 					-- kuertee start: callback
 					-- row[1]:createText(function () return Helper.getETAString(name, reservation.eta) end, { font = Helper.standardFontMono })
@@ -11251,12 +11116,12 @@ function Helper.onExpandLSOStorageNode(menu, container, _, ftable, _, nodedata)
 			limitslider.handlers.onSliderCellDeactivated = function (id) menu.noupdate = false end
 		end
 		if Helper.LSOStorageNodeBuySlider then
-			Helper.LSOStorageNodeBuySlider.widget.handlers.onSliderCellChanged = function(_, value) return Helper.slidercellBuyLimitOverride(menu, container, nodedata.ware, value) end
+			Helper.LSOStorageNodeBuySlider.widget.handlers.onSliderCellChanged = function(_, value) return Helper.slidercellBuyLimitOverride(menu, container, nodedata.ware, value, Helper.LSOStorageNodeSellSlider) end
 			Helper.LSOStorageNodeBuySlider.widget.handlers.onSliderCellActivated = function (id) menu.noupdate = true end
 			Helper.LSOStorageNodeBuySlider.widget.handlers.onSliderCellDeactivated = function (id) menu.noupdate = false end
 		end
 		if Helper.LSOStorageNodeSellSlider then 
-			Helper.LSOStorageNodeSellSlider.widget.handlers.onSliderCellChanged = function(_, value) return Helper.slidercellSellLimitOverride(menu, container, nodedata.ware, value) end
+			Helper.LSOStorageNodeSellSlider.widget.handlers.onSliderCellChanged = function(_, value) return Helper.slidercellSellLimitOverride(menu, container, nodedata.ware, value, Helper.LSOStorageNodeBuySlider) end
 			Helper.LSOStorageNodeSellSlider.widget.handlers.onSliderCellActivated = function (id) menu.noupdate = true end
 			Helper.LSOStorageNodeSellSlider.widget.handlers.onSliderCellDeactivated = function (id) menu.noupdate = false end
 		end
@@ -11290,9 +11155,9 @@ function Helper.getStorageAmount(container, nodedata, storageinfo_amounts, stora
 			if limit < defaultlimit then
 				extratext = "\n\n" .. ReadText(1001, 8467)
 			end
-			return string.format("%s%s / %s\n%s / %s%s", ((amount > limit) or (limit < defaultlimit)) and Helper.convertColorToText(Helper.color.warningorange) or "", Helper.unlockInfo(storageinfo_amounts, ConvertIntegerString(amount, true, accuracy or 3, true, true)), Helper.unlockInfo(storageinfo_capacity, ConvertIntegerString(limit, true, accuracy or 3, true, true)), Helper.unlockInfo(storageinfo_amounts, ConvertIntegerString(volume * amount, true, accuracy or 3, true, true)), Helper.unlockInfo(storageinfo_capacity, ConvertIntegerString(volume * limit, true, accuracy or 3, true, true)) .. " " .. ReadText(1001, 110), extratext)
+			return string.format("%s%s / %s\n%s / %s%s", ((amount > limit) or (limit < defaultlimit)) and ColorText["text_warning"] or "", Helper.unlockInfo(storageinfo_amounts, ConvertIntegerString(amount, true, accuracy or 3, true, true)), Helper.unlockInfo(storageinfo_capacity, ConvertIntegerString(limit, true, accuracy or 3, true, true)), Helper.unlockInfo(storageinfo_amounts, ConvertIntegerString(volume * amount, true, accuracy or 3, true, true)), Helper.unlockInfo(storageinfo_capacity, ConvertIntegerString(volume * limit, true, accuracy or 3, true, true)) .. " " .. ReadText(1001, 110), extratext)
 		else
-			return string.format("%s%s / %s", ((amount > limit) or (limit < defaultlimit)) and Helper.convertColorToText(Helper.color.warningorange) or "", Helper.unlockInfo(storageinfo_amounts, ConvertIntegerString(amount, true, accuracy or 3, true, true)), Helper.unlockInfo(storageinfo_capacity, ConvertIntegerString(limit, true, accuracy or 3, true, true)))
+			return string.format("%s%s / %s", ((amount > limit) or (limit < defaultlimit)) and ColorText["text_warning"] or "", Helper.unlockInfo(storageinfo_amounts, ConvertIntegerString(amount, true, accuracy or 3, true, true)), Helper.unlockInfo(storageinfo_capacity, ConvertIntegerString(limit, true, accuracy or 3, true, true)))
 		end
 	end
 end
@@ -11325,11 +11190,19 @@ function Helper.updateStorageLevel(menu, container, ware, value, buyslider, sell
 		if buyslider and (buyslider.ware == ware) then
 			SetSliderCellValue(buyslider.widget.id, value)
 		end
+	else
+		if buyslider and (buyslider.ware == ware) then
+			SetSliderCellValue(buyslider.widget.id, C.GetContainerBuyLimit(container, ware))
+		end
 	end
 	if C.HasContainerSellLimitOverride(container, ware) and (value < C.GetContainerSellLimit(container, ware)) then
 		Helper.setSellLimit(menu, container, ware, value)
 		if sellslider and (sellslider.ware == ware) then
 			SetSliderCellValue(sellslider.widget.id, value)
+		end
+	else
+		if sellslider and (sellslider.ware == ware) then
+			SetSliderCellValue(sellslider.widget.id, C.GetContainerSellLimit(container, ware))
 		end
 	end
 	if buyslider and (buyslider.ware == ware) then
@@ -11469,6 +11342,9 @@ end
 function Helper.checkboxBuyLimitOverride(menu, container, ware, row, currentlimit, checked)
 	if checked then
 		Helper.clearBuyLimit(menu, container, ware)
+		if Helper.LSOStorageNodeBuySlider and (Helper.LSOStorageNodeBuySlider.ware == ware) then
+			SetSliderCellValue(Helper.LSOStorageNodeBuySlider.widget.id, C.GetContainerBuyLimit(container, ware))
+		end
 	else
 		currentlimit = math.min(currentlimit, C.GetContainerSellLimit(container, ware))
 		if currentlimit == 0 then
@@ -11509,7 +11385,7 @@ function Helper.checkboxSetTradeRuleOverride(menu, container, type, ware, checke
 	end
 
 	if (type == "buy") or (type == "sell") then
-		menu.expandedNode:updateStatus(nil, Helper.isTradeRestricted(container, ware) and "lso_error" or nil, nil, Helper.color.warningorange)
+		menu.expandedNode:updateStatus(nil, Helper.isTradeRestricted(container, ware) and "lso_error" or nil, nil, Color["icon_warning"])
 	end
 	menu.updateExpandedNode()
 end
@@ -11583,19 +11459,25 @@ function  Helper.dropdownTradeRule(menu, container, type, ware, id)
 	C.SetContainerTradeRule(container, tonumber(id), type, ware, true)
 	
 	if (type == "buy") or (type == "sell") then
-		menu.expandedNode:updateStatus(nil, Helper.isTradeRestricted(container, ware) and "lso_error" or nil, nil, Helper.color.warningorange)
+		menu.expandedNode:updateStatus(nil, Helper.isTradeRestricted(container, ware) and "lso_error" or nil, nil, Color["icon_warning"])
 	end
 end
 
-function Helper.slidercellBuyLimitOverride(menu, container, ware, value)
+function Helper.slidercellBuyLimitOverride(menu, container, ware, value, sellslider)
 	if value then
 		Helper.setBuyLimit(menu, container, ware, value)
+		if sellslider and (sellslider.ware == ware) then
+			SetSliderCellValue(sellslider.widget.id, C.GetContainerSellLimit(container, ware))
+		end
 	end
 end
 
-function Helper.slidercellSellLimitOverride(menu, container, ware, value)
+function Helper.slidercellSellLimitOverride(menu, container, ware, value, buyslider)
 	if value then
 		Helper.setSellLimit(menu, container, ware, value)
+		if buyslider and (buyslider.ware == ware) then
+			SetSliderCellValue(buyslider.widget.id, C.GetContainerBuyLimit(container, ware))
+		end
 	end
 end
 
@@ -11658,6 +11540,9 @@ function Helper.onSliderChangedLSOStorageNode(container, node, nodedata, slideri
 			if Helper.LSOStorageNodeSellSlider and (Helper.LSOStorageNodeSellSlider.ware == ware) then
 				SetSliderCellValue(Helper.LSOStorageNodeSellSlider.widget.id, value)
 			end
+			if Helper.LSOStorageNodeBuySlider and (Helper.LSOStorageNodeBuySlider.ware == ware) then
+				SetSliderCellValue(Helper.LSOStorageNodeBuySlider.widget.id, C.GetContainerBuyLimit(container, ware))
+			end
 		end
 	end
 end
@@ -11665,12 +11550,15 @@ end
 Helper.turretModes = {
 	[1] = { id = "defend",			text = ReadText(1001, 8613),	icon = "",	displayremoveoption = false,	forall = true },
 	[2] = { id = "attackenemies",	text = ReadText(1001, 8614),	icon = "",	displayremoveoption = false,	forall = true },
-	[3] = { id = "attackcapital",	text = ReadText(1001, 8624),	icon = "",	displayremoveoption = false,	forall = true },
-	[4] = { id = "attackfighters",	text = ReadText(1001, 8625),	icon = "",	displayremoveoption = false,	forall = true },
-	[5] = { id = "mining",			text = ReadText(1001, 8616),	icon = "",	displayremoveoption = false,	forall = true },
-	[6] = { id = "missiledefence",	text = ReadText(1001, 8615),	icon = "",	displayremoveoption = false,	forall = true },
-	[7] = { id = "autoassist",		text = ReadText(1001, 8617),	icon = "",	displayremoveoption = false,	forall = true },
-	[8] = { id = "towing",			text = ReadText(1001, 8633),	icon = "",	displayremoveoption = false,	forall = false },
+	[3] = { id = "attackcapital",	text = ReadText(1001, 8634),	icon = "",	displayremoveoption = false,	forall = true },
+	[4] = { id = "prefercapital",	text = ReadText(1001, 8637),	icon = "",	displayremoveoption = false,	forall = true },
+	[5] = { id = "attackfighters",	text = ReadText(1001, 8635),	icon = "",	displayremoveoption = false,	forall = true },
+	[6] = { id = "preferfighters",	text = ReadText(1001, 8638),	icon = "",	displayremoveoption = false,	forall = true },
+	[7] = { id = "missiledefence",	text = ReadText(1001, 8636),	icon = "",	displayremoveoption = false,	forall = true },
+	[8] = { id = "prefermissiles",	text = ReadText(1001, 8639),	icon = "",	displayremoveoption = false,	forall = true },
+	[9] = { id = "autoassist",		text = ReadText(1001, 8617),	icon = "",	displayremoveoption = false,	forall = true },
+	[10] = { id = "mining",			text = ReadText(1001, 8616),	icon = "",	displayremoveoption = false,	forall = true },
+	[11] = { id = "towing",			text = ReadText(1001, 8633),	icon = "",	displayremoveoption = false,	forall = false },
 }
 
 function Helper.getTurretModes(turret, forall)
@@ -11725,7 +11613,7 @@ function Helper.createDropWaresContext(menu, frame, instance)
 		ftable:setColWidthPercent(3, 40)
 	end
 
-	local row = ftable:addRow(false, { fixed = true })
+	local row = ftable:addRow(false, { fixed = true, bgColor = Color["row_background_blue"] })
 	if menu.contextMenuData.mode == "venturedonate" then
 		row[1]:setColSpan(3):createText(ReadText(1001, 11530), Helper.headerRowCenteredProperties)
 	elseif menu.contextMenuData.mode == "ventureconvert" then
@@ -11743,7 +11631,7 @@ function Helper.createDropWaresContext(menu, frame, instance)
 			text = string.format(ReadText(1001, 11385), entry.convertedname)
 		end
 
-		row = ftable:addRow(true, { fixed = true, bgColor = Helper.color.transparent })
+		row = ftable:addRow(true, { fixed = true })
 		row[1]:setColSpan(3):createSliderCell({ height = Helper.standardTextHeight, min = 0, max = slidermax, start = slidermax, step = conversionrate }):setText(text)
 		row[1].handlers.onSliderCellChanged = function (_, value) return Helper.slidercellDropWares(menu, entry.ware, value / conversionrate) end
 	end
@@ -11751,24 +11639,24 @@ function Helper.createDropWaresContext(menu, frame, instance)
 	if menu.contextMenuData.mode == "ventureconvert" then
 		local waredata = menu.contextMenuData.wares[1]
 		if waredata then
-			local row = ftable:addRow(nil, { bgColor = Helper.color.transparent })
+			local row = ftable:addRow(nil, {  })
 			row[1]:setColSpan(3):createText("1" .. ReadText(1001, 42) .. " " .. waredata.name .. " = " .. waredata.conversionrate .. ReadText(1001, 42) .. " " .. waredata.convertedname, { halign = "right" })
 
 			ftable:addEmptyRow()
 
-			row = ftable:addRow(true, { fixed = true, bgColor = Helper.color.transparent })
+			row = ftable:addRow(true, { fixed = true })
 			row[1]:setColSpan(3):createText(string.format(ReadText(1001, 11559), waredata.name, waredata.convertedname) .. "\n" .. string.format(ReadText(1001, 11562), waredata.convertedname), { wordwrap = true })
 		end
 	elseif menu.contextMenuData.mode ~= "venturedonate" then
 		ftable:addEmptyRow()
 
-		row = ftable:addRow(true, { fixed = true, bgColor = Helper.color.transparent })
+		row = ftable:addRow(true, { fixed = true })
 		row[1]:createText(ReadText(1001, 7732))
 		row[2]:setColSpan(2):createDropDown(options, { startOption = curOption })
 		row[2].handlers.onDropDownConfirmed = function (_, id) return Helper.dropdownDropWaresLockbox(menu, id) end
 	end
 
-	row = ftable:addRow(true, { fixed = true, bgColor = Helper.color.transparent })
+	row = ftable:addRow(true, { fixed = true })
 	if menu.contextMenuData.mode == "venturedonate" then
 		row[1]:createButton({  }):setText(ReadText(1001, 11530), { halign = "center" })
 		row[1].handlers.onClick = function () return Helper.callExtensionFunction("multiverse", "donateVentureItem", menu) end
@@ -11779,7 +11667,7 @@ function Helper.createDropWaresContext(menu, frame, instance)
 		elseif menu.contextMenuData.converting ~= nil then
 			name = ReadText(1001, 11384)
 		end
-		row[1]:createButton({ active = (menu.contextMenuData.success == nil) and (menu.contextMenuData.converting == nil) }):setText(((menu.contextMenuData.success ~= nil) and Helper.convertColorToText((menu.contextMenuData.success == -1) and Helper.color.green or Helper.color.red) or "") .. name, { halign = "center" })
+		row[1]:createButton({ active = (menu.contextMenuData.success == nil) and (menu.contextMenuData.converting == nil) }):setText(((menu.contextMenuData.success ~= nil) and Helper.convertColorToText((menu.contextMenuData.success == -1) and Color["text_success"] or Color["text_failure"]) or "") .. name, { halign = "center" })
 		row[1].handlers.onClick = function () return Helper.callExtensionFunction("multiverse", "convertVentureItem", menu) end
 	else
 		row[1]:createButton({  }):setText((#menu.contextMenuData.wares > 1) and ReadText(1001, 7733) or ReadText(1001, 7705), { halign = "center" })
@@ -11992,6 +11880,606 @@ function Helper.getHoloMapColors()
 end
 
 Helper.chatParams = {}
+
+function Helper.getInputMouseOverText(input)
+	local inputstring = ffi.string(C.GetMappedInputName(input))
+	if inputstring ~= "" then
+		return ReadText(1001, 508) .. ReadText(1001, 120) .. " " .. inputstring
+	end
+	return ""
+end
+
+Helper.ventureContactsMode = { left = "friends", right = "friends" }
+Helper.ventureContactsConfig = {
+	pageSize = 30,
+	contextBorder = 5,
+}
+Helper.ventureContactsCategories = {
+--	{ category = "friends",					name = ReadText(50101, 11274),	icon = "vt_friendlist",				helpOverlayID = "mapst_ven_contacts_friend",	helpOverlayText = ReadText(50128, 11201) },
+}
+
+if C.IsVentureSeasonSupported() then
+	table.insert(Helper.ventureContactsCategories, { category = "blocked",					name = ReadText(50101, 11275),	icon = "vt_blockedlist",			helpOverlayID = "mapst_ven_contacts_blocked",	helpOverlayText = ReadText(50128, 11202) })
+end
+
+function Helper.createVentureContacts(menu, frame, instance, width, x, y, globalx, globaly)
+	if Helper.ventureContactsMode.left == "friends" then
+		Helper.createVentureContactsTab(menu, frame, instance, "friends", width, x, y, globalx, globaly)
+	elseif Helper.ventureContactsMode.left == "blocked" then
+		Helper.createVentureContactsTab(menu, frame, instance, "blocked", width, x, y, globalx, globaly)
+	end
+end
+
+function Helper.createVentureContactsTab(menu, frame, instance, mode, width, x, y, globalx, globaly)
+	if (not C.IsVentureSeasonSupported()) and (mode == "blocked") then
+		-- make sure we cannot be in "blocked" mode, if blocked mode is not supported
+		mode = "friends"
+	end
+	local infoTablePersistentData = menu.infoTablePersistentData[instance].venturecontacts
+	Helper.ventureContactsMode.width = width
+	Helper.ventureContactsMode.x = globalx
+	Helper.ventureContactsMode.y = globaly
+
+	local numCols = 10
+	local buttonsize = Helper.scaleY(Helper.standardTextHeight)
+	local infotable = frame:addTable(numCols, { tabOrder = 1, maxVisibleHeight = menu.infoFrame.properties.height, width = width, x = x, y = y })
+	if menu.setdefaulttable then
+		infotable.properties.defaultInteractiveObject = true
+		menu.setdefaulttable = nil
+	end
+	infotable:setColWidth(1, width / 3, false)
+	infotable:setColWidth(4, Helper.standardTextHeight)
+	infotable:setColWidth(5, Helper.standardTextHeight)
+	infotable:setColWidth(6, Helper.standardTextHeight)
+	infotable:setColWidth(7, Helper.standardTextHeight)
+	infotable:setColWidth(8, width / 3 - 4 * (buttonsize + Helper.borderSize), false)
+	infotable:setColWidth(9, Helper.standardTextHeight)
+	infotable:setColWidth(10, Helper.standardTextHeight)
+
+	-- title
+	local row = infotable:addRow(nil, { fixed = true, bgColor = Color["row_title_background"] })
+	row[1]:setColSpan(numCols):createText((mode == "friends") and ReadText(50101, 11274) or ReadText(50101, 11275), Helper.titleTextProperties)
+
+	infoTablePersistentData.numEntries = OnlineGetNumContacts(mode == "blocked")
+	Helper.ventureContacts = {}
+	if infoTablePersistentData.searchtext ~= "" then
+		local contacts = OnlineGetContacts(0, 0, mode == "blocked")
+		for _, entry in ipairs(contacts) do
+			if Helper.contactSearchHelper(entry, infoTablePersistentData.searchtext) then
+				table.insert(Helper.ventureContacts, entry)
+			end
+		end
+
+		infoTablePersistentData.numEntries = #Helper.ventureContacts
+		if infoTablePersistentData.numEntries <= Helper.ventureContactsConfig.pageSize then
+			infoTablePersistentData.curPage = 1
+		else
+			local startIndex = infoTablePersistentData.numEntries - Helper.ventureContactsConfig.pageSize * infoTablePersistentData.curPage + 1
+			local endIndex = Helper.ventureContactsConfig.pageSize + startIndex - 1
+			if startIndex < 1 then
+				startIndex = 1
+			end
+			Helper.ventureContacts = { table.unpack(Helper.ventureContacts, startIndex, endIndex) }
+		end
+	else
+		local startIndex = 1
+		if infoTablePersistentData.numEntries <= Helper.ventureContactsConfig.pageSize then
+			infoTablePersistentData.curPage = 1
+		else
+			startIndex = Helper.ventureContactsConfig.pageSize * (infoTablePersistentData.curPage - 1) + 1
+			if startIndex < 1 then
+				startIndex = 1
+			end
+		end
+		Helper.ventureContacts = OnlineGetContacts(Helper.ventureContactsConfig.pageSize, startIndex, mode == "blocked")
+	end
+	infoTablePersistentData.numPages = math.max(1, math.ceil(infoTablePersistentData.numEntries / Helper.ventureContactsConfig.pageSize))
+
+	-- pages
+	local row = infotable:addRow(true, { fixed = true })
+	row[1]:setColSpan(3):createEditBox({ description = ReadText(50101, 11293), defaultText = ReadText(1001, 3250) }):setText(infoTablePersistentData.searchtext, { halign = "left", x = Helper.standardTextOffsetx }):setHotkey("INPUT_STATE_DETAILMONITOR_0", { displayIcon = true })
+	row[1].handlers.onEditBoxDeactivated = function (_, text) if text ~= infoTablePersistentData.searchtext then infoTablePersistentData.searchtext = text; menu.noupdate = false; menu.refreshInfoFrame() end end
+
+	local buttonheight = math.max(Helper.editboxMinHeight, Helper.scaleY(Helper.subHeaderHeight))
+	row[4]:createButton({ scaling = false, width = buttonsize, height = buttonheight, cellBGColor = Color["row_background"] }):setText("X", { halign = "center", font = Helper.standardFontBold })
+	row[4].handlers.onClick = function () infoTablePersistentData.searchtext = ""; menu.refreshInfoFrame() end
+
+	row[5]:createButton({ scaling = false, active = infoTablePersistentData.curPage > 1, width = buttonsize, height = buttonheight, cellBGColor = Color["row_background"] }):setIcon("widget_arrow_skip_left_01", { width = buttonsize, height = buttonsize, y = (row:getHeight() - buttonsize) / 2 })
+	row[5].handlers.onClick = function () infoTablePersistentData.curPage = 1; menu.refreshInfoFrame() end
+	row[6]:createButton({ scaling = false, active = infoTablePersistentData.curPage > 1, width = buttonsize, height = buttonheight, cellBGColor = Color["row_background"] }):setIcon("widget_arrow_left_01", { width = buttonsize, height = buttonsize, y = (row:getHeight() - buttonsize) / 2 })
+	row[6].handlers.onClick = function () infoTablePersistentData.curPage = infoTablePersistentData.curPage - 1; menu.refreshInfoFrame() end
+	Helper.contactsPageEditBox = row[7]:setColSpan(2):createEditBox({ description = ReadText(1001, 7739) }):setText(infoTablePersistentData.curPage .. " / " .. infoTablePersistentData.numPages, { halign = "center" })
+	row[7].handlers.onEditBoxActivated = function (widget) return Helper.editboxVentureContactsPageActivated(menu, widget, instance) end
+	row[7].handlers.onEditBoxDeactivated = function (_, text, textchanged) return Helper.editboxVentureContactsPage(menu, instance, text, textchanged) end
+	row[9]:createButton({ scaling = false, active = infoTablePersistentData.curPage < infoTablePersistentData.numPages, width = buttonsize, height = buttonheight, cellBGColor = Color["row_background"] }):setIcon("widget_arrow_right_01", { width = buttonsize, height = buttonsize, y = (row:getHeight() - buttonsize) / 2 })
+	row[9].handlers.onClick = function () infoTablePersistentData.curPage = infoTablePersistentData.curPage + 1; menu.refreshInfoFrame() end
+	row[10]:createButton({ scaling = false, active = infoTablePersistentData.curPage < infoTablePersistentData.numPages, width = buttonsize, height = buttonheight, cellBGColor = Color["row_background"] }):setIcon("widget_arrow_skip_right_01", { width = buttonsize, height = buttonsize, y = (row:getHeight() - buttonsize) / 2 })
+	row[10].handlers.onClick = function () infoTablePersistentData.curPage = infoTablePersistentData.numPages; menu.refreshInfoFrame() end
+
+	infotable:addEmptyRow(Helper.standardTextHeight / 2)
+
+	if #Helper.ventureContacts > 0 then
+		local startIndex = math.max(1, #Helper.ventureContacts - (infoTablePersistentData.curPage - 1) * Helper.ventureContactsConfig.pageSize)
+		local pageSize = math.min(#Helper.ventureContacts, Helper.ventureContactsConfig.pageSize)
+		local endIndex = math.max(1, startIndex - pageSize + 1)
+		for i = startIndex, endIndex, -1 do
+			local entry = Helper.ventureContacts[i]
+
+			local row = infotable:addRow(entry, {  })
+			local platforminfo = ""
+			if entry.isplatformsteam then
+				platforminfo = " (\27[optionsmenu_steam] " .. (entry.platformname and (" " .. entry.platformname) or "") .. ")"
+			end
+			row[1]:setColSpan(numCols):createText(entry.name .. (entry.ismuted and " \27[menu_sound_off]" or "") .. platforminfo)
+		end
+	else
+		row = infotable:addRow(true, {  })
+		row[1]:setColSpan(numCols):createText(ReadText(50101, 11276))
+	end
+
+	if mode == "friends" then
+		infotable:addEmptyRow()
+
+		local row = infotable:addRow(nil, { bgColor = Color["row_title_background"] })
+		row[1]:setColSpan(numCols):createText(ReadText(50101, 11279), Helper.subHeaderTextProperties)
+		row[1].properties.halign = "center"
+
+		local row = infotable:addRow(nil, {  })
+		row[1]:setColSpan(numCols):createText(ReadText(50101, 11280), { wordwrap = true })
+
+		local row = infotable:addRow(true, {  })
+		row[1]:setColSpan(numCols):createEditBox({ description = ReadText(50101, 11294), defaultText = ReadText(1001, 3250), height = Helper.standardTextHeight }):setText("", { halign = "left", x = Helper.standardTextOffsetx })
+		row[1].handlers.onEditBoxDeactivated = function (_, text, textchanged) return Helper.editboxVentureFindForumUser(menu, instance, text, textchanged) end
+
+		if infoTablePersistentData.forumerror then
+			local errortext = string.format(ReadText(50101, 11286), infoTablePersistentData.forumsearch)
+			if infoTablePersistentData.forumerror == "alreadyexists" then
+				errortext = string.format(ReadText(50101, 11287), infoTablePersistentData.forumsearch)
+			elseif infoTablePersistentData.forumerror == "blocked" then
+				errortext = string.format(ReadText(50101, 11288), infoTablePersistentData.forumsearch)
+			end
+			local row = infotable:addRow(true, {  })
+			row[1]:setColSpan(numCols):createText(errortext, { color = Color["text_warning"], wordwrap = true })
+		elseif infoTablePersistentData.forumuserid then
+			local row = infotable:addRow(true, {  })
+			row[1]:setColSpan(3):createText(infoTablePersistentData.forumsearch)
+			row[4]:setColSpan(numCols - 3):createButton({  }):setText(ReadText(50101, 11281), { halign = "center" })
+			row[4].handlers.onClick = function () return Helper.buttonAddForumUser(menu, instance, infoTablePersistentData.forumuserid, false) end
+		end
+
+		if IsSteamworksEnabled() then
+			infotable:addEmptyRow()
+
+			local row = infotable:addRow(nil, { bgColor = Color["row_title_background"] })
+			row[1]:setColSpan(numCols):createText(ReadText(50101, 11282), Helper.subHeaderTextProperties)
+			row[1].properties.halign = "center"
+
+			local row = infotable:addRow(nil, {  })
+			row[1]:setColSpan(numCols):createText(ReadText(50101, 11283), { wordwrap = true })
+
+			local row = infotable:addRow(nil, {  })
+			row[1]:setColSpan(numCols):createText(ReadText(50101, 11284), { wordwrap = true })
+
+			infotable:addEmptyRow(Helper.standardTextHeight / 2)
+
+			local row = infotable:addRow(true, {  })
+			row[4]:setColSpan(numCols - 3):createButton({  }):setText(ReadText(50101, 11285), { halign = "center" })
+			row[4].handlers.onClick = function () return Helper.buttonCreateFriendListContext(menu) end
+		end
+	end
+
+	if menu.selectedRows["infotable" .. instance] then
+		infotable:setSelectedRow(menu.selectedRows["infotable" .. instance])
+		menu.selectedRows["infotable" .. instance] = nil
+		if menu.topRows["infotable" .. instance] then
+			infotable:setTopRow(menu.topRows["infotable" .. instance])
+			menu.topRows["infotable" .. instance] = nil
+		end
+		if menu.selectedCols["infotable" .. instance] then
+			infotable:setSelectedCol(menu.selectedCols["infotable" .. instance])
+			menu.selectedCols["infotable" .. instance] = nil
+		end
+	end
+	menu.setrow = nil
+	menu.settoprow = nil
+	menu.setcol = nil
+
+	local table_header = Helper.createVentureContactsHeader(menu, frame, instance, x, y)
+
+	infotable.properties.y = table_header.properties.y + table_header:getFullHeight() + Helper.borderSize
+
+	table_header:addConnection(1, (instance == "left") and 2 or 3, true)
+	infotable:addConnection(2, (instance == "left") and 2 or 3)
+end
+
+function Helper.createVentureContactsHeader(menu, frame, instance, x, y)
+	local ftable
+	if instance == "left" then
+		menu.ventureContactsHeaderTableLeft = frame:addTable(#Helper.ventureContactsCategories + 1, { tabOrder = 1, x = x, y = y })
+		ftable = menu.ventureContactsHeaderTableLeft
+	elseif instance == "right" then
+		menu.ventureContactsHeaderTableRight = frame:addTable(#Helper.ventureContactsCategories + 1, { tabOrder = 1, x = x, y = y })
+		ftable = menu.ventureContactsHeaderTableRight
+	end
+
+	local sidebarwidth = Helper.scaleX(Helper.sidebarWidth)
+	for i, entry in ipairs(Helper.ventureContactsCategories) do
+		if entry.empty then
+			ftable:setColWidth(i, sidebarwidth / 2, false)
+		else
+			ftable:setColWidth(i, sidebarwidth, false)
+		end
+	end
+
+	local row = ftable:addRow("orders_tabs", { fixed = true })
+	local count = 1
+	for _, entry in ipairs(Helper.ventureContactsCategories) do
+		if not entry.empty then
+			local bgcolor = Color["row_title_background"]
+			local color = Color["icon_normal"]
+			if entry.category == Helper.ventureContactsMode[instance] then
+				bgcolor = Color["row_background_blue"]
+			end
+
+			local hassession = OnlineHasSession()
+			local loccount = count
+			row[loccount]:createButton({ active = hassession, height = sidebarwidth, bgColor = bgcolor, mouseOverText = entry.name, scaling = false, helpOverlayID = entry.helpOverlayID, helpOverlayText = entry.helpOverlayText }):setIcon(entry.icon, { color = color})
+			row[loccount].handlers.onClick = function () return Helper.buttonVentureContactsSubMode(menu, entry.category, loccount, instance) end
+			count = count + 1
+		else
+			count = count + 1
+		end
+	end
+
+	if menu.selectedRows["ventureContactsHeaderTable" .. instance] then
+		ftable.properties.defaultInteractiveObject = true
+		ftable:setSelectedRow(menu.selectedRows["ventureContactsHeaderTable" .. instance])
+		ftable:setSelectedCol(menu.selectedCols["ventureContactsHeaderTable" .. instance] or 0)
+		menu.selectedRows["ventureContactsHeaderTable" .. instance] = nil
+		menu.selectedCols["ventureContactsHeaderTable" .. instance] = nil
+	end
+
+	return ftable
+end
+
+function Helper.buttonVentureContactsSubMode(menu, mode, col, instance)
+	if mode ~= Helper.ventureContactsMode[instance] then
+		Helper.ventureContactsMode[instance] = mode
+
+		AddUITriggeredEvent(menu.name, Helper.ventureContactsMode[instance])
+
+		menu.selectedRows["ventureContactsHeaderTable" .. instance] = 1
+		menu.selectedCols["ventureContactsHeaderTable" .. instance] = col
+		menu.settoprow = 1
+		if instance == "left" then
+			menu.refreshInfoFrame(1, 0)
+		elseif instance == "right" then
+			menu.refreshInfoFrame2(1, 0)
+		end
+	end
+end
+
+function Helper.contactSearchHelper(entry, text)
+	text = utf8.lower(text)
+
+	if string.find(utf8.lower(entry.name), text, 1, true) then
+		return true
+	end
+
+	return false
+end
+
+function Helper.editboxVentureContactsPageActivated(menu, widget, instance)
+	menu.noupdate = true
+	if Helper.contactsPageEditBox and (widget == Helper.contactsPageEditBox.id) then
+		C.SetEditBoxText(Helper.contactsPageEditBox.id, tostring(menu.infoTablePersistentData[instance].venturecontacts.curPage))
+	end
+end
+
+function Helper.editboxVentureContactsPage(menu, instance, text, textchanged)
+	local infoTablePersistentData = menu.infoTablePersistentData[instance].venturecontacts
+	local newpage = tonumber(text)
+	if newpage and (newpage ~= infoTablePersistentData.curPage) then
+		infoTablePersistentData.curPage = math.max(1, math.min(newpage, infoTablePersistentData.numPages))
+		menu.refreshInfoFrame()
+	else
+		C.SetEditBoxText(Helper.contactsPageEditBox.id, infoTablePersistentData.curPage .. " / " .. infoTablePersistentData.numPages)
+	end
+	menu.noupdate = false
+end
+
+function Helper.editboxVentureFindForumUser(menu, instance, text, textchanged)
+	local infoTablePersistentData = menu.infoTablePersistentData[instance].venturecontacts
+	if textchanged then
+		infoTablePersistentData.forumerror = nil
+		infoTablePersistentData.forumuserid = nil
+		infoTablePersistentData.forumsearch = text
+		Helper.usernameRequest = instance
+		OnlineCheckUsername(text)
+	end
+end
+
+function Helper.buttonAddForumUser(menu, instance, userid, block)
+	local infoTablePersistentData = menu.infoTablePersistentData[instance].venturecontacts
+	infoTablePersistentData.forumuserid = nil
+	OnlineAddContact(userid, block)
+	menu.refreshInfoFrame()
+end
+
+function Helper.buttonCreateFriendListContext(menu)
+	OnlineRequestPlatformFriendList()
+end
+
+function Helper.onCheckUsername(menu, result)
+	local data
+	if (menu.ventureMode == "venturecontacts") or (menu.mode == "venturecontacts") then
+		data = menu.infoTablePersistentData[Helper.usernameRequest].venturecontacts
+	elseif menu.contextMenuMode == "venturecreateparty" then
+		data = menu.contextMenuData
+	else
+		DebugError("Helper.onCheckUsername() called from unhandled sub menu.")
+		return
+	end
+
+	local success, userid, name = utf8.match(result, "([01]);([0-9]+);(.*)")
+	if success == "1" then
+		local contact = OnlineFindContact(userid)
+		if contact == nil then
+			data.forumsearch = name
+			data.forumuserid = tonumber(userid)
+		else
+			data.forumsearch = name
+			data.forumerror = contact.isblocked and "blocked" or "alreadyexists"
+		end
+	else
+		data.forumerror = "notfound"
+	end
+	Helper.usernameRequest = nil
+	if (menu.ventureMode == "venturecontacts") or (menu.mode == "venturecontacts") then
+		menu.refreshInfoFrame()
+	elseif menu.contextMenuMode == "venturecreateparty" then
+		menu.refreshContextFrame()
+	end
+end
+
+function Helper.onPlatformFriendsLookedUp(menu)
+	local friendlist = OnlineGetPlatformFriendList()
+
+	menu.contextMenuMode = "venturefriendlist"
+	local offsetx = Helper.ventureContactsMode.x + Helper.ventureContactsMode.width + Helper.borderSize + Helper.ventureContactsConfig.contextBorder
+	local offsety = Helper.ventureContactsMode.y
+	menu.contextMenuData = { xoffset = offsetx, yoffset = offsety, friendlist = friendlist }
+	if menu.ventureMode == "venturecontacts" then
+		menu.createContextFrame(Helper.scaleX(400))
+	elseif menu.mode == "venturecontacts" then
+		menu.createContextFrame(nil, offsetx, offsety, Helper.scaleX(400), true)
+	end
+end
+
+function Helper.createVentureContactContext(menu, frame)
+	local contact = menu.contextMenuData.contact
+
+	local infotable = frame:addTable(2, { tabOrder = 2, x = Helper.borderSize, y = Helper.borderSize, width = menu.contextMenuData.width, highlightMode = "off" })
+
+	-- title
+	local row = infotable:addRow(nil, { fixed = true })
+	row[1]:setColSpan(2):createText(contact.name, Helper.headerRowCenteredProperties)
+
+	if C.IsVentureSeasonSupported() then
+		local _, userid = OnlineGetUserName()
+		if contact.id ~= userid then
+			local row = infotable:addRow(true, { fixed = true })
+			row[1]:setColSpan(2):createButton({  }):setText(ReadText(1001, 12115))
+			row[1].handlers.onClick = function () return Helper.buttonContactMessage(menu, contact.id, contact.name) end
+		end
+
+		if not contact.isblocked then
+			local row = infotable:addRow(true, { fixed = true })
+			row[1]:setColSpan(2):createButton({  }):setText(contact.ismuted and ReadText(50101, 11278) or ReadText(50101, 11277))
+			row[1].handlers.onClick = function () return Helper.buttonMuteContact(menu, contact.id, not contact.ismuted) end
+		end
+
+		local row = infotable:addRow(true, { fixed = true })
+		row[1]:setColSpan(2):createButton({  }):setText(contact.isblocked and ReadText(50101, 11292) or ReadText(50101, 11290))
+		row[1].handlers.onClick = function () return Helper.buttonAddContact(menu, contact.id, not contact.isblocked) end
+	end 
+
+	local row = infotable:addRow(true, { fixed = true })
+	row[1]:setColSpan(2):createButton({  }):setText(ReadText(50101, 11296))
+	row[1].handlers.onClick = function () return Helper.buttonRemoveContact(menu, contact.id) end
+
+	if C.IsVentureSeasonSupported() then
+		local row = infotable:addRow(nil, { fixed = true })
+		row[1]:setColSpan(2):createText(ReadText(1001, 12110), Helper.subHeaderTextProperties)
+
+		local row = infotable:addRow(true, { fixed = true })
+		row[1]:setColSpan(2):createButton({  }):setText(ReadText(1001, 12111))
+		row[1].handlers.onClick = function () return Helper.buttonReportContact(menu, contact.id, "Offensive user name") end -- hardcoded text only visible in venture server moderator interface
+	end
+
+	-- adjust frame position
+	local neededheight = infotable.properties.y + infotable:getVisibleHeight()
+	if frame.properties.y + neededheight + Helper.frameBorder > Helper.viewHeight then
+		menu.contextMenuData.yoffset = Helper.viewHeight - neededheight - Helper.frameBorder
+		frame.properties.y = menu.contextMenuData.yoffset
+	end
+end
+
+function Helper.showVentureFriendListContext(menu, frame)
+	local contact = menu.contextMenuData.contact
+
+	local infotable = frame:addTable(3, { tabOrder = 2, x = Helper.borderSize, y = Helper.borderSize, width = menu.contextMenuData.width })
+	infotable:setColWidth(1, Helper.standardTextHeight)
+	infotable:setColWidthPercent(3, 50)
+
+	-- title
+	local row = infotable:addRow(nil, { fixed = true })
+	row[1]:setColSpan(3):createText(ReadText(50101, 11282), Helper.headerRowCenteredProperties)
+
+	local platformicon
+	if IsSteamworksEnabled() then
+		platformicon = "\27[optionsmenu_steam]"
+	end
+
+	if #menu.contextMenuData.friendlist > 0 then
+		for i, friend in ipairs(menu.contextMenuData.friendlist) do
+			local row = infotable:addRow(true, {  })
+			row[1]:createCheckBox(friend.isselected, {  })
+			row[1].handlers.onClick = function (_, checked) menu.contextMenuData.friendlist[i].isselected = checked end
+			row[2]:setColSpan(2):createText(friend.username .. " (" .. (platformicon or "") .. (friend.platformname and (" " .. friend.platformname) or "") .. ")")
+		end
+	else
+		local row = infotable:addRow(nil, {  })
+		row[1]:setColSpan(3):createText(ReadText(50101, 11507), { wordwrap = true })
+	end
+
+	local buttontable = frame:addTable(2, { tabOrder = 3, x = Helper.borderSize, y = Helper.borderSize, width = menu.contextMenuData.width })
+	local row = buttontable:addRow(true, {  })
+	row[1]:createButton({ active = function () return Helper.buttonImportFriendListActive(menu) end }):setText(ReadText(50101, 11289), { halign = "center" })
+	row[1].handlers.onClick = function () return Helper.buttonImportFriendList(menu) end
+	row[2]:createButton({  }):setText(ReadText(1001, 64), { halign = "center" })
+	row[2].handlers.onClick = function () return menu.closeContextMenu() end
+
+	local infoheight = infotable:getFullHeight()
+	local buttonheight = buttontable:getFullHeight()
+	if frame.properties.y + infotable.properties.y + infoheight + buttonheight + Helper.frameBorder > Helper.viewHeight then
+		buttontable.properties.y = Helper.viewHeight - frame.properties.y - Helper.frameBorder - buttonheight
+		infotable.properties.maxVisibleHeight = buttontable.properties.y - Helper.borderSize - infotable.properties.y
+	else
+		buttontable.properties.y = infotable.properties.y + infoheight + Helper.borderSize
+	end
+
+	infotable:addConnection(1, 3, true)
+	buttontable:addConnection(2, 3)
+end
+
+function Helper.buttonReportContact(menu, userid, reason)
+	local mousepos = C.GetCenteredMousePos()
+	menu.contextMenuMode = "venturereport"
+	menu.contextMenuData = { mode = "venturereport", submode = "user", reason = reason, userid = userid, xoffset = mousepos.x + Helper.viewWidth / 2, yoffset = mousepos.y + Helper.viewHeight / 2 }
+
+	local width = Helper.scaleX(400)
+	if menu.contextMenuData.xoffset + width > Helper.viewWidth then
+		menu.contextMenuData.xoffset = Helper.viewWidth - width - Helper.frameBorder
+	end
+	
+	if menu.ventureMode == "venturecontacts" then
+		menu.createContextFrame(width, nil, menu.contextMenuData.xoffset, menu.contextMenuData.yoffset)
+	elseif menu.mode == "venturecontacts" then
+		menu.createContextFrame(nil, menu.contextMenuData.xoffset, menu.contextMenuData.yoffset, width, true)
+	end
+end
+
+function Helper.createUserQuestionContext(menu, frame)
+	local numCols = 5
+	local ftable = frame:addTable(numCols, { tabOrder = 5, reserveScrollBar = false, highlightMode = "off" })
+
+	if menu.contextMenuData.mode == "venturereport" then
+		if menu.contextMenuData.submode == "user" then
+			local row = ftable:addRow(false, { fixed = true })
+			row[1]:setColSpan(numCols):createText(ReadText(50101, 11260), Helper.headerRowCenteredProperties)
+
+			local row = ftable:addRow(false, { fixed = true })
+			row[1]:setColSpan(numCols):createText(string.format(ReadText(50101, 11264), menu.contextMenuData.author), { wordwrap = true })
+		end
+	end
+
+
+	local row = ftable:addRow(false, { fixed = true })
+	row[1]:setColSpan(numCols):createText("")
+
+	local row = ftable:addRow(true, { fixed = true })
+	row[2]:createButton():setText(ReadText(1001, 2617), { halign = "center" })
+	if menu.contextMenuData.mode == "venturereport" then
+		if menu.contextMenuData.submode == "user" then
+			row[2].handlers.onClick = function () return menuExtension.reportUser(menu, menu.contextMenuData.userid, menu.contextMenuData.reason) end
+		end
+	end
+	row[4]:createButton():setText(ReadText(1001, 2618), { halign = "center" })
+	row[4].handlers.onClick = menu.closeContextMenu
+	ftable:setSelectedCol(4)
+
+	-- adjust frame position
+	local neededheight = ftable.properties.y + ftable:getVisibleHeight()
+	if frame.properties.y + neededheight > Helper.viewHeight then
+		menu.contextMenuData.yoffset = Helper.viewHeight - neededheight - Helper.frameBorder
+		frame.properties.y = menu.contextMenuData.yoffset
+	end
+end
+
+function Helper.buttonContactMessage(menu, id, name)
+	Helper.chatParams = { id = id, name = name }
+	C.QuickMenuAccess("chat")
+	menu.closeContextMenu()
+end
+
+function Helper.buttonMuteContact(menu, userid, mute)
+	OnlineMuteContact(userid, mute)
+	menu.closeContextMenu()
+end
+
+function Helper.buttonRemoveContact(menu, userid)
+	OnlineRemoveContact(userid)
+	menu.closeContextMenu()
+end
+
+function Helper.buttonAddContact(menu, userid, block)
+	OnlineAddContact(userid, block)
+	menu.closeContextMenu()
+end
+
+function Helper.buttonImportFriendListActive(menu)
+	for _, friend in ipairs(menu.contextMenuData.friendlist) do
+		if friend.isselected then
+			return true
+		end
+	end
+	return false
+end
+
+function Helper.buttonImportFriendList(menu)
+	local friends = ""
+	for _, friend in ipairs(menu.contextMenuData.friendlist) do
+		if friend.isselected then
+			if friends == "" then
+				friends = friend.platformid
+			else
+				friends = friends .. "," .. friend.platformid
+			end
+		end
+	end
+	OnlineImportPlatformFriends(friends)
+	menu.closeContextMenu()
+end
+
+function Helper.onReceiveContacts(menu)
+	if menu.contextMenuMode == "venturecreateparty" then
+		menu.refreshContextFrame()
+	end
+	if (menu.ventureMode == "venturecontacts") or (menu.mode == "venturecontacts") then
+		menu.refreshInfoFrame()
+	end
+end
+
+function Helper.registerVentureContactCallbacks(menu)
+	Helper.registeredVentureContactFunctions = {
+		onCheckUsername = function (_, result) return Helper.onCheckUsername(menu, result) end,
+		onPlatformFriendsLookedUp = function () return Helper.onPlatformFriendsLookedUp(menu) end,
+		onReceiveContacts = function () return Helper.onReceiveContacts(menu) end,
+	}
+	RegisterEvent("onCheckUsername", Helper.registeredVentureContactFunctions.onCheckUsername)
+	RegisterEvent("onPlatformFriendsLookedUp", Helper.registeredVentureContactFunctions.onPlatformFriendsLookedUp)
+	RegisterEvent("onReceiveContacts", Helper.registeredVentureContactFunctions.onReceiveContacts)
+end
+
+function Helper.unregisterVentureContactCallbacks()
+	if Helper.registeredVentureContactFunctions and next(Helper.registeredVentureContactFunctions) then
+		UnregisterEvent("onCheckUsername", Helper.registeredVentureContactFunctions.onCheckUsername)
+		UnregisterEvent("onPlatformFriendsLookedUp", Helper.registeredVentureContactFunctions.onPlatformFriendsLookedUp)
+		UnregisterEvent("onReceiveContacts", Helper.registeredVentureContactFunctions.onReceiveContacts)
+		Helper.registeredVentureContactFunctions = {}
+	end
+end
 
 -- kuertee start: SWI load lua
 function Helper.SWIUI_LoadLua(_, file)

@@ -68,12 +68,12 @@ ffi.cdef[[
 		uint32_t numdata;
 	} UICargoStat;
 	typedef struct {
-		const float x;
-		const float y;
-		const float z;
-		const float yaw;
-		const float pitch;
-		const float roll;
+		float x;
+		float y;
+		float z;
+		float yaw;
+		float pitch;
+		float roll;
 	} UIPosRot;
 	typedef struct {
 		const char* id;
@@ -269,10 +269,10 @@ local config = {
 		numdatapoints = 21,
 		factors = { 0.2, 0.5, 1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000, 50000, 100000, 200000, 500000, 1000000, 2000000, 5000000, 10000000, 20000000, 50000000, 100000000 },
 		datarecordcolors = {
-			[1] = { buy = { r = 253, g =  91, b =  91, a = 100 }, buyhex = "\27#FFFD5B5B#", sell = { r = 252, g = 171, b =  92, a = 100 }, sellhex = "\27#FFFCAB5C#" },
-			[2] = { buy = { r =  85, g = 172, b =   0, a = 100 }, buyhex = "\27#FF55AC00#", sell = { r = 180, g = 250, b = 200, a = 100 }, sellhex = "\27#FFB4FAC8#" },
-			[3] = { buy = { r =   0, g = 175, b = 180, a = 100 }, buyhex = "\27#FF00AFB4#", sell = { r =  91, g = 133, b = 253, a = 100 }, sellhex = "\27#FF5B85FD#" },
-			[4] = { buy = { r = 171, g =  91, b = 253, a = 100 }, buyhex = "\27#FFAB5BFD#", sell = { r = 253, g =  91, b = 213, a = 100 }, sellhex = "\27#FFFD5BD5#" }
+			[1] = { buy = Color["graph_data_1"], sell = Color["graph_data_2"] },
+			[2] = { buy = Color["graph_data_3"], sell = Color["graph_data_4"] },
+			[3] = { buy = Color["graph_data_5"], sell = Color["graph_data_6"] },
+			[4] = { buy = Color["graph_data_7"], sell = Color["graph_data_8"] },
 		},
 		point = {
 			type = "square",
@@ -796,7 +796,7 @@ function menu.getFlowchartProductionNodes()
 				resources = buildresources,
 				expandedTableNumColumns = 4,
 				expandHandler = menu.onExpandBuildModule,
-				color = menu.removedModules[tostring(ConvertStringTo64Bit(tostring(buildmodule)))] and Helper.color.red or nil,
+				color = menu.removedModules[tostring(ConvertStringTo64Bit(tostring(buildmodule)))] and Color["lso_node_removed"] or nil,
 			}
 		}
 
@@ -826,9 +826,9 @@ function menu.getFlowchartProductionNodes()
 						properties = { shape = "stadium" },
 						resources = buildresources,
 						expandHandler = menu.onExpandDestroyedModule,
-						color = Helper.color.grey,
-						textcolor = Helper.color.red,
-						statuscolor = Helper.color.red,
+						color = Color["lso_node_inactive"],
+						textcolor = Color["lso_node_error"],
+						statuscolor = Color["lso_node_error"],
 						statusIcon = "lso_warning",
 					}
 				}
@@ -859,7 +859,7 @@ function menu.getFlowchartProductionNodes()
 								properties = { shape = "stadium" },
 								resources = buildresources,
 								expandHandler = menu.onExpandPlannedBuildModule,
-								color = Helper.color.grey,
+								color = Color["lso_node_inactive"],
 							}
 						}
 
@@ -903,7 +903,7 @@ function menu.getFlowchartProductionNodes()
 		workforceraces = GetWorkForceRaceResources(menu.containerid)
 	end
 	if #workforceraces == 0 then
-		workforcenode[1].color = Helper.color.grey
+		workforcenode[1].color = Color["lso_node_inactive"]
 		-- TODO: set statusIcon
 		-- TODO: Handle case of workforce bonus being non-zero, but no habitation modules present
 	else
@@ -1301,7 +1301,7 @@ function menu.setupFlowchartData()
 	-- protectyon section
 	local condensateware = "condensate"
 	local transporttype = GetWareData(condensateware, "transport")
-	local sector = GetComponentData(menu.containerid, "sectorid")
+	local sector, haswaveprotectionmodule = GetComponentData(menu.containerid, "sectorid", "haswaveprotectionmodule")
 	local sectorcontainsthewave = GetComponentData(sector, "containsthewave")
 	local hascondensatestorage = false
 	if C.IsComponentClass(menu.container, "container") then
@@ -1326,31 +1326,36 @@ function menu.setupFlowchartData()
 
 	if sectorcontainsthewave and hascondensatestorage then
 		local condensatenodes = {}
-		local production_products =	C.IsInfoUnlockedForPlayer(menu.container, "production_products")
 
-		-- add condensate shield node
-		local condensateshieldnode = {
-			condensateshield = condensateware,
-			text = Helper.unlockInfo(production_products, ReadText(20104, 92501)),
-			type = transporttype,
-			row = 1, col = 2, numrows = 1, numcols = 1,
-			{
-				properties = {
-					value = 0,
-					max = 0,
-					shape = "hexagon",
-				},
-				expandedTableNumColumns = 2,
-				expandHandler = menu.onExpandCondensateShield,
+		local condensateshieldnode
+		if haswaveprotectionmodule then
+			local production_products =	C.IsInfoUnlockedForPlayer(menu.container, "production_products")
+			-- add condensate shield node
+			condensateshieldnode = {
+				condensateshield = condensateware,
+				text = Helper.unlockInfo(production_products, ReadText(20104, 92501)),
+				type = transporttype,
+				row = 1, col = 2, numrows = 1, numcols = 1,
+				{
+					properties = {
+						value = 0,
+						max = 0,
+						shape = "hexagon",
+					},
+					expandedTableNumColumns = 2,
+					expandHandler = menu.onExpandCondensateShield,
+				}
 			}
-		}
-		table.insert(condensatenodes, condensateshieldnode)
+			table.insert(condensatenodes, condensateshieldnode)
+		end
 
 		-- add condensate storage node
 		local node = Helper.createLSOStorageNode(menu, menu.container, condensateware, false, true, true)
 		table.insert(condensatenodes, node)
 		warenodes[condensateware] = node
-		addFlowchartEdge(node, condensateshieldnode)
+		if condensateshieldnode then
+			addFlowchartEdge(node, condensateshieldnode)
+		end
 
 		table.insert(flowchartsections, { nodes = condensatenodes, junctions = { }, numrows = 1, numcols = 2 })
 	end
@@ -1455,7 +1460,7 @@ function menu.setupFlowchartData()
 				issupplyresource = true,
 				expandedTableNumColumns = 3,
 				expandHandler = menu.onExpandSupplyResource,
-				statuscolor = hasrestrictions and Helper.color.warningorange or nil,
+				statuscolor = hasrestrictions and Color["icon_warning"] or nil,
 				statusIcon = hasrestrictions and "lso_error" or nil,
 			}
 		}
@@ -1641,7 +1646,7 @@ function menu.getFlowchartDummyProductionNodes()
 	addFlowchartEdge(nodeMethane, nodeGraphene)
 
 	local nodeCoolant = { text = "Superfluid Coolant", type = "container",
-		{ properties = { shape = "stadium", width = 250 }, statusText = "<!>", color = Helper.color.red },
+		{ properties = { shape = "stadium", width = 250 }, statusText = "<!>", color = Color["lso_node_error"] },
 		{ properties = { width = 250, value = 60, max = 100, slider1 = 75, slider2 = 100, step = 1, mouseOverText = "Mouse-over test 2: Without slider text" } }
 	}
 	addFlowchartEdge(nodeEnergy, nodeCoolant)
@@ -1656,7 +1661,7 @@ function menu.getFlowchartDummyProductionNodes()
 	addFlowchartEdge(nodeHydrogen, nodeWafers)
 
 	local nodeAntimatter = { text = "Antimatter Cells", type = "container",
-		{ properties = { shape = "stadium", width = 250 }, statusIcon = "menu_inventory", color = Helper.color.red },
+		{ properties = { shape = "stadium", width = 250 }, statusIcon = "menu_inventory", color = Color["lso_node_error"] },
 		{ properties = { width = 250, value = 30, max = 100, slider2 = 45, step = 1 } }
 	}
 	addFlowchartEdge(nodeEnergy, nodeAntimatter)
@@ -1724,20 +1729,18 @@ function menu.display()
 	menu.sidebarWidth = Helper.scaleX(Helper.sidebarWidth)
 	menu.rightBarX = Helper.viewWidth - menu.sidebarWidth - Helper.frameBorder
 
-	menu.frame = Helper.createFrameHandle(menu, { layer = config.mainFrameLayer, height = frameheight, width = framewidth, x = xoffset, y = yoffset, backgroundID = "solid", backgroundColor = Helper.color.semitransparent })
+	menu.frame = Helper.createFrameHandle(menu, { layer = config.mainFrameLayer, height = frameheight, width = framewidth, x = xoffset, y = yoffset })
+	menu.frame:setBackground("solid", { color = Color["frame_background_semitransparent"] })
 
 	local usablewidth = menu.frame.properties.width - 2 * Helper.frameBorder
 
 	local ftable, row
-	local rowproperties = { bgColor = Helper.color.transparent }
-
 	ftable = menu.frame:addTable(1, { tabOrder = 1, width = usablewidth, x = Helper.frameBorder })
 	ftable:setDefaultCellProperties("text", { halign = "center" })
 
-	row = ftable:addRow(false, rowproperties)
+	row = ftable:addRow(false)
 	row[1]:createText(menu.title, Helper.headerRow1Properties)
-	row = ftable:addRow(false, rowproperties)
-
+	row = ftable:addRow(false)
 	-- row[1]:createText(menu.container and GetComponentData(menu.containerid, "name") or "Flowchart Test")
 	-- kuertee start: callback
 	if callbacks ["display_get_station_name_extras"] then
@@ -1763,13 +1766,12 @@ function menu.display()
 		row[1]:createText(menu.container and GetComponentData(menu.containerid, "name") or "Flowchart Test")
 	end
 	-- kuertee end: callback
-
-	--row = ftable:addRow(false, rowproperties)
+	--row = ftable:addRow(false)
 	--row[1]:createText("Antigone Memorial")
 
 	usablewidth = menu.rightBarX - Helper.borderSize - Helper.frameBorder 
 
-	menu.flowchart = menu.frame:addFlowchart(menu.flowchartNumRows, menu.flowchartNumCols, { borderHeight = 3, borderColor = Helper.defaultSimpleBackgroundColor, minRowHeight = 45, minColWidth = 80, x = Helper.frameBorder, y = ftable:getVisibleHeight() + Helper.borderSize, width = usablewidth })
+	menu.flowchart = menu.frame:addFlowchart(menu.flowchartNumRows, menu.flowchartNumCols, { borderHeight = 3, borderColor = Color["row_background_blue"], minRowHeight = 45, minColWidth = 80, x = Helper.frameBorder, y = ftable:getVisibleHeight() + Helper.borderSize, width = usablewidth })
 	menu.flowchart:setDefaultNodeProperties({
 		expandedFrameLayer = config.expandedMenuFrameLayer,
 		expandedTableNumColumns = 2,
@@ -1779,7 +1781,7 @@ function menu.display()
 	})
 	for col = 1, menu.flowchartNumCols, 1 do
 		if col % 2 == (menu.startwithproduction and 1 or 0) then
-			menu.flowchart:setColBackgroundColor(col, Helper.defaultSimpleBackgroundColor)
+			menu.flowchart:setColBackgroundColor(col, Color["row_background_blue"])
 			menu.flowchart:setColumnCaption(col, ReadText(1001, 1600))
 		else
 			menu.flowchart:setColumnCaption(col, ReadText(1001, 1400))
@@ -1787,10 +1789,10 @@ function menu.display()
 	end
 	--menu.flowchart:setDefaultTextProperties({ fontsize = 8 })
 
-	local containerSlotColor = Helper.defaultFlowchartConnector3Color
-	local liquidSlotColor = Helper.defaultFlowchartConnector2Color
-	local solidSlotColor = Helper.defaultFlowchartConnector1Color
-	local condensateSlotColor = Helper.defaultFlowchartConnector4Color
+	local containerSlotColor = Color["lso_slot_container"]
+	local liquidSlotColor = Color["lso_slot_liquid"]
+	local solidSlotColor = Color["lso_slot_solid"]
+	local condensateSlotColor = Color["lso_slot_condensate"]
 	local containerProp = { sourceSlotColor = containerSlotColor, sourceSlotRank = 1, destSlotColor = containerSlotColor, destSlotRank = 1 }
 	local liquidProp = { sourceSlotColor = liquidSlotColor, sourceSlotRank = 2, destSlotColor = liquidSlotColor, destSlotRank = 2 }
 	local solidProp = { sourceSlotColor = solidSlotColor, sourceSlotRank = 3, destSlotColor = solidSlotColor, destSlotRank = 3 }
@@ -1959,16 +1961,16 @@ function menu.display()
 	titletable:setColWidth(3, titlewidth, false)
 	titletable:setColWidth(4, checkboxwidth, false)
 
-	row = titletable:addRow(false, { fixed = true, bgColor = Helper.color.transparent })
+	row = titletable:addRow(false, { fixed = true })
 	row[1]:setColSpan(5):createText("")
 	-- title
-	row = titletable:addRow(true, { fixed = true, bgColor = Helper.color.transparent, borderBelow = false })
+	row = titletable:addRow(true, { fixed = true, borderBelow = false })
 	row[2]:setBackgroundColSpan(2):createCheckBox(menu.showGraph, { height = checkboxwidth, scaling = false })
 	row[2].handlers.onClick = menu.buttonShowGraph
-	row[3]:createButton({ bgColor = Helper.color.transparent, height = Helper.headerRow1Height }):setText(title, { font = Helper.headerRow1Font, fontsize = Helper.headerRow1FontSize, x = Helper.headerRow1Offsetx, y = Helper.headerRow1Offsety, halign = "center" })
+	row[3]:createButton({ bgColor = Color["button_background_hidden"], height = Helper.headerRow1Height }):setText(title, { font = Helper.headerRow1Font, fontsize = Helper.headerRow1FontSize, x = Helper.headerRow1Offsetx, y = Helper.headerRow1Offsety, halign = "center" })
 	row[3].handlers.onClick = menu.buttonShowGraph
 	if menu.showGraph then
-		row = titletable:addRow(false, { fixed = true, bgColor = Helper.defaultSimpleBackgroundColor })
+		row = titletable:addRow(false, { fixed = true, bgColor = Color["row_background_blue"] })
 		row[1]:setColSpan(5):createText(" ", { fontsize = 1, height = 2 })
 	end
 
@@ -1998,21 +2000,23 @@ function menu.display()
 		end
 
 		-- mode buttons
-		row = ftable:addRow(true, { fixed = true, bgColor = Helper.color.transparent })
-		row[2]:setColSpan(2):createButton({ active = storageinfo_amounts, bgColor = (menu.graphmode == "tradeofferprices") and Helper.defaultArrowRowBackgroundColor or Helper.defaultTitleBackgroundColor }):setText(ReadText(1001, 6504), { halign = "center" })
+		row = ftable:addRow(true, { fixed = true })
+		row[2]:setColSpan(2):createButton({ active = storageinfo_amounts, bgColor = (menu.graphmode == "tradeofferprices") and Color["row_background_selected"] or Color["row_title_background"] }):setText(ReadText(1001, 6504), { halign = "center" })
 		row[2].handlers.onClick = function () return menu.buttonGraphMode("tradeofferprices") end
-		row[4]:setColSpan(2):createButton({ active = storageinfo_amounts, bgColor = (menu.graphmode == "tradeofferamounts") and Helper.defaultArrowRowBackgroundColor or Helper.defaultTitleBackgroundColor }):setText(ReadText(1001, 6508), { halign = "center" })
+		row[4]:setColSpan(2):createButton({ active = storageinfo_amounts, bgColor = (menu.graphmode == "tradeofferamounts") and Color["row_background_selected"] or Color["row_title_background"] }):setText(ReadText(1001, 6508), { halign = "center" })
 		row[4].handlers.onClick = function () return menu.buttonGraphMode("tradeofferamounts") end
-		row[6]:setColSpan(2):createButton({ active = storageinfo_amounts, bgColor = (menu.graphmode == "cargolevels") and Helper.defaultArrowRowBackgroundColor or Helper.defaultTitleBackgroundColor }):setText(ReadText(1001, 6505), { halign = "center" })
+		row[6]:setColSpan(2):createButton({ active = storageinfo_amounts, bgColor = (menu.graphmode == "cargolevels") and Color["row_background_selected"] or Color["row_title_background"] }):setText(ReadText(1001, 6505), { halign = "center" })
 		row[6].handlers.onClick = function () return menu.buttonGraphMode("cargolevels") end
-		row[8]:setColSpan(2):createButton({ active = isplayerowned, bgColor = (menu.graphmode == "npcaccounts") and Helper.defaultArrowRowBackgroundColor or Helper.defaultTitleBackgroundColor }):setText(ReadText(1001, 6506), { halign = "center" })
+		row[8]:setColSpan(2):createButton({ active = isplayerowned, bgColor = (menu.graphmode == "npcaccounts") and Color["row_background_selected"] or Color["row_title_background"] }):setText(ReadText(1001, 6506), { halign = "center" })
 		row[8].handlers.onClick = function () return menu.buttonGraphMode("npcaccounts") end
 		local buttonHeight = row:getHeight()
 		-- graph cell
-		row = ftable:addRow(false, { fixed = true, bgColor = Helper.color.transparent })
-	
+		row = ftable:addRow(false, { fixed = true })
+
+		-- graph
+		local graph = row[1]:setColSpan(10):createGraph({ height = menu.frame.properties.height - menu.frame:getUsedHeight() - 2 * buttonHeight - 3 * Helper.borderSize, scaling = false })
+
 		local minY, maxY = 0, 1
-		local datarecords = {}
 		local hashighlight = false
 		for i, entry in pairs(menu.showndata) do
 			if menu.selectedrowdata == entry then
@@ -2022,65 +2026,93 @@ function menu.display()
 		end
 		for i, entry in pairs(menu.showndata) do
 			if menu.graphmode == "cargolevels" then
-				local data = {}
+				local highlight = menu.selectedrowdata == entry
+				local color = config.graph.datarecordcolors[i].buy
+				if hashighlight and (not highlight) then
+					color.a = 50
+				end
+				local datarecord = graph:addDataRecord({
+					markertype = config.graph.point.type,
+					markersize = highlight and config.graph.point.highlightSize or config.graph.point.size,
+					markercolor = color,
+					linetype = config.graph.line.type,
+					linewidth = highlight and config.graph.line.highlightSize or config.graph.line.size,
+					linecolor = color,
+					mouseOverText = menu.graphdata[entry].text,
+				})
+
 				for i, point in pairs(menu.graphdata[entry].data) do
 					minY = math.min(minY, point.y)
 					maxY = math.max(maxY, point.y)
-					table.insert(data, Helper.createGraphDataPoint((point.t - menu.xEnd) / menu.xScale, point.y, nil, nil))
+					datarecord:addData((point.t - menu.xEnd) / menu.xScale, point.y, nil, nil)
 				end
-
-				local highlight = menu.selectedrowdata == entry
-				local color = { r = config.graph.datarecordcolors[i].buy.r, g = config.graph.datarecordcolors[i].buy.g, b = config.graph.datarecordcolors[i].buy.b, a = config.graph.datarecordcolors[i].buy.a }
-				if hashighlight and (not highlight) then
-					color.a = 50
-				end
-				table.insert(datarecords, Helper.createGraphDataRecord(config.graph.point.type, highlight and config.graph.point.highlightSize or config.graph.point.size, color, config.graph.line.type, highlight and config.graph.line.highlightSize or config.graph.line.size, color, data, false, menu.graphdata[entry].text))
 			elseif (menu.graphmode == "tradeofferprices") or (menu.graphmode == "tradeofferamounts") then
-				local data = {}
-				for i, point in pairs(menu.graphdata[entry].selldata) do
-					minY = math.min(minY, point.y)
-					maxY = math.max(maxY, point.y)
-					table.insert(data, Helper.createGraphDataPoint((point.t - menu.xEnd) / menu.xScale, point.y, nil, nil))
+				if next(menu.graphdata[entry].selldata) then
+					local highlight = menu.selectedrowdata == entry
+					local color = config.graph.datarecordcolors[i].sell
+					if hashighlight and (not highlight) then
+						color.a = 50
+					end
+					local datarecord = graph:addDataRecord({
+						markertype = config.graph.point.type,
+						markersize = highlight and config.graph.point.highlightSize or config.graph.point.size,
+						markercolor = color,
+						linetype = config.graph.line.type,
+						linewidth = highlight and config.graph.line.highlightSize or config.graph.line.size,
+						linecolor = color,
+						mouseOverText = ReadText(1001, 2917) .. ReadText(1001, 120) .. " " .. menu.graphdata[entry].text,
+					})
+
+					for i, point in pairs(menu.graphdata[entry].selldata) do
+						minY = math.min(minY, point.y)
+						maxY = math.max(maxY, point.y)
+						datarecord:addData((point.t - menu.xEnd) / menu.xScale, point.y, nil, nil)
+					end
 				end
 
-				local highlight = menu.selectedrowdata == entry
-				local color = { r = config.graph.datarecordcolors[i].sell.r, g = config.graph.datarecordcolors[i].sell.g, b = config.graph.datarecordcolors[i].sell.b, a = config.graph.datarecordcolors[i].sell.a }
-				if hashighlight and (not highlight) then
-					color.a = 50
-				end
-				if #data > 0 then
-					table.insert(datarecords, Helper.createGraphDataRecord(config.graph.point.type, highlight and config.graph.point.highlightSize or config.graph.point.size, color, config.graph.line.type, highlight and config.graph.line.highlightSize or config.graph.line.size, color, data, false, ReadText(1001, 2917) .. ReadText(1001, 120) .. " " .. menu.graphdata[entry].text))
-				end
+				if next(menu.graphdata[entry].buydata) then
+					local highlight = menu.selectedrowdata == entry
+					local color = config.graph.datarecordcolors[i].buy
+					if hashighlight and (not highlight) then
+						color.a = 50
+					end
+					local datarecord = graph:addDataRecord({
+						markertype = config.graph.point.type,
+						markersize = highlight and config.graph.point.highlightSize or config.graph.point.size,
+						markercolor = color,
+						linetype = config.graph.line.type,
+						linewidth = highlight and config.graph.line.highlightSize or config.graph.line.size,
+						linecolor = color,
+						mouseOverText = ReadText(1001, 2916) .. ReadText(1001, 120) .. " " .. menu.graphdata[entry].text,
+					})
 
-				data = {}
-				for i, point in pairs(menu.graphdata[entry].buydata) do
-					minY = math.min(minY, point.y)
-					maxY = math.max(maxY, point.y)
-					table.insert(data, Helper.createGraphDataPoint((point.t - menu.xEnd) / menu.xScale, point.y, nil, nil))
-				end
-
-				local highlight = menu.selectedrowdata == entry
-				local color = { r = config.graph.datarecordcolors[i].buy.r, g = config.graph.datarecordcolors[i].buy.g, b = config.graph.datarecordcolors[i].buy.b, a = config.graph.datarecordcolors[i].buy.a }
-				if hashighlight and (not highlight) then
-					color.a = 50
-				end
-				if #data > 0 then
-					table.insert(datarecords, Helper.createGraphDataRecord(config.graph.point.type, highlight and config.graph.point.highlightSize or config.graph.point.size, color, config.graph.line.type, highlight and config.graph.line.highlightSize or config.graph.line.size, color, data, false, ReadText(1001, 2916) .. ReadText(1001, 120) .. " " .. menu.graphdata[entry].text))
+					for i, point in pairs(menu.graphdata[entry].buydata) do
+						minY = math.min(minY, point.y)
+						maxY = math.max(maxY, point.y)
+						datarecord:addData((point.t - menu.xEnd) / menu.xScale, point.y, nil, nil)
+					end
 				end
 			elseif menu.graphmode == "npcaccounts" then
-				local data = {}
-				for i, point in pairs(menu.graphdata[entry].data) do
-					minY = math.min(minY, point.y)
-					maxY = math.max(maxY, point.y)
-					table.insert(data, Helper.createGraphDataPoint((point.t - menu.xEnd) / menu.xScale, point.y, nil, nil))
-				end
-
 				local highlight = menu.selectedrowdata == entry
-				local color = { r = config.graph.datarecordcolors[i].buy.r, g = config.graph.datarecordcolors[i].buy.g, b = config.graph.datarecordcolors[i].buy.b, a = config.graph.datarecordcolors[i].buy.a }
+				local color = config.graph.datarecordcolors[i].buy
 				if hashighlight and (not highlight) then
 					color.a = 50
 				end
-				table.insert(datarecords, Helper.createGraphDataRecord(config.graph.point.type, highlight and config.graph.point.highlightSize or config.graph.point.size, color, config.graph.line.type, highlight and config.graph.line.highlightSize or config.graph.line.size, color, data, false, menu.graphdata[entry].text))
+				local datarecord = graph:addDataRecord({
+					markertype = config.graph.point.type,
+					markersize = highlight and config.graph.point.highlightSize or config.graph.point.size,
+					markercolor = color,
+					linetype = config.graph.line.type,
+					linewidth = highlight and config.graph.line.highlightSize or config.graph.line.size,
+					linecolor = color,
+					mouseOverText = menu.graphdata[entry].text,
+				})
+
+				for i, point in pairs(menu.graphdata[entry].data) do
+					minY = math.min(minY, point.y)
+					maxY = math.max(maxY, point.y)
+					datarecord:addData((point.t - menu.xEnd) / menu.xScale, point.y, nil, nil)
+				end
 			end
 		end
 
@@ -2100,18 +2132,18 @@ function menu.display()
 		local xGranularity = Helper.round(menu.xGranularity / menu.xScale, 3)
 		local xOffset = xRange % xGranularity
 
-		local xaxis = Helper.createGraphAxis(Helper.createGraphText(menu.xTitle, Helper.standardFont, 9, menu.white), -xRange, 0, xGranularity, xOffset, true, menu.white, {r = 96, g = 96, b = 96, a = 80})
-		local yaxis = Helper.createGraphAxis(Helper.createGraphText(menu.yTitle, Helper.standardFont, 9, menu.white), 0, maxY, granularity, 0, true, menu.white, {r = 96, g = 96, b = 96, a = 80})
+		graph:setXAxis({ startvalue = -xRange, endvalue = 0, granularity = xGranularity, offset = xOffset, gridcolor = Color["graph_grid"] })
+		graph:setXAxisLabel(menu.xTitle, { fontsize = 9 })
+		graph:setYAxis({ startvalue = 0, endvalue = maxY, granularity = granularity, offset = 0, gridcolor = Color["graph_grid"] })
+		graph:setYAxisLabel(menu.yTitle, { fontsize = 9 })
 
-		-- graph
-		row[1]:setColSpan(10):createGraph("line", true, Helper.color.semitransparent, nil, xaxis, yaxis, datarecords, 0, 0, nil, menu.frame.properties.height - menu.frame:getUsedHeight() - 2 * buttonHeight - 3 * Helper.borderSize)
 		-- time interval buttons
-		row = ftable:addRow(true, { fixed = true, bgColor = Helper.color.transparent })
-		row[3]:setColSpan(2):createButton({ bgColor = (menu.timeframe == "hour") and Helper.defaultArrowRowBackgroundColor or Helper.defaultTitleBackgroundColor }):setText(ReadText(1001, 6501), { halign = "center" })
+		row = ftable:addRow(true, { fixed = true })
+		row[3]:setColSpan(2):createButton({ bgColor = (menu.timeframe == "hour") and Color["row_background_selected"] or Color["row_title_background"] }):setText(ReadText(1001, 6501), { halign = "center" })
 		row[3].handlers.onClick = function () return menu.buttonTimeFrame("hour") end
-		row[5]:setColSpan(2):createButton({ bgColor = (menu.timeframe == "day") and Helper.defaultArrowRowBackgroundColor or Helper.defaultTitleBackgroundColor }):setText(ReadText(1001, 6502), { halign = "center" })
+		row[5]:setColSpan(2):createButton({ bgColor = (menu.timeframe == "day") and Color["row_background_selected"] or Color["row_title_background"] }):setText(ReadText(1001, 6502), { halign = "center" })
 		row[5].handlers.onClick = function () return menu.buttonTimeFrame("day") end
-		row[7]:setColSpan(2):createButton({ bgColor = (menu.timeframe == "week") and Helper.defaultArrowRowBackgroundColor or Helper.defaultTitleBackgroundColor }):setText(ReadText(1001, 6503), { halign = "center" })
+		row[7]:setColSpan(2):createButton({ bgColor = (menu.timeframe == "week") and Color["row_background_selected"] or Color["row_title_background"] }):setText(ReadText(1001, 6503), { halign = "center" })
 		row[7].handlers.onClick = function () return menu.buttonTimeFrame("week") end
 
 		-- key table
@@ -2121,7 +2153,7 @@ function menu.display()
 		menu.keyTable:setColWidth(4, 1.5 * Helper.standardTextHeight)
 		menu.keyTable:setColWidth(5, Helper.standardTextHeight)
 		-- keys
-		row = menu.keyTable:addRow(false, { bgColor = Helper.color.transparent })
+		row = menu.keyTable:addRow(false, {  })
 		row[1]:setColSpan(5):createText(ReadText(1001, 6523), Helper.subHeaderTextProperties)
 		row[1].properties.halign = "center"
 		for i = 1, config.graph.maxshowndata do
@@ -2131,26 +2163,26 @@ function menu.display()
 			local data = menu.graphdata[entry]
 			if entry then
 				if (menu.graphmode == "cargolevels") or (menu.graphmode == "npcaccounts") then
-					row = menu.keyTable:addRow(entry, { bgColor = Helper.color.transparent })
+					row = menu.keyTable:addRow(entry, {  })
 					row[1]:setColSpan(3):createText(data.text, { minRowHeight = 2 * Helper.standardTextHeight + Helper.borderSize })
-					row[4]:createText(config.graph.datarecordcolors[i].buyhex .. "\27[solid]", { y = Helper.borderSize / 2 })
+					row[4]:createText(Helper.convertColorToText(config.graph.datarecordcolors[i].buy) .. "\27[solid]", { y = Helper.borderSize / 2 })
 					row[5]:createButton({ height = 2 * Helper.standardTextHeight + Helper.borderSize }):setText("X", { halign = "center" })
 					row[5].handlers.onClick = function () return menu.checkboxSelected(entry, row.index, 0) end
 				elseif (menu.graphmode == "tradeofferprices") or (menu.graphmode == "tradeofferamounts") then
-					row = menu.keyTable:addRow(entry, { bgColor = Helper.color.transparent })
+					row = menu.keyTable:addRow(entry, {  })
 					row[1]:setColSpan(2):createText(data.text, { minRowHeight = 2 * Helper.standardTextHeight + Helper.borderSize })
 					row[3]:createText(ReadText(1001, 8309) .. ReadText(1001, 120) .. "\n" .. ReadText(1001, 8308) .. ReadText(1001, 120))
-					row[4]:createText(config.graph.datarecordcolors[i].buyhex .. "\27[solid]\n" .. config.graph.datarecordcolors[i].sellhex .. "\27[solid]", { y = Helper.borderSize })
+					row[4]:createText(Helper.convertColorToText(config.graph.datarecordcolors[i].buy) .. "\27[solid]\n" .. Helper.convertColorToText(config.graph.datarecordcolors[i].sell) .. "\27[solid]", { y = Helper.borderSize })
 					row[5]:createButton({ height = 2 * Helper.standardTextHeight + Helper.borderSize }):setText("X", { halign = "center" })
 					row[5].handlers.onClick = function () return menu.checkboxSelected(entry, row.index, 0) end
 				end
 			else
-				row = menu.keyTable:addRow(false, { bgColor = Helper.color.transparent })
+				row = menu.keyTable:addRow(false, {  })
 				row[1]:setColSpan(5):createText("---", { minRowHeight = 2 * Helper.standardTextHeight + Helper.borderSize })
 			end
 		end
 		-- data
-		local row = menu.keyTable:addRow(false, { bgColor = Helper.color.transparent })
+		local row = menu.keyTable:addRow(false, {  })
 		row[1]:setColSpan(5):createText(ReadText(1001, 6507), Helper.subHeaderTextProperties)
 		row[1].properties.halign = "center"
 		if storageinfo_amounts and ((menu.graphmode ~= "npcaccounts") or isplayerowned) then
@@ -2160,14 +2192,14 @@ function menu.display()
 					if menu.graphmode ~= "npcaccounts" then
 						for i, group in ipairs(menu.groupedgraphdata) do
 							local isextended = menu.isGroupExpanded(group.id)
-							row = menu.keyTable:addRow(true, { bgColor = Helper.color.transparent })
+							row = menu.keyTable:addRow(true, {  })
 							row[1]:createButton({  }):setText(isextended and "-" or "+", { halign = "center" })
 							row[1].handlers.onClick = function () return menu.buttonExtend(group.id, row.index) end
 							row[2]:setColSpan(4):createText(group.name)
 							if isextended then
 								for j, dataIdx in ipairs(group) do
 									local data = menu.graphdata[dataIdx]
-									local row = menu.keyTable:addRow(true, { bgColor = Helper.color.transparent })
+									local row = menu.keyTable:addRow(true, {  })
 									row[1]:createCheckBox(data.shown, { height = Helper.standardTextHeight, active = data.shown or (menu.numshowndata < config.graph.maxshowndata), mouseOverText = (data.shown or (menu.numshowndata < config.graph.maxshowndata)) and "" or ReadText(1026, 6500) })
 									row[1].handlers.onClick = function () return menu.checkboxSelected(dataIdx, row.index, 1) end
 									row[2]:setColSpan(4):createText(data.text)
@@ -2176,22 +2208,22 @@ function menu.display()
 						end
 					else--]]
 						for dataIdx, data in ipairs(menu.graphdata) do
-							local row = menu.keyTable:addRow(dataIdx, { bgColor = Helper.color.transparent })
+							local row = menu.keyTable:addRow(dataIdx, {  })
 							row[1]:createCheckBox(data.shown, { height = Helper.standardTextHeight, active = data.shown or (menu.numshowndata < config.graph.maxshowndata), mouseOverText = (data.shown or (menu.numshowndata < config.graph.maxshowndata)) and "" or ReadText(1026, 6500) })
 							row[1].handlers.onClick = function () return menu.checkboxSelected(dataIdx, row.index, 1) end
 							row[2]:setColSpan(4):createText(data.text)
 						end
 					--end
 				else
-					local row = menu.keyTable:addRow(dataIdx, { bgColor = Helper.color.transparent })
+					local row = menu.keyTable:addRow(dataIdx, {  })
 					row[1]:setColSpan(5):createText(ReadText(1001, 6524))
 				end
 			else
-				local row = menu.keyTable:addRow(dataIdx, { bgColor = Helper.color.transparent })
+				local row = menu.keyTable:addRow(dataIdx, {  })
 				row[1]:setColSpan(5):createText(ReadText(1001, 6525))
 			end
 		else
-			local row = menu.keyTable:addRow(dataIdx, { bgColor = Helper.color.transparent })
+			local row = menu.keyTable:addRow(dataIdx, {  })
 			row[1]:setColSpan(5):createText(ReadText(1001, 6526))
 		end
 		
@@ -2286,12 +2318,12 @@ function menu.onExpandTradeWares(frame, ftable, ftable2, nodedata)
 	table.sort(allwares, Helper.sortName)
 
 	for _, entry in ipairs(allwares) do
-		local row = ftable:addRow(true, { bgColor = Helper.color.transparent })
+		local row = ftable:addRow(true, {  })
 		row[1]:createCheckBox(menu.selectedWares[entry.ware], { width = Helper.standardButtonHeight, height = Helper.standardButtonHeight })
 		row[1].handlers.onClick = function (_, checked) if checked then menu.selectedWares[entry.ware] = true else menu.selectedWares[entry.ware] = nil end end
 		row[2]:setColSpan(2):createText(entry.name)
 	end
-	local row = ftable2:addRow(true, { bgColor = Helper.color.transparent })
+	local row = ftable2:addRow(true, {  })
 	row[1]:setColSpan(2):createButton({ active = function () return not menu.compareTradeWareSelection() end }):setText(ReadText(1001, 2821), { halign = "center" })
 	row[1].handlers.onClick = menu.setTradeWares
 	row[3]:createButton({  }):setText(ReadText(1001, 64), { halign = "center" })
@@ -2314,12 +2346,12 @@ function menu.onExpandSupplyResource(_, ftable, _, nodedata)
 	ftable:setColWidth(3, Helper.scaleY(Helper.standardButtonHeight), false)
 	local row
 	-- storage
-	row = ftable:addRow(nil, { bgColor = Helper.color.transparent })
+	row = ftable:addRow(nil, {  })
 	row[1]:createText(ReadText(1001, 2415) .. ReadText(1001, 120))
 	row[2]:setColSpan(2):createText(ReadText(1001, 11018), { halign = "right" })
 	if C.IsComponentClass(menu.container, "container") then
 		-- amount
-		row = ftable:addRow(nil, { bgColor = Helper.color.transparent })
+		row = ftable:addRow(nil, {  })
 		row[1]:createText(ReadText(1001, 6521) .. ReadText(1001, 120))
 		row[2]:setColSpan(2):createText(
 			function()
@@ -2332,11 +2364,11 @@ function menu.onExpandSupplyResource(_, ftable, _, nodedata)
 		if GetComponentData(menu.containerid, "isplayerowned") then
 			-- buy offer
 			-- title
-			row = ftable:addRow(nil, { bgColor = Helper.color.transparent })
+			row = ftable:addRow(nil, {  })
 			row[1]:setColSpan(3):createText(ReadText(1001, 8309), Helper.subHeaderTextProperties)
 			row[1].properties.halign = "center"
 			-- automatic pricing
-			local row = ftable:addRow("autobuypricecheckbox", { bgColor = Helper.color.transparent })
+			local row = ftable:addRow("autobuypricecheckbox", {  })
 			row[1]:createText(ReadText(1001, 8402) .. ReadText(1001, 120), { wordwrap = true })
 			local avgprice, maxprice = GetWareData(nodedata.ware, "avgprice", "maxprice")
 			row[2]:setColSpan(2):createText(RoundTotalTradePrice((avgprice + maxprice) / 2) .. " " .. ReadText(1001, 101), { halign = "right" })
@@ -2344,15 +2376,15 @@ function menu.onExpandSupplyResource(_, ftable, _, nodedata)
 			-- trade rule
 			local hasownlist = C.HasContainerOwnTradeRule(menu.container, "supply", nodedata.ware)
 			local traderuleid = C.GetContainerTradeRuleID(menu.container, "supply", nodedata.ware)
-			local row = ftable:addRow(nil, { bgColor = Helper.color.transparent })
+			local row = ftable:addRow(nil, {  })
 			row[1]:setColSpan(3):createText(ReadText(1001, 11013) .. ReadText(1001, 120), textproperties)
 			-- global
-			local row = ftable:addRow("supplytraderule_global", { bgColor = Helper.color.transparent })
+			local row = ftable:addRow("supplytraderule_global", {  })
 			row[1]:setColSpan(2):createText(ReadText(1001, 11025) .. ReadText(1001, 120), textproperties)
 			row[3]:createCheckBox(not hasownlist, { height = Helper.standardButtonHeight })
 			row[3].handlers.onClick = function(_, checked) return menu.checkboxSetTradeRuleOverride(menu.container, "supply", nodedata.ware, checked) end
 			-- current
-			local row = ftable:addRow("supplytraderule_current", { bgColor = Helper.color.transparent })
+			local row = ftable:addRow("supplytraderule_current", {  })
 			row[1]:setColSpan(2):createDropDown(Helper.traderuleOptions, { startOption = (traderuleid ~= 0) and traderuleid or -1, active = hasownlist }):setTextProperties({ fontsize = config.mapFontSize })
 			row[1].handlers.onDropDownConfirmed = function (_, id) return menu.dropdownTradeRule(menu.container, "supply", nodedata.ware, id) end
 			row[3]:createButton({ mouseOverText = ReadText(1026, 8407) }):setIcon("menu_edit")
@@ -2478,111 +2510,111 @@ function menu.onExpandProduction(_, ftable, _, nodedata, productionmodules)
 		local shown = false
 		if destroyed > 0 then
 			shown = true
-			row = ftable:addRow(nil, { bgColor = Helper.color.transparent })
-			row[1]:setColSpan(2):createText(ReadText(1001, 8428) .. ReadText(1001, 120), { wordwrap = true, color = Helper.color.red })
-			row[3]:createText(destroyed, { halign = "right", color = Helper.color.red })
+			row = ftable:addRow(nil, {  })
+			row[1]:setColSpan(2):createText(ReadText(1001, 8428) .. ReadText(1001, 120), { wordwrap = true, color = Color["text_error"] })
+			row[3]:createText(destroyed, { halign = "right", color = Color["text_error"] })
 		end
 		if nonfunctional > 0 then
 			shown = true
-			row = ftable:addRow(nil, { bgColor = Helper.color.transparent })
-			row[1]:setColSpan(2):createText(ReadText(1001, 8429) .. ReadText(1001, 120), { wordwrap = true, color = Helper.color.red })
-			row[3]:createText(nonfunctional, { halign = "right", color = Helper.color.red })
+			row = ftable:addRow(nil, {  })
+			row[1]:setColSpan(2):createText(ReadText(1001, 8429) .. ReadText(1001, 120), { wordwrap = true, color = Color["text_error"] })
+			row[3]:createText(nonfunctional, { halign = "right", color = Color["text_error"] })
 		end
 		if hacked > 0 then
 			shown = true
-			row = ftable:addRow(nil, { bgColor = Helper.color.transparent })
-			row[1]:setColSpan(2):createText(ReadText(1001, 8430) .. ReadText(1001, 120), { wordwrap = true, color = Helper.color.red })
-			row[3]:createText(hacked, { halign = "right", color = Helper.color.red })
+			row = ftable:addRow(nil, {  })
+			row[1]:setColSpan(2):createText(ReadText(1001, 8430) .. ReadText(1001, 120), { wordwrap = true, color = Color["text_error"] })
+			row[3]:createText(hacked, { halign = "right", color = Color["text_error"] })
 		end
 		if paused > 0 then
 			shown = true
-			row = ftable:addRow(nil, { bgColor = Helper.color.transparent })
-			row[1]:setColSpan(2):createText(ReadText(1001, 8448) .. ReadText(1001, 120), { wordwrap = true, color = Helper.color.warningorange })
-			row[3]:createText(paused, { halign = "right", color = Helper.color.warningorange })
+			row = ftable:addRow(nil, {  })
+			row[1]:setColSpan(2):createText(ReadText(1001, 8448) .. ReadText(1001, 120), { wordwrap = true, color = Color["text_warning"] })
+			row[3]:createText(paused, { halign = "right", color = Color["text_warning"] })
 		end
 		if queued > 0 then
 			shown = true
-			row = ftable:addRow(nil, { bgColor = Helper.color.transparent })
-			row[1]:setColSpan(2):createText(ReadText(1001, 8469) .. ReadText(1001, 120), { wordwrap = true, color = Helper.color.warningorange })
-			row[3]:createText(queued, { halign = "right", color = Helper.color.warningorange })
+			row = ftable:addRow(nil, {  })
+			row[1]:setColSpan(2):createText(ReadText(1001, 8469) .. ReadText(1001, 120), { wordwrap = true, color = Color["text_warning"] })
+			row[3]:createText(queued, { halign = "right", color = Color["text_warning"] })
 		end
 		if noresources > 0 then
 			shown = true
-			row = ftable:addRow(nil, { bgColor = Helper.color.transparent })
-			row[1]:setColSpan(2):createText(ReadText(1001, 8431) .. ReadText(1001, 120), { wordwrap = true, color = Helper.color.red })
-			row[3]:createText(noresources, { halign = "right", color = Helper.color.red })
+			row = ftable:addRow(nil, {  })
+			row[1]:setColSpan(2):createText(ReadText(1001, 8431) .. ReadText(1001, 120), { wordwrap = true, color = Color["text_error"] })
+			row[3]:createText(noresources, { halign = "right", color = Color["text_error"] })
 		end
 		if nostorage > 0 then
 			shown = true
-			row = ftable:addRow(nil, { bgColor = Helper.color.transparent })
-			row[1]:setColSpan(2):createText(ReadText(1001, 8432) .. ReadText(1001, 120), { wordwrap = true, color = Helper.color.warningorange })
-			row[3]:createText(nostorage, { halign = "right", color = Helper.color.warningorange })
+			row = ftable:addRow(nil, {  })
+			row[1]:setColSpan(2):createText(ReadText(1001, 8432) .. ReadText(1001, 120), { wordwrap = true, color = Color["text_warning"] })
+			row[3]:createText(nostorage, { halign = "right", color = Color["text_warning"] })
 		end
 		if planned > 0 then
 			shown = true
-			row = ftable:addRow(nil, { bgColor = Helper.color.transparent })
+			row = ftable:addRow(nil, {  })
 			row[1]:setColSpan(2):createText(ReadText(1001, 8433) .. ReadText(1001, 120), { wordwrap = true })
 			row[3]:createText(planned, { halign = "right" })
 		end
 		if plannedremoval > 0 then
 			shown = true
-			row = ftable:addRow(nil, { bgColor = Helper.color.transparent })
+			row = ftable:addRow(nil, {  })
 			row[1]:setColSpan(2):createText(ReadText(1001, 8434) .. ReadText(1001, 120), { wordwrap = true })
 			row[3]:createText(plannedremoval, { halign = "right" })
 		end
 		if shown then
-			row = ftable:addRow(nil, { bgColor = Helper.color.transparent })
+			row = ftable:addRow(nil, {  })
 			row[1]:setColSpan(3):createText("")
 		end
 	end
 
 	-- Pause
 	if isplayerowned and (#productionmodules.components > 0) then
-		row = ftable:addRow(true, { bgColor = Helper.color.transparent })
+		row = ftable:addRow(true, {  })
 		local allpaused = #productionmodules.components == realpaused
 		row[1]:setColSpan(3):createButton({  }):setText(allpaused and ReadText(1001, 8450) or ReadText(1001, 8449), { halign = "center" })
 		row[1].handlers.onClick = function () return menu.buttonPauseProductionModules(productionmodules.components, not allpaused) end
-		row = ftable:addRow(nil, { bgColor = Helper.color.transparent })
+		row = ftable:addRow(nil, {  })
 		row[1]:setColSpan(3):createText("")
 	end
 
 	-- efficiency
-	row = ftable:addRow(nil, { bgColor = Helper.color.transparent })
+	row = ftable:addRow(nil, {  })
 	row[1]:createText(ReadText(1001, 1602) .. ReadText(1001, 120), { wordwrap = true })
 	row[2]:setColSpan(2):createText(function() return menu.getProductionEfficiency(productionmodules.components) end, { halign = "right" })
 	-- workforce
 	if workforce then
-		row = ftable:addRow(nil, { bgColor = Helper.color.transparent })
+		row = ftable:addRow(nil, {  })
 		row[1]:createText("   " .. ReadText(1001, 9415) .. ReadText(1001, 120), { wordwrap = true })
 		row[2]:setColSpan(2):createText(function() return menu.getProductionWorkforceEfficiency(productionmodules.components) end, { halign = "right" })
 	end
 	-- hull damage
 	if hullefficiency then
-		row = ftable:addRow(nil, { bgColor = Helper.color.transparent })
+		row = ftable:addRow(nil, {  })
 		row[1]:createText("   " .. ReadText(1001, 8468) .. ReadText(1001, 120), { wordwrap = true })
 		row[2]:setColSpan(2):createText(function() return menu.getProductionHullEfficiency(productionmodules.components) end, { halign = "right" })
 	end
 	-- sunlight
 	if sunlight then
-		row = ftable:addRow(nil, { bgColor = Helper.color.transparent })
+		row = ftable:addRow(nil, {  })
 		row[1]:createText("   " .. ReadText(1001, 2412) .. ReadText(1001, 120), { wordwrap = true })
 		row[2]:setColSpan(2):createText(sunlight.sunlight * 100 .. " %", { halign = "right" })
 	end
 	-- bonus products
-	row = ftable:addRow(nil, { bgColor = Helper.color.transparent })
+	row = ftable:addRow(nil, {  })
 	row[1]:createText(ReadText(1001, 8461) .. " / " .. ReadText(1001, 102) .. ReadText(1001, 120), { wordwrap = true })
 	row[2]:setColSpan(2):createText(function() return menu.getProductionEfficiencyProducts(nodedata.ware, productionmodules.macro, producing) end, { halign = "right" })
 	-- remaining cycle time
-	row = ftable:addRow(nil, { bgColor = Helper.color.transparent })
+	row = ftable:addRow(nil, {  })
 	row[1]:setColSpan(3):createText(ReadText(1001, 8435) .. ReadText(1001, 120), { wordwrap = true })
-	row = ftable:addRow(nil, { bgColor = Helper.color.transparent })
+	row = ftable:addRow(nil, {  })
 	row[1]:setColSpan(3):createText(function() return menu.getProductionCycleTime(productionmodules.components) end, { halign = "right" })
 	-- resource remaining time
-	row = ftable:addRow(nil, { bgColor = Helper.color.transparent })
+	row = ftable:addRow(nil, {  })
 	row[1]:setColSpan(3):createText(ReadText(1001, 8409) .. ReadText(1001, 120), { wordwrap = true })
-	row = ftable:addRow(nil, { bgColor = Helper.color.transparent })
+	row = ftable:addRow(nil, {  })
 	row[1]:setColSpan(3):createText(function() return menu.getProductionRemainingTime(nodedata.ware, productionmodules.components, productionmodules.macro) end, { halign = "right" })
-	row = ftable:addRow(nil, { bgColor = Helper.color.transparent })
+	row = ftable:addRow(nil, {  })
 	row[1]:setColSpan(3):createText("")
 
 	local macrodata = GetLibraryEntry(GetMacroData(productionmodules.macro, "infolibrary"), productionmodules.macro)
@@ -2601,31 +2633,31 @@ function menu.onExpandProduction(_, ftable, _, nodedata, productionmodules)
 		local currentamount = C.GetContainerWareProduction(menu.container, product, false)
 		-- factor
 		local factor = menu.showSingleProduction[productionmodules.macro] and 1 or producing
-		row = ftable:addRow(true, { bgColor = Helper.color.transparent })
+		row = ftable:addRow(true, {  })
 		row[1]:setColSpan(2):createText(ReadText(1001, 8462) .. ReadText(1001, 120))
 		row[3]:createCheckBox(menu.showSingleProduction[productionmodules.macro], { width = Helper.standardButtonHeight, height = Helper.standardButtonHeight, active = (producing ~= 1) or (baseamount ~= currentamount) })
 		row[3].handlers.onClick = function (_, checked) return menu.checkboxProductionSingle(productionmodules.macro, checked) end
 		-- product
-		row = ftable:addRow(nil, { bgColor = Helper.color.transparent })
+		row = ftable:addRow(nil, {  })
 		row[1]:setColSpan(3):createText(ReadText(1001, 1624) .. " / " .. ReadText(1001, 102) .. ReadText(1001, 120))
-		row = ftable:addRow(nil, { bgColor = Helper.color.transparent })
+		row = ftable:addRow(nil, {  })
 		row[1]:createText("   " .. Helper.unlockInfo(productioninfo_products, GetWareData(product, "name")))
 		local amount = menu.showSingleProduction[productionmodules.macro] and baseamount or currentamount
 		row[2]:setColSpan(2):createText(Helper.unlockInfo(productioninfo_rate, ConvertIntegerString(amount, true, 0, true, false)), { halign = "right" })
 		-- resources
 		if #proddata.resources > 0 then
-			row = ftable:addRow(nil, { bgColor = Helper.color.transparent })
+			row = ftable:addRow(nil, {  })
 			row[1]:setColSpan(3):createText(ReadText(1001, 7403) .. " / " .. ReadText(1001, 102) .. ReadText(1001, 120))
 			for _, resourcedata in ipairs(proddata.resources) do
-				row = ftable:addRow(nil, { bgColor = Helper.color.transparent })
+				row = ftable:addRow(nil, {  })
 				local amount = menu.showSingleProduction[productionmodules.macro] and ((queueduration > 0) and Helper.round(factor * resourcedata.amount * 3600 / queueduration) or 0) or C.GetContainerWareConsumptionPerProduct(menu.container, resourcedata.ware, product, false)
 				row[1]:createText("   " .. Helper.unlockInfo(productioninfo_resources, GetWareData(resourcedata.ware, "name")))
 				row[2]:setColSpan(2):createText(Helper.unlockInfo(productioninfo_rate, ConvertIntegerString(amount, true, 0, true, false)), { halign = "right" })
 			end
 		else
-			row = ftable:addRow(nil, { bgColor = Helper.color.transparent })
+			row = ftable:addRow(nil, {  })
 			row[1]:setColSpan(3):createText(ReadText(1001, 7403) .. " / " .. ReadText(1001, 102) .. ReadText(1001, 120))
-			row = ftable:addRow(nil, { bgColor = Helper.color.transparent })
+			row = ftable:addRow(nil, {  })
 			row[1]:setColSpan(3):createText("   ---")
 		end
 	end
@@ -2714,112 +2746,112 @@ function menu.onExpandProcessing(_, ftable, _, nodedata, processingmodules)
 		local shown = false
 		if destroyed > 0 then
 			shown = true
-			row = ftable:addRow(nil, { bgColor = Helper.color.transparent })
-			row[1]:setColSpan(2):createText(ReadText(1001, 8428) .. ReadText(1001, 120), { wordwrap = true, color = Helper.color.red })
-			row[3]:createText(destroyed, { halign = "right", color = Helper.color.red })
+			row = ftable:addRow(nil, {  })
+			row[1]:setColSpan(2):createText(ReadText(1001, 8428) .. ReadText(1001, 120), { wordwrap = true, color = Color["text_error"] })
+			row[3]:createText(destroyed, { halign = "right", color = Color["text_error"] })
 		end
 		if nonfunctional > 0 then
 			shown = true
-			row = ftable:addRow(nil, { bgColor = Helper.color.transparent })
-			row[1]:setColSpan(2):createText(ReadText(1001, 8429) .. ReadText(1001, 120), { wordwrap = true, color = Helper.color.red })
-			row[3]:createText(nonfunctional, { halign = "right", color = Helper.color.red })
+			row = ftable:addRow(nil, {  })
+			row[1]:setColSpan(2):createText(ReadText(1001, 8429) .. ReadText(1001, 120), { wordwrap = true, color = Color["text_error"] })
+			row[3]:createText(nonfunctional, { halign = "right", color = Color["text_error"] })
 		end
 		if hacked > 0 then
 			shown = true
-			row = ftable:addRow(nil, { bgColor = Helper.color.transparent })
-			row[1]:setColSpan(2):createText(ReadText(1001, 8430) .. ReadText(1001, 120), { wordwrap = true, color = Helper.color.red })
-			row[3]:createText(hacked, { halign = "right", color = Helper.color.red })
+			row = ftable:addRow(nil, {  })
+			row[1]:setColSpan(2):createText(ReadText(1001, 8430) .. ReadText(1001, 120), { wordwrap = true, color = Color["text_error"] })
+			row[3]:createText(hacked, { halign = "right", color = Color["text_error"] })
 		end
 		if noresources > 0 then
 			shown = true
-			row = ftable:addRow(nil, { bgColor = Helper.color.transparent })
-			row[1]:setColSpan(2):createText(ReadText(1001, 8431) .. ReadText(1001, 120), { wordwrap = true, color = Helper.color.red })
-			row[3]:createText(noresources, { halign = "right", color = Helper.color.red })
+			row = ftable:addRow(nil, {  })
+			row[1]:setColSpan(2):createText(ReadText(1001, 8431) .. ReadText(1001, 120), { wordwrap = true, color = Color["text_error"] })
+			row[3]:createText(noresources, { halign = "right", color = Color["text_error"] })
 		end
 		if nostorage > 0 then
 			shown = true
-			row = ftable:addRow(nil, { bgColor = Helper.color.transparent })
-			row[1]:setColSpan(2):createText(ReadText(1001, 8432) .. ReadText(1001, 120), { wordwrap = true, color = Helper.color.warningorange })
-			row[3]:createText(nostorage, { halign = "right", color = Helper.color.warningorange })
+			row = ftable:addRow(nil, {  })
+			row[1]:setColSpan(2):createText(ReadText(1001, 8432) .. ReadText(1001, 120), { wordwrap = true, color = Color["text_warning"] })
+			row[3]:createText(nostorage, { halign = "right", color = Color["text_warning"] })
 		end
 		if planned > 0 then
 			shown = true
-			row = ftable:addRow(nil, { bgColor = Helper.color.transparent })
+			row = ftable:addRow(nil, {  })
 			row[1]:setColSpan(2):createText(ReadText(1001, 8433) .. ReadText(1001, 120), { wordwrap = true })
 			row[3]:createText(planned, { halign = "right" })
 		end
 		if plannedremoval > 0 then
 			shown = true
-			row = ftable:addRow(nil, { bgColor = Helper.color.transparent })
+			row = ftable:addRow(nil, {  })
 			row[1]:setColSpan(2):createText(ReadText(1001, 8434) .. ReadText(1001, 120), { wordwrap = true })
 			row[3]:createText(plannedremoval, { halign = "right" })
 		end
 		if shown then
-			row = ftable:addRow(nil, { bgColor = Helper.color.transparent })
+			row = ftable:addRow(nil, {  })
 			row[1]:setColSpan(3):createText("")
 		end
 	end
 
 	-- Pause
 	if isplayerowned and (#processingmodules.components > 0) then
-		row = ftable:addRow(true, { bgColor = Helper.color.transparent })
+		row = ftable:addRow(true, {  })
 		local allpaused = #processingmodules.components == realpaused
 		row[1]:setColSpan(3):createButton({  }):setText(allpaused and ReadText(1001, 8450) or ReadText(1001, 8449), { halign = "center" })
 		row[1].handlers.onClick = function () return menu.buttonPauseProcessingModules(processingmodules.components, not allpaused) end
-		row = ftable:addRow(nil, { bgColor = Helper.color.transparent })
+		row = ftable:addRow(nil, {  })
 		row[1]:setColSpan(3):createText("")
 	end
 
 	-- remaining cycle time
-	row = ftable:addRow(nil, { bgColor = Helper.color.transparent })
+	row = ftable:addRow(nil, {  })
 	row[1]:setColSpan(3):createText(ReadText(1001, 8435) .. ReadText(1001, 120), { wordwrap = true })
-	row = ftable:addRow(nil, { bgColor = Helper.color.transparent })
+	row = ftable:addRow(nil, {  })
 	row[1]:setColSpan(3):createText(function() return menu.getProcessingCycleTime(processingmodules.components) end, { halign = "right" })
 
 	if next(products) then
 		-- product
-		row = ftable:addRow(nil, { bgColor = Helper.color.transparent })
+		row = ftable:addRow(nil, {  })
 		row[1]:setColSpan(3):createText(ReadText(1001, 1624) .. " / " .. ReadText(1001, 102) .. ReadText(1001, 120))
 		for _, entry in ipairs(products) do
-			row = ftable:addRow(nil, { bgColor = Helper.color.transparent })
+			row = ftable:addRow(nil, {  })
 			row[1]:createText("   " .. Helper.unlockInfo(productioninfo_products, GetWareData(entry.ware, "name")))
 			row[2]:setColSpan(2):createText(Helper.unlockInfo(productioninfo_rate, ConvertIntegerString(entry.amount, true, 0, true, false)), { halign = "right" })
 		end
 		-- resources
 		if #resources > 0 then
-			row = ftable:addRow(nil, { bgColor = Helper.color.transparent })
+			row = ftable:addRow(nil, {  })
 			row[1]:setColSpan(3):createText(ReadText(1001, 7403) .. " / " .. ReadText(1001, 102) .. ReadText(1001, 120))
 			for _, entry in ipairs(resources) do
-				row = ftable:addRow(nil, { bgColor = Helper.color.transparent })
+				row = ftable:addRow(nil, {  })
 				row[1]:createText("   " .. Helper.unlockInfo(productioninfo_resources, GetWareData(entry.ware, "name")))
 				row[2]:setColSpan(2):createText(Helper.unlockInfo(productioninfo_rate, ConvertIntegerString(entry.amount, true, 0, true, false)), { halign = "right" })
 			end
 		else
-			row = ftable:addRow(nil, { bgColor = Helper.color.transparent })
+			row = ftable:addRow(nil, {  })
 			row[1]:setColSpan(3):createText(ReadText(1001, 7403) .. " / " .. ReadText(1001, 102) .. ReadText(1001, 120))
-			row = ftable:addRow(nil, { bgColor = Helper.color.transparent })
+			row = ftable:addRow(nil, {  })
 			row[1]:setColSpan(3):createText("   ---")
 		end
 	elseif proddata then
 		-- product
-		row = ftable:addRow(nil, { bgColor = Helper.color.transparent })
+		row = ftable:addRow(nil, {  })
 		row[1]:setColSpan(3):createText(ReadText(1001, 1624) .. ReadText(1001, 120))
-		row = ftable:addRow(nil, { bgColor = Helper.color.transparent })
+		row = ftable:addRow(nil, {  })
 		row[1]:createText("   " .. Helper.unlockInfo(productioninfo_products, GetWareData(proddata.ware, "name")))
 		row[2]:setColSpan(2):createText(Helper.unlockInfo(productioninfo_rate, ConvertIntegerString(proddata.amount, true, 0, true, false)), { halign = "right" })
 		-- resources
 		if #proddata.resources > 0 then
-			row = ftable:addRow(nil, { bgColor = Helper.color.transparent })
+			row = ftable:addRow(nil, {  })
 			row[1]:setColSpan(3):createText(ReadText(1001, 7403) .. ReadText(1001, 120))
 			for _, resourcedata in ipairs(proddata.resources) do
-				row = ftable:addRow(nil, { bgColor = Helper.color.transparent })
+				row = ftable:addRow(nil, {  })
 				row[1]:createText("   " .. Helper.unlockInfo(productioninfo_resources, GetWareData(resourcedata.ware, "name")))
 				row[2]:setColSpan(2):createText(Helper.unlockInfo(productioninfo_rate, ConvertIntegerString(resourcedata.amount, true, 0, true, false)), { halign = "right" })
 			end
 		else
-			row = ftable:addRow(nil, { bgColor = Helper.color.transparent })
+			row = ftable:addRow(nil, {  })
 			row[1]:setColSpan(3):createText(ReadText(1001, 7403) .. ReadText(1001, 120))
-			row = ftable:addRow(nil, { bgColor = Helper.color.transparent })
+			row = ftable:addRow(nil, {  })
 			row[1]:setColSpan(3):createText("   ---")
 		end
 	end
@@ -2869,7 +2901,7 @@ function menu.getProductionEfficiencyProducts(ware, macro, producing)
 			local currentproduction = C.GetContainerWareProduction(menu.container, product, false)
 			local baseproduction = (queueduration > 0) and (Helper.round(proddata.amount * 3600 / queueduration) * producing) or 0
 			local diff = currentproduction - baseproduction
-			return string.format("%s%d", (diff > 0) and "\27G+" or ((diff < 0) and "\27R" or ""), diff)
+			return string.format("%s%d", (diff > 0) and (ColorText["text_positive"] .. "+") or ((diff < 0) and ColorText["text_negative"] or ""), diff)
 		else
 			return "-"
 		end
@@ -3051,9 +3083,9 @@ function menu.onExpandResearch(_, ftable, _, nodedata, researchmodule)
 		researchtime, resources, precursors = GetWareData(proddata.blueprintware, "researchtime", "resources", "researchprecursors")
 	end
 	-- remaining time
-	local row = ftable:addRow(nil, { fixed = true, bgColor = Helper.color.transparent })
+	local row = ftable:addRow(nil, { fixed = true })
 	row[1]:setColSpan(2):createText(function () return menu.researchStateText(researchmodule) end)
-	local row = ftable:addRow(nil, { fixed = true, bgColor = Helper.color.transparent })
+	local row = ftable:addRow(nil, { fixed = true })
 	row[1]:setColSpan(2):createText(function () return menu.researchTimeText(researchmodule, researchtime) end, { halign = "right" })
 	if proddata.state == "waitingforresources" then
 		-- mission precursors
@@ -3065,27 +3097,27 @@ function menu.onExpandResearch(_, ftable, _, nodedata, researchmodule)
 			end
 		end
 		if (#precursors > 0) and hasmissionprecursors then
-			local row = ftable:addRow(nil, { fixed = true, bgColor = Helper.color.transparent })
+			local row = ftable:addRow(nil, { fixed = true })
 			row[1]:setColSpan(2):createText(ReadText(1001, 7412) .. ReadText(1001, 120))
 			for i, precursor in ipairs(precursors) do
 				local name, ismissiononly = GetWareData(precursor, "name", "ismissiononly")
 				if ismissiononly and (not C.HasResearched(precursor)) then
-					local row = ftable:addRow(nil, { fixed = true, bgColor = Helper.color.transparent })
+					local row = ftable:addRow(nil, { fixed = true })
 					row[1]:setColSpan(2):createText("  " .. name)
 				end
 			end
 		end
 		-- resources
 		if #resources > 0 then
-			local row = ftable:addRow(nil, { fixed = true, bgColor = Helper.color.transparent })
+			local row = ftable:addRow(nil, { fixed = true })
 			row[1]:setColSpan(2):createText(ReadText(1001, 7411) .. ReadText(1001, 120))
 			for _, resourcedata in ipairs(resources) do
 				local locamount = C.GetAmountOfWareAvailable(resourcedata.ware, researchmodule)
 				local color
 				if locamount and (locamount < resourcedata.amount) then
-					color = Helper.color.warningorange
+					color = Color["text_warning"]
 				end
-				local row = ftable:addRow(nil, { fixed = true, bgColor = Helper.color.transparent })
+				local row = ftable:addRow(nil, { fixed = true })
 				local name = GetWareData(resourcedata.ware, "name")
 				local resourcename = "  " .. name
 				row[1]:createText(resourcename, { color = color })
@@ -3117,35 +3149,35 @@ function menu.onExpandTerraforming(_, ftable, _, nodedata, project)
 	local shiptrader = GetComponentData(menu.containerid, "shiptrader")
 	menu.updateDroneInfo(project.cluster, project.project)
 	if (not project.project.isongoing) and ((shiptrader == nil) or ((menu.droneinfo.numbuildsinprogress + menu.droneinfo.numcurrentdeliveries) == 0)) then
-		local row = ftable:addRow(nil, { bgColor = Helper.color.transparent })
-		row[1]:setColSpan(2):createText(function () return menu.terraformingErrorText(project) end, { wordwrap = true, color = Helper.color.red })
+		local row = ftable:addRow(nil, {  })
+		row[1]:setColSpan(2):createText(function () return menu.terraformingErrorText(project) end, { wordwrap = true, color = Color["text_error"] })
 
 		ftable:addEmptyRow(Helper.standardTextHeight / 2)
 	end
 
 	-- queue
-	local row = ftable:addRow(nil, { bgColor = Helper.color.transparent })
+	local row = ftable:addRow(nil, {  })
 	row[1]:setColSpan(2):createText(ReadText(1001, 3804) .. ReadText(1001, 120))
-	local row = ftable:addRow(nil, { bgColor = Helper.color.transparent })
+	local row = ftable:addRow(nil, {  })
 	row[1]:setColSpan(2):createText(function () menu.updateDroneInfo(project.cluster, project.project); return ConvertIntegerString(tonumber(menu.droneinfo.numbuildsinqueue), true, 0, true) end, { halign = "right" })
 	-- progress
-	local row = ftable:addRow(nil, { bgColor = Helper.color.transparent })
+	local row = ftable:addRow(nil, {  })
 	row[1]:setColSpan(2):createText(ReadText(1001, 3803) .. ReadText(1001, 120))
-	local row = ftable:addRow(nil, { bgColor = Helper.color.transparent })
+	local row = ftable:addRow(nil, {  })
 	row[1]:setColSpan(2):createText(function () menu.updateDroneInfo(project.cluster, project.project); return ConvertIntegerString(tonumber(menu.droneinfo.numbuildsinprogress), true, 0, true) end, { halign = "right" })
 	-- in-flight
-	local row = ftable:addRow(nil, { bgColor = Helper.color.transparent })
+	local row = ftable:addRow(nil, {  })
 	row[1]:setColSpan(2):createText(ReadText(1001, 3805) .. ReadText(1001, 120))
-	local row = ftable:addRow(nil, { bgColor = Helper.color.transparent })
+	local row = ftable:addRow(nil, {  })
 	row[1]:setColSpan(2):createText(function () menu.updateDroneInfo(project.cluster, project.project); return ConvertIntegerString(tonumber(menu.droneinfo.numcurrentdeliveries), true, 0, true) end, { halign = "right" })
 
 	-- resources
 	if #project.project.resources > 0 then
 		ftable:addEmptyRow(Helper.standardTextHeight / 2)
-		local row = ftable:addRow(nil, { bgColor = Helper.color.transparent })
+		local row = ftable:addRow(nil, {  })
 		row[1]:setColSpan(2):createText(ReadText(1001, 3802) .. ReadText(1001, 120))
 		for _, entry in ipairs(project.project.resources) do
-			local row = ftable:addRow(true, { bgColor = Helper.color.transparent })
+			local row = ftable:addRow(true, {  })
 			row[1]:createText("· " .. GetWareData(entry.ware, "name"))
 			menu.updateDeliveredWares(project.cluster, project.project)
 			row[2]:createText(function () menu.updateDeliveredWares(project.cluster, project.project); return ConvertIntegerString(menu.deliveredwares[entry.ware] or 0, true, 1, true) .. " / " .. ConvertIntegerString(entry.amount, true, 1, true) end, { halign = "right", mouseOverText = ConvertIntegerString(menu.deliveredwares[entry.ware] or 0, true, 0, true) .. " / " .. ConvertIntegerString(entry.amount, true, 0, true) })
@@ -3158,7 +3190,7 @@ function menu.onExpandTerraforming(_, ftable, _, nodedata, project)
 			ftable:addEmptyRow(Helper.standardTextHeight / 2)
 			hasspacing = true
 		end
-		local row = ftable:addRow(nil, { bgColor = Helper.color.transparent })
+		local row = ftable:addRow(nil, {  })
 		row[1]:createText(ReadText(1001, 3813) .. ReadText(1001, 120), { mouseOverText = ReadText(1026, 3800) })
 		if project.project.isongoing then
 			row[2]:createText(function () return ConvertTimeString(C.GetTerraformingProjectCompletionTime(project.cluster, project.project.id) - C.GetCurrentGameTime(), "%h:%M:%S") end, { halign = "right", mouseOverText = ReadText(1026, 3800) })
@@ -3188,8 +3220,8 @@ end
 
 function menu.onExpandDestroyedModule(_, ftable, _, nodedata, module)
 	if GetComponentData(menu.containerid, "isplayerowned") then
-		row = ftable:addRow(nil, { bgColor = Helper.color.transparent })
-		row[1]:setColSpan(2):createText(ReadText(1001, 8427), { color = Helper.color.red })
+		row = ftable:addRow(nil, {  })
+		row[1]:setColSpan(2):createText(ReadText(1001, 8427), { color = Color["text_error"] })
 	end
 end
 
@@ -3211,8 +3243,8 @@ function menu.onExpandBuildModule(_, ftable, _, nodedata, buildmodule)
 
 	local ishacked = GetComponentData(ConvertStringTo64Bit(tostring(buildmodule)), "ishacked")
 	if ishacked then
-		local row = ftable:addRow(nil, { bgColor = Helper.color.transparent })
-		row[1]:setColSpan(4):createText(ReadText(1001, 8426), { color = Helper.color.red, wordwrap = true })
+		local row = ftable:addRow(nil, {  })
+		row[1]:setColSpan(4):createText(ReadText(1001, 8426), { color = Color["text_error"], wordwrap = true })
 	end
 
 	if #constructions > 0 then
@@ -3223,18 +3255,18 @@ function menu.onExpandBuildModule(_, ftable, _, nodedata, buildmodule)
 			elseif construction.macro ~= "" then
 				name = GetMacroData(construction.macro, "name")
 			end
-			local color = (productioninfo_products and (construction.factionid == "player")) and Helper.color.green or Helper.color.white
+			local color = (productioninfo_products and (construction.factionid == "player")) and Color["text_player"] or Color["text_normal"]
 
 			if construction.inprogress then
-				local row = ftable:addRow(nil, { bgColor = Helper.color.transparent })
+				local row = ftable:addRow(nil, {  })
 				row[1]:setColSpan(4):createText(Helper.unlockInfo(productioninfo_products, name .. " (" .. ffi.string(C.GetObjectIDCode(construction.component)) .. ")"), { color = color, mouseOverText = construction.ismissingresources and ReadText(1026, 3223) or "" })
-				local row = ftable:addRow(nil, { bgColor = Helper.color.transparent })
+				local row = ftable:addRow(nil, {  })
 				row[1]:createText(Helper.unlockInfo(productioninfo_time, function () return menu.getShipBuildProgress(construction.component, "") end), { color = color, mouseOverText = construction.ismissingresources and ReadText(1026, 3223) or "" }) 
-				row[2]:setColSpan(3):createText(Helper.unlockInfo(productioninfo_time, function () return (construction.ismissingresources and "\27Y\27[warning] " or "") .. ConvertTimeString(C.GetBuildProcessorEstimatedTimeLeft(construction.buildercomponent), "%h:%M:%S") end), { halign = "right", color = color, mouseOverText = construction.ismissingresources and ReadText(1026, 3223) or "" })
+				row[2]:setColSpan(3):createText(Helper.unlockInfo(productioninfo_time, function () return (construction.ismissingresources and (ColorText["text_warning"] .. "\27[warning] ") or "") .. ConvertTimeString(C.GetBuildProcessorEstimatedTimeLeft(construction.buildercomponent), "%h:%M:%S") end), { halign = "right", color = color, mouseOverText = construction.ismissingresources and ReadText(1026, 3223) or "" })
 			end
 		end
 	else
-		local row = ftable:addRow(nil, { bgColor = Helper.color.transparent })
+		local row = ftable:addRow(nil, {  })
 		row[1]:setColSpan(4):createText(Helper.unlockInfo(productioninfo_products, ReadText(1001, 8419)))
 	end
 
@@ -3244,27 +3276,27 @@ function menu.onExpandBuildModule(_, ftable, _, nodedata, buildmodule)
 		-- trade rule
 		local hasownlist = C.HasContainerOwnTradeRule(menu.container, "build", "")
 		local traderuleid = C.GetContainerTradeRuleID(menu.container, "build", "")
-		local row = ftable:addRow(nil, { bgColor = Helper.color.transparent })
+		local row = ftable:addRow(nil, {  })
 		row[1]:setColSpan(4):createText(ReadText(1001, 11013) .. ReadText(1001, 120), textproperties)
 		-- global
-		local row = ftable:addRow("buildtraderule_global", { bgColor = Helper.color.transparent })
+		local row = ftable:addRow("buildtraderule_global", {  })
 		row[1]:setColSpan(3):createText(ReadText(1001, 8367) .. ReadText(1001, 120), textproperties)
 		row[4]:createCheckBox(not hasownlist, { height = Helper.standardButtonHeight })
 		row[4].handlers.onClick = function(_, checked) return menu.checkboxSetTradeRuleOverride(menu.container, "build", "", checked) end
 		-- current
-		local row = ftable:addRow("buildtraderule_current", { bgColor = Helper.color.transparent })
+		local row = ftable:addRow("buildtraderule_current", {  })
 		row[1]:setColSpan(3):createDropDown(Helper.traderuleOptions, { startOption = (traderuleid ~= 0) and traderuleid or -1, active = hasownlist }):setTextProperties({ fontsize = config.mapFontSize })
 		row[1].handlers.onDropDownConfirmed = function (_, id) return menu.dropdownTradeRule(menu.container, "build", "", id) end
 		row[4]:createButton({ mouseOverText = ReadText(1026, 8407) }):setIcon("menu_edit")
 		row[4].handlers.onClick = menu.buttonEditTradeRule
 
-		local row = ftable:addRow(false, { bgColor = Helper.color.transparent })
+		local row = ftable:addRow(false, {  })
 		row[1]:setColSpan(4):createText("")
 
 		-- price factor
-		row = ftable:addRow(false, { bgColor = Helper.color.transparent })
+		row = ftable:addRow(false, {  })
 		row[1]:setColSpan(4):createText(ReadText(1001, 8425) .. ReadText(1001, 120), { wordwrap = true })
-		row = ftable:addRow(true, { bgColor = Helper.color.transparent })
+		row = ftable:addRow(true, {  })
 		row[1]:setColSpan(4):createSliderCell({
 			height = Helper.standardTextHeight,
 			min = 50,
@@ -3283,12 +3315,12 @@ function menu.onExpandPlannedBuildModule(_, ftable, _, nodedata, buildmodule)
 
 		local row
 		-- build
-		row = ftable:addRow(nil, { bgColor = Helper.color.transparent })
+		row = ftable:addRow(nil, {  })
 		row[1]:createText(ReadText(1001, 8417) .. ReadText(1001, 120))
-		row = ftable:addRow(nil, { bgColor = Helper.color.transparent })
+		row = ftable:addRow(nil, {  })
 		row[1]:setColSpan(2):createText(function () return menu.getBuildProgress(menu.containerid, buildmodule[1]) end, { halign = "right" })
 		if IsComponentConstruction(ConvertStringTo64Bit(tostring(buildmodule[1]))) then
-			row = ftable:addRow(nil, { bgColor = Helper.color.transparent })
+			row = ftable:addRow(nil, {  })
 			local buildingprocessor = GetComponentData(menu.container, "buildingprocessor")
 			local ismissingresources = GetComponentData(buildingprocessor, "ismissingresources")
 			row[1]:setColSpan(2):createText(function () return menu.getBuildTime(buildmodule[1]) end, { halign = "right", mouseOverText = ismissingresources and ReadText(1026, 3223) or "" })
@@ -3324,17 +3356,17 @@ function menu.onExpandWorkforce(_, ftable, _, nodedata)
 
 	local row
 	-- global
-	row = ftable:addRow(nil, { bgColor = Helper.color.transparent })
+	row = ftable:addRow(nil, {  })
 	row[1]:setColSpan(2):createText(ReadText(1001, 8412) .. ReadText(1001, 120), { wordwrap = true })
 	row[3]:setColSpan(2):createText(function() return Helper.unlockInfo(workforceinfo_all, ConvertIntegerString(C.GetWorkForceInfo(menu.container, "").current, true, 0, true, false)) end, { halign = "right" })
-	row = ftable:addRow(nil, { bgColor = Helper.color.transparent })
+	row = ftable:addRow(nil, {  })
 	row[1]:setColSpan(2):createText(ReadText(1001, 9611) .. ReadText(1001, 120), { wordwrap = true })
 	row[3]:setColSpan(2):createText(function() return Helper.unlockInfo(workforceinfo_all, ConvertIntegerString(C.GetWorkForceInfo(menu.container, "").capacity, true, 0, true, false)) end, { halign = "right" })
 	-- optimal
 	if (#GetProductionModules(menu.containerid) > 0) or GetComponentData(menu.containerid, "canequipships") then
-		row = ftable:addRow(nil, { bgColor = Helper.color.transparent })
+		row = ftable:addRow(nil, {  })
 		row[1]:setColSpan(4):createText(ReadText(1001, 8413) .. ReadText(1001, 120), { wordwrap = true })
-		row = ftable:addRow(nil, { bgColor = Helper.color.transparent })
+		row = ftable:addRow(nil, {  })
 		row[1]:setColSpan(4):createText(function() return Helper.unlockInfo(workforceinfo_all, ConvertIntegerString(C.GetWorkForceInfo(menu.container, "").optimal, true, 0, true, false)) end, { halign = "right" })
 	end
 	local shouldfill = C.ShouldContainerFillWorkforceCapacity(menu.container)
@@ -3342,29 +3374,29 @@ function menu.onExpandWorkforce(_, ftable, _, nodedata)
 		if GetComponentData(menu.containerid, "isplayerowned") then
 			ftable:addEmptyRow(Helper.standardTextHeight / 2)
 			-- target
-			row = ftable:addRow(true, { bgColor = Helper.color.transparent })
+			row = ftable:addRow(true, {  })
 			row[1]:createCheckBox(shouldfill, { height = Helper.standardButtonHeight })
 			row[1].handlers.onClick = function(_, checked) return menu.checkboxSetWorkforceFill(menu.container) end
 			row[2]:setColSpan(3):createText(ReadText(1001, 8453), { mouseOverText = ReadText(1026, 8406) })
 			if shouldfill then
 				-- employment target
-				row = ftable:addRow(true, { bgColor = Helper.color.transparent })
+				row = ftable:addRow(true, {  })
 				row[1]:setColSpan(2):createText(ReadText(1001, 8455) .. ReadText(1001, 120), { wordwrap = true })
 				row[3]:setColSpan(2):createText(function() local workforceinfo = C.GetWorkForceInfo(menu.container, ""); return Helper.unlockInfo(workforceinfo_all, ConvertIntegerString(workforceinfo.capacity, true, 0, true, false)) end, { halign = "right" })
 			end
 			ftable:addEmptyRow(Helper.standardTextHeight / 2)
 		end
 		-- efficiency
-		row = ftable:addRow(true, { bgColor = Helper.color.transparent })
+		row = ftable:addRow(true, {  })
 		row[1]:setColSpan(2):createText(ReadText(1001, 8464) .. ReadText(1001, 120), { wordwrap = true })
 		row[3]:setColSpan(2):createText(function() return Helper.unlockInfo(workforceinfo_all, math.floor((GetComponentData(menu.containerid, "workforcebonus") or 0) * 100) .. " %") end, { halign = "right" })
 		if GetComponentData(menu.containerid, "isplayerowned") then
 			-- next update
-			row = ftable:addRow(nil, { bgColor = Helper.color.transparent })
+			row = ftable:addRow(nil, {  })
 			row[1]:setColSpan(4):createText(ReadText(1001, 8463), { wordwrap = true })
-			row = ftable:addRow(nil, { bgColor = Helper.color.transparent })
+			row = ftable:addRow(nil, {  })
 			row[1]:setColSpan(4):createText(ReadText(1001, 8414) .. ReadText(1001, 120), { wordwrap = true })
-			row = ftable:addRow(nil, { bgColor = Helper.color.transparent })
+			row = ftable:addRow(nil, {  })
 			row[1]:setColSpan(4):createText(function() return Helper.unlockInfo(workforceinfo_all, ConvertTimeString(C.GetWorkForceInfo(menu.container, "").timeuntilnextupdate - C.GetCurrentGameTime())) end, { halign = "right" })
 		end
 	end
@@ -3407,18 +3439,18 @@ function menu.onExpandWorkforce(_, ftable, _, nodedata)
 			workforceinfluences.change = buf.change
 
 			-- title
-			row = ftable:addRow(nil, { bgColor = Helper.color.transparent })
+			row = ftable:addRow(nil, {  })
 			row[1]:setColSpan(4):createText(Helper.unlockInfo(workforceinfo_all, race.name), Helper.subHeaderTextProperties)
 			row[1].properties.halign = "center"
 			-- current
-			row = ftable:addRow(true, { bgColor = Helper.color.transparent })
+			row = ftable:addRow(true, {  })
 			row[1]:setColSpan(2):createText(ReadText(1001, 8412) .. ReadText(1001, 120), { wordwrap = true })
 			row[3]:createText(function() return Helper.unlockInfo(workforceinfo_all, ConvertIntegerString(C.GetWorkForceInfo(menu.container, race.id).current, true, 0, true, false)) end, { halign = "right", x = 0 })
-			row = ftable:addRow(nil, { bgColor = Helper.color.transparent })
+			row = ftable:addRow(nil, {  })
 			row[1]:setColSpan(2):createText(ReadText(1001, 9611) .. ReadText(1001, 120), { wordwrap = true })
 			row[3]:createText(function() return Helper.unlockInfo(workforceinfo_all, ConvertIntegerString(C.GetWorkForceInfo(menu.container, race.id).capacity, true, 0, true, false)) end, { halign = "right", x = 0 })
 			-- sustainable
-			row = ftable:addRow(true, { bgColor = Helper.color.transparent })
+			row = ftable:addRow(true, {  })
 			local mouseovertext = ""
 			if workforceinfo_all then
 				mouseovertext = ReadText(1026, 8405)
@@ -3431,34 +3463,34 @@ function menu.onExpandWorkforce(_, ftable, _, nodedata)
 							mouseovertext = mouseovertext .. "\n"
 						end
 						first = false
-						mouseovertext = mouseovertext .. "· " .. entry.name .. ReadText(1001, 120) .. "  " .. Helper.convertColorToText((entry.value > 0) and Helper.color.green or ((entry.value < 0) and Helper.color.red or Helper.color.white)) .. string.format("%+.0f%%", entry.value * 100) .. "\27X"
+						mouseovertext = mouseovertext .. "· " .. entry.name .. ReadText(1001, 120) .. "  " .. Helper.convertColorToText((entry.value > 0) and Color["text_positive"] or ((entry.value < 0) and Color["text_negative"] or Color["text_normal"])) .. string.format("%+.0f%%", entry.value * 100) .. "\27X"
 					end
 				end
 			end
 			local icon = "widget_circle_01"
-			local color = Helper.color.grey
+			local color = Color["icon_inactive"]
 			if workforceinfluences.sustainable > workforceinfluences.capacity then
 				icon = "widget_arrow_up_01"
-				color = Helper.color.green
+				color = Color["text_positive"]
 			elseif workforceinfluences.sustainable < workforceinfluences.capacity then
 				icon = "widget_arrow_down_01"
-				color = Helper.color.red
+				color = Color["text_negative"]
 			end
 			row[1]:setBackgroundColSpan(4):setColSpan(2):createText(ReadText(1001, 8454) .. ReadText(1001, 120), { mouseOverText = mouseovertext })
 			row[3]:createText(Helper.unlockInfo(workforceinfo_all, ConvertIntegerString(workforceinfluences.sustainable, true, 0, true, false)), { halign = "right", mouseOverText = mouseovertext, x = 0 })
 			row[4]:createIcon(icon, { color = color, width = Helper.standardTextHeight, height = Helper.standardTextHeight, mouseOverText = mouseovertext })
 			-- target
-			row = ftable:addRow(true, { bgColor = Helper.color.transparent })
+			row = ftable:addRow(true, {  })
 			row[1]:setColSpan(2):createText(ReadText(1001, 8455) .. ReadText(1001, 120))
 			row[3]:createText(Helper.unlockInfo(workforceinfo_all, ConvertIntegerString(shouldfill and workforceinfluences.capacity or workforceinfluences.target, true, 0, true, false)), { halign = "right", x = 0 })
 			-- change
-			row = ftable:addRow(true, { bgColor = Helper.color.transparent })
+			row = ftable:addRow(true, {  })
 			local mouseovertext = ""
 			if workforceinfo_all then
-				mouseovertext = ReadText(20230, 1001) .. ReadText(1001, 120) .. "  " .. Helper.convertColorToText(Helper.color.green) .. string.format("%+.0f", workforceinfluences.basegrowth) .. "\27X"
+				mouseovertext = ReadText(20230, 1001) .. ReadText(1001, 120) .. "  " .. ColorText["text_positive"] .. string.format("%+.0f", workforceinfluences.basegrowth) .. "\27X"
 				for i, entry in ipairs(workforceinfluences.growthinfluences) do
 					if entry.active then
-						mouseovertext = mouseovertext .. "\n· " .. entry.name .. ReadText(1001, 120) .. "  " .. Helper.convertColorToText((entry.value > 0) and Helper.color.green or ((entry.value < 0) and Helper.color.red or Helper.color.white)) .. string.format("%+.0f%%", entry.value * 100) .. "\27X"
+						mouseovertext = mouseovertext .. "\n· " .. entry.name .. ReadText(1001, 120) .. "  " .. Helper.convertColorToText((entry.value > 0) and Color["text_positive"] or ((entry.value < 0) and Color["text_negative"] or Color["text_normal"])) .. string.format("%+.0f%%", entry.value * 100) .. "\27X"
 					end
 				end
 			end
@@ -3466,10 +3498,10 @@ function menu.onExpandWorkforce(_, ftable, _, nodedata)
 			local color = nil
 			if workforceinfluences.change > 0 then
 				icon = "widget_arrow_up_01"
-				color = Helper.color.green
+				color = Color["text_positive"]
 			elseif workforceinfluences.change < 0 then
 				icon = "widget_arrow_down_01"
-				color = Helper.color.red
+				color = Color["text_negative"]
 			end
 			row[1]:setBackgroundColSpan(4):setColSpan(2):createText(ReadText(1001, 8456) .. ReadText(1001, 120), { mouseOverText = mouseovertext })
 			row[3]:createText(Helper.unlockInfo(workforceinfo_all, string.format("%+s", ConvertIntegerString(workforceinfluences.change, true, 0, true, false))), { halign = "right", color = color, mouseOverText = mouseovertext, x = 0 })
@@ -3484,10 +3516,10 @@ function menu.onExpandWorkforce(_, ftable, _, nodedata)
 					end
 				end
 			
-				row = ftable:addRow(nil, { bgColor = Helper.color.transparent })
+				row = ftable:addRow(nil, {  })
 				row[1]:setColSpan(4):createText(ReadText(1001, 8451) .. " / " .. ReadText(1001, 102) .. ReadText(1001, 120))
 				for i, resource in ipairs(resourcedata.resources) do
-					row = ftable:addRow(nil, { bgColor = Helper.color.transparent })
+					row = ftable:addRow(nil, {  })
 					local amount = Helper.round(resource.cycle * 3600 / resource.cycleduration * workforceinfo.current / resourcedata.productamount)
 					row[1]:setColSpan(2):createText("   " .. resource.name)
 					row[3]:createText(ConvertIntegerString(amount, true, 0, true, false), { halign = "right", x = 0 })
@@ -3500,12 +3532,12 @@ function menu.onExpandWorkforce(_, ftable, _, nodedata)
 end
 
 function menu.onExpandCondensateShield(_, ftable, _, nodedata)
-	local row = ftable:addRow(nil, { bgColor = Helper.color.transparent })
+	local row = ftable:addRow(nil, {  })
 	row[1]:setColSpan(2):createText(ReadText(20104, 92502), { wordwrap = true })
 
 	ftable:addEmptyRow()
 
-	local row = ftable:addRow(nil, { bgColor = Helper.color.transparent })
+	local row = ftable:addRow(nil, {  })
 	row[1]:createText(ReadText(30251, 1) .. ReadText(1001, 120))
 	row[2]:createText("1" .. ReadText(1001, 42) .. " " .. GetWareData(nodedata.condensateshield, "name"), { halign = "right" })
 
@@ -3621,14 +3653,14 @@ function menu.onExpandSupply(_, ftable, _, nodedata)
 		if (supplytypeentry.type ~= "build") or canequipships then
 			if menu.supplies[supplytypeentry.type].capacity > 0 then
 				-- title
-				row = ftable:addRow(nil, { bgColor = Helper.color.transparent })
+				row = ftable:addRow(nil, {  })
 				row[1]:setColSpan(3):createText(Helper.unlockInfo(info_low, supplytypeentry.name), Helper.subHeaderTextProperties)
 				row[1].properties.halign = "center"
 				-- auto setting
 				local auto
 				if isplayerowned then
 					auto = supply_auto[supplytypeentry.type]
-					row = ftable:addRow(true, { bgColor = Helper.color.transparent })
+					row = ftable:addRow(true, {  })
 					row[1]:setColSpan(2):createText(supplytypeentry.autoname)
 					row[3]:createCheckBox(auto, { height = Helper.standardButtonHeight })
 					row[3].handlers.onClick = function (_, checked) return menu.checkboxSupplyAuto(menu.container, supplytypeentry.type, checked) end
@@ -3646,25 +3678,25 @@ function menu.onExpandSupply(_, ftable, _, nodedata)
 							end
 						end
 						-- name
-						row = ftable:addRow(true, { bgColor = Helper.color.transparent })
+						row = ftable:addRow(true, {  })
 						row[1]:createText(Helper.unlockInfo(info_low, entry.name))
-						row[2]:setColSpan(2):createText(isplayerowned and function () return menu.supplies[supplytypeentry.type][i].stored .. menu.getManualOrder(entry.macro, auto) .. (auto and (" / " .. (menu.supplyoverride[entry.macro] or menu.supplydefaults[entry.macro] or 0)) or "") end or "", { halign = "right", color = (entry.compatible == false) and Helper.color.grey or Helper.color.white })
+						row[2]:setColSpan(2):createText(isplayerowned and function () return menu.supplies[supplytypeentry.type][i].stored .. menu.getManualOrder(entry.macro, auto) .. (auto and (" / " .. (menu.supplyoverride[entry.macro] or menu.supplydefaults[entry.macro] or 0)) or "") end or "", { halign = "right", color = (entry.compatible == false) and Color["text_inactive"] or Color["text_normal"] })
 						-- amount
 						local start = info_high and (auto and limit or (entry.stored + (menu.supplyoverride[entry.macro] or 0))) or 0
 						local max = math.max(0, menu.supplies[supplytypeentry.type].capacity - currentOrders + start)
 						local maxSelect = math.min(max, (entry.compatible == false) and entry.stored or max)
 						start = math.min(maxSelect, math.max(0, start))
-						row = ftable:addRow(true, { bgColor = Helper.color.transparent })
+						row = ftable:addRow(true, {  })
 						local slidercell = row[1]:setColSpan(3):createSliderCell({
 							height = Helper.standardTextHeight,
-							valueColor = Helper.defaultSliderCellValueColor,
+							valueColor = Color["slider_value"],
 							min = 0,
 							maxSelect = maxSelect,
 							max = max,
 							start = start,
 							hideMaxValue = true,
 							readOnly = not isplayerowned,
-						}):setText(ReadText(1001, 8415) .. ReadText(1001, 120), { color = (entry.compatible == false) and Helper.color.grey or Helper.color.white })
+						}):setText(ReadText(1001, 8415) .. ReadText(1001, 120), { color = (entry.compatible == false) and Color["text_inactive"] or Color["text_normal"] })
 						row[1].handlers.onSliderCellChanged = function (_, value) menu.supplyoverride[entry.macro] = value - (auto and 0 or menu.supplies[supplytypeentry.type][i].stored) end
 						row[1].handlers.onSliderCellConfirm = function (id, value) return menu.slidercellSupplyAmount(menu.container, entry.macro, auto, supplytypeentry.type, i, value) end
 						row[1].handlers.onSliderCellActivated = function () return menu.slidercellSupplyAmountActivated(entry.macro) end
@@ -3675,7 +3707,7 @@ function menu.onExpandSupply(_, ftable, _, nodedata)
 						end
 					end
 				else
-					row = ftable:addRow(false, { bgColor = Helper.color.transparent })
+					row = ftable:addRow(false, {  })
 					row[1]:setColSpan(3):createText(ReadText(1001, 4235))
 				end
 			end
@@ -3686,19 +3718,19 @@ function menu.onExpandSupply(_, ftable, _, nodedata)
 		-- trade rule
 		local hasownlist = C.HasContainerOwnTradeRule(menu.container, "supply", "")
 		local traderuleid = C.GetContainerTradeRuleID(menu.container, "supply", "")
-		row = ftable:addRow(false, { bgColor = Helper.color.transparent })
+		row = ftable:addRow(false, {  })
 		row[1]:setColSpan(3):createText("")
 
-		row = ftable:addRow(nil, { bgColor = Helper.color.transparent })
+		row = ftable:addRow(nil, {  })
 		row[1]:setColSpan(3):createText(ReadText(1001, 11030), Helper.subHeaderTextProperties)
 		row[1].properties.halign = "center"
 		-- global
-		local row = ftable:addRow("supplytraderule_global", { bgColor = Helper.color.transparent })
+		local row = ftable:addRow("supplytraderule_global", {  })
 		row[1]:setColSpan(2):createText(ReadText(1001, 8367) .. ReadText(1001, 120), textproperties)
 		row[3]:createCheckBox(not hasownlist, { height = Helper.standardButtonHeight })
 		row[3].handlers.onClick = function(_, checked) return menu.checkboxSetTradeRuleOverride(menu.container, "supply", "", checked) end
 		-- current
-		local row = ftable:addRow("supplytraderule_current", { bgColor = Helper.color.transparent })
+		local row = ftable:addRow("supplytraderule_current", {  })
 		row[1]:setColSpan(2):createDropDown(Helper.traderuleOptions, { startOption = (traderuleid ~= 0) and traderuleid or -1, active = hasownlist }):setTextProperties({ fontsize = config.mapFontSize })
 		row[1].handlers.onDropDownConfirmed = function (_, id) return menu.dropdownTradeRule(menu.container, "supply", "", id) end
 		row[3]:createButton({ mouseOverText = ReadText(1026, 8407) }):setIcon("menu_edit")
@@ -3712,9 +3744,9 @@ function menu.getManualOrder(macro, auto)
 	local manualorder = ""
 	if (not auto) and menu.supplyoverride[macro] then
 		if menu.supplyoverride[macro] > 0 then
-			manualorder = " \27G(+" .. menu.supplyoverride[macro] .. ")\27X"
+			manualorder = " " .. ColorText["text_positive"] .. "(+" .. menu.supplyoverride[macro] .. ")\27X"
 		elseif menu.supplyoverride[macro] < 0 then
-			manualorder = " \27R(" .. menu.supplyoverride[macro] .. ")\27X"
+			manualorder = " " .. ColorText["text_negative"] .. "(" .. menu.supplyoverride[macro] .. ")\27X"
 		end
 	end
 
@@ -3740,18 +3772,18 @@ function menu.onExpandAccount(_, ftable, _, nodedata)
 	local row
 	-- missing funds
 	if money < budget then
-		row = ftable:addRow(nil, { bgColor = Helper.color.transparent })
+		row = ftable:addRow(nil, {  })
 		row[1]:setColSpan(2):createText(menu.getAccountWarningText, { color = menu.getAccountWarningColor, wordwrap = true })
 
 		ftable:addEmptyRow(Helper.standardTextHeight / 2)
 	end
 	-- wanted money
-	row = ftable:addRow(nil, { bgColor = Helper.color.transparent })
+	row = ftable:addRow(nil, {  })
 	row[1]:setColSpan(2):createText(ReadText(1001, 1919) .. ReadText(1001, 120))
-	row = ftable:addRow(nil, { bgColor = Helper.color.transparent })
+	row = ftable:addRow(nil, {  })
 	row[1]:setColSpan(2):createText(ConvertMoneyString(budget, false, true, 0, true, false) .. " " .. ReadText(1001, 101), { halign = "right" })
 	-- production and building
-	row = ftable:addRow(nil, { bgColor = Helper.color.transparent })
+	row = ftable:addRow(nil, {  })
 	local numproductionmodules = #GetProductionModules(menu.containerid)
 	local numbuildmodules = C.GetNumBuildModules(menu.container)
 	local text = ReadText(1001, 8420)
@@ -3763,20 +3795,20 @@ function menu.onExpandAccount(_, ftable, _, nodedata)
 		end
 	end
 	row[1]:setColSpan(2):createText(text .. ReadText(1001, 120))
-	row = ftable:addRow(nil, { bgColor = Helper.color.transparent })
+	row = ftable:addRow(nil, {  })
 	row[1]:setColSpan(2):createText(ConvertMoneyString(productionmoney, false, true, 0, true, false) .. " " .. ReadText(1001, 101), { halign = "right" })
 	-- supplies
-	row = ftable:addRow(nil, { bgColor = Helper.color.transparent })
+	row = ftable:addRow(nil, {  })
 	row[1]:setColSpan(2):createText(ReadText(1001, 8423) .. ReadText(1001, 120))
-	row = ftable:addRow(nil, { bgColor = Helper.color.transparent })
+	row = ftable:addRow(nil, {  })
 	row[1]:setColSpan(2):createText(ConvertMoneyString(supplymoney, false, true, 0, true, false) .. " " .. ReadText(1001, 101), { halign = "right" })
 	-- trade wares
-	row = ftable:addRow(nil, { bgColor = Helper.color.transparent })
+	row = ftable:addRow(nil, {  })
 	row[1]:setColSpan(2):createText(ReadText(1001, 8447) .. ReadText(1001, 120))
-	row = ftable:addRow(nil, { bgColor = Helper.color.transparent })
+	row = ftable:addRow(nil, {  })
 	row[1]:setColSpan(2):createText(ConvertMoneyString(trademoney, false, true, 0, true, false) .. " " .. ReadText(1001, 101), { halign = "right" })
 	-- current money
-	row = ftable:addRow(true, { bgColor = Helper.color.transparent })
+	row = ftable:addRow(true, {  })
 	row[1]:setColSpan(2):createSliderCell({
 		height = Helper.standardTextHeight,
 		min = 0,
@@ -3787,7 +3819,7 @@ function menu.onExpandAccount(_, ftable, _, nodedata)
 	}):setText(ReadText(1001, 7710))
 	row[1].handlers.onSliderCellChanged = menu.slidercellAccount
 	-- confirm
-	row = ftable:addRow(true, { bgColor = Helper.color.transparent })
+	row = ftable:addRow(true, {  })
 	row[1]:createButton({ active = function () return (menu.newAccountValue ~= nil) and GetComponentData(menu.containerid, "isplayerowned") end }):setText(ReadText(1001, 2821), { halign = "center" })
 	row[1].handlers.onClick = menu.buttonAccountConfirm
 	row[2]:createButton({ active = function () local money, estimate, isplayerowned = GetComponentData(menu.containerid, "money", "productionmoney", "isplayerowned"); estimate = estimate + tonumber(C.GetSupplyBudget(menu.container)) / 100; estimate = estimate + tonumber(C.GetTradeWareBudget(menu.container)) / 100; return isplayerowned and ((money + GetPlayerMoney()) > estimate) end }):setText(ReadText(1001, 7965), { halign = "center" })
@@ -3820,12 +3852,12 @@ function menu.getAccountWarningColor()
 
 	if money < budget then
 		if money == 0 then
-			return Helper.color.red
+			return Color["text_error"]
 		else
-			return Helper.color.warningorange
+			return Color["text_warning"]
 		end
 	end
-	return Helper.color.white
+	return Color["text_normal"]
 end
 
 function menu.onExpandDummy(_, ftable, _, nodedata)
@@ -4219,7 +4251,7 @@ function menu.checkboxSetTradeRuleOverride(container, type, ware, checked)
 	end
 
 	if (type == "buy") or (type == "sell") then
-		menu.expandedNode:updateStatus(nil, Helper.isTradeRestricted(menu.container, ware) and "lso_error" or nil, nil, Helper.color.warningorange)
+		menu.expandedNode:updateStatus(nil, Helper.isTradeRestricted(menu.container, ware) and "lso_error" or nil, nil, Color["icon_warning"])
 	end
 	menu.updateExpandedNode()
 end
@@ -4234,7 +4266,7 @@ function  menu.dropdownTradeRule(container, type, ware, id)
 	C.SetContainerTradeRule(container, tonumber(id), type, ware, true)
 	
 	if (type == "buy") or (type == "sell") then
-		menu.expandedNode:updateStatus(nil, Helper.isTradeRestricted(menu.container, ware) and "lso_error" or nil, nil, Helper.color.warningorange)
+		menu.expandedNode:updateStatus(nil, Helper.isTradeRestricted(menu.container, ware) and "lso_error" or nil, nil, Color["icon_warning"])
 	end
 end
 
@@ -4315,13 +4347,13 @@ end
 function menu.getPrimaryJunctionEdgeColor(edges)
 	-- Determine incoming edge color based on color of all outgoing edges
 	local colorprecedence = {
-		Helper.standardColor,
-		Helper.color.warningorange,
-		Helper.color.red,
+		Color["text_normal"],
+		Color["text_warning"],
+		Color["text_error"],
 	}
 	-- We choose the first color in colorprecedence table that appears on any outgoing edge (ignoring alpha)
-	local colorindex = #colorprecedence + 1	-- special index denoting fallback color
-	local color = Helper.color.grey			-- remember last edge color as fallback color
+	local colorindex = #colorprecedence + 1		-- special index denoting fallback color
+	local color = Color["lso_node_inactive"]	-- remember last edge color as fallback color
 	for _, edge in ipairs(edges) do
 		color = edge.properties.color
 		if type(color) == "function" then
@@ -4541,7 +4573,11 @@ end
 function menu.newWareReservationCallback(_, data)
 	local containerid, ware, reserverid = string.match(data, "(.+);(.+);(.+)")
 	if menu.container == ConvertStringTo64Bit(containerid) then
-		menu.updateExpandedNode()
+		if not menu.noupdate then
+			menu.updateExpandedNode()
+		else
+			menu.refreshnode = getElapsedTime()
+		end
 	end
 end
 
@@ -4564,7 +4600,7 @@ function menu.getBuildTime(component)
 	if IsComponentConstruction(ConvertStringTo64Bit(tostring(component))) then
 		local buildingprocessor = GetComponentData(menu.containerid, "buildingprocessor")
 		local ismissingresources = GetComponentData(buildingprocessor, "ismissingresources")
-		return (ismissingresources and "\27Y\27[warning] (" or "(") .. ConvertTimeString(C.GetBuildProcessorEstimatedTimeLeft(ConvertIDTo64Bit(buildingprocessor)), "%h:%M:%S") .. ")"
+		return (ismissingresources and (ColorText["text_warning"] .. "\27[warning] (") or "(") .. ConvertTimeString(C.GetBuildProcessorEstimatedTimeLeft(ConvertIDTo64Bit(buildingprocessor)), "%h:%M:%S") .. ")"
 	else
 		return ""
 	end
@@ -4632,12 +4668,12 @@ end
 function menu.updateProductionNode(node, productionmodules)
 	local text = node.customdata.nodedata.text
 	local ware = node.customdata.nodedata.ware
-	local textcolor = Helper.color.white
+	local textcolor = Color["text_normal"]
 	local statusicon
 	local statusiconmouseovertext = ""
 	local statusbgicon
-	local statuscolor = Helper.defaultFlowchartOutlineColor
-	local outlinecolor = Helper.defaultFlowchartOutlineColor
+	local statuscolor = Color["flowchart_node_default"]
+	local outlinecolor = Color["flowchart_node_default"]
 
 	local progress = 0
 
@@ -4650,16 +4686,16 @@ function menu.updateProductionNode(node, productionmodules)
 	local total = #productionmodules.destroyedcomponents + productionmodules.numplanned
 	if #productionmodules.destroyedcomponents > 0 then
 		statusicon = "lso_warning"
-		statuscolor = Helper.color.red
-		statusiconmouseovertext = Helper.convertColorToText(Helper.color.red) .. ReadText(1001, 8428)
-		textcolor = Helper.color.red
-		outlinecolor = Helper.color.grey
+		statuscolor = Color["icon_error"]
+		statusiconmouseovertext = ColorText["text_error"] .. ReadText(1001, 8428)
+		textcolor = Color["text_error"]
+		outlinecolor = Color["lso_node_inactive"]
 	elseif (#productionmodules.components == 0) and (productionmodules.numplanned > 0) then
 		statusicon = "lso_build"
-		statuscolor = Helper.color.white
+		statuscolor = Color["icon_normal"]
 		statusiconmouseovertext = ReadText(1001, 8433)
-		textcolor = Helper.color.grey
-		outlinecolor = Helper.color.grey
+		textcolor = Color["text_inactive"]
+		outlinecolor = Color["lso_node_inactive"]
 	end
 	local producing, queued = 0, 0
 	local isknown = false
@@ -4679,32 +4715,32 @@ function menu.updateProductionNode(node, productionmodules)
 				if ishacked then
 					if not statusicon then
 						statusicon = "lso_warning"
-						statuscolor = Helper.color.red
-						statusiconmouseovertext = Helper.convertColorToText(Helper.color.red) .. ReadText(1001, 8430)
-						textcolor = Helper.color.red
-						outlinecolor = Helper.color.red
+						statuscolor = Color["icon_error"]
+						statusiconmouseovertext = ColorText["text_error"] .. ReadText(1001, 8430)
+						textcolor = Color["text_error"]
+						outlinecolor = Color["lso_node_error"]
 					end
 				elseif ispausedmanually then
 					if not statusicon then
 						statusicon = "lso_pause"
-						statuscolor = Helper.color.warningorange
-						statusiconmouseovertext = Helper.convertColorToText(Helper.color.warningorange) .. ReadText(1001, 8448)
-						textcolor = Helper.color.warningorange
-						outlinecolor = Helper.color.warningorange
+						statuscolor = Color["icon_warning"]
+						statusiconmouseovertext = ColorText["text_warning"] .. ReadText(1001, 8448)
+						textcolor = Color["text_warning"]
+						outlinecolor = Color["lso_node_warning"]
 					end
 				elseif not isfunctional then
 					if not statusicon then
 						statusicon = "lso_warning"
-						statuscolor = Helper.color.red
-						statusiconmouseovertext = Helper.convertColorToText(Helper.color.red) .. ReadText(1001, 8429)
-						textcolor = Helper.color.red
-						outlinecolor = Helper.color.red
+						statuscolor = Color["icon_error"]
+						statusiconmouseovertext = ColorText["text_error"] .. ReadText(1001, 8429)
+						textcolor = Color["text_error"]
+						outlinecolor = Color["lso_node_error"]
 					end
 				elseif (proddata.state == "choosingitem") or (proddata.state == "waitingforstorage") then
 					if not statusicon then
 						statusicon = "lso_warning"
-						statuscolor = Helper.color.red
-						statusiconmouseovertext = Helper.convertColorToText(Helper.color.red) .. ReadText(1001, 8432)
+						statuscolor = Color["icon_error"]
+						statusiconmouseovertext = ColorText["text_error"] .. ReadText(1001, 8432)
 					end
 
 					for _, entry in ipairs(proddata.products) do
@@ -4713,9 +4749,9 @@ function menu.updateProductionNode(node, productionmodules)
 				elseif proddata.state == "waitingforresources" then
 					if not statusicon then
 						statusicon = "lso_warning"
-						statuscolor = Helper.color.red
-						statusiconmouseovertext = Helper.convertColorToText(Helper.color.red) .. ReadText(1001, 8431)
-						textcolor = Helper.color.red
+						statuscolor = Color["icon_error"]
+						statusiconmouseovertext = ColorText["text_error"] .. ReadText(1001, 8431)
+						textcolor = Color["text_error"]
 					end
 				elseif isqueued then
 					queued = queued + 1
@@ -4735,9 +4771,9 @@ function menu.updateProductionNode(node, productionmodules)
 	if queued == total then
 		if not statusicon then
 			statusicon = "lso_pause"
-			statuscolor = Helper.color.warningorange
-			statusiconmouseovertext = Helper.convertColorToText(Helper.color.warningorange) .. ReadText(1001, 8469)
-			textcolor = Helper.color.warningorange
+			statuscolor = Color["icon_warning"]
+			statusiconmouseovertext = ColorText["text_warning"] .. ReadText(1001, 8469)
+			textcolor = Color["text_warning"]
 		end
 	end
 	if producing == total then
@@ -4782,9 +4818,9 @@ function menu.updateProductionNode(node, productionmodules)
 
 		for _, edge in ipairs(node.incomingEdges) do
 			local storagenode = menu.findStorageNode(edge)
-			local edgecolor = Helper.color.white
+			local edgecolor = Color["flowchart_edge_default"]
 			if menu.resourcesmissing[storagenode.customdata.nodedata.ware] then
-				edgecolor = Helper.color.red
+				edgecolor = Color["lso_node_error"]
 			end
 			menu.updateEdgeColorRecursively(edge, edgecolor)
 		end
@@ -4794,12 +4830,12 @@ end
 function menu.updateProcessingNode(node, processingmodules)
 	local text = node.customdata.nodedata.text
 	local ware = node.customdata.nodedata.ware
-	local textcolor = Helper.color.white
+	local textcolor = Color["text_normal"]
 	local statusicon
 	local statusiconmouseovertext = ""
 	local statusbgicon
-	local statuscolor = Helper.defaultFlowchartOutlineColor
-	local outlinecolor = Helper.defaultFlowchartOutlineColor
+	local statuscolor = Color["flowchart_node_default"]
+	local outlinecolor = Color["flowchart_node_default"]
 
 	local progress = 0
 
@@ -4819,16 +4855,16 @@ function menu.updateProcessingNode(node, processingmodules)
 	local total = #processingmodules.destroyedcomponents + processingmodules.numplanned
 	if #processingmodules.destroyedcomponents > 0 then
 		statusicon = "lso_warning"
-		statuscolor = Helper.color.red
-		statusiconmouseovertext = Helper.convertColorToText(Helper.color.red) .. ReadText(1001, 8428)
-		textcolor = Helper.color.red
-		outlinecolor = Helper.color.grey
+		statuscolor = Color["icon_error"]
+		statusiconmouseovertext = ColorText["text_error"] .. ReadText(1001, 8428)
+		textcolor = Color["text_error"]
+		outlinecolor = Color["lso_node_inactive"]
 	elseif (#processingmodules.components == 0) and (processingmodules.numplanned > 0) then
 		statusicon = "lso_build"
-		statuscolor = Helper.color.white
+		statuscolor = Color["icon_normal"]
 		statusiconmouseovertext = ReadText(1001, 8433)
-		textcolor = Helper.color.grey
-		outlinecolor = Helper.color.grey
+		textcolor = Color["text_inactive"]
+		outlinecolor = Color["lso_node_inactive"]
 	end
 
 	local wares = ffi.new("UIWareAmount[?]", 1)
@@ -4846,41 +4882,41 @@ function menu.updateProcessingNode(node, processingmodules)
 			if ishacked then
 				if not statusicon then
 					statusicon = "lso_warning"
-					statuscolor = Helper.color.red
-					statusiconmouseovertext = Helper.convertColorToText(Helper.color.red) .. ReadText(1001, 8430)
-					textcolor = Helper.color.red
-					outlinecolor = Helper.color.red
+					statuscolor = Color["icon_error"]
+					statusiconmouseovertext = ColorText["text_error"] .. ReadText(1001, 8430)
+					textcolor = Color["text_error"]
+					outlinecolor = Color["lso_node_error"]
 				end
 			elseif ispausedmanually then
 				if not statusicon then
 					statusicon = "lso_pause"
-					statuscolor = Helper.color.warningorange
-					statusiconmouseovertext = Helper.convertColorToText(Helper.color.warningorange) .. ReadText(1001, 8448)
-					textcolor = Helper.color.warningorange
-					outlinecolor = Helper.color.warningorange
+					statuscolor = Color["icon_warning"]
+					statusiconmouseovertext = ColorText["text_warning"] .. ReadText(1001, 8448)
+					textcolor = Color["text_warning"]
+					outlinecolor = Color["lso_node_warning"]
 				end
 			elseif not isfunctional then
 				if not statusicon then
 					statusicon = "lso_warning"
-					statuscolor = Helper.color.red
-					statusiconmouseovertext = Helper.convertColorToText(Helper.color.red) .. ReadText(1001, 8429)
-					textcolor = Helper.color.red
-					outlinecolor = Helper.color.red
+					statuscolor = Color["icon_error"]
+					statusiconmouseovertext = ColorText["text_error"] .. ReadText(1001, 8429)
+					textcolor = Color["text_error"]
+					outlinecolor = Color["lso_node_error"]
 				end
 			elseif data.state == "waitingforstorage" then
 				if not statusicon then
 					statusicon = "lso_warning"
-					statuscolor = Helper.color.red
-					statusiconmouseovertext = Helper.convertColorToText(Helper.color.red) .. ReadText(1001, 8432)
+					statuscolor = Color["icon_error"]
+					statusiconmouseovertext = ColorText["text_error"] .. ReadText(1001, 8432)
 				end
 
 				menu.storagemissing[ware] = true
 			elseif data.state == "waitingforresources" then
 				if not statusicon then
 					statusicon = "lso_warning"
-					statuscolor = Helper.color.red
-					statusiconmouseovertext = Helper.convertColorToText(Helper.color.red) .. ReadText(1001, 8431)
-					textcolor = Helper.color.red
+					statuscolor = Color["icon_error"]
+					statusiconmouseovertext = ColorText["text_error"] .. ReadText(1001, 8431)
+					textcolor = Color["text_error"]
 				end
 			else
 				producing = producing + 1
@@ -4930,9 +4966,9 @@ function menu.updateProcessingNode(node, processingmodules)
 
 		for _, edge in ipairs(node.incomingEdges) do
 			local storagenode = menu.findStorageNode(edge)
-			local edgecolor = Helper.color.white
+			local edgecolor = Color["flowchart_edge_default"]
 			if menu.resourcesmissing[storagenode.customdata.nodedata.ware] then
-				edgecolor = Helper.color.red
+				edgecolor = Color["lso_node_error"]
 			end
 			menu.updateEdgeColorRecursively(edge, edgecolor)
 		end
@@ -4941,12 +4977,12 @@ end
 
 function menu.updateResearchNode(node, researchmodule)
 	local text = node.customdata.nodedata.text
-	local textcolor = Helper.color.white
+	local textcolor = Color["text_normal"]
 	local statusicon
 	local statusiconmouseovertext = ""
 	local statusbgicon
-	local statuscolor = Helper.defaultFlowchartOutlineColor
-	local outlinecolor = Helper.defaultFlowchartOutlineColor
+	local statuscolor = Color["flowchart_node_default"]
+	local outlinecolor = Color["flowchart_node_default"]
 
 	local proddata = GetProductionModuleData(researchmodule)
 	if (proddata.state == "producing") or (proddata.state == "waitingforresources") then
@@ -4954,8 +4990,8 @@ function menu.updateResearchNode(node, researchmodule)
 	
 		if proddata.state == "waitingforresources" then
 			statusicon = "lso_warning"
-			statuscolor = Helper.color.warningorange
-			statusiconmouseovertext = Helper.convertColorToText(Helper.color.warningorange) .. ReadText(1026, 8412)
+			statuscolor = Color["icon_warning"]
+			statusiconmouseovertext = ColorText["text_warning"] .. ReadText(1026, 8412)
 		else
 			statusicon = string.format("lso_pie_%02d", progress)
 			statusbgicon = "lso_progress"
@@ -4977,9 +5013,9 @@ function menu.updateResearchNode(node, researchmodule)
 
 			for _, edge in ipairs(node.incomingEdges) do
 				local storagenode = menu.findStorageNode(edge)
-				local edgecolor = Helper.color.white
+				local edgecolor = Color["flowchart_edge_default"]
 				if menu.resourcesmissing[storagenode.customdata.nodedata.ware] then
-					edgecolor = Helper.color.red
+					edgecolor = Color["lso_node_error"]
 				end
 				menu.updateEdgeColorRecursively(edge, edgecolor)
 			end
@@ -4990,7 +5026,7 @@ end
 function menu.updateBuildNode(node, buildmodule)
 	local ishacked = GetComponentData(ConvertStringTo64Bit(tostring(buildmodule)), "ishacked")
 	if ishacked then
-		node:updateStatus(nil, "lso_warning", nil, Helper.color.red, Helper.convertColorToText(Helper.color.red) .. ReadText(1001, 8426))
+		node:updateStatus(nil, "lso_warning", nil, Color["icon_error"], ColorText["text_error"] .. ReadText(1001, 8426))
 	else
 		node:updateStatus(nil, nil, nil, nil, "")
 	end
@@ -5000,9 +5036,9 @@ function menu.updateTerraformingNode(node, project)
 	project.project.isongoing = C.IsTerraformingProjectOngoing(project.cluster, project.project.id)
 	menu.updateDroneInfo(project.cluster, project.project)
 	if project.project.isongoing or ((menu.droneinfo.numbuildsinprogress + menu.droneinfo.numcurrentdeliveries) > 0) then
-		node:updateStatus(nil, "lso_pie_00", "lso_progress", Helper.defaultFlowchartOutlineColor, ReadText(1001, 3800))
+		node:updateStatus(nil, "lso_pie_00", "lso_progress", Color["flowchart_node_default"], ReadText(1001, 3800))
 	else
-		node:updateStatus(nil, "lso_warning", nil, Helper.color.red, Helper.convertColorToText(Helper.color.red) .. menu.terraformingErrorText(project))
+		node:updateStatus(nil, "lso_warning", nil, Color["icon_error"], ColorText["text_error"] .. menu.terraformingErrorText(project))
 	end
 end
 
@@ -5017,8 +5053,8 @@ function menu.updateSupplyResourceNode(node, ware)
 
 	local hasrestrictions = C.GetContainerTradeRuleID(menu.container, "supply", ware) > 0
 	local statusicon = hasrestrictions and "lso_error" or nil
-	local statuscolor = hasrestrictions and Helper.color.warningorange or nil
-	local statusiconmouseovertext = hasrestrictions and (Helper.convertColorToText(Helper.color.warningorange) .. ReadText(1026, 8404)) or ""
+	local statuscolor = hasrestrictions and Color["icon_warning"] or nil
+	local statusiconmouseovertext = hasrestrictions and (ColorText["text_warning"] .. ReadText(1026, 8404)) or ""
 	node:updateStatus(nil, statusicon, nil, statuscolor, statusiconmouseovertext)
 end
 
@@ -5041,7 +5077,7 @@ function menu.updateAccountNode(node)
 	node:updateValue(shownamount)
 	
 	local statustext = string.format("%s/%s %s", ConvertMoneyString(money, false, true, 3, true, false), ConvertMoneyString(productionmoney + supplymoney + tradewaremoney, false, true, 3, true, false), ReadText(1001, 101))
-	local statuscolor = (money < budget) and ((money == 0) and Helper.color.red or Helper.color.warningorange) or Helper.defaultFlowchartOutlineColor
+	local statuscolor = (money < budget) and ((money == 0) and Color["lso_node_error"] or Color["lso_node_warning"]) or Color["flowchart_node_default"]
 	node:updateStatus(statustext)
 	node:updateOutlineColor(statuscolor)
 end
@@ -5078,61 +5114,63 @@ function menu.onUpdate()
 		menu.contextFrame:update()
 	end
 
-	menu.resourcesmissing = {}
-	menu.storagemissing = {}
-	for _, node in pairs(menu.productionnodes) do
-		menu.updateProductionNode(node, node.customdata.moduledata.productionmodules)
-	end
-	for _, node in pairs(menu.processingnodes) do
-		menu.updateProcessingNode(node, node.customdata.moduledata.productionmodules)
-	end
-	for _, node in pairs(menu.researchnodes) do
-		menu.updateResearchNode(node, node.customdata.moduledata.researchmodule)
-	end
-	for _, node in pairs(menu.buildnodes) do
-		if type(node.customdata.moduledata.buildmodule) ~= "table" then
-			menu.updateBuildNode(node, node.customdata.moduledata.buildmodule)
+	if not menu.noupdate then
+		menu.resourcesmissing = {}
+		menu.storagemissing = {}
+		for _, node in pairs(menu.productionnodes) do
+			menu.updateProductionNode(node, node.customdata.moduledata.productionmodules)
 		end
-	end
-	for _, node in pairs(menu.terraformingnodes) do
-		menu.updateTerraformingNode(node, node.customdata.moduledata.terraformingproject)
-	end
-	for _, node in pairs(menu.storagenodes) do
-		Helper.updateLSOStorageNode(menu, node, menu.container, node.customdata.nodedata.ware)
-	end
-	for _, node in pairs(menu.supplyresourcenodes) do
-		menu.updateSupplyResourceNode(node, node.customdata.nodedata.ware)
-	end
-	for _, node in pairs(menu.accountnodes) do
-		menu.updateAccountNode(node)
-	end
-
-	if menu.refresh then
-		menu.refresh = nil
-
-		menu.saveFlowchartState("flowchart", menu.flowchart)
-		if menu.keyTable then
-			menu.saveTableState("keyTable", menu.keyTable)
+		for _, node in pairs(menu.processingnodes) do
+			menu.updateProcessingNode(node, node.customdata.moduledata.productionmodules)
 		end
-		if menu.expandedNode then
-			if menu.restoreNodeWare or menu.restoreNodeSupply or menu.restoreNodeSupplyWare or menu.restoreNodeBuildModule then
-				menu.saveTableState("nodeTable", menu.expandedMenuTable)
+		for _, node in pairs(menu.researchnodes) do
+			menu.updateResearchNode(node, node.customdata.moduledata.researchmodule)
+		end
+		for _, node in pairs(menu.buildnodes) do
+			if type(node.customdata.moduledata.buildmodule) ~= "table" then
+				menu.updateBuildNode(node, node.customdata.moduledata.buildmodule)
 			end
-			menu.expandedNode:collapse()
 		end
-		menu.display()
-		return
-	end
+		for _, node in pairs(menu.terraformingnodes) do
+			menu.updateTerraformingNode(node, node.customdata.moduledata.terraformingproject)
+		end
+		for _, node in pairs(menu.storagenodes) do
+			Helper.updateLSOStorageNode(menu, node, menu.container, node.customdata.nodedata.ware)
+		end
+		for _, node in pairs(menu.supplyresourcenodes) do
+			menu.updateSupplyResourceNode(node, node.customdata.nodedata.ware)
+		end
+		for _, node in pairs(menu.accountnodes) do
+			menu.updateAccountNode(node)
+		end
 
-	if menu.restoreNode and menu.restoreNode.id then
-		menu.restoreNode:expand()
-		menu.restoreNode = nil
-	end
+		if menu.refresh then
+			menu.refresh = nil
 
-	local curtime = getElapsedTime()
-	if menu.refreshnode and (menu.refreshnode < curtime) then
-		menu.refreshnode = nil
-		menu.updateExpandedNode()
+			menu.saveFlowchartState("flowchart", menu.flowchart)
+			if menu.keyTable then
+				menu.saveTableState("keyTable", menu.keyTable)
+			end
+			if menu.expandedNode then
+				if menu.restoreNodeWare or menu.restoreNodeSupply or menu.restoreNodeSupplyWare or menu.restoreNodeBuildModule then
+					menu.saveTableState("nodeTable", menu.expandedMenuTable)
+				end
+				menu.expandedNode:collapse()
+			end
+			menu.display()
+			return
+		end
+
+		if menu.restoreNode and menu.restoreNode.id then
+			menu.restoreNode:expand()
+			menu.restoreNode = nil
+		end
+
+		local curtime = getElapsedTime()
+		if menu.refreshnode and (menu.refreshnode < curtime) then
+			menu.refreshnode = nil
+			menu.updateExpandedNode()
+		end
 	end
 end
 

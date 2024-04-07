@@ -37,10 +37,6 @@ ffi.cdef[[
 
 local menu = {
 	name = "TransporterMenu",
-	white = { r = 255, g = 255, b = 255, a = 100 },
-	red = { r = 255, g = 0, b = 0, a = 100 },
-	green = { r = 0, g = 255, b = 0, a = 100 },
-	transparent = { r = 0, g = 0, b = 0, a = 0 },
 	extendedcategories = {
 		["ships"] = true,
 		["npcs"] = true,
@@ -197,17 +193,24 @@ function menu.onShowMenu()
 		if menu.transportercomponent == target.component and menu.transporterconnection == target.connection then
 			iscurrent = true
 		end
-		local parent = ConvertIDTo64Bit(GetComponentData(ConvertStringTo64Bit(tostring(target.component)), "parent"))
+		local parent, roomtype = GetComponentData(ConvertStringTo64Bit(tostring(target.component)), "parent", "roomtype")
+		parent = ConvertIDTo64Bit(parent)
 		if C.IsComponentClass(parent, "walkablemodule") then
 			local containercontext = C.GetContextByClass(parent, "container", false)
 			if containercontext == menu.topcontext then
 				local i = menu.findArrayEntry(menu.targets, parent)
 				if i == nil then
-					table.insert(menu.targets, { type = "walkablemodule", component = parent, directtarget = target, subtargets = { target }, subcomponents = {}, iscurrent = iscurrent })
+					table.insert(menu.targets, { type = "walkablemodule", component = parent, directtarget = target, subtargets = { target }, subcomponents = {}, iscurrent = iscurrent, hasshiptradercorner = roomtype == "shiptradercorner", hastradercorner = roomtype == "tradercorner" })
 					menu.extendedcategories[tostring(parent)] = true
 				else
 					if iscurrent then
 						menu.targets[i].iscurrent = iscurrent
+					end
+					if roomtype == "shiptradercorner" then
+						menu.targets[i].hasshiptradercorner = true
+					end
+					if roomtype == "tradercorner" then
+						menu.targets[i].hastradercorner = true
 					end
 					table.insert(menu.targets[i].subtargets, target)
 				end
@@ -298,7 +301,7 @@ function menu.onShowMenu()
 					end
 				end
 			end
-		elseif C.IsComponentClass(parent, "ventureplatform") then
+		elseif C.IsComponentClass(parent, "ventureplatform") or C.IsComponentClass(parent, "connectionmodule") then
 			table.insert(menu.targets, { type = "dyninterior", component = parent, directtarget = target, subtargets = {}, subcomponents = {}, iscurrent = iscurrent })
 		elseif C.IsComponentClass(target.component, "ship") then
 			local iscockpit, isexit = false, false
@@ -366,6 +369,15 @@ end
 function menu.sortTargets(a, b)
 	if config.sortOrder[a.type] == config.sortOrder[b.type] then
 		if a.directtarget and b.directtarget then
+			if a.iscurrent ~= b.iscurrent then
+				return a.iscurrent and (not b.iscurrent)
+			end
+			if a.hasshiptradercorner ~= b.hasshiptradercorner then
+				return a.hasshiptradercorner and (not b.hasshiptradercorner)
+			end
+			if a.hastradercorner ~= b.hastradercorner then
+				return a.hastradercorner and (not b.hastradercorner)
+			end
 			return ffi.string(C.GetTransporterLocationName(a.directtarget)) < ffi.string(C.GetTransporterLocationName(b.directtarget))
 		end
 		return a.directtarget and not b.directtarget
@@ -455,13 +467,13 @@ function menu.addEntry(ftable, target, indent, parentcomponent)
 		end
 	end
 
-	local row = ftable:addRow({ target = target.directtarget, issubtarget = false, hassubentries = (#target.subcomponents > 0) or displaysubtargets }, { bgColor = Helper.color.transparent })
+	local row = ftable:addRow({ target = target.directtarget, issubtarget = false, hassubentries = (#target.subcomponents > 0) or displaysubtargets }, {  })
 	local name = ffi.string(C.GetComponentName(target.component))
 
 	local font = Helper.standardFont
-	local color = menu.white
+	local color = Color["text_normal"]
 	if GetComponentData(ConvertStringTo64Bit(tostring(target.component)), "isplayerowned") then
-		color = menu.green
+		color = Color["text_player"]
 	end
 	local objectid
 	if C.IsComponentClass(target.component, "ship") then
@@ -470,7 +482,7 @@ function menu.addEntry(ftable, target, indent, parentcomponent)
 	if target.component == menu.topcontext then
 		name = ffi.string(C.GetTransporterLocationName(target.directtarget))
 		if menu.checkPlayerProperty(target.directtarget) then
-			color = menu.green
+			color = Color["text_player"]
 		end
 	end
 	local current = ""
@@ -490,7 +502,7 @@ function menu.addEntry(ftable, target, indent, parentcomponent)
 		end
 		if ismissiontarget then
 			font = Helper.standardFontBold
-			color = Helper.color.mission
+			color = Color["text_mission"]
 		end
 		if (menu.currentselection.target == target.directtarget) then
 			menu.buttontext = ReadText(1001, 6303)
@@ -554,33 +566,33 @@ function menu.addEntry(ftable, target, indent, parentcomponent)
 			local name, objectid, display, icon, isship = menu.getSubTargetName(subtarget)
 
 			local font = Helper.standardFont
-			local color = menu.white
+			local color = Color["text_normal"]
 			if menu.checkPlayerProperty(subtarget) then
-				color = menu.green
+				color = Color["text_player"]
 			end
 			if hasmissionshipsubtarget then
 				if menu.hasShipOrRoomMissionTarget(subtarget) then
 					font = Helper.standardFontBold
-					color = Helper.color.mission
+					color = Color["text_mission"]
 				end
 			else
 				if isship then
 					local context = C.GetContextForTransporterCheck(subtarget.component) -- Note by Matthias: context can be NULL if the component is a zone, which is the case for the space suit target
 					if (context ~= 0) and GetComponentData(ConvertStringTo64Bit(tostring(context)), "ismissiontarget") then
 						font = Helper.standardFontBold
-						color = Helper.color.mission
+						color = Color["text_mission"]
 					end
 				else
 					local locationcomponent = C.GetTransporterLocationComponent(subtarget) -- Note: context can be NULL if the component is a zone, which is the case for the space suit target
 					if (locationcomponent ~= 0) and GetComponentData(ConvertStringTo64Bit(tostring(locationcomponent)), "ismissiontarget") then
 						font = Helper.standardFontBold
-						color = Helper.color.mission
+						color = Color["text_mission"]
 					end
 				end
 			end
 
 			if display then
-				local row = ftable:addRow({ target = subtarget, issubtarget = true }, { bgColor = Helper.color.transparent })
+				local row = ftable:addRow({ target = subtarget, issubtarget = true }, {  })
 				local current = ""
 				if menu.transportercomponent == subtarget.component and menu.transporterconnection == subtarget.connection then
 					current = " [" .. ReadText(1001, 6301) .. "]"
@@ -619,9 +631,8 @@ function menu.display()
 		height = height + 2 * Helper.borderSize,
 		x = (Helper.viewWidth - 0.5 * width) / 2,
 		y = (Helper.viewHeight - height) / 2,
-		backgroundID = "solid",
-		backgroundColor = Helper.color.semitransparent,
 	})
+	frame:setBackground("solid", { color = Color["frame_background_semitransparent"] })
 
 	menu.infotext = ""
 
@@ -629,10 +640,10 @@ function menu.display()
 	ftable:setColWidth(1, Helper.standardTextHeight)
 	ftable:setColWidthPercent(3, 20)
 
-	local row = ftable:addRow(false, { fixed = true })
+	local row = ftable:addRow(false, { fixed = true, bgColor = Color["row_background_blue"] })
 	row[1]:setColSpan(3):createText(ReadText(1001, 6302), Helper.headerRow1Properties)
 
-	local row = ftable:addRow(false, {  })
+	local row = ftable:addRow(false, { bgColor = Color["row_background_blue"] })
 	row[1]:setColSpan(3):createText(ffi.string(C.GetComponentName(menu.topcontext)), Helper.subHeaderTextProperties)
 
 	for _, target in ipairs(menu.targets) do
@@ -649,13 +660,13 @@ function menu.display()
 	local iconsize = Helper.scaleY(2 * Helper.standardTextHeight)
 	buttontable:setColWidth(3, iconsize, false)
 
-	local buttonrow = buttontable:addRow(true, { fixed = true })
+	local buttonrow = buttontable:addRow(true, { fixed = true, bgColor = Color["row_background_blue"] })
 	buttonrow[1]:setColSpan(2):createText(menu.infotext, { minRowHeight = 2 * Helper.standardTextHeight, wordwrap = true })
 	local textheight = buttonrow[1]:getMinTextHeight(true)
 	buttonrow[3]:createButton({ height = textheight, scaling = false }):setIcon(menu.extendInfo and "widget_arrow_left_01" or "widget_arrow_right_01", { width = iconsize, height = iconsize, y = (textheight - iconsize) / 2 })
 	buttonrow[3].handlers.onClick = menu.buttonExpand
 
-	local buttonrow = buttontable:addRow(true, { fixed = true, bgColor = Helper.color.transparent })
+	local buttonrow = buttontable:addRow(true, { fixed = true })
 	local active = (not menu.currentselection.hassubentries) and ((menu.transportercomponent ~= menu.currentselection.target.component) or (menu.transporterconnection ~= menu.currentselection.target.connection))
 
 	-- kuertee start: callback
@@ -694,7 +705,7 @@ function menu.display()
 		infotable:setColWidthPercent(3, 25)
 		infotable:setColWidthPercent(4, 30)
 
-		local row = infotable:addRow(false, { fixed = true })
+		local row = infotable:addRow(false, { fixed = true, bgColor = Color["row_background_blue"] })
 		row[1]:setColSpan(4):createText(ReadText(1001, 2427), Helper.headerRow1Properties)
 
 		menu.room = C.GetRoomForTransporter(menu.currentselection.target)
@@ -725,7 +736,7 @@ function menu.display()
 			end
 			
 			if #dockedships > 0 then
-				local row = infotable:addRow(true, { bgColor = Helper.color.transparent })
+				local row = infotable:addRow(true, {  })
 				row[1]:createButton():setText(menu.extendedcategories["ships"] and "-" or "+", { halign = "center" })
 				row[1].handlers.onClick = function () return menu.buttonExtendCategory("ships") end
 				row[2]:setColSpan(3):createText(ReadText(1001, 6304), Helper.subHeaderTextProperties)
@@ -734,18 +745,18 @@ function menu.display()
 					for _, ship in ipairs(dockedships) do
 						local ship64 = ConvertStringTo64Bit(tostring(ship))
 						local font = Helper.standardFont
-						local color = menu.white
+						local color = Color["text_normal"]
 						local shiptext = ffi.string(C.GetComponentName(ship))
 						local objectid = ffi.string(C.GetObjectIDCode(ship))
 						local ismissiontarget, isplayerowned = GetComponentData(ship64, "ismissiontarget", "isplayerowned")
 
 						if ismissiontarget then
 							font = Helper.standardFontBold
-							color = Helper.color.mission
+							color = Color["text_mission"]
 						elseif isplayerowned then
-							color = menu.green
+							color = Color["text_player"]
 						end
-						local row = infotable:addRow(true, { bgColor = Helper.color.transparent })
+						local row = infotable:addRow(true, {  })
 						row[2]:setColSpan(2):createText(shiptext, { color = color, font = font })
 						row[4]:createText(objectid, { color = color, font = font, halign = "right" })
 					end
@@ -759,7 +770,7 @@ function menu.display()
 			end
 			menu.npcs = menu.getNPCs(menu.room, dockedships, menu.currentselection.issubtarget)
 			if #menu.npcs > 0 then
-				local row = infotable:addRow(true, { bgColor = Helper.color.transparent })
+				local row = infotable:addRow(true, {  })
 				row[1]:createButton():setText(menu.extendedcategories["npcs"] and "-" or "+", { halign = "center" })
 				row[1].handlers.onClick = function () return menu.buttonExtendCategory("npcs") end
 				row[2]:setColSpan(3):createText(ReadText(1001, 6300), Helper.subHeaderTextProperties)
@@ -767,14 +778,14 @@ function menu.display()
 					for _, npc in ipairs(menu.npcs) do
 						local name, typestring, typeicon, typename, isenemy, isplayerowned, ismissiontarget, postname, rolename = GetComponentData(npc, "name", "typestring", "typeicon", "typename", "isenemy", "isplayerowned", "ismissiontarget", "postname", "rolename")
 						local font = Helper.standardFont
-						local color = menu.white
+						local color = Color["text_normal"]
 						if ismissiontarget then
 							font = Helper.standardFontBold
-							color = Helper.color.mission
+							color = Color["text_mission"]
 						elseif isenemy then
-							color = menu.red
+							color = Color["text_enemy"]
 						elseif isplayerowned then
-							color = menu.green
+							color = Color["text_player"]
 						end
 						local title = postname
 						if title == "" then
@@ -783,7 +794,7 @@ function menu.display()
 								title = typename
 							end
 						end
-						local row = infotable:addRow(true, { bgColor = Helper.color.transparent })
+						local row = infotable:addRow(true, {  })
 						row[2]:createText(title, { color = color, font = font })
 						row[3]:setColSpan(2):createText(name, { color = color, font = font })
 					end
@@ -799,9 +810,6 @@ end
 
 function menu.viewCreated(layer, ...)
 	menu.selecttable, menu.infotable, menu.buttontable = ...
-
-	-- clear descriptors again
-	Helper.releaseDescriptors()
 end
 
 menu.updateInterval = 0.1
