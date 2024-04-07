@@ -793,6 +793,12 @@ local config = {
 	persistentdataversion = 1,
 }
 
+__CORE_DETAILMONITOR_SHIPBUILD = __CORE_DETAILMONITOR_SHIPBUILD or {
+	version = config.persistentdataversion,
+	["showStats"] = true,
+	["showStatsPaintMod"] = false,
+}
+
 -- kuertee start:
 local callbacks = {}
 -- kuertee end
@@ -808,12 +814,11 @@ local function init()
 
 	if __CORE_DETAILMONITOR_SHIPBUILD.version < config.persistentdataversion then
 		menu.upgradeSettingsVersion()
+	end
 
 	-- kuertee start:
 	menu.init_kuertee()
 	-- kuertee end
-
-	end
 end
 
 -- kuertee start:

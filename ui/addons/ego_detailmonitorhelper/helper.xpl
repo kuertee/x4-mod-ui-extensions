@@ -517,6 +517,49 @@ Helper = {
 	maxTextIcons = 15,
 	fallbackFont = "Terrakana",
 	fallbackFontBold = "Terrakana Bold",
+
+	-- kuertee start: colour backward compatibility
+	standardColor = { r = 255, g = 255, b = 255, a = 100 },
+	defaultHeaderBackgroundColor = { r = 0, g = 0, b = 0, a = 60 },
+	defaultSimpleBackgroundColor = { r = 66, g = 92, b = 111, a = 60 },
+	defaultTitleBackgroundColor = { r = 49, g = 69, b = 83, a = 60 },
+	defaultArrowRowBackgroundColor = { r = 83, g = 116, b = 139, a = 60 },
+	defaultUnselectableBackgroundColor = { r = 35, g = 53, b = 71, a = 60 },
+	defaultUnselectableFontColor = { r = 163, g = 193, b = 227, a = 100 },
+	defaultButtonBackgroundColor = { r = 49, g = 69, b = 83, a = 60 },
+	defaultUnselectableButtonBackgroundColor = { r = 31, g = 31, b = 31, a = 100 },
+	defaultButtonHighlightColor = { r = 71, g = 136, b = 184, a = 100 },
+	defaultUnselectableButtonHighlightColor = { r = 80, g = 80, b = 80, a = 100 },
+	defaultCheckBoxBackgroundColor = { r = 66, g = 92, b = 111, a = 100 },
+	defaultEditBoxBackgroundColor = { r = 49, g = 69, b = 83, a = 60 },
+	defaultSliderCellBackgroundColor = { r = 22, g = 34, b = 41, a = 60 },
+	defaultSliderCellInactiveBackgroundColor = { r = 40, g = 40, b = 40, a = 60 },
+	defaultSliderCellValueColor = { r = 99, g = 138, b = 166, a = 100 },
+	defaultSliderCellPositiveValueColor = { r = 29, g = 216, b = 35, a = 30 },
+	defaultSliderCellNegativeValueColor = { r = 216, g = 68, b = 29, a = 30 },
+	defaultStatusBarValueColor = { r = 71, g = 136, b = 184, a = 100 },
+	defaultStatusBarPosChangeColor = { r = 20, g = 222, b = 20, a = 30 },
+	defaultStatusBarNegChangeColor = { r = 236, g = 53, b = 0, a = 30 },
+	defaultStatusBarMarkerColor = { r = 151, g = 192, b = 223, a = 100 },
+	defaultBoxTextBoxColor = { r = 49, g = 69, b = 83, a = 60 },
+	defaultFlowchartOutlineColor = { r = 90, g = 146, b = 186, a = 100 },			-- light cyan
+	defaultFlowchartBackgroundColor = { r = 25, g = 25, b = 25, a = 100 },			-- dark grey
+	defaultFlowchartValueColor = { r = 0, g = 116, b = 153, a = 100 },				-- cyan
+	defaultFlowchartSlider1Color = { r = 225, g = 149, b = 0, a = 100 },			-- orange
+	defaultFlowchartDiff1Color = { r = 89, g = 52, b = 0, a = 100 },				-- brown
+	defaultFlowchartSlider2Color = { r = 66, g = 171, b = 61, a = 100 },			-- green
+	defaultFlowchartDiff2Color = { r = 4, g = 89, b = 0, a = 100 },					-- dark green
+	defaultFlowchartConnector1Color = { r = 255, g = 220, b = 0, a = 100 },			-- yellow
+	defaultFlowchartConnector2Color = { r = 0, g = 154, b = 204, a = 100 },			-- light cyan
+	defaultFlowchartConnector3Color = { r = 224, g = 79, b = 0, a = 100 },			-- dark orange
+	defaultFlowchartConnector4Color = { r = 255, g = 153, b = 255, a = 100 },		-- pink
+	defaultTitleTrapezoidBackgroundColor = { r = 66, g = 92, b = 111, a = 100 },
+	statusRed = {r = 255, g = 0, b = 0, a = 100},
+	statusOrange = {r = 255, g = 64, b = 0, a = 100},
+	statusYellow = {r = 255, g = 255, b = 0, a = 100},
+	statusGreen = {r = 0, g = 255, b = 0, a = 100},
+	-- kuertee end: colour backward compatibility
+
 }
 
 Helper.titleTextProperties = {
@@ -555,6 +598,43 @@ Helper.subHeaderTextProperties = {
 	cellBGColor = Color["row_background"],
 	titleColor = Color["row_title"],
 }
+
+-- kuertee start: colour backward compatibility
+Helper.color = {
+	black = { r = 0, g = 0, b = 0, a = 100 },
+	slidervalue = { r = 71, g = 136, b = 184, a = 100 },
+	green = { r = 0, g = 255, b = 0, a = 100 },
+	playergreen = { r = 170, g = 255, b = 139, a = 100 },
+	grey = { r = 128, g = 128, b = 128, a = 100 },
+	lightgreen = { r = 100, g = 225, b = 0, a = 100 },
+	lightgrey = { r = 192, g = 192, b = 192, a = 100 },
+	orange = { r = 255, g = 192, b = 0, a = 100 },
+	darkorange = { r = 128, g = 95, b = 0, a = 100 },
+	red = { r = 255, g = 0, b = 0, a = 100 },
+	semitransparent = { r = 0, g = 0, b = 0, a = 95 },
+	transparent60 = { r = 0, g = 0, b = 0, a = 60 },
+	transparent = { r = 0, g = 0, b = 0, a = 0 },
+	white = { r = 255, g = 255, b = 255, a = 100 },
+	yellow = { r = 144, g = 144, b = 0, a = 100 },
+	brightyellow = { r = 255, g = 255, b = 0, a = 100 },
+	warning = { r = 192, g = 192, b = 0, a = 100 },
+	done = { r = 38, g = 61, b = 78, a = 100 },
+	available = { r = 7, g = 29, b = 46, a = 100 },
+	darkgrey = { r = 32, g = 32, b = 32, a = 100 },
+	mission = { r = 255, g = 190, b = 0, a = 100 },
+	warningorange = { r = 255, g = 138, b = 0, a = 100 },
+	blue = { r = 90, g = 146, b = 186, a = 100 },
+	changedvalue = { r = 255, g = 236, b = 81, a = 100 },
+	cyan = { r = 46, g = 209, b = 255, a = 100 },
+	checkboxgroup = { r = 0, g = 102, b = 238, a = 60 },
+	unselectable = { r = 32, g = 32, b = 32, a = 100 },
+	cover = { r = 231, g = 244, b = 70, a = 100 },
+	textred = { r = 255, g = 80, b = 80, a = 100 },
+	grey64 = { r = 64, g = 64, b = 64, a = 100 },
+	illegal = { r = 255, g = 64, b = 0, a = 100 },
+	illegaldark = { r = 128, g = 32, b = 0, a = 100 },
+}
+-- kuertee end: colour backward compatibility
 
 Helper.intersectorDefenceFactor = 3000
 

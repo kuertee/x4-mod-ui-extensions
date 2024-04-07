@@ -27977,6 +27977,13 @@ end
 function menu.getFilterOption(id, savegame)
 	local settings = __CORE_DETAILMONITOR_MAPFILTER
 	if savegame then
+
+		-- kuertee start: __CORE_DETAILMONITOR_MAPFILTER_SAVE is reset on /reloadui
+		if not __CORE_DETAILMONITOR_MAPFILTER_SAVE then
+			__CORE_DETAILMONITOR_MAPFILTER_SAVE = {}
+		end
+		-- kuertee end: __CORE_DETAILMONITOR_MAPFILTER_SAVE is reset on /reloadui
+
 		settings = __CORE_DETAILMONITOR_MAPFILTER_SAVE
 	end
 
@@ -28116,6 +28123,12 @@ function menu.upgradeMapFilterVersion()
 end
 
 function menu.upgradeMapFilterSaveVersion()
+	-- kuertee start: __CORE_DETAILMONITOR_MAPFILTER_SAVE is reset on /reloadui
+	if not __CORE_DETAILMONITOR_MAPFILTER_SAVE then
+		__CORE_DETAILMONITOR_MAPFILTER_SAVE = {}
+	end
+	-- kuertee end: __CORE_DETAILMONITOR_MAPFILTER_SAVE is reset on /reloadui
+
 	local oldversion = __CORE_DETAILMONITOR_MAPFILTER_SAVE.version
 
 	if oldversion < 1 then
