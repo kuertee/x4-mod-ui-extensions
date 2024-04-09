@@ -5,8 +5,11 @@ by kuertee. Contributors: Erixon, Forleyor, Mycu, Runekn, AlexandreTK.
 
 Updates
 =======
-v6.2.014, 4 Mar 2024:
--Bug-fix: The callback for starting new games with an intro monologue (e.g. Segaris Pioneer gamestart) was sending an invalid variable causing the game to not proceed after the intro monologue.
+beta v7.0.002, 10 Apr 2024:
+-Bug-fix: missed lines from base beta 7.0.0 that resulted in the trade sections not showing in the Interact Menu.
+
+beta v7.0.001, 7 Apr 2024:
+-Compatibility: Requires base game beta v7.0.0.
 
 Instructions for players
 ========================
@@ -170,6 +173,9 @@ Troubleshooting
 
 History
 =======
+v6.2.014, 4 Mar 2024:
+-Bug-fix: The callback for starting new games with an intro monologue (e.g. Segaris Pioneer gamestart) was sending an invalid variable causing the game to not proceed after the intro monologue.
+
 v6.2.012, 19 Feb 2024:
 -Bug-fix: UIX wasn't properly getting initialised sometimes - i.e. when no other mod requests UIX functions. UIX should get initialised regardless. Fixed in this version.
 

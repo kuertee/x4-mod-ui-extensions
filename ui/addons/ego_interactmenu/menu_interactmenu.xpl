@@ -3806,8 +3806,14 @@ function menu.processSelectedPlayerShips()
 				menu.numorderloops = menu.numorderloops + 1
 			end
 
+			-- Check space suit
+			local isspacesuit = C.IsComponentClass(ship, "spacesuit")
+			if not isspacesuit then
+				menu.numshipsexcludingspacesuits = menu.numshipsexcludingspacesuits + 1
+			end
+
 			-- Check assignments
-			if isplayerownedtarget and C.IsComponentClass(menu.componentSlot.component, "controllable") and GetComponentData(ship, "assignedpilot") then
+			if isplayerownedtarget and C.IsComponentClass(menu.componentSlot.component, "controllable") and GetComponentData(ship, "assignedpilot") and (not isspacesuit) then
 				if commander ~= convertedComponent and C.CanAcceptSubordinate(menu.componentSlot.component, ship) then
 					menu.numassignableships = menu.numassignableships + 1
 					if GetComponentData(ship, "primarypurpose") == "mine" then
