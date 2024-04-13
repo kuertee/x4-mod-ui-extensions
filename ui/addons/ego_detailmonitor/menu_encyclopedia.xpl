@@ -2063,7 +2063,7 @@ function menu.setObject(rowdata)
 							if race == "khaak" then
 								iskhaak = true
 							end
-							if isxenon and iskhaak then
+							if isxenon or iskhaak then
 								break
 							end
 						end
@@ -2836,6 +2836,7 @@ function menu.addDetailRows(ftable)
 
 		elseif menu.mode == "Ships" then
 			local hasdefaultloadout = C.HasDefaultLoadout2(menu.id, true)
+			local shipmakerraces = GetMacroData(menu.id, "makerraceid")
 			-- hull
 			menu.addDetailRow(ftable, ReadText(1001, 9083), ConvertIntegerString(menu.object.hull, true, 0, true) .. " " .. ReadText(1001, 118))
 			-- ship type
@@ -2879,17 +2880,11 @@ function menu.addDetailRows(ftable)
 				for i = 1, numslots do
 					for _, engine in pairs(menu.data.Equipment.enginetypes) do
 						local makerrace, ware = GetMacroData(engine.id, "makerraceid", "ware")
-						local found = false
-						for _, race in ipairs(makerrace) do
-							if (race == "xenon") or (race == "khaak") then
-								found = true
-								break
-							end
+						local allowed = menu.isMakerRaceAllowed(makerrace, shipmakerraces)
+						if allowed and (not ware or GetWareData(ware, "volatile")) then
+							allowed = false
 						end
-						if not ware or GetWareData(ware, "volatile") then
-							found = true
-						end
-						if not found then
+						if allowed then
 							if C.IsUpgradeMacroCompatible(0, 0, menu.id, false, "engine", i, engine.id) then
 								local evalengine = GetLibraryEntry("enginetypes", engine.id)
 								for property, entry in pairs(bestengines) do
@@ -2950,17 +2945,11 @@ function menu.addDetailRows(ftable)
 				for i = 1, numslots do
 					for _, thruster in pairs(menu.data.Equipment.thrustertypes) do
 						local makerrace, ware = GetMacroData(thruster.id, "makerraceid", "ware")
-						local found = false
-						for _, race in ipairs(makerrace) do
-							if (race == "xenon") or (race == "khaak") then
-								found = true
-								break
-							end
+						local allowed = menu.isMakerRaceAllowed(makerrace, shipmakerraces)
+						if allowed and (not ware or GetWareData(ware, "volatile")) then
+							allowed = false
 						end
-						if GetWareData(ware, "volatile") then
-							found = true
-						end
-						if not found then
+						if allowed then
 							if C.IsVirtualUpgradeMacroCompatible(0, menu.id, "thruster", i, thruster.id) then
 								local evalthruster = GetLibraryEntry("enginetypes", thruster.id)
 								for property, entry in pairs(bestthrusters) do
@@ -3017,14 +3006,8 @@ function menu.addDetailRows(ftable)
 						for j = 0, n - 1 do
 							local aliasid = ffi.string(buf[j])
 							local makerrace = GetMacroData(aliasid, "makerraceid")
-							local found = false
-							for _, race in ipairs(makerrace) do
-								if (race == "xenon") or (race == "khaak") then
-									found = true
-									break
-								end
-							end
-							if not found then
+							local allowed = menu.isMakerRaceAllowed(makerrace, shipmakerraces)
+							if allowed then
 								if C.IsUpgradeMacroCompatible(0, 0, menu.id, false, "shield", i, aliasid) then
 									local evalshieldgen = GetLibraryEntry("shieldgentypes", aliasid)
 									if not bestshield or evalshieldgen.shield > bestshield.shield then
@@ -3998,6 +3981,31 @@ function menu.checkboxGraphData(id, type, i)
 	else
 		C.SetCheckBoxChecked(id, not menu.hiddenData[type][i], true)
 	end
+end
+
+function menu.isMakerRaceAllowed(makerraces, objectmakerraces)
+	local allowed = true
+	for _, race in ipairs(makerraces) do
+		if objectmakerraces then
+			local raceallowed = false		
+			for _, objectrace in ipairs(objectmakerraces) do
+				if objectrace == race then
+					raceallowed = true
+					break
+				end
+			end
+			if raceallowed then
+				-- always allow the equipment if the maker race matches the maker race of the object it is for
+				allowed = true
+				break
+			end
+		end
+		if (race == "xenon") or (race == "khaak") then
+			allowed = false
+			break
+		end
+	end
+	return (next(makerraces) == nil) or allowed
 end
 
 -- input in m

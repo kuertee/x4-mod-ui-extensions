@@ -1,6 +1,6 @@
 ﻿-- param == { 0, 0 }
 
--- modes: 
+-- modes:
 
 -- ffi setup
 local ffi = require("ffi")
@@ -317,7 +317,7 @@ function menu.display()
 	local isdocked = (menu.currentplayership ~= 0) and GetComponentData(menu.currentplayership, "isdocked")
 	local ownericon, owner, shiptrader, isdock, canbuildships, isplayerowned, issupplyship, canhavetradeoffers, aipilot = GetComponentData(menu.currentcontainer, "ownericon", "owner", "shiptrader", "isdock", "canbuildships", "isplayerowned", "issupplyship", "canhavetradeoffers", "aipilot")
 	local cantrade = canhavetradeoffers and isdock
-	local canwareexchange = isplayerowned and ((not C.IsComponentClass(menu.currentcontainer, "ship")) or aipilot) 
+	local canwareexchange = isplayerowned and ((not C.IsComponentClass(menu.currentcontainer, "ship")) or aipilot)
 	--NB: equipment docks currently do not have ship traders
 	local dockedplayerships = {}
 	Helper.ffiVLA(dockedplayerships, "UniverseID", C.GetNumDockedShips, C.GetDockedShips, menu.currentcontainer, "player")
@@ -437,9 +437,9 @@ function menu.display()
 				end
 			end
 			row[2]:createDropDown(modes, {
-				helpOverlayID = "docked_modes",		
-				helpOverlayText = " ", 
-				helpOverlayHighlightOnly = true, 
+				helpOverlayID = "docked_modes",
+				helpOverlayText = " ",
+				helpOverlayHighlightOnly = true,
 				height = Helper.standardButtonHeight,
 				startOption = "",
 				textOverride = ReadText(1002, 1001),
@@ -641,7 +641,7 @@ function menu.display()
 
 						local row = table_header:addRow("ammo_config", {  })
 						row[1]:createText("    " .. ReadText(1001, 2800) .. ReadText(1001, 120))	-- Ammunition, :
-						row[2]:setColSpan(10):createDropDown(dropdowndata, { startOption = function () return menu.getDropDownOption(weapon) end, active = dropdownactive })
+						row[2]:setColSpan(10):createDropDown(dropdowndata, { startOption = function () return menu.getDropDownOption(weapon) end, helpOverlayID = "docked_ammo_config", helpOverlayText = " ", helpOverlayHighlightOnly = true, active = dropdownactive })
 						row[2].handlers.onDropDownConfirmed = function(_, newammomacro) C.SetAmmoOfWeapon(weapon, newammomacro) end
 						titlerow[1].properties.helpOverlayHeight = titlerow[1].properties.helpOverlayHeight + row:getHeight() + Helper.borderSize
 					elseif pilot and C.IsComponentClass(weapon, "bomblauncher") then
@@ -672,7 +672,7 @@ function menu.display()
 
 						local row = table_header:addRow("ammo_config", {  })
 						row[1]:createText("    " .. ReadText(1001, 2800) .. ReadText(1001, 120))	-- Ammunition, :
-						row[2]:setColSpan(10):createDropDown(dropdowndata, { startOption = function () return menu.getDropDownOption(weapon) end, active = dropdownactive })
+						row[2]:setColSpan(10):createDropDown(dropdowndata, { startOption = function () return menu.getDropDownOption(weapon) end, helpOverlayID = "docked_ammo_config", helpOverlayText = " ", helpOverlayHighlightOnly = true, active = dropdownactive })
 						row[2].handlers.onDropDownConfirmed = function(_, newammomacro) C.SetAmmoOfWeapon(weapon, newammomacro) end
 						titlerow[1].properties.helpOverlayHeight = titlerow[1].properties.helpOverlayHeight + row:getHeight() + Helper.borderSize
 					end
@@ -721,7 +721,7 @@ function menu.display()
 						end
 
 						table.insert(menu.turretgroups, group)
-						
+
 						if not GetComponentData(ConvertStringTo64Bit(tostring(group.currentcomponent)), "istugweapon") then
 							hasonlytugturrets = false
 						end
@@ -838,7 +838,7 @@ function menu.display()
 					row[7].handlers.onClick = function () return C.SetDroneTypeArmed(menu.currentplayership, entry.type, not C.IsDroneTypeArmed(menu.currentplayership, entry.type)) end
 					row[7].properties.helpOverlayID = "docked_drones_" .. entry.type
 					row[7].properties.helpOverlayText = " "
-					row[7].properties.helpOverlayHighlightOnly = true 
+					row[7].properties.helpOverlayHighlightOnly = true
 				end
 			end
 			-- subordinates
@@ -1060,9 +1060,9 @@ function menu.display()
 				end
 			end
 			row[1]:createDropDown(modes, {
-				helpOverlayID = "docked_modes",		
-				helpOverlayText = " ", 
-				helpOverlayHighlightOnly = true, 
+				helpOverlayID = "docked_modes",
+				helpOverlayText = " ",
+				helpOverlayHighlightOnly = true,
 				height = Helper.standardButtonHeight,
 				startOption = "",
 				textOverride = ReadText(1002, 1001),
@@ -1427,7 +1427,7 @@ menu.updateInterval = 0.1
 -- hook to update the menu while it is being displayed
 function menu.onUpdate()
 	local curtime = getElapsedTime()
- 	if menu.secondarycontrolpost then
+	if menu.secondarycontrolpost then
 		if C.IsComponentClass(menu.currentcontainer, "ship") then
 			local docked = GetComponentData(menu.currentcontainer, "isdocked")
 			if docked ~= (menu.mode == "docked") then

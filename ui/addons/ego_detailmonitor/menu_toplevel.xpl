@@ -321,7 +321,7 @@ function menu.onTableMouseOut(uitable, row)
 end
 
 function menu.onTableMouseOver(uitable, row)
-	if (not menu.showTabs) and (not menu.lock) then
+	if (not menu.showTabs) and ((not menu.lock) or (not menu.over)) then
 		-- kuertee custom HUD start:
 		onTableMouseOver_uitable = uitable
 		onTableMouseOver_row = row

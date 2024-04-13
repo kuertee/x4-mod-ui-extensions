@@ -3953,6 +3953,7 @@ function menu.getDataAndDisplay(upgradeplan, crew, newedit, firsttime, noundo, s
 	end
 
 	-- assemble possible upgrades per slot
+	local objectmakerraces = menu.object ~= 0 and GetComponentData(ConvertStringTo64Bit(tostring(menu.object)), "makerraceid") or (menu.macro ~= "" and GetMacroData(menu.macro, "makerraceid") or nil)
 	for type, slots in pairs(menu.slots) do
 		local upgradetype = Helper.findUpgradeType(type)
 		if upgradetype.supertype == "macro" then
@@ -3961,7 +3962,7 @@ function menu.getDataAndDisplay(upgradeplan, crew, newedit, firsttime, noundo, s
 			for i, slot in ipairs(slots) do
 				if menu.upgradewares[type] then
 					for _, upgradeware in ipairs(menu.upgradewares[type]) do
-						if menu.checkCompatibility(upgradeware.macro) and C.IsUpgradeMacroCompatible(menu.object, 0, menu.macro, false, type, i, upgradeware.macro) then
+						if menu.checkCompatibility(upgradeware.macro, objectmakerraces) and C.IsUpgradeMacroCompatible(menu.object, 0, menu.macro, false, type, i, upgradeware.macro) then
 							if upgradeware.isFromShipyard or (slot.currentmacro == upgradeware.macro) then
 								table.insert(slot.possiblemacros, upgradeware.macro)
 							end
@@ -3994,7 +3995,7 @@ function menu.getDataAndDisplay(upgradeplan, crew, newedit, firsttime, noundo, s
 			for i, slot in ipairs(slots) do
 				if menu.upgradewares[type] then
 					for _, upgradeware in ipairs(menu.upgradewares[type]) do
-						if menu.checkCompatibility(upgradeware.macro) and C.IsVirtualUpgradeMacroCompatible(menu.object, menu.macro, type, i, upgradeware.macro) then
+						if menu.checkCompatibility(upgradeware.macro, objectmakerraces) and C.IsVirtualUpgradeMacroCompatible(menu.object, menu.macro, type, i, upgradeware.macro) then
 							table.insert(slot.possiblemacros, upgradeware.macro)
 						end
 					end
@@ -4011,14 +4012,14 @@ function menu.getDataAndDisplay(upgradeplan, crew, newedit, firsttime, noundo, s
 				local wares = menu.upgradewares[upgradetype.grouptype] or {}
 				for _, upgradeware in ipairs(wares) do
 					if upgradeware.macro ~= "" then
-						if menu.checkCompatibility(upgradeware.macro) and C.IsUpgradeGroupMacroCompatible(menu.object, menu.macro, group.path, group.group, upgradetype.grouptype, upgradeware.macro) then
+						if menu.checkCompatibility(upgradeware.macro, objectmakerraces) and C.IsUpgradeGroupMacroCompatible(menu.object, menu.macro, group.path, group.group, upgradetype.grouptype, upgradeware.macro) then
 							if upgradeware.isFromShipyard or (group[upgradetype.grouptype].currentmacro == upgradeware.macro) then
 								table.insert(menu.groups[i][upgradetype.grouptype].possiblemacros, upgradeware.macro)
 							end
 						end
 					end
-					table.sort(menu.groups[i][upgradetype.grouptype].possiblemacros, Helper.sortMacroRaceAndShortname)
 				end
+				table.sort(menu.groups[i][upgradetype.grouptype].possiblemacros, Helper.sortMacroRaceAndShortname)
 			end
 		end
 	end
@@ -4206,17 +4207,31 @@ function menu.checkCurrentBuildTasks()
 	end
 end
 
-function menu.checkCompatibility(macro)
+function menu.checkCompatibility(macro, objectmakerraces)
 	local makerrace = GetMacroData(macro, "makerraceid")
-	local isxenon, iskhaak = false, false
+	local allowed = true
 	for _, race in ipairs(makerrace) do
+		if objectmakerraces then
+			local raceallowed = false		
+			for _, objectrace in ipairs(objectmakerraces) do
+				if objectrace == race then
+					raceallowed = true
+					break
+				end
+			end
+			if raceallowed then
+				-- always allow the equipment if the maker race matches the maker race of the object it is for
+				allowed = true
+				break
+			end
+		end
 		if race == "xenon" then
-			isxenon = true
+			allowed = false
 		end
 		if race == "khaak" then
-			iskhaak = true
+			allowed = false
 		end
-		if isxenon and iskhaak then
+		if not allowed then
 			break
 		end
 	end
@@ -4224,7 +4239,7 @@ function menu.checkCompatibility(macro)
 	if menu.hasDefaultLoadout then
 		return menu.defaultLoadoutMacros[macro]
 	else
-		return (next(makerrace) == nil) or ((not isxenon) and (not iskhaak))
+		return (next(makerrace) == nil) or allowed
 	end
 end
 
@@ -7737,21 +7752,23 @@ function menu.displayPlan(frame)
 			-- chassis
 			if menu.object == 0 then
 				local ware = GetMacroData(menu.macro, "ware")
-				local isextended = menu.isUpgradeExpanded(menu.currentIdx, ware, "chassis")
-				local name = GetWareData(ware, "name")
-				local resources = menu.getBuildResources(ware)
+				if ware then
+					local isextended = menu.isUpgradeExpanded(menu.currentIdx, ware, "chassis")
+					local name = GetWareData(ware, "name")
+					local resources = menu.getBuildResources(ware)
 
-				row = ftable:addRow(true, {  })
-				if (resources ~= nil) and (#resources > 0) and (menu.mode ~= "customgamestart") and (menu.mode ~= "comparison") then
-					row[1]:createButton({ height = Helper.standardTextHeight }):setText(isextended and "-" or "+", { halign = "center" })
-					row[1].handlers.onClick = function () return menu.expandUpgrade(menu.currentIdx, ware, "chassis", row.index) end
-				end
-				row[2]:setColSpan(colspan):createText(ReadText(1001, 8008), { color = Color["text_positive"] })
-				if (not menu.isReadOnly) and (not menu.isplayerowned) and (menu.mode ~= "customgamestart") and (menu.mode ~= "comparison") then
-					row[4]:setColSpan(2):createText(ConvertMoneyString(tonumber(C.GetBuildWarePrice(menu.container, ware or "")), false, true, 0, true, false) .. " " .. ReadText(1001, 101), { halign = "right", color = Color["text_positive"] })
-				end
-				if resources and (#resources > 0) and isextended then
-					menu.displayUpgradeResources(ftable, resources, 1)
+					row = ftable:addRow(true, {  })
+					if (resources ~= nil) and (#resources > 0) and (menu.mode ~= "customgamestart") and (menu.mode ~= "comparison") then
+						row[1]:createButton({ height = Helper.standardTextHeight }):setText(isextended and "-" or "+", { halign = "center" })
+						row[1].handlers.onClick = function () return menu.expandUpgrade(menu.currentIdx, ware, "chassis", row.index) end
+					end
+					row[2]:setColSpan(colspan):createText(ReadText(1001, 8008), { color = Color["text_positive"] })
+					if (not menu.isReadOnly) and (not menu.isplayerowned) and (menu.mode ~= "customgamestart") and (menu.mode ~= "comparison") then
+						row[4]:setColSpan(2):createText(ConvertMoneyString(tonumber(C.GetBuildWarePrice(menu.container, ware or "")), false, true, 0, true, false) .. " " .. ReadText(1001, 101), { halign = "right", color = Color["text_positive"] })
+					end
+					if resources and (#resources > 0) and isextended then
+						menu.displayUpgradeResources(ftable, resources, 1)
+					end
 				end
 			end
 			for _, entry in ipairs(config.leftBar) do

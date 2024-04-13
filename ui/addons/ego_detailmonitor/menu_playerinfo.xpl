@@ -1573,6 +1573,12 @@ function menu.createInventory(frame, tableProperties, mode, tabOrderOffset)
 							row = infotable:addRow(nil, {  })
 							row[1]:setColSpan(4):createText(entry.name, Helper.subHeaderTextProperties)
 							row[1].properties.halign = "center"
+
+							row[1].properties.helpOverlayID = "playerinfo_inventory_" .. entry.id
+							row[1].properties.helpOverlayText = " "
+							row[1].properties.helpOverlayHeight = row:getHeight()
+							row[1].properties.helpOverlayHighlightOnly = true
+							row[1].properties.helpOverlayScaling = false
 						end
 						for _, ware in ipairs(entry.data) do
 							local waredata = menu.inventory[ware]
@@ -1582,10 +1588,12 @@ function menu.createInventory(frame, tableProperties, mode, tabOrderOffset)
 							end
 							menu.addInventoryWareEntry(infotable, ware, waredata, nil, nil, isequipment, entry.id == "online")
 							totalprice = totalprice + avgprice * waredata.amount
+							row[1].properties.helpOverlayHeight = row[1].properties.helpOverlayHeight + row:getHeight() + Helper.borderSize
 						end
 					end
 				end
 			end
+
 		end
 		if not found then
 			row = infotable:addRow(true, { interactive = false })
@@ -1661,7 +1669,7 @@ function menu.createInventory(frame, tableProperties, mode, tabOrderOffset)
 			row = buttontable:addRow(true, { fixed = true })
 		end
 		-- drop item button
-		row[1]:createButton({ active = menu.inventoryData.mode == "drop" }):setText((menu.inventoryData.dropWares and (#menu.inventoryData.dropWares > 1)) and ReadText(1001, 7733) or ReadText(1001, 7705), { halign = "center" })
+		row[1]:createButton({ active = menu.inventoryData.mode == "drop", helpOverlayID = "playerinfo_inventory_drop", helpOverlayText = " ", helpOverlayHighlightOnly = true }):setText((menu.inventoryData.dropWares and (#menu.inventoryData.dropWares > 1)) and ReadText(1001, 7733) or ReadText(1001, 7705), { halign = "center" })
 		row[1].handlers.onClick = menu.buttonInventoryDrop
 
 		if menu.inventoryData.mode ~= "drop" then
@@ -1674,7 +1682,7 @@ function menu.createInventory(frame, tableProperties, mode, tabOrderOffset)
 			end
 
 			row = buttontable:addRow(true, { fixed = true })
-			row[1]:createButton({ active = hasillegalwares }):setText(ReadText(1001, 7734), { halign = "center" })
+			row[1]:createButton({ active = hasillegalwares, helpOverlayID = "playerinfo_inventory_dropallillegal", helpOverlayText = " ", helpOverlayHighlightOnly = true }):setText(ReadText(1001, 7734), { halign = "center" })
 			row[1].handlers.onClick = function () return menu.buttonInventoryDropAll(true) end
 		end
 
@@ -3607,7 +3615,7 @@ function menu.initEmpireData()
 
 	local ships = {}
 	local stations = {}
-	
+
 	local numownedships = C.GetNumAllFactionShips("player")
 	local allownedships = ffi.new("UniverseID[?]", numownedships)
 	numownedships = C.GetAllFactionShips(allownedships, numownedships, "player")
