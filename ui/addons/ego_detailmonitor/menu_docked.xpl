@@ -193,17 +193,7 @@ end
 -- kuertee start:
 function menu.init_kuertee ()
 	menu.loadModLuas()
-	-- if Helper.modLuas[menu.name] then
-	-- 	if not next(Helper.modLuas[menu.name].failedByExtension) then
-	-- 		DebugError("uix init success: " .. tostring(debug.getinfo(1).source))
-	-- 	else
-	-- 		for extension, modLua in pairs(Helper.modLuas[menu.name].failedByExtension) do
-	-- 			DebugError("uix init failed: " .. tostring(debug.getinfo(modLua.init).source):gsub("@.\\", ""))
-	-- 		end
-	-- 	end
-	-- else
-		DebugError("uix load success: " .. tostring(debug.getinfo(1).source))
-	-- end
+	-- DebugError("uix load success: " .. tostring(debug.getinfo(1).source))
 end
 -- kuertee end
 
@@ -432,7 +422,7 @@ function menu.display()
 					end
 					local mouseovertext = GetLocalizedKeyName("action", entry.action)
 					if visible then
-						table.insert(modes, { id = entry.id, text = entry.name, icon = "", displayremoveoption = false, active = entryactive, mouseovertext = mouseovertext })
+						table.insert(modes, { id = entry.id, text = entry.name, icon = "", displayremoveoption = false, active = entryactive, mouseovertext = mouseovertext, helpOverlayID = "docked_mode_dropdown_" .. entry.id, helpOverlayText = " ", helpOverlayHighlightOnly = true })
 					end
 				end
 			end
@@ -462,9 +452,9 @@ function menu.display()
 						if consumables[j].amount > 0 then
 							local macro = ffi.string(consumables[j].macro)
 							if consumabledata.type == "civilian" then
-								table.insert(civilian, { id = consumabledata.id .. ":" .. macro, text = GetMacroData(macro, "name"), text2 = "(" .. consumables[j].amount .. ")", icon = "", displayremoveoption = false })
+								table.insert(civilian, { id = consumabledata.id .. ":" .. macro, text = GetMacroData(macro, "name"), text2 = "(" .. consumables[j].amount .. ")", icon = "", displayremoveoption = false, helpOverlayID = "docked_deploy_civ_dropdown_" .. consumabledata.id, helpOverlayText = " ", helpOverlayHighlightOnly = true })
 							else
-								table.insert(military, { id = consumabledata.id .. ":" .. macro, text = GetMacroData(macro, "name"), text2 = "(" .. consumables[j].amount .. ")", icon = "", displayremoveoption = false })
+								table.insert(military, { id = consumabledata.id .. ":" .. macro, text = GetMacroData(macro, "name"), text2 = "(" .. consumables[j].amount .. ")", icon = "", displayremoveoption = false, helpOverlayID = "docked_deploy_mil_dropdown_" .. consumabledata.id, helpOverlayText = " ", helpOverlayHighlightOnly = true })
 							end
 						end
 					end
@@ -576,11 +566,11 @@ function menu.display()
 				row[1]:setColSpan(2):createText(ReadText(1001, 11218))
 				row[7]:setColSpan(1)
 				for j = 1, 4 do
-					row[2 + j]:createCheckBox(function () return C.GetDefensibleActiveWeaponGroup(menu.currentplayership, true) == j end, { width = Helper.standardTextHeight, height = Helper.standardTextHeight, symbol = "arrow", bgColor = function () return menu.checkboxWeaponGroupColor(j, true) end })
+					row[2 + j]:createCheckBox(function () return C.GetDefensibleActiveWeaponGroup(menu.currentplayership, true) == j end, { width = Helper.standardTextHeight, height = Helper.standardTextHeight, symbol = "arrow", bgColor = function () return menu.checkboxWeaponGroupColor(j, true) end, helpOverlayID = "docked_weaponconfig_primary_" .. j .. "_active", helpOverlayText = " ", helpOverlayHighlightOnly = true })
 					row[2 + j].handlers.onClick = function () C.SetDefensibleActiveWeaponGroup(menu.currentplayership, true, j) end
 				end
 				for j = 1, 4 do
-					row[7 + j]:createCheckBox(function () return C.GetDefensibleActiveWeaponGroup(menu.currentplayership, false) == j end, { width = Helper.standardTextHeight, height = Helper.standardTextHeight, symbol = "arrow", bgColor = function () return menu.checkboxWeaponGroupColor(j, false) end })
+					row[7 + j]:createCheckBox(function () return C.GetDefensibleActiveWeaponGroup(menu.currentplayership, false) == j end, { width = Helper.standardTextHeight, height = Helper.standardTextHeight, symbol = "arrow", bgColor = function () return menu.checkboxWeaponGroupColor(j, false) end, helpOverlayID = "docked_weaponconfig_secondary_" .. j .. "_active", helpOverlayText = " ", helpOverlayHighlightOnly = true })
 					row[7 + j].handlers.onClick = function () C.SetDefensibleActiveWeaponGroup(menu.currentplayership, false, j) end
 				end
 				titlerow[1].properties.helpOverlayHeight = titlerow[1].properties.helpOverlayHeight + row:getHeight() + Helper.borderSize
@@ -588,7 +578,7 @@ function menu.display()
 				local row = table_header:addEmptyRow(Helper.standardTextHeight / 2)
 				titlerow[1].properties.helpOverlayHeight = titlerow[1].properties.helpOverlayHeight + row:getHeight() + Helper.borderSize
 
-				for _, weapon in ipairs(weapons) do
+				for i, weapon in ipairs(weapons) do
 					local numweapongroups = C.GetNumWeaponGroupsByWeapon(menu.currentplayership, weapon)
 					local rawweapongroups = ffi.new("UIWeaponGroup[?]", numweapongroups)
 					numweapongroups = C.GetWeaponGroupsByWeapon(rawweapongroups, numweapongroups, menu.currentplayership, weapon)
@@ -605,11 +595,11 @@ function menu.display()
 					row[1]:setColSpan(2):createText(ffi.string(C.GetComponentName(weapon)))
 					row[7]:setColSpan(1)
 					for j = 1, 4 do
-						row[2 + j]:createCheckBox(uiweapongroups.primary[j], { width = Helper.standardTextHeight, height = Helper.standardTextHeight, bgColor = function () return menu.checkboxWeaponGroupColor(j, true) end })
+						row[2 + j]:createCheckBox(uiweapongroups.primary[j], { width = Helper.standardTextHeight, height = Helper.standardTextHeight, bgColor = function () return menu.checkboxWeaponGroupColor(j, true) end, helpOverlayID = "docked_weaponconfig_primary_" .. j .. "_" .. i, helpOverlayText = " ", helpOverlayHighlightOnly = true })
 						row[2 + j].handlers.onClick = function() menu.checkboxWeaponGroup(menu.currentplayership, weapon, true, j, not uiweapongroups.primary[j]) end
 					end
 					for j = 1, 4 do
-						row[7 + j]:createCheckBox(uiweapongroups.secondary[j], { width = Helper.standardTextHeight, height = Helper.standardTextHeight, bgColor = function () return menu.checkboxWeaponGroupColor(j, false) end })
+						row[7 + j]:createCheckBox(uiweapongroups.secondary[j], { width = Helper.standardTextHeight, height = Helper.standardTextHeight, bgColor = function () return menu.checkboxWeaponGroupColor(j, false) end, helpOverlayID = "docked_weaponconfig_secondary_" .. j .. "_" .. i, helpOverlayText = " ", helpOverlayHighlightOnly = true })
 						row[7 + j].handlers.onClick = function() menu.checkboxWeaponGroup(menu.currentplayership, weapon, false, j, not uiweapongroups.secondary[j]) end
 					end
 					titlerow[1].properties.helpOverlayHeight = titlerow[1].properties.helpOverlayHeight + row:getHeight() + Helper.borderSize
@@ -772,7 +762,7 @@ function menu.display()
 						mouseovertext = turretname
 					end
 					row[1]:createText(turretname, { mouseOverText = mouseovertext })
-					row[2]:setColSpan(5):createDropDown(Helper.getTurretModes(turret), { startOption = function () return menu.getDropDownTurretModeOption(turret) end, helpOverlayID = "docked_turrets_modes".. turretscounter, helpOverlayText = " ", helpOverlayHighlightOnly = true  })
+					row[2]:setColSpan(5):createDropDown(Helper.getTurretModes(turret, nil, "docked_turrets_modes_dropdown_", turretscounter), { startOption = function () return menu.getDropDownTurretModeOption(turret) end, helpOverlayID = "docked_turrets_modes".. turretscounter, helpOverlayText = " ", helpOverlayHighlightOnly = true  })
 					row[2].handlers.onDropDownConfirmed = function(_, newturretmode) C.SetWeaponMode(turret, newturretmode) end
 					row[7]:setColSpan(5):createButton({helpOverlayID = "docked_turrets_arm" .. turretscounter, helpOverlayText = " ", helpOverlayHighlightOnly = true   }):setText(function () return C.IsWeaponArmed(turret) and ReadText(1001, 8631) or ReadText(1001, 8632) end, { halign = "center" })
 					row[7].handlers.onClick = function () return C.SetWeaponArmed(turret, not C.IsWeaponArmed(turret)) end
@@ -789,7 +779,7 @@ function menu.display()
 						mouseovertext = groupname
 					end
 					row[1]:createText(groupname, { color = (group.operational > 0) and Color["text_normal"] or Color["text_error"], mouseOverText = mouseovertext })
-					row[2]:setColSpan(5):createDropDown(Helper.getTurretModes(group.currentcomponent ~= 0 and group.currentcomponent or nil), { startOption = function () return menu.getDropDownTurretModeOption(menu.currentplayership, group.context, group.path, group.group) end, active = group.operational > 0, helpOverlayID = "docked_turretgroups_modes".. turretgroupscounter, helpOverlayText = " ", helpOverlayHighlightOnly = true  })
+					row[2]:setColSpan(5):createDropDown(Helper.getTurretModes(group.currentcomponent ~= 0 and group.currentcomponent or nil, nil, "docked_turretgroups_modes_dropdown_", turretgroupscounter), { startOption = function () return menu.getDropDownTurretModeOption(menu.currentplayership, group.context, group.path, group.group) end, active = group.operational > 0, helpOverlayID = "docked_turretgroups_modes".. turretgroupscounter, helpOverlayText = " ", helpOverlayHighlightOnly = true  })
 					row[2].handlers.onDropDownConfirmed = function(_, newturretmode) C.SetTurretGroupMode2(menu.currentplayership, group.context, group.path, group.group, newturretmode) end
 					row[7]:setColSpan(5):createButton({ helpOverlayID = "docked_turretgroups_arm" .. turretgroupscounter, helpOverlayText = " ", helpOverlayHighlightOnly = true  }):setText(function () return C.IsTurretGroupArmed(menu.currentplayership, group.context, group.path, group.group) and ReadText(1001, 8631) or ReadText(1001, 8632) end, { halign = "center" })
 					row[7].handlers.onClick = function () return C.SetTurretGroupArmed(menu.currentplayership, group.context, group.path, group.group, not C.IsTurretGroupArmed(menu.currentplayership, group.context, group.path, group.group)) end
@@ -879,8 +869,10 @@ function menu.display()
 				row[2]:createText(ReadText(1001, 8373), { font = Helper.standardFontBold, halign = "center" })
 				row[7]:createText(ReadText(1001, 8628), { font = Helper.standardFontBold, halign = "center" })
 
+				local subordinatecounter = 0
 				for i = 1, 10 do
 					if groups[i] then
+						subordinatecounter = subordinatecounter + 1
 						local supplyactive = (groups[i].numassignableresupplyships == #groups[i].subordinates) and ((not usedassignments["supplyfleet"]) or (usedassignments["supplyfleet"] == i))
 						local subordinateassignments = {
 							[1] = { id = "defence",			text = ReadText(20208, 40301),	icon = "",	displayremoveoption = false },
@@ -921,6 +913,12 @@ function menu.display()
 							end
 						end
 
+						for _, entry in ipairs(subordinateassignments) do
+							entry.helpOverlayID = "docked_subordinate_role_dropdown_" .. entry.id .. subordinatecounter
+							entry.helpOverlayText = " "
+							entry.helpOverlayHighlightOnly = true
+						end
+
 						local isdockingpossible = false
 						for _, subordinate in ipairs(groups[i].subordinates) do
 							if IsDockingPossible(subordinate, menu.currentplayership) then
@@ -940,7 +938,7 @@ function menu.display()
 
 						local row = table_header:addRow("subordinate_config", {  })
 						row[1]:createText(function () menu.updateSubordinateGroupInfo(); return ReadText(20401, i) .. (menu.subordinategroups[i] and (" (" .. ((not C.ShouldSubordinateGroupDockAtCommander(menu.currentplayership, i)) and ((#menu.subordinategroups[i].subordinates - menu.subordinategroups[i].numdockedatcommander) .. "/") or "") .. #menu.subordinategroups[i].subordinates ..")") or "") end, { color = isblocked and Color["text_warning"] or nil })
-						row[2]:setColSpan(5):createDropDown(subordinateassignments, { startOption = function () menu.updateSubordinateGroupInfo(); return menu.subordinategroups[i] and menu.subordinategroups[i].assignment or "" end, uiTriggerID = "subordinate_group_role_" .. i })
+						row[2]:setColSpan(5):createDropDown(subordinateassignments, { startOption = function () menu.updateSubordinateGroupInfo(); return menu.subordinategroups[i] and menu.subordinategroups[i].assignment or "" end, uiTriggerID = "subordinate_group_role_" .. i, helpOverlayID = "docked_subordinate_role" .. subordinatecounter, helpOverlayText = " ", helpOverlayHighlightOnly = true })
 						row[2].handlers.onDropDownConfirmed = function(_, newassignment) Helper.dropdownAssignment(_, nil, i, menu.currentplayership, newassignment) end
 						
 						-- Start Reactive Docking callback

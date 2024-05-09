@@ -313,18 +313,18 @@ local config = {
 		}},
 		{ id = "main_assignments",		text = ReadText(1001, 7803),	isorder = false },
 		{ id = "main_assignments_subsections",	text = ReadText(1001, 7805),	isorder = false,	subsections = {
-			{ id = "main_assignments_defence",				text = ReadText(20208, 40304) },
-			{ id = "main_assignments_positiondefence",		text = ReadText(20208, 41504) },
-			{ id = "main_assignments_attack",				text = ReadText(20208, 40904) },
-			{ id = "main_assignments_interception",			text = ReadText(20208, 41004) },
-			{ id = "main_assignments_bombardment",			text = ReadText(20208, 41604) },
-			{ id = "main_assignments_follow",				text = ReadText(20208, 41304) },
-			{ id = "main_assignments_supplyfleet",			text = ReadText(20208, 40704) },
-			{ id = "main_assignments_mining",				text = ReadText(20208, 40204) },
-			{ id = "main_assignments_trade",				text = ReadText(20208, 40104) },
-			{ id = "main_assignments_tradeforbuildstorage",	text = ReadText(20208, 40804) },
-			{ id = "main_assignments_assist",				text = ReadText(20208, 41204) },
-			{ id = "main_assignments_salvage",				text = ReadText(20208, 41404) },
+			{ id = "main_assignments_defence",				text = ReadText(20208, 40304),	helpOverlayID = "interactmenu_change_assign_defence",				helpOverlayText = " ",	helpOverlayHighlightOnly = true },
+			{ id = "main_assignments_positiondefence",		text = ReadText(20208, 41504),	helpOverlayID = "interactmenu_change_assign_positiondefence",		helpOverlayText = " ",	helpOverlayHighlightOnly = true },
+			{ id = "main_assignments_attack",				text = ReadText(20208, 40904),	helpOverlayID = "interactmenu_change_assign_attack",				helpOverlayText = " ",	helpOverlayHighlightOnly = true },
+			{ id = "main_assignments_interception",			text = ReadText(20208, 41004),	helpOverlayID = "interactmenu_change_assign_interception",			helpOverlayText = " ",	helpOverlayHighlightOnly = true },
+			{ id = "main_assignments_bombardment",			text = ReadText(20208, 41604),	helpOverlayID = "interactmenu_change_assign_bombardment",			helpOverlayText = " ",	helpOverlayHighlightOnly = true },
+			{ id = "main_assignments_follow",				text = ReadText(20208, 41304),	helpOverlayID = "interactmenu_change_assign_follow",				helpOverlayText = " ",	helpOverlayHighlightOnly = true },
+			{ id = "main_assignments_supplyfleet",			text = ReadText(20208, 40704),	helpOverlayID = "interactmenu_change_assign_supplyfleet",			helpOverlayText = " ",	helpOverlayHighlightOnly = true },
+			{ id = "main_assignments_mining",				text = ReadText(20208, 40204),	helpOverlayID = "interactmenu_change_assign_mining",				helpOverlayText = " ",	helpOverlayHighlightOnly = true },
+			{ id = "main_assignments_trade",				text = ReadText(20208, 40104),	helpOverlayID = "interactmenu_change_assign_trade",					helpOverlayText = " ",	helpOverlayHighlightOnly = true },
+			{ id = "main_assignments_tradeforbuildstorage",	text = ReadText(20208, 40804),	helpOverlayID = "interactmenu_change_assign_tradeforbuildstorage",	helpOverlayText = " ",	helpOverlayHighlightOnly = true },
+			{ id = "main_assignments_assist",				text = ReadText(20208, 41204),	helpOverlayID = "interactmenu_change_assign_assist",				helpOverlayText = " ",	helpOverlayHighlightOnly = true },
+			{ id = "main_assignments_salvage",				text = ReadText(20208, 41404),	helpOverlayID = "interactmenu_change_assign_salvage",				helpOverlayText = " ",	helpOverlayHighlightOnly = true },
 		}},
 		{ id = "order",					text = "",						isorder = nil },
 		{ id = "syncpoint",				text = "",						isorder = nil },
@@ -356,32 +356,32 @@ local config = {
 
 		{ id = "selected_assignments_all", text = ReadText(1001, 7886),	isorder = true },
 		{ id = "selected_change_assignments",	text = ReadText(1001, 11119),	isorder = true,		subsections = {
-			{ id = "selected_change_assignments_defence",				text = ReadText(20208, 40304),	helpOverlayID = "interactmenu_change_assign",	helpOverlayText = " ",	helpOverlayHighlightOnly = true },
-			{ id = "selected_change_assignments_positiondefence",		text = ReadText(20208, 41504) },
-			{ id = "selected_change_assignments_attack",				text = ReadText(20208, 40904) },
-			{ id = "selected_change_assignments_interception",			text = ReadText(20208, 41004) },
-			{ id = "selected_change_assignments_bombardment",			text = ReadText(20208, 41604) },
-			{ id = "selected_change_assignments_follow",				text = ReadText(20208, 41304) },
-			{ id = "selected_change_assignments_supplyfleet",			text = ReadText(20208, 40704) },
-			{ id = "selected_change_assignments_mining",				text = ReadText(20208, 40204) },
-			{ id = "selected_change_assignments_trade",					text = ReadText(20208, 40104) },
-			{ id = "selected_change_assignments_tradeforbuildstorage",	text = ReadText(20208, 40804) },
-			{ id = "selected_change_assignments_assist",				text = ReadText(20208, 41204) },
-			{ id = "selected_change_assignments_salvage",				text = ReadText(20208, 41404) },
+			{ id = "selected_change_assignments_defence",				text = ReadText(20208, 40304),	helpOverlayID = "interactmenu_change_assign_defence",				helpOverlayText = " ",	helpOverlayHighlightOnly = true },
+			{ id = "selected_change_assignments_positiondefence",		text = ReadText(20208, 41504),	helpOverlayID = "interactmenu_change_assign_positiondefence",		helpOverlayText = " ",	helpOverlayHighlightOnly = true },
+			{ id = "selected_change_assignments_attack",				text = ReadText(20208, 40904),	helpOverlayID = "interactmenu_change_assign_attack",				helpOverlayText = " ",	helpOverlayHighlightOnly = true },
+			{ id = "selected_change_assignments_interception",			text = ReadText(20208, 41004),	helpOverlayID = "interactmenu_change_assign_interception",			helpOverlayText = " ",	helpOverlayHighlightOnly = true },
+			{ id = "selected_change_assignments_bombardment",			text = ReadText(20208, 41604),	helpOverlayID = "interactmenu_change_assign_bombardment",			helpOverlayText = " ",	helpOverlayHighlightOnly = true },
+			{ id = "selected_change_assignments_follow",				text = ReadText(20208, 41304),	helpOverlayID = "interactmenu_change_assign_follow",				helpOverlayText = " ",	helpOverlayHighlightOnly = true },
+			{ id = "selected_change_assignments_supplyfleet",			text = ReadText(20208, 40704),	helpOverlayID = "interactmenu_change_assign_supplyfleet",			helpOverlayText = " ",	helpOverlayHighlightOnly = true },
+			{ id = "selected_change_assignments_mining",				text = ReadText(20208, 40204),	helpOverlayID = "interactmenu_change_assign_mining",				helpOverlayText = " ",	helpOverlayHighlightOnly = true },
+			{ id = "selected_change_assignments_trade",					text = ReadText(20208, 40104),	helpOverlayID = "interactmenu_change_assign_trade",					helpOverlayText = " ",	helpOverlayHighlightOnly = true },
+			{ id = "selected_change_assignments_tradeforbuildstorage",	text = ReadText(20208, 40804),	helpOverlayID = "interactmenu_change_assign_tradeforbuildstorage",	helpOverlayText = " ",	helpOverlayHighlightOnly = true },
+			{ id = "selected_change_assignments_assist",				text = ReadText(20208, 41204),	helpOverlayID = "interactmenu_change_assign_assist",				helpOverlayText = " ",	helpOverlayHighlightOnly = true },
+			{ id = "selected_change_assignments_salvage",				text = ReadText(20208, 41404),	helpOverlayID = "interactmenu_change_assign_salvage",				helpOverlayText = " ",	helpOverlayHighlightOnly = true },
 		}},
 		{ id = "selected_assignments",	text = ReadText(1001, 7805),	isorder = true,		subsections = {
-			{ id = "selected_assignments_defence",				text = ReadText(20208, 40304),	helpOverlayID = "interactmenu_assign",	helpOverlayText = " ",	helpOverlayHighlightOnly = true },
-			{ id = "selected_assignments_positiondefence",		text = ReadText(20208, 41504) },
-			{ id = "selected_assignments_attack",				text = ReadText(20208, 40904) },
-			{ id = "selected_assignments_interception",			text = ReadText(20208, 41004) },
-			{ id = "selected_assignments_bombardment",			text = ReadText(20208, 41604) },
-			{ id = "selected_assignments_follow",				text = ReadText(20208, 41304) },
-			{ id = "selected_assignments_supplyfleet",			text = ReadText(20208, 40704) },
-			{ id = "selected_assignments_mining",				text = ReadText(20208, 40204) },
-			{ id = "selected_assignments_trade",				text = ReadText(20208, 40104) },
-			{ id = "selected_assignments_tradeforbuildstorage",	text = ReadText(20208, 40804) },
-			{ id = "selected_assignments_assist",				text = ReadText(20208, 41204) },
-			{ id = "selected_assignments_salvage",				text = ReadText(20208, 41404) },
+			{ id = "selected_assignments_defence",				text = ReadText(20208, 40304),	helpOverlayID = "interactmenu_assign_defence",				helpOverlayText = " ",	helpOverlayHighlightOnly = true },
+			{ id = "selected_assignments_positiondefence",		text = ReadText(20208, 41504),	helpOverlayID = "interactmenu_assign_positiondefence",		helpOverlayText = " ",	helpOverlayHighlightOnly = true },
+			{ id = "selected_assignments_attack",				text = ReadText(20208, 40904),	helpOverlayID = "interactmenu_assign_attack",				helpOverlayText = " ",	helpOverlayHighlightOnly = true },
+			{ id = "selected_assignments_interception",			text = ReadText(20208, 41004),	helpOverlayID = "interactmenu_assign_interception",			helpOverlayText = " ",	helpOverlayHighlightOnly = true },
+			{ id = "selected_assignments_bombardment",			text = ReadText(20208, 41604),	helpOverlayID = "interactmenu_assign_bombardment",			helpOverlayText = " ",	helpOverlayHighlightOnly = true },
+			{ id = "selected_assignments_follow",				text = ReadText(20208, 41304),	helpOverlayID = "interactmenu_assign_follow",				helpOverlayText = " ",	helpOverlayHighlightOnly = true },
+			{ id = "selected_assignments_supplyfleet",			text = ReadText(20208, 40704),	helpOverlayID = "interactmenu_assign_supplyfleet",			helpOverlayText = " ",	helpOverlayHighlightOnly = true },
+			{ id = "selected_assignments_mining",				text = ReadText(20208, 40204),	helpOverlayID = "interactmenu_assign_mining",				helpOverlayText = " ",	helpOverlayHighlightOnly = true },
+			{ id = "selected_assignments_trade",				text = ReadText(20208, 40104),	helpOverlayID = "interactmenu_assign_trade",				helpOverlayText = " ",	helpOverlayHighlightOnly = true },
+			{ id = "selected_assignments_tradeforbuildstorage",	text = ReadText(20208, 40804),	helpOverlayID = "interactmenu_assign_tradeforbuildstorage",	helpOverlayText = " ",	helpOverlayHighlightOnly = true },
+			{ id = "selected_assignments_assist",				text = ReadText(20208, 41204),	helpOverlayID = "interactmenu_assign_assist",				helpOverlayText = " ",	helpOverlayHighlightOnly = true },
+			{ id = "selected_assignments_salvage",				text = ReadText(20208, 41404),	helpOverlayID = "interactmenu_assign_salvage",				helpOverlayText = " ",	helpOverlayHighlightOnly = true },
 		}},
 		{ id = "selected_consumables",	text = ReadText(1001, 7849),	isorder = true,		subsections = {
 			{ id = "selected_consumables_civilian",	text = "\27[order_deployobjectatposition] " .. ReadText(1001, 7847) },
@@ -428,17 +428,16 @@ end
 function menu.init_kuertee ()
 	RegisterEvent ("Interact_Menu_API.Add_Custom_Actions_Group_Id", menu.Add_Custom_Actions_Group_Id)
 	RegisterEvent ("Interact_Menu_API.Add_Custom_Actions_Group_Text", menu.Add_Custom_Actions_Group_Text)
-	-- DebugError("uix init success: " .. tostring(debug.getinfo(init).source))
 	if Helper.modLuas[menu.name] then
 		if not next(Helper.modLuas[menu.name].failedByExtension) then
-			DebugError("uix init success: " .. tostring(debug.getinfo(1).source))
+			-- DebugError("uix init success: " .. tostring(debug.getinfo(1).source))
 		else
 			for extension, modLua in pairs(Helper.modLuas[menu.name].failedByExtension) do
 				DebugError("uix init failed: " .. tostring(debug.getinfo(modLua.init).source):gsub("@.\\", ""))
 			end
 		end
 	else
-		DebugError("uix init success: " .. tostring(debug.getinfo(1).source))
+		-- DebugError("uix init success: " .. tostring(debug.getinfo(1).source))
 	end
 end
 -- kuertee end

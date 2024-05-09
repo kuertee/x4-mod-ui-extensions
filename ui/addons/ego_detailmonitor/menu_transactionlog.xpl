@@ -39,17 +39,7 @@ end
 -- kuertee start:
 function menu.init_kuertee ()
 	menu.loadModLuas()
-	-- if Helper.modLuas[menu.name] then
-	-- 	if not next(Helper.modLuas[menu.name].failedByExtension) then
-	-- 		DebugError("uix init success: " .. tostring(debug.getinfo(1).source))
-	-- 	else
-	-- 		for extension, modLua in pairs(Helper.modLuas[menu.name].failedByExtension) do
-	-- 			DebugError("uix init failed: " .. tostring(debug.getinfo(modLua.init).source):gsub("@.\\", ""))
-	-- 		end
-	-- 	end
-	-- else
-		DebugError("uix load success: " .. tostring(debug.getinfo(1).source))
-	-- end
+	-- DebugError("uix load success: " .. tostring(debug.getinfo(1).source))
 end
 -- kuertee end
 

@@ -367,8 +367,8 @@ local config = {
 		{ name = ReadText(1001, 7730),		icon = function () return menu.messageSidebarIcon() end,		mode = "messages",			active = true, helpOverlayID = "playerinfo_sidebar_messages",		helpOverlayText = ReadText(1028, 7712),		iconcolor = function () return menu.messageSidebarIconColor() end },
 		{ name = ReadText(1001, 7702),		icon = "pi_transactionlog",			mode = "transactionlog",	active = true, helpOverlayID = "playerinfo_sidebar_transactions",	helpOverlayText = ReadText(1028, 7719) },
 		{ name = ReadText(1001, 5700),		icon = "pi_logbook",				mode = "logbook",			active = true, helpOverlayID = "playerinfo_sidebar_logbook",		helpOverlayText = ReadText(1028, 7711) },
-		--{ spacing = true,	condition = function () return OnlineHasSession() end },
-		--{ name = ReadText(1001, 11386),		icon = "vt_contactlist",			mode = "venturecontacts",	active = true, helpOverlayID = "playerinfo_sidebar_contacts",		helpOverlayText = ReadText(1028, 3275),	condition = function () return OnlineHasSession() end },
+		{ spacing = true,	condition = function () return OnlineHasSession() end },
+		{ name = ReadText(1001, 11386),		icon = "vt_contactlist",			mode = "venturecontacts",	active = true, helpOverlayID = "playerinfo_sidebar_contacts",		helpOverlayText = ReadText(1028, 3275),	condition = function () return OnlineHasSession() end },
 	},
 	rightAlignTextProperties = {
 		halign = "right"
@@ -466,17 +466,7 @@ end
 -- kuertee start:
 function menu.init_kuertee ()
 	menu.loadModLuas()
-	-- if Helper.modLuas[menu.name] then
-	-- 	if not next(Helper.modLuas[menu.name].failedByExtension) then
-	-- 		DebugError("uix init success: " .. tostring(debug.getinfo(1).source))
-	-- 	else
-	-- 		for extension, modLua in pairs(Helper.modLuas[menu.name].failedByExtension) do
-	-- 			DebugError("uix init failed: " .. tostring(debug.getinfo(modLua.init).source):gsub("@.\\", ""))
-	-- 		end
-	-- 	end
-	-- else
-		DebugError("uix load success: " .. tostring(debug.getinfo(1).source))
-	-- end
+	-- DebugError("uix load success: " .. tostring(debug.getinfo(1).source))
 end
 -- kuertee end
 
@@ -6986,7 +6976,7 @@ function menu.onInventoryRowChange(row, rowdata, input, mode)
 				end
 			end
 			local active = GetWareData(rowdata[1], "allowdrop") and (not menu.onlineitems[rowdata[1]])
-			local desc = Helper.createButton(Helper.createTextInfo((count > 1) and ReadText(1001, 7733) or ReadText(1001, 7705), "center", Helper.standardFont, Helper.standardFontSize, 255, 255, 255, 100), nil, false, active, 0, 0, 0, Helper.standardButtonHeight, nil)
+			local desc = Helper.createButton(Helper.createTextInfo((count > 1) and ReadText(1001, 7733) or ReadText(1001, 7705), "center", Helper.standardFont, Helper.standardFontSize, 255, 255, 255, 100), nil, false, active, 0, 0, 0, Helper.standardButtonHeight, nil, nil, nil, nil, "playerinfo_inventory_drop")
 			Helper.setCellContent(menu, menu.inventoryButtonTable.id, desc, buttonrow, 1, nil, "button", nil, menu.buttonInventoryDrop)
 
 			if rowdata[1] ~= menu.inventoryData.curEntry[1] then

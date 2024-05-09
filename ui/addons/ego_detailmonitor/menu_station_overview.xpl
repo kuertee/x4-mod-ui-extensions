@@ -307,17 +307,7 @@ end
 -- kuertee start:
 function menu.init_kuertee ()
 	menu.loadModLuas()
-	-- if Helper.modLuas[menu.name] then
-	-- 	if not next(Helper.modLuas[menu.name].failedByExtension) then
-	-- 		DebugError("uix init success: " .. tostring(debug.getinfo(1).source))
-	-- 	else
-	-- 		for extension, modLua in pairs(Helper.modLuas[menu.name].failedByExtension) do
-	-- 			DebugError("uix init failed: " .. tostring(debug.getinfo(modLua.init).source):gsub("@.\\", ""))
-	-- 		end
-	-- 	end
-	-- else
-		DebugError("uix load success: " .. tostring(debug.getinfo(1).source))
-	-- end
+	-- DebugError("uix load success: " .. tostring(debug.getinfo(1).source))
 end
 -- kuertee end
 
@@ -774,7 +764,13 @@ function menu.getFlowchartProductionNodes()
 			end
 			local modulenode = {
 				productionmodules = data,
-				properties = { shape = "stadium" },
+				properties = {
+					shape = "stadium",
+					helpOverlayID = "station_overview_production_" .. productdata.ware,
+					helpOverlayText = " ",
+					helpOverlayHighlightOnly = true,
+					uiTriggerID = "production_" .. productdata.ware,
+				},
 				resources = resources,
 				expandedTableNumColumns = 3,
 				expandHandler = data.isprocessingmodule and menu.onExpandProcessing or menu.onExpandProduction,
@@ -891,6 +887,10 @@ function menu.getFlowchartProductionNodes()
 				shape = "hexagon",
 				value = workforcevisible and function () local workforceinfo = C.GetWorkForceInfo(menu.container, ""); local total = C.ShouldContainerFillWorkforceCapacity(menu.container) and math.max(workforceinfo.optimal, workforceinfo.capacity) or workforceinfo.optimal; return (total ~= 0) and math.min(100, math.floor(workforceinfo.current / total * 100)) or 0 end or 0,
 				max = 100,
+				helpOverlayID = "station_overview_workforce",
+				helpOverlayText = " ",
+				helpOverlayHighlightOnly = true,
+				uiTriggerID = "workforce",
 			},
 			resources = { },
 			expandedTableNumColumns = 4,
@@ -1382,6 +1382,10 @@ function menu.setupFlowchartData()
 					value = function () local data = GetUnitStorageData(menu.containerid); return unitinfo_amount and data.stored or 0 end,
 					max = shownmax,
 					shape = "hexagon",
+					helpOverlayID = "station_overview_drones",
+					helpOverlayText = " ",
+					helpOverlayHighlightOnly = true,
+					uiTriggerID = "drones",
 				},
 				expandedTableNumColumns = 3,
 				expandHandler = menu.onExpandSupply,
@@ -1574,6 +1578,10 @@ function menu.setupFlowchartData()
 			numcols = 1,
 			{
 				properties = {
+					helpOverlayID = "station_overview_tradewares",
+					helpOverlayText = " ",
+					helpOverlayHighlightOnly = true,
+					uiTriggerID = "tradewares",
 				},
 				expandedFrameNumTables = 2,
 				expandedTableNumColumns = 3,
@@ -2319,7 +2327,7 @@ function menu.onExpandTradeWares(frame, ftable, ftable2, nodedata)
 
 	for _, entry in ipairs(allwares) do
 		local row = ftable:addRow(true, {  })
-		row[1]:createCheckBox(menu.selectedWares[entry.ware], { width = Helper.standardButtonHeight, height = Helper.standardButtonHeight })
+		row[1]:setBackgroundColSpan(3):createCheckBox(menu.selectedWares[entry.ware], { width = Helper.standardButtonHeight, height = Helper.standardButtonHeight, helpOverlayID = "station_overview_tradeware_option_" .. entry.ware, helpOverlayText = " ", helpOverlayHighlightOnly = true, helpOverlayUseBackgroundSpan = true })
 		row[1].handlers.onClick = function (_, checked) if checked then menu.selectedWares[entry.ware] = true else menu.selectedWares[entry.ware] = nil end end
 		row[2]:setColSpan(2):createText(entry.name)
 	end

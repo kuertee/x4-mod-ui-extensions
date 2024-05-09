@@ -85,9 +85,7 @@ ffi.cdef[[
 	void ConnectToMultiplayerGame(const char* serverip);
 	const char* ConvertInputString(const char* text, const char* defaultvalue);
 	bool DeleteSavegame(const char* filename);
-	void DisableAutoMouseEmulation(void);
 	bool DoesColorMapNeedRestart(void);
-	void EnableAutoMouseEmulation(void);
 	void EnableScenarioLoading(bool reverse, const char* gamestartid);
 	void ExportColorMap(void);
 	void ExportInputFeedbackConfig(void);
@@ -98,6 +96,7 @@ ffi.cdef[[
 	uint32_t GetAllColorMapMappings(EditableColorMapEntry* result, uint32_t resultlen);
 	uint32_t GetAllInputFeedback(InputFeedbackConfig* result, uint32_t resultlen);
 	AutosaveIntervalInfo GetAutosaveIntervalOption(void);
+	bool GetAutoZoomResetOption(void);
 	const char* GetBuildVersionSuffix(void);
 	float GetCockpitCameraScaleOption(void);
 	uint32_t GetCatalogMacros(const char** result, uint32_t resultlen, const char* classid);
@@ -180,6 +179,7 @@ ffi.cdef[[
 	float GetTobiiHeadPositionFactor(void);
 	const char* GetTrackerNameOption(void);
 	const char* GetTrackerSDKOption(void);
+	float GetUIGlowIntensity(void);
 	uint32_t GetUIGlowOption(void);
 	float GetUIScaleFactor();
 	const char* GetUpscalingOption(bool useconfig);
@@ -254,6 +254,7 @@ ffi.cdef[[
 	void SetAAOption(const char* fxaa);
 	void SetAdaptiveSamplingOption(float value);
 	void SetAutosaveIntervalOption(float factor);
+	void SetAutoZoomResetOption(bool value);
 	void SetChromaticAberrationOption(bool value);
 	void SetCockpitCameraScaleOption(float value);
 	void SetColorBlindOption(const char* mode);
@@ -307,9 +308,11 @@ ffi.cdef[[
 	void SetVisitorNamesShownOption(bool setting);
 	void SetVRVivePointerHand(int hand);
 	void SetVolumetricFogOption(int32_t setting);
+	void SetUIGlowIntensity(float value);
 	void SetUIGlowOption(uint32_t value);
 	void SetUIScaleFactor(const float scale);
 	void SetUpscalingOption(const char* mode);
+	void SetUserData(const char* name, const char* value);
 	void ShowPromo(void);
 	void SkipNextStartAnimation(void);
 	void StartIntroAnimation(const char* triggername);
@@ -393,17 +396,7 @@ end
 -- kuertee start:
 function menu.init_kuertee ()
 	menu.loadModLuas()
-	-- if Helper.modLuas[menu.name] then
-	-- 	if not next(Helper.modLuas[menu.name].failedByExtension) then
-	-- 		DebugError("uix init success: " .. tostring(debug.getinfo(1).source))
-	-- 	else
-	-- 		for extension, modLua in pairs(Helper.modLuas[menu.name].failedByExtension) do
-	-- 			DebugError("uix init failed: " .. tostring(debug.getinfo(modLua.init).source):gsub("@.\\", ""))
-	-- 		end
-	-- 	end
-	-- else
-		DebugError("uix load success: " .. tostring(debug.getinfo(1).source))
-	-- end
+	-- DebugError("uix load success: " .. tostring(debug.getinfo(1).source))
 end
 -- kuertee end
 
@@ -1037,6 +1030,8 @@ config.input.controlsorder = {
 			{ "actions", 300, 3 },
 			{ "actions", 301, 3 },
 			{ "actions", 302, 3 },
+			{ "ranges", 11, { 3 } },
+			{ "ranges", 12, { 3 } },
 		},
 		[4] = {
 			["title"] = ReadText(1001, 3245),	-- "Map"
@@ -1048,14 +1043,18 @@ config.input.controlsorder = {
 			{ "actions", 263, 2 },
 		},
 		[5] = {
+			["title"] = ReadText(1001, 12665),
+			["mapable"] = false,
+			{ "ranges", 36, 5 },
+			{ "ranges", 37, 5 },
+		},
+		[6] = {
 			["title"] = ReadText(1001, 2664),
 			["mapable"] = false,
-			{ "ranges", 11, { 3, 4, 5 } },
-			{ "ranges", 12, { 3, 4, 5 } },
 			{ "actions", 336, 7 },
 			{ "actions", 337, 7 },
 		},
-		[6] = {
+		[7] = {
 			["title"] = ReadText(1001, 11788),
 			["mapable"] = true,
 			{ "states", 98, 2 },
@@ -1185,6 +1184,12 @@ config.optionDefinitions = {
 			wordwrap = true,
 		},
 		[3] = {
+			id = "load",
+			name = function () return (menu.autoReloadSave or C.IsSaveListLoadingComplete()) and ReadText(1001, 2604) or ReadText(1001, 7203) end,
+			submenu = "load",
+			selectable = function () return C.IsSaveListLoadingComplete() and C.HasSavegame() end,
+		},
+		[4] = {
 			id = "save",
 			name = ReadText(1001, 2605),
 			submenu = "save",
@@ -1192,56 +1197,64 @@ config.optionDefinitions = {
 			display = function () return not menu.isStartmenu end,
 			mouseOverText = function () return menu.saveMouseOverText() end,
 		},
-		[4] = {
+		[5] = {
 			id = "line",
 			linecolor = Color["row_background"],
 		},
-		[5] = {
+		[6] = {
 			id = "tutorials",
 			name = ReadText(1001, 12660),
 			submenu = "tutorials",
 		},
-		[6] = {
+		[7] = {
 			id = "timelines",
 			name = ReadText(1001, 12661),
 			prefixicon = function () return "menu_recommended", Color["gamestart_recommended"] end,
-			mouseOverText = ReadText(1026, 2681),
+			mouseOverText = ReadText(1026, 2696) .. "\n\n" .. ReadText(1026, 2681),
 			submenu = "timelines",
 			selectable = function () return ffi.string(C.GetGameStartName()) ~= "x4ep1_gamestart_hub" end,
 		},
-		[7] = {
-			id = "sandbox",
-			name = ReadText(1001, 12662),
-			submenu = "sandbox",
-		},
 		[8] = {
+			id = "new",
+			name = ReadText(1001, 12662),
+			submenu = "new",
+			mouseOverText = ReadText(1026, 4801) .. "\n\n" .. ReadText(1026, 4802),
+		},
+		[9] = {
+			id = "multiplayer",
+			name = ReadText(1001,7283),
+			submenu = "multiplayer",
+			display = C.IsNetworkEngineEnabled,
+		},
+		[10] = {
 			id = "line",
 			linecolor = Color["row_background"],
 		},
-		[9] = {
+		[11] = {
 			id = "settings",
 			name = function () return menu.nameSettings() end,
 			submenu = "settings",
 		},
-		[10] = {
+		[12] = {
 			id = "credits",
 			name = ReadText(1001, 4811),
 			submenu = "credits",
 			display = function () return menu.isStartmenu end,
 		},
-		[11] = {
+		[13] = {
 			id = "returntohub",
 			name = function () return menu.nameReturnToHub() end,
+			prefixicon = function () return "menu_recommended", Color["gamestart_recommended"] end,
 			callback = function () return menu.callbackReturnToHub() end,
 			display = function () return (not menu.isStartmenu) and C.IsTimelinesScenario() end,
 		},
-		[12] = {
+		[14] = {
 			id = "exit",
 			name = ReadText(1001, 11791),
 			submenu = "exit",
 			display = function () return not menu.isStartmenu end,
 		},
-		[13] = {
+		[15] = {
 			id = "quit",
 			name = ReadText(1001, 4876),
 			submenu = "quit",
@@ -1253,33 +1266,15 @@ config.optionDefinitions = {
 			id = "timelines_start",
 			name = function () return (ffi.string(C.GetUserData("timelines_scenarios_finished")) ~= "") and ReadText(1001, 12620) or ReadText(1001, 12619) end,
 			callback = function () return menu.callbackTimelines() end,
-			selectable = function () return C.IsExtensionEnabled("ego_dlc_timelines", false) end,
+			selectable = function () return (not C.HasExtension("ego_dlc_timelines", false)) or C.IsExtensionEnabled("ego_dlc_timelines", false) end,
+			mouseOverText = function () return (ffi.string(C.GetUserData("timelines_scenarios_finished")) ~= "") and ReadText(1026, 2698) or ReadText(1026, 2697) end,
 		},
 		[2] = {
 			id = "timelines_reset",
 			name = ReadText(1001, 12621),
 			submenu = "timelines_reset",
 			selectable = function () return C.IsExtensionEnabled("ego_dlc_timelines", false) and (ffi.string(C.GetUserData("timelines_scenarios_finished")) ~= "") end,
-		},
-	},
-	["sandbox"] = {
-		name = ReadText(1001, 11790),
-		[1] = {
-			id = "new",
-			name = ReadText(1001, 2603),
-			submenu = "new",
-		},
-		[2] = {
-			id = "load",
-			name = function () return (menu.autoReloadSave or C.IsSaveListLoadingComplete()) and ReadText(1001, 2604) or ReadText(1001, 7203) end,
-			submenu = "load",
-			selectable = function () return C.IsSaveListLoadingComplete() and C.HasSavegame() end,
-		},
-		[3] = {
-			id = "multiplayer",
-			name = ReadText(1001,7283),
-			submenu = "multiplayer",
-			display = C.IsNetworkEngineEnabled,
+			mouseOverText = ReadText(1026, 2699)
 		},
 	},
 	["load"] = {
@@ -1667,6 +1662,14 @@ config.optionDefinitions = {
 			selectable = function () return menu.selectableGfxPreset() end,
 		},
 		[28] = {
+			id = "uiglowintensity",
+			name = ReadText(1001, 12701),
+			valuetype = "slidercell",
+			value = function () return menu.valueGfxUIGlowIntensity() end,
+			callback = function (value) return menu.callbackGfxUIGlowIntensity(value) end,
+			selectable = function () return menu.selectableGfxPreset() end,
+		},
+		[29] = {
 			id = "chromaticaberration",
 			name = ReadText(1001, 8987),
 			valuetype = "button",
@@ -1674,7 +1677,7 @@ config.optionDefinitions = {
 			callback = function () return menu.callbackGfxChromaticAberration() end,
 			selectable = function () return menu.selectableGfxPreset() end,
 		},
-		[29] = {
+		[30] = {
 			id = "distortion",
 			name = ReadText(1001, 4822),
 			valuetype = "button",
@@ -1682,7 +1685,7 @@ config.optionDefinitions = {
 			callback = function () return menu.callbackGfxDistortion() end,
 			selectable = function () return menu.selectableGfxPreset() end,
 		},
-		[30] = {
+		[31] = {
 			id = "pom",
 			name = ReadText(1001, 11731),
 			valuetype = "dropdown",
@@ -1690,7 +1693,7 @@ config.optionDefinitions = {
 			callback = function (id, option) return menu.callbackGfxPOM(id, option) end,
 			selectable = function () return menu.selectableGfxPreset() end,
 		},
-		[31] = {
+		[32] = {
 			id = "lod",
 			name = ReadText(1001, 2628),
 			valuetype = "slidercell",
@@ -1698,7 +1701,7 @@ config.optionDefinitions = {
 			callback = function (value) return menu.callbackGfxLOD(value) end,
 			selectable = function () return menu.selectableGfxPreset() end,
 		},
-		[32] = {
+		[33] = {
 			id = "effectdist",
 			name = ReadText(1001, 2699),
 			valuetype = "slidercell",
@@ -1706,7 +1709,7 @@ config.optionDefinitions = {
 			callback = function (value) return menu.callbackGfxEffectDistance(value) end,
 			selectable = function () return menu.selectableGfxPreset() end,
 		},
-		[33] = {
+		[34] = {
 			id = "shaderquality",
 			name = ReadText(1001, 2680),
 			valuetype = "dropdown",
@@ -1715,7 +1718,7 @@ config.optionDefinitions = {
 			selectable = function () return menu.selectableGfxPreset() end,
 			display = function () return false end, -- TEMP hidden until we get shaders with different quality
 		},
-		[34] = {
+		[35] = {
 			id = "radar",
 			name = ReadText(1001, 1706),
 			valuetype = "dropdown",
@@ -1723,7 +1726,7 @@ config.optionDefinitions = {
 			callback = function (id, option) return menu.callbackGfxRadar(id, option) end,
 			selectable = function () return menu.selectableGfxPreset() end,
 		},
-		[35] = {
+		[36] = {
 			id = "ssr",
 			name = ReadText(1001, 7288),
 			valuetype = "dropdown",
@@ -1731,7 +1734,7 @@ config.optionDefinitions = {
 			callback = function (id, option) return menu.callbackGfxSSR(id, option) end,
 			selectable = function () return menu.selectableGfxPreset() end,
 		},
-		[36] = {
+		[37] = {
 			id = "envmapprobes",
 			name = ReadText(1001, 11733),
 			valuetype = "dropdown",
@@ -1739,7 +1742,7 @@ config.optionDefinitions = {
 			callback = function (id, option) return menu.callbackGfxEnvMapProbes(id, option) end,
 			selectable = function () return menu.selectableGfxPreset() end,
 		},
-		[37] = {
+		[38] = {
 			id = "volumetric",
 			name = ReadText(1001, 8990),
 			valuetype = "dropdown",
@@ -1747,27 +1750,27 @@ config.optionDefinitions = {
 			callback = function (id, option) return menu.callbackGfxVolumetric(id, option) end,
 			selectable = function () return menu.selectableGfxPreset() end,
 		},
-		[38] = {
+		[39] = {
 			id = "line",
 		},
-		[39] = {
+		[40] = {
 			id = "envmapprobesinsideglassfade",
 			name = ReadText(1001, 11754),
 			valuetype = "slidercell",
 			value = function () return menu.valueGfxEnvMapProbesInsideGlassFade() end,
 			callback = function (value) return menu.callbackGfxEnvMapProbesInsideGlassFade(value) end,
 		},
-		[40] = {
+		[41] = {
 			id = "capturehq",
 			name = ReadText(1001, 4816),
 			valuetype = "button",
 			value = function () return GetCaptureHQOption() and ReadText(1001, 2648) or ReadText(1001, 2649) end,
 			callback = function () return menu.callbackGfxCaptureHQ() end,
 		},
-		[41] = {
+		[42] = {
 			id = "line",
 		},
-		[42] = {
+		[43] = {
 			id = "gfx_defaults",
 			name = ReadText(1001, 8982),
 			submenu = "gfx_defaults",
@@ -2093,10 +2096,17 @@ config.optionDefinitions = {
 			callback = function (value) return menu.callbackGameCockpitCamera(value) end,
 		},
 		[35] = {
+			id = "autozoomreset",
+			name = ReadText(1001, 12702),
+			valuetype = "button",
+			value = function () return C.GetAutoZoomResetOption() and ReadText(1001, 2648) or ReadText(1001, 2649) end,
+			callback = function () return menu.callbackGameAutoZoomReset() end,
+		},
+		[36] = {
 			id = "header",
 			name = ReadText(1001, 2661),
 		},
-		[36] = {
+		[37] = {
 			id = "game_defaults",
 			name = ReadText(1001, 8984),
 			submenu = "game_defaults",
@@ -3613,17 +3623,22 @@ function menu.createContextMenuRemap(frame)
 	end
 	row[1]:setColSpan(5):createText(title, config.subHeaderTextProperties)
 
-	local row = ftable:addRow(nil, { fixed = true })
-	row[1]:setColSpan(5):createText(menu.getControlName(menu.remapControl.controltype, menu.remapControl.controlcode), { font = config.fontBold, halign = "center" })
-
-	if not menu.contextMenuData.reset then
-		local keyname, keyicon = menu.getInputName(menu.contextMenuData.newinput[1], menu.contextMenuData.newinput[2], menu.contextMenuData.newinput[3] or 0)
-		local newinputname = keyname .. " " .. keyicon
+	if (not menu.contextMenuData.modifier) and (not menu.contextMenuData.removemodifier) then
 		local row = ftable:addRow(nil, { fixed = true })
-		row[1]:setColSpan(5):createText(ReadText(1001, 12673) .. ReadText(1001, 120) .. " " .. newinputname, { halign = "center" })
+		row[1]:setColSpan(5):createText(menu.getControlName(menu.remapControl.controltype, menu.remapControl.controlcode), { font = config.fontBold, halign = "center" })
 	end
 
-	ftable:addEmptyRow()
+	if not menu.contextMenuData.removemodifier then
+		if not menu.contextMenuData.reset then
+			local keyname, keyicon = menu.getInputName(menu.contextMenuData.newinput[1], menu.contextMenuData.newinput[2], menu.contextMenuData.newinput[3] or 0)
+			local newinputname = keyname .. " " .. keyicon
+			local row = ftable:addRow(nil, { fixed = true })
+			row[1]:setColSpan(5):createText(ReadText(1001, 12673) .. ReadText(1001, 120) .. " " .. newinputname, { halign = "center" })
+		end
+
+		ftable:addEmptyRow()
+	end
+
 
 	local row = ftable:addRow(nil, { fixed = true })
 	local desc = ReadText(1001, 8979)
@@ -4848,6 +4863,8 @@ function menu.submenuHandler(optionParameter)
 		menu.displayInputFeedback()
 	elseif optionParameter == "input_modifiers" then
 		menu.displayInputModifiers()
+	elseif optionParameter == "timelines" then
+		menu.displayTimelines()
 	elseif config.optionDefinitions[optionParameter] then
 		menu.displayOptions(optionParameter)
 	end
@@ -4905,7 +4922,7 @@ function menu.removeInput()
 end
 
 function menu.registerDirectInput()
-	C.DisableAutoMouseEmulation()
+	Helper.disableAutoMouseEmulation(menu)
 	for i, entry in ipairs(config.input.directInputHookDefinitions) do
 		RegisterEvent(entry[1], config.input.directInputHooks[i])
 	end
@@ -4921,7 +4938,7 @@ function menu.unregisterDirectInput()
 	for i, entry in ipairs(config.input.directInputHookDefinitions) do
 		UnregisterEvent(entry[1], config.input.directInputHooks[i])
 	end
-	C.EnableAutoMouseEmulation()
+	Helper.enableAutoMouseEmulation(menu)
 end
 
 function menu.remapInput(newinputtype, newinputcode, newinputsgn, checked)
@@ -6667,6 +6684,23 @@ function menu.valueGfxUIGlow()
 	return options, currentOption
 end
 
+function menu.valueGfxUIGlowIntensity()
+	local start = Helper.round(C.GetUIGlowIntensity() * 100)
+
+	local scale = {
+		min            = 0,
+		max            = 100,
+		start          = start,
+		step           = 1,
+		suffix         = "",
+		exceedMaxValue = false,
+		hideMaxValue   = true,
+		readOnly       = not menu.selectableGfxPreset(),
+	}
+
+	return scale
+end
+
 function menu.valueGfxGPU()
 	local options = {}
 	local currentOption = C.GetRequestedGPU()
@@ -7485,8 +7519,29 @@ function menu.callbackReturnToHub()
 end
 
 function menu.callbackTimelines()
-	NewGame("x4ep1_gamestart_hub")
-	menu.closeMenu("close")
+	if not C.HasExtension("ego_dlc_timelines", false) then
+		local timelinesgamestart
+		local gamemodules = GetRegisteredModules()
+		for _, module in ipairs(gamemodules) do
+			if module.id == "x4ep1_gamestart_hub" then
+				timelinesgamestart = module
+				break
+			end
+		end
+
+		if timelinesgamestart then
+			if IsSteamworksEnabled() then
+				OpenSteamOverlayStorePage(timelinesgamestart.extensionsource)
+			elseif C.IsGOGVersion() then
+				if C.CanOpenWebBrowser() then
+					C.OpenWebBrowser(timelinesgamestart.extensionsource)
+				end
+			end
+		end
+	else
+		NewGame("x4ep1_gamestart_hub")
+		menu.closeMenu("close")
+	end
 end
 
 function menu.callbackOnlineSeason()
@@ -7609,6 +7664,10 @@ function menu.callbackGameAutosaveInterval(id, option)
 	if option ~= menu.curDropDownOption[id] then
 		C.SetAutosaveIntervalOption(tonumber(option))
 	end
+end
+
+function menu.callbackGameAutoZoomReset()
+	C.SetAutoZoomResetOption(not C.GetAutoZoomResetOption())
 end
 
 function menu.callbackGameBoost()
@@ -8013,6 +8072,12 @@ function menu.callbackGfxUIGlow(id, option)
 	if option ~= menu.curDropDownOption[id] then
 		menu.curDropDownOption[id] = option
 		C.SetUIGlowOption(tonumber(option) - 1)
+	end
+end
+
+function menu.callbackGfxUIGlowIntensity(value)
+	if value then
+		C.SetUIGlowIntensity(Helper.round(value / 100, 2))
 	end
 end
 
@@ -8607,7 +8672,8 @@ function menu.displayNewGame(createAsServer, displayTimelinesScenarios, displayT
 	local recommendedstarts = {}
 	for _, module in ipairs(gamemodules) do
 		if (not module.unlockhidden) or module.unlocked then
-			if ((displayTimelinesScenarios == module.timelinesscenario) or (IsCheatVersion() and (not displayTimelinesScenarios))) and (displayTutorials == module.tutorial) then
+			local istimelineshub = module.id == "x4ep1_gamestart_hub"
+			if ((displayTimelinesScenarios == (module.timelinesscenario or istimelineshub)) or (IsCheatVersion() and (not displayTimelinesScenarios) and (not istimelineshub))) and (displayTutorials == module.tutorial) then
 				if not menu.selectedOption then
 					menu.selectedOption = module
 				end
@@ -8660,7 +8726,7 @@ function menu.displayNewGame(createAsServer, displayTimelinesScenarios, displayT
 	row[1]:setBackgroundColSpan(2)
 	row[1]:createButton({ height = config.headerTextHeight }):setIcon(config.backarrow, { x = config.backarrowOffsetX })
 	row[1].handlers.onClick = function () return menu.onCloseElement("back") end
-	row[2]:createText(displayTutorials and ReadText(1001, 7208) or ReadText(1001, 2603), config.headerTextProperties)
+	row[2]:createText(displayTutorials and ReadText(1001, 7208) or ReadText(1001, 12699), config.headerTextProperties)
 
 	local row = titletable:addRow(false, { fixed = true })
 	row[2]:createText(displayTutorials and "" or ReadText(1001, 11718), config.warningTextProperties)
@@ -8906,6 +8972,262 @@ function menu.displayNewGame(createAsServer, displayTimelinesScenarios, displayT
 	local row = infotable2:addRow(true, { bgColor = Color["optionsmenu_cell_background"], fixed = true })
 	row[1]:setColSpan(3):createButton({ active = menu.buttonStartGameActive(), height = config.standardTextHeight }):setText(ReadText(1001, 9902), { halign = "center" })
 	row[1].handlers.onClick = function () return menu.buttonStartGame(menu.selectedOption) end
+
+	titletable:addConnection(1, 1, true)
+	optiontable:addConnection(2, 1)
+
+	infotable:addConnection(1, 2, true)
+	infotable2:addConnection(2, 2)
+
+	frame:display()
+end
+
+function menu.displayTimelines()
+	-- remove old data
+	Helper.clearDataForRefresh(menu, config.optionsLayer)
+	menu.selectedOption = nil
+
+	menu.currentOption = "timelines"
+	local options = config.optionDefinitions["timelines"]
+
+	local frame = menu.createOptionsFrame()
+
+	local titletable = frame:addTable(5, { tabOrder = 2, x = menu.table.x, y = menu.table.y, width = menu.table.width, maxVisibleHeight = menu.table.height })
+	titletable:setColWidth(1, menu.table.arrowColumnWidth, false)
+	titletable:setColWidth(3, menu.table.infoColumnWidth / 2, false)
+	titletable:setColWidth(4, menu.table.infoColumnWidth / 2 - Helper.scaleY(config.infoTextHeight) - Helper.borderSize, false)
+	titletable:setColWidth(5, Helper.scaleY(config.infoTextHeight), false)
+	titletable:setDefaultColSpan(3, 3)
+	titletable:setDefaultCellProperties("button", { height = config.standardTextHeight })
+	titletable:setDefaultComplexCellProperties("button", "text", { x = config.standardTextOffsetX, fontsize = config.standardFontSize })
+
+	-- title
+	local row = titletable:addRow(menu.currentOption ~= "main", { fixed = true })
+	row[1]:setBackgroundColSpan(5)
+	local colOffset = 1
+	if menu.currentOption ~= "main" then
+		row[1]:createButton({ height = config.headerTextHeight }):setIcon(config.backarrow, { x = config.backarrowOffsetX })
+		row[1].handlers.onClick = function () return menu.onCloseElement("back") end
+		colOffset = 0
+	end
+	if options.info then
+		row[2 - colOffset]:setColSpan(2 + colOffset):createText(options.name, config.headerTextProperties)
+		row[4]:setColSpan(2):createText(options.info, config.infoTextProperties)
+	else
+		row[2 - colOffset]:setColSpan(4 + colOffset):createText(options.name, config.headerTextProperties)
+	end
+
+	-- warning
+	if options.warning then
+		local warning, warningFont = options.warning()
+		local row = titletable:addRow(false, { fixed = true })
+		row[1]:setColSpan(5):createText(function () local text = options.warning() return text end, config.warningTextProperties)
+		if warningFont then
+			row[1].properties.font = warningFont
+		end
+	end
+
+	local offsety = titletable.properties.y + titletable:getVisibleHeight() + Helper.borderSize
+	local height = math.min(Helper.viewHeight - offsety - Helper.frameBorder, menu.table.height - offsety)
+
+	local optiontable = frame:addTable(5, { tabOrder = 1, x = menu.table.x, y = offsety, width = menu.table.widthWithExtraInfo, maxVisibleHeight = height })
+	optiontable:setColWidth(1, menu.table.arrowColumnWidth, false)
+
+	-- options
+	for optionIdx, option in ipairs(options) do
+		menu.displayOption(optiontable, option)
+	end
+
+	optiontable:setTopRow(menu.preselectTopRow)
+	menu.preselectTopRow = nil
+	menu.preselectOption = nil
+
+	local timelinesgamestart
+	local gamemodules = GetRegisteredModules()
+	for _, module in ipairs(gamemodules) do
+		if module.id == "x4ep1_gamestart_hub" then
+			timelinesgamestart = module
+			break
+		end
+	end
+
+	local width = menu.table.width - menu.table.widthWithExtraInfo - Helper.borderSize
+	local offsetx = menu.table.x + menu.table.widthWithExtraInfo + Helper.borderSize
+	local iconheight = math.floor(width * 9 / 16)
+	local infoheight = height
+
+	local showCutscene = menu.playNewGameCutscene and menu.playNewGameCutscene.movie
+	if showCutscene then
+		if not menu.cutsceneStoppedNotification then
+			menu.cutsceneStoppedNotification = true
+			NotifyOnCutsceneStopped(getElement("Scene.UIContract"))
+		end
+
+		local rendertarget = frame:addRenderTarget({ width = width, height = iconheight, x = offsetx, y = offsety, alpha = 100 })
+		offsety = offsety + iconheight + Helper.borderSize
+		infoheight = infoheight - iconheight - Helper.borderSize
+	end
+
+	local numlines = 7
+	local baseMaxVisibleHeight = Helper.scaleY(Helper.standardButtonHeight) + Helper.borderSize
+	if not showCutscene then
+		baseMaxVisibleHeight = baseMaxVisibleHeight + iconheight + Helper.borderSize
+	end
+	local maxVisibleHeight = baseMaxVisibleHeight + numlines * Helper.scaleY(config.infoTextHeight)
+
+	local infotable = frame:addTable(1, { tabOrder = 3, x = offsetx, y = offsety, width = width, maxVisibleHeight = maxVisibleHeight, highlightMode = "off" })
+
+	if not showCutscene then
+		local row = infotable:addRow(false, { bgColor = Color["optionsmenu_cell_background_icon"], fixed = true })
+		row[1]:createIcon(timelinesgamestart and timelinesgamestart.image or "gamestart_default", { scaling = false, width = width, height = iconheight })
+	end
+
+	local hasdescription = false
+	if timelinesgamestart then
+		local row = infotable:addRow(true, { bgColor = Color["optionsmenu_cell_background"], fixed = true })
+		if timelinesgamestart.requirement ~= "" then
+			local canopenstore = (timelinesgamestart.extensionid ~= "") and (not C.HasExtension(timelinesgamestart.extensionid, timelinesgamestart.isextensionpersonal)) and (IsSteamworksEnabled() or (C.IsGOGVersion() and C.CanOpenWebBrowser()))
+			if canopenstore then
+				local iconsize = Helper.scaleY(Helper.standardButtonHeight)
+				row[1]:createButton({ bgColor = Color["icon_error"], highlightColor = canopenstore and Color["button_highlight_default"] or Color["row_background"] }):setText(timelinesgamestart.requirement, { x = config.infoTextOffsetX, font = config.fontBold }):setIcon("mm_externallink", { scaling = false, x = width - iconsize, height = iconsize, width = iconsize })
+				local storeicon = ""
+				if IsSteamworksEnabled() then
+					storeicon = "optionsmenu_steam"
+				elseif C.IsGOGVersion() then
+					storeicon = "optionsmenu_gog"
+				end
+				if storeicon ~= "" then
+					row[1]:setIcon2(storeicon, { scaling = false, x = width - 2 * iconsize - Helper.borderSize, height = iconsize, width = iconsize })
+				end
+				row[1].handlers.onClick = function () return menu.buttonOpenStore(timelinesgamestart.extensionsource) end
+			else
+				row[1]:createText(timelinesgamestart.requirement, { x = config.infoTextOffsetX, y = (Helper.standardButtonHeight - Helper.standardTextHeight) / 2, font = config.fontBold, cellBGColor = Color["icon_error"], minRowHeight = Helper.standardButtonHeight })
+		end
+		else
+			row[1]:createText(ReadText(1001, 11732) .. ReadText(1001, 120) .. " " .. timelinesgamestart.typename, { mouseOverText = timelinesgamestart.typedescription, x = config.infoTextOffsetX, y = (Helper.standardButtonHeight - Helper.standardTextHeight) / 2, font = config.fontBold, cellBGColor = Color["optionsmenu_cell_background_icon"], minRowHeight = Helper.standardButtonHeight })
+		end
+
+		local text = timelinesgamestart.description
+		local descriptiontext = GetTextLines(text, Helper.standardFont, Helper.scaleFont(Helper.standardFont, config.infoFontSize), width - 2 * Helper.scaleX(config.infoTextOffsetX))
+		if #descriptiontext > numlines then
+			-- scrollbar case
+			descriptiontext = GetTextLines(text, Helper.standardFont, Helper.scaleFont(Helper.standardFont, config.infoFontSize), width - 2 * Helper.scaleX(config.infoTextOffsetX) - Helper.scrollbarWidth)
+		end
+
+		-- now that we know the actual text height, update the maxVisibleHeight so that numlines lines will fit
+		if #descriptiontext > 0 then
+			for linenum, descline in ipairs(descriptiontext) do
+				local row = infotable:addRow(true, { bgColor = Color["optionsmenu_cell_background"], borderBelow = false })
+				row[1]:createText(descline)
+
+				hasdescription = true
+			end
+		end
+	end
+	local fullheight = infotable:getFullHeight() + (hasdescription and 0 or Helper.borderSize) -- if there is no description, the border between icon row and the new empty row has to be accounted for
+	if fullheight < infotable.properties.maxVisibleHeight then
+		local row = infotable:addRow(nil, { bgColor = Color["optionsmenu_cell_background"], borderBelow = false })
+		row[1]:createText("", { scaling = false, minRowHeight = infotable.properties.maxVisibleHeight - fullheight, fontsize = 1 })
+	end
+
+	local infotable2 = frame:addTable(3, { tabOrder = 4, x = offsetx, y = infotable.properties.y + infotable.properties.maxVisibleHeight + Helper.borderSize, width = width, maxVisibleHeight = infoheight - infotable.properties.maxVisibleHeight - Helper.borderSize })
+	infotable2:setColWidthPercent(2, 15)
+	infotable2:setColWidthPercent(3, 50)
+	infotable2:setDefaultColSpan(2, 2)
+	infotable2:setDefaultBackgroundColSpan(1, 3)
+
+	if timelinesgamestart then
+		local row = infotable2:addRow(nil, {  })
+		row[1]:setColSpan(3):createText(" ", { fontsize = 1, height = Helper.borderSize, cellBGColor = Color["row_background_blue"] })
+
+		if IsCheatVersion() then
+			local row = infotable2:addRow(nil, { bgColor = Color["optionsmenu_cell_background"], borderBelow = false })
+			row[1]:createText("Gamestart ID:") -- (cheat only)
+			row[2]:createText(ColorText["text_inactive"] .. timelinesgamestart.id, { halign = "right" })
+		end
+
+		local playermacro = ""
+		local playermacrooptions = {}
+		if timelinesgamestart.custom then
+			local buf = ffi.new("CustomGameStartStringPropertyState[1]")
+			playermacro = ffi.string(C.GetCustomGameStartStringProperty(timelinesgamestart.id, "player", buf))
+			if ffi.string(buf[0].state) == "standard" then
+				local macros = {}
+				for macro in string.gmatch(ffi.string(buf[0].options), "[%w_]+") do
+					local race, racename, female = GetMacroData(macro, "entityrace", "entityracename", "entityfemale", "basemacro")
+					table.insert(macros, { macro = macro, race = race, racename = racename, gender = female and "female" or "male" })
+				end
+				table.sort(macros, Helper.sortPlayerMacro)
+
+				local lastrace, lastgender
+				local doublingcount = 0
+				for _, entry in ipairs(macros) do
+					local name = entry.racename or ""
+					if (entry.race ~= "teladi") and (entry.race ~= "paranid") then
+						if entry.gender == "female" then
+							name = name .. " " .. ReadText(1001, 9906)
+						elseif entry.gender == "male" then
+							name = name .. " " .. ReadText(1001, 9907)
+						end
+					end
+					if (lastrace == entry.race) and (lastgender == entry.gender) then
+						if doublingcount == 0 then
+							playermacrooptions[#playermacrooptions].text = playermacrooptions[#playermacrooptions].text .. " " .. ReadText(20402, 1)
+							doublingcount = 2
+						else
+							doublingcount = doublingcount + 1
+						end
+						name = name .. " " .. ReadText(20402, doublingcount)
+					else
+						lastrace = entry.race
+						lastgender = entry.gender
+						doublingcount = 0
+					end
+					table.insert(playermacrooptions, { id = entry.macro, text = name, icon = "", displayremoveoption = false })
+				end
+			end
+		end
+
+		for i, entry in ipairs(timelinesgamestart.info) do
+			local row
+			if entry.info == "@name" then
+				row = infotable2:addRow(nil, { bgColor = Color["optionsmenu_cell_background"], borderBelow = false })
+				row[1]:createText(ReadText(1021, 8) .. ReadText(1001, 120))
+				local gamestartid = timelinesgamestart.id
+				row[2]:createText(function () local buf = ffi.new("CustomGameStartStringPropertyState[1]"); return ColorText["text_inactive"] .. ffi.string(C.GetCustomGameStartStringProperty(gamestartid, "playername", buf)) end, { halign = "right" })
+			elseif entry.info == "@player" then
+				if ffi.string(C.GetUserData("timelines_scenarios_finished")) == "" then
+					row = infotable2:addRow(true, { bgColor = Color["optionsmenu_cell_background"], borderBelow = false })
+					if #playermacrooptions > 0 then
+						row[1]:createText(ReadText(1021, 11007) .. ReadText(1001, 120))
+						row[2]:createDropDown(playermacrooptions, { startOption = playermacro, height = Helper.standardTextHeight }):setTextProperties({ halign = "right", x = Helper.standardTextOffsetx })
+						row[2].handlers.onDropDownConfirmed = function(_, id) C.SetUserData("timelines_player_character_macro", id); return menu.callbackGamestartPlayerMacro(timelinesgamestart.id, "player", id) end
+					else
+						row[1]:createText("")
+					end
+				else
+					local playermacro = ffi.string(C.GetUserData("timelines_player_character_macro"))
+					if playermacro ~= "" then
+						menu.callbackGamestartPlayerMacro(timelinesgamestart.id, "player", playermacro)
+					end
+				end
+			elseif entry.info == "@unlock" then
+				if not timelinesgamestart.unlocked then
+					row = infotable2:addRow(nil, { bgColor = Color["optionsmenu_cell_background"], borderBelow = false })
+					row[1]:createText(ReadText(1004, 45) .. ReadText(1001, 120))
+					row[2]:createText(ColorText["text_inactive"] .. entry.description, { halign = "right" })
+				end
+			elseif entry.info ~= "" then
+				row = infotable2:addRow(nil, { bgColor = Color["optionsmenu_cell_background"], borderBelow = false })
+				row[1]:createText(entry.info .. ReadText(1001, 120))
+				row[2]:createText(ColorText["text_inactive"] .. entry.description, { halign = "right" })
+			elseif timelinesgamestart.info[i + 1].info ~= "@unlock" or (not timelinesgamestart.unlocked) then
+				-- do not show the empty line before @unlock if @unlock is not shown
+				row = infotable2:addRow(nil, { bgColor = Color["optionsmenu_cell_background"], borderBelow = false })
+				row[1]:createText("")
+			end
+		end
+	end
 
 	titletable:addConnection(1, 1, true)
 	optiontable:addConnection(2, 1)
@@ -11676,6 +11998,12 @@ function menu.viewCreated(layer, ...)
 			menu.titleTable, menu.optionTable, menu.colorTable, menu.mappingTable, menu.buttonTable = ...
 		elseif menu.currentOption == "inputfeedback" then
 			menu.optionTable, menu.buttonTable = ...
+		elseif menu.currentOption == "timelines" then
+			if menu.playNewGameCutscene then
+				menu.titleTable, menu.optionTable, menu.rendertarget, menu.infoTable = ...
+			else
+				menu.titleTable, menu.optionTable, menu.infoTable = ...
+			end
 		else
 			menu.optionTable = ...
 		end

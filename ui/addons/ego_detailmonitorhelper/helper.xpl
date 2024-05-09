@@ -734,17 +734,7 @@ function Helper.init_kuertee ()
 	Helper.time_kuerteeInited = GetCurRealTime()
 	Helper.loadModLuas("Helper", "helper_uix")
 	Helper.SWIUI_Init()
-	-- if Helper.modLuas["Helper"] then
-	-- 	if not next(Helper.modLuas["Helper"].failedByExtension) then
-	-- 		DebugError("uix init success: " .. tostring(debug.getinfo(1).source))
-	-- 	else
-	-- 		for extension, modLua in pairs(Helper.modLuas["Helper"].failedByExtension) do
-	-- 			DebugError("uix init failed: " .. tostring(debug.getinfo(modLua.init).source):gsub("@.\\", ""))
-	-- 		end
-	-- 	end
-	-- else
-		DebugError("uix load success: " .. tostring(debug.getinfo(1).source))
-	-- end
+	-- DebugError("uix load success: " .. tostring(debug.getinfo(1).source))
 end
 -- kuertee end
 
@@ -1365,13 +1355,7 @@ function Helper.registerMenu(menu)
 					PlaySound("ui_menu_changed")
 				end
 			end
-			local excludeEmulation = Helper.excludeFromMouseEmulation[menu.name]
-			if type(excludeEmulation) == "function" then
-				excludeEmulation = excludeEmulation()
-			end
-			if not excludeEmulation then
-				C.EnableAutoMouseEmulation()
-			end
+			Helper.enableAutoMouseEmulation(menu)
 			-- The actual callback
 			menu.onShowMenu(state, ...)
 		elseif menu.minimized then
@@ -1380,13 +1364,7 @@ function Helper.registerMenu(menu)
 			else
 				PlaySound("ui_map_open")
 			end
-			local excludeEmulation = Helper.excludeFromMouseEmulation[menu.name]
-			if type(excludeEmulation) == "function" then
-				excludeEmulation = excludeEmulation()
-			end
-			if not excludeEmulation then
-				C.EnableAutoMouseEmulation()
-			end
+			Helper.enableAutoMouseEmulation(menu)
 			Helper.restoreMenu(menu)
 		else
 			if menu.name == "InteractMenu" then
@@ -1407,6 +1385,20 @@ function Helper.registerMenu(menu)
 			callback = menu.callback,
 		}
 	end
+end
+
+function Helper.enableAutoMouseEmulation(menu)
+	local excludeEmulation = Helper.excludeFromMouseEmulation[menu.name]
+	if type(excludeEmulation) == "function" then
+		excludeEmulation = excludeEmulation()
+	end
+	if not excludeEmulation then
+		C.EnableAutoMouseEmulation()
+	end
+end
+
+function Helper.disableAutoMouseEmulation(menu)
+	C.DisableAutoMouseEmulation()
 end
 
 function Helper.setChatUpdateHandler(menu)
@@ -1439,7 +1431,7 @@ function Helper.minimizeMenu(menu, text)
 		menu.minimized = true
 		Helper.minimizedMenu = menu
 		-- disable mouse emulation mode
-		C.DisableAutoMouseEmulation()
+		Helper.disableAutoMouseEmulation(menu)
 		-- if a menu was minimized once forget the history of the menu so the previous will not pop-up after hours of on-off use of this menu
 		menu.param2 = nil
 		-- clean up scripts
@@ -1512,7 +1504,7 @@ end
 
 function Helper.clearMenu(menu, UpdateHandler)
 	-- stop mouse emulation
-	C.DisableAutoMouseEmulation()
+	Helper.disableAutoMouseEmulation(menu)
 	-- cleanup
 	if menu.name == "DockedMenu" then
 		Helper.dockedMenu = nil
@@ -1881,12 +1873,15 @@ end
 --		  [x]		= number,	   -- x offset
 --		  [y]		= number	   -- y offset
 --    } 
-function Helper.createButton(text, icon, noscaling, active, offsetx, offsety, width, height, color, hotkey, icon2, mouseovertext)
+function Helper.createButton(text, icon, noscaling, active, offsetx, offsety, width, height, color, hotkey, icon2, mouseovertext, helpoverlayid)
 	local buttonDescriptor = {}
 	buttonDescriptor.text = text
 	buttonDescriptor.icon = icon
 	buttonDescriptor.icon2 = icon2
 	buttonDescriptor.mouseovertext = mouseovertext
+	if helpoverlayid then
+		buttonDescriptor.helpoverlay = { text = " ", id = helpoverlayid, size = { width = 0, height = 0 }, offset = { x = 0, y = 0 }, highlightOnly = true, useBackgroundSpan = false }
+	end
 
 	buttonDescriptor.color = color or Color["button_background_default"]
 	buttonDescriptor.hotkey = hotkey
@@ -3230,6 +3225,7 @@ local defaultWidgetProperties = {
 		slider1MouseOverText = "",								-- mouse-over text string for the top slider handle
 		slider2MouseOverText = "",								-- mouse-over text string for the bottom slider handle
 		statusIconMouseOverText = "",							-- mouse-over text string for the status icon
+		uiTriggerID = propertyDefaultValue,						-- ID for UITriggered events
 		_basetype = "flowchartcell"
 	},
 	["flowchartjunction"] = {
@@ -5784,6 +5780,15 @@ function widgetHelpers.dropdown:createDescriptor()
 	local startOption = self.properties.startOption
 	local helpoverlay = createOverlayPropertyInfo(self)
 	local options = Helper.tableCopy(self.properties.options)
+	for _, option in ipairs(options) do
+		option.helpoverlay =  {
+			text = option.helpOverlayText,
+			id = option.helpOverlayID,
+			size = { width = option.helpOverlayWidth, height = option.helpOverlayHeight },
+			offset = { x = option.helpOverlayX, y = option.helpOverlayY },
+			highlightOnly = optionhelpOverlayHighlightOnly
+		}
+	end
 
 	local isfunctioncell = false
 	if type(startOption) == "function" then
@@ -5857,6 +5862,7 @@ function widgetHelpers.checkbox:createDescriptor()
 	local mouseovertext = self.properties.mouseOverText
 	local checked = self.properties.checked
 	local glowfactor = self.properties.glowfactor
+	local helpoverlay = createOverlayPropertyInfo(self)
 
 	local isfunctioncell = false
 	if type(checked) == "function" then
@@ -5887,6 +5893,7 @@ function widgetHelpers.checkbox:createDescriptor()
 	checkboxDescriptor.symbol = self.properties.symbol
 	checkboxDescriptor.glowfactor = bgColor.glow
 	checkboxDescriptor.symbolglowfactor = glowfactor
+	checkboxDescriptor.helpoverlay = helpoverlay
 
 	checkboxDescriptor.offset = { x = offsetx, y = offsety }
 	checkboxDescriptor.size = { width = width , height = height }
@@ -6950,6 +6957,9 @@ function widgetPrototypes.flowchartnode:expand()
 		ftable2 = frame:addTable(self.properties.expandedTableNumColumns, { tabOrder = 2, borderEnabled = true, wraparound = true })
 	end
 	-- frame will be shown if handler adds at least one row to ftable
+	if self.properties.uiTriggerID then
+		AddUITriggeredEvent(self.flowchart.frame.menu.name, self.properties.uiTriggerID, "expanded")
+	end
 	self.handlers.onExpanded(self, frame, ftable, ftable2)
 	if #ftable.rows > 0 then
 		-- Shrink frame height
@@ -6990,6 +7000,9 @@ function widgetPrototypes.flowchartnode:collapse()
 		end
 		self.flowchart.expandedNodes[self] = nil
 		if self.handlers.onCollapsed then
+			if self.properties.uiTriggerID then
+				AddUITriggeredEvent(self.flowchart.frame.menu.name, self.properties.uiTriggerID, "collapsed")
+			end
 			self.handlers.onCollapsed(self, frame)
 		end
 	end
@@ -9184,6 +9197,9 @@ function Helper.checkTopLevelConditions(entry)
 	if (entry.isonline ~= nil) and (entry.isonline ~= (C.AreVenturesCompatible() and (C.IsVentureSeasonSupported() or C.WasSessionOnline()))) then
 		return false
 	end
+	if (entry.istimelinescenario ~= nil) and (entry.istimelinescenario ~= (C.IsTimelinesScenario() or (ffi.string(C.GetGameStartName()) == "x4ep1_gamestart_hub"))) then
+		return false
+	end
 
 	-- kuertee start: callback
 	if callbacks ["checkTopLevelConditions_get_is_entry_available"] then
@@ -10552,6 +10568,10 @@ function Helper.createLSOStorageNode(menu, container, ware, planned, hasstorage,
 				step = 1,
 				slider1 = buylimit,
 				slider2 = selllimit,
+				helpOverlayID = "station_overview_storage_" .. ware,
+				helpOverlayText = " ",
+				helpOverlayHighlightOnly = true,
+				uiTriggerID = "storage_" .. ware,
 			},
 			isstorage = true,
 			expandedTableNumColumns = 3,
@@ -11647,12 +11667,17 @@ Helper.turretModes = {
 	[11] = { id = "towing",			text = ReadText(1001, 8633),	icon = "",	displayremoveoption = false,	forall = false },
 }
 
-function Helper.getTurretModes(turret, forall)
+function Helper.getTurretModes(turret, forall, helpoverlayprefix, counter)
 	local options = {}
 	for _, entry in ipairs(Helper.turretModes) do
 		if (not forall) or (forall == entry.forall) then
 			if (turret == nil) or C.IsWeaponModeCompatible(turret, "", entry.id) then
-				table.insert(options, entry)
+				table.insert(options, Helper.tableCopy(entry))
+				if helpoverlayprefix then
+					options[#options].helpOverlayID = helpoverlayprefix .. entry.id .. (counter or "")
+					options[#options].helpOverlayText = " "
+					options[#options].helpOverlayHighlightOnly = true
+				end
 			end
 		end
 	end
@@ -11981,11 +12006,11 @@ Helper.ventureContactsConfig = {
 	contextBorder = 5,
 }
 Helper.ventureContactsCategories = {
---	{ category = "friends",					name = ReadText(50101, 11274),	icon = "vt_friendlist",				helpOverlayID = "mapst_ven_contacts_friend",	helpOverlayText = ReadText(50128, 11201) },
+	{ category = "friends",					name = ReadText(1001, 11386),	icon = "vt_friendlist",				helpOverlayID = "mapst_ven_contacts_friend",	helpOverlayText = ReadText(1028, 7720) },
 }
 
 if C.IsVentureSeasonSupported() then
-	table.insert(Helper.ventureContactsCategories, { category = "blocked",					name = ReadText(50101, 11275),	icon = "vt_blockedlist",			helpOverlayID = "mapst_ven_contacts_blocked",	helpOverlayText = ReadText(50128, 11202) })
+	table.insert(Helper.ventureContactsCategories, { category = "blocked",					name = ReadText(1001, 11366),	icon = "vt_blockedlist",			helpOverlayID = "mapst_ven_contacts_blocked",	helpOverlayText = ReadText(1028, 7721) })
 end
 
 function Helper.createVentureContacts(menu, frame, instance, width, x, y, globalx, globaly)
@@ -12024,7 +12049,7 @@ function Helper.createVentureContactsTab(menu, frame, instance, mode, width, x, 
 
 	-- title
 	local row = infotable:addRow(nil, { fixed = true, bgColor = Color["row_title_background"] })
-	row[1]:setColSpan(numCols):createText((mode == "friends") and ReadText(50101, 11274) or ReadText(50101, 11275), Helper.titleTextProperties)
+	row[1]:setColSpan(numCols):createText((mode == "friends") and ReadText(1001, 11386) or ReadText(1001, 11366), Helper.titleTextProperties)
 
 	infoTablePersistentData.numEntries = OnlineGetNumContacts(mode == "blocked")
 	Helper.ventureContacts = {}
@@ -12063,7 +12088,7 @@ function Helper.createVentureContactsTab(menu, frame, instance, mode, width, x, 
 
 	-- pages
 	local row = infotable:addRow(true, { fixed = true })
-	row[1]:setColSpan(3):createEditBox({ description = ReadText(50101, 11293), defaultText = ReadText(1001, 3250) }):setText(infoTablePersistentData.searchtext, { halign = "left", x = Helper.standardTextOffsetx }):setHotkey("INPUT_STATE_DETAILMONITOR_0", { displayIcon = true })
+	row[1]:setColSpan(3):createEditBox({ description = ReadText(1001, 11390), defaultText = ReadText(1001, 3250) }):setText(infoTablePersistentData.searchtext, { halign = "left", x = Helper.standardTextOffsetx }):setHotkey("INPUT_STATE_DETAILMONITOR_0", { displayIcon = true })
 	row[1].handlers.onEditBoxDeactivated = function (_, text) if text ~= infoTablePersistentData.searchtext then infoTablePersistentData.searchtext = text; menu.noupdate = false; menu.refreshInfoFrame() end end
 
 	local buttonheight = math.max(Helper.editboxMinHeight, Helper.scaleY(Helper.subHeaderHeight))
@@ -12100,36 +12125,36 @@ function Helper.createVentureContactsTab(menu, frame, instance, mode, width, x, 
 		end
 	else
 		row = infotable:addRow(true, {  })
-		row[1]:setColSpan(numCols):createText(ReadText(50101, 11276))
+		row[1]:setColSpan(numCols):createText(ReadText(1001, 11367))
 	end
 
 	if mode == "friends" then
 		infotable:addEmptyRow()
 
 		local row = infotable:addRow(nil, { bgColor = Color["row_title_background"] })
-		row[1]:setColSpan(numCols):createText(ReadText(50101, 11279), Helper.subHeaderTextProperties)
+		row[1]:setColSpan(numCols):createText(ReadText(1001, 11370), Helper.subHeaderTextProperties)
 		row[1].properties.halign = "center"
 
 		local row = infotable:addRow(nil, {  })
-		row[1]:setColSpan(numCols):createText(ReadText(50101, 11280), { wordwrap = true })
+		row[1]:setColSpan(numCols):createText(ReadText(1001, 11371), { wordwrap = true })
 
 		local row = infotable:addRow(true, {  })
-		row[1]:setColSpan(numCols):createEditBox({ description = ReadText(50101, 11294), defaultText = ReadText(1001, 3250), height = Helper.standardTextHeight }):setText("", { halign = "left", x = Helper.standardTextOffsetx })
+		row[1]:setColSpan(numCols):createEditBox({ description = ReadText(1001, 11391), defaultText = ReadText(1001, 3250), height = Helper.standardTextHeight }):setText("", { halign = "left", x = Helper.standardTextOffsetx })
 		row[1].handlers.onEditBoxDeactivated = function (_, text, textchanged) return Helper.editboxVentureFindForumUser(menu, instance, text, textchanged) end
 
 		if infoTablePersistentData.forumerror then
-			local errortext = string.format(ReadText(50101, 11286), infoTablePersistentData.forumsearch)
+			local errortext = string.format(ReadText(1001, 11377), infoTablePersistentData.forumsearch)
 			if infoTablePersistentData.forumerror == "alreadyexists" then
-				errortext = string.format(ReadText(50101, 11287), infoTablePersistentData.forumsearch)
+				errortext = string.format(ReadText(1001, 11378), infoTablePersistentData.forumsearch)
 			elseif infoTablePersistentData.forumerror == "blocked" then
-				errortext = string.format(ReadText(50101, 11288), infoTablePersistentData.forumsearch)
+				errortext = string.format(ReadText(1001, 11379), infoTablePersistentData.forumsearch)
 			end
 			local row = infotable:addRow(true, {  })
 			row[1]:setColSpan(numCols):createText(errortext, { color = Color["text_warning"], wordwrap = true })
 		elseif infoTablePersistentData.forumuserid then
 			local row = infotable:addRow(true, {  })
 			row[1]:setColSpan(3):createText(infoTablePersistentData.forumsearch)
-			row[4]:setColSpan(numCols - 3):createButton({  }):setText(ReadText(50101, 11281), { halign = "center" })
+			row[4]:setColSpan(numCols - 3):createButton({  }):setText(ReadText(1001, 11372), { halign = "center" })
 			row[4].handlers.onClick = function () return Helper.buttonAddForumUser(menu, instance, infoTablePersistentData.forumuserid, false) end
 		end
 
@@ -12137,19 +12162,19 @@ function Helper.createVentureContactsTab(menu, frame, instance, mode, width, x, 
 			infotable:addEmptyRow()
 
 			local row = infotable:addRow(nil, { bgColor = Color["row_title_background"] })
-			row[1]:setColSpan(numCols):createText(ReadText(50101, 11282), Helper.subHeaderTextProperties)
+			row[1]:setColSpan(numCols):createText(ReadText(1001, 11373), Helper.subHeaderTextProperties)
 			row[1].properties.halign = "center"
 
 			local row = infotable:addRow(nil, {  })
-			row[1]:setColSpan(numCols):createText(ReadText(50101, 11283), { wordwrap = true })
+			row[1]:setColSpan(numCols):createText(ReadText(1001, 11374), { wordwrap = true })
 
 			local row = infotable:addRow(nil, {  })
-			row[1]:setColSpan(numCols):createText(ReadText(50101, 11284), { wordwrap = true })
+			row[1]:setColSpan(numCols):createText(ReadText(1001, 11375), { wordwrap = true })
 
 			infotable:addEmptyRow(Helper.standardTextHeight / 2)
 
 			local row = infotable:addRow(true, {  })
-			row[4]:setColSpan(numCols - 3):createButton({  }):setText(ReadText(50101, 11285), { halign = "center" })
+			row[4]:setColSpan(numCols - 3):createButton({  }):setText(ReadText(1001, 11376), { halign = "center" })
 			row[4].handlers.onClick = function () return Helper.buttonCreateFriendListContext(menu) end
 		end
 	end
@@ -12361,17 +12386,17 @@ function Helper.createVentureContactContext(menu, frame)
 
 		if not contact.isblocked then
 			local row = infotable:addRow(true, { fixed = true })
-			row[1]:setColSpan(2):createButton({  }):setText(contact.ismuted and ReadText(50101, 11278) or ReadText(50101, 11277))
+			row[1]:setColSpan(2):createButton({  }):setText(contact.ismuted and ReadText(1001, 11369) or ReadText(1001, 11368))
 			row[1].handlers.onClick = function () return Helper.buttonMuteContact(menu, contact.id, not contact.ismuted) end
 		end
 
 		local row = infotable:addRow(true, { fixed = true })
-		row[1]:setColSpan(2):createButton({  }):setText(contact.isblocked and ReadText(50101, 11292) or ReadText(50101, 11290))
+		row[1]:setColSpan(2):createButton({  }):setText(contact.isblocked and ReadText(1001, 11389) or ReadText(1001, 11388))
 		row[1].handlers.onClick = function () return Helper.buttonAddContact(menu, contact.id, not contact.isblocked) end
 	end 
 
 	local row = infotable:addRow(true, { fixed = true })
-	row[1]:setColSpan(2):createButton({  }):setText(ReadText(50101, 11296))
+	row[1]:setColSpan(2):createButton({  }):setText(ReadText(1001, 11392))
 	row[1].handlers.onClick = function () return Helper.buttonRemoveContact(menu, contact.id) end
 
 	if C.IsVentureSeasonSupported() then
@@ -12400,7 +12425,7 @@ function Helper.showVentureFriendListContext(menu, frame)
 
 	-- title
 	local row = infotable:addRow(nil, { fixed = true })
-	row[1]:setColSpan(3):createText(ReadText(50101, 11282), Helper.headerRowCenteredProperties)
+	row[1]:setColSpan(3):createText(ReadText(1001, 11373), Helper.headerRowCenteredProperties)
 
 	local platformicon
 	if IsSteamworksEnabled() then
@@ -12416,12 +12441,12 @@ function Helper.showVentureFriendListContext(menu, frame)
 		end
 	else
 		local row = infotable:addRow(nil, {  })
-		row[1]:setColSpan(3):createText(ReadText(50101, 11507), { wordwrap = true })
+		row[1]:setColSpan(3):createText(ReadText(1001, 11393), { wordwrap = true })
 	end
 
 	local buttontable = frame:addTable(2, { tabOrder = 3, x = Helper.borderSize, y = Helper.borderSize, width = menu.contextMenuData.width })
 	local row = buttontable:addRow(true, {  })
-	row[1]:createButton({ active = function () return Helper.buttonImportFriendListActive(menu) end }):setText(ReadText(50101, 11289), { halign = "center" })
+	row[1]:createButton({ active = function () return Helper.buttonImportFriendListActive(menu) end }):setText(ReadText(1001, 11387), { halign = "center" })
 	row[1].handlers.onClick = function () return Helper.buttonImportFriendList(menu) end
 	row[2]:createButton({  }):setText(ReadText(1001, 64), { halign = "center" })
 	row[2].handlers.onClick = function () return menu.closeContextMenu() end
@@ -12463,10 +12488,10 @@ function Helper.createUserQuestionContext(menu, frame)
 	if menu.contextMenuData.mode == "venturereport" then
 		if menu.contextMenuData.submode == "user" then
 			local row = ftable:addRow(false, { fixed = true })
-			row[1]:setColSpan(numCols):createText(ReadText(50101, 11260), Helper.headerRowCenteredProperties)
+			row[1]:setColSpan(numCols):createText(ReadText(1001, 11364), Helper.headerRowCenteredProperties)
 
 			local row = ftable:addRow(false, { fixed = true })
-			row[1]:setColSpan(numCols):createText(string.format(ReadText(50101, 11264), menu.contextMenuData.author), { wordwrap = true })
+			row[1]:setColSpan(numCols):createText(string.format(ReadText(1001, 11365), menu.contextMenuData.author), { wordwrap = true })
 		end
 	end
 
@@ -12704,10 +12729,7 @@ function Helper.loadModLuas(menuName, modLuaName)
 				-- Helper.debugText_forced("file: " .. tostring(file) .. " modLua: " .. tostring(Helper.modLuas[menuName].byExtension[extension.location]))
 				if isSuccess then
 					isModLuaLoaded = true
-					-- Helper.debugText_forced("Helper.modLuas[menuName]", tostring(Helper.modLuas[menuName]))
-					-- Helper.debugText_forced("Helper.modLuas[menuName].byExtension[extension.location]", tostring(Helper.modLuas[menuName].byExtension[extension.location]))
-					-- Helper.debugText_forced("Helper.modLuas[menuName].byExtension[extension.location].init", tostring(Helper.modLuas[menuName].byExtension[extension.location].init))
-					DebugError("uix load success: " .. tostring(debug.getinfo(Helper.modLuas[menuName].byExtension[extension.location].init).source:gsub("@.\\", "")))
+					-- DebugError("uix load success: " .. tostring(debug.getinfo(Helper.modLuas[menuName].byExtension[extension.location].init).source:gsub("@.\\", "")))
 					Helper.time_initModLuasNow = GetCurRealTime() + 1
 				else
 					local isFileMissing = string.find(errorMsg, "not found")
@@ -12742,7 +12764,7 @@ function Helper.initModLuas2()
 				local isSuccess, errorMsg = pcall(function () modLua.init() end)
 				if isSuccess then
 					menuData.isTriggerUIEventNow = true
-					DebugError("uix init success: " .. tostring(debug.getinfo(modLua.init).source):gsub("@.\\", ""))
+					-- DebugError("uix init success: " .. tostring(debug.getinfo(modLua.init).source):gsub("@.\\", ""))
 					initedMenuDatasByMenuName[menuName_inList] = menuData
 				else
 					DebugError("uix init failed: " .. tostring(errorMsg))
@@ -12759,7 +12781,7 @@ function Helper.initModLuas2()
 			local isSuccess, errorMsg = pcall(function () modLua.init() end)
 			if isSuccess then
 				menuData.isTriggerUIEventNow = true
-				DebugError("    uix init success at next try/tries: " .. tostring(debug.getinfo(modLua.init).source):gsub("@.\\", ""))
+				-- DebugError("    uix init success at next try/tries: " .. tostring(debug.getinfo(modLua.init).source):gsub("@.\\", ""))
 				-- table.remove(menuData.failedByExtension, extension)
 				menuData.failedByExtension[extension] = nil
 				initedMenuDatasByMenuName[menuName_inList] = menuData

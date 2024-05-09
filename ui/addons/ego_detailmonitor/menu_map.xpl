@@ -502,6 +502,7 @@ ffi.cdef[[
 	const char* GetComponentName(UniverseID componentid);
 	int GetConfigSetting(const char*const setting);
 	const char* GetContainerBuildMethod(UniverseID containerid);
+	uint32_t GetContainerCriticalWares(const char** result, uint32_t resultlen, UniverseID containerid);
 	TradeRuleID GetContainerTradeRuleID(UniverseID containerid, const char* ruletype, const char* wareid);
 	uint32_t GetContainerWareReservations2(WareReservationInfo2* result, uint32_t resultlen, UniverseID containerid, bool includevirtual, bool includemission, bool includesupply);
 	UniverseID GetContextByClass(UniverseID componentid, const char* classname, bool includeself);
@@ -581,6 +582,7 @@ ffi.cdef[[
 	uint32_t GetNumBoardingMarinesFromOperation(UniverseID defensibletargetid, const char* boarderfactionid);
 	uint32_t GetNumBuildTasks(UniverseID containerid, UniverseID buildmoduleid, bool isinprogress, bool includeupgrade);
 	uint32_t GetNumCargoTransportTypes(UniverseID containerid, bool merge);
+	uint32_t GetNumContainerCriticalWares(UniverseID containerid);
 	uint32_t GetNumContainerWareReservations2(UniverseID containerid, bool includevirtual, bool includemission, bool includesupply);
 	uint32_t GetNumCurrentMissionOffers(bool showninbbs);
 	uint32_t GetNumDiscoveredSectorResources(UniverseID sectorid);
@@ -1417,7 +1419,7 @@ local config = {
 		-- xl ships
 		{ text = ReadText(1001, 6) .. ReadText(1001, 120) .. " " .. ReadText(20111, 5041) },					-- Ships: XL
 		{ icon = "ship_xl_fight_01",				text = ReadText(1001, 9816),	color = "friendcolor" },	-- Fighter
-		{ icon = "ship_xl_neutral_01",				text = ReadText(1001, 9820),	color = "friendcolor" },	-- Auxiliary
+		{ icon = "ship_xl_auxiliary_01",			text = ReadText(1001, 9820),	color = "friendcolor" },	-- Auxiliary
 		--{ icon = "ship_xl_mine_01",				text = ReadText(1001, 9818),	color = "friendcolor" },	-- Miner
 		{ icon = "ship_xl_build_01",				text = ReadText(1001, 9821),	color = "friendcolor" },	-- Builder
 		-- l ships
@@ -1440,7 +1442,7 @@ local config = {
 		{ icon = "ship_xs_fight_01",				text = ReadText(20101, 100401),	color = "friendcolor" },	-- Defence Drone
 		{ icon = "ship_xs_trade_01",				text = ReadText(20101, 100101),	color = "friendcolor" },	-- Cargo Drone
 		{ icon = "ship_xs_mine_01",					text = ReadText(20101, 100501),	color = "friendcolor" },	-- Mining Drone
-		{ icon = "ship_xs_neutral_01",				text = ReadText(20101, 110201),	color = "friendcolor" },	-- Civilian Ship
+		{ icon = "ship_xs_auxiliary_01",			text = ReadText(20101, 110201),	color = "friendcolor" },	-- Civilian Ship
 		{ icon = "ship_xs_build_01",				text = ReadText(20101, 100301),	color = "friendcolor" },	-- Building Drone
 		-- trade offers
 		{ text = ReadText(1001, 1113) },																		-- Trade Offers
@@ -1678,17 +1680,7 @@ end
 -- kuertee start:
 function menu.init_kuertee ()
 	menu.loadModLuas()
-	-- if Helper.modLuas[menu.name] then
-	-- 	if not next(Helper.modLuas[menu.name].failedByExtension) then
-	-- 		DebugError("uix init success: " .. tostring(debug.getinfo(1).source))
-	-- 	else
-	-- 		for extension, modLua in pairs(Helper.modLuas[menu.name].failedByExtension) do
-	-- 			DebugError("uix init failed: " .. tostring(debug.getinfo(modLua.init).source):gsub("@.\\", ""))
-	-- 		end
-	-- 	end
-	-- else
-		DebugError("uix load success: " .. tostring(debug.getinfo(1).source))
-	-- end
+	DebugError("uix load success: " .. tostring(debug.getinfo(1).source))
 end
 -- kuertee end
 
@@ -8937,7 +8929,7 @@ function menu.getPropertyOwnedFleetDataInternal(instance, component, shiptyperan
 		shipclass = "xs"
 	end
 	if shiptyperank then
-		local purpose, icon = GetComponentData(component, "primarypurpose", "icon")
+		local purpose, icon, primarypurposeicon = GetComponentData(component, "primarypurpose", "icon", "primarypurposeicon")
 		if purpose == "fight" then
 			shiptyperank = shiptyperank + 5
 		elseif purpose == "auxiliary" then
@@ -8950,6 +8942,9 @@ function menu.getPropertyOwnedFleetDataInternal(instance, component, shiptyperan
 			shiptyperank = shiptyperank + 1
 		else
 			purpose = "neutral"
+		end
+		if primarypurposeicon ~= "" then
+			icon = primarypurposeicon
 		end
 		if not shiptypedata[shiptyperank] then
 			table.insert(shiptyperanks, shiptyperank)
@@ -9182,7 +9177,14 @@ function menu.displayOrderParam(ftable, orderidx, order, paramidx, param, listid
 			row[5]:setColSpan(1)
 			row[6]:createCheckBox(checked, { active = active, width = config.mapRowHeight, height = config.mapRowHeight, mouseOverText = mouseovertext })
 			row[6].handlers.onClick = function () menu.checkboxOrderPlayerOverrideValue(orderidx, param.canplayeroverride.paramidx, param.canplayeroverride.values[param.value], param.value) end
-			row[7]:createText(value and tostring(value) or "")
+
+			local suffix = ""
+			local mouseovertext = ""
+			if param.canplayeroverride.criticalwares[param.value] then
+				suffix = " " .. ColorText["text_warning"] .. "\27[menu_ware_critical]"
+				mouseovertext = ReadText(1026, 3284)
+			end
+			row[7]:createText(value and (tostring(value) .. suffix) or "", { mouseOverText = mouseovertext })
 		else
 			row[menu.infoTableData[instance].hasloop and 4 or 2]:setColSpan(menu.infoTableData[instance].hasloop and 1 or 3):createText(paramtext)
 			local active = paramactive and (not isplayeroccupiedship) and (((order.state == "setup") and (paramidx <= (order.actualparams + 1))) or ((order.state ~= "setup") and param.editable))
@@ -11192,7 +11194,6 @@ function menu.displayDefaultBehaviour(ftable, mode, titlerow, instance)
 								menu.setrow = row.index
 								menu.setcol = nil
 							end
-
 							row[2]:setColSpan(3):createText("  " .. param.text .. ReadText(1001, 120))
 							row[5]:setColSpan(1):createCheckBox(#overridedata.param.value == 0, { width = config.mapRowHeight, height = config.mapRowHeight, mouseOverText = ReadText(1026, 3282) })
 							row[5].handlers.onClick = function (_, checked) return menu.checkboxOrderPlayerOverride("default", j, param, overridedata.paramidx, overridedata.param, checked) end
@@ -11204,6 +11205,21 @@ function menu.displayDefaultBehaviour(ftable, mode, titlerow, instance)
 							for k, entry in ipairs(overridedata.param.value) do
 								overridedata.values[entry] = k
 							end
+							
+							overridedata.criticalwares = {}
+							local commander = infoTableData.commander
+							if GetComponentData(menu.infoSubmenuObject, "assignment") == "tradeforbuildstorage" then
+								commander = GetComponentData(commander, "buildstorage")
+							end
+							local commander64 = C.ConvertStringTo64Bit(tostring(commander))
+							local n = C.GetNumContainerCriticalWares(commander64)
+							if n > 0 then
+								local buf = ffi.new("const char*[?]", n)
+								n = C.GetContainerCriticalWares(buf, n, commander64)
+								for i = 0, n - 1 do
+									overridedata.criticalwares[ffi.string(buf[i])] = true
+								end
+							end
 						end
 
 						if overridedata and (#overridedata.param.value > 0) and overridedata.param.inputparams.optionsource then
@@ -11211,7 +11227,11 @@ function menu.displayDefaultBehaviour(ftable, mode, titlerow, instance)
 								if overridedata.param.inputparams.type == "ware" then
 									local warebasket = {}
 									local found = {}
-									local allresources, allproducts, rawtradewares = GetComponentData(infoTableData.commander, "allresources", "products", "tradewares")
+									local commander = infoTableData.commander
+									if GetComponentData(menu.infoSubmenuObject, "assignment") == "tradeforbuildstorage" then
+										commander = GetComponentData(commander, "buildstorage")
+									end
+									local allresources, allproducts, rawtradewares = GetComponentData(commander, "allresources", "products", "tradewares")
 									for _, ware in ipairs(allresources) do
 										if not found[ware] then
 											found[ware] = true
@@ -12924,13 +12944,13 @@ function menu.setupInfoSubmenuRows(mode, inputtable, inputobject, instance)
 			local cashcontainers = {}
 			if C.IsComponentClass(inputobject, "container") then
 				if mode == "buildstorage" then
-					table.insert(cashcontainers, { container = inputobject, estimatetype = "wantedmoney", text = ReadText(1001, 9429) }) -- Funds for Station Construction
+					table.insert(cashcontainers, { container = inputobject, estimatetype = "wantedmoney", text = ReadText(1001, 9429), helpoverlayprefix = "info_buildstorage_account_" }) -- Funds for Station Construction
 				else
-					table.insert(cashcontainers, { container = inputobject, estimatetype = "productionmoney", supply = true, tradewares = true, text = ReadText(1001, 7710) }) -- Station Account
+					table.insert(cashcontainers, { container = inputobject, estimatetype = "productionmoney", supply = true, tradewares = true, text = ReadText(1001, 7710), helpoverlayprefix = "info_station_account_" }) -- Station Account
 				end
 			end
 			if buildstorage then
-				table.insert(cashcontainers, { container = buildstorage, estimatetype = "wantedmoney", text = ReadText(1001, 9429) }) -- Funds for Station Construction
+				table.insert(cashcontainers, { container = buildstorage, estimatetype = "wantedmoney", text = ReadText(1001, 9429), helpoverlayprefix = "info_buildstorage_account_" }) -- Funds for Station Construction
 			end
 			for i, entry in ipairs(cashcontainers) do
 				if i ~= 1 then
@@ -12965,7 +12985,11 @@ function menu.setupInfoSubmenuRows(mode, inputtable, inputobject, instance)
 					min = math.min(containercash, 0),
 					max = slidermax,
 					maxSelect = slidermaxselect,
-					suffix = ReadText(1001, 101) })
+					suffix = ReadText(1001, 101),
+					helpOverlayID = entry.helpoverlayprefix .. "slider",
+					helpOverlayText = " ",
+					helpOverlayHighlightOnly = true,
+				})
 
 				row[2].handlers.onSliderCellChanged = function(_, value)
 					local idx = i
@@ -13003,7 +13027,7 @@ function menu.setupInfoSubmenuRows(mode, inputtable, inputobject, instance)
 				row[4]:setColSpan(5):createText(ConvertMoneyString(estimate, false, true, nil, true) .. " " .. ReadText(1001, 101), { halign = "right", mouseOverText = mouseovertext })
 
 				local row = inputtable:addRow("info_updateaccount", {  })
-				row[3]:createButton({ height = config.mapRowHeight, active = function () local money, estimate = GetComponentData(container, "money", entry.estimatetype); if entry.supply then estimate = estimate + tonumber(C.GetSupplyBudget(container)) / 100 end; if entry.tradewares then estimate = estimate + tonumber(C.GetTradeWareBudget(container)) / 100 end; return (money + GetPlayerMoney()) > estimate end }):setText(ReadText(1001, 7965), { halign = "center", fontsize = config.mapFontSize })	-- Accept Estimate
+				row[3]:createButton({ height = config.mapRowHeight, active = function () local money, estimate = GetComponentData(container, "money", entry.estimatetype); if entry.supply then estimate = estimate + tonumber(C.GetSupplyBudget(container)) / 100 end; if entry.tradewares then estimate = estimate + tonumber(C.GetTradeWareBudget(container)) / 100 end; return (money + GetPlayerMoney()) > estimate end, helpOverlayID = entry.helpoverlayprefix .. "accept_estimate", helpOverlayText = " ", helpOverlayHighlightOnly = true }):setText(ReadText(1001, 7965), { halign = "center", fontsize = config.mapFontSize })	-- Accept Estimate
 				row[3].handlers.onClick = function () return menu.infoSubmenuSetManagerAccountToEstimate(i, instance) end
 				row[4]:setColSpan(2):createButton({ height = config.mapRowHeight, active = function () return menu.checkTransferDetails(i, instance) end }):setText(ReadText(1001, 2821), { halign = "center", fontsize = config.mapFontSize })	-- Confirm
 				row[4].handlers.onClick = function () return menu.infoSubmenuUpdateManagerAccount(i, instance) end
