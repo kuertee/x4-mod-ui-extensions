@@ -417,6 +417,18 @@ function menu.init_kuertee ()
 end
 -- kuertee end
 
+function menu.openOtherMenu(menuname)
+	if menu.shown then
+		if menu.haschanges then
+			menu.contextData = { othermenu = menuname }
+			menu.displayContextFrame("userquestion", Helper.scaleX(400), (Helper.viewWidth - Helper.scaleX(400)) / 2, Helper.viewHeight / 2)
+		else
+			Helper.closeMenuAndOpenNewMenu(menu, menuname, nil, true, true)
+			menu.cleanup()
+		end
+	end
+end
+
 function menu.cleanup()
 	UnregisterEvent("newWareReservation", menu.newWareReservationCallback)
 
@@ -4319,12 +4331,22 @@ function menu.createUserQuestionContext()
 
 	local row = ftable:addRow(true, { fixed = true })
 	row[2]:createButton():setText(ReadText(1001, 2617), { halign = "center" })
-	row[2].handlers.onClick = function () menu.resetDefaultLoadout() return menu.closeMenu(menu.contextData.dueToClose) end
+	row[2].handlers.onClick = menu.resetAndCloseMenu
 	row[4]:createButton():setText(ReadText(1001, 2618), { halign = "center" })
 	row[4].handlers.onClick = menu.closeContextMenu
 	ftable:setSelectedCol(4)
 
 	menu.contextFrame:display()
+end
+
+function menu.resetAndCloseMenu()
+	menu.resetDefaultLoadout()
+	if menu.contextData.dueToClose then
+		menu.closeMenu(menu.contextData.dueToClose)
+	elseif menu.contextData.othermenu then
+		Helper.closeMenuAndOpenNewMenu(menu, menu.contextData.othermenu, nil, true, true)
+		menu.cleanup()
+	end
 end
 
 function menu.createOverwriteQuestionContext()

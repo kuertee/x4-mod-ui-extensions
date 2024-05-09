@@ -2570,14 +2570,14 @@ config.optionDefinitions = {
 			name = ReadText(config.input.controltextpage.ranges, 23),
 			valuetype = "button",
 			value = function () return menu.valueInputInvert(23) end,
-			callback = function () return menu.callbackInputInvert(23, "invert_direct_mouse_steering_roll") end,
+			callback = function () return menu.callbackInputInvert(23, "invert_controllermouse_x") end,
 		},
 		[15] = {
 			id = "invert_controllermouse_y",
 			name = ReadText(config.input.controltextpage.ranges, 24),
 			valuetype = "button",
 			value = function () return menu.valueInputInvert(24) end,
-			callback = function () return menu.callbackInputInvert(24, "invert_direct_mouse_steering_roll") end,
+			callback = function () return menu.callbackInputInvert(24, "invert_controllermouse_y") end,
 		},
 	},
 	["joystick_sensitivity"] = {
@@ -3004,10 +3004,19 @@ function menu.dropdownControl(row, data, id)
 	newinputtype = tonumber(newinputtype)
 	newinputcode = tonumber(newinputcode)
 	local newinputsgn = nil
-	if data and not menu.remapControl then
-		menu.remapControl = { row = row, col = data[6], controltype = data[1], controlcode = data[2], controlcontext = data[8] or 1, oldinputtype = data[3], oldinputcode = data[4], oldinputsgn = data[5], nokeyboard = data[7], allowmouseaxis = data[9] }
+	if data and (not menu.remapControl) then
+		if (newinputtype ~= data[3]) or (newinputcode ~= data[4]) then
+			menu.remapControl = { row = row, col = data[6], controltype = data[1], controlcode = data[2], controlcontext = data[8] or 1, oldinputtype = data[3], oldinputcode = data[4], oldinputsgn = data[5], nokeyboard = data[7], allowmouseaxis = data[9] }
 
-		menu.remapInput(newinputtype, newinputcode, newinputsgn)
+			menu.remapInput(newinputtype, newinputcode, newinputsgn)
+		else
+			-- reload controls menu
+			menu.preselectTopRow = GetTopRow(menu.optionTable)
+			menu.preselectOption = data.row
+			menu.preselectCol = data.col
+			menu.remapControl = nil
+			menu.submenuHandler(menu.currentOption)
+		end
 	end
 end
 
@@ -4309,16 +4318,32 @@ function menu.displayControlRow(ftable, controlsgroup, controltype, code, contex
 
 				if showcompassmenuoption then
 					local options = {
-						{ id = "30:0", text = "", icon = "", displayremoveoption = false },
+						{ id = "30:0", text = ReadText(1001, 12698), icon = "", displayremoveoption = false },
 					}
 					for i = 1, 8 do
-						table.insert(options, { id = "30:" .. i, text = ReadText(1030, i), icon = "", text2 = string.format("\27[input_device_radial_1_%d]", i), displayremoveoption = false })
+						local text2 = "- "
+						if menu.mappedcompassmenuoptions[30][i] then
+							text2 = menu.getControlName(menu.mappedcompassmenuoptions[30][i][1][1], menu.mappedcompassmenuoptions[30][i][1][2])
+							if #menu.mappedcompassmenuoptions[30][i] > 1 then
+								text2 = text2 .. ", ..."
+							end
+						end
+
+						table.insert(options, { id = "30:" .. i, text = ColorText["compass_1_ring_pointer"] .. " " .. string.format("\27[input_device_radial_1_%d]\27X", i) .. ReadText(1030, 10 + i), icon = "", text2 = text2, displayremoveoption = false })
 					end
 					for i = 1, 8 do
-						table.insert(options, { id = "31:" .. i, text = ReadText(1030, i), icon = "", text2 = string.format("\27[input_device_radial_2_%d]", i), displayremoveoption = false })
+						local text2 = "- "
+						if menu.mappedcompassmenuoptions[31][i] then
+							text2 = menu.getControlName(menu.mappedcompassmenuoptions[31][i][1][1], menu.mappedcompassmenuoptions[31][i][1][2])
+							if #menu.mappedcompassmenuoptions[31][i] > 1 then
+								text2 = text2 .. ", ..."
+							end
+						end
+
+						table.insert(options, { id = "31:" .. i, text = ColorText["compass_2_ring_pointer"] .. " " .. string.format("\27[input_device_radial_2_%d]\27X", i) .. ReadText(1030, 10 + i), icon = "", text2 = text2, displayremoveoption = false })
 					end
 
-					row[7]:setColSpan(2):createDropDown(options, { startOption = compassmenubutton and (compassmenubutton.input1 .. ":" .. compassmenubutton.input2) or "30:0" })
+					row[7]:setColSpan(2):createDropDown(options, { startOption = compassmenubutton and (compassmenubutton.input1 .. ":" .. compassmenubutton.input2) or "30:0", textOverride = compassmenubutton and "" or " ", text2Override = " " }):setText2Properties({ color = Color["text_inactive"] })
 					if compassmenubutton then
 						row[7].handlers.onDropDownConfirmed = function(_, id) return menu.dropdownControl(row.index, { controltype, code, compassmenubutton.input1, compassmenubutton.input2, compassmenubutton.input3, 7, false, context, false }, id) end
 					else
@@ -4460,12 +4485,30 @@ function menu.displayOption(ftable, option, numCols)
 	return row, row2
 end
 
+function menu.addMappedButtonData(array, found, input, controltype, controlcode)
+	if array[input[2]] then
+		if not found[input[1] .. "-" .. input[2] .. "-" .. controltype .. "-" .. controlcode] then
+			found[input[1] .. "-" .. input[2] .. "-" .. controltype .. "-" .. controlcode] = true
+			table.insert(array[input[2]], { controltype, controlcode })
+		end
+	else
+		found[input[1] .. "-" .. input[2] .. "-" .. controltype .. "-" .. controlcode] = true
+		array[input[2]] = { { controltype, controlcode } }
+	end
+end
+
 function menu.getControlsData()
 	menu.controls = { ["actions"] = GetInputActionMap(), ["states"] = GetInputStateMap(), ["ranges"] = GetInputRangeMap(), ["functions"] = config.input.controlFunctions }
+
+	local found = {}
 
 	menu.mappedmousebuttons = {
 		targetselect = {},
 		targetinteract = {},
+	}
+	menu.mappedcompassmenuoptions = {
+		[30] = {},
+		[31] = {},
 	}
 
 	for _, controlgroup in ipairs(config.input.controlsorder.space) do
@@ -4478,11 +4521,9 @@ function menu.getControlsData()
 					if type(inputs) == "table" then
 						for i, input in ipairs(inputs) do
 							if input[1] == 19 then
-								if menu.mappedmousebuttons[input[2]] then
-									table.insert(menu.mappedmousebuttons[input[2]], { controltype, controlcode })
-								else
-									menu.mappedmousebuttons[input[2]] = { { controltype, controlcode } }
-								end
+								menu.addMappedButtonData(menu.mappedmousebuttons, found, input, controltype, controlcode)
+							elseif (input[1] == 30) or (input[1] == 31) then
+								menu.addMappedButtonData(menu.mappedcompassmenuoptions[input[1]], found, input, controltype, controlcode)
 							end
 						end
 					end
@@ -4497,12 +4538,10 @@ function menu.getControlsData()
 								elseif controlcode == 131 then -- INPUT_STATE_TARGETMOUSE_INTERACTION_MENU
 									menu.mappedmousebuttons.targetinteract[input[2]] = true
 								else
-									if menu.mappedmousebuttons[input[2]] then
-										table.insert(menu.mappedmousebuttons[input[2]], { controltype, controlcode })
-									else
-										menu.mappedmousebuttons[input[2]] = { { controltype, controlcode } }
-									end
+									menu.addMappedButtonData(menu.mappedmousebuttons, found, input, controltype, controlcode)
 								end
+							elseif (input[1] == 30) or (input[1] == 31) then
+								menu.addMappedButtonData(menu.mappedcompassmenuoptions[input[1]], found, input, controltype, controlcode)
 							end
 						end
 					end
@@ -4512,11 +4551,9 @@ function menu.getControlsData()
 					if type(inputs) == "table" then
 						for i, input in ipairs(inputs) do
 							if input[1] == 19 then
-								if menu.mappedmousebuttons[input[2]] then
-									table.insert(menu.mappedmousebuttons[input[2]], { controltype, controlcode })
-								else
-									menu.mappedmousebuttons[input[2]] = { { controltype, controlcode } }
-								end
+								menu.addMappedButtonData(menu.mappedmousebuttons, found, input, controltype, controlcode)
+							elseif (input[1] == 30) or (input[1] == 31) then
+								menu.addMappedButtonData(menu.mappedcompassmenuoptions[input[1]], found, input, controltype, controlcode)
 							end
 						end
 					end
@@ -4532,12 +4569,10 @@ function menu.getControlsData()
 							elseif (controltype == "states") and (controlcode == 131) then -- INPUT_STATE_TARGETMOUSE_INTERACTION_MENU
 								menu.mappedmousebuttons.targetinteract[input[2]] = true
 							else
-								if menu.mappedmousebuttons[input[2]] then
-									table.insert(menu.mappedmousebuttons[input[2]], { controltype, controlcode })
-								else
-									menu.mappedmousebuttons[input[2]] = { { controltype, controlcode } }
-								end
+								menu.addMappedButtonData(menu.mappedmousebuttons, found, input, controltype, controlcode)
 							end
+						elseif (input[1] == 30) or (input[1] == 31) then
+							menu.addMappedButtonData(menu.mappedcompassmenuoptions[input[1]], found, input, controltype, controlcode)
 						end
 					end
 				end
@@ -4630,7 +4665,7 @@ function menu.getInputName(source, code, signum)
 		return ReadText(1009, code)
 	elseif source >= 30 and source <= 31 then
 		-- compass menu buttons
-		return ReadText(1030, code), ColorText["text_input_device_compassmenu"] .. string.format("\27[input_device_radial_%d_%d]", source - 29, code)
+		return ((source == 30) and ColorText["compass_1_ring_pointer"] or ColorText["compass_2_ring_pointer"]) .. string.format("\27[input_device_radial_%d_%d]\27X", source - 29, code) .. ReadText(1030, code), ""
 	else
 		DebugError("unknown input source '".. source .. "' - this should never happen [Florian]")
 		return ""
@@ -10398,7 +10433,15 @@ function menu.displaySavegameOptions(optionParameter)
 		customsavetitlerow[2]:setColSpan(4):createText("Custom Saves", config.subHeaderTextProperties) -- (cheat only)
 		-- sort by name, but don't care whether customsave prefix is followed by _ or -
 		local prefixlen = string.len("customsave_")
-		table.sort(customsaves, function (a, b) return string.lower(string.sub(a.filename, prefixlen + 1)) < string.lower(string.sub(b.filename, prefixlen + 1)) end)
+		if menu.saveSort == "date" then
+			table.sort(customsaves, function (a, b) return a.rawtime > b.rawtime end)
+		elseif menu.saveSort == "date_inv" then
+			table.sort(customsaves, function (a, b) return a.rawtime < b.rawtime end)
+		elseif (menu.saveSort == "name_inv") then
+			table.sort(customsaves, function (a, b) return string.lower(string.sub(a.filename, prefixlen + 1)) > string.lower(string.sub(b.filename, prefixlen + 1)) end)
+		else
+			table.sort(customsaves, function (a, b) return string.lower(string.sub(a.filename, prefixlen + 1)) < string.lower(string.sub(b.filename, prefixlen + 1)) end)
+		end
 		for i, savegame in ipairs(customsaves) do
 			local entry = string.format("%s - %s", string.sub(savegame.filename, prefixlen + 1), savegame.displayedname)
 			savegame.displayedname = entry

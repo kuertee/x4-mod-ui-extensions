@@ -1534,6 +1534,7 @@ local config = {
 		["SalvageInRadius"]			= 1,
 		["DeployObjectAtPosition"]	= 1,
 		["AttackInRange"]			= 1,
+		["RescueInRange"]			= 1,
 		["ProtectPosition"]			= 1,
 		["MiningCollect"]			= 1,
 		["MiningPlayer"]			= 1,
@@ -2846,6 +2847,34 @@ function menu.buttonSetOrderParam(order, param, index, value, instance)
 	else
 		DebugError("menu.buttonSetOrderParam: function called with invalid object: " .. ffi.string(C.GetComponentName(menu.infoSubmenuObject)) .. " " .. tostring(menu.infoSubmenuObject))
 	end
+end
+
+function menu.checkboxOrderPlayerOverride(order, param, paramdata, overrideparam, overrideparamdata, checked)
+	local object = ConvertStringToLuaID(tostring(menu.infoSubmenuObject))
+	
+	if checked then
+		-- remove all overrides
+		for listidx = #overrideparamdata.value, 1, -1 do
+			RemoveOrderListParam(object, order, overrideparam, listidx)
+		end
+	else
+		-- init override list with current list
+		for _, value in ipairs(paramdata.value) do
+			SetOrderParam(object, order, overrideparam, nil, value)
+		end
+	end
+	menu.refreshInfoFrame()
+end
+
+function menu.checkboxOrderPlayerOverrideValue(order, overrideparam, listidx, value)
+	local object = ConvertStringToLuaID(tostring(menu.infoSubmenuObject))
+
+	if listidx then
+		RemoveOrderListParam(object, order, overrideparam, listidx)
+	else
+		SetOrderParam(object, order, overrideparam, nil, value)
+	end
+	menu.refreshInfoFrame()
 end
 
 function menu.slidercellSetOrderParam(order, param, index, value, instance)
@@ -7963,6 +7992,31 @@ function menu.getOrderInfo(ship, gettargetname)
 					-- do not show these default orders if they reached the wait part
 					behaviouricon = ""
 				end
+			elseif defaultorder.orderdef.id == "TradeRoutine" then
+				local params = GetOrderParams(ship, "default")
+				local overridewares = ""
+				for i, entry in ipairs(params) do
+					if entry.name == "warebasket_override" then
+						local sortedwares = {}
+						for _, ware in ipairs(entry.value) do
+							table.insert(sortedwares, ware)
+						end
+						table.sort(sortedwares, Helper.sortWareName)
+
+						for j, ware in ipairs(sortedwares) do
+							if j == 1 then
+								overridewares = overridewares .. "\n\n" .. ReadText(1001, 11651) .. ReadText(1001, 120)
+							elseif j > 5 then
+								overridewares = overridewares .. "\n· " .. ((#entry.value == 6) and GetWareData(ware, "name") or string.format(ReadText(1001, 11633), #entry.value - 5))
+								break
+							end
+							overridewares = overridewares .. "\n· " .. GetWareData(ware, "name")
+						end
+						break
+					end
+				end
+
+				behaviourdescription = behaviourdescription .. overridewares
 			end
 		end
 	elseif next(defaultorder) then
@@ -7975,6 +8029,31 @@ function menu.getOrderInfo(ship, gettargetname)
 			if defaultorder.issyncpointreached then
 				icon = waiticon
 			end
+		elseif defaultorder.orderdef.id == "TradeRoutine" then
+			local params = GetOrderParams(ship, "default")
+			local overridewares = ""
+			for i, entry in ipairs(params) do
+				if entry.name == "warebasket_override" then
+					local sortedwares = {}
+					for _, ware in ipairs(entry.value) do
+						table.insert(sortedwares, ware)
+					end
+					table.sort(sortedwares, Helper.sortWareName)
+
+					for j, ware in ipairs(sortedwares) do
+						if j == 1 then
+							overridewares = overridewares .. "\n\n" .. ReadText(1001, 11651) .. ReadText(1001, 120)
+						elseif j > 5 then
+							overridewares = overridewares .. "\n· " .. ((#entry.value == 6) and GetWareData(ware, "name") or string.format(ReadText(1001, 11633), #entry.value - 5))
+							break
+						end
+						overridewares = overridewares .. "\n· " .. GetWareData(ware, "name")
+					end
+					break
+				end
+			end
+
+			description = description .. overridewares
 		end
 		color = Color["order_temp"]
 		if gettargetname then
@@ -8409,11 +8488,11 @@ function menu.createPropertyRow(instance, ftable, component, iteration, commande
 					col = col - 1
 				end
 				if currentordericon ~= "" then
-					row[col]:createIcon(currentorderrawicon, { color = currentorderisoverride and function () return menu.overrideOrderIcon(currentordercolor, false) end or currentordercolor, width = config.mapRowHeight, height = config.mapRowHeight, mouseOverText = currentordername .. "\n" .. currentorderdescription .. (currentordermouseovertext and ("\n" .. ColorText["text_error"] .. currentordermouseovertext .. "\27X") or "") })
+					row[col]:createIcon(currentorderrawicon, { color = currentorderisoverride and function () return menu.overrideOrderIcon(currentordercolor, false) end or currentordercolor, width = config.mapRowHeight, height = config.mapRowHeight, mouseOverText = currentordername .. "\n" .. Helper.indentText(currentorderdescription .. (currentordermouseovertext and ("\n" .. ColorText["text_error"] .. currentordermouseovertext .. "\27X") or ""), "  ", GetCurrentMouseOverWidth(), GetCurrentMouseOverFont()) })
 					col = col - 1
 				end
 				if behaviouricon ~= "" then
-					row[col]:createIcon(behaviourrawicon, { color = Color["order_temp"], width = config.mapRowHeight, height = config.mapRowHeight, mouseOverText = behaviourname })
+					row[col]:createIcon(behaviourrawicon, { color = Color["order_temp"], width = config.mapRowHeight, height = config.mapRowHeight, mouseOverText = behaviourname .. "\n" .. Helper.indentText(behaviourdescription, "  ", GetCurrentMouseOverWidth(), GetCurrentMouseOverFont()) })
 					col = col - 1
 				end
 			end
@@ -9078,18 +9157,40 @@ function menu.displayOrderParam(ftable, orderidx, order, paramidx, param, listid
 		paramcolor = Color["text_success"]
 	end
 
+	local paramtext = (param.text ~= "") and ("  " .. param.text .. ReadText(1001, 120)) or ""
+
 	if listidx then
 		local row = ftable:addRow({ orderidx, paramidx, listidx }, {  })
 		if selectedorder and (selectedorder[1] == orderidx) and (selectedorder[2] == paramidx) and (selectedorder[3] == listidx) then
 			menu.selectedRows["infotable" .. instance] = row.index
 			menu.selectedCols["infotable" .. instance] = nil
 		end
-		row[menu.infoTableData[instance].hasloop and 4 or 2]:setColSpan(menu.infoTableData[instance].hasloop and 1 or 3):createText("  " .. param.text .. ReadText(1001, 120))
-		local active = paramactive and (not isplayeroccupiedship) and (((order.state == "setup") and (paramidx <= (order.actualparams + 1))) or ((order.state ~= "setup") and param.editable))
-		row[5]:setColSpan(5):createButton({ active = active }):setText(value and tostring(value) or "", { halign = "center", color = paramcolor })
-		row[5].handlers.onClick = function () return menu.buttonSetOrderParam(orderidx, paramidx, listidx, nil, instance) end
-		row[10]:createButton({ active = active and ((not order.params[paramidx].required) or (numValues > 1)) }):setText("x", { halign = "center", color = paramcolor })
-		row[10].handlers.onClick = function () return menu.buttonRemoveListParam(orderidx, paramidx, listidx, instance) end
+
+		if param.canplayeroverride then
+			local checked = (#param.canplayeroverride.param.value == 0) or (param.canplayeroverride.values[param.value] ~= nil)
+			local active = #param.canplayeroverride.param.value > 1
+			local mouseovertext = ""
+
+			if #param.canplayeroverride.param.value > 0 then
+				if not checked then
+					active = true
+				elseif not active then
+					mouseovertext = ReadText(1026, 3283)
+				end
+			end
+
+			row[5]:setColSpan(1)
+			row[6]:createCheckBox(checked, { active = active, width = config.mapRowHeight, height = config.mapRowHeight, mouseOverText = mouseovertext })
+			row[6].handlers.onClick = function () menu.checkboxOrderPlayerOverrideValue(orderidx, param.canplayeroverride.paramidx, param.canplayeroverride.values[param.value], param.value) end
+			row[7]:createText(value and tostring(value) or "")
+		else
+			row[menu.infoTableData[instance].hasloop and 4 or 2]:setColSpan(menu.infoTableData[instance].hasloop and 1 or 3):createText(paramtext)
+			local active = paramactive and (not isplayeroccupiedship) and (((order.state == "setup") and (paramidx <= (order.actualparams + 1))) or ((order.state ~= "setup") and param.editable))
+			row[5]:setColSpan(7):createButton({ active = active }):setText(value and tostring(value) or "", { halign = "center", color = paramcolor })
+			row[5].handlers.onClick = function () return menu.buttonSetOrderParam(orderidx, paramidx, listidx, nil, instance) end
+			row[12]:createButton({ active = active and ((not order.params[paramidx].required) or (numValues > 1)) }):setText("x", { halign = "center", color = paramcolor })
+			row[12].handlers.onClick = function () return menu.buttonRemoveListParam(orderidx, paramidx, listidx, instance) end
+		end
 	elseif config.complexOrderParams[param.type] then
 		local data = config.complexOrderParams[param.type].data(param.value)
 		local playerreadonly = param.inputparams and param.inputparams.playerreadonly
@@ -9143,6 +9244,7 @@ function menu.displayOrderParam(ftable, orderidx, order, paramidx, param, listid
 		local slidercellProperties = {
 			height = config.mapRowHeight,
 			bgColor = Color["slider_background_transparent"],
+			valueColor = paramactive and Color["slider_value"] or Color["slider_value_inactive"],
 			min       = minselect,
 			max       = maxselect,
 			start     = math.max(minselect, math.min(maxselect, curvalue or startvalue or minselect)),
@@ -9162,8 +9264,8 @@ function menu.displayOrderParam(ftable, orderidx, order, paramidx, param, listid
 			menu.selectedCols["infotable" .. instance] = nil
 		end
 		row[menu.infoTableData[instance].hasloop and 4 or 2]:setColSpan(menu.infoTableData[instance].hasloop and 1 or 3)
-		row[menu.infoTableData[instance].hasloop and 4 or 2]:createText("  " .. param.text .. ReadText(1001, 120))
-		row[5]:setColSpan(6):createSliderCell(slidercellProperties):setText("", { fontsize = config.mapFontSize, color = paramcolor })
+		row[menu.infoTableData[instance].hasloop and 4 or 2]:createText(paramtext)
+		row[5]:setColSpan(8):createSliderCell(slidercellProperties):setText("", { fontsize = config.mapFontSize, color = paramcolor })
 		row[5].handlers.onSliderCellConfirm = function (_, value) return menu.slidercellSetOrderParam(orderidx, paramidx, listidx, value, instance) end
 		row[5].handlers.onSliderCellActivated = function() menu.noupdate = true end
 		row[5].handlers.onSliderCellDeactivated = function() menu.noupdate = false end
@@ -9173,7 +9275,7 @@ function menu.displayOrderParam(ftable, orderidx, order, paramidx, param, listid
 			menu.selectedRows["infotable" .. instance] = row.index
 			menu.selectedCols["infotable" .. instance] = nil
 		end
-		row[menu.infoTableData[instance].hasloop and 4 or 2]:setColSpan(menu.infoTableData[instance].hasloop and 1 or 3):createText("  " .. param.text .. ReadText(1001, 120))
+		row[menu.infoTableData[instance].hasloop and 4 or 2]:setColSpan(menu.infoTableData[instance].hasloop and 1 or 3):createText(paramtext)
 		local active = paramactive and (not isplayeroccupiedship) and (((order.state == "setup") and (paramidx <= (order.actualparams + 1))) or ((order.state ~= "setup") and param.editable))
 		local rawvalue = param.value ~= 0
 		if ismissing then
@@ -9187,8 +9289,8 @@ function menu.displayOrderParam(ftable, orderidx, order, paramidx, param, listid
 			menu.selectedRows["infotable" .. instance] = row.index
 			menu.selectedCols["infotable" .. instance] = nil
 		end
-		row[menu.infoTableData[instance].hasloop and 4 or 2]:setColSpan(menu.infoTableData[instance].hasloop and 1 or 3):createText("  " .. param.text .. ReadText(1001, 120))
-		row[5]:setColSpan(6)
+		row[menu.infoTableData[instance].hasloop and 4 or 2]:setColSpan(menu.infoTableData[instance].hasloop and 1 or 3):createText(paramtext)
+		row[5]:setColSpan(8)
 		local active = paramactive and (not isplayeroccupiedship) and (((order.state == "setup") and (paramidx <= (order.actualparams + 1))) or ((order.state ~= "setup") and param.editable))
 		local text = value and tostring(value) or ""
 		local height = math.max(config.mapRowHeight, math.ceil(C.GetTextHeight(text, Helper.standardFont, Helper.standardFontSize, row[5]:getWidth())) + Helper.borderSize)
@@ -9206,14 +9308,16 @@ function menu.displayFailureParam(ftable, failureidx, paramidx, param, listidx, 
 
 	local value = menu.getParamValue(param.type, param.value, param.inputparams)
 
+	local paramtext = (param.text ~= "") and ("  " .. param.text .. ReadText(1001, 120)) or ""
+
 	if listidx then
 		local row = ftable:addRow({ "failure", failureidx, paramidx, listidx }, { interactive = false })
 		if selectedorder and (selectedorder[1] == "failure") and (selectedorder[2] == failureidx) and (selectedorder[3] == paramidx) and (selectedorder[4] == listidx) then
 			menu.selectedRows["infotable" .. instance] = row.index
 			menu.selectedCols["infotable" .. instance] = nil
 		end
-		row[menu.infoTableData[instance].hasloop and 4 or 2]:setColSpan(menu.infoTableData[instance].hasloop and 1 or 3):createText("  " .. param.text .. ReadText(1001, 120))
-		row[5]:setColSpan(6):createButton({ active = false }):setText(value and tostring(value) or "", { halign = "center" })
+		row[menu.infoTableData[instance].hasloop and 4 or 2]:setColSpan(menu.infoTableData[instance].hasloop and 1 or 3):createText(paramtext)
+		row[5]:setColSpan(8):createButton({ active = false }):setText(value and tostring(value) or "", { halign = "center" })
 	elseif config.complexOrderParams[param.type] then
 		local data = config.complexOrderParams[param.type].data(param.value)
 		if next(data) then
@@ -9285,15 +9389,15 @@ function menu.displayFailureParam(ftable, failureidx, paramidx, param, listidx, 
 			menu.selectedCols["infotable" .. instance] = nil
 		end
 		row[menu.infoTableData[instance].hasloop and 4 or 2]:setColSpan(menu.infoTableData[instance].hasloop and 1 or 3)
-		row[menu.infoTableData[instance].hasloop and 4 or 2]:createText("  " .. param.text .. ReadText(1001, 120))
-		row[5]:setColSpan(6):createSliderCell(slidercellProperties):setText("", { fontsize = config.mapFontSize })
+		row[menu.infoTableData[instance].hasloop and 4 or 2]:createText(paramtext)
+		row[5]:setColSpan(8):createSliderCell(slidercellProperties):setText("", { fontsize = config.mapFontSize })
 	elseif param.type == "bool" then
 		local row = ftable:addRow({ "failure", failureidx, paramidx, listidx }, { interactive = false })
 		if selectedorder and (selectedorder[1] == "failure") and (selectedorder[2] == failureidx) and (selectedorder[3] == paramidx) and (selectedorder[4] == listidx) then
 			menu.selectedRows["infotable" .. instance] = row.index
 			menu.selectedCols["infotable" .. instance] = nil
 		end
-		row[menu.infoTableData[instance].hasloop and 4 or 2]:setColSpan(menu.infoTableData[instance].hasloop and 1 or 3):createText("  " .. param.text .. ReadText(1001, 120))
+		row[menu.infoTableData[instance].hasloop and 4 or 2]:setColSpan(menu.infoTableData[instance].hasloop and 1 or 3):createText(paramtext)
 		local rawvalue = param.value ~= 0
 		if ismissing then
 			rawvalue = false
@@ -9305,8 +9409,8 @@ function menu.displayFailureParam(ftable, failureidx, paramidx, param, listidx, 
 			menu.selectedRows["infotable" .. instance] = row.index
 			menu.selectedCols["infotable" .. instance] = nil
 		end
-		row[menu.infoTableData[instance].hasloop and 4 or 2]:setColSpan(menu.infoTableData[instance].hasloop and 1 or 3):createText("  " .. param.text .. ReadText(1001, 120))
-		row[5]:setColSpan(6)
+		row[menu.infoTableData[instance].hasloop and 4 or 2]:setColSpan(menu.infoTableData[instance].hasloop and 1 or 3):createText(paramtext)
+		row[5]:setColSpan(8)
 		local text = value and tostring(value) or ""
 		local height = math.max(config.mapRowHeight, math.ceil(C.GetTextHeight(text, Helper.standardFont, Helper.standardFontSize, row[5]:getWidth())) + Helper.borderSize)
 		row[5]:createButton({ active = false, height = height }):setText(text, { halign = "center", y = (height - config.mapRowHeight) / 2 })
@@ -9939,19 +10043,23 @@ function menu.createOrderQueue(frame, mode, instance)
 		end
 	end
 
-	local ftable = frame:addTable(10, { tabOrder = 1 })
+	local numcols = 12
+	local ftable = frame:addTable(numcols, { tabOrder = 1 })
 	ftable:setColWidth(1, Helper.standardTextHeight)
 	ftable:setColWidth(2, Helper.standardTextHeight)
 	ftable:setColWidth(3, 2 * Helper.standardTextHeight)
 	ftable:setColWidth(4, frame.properties.width / 3 - 4 * Helper.scaleY(Helper.standardTextHeight) - 3 * Helper.borderSize, false)
-	ftable:setColWidthPercent(5, 33)
-	ftable:setColWidth(7, Helper.standardTextHeight)
-	ftable:setColWidth(8, Helper.standardTextHeight)
+	ftable:setColWidth(5, Helper.standardTextHeight)
+	ftable:setColWidth(6, Helper.standardTextHeight)
+	ftable:setColWidth(7, frame.properties.width / 3 - 2 * Helper.scaleY(Helper.standardTextHeight) - Helper.borderSize, false)
 	ftable:setColWidth(9, Helper.standardTextHeight)
 	ftable:setColWidth(10, Helper.standardTextHeight)
+	ftable:setColWidth(11, Helper.standardTextHeight)
+	ftable:setColWidth(12, Helper.standardTextHeight)
 
 	ftable:setDefaultCellProperties("button", { height = config.mapRowHeight })
 	ftable:setDefaultBackgroundColSpan(1, 10)
+	ftable:setDefaultColSpan(5, 3)
 
 	-- isvalid == controllable.isclass.ship and controllable.isplayerowned
 	local isvalid = menu.isInfoModeValidFor(menu.infoSubmenuObject, mode)
@@ -9975,21 +10083,21 @@ function menu.createOrderQueue(frame, mode, instance)
 
 	--- title ---
 	local row = ftable:addRow(false, { fixed = true, bgColor = Color["row_title_background"] })
-	row[1]:setColSpan(10):createText(ReadText(1001, 2427), Helper.headerRowCenteredProperties)
+	row[1]:setColSpan(numcols):createText(ReadText(1001, 2427), Helper.headerRowCenteredProperties)
 	local row = ftable:addRow(false, { fixed = true, bgColor = Color["row_title_background"] })
-	row[1]:setColSpan(10):createText((mode == "orderqueue") and ReadText(1001, 8360) or ReadText(1001, 8361), Helper.headerRowCenteredProperties)
+	row[1]:setColSpan(numcols):createText((mode == "orderqueue") and ReadText(1001, 8360) or ReadText(1001, 8361), Helper.headerRowCenteredProperties)
 	--- name ---
 	local row = ftable:addRow({ "info_focus" }, { fixed = true, bgColor = Color["row_title_background"] })
-	row[10]:createButton({ height = Helper.headerRow1Height, width = config.mapRowHeight, cellBGColor = Color["row_background"] }):setIcon("menu_center_selection", { width = Helper.standardTextHeight, height = Helper.standardTextHeight, y = (Helper.headerRow1Height - Helper.standardTextHeight) / 2 })
-	row[10].handlers.onClick = function () return C.SetFocusMapComponent(menu.holomap, menu.infoSubmenuObject, true) end
+	row[numcols]:createButton({ height = Helper.headerRow1Height, width = config.mapRowHeight, cellBGColor = Color["row_background"] }):setIcon("menu_center_selection", { width = Helper.standardTextHeight, height = Helper.standardTextHeight, y = (Helper.headerRow1Height - Helper.standardTextHeight) / 2 })
+	row[numcols].handlers.onClick = function () return C.SetFocusMapComponent(menu.holomap, menu.infoSubmenuObject, true) end
 	if C.IsComponentClass(menu.infoSubmenuObject, "object") then
-		row[1]:setBackgroundColSpan(9):setColSpan(5):createText(ffi.string(C.GetComponentName(menu.infoSubmenuObject)), Helper.headerRow1Properties)
+		row[1]:setBackgroundColSpan(numcols - 1):setColSpan(7):createText(ffi.string(C.GetComponentName(menu.infoSubmenuObject)), Helper.headerRow1Properties)
 		row[1].properties.color = color
-		row[6]:setColSpan(4):createText(ffi.string(C.GetObjectIDCode(menu.infoSubmenuObject)), Helper.headerRow1Properties)
-		row[6].properties.color = color
-		row[6].properties.halign = "right"
+		row[8]:setColSpan(4):createText(ffi.string(C.GetObjectIDCode(menu.infoSubmenuObject)), Helper.headerRow1Properties)
+		row[8].properties.color = color
+		row[8].properties.halign = "right"
 	else
-		row[1]:setBackgroundColSpan(9):setColSpan(9):createText(ffi.string(C.GetComponentName(menu.infoSubmenuObject)), Helper.headerRow1Properties)
+		row[1]:setBackgroundColSpan(numcols - 1):setColSpan(numcols - 1):createText(ffi.string(C.GetComponentName(menu.infoSubmenuObject)), Helper.headerRow1Properties)
 		row[1].properties.color = color
 	end
 
@@ -10012,21 +10120,21 @@ function menu.createOrderQueue(frame, mode, instance)
 			--- name ---
 			local row = ftable:addRow(false, { bgColor = Color["row_background_unselectable"] })
 			row[1]:setColSpan(4):createText(postname .. ReadText(1001, 120))
-			row[5]:setColSpan(6):createText(name)
+			row[5]:setColSpan(8):createText(name)
 			--- skills ---
 			local adjustedskill = pilot and math.floor(C.GetEntityCombinedSkill(pilot64, nil, isplayer and "playerpilot" or "aipilot") * 15 / 100) or 0
 			local row = ftable:addRow(false, { bgColor = Color["row_background_unselectable"] })
 			row[1]:setColSpan(4):createText(ReadText(1001, 9124) .. ReadText(1001, 120), { mouseOverText = ReadText(1026, 2) })
-			row[5]:setColSpan(6):createText(pilot and Helper.displaySkill(adjustedskill) or "-", { color = pilot and Color["text_skills"] or nil, mouseOverText = ReadText(1026, 2) })
+			row[5]:setColSpan(8):createText(pilot and Helper.displaySkill(adjustedskill) or "-", { color = pilot and Color["text_skills"] or nil, mouseOverText = ReadText(1026, 2) })
 			--- commander ---
 			local row = ftable:addRow({ infoTableData.commander }, {  })
 			row[1]:setColSpan(4):createText(ReadText(1001, 1112) .. ReadText(1001, 120))
 			if infoTableData.commander then
-				row[5]:setColSpan(5):createText(commandername, { color = commandercolor })
-				row[10]:createButton():setIcon("menu_center_selection", { width = Helper.standardTextHeight, height = Helper.standardTextHeight })
-				row[10].handlers.onClick = function () return C.SetFocusMapComponent(menu.holomap, ConvertIDTo64Bit(infoTableData.commander), true) end
+				row[5]:setColSpan(7):createText(commandername, { color = commandercolor })
+				row[12]:createButton():setIcon("menu_center_selection", { width = Helper.standardTextHeight, height = Helper.standardTextHeight })
+				row[12].handlers.onClick = function () return C.SetFocusMapComponent(menu.holomap, ConvertIDTo64Bit(infoTableData.commander), true) end
 			else
-				row[5]:setColSpan(6):createText(commandername, { color = commandercolor })
+				row[5]:setColSpan(8):createText(commandername, { color = commandercolor })
 			end
 			--- current ai command ---
 			if pilot and IsValidComponent(pilot) then
@@ -10037,20 +10145,20 @@ function menu.createOrderQueue(frame, mode, instance)
 					aicommand = aicommandstack[1].command
 					aicommandparam = aicommandstack[1].param
 				end
-				row[5]:setColSpan(6):createText(Helper.unlockInfo(unlocked_operator_commands, string.format(aicommand, IsComponentClass(aicommandparam, "component") and GetComponentData(aicommandparam, "name") or nil)))
+				row[5]:setColSpan(8):createText(Helper.unlockInfo(unlocked_operator_commands, string.format(aicommand, IsComponentClass(aicommandparam, "component") and GetComponentData(aicommandparam, "name") or nil)))
 				local row = ftable:addRow(false, { bgColor = Color["row_background_unselectable"] })
 				local numaicommands = #aicommandstack
 				if numaicommands > 1 then
 					aicommandaction = aicommandstack[numaicommands].command
 					aicommandactionparam = aicommandstack[numaicommands].param
 				end
-				row[3]:setColSpan(6):createText(Helper.unlockInfo(unlocked_operator_commands, string.format(aicommandaction, IsComponentClass(aicommandactionparam, "component") and GetComponentData(aicommandactionparam, "name") or nil)))
+				row[3]:setColSpan(8):createText(Helper.unlockInfo(unlocked_operator_commands, string.format(aicommandaction, IsComponentClass(aicommandactionparam, "component") and GetComponentData(aicommandactionparam, "name") or nil)))
 			end
 			--- subordinates ---
 			local subordinates = GetSubordinates(menu.infoSubmenuObject, nil, true)
 			local row = ftable:addRow(false, { bgColor = Color["row_background_unselectable"] })
 			row[1]:setColSpan(4):createText(ReadText(1001, 1503) .. ReadText(1001, 120))
-			row[5]:setColSpan(6):createText(#subordinates)
+			row[5]:setColSpan(8):createText(#subordinates)
 			--- formation ---
 			local n = C.GetNumFormationShapes()
 			local buf = ffi.new("UIFormationInfo[?]", n)
@@ -10071,18 +10179,18 @@ function menu.createOrderQueue(frame, mode, instance)
 				menu.selectedCols["infotable" .. instance] = nil
 			end
 			row[1]:setColSpan(4):createText(ReadText(1001, 8307) .. ReadText(1001, 120))
-			row[5]:setColSpan(6):createDropDown(formationOptions, { height = config.mapRowHeight, startOption = formation, active = isvalid and (#subordinates > 0), textOverride = (#subordinates == 0) and ReadText(20223, 11) or nil }):setTextProperties({ fontsize = config.mapFontSize }):setText2Properties({ fontsize = config.mapFontSize, color = Color["text_skills"], halign = "right" })
+			row[5]:setColSpan(8):createDropDown(formationOptions, { height = config.mapRowHeight, startOption = formation, active = isvalid and (#subordinates > 0), textOverride = (#subordinates == 0) and ReadText(20223, 11) or nil }):setTextProperties({ fontsize = config.mapFontSize }):setText2Properties({ fontsize = config.mapFontSize, color = Color["text_skills"], halign = "right" })
 			row[5].handlers.onDropDownConfirmed = menu.dropdownBehaviourFormation
 			row[5].handlers.onDropDownActivated = function () menu.noupdate = true end
 		end
 
 		local row = ftable:addRow(false, {  })
-		row[1]:setColSpan(10):createText(" ")
+		row[1]:setColSpan(numcols):createText(" ")
 
 		---- actual order queue ----
 		--- title ---
 		local titlerow = ftable:addRow(false, { bgColor = Color["row_title_background"] })
-		titlerow[1]:setColSpan(10):createText((infoTableData.hasloop and (utf8.char(8734) .. " ") or "") .. ((mode == "orderqueue") and ReadText(1001, 3225) or ReadText(1001, 8318)) .. (infoTableData.hasloop and (" [" .. ReadText(1001, 11270) .. "]") or ""), Helper.headerRowCenteredProperties)
+		titlerow[1]:setColSpan(numcols):createText((infoTableData.hasloop and (utf8.char(8734) .. " ") or "") .. ((mode == "orderqueue") and ReadText(1001, 3225) or ReadText(1001, 8318)) .. (infoTableData.hasloop and (" [" .. ReadText(1001, 11270) .. "]") or ""), Helper.headerRowCenteredProperties)
 		titlerow[1].properties.helpOverlayID = "map_orderqueue"
 		titlerow[1].properties.helpOverlayText = " "
 		titlerow[1].properties.helpOverlayHeight = titlerow:getHeight()
@@ -10100,9 +10208,9 @@ function menu.createOrderQueue(frame, mode, instance)
 						nontempcounter = nontempcounter + 1
 					end
 				end
-				row[1]:setColSpan(10):createText(string.format(ReadText(1001, 11271), nontempcounter) .. ReadText(1001, 120), { font = Helper.standardFontBold })
+				row[1]:setColSpan(numcols):createText(string.format(ReadText(1001, 11271), nontempcounter) .. ReadText(1001, 120), { font = Helper.standardFontBold })
 			else
-				row[1]:setColSpan(10):createText(ReadText(1001, 11272), { font = Helper.standardFontBold })
+				row[1]:setColSpan(numcols):createText(ReadText(1001, 11272), { font = Helper.standardFontBold })
 			end
 			titlerow[1].properties.helpOverlayHeight = titlerow[1].properties.helpOverlayHeight + row:getHeight() + Helper.borderSize
 		end
@@ -10129,11 +10237,11 @@ function menu.createOrderQueue(frame, mode, instance)
 			if infoTableData.disabledmarker == i then
 				if next(infoTableData.defaultorder) and (not infoTableData.hasloop) then
 					local row = ftable:addRow(false, { bgColor = Color["row_background_unselectable"] })
-					row[2]:setColSpan(9):createText(ReadText(1001, 8320) .. ReadText(1001, 120) .. " " .. infoTableData.defaultorder.orderdefref.name, { font = Helper.standardFontBold })
+					row[2]:setColSpan(numcols - 1):createText(ReadText(1001, 8320) .. ReadText(1001, 120) .. " " .. infoTableData.defaultorder.orderdefref.name, { font = Helper.standardFontBold })
 				end
 
 				local row = ftable:addRow(false, {  })
-				row[1]:setColSpan(10):createText(ReadText(1001, 8319), { halign = "center", titleColor = Color["text_negative"] })
+				row[1]:setColSpan(numcols):createText(ReadText(1001, 8319), { halign = "center", titleColor = Color["text_negative"] })
 			end
 
 			-- orderdef
@@ -10277,31 +10385,31 @@ function menu.createOrderQueue(frame, mode, instance)
 				firstoverride = false
 			end
 			-- state
-			row[6]:createText(statecolor .. " [" .. order.statename .. "]", { halign = "right" })
+			row[8]:createText(statecolor .. " [" .. order.statename .. "]", { halign = "right" })
 			-- weapon config
-			row[7]:createButton({ active = isvalid and not isplayeroccupiedship, mouseOverText = ReadText(1001, 1105) }):setText("*", { halign = "center" })
-			row[7].handlers.onClick = function () return menu.buttonWeaponConfig(menu.infoSubmenuObject, i, false, instance) end
+			row[9]:createButton({ active = isvalid and not isplayeroccupiedship, mouseOverText = ReadText(1001, 1105) }):setText("*", { halign = "center" })
+			row[9].handlers.onClick = function () return menu.buttonWeaponConfig(menu.infoSubmenuObject, i, false, instance) end
 			-- up
-			row[8]:createButton({ active = isvalid and (not isplayeroccupiedship) and C.AdjustOrder(menu.infoSubmenuObject, oldidx, newupidx, enableup, false, true), mouseOverText = ReadText(1026, 3264) .. "\n".. ffi.string(C.GetDisplayedModifierKey("ctrl")) .. " - " .. ReadText(1026, 3277) }):setIcon("table_arrow_inv_up")
-			row[8].handlers.onClick = function (_, _, modified) return menu.buttonOrderUp(i, instance, modified) end
-			row[8].properties.uiTriggerID = "moveorderup"
+			row[10]:createButton({ active = isvalid and (not isplayeroccupiedship) and C.AdjustOrder(menu.infoSubmenuObject, oldidx, newupidx, enableup, false, true), mouseOverText = ReadText(1026, 3264) .. "\n".. ffi.string(C.GetDisplayedModifierKey("ctrl")) .. " - " .. ReadText(1026, 3277) }):setIcon("table_arrow_inv_up")
+			row[10].handlers.onClick = function (_, _, modified) return menu.buttonOrderUp(i, instance, modified) end
+			row[10].properties.uiTriggerID = "moveorderup"
 			-- down
-			row[9]:createButton({ active = isvalid and (not isplayeroccupiedship) and C.AdjustOrder(menu.infoSubmenuObject, oldidx, newdownidx, enabledown, false, true), mouseOverText = ReadText(1026, 3265) .. "\n" .. ffi.string(C.GetDisplayedModifierKey("ctrl")) .. " - " .. ReadText(1026, 3278) }):setIcon("table_arrow_inv_down")
-			row[9].handlers.onClick = function (_, _, modified) return menu.buttonOrderDown(i, instance, modified) end
-			row[9].properties.uiTriggerID = "moveorderdown"
+			row[11]:createButton({ active = isvalid and (not isplayeroccupiedship) and C.AdjustOrder(menu.infoSubmenuObject, oldidx, newdownidx, enabledown, false, true), mouseOverText = ReadText(1026, 3265) .. "\n" .. ffi.string(C.GetDisplayedModifierKey("ctrl")) .. " - " .. ReadText(1026, 3278) }):setIcon("table_arrow_inv_down")
+			row[11].handlers.onClick = function (_, _, modified) return menu.buttonOrderDown(i, instance, modified) end
+			row[11].properties.uiTriggerID = "moveorderdown"
 			-- remove
-			row[10]:createButton({ active = C.RemoveOrder(menu.infoSubmenuObject, i, false, true), helpOverlayID = "map_ordercancel", helpOverlayText = " ", helpOverlayHighlightOnly = true, mouseOverText = ReadText(1026, 3263) }):setText("x", { halign = "center" })
-			row[10].handlers.onClick = function () return menu.buttonRemoveOrder(i, instance) end
-			row[10].properties.uiTriggerID = "deleteorder"
+			row[12]:createButton({ active = C.RemoveOrder(menu.infoSubmenuObject, i, false, true), helpOverlayID = "map_ordercancel", helpOverlayText = " ", helpOverlayHighlightOnly = true, mouseOverText = ReadText(1026, 3263) }):setText("x", { halign = "center" })
+			row[12].handlers.onClick = function () return menu.buttonRemoveOrder(i, instance) end
+			row[12].properties.uiTriggerID = "deleteorder"
 			titlerow[1].properties.helpOverlayHeight = titlerow[1].properties.helpOverlayHeight + row:getHeight() + Helper.borderSize
 
 			if isextended then
 				if failure then
 					local row = ftable:addRow(nil, { bgColor = Color["row_background_unselectable"] })
-					row[infoTableData.hasloop and 4 or 2]:setColSpan(infoTableData.hasloop and 7 or 9):createText("  " .. Helper.getPassedTime(failure.timestamp) .. " - " .. failure.message, { color = Color["text_warning"] })
+					row[infoTableData.hasloop and 4 or 2]:setColSpan(infoTableData.hasloop and 9 or 11):createText("  " .. Helper.getPassedTime(failure.timestamp) .. " - " .. failure.message, { color = Color["text_warning"] })
 				elseif menu.cachedOrderFailures[tostring(id)] then
 					local row = ftable:addRow(nil, { bgColor = Color["row_background_unselectable"] })
-					row[infoTableData.hasloop and 4 or 2]:setColSpan(infoTableData.hasloop and 7 or 9):createText("  " .. Helper.getPassedTime(menu.cachedOrderFailures[tostring(id)].timestamp) .. " - " .. menu.cachedOrderFailures[tostring(id)].message, { color = Color["text_warning"] })
+					row[infoTableData.hasloop and 4 or 2]:setColSpan(infoTableData.hasloop and 9 or 11):createText("  " .. Helper.getPassedTime(menu.cachedOrderFailures[tostring(id)].timestamp) .. " - " .. menu.cachedOrderFailures[tostring(id)].message, { color = Color["text_warning"] })
 				end
 				for j, param in ipairs(order.params) do
 					if (not param.advanced) or (mode == "orderqueue_advanced") then
@@ -10309,7 +10417,7 @@ function menu.createOrderQueue(frame, mode, instance)
 							local playerreadonly = param.inputparams and param.inputparams.playerreadonly
 							if param.value then
 								for k, entry in ipairs(param.value) do
-									local param2 = { text = param.text .. " #" .. k, value = entry, type = param.inputparams.type, editable = param.editable, playerreadonly = playerreadonly }
+									local param2 = { text = (k == 1) and param.text or "", value = entry, type = param.inputparams.type, editable = param.editable, playerreadonly = playerreadonly }
 									menu.displayOrderParam(ftable, i, order, j, param2, k, instance)
 								end
 							end
@@ -10321,7 +10429,7 @@ function menu.createOrderQueue(frame, mode, instance)
 									menu.selectedCols["infotable" .. instance] = nil
 								end
 								local active = isvalid and (not isplayeroccupiedship) and (((order.state == "setup") and (j <= (order.actualparams + 1))) or ((order.state ~= "setup") and param.editable))
-								row[2]:setColSpan(9):createButton({ active = active }):setText("  " .. string.format(ReadText(1001, 3235), param.text), { halign = "center" })
+								row[2]:setColSpan(numcols - 1):createButton({ active = active }):setText("  " .. string.format(ReadText(1001, 3235), param.text), { halign = "center" })
 								row[2].handlers.onClick = function () return menu.buttonSetOrderParam(i, j, nil, nil, instance) end
 							end
 						elseif (param.type ~= "internal") then
@@ -10343,7 +10451,7 @@ function menu.createOrderQueue(frame, mode, instance)
 							menu.selectedCols["infotable" .. instance] = nil
 						end
 						row[2]:setColSpan(3):createText("  " .. ReadText(1001, 3237))
-						row[5]:setColSpan(6):createDropDown(syncPointOptions, { height = config.mapRowHeight, startOption = order.syncPointInfo.id, active = isvalid and (not isplayeroccupiedship) and order.isinfinite }):setTextProperties({ fontsize = config.mapFontSize, halign = "center" })
+						row[5]:setColSpan(8):createDropDown(syncPointOptions, { height = config.mapRowHeight, startOption = order.syncPointInfo.id, active = isvalid and (not isplayeroccupiedship) and order.isinfinite }):setTextProperties({ fontsize = config.mapFontSize, halign = "center" })
 						row[5].handlers.onDropDownConfirmed = function (_, id) return menu.dropdownNewSyncPoint(i, id) end
 						row[5].handlers.onDropDownActivated = function () menu.noupdate = true end
 					end
@@ -10368,11 +10476,11 @@ function menu.createOrderQueue(frame, mode, instance)
 				row[infoTableData.hasloop and 2 or 1].handlers.onClick = function () return menu.buttonExtendOrder(menu.infoSubmenuObject, i .. "syncpoint", instance, row.index, infoTableData.hasloop and 2 or 1) end
 
 				if order.syncPointInfo.id > 0 then
-					row[infoTableData.hasloop and 3 or 2]:setColSpan(infoTableData.hasloop and 7 or 8):createText(ReadText(1001, 3237) .. ReadText(1001, 120) .. " " .. Helper.getSyncPointName(order.syncPointInfo.id), { titleColor = color })
-					row[10]:createButton({ active = isvalid and not isplayeroccupiedship }):setText("x", { halign = "center" })
-					row[10].handlers.onClick = function () return menu.buttonRemoveOrderSyncPoint(i, instance) end
+					row[infoTableData.hasloop and 3 or 2]:setColSpan(infoTableData.hasloop and 9 or 10):createText(ReadText(1001, 3237) .. ReadText(1001, 120) .. " " .. Helper.getSyncPointName(order.syncPointInfo.id), { titleColor = color })
+					row[numcols]:createButton({ active = isvalid and not isplayeroccupiedship }):setText("x", { halign = "center" })
+					row[numcols].handlers.onClick = function () return menu.buttonRemoveOrderSyncPoint(i, instance) end
 				else
-					row[infoTableData.hasloop and 3 or 2]:setColSpan(infoTableData.hasloop and 8 or 9):createText(ReadText(1001, 3237) .. ReadText(1001, 120) .. " " .. ffi.string(C.GetComponentName(order.syncPointInfo.owningcontrollable)) .. " (" .. ffi.string(C.GetObjectIDCode(order.syncPointInfo.owningcontrollable)) .. ")", { titleColor = color })
+					row[infoTableData.hasloop and 3 or 2]:setColSpan(infoTableData.hasloop and 10 or 11):createText(ReadText(1001, 3237) .. ReadText(1001, 120) .. " " .. ffi.string(C.GetComponentName(order.syncPointInfo.owningcontrollable)) .. " (" .. ffi.string(C.GetObjectIDCode(order.syncPointInfo.owningcontrollable)) .. ")", { titleColor = color })
 				end
 
 				if isextended then
@@ -10381,13 +10489,13 @@ function menu.createOrderQueue(frame, mode, instance)
 						menu.selectedRows["infotable" .. instance] = row.index
 						menu.selectedCols["infotable" .. instance] = nil
 					end
-					row[infoTableData.hasloop and 3 or 2]:setColSpan(infoTableData.hasloop and 7 or 8):createText("  " .. ReadText(1001, 11297) .. ReadText(1001, 120))
+					row[infoTableData.hasloop and 3 or 2]:setColSpan(infoTableData.hasloop and 9 or 10):createText("  " .. ReadText(1001, 11297) .. ReadText(1001, 120))
 					if order.syncPointInfo.id > 0 then
-						row[10]:createCheckBox(function () return C.GetSyncPointAutoRelease(order.syncPointInfo.id, true) end, { width = config.mapRowHeight, height = config.mapRowHeight })
-						row[10].handlers.onClick = function(_, checked) return C.SetSyncPointAutoRelease(order.syncPointInfo.id, checked, false) end
+						row[numcols]:createCheckBox(function () return C.GetSyncPointAutoRelease(order.syncPointInfo.id, true) end, { width = config.mapRowHeight, height = config.mapRowHeight })
+						row[numcols].handlers.onClick = function(_, checked) return C.SetSyncPointAutoRelease(order.syncPointInfo.id, checked, false) end
 					else
-						row[10]:createCheckBox(function () return C.GetSyncPointAutoReleaseFromOrder(order.syncPointInfo.owningcontrollable, order.syncPointInfo.owningorderidx, true) end, { width = config.mapRowHeight, height = config.mapRowHeight })
-						row[10].handlers.onClick = function(_, checked) return C.SetSyncPointAutoReleaseFromOrder(order.syncPointInfo.owningcontrollable, order.syncPointInfo.owningorderidx, checked, false) end
+						row[numcols]:createCheckBox(function () return C.GetSyncPointAutoReleaseFromOrder(order.syncPointInfo.owningcontrollable, order.syncPointInfo.owningorderidx, true) end, { width = config.mapRowHeight, height = config.mapRowHeight })
+						row[numcols].handlers.onClick = function(_, checked) return C.SetSyncPointAutoReleaseFromOrder(order.syncPointInfo.owningcontrollable, order.syncPointInfo.owningorderidx, checked, false) end
 					end
 
 					local totalobjects, reachedobjects
@@ -10405,7 +10513,7 @@ function menu.createOrderQueue(frame, mode, instance)
 						menu.selectedCols["infotable" .. instance] = nil
 					end
 					row[infoTableData.hasloop and 3 or 2]:setColSpan(infoTableData.hasloop and 2 or 3):createText("  " .. string.format(ReadText(1001, 3229), reachedobjects, totalobjects))
-					row[5]:setColSpan(6):createButton({ active = (reachedobjects > 0) }):setText(ReadText(1001, 8324), { halign = "center" })
+					row[5]:setColSpan(8):createButton({ active = (reachedobjects > 0) }):setText(ReadText(1001, 8324), { halign = "center" })
 					row[5].handlers.onClick = function () return menu.buttonReleaseSyncPoint(order.syncPointInfo) end
 				end
 			end
@@ -10415,11 +10523,11 @@ function menu.createOrderQueue(frame, mode, instance)
 		if (infoTableData.disabledmarker == nil) or (infoTableData.disabledmarker == (#infoTableData.orders + 1)) then
 			if next(infoTableData.defaultorder) and (not infoTableData.hasloop) then
 				local row = ftable:addRow(false, { bgColor = Color["row_background_unselectable"] })
-				row[2]:setColSpan(9):createText(ReadText(1001, 8320) .. ReadText(1001, 120) .. " " .. infoTableData.defaultorder.orderdefref.name, { font = Helper.standardFontBold })
+				row[2]:setColSpan(numcols - 1):createText(ReadText(1001, 8320) .. ReadText(1001, 120) .. " " .. infoTableData.defaultorder.orderdefref.name, { font = Helper.standardFontBold })
 			end
 
 			local row = ftable:addRow(false, {  })
-			row[1]:setColSpan(10):createText(ReadText(1001, 8319), { halign = "center", titleColor = Color["text_negative"] })
+			row[1]:setColSpan(numcols):createText(ReadText(1001, 8319), { halign = "center", titleColor = Color["text_negative"] })
 		end
 
 		local hasstartableorders = false
@@ -10443,7 +10551,7 @@ function menu.createOrderQueue(frame, mode, instance)
 				menu.selectedRows["infotable" .. instance] = row.index
 				menu.selectedCols["infotable" .. instance] = nil
 			end
-			row[1]:setColSpan(10):createButton({ active = isvalid and (not isplayeroccupiedship) and ((pilot64 ~= nil) and (pilot64 ~= 0)), mouseOverText = isplayeroccupiedship and ReadText(1026, 3224) or (((pilot64 == nil) or (pilot64 == 0)) and ReadText(1026, 3225) or "") }):setText(ReadText(1001, 3238), { halign = "center" })
+			row[1]:setColSpan(numcols):createButton({ active = isvalid and (not isplayeroccupiedship) and ((pilot64 ~= nil) and (pilot64 ~= 0)), mouseOverText = isplayeroccupiedship and ReadText(1026, 3224) or (((pilot64 == nil) or (pilot64 == 0)) and ReadText(1026, 3225) or "") }):setText(ReadText(1001, 3238), { halign = "center" })
 			row[1].handlers.onClick = function () return menu.buttonNewOrder(nil, false, instance) end
 		end
 
@@ -10454,9 +10562,9 @@ function menu.createOrderQueue(frame, mode, instance)
 		row[1]:setColSpan(4):createButton({ active = isvalid and hasremoveableorders }):setText(ReadText(1001, 3239), { halign = "center" })
 		row[1].handlers.onClick = function () return menu.buttonDeleteAllOrders(instance) end
 		row[1].properties.uiTriggerID = "deleteallorders"
-		row[6]:setColSpan(5):createButton({ active = isvalid and (not isplayeroccupiedship) and hasstartableorders }):setText(ReadText(1001, 3240), { halign = "center" })
-		row[6].handlers.onClick = function () return menu.buttonStartOrders(instance) end
-		row[6].properties.uiTriggerID = "startorderqueue"
+		row[8]:setColSpan(5):createButton({ active = isvalid and (not isplayeroccupiedship) and hasstartableorders }):setText(ReadText(1001, 3240), { halign = "center" })
+		row[8].handlers.onClick = function () return menu.buttonStartOrders(instance) end
+		row[8].properties.uiTriggerID = "startorderqueue"
 
 		-- syncpoint overview
 		local first = true
@@ -10469,7 +10577,7 @@ function menu.createOrderQueue(frame, mode, instance)
 					ftable:addEmptyRow(1)
 					--- title ---
 					local row = ftable:addRow(false, { bgColor = Color["row_title_background"] })
-					row[1]:setColSpan(10):createText(ReadText(1001, 8323), Helper.headerRowCenteredProperties)
+					row[1]:setColSpan(numcols):createText(ReadText(1001, 8323), Helper.headerRowCenteredProperties)
 					first = false
 				end
 				local row = ftable:addRow({"sync", i}, {  })
@@ -10478,7 +10586,7 @@ function menu.createOrderQueue(frame, mode, instance)
 					menu.selectedCols["infotable" .. instance] = nil
 				end
 				row[1]:setColSpan(4):createText(Helper.getSyncPointName(i) .. " (" .. string.format(ReadText(1001, 3229), reachedobjects, totalobjects) .. ")")
-				row[5]:setColSpan(6):createButton({ active = (reachedobjects > 0) }):setText(ReadText(1001, 8324), { halign = "center" })
+				row[5]:setColSpan(8):createButton({ active = (reachedobjects > 0) }):setText(ReadText(1001, 8324), { halign = "center" })
 				local syncpointinfo = { id = i }
 				row[5].handlers.onClick = function () return menu.buttonReleaseSyncPoint(syncpointinfo) end
 
@@ -10487,22 +10595,22 @@ function menu.createOrderQueue(frame, mode, instance)
 					menu.selectedRows["infotable" .. instance] = row.index
 					menu.selectedCols["infotable" .. instance] = nil
 				end
-				row[3]:setColSpan(7):createText(ReadText(1001, 11297) .. ReadText(1001, 120))
-				row[10]:createCheckBox(function () return C.GetSyncPointAutoRelease(i, true) end, { width = config.mapRowHeight, height = config.mapRowHeight })
-				row[10].handlers.onClick = function(_, checked) return C.SetSyncPointAutoRelease(i, checked, false) end
+				row[3]:setColSpan(9):createText(ReadText(1001, 11297) .. ReadText(1001, 120))
+				row[numcols]:createCheckBox(function () return C.GetSyncPointAutoRelease(i, true) end, { width = config.mapRowHeight, height = config.mapRowHeight })
+				row[numcols].handlers.onClick = function(_, checked) return C.SetSyncPointAutoRelease(i, checked, false) end
 			end
 		end
 
 		local row = ftable:addRow(false, {  })
-		row[1]:setColSpan(10):createText(" ")
+		row[1]:setColSpan(numcols):createText(" ")
 
 		---- assignment ----
 		if infoTableData.commander and isvalid and (not isplayeroccupiedship) then
 			--- title ---
 			local row = ftable:addRow({ infoTableData.commander }, { bgColor = Color["row_title_background"] })
-			row[1]:setColSpan(9):createText(string.format(ReadText(1001, 7803), Helper.convertColorToText(commandercolor) .. commandername), Helper.headerRowCenteredProperties)
-			row[10]:createButton({ height = Helper.headerRow1Height, width = config.mapRowHeight, cellBGColor = Color["row_background"] }):setIcon("menu_center_selection", { width = Helper.standardTextHeight, height = Helper.standardTextHeight, y = (Helper.headerRow1Height - Helper.standardTextHeight) / 2 })
-			row[10].handlers.onClick = function () return C.SetFocusMapComponent(menu.holomap, ConvertIDTo64Bit(infoTableData.commander), true) end
+			row[1]:setColSpan(numcols - 1):createText(string.format(ReadText(1001, 7803), Helper.convertColorToText(commandercolor) .. commandername), Helper.headerRowCenteredProperties)
+			row[numcols]:createButton({ height = Helper.headerRow1Height, width = config.mapRowHeight, cellBGColor = Color["row_background"] }):setIcon("menu_center_selection", { width = Helper.standardTextHeight, height = Helper.standardTextHeight, y = (Helper.headerRow1Height - Helper.standardTextHeight) / 2 })
+			row[numcols].handlers.onClick = function () return C.SetFocusMapComponent(menu.holomap, ConvertIDTo64Bit(infoTableData.commander), true) end
 
 			local row = ftable:addRow({ "assignment" }, {  })
 			if selectedorder and (selectedorder[1] == "assignment") then
@@ -10563,7 +10671,7 @@ function menu.createOrderQueue(frame, mode, instance)
 				end
 			end
 
-			row[5]:setColSpan(6):createDropDown(asssignmentOptions, { height = config.mapRowHeight, startOption = currentassignment }):setTextProperties({ fontsize = config.mapFontSize, halign = "center" })
+			row[5]:setColSpan(8):createDropDown(asssignmentOptions, { height = config.mapRowHeight, startOption = currentassignment }):setTextProperties({ fontsize = config.mapFontSize, halign = "center" })
 			row[5].handlers.onDropDownConfirmed = function(_, newassignment) Helper.dropdownAssignment(_, menu.infoSubmenuObject, nil, nil, newassignment) end
 			row[5].handlers.onDropDownActivated = function () menu.noupdate = true end
 
@@ -10572,11 +10680,11 @@ function menu.createOrderQueue(frame, mode, instance)
 				menu.selectedRows["infotable" .. instance] = row.index
 				menu.selectedCols["infotable" .. instance] = nil
 			end
-			row[1]:setColSpan(10):createButton({ active = true }):setText(ReadText(1001, 7810), { halign = "center" })
+			row[1]:setColSpan(numcols):createButton({ active = true }):setText(ReadText(1001, 7810), { halign = "center" })
 			row[1].handlers.onClick = menu.buttonRemoveAssignment
 
 			local row = ftable:addRow(false, {  })
-			row[1]:setColSpan(10):createText(" ")
+			row[1]:setColSpan(numcols):createText(" ")
 		end
 
 		---- default order ----
@@ -10584,7 +10692,7 @@ function menu.createOrderQueue(frame, mode, instance)
 
 		--- title ---
 		local titlerow = ftable:addRow(false, { bgColor = Color["row_title_background"] })
-		titlerow[1]:setColSpan(10):createText((hasloop and (utf8.char(8734) .. " ") or "") .. ReadText(1001, 8320), Helper.headerRowCenteredProperties)
+		titlerow[1]:setColSpan(numcols):createText((hasloop and (utf8.char(8734) .. " ") or "") .. ReadText(1001, 8320), Helper.headerRowCenteredProperties)
 		titlerow[1].properties.helpOverlayID = "map_defaultorder"
 		titlerow[1].properties.helpOverlayText = " "
 		titlerow[1].properties.helpOverlayHeight = titlerow:getHeight()
@@ -10598,7 +10706,7 @@ function menu.createOrderQueue(frame, mode, instance)
 		end
 	else
 		local row = ftable:addRow(nil, {  })
-		row[1]:setColSpan(10):createText(ReadText(1001, 11226), { wordwrap = true })
+		row[1]:setColSpan(numcols):createText(ReadText(1001, 11226), { wordwrap = true })
 	end
 
 	if maxvisibleheight then
@@ -10635,6 +10743,7 @@ function menu.displayOrderFailureSection(ftable, instance)
 	local selectedorder = menu.infoTablePersistentData[instance].selectedorder
 	infoTableData.looporderfailures = {}
 
+	local numcols = 12
 	local found = false
 	local n = C.GetNumOrderFailures(menu.infoSubmenuObject, infoTableData.hasloop == true)
 	if n > 0 then
@@ -10653,7 +10762,7 @@ function menu.displayOrderFailureSection(ftable, instance)
 					found = true
 					-- failed behaviour
 					local row = ftable:addRow(nil, { bgColor = Color["row_title_background"] })
-					row[1]:setColSpan(10):createText(ReadText(1001, 11621), Helper.subHeaderTextProperties)
+					row[1]:setColSpan(numcols):createText(ReadText(1001, 11621), Helper.subHeaderTextProperties)
 				end
 
 				local orderdefid = ffi.string(failure.orderdef)
@@ -10681,9 +10790,9 @@ function menu.displayOrderFailureSection(ftable, instance)
 				row[1]:createButton({  }):setText(isextended and "-" or "+", { halign = "center" })
 				row[1].handlers.onClick = function () return menu.buttonExtendOrder(menu.infoSubmenuObject, i .. "failure", instance, row.index, 1) end
 				row[2]:setColSpan(3):createText(orderfailuredef and orderfailuredef.name or "", { mouseOverText = ColorText["text_warning"] .. message })
-				row[5]:setColSpan(5):createText("[" .. ReadText(1001, 8837) .. "]", { halign = "right", color = Color["text_warning"], mouseOverText = ColorText["text_warning"] .. message })
-				row[10]:createButton({  }):setText("X", { halign = "center" })
-				row[10].handlers.onClick = function () C.RemoveOrderFailure(menu.infoSubmenuObject, buf[i].id); menu.refreshInfoFrame(nil, 0) end
+				row[5]:setColSpan(7):createText("[" .. ReadText(1001, 8837) .. "]", { halign = "right", color = Color["text_warning"], mouseOverText = ColorText["text_warning"] .. message })
+				row[12]:createButton({  }):setText("X", { halign = "center" })
+				row[12].handlers.onClick = function () C.RemoveOrderFailure(menu.infoSubmenuObject, buf[i].id); menu.refreshInfoFrame(nil, 0) end
 				if isextended then
 					-- message
 					local row = ftable:addRow(nil, { bgColor = Color["row_background_unselectable"] })
@@ -10695,7 +10804,7 @@ function menu.displayOrderFailureSection(ftable, instance)
 							if param.type == "list" then
 								if param.value then
 									for k, entry in ipairs(param.value) do
-										local param2 = { text = param.text .. " #" .. k, value = entry, type = param.inputparams.type, editable = param.editable }
+										local param2 = { text = (k == 1) and param.text or "", value = entry, type = param.inputparams.type, editable = param.editable }
 										menu.displayFailureParam(ftable, i, j, param2, k, instance)
 									end
 								end
@@ -10712,7 +10821,7 @@ function menu.displayOrderFailureSection(ftable, instance)
 			local row = ftable:addEmptyRow()
 			-- current behaviour
 			local row = ftable:addRow(nil, { bgColor = Color["row_title_background"] })
-			row[1]:setColSpan(10):createText(ReadText(1001, 11622), Helper.subHeaderTextProperties)
+			row[1]:setColSpan(numcols):createText(ReadText(1001, 11622), Helper.subHeaderTextProperties)
 		end
 	end
 end
@@ -10928,6 +11037,7 @@ end
 function menu.displayDefaultBehaviourFailure(ftable, mode, titlerow, instance, planned)
 	local infoTableData = menu.infoTableData[instance]
 	local selectedorder = menu.infoTablePersistentData[instance].selectedorder
+	local numcols = 12
 	if not infoTableData.hasloop then
 		local failure = ffi.new("OrderFailure")
 		if C.GetDefaultOrderFailure(failure, menu.infoSubmenuObject) then
@@ -10937,9 +11047,9 @@ function menu.displayDefaultBehaviourFailure(ftable, mode, titlerow, instance, p
 				menu.selectedRows["infotable" .. instance] = row.index
 				menu.selectedCols["infotable" .. instance] = nil
 			end
-			row[1]:setColSpan(9):setBackgroundColSpan(9):createText(ReadText(1001, 11618), Helper.subHeaderTextProperties)
-			row[10]:createButton({ height = Helper.subHeaderHeight }):setText("X", { halign = "center" })
-			row[10].handlers.onClick = function () C.RemoveDefaultOrderFailure(menu.infoSubmenuObject); menu.refreshInfoFrame() end
+			row[1]:setColSpan(numcols - 1):setBackgroundColSpan(9):createText(ReadText(1001, 11618), Helper.subHeaderTextProperties)
+			row[numcols]:createButton({ height = Helper.subHeaderHeight }):setText("X", { halign = "center" })
+			row[numcols].handlers.onClick = function () C.RemoveDefaultOrderFailure(menu.infoSubmenuObject); menu.refreshInfoFrame() end
 			titlerow[1].properties.helpOverlayHeight = titlerow[1].properties.helpOverlayHeight + row:getHeight() + Helper.borderSize
 
 			local orderdefid = ffi.string(failure.orderdef)
@@ -10959,7 +11069,7 @@ function menu.displayDefaultBehaviourFailure(ftable, mode, titlerow, instance, p
 			-- name
 			local row = ftable:addRow(nil, {  })
 			row[1]:setColSpan(4):createText(ReadText(1001, 8320) .. ReadText(1001, 120))
-			row[5]:setColSpan(6):createButton({ active = false }):setText(orderfailuredef and orderfailuredef.name or ""):setText2(orderfailuredef and Helper.displaySkill(math.floor(orderfailuredef.requiredSkill * 15 / 100)) or "", { halign = "right", color = Color["text_skills"] })
+			row[5]:setColSpan(8):createButton({ active = false }):setText(orderfailuredef and orderfailuredef.name or ""):setText2(orderfailuredef and Helper.displaySkill(math.floor(orderfailuredef.requiredSkill * 15 / 100)) or "", { halign = "right", color = Color["text_skills"] })
 			titlerow[1].properties.helpOverlayHeight = titlerow[1].properties.helpOverlayHeight + row:getHeight() + Helper.borderSize
 			-- params
 			local params = GetOrderFailureParams(menu.infoSubmenuObject, tonumber(failure.id))
@@ -10968,7 +11078,7 @@ function menu.displayDefaultBehaviourFailure(ftable, mode, titlerow, instance, p
 					if param.type == "list" then
 						if param.value then
 							for k, entry in ipairs(param.value) do
-								local param2 = { text = param.text .. " #" .. k, value = entry, type = param.inputparams.type, editable = param.editable }
+								local param2 = { text = (k == 1) and param.text or "", value = entry, type = param.inputparams.type, editable = param.editable }
 								menu.displayFailureParam(ftable, "defaultorderfailure", j, param2, k, instance)
 							end
 						end
@@ -10979,12 +11089,12 @@ function menu.displayDefaultBehaviourFailure(ftable, mode, titlerow, instance, p
 			end
 			-- message
 			local row = ftable:addRow(nil, { bgColor = Color["row_background_unselectable"] })
-			row[1]:setColSpan(10):createText(Helper.getPassedTime(failure.timestamp) .. " - " .. ffi.string(failure.message), { color = Color["text_warning"] })
+			row[1]:setColSpan(numcols):createText(Helper.getPassedTime(failure.timestamp) .. " - " .. ffi.string(failure.message), { color = Color["text_warning"] })
 			titlerow[1].properties.helpOverlayHeight = titlerow[1].properties.helpOverlayHeight + row:getHeight() + Helper.borderSize
 			if orderdefid ~= infoTableData.defaultorder.orderdefref.id then
 				-- changed default
 				local row = ftable:addRow(nil, { bgColor = Color["row_background_unselectable"] })
-				row[1]:setColSpan(10):createText(ReadText(1001, 11619), { color = Color["text_warning"] })
+				row[1]:setColSpan(numcols):createText(ReadText(1001, 11619), { color = Color["text_warning"] })
 				titlerow[1].properties.helpOverlayHeight = titlerow[1].properties.helpOverlayHeight + row:getHeight() + Helper.borderSize
 			end
 			-- empty line
@@ -10992,7 +11102,7 @@ function menu.displayDefaultBehaviourFailure(ftable, mode, titlerow, instance, p
 			titlerow[1].properties.helpOverlayHeight = titlerow[1].properties.helpOverlayHeight + row:getHeight() + Helper.borderSize
 			-- current behaviour
 			local row = ftable:addRow(nil, { bgColor = Color["row_title_background"] })
-			row[1]:setColSpan(10):createText(planned and ReadText(1001, 11620) or ReadText(1001, 11617), Helper.subHeaderTextProperties)
+			row[1]:setColSpan(numcols):createText(planned and ReadText(1001, 11620) or ReadText(1001, 11617), Helper.subHeaderTextProperties)
 			titlerow[1].properties.helpOverlayHeight = titlerow[1].properties.helpOverlayHeight + row:getHeight() + Helper.borderSize
 		end
 	end
@@ -11012,6 +11122,7 @@ function menu.displayDefaultBehaviour(ftable, mode, titlerow, instance)
 
 	menu.displayDefaultBehaviourFailure(ftable, mode, titlerow, instance)
 
+	local numcols = 12
 	local order = infoTableData.defaultorder
 	if infoTableData.hasloop then
 		-- name
@@ -11021,7 +11132,7 @@ function menu.displayDefaultBehaviour(ftable, mode, titlerow, instance)
 			menu.setcol = nil
 		end
 		row[1]:setColSpan(4):createText(ReadText(1001, 8320) .. ReadText(1001, 120))
-		row[5]:setColSpan(6):createButton({ active = behaviouractive, mouseOverText = (mouseovertext == "") and ReadText(1026, 3269) or mouseovertext }):setText(ReadText(1001, 11267)):setText2(Helper.displaySkill(menu.orderloopskill), { halign = "right", color = Color["text_skills"] })
+		row[5]:setColSpan(8):createButton({ active = behaviouractive, mouseOverText = (mouseovertext == "") and ReadText(1026, 3269) or mouseovertext }):setText(ReadText(1001, 11267)):setText2(Helper.displaySkill(menu.orderloopskill), { halign = "right", color = Color["text_skills"] })
 		row[5].handlers.onClick = function () return menu.buttonNewOrder(nil, true, instance) end
 		titlerow[1].properties.helpOverlayHeight = titlerow[1].properties.helpOverlayHeight + row:getHeight() + Helper.borderSize
 	elseif next(order) then
@@ -11029,12 +11140,12 @@ function menu.displayDefaultBehaviour(ftable, mode, titlerow, instance)
 		-- commander
 		if infoTableData.commander then
 			local row = ftable:addRow(nil, {  })
-			row[1]:setColSpan(10):createText(ReadText(1001, 11230), { wordwrap = true })
+			row[1]:setColSpan(numcols):createText(ReadText(1001, 11230), { wordwrap = true })
 			titlerow[1].properties.helpOverlayHeight = titlerow[1].properties.helpOverlayHeight + row:getHeight() + Helper.borderSize
 		end
 		-- note
 		local row = ftable:addRow(nil, {  })
-		row[1]:setColSpan(10):createText(ReadText(1001, 8363) .. ReadText(1001, 120))
+		row[1]:setColSpan(numcols):createText(ReadText(1001, 8363) .. ReadText(1001, 120))
 		titlerow[1].properties.helpOverlayHeight = titlerow[1].properties.helpOverlayHeight + row:getHeight() + Helper.borderSize
 		-- name
 		local row = ftable:addRow({ "default2" }, {  })
@@ -11044,7 +11155,7 @@ function menu.displayDefaultBehaviour(ftable, mode, titlerow, instance)
 		end
 		local printedSkillReq = math.floor(order.orderdefref.requiredSkill * 15 / 100)
 		row[1]:setColSpan(4):createText(ReadText(1001, 8364) .. ReadText(1001, 120))
-		row[5]:setColSpan(6):createButton({helpOverlayID = "map_behaviourassignement", helpOverlayText = " ", helpOverlayHighlightOnly = true, active = behaviouractive, mouseOverText = (mouseovertext == "") and order.orderdefref.description or mouseovertext }):setText(order.orderdefref.name):setText2(Helper.displaySkill(printedSkillReq), { halign = "right", color = Color["text_skills"] })
+		row[5]:setColSpan(8):createButton({helpOverlayID = "map_behaviourassignement", helpOverlayText = " ", helpOverlayHighlightOnly = true, active = behaviouractive, mouseOverText = (mouseovertext == "") and order.orderdefref.description or mouseovertext }):setText(order.orderdefref.name):setText2(Helper.displaySkill(printedSkillReq), { halign = "right", color = Color["text_skills"] })
 		row[5].handlers.onClick = function () return menu.buttonNewOrder(nil, true, instance) end
 		row[5].properties.uiTriggerID = "DefaultBehaviour"
 		titlerow[1].properties.helpOverlayHeight = titlerow[1].properties.helpOverlayHeight + row:getHeight() + Helper.borderSize
@@ -11056,14 +11167,92 @@ function menu.displayDefaultBehaviour(ftable, mode, titlerow, instance)
 			if (not param.hasinfinitevalue) and ((not param.advanced) or (mode == "orderqueue_advanced")) then
 				if param.type == "list" then
 					local playerreadonly = param.inputparams and param.inputparams.playerreadonly
+					local canplayeroverride = (param.inputparams.canplayeroverride == 1) and infoTableData.commander
+
 					if param.value then
-						for k, entry in ipairs(param.value) do
-							local param2 = { text = param.text .. " #" .. k, value = entry, type = param.inputparams.type, editable = param.editable, playerreadonly = playerreadonly }
-							menu.displayOrderParam(ftable, "default", order, j, param2, k, instance)
+						local overridedata
+						if canplayeroverride then
+							overridedata = {}
+
+							local overrideparamname = param.name .. "_override"
+							for i, entry in ipairs(order.params) do
+								if entry.name == overrideparamname then
+									overridedata.paramidx = i
+									overridedata.param = entry
+									break
+								end
+							end
+							if not overridedata.paramidx then
+								DebugError("Missing override order parameter '" .. overrideparamname .."' although canplayeroverride is set.")
+								return
+							end
+
+							local row = ftable:addRow({ j, "manual" })
+							if selectedorder and (selectedorder[1] == j) and (selectedorder[2] == "manual") then
+								menu.setrow = row.index
+								menu.setcol = nil
+							end
+
+							row[2]:setColSpan(3):createText("  " .. param.text .. ReadText(1001, 120))
+							row[5]:setColSpan(1):createCheckBox(#overridedata.param.value == 0, { width = config.mapRowHeight, height = config.mapRowHeight, mouseOverText = ReadText(1026, 3282) })
+							row[5].handlers.onClick = function (_, checked) return menu.checkboxOrderPlayerOverride("default", j, param, overridedata.paramidx, overridedata.param, checked) end
+							row[6]:setColSpan(7):createText(ReadText(1001, 11650), { mouseOverText = ReadText(1026, 3282) })
+
+							ftable:addEmptyRow()
+
+							overridedata.values = {}
+							for k, entry in ipairs(overridedata.param.value) do
+								overridedata.values[entry] = k
+							end
+						end
+
+						if overridedata and (#overridedata.param.value > 0) and overridedata.param.inputparams.optionsource then
+							if overridedata.param.inputparams.optionsource == "commanderwarebasket" then
+								if overridedata.param.inputparams.type == "ware" then
+									local warebasket = {}
+									local found = {}
+									local allresources, allproducts, rawtradewares = GetComponentData(infoTableData.commander, "allresources", "products", "tradewares")
+									for _, ware in ipairs(allresources) do
+										if not found[ware] then
+											found[ware] = true
+											table.insert(warebasket, ware)
+										end
+									end
+									for _, ware in ipairs(allproducts) do
+										if not found[ware] then
+											found[ware] = true
+											table.insert(warebasket, ware)
+										end
+									end
+									for _, ware in ipairs(rawtradewares) do
+										if not found[ware] then
+											found[ware] = true
+											table.insert(warebasket, ware)
+										end
+									end
+
+									for i = #warebasket, 1, -1 do
+										if GetWareCapacity(overridedata.param.inputparams.cancarry, warebasket[i], true) == 0 then
+											table.remove(warebasket, i)
+										end
+									end
+									table.sort(warebasket, Helper.sortWareName)
+
+									for k, ware in ipairs(warebasket) do
+										local param2 = { text = ((k == 1) and (not canplayeroverride)) and param.text or "", value = ware, type = param.inputparams.type, editable = param.editable, playerreadonly = playerreadonly, canplayeroverride = overridedata }
+										menu.displayOrderParam(ftable, "default", order, j, param2, k, instance)
+									end
+								end
+							end
+						else
+							for k, entry in ipairs(param.value) do
+								local param2 = { text = ((k == 1) and (not canplayeroverride)) and param.text or "", value = entry, type = param.inputparams.type, editable = param.editable, playerreadonly = playerreadonly, canplayeroverride = overridedata }
+								menu.displayOrderParam(ftable, "default", order, j, param2, k, instance)
+							end
 						end
 					end
 
-					if playerreadonly ~= 1 then
+					if (playerreadonly ~= 1) and (not canplayeroverride) then
 						local row = ftable:addRow({ i, j, "new" }, {  })
 						if selectedorder and (selectedorder[1] == i) and (selectedorder[2] == j) and (selectedorder[3] == "new") then
 							menu.setrow = row.index
@@ -11081,8 +11270,8 @@ function menu.displayDefaultBehaviour(ftable, mode, titlerow, instance)
 						end
 						-- kuertee end: callback
 
-						local active = behaviouractive and isvalid and (not isplayeroccupiedship) and (((order.state == "setup") and (j <= (order.actualparams + 1))) or ((order.state ~= "setup") and param.editable))
-						row[2]:setColSpan(9):createButton({ active = active }):setText("  " .. string.format((param.inputparams.type == "ware") and ReadText(1001, 8377) or ReadText(1001, 3235), param.text), { halign = "center" })
+						local active = behaviouractive and (((order.state == "setup") and (j <= (order.actualparams + 1))) or ((order.state ~= "setup") and param.editable))
+						row[2]:setColSpan(numcols - 1):createButton({ active = active }):setText("  " .. string.format((param.inputparams.type == "ware") and ReadText(1001, 8378) or ReadText(1001, 3235), param.text), { halign = "center" })
 						row[2].handlers.onClick = function () return menu.buttonSetOrderParam("default", j, nil, nil, instance) end
 						titlerow[1].properties.helpOverlayHeight = titlerow[1].properties.helpOverlayHeight + row:getHeight() + Helper.borderSize
 					end
@@ -11097,9 +11286,9 @@ function menu.displayDefaultBehaviour(ftable, mode, titlerow, instance)
 			menu.setrow = row.index
 			menu.setcol = nil
 		end
-		row[2]:setColSpan(8):createText(ReadText(1001, 8320) .. ReadText(1001, 120) .. " ---")
-		row[10]:createButton({ active = behaviouractive, mouseOverText = mouseovertext }):setIcon("menu_edit")
-		row[10].handlers.onClick = function () return menu.buttonNewOrder(nil, true, instance) end
+		row[2]:setColSpan(numcols - 2):createText(ReadText(1001, 8320) .. ReadText(1001, 120) .. " ---")
+		row[numcols]:createButton({ active = behaviouractive, mouseOverText = mouseovertext }):setIcon("menu_edit")
+		row[numcols].handlers.onClick = function () return menu.buttonNewOrder(nil, true, instance) end
 		titlerow[1].properties.helpOverlayHeight = titlerow[1].properties.helpOverlayHeight + row:getHeight() + Helper.borderSize
 	end
 
@@ -11108,7 +11297,7 @@ function menu.displayDefaultBehaviour(ftable, mode, titlerow, instance)
 		menu.setrow = row.index
 	end
 	row[1]:setColSpan(4):createButton({ active = false }):setText(ReadText(1001, 2821), { halign = "center" })
-	row[6]:setColSpan(5):createButton({ active = false }):setText(ReadText(1001, 64), { halign = "center" })
+	row[8]:setColSpan(5):createButton({ active = false }):setText(ReadText(1001, 64), { halign = "center" })
 	titlerow[1].properties.helpOverlayHeight = titlerow[1].properties.helpOverlayHeight + row:getHeight() + Helper.borderSize
 end
 
@@ -11131,13 +11320,14 @@ function menu.displayPlannedDefaultBehaviour(ftable, mode, titlerow, instance)
 
 	local order = infoTableData.planneddefaultorder
 
+	local numcols = 12
 	local row = ftable:addEmptyRow(1)
 	titlerow[1].properties.helpOverlayHeight = titlerow[1].properties.helpOverlayHeight + row:getHeight() + Helper.borderSize
 
 	if persistentData.planneddefaultorderloop then
 		-- note
 		local row = ftable:addRow(nil, {  })
-		row[1]:setColSpan(10):createText(ReadText(1001, 8365) .. ReadText(1001, 120), { font = Helper.standardFontBold })
+		row[1]:setColSpan(numcols):createText(ReadText(1001, 8365) .. ReadText(1001, 120), { font = Helper.standardFontBold })
 		titlerow[1].properties.helpOverlayHeight = titlerow[1].properties.helpOverlayHeight + row:getHeight() + Helper.borderSize
 
 		-- name
@@ -11147,14 +11337,14 @@ function menu.displayPlannedDefaultBehaviour(ftable, mode, titlerow, instance)
 			menu.setcol = nil
 		end
 		row[1]:setColSpan(4):createText(ReadText(1001, 8320) .. ReadText(1001, 120))
-		row[5]:setColSpan(6):createButton({ active = behaviouractive, mouseOverText = (mouseovertext == "") and ReadText(1026, 3269) or mouseovertext }):setText(ReadText(1001, 11267)):setText2(Helper.displaySkill(menu.orderloopskill), { halign = "right", color = Color["text_skills"] })
+		row[5]:setColSpan(8):createButton({ active = behaviouractive, mouseOverText = (mouseovertext == "") and ReadText(1026, 3269) or mouseovertext }):setText(ReadText(1001, 11267)):setText2(Helper.displaySkill(menu.orderloopskill), { halign = "right", color = Color["text_skills"] })
 		row[5].handlers.onClick = function () return menu.buttonNewOrder(nil, true, instance) end
 		titlerow[1].properties.helpOverlayHeight = titlerow[1].properties.helpOverlayHeight + row:getHeight() + Helper.borderSize
 
 		-- delete existing orders note
 		if #infoTableData.orders > 0 then
 			local row = ftable:addRow(nil, {  })
-			row[1]:setColSpan(10):createText(function () return persistentData.planneddefaultorderloop.hasunremoveableorders and ReadText(1001, 11269) or ReadText(1001, 11268) end, { color = Color["text_error"] })
+			row[1]:setColSpan(numcols):createText(function () return persistentData.planneddefaultorderloop.hasunremoveableorders and ReadText(1001, 11269) or ReadText(1001, 11268) end, { color = Color["text_error"] })
 			titlerow[1].properties.helpOverlayHeight = titlerow[1].properties.helpOverlayHeight + row:getHeight() + Helper.borderSize
 		end
 	elseif next(order) then
@@ -11162,7 +11352,7 @@ function menu.displayPlannedDefaultBehaviour(ftable, mode, titlerow, instance)
 
 		-- note
 		local row = ftable:addRow(nil, {  })
-		row[1]:setColSpan(10):createText((persistentData.planneddefaultorderiscopy and ReadText(1001, 11610) or ReadText(1001, 8365)) .. ReadText(1001, 120), { font = Helper.standardFontBold })
+		row[1]:setColSpan(numcols):createText((persistentData.planneddefaultorderiscopy and ReadText(1001, 11610) or ReadText(1001, 8365)) .. ReadText(1001, 120), { font = Helper.standardFontBold })
 		titlerow[1].properties.helpOverlayHeight = titlerow[1].properties.helpOverlayHeight + row:getHeight() + Helper.borderSize
 		-- name
 		local row = ftable:addRow({ "default2" }, {  })
@@ -11172,7 +11362,7 @@ function menu.displayPlannedDefaultBehaviour(ftable, mode, titlerow, instance)
 		end
 		local printedSkillReq = math.floor(order.orderdefref.requiredSkill * 15 / 100)
 		row[1]:setColSpan(4):createText(ReadText(1001, 8320) .. ReadText(1001, 120))
-		row[5]:setColSpan(6):createButton({ active = behaviouractive, mouseOverText = (mouseovertext == "") and order.orderdefref.description or mouseovertext }):setText(order.orderdefref.name):setText2(Helper.displaySkill(printedSkillReq), { halign = "right", color = Color["text_skills"] })
+		row[5]:setColSpan(8):createButton({ active = behaviouractive, mouseOverText = (mouseovertext == "") and order.orderdefref.description or mouseovertext }):setText(order.orderdefref.name):setText2(Helper.displaySkill(printedSkillReq), { halign = "right", color = Color["text_skills"] })
 		row[5].handlers.onClick = function () return menu.buttonNewOrder(nil, true, instance) end
 		titlerow[1].properties.helpOverlayHeight = titlerow[1].properties.helpOverlayHeight + row:getHeight() + Helper.borderSize
 
@@ -11182,7 +11372,7 @@ function menu.displayPlannedDefaultBehaviour(ftable, mode, titlerow, instance)
 					local playerreadonly = param.inputparams and param.inputparams.playerreadonly
 					if param.value then
 						for k, entry in ipairs(param.value) do
-							local param2 = { text = param.text .. " #" .. k, value = entry, type = param.inputparams.type, editable = param.editable, playerreadonly = playerreadonly }
+							local param2 = { text = (k == 1) and param.text or "", value = entry, type = param.inputparams.type, editable = param.editable, playerreadonly = playerreadonly }
 							menu.displayOrderParam(ftable, "planneddefault", order, j, param2, k, instance)
 						end
 					end
@@ -11194,7 +11384,7 @@ function menu.displayPlannedDefaultBehaviour(ftable, mode, titlerow, instance)
 							menu.selectedCols["infotable" .. instance] = nil
 						end
 						local active = isvalid and (not isplayeroccupiedship) and (((order.state == "setup") and (j <= (order.actualparams + 1))) or ((order.state ~= "setup") and param.editable))
-						row[2]:setColSpan(9):createButton({ active = active }):setText("  " .. (param.inputparams and string.format((param.inputparams.type == "ware") and ReadText(1001, 8377) or ReadText(1001, 3235), param.text) or "---"), { halign = "center" })
+						row[2]:setColSpan(numcols - 1):createButton({ active = active }):setText("  " .. (param.inputparams and string.format((param.inputparams.type == "ware") and ReadText(1001, 8378) or ReadText(1001, 3235), param.text) or "---"), { halign = "center" })
 						row[2].handlers.onClick = function () return menu.buttonSetOrderParam("planneddefault", j, nil, nil, instance) end
 						titlerow[1].properties.helpOverlayHeight = titlerow[1].properties.helpOverlayHeight + row:getHeight() + Helper.borderSize
 					end
@@ -11208,9 +11398,9 @@ function menu.displayPlannedDefaultBehaviour(ftable, mode, titlerow, instance)
 		if selectedorder and (selectedorder[1] == "planneddefault") then
 			menu.setrow = row.index
 		end
-		row[2]:setColSpan(8):createText(ReadText(1001, 8322) .. ReadText(1001, 120) .. " ---")
-		row[10]:createButton({ active = behaviouractive, mouseOverText = mouseovertext }):setIcon("menu_edit")
-		row[10].handlers.onClick = function () return menu.buttonNewOrder(nil, true, instance) end
+		row[2]:setColSpan(numcols - 2):createText(ReadText(1001, 8322) .. ReadText(1001, 120) .. " ---")
+		row[numcols]:createButton({ active = behaviouractive, mouseOverText = mouseovertext }):setIcon("menu_edit")
+		row[numcols].handlers.onClick = function () return menu.buttonNewOrder(nil, true, instance) end
 		titlerow[1].properties.helpOverlayHeight = titlerow[1].properties.helpOverlayHeight + row:getHeight() + Helper.borderSize
 	end
 
@@ -11221,8 +11411,8 @@ function menu.displayPlannedDefaultBehaviour(ftable, mode, titlerow, instance)
 	row[1]:setColSpan(4):createButton({ active = function () return menu.buttonConfirmPlannedDefaultOrderActive(instance, isvalid) end, helpOverlayID = "map_confirmdefaultorder", helpOverlayText = " ", helpOverlayHighlightOnly = true }):setText(ReadText(1001, 2821), { halign = "center" })
 	row[1].handlers.onClick = function () return menu.buttonDefaultOrderConfirm(instance) end
 	row[1].properties.uiTriggerID = "map_confirmdefaultorder"
-	row[6]:setColSpan(5):createButton():setText(ReadText(1001, 64), { halign = "center" })
-	row[6].handlers.onClick = function () return menu.buttonDefaultOrderDiscard(instance) end
+	row[8]:setColSpan(5):createButton():setText(ReadText(1001, 64), { halign = "center" })
+	row[8].handlers.onClick = function () return menu.buttonDefaultOrderDiscard(instance) end
 	titlerow[1].properties.helpOverlayHeight = titlerow[1].properties.helpOverlayHeight + row:getHeight() + Helper.borderSize
 end
 

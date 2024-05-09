@@ -2063,7 +2063,7 @@ function menu.setObject(rowdata)
 							if race == "khaak" then
 								iskhaak = true
 							end
-							if isxenon or iskhaak then
+							if isxenon and iskhaak then -- sic! no guarantee that the macro does not define both as makerrace. Also better example if more cases are added.
 								break
 							end
 						end

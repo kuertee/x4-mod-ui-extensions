@@ -366,6 +366,7 @@ ffi.cdef[[
 	bool IsVentureSeasonSupported(void);
 	bool IsVRMode(void);
 	bool IsWeaponModeCompatible(UniverseID weaponid, const char* macroname, const char* weaponmodeid);
+	bool QuickMenuAccess(const char* menu);
 	void ReleaseConstructionMapState(void);
 	void ReleaseDetachedSubordinateGroup(UniverseID controllableid, int group);
 	void RemoveTrackedMenu(const char* menu);
@@ -1680,14 +1681,19 @@ function Helper.closeMenu(menu, dueToClose, allowAutoMenu, sound)
 	closeMenu(menu, updateHandler, allowAutoMenu)
 end
 
-function Helper.closeMenuAndOpenNewMenu(menu, newname, param, noreturn)
+function Helper.closeMenuAndOpenNewMenu(menu, newname, param, noreturn, quickaccess)
 	C.SkipNextStartAnimation()
-	if noreturn then
-		OpenMenu(newname, Helper.convertComponentIDs(param), menu.param2)
-	else
-		OpenMenu(newname, Helper.convertComponentIDs(param), { menu.name, menu.param, { "restore", Helper.convertComponentIDs(menu.onSaveState and menu.onSaveState() or false), menu.param2 } })
+	if not quickaccess then
+		if noreturn then
+			OpenMenu(newname, Helper.convertComponentIDs(param), menu.param2)
+		else
+			OpenMenu(newname, Helper.convertComponentIDs(param), { menu.name, menu.param, { "restore", Helper.convertComponentIDs(menu.onSaveState and menu.onSaveState() or false), menu.param2 } })
+		end
 	end
 	closeMenu(menu, nil, false)
+	if quickaccess then
+		C.QuickMenuAccess(newname)
+	end
 end
 
 function Helper.closeMenuAndReturn(menu, returnparam)
