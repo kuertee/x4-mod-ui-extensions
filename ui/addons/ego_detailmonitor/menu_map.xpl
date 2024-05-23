@@ -1418,32 +1418,51 @@ local config = {
 		{ icon = "mapob_factory",					text = ReadText(20102, 1001),	width = 0.8 * Helper.sidebarWidth,	height = 0.8 * Helper.sidebarWidth,	color = "friendcolor" },	-- Factory
 		-- xl ships
 		{ text = ReadText(1001, 6) .. ReadText(1001, 120) .. " " .. ReadText(20111, 5041) },					-- Ships: XL
-		{ icon = "ship_xl_fight_01",				text = ReadText(1001, 9816),	color = "friendcolor" },	-- Fighter
-		{ icon = "ship_xl_auxiliary_01",			text = ReadText(1001, 9820),	color = "friendcolor" },	-- Auxiliary
-		--{ icon = "ship_xl_mine_01",				text = ReadText(1001, 9818),	color = "friendcolor" },	-- Miner
-		{ icon = "ship_xl_build_01",				text = ReadText(1001, 9821),	color = "friendcolor" },	-- Builder
+		{ icon = "ship_xl_battleship_01",			text = ReadText(1001, 9822),	color = "friendcolor" },	-- Battleship
+		{ icon = "ship_xl_carrier_01",				text = ReadText(1001, 9823),	color = "friendcolor" },	-- Carrier
+		{ icon = "ship_xl_destroyer_01",			text = ReadText(1001, 9824),	color = "friendcolor" },	-- Destroyer
+		{ icon = "ship_xl_freighter_01",			text = ReadText(1001, 9819),	color = "friendcolor" },	-- Freighter
+		{ icon = "ship_xl_resupplier_01",			text = ReadText(1001, 9820),	color = "friendcolor" },	-- Auxiliary
+		{ icon = "ship_xl_builder_01",				text = ReadText(1001, 9821),	color = "friendcolor" },	-- Builder
 		-- l ships
 		{ text = ReadText(1001, 6) .. ReadText(1001, 120) .. " " .. ReadText(20111, 5031) },					-- Ships: L
-		{ icon = "ship_l_fight_01",					text = ReadText(1001, 9816),	color = "friendcolor" },	-- Fighter
-		{ icon = "ship_l_trade_01",					text = ReadText(1001, 9819),	color = "friendcolor" },	-- Freighter
-		{ icon = "ship_l_mine_01",					text = ReadText(1001, 9818),	color = "friendcolor" },	-- Miner
+		{ icon = "ship_l_carrier_01",				text = ReadText(1001, 9823),	color = "friendcolor" },	-- Carrier
+		{ icon = "ship_l_destroyer_01",				text = ReadText(1001, 9824),	color = "friendcolor" },	-- Destroyer
+		{ icon = "ship_l_scavenger_01",				text = ReadText(1001, 9825),	color = "friendcolor" },	-- Scavenger
+		{ icon = "ship_l_freighter_01",				text = ReadText(1001, 9819),	color = "friendcolor" },	-- Freighter
+		{ icon = "ship_l_miner_01",					text = ReadText(1001, 9818),	color = "friendcolor" },	-- Miner
+		{ icon = "ship_l_compactor_01",				text = ReadText(1001, 9826),	color = "friendcolor" },	-- Compactor
 		-- m ships
 		{ text = ReadText(1001, 6) .. ReadText(1001, 120) .. " " .. ReadText(20111, 5021) },					-- Ships: M
-		{ icon = "ship_m_fight_01",					text = ReadText(1001, 9816),	color = "friendcolor" },	-- Fighter
-		{ icon = "ship_m_trade_01",					text = ReadText(1001, 9817),	color = "friendcolor" },	-- Transporter
-		{ icon = "ship_m_mine_01",					text = ReadText(1001, 9818),	color = "friendcolor" },	-- Miner
+		{ icon = "ship_m_frigate_01",				text = ReadText(1001, 9829),	color = "friendcolor" },	-- Frigate
+		{ icon = "ship_m_corvette_01",				text = ReadText(1001, 9828),	color = "friendcolor" },	-- Corvette
+		{ icon = "ship_m_gunboat_01",				text = ReadText(1001, 9830),	color = "friendcolor" },	-- Gunboat
+		{ icon = "ship_m_scavenger_01",				text = ReadText(1001, 9825),	color = "friendcolor" },	-- Scavenger
+		{ icon = "ship_m_transporter_01",			text = ReadText(1001, 9817),	color = "friendcolor" },	-- Transporter
+		{ icon = "ship_m_miner_01",					text = ReadText(1001, 9818),	color = "friendcolor" },	-- Miner
+		{ icon = "ship_m_tug_01",					text = ReadText(1001, 9827),	color = "friendcolor" },	-- Tug
 		-- s ships
 		{ text = ReadText(1001, 6) .. ReadText(1001, 120) .. " " .. ReadText(20111, 5011) },					-- Ships: S
-		{ icon = "ship_s_fight_01",					text = ReadText(1001, 9816),	color = "friendcolor" },	-- Fighter
-		{ icon = "ship_s_trade_01",					text = ReadText(1001, 9817),	color = "friendcolor" },	-- Transporter
-		{ icon = "ship_s_mine_01",					text = ReadText(1001, 9818),	color = "friendcolor" },	-- Miner
+		{ icon = "ship_s_heavyfighter_01",			text = ReadText(1001, 9833),	color = "friendcolor" },	-- Heavy Fighter
+		{ icon = "ship_s_fighter_01",				text = ReadText(1001, 9816),	color = "friendcolor" },	-- Fighter
+		{ icon = "ship_s_scout_01",					text = ReadText(1001, 9834),	color = "friendcolor" },	-- Scout
+		{ icon = "ship_s_lasertower_01",			text = ReadText(1001, 9835),	color = "friendcolor" },	-- Lasertower
+		{ icon = "ship_s_drone_fight_01",			text = ReadText(20101, 100401),	color = "friendcolor" },	-- Defence Drone
+		{ icon = "ship_s_courier_01",				text = ReadText(1001, 9832),	color = "friendcolor" },	-- Courier
+		{ icon = "ship_s_drone_trade_01",			text = ReadText(20101, 100101),	color = "friendcolor" },	-- Cargo Drone
+		{ icon = "ship_s_miner_01",					text = ReadText(1001, 9818),	color = "friendcolor" },	-- Miner
+		{ icon = "ship_s_drone_mine_01",			text = ReadText(20101, 100501),	color = "friendcolor" },	-- Mining Drone
+		{ icon = "ship_s_racer_01",					text = ReadText(1001, 9831),	color = "friendcolor" },	-- Racing
 		-- xs ships
 		{ text = ReadText(1001, 22) },																			-- Units
-		{ icon = "ship_xs_fight_01",				text = ReadText(20101, 100401),	color = "friendcolor" },	-- Defence Drone
-		{ icon = "ship_xs_trade_01",				text = ReadText(20101, 100101),	color = "friendcolor" },	-- Cargo Drone
-		{ icon = "ship_xs_mine_01",					text = ReadText(20101, 100501),	color = "friendcolor" },	-- Mining Drone
-		{ icon = "ship_xs_auxiliary_01",			text = ReadText(20101, 110201),	color = "friendcolor" },	-- Civilian Ship
-		{ icon = "ship_xs_build_01",				text = ReadText(20101, 100301),	color = "friendcolor" },	-- Building Drone
+		{ icon = "ship_xs_drone_fight_01",			text = ReadText(20101, 100401),	color = "friendcolor" },	-- Defence Drone
+		{ icon = "ship_xs_policeship_01",			text = ReadText(20214, 800),	color = "friendcolor" },	-- Police Vehicles
+		{ icon = "ship_xs_boardingpod_01",			text = ReadText(20101, 101301),	color = "friendcolor" },	-- Boarding Pod
+		{ icon = "ship_xs_distressdrone_01",		text = ReadText(1001, 9836),	color = "friendcolor" },	-- Distress Drone
+		{ icon = "ship_xs_lasertower_01_inactive",	text = ReadText(1001, 9835),	color = "friendcolor" },	-- Lasertower
+		{ icon = "ship_xs_drone_trade_01",			text = ReadText(20101, 100101),	color = "friendcolor" },	-- Cargo Drone
+		{ icon = "ship_xs_personalvehicle_01",		text = ReadText(20101, 110201),	color = "friendcolor" },	-- Civilian Ship
+		{ icon = "ship_xs_drone_build_01",			text = ReadText(20101, 100301),	color = "friendcolor" },	-- Building Drone
 		-- trade offers
 		{ text = ReadText(1001, 1113) },																		-- Trade Offers
 		{ icon = "maptr_illegal",					text = ReadText(1001, 9813) },								-- Illegal Trades

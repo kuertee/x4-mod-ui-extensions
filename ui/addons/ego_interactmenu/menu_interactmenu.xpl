@@ -2970,7 +2970,7 @@ function menu.draw()
 				menu.excludeMonitorZone(frame, monitorexclusionzone, width, frameheight, origFrameX, origFrameY, mouseOutBoxExtension, monitor.noright)
 			end
 		end
-		
+
 		if visframe then
 			visframe:display()
 		end
@@ -3033,7 +3033,7 @@ function menu.excludeMonitorZone(frame, monitorexclusionzone, framewidth, frameh
 				-- interact menu extends beyond the monitor on both sides, move it up
 				local newY = monitorexclusionzone.y - frameheight
 				mouseOutBoxExtension.bottom = origFrameY - newY
-				menu.frameY = newY
+				menu.frameY = math.max(0, newY)
 				needschange = false
 			elseif menu.frameX + framewidth > monitorexclusionzone.x then
 				-- overlapping with the minitor, flip to left from cursor
@@ -3085,7 +3085,7 @@ function menu.excludeMonitorZone(frame, monitorexclusionzone, framewidth, frameh
 			elseif (diffY < diffX1) and (diffY < diffX2) then
 				-- moving up
 				mouseOutBoxExtension.bottom = diffY
-				menu.frameY = newY
+				menu.frameY = math.max(0, newY)
 				needschange = false
 			end
 		end
@@ -5740,6 +5740,9 @@ function menu.prepareActions()
 									entry.mouseOverText = (not menu.hasPlayerShipPilot) and ReadText(1026, 7830) or ""
 									if menu.numorderloops == 0 then
 										entry.text = menu.orderIconText("TradePerform") .. entry.text
+										entry.helpOverlayID = "interactmenu_trade"
+										entry.helpOverlayText = " "
+										entry.helpOverlayHighlightOnly = true
 										menu.insertInteractionContent("trade_orders", entry)
 									else
 										local hasbuy, hassell

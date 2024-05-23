@@ -63,6 +63,10 @@ ffi.cdef[[
 	typedef struct {
 		const char* filename;
 		const char* name;
+	} UIColorProfileInfo;
+	typedef struct {
+		const char* filename;
+		const char* name;
 		const char* description;
 		const char* version;
 		uint32_t rawversion;
@@ -88,6 +92,7 @@ ffi.cdef[[
 	bool DoesColorMapNeedRestart(void);
 	void EnableScenarioLoading(bool reverse, const char* gamestartid);
 	void ExportColorMap(void);
+	void ExportColorProfile(const char* filename, const char* name);
 	void ExportInputFeedbackConfig(void);
 	void FadeScreen2(float fadeouttime, float fadeintime, float holdtime);
 	const char* GetAAOption(bool useconfig);
@@ -103,6 +108,7 @@ ffi.cdef[[
 	bool GetChromaticAberrationOption(void);
 	const char* GetColorBlindOption(void);
 	float GetColorBlindOptionStrength(void);
+	uint32_t GetColorProfiles(UIColorProfileInfo* result, uint32_t resultlen);
 	uint32_t GetConfiguredModifierKeys(InputData* result, uint32_t resultlen, const char* uimodifier);
 	int32_t GetCurrentLanguage(void);
 	const char* GetCurrentSoundDevice(void);
@@ -139,6 +145,7 @@ ffi.cdef[[
 	uint32_t GetNumAllColorMapMappings(void);
 	uint32_t GetNumAllInputFeedback(void);
 	uint32_t GetNumCatalogMacros(const char* classid);
+	uint32_t GetNumColorProfiles();
 	uint32_t GetNumConfiguredModifierKeys(const char* modifier);
 	uint32_t GetNumGameStartGroups(void);
 	uint32_t GetNumGPUs(void);
@@ -192,6 +199,7 @@ ffi.cdef[[
 	bool HasSavegame(void);
 	void HidePromo(void);
 	void ImportColorMap(bool usedefault);
+	void ImportColorProfile(const char* filename);
 	void ImportInputFeedbackConfig(bool usedefault);
 	bool IsAAOptionSupported(const char* mode);
 	bool IsAppStoreVersion(void);
@@ -434,6 +442,8 @@ local config = {
 	hubFadeOutHoldDuration = 0.1,
 
 	numRecommendedGamestarts = 2,
+
+	minGamestartInfoRows = 8,
 }
 
 config.frame = {
@@ -1179,6 +1189,7 @@ config.optionDefinitions = {
 		[2] = {
 			id = "continue",
 			name = function () return menu.nameContinue() end,
+			mouseOverText = ReadText(1026, 4803),
 			callback = function () return menu.callbackContinue() end,
 			selectable = function () return menu.selectableContinue() end,
 			wordwrap = true,
@@ -1186,6 +1197,7 @@ config.optionDefinitions = {
 		[3] = {
 			id = "load",
 			name = function () return (menu.autoReloadSave or C.IsSaveListLoadingComplete()) and ReadText(1001, 2604) or ReadText(1001, 7203) end,
+			mouseOverText = ReadText(1026, 4804),
 			submenu = "load",
 			selectable = function () return C.IsSaveListLoadingComplete() and C.HasSavegame() end,
 		},
@@ -1204,6 +1216,7 @@ config.optionDefinitions = {
 		[6] = {
 			id = "tutorials",
 			name = ReadText(1001, 12660),
+			mouseOverText = ReadText(1026, 4805),
 			submenu = "tutorials",
 		},
 		[7] = {
@@ -1399,11 +1412,12 @@ config.optionDefinitions = {
 			name = function () return menu.nameOnline() end,
 			submenu = "online",
 			selectable = C.IsOnlineEnabled,
-			mouseOverText = function () return C.IsOnlineEnabled() and "" or ReadText(1001, 11592) end,
+			mouseOverText = function () return C.IsOnlineEnabled() and (ReadText(1026, 4806) .. "\n\n" .. ReadText(1026, 4807)) or ReadText(1001, 11592) end,
 		},
 		[2] = {
 			id = "extensions",
 			name = function () return menu.nameExtension() end,
+			mouseOverText = ReadText(1026, 4808),
 			submenu = "extensions",
 			display = function () return not C.IsDemoVersion() end,
 		},
@@ -3757,7 +3771,7 @@ function menu.createContextMenuDirectInput(frame)
 	local row = ftable:addRow(nil, { fixed = true })
 	row[2]:setColSpan(3):createText(menu.getControlName(menu.remapControl.controltype, menu.remapControl.controlcode), { font = config.fontBold, halign = "center" })
 
-	local currentinputname = ""
+	local currentinputname = ReadText(1001, 12709)
 	if menu.remapControl.oldinputtype ~= -1 then
 		local keyname, keyicon = menu.getInputName(menu.remapControl.oldinputtype, menu.remapControl.oldinputcode, menu.remapControl.oldinputsgn)
 		currentinputname = keyname .. " " .. keyicon
@@ -3813,7 +3827,7 @@ function menu.createContextMenuRemoveControllerInput(frame)
 	local row = ftable:addRow(nil, { fixed = true })
 	row[1]:setColSpan(5):createText(menu.getControlName(menu.remapControl.controltype, menu.remapControl.controlcode), { font = config.fontBold, halign = "center" })
 
-	local currentinputname = ""
+	local currentinputname = ReadText(1001, 12709)
 	if menu.remapControl.oldinputtype ~= -1 then
 		local keyname, keyicon = menu.getInputName(menu.remapControl.oldinputtype, menu.remapControl.oldinputcode, menu.remapControl.oldinputsgn)
 		currentinputname = keyname .. " " .. keyicon
@@ -4744,6 +4758,9 @@ function menu.refresh()
 		menu.selectedRows["colorblindcolors"] = Helper.currentTableRow[menu.colorTable]
 		menu.topRows["colorblindmappings"] = GetTopRow(menu.mappingTable)
 		menu.selectedRows["colorblindmappings"] = Helper.currentTableRow[menu.mappingTable]
+		menu.topRows["colorblindbuttons"] = GetTopRow(menu.buttonTable)
+		menu.selectedRows["colorblindbuttons"] = Helper.currentTableRow[menu.buttonTable]
+		menu.selectedCols["colorblindbuttons"] = Helper.currentTableCol[menu.buttonTable]
 	elseif menu.currentOption == "inputfeedback" then
 		menu.topRows["inputfeedbackconfig"] = GetTopRow(menu.optionTable)
 		menu.selectedRows["inputfeedbackconfig"] = Helper.currentTableRow[menu.optionTable]
@@ -8796,7 +8813,7 @@ function menu.displayNewGame(createAsServer, displayTimelinesScenarios, displayT
 	menu.preselectTopRow = nil
 	menu.preselectOption = nil
 
-	local width = menu.table.width - menu.table.widthWithExtraInfo - Helper.borderSize
+	local width = math.floor(1.3 * (menu.table.width - menu.table.widthWithExtraInfo - Helper.borderSize))
 	local offsetx = menu.table.x + menu.table.widthWithExtraInfo + Helper.borderSize
 	local iconheight = math.floor(width * 9 / 16)
 	local infoheight = height
@@ -8813,7 +8830,7 @@ function menu.displayNewGame(createAsServer, displayTimelinesScenarios, displayT
 		infoheight = infoheight - iconheight - Helper.borderSize
 	end
 
-	local numlines = 7
+	local numlines = 5
 	local baseMaxVisibleHeight = Helper.scaleY(Helper.standardButtonHeight) + Helper.borderSize
 	if not showCutscene then
 		baseMaxVisibleHeight = baseMaxVisibleHeight + iconheight + Helper.borderSize
@@ -8875,23 +8892,30 @@ function menu.displayNewGame(createAsServer, displayTimelinesScenarios, displayT
 		row[1]:createText("", { scaling = false, minRowHeight = infotable.properties.maxVisibleHeight - fullheight, fontsize = 1 })
 	end
 
+	local iconwidth = math.floor(0.27 * width) - Helper.borderSize
 	local infotable2 = frame:addTable(3, { tabOrder = 4, x = offsetx, y = infotable.properties.y + infotable.properties.maxVisibleHeight + Helper.borderSize, width = width, maxVisibleHeight = infoheight - infotable.properties.maxVisibleHeight - Helper.borderSize })
-	infotable2:setColWidthPercent(2, 15)
-	infotable2:setColWidthPercent(3, 50)
-	infotable2:setDefaultColSpan(2, 2)
+	infotable2:setColWidthPercent(1, 25)
+	infotable2:setColWidth(3, iconwidth, false)
 	infotable2:setDefaultBackgroundColSpan(1, 3)
 
 	if menu.selectedOption then
+		local isspecial = menu.selectedOption.customeditor or menu.selectedOption.mapeditor or menu.selectedOption.stationeditor
+		local valuecolspan = 1
+		if isspecial then
+			valuecolspan = 2
+		end
+
 		local row = infotable2:addRow(nil, {  })
 		row[1]:setColSpan(3):createText(" ", { fontsize = 1, height = Helper.borderSize, cellBGColor = Color["row_background_blue"] })
 
 		if IsCheatVersion() then
 			local row = infotable2:addRow(nil, { bgColor = Color["optionsmenu_cell_background"], borderBelow = false })
 			row[1]:createText("Gamestart ID:") -- (cheat only)
-			row[2]:createText(ColorText["text_inactive"] .. menu.selectedOption.id, { halign = "right" })
+			row[2]:setColSpan(valuecolspan):createText(ColorText["text_inactive"] .. menu.selectedOption.id, { halign = "right" })
 		end
+		local infostarty = infotable2:getFullHeight()
 
-		local playermacro = ""
+		local playermacro = menu.selectedOption.playermacro
 		local playermacrooptions = {}
 		if menu.selectedOption.custom then
 			local buf = ffi.new("CustomGameStartStringPropertyState[1]")
@@ -8933,18 +8957,31 @@ function menu.displayNewGame(createAsServer, displayTimelinesScenarios, displayT
 			end
 		end
 
+		local playerimage = ""
+		if not isspecial then
+			playerimage = GetMacroData(playermacro, "image") or ""
+		end
+
+		local infoimage = ""
+		for i, entry in ipairs(menu.selectedOption.info) do
+			if entry.info == "@playerimage" then
+				infoimage = entry.description
+			end
+		end
+		local imagerow, imageindex = nil, 1
+
 		for i, entry in ipairs(menu.selectedOption.info) do
 			local row
 			if entry.info == "@name" then
 				row = infotable2:addRow(nil, { bgColor = Color["optionsmenu_cell_background"], borderBelow = false })
 				row[1]:createText(ReadText(1021, 8) .. ReadText(1001, 120))
 				local gamestartid = menu.selectedOption.id
-				row[2]:createText(function () local buf = ffi.new("CustomGameStartStringPropertyState[1]"); return ColorText["text_inactive"] .. ffi.string(C.GetCustomGameStartStringProperty(gamestartid, "playername", buf)) end, { halign = "right" })
+				row[2]:setColSpan(valuecolspan):createText(function () local buf = ffi.new("CustomGameStartStringPropertyState[1]"); return ColorText["text_inactive"] .. ffi.string(C.GetCustomGameStartStringProperty(gamestartid, "playername", buf)) end, { halign = "right" })
 			elseif entry.info == "@player" then
 				row = infotable2:addRow(true, { bgColor = Color["optionsmenu_cell_background"], borderBelow = false })
 				if #playermacrooptions > 0 then
 					row[1]:createText(ReadText(1021, 11007) .. ReadText(1001, 120))
-					row[2]:createDropDown(playermacrooptions, { startOption = playermacro, height = Helper.standardTextHeight }):setTextProperties({ halign = "right", x = Helper.standardTextOffsetx })
+					row[2]:setColSpan(valuecolspan):createDropDown(playermacrooptions, { startOption = playermacro, height = Helper.standardTextHeight }):setTextProperties({ halign = "right", x = Helper.standardTextOffsetx })
 					row[2].handlers.onDropDownConfirmed = function(_, id) return menu.callbackGamestartPlayerMacro(menu.selectedOption.id, "player", id) end
 				else
 					row[1]:createText("")
@@ -8953,17 +8990,37 @@ function menu.displayNewGame(createAsServer, displayTimelinesScenarios, displayT
 				if not menu.selectedOption.unlocked then
 					row = infotable2:addRow(nil, { bgColor = Color["optionsmenu_cell_background"], borderBelow = false })
 					row[1]:createText(ReadText(1004, 45) .. ReadText(1001, 120))
-					row[2]:createText(ColorText["text_inactive"] .. entry.description, { halign = "right" })
+					row[2]:setColSpan(valuecolspan):createText(ColorText["text_inactive"] .. entry.description, { halign = "right" })
+				end
+			elseif entry.info == "@playerimage" then
+				if i == 1 then
+					imageindex = i + 1
 				end
 			elseif entry.info ~= "" then
 				row = infotable2:addRow(nil, { bgColor = Color["optionsmenu_cell_background"], borderBelow = false })
 				row[1]:createText(entry.info .. ReadText(1001, 120))
-				row[2]:createText(ColorText["text_inactive"] .. entry.description, { halign = "right" })
+				row[2]:setColSpan(valuecolspan):createText(ColorText["text_inactive"] .. entry.description, { halign = "right" })
 			elseif menu.selectedOption.info[i + 1].info ~= "@unlock" or (not menu.selectedOption.unlocked) then
 				-- do not show the empty line before @unlock if @unlock is not shown
 				row = infotable2:addRow(nil, { bgColor = Color["optionsmenu_cell_background"], borderBelow = false })
 				row[1]:createText("")
 			end
+			
+			if row then
+				if (playerimage ~= "") or (infoimage ~= "") then
+					if i == imageindex then
+						imagerow = row
+						row[3]:createIcon((playerimage ~= "") and function () return menu.getPlayerMacroIcon(menu.selectedOption) end or infoimage, { width = iconwidth, height = iconwidth, scaling = false, affectRowHeight = false, y = iconwidth / 2 - Helper.scaleY(config.infoTextHeight) / 2, cellBGColor = Color["optionsmenu_cell_background_icon"] })
+					else
+						row[3]:createText(" ", { cellBGColor = Color["optionsmenu_cell_background_icon"] })
+					end
+				end
+			end
+		end
+		if imagerow then
+			local infoendy = infotable2:getFullHeight()
+			local imageoffsety = math.floor(((infoendy - infostarty) - iconwidth) / 2)
+			imagerow[3].properties.y = iconwidth / 2 - Helper.scaleY(config.infoTextHeight) / 2 + imageoffsety
 		end
 	end
 
@@ -8980,6 +9037,16 @@ function menu.displayNewGame(createAsServer, displayTimelinesScenarios, displayT
 	infotable2:addConnection(2, 2)
 
 	frame:display()
+end
+
+function menu.getPlayerMacroIcon(gamestart)
+	local playermacro = gamestart.playermacro
+	if gamestart.custom then
+		local buf = ffi.new("CustomGameStartStringPropertyState[1]")
+		playermacro = ffi.string(C.GetCustomGameStartStringProperty(gamestart.id, "player", buf))
+	end
+
+	return GetMacroData(playermacro, "image") or ""
 end
 
 function menu.displayTimelines()
@@ -9051,7 +9118,7 @@ function menu.displayTimelines()
 		end
 	end
 
-	local width = menu.table.width - menu.table.widthWithExtraInfo - Helper.borderSize
+	local width = math.floor(1.3 * (menu.table.width - menu.table.widthWithExtraInfo - Helper.borderSize))
 	local offsetx = menu.table.x + menu.table.widthWithExtraInfo + Helper.borderSize
 	local iconheight = math.floor(width * 9 / 16)
 	local infoheight = height
@@ -9068,7 +9135,7 @@ function menu.displayTimelines()
 		infoheight = infoheight - iconheight - Helper.borderSize
 	end
 
-	local numlines = 7
+	local numlines = 5
 	local baseMaxVisibleHeight = Helper.scaleY(Helper.standardButtonHeight) + Helper.borderSize
 	if not showCutscene then
 		baseMaxVisibleHeight = baseMaxVisibleHeight + iconheight + Helper.borderSize
@@ -9130,23 +9197,30 @@ function menu.displayTimelines()
 		row[1]:createText("", { scaling = false, minRowHeight = infotable.properties.maxVisibleHeight - fullheight, fontsize = 1 })
 	end
 
+	local iconwidth = math.floor(0.27 * width) - Helper.borderSize
 	local infotable2 = frame:addTable(3, { tabOrder = 4, x = offsetx, y = infotable.properties.y + infotable.properties.maxVisibleHeight + Helper.borderSize, width = width, maxVisibleHeight = infoheight - infotable.properties.maxVisibleHeight - Helper.borderSize })
-	infotable2:setColWidthPercent(2, 15)
-	infotable2:setColWidthPercent(3, 50)
-	infotable2:setDefaultColSpan(2, 2)
+	infotable2:setColWidthPercent(1, 25)
+	infotable2:setColWidth(3, iconwidth, false)
 	infotable2:setDefaultBackgroundColSpan(1, 3)
 
 	if timelinesgamestart then
+		local isspecial = timelinesgamestart.customeditor or timelinesgamestart.mapeditor or timelinesgamestart.stationeditor
+		local valuecolspan = 1
+		if isspecial then
+			valuecolspan = 2
+		end
+
 		local row = infotable2:addRow(nil, {  })
 		row[1]:setColSpan(3):createText(" ", { fontsize = 1, height = Helper.borderSize, cellBGColor = Color["row_background_blue"] })
 
 		if IsCheatVersion() then
 			local row = infotable2:addRow(nil, { bgColor = Color["optionsmenu_cell_background"], borderBelow = false })
 			row[1]:createText("Gamestart ID:") -- (cheat only)
-			row[2]:createText(ColorText["text_inactive"] .. timelinesgamestart.id, { halign = "right" })
+			row[2]:setColSpan(valuecolspan):createText(ColorText["text_inactive"] .. timelinesgamestart.id, { halign = "right" })
 		end
+		local infostarty = infotable2:getFullHeight()
 
-		local playermacro = ""
+		local playermacro = timelinesgamestart.playermacro
 		local playermacrooptions = {}
 		if timelinesgamestart.custom then
 			local buf = ffi.new("CustomGameStartStringPropertyState[1]")
@@ -9188,19 +9262,33 @@ function menu.displayTimelines()
 			end
 		end
 
+		local playerimage = ""
+		if not isspecial then
+			playerimage = GetMacroData(playermacro, "image") or ""
+		end
+
+		local infoimage = ""
+		for i, entry in ipairs(timelinesgamestart.info) do
+			if entry.info == "@playerimage" then
+				infoimage = entry.description
+			end
+		end
+		local imagerow, imageindex = nil, 1
+
+		local rowcount = 0
 		for i, entry in ipairs(timelinesgamestart.info) do
 			local row
 			if entry.info == "@name" then
 				row = infotable2:addRow(nil, { bgColor = Color["optionsmenu_cell_background"], borderBelow = false })
 				row[1]:createText(ReadText(1021, 8) .. ReadText(1001, 120))
 				local gamestartid = timelinesgamestart.id
-				row[2]:createText(function () local buf = ffi.new("CustomGameStartStringPropertyState[1]"); return ColorText["text_inactive"] .. ffi.string(C.GetCustomGameStartStringProperty(gamestartid, "playername", buf)) end, { halign = "right" })
+				row[2]:setColSpan(valuecolspan):createText(function () local buf = ffi.new("CustomGameStartStringPropertyState[1]"); return ColorText["text_inactive"] .. ffi.string(C.GetCustomGameStartStringProperty(gamestartid, "playername", buf)) end, { halign = "right" })
 			elseif entry.info == "@player" then
 				if ffi.string(C.GetUserData("timelines_scenarios_finished")) == "" then
 					row = infotable2:addRow(true, { bgColor = Color["optionsmenu_cell_background"], borderBelow = false })
 					if #playermacrooptions > 0 then
 						row[1]:createText(ReadText(1021, 11007) .. ReadText(1001, 120))
-						row[2]:createDropDown(playermacrooptions, { startOption = playermacro, height = Helper.standardTextHeight }):setTextProperties({ halign = "right", x = Helper.standardTextOffsetx })
+						row[2]:setColSpan(valuecolspan):createDropDown(playermacrooptions, { startOption = playermacro, height = Helper.standardTextHeight }):setTextProperties({ halign = "right", x = Helper.standardTextOffsetx })
 						row[2].handlers.onDropDownConfirmed = function(_, id) C.SetUserData("timelines_player_character_macro", id); return menu.callbackGamestartPlayerMacro(timelinesgamestart.id, "player", id) end
 					else
 						row[1]:createText("")
@@ -9209,23 +9297,54 @@ function menu.displayTimelines()
 					local playermacro = ffi.string(C.GetUserData("timelines_player_character_macro"))
 					if playermacro ~= "" then
 						menu.callbackGamestartPlayerMacro(timelinesgamestart.id, "player", playermacro)
+						playerimage = GetMacroData(playermacro, "image") or ""
 					end
 				end
 			elseif entry.info == "@unlock" then
 				if not timelinesgamestart.unlocked then
 					row = infotable2:addRow(nil, { bgColor = Color["optionsmenu_cell_background"], borderBelow = false })
 					row[1]:createText(ReadText(1004, 45) .. ReadText(1001, 120))
-					row[2]:createText(ColorText["text_inactive"] .. entry.description, { halign = "right" })
+					row[2]:setColSpan(valuecolspan):createText(ColorText["text_inactive"] .. entry.description, { halign = "right" })
+				end
+			elseif entry.info == "@playerimage" then
+				-- skip
+				if i == 1 then
+					imageindex = i + 1
 				end
 			elseif entry.info ~= "" then
 				row = infotable2:addRow(nil, { bgColor = Color["optionsmenu_cell_background"], borderBelow = false })
 				row[1]:createText(entry.info .. ReadText(1001, 120))
-				row[2]:createText(ColorText["text_inactive"] .. entry.description, { halign = "right" })
+				row[2]:setColSpan(valuecolspan):createText(ColorText["text_inactive"] .. entry.description, { halign = "right" })
 			elseif timelinesgamestart.info[i + 1].info ~= "@unlock" or (not timelinesgamestart.unlocked) then
 				-- do not show the empty line before @unlock if @unlock is not shown
 				row = infotable2:addRow(nil, { bgColor = Color["optionsmenu_cell_background"], borderBelow = false })
 				row[1]:createText("")
 			end
+			
+			if row then
+				rowcount = rowcount + 1
+				if (playerimage ~= "") or (infoimage ~= "") then
+					if i == imageindex then
+						imagerow = row
+						row[3]:createIcon((playerimage ~= "") and function () return menu.getPlayerMacroIcon(timelinesgamestart) end or infoimage, { width = iconwidth, height = iconwidth, scaling = false, affectRowHeight = false, y = iconwidth / 2 - Helper.scaleY(config.infoTextHeight) / 2, cellBGColor = Color["optionsmenu_cell_background_icon"] })
+					else
+						row[3]:createText(" ", { cellBGColor = Color["optionsmenu_cell_background_icon"] })
+					end
+				end
+			end
+		end
+
+		if rowcount < config.minGamestartInfoRows then
+			for i = 1, config.minGamestartInfoRows - rowcount do
+				local row = infotable2:addRow(nil, { bgColor = Color["optionsmenu_cell_background"], borderBelow = false })
+				row[3]:createText(" ", { cellBGColor = Color["optionsmenu_cell_background_icon"] })
+			end
+		end
+
+		if imagerow then
+			local infoendy = infotable2:getFullHeight()
+			local imageoffsety = math.floor(((infoendy - infostarty) - iconwidth) / 2)
+			imagerow[3].properties.y = iconwidth / 2 - Helper.scaleY(config.infoTextHeight) / 2 + imageoffsety
 		end
 	end
 
@@ -9711,7 +9830,10 @@ function menu.displayColorLibrary()
 		mappingsByID = {},
 		sortedMappings = {},
 		colorDropdownOptions = {},
+		profilesByFilename = {},
 		newColorDefinition = "",
+		newColorProfileName = menu.colorLibSettings and menu.colorLibSettings.newColorProfileName or "",
+		newColorProfileFileName = menu.colorLibSettings and menu.colorLibSettings.newColorProfileFileName or "",
 		colorblindstrength = 100,
 		sortByReference = menu.colorLibSettings and menu.colorLibSettings.sortByReference or false,
 	}
@@ -9864,18 +9986,62 @@ function menu.displayColorLibrary()
 	local buttontable = frame:addTable(5, { tabOrder = 4, x = menu.table.x, y = 0, width = titletablewidth })
 	buttontable:setDefaultCellProperties("button", { height = config.standardTextHeight })
 	buttontable:setDefaultComplexCellProperties("button", "text", { x = config.standardTextOffsetX, fontsize = config.standardFontSize })
+	buttontable:setDefaultCellProperties("dropdown", { height = Helper.scaleY(config.standardTextHeight), scaling = false })
+	buttontable:setDefaultComplexCellProperties("dropdown", "text", { x = config.standardTextOffsetX, fontsize = config.standardFontSize, scaling = true })
 
 	local row = buttontable:addRow(true, { fixed = true })
-	row[1]:createEditBox({ height = config.standardTextHeight, description = ReadText(1001, 12610) }):setText(menu.colorLibSettings.newColorDefinition, { fontsize = config.standardFontSize })
+	row[1]:createEditBox({ height = config.standardTextHeight, description = ReadText(1001, 12610) }):setText(menu.colorLibSettings.newColorDefinition, { fontsize = config.standardFontSize, x = Helper.standardTextOffsetx })
 	row[1].handlers.onTextChanged = function (_, text) menu.colorLibSettings.newColorDefinition = text end
 	row[2]:createButton({ active = function () return (menu.colorLibSettings.newColorDefinition ~= "") and (menu.colorLibSettings.colorIndices[menu.colorLibSettings.newColorDefinition] == nil) end }):setText(ReadText(1001, 12611), { halign = "center" })
 	row[2].handlers.onClick = function () C.AddColorMapColorDefinition(menu.colorLibSettings.newColorDefinition); menu.colorLibSettings.newColorDefinition = ""; menu.refresh() end
 
+	row[4]:setColSpan(2):createText(ReadText(1001, 12708), config.subHeaderTextProperties)
+
 	local row = buttontable:addRow(true, { fixed = true })
-	row[1]:createButton({  }):setText(ReadText(1001, 8967), { halign = "center" })
-	row[1].handlers.onClick = function() C.ExportColorMap() end
+	local profiles = {}
+	menu.colorLibSettings.profilesByFilename = {}
+	local n = C.GetNumColorProfiles()
+	if n > 0 then
+		local buf = ffi.new("UIColorProfileInfo[?]", n)
+		n = C.GetColorProfiles(buf, n)
+		for i = 0, n - 1 do
+			local filename = ffi.string(buf[i].filename)
+			local name = ffi.string(buf[i].name)
+			table.insert(profiles, { id = filename, text = name, icon = "", displayremoveoption = false })
+			menu.colorLibSettings.profilesByFilename[filename] = name
+		end
+	end
+	row[4]:setColSpan(2):createDropDown(profiles, { startOption = "", textOverride = ReadText(1001, 12703), active = n > 0 })
+	row[4].handlers.onDropDownConfirmed = function (_, option)  menu.colorLibSettings.newColorProfileName = menu.colorLibSettings.profilesByFilename[option];  menu.colorLibSettings.newColorProfileFileName = option; C.ImportColorProfile(option); menu.refresh() end
+
+	local row = buttontable:addRow(nil, {  })
+	row[1]:setColSpan(2):createText(" ", { fontsize = 1, height = Helper.borderSize, cellBGColor = Color["row_separator"] })
+
+	local row = buttontable:addRow(nil, { fixed = true })
+	row[4]:setColSpan(2):createText(ReadText(1001, 12705), config.subHeaderTextProperties)
+
+	local row = buttontable:addRow(true, { fixed = true })
+	row[1]:createButton({  }):setText(ReadText(1001, 12704), { halign = "center" })
+	row[1].handlers.onClick = function () C.ExportColorMap() end
 	row[2]:createButton({  }):setText(ReadText(1001, 2647), { halign = "center" })
-	row[2].handlers.onClick = function() C.ImportColorMap(true); menu.refresh() end
+	row[2].handlers.onClick = function () C.ImportColorMap(true); menu.refresh() end
+
+	row[4]:setColSpan(2):createEditBox({ height = config.standardTextHeight, description = ReadText(1001, 12706) }):setText(menu.colorLibSettings.newColorProfileName, { fontsize = config.standardFontSize, x = Helper.standardTextOffsetx })
+	row[4].handlers.onEditBoxActivated = function () SelectRow(menu.buttonTable, row.index) end
+	row[4].handlers.onTextChanged = function (_, text) menu.colorLibSettings.newColorProfileName = text; menu.colorLibSettings.newColorProfileFileName = utf8.gsub(menu.colorLibSettings.newColorProfileName, "[^%w_%-%() ]", "_") end
+
+	local row = buttontable:addRow(true, { fixed = true })
+	row[4]:createButton({ active = function () return (menu.colorLibSettings.newColorProfileFileName ~= "") and (menu.colorLibSettings.profilesByFilename[menu.colorLibSettings.newColorProfileFileName] ~= nil) end }):setText(ReadText(1001, 12707), { halign = "center" })
+	row[4].handlers.onClick = function () C.ExportColorProfile(menu.colorLibSettings.newColorProfileFileName, menu.colorLibSettings.newColorProfileName); menu.refresh() end
+	row[5]:createButton({ active = function () return (menu.colorLibSettings.newColorProfileFileName ~= "") and (menu.colorLibSettings.profilesByFilename[menu.colorLibSettings.newColorProfileFileName] == nil) end }):setText(ReadText(1001, 7909), { halign = "center" })
+	row[5].handlers.onClick = function () C.ExportColorProfile(menu.colorLibSettings.newColorProfileFileName, menu.colorLibSettings.newColorProfileName); menu.refresh() end
+
+	buttontable:setTopRow(menu.topRows["colorblindbuttons"])
+	buttontable:setSelectedRow(menu.selectedRows["colorblindbuttons"])
+	buttontable:setSelectedCol(menu.selectedCols["colorblindbuttons"] or 1)
+	menu.topRows["colorblindbuttons"] = nil
+	menu.selectedRows["colorblindbuttons"] = nil
+	menu.selectedCols["colorblindbuttons"] = nil
 
 	local buttonheight = buttontable:getFullHeight()
 	buttontable.properties.y = Helper.viewHeight - menu.frameOffsetY - buttonheight - menu.table.x

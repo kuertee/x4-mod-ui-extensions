@@ -5,8 +5,8 @@ by kuertee. Contributors: Erixon, Forleyor, Mycu, Runekn, AlexandreTK.
 
 Updates
 =======
-beta v7.0.005, 9 May 2024:
--Compatibility: Requires base game beta v7.0.0.
+beta v7.0.006, 23 May 2024:
+-Compatibility: Requires base game v7.0.0 beta 6.
 
 Instructions for players
 ========================
@@ -170,6 +170,9 @@ Troubleshooting
 
 History
 =======
+beta v7.0.005, 9 May 2024:
+-Compatibility: Requires base game beta v7.0.0.
+
 beta v7.0.002, 10 Apr 2024:
 -Bug-fix: missed lines from base beta 7.0.0 that resulted in the trade sections not showing in the Interact Menu.
 

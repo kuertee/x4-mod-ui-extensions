@@ -2327,12 +2327,12 @@ function menu.onExpandTradeWares(frame, ftable, ftable2, nodedata)
 
 	for _, entry in ipairs(allwares) do
 		local row = ftable:addRow(true, {  })
-		row[1]:setBackgroundColSpan(3):createCheckBox(menu.selectedWares[entry.ware], { width = Helper.standardButtonHeight, height = Helper.standardButtonHeight, helpOverlayID = "station_overview_tradeware_option_" .. entry.ware, helpOverlayText = " ", helpOverlayHighlightOnly = true, helpOverlayUseBackgroundSpan = true })
+		row[1]:setBackgroundColSpan(3):createCheckBox(menu.selectedWares[entry.ware], { width = Helper.standardButtonHeight, height = Helper.standardButtonHeight, helpOverlayID = "station_overview_tradeware_option_" .. entry.ware, helpOverlayText = " ", helpOverlayHighlightOnly = true, helpOverlayUseBackgroundSpan = true, uiTriggerID = "tradeware_" .. entry.ware })
 		row[1].handlers.onClick = function (_, checked) if checked then menu.selectedWares[entry.ware] = true else menu.selectedWares[entry.ware] = nil end end
 		row[2]:setColSpan(2):createText(entry.name)
 	end
 	local row = ftable2:addRow(true, {  })
-	row[1]:setColSpan(2):createButton({ active = function () return not menu.compareTradeWareSelection() end }):setText(ReadText(1001, 2821), { halign = "center" })
+	row[1]:setColSpan(2):createButton({ active = function () return not menu.compareTradeWareSelection() end, uiTriggerID = "tradewares_confirm" }):setText(ReadText(1001, 2821), { halign = "center" })
 	row[1].handlers.onClick = menu.setTradeWares
 	row[3]:createButton({  }):setText(ReadText(1001, 64), { halign = "center" })
 	row[3].handlers.onClick = function () return menu.expandedNode:collapse() end

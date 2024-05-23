@@ -3508,18 +3508,18 @@ function menu.getEmployeeList()
 		if locshipware and (not isunit) and (not islasertower) and (not isdeployable) then
 			local shipname, pilot, isdeployable = GetComponentData(locship, "name", "assignedaipilot", "isdeployable")
 			shipname = shipname .. " (" .. ffi.string(C.GetObjectIDCode(locship)) .. ")"
-				if pilot and IsValidComponent(pilot) then
-					local name, combinedskill, poststring, postname = GetComponentData(pilot, "name", "combinedskill", "poststring", "postname")
+			if pilot and IsValidComponent(pilot) then
+				local name, combinedskill, poststring, postname = GetComponentData(pilot, "name", "combinedskill", "poststring", "postname")
 				table.insert(empireemployees, { id = ConvertIDTo64Bit(pilot), type = "entity", name = name, combinedskill = combinedskill, roleid = poststring, rolename = postname, container = locship, containername = shipname })
 				numhiredpersonnel = numhiredpersonnel + 1
-				end
+			end
 			local locnumroles = C.GetPeople2(peopletable, numroles, locship, true)
 			for i = 0, locnumroles - 1 do
 				numhiredpersonnel = numhiredpersonnel + peopletable[i].amount
-
-					local roleid = ffi.string(peopletable[i].id)
-					local rolename = ffi.string(peopletable[i].name)
-					local numtiers = peopletable[i].numtiers
+				local roleid = ffi.string(peopletable[i].id)
+				local rolename = ffi.string(peopletable[i].name)
+				local numtiers = peopletable[i].numtiers
+				--print("role: " .. tostring(roleid) .. ", rolename: " .. tostring(rolename) .. ", numtiers: " .. tostring(numtiers))
 				if numtiers > 0 then
 					local tiertable = ffi.new("RoleTierData[?]", numtiers)
 					numtiers = C.GetRoleTiers(tiertable, numtiers, locship, peopletable[i].id)
@@ -3529,12 +3529,19 @@ function menu.getEmployeeList()
 							local persontable = GetRoleTierNPCs(locship, roleid, tiertable[j].skilllevel)
 							for k, person in ipairs(persontable) do
 								table.insert(empireemployees, { id = person.seed, type = "person", name = person.name, combinedskill = person.combinedskill, roleid = roleid, rolename = rolename, container = locship, containername = shipname })
+							end
 						end
+					end
+				elseif roleid == "unassigned" then
+					local persontable = GetRoleTierNPCs(locship, roleid, 0)
+					--print("numpersons: " .. tostring(#persontable))
+					for k, person in ipairs(persontable) do
+						--print(k .. ": " .. person.name)
+						table.insert(empireemployees, { id = person.seed, type = "person", name = person.name, combinedskill = person.combinedskill, roleid = roleid, rolename = rolename, container = locship, containername = shipname })
 					end
 				end
 			end
 		end
-	end
 	end
 
 	local numownedstations = C.GetNumAllFactionStations("player")
@@ -6294,7 +6301,7 @@ function menu.createContextFrame(data, x, y, width, nomouseout)
 					local row = ftable:addRow("info_person_cancel_transfer", { fixed = true })
 					row[1]:createButton({ bgColor = Color["button_background_hidden"], height = Helper.standardTextHeight }):setText(ReadText(1001, 9435))	-- Cancel all scheduled transfers
 					row[1].handlers.onClick = function () return menu.buttonPersonnelCancelTransfer(controllable, person) end
-				elseif hasarrived and ((personrole == "service") or (personrole == "marine")) then
+				elseif hasarrived and ((personrole == "service") or (personrole == "marine") or (personrole == "unassigned")) then
 					local printedtitle = C.IsComponentClass(controllable, "ship_s") and ReadText(1001, 4847) or ReadText(1001, 4848)	-- Pilot, Captain
 					-- promote
 					local row = ftable:addRow("info_person_promote", { fixed = true })

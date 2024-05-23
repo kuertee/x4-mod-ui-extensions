@@ -102,7 +102,7 @@ end
 -- Menu member functions
 
 function menu.buttonGoTo()
-	if not menu.currentselection.hassubentries then
+	if (not menu.currentselection.hassubentries) or menu.currentselection.target then
 		if (menu.transportercomponent ~= menu.currentselection.target.component) or (menu.transporterconnection ~= menu.currentselection.target.connection) then
 			if C.IsComponentClass(menu.currentselection.target.component, "zone") then
 				-- space suit case
@@ -321,9 +321,6 @@ function menu.onShowMenu()
 					end
 					menu.extendedcategories[tostring(target.component)] = true
 				else
-					if iscurrent then
-						menu.targets[i].iscurrent = iscurrent
-					end
 					if iscockpit then
 						menu.targets[i].type = "cockpit"
 						menu.targets[i].directtarget = target
@@ -488,7 +485,7 @@ function menu.addEntry(ftable, target, indent, parentcomponent)
 			ismissiontarget = target.type == "zone"
 		else
 			local locationcomponent = C.GetTransporterLocationComponent(target.directtarget) -- Note: context can be NULL if the component is a zone, which is the case for the space suit target
-			ismissiontarget = (locationcomponent ~= 0) and (not displaysubtargets) and (not target.nomissiontarget) and GetComponentData(ConvertStringTo64Bit(tostring(locationcomponent)), "ismissiontarget")
+			ismissiontarget = (locationcomponent ~= 0) and (not target.nomissiontarget) and GetComponentData(ConvertStringTo64Bit(tostring(locationcomponent)), "ismissiontarget")
 		end
 		if ismissiontarget then
 			font = Helper.standardFontBold

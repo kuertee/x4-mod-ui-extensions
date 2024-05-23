@@ -2585,12 +2585,12 @@ function Helper.setCheckBoxScript(menu, id, tableobj, row, col, script)
 	menu.checkboxScriptMap = menu.checkboxScriptMap or {}
 	local layer = Helper.findFrameLayer(menu, tableobj)
 
-	local scriptWrapper = function (...)
+	local scriptWrapper = function (widgetid, checked, ...)
 		if id then
-			AddUITriggeredEvent(menu.name, id)
+			AddUITriggeredEvent(menu.name, id, checked)
 		end
 		PlaySound("ui_positive_click")
-		return script(...)
+		return script(widgetid, checked, ...)
 	end
 
 	table.insert(menu.checkboxScriptMap, { layer = layer, tableobj = tableobj, row = row, col = col, type = "onClick", script = scriptWrapper })
