@@ -1926,7 +1926,7 @@ function menu.playerresearchMouseOver()
 			return ""
 		end
 	end
-	missingdependencies = "\n- " .. menu.storiesbyid["story_hq_boso"].name .. "\n- " .. menu.storiesbyid["story_hq_dal"].name
+	missingdependencies = "\n- " .. (menu.storiesbyid["story_hq_boso"] and menu.storiesbyid["story_hq_boso"].name or "story_hq_boso") .. "\n- " .. (menu.storiesbyid["story_hq_dal"] and menu.storiesbyid["story_hq_dal"].name or "story_hq_dal")
 	return ReadText(1001, 9938) .. ReadText(1001, 120) .. ColorText["text_error"] .. missingdependencies .. "\27X"
 end
 
@@ -1967,7 +1967,7 @@ function menu.universeSector(current)
 								break
 							end
 						end
-						missingdependencies = missingdependencies .. "\n- " .. menu.storiesbyid[dependency].name
+						missingdependencies = missingdependencies .. "\n- " .. (menu.storiesbyid[dependency] and menu.storiesbyid[dependency].name or dependency)
 					end
 					if not found then
 						mouseovertext = ((mouseovertext ~= "") and (mouseovertext .. "\n\n") or "") .. ReadText(1001, 9951) .. ReadText(1001, 120) .. ColorText["text_error"] .. missingdependencies .. "\27X"
@@ -2347,7 +2347,7 @@ function menu.displayMultiSelection(property)
 									break
 								end
 							end
-							missingdependencies = missingdependencies .. "\n- " .. menu.storiesbyid[dependency].name
+							missingdependencies = missingdependencies .. "\n- " .. (menu.storiesbyid[dependency] and menu.storiesbyid[dependency].name or dependency)
 						end
 						if not found then
 							mouseovertext = ((mouseovertext ~= "") and (mouseovertext .. "\n\n") or "") .. ReadText(1001, 9951) .. ReadText(1001, 120) .. ColorText["text_error"] .. missingdependencies .. "\27X"
@@ -2981,7 +2981,7 @@ function menu.display()
 				for j, detail in ipairs(budget.details) do
 					if (j <= maxdetails - 1) or (j == #budget.details) then
 						if budget.type then
-							rows[j + 1][2 * i - 1]:setColSpan(2):createText(menu.storiesbyid[detail.property].name)
+							rows[j + 1][2 * i - 1]:setColSpan(2):createText(menu.storiesbyid[detail.property] and menu.storiesbyid[detail.property].name or detail.property)
 						else
 							rows[j + 1][2 * i - 1]:createText(menu.findPropertyName(detail.property))
 							rows[j + 1][2 * i]:createText(function () menu.updateBudgets(); return ConvertIntegerString(menu.propertybudgets[budget.id .. detail.property], true, 3, true) .. budget.suffix end, { halign = "right" })
@@ -3678,7 +3678,7 @@ function menu.display()
 													break
 												end
 											end
-											missingdependencies = missingdependencies .. "\n- " .. menu.storiesbyid[dependency].name
+											missingdependencies = missingdependencies .. "\n- " .. (menu.storiesbyid[dependency] and menu.storiesbyid[dependency].name or dependency)
 										end
 										if not found then
 											mouseovertext = mouseovertext .. "\n\n" .. ReadText(1001, 9932) .. ReadText(1001, 120) .. ColorText["text_error"] .. missingdependencies .. "\27X"
@@ -3882,7 +3882,7 @@ function menu.updateBudgets()
 					elseif budget.type == "research" then
 						local sortedstories = {}
 						for story in pairs(menu.researchstories) do
-							table.insert(sortedstories, { id = story, name = menu.storiesbyid[story].name })
+							table.insert(sortedstories, { id = story, name = menu.storiesbyid[story] and menu.storiesbyid[story].name or story })
 						end
 						table.sort(sortedstories, Helper.sortName)
 						for _, story in ipairs(sortedstories) do

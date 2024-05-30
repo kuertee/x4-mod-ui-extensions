@@ -2807,6 +2807,7 @@ function menu.buttonSetOrderParam(order, param, index, value, instance)
 					end
 				else
 					SetOrderParam(object64, order, param, index, value)
+					AddUITriggeredEvent(menu.name, "orderparam_" .. paramdata.name, value)
 				end
 				menu.closeContextMenu()
 				menu.refreshInfoFrame()
@@ -2862,7 +2863,7 @@ end
 
 function menu.checkboxOrderPlayerOverride(order, param, paramdata, overrideparam, overrideparamdata, checked)
 	local object = ConvertStringToLuaID(tostring(menu.infoSubmenuObject))
-	
+
 	if checked then
 		-- remove all overrides
 		for listidx = #overrideparamdata.value, 1, -1 do
@@ -7290,7 +7291,7 @@ function menu.createObjectList(frame, instance)
 	end
 
 	menu.numFixedRows = objecttable.numfixedrows
-	
+
 	if menu.selectedRows["objectlist"] then
 		objecttable:setSelectedRow(menu.selectedRows["objectlist"])
 		menu.selectedRows["objectlist"] = nil
@@ -11224,7 +11225,7 @@ function menu.displayDefaultBehaviour(ftable, mode, titlerow, instance)
 							for k, entry in ipairs(overridedata.param.value) do
 								overridedata.values[entry] = k
 							end
-							
+
 							overridedata.criticalwares = {}
 							local commander = infoTableData.commander
 							if GetComponentData(menu.infoSubmenuObject, "assignment") == "tradeforbuildstorage" then
@@ -11720,7 +11721,7 @@ function menu.createPlotMode(inputframe)
 	if menu.plotData.placed and (not menu.plotData.fullypaid) and menu.plotData.isinownedspace and (not menu.plotData.affordable) then
 		mouseovertext = ReadText(1026, 3222)
 	end
-	row2[3]:createButton({ active = menu.plotData.placed and not menu.plotData.fullypaid and menu.plotData.isinownedspace and menu.plotData.affordable, height = config.mapRowHeight, mouseOverText = mouseovertext, helpOverlayID = "create_plot_purchase", helpOverlayText = " ",  helpOverlayHighlightOnly = true}):setText(ReadText(1001, 9233), { halign = "center", fontsize = config.mapFontSize })	-- Buy licence
+	row2[3]:createButton({ active = menu.plotData.placed and not menu.plotData.fullypaid and menu.plotData.isinownedspace and menu.plotData.affordable, height = config.mapRowHeight, mouseOverText = mouseovertext, helpOverlayID = "create_plot_purchase", helpOverlayText = " ",  helpOverlayHighlightOnly = true, uiTriggerID = "buyplot" }):setText(ReadText(1001, 9233), { halign = "center", fontsize = config.mapFontSize })	-- Buy licence
 	row2[3].handlers.onClick = function() return menu.buttonBuyPlot() end
 	row2[3].properties.uiTriggerID = "buyplot"
 	table.insert(menu.plotbuttons, { table = table_plotdetails, cell = row2[3], row = row2.index, col = 3, rowdata = "buyplot", script = function() return menu.buttonBuyPlot() end })
@@ -15167,7 +15168,7 @@ function menu.setupLoadoutInfoSubmenuRows(mode, inputtable, inputobject, instanc
 						for macro, data in pairs(locmacros) do
 							local row = inputtable:addRow({ entry.encyclopedia, macro, inputobject }, {  })
 							row[2]:setColSpan(5):createText(GetMacroData(macro, "name"))
-							row[7]:setColSpan(4):createText(data.count .. " / " .. data.count + data.construction, { halign = "right" })
+							row[7]:setColSpan(4):createText(data.count .. " / " .. data.count + data.construction + data.wreck, { halign = "right" })
 							local shieldpercent = data.shieldpercent
 							local hullpercent = data.hullpercent
 							if data.count > 0 then
@@ -22804,7 +22805,7 @@ function menu.createSearchFieldContext(frame)
 		row[1]:createButton({ bgColor = Color["row_background"], height = menu.editboxHeight, scaling = false }):setText(item.ware and ("\27[maptr_supply] " .. GetWareData(item.ware, "name")) or (item.sector and ("\27[maptr_hexagon] " .. GetComponentData(item.sector, "name")) or ""), { scaling = true, x = 2 })
 		row[1].handlers.onClick = function () return menu.searchTextConfirmed(_, item.name, true) end
 	end
-	
+
 	table.sort(founditems, Helper.sortName)
 	for i, item in ipairs(founditems) do
 		if (i > (10 - #founditems_prio)) and (not maxVisibleHeight) then
@@ -24399,7 +24400,7 @@ function menu.createSelectContext(frame)
 	elseif menu.mode == "selectComponent" then
 		active = menu.checkForSelectComponent(menu.contextMenuData.component)
 	end
-	row[1]:createButton({ active = active, height = Helper.standardTextHeight, mouseOverText = mouseovertext }):setText(ReadText(1001, 3102))
+	row[1]:createButton({ active = active, height = Helper.standardTextHeight, mouseOverText = mouseovertext, helpOverlayID = "selectactive", helpOverlayText = " ", helpOverlayHighlightOnly = true }):setText(ReadText(1001, 3102))
 	row[1].handlers.onClick = menu.buttonSelectHandler
 	row[1].properties.uiTriggerID = "selectactive"
 
@@ -25437,6 +25438,8 @@ function menu.onRenderTargetSelect(modified)
 					menu.modeparam[1]({ConvertStringToLuaID(tostring(offsetcomponent)), {offset.x, offset.y, offset.z}})
 				end
 			end
+		elseif menu.mode == "orderparam_sector" then
+			menu.mode = nil
 		elseif (menu.mode == "orderparam_selectenemies") or (menu.mode == "orderparam_selectplayerdeployables") then
 			menu.mode = nil
 			menu.modeparam = {}
@@ -26896,9 +26899,11 @@ function menu.infoCombineLoadoutComponents(components)
 		local isconstruction = IsComponentConstruction(val64)
 		if not locmacros[locmacro] then
 			if isoperational then
-				locmacros[locmacro] = { count = 1, hullpercent = hullpercent, shieldpercent = shieldpercent, construction = 0 }
+				locmacros[locmacro] = { count = 1, hullpercent = hullpercent, shieldpercent = shieldpercent, construction = 0, wreck = 0 }
 			elseif isconstruction then
-				locmacros[locmacro] = { count = 0, hullpercent = 0, shieldpercent = 0, construction = 1 }
+				locmacros[locmacro] = { count = 0, hullpercent = 0, shieldpercent = 0, construction = 1, wreck = 0 }
+			else
+				locmacros[locmacro] = { count = 0, hullpercent = 0, shieldpercent = 0, construction = 0, wreck = 1 }
 			end
 		else
 			if isoperational then
@@ -26907,6 +26912,8 @@ function menu.infoCombineLoadoutComponents(components)
 				locmacros[locmacro].shieldpercent = locmacros[locmacro].shieldpercent + shieldpercent
 			elseif isconstruction then
 				locmacros[locmacro].construction = locmacros[locmacro].construction + 1
+			else
+				locmacros[locmacro].wreck = locmacros[locmacro].wreck + 1
 			end
 		end
 	end
@@ -27561,6 +27568,19 @@ function menu.closeContextMenu(dueToClose)
 			end
 		elseif menu.contextMenuMode == "venturereport" then
 			Helper.sendChatWindowCallback("unlock")
+		elseif menu.contextMenuMode == "set_orderparam_sector" then
+			local offset = ffi.new("UIPosRot")
+			local eclipticoffset = ffi.new("UIPosRot")
+			local offsetcomponent = C.GetMapPositionOnEcliptic2(menu.holomap, offset, false, 0, eclipticoffset)
+			if offsetcomponent ~= 0 then
+				if C.IsComponentClass(offsetcomponent, "sector") then
+					menu.mode = "orderparam_sector"
+					local luaoffsetcomponent = ConvertStringToLuaID(tostring(offsetcomponent))
+					SetOrderParam(ConvertStringTo64Bit(tostring(menu.infoSubmenuObject)), menu.contextMenuData.order, menu.contextMenuData.param, menu.contextMenuData.index, luaoffsetcomponent)
+					AddUITriggeredEvent(menu.name, menu.contextMenuMode, luaoffsetcomponent)
+					menu.refreshInfoFrame()
+				end
+			end
 		end
 		-- REMOVE this block once the mouse out/over event order is correct -> This should be unnessecary due to the global tablemouseout event reseting the picking
 		if menu.currentMouseOverTable and (
@@ -28228,7 +28248,7 @@ function menu.setFilterOption(mode, setting, id, value, index)
 	if setting.savegame then
 		settings = __CORE_DETAILMONITOR_MAPFILTER_SAVE
 	end
-	
+
 	if setting.type == "multiselectlist" then
 		settings[id] = settings[id] or {}
 		if value then

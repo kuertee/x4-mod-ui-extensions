@@ -340,7 +340,7 @@ local config = {
 		{ id = "selected_orders_all",	text = ReadText(1001, 7804),	isorder = true,		showloop = true },
 		{ id = "selected_orders",		text = ReadText(1001, 7804),	isorder = true,		showloop = true },
 		{ id = "mining_orders",			text = "",						isorder = true,		showloop = true,		subsections = {
-			{ id = "mining",			text = "\27[order_miningplayer] " .. ReadText(1041, 351) },
+			{ id = "mining",			text = "\27[order_miningplayer] " .. ReadText(1041, 351), helpOverlayID = "interactmenu_mining", helpOverlayText = " ", helpOverlayHighlightOnly = true },
 		}},
 		{ id = "venturedockoption",		text = "",						isorder = true,		showloop = true,		subsections = {
 			{ id = "venturedock",	text = "\27[order_dockandwait] " .. ReadText(1001, 7844) },
@@ -5027,7 +5027,7 @@ function menu.insertLuaAction(actiontype, istobedisplayed)
 				for _, entry in ipairs(miningwares) do
 					if entry.amount > 0 then
 						found = true
-						menu.insertInteractionContent("mining", { type = actiontype, text = entry.name, text2 = Helper.convertColorToText(menu.holomapcolor.playercolor) .. ((entry.amount == 1) and ReadText(1001, 7851) or string.format(ReadText(1001, 7801), entry.amount)), helpOverlayID = "interactmenu_mining", helpOverlayText = " ", helpOverlayHighlightOnly = true, script = function () return menu.buttonMining(entry.ware, false) end, orderid = "MiningPlayer" })
+						menu.insertInteractionContent("mining", { type = actiontype, text = entry.name, text2 = Helper.convertColorToText(menu.holomapcolor.playercolor) .. ((entry.amount == 1) and ReadText(1001, 7851) or string.format(ReadText(1001, 7801), entry.amount)), script = function () return menu.buttonMining(entry.ware, false) end, orderid = "MiningPlayer" })
 					end
 				end
 				if not found then

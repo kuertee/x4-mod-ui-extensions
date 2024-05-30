@@ -90,12 +90,14 @@ ffi.cdef[[
 	const char* ConvertInputString(const char* text, const char* defaultvalue);
 	bool DeleteSavegame(const char* filename);
 	bool DoesColorMapNeedRestart(void);
+	bool DoesUserDataExist(void);
 	void EnableScenarioLoading(bool reverse, const char* gamestartid);
 	void ExportColorMap(void);
 	void ExportColorProfile(const char* filename, const char* name);
 	void ExportInputFeedbackConfig(void);
 	void FadeScreen2(float fadeouttime, float fadeintime, float holdtime);
 	const char* GetAAOption(bool useconfig);
+	bool GetAchievement(const char* name);
 	float GetAdaptiveSamplingOption(void);
 	uint32_t GetAllColorMapColors(EditableColorMapEntry* result, uint32_t resultlen);
 	uint32_t GetAllColorMapMappings(EditableColorMapEntry* result, uint32_t resultlen);
@@ -232,6 +234,7 @@ ffi.cdef[[
 	bool IsTimelinesScenario(void);
 	bool IsTobiiAvailable(void);
 	bool IsTradeShowVersion(void);
+	bool IsTutorial(void);
 	bool IsUpscalingOptionSupported(const char* mode);
 	bool IsVentureExtensionSupported(void);
 	bool IsVentureSeasonSupported(void);
@@ -248,6 +251,8 @@ ffi.cdef[[
 	bool QueryGameServers(void);
 	void ReloadSaveList(void);
 	void RemoveColorMapColorDefinition(const char* colorid);
+	void RemoveColorProfile(const char* filename);
+	void RemoveInputProfile(uint32_t slot);
 	void RequestGPU(uint32_t idx);
 	void RequestGPUAutomaticallySelected(void);
 	void RequestLanguageChange(int32_t id);
@@ -390,10 +395,14 @@ local function init()
 		if (__CORE_GAMEOPTIONS_RESTORE == nil) and C.IsGameModified() then
 			menu.contextMenuMode = "modified"
 			menu.contextMenuData = { width = Helper.scaleX(400), y = Helper.viewHeight / 2 }
+		elseif not C.DoesUserDataExist() then
+			menu.contextMenuMode = "firstgame"
+			menu.contextMenuData = { width = Helper.scaleX(500), y = Helper.viewHeight / 2 }
 		elseif C.IsVentureSeasonSupported() and OnlineHasSession() and (not OnlineGetVentureConfig("allow_validation")) and (not OnlineGetVentureConfig("disable_popup")) then
 			menu.contextMenuMode = "ventureextension"
 			menu.contextMenuData = { width = Helper.scaleX(400), y = Helper.viewHeight / 2 }
 		end
+		C.SetUserData("firsttimestartmenu", "false")
 	end
 
 	-- kuertee start:
@@ -1216,13 +1225,14 @@ config.optionDefinitions = {
 		[6] = {
 			id = "tutorials",
 			name = ReadText(1001, 12660),
+			prefixicon = function () return menu.prefixIconTopLevel("tutorials") end,
 			mouseOverText = ReadText(1026, 4805),
 			submenu = "tutorials",
 		},
 		[7] = {
 			id = "timelines",
 			name = ReadText(1001, 12661),
-			prefixicon = function () return "menu_recommended", Color["gamestart_recommended"] end,
+			prefixicon = function () return menu.prefixIconTopLevel("timelines") end,
 			mouseOverText = ReadText(1026, 2696) .. "\n\n" .. ReadText(1026, 2681),
 			submenu = "timelines",
 			selectable = function () return ffi.string(C.GetGameStartName()) ~= "x4ep1_gamestart_hub" end,
@@ -1230,6 +1240,7 @@ config.optionDefinitions = {
 		[8] = {
 			id = "new",
 			name = ReadText(1001, 12662),
+			prefixicon = function () return menu.prefixIconTopLevel("new") end,
 			submenu = "new",
 			mouseOverText = ReadText(1026, 4801) .. "\n\n" .. ReadText(1026, 4802),
 		},
@@ -3070,6 +3081,11 @@ function menu.buttonInputProfileSave(profile)
 	menu.displayUserQuestion(ReadText(1001, 4858) .. " - \"" .. profile.name .. "\"", function () return menu.callbackInputProfileSave(profile) end)
 end
 
+function menu.buttonInputProfileRemove(profile, slot)
+	table.insert(menu.history, 1, { optionParameter = menu.currentOption, topRow = GetTopRow(menu.optionTable), selectedOption = profile.id })
+	menu.displayUserQuestion(ReadText(1001, 12715) .. " - \"" .. profile.name .. "\"", function () return menu.callbackInputProfileRemove(slot) end)
+end
+
 function menu.buttonReloadLobby()
 	menu.lobby = {}
 	C.QueryGameServers()
@@ -3507,7 +3523,7 @@ function menu.createContextMenu()
 
 	local sizeextension = 2 * Helper.borderSize
 	local xoffset = menu.frameOffsetX + (menu.width - menu.contextMenuData.width) / 2
-	if (menu.contextMenuMode == "modified") or (menu.contextMenuMode == "ventureextension") or (menu.contextMenuMode == "info") then
+	if (menu.contextMenuMode == "modified") or (menu.contextMenuMode == "ventureextension") or (menu.contextMenuMode == "info") or (menu.contextMenuMode == "userquestion") or (menu.contextMenuMode == "firstgame") then
 		sizeextension = 6 * Helper.borderSize
 		xoffset = (Helper.viewWidth - menu.contextMenuData.width) / 2
 	end
@@ -3540,10 +3556,14 @@ function menu.createContextMenu()
 	elseif menu.contextMenuMode == "removeControllerInput" then
 		height = menu.createContextMenuRemoveControllerInput(menu.contextFrame)
 		menu.contextFrame:setBackground2("gradient_alpha_04", { color = Color["frame_background_semitransparent"], width = Helper.viewWidth, height = Helper.viewHeight })
+	elseif menu.contextMenuMode == "userquestion" then
+		height = menu.createContextMenuUserQuestion(menu.contextFrame)
+	elseif menu.contextMenuMode == "firstgame" then
+		height = menu.createContextMenuFirstGame(menu.contextFrame)
 	end
 
 	menu.contextFrame.properties.height = height + sizeextension
-	if (menu.contextMenuMode == "modified") or (menu.contextMenuMode == "ventureextension") or (menu.contextMenuMode == "info") then
+	if (menu.contextMenuMode == "modified") or (menu.contextMenuMode == "ventureextension") or (menu.contextMenuMode == "info") or (menu.contextMenuMode == "userquestion") or (menu.contextMenuMode == "firstgame") then
 		menu.contextFrame.properties.y = menu.contextFrame.properties.y - menu.contextFrame.properties.height / 2
 	elseif menu.contextMenuMode == "editcolor" then
 		menu.contextFrame.properties.x = math.min(menu.contextFrame.properties.x, Helper.viewWidth - menu.contextMenuData.width - Helper.frameBorder)
@@ -3893,6 +3913,54 @@ function menu.createContextMenuModified(frame)
 	return ftable:getVisibleHeight()
 end
 
+function menu.createContextMenuUserQuestion(frame)
+	local ftable = frame:addTable(6, { tabOrder = 1, width = menu.contextMenuData.width, x = 3 * Helper.borderSize, y = 3 * Helper.borderSize, defaultInteractiveObject = true })
+	ftable:setColWidth(1, Helper.scaleY(Helper.standardButtonHeight), false)
+	ftable:setColWidthPercent(5, 25, false)
+	ftable:setColWidthPercent(6, 25, false)
+
+	local row = ftable:addRow(false, { fixed = true })
+	if menu.contextMenuData.id == "deletecolorprofile" then
+		row[1]:setColSpan(6):createText(ReadText(1001, 12713), Helper.headerRowCenteredProperties)
+	end
+
+	local row = ftable:addRow(false, { fixed = true })
+	if menu.contextMenuData.id == "deletecolorprofile" then
+		row[1]:setColSpan(6):createText(ReadText(1001, 12714), { wordwrap = true })
+	end
+
+	ftable:addEmptyRow()
+
+	local row = ftable:addRow(true, { fixed = true })
+	row[1]:createCheckBox(function () return menu.contextMenuData.saveOption == true end, { height = Helper.standardButtonHeight })
+	row[1].handlers.onClick = function () menu.contextMenuData.saveOption = not menu.contextMenuData.saveOption end
+	row[2]:setColSpan(3):createButton({ bgColor = Color["button_background_hidden"] }):setText(ReadText(1001, 9711))
+	row[2].handlers.onClick = function () menu.contextMenuData.saveOption = not menu.contextMenuData.saveOption end
+	row[5]:createButton({  }):setText(ReadText(1001, 2821), { halign = "center" })
+	row[5].handlers.onClick = menu.buttonUserQuestionConfirm
+	row[6]:createButton({  }):setText(ReadText(1001, 64), { halign = "center" })
+	row[6].handlers.onClick = menu.buttonUserQuestionCancel
+	ftable:setSelectedCol(6)
+
+	return ftable:getVisibleHeight()
+end
+
+function menu.buttonUserQuestionConfirm()
+	__CORE_DETAILMONITOR_USERQUESTION[menu.contextMenuData.id] = menu.contextMenuData.saveOption
+	if menu.contextMenuData.id == "deletecolorprofile" then
+		C.RemoveColorProfile(menu.contextMenuData.filename)
+		menu.refresh()
+	end
+	menu.closeContextMenu()
+end
+
+function menu.buttonUserQuestionCancel()
+	if menu.contextMenuData.id == "deletecolorprofile" then
+		menu.refresh()
+	end
+	menu.closeContextMenu()
+end
+
 function menu.createContextMenuVentureExtension(frame)
 	local ftable = frame:addTable(6, { tabOrder = 1, width = menu.contextMenuData.width, x = 3 * Helper.borderSize, y = 3 * Helper.borderSize, defaultInteractiveObject = true })
 	ftable:setColWidth(1, Helper.scaleY(Helper.standardButtonHeight), false)
@@ -3928,6 +3996,30 @@ function menu.createContextMenuVentureExtension(frame)
 		menu.closeContextMenu()
 	end
 	ftable:setSelectedCol(6)
+
+	return ftable:getVisibleHeight()
+end
+
+function menu.createContextMenuFirstGame(frame)
+	local ftable = frame:addTable(3, { tabOrder = 1, width = menu.contextMenuData.width, x = 3 * Helper.borderSize, y = 3 * Helper.borderSize, defaultInteractiveObject = true })
+
+	local hastimelines = C.HasExtension("ego_dlc_timelines", false)
+
+	local row = ftable:addRow(false, { fixed = true })
+	row[1]:setColSpan(3):createText(hastimelines and ReadText(1001, 12716) or ReadText(1001, 12720), Helper.headerRowCenteredProperties)
+
+	local row = ftable:addRow(false, { fixed = true })
+	if hastimelines then
+		row[1]:setColSpan(3):createText(ReadText(1001, 12717) .. "\n\n" .. ReadText(1001, 12718) .. " " .. ReadText(1001, 12722) .. "\n\n" .. ReadText(1001, 12719), { wordwrap = true })
+	else
+		row[1]:setColSpan(3):createText(ReadText(1001, 12721) .. "\n\n" .. ReadText(1001, 12722) .. "\n\n" .. ReadText(1001, 12719), { wordwrap = true })
+	end
+
+	ftable:addEmptyRow()
+
+	local row = ftable:addRow(true, { fixed = true })
+	row[2]:createButton({  }):setText(ReadText(1001, 14), { halign = "center" })
+	row[2].handlers.onClick = function() menu.closeContextMenu() end
 
 	return ftable:getVisibleHeight()
 end
@@ -4489,8 +4581,10 @@ function menu.displayOption(ftable, option, numCols)
 			else
 				if option.prefixicon then
 					local icon, color = option.prefixicon()
-					local iconsize = Helper.scaleY(config.infoTextHeight)
-					row[1]:createIcon(icon, { color = color, width = iconsize, height = iconsize, x = row[1]:getWidth() - iconsize, scaling = false })
+					if icon then
+						local iconsize = Helper.scaleY(config.infoTextHeight)
+						row[1]:createIcon(icon, { color = color, width = iconsize, height = iconsize, x = row[1]:getWidth() - iconsize, scaling = false })
+					end
 				end
 				row[2]:setColSpan(numCols - 1):createText(option.name, isselectable and config.standardTextProperties or config.disabledTextProperties)
 				if option.wordwrap then
@@ -5745,6 +5839,21 @@ function menu.nameOnlineSeason()
 		end
 	else
 		return ReadText(1001, 11300)
+	end
+end
+
+function menu.prefixIconTopLevel(type)
+	local m0bossscore = ffi.string(C.GetUserData("scenario_m0_boss_battle_best_score"))
+	local timelinesDone = false
+	if m0bossscore ~= "" then
+		timelinesDone = tonumber(m0bossscore) >= 1
+	end
+	if (type == "tutorials") and (not menu.allBasicTutorialsDone) then
+		return "menu_recommended", Color["gamestart_recommended"]
+	elseif (type == "timelines") and menu.allBasicTutorialsDone and (not timelinesDone) then
+		return "menu_recommended", Color["gamestart_recommended"]
+	elseif(type == "new") and menu.allBasicTutorialsDone and timelinesDone then
+		return "menu_recommended", Color["gamestart_recommended"]
 	end
 end
 
@@ -8328,6 +8437,12 @@ function menu.callbackInputProfileSave(profile)
 	menu.onCloseElement("back")
 end
 
+function menu.callbackInputProfileRemove(slot)
+	C.RemoveInputProfile(slot)
+	menu.userQuestion = nil
+	menu.onCloseElement("back")
+end
+
 function menu.callbackInputSensitivity(rangeid, configname, value)
 	if value then
 		SetSensitivitySetting(rangeid, configname, Helper.round(value / 100, 2))
@@ -8539,6 +8654,14 @@ function menu.displayOptions(optionParameter)
 	menu.currentOption = optionParameter
 	local options = config.optionDefinitions[optionParameter]
 
+	-- kuertee start: callback
+	if callbacks ["displayOptions_modifyOptions"] then
+		for _, callback in ipairs (callbacks ["displayOptions_modifyOptions"]) do
+			options = callback(options)
+		end
+	end
+	-- kuertee end: callback
+
 	local frame = menu.createOptionsFrame()
 
 	local ftable = frame:addTable(5, { tabOrder = 1, x = menu.table.x, y = menu.table.y, width = menu.table.width, maxVisibleHeight = menu.table.height })
@@ -8734,6 +8857,8 @@ function menu.displayNewGame(createAsServer, displayTimelinesScenarios, displayT
 	end
 
 	local frame = menu.createOptionsFrame()
+	local extrawidth = math.floor(0.3 * (menu.table.width - menu.table.widthWithExtraInfo - Helper.borderSize))
+	frame.properties.width = frame.properties.width + extrawidth
 
 	local titletable = frame:addTable(2, { tabOrder = 2, x = menu.table.x, y = menu.table.y, width = menu.table.width, skipTabChange = true })
 	titletable:setColWidth(1, menu.table.arrowColumnWidth, false)
@@ -8813,7 +8938,7 @@ function menu.displayNewGame(createAsServer, displayTimelinesScenarios, displayT
 	menu.preselectTopRow = nil
 	menu.preselectOption = nil
 
-	local width = math.floor(1.3 * (menu.table.width - menu.table.widthWithExtraInfo - Helper.borderSize))
+	local width = menu.table.width - menu.table.widthWithExtraInfo - Helper.borderSize + extrawidth
 	local offsetx = menu.table.x + menu.table.widthWithExtraInfo + Helper.borderSize
 	local iconheight = math.floor(width * 9 / 16)
 	local infoheight = height
@@ -8969,7 +9094,8 @@ function menu.displayNewGame(createAsServer, displayTimelinesScenarios, displayT
 			end
 		end
 		local imagerow, imageindex = nil, 1
-
+		
+		local rowcount = 0
 		for i, entry in ipairs(menu.selectedOption.info) do
 			local row
 			if entry.info == "@name" then
@@ -9000,13 +9126,14 @@ function menu.displayNewGame(createAsServer, displayTimelinesScenarios, displayT
 				row = infotable2:addRow(nil, { bgColor = Color["optionsmenu_cell_background"], borderBelow = false })
 				row[1]:createText(entry.info .. ReadText(1001, 120))
 				row[2]:setColSpan(valuecolspan):createText(ColorText["text_inactive"] .. entry.description, { halign = "right" })
-			elseif menu.selectedOption.info[i + 1].info ~= "@unlock" or (not menu.selectedOption.unlocked) then
+			elseif ((menu.selectedOption.info[i + 1] and menu.selectedOption.info[i + 1].info) ~= "@unlock") or (not menu.selectedOption.unlocked) then
 				-- do not show the empty line before @unlock if @unlock is not shown
 				row = infotable2:addRow(nil, { bgColor = Color["optionsmenu_cell_background"], borderBelow = false })
 				row[1]:createText("")
 			end
 			
 			if row then
+				rowcount = rowcount + 1
 				if (playerimage ~= "") or (infoimage ~= "") then
 					if i == imageindex then
 						imagerow = row
@@ -9017,6 +9144,14 @@ function menu.displayNewGame(createAsServer, displayTimelinesScenarios, displayT
 				end
 			end
 		end
+
+		if rowcount < config.minGamestartInfoRows then
+			for i = 1, config.minGamestartInfoRows - rowcount do
+				local row = infotable2:addRow(nil, { bgColor = Color["optionsmenu_cell_background"], borderBelow = false })
+				row[3]:createText(" ", { cellBGColor = Color["optionsmenu_cell_background_icon"] })
+			end
+		end
+
 		if imagerow then
 			local infoendy = infotable2:getFullHeight()
 			local imageoffsety = math.floor(((infoendy - infostarty) - iconwidth) / 2)
@@ -9058,6 +9193,8 @@ function menu.displayTimelines()
 	local options = config.optionDefinitions["timelines"]
 
 	local frame = menu.createOptionsFrame()
+	local extrawidth = math.floor(0.3 * (menu.table.width - menu.table.widthWithExtraInfo - Helper.borderSize))
+	frame.properties.width = frame.properties.width + extrawidth
 
 	local titletable = frame:addTable(5, { tabOrder = 2, x = menu.table.x, y = menu.table.y, width = menu.table.width, maxVisibleHeight = menu.table.height })
 	titletable:setColWidth(1, menu.table.arrowColumnWidth, false)
@@ -9118,7 +9255,7 @@ function menu.displayTimelines()
 		end
 	end
 
-	local width = math.floor(1.3 * (menu.table.width - menu.table.widthWithExtraInfo - Helper.borderSize))
+	local width = menu.table.width - menu.table.widthWithExtraInfo - Helper.borderSize + extrawidth
 	local offsetx = menu.table.x + menu.table.widthWithExtraInfo + Helper.borderSize
 	local iconheight = math.floor(width * 9 / 16)
 	local infoheight = height
@@ -9285,7 +9422,7 @@ function menu.displayTimelines()
 				row[2]:setColSpan(valuecolspan):createText(function () local buf = ffi.new("CustomGameStartStringPropertyState[1]"); return ColorText["text_inactive"] .. ffi.string(C.GetCustomGameStartStringProperty(gamestartid, "playername", buf)) end, { halign = "right" })
 			elseif entry.info == "@player" then
 				if ffi.string(C.GetUserData("timelines_scenarios_finished")) == "" then
-					row = infotable2:addRow(true, { bgColor = Color["optionsmenu_cell_background"], borderBelow = false })
+					row = infotable2:addRow(true, { bgColor = Color["optionsmenu_cell_background"], borderBelow = false, fixed = true })
 					if #playermacrooptions > 0 then
 						row[1]:createText(ReadText(1021, 11007) .. ReadText(1001, 120))
 						row[2]:setColSpan(valuecolspan):createDropDown(playermacrooptions, { startOption = playermacro, height = Helper.standardTextHeight }):setTextProperties({ halign = "right", x = Helper.standardTextOffsetx })
@@ -9293,7 +9430,7 @@ function menu.displayTimelines()
 					else
 						row[1]:createText("")
 					end
-				else
+				elseif timelinesgamestart.custom then
 					local playermacro = ffi.string(C.GetUserData("timelines_player_character_macro"))
 					if playermacro ~= "" then
 						menu.callbackGamestartPlayerMacro(timelinesgamestart.id, "player", playermacro)
@@ -9315,7 +9452,7 @@ function menu.displayTimelines()
 				row = infotable2:addRow(nil, { bgColor = Color["optionsmenu_cell_background"], borderBelow = false })
 				row[1]:createText(entry.info .. ReadText(1001, 120))
 				row[2]:setColSpan(valuecolspan):createText(ColorText["text_inactive"] .. entry.description, { halign = "right" })
-			elseif timelinesgamestart.info[i + 1].info ~= "@unlock" or (not timelinesgamestart.unlocked) then
+			elseif ((timelinesgamestart.info[i + 1] and timelinesgamestart.info[i + 1].info) ~= "@unlock") or (not timelinesgamestart.unlocked) then
 				-- do not show the empty line before @unlock if @unlock is not shown
 				row = infotable2:addRow(nil, { bgColor = Color["optionsmenu_cell_background"], borderBelow = false })
 				row[1]:createText("")
@@ -9972,7 +10109,7 @@ function menu.displayColorLibrary()
 		row[3]:setColSpan(2):createDropDown(menu.colorLibSettings.colorDropdownOptions, { startOption = entry.ref })
 		row[3].handlers.onDropDownConfirmed = function (_, id) return menu.dropdownColorMapping(i, id) end
 
-		if i == 39 then -- dropdown limit
+		if i == 37 then -- dropdown limit
 			mappingtable.properties.maxVisibleHeight = mappingtable:getFullHeight()
 			colortable.properties.maxVisibleHeight = mappingtable.properties.maxVisibleHeight
 		end
@@ -10007,12 +10144,13 @@ function menu.displayColorLibrary()
 		for i = 0, n - 1 do
 			local filename = ffi.string(buf[i].filename)
 			local name = ffi.string(buf[i].name)
-			table.insert(profiles, { id = filename, text = name, icon = "", displayremoveoption = false })
+			table.insert(profiles, { id = filename, text = name, icon = "", displayremoveoption = true })
 			menu.colorLibSettings.profilesByFilename[filename] = name
 		end
 	end
 	row[4]:setColSpan(2):createDropDown(profiles, { startOption = "", textOverride = ReadText(1001, 12703), active = n > 0 })
-	row[4].handlers.onDropDownConfirmed = function (_, option)  menu.colorLibSettings.newColorProfileName = menu.colorLibSettings.profilesByFilename[option];  menu.colorLibSettings.newColorProfileFileName = option; C.ImportColorProfile(option); menu.refresh() end
+	row[4].handlers.onDropDownConfirmed = function (_, option)  menu.colorLibSettings.newColorProfileName = menu.colorLibSettings.profilesByFilename[option]; menu.colorLibSettings.newColorProfileFileName = option; C.ImportColorProfile(option); menu.refresh() end
+	row[4].handlers.onDropDownRemoved = menu.dropdownRemovedColorProfile
 
 	local row = buttontable:addRow(nil, {  })
 	row[1]:setColSpan(2):createText(" ", { fontsize = 1, height = Helper.borderSize, cellBGColor = Color["row_separator"] })
@@ -10067,6 +10205,17 @@ function menu.dropdownColorMapping(i, newrefid)
 
 	menu.colorLibSettings.colorsUsedCount[oldref] = menu.colorLibSettings.colorsUsedCount[oldref] - 1
 	menu.colorLibSettings.colorsUsedCount[newrefid] = (menu.colorLibSettings.colorsUsedCount[newrefid] or 0) + 1
+end
+
+function menu.dropdownRemovedColorProfile(_, filename)
+	if __CORE_DETAILMONITOR_USERQUESTION["deletecolorprofile"] then
+		C.RemoveColorProfile(filename)
+		menu.refresh()
+	else
+		menu.contextMenuMode = "userquestion"
+		menu.contextMenuData = { width = Helper.scaleX(400), y = Helper.viewHeight / 2, id = "deletecolorprofile", filename = filename }
+		menu.createContextMenu()
+	end
 end
 
 function menu.getColorMapColor(color)
@@ -10766,9 +10915,16 @@ function menu.displaySavegameOptions(optionParameter)
 					end
 				end
 			end
-			local startIdx = (menu.saveSort == "slot_inv") and 10 or 1
-			local endIdx = (menu.saveSort == "slot_inv") and 1 or 10
+
+			-- kuertee start: more save games
+			-- local startIdx = (menu.saveSort == "slot_inv") and 10 or 1
+			-- local endIdx = (menu.saveSort == "slot_inv") and 1 or 10
+			-- local direction = (menu.saveSort == "slot_inv") and -1 or 1
+			local startIdx = (menu.saveSort == "slot_inv") and Helper.maxSaveFiles or 1
+			local endIdx = (menu.saveSort == "slot_inv") and 1 or Helper.maxSaveFiles
 			local direction = (menu.saveSort == "slot_inv") and -1 or 1
+			-- kuertee end: more save games
+
 			for i = startIdx, endIdx, direction do
 				local savegamestring = string.format("%03d", i)
 				if usedsavegamenames["save_" .. savegamestring] then
@@ -11641,7 +11797,7 @@ function menu.displayInputProfiles(optionParameter)
 
 	local frame = menu.createOptionsFrame()
 
-	local titletable = frame:addTable(4, { tabOrder = 2, x = menu.table.x, y = menu.table.y, width = menu.table.width, skipTabChange = true })
+	local titletable = frame:addTable(4, { tabOrder = 2, x = menu.table.x, y = menu.table.y, width = menu.table.widthExtraWide, skipTabChange = true })
 	titletable:setColWidth(1, menu.table.arrowColumnWidth, false)
 	titletable:setColWidth(3, menu.table.infoColumnWidth / 2, false)
 	titletable:setColWidth(4, menu.table.infoColumnWidth / 2, false)
@@ -11656,9 +11812,10 @@ function menu.displayInputProfiles(optionParameter)
 	local offsety = titletable.properties.y + titletable:getVisibleHeight() + Helper.borderSize
 	local height = menu.table.height - (titletable:getVisibleHeight() + Helper.borderSize)
 
-	local ftable = frame:addTable(3, { tabOrder = 1, x = menu.table.x, y = offsety, width = menu.table.widthWithExtraInfo, maxVisibleHeight = height })
+	local ftable = frame:addTable(4, { tabOrder = 1, x = menu.table.x, y = offsety, width = menu.table.widthExtraWide / 2, maxVisibleHeight = height })
 	ftable:setColWidth(1, menu.table.arrowColumnWidth, false)
 	ftable:setColWidth(3, config.standardTextHeight)
+	ftable:setColWidth(4, config.standardTextHeight)
 
 	local userprofiles = {}
 	local inputprofiles = GetInputProfiles()
@@ -11682,37 +11839,37 @@ function menu.displayInputProfiles(optionParameter)
 
 	if next(mouseprofiles) then
 		local row = ftable:addRow(nil, {  })
-		row[2]:setColSpan(2):createText(ReadText(1001, 12693), config.subHeaderTextProperties)
+		row[2]:setColSpan(3):createText(ReadText(1001, 12693), config.subHeaderTextProperties)
 
 		for _, profile in ipairs(mouseprofiles) do
 			local row = ftable:addRow(profile, {  })
-			row[2]:setColSpan(2):createText(profile.name, config.standardTextProperties)
+			row[2]:setColSpan(3):createText(profile.name, config.standardTextProperties)
 			if profile.id == menu.preselectOption then
 				ftable:setSelectedRow(row.index)
 			end
 		end
 
 		local row = ftable:addRow(nil, {  })
-		row[2]:setColSpan(2):createText(" ", { fontsize = 1, height = 4 * Helper.borderSize })
+		row[2]:setColSpan(3):createText(" ", { fontsize = 1, height = 4 * Helper.borderSize })
 	end
 	if next(otherprofiles) then
 		local row = ftable:addRow(nil, {  })
-		row[2]:setColSpan(2):createText(ReadText(1001, 12694), config.subHeaderTextProperties)
+		row[2]:setColSpan(3):createText(ReadText(1001, 12694), config.subHeaderTextProperties)
 
 		for _, profile in ipairs(otherprofiles) do
 			local row = ftable:addRow(profile, {  })
-			row[2]:setColSpan(2):createText(profile.name, config.standardTextProperties)
+			row[2]:setColSpan(3):createText(profile.name, config.standardTextProperties)
 			if profile.id == menu.preselectOption then
 				ftable:setSelectedRow(row.index)
 			end
 		end
 
 		local row = ftable:addRow(nil, {  })
-		row[2]:setColSpan(2):createText(" ", { fontsize = 1, height = 4 * Helper.borderSize })
+		row[2]:setColSpan(3):createText(" ", { fontsize = 1, height = 4 * Helper.borderSize })
 	end
 
 	local row = ftable:addRow(false, {  })
-	row[2]:setColSpan(2):createText(ReadText(1001, 12695), config.subHeaderTextProperties)
+	row[2]:setColSpan(3):createText(ReadText(1001, 12695), config.subHeaderTextProperties)
 
 	for i = 1, 5 do
 		local filename = "inputmap_" .. i
@@ -11723,12 +11880,14 @@ function menu.displayInputProfiles(optionParameter)
 				ftable:setSelectedRow(row.index)
 			end
 			if menu.currentOption == "profile_load" then
-				row[2]:setColSpan(2):createText(profile.name, config.standardTextProperties)
+				row[2]:setColSpan(3):createText(profile.name, config.standardTextProperties)
 			else
 				row[2]:createEditBox({ description = ReadText(1001, 4858) }):setText(profile.name, { fontsize = config.standardFontSize })
 				row[2].handlers.onTextChanged = function (_, text) return menu.editboxInputProfileSave(profile, text) end
 				row[3]:createButton({ height = config.standardTextHeight }):setIcon("menu_save")
 				row[3].handlers.onClick = function () return menu.buttonInputProfileSave(profile) end
+				row[4]:createButton({ height = config.standardTextHeight }):setText("X", { halign = "center", x = 0 })
+				row[4].handlers.onClick = function () return menu.buttonInputProfileRemove(profile, i) end
 			end
 		else
 			local row = ftable:addRow({ id = 100 + i, empty = true }, {  })
@@ -11736,7 +11895,7 @@ function menu.displayInputProfiles(optionParameter)
 				ftable:setSelectedRow(row.index)
 			end
 			if menu.currentOption == "profile_load" then
-				row[2]:setColSpan(2):createText(ReadText(1001, 4812), config.disabledTextProperties)
+				row[2]:setColSpan(3):createText(ReadText(1001, 4812), config.disabledTextProperties)
 			else
 				row[2]:createText(ReadText(1001, 4812), config.disabledTextProperties)
 				row[3]:createButton({ height = config.standardTextHeight }):setIcon("menu_save")
@@ -11749,12 +11908,11 @@ function menu.displayInputProfiles(optionParameter)
 	menu.preselectTopRow = nil
 	menu.preselectOption = nil
 
-	local width = menu.table.width - menu.table.widthWithExtraInfo - Helper.borderSize
-	local offsetx = menu.table.x + menu.table.widthWithExtraInfo + Helper.borderSize
-	local infotable = frame:addTable(1, { tabOrder = 0, x = offsetx, y = offsety, width = width, maxVisibleHeight = height })
+	local offsetx = menu.table.x + menu.table.widthExtraWide / 2 + Helper.borderSize
+	local infotable = frame:addTable(1, { tabOrder = 0, x = offsetx, y = offsety, width = menu.table.widthExtraWide / 2, maxVisibleHeight = height })
 
 	local row = infotable:addRow(false, { bgColor = Color["optionsmenu_cell_background"] })
-	row[1]:createText(menu.inputProfileDescription, { scaling = false, width = width, height = height, wordwrap = true, fontsize = Helper.scaleFont(config.font, config.infoFontSize) })
+	row[1]:createText(menu.inputProfileDescription, { scaling = false, width = menu.table.widthExtraWide / 2, height = height, wordwrap = true, fontsize = Helper.scaleFont(config.font, config.infoFontSize) })
 
 	titletable.properties.nextTable = ftable.index
 	ftable.properties.prevTable = titletable.index
@@ -12096,6 +12254,22 @@ function menu.onShowMenu()
 
 	C.ReloadSaveList()
 
+	menu.allBasicTutorialsDone = true
+	local gamemodules = GetRegisteredModules()
+	for _, module in ipairs(gamemodules) do
+		if module.tutorial and (module.group == 3) then
+			if tonumber(ffi.string(C.GetUserData(module.id .. "_completed"))) ~= 1 then
+				menu.allBasicTutorialsDone = false
+				break
+			end
+		end
+	end
+	if not menu.allBasicTutorialsDone then
+		if C.GetAchievement("ACH_FLIGHT_SCHOOL") then
+			menu.allBasicTutorialsDone = true
+		end
+	end
+
 	-- restore handling
 	if __CORE_GAMEOPTIONS_RESTORE then
 		menu.history = __CORE_GAMEOPTIONS_RESTOREINFO.history
@@ -12250,7 +12424,15 @@ function menu.onUpdate()
 				for _, save in ipairs(menu.savegames) do
 					if save.isonline and (save.filename == "online_save") then
 						menu.onlinesave = save
-						break
+						if menu.allBasicTutorialsDone then
+							break
+						end
+					end
+					if save.rawversion < 700 then
+						menu.allBasicTutorialsDone = true
+						if menu.onlinesave then
+							break
+						end
 					end
 				end
 				if next(menu.savegames) then
@@ -12499,8 +12681,30 @@ function menu.newGameCallback(option, checked)
 			else
 				if menu.currentOption == "multiplayer_server" then
 					C.NewMultiplayerGame(option.id)
-				else
+				elseif option.tutorial then
+					local value = 1
+					if menu.isStartmenu or C.IsTutorial() then
+						value = 0
+					elseif C.IsTimelinesScenario() or (ffi.string(C.GetGameStartName()) == "x4ep1_gamestart_hub") then
+						value = 2
+					end
+					if value == 1 then
+						Helper.closeMenuAndOpenNewMenu(menu, "UserQuestionMenu", { 0, 0, "starttutorial", { option.id, 1 } })
+						menu.cleanup()
+					else
+						C.SetUserData("tutorial_started_from", tostring(value))
 
+						-- kuertee start: callback
+						if callbacks ["newGameCallback_preNewGame"] then
+							for _, callback in ipairs (callbacks ["newGameCallback_preNewGame"]) do
+								callback(option.id)
+							end
+						end
+						-- kuertee end: callback
+
+						NewGame(option.id)
+					end
+				else
 					-- kuertee start: callback
 					if callbacks ["newGameCallback_preNewGame"] then
 						for _, callback in ipairs (callbacks ["newGameCallback_preNewGame"]) do
@@ -12508,6 +12712,7 @@ function menu.newGameCallback(option, checked)
 						end
 					end
 					-- kuertee end: callback
+
 					NewGame(option.id)
 				end
 				menu.displayInit()

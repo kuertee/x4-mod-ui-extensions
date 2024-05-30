@@ -1,6 +1,6 @@
 ﻿-- section == cArch_configureStation
 -- param == { 0, 0, container }
- 
+
 -- ffi setup
 local ffi = require("ffi")
 local C = ffi.C
@@ -493,7 +493,7 @@ function menu.cleanup()
 	menu.topRows = {}
 	menu.selectedRows = {}
 	menu.selectedCols = {}
-	
+
 	UnregisterAddonBindings("ego_detailmonitor", "undo")
 
 	-- kuertee start: callback
@@ -518,7 +518,7 @@ function menu.buttonLeftBar(mode, row)
 		PlaySound("ui_positive_select")
 		menu.modulesMode = mode
 	end
-	
+
 	menu.storePlanTableState()
 	menu.displayMenu()
 end
@@ -608,12 +608,12 @@ function menu.buttonSelectSlot(slot, row, col)
 	if menu.currentSlot ~= slot then
 		menu.currentSlot = slot
 	end
-	
+
 	if menu.upgradetypeMode == "turretgroup" then
 		local group = menu.groups[menu.currentSlot]
 		C.SetSelectedMapGroup(menu.holomap, menu.loadoutModule.component, menu.loadoutModule.macro, group.path, group.group)
 	end
-	
+
 	menu.topRows.modules = GetTopRow(menu.moduletable)
 	menu.selectedRows.modules = row
 	menu.selectedCols.modules = col
@@ -637,7 +637,7 @@ function menu.buttonSelectGroupUpgrade(type, group, macro, row, col, keepcontext
 			elseif (macro == "") and (menu.constructionplan[menu.loadoutMode].upgradeplan[type][group].count ~= 0) then
 				menu.constructionplan[menu.loadoutMode].upgradeplan[type][group].count = 0
 			end
-			
+
 			menu.topRows.modules = GetTopRow(menu.moduletable)
 			menu.selectedRows.modules = row
 			menu.selectedCols.modules = col
@@ -667,7 +667,7 @@ end
 
 function menu.buttonExtendEntry(index, row)
 	menu.extendEntry(menu.container, index)
-	
+
 	menu.topRows.modules = GetTopRow(menu.moduletable)
 	menu.selectedRows.modules = Helper.currentTableRow[menu.moduletable]
 	menu.selectedCols.modules = Helper.currentTableCol[menu.moduletable]
@@ -678,7 +678,7 @@ end
 
 function menu.buttonExtendResourceEntry(index, row)
 	menu.extendResourceEntry(index)
-	
+
 	menu.topRows.modules = GetTopRow(menu.moduletable)
 	menu.selectedRows.modules = Helper.currentTableRow[menu.moduletable]
 	menu.selectedCols.modules = Helper.currentTableCol[menu.moduletable]
@@ -700,7 +700,7 @@ end
 function menu.buttonRemoveModule(module, removesequence)
 	C.RemoveItemFromConstructionMap2(menu.holomap, module.idx, removesequence)
 	menu.closeContextMenu()
-	
+
 	menu.topRows.modules = GetTopRow(menu.moduletable)
 	menu.selectedRows.modules = Helper.currentTableRow[menu.moduletable]
 	menu.selectedCols.modules = Helper.currentTableCol[menu.moduletable]
@@ -891,7 +891,7 @@ function menu.buttonCancelLoadout()
 	menu.hasconstructionchanges = nil
 
 	menu.closeContextMenu()
-	
+
 	menu.displayMainFrame()
 	menu.refreshPlan()
 	menu.displayMenu()
@@ -982,16 +982,22 @@ function menu.dropdownLoad(_, id)
 end
 
 function menu.dropdownRemovedCP(_, id)
-	C.RemoveConstructionPlan("local", id)
-	if id == menu.currentCPID then
-		menu.currentCPID = nil
-		menu.currentCPName = nil
-	end
-	for i, plan in ipairs(menu.constructionplans) do
-		if plan.id == id then
-			table.remove(menu.constructionplans, i)
-			break
+	if __CORE_DETAILMONITOR_USERQUESTION["deleteconstructionplan"] then
+		C.RemoveConstructionPlan("local", id)
+		if id == menu.currentCPID then
+			menu.currentCPID = nil
+			menu.currentCPName = nil
 		end
+		for i, plan in ipairs(menu.constructionplans) do
+			if plan.id == id then
+				table.remove(menu.constructionplans, i)
+				break
+			end
+		end
+	else
+		Helper.closeDropDownOptions(menu.titlebartable, 1, 2)
+		menu.contextData = { id = "deleteconstructionplan", cpid = id }
+		menu.displayContextFrame("removeCP", Helper.scaleX(400), (Helper.viewWidth - Helper.scaleX(400)) / 2, Helper.viewHeight / 2)
 	end
 end
 
@@ -1354,21 +1360,21 @@ function menu.checkboxToggleGlobalWarePriceModifier()
 	menu.storePlanTableState()
 	menu.displayMenu()
 end
-	 
+
 function menu.checkboxSetTradeRuleOverride(container, type, checked, ware)
 	if type == "trade" then
-		if checked then 
+		if checked then
 			C.SetContainerTradeRule(container, -1, "buy",  ware or "", false)
 			C.SetContainerTradeRule(container, -1, "sell", ware or "", false)
-		else 
+		else
 			local currentid = C.GetContainerTradeRuleID(container, "buy", ware or "")
 			C.SetContainerTradeRule(container, (currentid ~= 0) and currentid or -1, "buy",  ware or "", true)
 			C.SetContainerTradeRule(container, (currentid ~= 0) and currentid or -1, "sell", ware or "", true)
 		end
 	else
-		if checked then 
+		if checked then
 			C.SetContainerTradeRule(container, -1, type, ware or "", false)
-		else 
+		else
 			local currentid = C.GetContainerTradeRuleID(container, type, ware or "")
 			C.SetContainerTradeRule(container, (currentid ~= 0) and currentid or -1, type, ware or "", true)
 		end
@@ -1638,7 +1644,7 @@ function menu.onShowMenu(state)
 	Helper.unregisterStationEditorChanges()
 
 	menu.displayMainFrame()
-	
+
 	RegisterAddonBindings("ego_detailmonitor", "undo")
 	Helper.setKeyBinding(menu, menu.hotkey)
 end
@@ -1836,7 +1842,7 @@ function menu.createTitleBar(frame)
 	ftable:setColWidth(7, menu.titleData.height)
 	ftable:setColWidth(8, menu.titleData.height)
 	ftable:setColWidth(9, menu.titleData.height)
-	
+
 	local row = ftable:addRow(true, { fixed = true, bgColor = Color["row_background_blue"] })
 	if not menu.loadoutMode then
 		-- name
@@ -1923,7 +1929,7 @@ function menu.refreshTitleBar()
 			table.insert(loadOptions, { id = plan.id, text = plan.name, icon = "", displayremoveoption = plan.deleteable, active = plan.active, mouseovertext = plan.mouseovertext })
 		end
 		table.sort(loadOptions, function (a, b) return a.text < b.text end)
-		
+
 		-- editbox
 		local desc = Helper.createEditBox(Helper.createTextInfo(ffi.string(C.GetComponentName(menu.container)), "center", Helper.headerRow1Font, Helper.scaleFont(Helper.headerRow1Font, Helper.headerRow1FontSize), 255, 255, 255, 100), true, 0, 0, 0, 0, nil, nil, false)
 		Helper.setCellContent(menu, menu.titlebartable, desc, 1, 1, nil, "editbox", nil, menu.editboxNameUpdateText)
@@ -1941,7 +1947,7 @@ function menu.refreshTitleBar()
 				table.insert(loadoutOptions, { id = loadout.id, text = loadout.name, icon = "", displayremoveoption = loadout.deleteable, active = loadout.active, mouseovertext = loadout.mouseovertext })
 			end
 		end
-		
+
 		-- editbox
 		local desc = Helper.createEditBox(Helper.createTextInfo(ffi.string(C.GetComponentName(menu.container)), "center", Helper.headerRow1Font, Helper.scaleFont(Helper.headerRow1Font, Helper.headerRow1FontSize), 255, 255, 255, 100), true, 0, 0, 0, 0, nil, nil, false)
 		Helper.setCellContent(menu, menu.titlebartable, desc, 1, 1, nil, "editbox", nil, menu.editboxNameUpdateText)
@@ -2204,7 +2210,7 @@ function menu.displayModules(frame, firsttime)
 					if upgradetype.allowempty then
 						local group = math.ceil(upgradegroupcount / 3)
 						menu.groupedupgrades[upgradetype.grouptype][group] = menu.groupedupgrades[upgradetype.grouptype][group] or {}
-						table.insert(menu.groupedupgrades[upgradetype.grouptype][group], { macro = "", icon = "upgrade_empty", name = ReadText(1001, 7906) })
+						table.insert(menu.groupedupgrades[upgradetype.grouptype][group], { macro = "", icon = "upgrade_empty", name = ReadText(1001, 7906), helpOverlayID = "upgrade_empty", helpOverlayText = " ", helpOverlayHighlightOnly = true })
 						upgradegroupcount = upgradegroupcount + 1
 					end
 				end
@@ -2214,7 +2220,7 @@ function menu.displayModules(frame, firsttime)
 		end
 	end
 	count = count - 1
-	
+
 	local editboxheight = math.max(23, Helper.scaleY(Helper.standardTextHeight))
 
 	if not menu.loadoutMode then
@@ -2274,14 +2280,14 @@ function menu.displayModules(frame, firsttime)
 							AddKnownItem(infolibrary, group[i])
 							local icon = C.IsIconValid("module_" .. group[i]) and ("module_" .. group[i]) or "module_notfound"
 							local active = true
-							row[i]:createButton({ width = columnWidth, height = columnWidth, active = active, highlightColor = Color["button_highlight_bigbutton"], mouseOverText = name }):setIcon(icon)
+							row[i]:createButton({ width = columnWidth, height = columnWidth, active = active, highlightColor = Color["button_highlight_bigbutton"], mouseOverText = name, helpOverlayID = "stationbuildst_" .. group[i], helpOverlayText = " ", helpOverlayHighlightOnly = true }):setIcon(icon)
 
 							-- Tutorial solar panels (shared)
 							if group[i] == "prod_gen_energycells_macro" then
 								row[i].properties.helpOverlayID = "stationbuildst_production_energycells"
 								row[i].properties.helpOverlayText = " "
 								row[i].properties.helpOverlayHighlightOnly = true
-							end 
+							end
 
 							-- Tutorial solid storage (any race)
 							if	(group[i] == "storage_arg_s_solid_01_macro") or (group[i] == "storage_arg_m_solid_01_macro") or (group[i] == "storage_arg_l_solid_01_macro") or
@@ -2294,7 +2300,7 @@ function menu.displayModules(frame, firsttime)
 								row[i].properties.helpOverlayID = "stationbuildst_storage_solid" .. storagecounter_solid
 								row[i].properties.helpOverlayText = " "
 								row[i].properties.helpOverlayHighlightOnly = true
-							end 
+							end
 
 							-- Tutorial container storage (any race)
 							if	(group[i] == "storage_arg_s_container_01_macro") or (group[i] == "storage_arg_m_container_01_macro") or (group[i] == "storage_arg_l_container_01_macro") or
@@ -2307,54 +2313,54 @@ function menu.displayModules(frame, firsttime)
 								row[i].properties.helpOverlayID = "stationbuildst_storage_container" .. storagecounter_container
 								row[i].properties.helpOverlayText = " "
 								row[i].properties.helpOverlayHighlightOnly = true
-							end 
+							end
 
 							-- Tutorial shipyard buildmodules
-							if	(group[i] == "buildmodule_gen_ships_l_macro") or (group[i] == "buildmodule_gen_ships_xl_macro") or (group[i] == "buildmodule_ter_ships_l_macro") or (group[i] == "buildmodule_ter_ships_xl_macro") 
+							if	(group[i] == "buildmodule_gen_ships_l_macro") or (group[i] == "buildmodule_gen_ships_xl_macro") or (group[i] == "buildmodule_ter_ships_l_macro") or (group[i] == "buildmodule_ter_ships_xl_macro")
 							then
 								counter_shipyard = counter_shipyard + 1
 								row[i].properties.helpOverlayID = "stationbuildst_build_shipyard" .. counter_shipyard
 								row[i].properties.helpOverlayText = " "
 								row[i].properties.helpOverlayHighlightOnly = true
-							end 
+							end
 
 							-- Tutorial wharf buildmodules
-							if	(group[i] == "buildmodule_gen_ships_m_dockarea_01_macro") or (group[i] == "buildmodule_ter_ships_m_dockarea_01_macro") 
+							if	(group[i] == "buildmodule_gen_ships_m_dockarea_01_macro") or (group[i] == "buildmodule_ter_ships_m_dockarea_01_macro")
 							then
 								counter_wharf = counter_wharf + 1
 								row[i].properties.helpOverlayID = "stationbuildst_build_wharf" .. counter_wharf
 								row[i].properties.helpOverlayText = " "
 								row[i].properties.helpOverlayHighlightOnly = true
-							end 
+							end
 
 							-- Tutorial Dockarea (any race)
 							if	(group[i] == "dockarea_arg_m_station_01_hightech_macro") or (group[i] == "dockarea_arg_m_station_01_lowtech_macro") or (group[i] == "dockarea_arg_m_station_01_macro") or
 								(group[i] == "dockarea_arg_m_station_02_hightech_macro") or (group[i] == "dockarea_arg_m_station_02_lowtech_macro") or (group[i] == "dockarea_arg_m_station_02_macro") or
-								(group[i] == "dockarea_int_m_station_01_macro") or (group[i] == "dockarea_par_m_station_01_macro") or (group[i] == "dockarea_tel_m_station_01_macro") or (group[i] == "dockarea_ter_m_station_01_hightech_macro") 
+								(group[i] == "dockarea_int_m_station_01_macro") or (group[i] == "dockarea_par_m_station_01_macro") or (group[i] == "dockarea_tel_m_station_01_macro") or (group[i] == "dockarea_ter_m_station_01_hightech_macro")
 							then
 								dockareacounter = dockareacounter + 1
 								row[i].properties.helpOverlayID = "stationbuildst_dock_dockarea" .. dockareacounter
 								row[i].properties.helpOverlayText = " "
 								row[i].properties.helpOverlayHighlightOnly = true
-							end 
+							end
 
 							-- Tutorial Pier (any race)
 							if	(group[i] == "pier_arg_harbor_01_macro") or (group[i] == "pier_arg_harbor_02_macro") or (group[i] == "pier_arg_harbor_03_macro") or
 								(group[i] == "pier_par_harbor_01_macro") or (group[i] == "pier_par_harbor_02_macro") or (group[i] == "pier_par_harbor_03_macro") or
-								(group[i] == "pier_spl_harbor_01_macro") or (group[i] == "pier_spl_harbor_02_macro") or (group[i] == "pier_spl_harbor_03_macro") or 
+								(group[i] == "pier_spl_harbor_01_macro") or (group[i] == "pier_spl_harbor_02_macro") or (group[i] == "pier_spl_harbor_03_macro") or
 								(group[i] == "pier_tel_harbor_01_macro") or (group[i] == "pier_tel_harbor_02_macro") or (group[i] == "pier_tel_harbor_03_macro") or
-								(group[i] == "pier_ter_harbor_01_macro") or (group[i] == "pier_ter_harbor_02_macro") or (group[i] == "pier_ter_harbor_03_macro") or (group[i] == "pier_ter_harbor_04_macro") 
+								(group[i] == "pier_ter_harbor_01_macro") or (group[i] == "pier_ter_harbor_02_macro") or (group[i] == "pier_ter_harbor_03_macro") or (group[i] == "pier_ter_harbor_04_macro")
 							then
 								counter_pier = counter_pier + 1
 								row[i].properties.helpOverlayID = "stationbuildst_dock_pier" .. counter_pier
 								row[i].properties.helpOverlayText = " "
 								row[i].properties.helpOverlayHighlightOnly = true
-							end 
+							end
 
 							-- Tutorial Connections (any race)
 							if	(group[i] == "struct_arg_base_01_macro")		or (group[i] == "struct_arg_base_02_macro")		or (group[i] == "struct_arg_base_03_macro")		or
 								(group[i] == "struct_arg_cross_01_macro")		or (group[i] == "struct_arg_vertical_01_macro") or (group[i] == "struct_arg_vertical_02_macro") or
-								(group[i] == "struct_par_base_01_macro")		or (group[i] == "struct_par_base_02_macro")		or (group[i] == "struct_par_base_03_macro")		or 
+								(group[i] == "struct_par_base_01_macro")		or (group[i] == "struct_par_base_02_macro")		or (group[i] == "struct_par_base_03_macro")		or
 								(group[i] == "struct_par_cross_01_macro")		or (group[i] == "struct_par_cross_02_macro")	or (group[i] == "struct_par_cross_03_macro")	or
 								(group[i] == "struct_par_vertical_01_macro")	or (group[i] == "struct_spl_base_01_macro")		or (group[i] == "struct_spl_base_02_macro")		or
 								(group[i] == "struct_spl_base_03_macro")		or (group[i] == "struct_spl_cross_01_macro")	or (group[i] == "struct_spl_vertical_01_macro") or
@@ -2368,7 +2374,7 @@ function menu.displayModules(frame, firsttime)
 								row[i].properties.helpOverlayID = "stationbuildst_other_struct" .. counter_struct
 								row[i].properties.helpOverlayText = " "
 								row[i].properties.helpOverlayHighlightOnly = true
-							end 
+							end
 
 							if menu.modulesMode == "moduletypes_production" then
 								local icon = GetMacroData(group[i], "waregroupicon")
@@ -2702,7 +2708,7 @@ function menu.displayModules(frame, firsttime)
 											end
 
 											local column = i * 3 - 2
-											row[column]:createButton({ width = columnWidths[i], height = maxColumnWidth, mouseOverText = untruncatedExtraText }):setIcon(group[i].icon):setIcon2(installicon, { color = installcolor }):setText2(weaponicon, { x = 3, y = -maxColumnWidth / 2 + Helper.scaleY(Helper.standardTextHeight) / 2 + Helper.configButtonBorderSize, fontsize = Helper.scaleFont(Helper.standardFont, Helper.standardFontSize) })
+											row[column]:createButton({ width = columnWidths[i], height = maxColumnWidth, mouseOverText = untruncatedExtraText, helpOverlayID = "groupedslot_" .. group[i].macro, helpOverlayText = " ", helpOverlayHighlightOnly = true, uiTriggerID = "groupedslot_" .. group[i].macro }):setIcon(group[i].icon):setIcon2(installicon, { color = installcolor }):setText2(weaponicon, { x = 3, y = -maxColumnWidth / 2 + Helper.scaleY(Helper.standardTextHeight) / 2 + Helper.configButtonBorderSize, fontsize = Helper.scaleFont(Helper.standardFont, Helper.standardFontSize) })
 											row[column].handlers.onClick = function () return menu.buttonSelectGroupUpgrade(upgradetype.type, menu.currentSlot, group[i].macro, row.index, column) end
 											if group[i].macro ~= "" then
 												row[column].handlers.onRightClick = function (...) return menu.buttonInteract({ type = upgradetype.type, name = group[i].name, macro = group[i].macro }, ...) end
@@ -3183,7 +3189,7 @@ function menu.displayPlan(frame)
 			-- module status here
 			local row = modulestatustable:addRow(false, { fixed = true, bgColor = Color["row_title_background"] })
 			row[1]:setColSpan(6):createText(ReadText(1001, 7991), menu.headerTextProperties)
-		
+
 			local infoCount = 0
 			local visibleHeight
 			for _, errorentry in Helper.orderedPairs(menu.criticalmoduleerrors) do
@@ -3254,7 +3260,7 @@ function menu.displayPlan(frame)
 				menu.selectedRows.planresources = row.index
 			end
 			local isextended = menu.isResourceEntryExtended("buildstorage")
-			row[1]:createButton({ helpOverlayID = "plot_resources_available", helpOverlayText = " ",  helpOverlayHighlightOnly = true  }):setText(isextended and "-" or "+", { halign = "center" })
+			row[1]:createButton({ helpOverlayID = "plot_resources_available", helpOverlayText = " ",  helpOverlayHighlightOnly = true, uiTriggerID = "extendavailableresourcesentry" }):setText(isextended and "-" or "+", { halign = "center" })
 			row[1].handlers.onClick = function () return menu.buttonExtendResourceEntry("buildstorage", row.index) end
 			row[2]:setColSpan(5):createText(ReadText(1001, 7927) .. (menu.newWareReservation and " " .. ColorText["text_positive"] .. "[+" .. menu.newWareReservation .. "]" or ""), Helper.subHeaderTextProperties)
 
@@ -3490,7 +3496,7 @@ function menu.displayPlan(frame)
 					if C.GetContainerTradeRuleID(menu.buildstorage, "buy", ware.ware) > 0 then
 						row[5]:setColSpan(2):createText("\27[lso_error]", { halign = "right", color = Color["text_warning"], mouseOverText = ReadText(1026, 8404) })
 					end
-				
+
 					ware.minprice, ware.maxprice = GetWareData(ware.ware, "minprice", "maxprice")
 					if isextended then
 						-- trade rule
@@ -3559,7 +3565,7 @@ function menu.displayPlan(frame)
 				row[2]:setColSpan(3):createButton({ helpOverlayID = "confirm_credits", helpOverlayText = " ", helpOverlayHighlightOnly = true, active = function () return (menu.newAccountValue ~= nil) and (menu.newAccountValue ~= buildstoragemoney) and GetComponentData(ConvertStringTo64Bit(tostring(menu.buildstorage)), "isplayerowned") end }):setText(ReadText(1001, 2821), { halign = "center" })
 				row[2].handlers.onClick = menu.buttonConfirmMoney
 				row[2].properties.uiTriggerID = "confirmcredits"
-				row[5]:setColSpan(2):createButton({ active = function () local money, isplayerowned = GetComponentData(ConvertStringTo64Bit(tostring(menu.buildstorage)), "money", "isplayerowned"); return ((money + GetPlayerMoney()) > menu.totalprice) and isplayerowned end }):setText(ReadText(1001, 7965), { halign = "center" })
+				row[5]:setColSpan(2):createButton({ active = function () local money, isplayerowned = GetComponentData(ConvertStringTo64Bit(tostring(menu.buildstorage)), "money", "isplayerowned"); return ((money + GetPlayerMoney()) > menu.totalprice) and isplayerowned end, helpOverlayID = "acceptestimate", helpOverlayText = " ", helpOverlayHighlightOnly = true, uiTriggerID = "acceptestimate" }):setText(ReadText(1001, 7965), { halign = "center" })
 				row[5].handlers.onClick = menu.buttonSetMoneyToEstimate
 			end
 
@@ -3615,7 +3621,7 @@ function menu.displayPlan(frame)
 
 		local row = statustable:addRow(false, { fixed = true, bgColor = Color["row_title_background"] })
 		row[1]:createText(ReadText(1001, 7922), menu.headerTextProperties)
-		
+
 		for _, errorentry in Helper.orderedPairs(menu.criticalerrors) do
 			row = statustable:addRow(true, {  })
 			row[1]:createText(errorentry, { color = Color["text_criticalerror"], wordwrap = true })
@@ -3635,7 +3641,7 @@ function menu.displayPlan(frame)
 
 		local row = statustable:addRow(true, {  })
 		row[1]:setColSpan(1)
-		row[2]:createButton({  }):setText(ReadText(1001, 8035), { halign = "center" })
+		row[2]:createButton({ helpOverlayID = "stationconfig_closemenu", helpOverlayText = " ",  helpOverlayHighlightOnly = true }):setText(ReadText(1001, 8035), { halign = "center" })
 		row[2].handlers.onClick = function () menu.modulesMode = nil; return menu.onCloseElement("back") end
 
 		statustable.properties.y = Helper.viewHeight - statustable:getFullHeight() - Helper.frameBorder
@@ -3684,7 +3690,7 @@ function menu.displayPlan(frame)
 			row[2].handlers.onClick = menu.buttonCancelCancel
 		else
 			local row = buttontable:addRow(true, { fixed = true, bgColor = Color["row_title_background"] })
-			row[1]:createButton({  }):setText(ReadText(1001, 7921), { halign = "center" })
+			row[1]:createButton({ helpOverlayID = "stationconfig_confirmloadout", helpOverlayText = " ", helpOverlayHighlightOnly = true, uiTriggerID = "confirmloadout" }):setText(ReadText(1001, 7921), { halign = "center" })
 			row[1].handlers.onClick = menu.buttonConfirmLoadout
 			row[2]:createButton({  }):setText(ReadText(1001, 7920), { halign = "center" })
 			row[2].handlers.onClick = menu.buttonCancel
@@ -3803,9 +3809,9 @@ function  menu.dropdownBuildRule(container, id)
 end
 
 function menu.checkboxSetBuildRuleOverride(container, checked, curglobal)
-	if checked then 
+	if checked then
 		C.SetContainerBuildMethod(container, "")
-	else 
+	else
 		C.SetContainerBuildMethod(container, curglobal or "default")
 	end
 	menu.refreshPlan()
@@ -4105,7 +4111,7 @@ function menu.getBuildProgress(component, added, removed)
 			buildprogress = 100 - buildprogress
 			menu.refresh = menu.refresh or (getElapsedTime() + 10.0)
 		end
-		
+
 		local buildingprocessor = GetComponentData(menu.container, "buildingprocessor")
 		local ismissingresources, buildcomponents, recyclingcomponents = GetComponentData(buildingprocessor, "ismissingresources", "buildcomponents", "recyclingcomponents")
 		local found = false
@@ -4167,6 +4173,8 @@ function menu.displayContextFrame(mode, width, x, y)
 	menu.contextMode = { mode = mode, width = width, x = x, y = y }
 	if mode == "saveCP" then
 		menu.createCPSaveContext()
+	elseif mode == "removeCP" then
+		menu.createCPRemoveContext()
 	elseif mode == "importCP" then
 		menu.createCPImportContext()
 	elseif mode == "exportCP" then
@@ -4281,7 +4289,7 @@ function menu.createSlotContext()
 		end
 
 		local row = ftable:addRow(true)
-		row[1]:createButton({ height = Helper.standardTextHeight }):setText(name, { color = color })
+		row[1]:createButton({ height = Helper.standardTextHeight, helpOverlayID = "turretgroup_empty", helpOverlayText = " ", helpOverlayHighlightOnly = true }):setText(name, { color = color })
 		if menu.upgradetypeMode == "turretgroup" then
 			row[1].handlers.onClick = function () return menu.buttonSelectGroupUpgrade(upgradetype2.type, menu.currentSlot, "", nil, nil, row.index) end
 		end
@@ -4418,7 +4426,7 @@ function menu.createModuleContext()
 	end
 	if active then
 		local row = ftable:addRow(true, { fixed = true })
-		row[1]:createButton({ active = true, bgColor = Color["button_background_hidden"] }):setText(ReadText(1001, 7938))
+		row[1]:createButton({ active = true, bgColor = Color["button_background_hidden"], helpOverlayID = "stationconfig_editloadout", helpOverlayText = " ",  helpOverlayHighlightOnly = true, uiTriggerID = "editloadout" }):setText(ReadText(1001, 7938))
 		row[1].handlers.onClick = function () return menu.buttonEditLoadout(menu.contextData.item) end
 	end
 
@@ -4427,7 +4435,7 @@ function menu.createModuleContext()
 	row[1].handlers.onClick = function () return menu.buttonContextEncyclopedia({ type = "module", macro = menu.contextData.item.macro }) end
 
 	local row = ftable:addRow(true, { fixed = true })
-	row[1]:createButton({ active = not menu.contextData.item.isfixed, bgColor = Color["button_background_hidden"] }):setText(ReadText(1001, 7999))
+	row[1]:createButton({ active = not menu.contextData.item.isfixed, bgColor = Color["button_background_hidden"], helpOverlayID = "stationconfig_resetrotation", helpOverlayText = " ", helpOverlayHighlightOnly = true, uiTriggerID = "resetrotation" }):setText(ReadText(1001, 7999))
 	row[1].handlers.onClick = function () return menu.buttonResetModuleRotation(menu.contextData.item) end
 
 	local row = ftable:addRow(true, { fixed = true })
@@ -4590,6 +4598,68 @@ function menu.createCPSaveContext()
 	row[3].handlers.onClick = menu.closeContextMenu
 
 	menu.contextFrame:display()
+end
+
+function menu.createCPRemoveContext()
+	Helper.removeAllWidgetScripts(menu, config.contextLayer)
+
+	menu.contextFrame = Helper.createFrameHandle(menu, {
+		layer = config.contextLayer,
+		standardButtons = {},
+		width = menu.contextMode.width,
+		x = menu.contextMode.x,
+		y = menu.contextMode.y,
+		autoFrameHeight = true,
+	})
+	menu.contextFrame:setBackground("solid", { color = Color["frame_background_semitransparent"] })
+
+	local ftable = menu.contextFrame:addTable(6, { tabOrder = 5, defaultInteractiveObject = true })
+	ftable:setColWidth(1, Helper.scaleY(Helper.standardButtonHeight), false)
+	ftable:setColWidthPercent(5, 25, false)
+	ftable:setColWidthPercent(6, 25, false)
+
+	local row = ftable:addRow(false, { fixed = true })
+	row[1]:setColSpan(6):createText(ReadText(1001, 11924), Helper.headerRowCenteredProperties)
+
+	local row = ftable:addRow(false, { fixed = true })
+	row[1]:setColSpan(6):createText(ReadText(1001, 11925), { wordwrap = true })
+
+	ftable:addEmptyRow()
+
+	local row = ftable:addRow(true, { fixed = true })
+	row[1]:createCheckBox(function () return menu.contextData.saveOption == true end, { height = Helper.standardButtonHeight })
+	row[1].handlers.onClick = function () menu.contextData.saveOption = not menu.contextData.saveOption end
+	row[2]:setColSpan(3):createButton({ bgColor = Color["button_background_hidden"] }):setText(ReadText(1001, 9711))
+	row[2].handlers.onClick = function () menu.contextData.saveOption = not menu.contextData.saveOption end
+	row[5]:createButton({  }):setText(ReadText(1001, 2821), { halign = "center" })
+	row[5].handlers.onClick = menu.buttonCPRemoveConfirm
+	row[6]:createButton({  }):setText(ReadText(1001, 64), { halign = "center" })
+	row[6].handlers.onClick = menu.buttonCPRemoveCancel
+	ftable:setSelectedCol(6)
+
+	menu.contextFrame:display()
+end
+
+function menu.buttonCPRemoveConfirm()
+	__CORE_DETAILMONITOR_USERQUESTION[menu.contextData.id] = menu.contextData.saveOption
+	C.RemoveConstructionPlan("local", menu.contextData.cpid)
+	if menu.contextData.cpid == menu.currentCPID then
+		menu.currentCPID = nil
+		menu.currentCPName = nil
+	end
+	for i, plan in ipairs(menu.constructionplans) do
+		if plan.id == menu.contextData.cpid then
+			table.remove(menu.constructionplans, i)
+			break
+		end
+	end
+	menu.refreshTitleBar()
+	menu.closeContextMenu()
+end
+
+function menu.buttonCPRemoveCancel()
+	menu.refreshTitleBar()
+	menu.closeContextMenu()
 end
 
 function menu.createSettingsContext()
@@ -4830,7 +4900,7 @@ function menu.createCPImportContext()
 	local buttontable = menu.contextFrame:addTable(2, { tabOrder = 7, reserveScrollBar = false })
 	buttontable:setDefaultCellProperties("button", { height = Helper.standardTextHeight })
 	buttontable:setDefaultComplexCellProperties("button", "text", { fontsize = Helper.standardFontSize, halign = "center" })
-	
+
 	local row = buttontable:addRow(nil, { fixed = true })
 	row[1]:setColSpan(2):createText(" ")
 
@@ -4979,7 +5049,7 @@ end
 function menu.viewCreated(layer, ...)
 	if layer == config.mainLayer then
 		menu.rightbartable, menu.titlebartable, menu.map = ...
-	
+
 		if menu.activatemap == nil then
 			menu.activatemap = true
 		end
@@ -5173,7 +5243,7 @@ function menu.onUpdate()
 				local desc = Helper.createButton(nil, Helper.createButtonIcon("menu_undo", nil, 255, 255, 255, 100, nil, nil, 0, 0), true, canundo, 0, 0, 0, menu.titleData.height, nil, nil, nil, ReadText(1026, 7903) .. Helper.formatOptionalShortcut(" (%s)", "action", 278))
 				Helper.setCellContent(menu, menu.titlebartable, desc, 1, 7, nil, "button", nil, function () return menu.undoHelper(true) end)
 			end
-			
+
 			local canredo = C.CanRedoConstructionMapChange(menu.holomap)
 			if canredo ~= menu.canredo then
 				menu.canredo = canredo
@@ -5529,15 +5599,15 @@ function menu.onRestoreState(state)
 	local mapstate
 	if state.map then
 		local offset = ffi.new("UIPosRot", {
-			x = state.map.offset.x, 
-			y = state.map.offset.y, 
-			z = state.map.offset.z, 
-			yaw = state.map.offset.yaw, 
-			pitch = state.map.offset.pitch, 
+			x = state.map.offset.x,
+			y = state.map.offset.y,
+			z = state.map.offset.z,
+			yaw = state.map.offset.yaw,
+			pitch = state.map.offset.pitch,
 			roll = state.map.offset.roll
 		})
 		mapstate = ffi.new("HoloMapState", {
-			offset = offset, 
+			offset = offset,
 			cameradistance = state.map.cameradistance
 		})
 	end

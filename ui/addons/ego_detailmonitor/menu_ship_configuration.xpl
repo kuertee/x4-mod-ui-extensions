@@ -958,7 +958,7 @@ function menu.buttonSelectSlot(slot, row, col)
 	if menu.currentSlot ~= slot then
 		menu.currentSlot = slot
 	end
-	
+
 	menu.selectMapMacroSlot()
 
 	menu.topRows.slots = GetTopRow(menu.slottable)
@@ -1061,8 +1061,10 @@ function menu.checkboxSelectSoftware(type, slot, software, row, keepcontext)
 	local upgradetype = Helper.findUpgradeType(type)
 
 	if software ~= menu.upgradeplan[type][slot] then
+		AddUITriggeredEvent(menu.name, "software_added", software)
 		menu.upgradeplan[type][slot] = software
 	else
+		AddUITriggeredEvent(menu.name, "software_removed", software)
 		if menu.software[type][slot].defaultsoftware ~= 0 then
 			menu.upgradeplan[type][slot] = menu.software[type][slot].possiblesoftware[menu.software[type][slot].defaultsoftware]
 		else
@@ -1380,6 +1382,7 @@ function menu.slidercellSelectAmount(type, slot, macro, row, value)
 	local upgradetype = Helper.findUpgradeType(type)
 
 	if (upgradetype.supertype == "ammo") then
+		AddUITriggeredEvent(menu.name, "ammo_changed", value)
 		menu.upgradeplan[type][macro] = value
 		menu.selectedRows.slots = row
 	end
@@ -1398,6 +1401,7 @@ function menu.slidercellSelectCrewAmount(slot, tier, row, istier, value)
 		menu.crew.roles[slot].wanted = value
 	end
 	if change > 0 then
+		AddUITriggeredEvent(menu.name, "crew_added", change)
 		-- adding crew
 		-- first use npcs from the unassigned pool
 		if #menu.crew.unassigned > 0 then
@@ -1459,6 +1463,7 @@ function menu.slidercellSelectCrewAmount(slot, tier, row, istier, value)
 			end
 		end
 	else
+		AddUITriggeredEvent(menu.name, "crew_removed", -change)
 		-- removing crew
 		-- first remove newly hired crew
 		for i, entry in ipairs(menu.crew.hireddetails) do
@@ -1757,7 +1762,7 @@ end
 function menu.buttonSelectPaintMod(entry, row, col)
 	menu.selectedPaintMod = entry
 	C.SetMapPaintMod(menu.holomap, entry.ware)
-	
+
 	menu.selectedRows.slots = row
 	menu.selectedCols.slots = col
 	menu.refreshMenu()
@@ -1787,7 +1792,7 @@ function menu.buttonInstallPaintMod()
 
 	menu.selectedRows.slots = Helper.currentTableRow[menu.slottable]
 	menu.selectedCols.slots = Helper.currentTableCol[menu.slottable]
-	
+
 	menu.mapstate = ffi.new("HoloMapState")
 	C.GetMapState(menu.holomap, menu.mapstate)
 	menu.prepareModWares()
@@ -1795,6 +1800,7 @@ function menu.buttonInstallPaintMod()
 end
 
 function menu.dropdownShipClass(_, class)
+	AddUITriggeredEvent(menu.name, "shipclass_selected", class)
 	if class ~= menu.class then
 		menu.class = class or ""
 		if menu.usemacro then
@@ -1846,6 +1852,7 @@ end
 
 function menu.dropdownShip(_, shipid)
 	if menu.usemacro then
+		AddUITriggeredEvent(menu.name, "shipmacro_selected", shipid)
 		local oldmacro = menu.macro
 		menu.macro = shipid or ""
 		if menu.macro ~= oldmacro then
@@ -1882,6 +1889,7 @@ function menu.dropdownShip(_, shipid)
 			menu.getDataAndDisplay()
 		end
 	elseif (menu.mode == "upgrade") or (menu.mode == "modify") then
+		AddUITriggeredEvent(menu.name, "ship_selected", shipid)
 		local oldobject = menu.object
 		local oldobjectgroup = menu.objectgroup and menu.objectgroup.idx or 0
 
@@ -1908,7 +1916,7 @@ function menu.dropdownShip(_, shipid)
 		end
 		menu.damagedcomponents = menu.determineNeededRepairs(menu.object)
 		menu.validLoadoutPossible = (not menu.isReadOnly) and menu.container and C.CanGenerateValidLoadout(menu.container, GetComponentData(ConvertStringTo64Bit(tostring(menu.object)), "macro"))
-		
+
 		if (menu.object ~= oldobject) or ((menu.objectgroup and menu.objectgroup.idx or 0) ~= oldobjectgroup) then
 			menu.setdefaulttable = true
 			if menu.editingshoppinglist then
@@ -1966,7 +1974,7 @@ function menu.dropdownShip(_, shipid)
 					break
 				end
 			end
-		
+
 			if not found then
 				menu.editingshoppinglist = nil
 
@@ -2076,6 +2084,7 @@ function menu.dropdownChangePurchaseAmount(idx, amountstring)
 	local entry = menu.shoppinglist[idx]
 	entry.amount = tonumber(amountstring)
 	menu.refreshMenu()
+	AddUITriggeredEvent(menu.name, "shipconfig_purchaseamount", entry.amount)
 end
 
 function menu.onDropDownActivated()
@@ -2221,7 +2230,7 @@ function menu.buttonLeftBar(mode, row, overrideMode, overrideSlot)
 	else
 		C.ClearSelectedMapMacroSlots(menu.holomap)
 	end
-	
+
 	menu.displayMenu(true)
 	if isreopencontextframe then
 		if contextmodemode == "equipmentfilter" then
@@ -2401,7 +2410,7 @@ end
 
 function menu.onShowMenu(state)
 	menu.damagedcomponents = {}
-	
+
 	-- layout
 	menu.scaleSize = Helper.scaleX(config.scaleSize)
 	menu.frameworkData = {
@@ -2479,7 +2488,7 @@ function menu.onShowMenu(state)
 		cellBGColor = Color["row_background"],
 		titleColor = Color["row_title"],
 	}
-	
+
 	menu.subHeaderSliderCellTextProperties = {
 		font = Helper.headerRow1Font,
 		fontsize = Helper.scaleFont(Helper.headerRow1Font, Helper.headerRow1FontSize),
@@ -2636,7 +2645,7 @@ function menu.onShowMenu(state)
 			menu.class = ffi.string(C.GetComponentClass(menu.object))
 			menu.damagedcomponents = menu.determineNeededRepairs(menu.object)
 			menu.validLoadoutPossible = (not menu.isReadOnly) and menu.container and C.CanGenerateValidLoadout(menu.container, GetComponentData(ConvertStringTo64Bit(tostring(menu.object)), "macro"))
-			
+
 			local aipilot = GetComponentData(ConvertStringTo64Bit(tostring(menu.object)), "assignedaipilot")
 			if aipilot then
 				menu.captainSelected = true
@@ -2981,7 +2990,7 @@ function menu.onShowMenu(state)
 	AddUITriggeredEvent(menu.name, menu.upgradetypeMode)
 
 	menu.getDataAndDisplay(upgradeplan, crew, nil, true)
-	
+
 	if not menu.bindingRegistered then
 		menu.bindingRegistered = true
 		RegisterAddonBindings("ego_detailmonitor", "undo")
@@ -3341,7 +3350,7 @@ function menu.displayLeftBar(frame)
 					else
 						mouseovertext = entry.name
 					end
-					row[2]:createButton({ active = active, height = menu.frameworkData.sidebarWidth, mouseOverText = mouseovertext, bgColor = selected and Color["row_background_selected"] or Color["button_background_default"] }):setIcon(entry.icon, { color = function () return menu.buttonLeftBarColor(entry.mode, active, missing) end })
+					row[2]:createButton({ active = active, height = menu.frameworkData.sidebarWidth, mouseOverText = mouseovertext, bgColor = selected and Color["row_background_selected"] or Color["button_background_default"], helpOverlayID = "shipconfig_leftbar_" .. entry.mode, helpOverlayText = " ", helpOverlayHighlightOnly = true }):setIcon(entry.icon, { color = function () return menu.buttonLeftBarColor(entry.mode, active, missing) end })
 					row[2].handlers.onClick = function () return menu.buttonLeftBar(entry.mode, row.index, overrideMode, overrideSlot) end
 				elseif selected then
 					found = false
@@ -3690,7 +3699,7 @@ function menu.getDataAndDisplay(upgradeplan, crew, newedit, firsttime, noundo, s
 	menu.slots = {}
 	menu.ammo = { missile = {}, drone = {}, deployable = {}, countermeasure = {}, }
 	menu.software = {}
-	menu.crew = { 
+	menu.crew = {
 		total = 0,
 		capacity = 0,
 		unassigned = {},
@@ -3884,7 +3893,7 @@ function menu.getDataAndDisplay(upgradeplan, crew, newedit, firsttime, noundo, s
 					local groupinfo = C.GetUpgradeGroupInfo2(menu.object, "", entry.context, "", entry.group, "engine")
 					if groupinfo.total > 0 then	-- EngineGroup
 						entry.slotsize = ffi.string(groupinfo.slotsize)
-						entry.upgradetype = "engines"	
+						entry.upgradetype = "engines"
 					else -- TurretGroup
 						local groupinfo = C.GetUpgradeGroupInfo2(menu.object, "", entry.context, "", entry.group, "turret")
 						entry.slotsize = ffi.string(groupinfo.slotsize)
@@ -4155,7 +4164,7 @@ function menu.getDataAndDisplay(upgradeplan, crew, newedit, firsttime, noundo, s
 	if not noundo then
 		menu.addUndoStep()
 	end
-	
+
 	if menu.holomap and (menu.holomap ~= 0) then
 		if (menu.usemacro and (menu.macro ~= "")) or (((menu.mode == "upgrade") or (menu.mode == "modify")) and (menu.object ~= 0)) then
 			if (not newedit) and upgradeplan then
@@ -4202,7 +4211,7 @@ function menu.checkCompatibility(macro, objectmakerraces)
 	local allowed = true
 	for _, race in ipairs(makerrace) do
 		if objectmakerraces then
-			local raceallowed = false		
+			local raceallowed = false
 			for _, objectrace in ipairs(objectmakerraces) do
 				if objectrace == race then
 					raceallowed = true
@@ -4259,7 +4268,7 @@ function menu.displayAmmoSlot(ftable, type, macro, total, capacity, first)
 			exceedMaxValue = false,
 			readOnly       = menu.isReadOnly,
 		}
-		
+
 		local price
 		local j = menu.findUpgradeMacro(type, macro)
 		if j then
@@ -4291,7 +4300,7 @@ function menu.displayAmmoSlot(ftable, type, macro, total, capacity, first)
 		end
 
 		local row = ftable:addRow(true, { scaling = true, bgColor = Color["row_background_blue"] })
-		row[1]:setColSpan(11):createSliderCell({ width = slidercellWidth, height = Helper.standardTextHeight, valueColor = Color["slider_value"], min = scale.min, max = scale.max, maxSelect = scale.maxSelect, start = scale.start, step = scale.step, suffix = scale.suffix, exceedMaxValue = scale.exceedMaxValue, readOnly = scale.readOnly }):setText(ReadText(1001, 1202), { color = color })
+		row[1]:setColSpan(11):createSliderCell({ width = slidercellWidth, height = Helper.standardTextHeight, valueColor = Color["slider_value"], min = scale.min, max = scale.max, maxSelect = scale.maxSelect, start = scale.start, step = scale.step, suffix = scale.suffix, exceedMaxValue = scale.exceedMaxValue, readOnly = scale.readOnly, helpOverlayID = "shipconfig_ammo_" .. macro, helpOverlayText = " ", helpOverlayHighlightOnly = true }):setText(ReadText(1001, 1202), { color = color })
 		row[1].handlers.onSliderCellChanged = function (_, ...) return menu.slidercellSelectAmount(type, nil, macro, row.index, ...) end
 		row[1].handlers.onRightClick = function (...) return menu.buttonInteract({ type = type, name = name, macro = macro }, ...) end
 
@@ -4357,7 +4366,7 @@ function menu.displayCrewSlot(ftable, idx, data, buttonWidth, price, first)
 		end
 
 		local row = ftable:addRow(true, { scaling = true, bgColor = Color["row_background_blue"] })
-		row[1]:setColSpan(11):createSliderCell({ width = slidercellWidth, height = Helper.standardTextHeight, valueColor = Color["slider_value"], min = scale.min, max = scale.max, maxSelect = scale.maxSelect, start = scale.start, step = scale.step, suffix = scale.suffix, exceedMaxValue = scale.exceedMaxValue, readOnly = scale.readOnly }):setText(ReadText(1001, 1202), { color = color })
+		row[1]:setColSpan(11):createSliderCell({ width = slidercellWidth, height = Helper.standardTextHeight, valueColor = Color["slider_value"], min = scale.min, max = scale.max, maxSelect = scale.maxSelect, start = scale.start, step = scale.step, suffix = scale.suffix, exceedMaxValue = scale.exceedMaxValue, readOnly = scale.readOnly, helpOverlayID = "shipconfig_crew_" .. data.id, helpOverlayText = " ", helpOverlayHighlightOnly = true }):setText(ReadText(1001, 1202), { color = color })
 		row[1].handlers.onSliderCellChanged = function (_, ...) return menu.slidercellSelectCrewAmount(idx, 1, row.index, false, ...) end
 		lastrow = row
 
@@ -4376,7 +4385,7 @@ function menu.displayCrewSlot(ftable, idx, data, buttonWidth, price, first)
 					}
 
 					local row = ftable:addRow(true, { scaling = true, bgColor = Color["row_background_blue"] })
-					row[1]:setColSpan(11):createSliderCell({ width = slidercellWidth, height = Helper.standardTextHeight, valueColor = Color["slider_value"], min = scale.min, max = scale.max, maxSelect = scale.maxSelect, start = scale.start, step = scale.step, suffix = scale.suffix, exceedMaxValue = scale.exceedMaxValue, readOnly = scale.readOnly }):setText("  " .. tier.name, { color = color })
+					row[1]:setColSpan(11):createSliderCell({ width = slidercellWidth, height = Helper.standardTextHeight, valueColor = Color["slider_value"], min = scale.min, max = scale.max, maxSelect = scale.maxSelect, start = scale.start, step = scale.step, suffix = scale.suffix, exceedMaxValue = scale.exceedMaxValue, readOnly = scale.readOnly, helpOverlayID = "shipconfig_crew_" .. data.id .. j, helpOverlayText = " ", helpOverlayHighlightOnly = true }):setText("  " .. tier.name, { color = color })
 					row[1].handlers.onSliderCellChanged = function (_, ...) return menu.slidercellSelectCrewAmount(idx, j, row.index, true, ...) end
 					lastrow = row
 				end
@@ -4441,7 +4450,7 @@ function menu.displaySoftwareSlot(ftable, type, slot, slotdata)
 				local name = GetWareData(software, "name")
 				AddKnownItem("software", software)
 				local row = ftable:addRow({ type = type, name = name, software = software }, { scaling = true })
-				row[1]:setColSpan(1):createCheckBox(software == plansoftware, { scaling = false, active = active, width = menu.rowHeight, height = menu.rowHeight })
+				row[1]:setColSpan(1):createCheckBox(software == plansoftware, { scaling = false, active = active, width = menu.rowHeight, height = menu.rowHeight, helpOverlayID = "shipconfig_software_" .. software, helpOverlayText = " ", helpOverlayHighlightOnly = true })
 				row[1].handlers.onClick = function () return menu.checkboxSelectSoftware(type, slot, software, row.index) end
 				row[2]:setColSpan(price and 7 or 10):createText(name, { color = installcolor })
 				if price then
@@ -4509,7 +4518,7 @@ end
 function menu.displaySlots(frame, firsttime)
 	if menu.upgradetypeMode and ((menu.mode ~= "purchase") or menu.validLicence) then
 		local upgradetype = Helper.findUpgradeType(menu.upgradetypeMode)
-	
+
 		local count, rowcount, slidercount = 1, 0, 0
 		menu.groupedupgrades = {}
 
@@ -4554,7 +4563,7 @@ function menu.displaySlots(frame, firsttime)
 						if (not menu.isReadOnly) and upgradetype2.allowempty then
 							local group = math.ceil(upgradegroupcount / 3)
 							menu.groupedupgrades[upgradetype2.grouptype][group] = menu.groupedupgrades[upgradetype2.grouptype][group] or {}
-							table.insert(menu.groupedupgrades[upgradetype2.grouptype][group], { macro = "", icon = "upgrade_empty", name = ReadText(1001, 7906) })
+							table.insert(menu.groupedupgrades[upgradetype2.grouptype][group], { macro = "", icon = "upgrade_empty", name = ReadText(1001, 7906), helpOverlayID = "upgrade_empty", helpOverlayText = " ", helpOverlayHighlightOnly = true })
 							upgradegroupcount = upgradegroupcount + 1
 						end
 					end
@@ -4622,7 +4631,7 @@ function menu.displaySlots(frame, firsttime)
 					if (not menu.isReadOnly) and (upgradetype.allowempty and (not C.IsSlotMandatory(menu.object, 0, menu.macro, false, upgradetype.type, menu.currentSlot))) then
 						local group = math.ceil(count / 3)
 						menu.groupedupgrades[group] = menu.groupedupgrades[group] or {}
-						table.insert(menu.groupedupgrades[group], { macro = "", icon = "upgrade_empty", name = ReadText(1001, 7906) })
+						table.insert(menu.groupedupgrades[group], { macro = "", icon = "upgrade_empty", name = ReadText(1001, 7906), helpOverlayID = "upgrade_empty", helpOverlayText = " ", helpOverlayHighlightOnly = true })
 						count = count + 1
 					end
 				end
@@ -4679,7 +4688,7 @@ function menu.displaySlots(frame, firsttime)
 					if not slot.isgroup then
 						local slotname = slot.slotname
 						local slotsize = slot.slotsize
-							
+
 						local compatibilities
 						local n = C.GetNumSlotCompatibilities(menu.object, 0, menu.macro, false, upgradetype.type, i)
 						if n > 0 then
@@ -4722,7 +4731,7 @@ function menu.displaySlots(frame, firsttime)
 			menu.groupedslots[group] = menu.groupedslots[group] or {}
 			table.insert(menu.groupedslots[group], entry)
 		end
-		
+
 		menu.rowHeight = math.max(23, Helper.scaleY(Helper.standardTextHeight))
 		menu.extraFontSize = Helper.scaleFont(Helper.standardFont, Helper.standardFontSize)
 		local maxSlotWidth = math.floor((menu.slotData.width - 8 * Helper.borderSize) / 9)
@@ -4877,7 +4886,7 @@ function menu.displaySlots(frame, firsttime)
 						mouseovertext = ReadText(1001, 8023) .. " " .. group[i][3]
 					end
 
-					row[col]:setColSpan(colspan):createButton({ height = slotWidths[i], width = slotWidths[i], bgColor = bgcolor, mouseOverText = mouseovertext }):setText(group[i][3], { halign = "center", fontsize = Helper.scaleFont(Helper.standardFont, Helper.standardFontSize), color = function () return menu.buttonSlotColor(group[i][1], haserror) end })
+					row[col]:setColSpan(colspan):createButton({ height = slotWidths[i], width = slotWidths[i], bgColor = bgcolor, mouseOverText = mouseovertext, helpOverlayID = "shipconfig_slot_" .. group[i][3], helpOverlayText = " ", helpOverlayHighlightOnly = true, uiTriggerID = "shipconfig_slot_" .. group[i][3] }):setText(group[i][3], { halign = "center", fontsize = Helper.scaleFont(Helper.standardFont, Helper.standardFontSize), color = function () return menu.buttonSlotColor(group[i][1], haserror) end })
 					if total > 0 then
 						local width = math.max(1, math.floor(count * (slotWidths[i] - 2 * menu.scaleSize) / total))
 						row[col]:setIcon("solid", { width = width + 2 * Helper.configButtonBorderSize, height = menu.scaleSize + 2 * Helper.configButtonBorderSize, x = menu.scaleSize - Helper.configButtonBorderSize, y = slotWidths[i] - 2 * menu.scaleSize - Helper.configButtonBorderSize })
@@ -5007,7 +5016,7 @@ function menu.displaySlots(frame, firsttime)
 								end
 							end
 							local plandata = menu.upgradeplan[upgradetype2.type][menu.currentSlot]
-							
+
 							local row = ftable:addRow(true, { bgColor = upgradetype2.mergeslots and Color["row_background_blue"] or nil })
 							local name = upgradetype2.text.default
 							local slotsize = menu.groups[menu.currentSlot][upgradetype2.grouptype].slotsize
@@ -5120,7 +5129,7 @@ function menu.displaySlots(frame, firsttime)
 
 												hasstock = upgradeware.isFromShipyard or ((menu.groups[menu.currentSlot][upgradetype2.grouptype].currentmacro == group[i].macro) and (menu.groups[menu.currentSlot][upgradetype2.grouptype].hasstock ~= false))
 											end
-										
+
 											local amounttext = ""
 											if upgradetype2.mergeslots and (menu.groups[menu.currentSlot][upgradetype2.grouptype].total > 1) then
 												amounttext = menu.groups[menu.currentSlot][upgradetype2.grouptype].total .. ReadText(1001, 42) .. " "
@@ -5170,6 +5179,12 @@ function menu.displaySlots(frame, firsttime)
 											-- end: mycu call-back
 
 											local useable = hasstock and haslicence
+											local overlayid
+											if group[i].macro == "" then
+												overlayid = "shipconfig_upgrade_empty"
+											else
+												overlayid = "shipconfig_upgrade_" .. group[i].macro
+											end
 											row[column]:createButton({
 												active = active,
 												width = columnWidths[i],
@@ -5177,6 +5192,9 @@ function menu.displaySlots(frame, firsttime)
 												mouseOverText = mouseovertext,
 												bgColor = useable and Color["button_background_default"] or Color["button_background_inactive"],
 												highlightColor = useable and Color["button_highlight_bigbutton"] or Color["button_highlight_inactive"],
+												helpOverlayID = overlayid,
+												helpOverlayText = " ",
+												helpOverlayHighlightOnly = true,
 											}):setIcon(group[i].icon):setIcon2(installicon, { color = installcolor }):setText(icon, { y = maxColumnWidth / 2 - Helper.scaleY(Helper.standardTextHeight) / 2 - Helper.configButtonBorderSize, halign = "right", color = overridecolor, fontsize = Helper.scaleFont(Helper.standardFont, Helper.standardFontSize) }):setText2(weaponicon, { x = 3, y = -maxColumnWidth / 2 + Helper.scaleY(Helper.standardTextHeight) / 2 + Helper.configButtonBorderSize, fontsize = Helper.scaleFont(Helper.standardFont, Helper.standardFontSize) })
 											if useable then
 												row[column].handlers.onClick = function () return menu.buttonSelectGroupUpgrade(upgradetype2.type, menu.currentSlot, group[i].macro, row.index, column) end
@@ -5301,7 +5319,17 @@ function menu.displaySlots(frame, firsttime)
 								column = column + 1
 							end
 							--print("adding button for component: " .. tostring(componentstring) .. " row: " .. tostring(row.index) .. ", col: " .. tostring(column))
-							row[column]:createButton({ width = columnWidths[i], height = maxColumnWidth, bgColor = color, mouseOverText = mouseovertext, highlightColor = Color["button_highlight_bigbutton"] }):setIcon(group[i].icon):setIcon2(installicon, { color = installcolor })
+							row[column]:createButton({
+								width = columnWidths[i],
+								height = maxColumnWidth,
+								bgColor = color,
+								mouseOverText = mouseovertext,
+								highlightColor = Color["button_highlight_bigbutton"],
+								helpOverlayID = "shipconfig_repair_" .. group[i].macro,
+								helpOverlayText = " ",
+								helpOverlayHighlightOnly = true,
+								uiTriggerID = "shipconfig_repair",
+							}):setIcon(group[i].icon):setIcon2(installicon, { color = installcolor })
 							row[column].handlers.onClick = function () return menu.buttonSelectRepair(row.index, column, componentstring) end
 							row2[column]:createBoxText(extraText, { width = columnWidths[i], fontsize = menu.extraFontSize, mouseOverText = untruncatedExtraText })
 						end
@@ -5380,7 +5408,7 @@ function menu.displaySlots(frame, firsttime)
 									DebugError("Found upgradeware info for '" .. group[i].macro .. "', but no ware is set. Is it not defined?")
 								end
 							end
-							
+
 							local amounttext = ""
 							if upgradetype.mergeslots and (#menu.upgradeplan[upgradetype.type] > 1) then
 								amounttext = #menu.upgradeplan[upgradetype.type] .. ReadText(1001, 42) .. " "
@@ -5420,6 +5448,12 @@ function menu.displaySlots(frame, firsttime)
 
 							local active = ((group[i].macro == plandata.macro) or (not hasmod))
 							local useable = hasstock and haslicence
+							local overlayid
+							if group[i].macro == "" then
+								overlayid = "shipconfig_upgrade_empty"
+							else
+								overlayid = "shipconfig_upgrade_" .. group[i].macro
+							end
 							row[column]:createButton({
 								active = active,
 								width = columnWidths[i],
@@ -5427,6 +5461,9 @@ function menu.displaySlots(frame, firsttime)
 								mouseOverText = mouseovertext,
 								bgColor = useable and Color["button_background_default"] or Color["button_background_inactive"],
 								highlightColor = useable and Color["button_highlight_bigbutton"] or Color["button_highlight_inactive"],
+								helpOverlayID = overlayid,
+								helpOverlayText = " ",
+								helpOverlayHighlightOnly = true,
 							}):setIcon(group[i].icon):setIcon2(installicon, { color = installcolor }):setText(icon, { y = maxColumnWidth / 2 - Helper.scaleY(Helper.standardTextHeight) / 2 - Helper.configButtonBorderSize, halign = "right", color = overridecolor, fontsize = Helper.scaleFont(Helper.standardFont, Helper.standardFontSize) }):setText2(weaponicon, { x = 3, y = -maxColumnWidth / 2 + Helper.scaleY(Helper.standardTextHeight) / 2 + Helper.configButtonBorderSize, fontsize = Helper.scaleFont(Helper.standardFont, Helper.standardFontSize) })
 							if useable then
 								row[column].handlers.onClick = function () return menu.buttonSelectUpgradeMacro(menu.upgradetypeMode, menu.currentSlot, group[i].macro, row.index, column, nil, (menu.mode == "customgamestart") or (menu.mode == "comparison")) end
@@ -5475,7 +5512,7 @@ function menu.displaySlots(frame, firsttime)
 								elseif upgradetype.type == "countermeasure" then
 									name = ReadText(1001, 8063)		-- "Countermeasures"
 								end
-								
+
 								local row = ftable:addRow(false, { bgColor = Color["player_info_background"] })
 								row[1]:setColSpan(7):setBackgroundColSpan(10):createText(name, menu.subHeaderTextProperties)
 								row[8]:setColSpan(4):createText(total .. "\27X" .. " / " .. capacity, menu.subHeaderTextProperties)
@@ -5692,7 +5729,7 @@ function menu.displaySlots(frame, firsttime)
 
 				if menu.mode ~= "customgamestart" then
 					local row = ftable:addRow(true, { scaling = true })
-					row[1]:setColSpan(1):createCheckBox(menu.captainSelected, { scaling = false, active = (menu.mode == "purchase") and (not menu.captainSelected), width = menu.rowHeight, height = menu.rowHeight })
+					row[1]:setColSpan(1):createCheckBox(menu.captainSelected, { scaling = false, active = (menu.mode == "purchase") and (not menu.captainSelected), width = menu.rowHeight, height = menu.rowHeight, helpOverlayID = "shipconfig_crew_captain", helpOverlayText = " ", helpOverlayHighlightOnly = true, uiTriggerID = "shipconfig_crew_captain" })
 					row[1].handlers.onClick = function () return menu.checkboxSelectCaptain(row.index) end
 					row[2]:setColSpan(7):createText(isbigship and ReadText(1001, 4848) or ReadText(1001, 4847), { color = ((menu.mode ~= "purchase") or menu.captainSelected) and Color["text_normal"] or Color["text_error"] })
 					if menu.usemacro then
@@ -5718,7 +5755,7 @@ function menu.displaySlots(frame, firsttime)
 
 						local row = ftable:addRow(true, { scaling = true })
 						row[1]:setColSpan(11):createSliderCell({ height = Helper.standardTextHeight, valueColor = Color["slider_value"], min = 0, max = menu.crew.capacity, start = (menu.customgamestartpeopledef == "") and 0 or Helper.round(menu.crew.capacity * menu.customgamestartpeoplefillpercentage / 100), step = 1, readOnly = menu.customgamestartpeopledef == "" }):setText(ReadText(1001, 47))
-						row[1].handlers.onSliderCellChanged = function(_, newamount) menu.customgamestartpeoplefillpercentage = newamount / menu.crew.capacity * 100 end 
+						row[1].handlers.onSliderCellChanged = function(_, newamount) menu.customgamestartpeoplefillpercentage = newamount / menu.crew.capacity * 100 end
 					else
 						local row = ftable:addRow(false, { scaling = true })
 						row[1]:setColSpan(11):createText("")
@@ -5946,7 +5983,7 @@ function menu.getExtraText(columnwidth, basetext, fullbasetext, macro, price, co
 		local untruncatedExtraText2
 		if fullbasetext == nil then
 			untruncatedExtraText2 = extraText2 .. separator .. extraText
-		else	
+		else
 			untruncatedExtraText2 = extraText
 		end
 		untruncatedExtraText = (fullbasetext or basetext) .. ((untruncatedExtraText2 ~= "") and ("\n" .. untruncatedExtraText2) or "")
@@ -6080,7 +6117,7 @@ function menu.displayModifySlots(frame)
 end
 
 function menu.displayModifyPaintSlots(frame)
-	if menu.upgradetypeMode then	
+	if menu.upgradetypeMode then
 		local entry = menu.getLeftBarEntry(menu.upgradetypeMode)
 		-- available mods
 		local categoryQuality = menu.getModQuality(menu.modCategory)
@@ -6088,7 +6125,7 @@ function menu.displayModifyPaintSlots(frame)
 			DebugError(string.format("Could not resolve mod category '%s' to quality level. Check Helper.modQualities [Florian]", menu.modCategory))
 			return
 		end
-		
+
 		if not menu.selectedPaintMod then
 			if menu.modeparam[1] and (#menu.selectableships > 1) then
 				menu.selectedPaintMod = menu.defaultpaintmod
@@ -6181,7 +6218,7 @@ function menu.displayModifyPaintSlots(frame)
 		row[3].handlers.onClick = menu.buttonInstallPaintMod
 
 		buttontable.properties.y = Helper.viewHeight - buttontable:getFullHeight() - Helper.frameBorder
-		
+
 		menu.extraFontSize = Helper.scaleFont(Helper.standardFont, Helper.standardFontSize)
 		local maxSlotWidth = math.floor((menu.slotData.width - 8 * Helper.borderSize) / 9)
 		local boxTextHeight = math.ceil(C.GetTextHeight(" ", Helper.standardFont, menu.extraFontSize, 0)) + 2 * Helper.borderSize
@@ -6310,7 +6347,7 @@ function menu.displayModSlot(ftable, type, modclass, slot, slotdata, isgroup)
 	if type ~= "ship" then
 		upgradetype = Helper.findUpgradeType(type)
 	end
-	
+
 	local isexpanded = menu.isModSlotExpanded(type, slot)
 	if (type == "ship") or (upgradetype and upgradetype.mergeslots) then
 		isexpanded = true
@@ -6396,7 +6433,7 @@ function menu.displayModSlot(ftable, type, modclass, slot, slotdata, isgroup)
 		else
 			row[6]:setColSpan(3)
 		end
-		
+
 		row[2]:setColSpan(4):createText(GetMacroData(slotdata.currentmacro, "name"))
 		if (not uprgadetype) or (not upgradetype.mergeslots) then
 			row[6]:createText("[" .. ReadText(1001, 66) .. " " .. slot .. "]", { halign = "right" })
@@ -7535,7 +7572,7 @@ function menu.displayPlan(frame)
 		row[2].handlers.onClick = function () return menu.closeMenu("back") end
 	else
 		row = buttontable:addRow(true, { fixed = true, bgColor = Color["row_title_background"] })
-		local button = row[1]:createButton({ active = ((#menu.shoppinglist > (menu.editingshoppinglist and 1 or 0)) or (menu.mode == "customgamestart") or ((menu.mode == "comparison") and (menu.macro ~= ""))) and (next(menu.criticalerrors) == nil) }):setText(((menu.mode == "customgamestart") or (menu.mode == "comparison")) and ReadText(1001, 2821) or ReadText(1001, 8011), { halign = "center" })
+		local button = row[1]:createButton({ active = ((#menu.shoppinglist > (menu.editingshoppinglist and 1 or 0)) or (menu.mode == "customgamestart") or ((menu.mode == "comparison") and (menu.macro ~= ""))) and (next(menu.criticalerrors) == nil), helpOverlayID = "shipconfig_confirm", helpOverlayText = " ", helpOverlayHighlightOnly = true, uiTriggerID = "shipconfig_confirm" }):setText(((menu.mode == "customgamestart") or (menu.mode == "comparison")) and ReadText(1001, 2821) or ReadText(1001, 8011), { halign = "center" })
 		if (menu.object == 0) and (menu.macro == "") then
 			button:setHotkey("INPUT_STATE_DETAILMONITOR_X", { displayIcon = true })
 		end
@@ -7842,7 +7879,7 @@ function menu.displayPlan(frame)
 						table.insert(resources, { ware = ffi.string(buf[i].ware), amount = buf[i].amount })
 					end
 				end
-				
+
 				row = ftable:addRow(true, {  })
 				if (#resources > 0) and (menu.mode ~= "customgamestart") and (menu.mode ~= "comparison") then
 					row[1]:createButton({ height = Helper.standardTextHeight }):setText(isextended and "-" or "+", { halign = "center" })
@@ -7876,7 +7913,7 @@ function menu.displayPlan(frame)
 					mouseovertext = mouseovertext .. ((type(error) == "function") and error(nil, true) or error)
 				end
 			end
-			local button = row[3]:setColSpan(3):createButton({ active = (not menu.errors[1]) and (not menu.errors[2]) and (not menu.errors[3]) and (hasupgrades or hasrepairs), mouseOverText = mouseovertext }):setText(ReadText(1001, 8006), { halign = "center" })
+			local button = row[3]:setColSpan(3):createButton({ active = (not menu.errors[1]) and (not menu.errors[2]) and (not menu.errors[3]) and (hasupgrades or hasrepairs), mouseOverText = mouseovertext, helpOverlayID = "shipconfig_addtoshoppinglist", helpOverlayText = " ", helpOverlayHighlightOnly = true, uiTriggerID = "shipconfig_addtoshoppinglist" }):setText(ReadText(1001, 8006), { halign = "center" })
 			if (menu.object ~= 0) or (menu.macro ~= "") then
 				button:setHotkey("INPUT_STATE_DETAILMONITOR_X", { displayIcon = true })
 			end
@@ -7888,7 +7925,7 @@ function menu.displayPlan(frame)
 		row[2]:setColSpan(4):createText(ReadText(1001, 8007))
 
 		local row = ftable:addRow(true, {  })
-		row[3]:setColSpan(3):createButton({ active = false }):setText(ReadText(1001, 8006), { halign = "center" })
+		row[3]:setColSpan(3):createButton({ active = false, helpOverlayID = "shipconfig_addtoshoppinglist", helpOverlayText = " ", helpOverlayHighlightOnly = true, uiTriggerID = "shipconfig_addtoshoppinglist" }):setText(ReadText(1001, 8006), { halign = "center" })
 	end
 
 	if (not menu.isReadOnly) and (menu.mode ~= "customgamestart") and (menu.mode ~= "comparison") then
@@ -7945,16 +7982,16 @@ function menu.displayPlan(frame)
 						for i = 1, 20 do
 							if (not limitedamount) or (i <= limitedamount) then
 								local active = menu.isplayerowned or (playerMoney - menu.shoppinglisttotal - (i - entry.amount) * entry.price > 0)
-								table.insert(options, { id = i, text = i, icon = "", displayremoveoption = false, active = active, mouseovertext = active and "" or (ColorText["text_error"] .. ReadText(1026, 8016)) })
+								table.insert(options, { id = i, text = i, icon = "", displayremoveoption = false, active = active, mouseovertext = active and "" or (ColorText["text_error"] .. ReadText(1026, 8016)), helpOverlayID = "shipconfig_purchaseamount_" .. i, helpOverlayText = " ", helpOverlayHighlightOnly = true })
 							end
 						end
 						for i = 30, 100, 10 do
 							if (not limitedamount) or (i <= limitedamount) then
 								local active = menu.isplayerowned or (playerMoney - menu.shoppinglisttotal - (i - entry.amount) * entry.price > 0)
-								table.insert(options, { id = i, text = i, icon = "", displayremoveoption = false, active = active, mouseovertext = active and "" or (ColorText["text_error"] .. ReadText(1026, 8016)) })
+								table.insert(options, { id = i, text = i, icon = "", displayremoveoption = false, active = active, mouseovertext = active and "" or (ColorText["text_error"] .. ReadText(1026, 8016)), helpOverlayID = "shipconfig_purchaseamount_" .. i, helpOverlayText = " ", helpOverlayHighlightOnly = true })
 							end
 						end
-						row[5]:createDropDown(options, { startOption = entry.amount }):setTextProperties({ halign = "right", x = Helper.standardTextOffsetx })
+						row[5]:createDropDown(options, { startOption = entry.amount, helpOverlayID = "shipconfig_purchaseamount", helpOverlayText = " ", helpOverlayHighlightOnly = true }):setTextProperties({ halign = "right", x = Helper.standardTextOffsetx })
 						row[5].handlers.onDropDownConfirmed = function (_, amountstring) return menu.dropdownChangePurchaseAmount(i, amountstring) end
 					else
 						local row = ftable:addRow(false, {  })
@@ -8081,7 +8118,7 @@ function menu.displayModifyPlan(frame)
 		row[1]:createText(ReadText(1001, 2003))
 		row[2]:createText(function () return ConvertMoneyString(GetPlayerMoney(), false, true, 0, true, false) .. " " .. ReadText(1001, 101) end, { halign = "right" })
 	end
-	
+
 	local row = buttontable:addRow(true, { fixed = true })
 	row[2]:createButton({ }):setText(ReadText(1001, 8035), { halign = "center" })
 	row[2].handlers.onClick = function () return menu.closeMenu("back") end
@@ -8161,7 +8198,7 @@ function menu.displayModifyPlan(frame)
 	if not menu.isplayerowned then
 		local row = ftable:addRow(false, { bgColor = Color["row_title_background"] })
 		row[1]:setColSpan(2):createText(ReadText(1001, 8037), menu.headerTextProperties)
-	
+
 		if menu.upgradetypeMode == "paintmods" then
 			local row = ftable:addRow(false, {  })
 			row[1]:setColSpan(2):createText(ReadText(1001, 8517))
@@ -8207,7 +8244,7 @@ function menu.displayModifyPlan(frame)
 	menu.selectedCols.plan = nil
 end
 
-function menu.displayStats(frame)	
+function menu.displayStats(frame)
 	-- title
 	local titletable = frame:addTable(5, { tabOrder = 19, width = menu.statsData.width, x = menu.statsData.offsetX, y = 0, reserveScrollBar = false, skipTabChange = true })
 	local title = ReadText(1001, 8534)
@@ -8366,11 +8403,11 @@ function menu.evaluateShipOptions()
 	for _, class in ipairs(config.classorder) do
 		if menu.usemacro then
 			if menu.availableshipmacrosbyclass[class] then
-				table.insert(classOptions, { id = class, text = ReadText(1001, 8026) .. " " .. Helper.getClassText(class), icon = "", displayremoveoption = false })
+				table.insert(classOptions, { id = class, text = ReadText(1001, 8026) .. " " .. Helper.getClassText(class), icon = "", displayremoveoption = false, helpOverlayID = "shipconfig_classoptions_" .. class, helpOverlayText = " ", helpOverlayHighlightOnly = true })
 			end
 		elseif (menu.mode == "upgrade") or (menu.mode == "modify") then
 			if menu.selectableshipsbyclass[class] then
-				table.insert(classOptions, { id = class, text = ReadText(1001, 8026) .. " " .. Helper.getClassText(class), icon = "", displayremoveoption = false })
+				table.insert(classOptions, { id = class, text = ReadText(1001, 8026) .. " " .. Helper.getClassText(class), icon = "", displayremoveoption = false, helpOverlayID = "shipconfig_classoptions_" .. class, helpOverlayText = " ", helpOverlayHighlightOnly = true })
 			end
 		end
 	end
@@ -8498,7 +8535,7 @@ function menu.createTitleBar(frame)
 
 		local row = ftable:addRow(true, { fixed = true, bgColor = Color["row_background_blue"] })
 		-- class
-		row[1]:createDropDown(classOptions, { startOption = menu.class, active = (not menu.isReadOnly) and (#classOptions > 0), optionWidth = menu.titleData.dropdownWidth }):setTextProperties(config.dropDownTextProperties)
+		row[1]:createDropDown(classOptions, { startOption = menu.class, active = (not menu.isReadOnly) and (#classOptions > 0), optionWidth = menu.titleData.dropdownWidth, helpOverlayID = "shipconfig_classoptions", helpOverlayText = " ", helpOverlayHighlightOnly = true, uiTriggerID = "shipconfig_classoptions" }):setTextProperties(config.dropDownTextProperties)
 		row[1].handlers.onDropDownConfirmed = menu.dropdownShipClass
 		-- ships
 		local dropDownIconProperties = {
@@ -8509,7 +8546,7 @@ function menu.createTitleBar(frame)
 			scaling = false,
 		}
 
-		row[2]:createDropDown(shipOptions, { startOption = curShipOption, active = (not menu.isReadOnly) and (menu.class ~= ""), optionWidth = menu.titleData.dropdownWidth, optionHeight = (menu.statsTableOffsetY or Helper.viewHeight) - menu.titleData.offsetY - Helper.frameBorder }):setTextProperties(config.dropDownTextProperties):setIconProperties(dropDownIconProperties)
+		row[2]:createDropDown(shipOptions, { startOption = curShipOption, active = (not menu.isReadOnly) and (menu.class ~= ""), optionWidth = menu.titleData.dropdownWidth, optionHeight = (menu.statsTableOffsetY or Helper.viewHeight) - menu.titleData.offsetY - Helper.frameBorder, helpOverlayID = "shipconfig_shipoptions", helpOverlayText = " ", helpOverlayHighlightOnly = true, uiTriggerID = "shipconfig_shipoptions" }):setTextProperties(config.dropDownTextProperties):setIconProperties(dropDownIconProperties)
 		row[2].properties.text.halign = "left"
 		row[2].handlers.onDropDownConfirmed = menu.dropdownShip
 		-- reset camera
@@ -8536,7 +8573,7 @@ function menu.createTitleBar(frame)
 
 		local row = ftable:addRow(true, { fixed = true, bgColor = Color["row_background_blue"] })
 		-- class
-		row[1]:createDropDown(classOptions, { startOption = menu.class, active = (not menu.isReadOnly) and (#classOptions > 0) }):setTextProperties(config.dropDownTextProperties)
+		row[1]:createDropDown(classOptions, { startOption = menu.class, active = (not menu.isReadOnly) and (#classOptions > 0), helpOverlayID = "shipconfig_classoptions", helpOverlayText = " ", helpOverlayHighlightOnly = true }):setTextProperties(config.dropDownTextProperties)
 		row[1].handlers.onDropDownConfirmed = menu.dropdownShipClass
 		-- ships
 		local dropDownIconProperties = {
@@ -8546,8 +8583,8 @@ function menu.createTitleBar(frame)
 			y = 0,
 			scaling = false,
 		}
-		
-		local dropdown = row[2]:createDropDown(shipOptions, { startOption = curShipOption, active = (not menu.isReadOnly) and (menu.class ~= ""), optionHeight = (menu.statsTableOffsetY or Helper.viewHeight) - menu.titleData.offsetY - Helper.frameBorder }):setTextProperties(config.dropDownTextProperties):setIconProperties(dropDownIconProperties)
+
+		local dropdown = row[2]:createDropDown(shipOptions, { startOption = curShipOption, active = (not menu.isReadOnly) and (menu.class ~= ""), optionHeight = (menu.statsTableOffsetY or Helper.viewHeight) - menu.titleData.offsetY - Helper.frameBorder, helpOverlayID = "shipconfig_shipoptions", helpOverlayText = " ", helpOverlayHighlightOnly = true }):setTextProperties(config.dropDownTextProperties):setIconProperties(dropDownIconProperties)
 		row[2].properties.text.halign = "left"
 		row[2].handlers.onDropDownConfirmed = menu.dropdownShip
 		local active = true
@@ -8577,7 +8614,7 @@ function menu.createTitleBar(frame)
 		end
 		-- mycu end: callback
 
-		row[4]:createButton({ active = (not menu.isReadOnly) and active and ((menu.object ~= 0) or (menu.macro ~= "")), height = menu.titleData.height, mouseOverText = ReadText(1026, 7905) }):setIcon("menu_save")
+		row[4]:createButton({ active = (not menu.isReadOnly) and active and ((menu.object ~= 0) or (menu.macro ~= "")), height = menu.titleData.height, mouseOverText = ReadText(1026, 7905), helpOverlayID = "shipconfig_saveloadout", helpOverlayText = " ", helpOverlayHighlightOnly = true, uiTriggerID = "shipconfig_saveloadout" }):setIcon("menu_save")
 		row[4].handlers.onClick = menu.buttonTitleSave
 
 		-- mycu start: callback
@@ -8622,7 +8659,7 @@ function menu.displayMenu(firsttime)
 	menu.createTitleBar(menu.infoFrame)
 
 	menu.displayLeftBar(menu.infoFrame)
-	
+
 	if (menu.usemacro and (menu.macro ~= "")) or ((menu.mode == "upgrade") and (menu.object ~= 0)) then
 		menu.displaySlots(menu.infoFrame, firsttime)
 	elseif menu.mode == "modify" then
@@ -8634,7 +8671,7 @@ function menu.displayMenu(firsttime)
 	else
 		menu.displayEmptySlots(menu.infoFrame)
 	end
-	
+
 	if menu.usemacro or (menu.mode == "upgrade") then
 		menu.displayPlan(menu.infoFrame)
 	elseif menu.mode == "modify" then
@@ -8788,7 +8825,7 @@ function menu.createSlotContext()
 		if not haslicence then
 			bgcolor = Color["button_background_inactive"]
 		end
-				
+
 		local color = Color["text_normal"]
 		if (macro == slotdata.currentmacro) and (macro ~= plandata) then
 			color = Color["text_negative"]
@@ -8828,7 +8865,7 @@ function menu.createSlotContext()
 			end
 		end
 	end
-		
+
 	local allowempty = upgradetype.allowempty
 	if upgradetype.supertype == "macro" then
 		allowempty = allowempty and (not C.IsSlotMandatory(menu.object, 0, menu.macro, false, upgradetype.type,  menu.contextData.slot))
@@ -8849,7 +8886,7 @@ function menu.createSlotContext()
 		end
 
 		local row = ftable:addRow(true)
-		row[1]:createButton({ active = canequip and (not hasmod), bgColor = bgcolor, mouseOverText = mouseovertext, height = Helper.standardTextHeight }):setText(name, { color = color })
+		row[1]:createButton({ active = canequip and (not hasmod), bgColor = bgcolor, mouseOverText = mouseovertext, height = Helper.standardTextHeight, helpOverlayID = "upgrade_empty", helpOverlayText = " ", helpOverlayHighlightOnly = true }):setText(name, { color = color })
 		if (menu.upgradetypeMode == "enginegroup") or (menu.upgradetypeMode == "turretgroup") then
 			row[1].handlers.onClick = function () return menu.buttonSelectGroupUpgrade(upgradetype2.type, menu.currentSlot, "", nil, nil, row.index) end
 		else
@@ -8995,9 +9032,9 @@ function menu.createLoadoutSaveContext()
 	end
 
 	local row = ftable:addRow(true, { scaling = true, fixed = true, bgColor = Color["row_background_blue"] })
-	row[1]:createButton({ active = menu.checkLoadoutOverwriteActive, mouseOverText = ReadText(1026, 7908) }):setText(ReadText(1001, 7908), {  })
+	row[1]:createButton({ active = menu.checkLoadoutOverwriteActive, mouseOverText = ReadText(1026, 7908), helpOverlayID = "shipconfig_saveloadout_overwrite", helpOverlayText = " ", helpOverlayHighlightOnly = true, uiTriggerID = "shipconfig_saveloadout_overwrite" }):setText(ReadText(1001, 7908), {  })
 	row[1].handlers.onClick = function () return menu.buttonSave(true) end
-	row[2]:createButton({ active = menu.checkLoadoutSaveNewActive, mouseOverText = ReadText(1026, 7909) }):setText(ReadText(1001, 7909), {  })
+	row[2]:createButton({ active = menu.checkLoadoutSaveNewActive, mouseOverText = ReadText(1026, 7909), helpOverlayID = "shipconfig_saveloadout_saveasnew", helpOverlayText = " ", helpOverlayHighlightOnly = true, uiTriggerID = "shipconfig_saveloadout_saveasnew" }):setText(ReadText(1001, 7909), {  })
 	row[2].handlers.onClick = function () return menu.buttonSave(false) end
 
 	menu.contextFrame:display()
@@ -9180,7 +9217,7 @@ function menu.onUpdate()
 						C.SetMapPaintMod(menu.holomap, menu.installedPaintMod.ware)
 					end
 					menu.selectMapMacroSlot()
-					
+
 					if menu.mapstate then
 						C.SetMapState(menu.holomap, menu.mapstate)
 						menu.mapstate = nil
@@ -9191,7 +9228,7 @@ function menu.onUpdate()
 			menu.activatemap = false
 		end
 	end
-	
+
 	if menu.map and menu.holomap ~= 0 then
 		local x, y = GetRenderTargetMousePosition(menu.map)
 		C.SetMapRelativeMousePosition(menu.holomap, (x and y) ~= nil, x or 0, y or 0)
@@ -9507,15 +9544,15 @@ end
 function menu.onRestoreState(state)
 	if state.map then
 		local offset = ffi.new("UIPosRot", {
-			x = state.map.offset.x, 
-			y = state.map.offset.y, 
-			z = state.map.offset.z, 
-			yaw = state.map.offset.yaw, 
-			pitch = state.map.offset.pitch, 
+			x = state.map.offset.x,
+			y = state.map.offset.y,
+			z = state.map.offset.z,
+			yaw = state.map.offset.yaw,
+			pitch = state.map.offset.pitch,
 			roll = state.map.offset.roll
 		})
 		menu.mapstate = ffi.new("HoloMapState", {
-			offset = offset, 
+			offset = offset,
 			cameradistance = state.map.cameradistance
 		})
 	end
@@ -10102,7 +10139,7 @@ function menu.prepareComponentCrewInfo(object)
 			numhireable = numhireable + 1
 			menu.crew.roles[numhireable] = { id = ffi.string(buf[i].id), name = ffi.string(buf[i].name), desc = ffi.string(buf[i].desc), total = buf[i].amount, wanted = buf[i].amount, tiers = {}, canhire = buf[i].canhire }
 			menu.crew.total = menu.crew.total + buf[i].amount
-		
+
 			local numtiers = buf[i].numtiers
 			local buf2 = ffi.new("RoleTierData[?]", numtiers)
 			numtiers = C.GetRoleTiers(buf2, numtiers, object, menu.crew.roles[numhireable].id)
@@ -10571,7 +10608,7 @@ function menu.upgradeSettingsVersion()
 	local oldversion = __CORE_DETAILMONITOR_SHIPBUILD.version
 
 	if oldversion < 2 then
-		
+
 	end
 
 	__CORE_DETAILMONITOR_SHIPBUILD.version = config.persistentdataversion

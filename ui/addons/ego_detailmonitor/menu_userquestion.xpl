@@ -28,7 +28,9 @@ ffi.cdef[[
 	void SetJoystickSteeringAdapative(bool value);
 	void SetMouseSteeringAdapative(bool value);
 	void SetMouseSteeringInvertedOption(const char* paramname, bool value);
+	void SetUserData(const char* name, const char* value);
 	void StartControlPanelHack(UIComponentSlot target, const char* paneltypeid);
+	void TriggerAutosave(bool checkenabled);
 	const char* UndockPlayerShip(bool checkonly);
 ]]
 
@@ -93,6 +95,7 @@ end
 -- Menu member functions
 
 function menu.confirm()
+	local allowclose = true
 	if menu.mode == "hackpanel" then
 		C.StartControlPanelHack(menu.hacktarget, menu.modeparam[3])
 	elseif menu.mode == "abortupgrade" then
@@ -109,11 +112,22 @@ function menu.confirm()
 		C.SetRelationBoostToFaction(menu.hostilecomponent, "player", "markedashostile", -1, 1, 600)
 	elseif menu.mode == "discardstationeditor" then
 		Helper.clearStationEditorState()
+	elseif menu.mode == "starttutorial" then
+		if menu.modeparam[2] == 1 then
+			menu.saveTriggered = true
+			C.TriggerAutosave(false)
+			allowclose = false
+		else
+			C.SetUserData("tutorial_started_from", tostring(menu.modeparam[2]))
+			NewGame(menu.modeparam[1])
+		end
 	end
 	if menu.saveOption then
 		__CORE_DETAILMONITOR_USERQUESTION[menu.mode] = true
 	end
-	menu.onCloseElement("close")
+	if allowclose then
+		menu.onCloseElement("close")
+	end
 end
 
 function menu.customOption(optionid, optionparameters)
@@ -238,7 +252,10 @@ function menu.createTable(frame, tableProperties)
 	end
 	-- kuertee end: custom mode
 
-	local numCols = (menu.mode == "custom") and 5 or 6
+	local numCols = 6
+	if (menu.mode == "custom") or (menu.mode == "starttutorial") then
+		numCols = 5
+	end
 	local ftable = frame:addTable(numCols, { tabOrder = 1, borderEnabled = true, width = tableProperties.width, x = tableProperties.x, y = tableProperties.y, defaultInteractiveObject = true })
 	if menu.mode == "custom" then
 		local leftwith = math.ceil(C.GetTextWidth(menu.modeparam[3][2] or "", Helper.standardFont, Helper.scaleFont(Helper.standardFont, Helper.standardFontSize)))
@@ -249,6 +266,9 @@ function menu.createTable(frame, tableProperties)
 		local buttonwidth = math.max(minbuttonwidth, math.min(maxbuttonwidth, math.max(leftwith, rightwidth) + 2 * Helper.standardTextOffsetx))
 		ftable:setColWidth(2, buttonwidth, false)
 		ftable:setColWidth(4, buttonwidth, false)
+	elseif menu.mode == "starttutorial" then
+		ftable:setColWidth(2, 0.4 * tableProperties.width - Helper.borderSize, false)
+		ftable:setColWidth(4, 0.4 * tableProperties.width - Helper.borderSize, false)
 	else
 		ftable:setColWidth(1, Helper.scaleY(Helper.standardButtonHeight), false)
 		ftable:setColWidthPercent(5, 25, false)
@@ -288,6 +308,12 @@ function menu.createTable(frame, tableProperties)
 
 		local row = ftable:addRow(false, { fixed = true })
 		row[1]:setColSpan(numCols):createText(ReadText(1001, 9722), { wordwrap = true })
+	elseif menu.mode == "starttutorial" then
+		local row = ftable:addRow(false, { fixed = true })
+		row[1]:setColSpan(numCols):createText(ReadText(1001, 9728), Helper.headerRowCenteredProperties)
+
+		local row = ftable:addRow(false, { fixed = true })
+		row[1]:setColSpan(numCols):createText(ReadText(1001, 9727), { wordwrap = true })
 	elseif menu.mode == "custom" then
 		local row = ftable:addRow(false, { fixed = true })
 		row[1]:setColSpan(numCols):createText(menu.modeparam[1] or "", Helper.headerRowCenteredProperties)
@@ -311,6 +337,12 @@ function menu.createTable(frame, tableProperties)
 		elseif menu.modeparam[6] == "left" then
 			ftable:setSelectedCol(2)
 		end
+	elseif menu.mode == "starttutorial" then
+		local row = ftable:addRow(true, { fixed = true })
+		row[2]:createButton({ active = function () return IsSavingPossible(false) end, helpOverlayID = "custom_" .. menu.mode .. "_confirm", helpOverlayText = " ", helpOverlayHighlightOnly = true }):setText(ReadText(1001, 9724), { halign = "center" })
+		row[2].handlers.onClick = menu.confirm
+		row[4]:createButton({ helpOverlayID = "custom_" .. menu.mode .. "_cancel", helpOverlayText = " ", helpOverlayHighlightOnly = true }):setText(ReadText(1001, 64), { halign = "center" })
+		row[4].handlers.onClick = function () return menu.onCloseElement("back", true) end
 	else
 		local row = ftable:addRow(true, { fixed = true })
 		row[1]:createCheckBox(function () return menu.saveOption end, { height = Helper.standardButtonHeight })
@@ -351,6 +383,19 @@ function menu.onRowChanged(row, rowdata, uitable)
 end
 
 function menu.onSelectElement(uitable, modified, row)
+end
+
+function menu.onGameSaved(_, success)
+	if menu.saveTriggered then
+		menu.saveTriggered = nil
+		if menu.mode == "starttutorial" then
+			C.SetUserData("tutorial_started_from", tostring(menu.modeparam[2]))
+			if success then
+				NewGame(menu.modeparam[1])
+			end
+			menu.onCloseElement("close")
+		end
+	end
 end
 
 function menu.onCloseElement(dueToClose, allowAutoMenu)

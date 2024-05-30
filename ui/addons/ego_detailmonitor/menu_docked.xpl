@@ -283,10 +283,16 @@ function menu.onShowMenu()
 	menu.selectedRows = {}
 	menu.selectedCols = {}
 	-- init selection
-	menu.firsttime = getElapsedTime() + 0.35
+	local curtime = getElapsedTime()
+	menu.firsttime = curtime + 0.35
 
 	-- add content
 	menu.display()
+
+	-- we might have just started the game, check things again (e.g. shiptrader existing) after a short time
+	if curtime < 30 then
+		menu.refresh = curtime + 1
+	end
 end
 
 function menu.display()
