@@ -12710,7 +12710,7 @@ end
 
 Helper.modLuas = {}
 Helper.time_initModLuasNow = nil
-Helper.isDebugModLuas = true
+Helper.isDebugModLuas = false
 function Helper.loadModLuas(menuName, modLuaName)
 	if not Helper.modLuas[menuName] then
 		Helper.modLuas[menuName] = {
