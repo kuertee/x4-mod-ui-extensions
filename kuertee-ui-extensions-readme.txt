@@ -5,11 +5,8 @@ by kuertee. Contributors: Erixon, Forleyor, Mycu, Runekn, AlexandreTK.
 
 Updates
 =======
-beta v7.0.007, 30 May 2024:
--Compatibility: Requires base game v7.0.0 beta 7.
-
-beta v7.0.006, 23 May 2024:
--Compatibility: Requires base game v7.0.0 beta 6.
+beta v7.0.008, 8 Jun 2024:
+-Compatibility: Requires base game v7.0.0 beta 8.
 
 Instructions for players
 ========================
@@ -173,6 +170,12 @@ Troubleshooting
 
 History
 =======
+beta v7.0.007, 30 May 2024:
+-Compatibility: Requires base game v7.0.0 beta 7.
+
+beta v7.0.006, 23 May 2024:
+-Compatibility: Requires base game v7.0.0 beta 6.
+
 beta v7.0.005, 9 May 2024:
 -Compatibility: Requires base game beta v7.0.0.
 

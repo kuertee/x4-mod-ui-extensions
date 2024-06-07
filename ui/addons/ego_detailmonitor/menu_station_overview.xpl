@@ -2349,6 +2349,31 @@ end
 function menu.onExpandSupplyResource(_, ftable, _, nodedata)
 	local storageinfo_capacity =	C.IsInfoUnlockedForPlayer(menu.container, "storage_capacity")
 	local storageinfo_amounts =		C.IsInfoUnlockedForPlayer(menu.container, "storage_amounts")
+	
+	local reservations = {}
+	local n = C.GetNumContainerWareReservations2(menu.container, false, false, true)
+	local buf = ffi.new("WareReservationInfo2[?]", n)
+	n = C.GetContainerWareReservations2(buf, n, menu.container, false, false, true)
+	for i = 0, n - 1 do
+		local issupply = buf[i].issupply
+		if issupply then
+			local ware = ffi.string(buf[i].ware)
+			local buyflag = buf[i].isbuyreservation and "selloffer" or "buyoffer" -- sic! Reservation to buy -> container is selling
+			local invbuyflag = buf[i].isbuyreservation and "buyoffer" or "selloffer"
+			local tradedeal = buf[i].tradedealid
+			if not Helper.dirtyreservations[tostring(tradedeal)] then
+				if reservations[ware] then
+					table.insert(reservations[ware][buyflag], { reserver = buf[i].reserverid, amount = buf[i].amount, eta = buf[i].eta, tradedeal = tradedeal, issupply = issupply })
+				else
+					reservations[ware] = { [buyflag] = { { reserver = buf[i].reserverid, amount = buf[i].amount, eta = buf[i].eta, tradedeal = tradedeal, issupply = buf[i].issupply } }, [invbuyflag] = {} }
+				end
+			end
+		end
+	end
+	for _, data in pairs(reservations) do
+		table.sort(data.buyoffer, Helper.sortETA)
+		table.sort(data.selloffer, Helper.sortETA)
+	end
 
 	ftable:setColWidthPercent(2, 30)
 	ftable:setColWidth(3, Helper.scaleY(Helper.standardButtonHeight), false)
@@ -2397,6 +2422,25 @@ function menu.onExpandSupplyResource(_, ftable, _, nodedata)
 			row[1].handlers.onDropDownConfirmed = function (_, id) return menu.dropdownTradeRule(menu.container, "supply", nodedata.ware, id) end
 			row[3]:createButton({ mouseOverText = ReadText(1026, 8407) }):setIcon("menu_edit")
 			row[3].handlers.onClick = menu.buttonEditTradeRule
+			-- reservations
+			if reservations[nodedata.ware] and (#reservations[nodedata.ware].buyoffer > 0) then
+				-- title
+				row = ftable:addRow(nil, {  })
+				row[1]:setColSpan(3):createText(string.format(ReadText(1001, 7994), GetWareData(nodedata.ware, "name")) .. ReadText(1001, 120), { wordwrap = true })
+				for i, reservation in ipairs(reservations[nodedata.ware].buyoffer) do
+					row = ftable:addRow("buyreservation" .. i, {  })
+					if menu.selectedRowData["nodeTable"] == "buyreservation" then
+						menu.selectedRows["nodeTable"] = row.index
+						menu.selectedRowData["nodeTable"] = nil
+					end
+					local isplayerowned = GetComponentData(ConvertStringTo64Bit(tostring(reservation.reserver)), "isplayerowned")
+					local name = (isplayerowned and ColorText["text_player"] or "") .. ffi.string(C.GetComponentName(reservation.reserver)) .. " (" .. ffi.string(C.GetObjectIDCode(reservation.reserver)) .. ")\27X"
+					row[1]:createText(function () return Helper.getETAString(name, reservation.eta) end, { font = Helper.standardFontMono })
+					row[2]:createText(ConvertIntegerString(reservation.amount, true, 3, false), { halign = "right" })
+					row[3]:createButton({ active = function () return Helper.buttonCancelTradeActive(menu, menu.container, reservation.tradedeal) end, mouseOverText = ReadText(1026, 7924) }):setText("X", { halign = "center" })
+					row[3].handlers.onClick = function () return Helper.buttonCancelTrade(menu, menu.container, reservation.tradedeal) end
+				end
+			end
 		end
 	end
 

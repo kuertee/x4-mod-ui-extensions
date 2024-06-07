@@ -3019,7 +3019,7 @@ local defaultWidgetProperties = {
 		maxVisibleHeight = 0,									-- maximum height of table (enables scrollbar if required height for all rows exceeds max height, 0 = no maximum)
 		reserveScrollBar = true,								-- whether the table width should include the required space for a potential scrollbar (otherwise the last column may be shortened)
 		wraparound = false,										-- whether the table selection should wrap around when moving beyond the first/last row
-		highlightMode = "on",									-- how to highlight the table selection ("on", "column", "off", "grey")
+		highlightMode = "on",									-- how to highlight the table selection ("on", "column", "off", "grey", "backgroundcolumn")
 		multiSelect = false,									-- whether the the table allows multiselection
 		backgroundID = "",										-- the background texture (using an icon ID) to be used (empty = no background)
 		backgroundColor = Color["table_background_default"],	-- color of the background texture
@@ -6061,7 +6061,7 @@ function widgetHelpers.graph:createDescriptor()
 	graphDescriptor.xAxis = createAxisPropertyInfo(self.properties.xAxis)
 	graphDescriptor.xAxisLabel = createTextPropertyInfo(self, self.properties.xAxisLabel)
 	graphDescriptor.yAxis = createAxisPropertyInfo(self.properties.yAxis)
-	graphDescriptor.yAxisLabel = createTextPropertyInfo(self, self.properties.xAxisLabel)
+	graphDescriptor.yAxisLabel = createTextPropertyInfo(self, self.properties.yAxisLabel)
 	graphDescriptor.offset = { x = self.properties.x or 0, y = self.properties.y or 0 }
 	graphDescriptor.size = { width = self.properties.width or 0, height = self.properties.height or 0 }
 	graphDescriptor.mouseovertext = self.properties.mouseOverText
@@ -10743,15 +10743,18 @@ function Helper.onExpandLSOStorageNode(menu, container, _, ftable, _, nodedata)
 	local buf = ffi.new("WareReservationInfo2[?]", n)
 	n = C.GetContainerWareReservations2(buf, n, container, false, false, true)
 	for i = 0, n - 1 do
-		local ware = ffi.string(buf[i].ware)
-		local buyflag = buf[i].isbuyreservation and "selloffer" or "buyoffer" -- sic! Reservation to buy -> container is selling
-		local invbuyflag = buf[i].isbuyreservation and "buyoffer" or "selloffer"
-		local tradedeal = buf[i].tradedealid
-		if not Helper.dirtyreservations[tostring(tradedeal)] then
-			if reservations[ware] then
-				table.insert(reservations[ware][buyflag], { reserver = buf[i].reserverid, amount = buf[i].amount, eta = buf[i].eta, tradedeal = tradedeal })
-			else
-				reservations[ware] = { [buyflag] = { { reserver = buf[i].reserverid, amount = buf[i].amount, eta = buf[i].eta, tradedeal = tradedeal } }, [invbuyflag] = {} }
+		local issupply = buf[i].issupply
+		if not issupply then
+			local ware = ffi.string(buf[i].ware)
+			local buyflag = buf[i].isbuyreservation and "selloffer" or "buyoffer" -- sic! Reservation to buy -> container is selling
+			local invbuyflag = buf[i].isbuyreservation and "buyoffer" or "selloffer"
+			local tradedeal = buf[i].tradedealid
+			if not Helper.dirtyreservations[tostring(tradedeal)] then
+				if reservations[ware] then
+					table.insert(reservations[ware][buyflag], { reserver = buf[i].reserverid, amount = buf[i].amount, eta = buf[i].eta, tradedeal = tradedeal, issupply = issupply })
+				else
+					reservations[ware] = { [buyflag] = { { reserver = buf[i].reserverid, amount = buf[i].amount, eta = buf[i].eta, tradedeal = tradedeal, issupply = buf[i].issupply } }, [invbuyflag] = {} }
+				end
 			end
 		end
 	end
@@ -12707,6 +12710,7 @@ end
 
 Helper.modLuas = {}
 Helper.time_initModLuasNow = nil
+Helper.isDebugModLuas = true
 function Helper.loadModLuas(menuName, modLuaName)
 	if not Helper.modLuas[menuName] then
 		Helper.modLuas[menuName] = {
@@ -12723,13 +12727,19 @@ function Helper.loadModLuas(menuName, modLuaName)
 		for _, extension in ipairs(extensions) do
 			if (not extension.error) and extension.enabled then
 				local file = "extensions." .. extension.location:gsub("%\\", "") .. ".ui." .. modLuaName
-				-- Helper.debugText_forced("file: " .. tostring(file))
+				if Helper.isDebugModLuas then
+					Helper.debugText_forced("file: " .. tostring(file))
+				end
 				-- Helper.modLuas[menuName].byExtension[extension.location] = require(file)
 				local isSuccess, errorMsg = pcall(function() Helper.modLuas[menuName].byExtension[extension.location] = require(file) end)
-				-- Helper.debugText_forced("file: " .. tostring(file) .. " modLua: " .. tostring(Helper.modLuas[menuName].byExtension[extension.location]))
+				if Helper.isDebugModLuas then
+					Helper.debugText_forced("file: " .. tostring(file) .. " modLua: " .. tostring(Helper.modLuas[menuName].byExtension[extension.location]))
+				end
 				if isSuccess then
 					isModLuaLoaded = true
-					-- DebugError("uix load success: " .. tostring(debug.getinfo(Helper.modLuas[menuName].byExtension[extension.location].init).source:gsub("@.\\", "")))
+					if Helper.isDebugModLuas then
+						DebugError("uix load success: " .. tostring(debug.getinfo(Helper.modLuas[menuName].byExtension[extension.location].init).source:gsub("@.\\", "")))
+					end
 					Helper.time_initModLuasNow = GetCurRealTime() + 1
 				else
 					local isFileMissing = string.find(errorMsg, "not found")
@@ -12740,7 +12750,9 @@ function Helper.loadModLuas(menuName, modLuaName)
 			end
 		end
 	end
-	-- Helper.debugText_forced(tostring(menuName) .. " " .. tostring(modLuaName) .. " #extensions: " .. tostring(#extensions) .. " isModLuaLoaded: " .. tostring(isModLuaLoaded))
+	if Helper.isDebugModLuas then
+		Helper.debugText_forced(tostring(menuName) .. " " .. tostring(modLuaName) .. " #extensions: " .. tostring(#extensions) .. " isModLuaLoaded: " .. tostring(isModLuaLoaded))
+	end
 	if isModLuaLoaded then
 		AddUITriggeredEvent("uix_mod_lua", "load", menuName)
 	end
@@ -12764,7 +12776,9 @@ function Helper.initModLuas2()
 				local isSuccess, errorMsg = pcall(function () modLua.init() end)
 				if isSuccess then
 					menuData.isTriggerUIEventNow = true
-					-- DebugError("uix init success: " .. tostring(debug.getinfo(modLua.init).source):gsub("@.\\", ""))
+					if Helper.isDebugModLuas then
+						DebugError("uix init success: " .. tostring(debug.getinfo(modLua.init).source):gsub("@.\\", ""))
+					end
 					initedMenuDatasByMenuName[menuName_inList] = menuData
 				else
 					DebugError("uix init failed: " .. tostring(errorMsg))
@@ -12775,13 +12789,17 @@ function Helper.initModLuas2()
 	end
 	-- try those that failed in the last init, e.g. some luas may be trying to access menus that need to be open
 	for menuName_inList, menuData in pairs(Helper.modLuas) do
-		-- DebugError(menuName_inList .. " failedByExtension: " .. tostring(next(menuData.failedByExtension)))
+		if Helper.isDebugModLuas then
+			DebugError(menuName_inList .. " failedByExtension: " .. tostring(next(menuData.failedByExtension)))
+		end
 		for extension, modLua in pairs(menuData.failedByExtension) do
 			DebugError("uix retrying init " .. tostring(debug.getinfo(modLua.init).source):gsub("@.\\", ""))
 			local isSuccess, errorMsg = pcall(function () modLua.init() end)
 			if isSuccess then
 				menuData.isTriggerUIEventNow = true
-				-- DebugError("    uix init success at next try/tries: " .. tostring(debug.getinfo(modLua.init).source):gsub("@.\\", ""))
+				if Helper.isDebugModLuas then
+					DebugError("    uix init success at next try/tries: " .. tostring(debug.getinfo(modLua.init).source):gsub("@.\\", ""))
+				end
 				-- table.remove(menuData.failedByExtension, extension)
 				menuData.failedByExtension[extension] = nil
 				initedMenuDatasByMenuName[menuName_inList] = menuData
@@ -12797,7 +12815,9 @@ function Helper.initModLuas2()
 			if menuData.isTriggerUIEventNow then
 				menuData.isTriggerUIEventNow = nil
 				AddUITriggeredEvent("uix_mod_lua", "init", menuName_inList)
-				-- DebugError("AddUITriggeredEvent uix_mod_lua init: " .. tostring(menuName_inList))
+				if Helper.isDebugModLuas then
+					DebugError("AddUITriggeredEvent uix_mod_lua init: " .. tostring(menuName_inList))
+				end
 			end
 		else
 			isAllInited = nil
@@ -12807,7 +12827,9 @@ function Helper.initModLuas2()
 		if not Helper.isModLuaInited_general then
 			Helper.isModLuaInited_general = true
 			AddUITriggeredEvent("uix_mod_lua", "init")
-			-- DebugError("AddUITriggeredEvent uix_mod_lua init")
+			if Helper.isDebugModLuas then
+				DebugError("AddUITriggeredEvent uix_mod_lua init")
+			end
 		end
 	end
 end

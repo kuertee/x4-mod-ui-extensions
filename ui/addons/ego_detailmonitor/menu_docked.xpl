@@ -889,7 +889,8 @@ function menu.display()
 							[2] = { id = "supplyfleet",		text = ReadText(20208, 40701),	icon = "",	displayremoveoption = false, active = supplyactive, mouseovertext = supplyactive and "" or ReadText(1026, 8601) },
 						}
 
-						if C.IsComponentClass(menu.currentplayership, "station") then
+						local isstation = C.IsComponentClass(menu.currentplayership, "station")
+						if isstation then
 							local miningactive = (groups[i].numassignableminingships == #groups[i].subordinates) and ((not usedassignments["mining"]) or (usedassignments["mining"] == i))
 							table.insert(subordinateassignments, { id = "mining", text = ReadText(20208, 40201), icon = "", displayremoveoption = false, active = miningactive, mouseovertext = miningactive and "" or ReadText(1026, 8602) })
 							local tradeactive = (not usedassignments["trade"]) or (usedassignments["trade"] == i)
@@ -936,9 +937,11 @@ function menu.display()
 								break
 							end
 						end
-						local active = true
+						local active = function () return menu.buttonActiveSubordinateGroupLaunch(i) end
 						local mouseovertext = ""
-						if not GetComponentData(menu.currentplayership, "hasshipdockingbays") then
+						if isstation then
+							active = false
+						elseif not GetComponentData(menu.currentplayership, "hasshipdockingbays") then
 							active = false
 							mouseovertext = ReadText(1026, 8604)
 						elseif not isdockingpossible then
@@ -1191,6 +1194,14 @@ function menu.updateSubordinateGroupInfo()
 			end
 		end
 	end
+end
+
+function menu.buttonActiveSubordinateGroupLaunch(i)
+	menu.updateSubordinateGroupInfo()
+	if menu.subordinategroups[i] then
+		return (menu.subordinategroups[i].assignment ~= "trade") and (menu.subordinategroups[i].assignment ~= "mining") and (menu.subordinategroups[i].assignment ~= "follow") and (menu.subordinategroups[i].assignment ~= "assist") and (menu.subordinategroups[i].assignment ~= "supplyfleet")
+	end
+	return false
 end
 
 function menu.infoText()

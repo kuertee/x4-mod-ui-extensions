@@ -395,6 +395,8 @@ local function init()
 		menu.upgradeSettingsVersion()
 	end
 
+	RegisterEvent("openmenu", function (_, menuname) return menu.openOtherMenu(menuname) end)
+
 	-- kuertee start:
 	menu.init_kuertee()
 	-- kuertee end

@@ -457,6 +457,12 @@ local function init()
 	if Helper then
 		Helper.registerMenu(menu)
 	end
+	menu.infoTablePersistentData = {
+		left = {
+			venturecontacts = { curPage = 1, searchtext = "", forumsearch = "" },
+		},
+	}
+
 
 	-- kuertee start:
 	menu.init_kuertee()
@@ -1241,11 +1247,25 @@ function menu.onShowMenu(state)
 
 	-- Init
 	menu.playerInfoFullWidth = Helper.viewWidth - (Helper.playerInfoConfig.offsetX + Helper.frameBorder + Helper.borderSize)
+
 	menu.sideBarWidth = Helper.scaleX(Helper.sidebarWidth)
-	local availableLeftBarHeight = Helper.viewHeight - (Helper.playerInfoConfig.offsetY + Helper.playerInfoConfig.height + Helper.borderSize + menu.sideBarWidth + Helper.scaleY(Helper.titleTextProperties.height) + 2 * Helper.borderSize)
-	if 14 * menu.sideBarWidth > availableLeftBarHeight then
-		menu.sideBarWidth = Helper.round(availableLeftBarHeight / 14)
+	local availableLeftBarHeight = Helper.viewHeight - (Helper.playerInfoConfig.offsetY + Helper.playerInfoConfig.height + Helper.borderSize + menu.sideBarWidth + Helper.scaleY(Helper.titleTextProperties.height) + 3 * Helper.borderSize)
+	local count, bordercount = 0, 0
+	for _, entry in ipairs(config.leftBar) do
+		if not entry.condition or entry.condition() then
+			if entry.spacing then
+				count = count + 0.25
+				bordercount = bordercount + 1
+			else
+				count = count + 1
+				bordercount = bordercount + 1
+			end
+		end
 	end
+	if (count * menu.sideBarWidth + bordercount * Helper.borderSize) > availableLeftBarHeight then
+		menu.sideBarWidth = math.floor((availableLeftBarHeight - bordercount * Helper.borderSize) / count)
+	end
+
 	menu.contextMenuWidth = Helper.scaleX(200)
 
 	menu.mode = menu.param[3] or menu.mode or config.mode
@@ -1328,7 +1348,7 @@ function menu.createPlayerInfo(frame, width, height, offsetx, offsety)
 
 	local textheight = math.ceil(C.GetTextHeight(Helper.playerInfoConfigTextLeft(), Helper.standardFont, Helper.playerInfoConfig.fontsize, width - height - Helper.borderSize))
 	icon:setText(Helper.playerInfoConfigTextLeft,		{ fontsize = Helper.playerInfoConfig.fontsize, halign = "left",  x = height + Helper.borderSize, y = (height - textheight) / 2 })
-	icon:setText2(Helper.playerInfoConfigTextRight,	{ fontsize = Helper.playerInfoConfig.fontsize, halign = "right", x = Helper.borderSize,          y = (height - textheight) / 2 })
+	icon:setText2(Helper.playerInfoConfigTextRight,		{ fontsize = Helper.playerInfoConfig.fontsize, halign = "right", x = Helper.borderSize,          y = (height - textheight) / 2 })
 
 	local spacingHeight = menu.sideBarWidth / 4
 	row = ftable:addRow(false, { fixed = true, bgColor = Color["row_background_blue"] })
@@ -2612,10 +2632,10 @@ function menu.createLogbook(frame, tableProperties)
 					local n = C.GetTickerCache(buf, numQuery, (i - 1) * config.logbookQueryLimit + 1, numQuery, "");
 					for j = 0, n - 1 do
 						local entry = {
-							time = buf[i].time,
-							category = ffi.string(buf[i].category),
-							title = ffi.string(buf[i].title),
-							text = ffi.string(buf[i].text),
+							time = buf[j].time,
+							category = ffi.string(buf[j].category),
+							title = ffi.string(buf[j].title),
+							text = ffi.string(buf[j].text),
 							factionname = "",
 							entityname = "",
 							money = 0,

@@ -115,7 +115,11 @@ function menu.confirm()
 	elseif menu.mode == "starttutorial" then
 		if menu.modeparam[2] == 1 then
 			menu.saveTriggered = true
-			C.TriggerAutosave(false)
+			if Helper.isOnlineGame() then
+				SaveOnlineGame()
+			else
+				C.TriggerAutosave(false)
+			end
 			allowclose = false
 		else
 			C.SetUserData("tutorial_started_from", tostring(menu.modeparam[2]))

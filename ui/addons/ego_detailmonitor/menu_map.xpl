@@ -14994,9 +14994,11 @@ function menu.setupLoadoutInfoSubmenuRows(mode, inputtable, inputobject, instanc
 									break
 								end
 							end
-							local active = true
+							local active = function () return menu.buttonActiveSubordinateGroupLaunch(inputobject, i) end
 							local mouseovertext = ""
-							if not GetComponentData(inputobject, "hasshipdockingbays") then
+							if isstation then
+								active = false
+							elseif not GetComponentData(inputobject, "hasshipdockingbays") then
 								active = false
 								mouseovertext = ReadText(1026, 8604)
 							elseif not isdockingpossible then
@@ -25898,7 +25900,7 @@ function menu.onRenderTargetRightMouseUp(modified)
 			distanceTool_to_posRot = posrot
 			distanceTool_to_component = posrotcomponent
     
-    		Helper.distanceTool_distance = nil
+    			Helper.distanceTool_distance = nil
 			if distanceTool_from_component and distanceTool_from_posRot then
 				local posFrom, sectorFrom, posTo, sectorTo
 				if C.IsComponentClass (distanceTool_from_component, "sector") then
@@ -27569,16 +27571,18 @@ function menu.closeContextMenu(dueToClose)
 		elseif menu.contextMenuMode == "venturereport" then
 			Helper.sendChatWindowCallback("unlock")
 		elseif menu.contextMenuMode == "set_orderparam_sector" then
-			local offset = ffi.new("UIPosRot")
-			local eclipticoffset = ffi.new("UIPosRot")
-			local offsetcomponent = C.GetMapPositionOnEcliptic2(menu.holomap, offset, false, 0, eclipticoffset)
-			if offsetcomponent ~= 0 then
-				if C.IsComponentClass(offsetcomponent, "sector") then
-					menu.mode = "orderparam_sector"
-					local luaoffsetcomponent = ConvertStringToLuaID(tostring(offsetcomponent))
-					SetOrderParam(ConvertStringTo64Bit(tostring(menu.infoSubmenuObject)), menu.contextMenuData.order, menu.contextMenuData.param, menu.contextMenuData.index, luaoffsetcomponent)
-					AddUITriggeredEvent(menu.name, menu.contextMenuMode, luaoffsetcomponent)
-					menu.refreshInfoFrame()
+			if menu.picking then
+				local offset = ffi.new("UIPosRot")
+				local eclipticoffset = ffi.new("UIPosRot")
+				local offsetcomponent = C.GetMapPositionOnEcliptic2(menu.holomap, offset, false, 0, eclipticoffset)
+				if offsetcomponent ~= 0 then
+					if C.IsComponentClass(offsetcomponent, "sector") then
+						menu.mode = "orderparam_sector"
+						local luaoffsetcomponent = ConvertStringToLuaID(tostring(offsetcomponent))
+						SetOrderParam(ConvertStringTo64Bit(tostring(menu.infoSubmenuObject)), menu.contextMenuData.order, menu.contextMenuData.param, menu.contextMenuData.index, luaoffsetcomponent)
+						AddUITriggeredEvent(menu.name, menu.contextMenuMode, luaoffsetcomponent)
+						menu.refreshInfoFrame()
+					end
 				end
 			end
 		end
@@ -28659,6 +28663,14 @@ function menu.updateSubordinateGroupInfo(controllable)
 			end
 		end
 	end
+end
+
+function menu.buttonActiveSubordinateGroupLaunch(inputobject, i)
+	menu.updateSubordinateGroupInfo(inputobject)
+	if menu.subordinategroups[i] then
+		return (menu.subordinategroups[i].assignment ~= "trade") and (menu.subordinategroups[i].assignment ~= "mining") and (menu.subordinategroups[i].assignment ~= "follow") and (menu.subordinategroups[i].assignment ~= "assist") and (menu.subordinategroups[i].assignment ~= "supplyfleet")
+	end
+	return false
 end
 
 function menu.etaSorter(a, b)

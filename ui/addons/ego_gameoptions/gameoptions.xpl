@@ -8874,7 +8874,7 @@ function menu.displayNewGame(createAsServer, displayTimelinesScenarios, displayT
 	row[2]:createText(displayTutorials and "" or ReadText(1001, 11718), config.warningTextProperties)
 
 	local offsety = titletable.properties.y + titletable:getVisibleHeight() + Helper.borderSize
-	local height = math.min(Helper.viewHeight - offsety - Helper.frameBorder, menu.table.height - offsety)
+	local height = Helper.viewHeight - offsety - Helper.frameBorder - frame.properties.y
 
 	local optiontable = frame:addTable(2, { tabOrder = 1, x = menu.table.x, y = offsety, width = menu.table.widthWithExtraInfo, maxVisibleHeight = height })
 	optiontable:setColWidth(1, menu.table.arrowColumnWidth, false)
@@ -9018,11 +9018,12 @@ function menu.displayNewGame(createAsServer, displayTimelinesScenarios, displayT
 	end
 
 	local iconwidth = math.floor(0.27 * width) - Helper.borderSize
-	local infotable2 = frame:addTable(3, { tabOrder = 4, x = offsetx, y = infotable.properties.y + infotable.properties.maxVisibleHeight + Helper.borderSize, width = width, maxVisibleHeight = infoheight - infotable.properties.maxVisibleHeight - Helper.borderSize })
+	local infotable2 = frame:addTable(3, { tabOrder = 4, x = offsetx, y = infotable.properties.y + infotable.properties.maxVisibleHeight + Helper.borderSize, width = width, maxVisibleHeight = infoheight - infotable.properties.maxVisibleHeight - Helper.borderSize, highlightMode = "backgroundcolumn" })
 	infotable2:setColWidthPercent(1, 25)
 	infotable2:setColWidth(3, iconwidth, false)
-	infotable2:setDefaultBackgroundColSpan(1, 3)
+	infotable2:setDefaultBackgroundColSpan(1, 2)
 
+	local passiverows = {}
 	if menu.selectedOption then
 		local isspecial = menu.selectedOption.customeditor or menu.selectedOption.mapeditor or menu.selectedOption.stationeditor
 		local valuecolspan = 1
@@ -9034,9 +9035,10 @@ function menu.displayNewGame(createAsServer, displayTimelinesScenarios, displayT
 		row[1]:setColSpan(3):createText(" ", { fontsize = 1, height = Helper.borderSize, cellBGColor = Color["row_background_blue"] })
 
 		if IsCheatVersion() then
-			local row = infotable2:addRow(nil, { bgColor = Color["optionsmenu_cell_background"], borderBelow = false })
+			local row = infotable2:addRow(true, { bgColor = Color["optionsmenu_cell_background"], borderBelow = false, interactive = false })
 			row[1]:createText("Gamestart ID:") -- (cheat only)
 			row[2]:setColSpan(valuecolspan):createText(ColorText["text_inactive"] .. menu.selectedOption.id, { halign = "right" })
+			table.insert(passiverows, row)
 		end
 		local infostarty = infotable2:getFullHeight()
 
@@ -9099,10 +9101,11 @@ function menu.displayNewGame(createAsServer, displayTimelinesScenarios, displayT
 		for i, entry in ipairs(menu.selectedOption.info) do
 			local row
 			if entry.info == "@name" then
-				row = infotable2:addRow(nil, { bgColor = Color["optionsmenu_cell_background"], borderBelow = false })
+				row = infotable2:addRow(true, { bgColor = Color["optionsmenu_cell_background"], borderBelow = false, interactive = false })
 				row[1]:createText(ReadText(1021, 8) .. ReadText(1001, 120))
 				local gamestartid = menu.selectedOption.id
 				row[2]:setColSpan(valuecolspan):createText(function () local buf = ffi.new("CustomGameStartStringPropertyState[1]"); return ColorText["text_inactive"] .. ffi.string(C.GetCustomGameStartStringProperty(gamestartid, "playername", buf)) end, { halign = "right" })
+				table.insert(passiverows, row)
 			elseif entry.info == "@player" then
 				row = infotable2:addRow(true, { bgColor = Color["optionsmenu_cell_background"], borderBelow = false })
 				if #playermacrooptions > 0 then
@@ -9114,18 +9117,20 @@ function menu.displayNewGame(createAsServer, displayTimelinesScenarios, displayT
 				end
 			elseif entry.info == "@unlock" then
 				if not menu.selectedOption.unlocked then
-					row = infotable2:addRow(nil, { bgColor = Color["optionsmenu_cell_background"], borderBelow = false })
+					row = infotable2:addRow(true, { bgColor = Color["optionsmenu_cell_background"], borderBelow = false, interactive = false })
 					row[1]:createText(ReadText(1004, 45) .. ReadText(1001, 120))
 					row[2]:setColSpan(valuecolspan):createText(ColorText["text_inactive"] .. entry.description, { halign = "right" })
+					table.insert(passiverows, row)
 				end
 			elseif entry.info == "@playerimage" then
 				if i == 1 then
 					imageindex = i + 1
 				end
 			elseif entry.info ~= "" then
-				row = infotable2:addRow(nil, { bgColor = Color["optionsmenu_cell_background"], borderBelow = false })
+				row = infotable2:addRow(true, { bgColor = Color["optionsmenu_cell_background"], borderBelow = false, interactive = false })
 				row[1]:createText(entry.info .. ReadText(1001, 120))
 				row[2]:setColSpan(valuecolspan):createText(ColorText["text_inactive"] .. entry.description, { halign = "right" })
+				table.insert(passiverows, row)
 			elseif ((menu.selectedOption.info[i + 1] and menu.selectedOption.info[i + 1].info) ~= "@unlock") or (not menu.selectedOption.unlocked) then
 				-- do not show the empty line before @unlock if @unlock is not shown
 				row = infotable2:addRow(nil, { bgColor = Color["optionsmenu_cell_background"], borderBelow = false })
@@ -9145,14 +9150,15 @@ function menu.displayNewGame(createAsServer, displayTimelinesScenarios, displayT
 			end
 		end
 
-		if rowcount < config.minGamestartInfoRows then
-			for i = 1, config.minGamestartInfoRows - rowcount do
-				local row = infotable2:addRow(nil, { bgColor = Color["optionsmenu_cell_background"], borderBelow = false })
-				row[3]:createText(" ", { cellBGColor = Color["optionsmenu_cell_background_icon"] })
-			end
-		end
-
 		if imagerow then
+			if rowcount < config.minGamestartInfoRows then
+				for i = 1, config.minGamestartInfoRows - rowcount do
+					local row = infotable2:addRow(true, { bgColor = Color["optionsmenu_cell_background"], borderBelow = false, interactive = false })
+					row[3]:createText(" ", { cellBGColor = Color["optionsmenu_cell_background_icon"] })
+					table.insert(passiverows, row)
+				end
+			end
+
 			local infoendy = infotable2:getFullHeight()
 			local imageoffsety = math.floor(((infoendy - infostarty) - iconwidth) / 2)
 			imagerow[3].properties.y = iconwidth / 2 - Helper.scaleY(config.infoTextHeight) / 2 + imageoffsety
@@ -9161,9 +9167,16 @@ function menu.displayNewGame(createAsServer, displayTimelinesScenarios, displayT
 
 	local row = infotable2:addRow(nil, { bgColor = Color["optionsmenu_cell_background"], borderBelow = false })
 	row[1]:createText(" ", { fontsize = 1, minRowHeight = config.standardTextHeight / 2 })
-	local row = infotable2:addRow(true, { bgColor = Color["optionsmenu_cell_background"], fixed = true })
-	row[1]:setColSpan(3):createButton({ active = menu.buttonStartGameActive(), height = config.standardTextHeight }):setText(ReadText(1001, 9902), { halign = "center" })
-	row[1].handlers.onClick = function () return menu.buttonStartGame(menu.selectedOption) end
+	local buttonrow = infotable2:addRow(true, { bgColor = Color["optionsmenu_cell_background"] })
+	buttonrow[1]:setColSpan(3):setBackgroundColSpan(3):createButton({ active = menu.buttonStartGameActive(), height = config.standardTextHeight }):setText(ReadText(1001, 9902), { halign = "center" })
+	buttonrow[1].handlers.onClick = function () return menu.buttonStartGame(menu.selectedOption) end
+
+	if frame.properties.y + infotable2.properties.y + infotable2:getFullHeight() + Helper.frameBorder < Helper.viewHeight then
+		buttonrow.properties.fixed = true
+		for _, row in ipairs(passiverows) do
+			row.rowdata = nil
+		end
+	end
 
 	titletable:addConnection(1, 1, true)
 	optiontable:addConnection(2, 1)
@@ -9471,14 +9484,14 @@ function menu.displayTimelines()
 			end
 		end
 
-		if rowcount < config.minGamestartInfoRows then
-			for i = 1, config.minGamestartInfoRows - rowcount do
-				local row = infotable2:addRow(nil, { bgColor = Color["optionsmenu_cell_background"], borderBelow = false })
-				row[3]:createText(" ", { cellBGColor = Color["optionsmenu_cell_background_icon"] })
-			end
-		end
-
 		if imagerow then
+			if rowcount < config.minGamestartInfoRows then
+				for i = 1, config.minGamestartInfoRows - rowcount do
+					local row = infotable2:addRow(nil, { bgColor = Color["optionsmenu_cell_background"], borderBelow = false })
+					row[3]:createText(" ", { cellBGColor = Color["optionsmenu_cell_background_icon"] })
+				end
+			end
+
 			local infoendy = infotable2:getFullHeight()
 			local imageoffsety = math.floor(((infoendy - infostarty) - iconwidth) / 2)
 			imagerow[3].properties.y = iconwidth / 2 - Helper.scaleY(config.infoTextHeight) / 2 + imageoffsety

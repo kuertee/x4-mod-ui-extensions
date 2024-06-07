@@ -4663,12 +4663,14 @@ function menu.displaySlots(frame, firsttime)
 			menu.repairslots = {}
 
 			if menu.objectgroup then
+				local count = 1
 				for i, ship in ipairs(menu.objectgroup.ships) do
 					if #menu.objectgroup.shipdata[i].damagedcomponents > 0 then
-						local group = math.ceil(i / 3)
+						local group = math.ceil(count / 3)
 
 						menu.repairslots[group] = menu.repairslots[group] or {}
 						table.insert(menu.repairslots[group], { i, ship.macro, i, ship.ship })
+						count = count + 1
 					end
 				end
 			else
