@@ -287,7 +287,7 @@ local config = {
 	entryFontSize = Helper.standardFontSize,
 	entryX = 3,
 	mouseOutRange = 100,
-	border = 5,
+	border = Helper.frameBorder,
 	subsectionDelay = 0.5,
 
 	sections = {
@@ -2905,7 +2905,7 @@ function menu.draw()
 	frame.properties.y = menu.frameY
 	if menu.subsection then
 		subsectionHeight = subsectionTable:getFullHeight()
-		subsectionTable.properties.y = menu.subsection.y - subsectionHeight + (config.rowHeight + Helper.borderSize)
+		subsectionTable.properties.y = menu.subsection.y - subsectionHeight + Helper.scaleY(config.rowHeight)
 		if subsectionTable.properties.y < 0 then
 			local diff = -subsectionTable.properties.y
 			menu.frameY = frame.properties.y - diff
@@ -3035,8 +3035,8 @@ function menu.excludeMonitorZone(frame, monitorexclusionzone, framewidth, frameh
 				mouseOutBoxExtension.bottom = origFrameY - newY
 				menu.frameY = math.max(0, newY)
 				needschange = false
-			elseif menu.frameX + framewidth > monitorexclusionzone.x then
-				-- overlapping with the minitor, flip to left from cursor
+			elseif (not menu.forceSubSectionToLeft) and (menu.frameX + framewidth > monitorexclusionzone.x) then
+				-- overlapping with the monitor, flip to left from cursor
 				local newX = menu.frameX - framewidth
 				-- make sure we have enough space left for a subsection on the left
 				if newX > menu.width + Helper.borderSize then
@@ -3044,7 +3044,7 @@ function menu.excludeMonitorZone(frame, monitorexclusionzone, framewidth, frameh
 					needschange = false
 					menu.forceSubSectionToLeft = true
 				end
-			elseif  menu.frameX + 2 * menu.width + Helper.borderSize > monitorexclusionzone.x then
+			elseif menu.frameX + 2 * menu.width + Helper.borderSize > monitorexclusionzone.x then
 				-- ok, but no space for subsection -> force to left
 				needschange = false
 				menu.forceSubSectionToLeft = true

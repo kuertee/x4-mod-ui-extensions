@@ -59,6 +59,8 @@ local function init()
 		Helper.registerMenu(menu)
 	end
 
+	RegisterEvent("gameSaved", menu.onGameSaved)
+
 	-- kuertee start:
 	menu.init_kuertee()
 	-- kuertee end

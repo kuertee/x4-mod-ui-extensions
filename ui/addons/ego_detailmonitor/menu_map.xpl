@@ -1699,7 +1699,7 @@ end
 -- kuertee start:
 function menu.init_kuertee ()
 	menu.loadModLuas()
-	DebugError("uix load success: " .. tostring(debug.getinfo(1).source))
+	-- DebugError("uix load success: " .. tostring(debug.getinfo(1).source))
 end
 -- kuertee end
 
@@ -11494,7 +11494,7 @@ function menu.createPlotMode(inputframe)
 	local maxVisibleHeight
 	local numplotentries = #menu.plots + 1
 	for i, plot in ipairs(menu.plots) do
-		local station64 = plot.station
+		local station64 = ConvertStringTo64Bit(tostring(plot.station))
 		local stationname = menu.getContainerNameAndColors(station64, 0, false, false)
 		row = menu.table_plotlist:addRow(station64, { bgColor = Color["row_background_blue"] })
 		row[1]:setBackgroundColSpan(3):createText((stationname), textproperties)
@@ -13325,7 +13325,7 @@ function menu.setupInfoSubmenuRows(mode, inputtable, inputobject, instance)
 
 			locrowdata = { "info_station_storage", (ReadText(1001, 1400) .. " (" .. printednumwares .. " " .. ((printednumwares == "1") and ReadText(1001, 45) or ReadText(1001, 46)) .. ")") }	-- Storage, Ware, Wares
 			local row = menu.addInfoSubmenuRow(instance, inputtable, row, locrowdata, false, true, (numwares > 0) and true or false, 1, indentsize)
-			local setting, list = menu.getTradeWareFilter()
+			local setting, list = menu.getTradeWareFilter(true)
 			if menu.isInfoExtended(locrowdata[1], instance) then
 				for i, usagecat in ipairs(cargocatindex) do
 					if (cargotable[usagecat].numcatwares > 0) then
@@ -13447,7 +13447,7 @@ function menu.setupInfoSubmenuRows(mode, inputtable, inputobject, instance)
 				local printednumwares = storageinfo_amounts and ConvertIntegerString(numwares, true, 0, true) or unknowntext
 				locrowdata = { "info_station_buildstorage_storage", (ReadText(1001, 1400) .. " (" .. printednumwares .. " " .. ((printednumwares == "1") and ReadText(1001, 45) or ReadText(1001, 46)) .. ")") }	-- Storage, Ware, Wares
 				local row = menu.addInfoSubmenuRow(instance, inputtable, row, locrowdata, false, true, (numwares > 0) and true or false, 1, indentsize)
-				local setting, list = menu.getTradeWareFilter()
+				local setting, list = menu.getTradeWareFilter(true)
 				if menu.isInfoExtended(locrowdata[1], instance) then
 					for _, wareentry in ipairs(cargotable) do
 						local ware = wareentry.ware
@@ -18545,7 +18545,7 @@ function menu.createSelectedShips(frame)
 					end
 				end
 				table.sort(wares, function (a, b) return a.future > b.future end)
-				local setting, list = menu.getTradeWareFilter()
+				local setting, list = menu.getTradeWareFilter(true)
 				for i, entry in ipairs(wares) do
 					local color, script = menu.getWareButtonColorAndScript(list, setting, entry.ware)
 					table.insert(rows.right, { entrytype = "ware", text = entry.name, current = entry.current, future = entry.future, max = GetWareCapacity(selectedcomponent, entry.ware), color = color, script = script })
@@ -18669,7 +18669,7 @@ function menu.createSelectedShips(frame)
 					table.insert(wares, { ware = ware, name = GetWareData(ware, "name"), current = amount, future = futureamount })
 				end
 				table.sort(wares, function (a, b) return a.future > b.future end)
-				local setting, list = menu.getTradeWareFilter()
+				local setting, list = menu.getTradeWareFilter(true)
 				for i, entry in ipairs(wares) do
 					local color, script = menu.getWareButtonColorAndScript(list, setting, entry.ware)
 					local productionlimit = GetWareProductionLimit(selectedcomponent, entry.ware)
@@ -25471,7 +25471,7 @@ function menu.onRenderTargetSelect(modified)
 				local tradeid = ConvertStringToLuaID(tostring(pickedtradeoffer))
 				local tradedata = GetTradeData(tradeid)
 				if tradedata.ware then
-					local setting, rawwarelist = menu.getTradeWareFilter()
+					local setting, rawwarelist = menu.getTradeWareFilter(true)
 					local found = false
 					for i, ware in ipairs(rawwarelist) do
 						if ware == tradedata.ware then

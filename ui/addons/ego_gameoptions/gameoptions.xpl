@@ -1198,7 +1198,7 @@ config.optionDefinitions = {
 		[2] = {
 			id = "continue",
 			name = function () return menu.nameContinue() end,
-			mouseOverText = ReadText(1026, 4803),
+			mouseOverText = function () return menu.isStartmenu and ReadText(1026, 4803) or "" end,
 			callback = function () return menu.callbackContinue() end,
 			selectable = function () return menu.selectableContinue() end,
 			wordwrap = true,
@@ -4982,6 +4982,10 @@ function menu.submenuHandler(optionParameter)
 end
 
 function menu.openSubmenu(optionParameter, selectedOption)
+	if (optionParameter == "save") or (optionParameter == "saveoffline") then
+		menu.savegameName = nil
+	end
+
 	table.insert(menu.history, 1, { optionParameter = menu.currentOption, topRow = GetTopRow(menu.optionTable), selectedOption = selectedOption })
 	menu.submenuHandler(optionParameter)
 end
@@ -6984,6 +6988,7 @@ function menu.valueGfxShadows()
 
 	local settings = {
 		[0] = ReadText(1001, 2649),
+		[1] = ReadText(1001, 2650),
 		[2] = ReadText(1001, 2651),
 		[3] = ReadText(1001, 4837),
 	}
@@ -9082,6 +9087,24 @@ function menu.displayNewGame(createAsServer, displayTimelinesScenarios, displayT
 					table.insert(playermacrooptions, { id = entry.macro, text = name, icon = "", displayremoveoption = false })
 				end
 			end
+
+			if menu.selectedOption.usetimelinesplayercharacter then
+				local playermacro = ffi.string(C.GetUserData("timelines_player_character_macro"))
+				if playermacro ~= "" then
+					local found = false
+					for _, entry in ipairs(playermacrooptions) do
+						if entry.id == playermacro then
+							found = true
+							break
+						end
+					end
+					if found then
+						menu.callbackGamestartPlayerMacro(menu.selectedOption.id, "player", playermacro)
+					else
+						DebugError("Requested timelines player character macro '" .. tostring(playermacro) .. "' not found in timelines hub gamestart options!")
+					end
+				end
+			end
 		end
 
 		local playerimage = ""
@@ -9439,15 +9462,26 @@ function menu.displayTimelines()
 					if #playermacrooptions > 0 then
 						row[1]:createText(ReadText(1021, 11007) .. ReadText(1001, 120))
 						row[2]:setColSpan(valuecolspan):createDropDown(playermacrooptions, { startOption = playermacro, height = Helper.standardTextHeight }):setTextProperties({ halign = "right", x = Helper.standardTextOffsetx })
-						row[2].handlers.onDropDownConfirmed = function(_, id) C.SetUserData("timelines_player_character_macro", id); return menu.callbackGamestartPlayerMacro(timelinesgamestart.id, "player", id) end
+						row[2].handlers.onDropDownConfirmed = function (_, id) return menu.dropdownTimelinesCharacter(timelinesgamestart, id) end
 					else
 						row[1]:createText("")
 					end
 				elseif timelinesgamestart.custom then
 					local playermacro = ffi.string(C.GetUserData("timelines_player_character_macro"))
 					if playermacro ~= "" then
-						menu.callbackGamestartPlayerMacro(timelinesgamestart.id, "player", playermacro)
-						playerimage = GetMacroData(playermacro, "image") or ""
+						local found = false
+						for _, entry in ipairs(playermacrooptions) do
+							if entry.id == playermacro then
+								found = true
+								break
+							end
+						end
+						if found then
+							menu.callbackGamestartPlayerMacro(timelinesgamestart.id, "player", playermacro)
+							playerimage = GetMacroData(playermacro, "image") or ""
+						else
+							DebugError("Requested timelines player character macro '" .. tostring(playermacro) .. "' not found in timelines hub gamestart options!")
+						end
 					end
 				end
 			elseif entry.info == "@unlock" then
@@ -10229,6 +10263,12 @@ function menu.dropdownRemovedColorProfile(_, filename)
 		menu.contextMenuData = { width = Helper.scaleX(400), y = Helper.viewHeight / 2, id = "deletecolorprofile", filename = filename }
 		menu.createContextMenu()
 	end
+end
+
+function menu.dropdownTimelinesCharacter(timelinesgamestart, id)
+	C.SetUserData("timelines_player_character_macro", id)
+	C.SetUserData("timelines_hub_player_isfemale", GetMacroData(id, "entityfemale") and "1" or "0")
+	return menu.callbackGamestartPlayerMacro(timelinesgamestart.id, "player", id)
 end
 
 function menu.getColorMapColor(color)
@@ -11147,6 +11187,8 @@ function menu.displaySavegameOptions(optionParameter)
 	row[1]:setColSpan(2):createText(ReadText(1001, 8970) .. ReadText(1001, 120))
 	if (menu.currentOption == "save") or (menu.currentOption == "saveoffline") then
 		menu.saveNameEditBox = row[3]:setColSpan(2):createEditBox({ height = config.standardTextHeight, description = ReadText(1001, 8970), active = function () return (menu.selectedOption ~= nil) and (next(menu.selectedOption) ~= nil) and (not menu.selectedOption.isonline) end }):setText(menu.savegameName, { fontsize = config.standardFontSize, halign = "right" }):setHotkey("INPUT_STATE_DETAILMONITOR_Y", { displayIcon = true, x = 0 })
+		row[3].handlers.onEditBoxActivated = function (widget) menu.noupdate = true end
+		row[3].handlers.onEditBoxDeactivated = function (_, text, textchanged) menu.noupdate = nil end
 		row[3].handlers.onTextChanged = menu.editboxSaveName
 	else
 		row[3]:setColSpan(2):createText(function () return ((menu.selectedOption ~= nil) and (next(menu.selectedOption) ~= nil)) and menu.selectedOption.displayedname or "" end, config.standardRightTextProperties)
@@ -12409,7 +12451,7 @@ function menu.onUpdate()
 			menu.openSubmenu("idle", menu.selectedOption.id)
 		end
 	else
-		if menu.delayedRefresh and (menu.delayedRefresh < curtime) then
+		if (not menu.noupdate) and menu.delayedRefresh and (menu.delayedRefresh < curtime) then
 			menu.delayedRefresh = nil
 			if menu.currentOption ~= "question" then
 				menu.refresh()
@@ -12623,15 +12665,17 @@ function menu.onRowChanged(row, rowdata, uitable, modified, input, source)
 				Helper.setCellContent(menu, menu.optionTable, CreateFontString(fontStringDescriptor), 2, 1)
 			end
 		elseif (menu.currentOption == "save") or (menu.currentOption == "load") or (menu.currentOption == "saveoffline") then
-			if menu.selectedOption and next(menu.selectedOption) and (menu.selectedOption.titlerow == nil) and (menu.selectedOption.submenu == nil) then
-				if (menu.currentOption == "save") or (menu.currentOption == "saveoffline") then
-					menu.savegameName = menu.getNewSavegameName(menu.selectedOption)
-					C.SetEditBoxText(menu.saveNameEditBox.id, menu.savegameName)
-				end
-			else
-				if (menu.currentOption == "save") or (menu.currentOption == "saveoffline") then
-					menu.savegameName = ""
-					C.SetEditBoxText(menu.saveNameEditBox.id, menu.savegameName)
+			if (source ~= "auto") or (menu.savegameName == nil) then
+				if menu.selectedOption and next(menu.selectedOption) and (menu.selectedOption.titlerow == nil) and (menu.selectedOption.submenu == nil) then
+					if (menu.currentOption == "save") or (menu.currentOption == "saveoffline") then
+						menu.savegameName = menu.getNewSavegameName(menu.selectedOption)
+						C.SetEditBoxText(menu.saveNameEditBox.id, menu.savegameName)
+					end
+				else
+					if (menu.currentOption == "save") or (menu.currentOption == "saveoffline") then
+						menu.savegameName = ""
+						C.SetEditBoxText(menu.saveNameEditBox.id, menu.savegameName)
+					end
 				end
 			end
 			if source ~= "auto" then

@@ -57,6 +57,7 @@ ffi.cdef[[
 	bool CanCancelConstruction(UniverseID containerid, BuildTaskID id);
 	bool CanContainerEquipShip(UniverseID containerid, UniverseID shipid);
 	bool CanContainerSupplyShip(UniverseID containerid, UniverseID shipid);
+	bool CanPerformLongRangeScan(void);
 	bool CanPlayerStandUp(void);
 	bool CanStartTravelMode(UniverseID objectid);
 	uint32_t GetAllLaserTowers(AmmoData* result, uint32_t resultlen, UniverseID defensibleid);
@@ -422,6 +423,8 @@ function menu.display()
 					local visible = true
 					if entry.id == "travel" then
 						entryactive = entryactive and C.CanStartTravelMode(menu.currentplayership)
+					elseif entry.id == "scan_longrange" then
+						entryactive = entryactive and C.CanPerformLongRangeScan()
 					elseif entry.id == "seta" then
 						entryactive = true
 						visible = C.CanActivateSeta(false)
@@ -958,7 +961,7 @@ function menu.display()
 						local rd_callbackVal
 						if callbacks ["rd_addReactiveDockingDockMenu"] then
 				  			for _, callback in ipairs (callbacks ["rd_addReactiveDockingDockMenu"]) do
-				    			rd_callbackVal = callback (row, menu.currentplayership, i, active, mouseovertext)
+				    				rd_callbackVal = callback (row, menu.currentplayership, i, active, mouseovertext)
 				  			end
 						end
 						if not rd_callbackVal then
@@ -1061,6 +1064,8 @@ function menu.display()
 					local visible = true
 					if entry.id == "travel" then
 						entryactive = entryactive and C.CanStartTravelMode(menu.currentplayership)
+					elseif entry.id == "scan_longrange" then
+						entryactive = entryactive and C.CanPerformLongRangeScan()
 					elseif entry.id == "seta" then
 						entryactive = true
 						visible = C.CanActivateSeta(false)
