@@ -76,6 +76,7 @@ ffi.cdef[[
 	uint32_t GetDockedShips(UniverseID* result, uint32_t resultlen, UniverseID dockingbayorcontainerid, const char* factionid);
 	uint32_t GetDroneModes(DroneModeInfo* result, uint32_t resultlen, UniverseID defensibleid, const char* dronetype);
 	UniverseID GetEnvironmentObject();
+	const char* GetGameStartName();
 	uint32_t GetNumAllLaserTowers(UniverseID defensibleid);
 	uint32_t GetNumAllMines(UniverseID defensibleid);
 	uint32_t GetNumAllNavBeacons(UniverseID defensibleid);
@@ -213,6 +214,10 @@ function menu.onGamePlanChange(_, mode)
 	end
 end
 
+function menu.onPlayerActivityChanged()
+	menu.refresh = getElapsedTime() - 1
+end
+
 function menu.onConvEnds()
 	if not Helper.hasConversationReturnHandler then
 		local controlpost = ffi.string(C.GetPlayerCurrentControlGroup())
@@ -248,6 +253,13 @@ function menu.cleanup()
 end
 
 function menu.onShowMenu()
+	if not menu.hasPlayerActivityCallback then
+		local contract = getElement("Scene.UIContract")
+		registerForEvent("playerActivityChanged", contract, menu.onPlayerActivityChanged)
+		NotifyOnPlayerActivityChanged(contract)
+		menu.hasPlayerActivityCallback = true
+	end
+
 	Helper.setTabScrollCallback(menu, menu.onTabScroll)
 	registerForEvent("inputModeChanged", getElement("Scene.UIContract"), menu.onInputModeChanged)
 
@@ -330,6 +342,7 @@ function menu.display()
 	end
 	local canmodifyship = (shiptrader ~= nil) and (canequip or cansupply) and isdock
 	local canbuyship = (shiptrader ~= nil) and canbuildships and isdock
+	local istimelineshub = ffi.string(C.GetGameStartName()) == "x4ep1_gamestart_hub"
 	--print("cantrade: " .. tostring(cantrade) .. ", canbuyship: " .. tostring(canbuyship) .. ", canmodifyship: " .. tostring(canmodifyship))
 
 	width = (width / 3) - Helper.borderSize
@@ -991,7 +1004,9 @@ function menu.display()
 		end
 		local active = (menu.currentplayership ~= 0) or menu.secondarycontrolpost
 		row[2]:createButton(active and { mouseOverText = GetLocalizedKeyName("action", 277), helpOverlayID = "docked_getup", helpOverlayText = " ", helpOverlayHighlightOnly = true } or config.inactiveButtonProperties):setText(ReadText(1002, 20014), active and config.activeButtonTextProperties or config.inactiveButtonTextProperties)	-- "Get Up"
-		row[2].handlers.onClick = menu.buttonGetUp
+		if active then
+			row[2].handlers.onClick = menu.buttonGetUp
+		end
 		local active = menu.currentplayership ~= 0
 		row[7]:createButton(active and { mouseOverText = GetLocalizedKeyName("action", 316), helpOverlayID = "docked_shipinfo", helpOverlayText = " ", helpOverlayHighlightOnly = true } or config.inactiveButtonProperties):setText(ReadText(1001, 8602), active and config.activeButtonTextProperties or config.inactiveButtonTextProperties)	-- "Ship Information"
 		if active then
@@ -1014,7 +1029,7 @@ function menu.display()
 		end
 
 		local hastradeoffers = GetFactionData(owner, "hastradeoffers")
-		local active = cantrade and hastradeoffers
+		local active = cantrade and hastradeoffers and (not istimelineshub)
 		local mouseovertext = ""
 		if not hastradeoffers then
 			mouseovertext = ReadText(1026, 7866)
@@ -1091,12 +1106,16 @@ function menu.display()
 				row[1].properties.uiTriggerID = "startmode"
 			end
 		end
-		if menu.currentplayership ~= 0 then
-			row[2]:createButton({ mouseOverText = GetLocalizedKeyName("action", 175), bgColor = menu.undockButtonBGColor, highlightColor = menu.undockButtonHighlightColor, helpOverlayID = "docked_undock", helpOverlayText = " ", helpOverlayHighlightOnly = true }):setText(ReadText(1002, 20013), { halign = "center", color = menu.undockButtonTextColor })	-- "Undock"
-			row[2].handlers.onClick = menu.buttonUndock
+		if not istimelineshub then
+			if menu.currentplayership ~= 0 then
+				row[2]:createButton({ mouseOverText = GetLocalizedKeyName("action", 175), bgColor = menu.undockButtonBGColor, highlightColor = menu.undockButtonHighlightColor, helpOverlayID = "docked_undock", helpOverlayText = " ", helpOverlayHighlightOnly = true }):setText(ReadText(1002, 20013), { halign = "center", color = menu.undockButtonTextColor })	-- "Undock"
+				row[2].handlers.onClick = menu.buttonUndock
+			else
+				row[2]:createButton({ mouseOverText = GetLocalizedKeyName("action", 175), helpOverlayID = "docked_gotoship", helpOverlayText = " ", helpOverlayHighlightOnly = true }):setText(ReadText(1001, 7305), { halign = "center" })	-- "Go to Ship"
+				row[2].handlers.onClick = menu.buttonGoToShip
+			end
 		else
-			row[2]:createButton({ mouseOverText = GetLocalizedKeyName("action", 175), helpOverlayID = "docked_gotoship", helpOverlayText = " ", helpOverlayHighlightOnly = true }):setText(ReadText(1001, 7305), { halign = "center" })	-- "Go to Ship"
-			row[2].handlers.onClick = menu.buttonGoToShip
+			row[2]:createButton(config.inactiveButtonProperties):setText(ReadText(1001, 7305), config.inactiveButtonTextProperties)	-- dummy
 		end
 		row[7]:createButton(config.inactiveButtonProperties):setText("", config.inactiveButtonTextProperties)	-- dummy
 

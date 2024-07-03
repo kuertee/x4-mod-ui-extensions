@@ -603,7 +603,6 @@ ffi.cdef[[
 	UniverseID GetUpgradeSlotCurrentComponent(UniverseID destructibleid, const char* upgradetypename, size_t slot);
 	UpgradeGroup GetUpgradeSlotGroup(UniverseID destructibleid, const char* macroname, const char* upgradetypename, size_t slot);
 	uint32_t GetUsedLimitedShips(UIMacroCount* result, uint32_t resultlen);
-	const char* GetUserDataSigned(const char* name);
 	const char* GetVirtualUpgradeSlotCurrentMacro(UniverseID defensibleid, const char* upgradetypename, size_t slot);
 	WorkForceInfo GetWorkForceInfo(UniverseID containerid, const char* raceid);
 	bool HasDefaultLoadout2(const char* macroname, bool allowloadoutoverride);
@@ -2531,6 +2530,7 @@ function menu.onShowMenu(state)
 			menu.modeparam.propertycommander					= menu.modeparam[11]
 			menu.modeparam.propertypeopledef					= menu.modeparam[12]
 			menu.modeparam.propertypeoplefillpercentage			= menu.modeparam[13]
+			menu.modeparam.propertycount						= menu.modeparam[14] or 1
 		elseif menu.mode == "comparison" then
 			menu.modeparam = menu.param[5]
 		else
@@ -2849,6 +2849,42 @@ function menu.onShowMenu(state)
 				menu.availableshipmacrosbyclass[class] = { macro }
 			end
 		end
+
+		local buf = ffi.new("CustomGameStartStringPropertyState[1]")
+		local playershipmacro = ffi.string(C.GetCustomGameStartStringProperty(menu.modeparam.gamestartid, "ship", buf))
+		local ware = GetMacroData(playershipmacro, "ware")
+		local islimited = GetWareData(ware, "islimited")
+		if islimited then
+			menu.usedLimitedMacros[playershipmacro] = (menu.usedLimitedMacros[playershipmacro] or 0) + 1
+		end
+
+		local state = C.GetCustomGameStartPlayerPropertyPropertyState(menu.modeparam.gamestartid, "playerproperty")
+		if state.numvalues > 0 then
+			local counts = ffi.new("CustomGameStartPlayerPropertyCounts[?]", state.numvalues)
+			local n = C.GetCustomGameStartPlayerPropertyCounts(counts, state.numvalues, menu.modeparam.gamestartid, "playerproperty")
+			if n > 0 then
+				local buf = ffi.new("CustomGameStartPlayerProperty3[?]", n)
+				for i = 0, n - 1 do
+					buf[i].numcargo = counts[i].numcargo
+					buf[i].cargo = Helper.ffiNewHelper("UIWareInfo[?]", counts[i].numcargo)
+				end
+				n = C.GetCustomGameStartPlayerPropertyProperty3(buf, n, menu.modeparam.gamestartid, "playerproperty")
+				for i = 0, n - 1 do
+					local type = ffi.string(buf[i].type)
+					if type == "ship" then
+						local macro = ffi.string(buf[i].macroname)
+						local ware = GetMacroData(macro, "ware")
+						local islimited = GetWareData(ware, "islimited")
+						if islimited then
+							menu.usedLimitedMacros[macro] = (menu.usedLimitedMacros[macro] or 0) + buf[i].count
+						end
+					end
+				end
+			end
+		end
+		if (menu.macro ~= "") and menu.usedLimitedMacros[menu.macro] then
+			menu.usedLimitedMacros[menu.macro] = math.max(0, menu.usedLimitedMacros[menu.macro] - menu.modeparam.propertycount)
+		end
 	elseif menu.mode == "comparison" then
 		menu.object = 0
 		menu.macro = Helper.getShipComparisonMacro(menu.modeparam[1]) or ""
@@ -3111,12 +3147,26 @@ function menu.displayLeftBar(frame)
 						mouseovertext = ColorText["text_error"] .. ReadText(1001, 39) .. "\27X"
 					end
 				elseif entry.mode == "repair" then
-					if #menu.damagedcomponents > 0 then
-						active = true
-						total = #menu.damagedcomponents
-						if menu.repairplan and menu.repairplan[tostring(menu.object)] then
-							for componentidstring in pairs(menu.repairplan[tostring(menu.object)]) do
-								count = count + 1
+					if menu.objectgroup then
+						for i, ship in ipairs(menu.objectgroup.ships) do
+							if #menu.objectgroup.shipdata[i].damagedcomponents > 0 then
+								active = true
+								total = total + #menu.objectgroup.shipdata[i].damagedcomponents
+								if menu.repairplan and menu.repairplan[tostring(ship.ship)] then
+									for componentidstring in pairs(menu.repairplan[tostring(ship.ship)]) do
+										count = count + 1
+									end
+								end
+							end
+						end
+					else
+						if #menu.damagedcomponents > 0 then
+							active = true
+							total = #menu.damagedcomponents
+							if menu.repairplan and menu.repairplan[tostring(menu.object)] then
+								for componentidstring in pairs(menu.repairplan[tostring(menu.object)]) do
+									count = count + 1
+								end
 							end
 						end
 					end
@@ -3883,40 +3933,41 @@ function menu.getDataAndDisplay(upgradeplan, crew, newedit, firsttime, noundo, s
 				entry.context = buf[i].context
 				entry.group = ffi.string(buf[i].group)
 				entry.component = buf[i].component
-
+				table.insert(menu.shieldgroups, entry)
+			end
+			table.sort(menu.shieldgroups, function (a, b) return a.group < b.group end)
+			for i, entry in ipairs(menu.shieldgroups) do
 				if (entry.context == menu.object) and (entry.group == "") then -- mainship
 					local groupinfo = C.GetUpgradeGroupInfo2(menu.object, "", entry.context, "", entry.group, "shield")
-					entry.slotsize = ffi.string(groupinfo.slotsize)
-					entry.count = groupinfo.count
-					entry.upgradetype = "shields"
+					menu.shieldgroups[i].slotsize = ffi.string(groupinfo.slotsize)
+					menu.shieldgroups[i].count = groupinfo.count
+					menu.shieldgroups[i].upgradetype = "shields"
 				else
 					local groupinfo = C.GetUpgradeGroupInfo2(menu.object, "", entry.context, "", entry.group, "engine")
 					if groupinfo.total > 0 then	-- EngineGroup
-						entry.slotsize = ffi.string(groupinfo.slotsize)
-						entry.upgradetype = "engines"
+						menu.shieldgroups[i].slotsize = ffi.string(groupinfo.slotsize)
+						menu.shieldgroups[i].upgradetype = "engines"
 					else -- TurretGroup
 						local groupinfo = C.GetUpgradeGroupInfo2(menu.object, "", entry.context, "", entry.group, "turret")
-						entry.slotsize = ffi.string(groupinfo.slotsize)
-						entry.upgradetype = "turrets"
+						menu.shieldgroups[i].slotsize = ffi.string(groupinfo.slotsize)
+						menu.shieldgroups[i].upgradetype = "turrets"
 					end
 				end
-				entry.sizecount = 0
+				menu.shieldgroups[i].sizecount = 0
 
-				if entry.slotsize ~= "" then
-					if shieldsizecounts[entry.upgradetype] then
-						if shieldsizecounts[entry.upgradetype][entry.slotsize] then
-							shieldsizecounts[entry.upgradetype][entry.slotsize] = shieldsizecounts[entry.upgradetype][entry.slotsize] + 1
+				if menu.shieldgroups[i].slotsize ~= "" then
+					if shieldsizecounts[menu.shieldgroups[i].upgradetype] then
+						if shieldsizecounts[menu.shieldgroups[i].upgradetype][menu.shieldgroups[i].slotsize] then
+							shieldsizecounts[menu.shieldgroups[i].upgradetype][menu.shieldgroups[i].slotsize] = shieldsizecounts[menu.shieldgroups[i].upgradetype][menu.shieldgroups[i].slotsize] + 1
 						else
-							shieldsizecounts[entry.upgradetype][entry.slotsize] = 1
+							shieldsizecounts[menu.shieldgroups[i].upgradetype][menu.shieldgroups[i].slotsize] = 1
 						end
 					else
-						shieldsizecounts[entry.upgradetype] = {}
-						shieldsizecounts[entry.upgradetype][entry.slotsize] = 1
+						shieldsizecounts[menu.shieldgroups[i].upgradetype] = {}
+						shieldsizecounts[menu.shieldgroups[i].upgradetype][menu.shieldgroups[i].slotsize] = 1
 					end
-					entry.sizecount = shieldsizecounts[entry.upgradetype][entry.slotsize]
+					menu.shieldgroups[i].sizecount = shieldsizecounts[menu.shieldgroups[i].upgradetype][menu.shieldgroups[i].slotsize]
 				end
-
-				table.insert(menu.shieldgroups, entry)
 			end
 			for i, entry in ipairs(menu.shieldgroups) do
 				if (entry.context == menu.object) and (entry.group == "") then
@@ -6750,8 +6801,8 @@ function menu.checkLicence(macro, rawicon, issoftware, rawmouseovertext)
 					end
 				end
 			end
-			if islimited and (not menu.isReadOnly) and (menu.mode ~= "comparison") then
-				local limitamount = tonumber(ffi.string(C.GetUserDataSigned("limited_blueprint_" .. ware))) or 0
+			if islimited and (not menu.isReadOnly) and (menu.mode ~= "comparison") and (not menu.modeparam.creative) then
+				local limitamount = Helper.getLimitedWareAmount(ware)
 				local shoppinglistamount = 0
 				for i, entry in ipairs(menu.shoppinglist) do
 					if i ~= menu.editingshoppinglist then
@@ -7180,6 +7231,13 @@ function menu.displayPlan(frame)
 		end
 	end
 
+	if (menu.mode == "customgamestart") and (menu.macro ~= "") and (not menu.modeparam.creative) then
+		local haslicence, icon, overridecolor, mouseovertext = menu.checkLicence(menu.macro, true, nil, true)
+		if not haslicence then
+			menu.criticalerrors[6] = mouseovertext
+		end
+	end
+
 	if ((menu.mode == "upgrade") or (menu.mode == "modify")) and (menu.object ~= 0) then
 		if menu.tasks[tostring(menu.object)] then
 			menu.errors[3] = function (_, notime)
@@ -7210,6 +7268,13 @@ function menu.displayPlan(frame)
 				if data.macro == "" then
 					allowempty = upgradetype.allowempty and (not C.IsSlotMandatory(menu.object, 0, menu.macro, false, upgradetype.type, slot))
 				else
+					local isminingweapon = GetMacroData(data.macro, "isminingweapon")
+					hasminingequipment = hasminingequipment or isminingweapon
+					hasmilitaryequipment = hasmilitaryequipment or (not isminingweapon)
+				end
+			elseif upgradetype.supertype == "group" then
+				local data = macro
+				if data.macro ~= "" then
 					local isminingweapon = GetMacroData(data.macro, "isminingweapon")
 					hasminingequipment = hasminingequipment or isminingweapon
 					hasmilitaryequipment = hasmilitaryequipment or (not isminingweapon)
@@ -7963,7 +8028,7 @@ function menu.displayPlan(frame)
 						researchprecursors = GetWareData(ware, "productionresearchprecursors")
 
 						if islimited then
-							local limitamount = tonumber(ffi.string(C.GetUserDataSigned("limited_blueprint_" .. ware))) or 0
+							local limitamount = Helper.getLimitedWareAmount(ware)
 							local shoppinglistamount = 0
 							for i, entry in ipairs(menu.shoppinglist) do
 								if i ~= menu.editingshoppinglist then
@@ -8422,7 +8487,6 @@ function menu.evaluateShipOptions()
 				local haslicence, icon, overridecolor, mouseovertext, limitstring = menu.checkLicence(macro, true)
 				local name, infolibrary, shiptypename, primarypurpose, shipicon = GetMacroData(macro, "name", "infolibrary", "shiptypename", "primarypurpose", "icon")
 
-
 				-- start: alexandretk call-back
 				if callbacks ["evaluateShipOptions_override_shiptypename"] then
 					local shiptypename_override
@@ -8436,7 +8500,7 @@ function menu.evaluateShipOptions()
 				end
 				-- end: alexandretk call-back
 
-				table.insert(shipOptions, { id = macro, text = "\27[" .. shipicon .. "] " .. name .. " - " .. shiptypename .. limitstring, icon = icon or "", displayremoveoption = false, overridecolor = overridecolor, mouseovertext = mouseovertext, name = name .. " - " .. shiptypename, objectid = "", class = menu.class, purpose = primarypurpose })
+				table.insert(shipOptions, { id = macro, text = "\27[" .. shipicon .. "] " .. name .. " - " .. shiptypename .. limitstring, icon = icon or "", displayremoveoption = false, overridecolor = overridecolor, mouseovertext = mouseovertext, name = name .. " - " .. shiptypename, objectid = "", class = menu.class, purpose = primarypurpose, helpOverlayID = "shipconfig_shipoptions_" .. macro, helpOverlayText = " ", helpOverlayHighlightOnly = true })
 				AddKnownItem(infolibrary, macro)
 			end
 		end
@@ -10445,65 +10509,67 @@ function menu.setupGroupData(object, macro, groups, changeupgradeplan)
 	for i = 0, n - 1 do
 		if (ffi.string(buf[i].path) ~= "..") or (ffi.string(buf[i].group) ~= "") then
 			table.insert(groups, { path = ffi.string(buf[i].path), group = ffi.string(buf[i].group) })
-			local group = groups[#groups]
-			for j, upgradetype in ipairs(Helper.upgradetypes) do
-				if upgradetype.supertype == "group" then
-					local groupinfo = C.GetUpgradeGroupInfo(object, macro, group.path, group.group, upgradetype.grouptype)
-					local currentmacro = ffi.string(groupinfo.currentmacro)
-					local slotsize = ffi.string(groupinfo.slotsize)
+		end
+	end
+	table.sort(groups, function (a, b) return a.group < b.group end)
+	for i, group in ipairs(groups) do
+		for j, upgradetype in ipairs(Helper.upgradetypes) do
+			if upgradetype.supertype == "group" then
+				local groupinfo = C.GetUpgradeGroupInfo(object, macro, group.path, group.group, upgradetype.grouptype)
+				local currentmacro = ffi.string(groupinfo.currentmacro)
+				local slotsize = ffi.string(groupinfo.slotsize)
 
-					local compatibilities
-					local n_comp = C.GetNumUpgradeGroupCompatibilities(object, macro, 0, group.path, group.group, upgradetype.grouptype)
-					if n_comp > 0 then
-						compatibilities = {}
-						local buf_comp = ffi.new("EquipmentCompatibilityInfo[?]", n)
-						n_comp = C.GetUpgradeGroupCompatibilities(buf_comp, n_comp, object, macro, 0, group.path, group.group, upgradetype.grouptype)
-						for k = 0, n_comp - 1 do
-							compatibilities[ffi.string(buf_comp[k].tag)] = ffi.string(buf_comp[k].name)
-						end
+				local compatibilities
+				local n_comp = C.GetNumUpgradeGroupCompatibilities(object, macro, 0, group.path, group.group, upgradetype.grouptype)
+				if n_comp > 0 then
+					compatibilities = {}
+					local buf_comp = ffi.new("EquipmentCompatibilityInfo[?]", n)
+					n_comp = C.GetUpgradeGroupCompatibilities(buf_comp, n_comp, object, macro, 0, group.path, group.group, upgradetype.grouptype)
+					for k = 0, n_comp - 1 do
+						compatibilities[ffi.string(buf_comp[k].tag)] = ffi.string(buf_comp[k].name)
 					end
+				end
 
-					groups[#groups][upgradetype.grouptype] = { count = groupinfo.count, operational = groupinfo.operational, total = groupinfo.total, slotsize = slotsize, compatibilities = compatibilities, currentcomponent = (groupinfo.currentcomponent ~= 0) and groupinfo.currentcomponent or nil, currentmacro = currentmacro, possiblemacros = {} }
-					if upgradetype.grouptype ~= "shield" then
-						groups[#groups].slotsize = slotsize
-						groups[#groups].compatibilities = compatibilities
+				groups[i][upgradetype.grouptype] = { count = groupinfo.count, operational = groupinfo.operational, total = groupinfo.total, slotsize = slotsize, compatibilities = compatibilities, currentcomponent = (groupinfo.currentcomponent ~= 0) and groupinfo.currentcomponent or nil, currentmacro = currentmacro, possiblemacros = {} }
+				if upgradetype.grouptype ~= "shield" then
+					groups[i].slotsize = slotsize
+					groups[i].compatibilities = compatibilities
 
-						if groups[#groups][upgradetype.grouptype].total > 0 then
-							groups[#groups].groupname = #groups
-							if slotsize ~= "" then
-								if sizecounts[upgradetype.grouptype][slotsize] then
-									sizecounts[upgradetype.grouptype][slotsize] = sizecounts[upgradetype.grouptype][slotsize] + 1
-								else
-									sizecounts[upgradetype.grouptype][slotsize] = 1
-								end
-								groups[#groups].groupname = upgradetype.shorttext[slotsize] .. sizecounts[upgradetype.grouptype][slotsize]
-							end
-						end
-					end
-					if changeupgradeplan then
-						local weaponmode = ""
-						if object ~= 0 then
-							weaponmode = ffi.string(C.GetTurretGroupMode2(object, 0, group.path, group.group))
-						end
-						menu.upgradeplan[upgradetype.type][#groups] = { macro = currentmacro, count = groupinfo.count, path = group.path, group = group.group, ammomacro = "", weaponmode = weaponmode }
-						if currentmacro ~= "" then
-							local ware = GetMacroData(currentmacro, "ware")
-							local i = menu.findUpgradeMacro(upgradetype.grouptype, currentmacro)
-							if i then
-								if menu.objectgroup then
-									if not menu.upgradewares[upgradetype.grouptype][i].isFromShipyard then
-										menu.upgradeplan[upgradetype.type][#groups].checkforeignmacro = true
-									end
-								end
-								menu.upgradewares[upgradetype.grouptype][i].objectamount = menu.upgradewares[upgradetype.grouptype][i].objectamount + groupinfo.count
+					if groups[i][upgradetype.grouptype].total > 0 then
+						groups[i].groupname = i
+						if slotsize ~= "" then
+							if sizecounts[upgradetype.grouptype][slotsize] then
+								sizecounts[upgradetype.grouptype][slotsize] = sizecounts[upgradetype.grouptype][slotsize] + 1
 							else
-								if menu.objectgroup then
-									menu.upgradeplan[upgradetype.type][#groups].checkforeignmacro = true
-								end
-								table.insert(menu.upgradewares[upgradetype.grouptype], { ware = ware, macro = currentmacro, objectamount = groupinfo.count, isFromShipyard = false })
+								sizecounts[upgradetype.grouptype][slotsize] = 1
 							end
-							menu.setMissingUpgrade(ware, groupinfo.count, i == nil)
+							groups[i].groupname = upgradetype.shorttext[slotsize] .. sizecounts[upgradetype.grouptype][slotsize]
 						end
+					end
+				end
+				if changeupgradeplan then
+					local weaponmode = ""
+					if object ~= 0 then
+						weaponmode = ffi.string(C.GetTurretGroupMode2(object, 0, group.path, group.group))
+					end
+					menu.upgradeplan[upgradetype.type][i] = { macro = currentmacro, count = groupinfo.count, path = group.path, group = group.group, ammomacro = "", weaponmode = weaponmode }
+					if currentmacro ~= "" then
+						local ware = GetMacroData(currentmacro, "ware")
+						local i = menu.findUpgradeMacro(upgradetype.grouptype, currentmacro)
+						if i then
+							if menu.objectgroup then
+								if not menu.upgradewares[upgradetype.grouptype][i].isFromShipyard then
+									menu.upgradeplan[upgradetype.type][i].checkforeignmacro = true
+								end
+							end
+							menu.upgradewares[upgradetype.grouptype][i].objectamount = menu.upgradewares[upgradetype.grouptype][i].objectamount + groupinfo.count
+						else
+							if menu.objectgroup then
+								menu.upgradeplan[upgradetype.type][i].checkforeignmacro = true
+							end
+							table.insert(menu.upgradewares[upgradetype.grouptype], { ware = ware, macro = currentmacro, objectamount = groupinfo.count, isFromShipyard = false })
+						end
+						menu.setMissingUpgrade(ware, groupinfo.count, i == nil)
 					end
 				end
 			end

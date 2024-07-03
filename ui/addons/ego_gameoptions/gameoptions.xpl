@@ -602,7 +602,7 @@ config.input.controlFunctions = {
 		["contexts"]= { 1, 2, 3, 4, 5 },
 	},
 	[3] = {
-		["name"] = ReadText(1001, 2671),
+		["name"] = ReadText(1001, 5102),
 		["definingcontrol"] = {"states", 22},
 		["actions"] = { 124 },
 		["states"] = { 1, 22, 23 },
@@ -775,7 +775,7 @@ config.input.controlsorder = {
 	["space"] = {
 		[1] = {
 			["title"] = ReadText(1001, 4865),	-- "Steering: Analog"
-			["mapable"] = true,
+			["mappable"] = true,
 			{ "ranges", 21, nil, ReadText(1026, 2629) },
 			{ "ranges", 22, nil, ReadText(1026, 2630) },
 			{ "ranges", 2 },
@@ -790,7 +790,7 @@ config.input.controlsorder = {
 		},
 		[2] = {
 			["title"] = ReadText(1001, 4866),	-- "Steering: Digital"
-			["mapable"] = true,
+			["mappable"] = true,
 			{ "states", 4, { 1, 2 } },
 			{ "states", 5, { 1, 2 } },
 			{ "states", 2, { 1, 2 } },
@@ -825,7 +825,7 @@ config.input.controlsorder = {
 		},
 		[3] = {
 			["title"] = ReadText(1001, 2663),	-- "Weapons"
-			["mapable"] = true,
+			["mappable"] = true,
 			{ "states", 24, { 1, 2 } },
 			{ "states", 48, { 1, 2 } },
 			{ "states", 25, { 1, 2 } },
@@ -847,7 +847,7 @@ config.input.controlsorder = {
 		},
 		[4] = {
 			["title"] = ReadText(1002, 1001),	-- "Modes"
-			["mapable"] = true,
+			["mappable"] = true,
 			{ "states", 84, display = function () return C.IsVROculusTouchActive() or C.IsVRViveControllerActive() end },
 			{ "functions", 16 },
 			{ "actions", 304, { 1, 2 } },
@@ -856,7 +856,7 @@ config.input.controlsorder = {
 		},
 		[5] = {
 			["title"] = ReadText(1001, 7245),	-- "Menu Access"
-			["mapable"] = true,
+			["mappable"] = true,
 			{ "states", 126, { 1, 2 } },
 			{ "states", 127, { 1, 2 } },
 			{ "actions", 317, { 1, 2 } },
@@ -877,7 +877,7 @@ config.input.controlsorder = {
 		},
 		[6] = {
 			["title"] = ReadText(1001, 2600),	-- "Options Menu"
-			["mapable"] = true,
+			["mappable"] = true,
 			{ "actions", 132, { 1, 2 } },
 			{ "actions", 160, { 1, 2 } },
 			{ "actions", 161, { 1, 2 } },
@@ -887,7 +887,7 @@ config.input.controlsorder = {
 		},
 		[7] = {
 			["title"] = ReadText(1001, 4860),	-- "Camera"
-			["mapable"] = true,
+			["mappable"] = true,
 			{ "states", 81, { 1, 2, 9 } },
 			{ "functions", 11, { 1, 2, 9 }, ReadText(1026, 2605) },
 			{ "actions", 181, { 1, 2, 9 }, ReadText(1026, 2606) },
@@ -912,7 +912,7 @@ config.input.controlsorder = {
 		},
 		[8] = {
 			["title"] = ReadText(1001, 12696),	--"Target Management (Mouse)"
-			["mapable"] = true,
+			["mappable"] = true,
 			["mouseonly"] = true,
 			["filter"] = { [""] = true, ["keyboard"] = true },
 			["compassmenusupport"] = false,
@@ -921,7 +921,7 @@ config.input.controlsorder = {
 		},
 		[9] = {
 			["title"] = ReadText(1001, 7282),	--"Target Management"
-			["mapable"] = true,
+			["mappable"] = true,
 			{ "actions", 167, { 1, 2 } },
 			{ "actions", 168, { 1, 2 }, ReadText(1026, 2604) },	-- "Target Object" (near crosshair)
 			{ "functions", 3 },
@@ -934,12 +934,12 @@ config.input.controlsorder = {
 		},
 		[10] = {
 			["title"] = ReadText(1001, 12655),	--"Accessibility"
-			["mapable"] = true,
+			["mappable"] = true,
 			{ "actions", 374, { 1, 2 }, ReadText(1026, 2675) },
 		},
 		[11] = {
 			["title"] = ReadText(1001, 2664),	--"Misc"
-			["mapable"] = true,
+			["mappable"] = true,
 			{ "functions", 10 },
 			{ "actions", 277, { 1, 2 } },
 			{ "actions", 178, { 1, 2 }, ReadText(1026, 2609) },
@@ -966,7 +966,7 @@ config.input.controlsorder = {
 		},
 		[12] = {
 			["title"] = ReadText(1001, 4815),	-- "Expert Settings - Use with Caution!"
-			["mapable"] = true,
+			["mappable"] = true,
 			{ "actions", 310, { 1, 2 } },
 			{ "states", 96, { 1, 2 } },
 			{ "actions", 137, { 1, 2 } },
@@ -980,7 +980,7 @@ config.input.controlsorder = {
 	["menus"] = {
 		[1] = {
 			["title"] = ReadText(1001, 7296),	-- "Menus - Analog"
-			["mapable"] = true,
+			["mappable"] = true,
 			{ "ranges", 23, { 2, 6 } },
 			{ "ranges", 24, { 2, 6 } },
 			{ "ranges", 25, 2 },
@@ -3614,7 +3614,7 @@ function menu.createContextMenuRemap(frame)
 	local active = true
 	local warning
 	for _, conflict in ipairs(menu.contextMenuData.conflicts) do
-		if not conflict.mapable then
+		if not conflict.mappable then
 			active = false
 		end
 		if conflict.control[6] then
@@ -3696,7 +3696,7 @@ function menu.createContextMenuRemap(frame)
 
 	for _, conflict in ipairs(menu.contextMenuData.conflicts) do
 		local row = ftable:addRow(true, {  })
-		row[1]:setColSpan(5):createText("· " .. menu.getControlName(conflict.control[1], conflict.control[2]), { color = (not conflict.mapable) and Color["text_error"] or nil })
+		row[1]:setColSpan(5):createText("· " .. menu.getControlName(conflict.control[1], conflict.control[2]), { color = (not conflict.mappable) and Color["text_error"] or nil })
 	end
 
 	local buttontable = frame:addTable(5, { tabOrder = 1, x = Helper.borderSize, y = Helper.borderSize, width = menu.contextMenuData.width, highlightMode = "off", defaultInteractiveObject = true })
@@ -4113,8 +4113,8 @@ function menu.onInputModeChanged(_, mode)
 	menu.createTopLevel()
 end
 
-function menu.getMappedButtons(buttons, compassmenubutton, displayed, input, mapable)
-	local loc_mapable = mapable
+function menu.getMappedButtons(buttons, compassmenubutton, displayed, input, mappable)
+	local loc_mappable = mappable
 	if (type(input[1]) == "number") and menu.checkInputSource(input[1]) then
 		if (input[1] == 30) or (input[1] == 31) then -- INPUT_SOURCE_COMPASSMENU, INPUT_SOURCE_COMPASSMENU_2
 			local keyname, keyicon = menu.getInputName(input[1], input[2], input[3])
@@ -4125,14 +4125,14 @@ function menu.getMappedButtons(buttons, compassmenubutton, displayed, input, map
 			local keyname, keyicon = menu.getInputName(input[1], input[2], input[3])
 			if keyname ~= "" then
 				displayed = displayed + 1
-				if (not loc_mapable) and (input[1] == 1) then
+				if (not loc_mappable) and (input[1] == 1) then
 					if displayed == 1 then
-						buttons[displayed] = { keyname = keyname, keyicon = keyicon, input1 = input[1], input2 = input[2], input3 = input[3], notmapable = true }
+						buttons[displayed] = { keyname = keyname, keyicon = keyicon, input1 = input[1], input2 = input[2], input3 = input[3], notmappable = true }
 					else
 						buttons[displayed] = buttons[1]
-						buttons[1] = { keyname = keyname, keyicon = keyicon, input1 = input[1], input2 = input[2], input3 = input[3], notmapable = true }
+						buttons[1] = { keyname = keyname, keyicon = keyicon, input1 = input[1], input2 = input[2], input3 = input[3], notmappable = true }
 					end
-					loc_mapable = true
+					loc_mappable = true
 				else
 					buttons[displayed] = { keyname = keyname, keyicon = keyicon, input1 = input[1], input2 = input[2], input3 = input[3] }
 				end
@@ -4142,7 +4142,7 @@ function menu.getMappedButtons(buttons, compassmenubutton, displayed, input, map
 	return buttons, compassmenubutton, displayed
 end
 
-function menu.displayControlRow(ftable, controlsgroup, controltype, code, context, mouseovertext, mapable, allowmouseaxis, first, checklastnonkeyboard, compassmenusupport, mouseonly, mousewheelonly)
+function menu.displayControlRow(ftable, controlsgroup, controltype, code, context, mouseovertext, mappable, allowmouseaxis, first, checklastnonkeyboard, compassmenusupport, mouseonly, mousewheelonly)
 	local buttons = {}
 	local compassmenubutton = nil
 	local name = menu.getControlName(controltype, code)
@@ -4156,14 +4156,14 @@ function menu.displayControlRow(ftable, controlsgroup, controltype, code, contex
 		if type(inputs) == "table" then
 			local displayed = 0
 			for _, input in ipairs(inputs) do
-				buttons, compassmenubutton, displayed = menu.getMappedButtons(buttons, compassmenubutton, displayed, input, mapable)
+				buttons, compassmenubutton, displayed = menu.getMappedButtons(buttons, compassmenubutton, displayed, input, mappable)
 			end
 		end
 	else
 		if type(menu.controls[controltype][code]) == "table" then
 			local displayed = 0
 			for _, input in ipairs(menu.controls[controltype][code]) do
-				buttons, compassmenubutton, displayed = menu.getMappedButtons(buttons, compassmenubutton, displayed, input, mapable)
+				buttons, compassmenubutton, displayed = menu.getMappedButtons(buttons, compassmenubutton, displayed, input, mappable)
 			end
 		end
 	end
@@ -4193,11 +4193,11 @@ function menu.displayControlRow(ftable, controlsgroup, controltype, code, contex
 		if row.index == menu.preselectOption then
 			ftable:setSelectedRow(row.index)
 			if menu.preselectCol == 3 then
-				if buttons[i] and (buttons[i].notmapable == nil) then
+				if buttons[i] and (buttons[i].notmappable == nil) then
 					ftable:setSelectedCol(3)
 				end
 			elseif menu.preselectCol == 4 then
-				if buttons[i] and (buttons[i].notmapable == nil) then
+				if buttons[i] and (buttons[i].notmappable == nil) then
 					ftable:setSelectedCol(4)
 				end
 			elseif menu.preselectCol == 7 then
@@ -4347,7 +4347,7 @@ function menu.displayControlRow(ftable, controlsgroup, controltype, code, contex
 		end
 
 		-- normal mapping
-		if buttons[i] and (buttons[i].notmapable ~= nil) then
+		if buttons[i] and (buttons[i].notmappable ~= nil) then
 			if buttons[i].keyicon then
 				local iconwidth = C.GetTextWidth(" " .. buttons[i].keyicon, config.font, Helper.scaleFont(config.font, config.standardFontSize))
 				text = TruncateText(text, config.font, Helper.scaleFont(config.font, config.standardFontSize), row[3]:getWidth() - 2 * Helper.scaleX(config.standardTextOffsetX) - iconwidth)
@@ -4366,10 +4366,10 @@ function menu.displayControlRow(ftable, controlsgroup, controltype, code, contex
 				button:setText2((hasextramousebuttoninfo and "\27[menu_info]" or "") .. buttons[i].keyicon, { halign = "right" })
 			end
 			if buttons[i] then
-				row[3].handlers.onClick = function () return menu.buttonControl(row.index, { controltype, code, buttons[i].input1, buttons[i].input2, buttons[i].input3, 3, not mapable, context, allowmouseaxis, checklastnonkeyboard, mouseonly, mouseonly and (numbuttons == 1), isdblclick, mousewheelonly }) end
+				row[3].handlers.onClick = function () return menu.buttonControl(row.index, { controltype, code, buttons[i].input1, buttons[i].input2, buttons[i].input3, 3, not mappable, context, allowmouseaxis, checklastnonkeyboard, mouseonly, mouseonly and (numbuttons == 1), isdblclick, mousewheelonly }) end
 				row[3].properties.uiTriggerID = "remapcontrol1a"
 			else
-				row[3].handlers.onClick = function () return menu.buttonControl(row.index, { controltype, code, -1, -1, 0, 3, not mapable, context, allowmouseaxis, checklastnonkeyboard, mouseonly, mouseonly and (numbuttons == 1), isdblclick, mousewheelonly }) end
+				row[3].handlers.onClick = function () return menu.buttonControl(row.index, { controltype, code, -1, -1, 0, 3, not mappable, context, allowmouseaxis, checklastnonkeyboard, mouseonly, mouseonly and (numbuttons == 1), isdblclick, mousewheelonly }) end
 				row[3].properties.uiTriggerID = "remapcontrol1b"
 			end
 		end
@@ -4378,15 +4378,15 @@ function menu.displayControlRow(ftable, controlsgroup, controltype, code, contex
 		end
 
 		-- remove
-		row[4]:createButton({ active = ((buttons[i] and (buttons[i].notmapable == nil)) == true) and ((not mouseonly) or (numbuttons > 1)), width = config.standardTextHeight, mouseOverText = ReadText(1026, 2677) }):setText("X", { halign = "center", x = 0 })
+		row[4]:createButton({ active = ((buttons[i] and (buttons[i].notmappable == nil)) == true) and ((not mouseonly) or (numbuttons > 1)), width = config.standardTextHeight, mouseOverText = ReadText(1026, 2677) }):setText("X", { halign = "center", x = 0 })
 		if buttons[i] then
-			row[4].handlers.onClick = function () return menu.buttonRemoveControl(row.index, { controltype, code, buttons[i].input1, buttons[i].input2, buttons[i].input3, 4, not mapable, context, allowmouseaxis, checklastnonkeyboard }) end
+			row[4].handlers.onClick = function () return menu.buttonRemoveControl(row.index, { controltype, code, buttons[i].input1, buttons[i].input2, buttons[i].input3, 4, not mappable, context, allowmouseaxis, checklastnonkeyboard }) end
 		end
 
 		-- add
 		if i == 1 then
 			row[5]:createButton({ width = config.standardTextHeight, mouseOverText = ReadText(1026, 2678) }):setText("+", { halign = "center", x = 0 })
-			row[5].handlers.onClick = function () return menu.buttonAddControl(row.index + (next(buttons) and numbuttons or 0), { controltype, code, -1, -1, 0, 3, not mapable, context, allowmouseaxis, nil, mouseonly }) end
+			row[5].handlers.onClick = function () return menu.buttonAddControl(row.index + (next(buttons) and numbuttons or 0), { controltype, code, -1, -1, 0, 3, not mappable, context, allowmouseaxis, nil, mouseonly }) end
 		end
 
 		-- reset
@@ -5350,7 +5350,7 @@ function menu.checkForConflictsInternal(controlsorder, returnvalue, newinputtype
 							if type(inputs) == "table" then
 								for i, input in ipairs(inputs) do
 									if menu.checkInput(inputs, i, input, newinput, true) then
-										table.insert(returnvalue, { control = control, mapable = controlgroup.mapable or newinputtype ~= 1 })
+										table.insert(returnvalue, { control = control, mappable = controlgroup.mappable or newinputtype ~= 1 })
 										found = true
 									end
 								end
@@ -5366,7 +5366,7 @@ function menu.checkForConflictsInternal(controlsorder, returnvalue, newinputtype
 							if type(inputs) == "table" then
 								for i, input in ipairs(inputs) do
 									if menu.checkInput(inputs, i, input, newinput, true) then
-										table.insert(returnvalue, { control = control, mapable = controlgroup.mapable or newinputtype ~= 1 })
+										table.insert(returnvalue, { control = control, mappable = controlgroup.mappable or newinputtype ~= 1 })
 										found = true
 									end
 								end
@@ -5382,7 +5382,7 @@ function menu.checkForConflictsInternal(controlsorder, returnvalue, newinputtype
 							if type(inputs) == "table" then
 								for i, input in ipairs(inputs) do
 									if menu.checkInput(inputs, i, input, newinput, true) then
-										table.insert(returnvalue, { control = control, mapable = controlgroup.mapable or newinputtype ~= 1 })
+										table.insert(returnvalue, { control = control, mappable = controlgroup.mappable or newinputtype ~= 1 })
 										found = true
 									end
 								end
@@ -5398,7 +5398,7 @@ function menu.checkForConflictsInternal(controlsorder, returnvalue, newinputtype
 					if type(menu.controls[control[1]][control[2]]) == "table" then
 						for i, input in ipairs(menu.controls[control[1]][control[2]]) do
 							if menu.checkInput(menu.controls[control[1]][control[2]], i, input, newinput, true) then
-								table.insert(returnvalue, { control = control, mapable = controlgroup.mapable or newinputtype ~= 1 })
+								table.insert(returnvalue, { control = control, mappable = controlgroup.mappable or newinputtype ~= 1 })
 							end
 						end
 					end
@@ -5421,8 +5421,8 @@ end
 
 function menu.fixInputConflictsInternal(controlsorder, newinput, checkall)
 	for _, controlgroup in ipairs(controlsorder) do
-		if controlgroup.mapable or (newinput[1] ~= 1) then
-			for _, control in ipairs(controlgroup) do
+		for _, control in ipairs(controlgroup) do
+			if controlgroup.mappable or (newinput[1] ~= 1) or control[7] then
 				if control[1] == "functions" then
 					if checkall or menu.hasContext(menu.controls[control[1]][control[2]].contexts or 1) then
 						for _, functionaction in ipairs(menu.controls[control[1]][control[2]].actions) do
@@ -6550,12 +6550,8 @@ function menu.valueGameThirdPersonFlight()
 end
 
 function menu.valueGameUIScale()
-	local maxUIScale = (Helper.viewWidth <= 1280) and 1.4 or 1.5
-	local max = 1.5
-	if C.IsRunningOnSteamDeck() then
-		maxUIScale = 1.6
-		max = 1.6
-	end
+	local maxUIScale = 1.8
+	local max = 1.8
 	menu.newUIScale = math.max(0.5, math.min(maxUIScale, Helper.round(C.GetUIScaleFactor(), 1)))
 
 	local scale = {
@@ -7984,10 +7980,7 @@ function menu.callbackGameUIScaleConfirm()
 end
 
 function menu.callbackGameUIScaleReset()
-	local maxUIScale = (Helper.viewWidth <= 1280) and 1.4 or 1.5
-	if C.IsRunningOnSteamDeck() then
-		maxUIScale = 1.6
-	end
+	local maxUIScale = 1.8
 	menu.newUIScale = math.max(0.5, math.min(maxUIScale, Helper.round(C.GetUIScaleFactor(), 1)))
 	menu.refresh()
 end
@@ -9268,7 +9261,7 @@ function menu.displayTimelines()
 	end
 
 	local offsety = titletable.properties.y + titletable:getVisibleHeight() + Helper.borderSize
-	local height = math.min(Helper.viewHeight - offsety - Helper.frameBorder, menu.table.height - offsety)
+	local height = Helper.viewHeight - offsety - Helper.frameBorder - frame.properties.y
 
 	local optiontable = frame:addTable(5, { tabOrder = 1, x = menu.table.x, y = offsety, width = menu.table.widthWithExtraInfo, maxVisibleHeight = height })
 	optiontable:setColWidth(1, menu.table.arrowColumnWidth, false)
@@ -9371,11 +9364,12 @@ function menu.displayTimelines()
 	end
 
 	local iconwidth = math.floor(0.27 * width) - Helper.borderSize
-	local infotable2 = frame:addTable(3, { tabOrder = 4, x = offsetx, y = infotable.properties.y + infotable.properties.maxVisibleHeight + Helper.borderSize, width = width, maxVisibleHeight = infoheight - infotable.properties.maxVisibleHeight - Helper.borderSize })
+	local infotable2 = frame:addTable(3, { tabOrder = 4, x = offsetx, y = infotable.properties.y + infotable.properties.maxVisibleHeight + Helper.borderSize, width = width, maxVisibleHeight = infoheight - infotable.properties.maxVisibleHeight - Helper.borderSize, highlightMode = "backgroundcolumn" })
 	infotable2:setColWidthPercent(1, 25)
 	infotable2:setColWidth(3, iconwidth, false)
-	infotable2:setDefaultBackgroundColSpan(1, 3)
+	infotable2:setDefaultBackgroundColSpan(1, 2)
 
+	local passiverows = {}
 	if timelinesgamestart then
 		local isspecial = timelinesgamestart.customeditor or timelinesgamestart.mapeditor or timelinesgamestart.stationeditor
 		local valuecolspan = 1
@@ -9387,9 +9381,10 @@ function menu.displayTimelines()
 		row[1]:setColSpan(3):createText(" ", { fontsize = 1, height = Helper.borderSize, cellBGColor = Color["row_background_blue"] })
 
 		if IsCheatVersion() then
-			local row = infotable2:addRow(nil, { bgColor = Color["optionsmenu_cell_background"], borderBelow = false })
+			local row = infotable2:addRow(true, { bgColor = Color["optionsmenu_cell_background"], borderBelow = false, interactive = false })
 			row[1]:createText("Gamestart ID:") -- (cheat only)
 			row[2]:setColSpan(valuecolspan):createText(ColorText["text_inactive"] .. timelinesgamestart.id, { halign = "right" })
+			table.insert(passiverows, row)
 		end
 		local infostarty = infotable2:getFullHeight()
 
@@ -9452,13 +9447,14 @@ function menu.displayTimelines()
 		for i, entry in ipairs(timelinesgamestart.info) do
 			local row
 			if entry.info == "@name" then
-				row = infotable2:addRow(nil, { bgColor = Color["optionsmenu_cell_background"], borderBelow = false })
+				row = infotable2:addRow(true, { bgColor = Color["optionsmenu_cell_background"], borderBelow = false, interactive = false })
 				row[1]:createText(ReadText(1021, 8) .. ReadText(1001, 120))
 				local gamestartid = timelinesgamestart.id
 				row[2]:setColSpan(valuecolspan):createText(function () local buf = ffi.new("CustomGameStartStringPropertyState[1]"); return ColorText["text_inactive"] .. ffi.string(C.GetCustomGameStartStringProperty(gamestartid, "playername", buf)) end, { halign = "right" })
+				table.insert(passiverows, row)
 			elseif entry.info == "@player" then
 				if ffi.string(C.GetUserData("timelines_scenarios_finished")) == "" then
-					row = infotable2:addRow(true, { bgColor = Color["optionsmenu_cell_background"], borderBelow = false, fixed = true })
+					row = infotable2:addRow(true, { bgColor = Color["optionsmenu_cell_background"], borderBelow = false })
 					if #playermacrooptions > 0 then
 						row[1]:createText(ReadText(1021, 11007) .. ReadText(1001, 120))
 						row[2]:setColSpan(valuecolspan):createDropDown(playermacrooptions, { startOption = playermacro, height = Helper.standardTextHeight }):setTextProperties({ halign = "right", x = Helper.standardTextOffsetx })
@@ -9486,9 +9482,10 @@ function menu.displayTimelines()
 				end
 			elseif entry.info == "@unlock" then
 				if not timelinesgamestart.unlocked then
-					row = infotable2:addRow(nil, { bgColor = Color["optionsmenu_cell_background"], borderBelow = false })
+					row = infotable2:addRow(true, { bgColor = Color["optionsmenu_cell_background"], borderBelow = false, interactive = false })
 					row[1]:createText(ReadText(1004, 45) .. ReadText(1001, 120))
 					row[2]:setColSpan(valuecolspan):createText(ColorText["text_inactive"] .. entry.description, { halign = "right" })
+					table.insert(passiverows, row)
 				end
 			elseif entry.info == "@playerimage" then
 				-- skip
@@ -9496,9 +9493,10 @@ function menu.displayTimelines()
 					imageindex = i + 1
 				end
 			elseif entry.info ~= "" then
-				row = infotable2:addRow(nil, { bgColor = Color["optionsmenu_cell_background"], borderBelow = false })
+				row = infotable2:addRow(true, { bgColor = Color["optionsmenu_cell_background"], borderBelow = false, interactive = false })
 				row[1]:createText(entry.info .. ReadText(1001, 120))
 				row[2]:setColSpan(valuecolspan):createText(ColorText["text_inactive"] .. entry.description, { halign = "right" })
+				table.insert(passiverows, row)
 			elseif ((timelinesgamestart.info[i + 1] and timelinesgamestart.info[i + 1].info) ~= "@unlock") or (not timelinesgamestart.unlocked) then
 				-- do not show the empty line before @unlock if @unlock is not shown
 				row = infotable2:addRow(nil, { bgColor = Color["optionsmenu_cell_background"], borderBelow = false })
@@ -9521,14 +9519,28 @@ function menu.displayTimelines()
 		if imagerow then
 			if rowcount < config.minGamestartInfoRows then
 				for i = 1, config.minGamestartInfoRows - rowcount do
-					local row = infotable2:addRow(nil, { bgColor = Color["optionsmenu_cell_background"], borderBelow = false })
+					local row = infotable2:addRow(true, { bgColor = Color["optionsmenu_cell_background"], borderBelow = false })
 					row[3]:createText(" ", { cellBGColor = Color["optionsmenu_cell_background_icon"] })
+					table.insert(passiverows, row)
 				end
 			end
 
 			local infoendy = infotable2:getFullHeight()
 			local imageoffsety = math.floor(((infoendy - infostarty) - iconwidth) / 2)
 			imagerow[3].properties.y = iconwidth / 2 - Helper.scaleY(config.infoTextHeight) / 2 + imageoffsety
+		end
+	end
+
+	local row = infotable2:addRow(nil, { bgColor = Color["optionsmenu_cell_background"], borderBelow = false })
+	row[1]:createText(" ", { fontsize = 1, minRowHeight = config.standardTextHeight / 2 })
+	local buttonrow = infotable2:addRow(true, { bgColor = Color["optionsmenu_cell_background"] })
+	buttonrow[1]:setColSpan(3):setBackgroundColSpan(3):createButton({ active = C.IsExtensionEnabled("ego_dlc_timelines", false), height = config.standardTextHeight }):setText((ffi.string(C.GetUserData("timelines_scenarios_finished")) ~= "") and ReadText(1001, 12620) or ReadText(1001, 12619), { halign = "center" })
+	buttonrow[1].handlers.onClick = menu.callbackTimelines
+
+	if frame.properties.y + infotable2.properties.y + infotable2:getFullHeight() + Helper.frameBorder < Helper.viewHeight then
+		buttonrow.properties.fixed = true
+		for _, row in ipairs(passiverows) do
+			row.rowdata = nil
 		end
 	end
 
@@ -10737,7 +10749,7 @@ function menu.checkForModifier(modifier, checkonly)
 							if type(inputs) == "table" then
 								for i, input in ipairs(inputs) do
 									if menu.checkModifier(inputs, i, modifier, input, checkonly) then
-										table.insert(returnvalue, { control = control, mapable = controlgroup.mapable or newinputtype ~= 1 })
+										table.insert(returnvalue, { control = control, mappable = controlgroup.mappable or newinputtype ~= 1 })
 										found = true
 									end
 								end
@@ -10753,7 +10765,7 @@ function menu.checkForModifier(modifier, checkonly)
 							if type(inputs) == "table" then
 								for i, input in ipairs(inputs) do
 									if menu.checkModifier(inputs, i, modifier, input, checkonly) then
-										table.insert(returnvalue, { control = control, mapable = controlgroup.mapable or newinputtype ~= 1 })
+										table.insert(returnvalue, { control = control, mappable = controlgroup.mappable or newinputtype ~= 1 })
 										found = true
 									end
 								end
@@ -10769,7 +10781,7 @@ function menu.checkForModifier(modifier, checkonly)
 							if type(inputs) == "table" then
 								for i, input in ipairs(inputs) do
 									if menu.checkModifier(inputs, i, modifier, input, checkonly) then
-										table.insert(returnvalue, { control = control, mapable = controlgroup.mapable or newinputtype ~= 1 })
+										table.insert(returnvalue, { control = control, mappable = controlgroup.mappable or newinputtype ~= 1 })
 										found = true
 									end
 								end
@@ -10783,7 +10795,7 @@ function menu.checkForModifier(modifier, checkonly)
 					if type(menu.controls[control[1]][control[2]]) == "table" then
 						for i, input in ipairs(menu.controls[control[1]][control[2]]) do
 							if menu.checkModifier(menu.controls[control[1]][control[2]], i, modifier, input, checkonly) then
-								table.insert(returnvalue, { control = control, mapable = controlgroup.mapable or newinputtype ~= 1 })
+								table.insert(returnvalue, { control = control, mappable = controlgroup.mappable or newinputtype ~= 1 })
 							end
 						end
 					end
@@ -11729,7 +11741,7 @@ function menu.displayControls(optionParameter)
 					end
 					if (not control.display) or control.display() then
 						if IsCheatVersion() or (not config.input.cheatControls[control[1]][control[2]]) then
-							menu.displayControlRow(ftable, i, control[1], control[2], control[3], control[4], controls.mapable, control[5], first, control[6], controls.compassmenusupport, controls.mouseonly, control.mousewheelonly)
+							menu.displayControlRow(ftable, i, control[1], control[2], control[3], control[4], controls.mappable or control[7], control[5], first, control[6], controls.compassmenusupport, controls.mouseonly, control.mousewheelonly)
 						end
 					end
 					first = false
@@ -11850,7 +11862,7 @@ function menu.displayInputProfiles(optionParameter)
 
 	menu.currentOption = optionParameter
 
-	local frame = menu.createOptionsFrame()
+	local frame = menu.createOptionsFrame(true)
 
 	local titletable = frame:addTable(4, { tabOrder = 2, x = menu.table.x, y = menu.table.y, width = menu.table.widthExtraWide, skipTabChange = true })
 	titletable:setColWidth(1, menu.table.arrowColumnWidth, false)
@@ -12558,6 +12570,7 @@ function menu.onUpdate()
 				if menu.isStartmenu then
 					C.SetSceneCameraActive(false)
 					C.StopStartMenuBGMusic()
+					Unpause(true)
 				end
 			end
 		elseif menu.currentOption == "idle" then
@@ -12695,7 +12708,8 @@ function menu.newGameCallback(option, checked)
 		menu.playNewGameCutscene = {}
 	end
 	if menu.isStartmenu and (option.intro ~= "") then
-		menu.animationDelay = { getElapsedTime() + option.introlength + option.introfadeoutlength, option, false, option.introfadeoutlength }
+		-- use non-zero holdtime to prevent the fade-out ending too early before calling NewGame(), which would result in instant fade-in
+		menu.animationDelay = { getElapsedTime() + option.introlength + option.introfadeoutlength, option, false, option.introfadeoutlength, 1.0 }
 		menu.displayEmptyMenu()
 		C.StartIntroAnimation(option.intro)
 		if option.introvoice ~= "" then

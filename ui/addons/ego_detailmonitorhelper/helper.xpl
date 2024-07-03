@@ -59,6 +59,12 @@ ffi.cdef[[
 		uint32_t numfactions;
 	} FightRuleCounts;
 	typedef struct {
+		int32_t year;
+		uint32_t month;
+		uint32_t day;
+		bool isvalid;
+	} GameStartDateInfo;
+	typedef struct {
 		double time;
 		int64_t money;
 		int64_t entryid;
@@ -298,6 +304,7 @@ ffi.cdef[[
 	uint32_t GetDockedShips(UniverseID* result, uint32_t resultlen, UniverseID dockingbayorcontainerid, const char* factionid);
 	bool GetFightRuleInfo(FightRuleInfo* info, FightRuleID id);
 	FightRuleCounts GetFightRuleInfoCounts(FightRuleID id);
+	GameStartDateInfo GetGameStartDate();
 	const char* GetGameStartName();
 	bool GetInstalledEngineMod(UniverseID objectid, UIEngineMod* enginemod);
 	bool GetInstalledGroupedWeaponMod(UniverseID defensibleid, UniverseID contextid, const char* group, UIWeaponMod* weaponmod);
@@ -341,6 +348,8 @@ ffi.cdef[[
 	TradeRuleCounts GetTradeRuleInfoCounts(TradeRuleID id);
 	float GetUIScale(const bool scalewithresolution);
 	UpgradeGroup GetUpgradeSlotGroup(UniverseID destructibleid, const char* macroname, const char* upgradetypename, size_t slot);
+	const char* GetUserData(const char* name);
+	const char* GetUserDataSigned(const char* name);
 	uint32_t GetVenturePlatformDocks(UniverseID* result, uint32_t resultlen, UniverseID ventureplatformid);
 	uint32_t GetVenturePlatforms(UniverseID* result, uint32_t resultlen, UniverseID defensibleid);
 	WorkForceInfo GetWorkForceInfo(UniverseID containerid, const char* raceid);
@@ -353,6 +362,7 @@ ffi.cdef[[
 	bool IsConversationCancelling(void);
 	bool IsDemoVersion(void);
 	bool IsInfoUnlockedForPlayer(UniverseID componentid, const char* infostring);
+	bool IsGameModified(void);
 	bool IsGameOver(void);
 	bool IsNextStartAnimationSkipped(bool reset);
 	bool IsOnlineEnabled(void);
@@ -1303,6 +1313,7 @@ function Helper.registerMenu(menu)
 				end
 				Helper.dockedMenu = nil
 				Helper.topLevelMenu = menu
+				C.SkipNextStartAnimation()
 			else
 				if Helper.dockedMenu then
 					local dockedMenu = Helper.dockedMenu
@@ -1674,7 +1685,9 @@ function Helper.closeMenu(menu, dueToClose, allowAutoMenu, sound)
 end
 
 function Helper.closeMenuAndOpenNewMenu(menu, newname, param, noreturn, quickaccess)
-	C.SkipNextStartAnimation()
+	if menu.name ~= "TopLevelMenu" then
+		C.SkipNextStartAnimation()
+	end
 	if not quickaccess then
 		if noreturn then
 			OpenMenu(newname, Helper.convertComponentIDs(param), menu.param2)
@@ -5278,6 +5291,7 @@ function widgetHelpers.icon:createDescriptor()
 	local height = self:getHeight(true)
 	local mouseovertext = self.properties.mouseOverText
 	local affectrowheight = self.properties.affectRowHeight
+	local helpoverlay = createOverlayPropertyInfo(self)
 
 	local isfunctioncell = false
 	isfunctioncell = isfunctioncell or isTextPropertyFunctionCell(self, self.properties.text)
@@ -5319,6 +5333,7 @@ function widgetHelpers.icon:createDescriptor()
 	iconDescriptor.size = { width = width, height = height }
 	iconDescriptor.affectrowheight = affectrowheight
 	iconDescriptor.glowfactor = glowfactor
+	iconDescriptor.helpoverlay = helpoverlay
 
 	return CreateIcon(iconDescriptor)
 end
@@ -7927,6 +7942,16 @@ function Helper.sortShipsByClassAndPurpose(a, b, invert)
 	end
 end
 
+function Helper.sortClass(a, b, invert)
+	local aclass = Helper.classOrder[a.class] or 0
+	local bclass = Helper.classOrder[b.class] or 0
+	if invert then
+		return aclass > bclass
+	else
+		return aclass < bclass
+	end
+end
+
 function Helper.sortID(a, b)
 	return a.id < b.id
 end
@@ -8148,14 +8173,23 @@ function Helper.orderedPairsByWareName(t)
 end
 
 function Helper.convertGameTimeToXTimeString(time)
-	-- offset to 825-02-08 11:00
-	time = time + 824 * 31104000 + 1 * 2592000 + 7 * 86400 + 11 * 3600
+	if not Helper.xTimeOffset then
+		local date = C.GetGameStartDate()
+		if date.isvalid then
+			Helper.xTimeOffset = (date.year - 2170) * 31104000 + date.month * 2592000 + date.day * 86400 + 11 * 3600
+		else
+			-- offset to 825-02-08 11:00
+			Helper.xTimeOffset = 825 * 31104000 + 2 * 2592000 + 8 * 86400 + 11 * 3600
+		end
+	end
 
-	local timestring = math.ceil(time / 31104000) .. "-"
+	time = time + Helper.xTimeOffset
+
+	local timestring = math.floor(time / 31104000) .. "-"
 	time = time % 31104000
-	timestring = timestring .. string.format("%02d", math.ceil(time / 2592000)) .. "-"
+	timestring = timestring .. string.format("%02d", math.floor(time / 2592000)) .. "-"
 	time = time % 2592000
-	timestring = timestring .. string.format("%02d", math.ceil(time / 86400)) .. " "
+	timestring = timestring .. string.format("%02d", math.floor(time / 86400)) .. " "
 	time = time % 86400
 	timestring = timestring .. string.format("%02d", math.floor(time / 3600)) .. ":"
 	time = time % 3600
@@ -10618,7 +10652,8 @@ function Helper.updateLSOStorageNode(menu, node, container, ware)
 
 				local currentlimit = GetWareProductionLimit(container, ware)
 				local defaultlimit = C.GetContainerWareMaxProductionStorageForTime(container, ware, 7200, true)
-				if currentlimit < defaultlimit then
+				local waretype = Helper.getContainerWareType(container, ware)
+				if (waretype ~= "trade") and (currentlimit < defaultlimit) then
 					statuscolor = Color["icon_warning"]
 					statusiconmouseovertext = ColorText["text_warning"] .. ReadText(1001, 8467)
 				end
@@ -11259,14 +11294,16 @@ function Helper.getStorageAmount(container, nodedata, storageinfo_amounts, stora
 		-- non-production, non-trade ware, don't show maximum
 		return Helper.unlockInfo(storageinfo_amounts, ConvertIntegerString(amount, true, accuracy or 6, true, true) .. (showvolume and ("\n" .. ConvertIntegerString(volume * amount, true, accuracy or 6, true, true) .. " " .. ReadText(1001, 110)) or ""))
 	else
+		local waretype = Helper.getContainerWareType(container, nodedata.ware)
+		local hasstoragewarning = (waretype ~= "trade") and (limit < defaultlimit)
 		if showvolume then
 			local extratext = ""
-			if limit < defaultlimit then
+			if hasstoragewarning then
 				extratext = "\n\n" .. ReadText(1001, 8467)
 			end
-			return string.format("%s%s / %s\n%s / %s%s", ((amount > limit) or (limit < defaultlimit)) and ColorText["text_warning"] or "", Helper.unlockInfo(storageinfo_amounts, ConvertIntegerString(amount, true, accuracy or 3, true, true)), Helper.unlockInfo(storageinfo_capacity, ConvertIntegerString(limit, true, accuracy or 3, true, true)), Helper.unlockInfo(storageinfo_amounts, ConvertIntegerString(volume * amount, true, accuracy or 3, true, true)), Helper.unlockInfo(storageinfo_capacity, ConvertIntegerString(volume * limit, true, accuracy or 3, true, true)) .. " " .. ReadText(1001, 110), extratext)
+			return string.format("%s%s / %s\n%s / %s%s", ((amount > limit) or hasstoragewarning) and ColorText["text_warning"] or "", Helper.unlockInfo(storageinfo_amounts, ConvertIntegerString(amount, true, accuracy or 3, true, true)), Helper.unlockInfo(storageinfo_capacity, ConvertIntegerString(limit, true, accuracy or 3, true, true)), Helper.unlockInfo(storageinfo_amounts, ConvertIntegerString(volume * amount, true, accuracy or 3, true, true)), Helper.unlockInfo(storageinfo_capacity, ConvertIntegerString(volume * limit, true, accuracy or 3, true, true)) .. " " .. ReadText(1001, 110), extratext)
 		else
-			return string.format("%s%s / %s", ((amount > limit) or (limit < defaultlimit)) and ColorText["text_warning"] or "", Helper.unlockInfo(storageinfo_amounts, ConvertIntegerString(amount, true, accuracy or 3, true, true)), Helper.unlockInfo(storageinfo_capacity, ConvertIntegerString(limit, true, accuracy or 3, true, true)))
+			return string.format("%s%s / %s", ((amount > limit) or hasstoragewarning) and ColorText["text_warning"] or "", Helper.unlockInfo(storageinfo_amounts, ConvertIntegerString(amount, true, accuracy or 3, true, true)), Helper.unlockInfo(storageinfo_capacity, ConvertIntegerString(limit, true, accuracy or 3, true, true)))
 		end
 	end
 end
@@ -12593,6 +12630,13 @@ function Helper.unregisterVentureContactCallbacks()
 		UnregisterEvent("onReceiveContacts", Helper.registeredVentureContactFunctions.onReceiveContacts)
 		Helper.registeredVentureContactFunctions = {}
 	end
+end
+
+function Helper.getLimitedWareAmount(ware)
+	if C.IsGameModified() then
+		return tonumber(ffi.string(C.GetUserData("limited_blueprint_" .. ware))) or 0
+	end
+	return tonumber(ffi.string(C.GetUserDataSigned("limited_blueprint_" .. ware))) or 0
 end
 
 -- kuertee start: SWI load lua

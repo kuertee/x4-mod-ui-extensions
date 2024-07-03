@@ -961,19 +961,25 @@ end
 function menu.buttonAccountConfirm()
 	for _, transaction in ipairs(menu.accountData.transactions) do
 		if transaction.amount > 0 then
-			local newstationcash = (GetAccountData(transaction.station, "money") or 0) - transaction.amount
-			SetMaxBudget(transaction.station, (newstationcash * 3) / 2)
-			SetMinBudget(transaction.station, newstationcash)
-			TransferMoneyToPlayer(transaction.amount, transaction.station)
+			local isplayerowned = GetComponentData(transaction.station, "isplayerowned")
+			if isplayerowned then
+				local newstationcash = (GetAccountData(transaction.station, "money") or 0) - transaction.amount
+				SetMaxBudget(transaction.station, (newstationcash * 3) / 2)
+				SetMinBudget(transaction.station, newstationcash)
+				TransferMoneyToPlayer(transaction.amount, transaction.station)
+			end
 		end
 	end
 	for _, transaction in ipairs(menu.accountData.transactions) do
 		if transaction.amount < 0 then
-			-- NB: transaction.amount is always with respect to the player's account! so transaction.amount in this case is negative since money is taken away from the player's account.
-			local newstationcash = (GetAccountData(transaction.station, "money") or 0) - transaction.amount
-			SetMaxBudget(transaction.station, (newstationcash * 3) / 2)
-			SetMinBudget(transaction.station, newstationcash)
-			TransferPlayerMoneyTo(-transaction.amount, transaction.station)
+			local isplayerowned = GetComponentData(transaction.station, "isplayerowned")
+			if isplayerowned then
+				-- NB: transaction.amount is always with respect to the player's account! so transaction.amount in this case is negative since money is taken away from the player's account.
+				local newstationcash = (GetAccountData(transaction.station, "money") or 0) - transaction.amount
+				SetMaxBudget(transaction.station, (newstationcash * 3) / 2)
+				SetMinBudget(transaction.station, newstationcash)
+				TransferPlayerMoneyTo(-transaction.amount, transaction.station)
+			end
 		end
 	end
 	menu.accountData.transactions = {}
@@ -982,29 +988,31 @@ end
 
 function menu.accountSetEstimate(container, isbuildstorage)
 	local container64 = ConvertIDTo64Bit(container)
-	local containernmoney, productionmoney, wantedmoney = GetComponentData(container, "money", "productionmoney", "wantedmoney")
-	local estimate = 0
-	if isbuildstorage then
-		estimate = wantedmoney
-	else
-		local supplymoney = tonumber(C.GetSupplyBudget(container64)) / 100
-		local tradewaremoney = tonumber(C.GetTradeWareBudget(container64)) / 100
-		estimate = productionmoney + supplymoney + tradewaremoney
-	end
-	local amount = -estimate + containernmoney
+	local containernmoney, productionmoney, wantedmoney, isplayerowned = GetComponentData(container, "money", "productionmoney", "wantedmoney", "isplayerowned")
+	if isplayerowned then
+		local estimate = 0
+		if isbuildstorage then
+			estimate = wantedmoney
+		else
+			local supplymoney = tonumber(C.GetSupplyBudget(container64)) / 100
+			local tradewaremoney = tonumber(C.GetTradeWareBudget(container64)) / 100
+			estimate = productionmoney + supplymoney + tradewaremoney
+		end
+		local amount = -estimate + containernmoney
 
-	local _, index = menu.findAccountTransaction(container)
-	if amount ~= 0 then
-		if index then
-			if menu.accountData.transactions[index].amount ~= amount then
-				menu.accountData.transactions[index].amount = amount
+		local _, index = menu.findAccountTransaction(container)
+		if amount ~= 0 then
+			if index then
+				if menu.accountData.transactions[index].amount ~= amount then
+					menu.accountData.transactions[index].amount = amount
+				end
+			else
+				table.insert(menu.accountData.transactions, { station = container, amount = amount })
 			end
 		else
-			table.insert(menu.accountData.transactions, { station = container, amount = amount })
-		end
-	else
-		if index then
-			table.remove(menu.accountData.transactions, index)
+			if index then
+				table.remove(menu.accountData.transactions, index)
+			end
 		end
 	end
 end
@@ -2037,11 +2045,14 @@ function menu.createEquipmentPropertyEntry(ftable, modclass, property)
 	row[2]:setBackgroundColSpan(1):createButton({ active = expandable, height = Helper.standardTextHeight }):setText(isexpanded and "-" or "+", { halign = "center" })
 	row[2].handlers.onClick = function () return menu.expandWeaponMod(modclass, property.key, row.index) end
 	row[3]:setBackgroundColSpan(4):createText(property.text, { color = color })
+	local minusedcol = 7
 	for quality, entry2 in ipairs(Helper.modQualities) do
 		if modwares[quality].iscraftable then
+			minusedcol = math.min(minusedcol, quality + 3)
 			row[quality + 3]:createText("\27[" .. entry2.icon2 .. "]", { halign = "right", color = color })
 		end
 	end
+	row[3]:setColSpan(minusedcol - 3)
 
 	if isexpanded then
 		local first = true
@@ -2212,7 +2223,16 @@ function menu.createFactions(frame, tableProperties)
 		for i, relation in ipairs(menu.relations) do
 			local shortname = GetFactionData(relation.id, "shortname")
 			row = infotable:addRow({ "faction", relation }, {  })
-			row[1]:createIcon((relation.icon ~= "") and relation.icon or "solid", { height = iconheight, x = iconoffset, color = function () return menu.relationColor(relation.id) end, mouseOverText = function () local prioritizedrelationrangename = GetFactionData(relation.id, "prioritizedrelationrangename"); return prioritizedrelationrangename end })
+			row[1]:setBackgroundColSpan(3):createIcon((relation.icon ~= "") and relation.icon or "solid", {
+				height = iconheight,
+				x = iconoffset,
+				color = function () return menu.relationColor(relation.id) end,
+				mouseOverText = function () local prioritizedrelationrangename = GetFactionData(relation.id, "prioritizedrelationrangename"); return prioritizedrelationrangename end,
+				helpOverlayID = "playerinfo_faction_" .. relation.id,
+				helpOverlayText = " ",
+				helpOverlayHighlightOnly = true,
+				helpOverlayUseBackgroundSpan = true,
+			})
 			row[2]:createText("[" .. shortname .. "] " .. relation.name, { fontsize = 14, color = function () return menu.relationColor(relation.id) end, y = 2 * iconoffset, minRowHeight = iconheight + 2 * iconoffset, mouseOverText = function () local prioritizedrelationrangename = GetFactionData(relation.id, "prioritizedrelationrangename"); return prioritizedrelationrangename end })
 			row[3]:createText(
 				function () return string.format("%+d", GetUIRelation(relation.id)) end,
@@ -2229,6 +2249,8 @@ function menu.createFactions(frame, tableProperties)
 	detailtable:setColWidth(1, 2 * Helper.titleHeight)
 
 	local relation = menu.factionData.curEntry
+
+	AddUITriggeredEvent(menu.name, menu.mode, menu.factionData.curEntry.id)
 
 	local row = detailtable:addRow(nil, { fixed = true, bgColor = Color["row_title_background"] })
 	row[1]:setBackgroundColSpan(3):createText(next(relation) and ("\27[" .. relation.icon .. "]") or "", Helper.titleTextProperties)
@@ -2281,7 +2303,14 @@ function menu.createFactions(frame, tableProperties)
 				elseif not licence.precursor then
 					info = string.format("%+d", licence.minrelation)
 				end
-				row[2]:createText(name, { color = color, mouseOverText = licence.desc })
+				row[2]:setBackgroundColSpan(2):createText(name, {
+					color = color,
+					mouseOverText = licence.desc,
+					helpOverlayID = "playerinfo_factionlicense_" .. licence.id,
+					helpOverlayText = " ",
+					helpOverlayHighlightOnly = true,
+					helpOverlayUseBackgroundSpan = true,
+				})
 				row[3]:createText(info, { halign = "right", color = color })
 				AddKnownItem("licences", licence.id)
 			end
@@ -2293,7 +2322,11 @@ function menu.createFactions(frame, tableProperties)
 		row[1]:setColSpan(3):createText(ReadText(1001, 7749), Helper.subHeaderTextProperties)
 
 		local row = detailtable:addRow(true, {  })
-		row[2]:setColSpan(2):createText(ffi.string(C.GenerateFactionRelationText(relation.id)))
+		row[2]:setColSpan(2):createText(ffi.string(C.GenerateFactionRelationText(relation.id)), {
+			helpOverlayID = "playerinfo_faction_relation",
+			helpOverlayText = " ",
+			helpOverlayHighlightOnly = true,
+		})
 
 		detailtable:addEmptyRow(Helper.standardTextHeight / 2)
 		-- war declaration

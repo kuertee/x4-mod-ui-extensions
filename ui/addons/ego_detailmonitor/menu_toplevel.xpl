@@ -330,7 +330,7 @@ function menu.onSelectElement(uitable, modified, row)
 end
 
 function menu.close()
-	Helper.closeMenu(menu, "close")
+	Helper.closeMenu(menu, "close", nil, false)
 	menu.cleanup()
 end
 
@@ -345,7 +345,7 @@ function menu.onCloseElement(dueToClose, layer)
 	if menu.showTabs then
 		menu.closeTabs()
 	elseif layer == nil then
-		Helper.closeMenu(menu, dueToClose)
+		Helper.closeMenu(menu, dueToClose, nil, false)
 		menu.cleanup()
 	else
 		Helper.closeMenuAndOpenNewMenu(menu, "OptionsMenu", nil)

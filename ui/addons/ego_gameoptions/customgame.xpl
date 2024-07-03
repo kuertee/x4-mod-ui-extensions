@@ -57,13 +57,13 @@ ffi.cdef[[
 		bool hasincompatibleloadout;
 	} CustomGameStartContentCounts;
 	typedef struct {
-		const char** macros;
+		UIMacroCount* macros;
 		uint32_t nummacros;
 		const char** blueprints;
 		uint32_t numblueprints;
 		const char** constructionplanids;
 		uint32_t numconstructionplans;
-	} CustomGameStartContentData;
+	} CustomGameStartContentData2;
 	typedef struct {
 		const char* library;
 		const char* item;
@@ -248,8 +248,8 @@ ffi.cdef[[
 	uint32_t GetCustomGameStartKnownPropertyNumStateDependencyLists(const char* id, const char* propertyid, CustomGameStartKnownEntry2 uivalue);
 	CustomGameStartKnownPropertyState GetCustomGameStartKnownPropertyState(const char* id, const char* propertyid);
 	uint32_t GetCustomGameStartKnownPropertyStateDependencies(const char** result, uint32_t resultlen, const char* id, const char* propertyid, CustomGameStartKnownEntry2 uivalue);
-	CustomGameStartContentCounts GetCustomGameStartContentCounts(const char* id, const char* filename, const char* gamestartid);
-	void GetCustomGameStartContent(CustomGameStartContentData* result, const char* id, const char* filename, const char* gamestartid);
+	CustomGameStartContentCounts GetCustomGameStartContentCounts2(const char* id, const char* filename, const char* gamestartid);
+	void GetCustomGameStartContent2(CustomGameStartContentData2* result, const char* id, const char* filename, const char* gamestartid);
 	int64_t GetCustomGameStartMoneyProperty(const char* id, const char* propertyid, CustomGameStartMoneyPropertyState* state);
 	uint32_t GetCustomGameStartPaintThemes(UIPaintTheme* result, uint32_t resultlen, const char* id);
 	uint32_t GetCustomGameStartPlayerPropertyCounts(CustomGameStartPlayerPropertyCounts* result, uint32_t resultlen, const char* id, const char* propertyid);
@@ -1643,8 +1643,9 @@ function menu.dropdownStoryState(groupid, storyid)
 	menu.refreshMenu()
 end
 
-function menu.dropdownPlayerPropertySetCount(entryid, count)
+function menu.dropdownPlayerPropertySetCount(entryid, count, macro, oldcount)
 	C.SetCustomGameStartPlayerPropertyCount(menu.customgamestart, menu.category.id, entryid, count)
+	menu.usedlimitedships[macro] = menu.usedlimitedships[macro] - oldcount + count
 	menu.refresh = getElapsedTime()
 end
 
@@ -2052,11 +2053,11 @@ function menu.openShipConfig()
 	menu.cleanup()
 end
 
-function menu.openPlayerPropertyShipConfig(row, entryid, macro, commanderid, peopledef, peoplefillpercentage)
+function menu.openPlayerPropertyShipConfig(row, entryid, macro, commanderid, peopledef, peoplefillpercentage, count)
 	menu.addingFleet = true
 	menu.selectedRows.propertyTable = row
 	menu.selectedCols.propertyTable = 2
-	Helper.closeMenuAndOpenNewMenu(menu, "ShipConfigurationMenu", { 0, 0, nil, "customgamestart", { menu.customgamestart, menu.creative, "playerproperty", nil, nil, nil, nil, "playerpainttheme", entryid, macro, commanderid, peopledef, peoplefillpercentage } })
+	Helper.closeMenuAndOpenNewMenu(menu, "ShipConfigurationMenu", { 0, 0, nil, "customgamestart", { menu.customgamestart, menu.creative, "playerproperty", nil, nil, nil, nil, "playerpainttheme", entryid, macro, commanderid, peopledef, peoplefillpercentage, count } })
 	menu.cleanup()
 end
 
@@ -2645,6 +2646,15 @@ function menu.onShowMenu(state)
 	menu.initSatellites()
 	menu.initFactions()
 
+	menu.usedlimitedships = {}
+	local buf = ffi.new("CustomGameStartStringPropertyState[1]")
+	local playershipmacro = ffi.string(C.GetCustomGameStartStringProperty(menu.customgamestart, "ship", buf))
+	local ware = GetMacroData(playershipmacro, "ware")
+	local islimited = GetWareData(ware, "islimited")
+	if islimited then
+		menu.usedlimitedships[playershipmacro] = (menu.usedlimitedships[playershipmacro] or 0) + 1
+	end
+
 	local state = C.GetCustomGameStartPlayerPropertyPropertyState(menu.customgamestart, "playerproperty")
 	if state.numvalues > 0 then
 		local counts = ffi.new("CustomGameStartPlayerPropertyCounts[?]", state.numvalues)
@@ -2660,6 +2670,15 @@ function menu.onShowMenu(state)
 				local sector = ffi.string(C.GetCustomGameStartPlayerPropertySector(menu.customgamestart, "playerproperty", ffi.string(buf[i].id)))
 				if sector ~= "" then
 					menu.setKnownValue("playerknownspace", sector, true)
+				end
+				local type = ffi.string(buf[i].type)
+				if type == "ship" then
+					local macro = ffi.string(buf[i].macroname)
+					local ware = GetMacroData(macro, "ware")
+					local islimited = GetWareData(ware, "islimited")
+					if islimited then
+						menu.usedlimitedships[macro] = (menu.usedlimitedships[macro] or 0) + buf[i].count
+					end
 				end
 			end
 		end
@@ -2840,32 +2859,47 @@ function menu.display()
 			local active = true
 			local mouseovertext = ""
 
-			local content = C.GetCustomGameStartContentCounts(menu.customgamestart, filename, menu.customgamestart)
+			local content = C.GetCustomGameStartContentCounts2(menu.customgamestart, filename, menu.customgamestart)
 			if not content.hasincompatibleloadout then
-				local buf_content = ffi.new("CustomGameStartContentData")
+				local buf_content = ffi.new("CustomGameStartContentData2")
 				buf_content.nummacros = content.nummacros
-				buf_content.macros = Helper.ffiNewHelper("const char*[?]", content.nummacros)
+				buf_content.macros = Helper.ffiNewHelper("UIMacroCount[?]", content.nummacros)
 				buf_content.numblueprints = content.numblueprints
 				buf_content.blueprints = Helper.ffiNewHelper("const char*[?]", content.numblueprints)
 				buf_content.numconstructionplans = content.numconstructionplans
 				buf_content.constructionplanids = Helper.ffiNewHelper("const char*[?]", content.numconstructionplans)
-				C.GetCustomGameStartContent(buf_content, menu.customgamestart, filename, menu.customgamestart)
+				C.GetCustomGameStartContent2(buf_content, menu.customgamestart, filename, menu.customgamestart)
 				-- need to cache the constructionplanids due to menu.checkConstructionPlan() in the constructionplan loop calling other ffi functions, causing the last entry in the array to break for an unknown (FFI library internal) reason
 				local constructionplanids = {}
 				for j = 0, buf_content.numconstructionplans - 1 do
 					constructionplanids[j] = ffi.string(buf_content.constructionplanids[j])
 				end
 				-- macros
+				local usedlimitedwares = {}
 				for j = 0, buf_content.nummacros - 1 do
-					local ware = GetMacroData(ffi.string(buf_content.macros[j]), "ware")
+					local ware = GetMacroData(ffi.string(buf_content.macros[j].macro), "ware")
 					if ware then
-						local hasblueprint, isdeprecated, isplayerblueprintallowed, nocustomgamestart = GetWareData(ware, "hasblueprint", "isdeprecated", "isplayerblueprintallowed", "nocustomgamestart")
+						local hasblueprint, isdeprecated, isplayerblueprintallowed, nocustomgamestart, islimited = GetWareData(ware, "hasblueprint", "isdeprecated", "isplayerblueprintallowed", "nocustomgamestart", "islimited")
 						if menu.creative then
 							nocustomgamestart = false
+							islimited = false
 						end
 						if (not hasblueprint) or isdeprecated or (not isplayerblueprintallowed) or nocustomgamestart then
 							active = false
 							mouseovertext = ReadText(1026, 9925)
+							break
+						end
+						if islimited then
+							usedlimitedwares[ware] = (usedlimitedwares[ware] or 0) + buf_content.macros[j].amount
+						end
+					end
+				end
+				if active then
+					for ware, amount in pairs(usedlimitedwares) do
+						local limitamount = Helper.getLimitedWareAmount(ware)
+						if amount > limitamount then
+							active = false
+							mouseovertext = ReadText(1026, 9930)
 							break
 						end
 					end
@@ -4027,9 +4061,10 @@ function menu.displayPlayerPropertyEntry(ftable, entry, iteration)
 	if showpeople then
 		text2 = text2 .. ((text2 ~= "") and " - " or "") .. ConvertIntegerString(peoplebudget, true, 0, true) .. menu.getBudgetSuffix("people")
 	end
+	local name, ware = GetMacroData(entry.macro, "name", "ware")
 	if entry.type == "ship" then
-		row[2]:setColSpan(2):createButton({ x = iteration * config.standardTextHeight }):setText(GetMacroData(entry.macro, "name")):setText2(text2)
-		row[2].handlers.onClick = function () return menu.openPlayerPropertyShipConfig(row.index, entry.id, entry.macro, nil, entry.peopledef, entry.peoplefillpercentage) end
+		row[2]:setColSpan(2):createButton({ x = iteration * config.standardTextHeight }):setText(name):setText2(text2)
+		row[2].handlers.onClick = function () return menu.openPlayerPropertyShipConfig(row.index, entry.id, entry.macro, nil, entry.peopledef, entry.peoplefillpercentage, entry.count) end
 	elseif entry.type == "station" then
 		row[2]:setColSpan(2):createDropDown(isHQentry and menu.hqconstructionplans or menu.constructionplans, { startOption = entry.constructionplanid, text2Override = text2 })
 		row[2].handlers.onDropDownConfirmed = function(_, id) return menu.dropdownPlayerPropertyAddStation(entry.id, id, isHQentry) end
@@ -4061,13 +4096,48 @@ function menu.displayPlayerPropertyEntry(ftable, entry, iteration)
 			row[2].properties.x = row[2].properties.x + (iteration + 1) * config.standardTextHeight
 			local options = {}
 			for i = 1, 20 do
-				table.insert(options, { id = i, text = i, icon = "", displayremoveoption = false })
+				local active = true
+				local mouseovertext = ""
+				local icon = ""
+				if not menu.creative then
+					local islimited = GetWareData(ware, "islimited")
+					if islimited then
+						local limitamount = Helper.getLimitedWareAmount(ware)
+						if menu.usedlimitedships[entry.macro] - entry.count + i > limitamount then
+							active = false
+							mouseovertext = ReadText(1026, 8028)
+							icon = "menu_locked"
+						end
+					end
+				end
+				table.insert(options, { id = i, text = i, icon = icon, displayremoveoption = false, active = active, mouseovertext = mouseovertext, overridecolor = (not active) and Color["text_error"] or nil })
 			end
 			for i = 30, 100, 10 do
-				table.insert(options, { id = i, text = i, icon = "", displayremoveoption = false })
+				local active = true
+				local mouseovertext = ""
+				local icon = ""
+				if not menu.creative then
+					local islimited = GetWareData(ware, "islimited")
+					if islimited then
+						local limitamount = Helper.getLimitedWareAmount(ware)
+						if menu.usedlimitedships[entry.macro] - entry.count + i > limitamount then
+							active = false
+							mouseovertext = ReadText(1026, 8028)
+							icon = "menu_locked"
+						end
+					end
+				end
+				table.insert(options, { id = i, text = i, icon = icon, displayremoveoption = false, active = active, mouseovertext = mouseovertext, overridecolor = (not active) and Color["text_error"] or nil })
 			end
-			row[3]:setColSpan(2):createDropDown(options, { startOption = entry.count })
-			row[3].handlers.onDropDownConfirmed = function (_, amountstring) return menu.dropdownPlayerPropertySetCount(entry.id, tonumber(amountstring)) end
+			local dropdownheight = Helper.scaleY(config.standardTextHeight)
+			row[3]:setColSpan(2):createDropDown(options, { startOption = entry.count }):setIconProperties({
+				width = dropdownheight,
+				height = dropdownheight,
+				x = row[3]:getColSpanWidth() - 1.5 * dropdownheight,
+				y = 0,
+				scaling = false,
+			})
+			row[3].handlers.onDropDownConfirmed = function (_, amountstring) return menu.dropdownPlayerPropertySetCount(entry.id, tonumber(amountstring), entry.macro, entry.count) end
 		end
 		-- price
 		if showmoney then

@@ -654,7 +654,7 @@ function menu.display()
 	buttonrow[3].handlers.onClick = menu.buttonExpand
 
 	local buttonrow = buttontable:addRow(true, { fixed = true })
-	local active = (not menu.currentselection.hassubentries) and ((menu.transportercomponent ~= menu.currentselection.target.component) or (menu.transporterconnection ~= menu.currentselection.target.connection))
+	local active = ((not menu.currentselection.hassubentries) or menu.currentselection.target) and ((menu.transportercomponent ~= menu.currentselection.target.component) or (menu.transporterconnection ~= menu.currentselection.target.connection))
 
 	-- kuertee start: callback
 	if callbacks ["display_on_set_room_active"] then

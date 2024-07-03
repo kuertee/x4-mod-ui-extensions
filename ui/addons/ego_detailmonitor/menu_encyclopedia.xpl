@@ -3360,10 +3360,12 @@ function menu.addDetailRows(ftable)
 				end
 				-- range
 				menu.addDetailRow(ftable, ReadText(1001, 9087), menu.formatRange(menu.object.range) .. " " .. ReadText(1001, 108))
-				-- lock range
-				menu.addDetailRow(ftable, ReadText(1001, 9649), menu.formatRange(menu.object.maxlockrange) .. " " .. ReadText(1001, 108))
-				-- lock time
-				menu.addDetailRow(ftable, ReadText(1001, 9650), ConvertIntegerString(menu.object.locktime, true, 0, true) .. " " .. ReadText(1001, 100))
+				if menu.object.locktime > 0 then
+					-- lock range
+					menu.addDetailRow(ftable, ReadText(1001, 9649), menu.formatRange(menu.object.maxlockrange) .. " " .. ReadText(1001, 108))
+					-- lock time
+					menu.addDetailRow(ftable, ReadText(1001, 9650), ConvertIntegerString(menu.object.locktime, true, 0, true) .. " " .. ReadText(1001, 100))
+				end
 				-- empty line
 				menu.addDetailRow(ftable, "")
 				-- speed

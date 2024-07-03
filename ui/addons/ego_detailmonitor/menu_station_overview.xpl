@@ -582,6 +582,20 @@ function menu.getFlowchartProductionNodes()
 
 	local buildmodules = {}
 	Helper.ffiVLA(buildmodules, "UniverseID", C.GetNumBuildModules, C.GetBuildModules, menu.container)
+	for i, buildmodule in ipairs(buildmodules) do
+		local docksizes = GetComponentData(ConvertStringToLuaID(tostring(buildmodule)), "docksizes")
+		local buildclass = "ship_s"
+		if docksizes.docks_xl > 0 then
+			buildclass = "ship_xl"
+		elseif docksizes.docks_l > 0 then
+			buildclass = "ship_l"
+		elseif docksizes.docks_m > 0 then
+			buildclass = "ship_m"
+		end
+		buildmodules[i] = { component = buildmodule, class = buildclass }
+	end
+	table.sort(buildmodules, Helper.sortClass)
+
 	local buildresources = {}
 	local n = C.GetNumContainerBuildResources(menu.container)
 	local buf = ffi.new("const char*[?]", n)
@@ -784,15 +798,15 @@ function menu.getFlowchartProductionNodes()
 	local buildmodulenodes = {}
 	for _, buildmodule in ipairs(buildmodules) do
 		local warenode = {
-			text = Helper.unlockInfo(productioninfo_resources, ffi.string(C.GetComponentName(buildmodule))),
+			text = Helper.unlockInfo(productioninfo_resources, ffi.string(C.GetComponentName(buildmodule.component))),
 			type = "container",
 			{
-				buildmodule = buildmodule,
+				buildmodule = buildmodule.component,
 				properties = { shape = "stadium" },
 				resources = buildresources,
 				expandedTableNumColumns = 4,
 				expandHandler = menu.onExpandBuildModule,
-				color = menu.removedModules[tostring(ConvertStringTo64Bit(tostring(buildmodule)))] and Color["lso_node_removed"] or nil,
+				color = menu.removedModules[tostring(ConvertStringTo64Bit(tostring(buildmodule.component)))] and Color["lso_node_removed"] or nil,
 			}
 		}
 
@@ -1749,6 +1763,7 @@ function menu.display()
 	row = ftable:addRow(false)
 	row[1]:createText(menu.title, Helper.headerRow1Properties)
 	row = ftable:addRow(false)
+
 	-- row[1]:createText(menu.container and GetComponentData(menu.containerid, "name") or "Flowchart Test")
 	-- kuertee start: callback
 	if callbacks ["display_get_station_name_extras"] then
@@ -1774,6 +1789,7 @@ function menu.display()
 		row[1]:createText(menu.container and GetComponentData(menu.containerid, "name") or "Flowchart Test")
 	end
 	-- kuertee end: callback
+
 	--row = ftable:addRow(false)
 	--row[1]:createText("Antigone Memorial")
 

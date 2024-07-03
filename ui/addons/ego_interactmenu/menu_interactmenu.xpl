@@ -5273,8 +5273,9 @@ function menu.insertLuaAction(actiontype, istobedisplayed)
 	elseif actiontype == "sellships" then
 		if #menu.selectedplayerships > 0 then
 			if not isplayerownedtarget then
-				local shiptrader, isdock, iswharf, isshipyard = GetComponentData(convertedComponent, "shiptrader", "isdock", "iswharf", "isshipyard")
-				if shiptrader and isdock and (iswharf or isshipyard) then
+				local shiptrader, isdock, iswharf, isshipyard, owner = GetComponentData(convertedComponent, "shiptrader", "isdock", "iswharf", "isshipyard", "owner")
+				local doesbuyshipsfromplayer = GetFactionData(owner, "doesbuyshipsfromplayer")
+				if shiptrader and isdock and (iswharf or isshipyard) and doesbuyshipsfromplayer then
 					local cansell = false
 					for _, ship in ipairs(menu.selectedplayerships) do
 						if C.CanContainerBuildShip(menu.componentSlot.component, ship) and GetComponentData(ship, "issellable") then

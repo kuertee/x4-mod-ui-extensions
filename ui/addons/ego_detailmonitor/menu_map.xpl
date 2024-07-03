@@ -2810,6 +2810,7 @@ function menu.buttonSetOrderParam(order, param, index, value, instance)
 					AddUITriggeredEvent(menu.name, "orderparam_" .. paramdata.name, value)
 				end
 				menu.closeContextMenu()
+				Helper.clearTableConnectionColumn(menu, 3)
 				menu.refreshInfoFrame()
 			else
 				menu.contextMenuMode = "set_orderparam_ware"
@@ -4240,6 +4241,12 @@ function menu.slidercellShipAmmo(sellid, buyid, ware, ammoamount, value)
 end
 
 function menu.onSliderCellDown()
+	if menu.contextMenuMode == "trade" then
+		menu.tradeSliderLock = true
+	end
+end
+
+function menu.onSliderCellActivated()
 	if menu.contextMenuMode == "trade" then
 		menu.tradeSliderLock = true
 	end
@@ -7042,12 +7049,15 @@ function menu.sortComponentListHelper(components, sorter)
 end
 
 function menu.isObjectValid(object)
-	local isdeployable, isradarvisible, isorphaned = GetComponentData(object, "isdeployable", "isradarvisible", "isorphaned")
-	if not C.IsComponentClass(object, "ship") and not (C.IsRealComponentClass(object, "station") and (not C.IsComponentWrecked(object))) and not isdeployable and not C.IsComponentClass(object, "lockbox") and not (C.IsComponentClass(object, "buildstorage") and isorphaned) then
+	local isdeployable, isradarvisible, isorphaned, isattachedaslimpet = GetComponentData(object, "isdeployable", "isradarvisible", "isorphaned", "isattachedaslimpet")
+	local isship = C.IsComponentClass(object, "ship")
+	if not isship and not (C.IsRealComponentClass(object, "station") and (not C.IsComponentWrecked(object))) and not isdeployable and not C.IsComponentClass(object, "lockbox") and not (C.IsComponentClass(object, "buildstorage") and isorphaned) then
 		return false
 	elseif C.IsComponentClass(object, "controllable") and C.IsUnit(object) then
 		return false
 	elseif (not C.IsObjectKnown(object)) or (not isradarvisible) then
+		return false
+	elseif isship and isattachedaslimpet then
 		return false
 	end
 	return true
@@ -9485,11 +9495,25 @@ function menu.createOrdersMenuHeader(frame, instance)
 		orderHeaderTable = menu.orderHeaderTableRight
 	end
 
+	local count = 0
 	for i, entry in ipairs(config.infoCategories) do
 		if entry.empty then
-			orderHeaderTable:setColWidth(i, menu.sideBarWidth / 2, false)
+			count = count + 0.5
 		else
-			orderHeaderTable:setColWidth(i, menu.sideBarWidth, false)
+			count = count + 1
+		end
+	end
+
+	local sideBarWidth = menu.sideBarWidth
+	if (count * menu.sideBarWidth + (#config.infoCategories - 1) * Helper.borderSize) > frame.properties.width then
+		sideBarWidth = math.floor((frame.properties.width - (#config.infoCategories - 1) * Helper.borderSize) / count)
+	end
+
+	for i, entry in ipairs(config.infoCategories) do
+		if entry.empty then
+			orderHeaderTable:setColWidth(i, sideBarWidth / 2, false)
+		else
+			orderHeaderTable:setColWidth(i, sideBarWidth, false)
 		end
 	end
 
@@ -9512,7 +9536,7 @@ function menu.createOrdersMenuHeader(frame, instance)
 
 			if shown then
 				local loccount = count
-				row[loccount]:createButton({ active = menu.isInfoModeValidFor(menu.infoSubmenuObject, entry.category), height = menu.sideBarWidth, bgColor = bgcolor, mouseOverText = entry.name, scaling = false, helpOverlayID = entry.helpOverlayID, helpOverlayText = entry.helpOverlayText }):setIcon(entry.icon, { color = color})
+				row[loccount]:createButton({ active = menu.isInfoModeValidFor(menu.infoSubmenuObject, entry.category), height = sideBarWidth, bgColor = bgcolor, mouseOverText = entry.name, scaling = false, helpOverlayID = entry.helpOverlayID, helpOverlayText = entry.helpOverlayText }):setIcon(entry.icon, { color = color})
 				row[loccount].handlers.onClick = function () return menu.buttonInfoSubMode(entry.category, loccount, instance) end
 				count = count + 1
 			end
@@ -12076,15 +12100,16 @@ function menu.createInfoSubmenu(inputframe, instance)
 	row = table_description:addRow(false, { fixed = true, bgColor = Color["row_title_background"] })
 	row[1]:createText(ReadText(1001, 2404), Helper.headerRowCenteredProperties)
 
+	local numlines = math.max(6, math.min(12, math.floor(0.2 * frameheight / Helper.scaleY(Helper.standardTextHeight))))
 	local descriptiontext = GetTextLines(description, Helper.standardFont, Helper.scaleFont(Helper.standardFont, Helper.standardFontSize), inputframe.properties.width - 2 * Helper.scaleX(Helper.standardTextOffsetx))
-	if #descriptiontext > 12 then
+	if #descriptiontext > numlines then
 		-- scrollbar case
 		descriptiontext = GetTextLines(description, Helper.standardFont, Helper.scaleFont(Helper.standardFont, Helper.standardFontSize), inputframe.properties.width - 2 * Helper.scaleX(Helper.standardTextOffsetx) - Helper.scrollbarWidth)
 	end
 	for linenum, descline in ipairs(descriptiontext) do
 		local row = table_description:addRow(true, {  })
 		row[1]:createText(descline)
-		if linenum == 12 then
+		if linenum == numlines then
 			visibleHeight = table_description:getFullHeight()
 		end
 	end
@@ -13047,9 +13072,9 @@ function menu.setupInfoSubmenuRows(mode, inputtable, inputobject, instance)
 				row[4]:setColSpan(5):createText(ConvertMoneyString(estimate, false, true, nil, true) .. " " .. ReadText(1001, 101), { halign = "right", mouseOverText = mouseovertext })
 
 				local row = inputtable:addRow("info_updateaccount", {  })
-				row[3]:createButton({ height = config.mapRowHeight, active = function () local money, estimate = GetComponentData(container, "money", entry.estimatetype); if entry.supply then estimate = estimate + tonumber(C.GetSupplyBudget(container)) / 100 end; if entry.tradewares then estimate = estimate + tonumber(C.GetTradeWareBudget(container)) / 100 end; return (money + GetPlayerMoney()) > estimate end, helpOverlayID = entry.helpoverlayprefix .. "accept_estimate", helpOverlayText = " ", helpOverlayHighlightOnly = true }):setText(ReadText(1001, 7965), { halign = "center", fontsize = config.mapFontSize })	-- Accept Estimate
+				row[3]:createButton({ height = config.mapRowHeight, active = function () local money, estimate, isplayerowned = GetComponentData(container, "money", entry.estimatetype, "isplayerowned"); if not isplayerowned then return false end; if entry.supply then estimate = estimate + tonumber(C.GetSupplyBudget(container)) / 100 end; if entry.tradewares then estimate = estimate + tonumber(C.GetTradeWareBudget(container)) / 100 end; return (money + GetPlayerMoney()) > estimate end, helpOverlayID = entry.helpoverlayprefix .. "accept_estimate", helpOverlayText = " ", helpOverlayHighlightOnly = true }):setText(ReadText(1001, 7965), { halign = "center", fontsize = config.mapFontSize })	-- Accept Estimate
 				row[3].handlers.onClick = function () return menu.infoSubmenuSetManagerAccountToEstimate(i, instance) end
-				row[4]:setColSpan(2):createButton({ height = config.mapRowHeight, active = function () return menu.checkTransferDetails(i, instance) end }):setText(ReadText(1001, 2821), { halign = "center", fontsize = config.mapFontSize })	-- Confirm
+				row[4]:setColSpan(2):createButton({ height = config.mapRowHeight, active = function () local isplayerowned = GetComponentData(container, "isplayerowned"); if not isplayerowned then return false end; return menu.checkTransferDetails(i, instance) end }):setText(ReadText(1001, 2821), { halign = "center", fontsize = config.mapFontSize })	-- Confirm
 				row[4].handlers.onClick = function () return menu.infoSubmenuUpdateManagerAccount(i, instance) end
 				row[6]:setColSpan(3):createButton({ height = config.mapRowHeight, active = function () return menu.checkTransferDetails(i, instance) end }):setText(ReadText(1001, 64), { halign = "center", fontsize = config.mapFontSize })	-- Cancel
 				row[6].handlers.onClick = function() return menu.resetInfoSubmenu(i, instance) end
@@ -15850,59 +15875,75 @@ function menu.infoSubmenuCombineCrewTables(instance)
 		for j = 0, numtiers - 1 do
 			local tiername = ffi.string(tiertable[j].name)
 			for _, person in ipairs(infocrew.current.roles[i + 1].tiers[j + 1].persons) do
-				if not checktable[person] then
-					table.insert(result, {
-						person = person,
-						name = ffi.string(C.GetPersonName(person, menu.infoSubmenuObject)),
-						currentskill = C.GetPersonCombinedSkill(menu.infoSubmenuObject, person, nil, nil),
-						skill = C.GetPersonCombinedSkill(menu.infoSubmenuObject, person, role, post),
-						roleid = roleid,
-						rolename = rolename,
-						tiername = tiername
-					})
-					checktable[person] = true
+				if C.IsPerson(person, menu.infoSubmenuObject) then
+					if not checktable[person] then
+						table.insert(result, {
+							person = person,
+							name = ffi.string(C.GetPersonName(person, menu.infoSubmenuObject)),
+							currentskill = C.GetPersonCombinedSkill(menu.infoSubmenuObject, person, nil, nil),
+							skill = C.GetPersonCombinedSkill(menu.infoSubmenuObject, person, role, post),
+							roleid = roleid,
+							rolename = rolename,
+							tiername = tiername
+						})
+						checktable[person] = true
+					end
+				else
+					menu.updatePeopleInfo = getElapsedTime() + 0.1
 				end
 			end
 			for _, person in ipairs(infocrew.reassigned.roles[i + 1].tiers[j + 1].persons) do
-				if not checktable[person.person] then
-					table.insert(result, {
-						person = person.person,
-						name = ffi.string(C.GetPersonName(person.person, menu.infoSubmenuObject)),
-						currentskill = C.GetPersonCombinedSkill(menu.infoSubmenuObject, person.person, nil, nil),
-						skill = C.GetPersonCombinedSkill(menu.infoSubmenuObject, person.person, role, post),
-						roleid = roleid,
-						rolename = rolename,
-						tiername = tiername
-					})
-					checktable[person.person] = true
+				if C.IsPerson(person.person, menu.infoSubmenuObject) then
+					if not checktable[person.person] then
+						table.insert(result, {
+							person = person.person,
+							name = ffi.string(C.GetPersonName(person.person, menu.infoSubmenuObject)),
+							currentskill = C.GetPersonCombinedSkill(menu.infoSubmenuObject, person.person, nil, nil),
+							skill = C.GetPersonCombinedSkill(menu.infoSubmenuObject, person.person, role, post),
+							roleid = roleid,
+							rolename = rolename,
+							tiername = tiername
+						})
+						checktable[person.person] = true
+					end
+				else
+					menu.updatePeopleInfo = getElapsedTime() + 0.1
 				end
 			end
 		end
 		if numtiers == 0 then
 			for _, person in ipairs(infocrew.current.roles[i + 1].tiers[1].persons) do
-				if not checktable[person] then
-					table.insert(result, {
-						person = person,
-						name = ffi.string(C.GetPersonName(person, menu.infoSubmenuObject)),
-						currentskill = C.GetPersonCombinedSkill(menu.infoSubmenuObject, person, nil, nil),
-						skill = C.GetPersonCombinedSkill(menu.infoSubmenuObject, person, role, post),
-						roleid = roleid,
-						rolename = rolename
-					})
-					checktable[person] = true
+				if C.IsPerson(person, menu.infoSubmenuObject) then
+					if not checktable[person] then
+						table.insert(result, {
+							person = person,
+							name = ffi.string(C.GetPersonName(person, menu.infoSubmenuObject)),
+							currentskill = C.GetPersonCombinedSkill(menu.infoSubmenuObject, person, nil, nil),
+							skill = C.GetPersonCombinedSkill(menu.infoSubmenuObject, person, role, post),
+							roleid = roleid,
+							rolename = rolename
+						})
+						checktable[person] = true
+					end
+				else
+					menu.updatePeopleInfo = getElapsedTime() + 0.1
 				end
 			end
 			for _, person in ipairs(infocrew.reassigned.roles[i + 1].tiers[1].persons) do
-				if not checktable[person.person] then
-					table.insert(result, {
-						person = person.person,
-						name = ffi.string(C.GetPersonName(person.person, menu.infoSubmenuObject)),
-						currentskill = C.GetPersonCombinedSkill(menu.infoSubmenuObject, person.person, nil, nil),
-						skill = C.GetPersonCombinedSkill(menu.infoSubmenuObject, person.person, role, post),
-						roleid = roleid,
-						rolename = rolename
-					})
-					checktable[person.person] = true
+				if C.IsPerson(person.person, menu.infoSubmenuObject) then
+					if not checktable[person.person] then
+						table.insert(result, {
+							person = person.person,
+							name = ffi.string(C.GetPersonName(person.person, menu.infoSubmenuObject)),
+							currentskill = C.GetPersonCombinedSkill(menu.infoSubmenuObject, person.person, nil, nil),
+							skill = C.GetPersonCombinedSkill(menu.infoSubmenuObject, person.person, role, post),
+							roleid = roleid,
+							rolename = rolename
+						})
+						checktable[person.person] = true
+					end
+				else
+					menu.updatePeopleInfo = getElapsedTime() + 0.1
 				end
 			end
 		end
@@ -16376,25 +16417,27 @@ end
 function menu.infoSubmenuSetManagerAccountToEstimate(i, instance)
 	local entry = menu.infoTablePersistentData[instance].cashtransferdetails.transfers[i]
 	if entry then
-		local containermoney, estimate = GetComponentData(entry.object, "money", entry.estimatetype)
-		if entry.supply then
-			estimate = estimate + tonumber(C.GetSupplyBudget(entry.object)) / 100
-		end
-		if entry.tradewares then
-			estimate = estimate + tonumber(C.GetTradeWareBudget(entry.object)) / 100
-		end
-		if C.IsComponentClass(entry.object, "station") then
-			SetMaxBudget(entry.object, (estimate * 3) / 2)
-			SetMinBudget(entry.object, estimate)
-		end
+		local containermoney, estimate, isplayerowned = GetComponentData(entry.object, "money", entry.estimatetype, "isplayerowned")
+		if isplayerowned then
+			if entry.supply then
+				estimate = estimate + tonumber(C.GetSupplyBudget(entry.object)) / 100
+			end
+			if entry.tradewares then
+				estimate = estimate + tonumber(C.GetTradeWareBudget(entry.object)) / 100
+			end
+			if C.IsComponentClass(entry.object, "station") then
+				SetMaxBudget(entry.object, (estimate * 3) / 2)
+				SetMinBudget(entry.object, estimate)
+			end
 
-		local amount = estimate - containermoney
-		if amount > 0 then
-			TransferPlayerMoneyTo(amount, entry.object)
-		else
-			TransferMoneyToPlayer(-amount, entry.object)
+			local amount = estimate - containermoney
+			if amount > 0 then
+				TransferPlayerMoneyTo(amount, entry.object)
+			else
+				TransferMoneyToPlayer(-amount, entry.object)
+			end
+			menu.infoTablePersistentData[instance].cashtransferdetails.transfers[i].amount = 0
 		end
-		menu.infoTablePersistentData[instance].cashtransferdetails.transfers[i].amount = 0
 	end
 
 	menu.refreshInfoFrame()
@@ -16403,14 +16446,17 @@ end
 function menu.infoSubmenuUpdateManagerAccount(i, instance)
 	local entry = menu.infoTablePersistentData[instance].cashtransferdetails.transfers[i]
 	if entry and entry.amount ~= 0 then
-		if C.IsComponentClass(entry.object, "station") then
-			local newstationcash = (GetAccountData(entry.object, "money") or 0) + entry.amount
-			SetMaxBudget(entry.object, (newstationcash * 3) / 2)
-			SetMinBudget(entry.object, newstationcash)
-		end
+		local isplayerowned = GetComponentData(entry.object, "isplayerowned")
+		if isplayerowned then
+			if C.IsComponentClass(entry.object, "station") then
+				local newstationcash = (GetAccountData(entry.object, "money") or 0) + entry.amount
+				SetMaxBudget(entry.object, (newstationcash * 3) / 2)
+				SetMinBudget(entry.object, newstationcash)
+			end
 
-		TransferPlayerMoneyTo(entry.amount, entry.object)
-		menu.infoTablePersistentData[instance].cashtransferdetails.transfers[i].amount = 0
+			TransferPlayerMoneyTo(entry.amount, entry.object)
+			menu.infoTablePersistentData[instance].cashtransferdetails.transfers[i].amount = 0
+		end
 	end
 
 	menu.refreshInfoFrame()
@@ -21417,6 +21463,25 @@ function menu.createCrewTransferContext(frame)
 	local namewidth = 0.35 * menu.contextMenuData.width - 2 * Helper.scaleY(Helper.standardTextHeight) - Helper.scaleX(numberwidth) - separatorwidth / 2 - 5 * Helper.borderSize
 	local numListRows = 8
 
+	-- warnings and buttons
+	local buttontable = frame:addTable(3, { tabOrder = 3, x = Helper.borderSize, width = menu.contextMenuData.width })
+	buttontable:setColWidthPercent(2, 25)
+	buttontable:setColWidthPercent(3, 25)
+
+	local leftname, lefticon =  GetComponentData(menu.contextMenuData.leftShip, "name", "icon")
+	local rightname, righticon =  GetComponentData(menu.contextMenuData.rightShip, "name", "icon")
+
+	local row = buttontable:addRow(nil, { fixed = true })
+	row[1]:setColSpan(3):createText(function () return menu.crewTransferWarningText(leftname, rightname, 1) end, { halign = "right", color = Color["text_error"] })
+	local row = buttontable:addRow(nil, { fixed = true })
+	row[1]:setColSpan(3):createText(function () return menu.crewTransferWarningText(leftname, rightname, 2) end, { halign = "right", color = Color["text_error"] })
+
+	local row = buttontable:addRow(true, { fixed = true })
+	row[2]:createButton({ active = menu.crewTransferAllowed }):setText(ReadText(1001, 2821), { halign = "center" })
+	row[2].handlers.onClick = menu.buttonCrewTransferConfirm
+	row[3]:createButton({  }):setText(ReadText(1001, 64), { halign = "center" })
+	row[3].handlers.onClick = function () return menu.closeContextMenu("back") end
+
 	local shiptable = frame:addTable(11, { tabOrder = 2, x = Helper.borderSize, y = Helper.borderSize, width = menu.contextMenuData.width })
 	shiptable:setColWidth(1, Helper.scaleY(Helper.standardTextHeight), false)
 	shiptable:setColWidth(2, namewidth, false)
@@ -21435,10 +21500,8 @@ function menu.createCrewTransferContext(frame)
 
 	-- ships
 	local row = shiptable:addRow(nil, { fixed = true })
-	local leftname, lefticon =  GetComponentData(menu.contextMenuData.leftShip, "name", "icon")
 	local leftShipName = "\27[" .. lefticon .. "] " .. leftname .. " (" .. ffi.string(C.GetObjectIDCode(menu.contextMenuData.leftShip)) .. ")"
 	row[1]:setColSpan(5):createText(leftShipName, { halign = "center", color = Color["text_player"], font = Helper.headerRow1Font, fontsize = Helper.headerRow1FontSize, x = Helper.headerRow1Offsetx, y = Helper.headerRow1Offsety })
-	local rightname, righticon =  GetComponentData(menu.contextMenuData.rightShip, "name", "icon")
 	local rightShipName = "\27[" .. righticon .. "] " .. rightname .. " (" .. ffi.string(C.GetObjectIDCode(menu.contextMenuData.rightShip)) .. ")"
 	row[7]:setColSpan(5):createText(rightShipName, { halign = "center", color = menu.contextMenuData.crew.right.isplayerowned and Color["text_player"] or Color["text_normal"], font = Helper.headerRow1Font, fontsize = Helper.headerRow1FontSize, x = Helper.headerRow1Offsetx, y = Helper.headerRow1Offsety })
 
@@ -21511,7 +21574,7 @@ function menu.createCrewTransferContext(frame)
 		local row = shiptable:addRow(true, { fixed = true })
 		if not menu.contextMenuData.crew.right.isstation and menu.contextMenuData.crew.right.canassignpilot then
 			row[1]:createCheckBox(function () return menu.contextMenuData.crew.left.replaceCaptain or false end, { height = Helper.standardTextHeight, width = Helper.standardTextHeight, active = (not menu.contextMenuData.crew.exchangeCaptains) or (not menu.contextMenuData.crew.right.captain) })
-			row[1].handlers.onClick = function (id) menu.contextMenuData.crew.left.replaceCaptain = not menu.contextMenuData.crew.left.replaceCaptain; menu.checkForNewCaptains() end
+			row[1].handlers.onClick = function () return menu.checkboxAssignCaptain("left") end
 			row[2]:setColSpan(4):createText(menu.contextMenuData.crew.left.captain and ReadText(1001, 11234) or ReadText(1001, 11233))
 		end
 
@@ -21526,7 +21589,7 @@ function menu.createCrewTransferContext(frame)
 		elseif menu.contextMenuData.crew.right.canassignpilot then
 			row[7]:setColSpan(4):createText(menu.contextMenuData.crew.right.captain and ReadText(1001, 11234) or ReadText(1001, 11233), { halign = "right" })
 			row[11]:createCheckBox(function () return menu.contextMenuData.crew.right.replaceCaptain or false end, { height = Helper.standardTextHeight, width = Helper.standardTextHeight, active = (not menu.contextMenuData.crew.exchangeCaptains) or (not menu.contextMenuData.crew.left.captain) })
-			row[11].handlers.onClick = function (id) menu.contextMenuData.crew.right.replaceCaptain = not menu.contextMenuData.crew.right.replaceCaptain; menu.checkForNewCaptains() end
+			row[11].handlers.onClick = function () return menu.checkboxAssignCaptain("right") end
 		end
 		-- new captain
 		local row = shiptable:addRow(nil, { fixed = true })
@@ -21785,21 +21848,7 @@ function menu.createCrewTransferContext(frame)
 		menu.contextselectedrow = nil
 	end
 
-	-- warnings and buttons
-	local buttontable = frame:addTable(3, { tabOrder = 3, x = Helper.borderSize, y = shiptable.properties.y + shiptable:getVisibleHeight(), width = menu.contextMenuData.width })
-	buttontable:setColWidthPercent(2, 25)
-	buttontable:setColWidthPercent(3, 25)
-
-	local row = buttontable:addRow(nil, { fixed = true })
-	row[1]:setColSpan(3):createText(function () return menu.crewTransferWarningText(leftname, rightname, 1) end, { halign = "right", color = Color["text_error"] })
-	local row = buttontable:addRow(nil, { fixed = true })
-	row[1]:setColSpan(3):createText(function () return menu.crewTransferWarningText(leftname, rightname, 2) end, { halign = "right", color = Color["text_error"] })
-
-	local row = buttontable:addRow(true, { fixed = true })
-	row[2]:createButton({ active = menu.crewTransferAllowed }):setText(ReadText(1001, 2821), { halign = "center" })
-	row[2].handlers.onClick = menu.buttonCrewTransferConfirm
-	row[3]:createButton({  }):setText(ReadText(1001, 64), { halign = "center" })
-	row[3].handlers.onClick = function () return menu.closeContextMenu("back") end
+	buttontable.properties.y = shiptable.properties.y + shiptable:getVisibleHeight()
 
 	shiptable.properties.nextTable = buttontable.index
 	buttontable.properties.prevTable = shiptable.index
@@ -21929,7 +21978,7 @@ function menu.slidercellCrewTransfer(i, j, value)
 	end
 end
 
-function menu.checkForNewCaptains()
+function menu.checkForNewCaptains(forcerefresh)
 	local changedcaptain
 	if menu.contextMenuData.crew.left.replaceCaptain then
 		local currentskill
@@ -22017,7 +22066,7 @@ function menu.checkForNewCaptains()
 		menu.contextMenuData.crew.right.newShiptrader = nil
 	end
 
-	if changedcaptain or menu.contextMenuData.crew.right.isstation then
+	if forcerefresh or changedcaptain or menu.contextMenuData.crew.right.isstation then
 		menu.refreshContextFrame()
 	end
 end
@@ -22374,6 +22423,20 @@ function menu.checkboxCrewExchangeCaptains()
 	end
 
 	menu.refreshContextFrame()
+end
+
+function menu.checkboxAssignCaptain(origin)
+	menu.contextMenuData.crew[origin].replaceCaptain = not menu.contextMenuData.crew[origin].replaceCaptain
+	local refresh = false
+	if not menu.contextMenuData.crew[origin].captain then
+		if menu.contextMenuData.crew[origin].replaceCaptain then
+			menu.contextMenuData.crew[origin].capacity = menu.contextMenuData.crew[origin].capacity + 1
+		else
+			menu.contextMenuData.crew[origin].capacity = menu.contextMenuData.crew[origin].capacity - 1
+		end
+		refresh = true
+	end
+	menu.checkForNewCaptains(refresh)
 end
 
 function menu.createRenameContext(frame)
@@ -24190,10 +24253,13 @@ function menu.createInfoContext(frame)
 	local loctable = frame:addTable(1, { tabOrder = 3, x = Helper.borderSize, y = Helper.borderSize, width = menu.contextMenuData.width, highlightMode = "off" })
 
 	local title = ""
+	local isunlocked = false
 	if entity then
-		title = ffi.string(C.GetComponentName(entity))
+		isunlocked = IsInfoUnlockedForPlayer(controllable, "operator_name")
+		title = Helper.unlockInfo(isunlocked, ffi.string(C.GetComponentName(entity)))
 	elseif person then
-		title = ffi.string(C.GetPersonName(person, controllable))
+		isunlocked = IsInfoUnlockedForPlayer(controllable, "name")
+		title = Helper.unlockInfo(isunlocked, ffi.string(C.GetPersonName(person, controllable)))
 	elseif inv_ware or software then
 		title = GetWareData(inv_ware or software, "name")
 	elseif weaponmacro or equipmentmacro then
@@ -24280,7 +24346,7 @@ function menu.createInfoContext(frame)
 	if person or entity then
 		if (not transferscheduled) and hasarrived then
 			row = loctable:addRow("info_actor_comm", { fixed = true })
-			row[1]:createButton({ bgColor = Color["button_background_hidden"], height = Helper.standardTextHeight, active = (not entity) or (entity ~= player) }):setText(ReadText(1001, 3216))	-- (initiate comm)Comm
+			row[1]:createButton({ bgColor = Color["button_background_hidden"], height = Helper.standardTextHeight, active = ((not entity) or (entity ~= player)) and isunlocked }):setText(ReadText(1001, 3216))	-- (initiate comm)Comm
 			row[1].handlers.onClick = function () menu.openCommWithActor(conversationactor) end
 		end
 	end
@@ -26937,16 +27003,24 @@ function menu.infoUpdatePeople()
 end
 
 function menu.refreshCrewInfo()
+	local refreshinfoframe, refreshinfoframe2 = false, false
 	if (menu.infoMode.left == "objectinfo") or (menu.infoMode.left == "objectcrew") then
 		if menu.infoSubmenuObject and C.IsComponentClass(menu.infoSubmenuObject, "ship") then
 			menu.infoSubmenuPrepareCrewInfo("left")
 		end
-		menu.refreshInfoFrame()
+		refreshinfoframe = true
 	end
 	if (menu.infoMode.right == "objectinfo") or (menu.infoMode.right == "objectcrew") then
 		if menu.infoSubmenuObject and C.IsComponentClass(menu.infoSubmenuObject, "ship") then
 			menu.infoSubmenuPrepareCrewInfo("right")
 		end
+		refreshinfoframe2 = true
+	end
+
+	if refreshinfoframe then
+		menu.refreshInfoFrame()
+		-- menu.refreshInfoFrame() already triggers menu.refreshInfoFrame2()
+	elseif refreshinfoframe2 then
 		menu.refreshInfoFrame2()
 	end
 end
