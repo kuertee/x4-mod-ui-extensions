@@ -5,6 +5,9 @@ by kuertee. Contributors: Erixon, Forleyor, Mycu, Runekn, AlexandreTK.
 
 Updates
 =======
+v7.0.03, 1 Jul 2024:
+-Tweak: Updated the internal version number and version date.
+
 v7.0.02, 28 Jun 2024:
 -Compatibility: Requires base game v7.00 HF 1.
 
