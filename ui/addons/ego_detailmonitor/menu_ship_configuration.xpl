@@ -5216,10 +5216,6 @@ function menu.displaySlots(frame, firsttime)
 												end
 											end
 
-											mouseovertext = untruncatedExtraText .. ((mouseovertext ~= "") and ("\n\n" .. mouseovertext) or "")
-
-											local active = ((group[i].macro == plandata.macro) or (not hasmod)) 
-
 											-- start: mycu call-back
 											if callbacks ["displaySlots_on_before_create_button_mouseovertext"] then
 												for _, callback in ipairs (callbacks ["displaySlots_on_before_create_button_mouseovertext"]) do
@@ -5231,6 +5227,9 @@ function menu.displaySlots(frame, firsttime)
 											end
 											-- end: mycu call-back
 
+											mouseovertext = untruncatedExtraText .. ((mouseovertext ~= "") and ("\n\n" .. mouseovertext) or "")
+
+											local active = ((group[i].macro == plandata.macro) or (not hasmod)) 
 											local useable = hasstock and haslicence
 											local overlayid
 											if group[i].macro == "" then
@@ -5496,6 +5495,17 @@ function menu.displaySlots(frame, firsttime)
 									end
 								end
 							end
+
+							-- start: mycu call-back
+							if callbacks ["displaySlots_on_before_create_button_mouseovertext"] then
+								for _, callback in ipairs (callbacks ["displaySlots_on_before_create_button_mouseovertext"]) do
+									result = callback (group[i].macro, plandata.macro, mouseovertext)
+									if result then
+										mouseovertext = result.mouseovertext
+									end
+								end
+							end
+							-- end: mycu call-back
 
 							mouseovertext = untruncatedExtraText .. ((mouseovertext ~= "") and ("\n\n" .. mouseovertext) or "")
 
