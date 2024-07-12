@@ -24,6 +24,10 @@ ffi.cdef[[
 		bool isdeletable;
 	} EditableColorMapEntry;
 	typedef struct {
+		float min;
+		float max;
+	} FloatRange;
+	typedef struct {
 		int32_t id;
 		const char* name;
 	} GameStartGroupInfo;
@@ -191,6 +195,7 @@ ffi.cdef[[
 	float GetUIGlowIntensity(void);
 	uint32_t GetUIGlowOption(void);
 	float GetUIScaleFactor();
+	FloatRange GetUIScaleFactorRange(void);
 	const char* GetUpscalingOption(bool useconfig);
 	const char* GetUserData(const char* name);
 	uint32_t GetVentureDLCStatus(void);
@@ -990,7 +995,7 @@ config.input.controlsorder = {
 		},
 		[2] = {
 			["title"] = ReadText(1001, 2665),	-- "Menus - Digital"
-			["mapable"] = false,
+			["mappable"] = false,
 			{ "actions", 21, 2 },
 			{ "actions", 20, 2 },
 			{ "functions", 7 },
@@ -1030,9 +1035,10 @@ config.input.controlsorder = {
 		},
 		[3] = {
 			["title"] = ReadText(1001, 2666),
-			["mapable"] = false,
+			["mappable"] = false,
 			{ "states", 1, 3 },
 			{ "actions", 294, 3 },
+			{ "actions", 376, 9, nil, nil, nil, true },
 			{ "actions", 97, 3 },
 			{ "actions", 98, 3 },
 			{ "actions", 99, 3 },
@@ -1054,7 +1060,7 @@ config.input.controlsorder = {
 		},
 		[4] = {
 			["title"] = ReadText(1001, 3245),	-- "Map"
-			["mapable"] = true,
+			["mappable"] = true,
 			{ "actions", 216, 2 },	-- "Target Object" (in map)
 			{ "actions", 264, 2 },
 			{ "actions", 265, 2 },
@@ -1063,19 +1069,19 @@ config.input.controlsorder = {
 		},
 		[5] = {
 			["title"] = ReadText(1001, 12665),
-			["mapable"] = false,
+			["mappable"] = false,
 			{ "ranges", 36, 5 },
 			{ "ranges", 37, 5 },
 		},
 		[6] = {
 			["title"] = ReadText(1001, 2664),
-			["mapable"] = false,
+			["mappable"] = false,
 			{ "actions", 336, 7 },
 			{ "actions", 337, 7 },
 		},
 		[7] = {
 			["title"] = ReadText(1001, 11788),
-			["mapable"] = true,
+			["mappable"] = true,
 			{ "states", 98, 2 },
 			{ "states", 121, 2 },
 			{ "states", 122, 2 },
@@ -1085,7 +1091,7 @@ config.input.controlsorder = {
 	["firstperson"] = {
 		[1] = {
 			["title"] = ReadText(1001, 12689),
-			["mapable"] = true,
+			["mappable"] = true,
 			{ "ranges", 15 },
 			{ "ranges", 16 },
 			{ "ranges", 13 },
@@ -1093,7 +1099,7 @@ config.input.controlsorder = {
 		},
 		[2] = {
 			["title"] = ReadText(1001, 12690),
-			["mapable"] = true,
+			["mappable"] = true,
 			{ "states", 26 },
 			{ "states", 27 },
 			{ "states", 32 },
@@ -1107,6 +1113,7 @@ config.input.controlsorder = {
 			{ "states", 35 },
 			{ "states", 36 },
 			{ "actions", 220 },
+			{ "functions", 3 },
 		},
 	},
 }
@@ -6550,14 +6557,16 @@ function menu.valueGameThirdPersonFlight()
 end
 
 function menu.valueGameUIScale()
-	local maxUIScale = 1.8
-	local max = 1.8
-	menu.newUIScale = math.max(0.5, math.min(maxUIScale, Helper.round(C.GetUIScaleFactor(), 1)))
+	local range = C.GetUIScaleFactorRange()
+	local minUIScale = Helper.round(range.min, 1)
+	local maxUIScale = Helper.round(range.max, 1)
+
+	menu.newUIScale = math.max(minUIScale, math.min(maxUIScale, Helper.round(C.GetUIScaleFactor(), 1)))
 
 	local scale = {
 		min            = 0.5,
-		max            = max,
-		maxSelect      = maxUIScale,
+		minSelect      = minUIScale,
+		max            = maxUIScale,
 		start          = menu.newUIScale,
 		step           = 0.1,
 		suffix         = "",
@@ -7980,8 +7989,10 @@ function menu.callbackGameUIScaleConfirm()
 end
 
 function menu.callbackGameUIScaleReset()
-	local maxUIScale = 1.8
-	menu.newUIScale = math.max(0.5, math.min(maxUIScale, Helper.round(C.GetUIScaleFactor(), 1)))
+	local range = C.GetUIScaleFactorRange()
+	local minUIScale = Helper.round(range.min, 1)
+	local maxUIScale = Helper.round(range.max, 1)
+	menu.newUIScale = math.max(minUIScale, math.min(maxUIScale, Helper.round(C.GetUIScaleFactor(), 1)))
 	menu.refresh()
 end
 

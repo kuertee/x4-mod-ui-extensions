@@ -914,6 +914,14 @@ function menu.cleanup()
 		UnregisterAddonBindings("ego_detailmonitor", "undo")
 		menu.bindingRegistered = nil
 	end
+
+	-- kuertee start: callback
+	if callbacks ["cleanup"] then
+		for _, callback in ipairs (callbacks ["cleanup"]) do
+			callback ()
+		end
+	end
+	-- kuertee end: callback
 end
 
 -- button scripts

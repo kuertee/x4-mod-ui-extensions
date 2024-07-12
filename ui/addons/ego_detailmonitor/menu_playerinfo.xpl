@@ -536,6 +536,14 @@ function menu.cleanup()
 	menu.ventureContactCallbacksRegistered = nil
 
 	C.SetUICoverOverride(false)
+
+	-- kuertee start: callback
+	if callbacks ["cleanup"] then
+		for _, callback in ipairs (callbacks ["cleanup"]) do
+			callback ()
+		end
+	end
+	-- kuertee end: callback
 end
 
 -- Menu member functions

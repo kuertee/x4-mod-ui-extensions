@@ -250,6 +250,14 @@ function menu.cleanup()
 	menu.table_toplevel = nil
 	menu.table_topleft = nil
 	menu.table_header = nil
+
+	-- kuertee start: callback
+	if callbacks ["cleanup"] then
+		for _, callback in ipairs (callbacks ["cleanup"]) do
+			callback ()
+		end
+	end
+	-- kuertee end: callback
 end
 
 function menu.onShowMenu()
