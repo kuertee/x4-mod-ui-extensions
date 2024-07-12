@@ -210,6 +210,9 @@ menu.updateInterval = 0.1
 
 function menu.onUpdate()
 	Helper.onTransactionLogUpdate()
+    if not menu.infoFrame then
+        return
+    end
 	menu.infoFrame:update()
 
 	if not Helper.transactionLogData.noupdate then
