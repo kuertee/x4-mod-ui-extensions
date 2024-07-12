@@ -5,7 +5,7 @@ by kuertee. Contributors: Erixon, Forleyor, Mycu, Runekn, AlexandreTK.
 
 Updates
 =======
-v7.0.021, 28 Jun 2024:
+v7.0.021, 12 Jul 2024:
 -Bug-fix: some mods (e.g. my Trade Analytics) were trying to update the Transaction Log menu even when it wasn't open.
 
 v7.0.02, 28 Jun 2024:
