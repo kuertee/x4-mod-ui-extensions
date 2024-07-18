@@ -5,13 +5,8 @@ by kuertee. Contributors: Erixon, Forleyor, Mycu, Runekn, AlexandreTK.
 
 Updates
 =======
-v7.1.02, 13 Jul 2024:
--Compatibility: Requires base game v7.10 beta 2.
-
-v7.1.01, 7 Jul 2024:
--Bug-fix: Some mods (e.g. my Trade Analytics) were trying to update the Transaction Log menu even when it wasn't open.
--Tweak: Extensions menu lists enabled mods first before disabled mods.
--Bug-fix: Callback 7.x compatibility in Ship Configuration menu.
+v7.1.03, 19 Jul 2024:
+-Compatibility: Requires base game v7.10 beta 3.
 
 Instructions for players
 ========================
@@ -175,6 +170,14 @@ Troubleshooting
 
 History
 =======
+v7.1.02, 13 Jul 2024:
+-Compatibility: Requires base game v7.10 beta 2.
+
+v7.1.01, 7 Jul 2024:
+-Bug-fix: Some mods (e.g. my Trade Analytics) were trying to update the Transaction Log menu even when it wasn't open.
+-Tweak: Extensions menu lists enabled mods first before disabled mods.
+-Bug-fix: Callback 7.x compatibility in Ship Configuration menu.
+
 v7.1.00, 3 Jul 2024:
 -Compatibility: Requires base game v7.10 beta 1.
 

@@ -90,6 +90,7 @@ ffi.cdef[[
 	bool AreGfxSettingsTooHigh(void);
 	bool AreVenturesEnabled(void);
 	bool CanOpenWebBrowser(void);
+	void ClearStartmenuParam(void);
 	void ConnectToMultiplayerGame(const char* serverip);
 	const char* ConvertInputString(const char* text, const char* defaultvalue);
 	bool DeleteSavegame(const char* filename);
@@ -178,6 +179,7 @@ ffi.cdef[[
 	const char* GetSSROption2(void);
 	const char* GetStartmenuBackgroundOption(void);
 	uint32_t GetStartmenuBackgrounds(StartmenuBackgroundInfo* result, uint32_t resultlen);
+	const char* GetStartmenuParam(void);
 	const char* GetSteamID(void);
 	const char* GetTextureQualityOption(void);
 	bool GetThirdPersonFlightOption(void);
@@ -354,6 +356,8 @@ local menu = {
 	lastSaveUpdateTime = 0,
 	searchtext = "",
 	controlsFilter = "",
+	colorSearchText = "",
+	mappingSearchText = "",
 	selectedRows = {},
 	selectedCols = {},
 	topRows = {},
@@ -394,7 +398,9 @@ local function init()
 
 	-- restore handling
 	if __CORE_GAMEOPTIONS_RESTORE or menu.isStartmenu then
-		OpenMenu("OptionsMenu", nil, nil, true)
+		local submenu = ffi.string(C.GetStartmenuParam())
+		OpenMenu("OptionsMenu", (submenu ~= "") and submenu or nil, nil, true)
+		C.ClearStartmenuParam()
 	end
 	if menu.isStartmenu then
 		if (__CORE_GAMEOPTIONS_RESTORE == nil) and C.IsGameModified() then
@@ -3183,9 +3189,9 @@ function menu.buttonPrivacyPolicy()
 	end
 end
 
-function menu.buttonOnlineHelp()
+function menu.buttonOnlineHelp(helplink)
 	if C.CanOpenWebBrowser() then
-		C.OpenWebBrowser(ReadText(1001, 11767))
+		C.OpenWebBrowser(helplink or ReadText(1001, 11767))
 	end
 end
 
@@ -10139,19 +10145,25 @@ function menu.displayColorLibrary()
 	local row = colortable:addRow(false, { fixed = true })
 	row[1]:setColSpan(numcols):createText(ReadText(1001, 11795), config.warningTextProperties)
 
+	local row = colortable:addRow(true, { fixed = true })
+	row[1]:setColSpan(numcols):createEditBox({ height = config.standardTextHeight, defaultText = ReadText(1001, 3250) }):setText(menu.colorSearchText, { x = Helper.standardTextOffsetx })
+	row[1].handlers.onEditBoxDeactivated = menu.editboxColorDefinitionSearchUpdateText
+
 	local row = colortable:addRow(false, { fixed = true })
 	row[1]:setBackgroundColSpan(numcols):createText(ReadText(1001, 11798), config.subHeaderLeftTextProperties)
 	row[2]:setColSpan(3):createText(ReadText(1001, 11799), config.subHeaderLeftTextProperties)
 
 	for _, entry in ipairs(menu.colorLibSettings.colors) do
-		local row = colortable:addRow(true, {  })
-		row[1]:createText(entry.id, config.standardTextProperties)
-		row[2]:createButton({ bgColor = Color["button_background_white"], highlightColor = Color["button_highlight_hidden"] }):setIcon2("solid", { color = function () return menu.getDefinitionColor(entry.id) end }):setIcon("menu_checker", { scaling = false, width = row[2]:getWidth() / 2, height = Helper.scaleY(config.standardTextHeight), x = row[2]:getWidth() / 2 })
-		row[3]:createButton({  }):setIcon("menu_edit")
-		row[3].handlers.onClick = function () menu.buttonEditColor(entry.id) end
-		if entry.isdeletable then
-			row[4]:createButton({ active = function () return (menu.colorLibSettings.colorsUsedCount[entry.id] or 0) == 0 end }):setText("x")
-			row[4].handlers.onClick = function () C.RemoveColorMapColorDefinition(entry.id); menu.refresh() end
+		if menu.filterColorDefinition(entry.id, menu.colorSearchText) then
+			local row = colortable:addRow(true, {  })
+			row[1]:createText(entry.id, config.standardTextProperties)
+			row[2]:createButton({ bgColor = Color["button_background_white"], highlightColor = Color["button_highlight_hidden"] }):setIcon2("solid", { color = function () return menu.getDefinitionColor(entry.id) end }):setIcon("menu_checker", { scaling = false, width = row[2]:getWidth() / 2, height = Helper.scaleY(config.standardTextHeight), x = row[2]:getWidth() / 2 })
+			row[3]:createButton({  }):setIcon("menu_edit")
+			row[3].handlers.onClick = function () menu.buttonEditColor(entry.id) end
+			if entry.isdeletable then
+				row[4]:createButton({ active = function () return (menu.colorLibSettings.colorsUsedCount[entry.id] or 0) == 0 end }):setText("x")
+				row[4].handlers.onClick = function () C.RemoveColorMapColorDefinition(entry.id); menu.refresh() end
+			end
 		end
 	end
 
@@ -10179,22 +10191,51 @@ function menu.displayColorLibrary()
 	row[1]:setColSpan(numcols):createText(ReadText(1001, 11797), config.warningTextProperties)
 
 	local row = mappingtable:addRow(true, { fixed = true })
+	row[1]:setColSpan(numcols):createEditBox({ height = config.standardTextHeight, defaultText = ReadText(1001, 3250) }):setText(menu.mappingSearchText, { x = Helper.standardTextOffsetx })
+	row[1].handlers.onEditBoxDeactivated = menu.editboxColorMappingSearchUpdateText
+
+	local row = mappingtable:addRow(true, { fixed = true })
 	row[1]:setBackgroundColSpan(numcols):createText(ReadText(1001, 12601), config.subHeaderLeftTextProperties)
 	row[2]:createText(ReadText(1001, 11799), config.subHeaderLeftTextProperties)
 	row[3]:createText(ReadText(1001, 12602), config.subHeaderLeftTextProperties)
 	row[4]:createButton({ height = config.subHeaderTextHeight, width = config.subHeaderTextHeight, bgColor = menu.colorLibSettings.sortByReference and Color["button_background_active"] or nil }):setIcon("widget_arrow_down_01")
 	row[4].handlers.onClick = function () menu.colorLibSettings.sortByReference = not menu.colorLibSettings.sortByReference; menu.refresh() end
 
+	local count = 0
 	for i, entry in ipairs(menu.colorLibSettings.mappings) do
-		local row = mappingtable:addRow(true, {  })
-		row[1]:createText(entry.id, config.standardTextProperties)
-		row[2]:createButton({ bgColor = Color["button_background_white"], highlightColor = Color["button_highlight_hidden"] }):setIcon2("solid", { color = function () return menu.getMappingColor(entry.id) end }):setIcon("menu_checker", { scaling = false, width = row[2]:getWidth() / 2, height = Helper.scaleY(config.standardTextHeight), x = row[2]:getWidth() / 2 })
-		row[3]:setColSpan(2):createDropDown(menu.colorLibSettings.colorDropdownOptions, { startOption = entry.ref })
-		row[3].handlers.onDropDownConfirmed = function (_, id) return menu.dropdownColorMapping(i, id) end
+		local display = false
+		if menu.mappingSearchText == "" then
+			-- check color definition search, if empty it will return true
+			if menu.filterColorDefinition(entry.ref, menu.colorSearchText) then
+				display = true
+			end
+		else
+			if menu.colorSearchText == "" then
+				-- check color mapping search
+				if menu.filterColorMapping(entry.id, menu.mappingSearchText) then
+					display = true
+				end
+			else
+				-- check both searches
+				if menu.filterColorDefinition(entry.ref, menu.colorSearchText) or menu.filterColorMapping(entry.id, menu.mappingSearchText) then
+					display = true
+				end
+			end
+		end
 
-		if i == 37 then -- dropdown limit
-			mappingtable.properties.maxVisibleHeight = mappingtable:getFullHeight()
-			colortable.properties.maxVisibleHeight = mappingtable.properties.maxVisibleHeight
+		if display then
+			count = count + 1
+
+			local row = mappingtable:addRow(true, {  })
+			row[1]:createText(entry.id, config.standardTextProperties)
+			row[2]:createButton({ bgColor = Color["button_background_white"], highlightColor = Color["button_highlight_hidden"] }):setIcon2("solid", { color = function () return menu.getMappingColor(entry.id) end }):setIcon("menu_checker", { scaling = false, width = row[2]:getWidth() / 2, height = Helper.scaleY(config.standardTextHeight), x = row[2]:getWidth() / 2 })
+			row[3]:setColSpan(2):createDropDown(menu.colorLibSettings.colorDropdownOptions, { startOption = entry.ref })
+			row[3].handlers.onDropDownConfirmed = function (_, id) return menu.dropdownColorMapping(i, id) end
+
+			if count == 37 then -- dropdown limit
+				mappingtable.properties.maxVisibleHeight = mappingtable:getFullHeight()
+				colortable.properties.maxVisibleHeight = mappingtable.properties.maxVisibleHeight
+			end
 		end
 	end
 
@@ -10267,8 +10308,10 @@ function menu.displayColorLibrary()
 	local buttonheight = buttontable:getFullHeight()
 	buttontable.properties.y = Helper.viewHeight - menu.frameOffsetY - buttonheight - menu.table.x
 
-	mappingtable.properties.maxVisibleHeight = math.min(mappingtable.properties.maxVisibleHeight, buttontable.properties.y - mappingtable.properties.y - Helper.borderSize)
-	colortable.properties.maxVisibleHeight = math.min(colortable.properties.maxVisibleHeight, buttontable.properties.y - colortable.properties.y - Helper.borderSize)
+	local availablemappingheight = buttontable.properties.y - mappingtable.properties.y - Helper.borderSize
+	mappingtable.properties.maxVisibleHeight = (mappingtable.properties.maxVisibleHeight > 0) and math.min(mappingtable.properties.maxVisibleHeight, availablemappingheight) or availablemappingheight
+	local availablecolorheight = buttontable.properties.y - colortable.properties.y - Helper.borderSize
+	colortable.properties.maxVisibleHeight = (colortable.properties.maxVisibleHeight > 0) and math.min(colortable.properties.maxVisibleHeight, availablecolorheight) or availablecolorheight
 
 	optiontable:addConnection(1, 1, true)
 	colortable:addConnection(2, 1)
@@ -11460,6 +11503,7 @@ function menu.displayOnlineLogin()
 		local errortext = ""
 		local errormouseovertext = ""
 		local showhelpbutton = false
+		local helplink
 		if errorcode == "ERR_CREDENTIALS_INVALID" then
 			errortext = ReadText(1001, 8925)
 			showhelpbutton = C.CanOpenWebBrowser()
@@ -11479,6 +11523,10 @@ function menu.displayOnlineLogin()
 			errormouseovertext = ColorText["text_error"] .. ReadText(1001, 8915)
 		elseif errorcode == "ERR_SERVICE_UNAVAILABLE" then
 			errortext = ReadText(1001, 8913)
+		elseif errorcode == "ERR_SSLCERT_FAILED" then
+			errortext = ReadText(1001, 11394)
+			showhelpbutton = C.CanOpenWebBrowser()
+			helplink = ReadText(1001, 11395)
 		elseif errorcode == "INCOMPATIBLE_CLIENT_VERSION" then
 			errortext = ReadText(1001, 11352)
 		elseif errorcode == "INCOMPATIBLE_ONLINE_EXTENSION_VERSION" then
@@ -11492,7 +11540,7 @@ function menu.displayOnlineLogin()
 		row[7].properties.mouseOverText = errormouseovertext
 		if showhelpbutton then
 			row[10]:setColSpan(2):createButton({ height = config.standardTextHeight, active = C.CanOpenWebBrowser() }):setText(ReadText(1001, 8992) .. " \27[mm_externallink]", { fontsize = config.standardFontSize, halign = "center" })
-			row[10].handlers.onClick = menu.buttonOnlineHelp
+			row[10].handlers.onClick = function () return menu.buttonOnlineHelp(helplink) end
 		end
 	end
 
@@ -11820,6 +11868,40 @@ end
 function menu.editboxControlsSearchUpdateText(widget, text, textchanged)
 	if textchanged then
 		menu.searchtext = text
+	end
+
+	menu.refresh()
+end
+
+function menu.filterColorDefinition(colordef, text)
+	text = utf8.lower(text)
+
+	if string.find(utf8.lower(colordef), text, 1, true) then
+		return true
+	end
+	return false
+end
+
+function menu.editboxColorDefinitionSearchUpdateText(widget, text, textchanged)
+	if textchanged then
+		menu.colorSearchText = text
+	end
+
+	menu.refresh()
+end
+
+function menu.filterColorMapping(colormapping, text)
+	text = utf8.lower(text)
+
+	if string.find(utf8.lower(colormapping), text, 1, true) then
+		return true
+	end
+	return false
+end
+
+function menu.editboxColorMappingSearchUpdateText(widget, text, textchanged)
+	if textchanged then
+		menu.mappingSearchText = text
 	end
 
 	menu.refresh()
@@ -13132,7 +13214,11 @@ function menu.onCloseElement(dueToClose)
 					menu.preselectOption = lastOption.selectedOption
 					menu.submenuHandler(lastOption.optionParameter)
 				else
-					menu.closeMenu(dueToClose)
+					if menu.isStartmenu then
+						menu.submenuHandler("main")
+					else
+						menu.closeMenu(dueToClose)
+					end
 				end
 			end
 		end

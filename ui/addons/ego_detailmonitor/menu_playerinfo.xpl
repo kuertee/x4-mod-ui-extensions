@@ -633,6 +633,7 @@ function menu.buttonTogglePlayerInfo(mode)
 			C.SetMessageRead(menu.messageData.curEntry.id, menu.messageData.curEntry.category)
 			AddUITriggeredEvent(menu.name, "message_read", ConvertStringTo64Bit(tostring(menu.messageData.curEntry.id)))
 		end
+		menu.messageData.curEntry = {}
 		menu.messageData.showFullscreen = nil
 		menu.cleanupCutsceneRenderTarget()
 	elseif menu.mode == "venturecontacts" then
@@ -695,6 +696,7 @@ function menu.deactivatePlayerInfo()
 			C.SetMessageRead(menu.messageData.curEntry.id, menu.messageData.curEntry.category)
 			AddUITriggeredEvent(menu.name, "message_read", ConvertStringTo64Bit(tostring(menu.messageData.curEntry.id)))
 		end
+		menu.messageData.curEntry = {}
 		menu.messageData.showFullscreen = nil
 		menu.cleanupCutsceneRenderTarget()
 	elseif menu.mode == "venturecontacts" then
@@ -1256,6 +1258,7 @@ function menu.onShowMenu(state)
 	menu.topRows = {}
 	menu.selectedRows = {}
 	menu.selectedCols = {}
+	menu.messageData.curEntry = {}
 
 	-- Register bindings
 	Helper.setKeyBinding(menu, menu.hotkey)
@@ -7165,10 +7168,8 @@ function menu.closeMenu(dueToClose)
 	if next(menu.messageData.curEntry) then
 		C.SetMessageRead(menu.messageData.curEntry.id, menu.messageData.curEntry.category)
 		AddUITriggeredEvent(menu.name, "message_read", ConvertStringTo64Bit(tostring(menu.messageData.curEntry.id)))
+		menu.messageData.curEntry = {}
 		menu.messageData.showFullscreen = nil
-		if menu.messageData.curEntry.category == "lowprio" then
-			menu.messageData.curEntry = {}
-		end
 	end
 	Helper.closeMenu(menu, dueToClose)
 	menu.cleanup()

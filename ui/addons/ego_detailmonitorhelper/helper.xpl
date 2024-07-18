@@ -348,7 +348,6 @@ ffi.cdef[[
 	TradeRuleCounts GetTradeRuleInfoCounts(TradeRuleID id);
 	float GetUIScale(const bool scalewithresolution);
 	UpgradeGroup GetUpgradeSlotGroup(UniverseID destructibleid, const char* macroname, const char* upgradetypename, size_t slot);
-	const char* GetUserData(const char* name);
 	const char* GetUserDataSigned(const char* name);
 	uint32_t GetVenturePlatformDocks(UniverseID* result, uint32_t resultlen, UniverseID ventureplatformid);
 	uint32_t GetVenturePlatforms(UniverseID* result, uint32_t resultlen, UniverseID defensibleid);
@@ -362,7 +361,6 @@ ffi.cdef[[
 	bool IsConversationCancelling(void);
 	bool IsDemoVersion(void);
 	bool IsInfoUnlockedForPlayer(UniverseID componentid, const char* infostring);
-	bool IsGameModified(void);
 	bool IsGameOver(void);
 	bool IsNextStartAnimationSkipped(bool reset);
 	bool IsOnlineEnabled(void);
@@ -5794,15 +5792,17 @@ function widgetHelpers.dropdown:createDescriptor()
 	local mouseovertext = self.properties.mouseOverText
 	local startOption = self.properties.startOption
 	local helpoverlay = createOverlayPropertyInfo(self)
-	local options = Helper.tableCopy(self.properties.options)
+	local options = Helper.tableCopy(self.properties.options, 1)
 	for _, option in ipairs(options) do
-		option.helpoverlay =  {
-			text = option.helpOverlayText,
-			id = option.helpOverlayID,
-			size = { width = option.helpOverlayWidth, height = option.helpOverlayHeight },
-			offset = { x = option.helpOverlayX, y = option.helpOverlayY },
-			highlightOnly = optionhelpOverlayHighlightOnly
-		}
+		if option.helpOverlayID then
+			option.helpoverlay =  {
+				text = option.helpOverlayText,
+				id = option.helpOverlayID,
+				size = { width = option.helpOverlayWidth, height = option.helpOverlayHeight },
+				offset = { x = option.helpOverlayX, y = option.helpOverlayY },
+				highlightOnly = optionhelpOverlayHighlightOnly
+			}
+		end
 	end
 
 	local isfunctioncell = false
@@ -11049,6 +11049,7 @@ function Helper.onExpandLSOStorageNode(menu, container, _, ftable, _, nodedata)
 				local row = ftable:addRow("buytraderule_current", {  })
 				row[1]:setColSpan(2):createDropDown(Helper.traderuleOptions, { startOption = (traderuleid ~= 0) and traderuleid or -1, active = hasownlist }):setTextProperties({ fontsize = config.mapFontSize })
 				row[1].handlers.onDropDownConfirmed = function (_, id) return Helper.dropdownTradeRule(menu, container, "buy", nodedata.ware, id) end
+				row[1].handlers.onDropDownActivated = function () menu.noupdate = true end
 				row[3]:createButton({ mouseOverText = ReadText(1026, 8407) }):setIcon("menu_edit")
 				row[3].handlers.onClick = function () return Helper.buttonEditTradeRule(menu) end
 			end
@@ -11203,6 +11204,7 @@ function Helper.onExpandLSOStorageNode(menu, container, _, ftable, _, nodedata)
 				local row = ftable:addRow("selltraderule_current", {  })
 				row[1]:setColSpan(2):createDropDown(Helper.traderuleOptions, { startOption = (traderuleid ~= 0) and traderuleid or -1, active = hasownlist }):setTextProperties({ fontsize = config.mapFontSize })
 				row[1].handlers.onDropDownConfirmed = function (_, id) return Helper.dropdownTradeRule(menu, container, "sell", nodedata.ware, id) end
+				row[1].handlers.onDropDownActivated = function () menu.noupdate = true end
 				row[3]:createButton({ mouseOverText = ReadText(1026, 8407) }):setIcon("menu_edit")
 				row[3].handlers.onClick = function () return Helper.buttonEditTradeRule(menu) end
 			end
@@ -11607,6 +11609,7 @@ function  Helper.dropdownTradeRule(menu, container, type, ware, id)
 	if (type == "buy") or (type == "sell") then
 		menu.expandedNode:updateStatus(nil, Helper.isTradeRestricted(container, ware) and "lso_error" or nil, nil, Color["icon_warning"])
 	end
+	menu.noupdate = false
 end
 
 function Helper.slidercellBuyLimitOverride(menu, container, ware, value, sellslider)

@@ -4641,10 +4641,10 @@ end
 function menu.newWareReservationCallback(_, data)
 	local containerid, ware, reserverid = string.match(data, "(.+);(.+);(.+)")
 	if menu.container == ConvertStringTo64Bit(containerid) then
-		if not menu.noupdate then
-			menu.updateExpandedNode()
-		else
-			menu.refreshnode = getElapsedTime()
+		if menu.expandedNode.customdata.nodedata.ware == ware then
+			if not menu.refreshnode then
+				menu.refreshnode = getElapsedTime()
+			end
 		end
 	end
 end

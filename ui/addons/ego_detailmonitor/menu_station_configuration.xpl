@@ -1509,6 +1509,7 @@ function menu.onShowMenu(state)
 		offsetX = 0,
 		offsetY = 0
 	}
+	menu.subHeaderRowHeight = Helper.scaleY(26)
 
 	menu.headerTextProperties = {
 		font = Helper.headerRow1Font,
@@ -2162,7 +2163,7 @@ function menu.displayModules(frame, firsttime)
 		AddUITriggeredEvent(menu.name, menu.modulesMode, "on")
 	end
 
-	local count = 1
+	local count, rowcount, slidercount = 1, 0, 0
 	local hasventureplatform = false
 	if not menu.loadoutMode then
 		local modules = menu.modules[menu.modulesMode] or {}
@@ -2217,6 +2218,10 @@ function menu.displayModules(frame, firsttime)
 					end
 				end
 				count = count + upgradegroupcount - 1
+				if upgradegroupcount > 1 then
+					slidercount = slidercount + 1
+				end
+				rowcount = rowcount + math.ceil((upgradegroupcount - 1) / 3)
 			end
 			count = count + 1
 		end
@@ -2440,43 +2445,8 @@ function menu.displayModules(frame, firsttime)
 		menu.selectedCols.modules = nil
 	else
 		if menu.upgradetypeMode then
-			local maxSlotWidth = math.floor((menu.modulesData.width - 8 * Helper.borderSize) / 9)
-			local slotWidth = maxSlotWidth - math.floor(((count / 3 > 6) and Helper.scrollbarWidth or 0) / 9)
-			local extraPixels = (menu.modulesData.width - 8 * Helper.borderSize) % 9
-			local slotWidths = { slotWidth, slotWidth, slotWidth, slotWidth, slotWidth, slotWidth, slotWidth, slotWidth, slotWidth }
-			if extraPixels > 0 then
-				for i = 1, extraPixels do
-					slotWidths[i] = slotWidths[i] + 1
-				end
-			end
-			local columnWidths = {}
-			local maxColumnWidth = 0
-			for i = 1, 3 do
-				columnWidths[i] = slotWidths[(i - 1) * 3 + 1] + slotWidths[(i - 1) * 3 + 2] + slotWidths[(i - 1) * 3 + 3] + 2 * Helper.borderSize
-				maxColumnWidth = math.max(maxColumnWidth, columnWidths[i])
-			end
-			local slidercellWidth = menu.modulesData.width - math.floor((count / 3 > 6) and Helper.scrollbarWidth or 0)
-
-			local ftable = frame:addTable(10, { tabOrder = 1, width = menu.modulesData.width, height = 0, x = menu.modulesData.offsetX, y = menu.modulesData.offsetY, scaling = false, reserveScrollBar = false, highlightMode = "column", backgroundID = "solid", backgroundColor = Color["table_background_3d_editor"] })
-			if menu.setdefaulttable then
-				ftable.properties.defaultInteractiveObject = true
-				menu.setdefaulttable = nil
-			end
-			for i = 1, 8 do
-				ftable:setColWidth(i, slotWidths[i])
-			end
-			ftable:setColWidth(10, editboxheight)
-			ftable:setDefaultColSpan(1, 3)
-			ftable:setDefaultColSpan(4, 3)
-			ftable:setDefaultColSpan(7, 4)
-
-			local currentSlotInfo = {}
-
 			local upgradetype = Helper.findUpgradeType(menu.upgradetypeMode)
-
-			local name = menu.getLeftBarLoadoutEntry(menu.upgradetypeMode).name or ""
-			local row = ftable:addRow(false, { fixed = true, bgColor = Color["row_title_background"] })
-			row[1]:setColSpan(10):createText(name, menu.headerTextProperties)
+			local currentSlotInfo = {}
 
 			if menu.upgradetypeMode == "turretgroup" then
 				local groupcount = 1
@@ -2512,6 +2482,56 @@ function menu.displayModules(frame, firsttime)
 					table.insert(menu.groupedslots[group], entry)
 				end
 			end
+			
+			menu.rowHeight = math.max(23, Helper.scaleY(Helper.standardTextHeight))
+			menu.extraFontSize = Helper.scaleFont(Helper.standardFont, Helper.standardFontSize)
+			local maxSlotWidth = math.floor((menu.modulesData.width - 8 * Helper.borderSize) / 9)
+
+			local hasScrollbar = false
+			local headerHeight = menu.titleData.height + #menu.groupedslots * (maxSlotWidth + Helper.borderSize) + menu.rowHeight + 2 * Helper.borderSize
+			local boxTextHeight = math.ceil(C.GetTextHeight(" \n ", Helper.standardFont, menu.extraFontSize, 0)) + 2 * Helper.borderSize
+			--[[ Keep for simpler debugging
+				print((Helper.viewHeight - 2 * menu.slotData.offsetY) .. " vs " .. (headerHeight + rowcount * (3 * (maxSlotWidth + Helper.borderSize) + boxTextHeight) + slidercount * (menu.subHeaderRowHeight + Helper.borderSize)))
+				print(headerHeight)
+				print(boxTextHeight)
+				print(rowcount .. " * " .. 3 * (maxSlotWidth + Helper.borderSize))
+				print(slidercount .. " * " .. menu.subHeaderRowHeight + Helper.borderSize) --]]
+			if (Helper.viewHeight - 2 * menu.modulesData.offsetY) < (headerHeight + rowcount * (3 * (maxSlotWidth + Helper.borderSize) + boxTextHeight) + slidercount * (menu.subHeaderRowHeight + Helper.borderSize)) then
+				hasScrollbar = true
+			end
+
+			local slotWidth = maxSlotWidth - math.floor((hasScrollbar and Helper.scrollbarWidth or 0) / 9)
+			local extraPixels = (menu.modulesData.width - 8 * Helper.borderSize) % 9
+			local slotWidths = { slotWidth, slotWidth, slotWidth, slotWidth, slotWidth, slotWidth, slotWidth, slotWidth, slotWidth }
+			if extraPixels > 0 then
+				for i = 1, extraPixels do
+					slotWidths[i] = slotWidths[i] + 1
+				end
+			end
+			local columnWidths = {}
+			local maxColumnWidth = 0
+			for i = 1, 3 do
+				columnWidths[i] = slotWidths[(i - 1) * 3 + 1] + slotWidths[(i - 1) * 3 + 2] + slotWidths[(i - 1) * 3 + 3] + 2 * Helper.borderSize
+				maxColumnWidth = math.max(maxColumnWidth, columnWidths[i])
+			end
+			local slidercellWidth = menu.modulesData.width - math.floor(hasScrollbar and Helper.scrollbarWidth or 0)
+
+			local ftable = frame:addTable(10, { tabOrder = 1, width = menu.modulesData.width, height = 0, x = menu.modulesData.offsetX, y = menu.modulesData.offsetY, scaling = false, reserveScrollBar = false, highlightMode = "column", backgroundID = "solid", backgroundColor = Color["table_background_3d_editor"] })
+			if menu.setdefaulttable then
+				ftable.properties.defaultInteractiveObject = true
+				menu.setdefaulttable = nil
+			end
+			for i = 1, 8 do
+				ftable:setColWidth(i, slotWidths[i])
+			end
+			ftable:setColWidth(10, editboxheight)
+			ftable:setDefaultColSpan(1, 3)
+			ftable:setDefaultColSpan(4, 3)
+			ftable:setDefaultColSpan(7, 4)
+
+			local name = menu.getLeftBarLoadoutEntry(menu.upgradetypeMode).name or ""
+			local row = ftable:addRow(false, { fixed = true, bgColor = Color["row_title_background"] })
+			row[1]:setColSpan(10):createText(name, menu.headerTextProperties)
 
 			for _, group in ipairs(menu.groupedslots) do
 				local row = ftable:addRow(true, {  })
@@ -2548,7 +2568,7 @@ function menu.displayModules(frame, firsttime)
 							mouseovertext = ReadText(1001, 8023) .. " " .. group[i][1]
 						end
 
-						row[i]:setColSpan(colspan):createButton({ height = slotWidths[i], bgColor = bgcolor, mouseOverText = mouseovertext }):setText(group[i][3], { halign = "center", fontsize = Helper.scaleFont(Helper.standardFont, Helper.standardFontSize) })
+						row[i]:setColSpan(colspan):createButton({ height = slotWidths[i], bgColor = bgcolor, mouseOverText = mouseovertext, width = slotWidths[i] }):setText(group[i][3], { halign = "center", fontsize = Helper.scaleFont(Helper.standardFont, Helper.standardFontSize) })
 						if total > 0 then
 							local width = math.max(1, math.floor(count * (slotWidths[i] - 2 * menu.scaleSize) / total))
 							row[i]:setIcon("solid", { width = width + 2 * Helper.configButtonBorderSize, height = menu.scaleSize + 2 * Helper.configButtonBorderSize, x = menu.scaleSize - Helper.configButtonBorderSize, y = slotWidths[i] - 2 * menu.scaleSize - Helper.configButtonBorderSize })
@@ -2833,6 +2853,10 @@ function menu.refreshPlan()
 					else
 						menu.usedLimitedModules[entry.macro] = 1
 					end
+				end
+
+				if menu.selectedModule and (entry.idx == menu.selectedModule.idx) then
+					menu.selectedModule = entry
 				end
 			end
 
@@ -3979,12 +4003,37 @@ function menu.displayModuleInfo(frame)
 		row[1]:createText(ReadText(1001, 9612))
 		row[2]:createText(data.shipstoragecapacity)
 	end
+
+	local counts = {}
+	for _, upgradetype in ipairs(Helper.upgradetypes) do
+		if upgradetype.supertype == "group" then
+			counts[upgradetype.type] = 0
+			for slot, group in pairs(menu.selectedModule.upgradeplan[upgradetype.type]) do
+				if upgradetype.mergeslots then
+					counts[upgradetype.type] = counts[upgradetype.type] + ((menu.selectedModule.upgradeplan[upgradetype.type][slot].count > 0) and 1 or 0)
+				else
+					counts[upgradetype.type] = counts[upgradetype.type] + menu.selectedModule.upgradeplan[upgradetype.type][slot].count
+				end
+			end
+		end
+	end
+
 	-- turrets
 	local numturrets = C.GetNumUpgradeSlots(menu.selectedModule.component, menu.selectedModule.macro, "turret")
 	if numturrets > 0 then
 		local row = ftable:addRow(false, {  })
 		row[1]:createText(ReadText(1001, 1319))
-		row[2]:createText(tonumber(numturrets))
+
+		row[2]:createText(counts.turretgroup .. " / " .. tonumber(numturrets))
+	end
+
+	-- shields
+	local numshields = C.GetNumUpgradeSlots(menu.selectedModule.component, menu.selectedModule.macro, "shield")
+	if numshields > 0 then
+		local row = ftable:addRow(false, {  })
+		row[1]:createText(ReadText(1001, 1317))
+
+		row[2]:createText(counts.shieldgroup .. " / " .. tonumber(numshields))
 	end
 
 	ftable.properties.y = Helper.viewHeight - ftable:getVisibleHeight() - menu.statsData.offsetY

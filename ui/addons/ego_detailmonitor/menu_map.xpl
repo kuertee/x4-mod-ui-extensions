@@ -7316,13 +7316,20 @@ function menu.createObjectList(frame, instance)
 	else
 		menu.settoprow = ((not menu.settoprow) or (menu.settoprow == 0)) and ((menu.setrow and menu.setrow > 21) and (menu.setrow - 17) or 3) or menu.settoprow
 		objecttable:setTopRow(menu.settoprow)
+		local highlightborderrow = menu.sethighlightborderrow or menu.setrow
 		if menu.infoTable then
 			local result = GetShiftStartEndRow(menu.infoTable)
 			if result then
-				objecttable:setShiftStartEnd(table.unpack(result))
+				if highlightborderrow then
+					local shiftstart, shiftend = table.unpack(result)
+					local ismultiselected = objecttable.rows[highlightborderrow].properties.multiSelected
+					if (not ismultiselected) or (((not shiftstart) or (shiftstart <= highlightborderrow)) and ((not shiftend) or (shiftend >= highlightborderrow))) then
+						objecttable:setShiftStartEnd(table.unpack(result))
+					end
+				end
 			end
 		end
-		objecttable:setSelectedRow(menu.sethighlightborderrow or menu.setrow)
+		objecttable:setSelectedRow(highlightborderrow)
 	end
 	menu.setrow = nil
 	menu.settoprow = nil
@@ -7727,13 +7734,20 @@ function menu.createPropertyOwned(frame, instance)
 	else
 		menu.settoprow = ((not menu.settoprow) or (menu.settoprow == 0)) and ((menu.setrow and menu.setrow > 21) and (menu.setrow - 17) or 3) or menu.settoprow
 		ftable:setTopRow(menu.settoprow)
+		local highlightborderrow = menu.sethighlightborderrow or menu.setrow
 		if menu.infoTable then
 			local result = GetShiftStartEndRow(menu.infoTable)
 			if result then
-				ftable:setShiftStartEnd(table.unpack(result))
+				if highlightborderrow then
+					local shiftstart, shiftend = table.unpack(result)
+					local ismultiselected = ftable.rows[highlightborderrow].properties.multiSelected
+					if (not ismultiselected) or (((not shiftstart) or (shiftstart <= highlightborderrow)) and ((not shiftend) or (shiftend >= highlightborderrow))) then
+						ftable:setShiftStartEnd(shiftstart, shiftend)
+					end
+				end
 			end
 		end
-		ftable:setSelectedRow(menu.sethighlightborderrow or menu.setrow)
+		ftable:setSelectedRow(highlightborderrow)
 	end
 	menu.setrow = nil
 	menu.settoprow = nil
@@ -28844,12 +28858,18 @@ function menu.getWareButtonColorAndScript(filteroptionlist, setting, contextware
 		end
 	end
 
-	local color = ((#filteroptionlist == 0) or index) and Color["text_normal"] or Color["text_inactive"]
+	local color = Color["text_normal"]
 	local script
-	if index then
-		script = function () menu.removeFilterOption(setting, setting.id, index) end
-	else
-		script = function () menu.setFilterOption("layer_trade", setting, setting.id, contextware) end
+
+	if menu.getFilterOption("layer_trade", false) then
+		if (#filteroptionlist ~= 0) and (not index) then
+			color = Color["text_inactive"]
+		end
+		if index then
+			script = function () menu.removeFilterOption(setting, setting.id, index) end
+		else
+			script = function () menu.setFilterOption("layer_trade", setting, setting.id, contextware) end
+		end
 	end
 
 	return color, script
