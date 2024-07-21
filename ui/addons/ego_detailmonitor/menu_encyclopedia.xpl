@@ -3045,6 +3045,15 @@ function menu.addDetailRows(ftable)
 			end
 			-- missile storage
 			menu.addDetailRow(ftable, ReadText(1001, 9061), ConvertIntegerString(C.GetDefaultMissileStorageCapacity(menu.id), true, 0, true))
+
+			-- start: kuertee call-back
+			if callbacks ["addDetailRow_post_missile_entry"] then		
+					for _, callback in ipairs (callbacks ["addDetailRow_post_missile_entry"]) do
+					callback(ftable, col1, col2, col3, offsetx, iswordwrap, properties1, properties2, properties3, entry)
+			    end		
+			end
+			-- end: kuertee call-back
+
 			-- empty line
 			menu.addDetailRow(ftable, "")
 			-- crew capacity
