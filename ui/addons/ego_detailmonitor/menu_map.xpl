@@ -6610,7 +6610,7 @@ function menu.viewCreated(layer, ...)
 		elseif menu.contextMenuMode == "select" then
 			menu.contexttable = ...
 		elseif menu.contextMenuMode == "crewtransfer" then
-			menu.contexttable = ...
+			menu.contextbuttontable, menu.contexttable = ...
 		elseif menu.contextMenuMode == "ventureconfig" then
 			menu.contexttitletable, menu.contextmissiontable, menu.contextinfotable, menu.contextbuttontable, menu.contextrewardtable, menu.contextdescriptiontable = ...
 		elseif menu.contextMenuMode == "hire" then
@@ -17062,6 +17062,7 @@ function menu.addMissionRow(ftable, missionentry, indented, seqidx)
 		end
 	else
 		if indented == 2 then
+			row[2]:setBackgroundColSpan(1)
 			row[1]:setColSpan(2)
 			row[1].properties.cellBGColor = Color["row_background"]
 			row[3]:setBackgroundColSpan(7):setColSpan(2):createText(icon .. "\n" .. faction, { color = color })

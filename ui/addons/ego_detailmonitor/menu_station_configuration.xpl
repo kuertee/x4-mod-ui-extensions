@@ -4008,11 +4008,13 @@ function menu.displayModuleInfo(frame)
 	for _, upgradetype in ipairs(Helper.upgradetypes) do
 		if upgradetype.supertype == "group" then
 			counts[upgradetype.type] = 0
-			for slot, group in pairs(menu.selectedModule.upgradeplan[upgradetype.type]) do
-				if upgradetype.mergeslots then
-					counts[upgradetype.type] = counts[upgradetype.type] + ((menu.selectedModule.upgradeplan[upgradetype.type][slot].count > 0) and 1 or 0)
-				else
-					counts[upgradetype.type] = counts[upgradetype.type] + menu.selectedModule.upgradeplan[upgradetype.type][slot].count
+			if menu.selectedModule.upgradeplan then
+				for slot, group in pairs(menu.selectedModule.upgradeplan[upgradetype.type]) do
+					if upgradetype.mergeslots then
+						counts[upgradetype.type] = counts[upgradetype.type] + ((menu.selectedModule.upgradeplan[upgradetype.type][slot].count > 0) and 1 or 0)
+					else
+						counts[upgradetype.type] = counts[upgradetype.type] + menu.selectedModule.upgradeplan[upgradetype.type][slot].count
+					end
 				end
 			end
 		end

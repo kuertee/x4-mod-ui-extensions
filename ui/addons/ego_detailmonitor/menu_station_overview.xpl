@@ -1501,7 +1501,7 @@ function menu.setupFlowchartData()
 		local money, productionmoney = GetComponentData(menu.containerid, "money", "productionmoney")
 		local supplymoney = tonumber(C.GetSupplyBudget(menu.container)) / 100
 		local tradewaremoney = tonumber(C.GetTradeWareBudget(menu.container)) / 100
-		local budget = productionmoney + supplymoney + tradewaremoney
+		local budget = math.floor(productionmoney + supplymoney + tradewaremoney)
 
 		local shownamount = money
 		local shownmax = math.max(shownamount, budget)
@@ -3834,7 +3834,7 @@ function menu.onExpandAccount(_, ftable, _, nodedata)
 	local money, productionmoney = GetComponentData(menu.containerid, "money", "productionmoney")
 	local supplymoney = tonumber(C.GetSupplyBudget(menu.container)) / 100
 	local trademoney = tonumber(C.GetTradeWareBudget(menu.container)) / 100
-	local budget = productionmoney + supplymoney + trademoney
+	local budget = math.floor(productionmoney + supplymoney + trademoney)
 	local playermoney = math.max(0, GetPlayerMoney())
 
 	local row
@@ -3875,6 +3875,9 @@ function menu.onExpandAccount(_, ftable, _, nodedata)
 	row[1]:setColSpan(2):createText(ReadText(1001, 8447) .. ReadText(1001, 120))
 	row = ftable:addRow(nil, {  })
 	row[1]:setColSpan(2):createText(ConvertMoneyString(trademoney, false, true, 0, true, false) .. " " .. ReadText(1001, 101), { halign = "right" })
+	if row.index == menu.selectedRows.nodeTable then
+		menu.selectedRows.nodeTable = menu.selectedRows.nodeTable + 1
+	end
 	-- current money
 	row = ftable:addRow(true, {  })
 	row[1]:setColSpan(2):createSliderCell({
@@ -3900,7 +3903,7 @@ function menu.getAccountWarningText()
 	local money, productionmoney = GetComponentData(menu.containerid, "money", "productionmoney")
 	local supplymoney = tonumber(C.GetSupplyBudget(menu.container)) / 100
 	local trademoney = tonumber(C.GetTradeWareBudget(menu.container)) / 100
-	local budget = productionmoney + supplymoney + trademoney
+	local budget = math.floor(productionmoney + supplymoney + trademoney)
 
 	if money < budget then
 		if money == 0 then
@@ -3916,7 +3919,7 @@ function menu.getAccountWarningColor()
 	local money, productionmoney = GetComponentData(menu.containerid, "money", "productionmoney")
 	local supplymoney = tonumber(C.GetSupplyBudget(menu.container)) / 100
 	local trademoney = tonumber(C.GetTradeWareBudget(menu.container)) / 100
-	local budget = productionmoney + supplymoney + trademoney
+	local budget = math.floor(productionmoney + supplymoney + trademoney)
 
 	if money < budget then
 		if money == 0 then
@@ -5130,7 +5133,7 @@ function menu.updateAccountNode(node)
 	local money, productionmoney = GetComponentData(menu.containerid, "money", "productionmoney")
 	local supplymoney = tonumber(C.GetSupplyBudget(menu.container)) / 100
 	local tradewaremoney = tonumber(C.GetTradeWareBudget(menu.container)) / 100
-	local budget = productionmoney + supplymoney + tradewaremoney
+	local budget = math.floor(productionmoney + supplymoney + tradewaremoney)
 
 	local shownamount = money
 	local shownmax = math.max(shownamount, budget)

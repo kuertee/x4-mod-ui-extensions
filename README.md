@@ -5,11 +5,8 @@ by kuertee. Contributors: Erixon, Forleyor, Mycu, Runekn, AlexandreTK.
 
 Updates
 =======
-v7.1.031, 22 Jul 2024:
--New feature: New Encyclopedia callback for extra ship data after ship's weapons list.
-
-v7.1.03, 19 Jul 2024:
--Compatibility: Requires base game v7.10 beta 3.
+v7.1.04, 29 Jul 2024:
+-Compatibility: Requires base game v7.10 beta 4.
 
 Instructions for players
 ========================
@@ -173,6 +170,12 @@ Troubleshooting
 
 History
 =======
+v7.1.031, 22 Jul 2024:
+-New feature: New Encyclopedia callback for extra ship data after ship's weapons list.
+
+v7.1.03, 19 Jul 2024:
+-Compatibility: Requires base game v7.10 beta 3.
+
 v7.1.02, 13 Jul 2024:
 -Compatibility: Requires base game v7.10 beta 2.
 
