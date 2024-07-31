@@ -2862,9 +2862,14 @@ function menu.addDetailRows(ftable)
 
 			local numslots = tonumber(C.GetNumUpgradeSlots(0, menu.id, "engine"))
 			if hasdefaultloadout and menu.preobject then
-				local bestengine = GetLibraryEntry( "enginetypes", ffi.string(C.GetUpgradeSlotCurrentMacro(ConvertIDTo64Bit(menu.preobject), 0, "engine", 1)) )
-				for _, entry in pairs(bestengines) do
-					entry.engine = bestengine
+				local enginemacro = ffi.string(C.GetUpgradeSlotCurrentMacro(ConvertIDTo64Bit(menu.preobject), 0, "engine", 1))
+				if enginemacro ~= "" then
+					local bestengine = GetLibraryEntry("enginetypes", enginemacro)
+					if next(bestengine) then
+						for _, entry in pairs(bestengines) do
+							entry.engine = bestengine
+						end
+					end
 				end
 			else
 				for i = 1, numslots do
@@ -3918,7 +3923,7 @@ function menu.createGraph(width, height, x, y)
 		end
 		
 		if sellDataWeights[i] and (sellDataWeights[i].amount > 0) and (not menu.hiddenData.sell[i]) then
-			if next(menu.graphdata[buyDataWeights[i].dataIdx].selldata) then
+			if next(menu.graphdata[sellDataWeights[i].dataIdx].selldata) then
 				local highlight = menu.selectedrowdata == entry
 				local color = config.graph.datarecordcolors[i].sell
 				if hashighlight and (not highlight) then

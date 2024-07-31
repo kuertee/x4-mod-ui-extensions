@@ -10573,21 +10573,21 @@ function menu.setupGroupData(object, macro, groups, changeupgradeplan)
 					menu.upgradeplan[upgradetype.type][i] = { macro = currentmacro, count = groupinfo.count, path = group.path, group = group.group, ammomacro = "", weaponmode = weaponmode }
 					if currentmacro ~= "" then
 						local ware = GetMacroData(currentmacro, "ware")
-						local i = menu.findUpgradeMacro(upgradetype.grouptype, currentmacro)
-						if i then
+						local k = menu.findUpgradeMacro(upgradetype.grouptype, currentmacro)
+						if k then
 							if menu.objectgroup then
-								if not menu.upgradewares[upgradetype.grouptype][i].isFromShipyard then
+								if not menu.upgradewares[upgradetype.grouptype][k].isFromShipyard then
 									menu.upgradeplan[upgradetype.type][i].checkforeignmacro = true
 								end
 							end
-							menu.upgradewares[upgradetype.grouptype][i].objectamount = menu.upgradewares[upgradetype.grouptype][i].objectamount + groupinfo.count
+							menu.upgradewares[upgradetype.grouptype][k].objectamount = menu.upgradewares[upgradetype.grouptype][k].objectamount + groupinfo.count
 						else
 							if menu.objectgroup then
 								menu.upgradeplan[upgradetype.type][i].checkforeignmacro = true
 							end
 							table.insert(menu.upgradewares[upgradetype.grouptype], { ware = ware, macro = currentmacro, objectamount = groupinfo.count, isFromShipyard = false })
 						end
-						menu.setMissingUpgrade(ware, groupinfo.count, i == nil)
+						menu.setMissingUpgrade(ware, groupinfo.count, k == nil)
 					end
 				end
 			end

@@ -12580,11 +12580,11 @@ function menu.setupInfoSubmenuRows(mode, inputtable, inputobject, instance)
 		row = menu.addInfoSubmenuRow(instance, inputtable, row, locrowdata, false, false, false, 1, indentsize)
 
 		local hull_max = Helper.unlockInfo(defenceinfo_low, ConvertIntegerString(Helper.round(GetComponentData(object64, "hullmax")), true, 4, true, true, true))
-		locrowdata = { false, ReadText(1001, 1) .. ReadText(1001, 120), (defenceinfo_high and (function() return (ConvertIntegerString(Helper.round(GetComponentData(object64, "hull")), true, 4, true, true, true) .. " / " .. hull_max .. " " .. ReadText(1001, 118) .. " (" .. GetComponentData(object64, "hullpercent") .. "%)") end) or (unknowntext .. " / " .. hull_max .. " " .. ReadText(1001, 118) .. " (" ..  GetComponentData(object64, "hullpercent") .. "%)")) }	-- Hull, MJ
+		locrowdata = { false, ReadText(1001, 1) .. ReadText(1001, 120), (defenceinfo_high and (function() return (ConvertIntegerString(Helper.round(GetComponentData(object64, "hull") or 0), true, 4, true, true, true) .. " / " .. hull_max .. " " .. ReadText(1001, 118) .. " (" .. (GetComponentData(object64, "hullpercent") or 0) .. "%)") end) or (unknowntext .. " / " .. hull_max .. " " .. ReadText(1001, 118) .. " (" ..  (GetComponentData(object64, "hullpercent") or 0) .. "%)")) }	-- Hull, MJ
 		row = menu.addInfoSubmenuRow(instance, inputtable, row, locrowdata, false, false, false, 1, indentsize)
 
 		local shield_max = Helper.unlockInfo(defenceinfo_low, ConvertIntegerString(Helper.round(GetComponentData(object64, "shieldmax")), true, 4, true, true, true))
-		locrowdata = { false, ReadText(1001, 2) .. ReadText(1001, 120), (defenceinfo_high and (function() return (ConvertIntegerString(Helper.round(GetComponentData(object64, "shield")), true, 4, true, true, true) .. " / " .. shield_max .. " " .. ReadText(1001, 118) .. " (" .. GetComponentData(object64, "shieldpercent") .. "%)") end) or (unknowntext .. " / " .. shield_max .. " " .. ReadText(1001, 118) .. " (" ..  GetComponentData(object64, "shieldpercent") .. "%)")) }	-- Shield, MJ
+		locrowdata = { false, ReadText(1001, 2) .. ReadText(1001, 120), (defenceinfo_high and (function() return (ConvertIntegerString(Helper.round(GetComponentData(object64, "shield") or 0), true, 4, true, true, true) .. " / " .. shield_max .. " " .. ReadText(1001, 118) .. " (" .. (GetComponentData(object64, "shieldpercent") or 0) .. "%)") end) or (unknowntext .. " / " .. shield_max .. " " .. ReadText(1001, 118) .. " (" ..  (GetComponentData(object64, "shieldpercent") or 0) .. "%)")) }	-- Shield, MJ
 		row = menu.addInfoSubmenuRow(instance, inputtable, row, locrowdata, false, false, false, 1, indentsize)
 
 		locrowdata = { true, ReadText(1001, 9076) .. ReadText(1001, 120), defenceinfo_low and (function() return (ConvertIntegerString(Helper.round(GetComponentData(object64, "maxunboostedforwardspeed") or 0), true, 0, true) .. " " .. ReadText(1001, 113)) end) or (unknowntext .. " " .. ReadText(1001, 113)) }	-- Cruising Speed, m/s
@@ -19624,7 +19624,11 @@ function menu.initTradeContextData()
 					end
 				else
 					table.insert(menu.contextMenuData.buyoffers, tradedata)
-					buywares[tradedata.ware] = tradedata
+					if not buywares[tradedata.ware] then
+						buywares[tradedata.ware] = { tradedata }
+					else
+						table.insert(buywares[tradedata.ware], tradedata)
+					end
 				end
 				if tradedata.active and currentotherwares then
 					currentotherwares[tradedata.ware] = currentotherwares[tradedata.ware] or 0
@@ -19641,7 +19645,11 @@ function menu.initTradeContextData()
 					end
 				else
 					table.insert(menu.contextMenuData.selloffers, tradedata)
-					sellwares[tradedata.ware] = tradedata
+					if not sellwares[tradedata.ware] then
+						sellwares[tradedata.ware] = { tradedata }
+					else
+						table.insert(sellwares[tradedata.ware], tradedata)
+					end
 				end
 				if tradedata.active then
 					currentwares[tradedata.ware] = currentwares[tradedata.ware] or 0
@@ -19675,7 +19683,7 @@ function menu.initTradeContextData()
 					tradedata.active = false
 					tradedata.stale = true
 					table.insert(menu.contextMenuData.buyoffers, tradedata)
-					buywares[tradedata.ware] = tradedata
+					buywares[tradedata.ware] = { tradedata }
 				end
 			elseif tradedata.isselloffer then
 				if tradedata.ismissionoffer then
@@ -19696,7 +19704,7 @@ function menu.initTradeContextData()
 					tradedata.active = false
 					tradedata.stale = true
 					table.insert(menu.contextMenuData.selloffers, tradedata)
-					sellwares[tradedata.ware] = tradedata
+					sellwares[tradedata.ware] = { tradedata }
 				end
 			end
 		end
@@ -19951,13 +19959,15 @@ end
 
 function menu.getCargoOrderAmountByWare(ware)
 	local result = 0
-	local buyoffer = menu.contextMenuData.buywares[ware]
-	if buyoffer then
-		result = result + (menu.contextMenuData.orders[ConvertIDTo64Bit(buyoffer.id)] or 0)
+	if menu.contextMenuData.buywares[ware] then
+		for _, buyoffer in ipairs(menu.contextMenuData.buywares[ware]) do
+			result = result + (menu.contextMenuData.orders[ConvertIDTo64Bit(buyoffer.id)] or 0)
+		end
 	end
-	local selloffer = menu.contextMenuData.sellwares[ware]
-	if selloffer then
-		result = result + (menu.contextMenuData.orders[ConvertIDTo64Bit(selloffer.id)] or 0)
+	if menu.contextMenuData.sellwares[ware] then
+		for _, selloffer in ipairs(menu.contextMenuData.sellwares[ware]) do
+			result = result + (menu.contextMenuData.orders[ConvertIDTo64Bit(selloffer.id)] or 0)
+		end
 	end
 	local missionoffers = menu.contextMenuData.missionwares[ware]
 	if missionoffers then
@@ -20118,7 +20128,7 @@ function menu.getTradeContextRowContent(waredata)
 		if waredata.buy.desiredamount > 0 then
 			hasdesiredbuyamount = true
 		end
-		local availableamount = (waredata.buy.ammotypename and menu.contextMenuData.currentammo[waredata.ware] or menu.contextMenuData.currentcargo[waredata.ware]) or 0
+		local availableamount = (waredata.buy.ammotypename and menu.contextMenuData.currentammo[waredata.ware] or ((menu.contextMenuData.currentcargo[waredata.ware] or 0) - menu.getCargoOrderAmountByWare(waredata.ware) + buyoffer_curorder)) or 0
 		buyoffer_maxselect = math.min(waredata.buy.amount, availableamount)
 		buyoffer_max = waredata.buy.amount
 
