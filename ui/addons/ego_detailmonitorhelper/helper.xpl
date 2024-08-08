@@ -696,9 +696,11 @@ Helper.slotTypeOrder = {
 }
 
 -- forward declarations of local functions
-local onUpdate								-- callback, delegates to onUpdateHandler
-local onUpdateHandler = nil					-- a function will be called once per frame when assigned to this variable
-local onChatUpdateHandler = nil				-- a function will be called once per frame when assigned to this variable
+local onUpdate								-- global function calling the callbacks below
+
+local onUpdateHandler = nil					-- a callback function to be called once per frame in onUpdate() when assigned to this variable
+local onChatUpdateHandler = nil				-- a callback function to be called once per frame in onUpdate() when assigned to this variable
+local onUpdateOneTimeCallbacks = {}			-- list of callbacks to be called a single time on the next onUpdate()
 
 local getSectionBaseParam
 
@@ -881,7 +883,15 @@ Helper.currentTableCol = {}
 ---------------------------------------------------------------------------------
 
 function onUpdate()
-	-- delegate function call so we don't have to set and remove the callback all the time
+	-- call registered onUpdate callbacks
+	if #onUpdateOneTimeCallbacks > 0 then
+		-- clear list of one-time callbacks before calling them
+		local currentcallbacks = onUpdateOneTimeCallbacks
+		onUpdateOneTimeCallbacks = {}
+		for _, callback in ipairs(currentcallbacks) do
+			callback()
+		end
+	end
 	if onUpdateHandler then
 		onUpdateHandler()
 	end
@@ -1456,8 +1466,7 @@ function Helper.minimizeMenu(menu, text)
 				View.minimizeMenu("Helper" .. layer, text)
 			end
 		end
-		onUpdateHandler = function ()
-				onUpdateHandler = nil
+		table.insert(onUpdateOneTimeCallbacks, function ()
 				for layer, frame in pairs(menu.frames) do
 					if IsValidWidgetElement(frame) then
 						-- rehook the onHide event to allow closing and restoring the menu
@@ -1465,6 +1474,7 @@ function Helper.minimizeMenu(menu, text)
 					end
 				end
 			end
+		)
 
 		C.RemoveTrackedMenu(menu.name)
 
@@ -1511,7 +1521,7 @@ function Helper.clearFrame(menu, layer)
 	menu.frames[layer] = nil
 end
 
-function Helper.clearMenu(menu, UpdateHandler)
+function Helper.clearMenu(menu)
 	-- stop mouse emulation
 	Helper.disableAutoMouseEmulation(menu)
 	-- cleanup
@@ -1548,7 +1558,8 @@ function Helper.clearMenu(menu, UpdateHandler)
 	menu.tableConnections = {}
 	menu.shown = nil
 	menu.defaulttable = nil
-	onUpdateHandler = UpdateHandler
+	-- reset menu update callback
+	onUpdateHandler = nil
 end
 
 function Helper.findFrameLayer(menu, widget)
@@ -1650,13 +1661,13 @@ end
 
 -- This or another Helper.closeMenu*() function must be called from menu.onCloseElement()
 function Helper.closeMenu(menu, dueToClose, allowAutoMenu, sound)
-	local updateHandler
+	local resultfunc
 	if allowAutoMenu == nil then
 		allowAutoMenu = true
 	end
 	if (dueToClose == "back") then
 		if menu.conversationMenu then
-			updateHandler = ReturnFromMenu
+			resultfunc = ReturnFromMenu
 			allowAutoMenu = false
 		else
 			if menu.param2 and (#menu.param2 > 0) then
@@ -1676,10 +1687,10 @@ function Helper.closeMenu(menu, dueToClose, allowAutoMenu, sound)
 			PlaySound("ui_map_close")
 		end
 		if menu.conversationMenu then
-			updateHandler = CancelConversation
+			resultfunc = CancelConversation
 		end
 	end
-	closeMenu(menu, updateHandler, allowAutoMenu)
+	closeMenu(menu, resultfunc, allowAutoMenu)
 end
 
 function Helper.closeMenuAndOpenNewMenu(menu, newname, param, noreturn, quickaccess)
@@ -1724,18 +1735,18 @@ function Helper.closeMenuForSubConversation(menu, nextconversation, nextactor, c
 end
 
 function Helper.closeMenuForNewConversation(menu, conversation, actor, convparam, disablereturn)
-	local updateHandler
+	local resultfunc
 	if menu.conversationMenu then
 		-- TEMP Florian: Remove once menus do not open other menus via the conversation manager
 		local baseparam = getSectionBaseParam(menu)
-		updateHandler = function() ProceedFromMenu(conversation, Helper.convertComponentIDs(convparam), Helper.convertComponentIDs(baseparam)) end
+		resultfunc = function() ProceedFromMenu(conversation, Helper.convertComponentIDs(convparam), Helper.convertComponentIDs(baseparam)) end
 	else
 		if not disablereturn then
 			Helper.addConversationReturnHandler(menu)
 		end
-		updateHandler = function() StartConversationFromMenu(conversation, actor, Helper.convertComponentIDs(convparam)) end
+		resultfunc = function() StartConversationFromMenu(conversation, actor, Helper.convertComponentIDs(convparam)) end
 	end
-	closeMenu(menu, updateHandler, false)
+	closeMenu(menu, resultfunc, false)
 end
 
 function Helper.onConversationReturned(eventname, sectionname)
@@ -1824,18 +1835,15 @@ function closeMenu(menu, resultfunc, allowAutoMenu)
 	end
 	-- Wake up conversation and send menu result (even if nil or false) but only on next frame!
 	-- This gives the current menu a chance to clean things up, in case the conversation decides to open another menu right away
-	local UpdateHandler
 	if resultfunc then
-		UpdateHandler = function()
-							onUpdateHandler = nil	-- don't call me again
+		table.insert(onUpdateOneTimeCallbacks, function()
 							UnsuspendConversation()
 							-- NOTE: This must happen AFTER UnsuspendConversation()
 							resultfunc()
 						end
-	else
-		UpdateHandler = nil
+		)
 	end
-	Helper.clearMenu(menu, UpdateHandler)
+	Helper.clearMenu(menu)
 end
 
 ---------------------------------------------------------------------------------
