@@ -6,7 +6,7 @@ by kuertee. Contributors: Erixon, Forleyor, Mycu, Runekn, AlexandreTK.
 Updates
 =======
 v7.1.06, 8 Aug 2024:
--Compatibility: Requires base game v7.10 beta 6.
+-Compatibility: Requires base game v7.10.
 
 Instructions for players
 ========================
