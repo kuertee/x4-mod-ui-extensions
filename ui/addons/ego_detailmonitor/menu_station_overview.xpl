@@ -406,6 +406,14 @@ function menu.onShowMenu(state)
 	menu.container = ConvertIDTo64Bit(menu.containerid)
 	menu.displayedgraphwares = {}
 
+	-- kuertee start: callback
+	if callbacks ["onShowMenu_start"] then
+		for _, callback in ipairs (callbacks ["onShowMenu_start"]) do
+			callback (menu.container)
+		end
+	end
+	-- kuertee end: callback
+
 	menu.isdummy = false
 	if not menu.container then
 		menu.isdummy = true

@@ -10705,7 +10705,24 @@ function Helper.updateLSOStorageNode(menu, node, container, ware)
 		node:updateMaxValue(max)
 	end
 	node:updateValue(amount)
-	node:updateStatus(nil, statusicon, nil, statuscolor, statusiconmouseovertext)
+
+	-- kuertee start: callback
+	if callbacks ["updateLSOStorageNode_pre_update_expanded_node"] then
+		-- function widgetPrototypes.flowchartnode:updateStatus(text, icon, bgicon, color, mouseovertext)
+		local status_text = nil
+		local status_icon = statusicon
+		local status_bgicon = nil
+		local status_color = statuscolor
+		local status_mouseovertext = statusiconmouseovertext
+		for _, callback in ipairs (callbacks ["updateLSOStorageNode_pre_update_expanded_node"]) do
+			status_text, status_icon, status_bgicon, status_color, status_mouseovertext = callback(menu, node, container, ware, status_text, status_icon, status_bgicon, status_color, status_mouseovertext)
+		end
+		node:updateStatus(status_text, status_icon, status_bgicon, status_color, status_mouseovertext)
+	else
+
+		node:updateStatus(nil, statusicon, nil, statuscolor, statusiconmouseovertext)
+	end
+	-- kuertee end: callback
 
 	for _, edge in ipairs(node.incomingEdges) do
 		menu.updateEdgeColorRecursively(edge, edgecolor)
@@ -10954,6 +10971,14 @@ function Helper.onExpandLSOStorageNode(menu, container, _, ftable, _, nodedata)
 		Helper.LSOStorageNodeSellSlider = nil
 		-- buy offer
 		if (waretype == "resource") or (waretype == "intermediate") or (waretype == "product") or (waretype == "trade") then
+			-- kuertee start: callback
+			if callbacks ["onExpandLSOStorageNode_pre_buy_offer_title"] then
+				for _, callback in ipairs (callbacks ["onExpandLSOStorageNode_pre_buy_offer_title"]) do
+					callback(menu, container, ftable, nodedata)
+				end
+			end
+			-- kuertee end: callback
+
 			local currentprice = math.max(minprice, math.min(maxprice, RoundTotalTradePrice(GetContainerWarePrice(container, nodedata.ware, true))))
 			local haspriceoverride = HasContainerWarePriceOverride(container, nodedata.ware, true)
 			local istradewarebought = C.GetContainerWareIsBuyable(container, nodedata.ware)
@@ -11110,6 +11135,14 @@ function Helper.onExpandLSOStorageNode(menu, container, _, ftable, _, nodedata)
 
 		-- sell offer
 		if (not isprocessed) and ((waretype == "resource") or (waretype == "product") or (waretype == "intermediate") or (waretype == "trade")) then
+			-- kuertee start: callback
+			if callbacks ["onExpandLSOStorageNode_pre_sell_offer_title"] then
+				for _, callback in ipairs (callbacks ["onExpandLSOStorageNode_pre_sell_offer_title"]) do
+					callback(menu, container, ftable, nodedata)
+				end
+			end
+			-- kuertee end: callback
+
 			local currentprice = math.max(minprice, math.min(maxprice, RoundTotalTradePrice(GetContainerWarePrice(container, nodedata.ware, false))))
 			local haspriceoverride = HasContainerWarePriceOverride(container, nodedata.ware, false)
 			local istradewaresold = C.GetContainerWareIsSellable(container, nodedata.ware)
@@ -11541,7 +11574,25 @@ function Helper.checkboxSetTradeRuleOverride(menu, container, type, ware, checke
 	end
 
 	if (type == "buy") or (type == "sell") then
-		menu.expandedNode:updateStatus(nil, Helper.isTradeRestricted(container, ware) and "lso_error" or nil, nil, Color["icon_warning"])
+
+		-- kuertee start: callback
+		if callbacks ["checkboxSetTradeRuleOverride_pre_update_expanded_node"] then
+			-- function widgetPrototypes.flowchartnode:updateStatus(text, icon, bgicon, color, mouseovertext)
+			local status_text = nil
+			local status_icon = Helper.isTradeRestricted(container, ware) and "lso_error" or nil
+			local status_bgicon = nil
+			local status_color = Color["icon_warning"]
+			local status_mouseovertext
+			for _, callback in ipairs (callbacks ["checkboxSetTradeRuleOverride_pre_update_expanded_node"]) do
+				status_text, status_icon, status_bgicon, status_color, status_mouseovertext = callback(menu, container, type, ware, checked, status_text, status_icon, status_bgicon, status_color, status_mouseovertext)
+			end
+			menu.expandedNode:updateStatus(status_text, status_icon, status_bgicon, status_color, status_mouseovertext)
+		else
+
+			menu.expandedNode:updateStatus(nil, Helper.isTradeRestricted(container, ware) and "lso_error" or nil, nil, Color["icon_warning"])
+		end
+		-- kuertee end: callback
+
 	end
 	menu.updateExpandedNode()
 end
@@ -11615,7 +11666,25 @@ function  Helper.dropdownTradeRule(menu, container, type, ware, id)
 	C.SetContainerTradeRule(container, tonumber(id), type, ware, true)
 	
 	if (type == "buy") or (type == "sell") then
-		menu.expandedNode:updateStatus(nil, Helper.isTradeRestricted(container, ware) and "lso_error" or nil, nil, Color["icon_warning"])
+
+		-- kuertee start: callback
+		if callbacks ["dropdownTradeRule_pre_update_expanded_node"] then
+			-- function widgetPrototypes.flowchartnode:updateStatus(text, icon, bgicon, color, mouseovertext)
+			local status_text = nil
+			local status_icon = Helper.isTradeRestricted(container, ware) and "lso_error" or nil
+			local status_bgicon = nil
+			local status_color = Color["icon_warning"]
+			local status_mouseovertext = nil
+			for _, callback in ipairs (callbacks ["dropdownTradeRule_pre_update_expanded_node"]) do
+				status_text, status_icon, status_bgicon, status_color, status_mouseovertext = callback(menu, container, type, ware, id, status_text, status_icon, status_bgicon, status_color, status_mouseovertext)
+			end
+			menu.expandedNode:updateStatus(status_text, status_icon, status_bgicon, status_color, mouseOverText)
+		else
+
+			menu.expandedNode:updateStatus(nil, Helper.isTradeRestricted(container, ware) and "lso_error" or nil, nil, Color["icon_warning"])
+		end
+		-- kuertee end: callback
+
 	end
 	menu.noupdate = false
 end

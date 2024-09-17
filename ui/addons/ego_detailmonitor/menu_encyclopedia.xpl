@@ -302,6 +302,14 @@ function menu.cleanup()
 	menu.cleanupRenderTarget()
 
 	menu.frame = nil
+
+	-- kuertee start: callback
+	if callbacks ["cleanup"] then
+		for _, callback in ipairs (callbacks ["cleanup"]) do
+			callback ()
+		end
+	end
+	-- kuertee end: callback
 end
 
 -- Menu member functions
@@ -1448,6 +1456,14 @@ end
 
 -- assemble the menu
 function menu.display()
+	-- kuertee start: callback
+	if callbacks ["display_on_start"] then
+		for _, callback in ipairs (callbacks ["display_on_start"]) do
+			callback (menu.infoFrame, tableProperties)
+		end
+	end
+	-- kuertee end: callback
+
 	--print("Displaying Menu")
 	menu.displayRunning = true
 
@@ -2514,6 +2530,15 @@ function menu.addDetailRows(ftable)
 				for i, entry in pairs(sortedProducts) do
 					menu.addDetailRow(ftable, (i == 1) and ReadText(1001, 9094) or "", entry.count .. ReadText(1001, 42) .. " " .. entry.name)
 				end
+
+				-- start: kuertee call-back
+				if callbacks ["addDetailRow_known_cluster_production_module_entries"] then		
+						for _, callback in ipairs (callbacks ["addDetailRow_known_cluster_production_module_entries"]) do
+						callback(ftable, clusters)
+				    end		
+				end
+				-- end: kuertee call-back
+
 			else
 				-- owner
 				if IsComponentClass(menu.object, "sector") then
@@ -2598,6 +2623,15 @@ function menu.addDetailRows(ftable)
 				for i, entry in pairs(sortedProducts) do
 					menu.addDetailRow(ftable, (i == 1) and ReadText(1001, 9094) or "", entry.count .. ReadText(1001, 42) .. " " .. entry.name)
 				end
+
+				-- start: kuertee call-back
+				if callbacks ["addDetailRow_known_sector_production_module_entries"] then		
+						for _, callback in ipairs (callbacks ["addDetailRow_known_sector_production_module_entries"]) do
+						callback(ftable, menu.object)
+				    end		
+				end
+				-- end: kuertee call-back
+
 			end
 			if (type(menu.object) == "number") or (#menu.details.sectors == 1) then
 				local data = menu.details.systeminfo
