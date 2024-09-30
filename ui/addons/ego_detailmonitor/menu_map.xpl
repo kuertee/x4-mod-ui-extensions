@@ -7787,6 +7787,13 @@ function menu.createPropertyOwned(frame, instance)
 					active = entry.category ~= "deployables"
 				elseif menu.mode == "selectCV" then
 					active = entry.category == "propertyall"
+                    -- start: mycu callback
+                    if callbacks ["onSetActiveStateForCVMode_on_createPropertyOwned"] then
+                        for _, callback in ipairs (callbacks ["onSetActiveStateForCVMode_on_createPropertyOwned"]) do
+                            active = callback (entry)
+                        end
+                    end
+                    -- end: mycu callback
 				elseif (menu.mode == "selectComponent") and (menu.modeparam[3] == "deployables") then
 					active = entry.category == "deployables"
 					if active and (menu.selectedCols.propertytabs == nil) then
