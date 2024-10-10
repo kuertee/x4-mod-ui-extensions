@@ -2729,6 +2729,17 @@ function menu.displayModules(frame, firsttime)
 												untruncatedExtraText = group[i].name
 											end
 
+											-- start: mycu callback
+											if callbacks ["displayModules_on_before_create_button_mouseovertext"] then
+												for _, callback in ipairs (callbacks ["displayModules_on_before_create_button_mouseovertext"]) do
+													result = callback (group[i].macro, plandata.macro, untruncatedExtraText)
+													if result then
+														untruncatedExtraText = result.mouseovertext
+													end
+												end
+											end
+											-- end: mycu callback
+
 											local column = i * 3 - 2
 											row[column]:createButton({ width = columnWidths[i], height = maxColumnWidth, mouseOverText = untruncatedExtraText, helpOverlayID = "groupedslot_" .. group[i].macro, helpOverlayText = " ", helpOverlayHighlightOnly = true, uiTriggerID = "groupedslot_" .. group[i].macro }):setIcon(group[i].icon):setIcon2(installicon, { color = installcolor }):setText2(weaponicon, { x = 3, y = -maxColumnWidth / 2 + Helper.scaleY(Helper.standardTextHeight) / 2 + Helper.configButtonBorderSize, fontsize = Helper.scaleFont(Helper.standardFont, Helper.standardFontSize) })
 											row[column].handlers.onClick = function () return menu.buttonSelectGroupUpgrade(upgradetype.type, menu.currentSlot, group[i].macro, row.index, column) end
