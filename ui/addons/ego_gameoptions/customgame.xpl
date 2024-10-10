@@ -787,6 +787,14 @@ function menu.cleanup()
 	menu.usespacesuit = nil
 	menu.rendertargetLock = nil
 	menu.rightdown = nil
+
+	-- kuertee start: callback
+	if callbacks ["cleanup"] then
+		for _, callback in ipairs (callbacks ["cleanup"]) do
+			callback(menu.customgamestart)
+		end
+	end
+	-- kuertee end: callback
 end
 
 function menu.buttonNewGame()
@@ -794,6 +802,15 @@ function menu.buttonNewGame()
 	if menu.multiplayer then
 		C.NewMultiplayerGame(menu.customgamestart)
 	else
+
+		-- kuertee start: callback
+		if callbacks ["buttonNewGame_preNewGame"] then
+			for _, callback in ipairs (callbacks ["buttonNewGame_preNewGame"]) do
+				callback(menu.customgamestart)
+			end
+		end
+		-- kuertee end: callback
+
 		NewGame(menu.customgamestart)
 	end
 	menu.displayInit()
@@ -834,6 +851,14 @@ function menu.buttonReset()
 		end
 	end
 	menu.refresh = getElapsedTime()
+
+	-- kuertee start: callback
+	if callbacks ["buttonReset_on_end"] then
+		for _, callback in ipairs (callbacks ["buttonReset_on_end"]) do
+			callback ()
+		end
+	end
+	-- kuertee end: callback
 end
 
 function menu.buttonBoolProperty(property)
@@ -1652,6 +1677,14 @@ end
 function menu.editboxProperty(property, text)
 	property.value = text
 	property.set(menu.customgamestart, property.id, text)
+
+	-- kuertee start: callback
+	if callbacks ["editboxProperty_on_end"] then
+		for _, callback in ipairs (callbacks ["editboxProperty_on_end"]) do
+			callback (property, text)
+		end
+	end
+	-- kuertee end: callback
 end
 
 function menu.editboxPlayerPropertyName(id, text)
@@ -1686,6 +1719,14 @@ function menu.slidercellFaction(faction, value)
 
 	C.SetCustomGameStartRelationsProperty(menu.customgamestart, menu.category.id, relations, #relationinfo)
 	Helper.ffiClearNewHelper()
+
+	-- kuertee start: callback
+	if callbacks ["slidercellFaction_on_end"] then
+		for _, callback in ipairs (callbacks ["slidercellFaction_on_end"]) do
+			callback (faction, value)
+		end
+	end
+	-- kuertee end: callback
 end
 
 function menu.removeFactionRelationHelper(faction)
@@ -1723,6 +1764,14 @@ function menu.removeFactionRelationHelper(faction)
 
 	C.SetCustomGameStartRelationsProperty(menu.customgamestart, "universefactionrelations", relations, #relationinfo)
 	Helper.ffiClearNewHelper()
+
+	-- kuertee start: callback
+	if callbacks ["removeFactionRelationHelper_on_end"] then
+		for _, callback in ipairs (callbacks ["removeFactionRelationHelper_on_end"]) do
+			callback (faction)
+		end
+	end
+	-- kuertee end: callback
 end
 
 function menu.saveMultiSelect(property)
@@ -2051,6 +2100,14 @@ function menu.openShipConfig()
 	menu.usespacesuit = nil
 	Helper.closeMenuAndOpenNewMenu(menu, "ShipConfigurationMenu", { 0, 0, nil, "customgamestart", { menu.customgamestart, menu.creative, "ship", "shiploadout", "shippeople", "shippeoplefillpercent", nil, "playerpainttheme" } })
 	menu.cleanup()
+
+	-- kuertee start: callback
+	if callbacks ["openShipConfig_on_end"] then
+		for _, callback in ipairs (callbacks ["openShipConfig_on_end"]) do
+			callback ()
+		end
+	end
+	-- kuertee end: callback
 end
 
 function menu.openPlayerPropertyShipConfig(row, entryid, macro, commanderid, peopledef, peoplefillpercentage, count)
@@ -2059,6 +2116,14 @@ function menu.openPlayerPropertyShipConfig(row, entryid, macro, commanderid, peo
 	menu.selectedCols.propertyTable = 2
 	Helper.closeMenuAndOpenNewMenu(menu, "ShipConfigurationMenu", { 0, 0, nil, "customgamestart", { menu.customgamestart, menu.creative, "playerproperty", nil, nil, nil, nil, "playerpainttheme", entryid, macro, commanderid, peopledef, peoplefillpercentage, count } })
 	menu.cleanup()
+
+	-- kuertee start: callback
+	if callbacks ["openPlayerPropertyShipConfig_on_end"] then
+		for _, callback in ipairs (callbacks ["openPlayerPropertyShipConfig_on_end"]) do
+			callback (customgamestart, propertyid, option)
+		end
+	end
+	-- kuertee end: callback
 end
 
 function menu.setPlayerMacro(customgamestart, propertyid, option)
@@ -2076,6 +2141,14 @@ function menu.setPlayerMacro(customgamestart, propertyid, option)
 		SetRenderTargetNoise(menu.rendertarget.id, true)
 		menu.rendertargetLock = getElapsedTime() + 0.1
 	end
+
+	-- kuertee start: callback
+	if callbacks ["setPlayerMacro_on_end"] then
+		for _, callback in ipairs (callbacks ["setPlayerMacro_on_end"]) do
+			callback (customgamestart, propertyid, option)
+		end
+	end
+	-- kuertee end: callback
 end
 
 function menu.setPlayerPaintTheme(customgamestart, propertyid, option)
@@ -2094,6 +2167,14 @@ function menu.setPlayerSector(gamestartid, propertyid, sector, noreset)
 		menu.holomap = 0
 	end
 	C.SetCustomGameStartStringProperty(gamestartid, propertyid, sector)
+
+	-- kuertee start: callback
+	if callbacks ["setPlayerSector_on_end"] then
+		for _, callback in ipairs (callbacks ["setPlayerSector_on_end"]) do
+			callback (gamestartid, propertyid, sector, noreset)
+		end
+	end
+	-- kuertee end: callback
 end
 
 function menu.displayMultiSelection(property)
@@ -2738,6 +2819,14 @@ function menu.onRestoreState(state)
 end
 
 function menu.display()
+	-- kuertee start: callback
+	if callbacks ["display_on_start"] then
+		for _, callback in ipairs (callbacks ["display_on_start"]) do
+			callback (config)
+		end
+	end
+	-- kuertee end: callback
+
 	-- remove old data
 	Helper.clearDataForRefresh(menu, config.mainFrameLayer)
 
@@ -3079,6 +3168,14 @@ function menu.display()
 		local row = menu.propertyTable:addRow(nil, { fixed = true })
 		row[1]:setColSpan(numCols):createText(menu.category.name, config.headerTextProperties)
 
+		-- kuertee start: callback
+		if callbacks ["display_on_after_category_name"] then
+			for _, callback in ipairs (callbacks ["display_on_after_category_name"]) do
+				callback (numCols)
+			end
+		end
+		-- kuertee end: callback
+
 		if menu.category.type == "list" then
 			for _, property in ipairs(menu.category.properties) do
 				local minvalue, maxvalue, options
@@ -3109,6 +3206,15 @@ function menu.display()
 					row[1]:setColSpan(property.budget and 1 or 2):createText(propertyname .. ReadText(1001, 120), config.standardTextProperties)
 					row[1].properties.mouseOverText = property.mouseOverText
 					row[1].properties.color = function () return menu.propertyColor(property) end
+
+					-- kuertee start: callback
+					if callbacks ["display_on_after_property_name"] then
+						for _, callback in ipairs (callbacks ["display_on_after_property_name"]) do
+							callback (numCols, property)
+						end
+					end
+					-- kuertee end: callback
+
 					if property.budget then
 						local text, mouseovertext = "", ""
 						for _, budget in ipairs(menu.budgets) do
@@ -3745,6 +3851,14 @@ function menu.display()
 				menu.propertyTable:setSelectedRow(menu.selectedRows.propertyTable)
 			end
 		end
+
+		-- kuertee start: callback
+		if callbacks ["display_on_after_category_options"] then
+			for _, callback in ipairs (callbacks ["display_on_after_category_options"]) do
+				callback (numCols)
+			end
+		end
+		-- kuertee end: callback
 
 		if menu.category.rendertarget and (menu.contextMenu ~= "multiselect") then
 			local offsetx = menu.propertyTable.properties.x + menu.propertyTable.properties.width + 2 * Helper.borderSize
