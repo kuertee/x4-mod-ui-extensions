@@ -5,8 +5,8 @@ by kuertee. Contributors: Erixon, Forleyor, Mycu, Runekn, AlexandreTK.
 
 Updates
 =======
-v7.2.00, 17 Sep 2024:
--New callbacks in the Station Overview menu (for an update for the Trade Analytics mod) and in the Encyclopedia menu (for a feature in the StarWars Interworlds mod).
+v7.1.09, 10 Oct 2024:
+-New callbacks: to support updates to some mods (e.g. Mycu's Equipment Tooltip, etc.).
 
 Instructions for players
 ========================
@@ -170,6 +170,9 @@ Troubleshooting
 
 History
 =======
+v7.1.07, 17 Sep 2024:
+-New callbacks in the Station Overview menu (for an update for the Trade Analytics mod) and in the Encyclopedia menu (for a feature in the StarWars Interworlds mod).
+
 v7.1.06, 8 Aug 2024:
 -Compatibility: Requires base game v7.10.
 
