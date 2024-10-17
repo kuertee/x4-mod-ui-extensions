@@ -5,6 +5,9 @@ by kuertee. Contributors: Erixon, Forleyor, Mycu, Runekn, AlexandreTK, NS.88.NS.
 
 Updates
 =======
+v7.1.11, 18 Oct 2024:
+-Bug-fix: one more deregisterCallback bug.
+
 v7.1.10, 17 Oct 2024:
 -New callbacks: for an upcoming mod from NS.88.NS.
 -Bug-fixes: deregisterCallback was only not deregistering callbacks except when the first callback registered is deregistered.
