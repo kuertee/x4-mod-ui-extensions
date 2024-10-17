@@ -2738,6 +2738,14 @@ function menu.onExpandProduction(_, ftable, _, nodedata, productionmodules)
 		end
 	end
 
+	-- ns.88.ns start: callback
+	if callbacks ["onExpandProduction_on_end"] then
+		for _, callback in ipairs (callbacks ["onExpandProduction_on_end"]) do
+			callback (ftable, nodedata, productionmodules)
+		end
+	end
+	-- ns.88.ns end: callback
+
 	menu.restoreTableState("nodeTable", ftable)
 end
 
@@ -5327,7 +5335,7 @@ function menu.deregisterCallback(callbackName, callbackFunction)
 	-- for i, callback in ipairs(callbacks[callbackName]) do
 	if callbacks[callbackName] and #callbacks[callbackName] > 0 then
 		for i = #callbacks[callbackName], 1, -1 do
-			if callbacks[callbackName][1] == callbackFunction then
+			if callbacks[callbackName][i] == callbackFunction then
 				table.remove(callbacks[callbackName], i)
 			end
 		end

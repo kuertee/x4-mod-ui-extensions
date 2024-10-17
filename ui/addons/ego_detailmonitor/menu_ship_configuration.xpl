@@ -10722,7 +10722,7 @@ function menu.deregisterCallback(callbackName, callbackFunction)
 	-- for i, callback in ipairs(callbacks[callbackName]) do
 	if callbacks[callbackName] and #callbacks[callbackName] > 0 then
 		for i = #callbacks[callbackName], 1, -1 do
-			if callbacks[callbackName][1] == callbackFunction then
+			if callbacks[callbackName][i] == callbackFunction then
 				table.remove(callbacks[callbackName], i)
 			end
 		end

@@ -2097,6 +2097,14 @@ function menu.shipValue(current)
 end
 
 function menu.openShipConfig()
+	-- kuertee start: callback
+	if callbacks ["openShipConfig_on_start"] then
+		for _, callback in ipairs (callbacks ["openShipConfig_on_start"]) do
+			callback ()
+		end
+	end
+	-- kuertee end: callback
+
 	menu.usespacesuit = nil
 	Helper.closeMenuAndOpenNewMenu(menu, "ShipConfigurationMenu", { 0, 0, nil, "customgamestart", { menu.customgamestart, menu.creative, "ship", "shiploadout", "shippeople", "shippeoplefillpercent", nil, "playerpainttheme" } })
 	menu.cleanup()
@@ -2120,7 +2128,7 @@ function menu.openPlayerPropertyShipConfig(row, entryid, macro, commanderid, peo
 	-- kuertee start: callback
 	if callbacks ["openPlayerPropertyShipConfig_on_end"] then
 		for _, callback in ipairs (callbacks ["openPlayerPropertyShipConfig_on_end"]) do
-			callback (customgamestart, propertyid, option)
+			callback (row, entryid, macro, commanderid, peopledef, peoplefillpercentage, count)
 		end
 	end
 	-- kuertee end: callback
@@ -5601,7 +5609,7 @@ function menu.deregisterCallback(callbackName, callbackFunction)
 	-- for i, callback in ipairs(callbacks[callbackName]) do
 	if callbacks[callbackName] and #callbacks[callbackName] > 0 then
 		for i = #callbacks[callbackName], 1, -1 do
-			if callbacks[callbackName][1] == callbackFunction then
+			if callbacks[callbackName][i] == callbackFunction then
 				table.remove(callbacks[callbackName], i)
 			end
 		end
