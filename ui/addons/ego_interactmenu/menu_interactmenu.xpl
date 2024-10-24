@@ -3220,7 +3220,7 @@ function menu.createContentTable(frame, position)
 
 	-- kuertee start: forceShowMenus: show main, interaction, custom_actions menu when no actions to show
 	-- local uix_forceShowSections = {"main", "interaction", "custom_actions"}
-	local uix_forceShowSections = {"custom_actions"}
+	local uix_forceShowSections = {"interaction", "custom_actions"}
 	local uix_forceShowSections_isStationActions
 	if #menu.selectedplayerships == 0 and #menu.selectedotherobjects > 0 then
 		uix_forceShowSections_isStationActions = C.IsRealComponentClass(menu.selectedotherobjects[1], "station")
