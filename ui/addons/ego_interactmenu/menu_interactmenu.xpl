@@ -3218,6 +3218,15 @@ function menu.createContentTable(frame, position)
 		x = menu.width + Helper.borderSize
 	end
 
+	-- kuertee start: forceShowMenus: show main, interaction, custom_actions menu when no actions to show
+	-- local uix_forceShowSections = {"main", "interaction", "custom_actions"}
+	local uix_forceShowSections = {"custom_actions"}
+	local uix_forceShowSections_isStationActions
+	if #menu.selectedplayerships == 0 and #menu.selectedotherobjects > 0 then
+		uix_forceShowSections_isStationActions = C.IsRealComponentClass(menu.selectedotherobjects[1], "station")
+	end
+	-- kuertee end: forceShowMenus: show main, interaction, custom_actions menu when no actions to show
+
 	local ftable = frame:addTable(5, { tabOrder = menu.subsection and 2 or 1, x = x, width = menu.width, backgroundID = "solid", backgroundColor = Color["frame_background_semitransparent"], highlightMode = "off" })
 	ftable:setDefaultCellProperties("text",   { minRowHeight = config.rowHeight, fontsize = config.entryFontSize, x = config.entryX })
 	ftable:setDefaultCellProperties("button", { height = config.rowHeight })
@@ -3256,7 +3265,15 @@ function menu.createContentTable(frame, position)
 			color = menu.colors.selected
 		elseif (#menu.selectedplayerships == 0) and (#menu.selectedotherobjects > 0) then
 			modetext = ReadText(1001, 7804)
-			text = menu.texts.otherName
+
+			-- kuertee start: forceShowMenus: show main, interaction, custom_actions menu when no actions to show
+			if not uix_forceShowSections_isStationActions then
+				text = menu.texts.otherName
+			else
+				text = GetComponentData(menu.selectedotherobjects[1], "name")
+			end
+			-- kuertee end: forceShowMenus: show main, interaction, custom_actions menu when no actions to show
+
 			color = menu.colors.selected
 		elseif (#menu.ventureships > 0) and (#menu.selectedplayerships == 0) then
 			text = menu.texts.ventureName
@@ -3304,7 +3321,12 @@ function menu.createContentTable(frame, position)
 	ftable:setDefaultColSpan(4, 2)
 
 	local height = 0
+
+	-- kuertee start: forceShowMenus: show main, interaction, custom_actions menu when no actions to show
 	if (((not menu.showPlayerInteractions) and (#menu.selectedplayerships > 0)) or ((#menu.selectedplayerships == 0) and (#menu.selectedotherobjects > 0))) and (not menu.syncpoint) and (not menu.syncpointorder) and (not menu.intersectordefencegroup) and (not menu.mission) and (not menu.missionoffer) then
+	-- if (not uix_forceShowSections_isStationActions) and (((not menu.showPlayerInteractions) and (#menu.selectedplayerships > 0)) or ((#menu.selectedplayerships == 0) and (#menu.selectedotherobjects > 0))) and (not menu.syncpoint) and (not menu.syncpointorder) and (not menu.intersectordefencegroup) and (not menu.mission) and (not menu.missionoffer) then
+	-- kuertee end: forceShowMenus: show main, interaction, custom_actions menu when no actions to show
+
 		-- modemarker
 		local row = ftable:addRow(false, {  })
 		row[1]:setBackgroundColSpan(5):setColSpan(2):createIcon("be_diagonal_01", { width = bordericonsize, height = bordericonsize, x = borderwidth - bordericonsize + Helper.borderSize, scaling = false, color = Color["row_background_blue_opaque"] })
@@ -3404,6 +3426,12 @@ function menu.createContentTable(frame, position)
 			skipped = true
 		end
 	end
+
+	-- kuertee start: forceShowMenus: show main, interaction, custom_actions menu when no actions to show
+	local uix_forceShowSections_skipped_orig = skipped
+	skipped = false
+	-- kuertee end: forceShowMenus: show main, interaction, custom_actions menu when no actions to show
+
 	if not skipped then
 		local first = true
 		for _, section in ipairs(config.sections) do
@@ -3413,8 +3441,25 @@ function menu.createContentTable(frame, position)
 					pass = true
 				end
 			elseif (section.isorder == nil) or (section.isorder == (#menu.selectedplayerships > 0)) then
-				pass = true
+				-- kuertee start: forceShowMenus: show main, interaction, custom_actions menu when no actions to show
+				if not uix_forceShowSections_skipped_orig then
+					pass = true
+				end
+				-- kuertee end: forceShowMenus: show main, interaction, custom_actions menu when no actions to show
 			end
+
+			-- kuertee start: forceShowMenus: show main, interaction, custom_actions menu when no actions to show
+			if uix_forceShowSections_skipped_orig then
+				if not pass then
+					for _, uix_forceShowSection in ipairs(uix_forceShowSections) do
+						if section.id == uix_forceShowSection then
+							pass = true
+							break
+						end
+					end
+				end
+			end
+			-- kuertee end: forceShowMenus: show main, interaction, custom_actions menu when no actions to show
 
 			if pass then
 				if section.subsections then
