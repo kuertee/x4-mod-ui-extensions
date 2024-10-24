@@ -13,6 +13,11 @@
 --		  - "sellships",			param: { shipyard, ships }
 --		  - "dropwarescontext",		param: { mode, entity }
 --		  - "renamecontext",		param: { component, renamefleet }
+
+--        -- kuertee start: multi-rename: requires menu_interactmenu.uix_forcedShowMenu
+--		  - "renamecontext",		param: { component, renamefleet, uix_renameTheseObjects }
+--        -- kuertee end: multi-rename
+
 --		  - "changelogocontext",	param: { component }
 --		  - "selectComponent",		param: { returnsection, classlist[, category][, playerowned][, customheading] }
 --		  - "crewtransfercontext",	param: { othership, ship }
@@ -6114,7 +6119,17 @@ function menu.displayMenu(firsttime)
 		local x, y = GetLocalMousePosition()
 
 		menu.contextMenuMode = "rename"
-		menu.contextMenuData = { component = menu.modeparam[1], fleetrename = menu.modeparam[2] ~= 0, xoffset = x + Helper.viewWidth / 2, yoffset = Helper.viewHeight / 2 - y }
+
+		-- kuertee start: multi-rename
+		-- menu.contextMenuData = { component = menu.modeparam[1], fleetrename = menu.modeparam[2] ~= 0, xoffset = x + Helper.viewWidth / 2, yoffset = Helper.viewHeight / 2 - y }
+		menu.contextMenuData = {
+			component = menu.modeparam[1],
+			fleetrename = menu.modeparam[2] ~= 0,
+			uix_renameTheseObjects = menu.modeparam[3],
+			xoffset = x + Helper.viewWidth / 2,
+			yoffset = Helper.viewHeight / 2 - y
+		}
+		-- kuertee end: multi-rename
 
 		local width = Helper.scaleX(config.renameWidth)
 		if menu.contextMenuData.xoffset + width > Helper.viewWidth then
@@ -22470,52 +22485,39 @@ function menu.createRenameContext(frame)
 	local title = menu.contextMenuData.fleetrename and ReadText(1001, 7895) or ReadText(1001, 1114)
 	local startname = menu.contextMenuData.fleetrename and ffi.string(C.GetFleetName(menu.contextMenuData.component)) or ffi.string(C.GetComponentName(menu.contextMenuData.component))
 
-	local shiptable
-	local utRenamingActive = false
-	local index, span = 2, 2
 	-- [UniTrader's Advanced Renaming] Forleyor start: callback
-	if callbacks ["utRenaming_createRenameContext"] then
-		for _, callback in ipairs (callbacks ["utRenaming_createRenameContext"]) do
-			startname = callback (frame, nil)
+	if callbacks ["utRenaming_createRenameContext_get_startname"] then
+		for _, callback in ipairs (callbacks ["utRenaming_createRenameContext_get_startname"]) do
+			uix_startname = callback (frame)
+			if uix_startname then
+				startname = uix_startname
+				break
+			end
 		end
-		utRenamingActive = true
-		index = 4
-		span = 6
-		shiptable = frame:addTable(6, { tabOrder = 2, x = Helper.borderSize, y = Helper.borderSize, width = menu.contextMenuData.width, highlightMode = "off" })
-		-- [UniTrader's Advanced Renaming] Forleyor end: callback
-	else
-		shiptable = frame:addTable(2, { tabOrder = 2, x = Helper.borderSize, y = Helper.borderSize, width = menu.contextMenuData.width, highlightMode = "off" })
 	end
-	
+	-- [UniTrader's Advanced Renaming] Forleyor end: callback
+
+	local shiptable = frame:addTable(2, { tabOrder = 2, x = Helper.borderSize, y = Helper.borderSize, width = menu.contextMenuData.width, highlightMode = "off" })
+
 	-- title
 	local row = shiptable:addRow(nil, { fixed = true })
-	row[1]:setColSpan(span):createText(title, Helper.headerRowCenteredProperties)
+	row[1]:setColSpan(2):createText(title, Helper.headerRowCenteredProperties)
 
 	local row = shiptable:addRow(true, { fixed = true })
-	menu.contextMenuData.nameEditBox = row[1]:setColSpan(span):createEditBox({ height = config.mapRowHeight, description = title }):setText(startname)
+	menu.contextMenuData.nameEditBox = row[1]:setColSpan(2):createEditBox({ height = config.mapRowHeight, description = title }):setText(startname)
 	row[1].handlers.onTextChanged = function (_, text, textchanged) menu.contextMenuData.newtext = text end
 	row[1].handlers.onEditBoxDeactivated = menu.buttonRenameConfirm
 
 	local row = shiptable:addRow(true, { fixed = true })
 	row[1]:createButton({  }):setText(ReadText(1001, 2821), { halign = "center" })
-	row[index]:createButton({  }):setText(ReadText(1001, 64), { halign = "center" })
-
-	if utRenamingActive then
-		row[1]:setColSpan(3):createButton({  }):setText(ReadText(1001, 2821), { halign = "center" })
-		row[index]:setColSpan(3):createButton({  }):setText(ReadText(1001, 64), { halign = "center" })
-	else
-		row[1]:createButton({  }):setText(ReadText(1001, 2821), { halign = "center" })
-		row[index]:createButton({  }):setText(ReadText(1001, 64), { halign = "center" })
-	end
-
 	row[1].handlers.onClick = menu.buttonRenameConfirm
-	row[index]:createButton({  }):setText(ReadText(1001, 64), { halign = "center" })
-	row[index].handlers.onClick = function () return menu.closeContextMenu("back") end
+	row[2]:createButton({  }):setText(ReadText(1001, 64), { halign = "center" })
+	row[2].handlers.onClick = function () return menu.closeContextMenu("back") end
 
 	-- [UniTrader's Advanced Renaming] Forleyor start: callback
-	if callbacks ["utRenaming_createRenameContext"] then
-		for _, callback in ipairs (callbacks ["utRenaming_createRenameContext"]) do
-			callback (frame, shiptable)
+	if callbacks ["utRenaming_createRenameContext_on_after_confirm_button"] then
+		for _, callback in ipairs (callbacks ["utRenaming_createRenameContext_on_after_confirm_button"]) do
+			startname = callback (frame, shiptable)
 		end
 	end
 	-- [UniTrader's Advanced Renaming] Forleyor end: callback
@@ -23144,19 +23146,30 @@ function menu.createOnlineModeContext(frame)
 end
 
 function menu.buttonRenameConfirm()
+	-- kuertee start: multi-rename
+	if not menu.contextMenuData.fleetrename then
+		if menu.contextMenuData.uix_renameTheseObjects and #menu.contextMenuData.uix_renameTheseObjects > 0 then
+			for _, uix_renameThisObject in ipairs(menu.contextMenuData.uix_renameTheseObjects) do
+				SetComponentName(uix_renameThisObject, menu.contextMenuData.newtext)
+			end
+		end
+	end
+	-- kuertee end: multi-rename
+
 	if menu.contextMenuData.newtext then
 		if menu.contextMenuData.fleetrename then
 			C.SetFleetName(menu.contextMenuData.component, menu.contextMenuData.newtext)
 		else
+			SetComponentName(menu.contextMenuData.component, menu.contextMenuData.newtext)
+
 			-- [UniTrader's Advanced Renaming] Forleyor start: callback
 			if callbacks ["utRenaming_buttonRenameConfirm"] then
 				for _, callback in ipairs (callbacks ["utRenaming_buttonRenameConfirm"]) do
-					callback (objectid, text)
+					callback ()
 				end
-			else
-				SetComponentName(menu.contextMenuData.component, menu.contextMenuData.newtext)
 			end
 			-- [UniTrader's Advanced Renaming] Forleyor end: callback
+
 		end
 	end
 	menu.noupdate = false
@@ -27871,7 +27884,17 @@ function menu.onInteractMenuCallback(type, param)
 	elseif type == "renamecontext" then
 		local mousepos = C.GetCenteredMousePos()
 		menu.contextMenuMode = "rename"
-		menu.contextMenuData = { component = param[1], fleetrename = param[2], xoffset = mousepos.x + Helper.viewWidth / 2, yoffset = mousepos.y + Helper.viewHeight / 2 }
+
+		-- kuertee start: multi-rename
+		-- menu.contextMenuData = { component = param[1], fleetrename = param[2], xoffset = mousepos.x + Helper.viewWidth / 2, yoffset = mousepos.y + Helper.viewHeight / 2 }
+		menu.contextMenuData = {
+			component = param[1],
+			fleetrename = param[2],
+			uix_renameTheseObjects = param[3],
+			xoffset = mousepos.x + Helper.viewWidth / 2,
+			yoffset = mousepos.y + Helper.viewHeight / 2
+		}
+		-- kuertee end: multi-rename
 
 		local width = Helper.scaleX(config.renameWidth)
 		if menu.contextMenuData.xoffset + width > Helper.viewWidth then

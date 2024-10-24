@@ -6,8 +6,9 @@ by kuertee. Contributors: Erixon, Forleyor, Mycu, Runekn, AlexandreTK, NS.88.NS.
 Updates
 =======
 v7.1.1X, X:
--Tweak: Removed "utRenaming_setupInfoSubmenuRows" callback because UniTrader's Advanced Renaming use of it has changed.
--Tweak: Added "utRenaming_setupInfoSubmenuRows_on_end" callback because UniTrader's Advanced Renaming use of it has changed.
+-New feature: Rename multiple objects.
+-New feature: The Custom Actions menu is shown when no menu is shown. E.g. when selecting multiple stations. Allows setting a station profile from the Trade Analytics mod to multiple stations at once.
+-Tweak: Tweaked the callbacks for UT Advanced Renaming.
 
 v7.1.11, 18 Oct 2024:
 -Bug-fix: one more deregisterCallback bug.
