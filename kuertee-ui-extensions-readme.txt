@@ -5,6 +5,10 @@ by kuertee. Contributors: Erixon, Forleyor, Mycu, Runekn, AlexandreTK, NS.88.NS.
 
 Updates
 =======
+v7.1.1X, X:
+-Tweak: Removed "utRenaming_setupInfoSubmenuRows" callback because UniTrader's Advanced Renaming use of it has changed.
+-Tweak: Added "utRenaming_setupInfoSubmenuRows_on_end" callback because UniTrader's Advanced Renaming use of it has changed.
+
 v7.1.11, 18 Oct 2024:
 -Bug-fix: one more deregisterCallback bug.
 

@@ -12523,22 +12523,9 @@ function menu.setupInfoSubmenuRows(mode, inputtable, inputobject, instance)
 		locrowdata = { "info_name", ReadText(1001, 2809) .. ReadText(1001, 120), objectname }	-- Name
 		if isplayerowned then
 			row = inputtable:addRow(locrowdata[1], {  })
-			
-			-- [UniTrader's Advanced Renaming] Forleyor start: callback
-			local utRenamingActive = false
-			if callbacks ["utRenaming_setupInfoSubmenuRows"] then
-				for _, callback in ipairs (callbacks ["utRenaming_setupInfoSubmenuRows"]) do
-					callback (row, instance, inputobject, objectname)
-				end
-				utRenamingActive = true
-			end
-			-- [UniTrader's Advanced Renaming] Forleyor end: callback
-
-			if not utRenamingActive then
-				row[2]:setColSpan(2):createText(locrowdata[2], { minRowHeight = config.mapRowHeight, fontsize = config.mapFontSize, font = Helper.standardFont, x = Helper.standardTextOffsetx + indentsize })
-				row[4]:setColSpan(5):createEditBox({ height = config.mapRowHeight, description = locrowdata[2] }):setText(objectname, { halign = "right" })
-				row[4].handlers.onEditBoxDeactivated = function(_, text, textchanged) return menu.infoChangeObjectName(inputobject, text, textchanged) end
-			end
+			row[2]:setColSpan(2):createText(locrowdata[2], { minRowHeight = config.mapRowHeight, fontsize = config.mapFontSize, font = Helper.standardFont, x = Helper.standardTextOffsetx + indentsize })
+			row[4]:setColSpan(5):createEditBox({ height = config.mapRowHeight, description = locrowdata[2] }):setText(objectname, { halign = "right" })
+			row[4].handlers.onEditBoxDeactivated = function(_, text, textchanged) return menu.infoChangeObjectName(inputobject, text, textchanged) end
 		else
 			row = menu.addInfoSubmenuRow(instance, inputtable, row, locrowdata, false, false, false, 1, indentsize, nil, nil, false)
 		end
@@ -13741,6 +13728,14 @@ function menu.setupInfoSubmenuRows(mode, inputtable, inputobject, instance)
 	else
 		DebugError("menu.setupInfoSubmenuRows(): called with unsupported mode: " .. tostring(mode) .. ".")
 	end
+
+	-- [UniTrader's Advanced Renaming] Forleyor start: callback
+	if callbacks ["utRenaming_setupInfoSubmenuRows_on_end"] then
+		for _, callback in ipairs (callbacks ["utRenaming_setupInfoSubmenuRows_on_end"]) do
+			callback(mode, inputtable, inputobject, instance)
+		end
+	end
+	-- [UniTrader's Advanced Renaming] Forleyor end: callback
 end
 
 function menu.setupCrewInfoSubmenuRows(mode, inputtable, inputobject, instance)
@@ -26981,7 +26976,7 @@ function menu.infoChangeObjectName(objectid, text, textchanged)
 	-- [UniTrader's Advanced Renaming] Forleyor start: callback
 	if callbacks ["utRenaming_infoChangeObjectName"] then
 		for _, callback in ipairs (callbacks ["utRenaming_infoChangeObjectName"]) do
-			callback (objectid, text)
+			callback (objectid, text, textchanged)
 		end
 	end
 	-- [UniTrader's Advanced Renaming] Forleyor end: callback
