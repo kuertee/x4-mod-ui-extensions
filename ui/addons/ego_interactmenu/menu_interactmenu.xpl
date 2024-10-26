@@ -2311,27 +2311,37 @@ function menu.buttonRemoveOrder()
 end
 
 -- kuertee start: multi-rename
-function menu.getUIXRenameTheseObjects()
-	local uix_renameTheseObjects = {}
+function menu.uix_multiRename_getObjects()
+	uix_multiRename_objects = {}
+	local primaryObject = ConvertIDTo64Bit(ConvertStringToLuaID(tostring(menu.componentSlot.component)))
+	if IsValidComponent(primaryObject) then
+		table.insert(uix_multiRename_objects, primaryObject)
+	end
 	if menu.selectedplayerships and #menu.selectedplayerships > 0 then
 		for _, object in ipairs(menu.selectedplayerships) do
-			table.insert(uix_renameTheseObjects, object)
+			if IsValidComponent(object) then
+				table.insert(uix_multiRename_objects, object)
+			end
 		end
 	end
 	if menu.selectedotherobjects and #menu.selectedotherobjects > 0 then
 		for _, object in ipairs(menu.selectedotherobjects) do
-			local isplayerowned = GetComponentData(ConvertStringTo64Bit(tostring(object)), "isplayerowned")
-			if isplayerowned then
-				table.insert(uix_renameTheseObjects, object)
+			if IsValidComponent(object) then
+				local isplayerowned = GetComponentData(ConvertStringTo64Bit(tostring(object)), "isplayerowned")
+				if isplayerowned then
+					table.insert(uix_multiRename_objects, object)
+				end
 			end
 		end
 	end
 	if menu.selectedplayerdeployables and #menu.selectedplayerdeployables > 0 then
 		for _, object in ipairs(menu.selectedplayerdeployables) do
-			table.insert(uix_renameTheseObjects, object)
+			if IsValidComponent(object) then
+				table.insert(uix_multiRename_objects, object)
+			end
 		end
 	end
-	return uix_renameTheseObjects
+	return uix_multiRename_objects
 end
 -- kuertee end: multi-rename
 
@@ -2342,9 +2352,12 @@ function menu.buttonRename(isfleet)
 		end
 
 		-- kuertee start: multi-rename
-		-- Helper.closeMenuAndOpenNewMenu(menu, "MapMenu", { 0, 0, true, nil, nil, 'renamecontext', { ConvertStringTo64Bit(tostring(menu.componentSlot.component)), isfleet } }, true)
-		local uix_renameTheseObjects = menu.getUIXRenameTheseObjects()
-		Helper.closeMenuAndOpenNewMenu(menu, "MapMenu", { 0, 0, true, nil, nil, 'renamecontext', { ConvertStringTo64Bit(tostring(menu.componentSlot.component)), isfleet, uix_renameTheseObjects } }, true)
+		if uix_multiRename_objects and #uix_multiRename_objects > 0 then
+			Helper.closeMenuAndOpenNewMenu(menu, "MapMenu", { 0, 0, true, nil, nil, 'renamecontext', { ConvertStringTo64Bit(tostring(menu.componentSlot.component)), isfleet, uix_multiRename_objects } }, true)
+			uix_multiRename_objects = nil
+		else
+			Helper.closeMenuAndOpenNewMenu(menu, "MapMenu", { 0, 0, true, nil, nil, 'renamecontext', { ConvertStringTo64Bit(tostring(menu.componentSlot.component)), isfleet } }, true)
+		end
 		-- kuertee end: multi-rename
 
 		menu.cleanup()
@@ -2353,9 +2366,12 @@ function menu.buttonRename(isfleet)
 		Helper.clearFrame(menu, config.layer)
 
 		-- kuertee start: multi-rename
-		-- Helper.returnFromInteractMenu(menu.currentOverTable, "renamecontext", { ConvertStringTo64Bit(tostring(menu.componentSlot.component)), isfleet } )
-		local uix_renameTheseObjects = menu.getUIXRenameTheseObjects()
-		Helper.returnFromInteractMenu(menu.currentOverTable, "renamecontext", { ConvertStringTo64Bit(tostring(menu.componentSlot.component)), isfleet, uix_renameTheseObjects } )
+		if uix_multiRename_objects and #uix_multiRename_objects > 0 then
+			Helper.returnFromInteractMenu(menu.currentOverTable, "renamecontext", { ConvertStringTo64Bit(tostring(menu.componentSlot.component)), isfleet, uix_multiRename_objects } )
+			uix_multiRename_objects = nil
+		else
+			Helper.returnFromInteractMenu(menu.currentOverTable, "renamecontext", { ConvertStringTo64Bit(tostring(menu.componentSlot.component)), isfleet } )
+		end
 		-- kuertee end: multi-rename
 
 		menu.cleanup()
@@ -3400,7 +3416,7 @@ function menu.createContentTable(frame, position)
 
 	-- kuertee start: multi-rename
 	if #menu.selectedplayerships > 0 or #menu.selectedotherobjects > 0 or #menu.selectedplayerdeployables > 0 then
-		height = height + menu.addMultiRenameButton(ftable)
+		height = height + menu.uix_multiRename_addButton(ftable)
 	end
 	-- kuertee end: multi-rename
 
@@ -3619,15 +3635,17 @@ function menu.createContentTable(frame, position)
 end
 
 -- kuertee start: multi-rename
-function menu.addMultiRenameButton(ftable)
+local uix_multiRename_objects
+function menu.uix_multiRename_addButton(ftable)
 	local height = 0
 	local row = ftable:addRow(true, {  })
 	local button = row[1]:setColSpan(5):createButton({
+		active = true,
 		bgColor = Color["button_background_inactive"],
 		highlightColor = Color["button_highlight_default"],
 	}):setText((ReadText(1001, 1114)))
-	local uix_renameTheseObjects = menu.getUIXRenameTheseObjects()
-	local text2 = string.format(ReadText(1001, 11105), #uix_renameTheseObjects)
+	uix_multiRename_objects = menu.uix_multiRename_getObjects()
+	local text2 = string.format(ReadText(1001, 11105), #uix_multiRename_objects)
 	button:setText2(text2, { halign = "right", color = menu.colors.target })
 	row[1].handlers.onClick = function () return menu.buttonRename() end
 	height = height + row:getHeight() + Helper.borderSize

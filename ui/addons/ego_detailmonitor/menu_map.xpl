@@ -15,7 +15,7 @@
 --		  - "renamecontext",		param: { component, renamefleet }
 
 --        -- kuertee start: multi-rename: requires menu_interactmenu.uix_forcedShowMenu
---		  - "renamecontext",		param: { component, renamefleet, uix_renameTheseObjects }
+--		  - "renamecontext",		param: { component, renamefleet, uix_multiRename_objects }
 --        -- kuertee end: multi-rename
 
 --		  - "changelogocontext",	param: { component }
@@ -6125,7 +6125,7 @@ function menu.displayMenu(firsttime)
 		menu.contextMenuData = {
 			component = menu.modeparam[1],
 			fleetrename = menu.modeparam[2] ~= 0,
-			uix_renameTheseObjects = menu.modeparam[3],
+			uix_multiRename_objects = menu.modeparam[3],
 			xoffset = x + Helper.viewWidth / 2,
 			yoffset = Helper.viewHeight / 2 - y
 		}
@@ -23148,9 +23148,13 @@ end
 function menu.buttonRenameConfirm()
 	-- kuertee start: multi-rename
 	if not menu.contextMenuData.fleetrename then
-		if menu.contextMenuData.uix_renameTheseObjects and #menu.contextMenuData.uix_renameTheseObjects > 0 then
-			for _, uix_renameThisObject in ipairs(menu.contextMenuData.uix_renameTheseObjects) do
-				SetComponentName(uix_renameThisObject, menu.contextMenuData.newtext)
+		if menu.contextMenuData.uix_multiRename_objects and #menu.contextMenuData.uix_multiRename_objects > 0 then
+			local newtext = menu.contextMenuData.newtext
+			if not newtext then
+				newtext = GetComponentData(menu.contextMenuData.uix_multiRename_objects[1], "name")
+			end
+			for _, uix_renameThisObject in ipairs(menu.contextMenuData.uix_multiRename_objects) do
+				SetComponentName(uix_renameThisObject, newtext)
 			end
 		end
 	end
@@ -27890,7 +27894,7 @@ function menu.onInteractMenuCallback(type, param)
 		menu.contextMenuData = {
 			component = param[1],
 			fleetrename = param[2],
-			uix_renameTheseObjects = param[3],
+			uix_multiRename_objects = param[3],
 			xoffset = mousepos.x + Helper.viewWidth / 2,
 			yoffset = mousepos.y + Helper.viewHeight / 2
 		}
