@@ -7,15 +7,8 @@ Updates
 =======
 v7.1.1X, X:
 -New feature: Rename multiple objects.
--New feature: The Custom Actions menu is shown when no menu is shown. E.g. when selecting multiple stations. Allows setting a station profile from the Trade Analytics mod to multiple stations at once.
--Tweak: Tweaked the callbacks for UT Advanced Renaming.
-
-v7.1.11, 18 Oct 2024:
--Bug-fix: one more deregisterCallback bug.
-
-v7.1.10, 17 Oct 2024:
--New callbacks: for an upcoming mod from NS.88.NS.
--Bug-fixes: deregisterCallback was only not deregistering callbacks except when the first callback registered is deregistered.
+-New feature: The Custom Actions menu is shown when no menu is valid. E.g. when selecting multiple stations. Allows setting a station profile from the Trade Analytics mod to multiple stations at once.
+-Tweak: Tweaked some callbacks for UT Advanced Renaming.
 
 Instructions for players
 ========================
@@ -179,6 +172,13 @@ Troubleshooting
 
 History
 =======
+v7.1.11, 18 Oct 2024:
+-Bug-fix: one more deregisterCallback bug.
+
+v7.1.10, 17 Oct 2024:
+-New callbacks: for an upcoming mod from NS.88.NS.
+-Bug-fixes: deregisterCallback was only not deregistering callbacks except when the first callback registered is deregistered.
+
 v7.1.09, 10 Oct 2024:
 -New callbacks: to support updates to some mods (e.g. Mycu's Equipment Tooltip, etc.).
 
