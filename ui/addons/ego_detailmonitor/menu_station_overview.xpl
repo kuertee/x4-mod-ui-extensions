@@ -2738,14 +2738,6 @@ function menu.onExpandProduction(_, ftable, _, nodedata, productionmodules)
 		end
 	end
 
-	-- ns.88.ns start: callback
-	if callbacks ["onExpandProduction_on_end"] then
-		for _, callback in ipairs (callbacks ["onExpandProduction_on_end"]) do
-			callback (ftable, nodedata, productionmodules)
-		end
-	end
-	-- ns.88.ns end: callback
-
 	menu.restoreTableState("nodeTable", ftable)
 end
 

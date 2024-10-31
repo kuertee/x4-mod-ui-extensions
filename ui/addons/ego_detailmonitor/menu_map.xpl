@@ -23153,8 +23153,18 @@ function menu.buttonRenameConfirm()
 			if not newtext then
 				newtext = GetComponentData(menu.contextMenuData.uix_multiRename_objects[1], "name")
 			end
+			if callbacks ["buttonRenameConfirm_onMultiRename_on_before_rename"] then
+				for _, callback in ipairs (callbacks ["buttonRenameConfirm_onMultiRename_on_before_rename"]) do
+					callback ()
+				end
+			end
 			for _, uix_renameThisObject in ipairs(menu.contextMenuData.uix_multiRename_objects) do
 				SetComponentName(uix_renameThisObject, newtext)
+			end
+			if callbacks ["buttonRenameConfirm_onMultiRename_on_after_rename"] then
+				for _, callback in ipairs (callbacks ["buttonRenameConfirm_onMultiRename_on_after_rename"]) do
+					callback ()
+				end
 			end
 		end
 	end
