@@ -2341,6 +2341,9 @@ function menu.uix_multiRename_getObjects()
 			end
 		end
 	end
+	if menu.removedOccupiedPlayerShip then
+		table.insert(uix_multiRename_objects, menu.removedOccupiedPlayerShip)
+	end
 	return uix_multiRename_objects
 end
 -- kuertee end: multi-rename

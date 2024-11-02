@@ -23147,6 +23147,7 @@ end
 
 function menu.buttonRenameConfirm()
 	-- kuertee start: multi-rename
+	local uix_isAlreadyRenamed
 	if not menu.contextMenuData.fleetrename then
 		if menu.contextMenuData.uix_multiRename_objects and #menu.contextMenuData.uix_multiRename_objects > 0 then
 			local newtext = menu.contextMenuData.newtext
@@ -23158,8 +23159,24 @@ function menu.buttonRenameConfirm()
 					callback ()
 				end
 			end
-			for _, uix_renameThisObject in ipairs(menu.contextMenuData.uix_multiRename_objects) do
-				SetComponentName(uix_renameThisObject, newtext)
+			table.sort(menu.contextMenuData.uix_multiRename_objects, function (a, b) return menu.sortDanger(a, b, true) end)
+			for uix_index, uix_object in ipairs(menu.contextMenuData.uix_multiRename_objects) do
+				local uix_name = newtext
+				if string.find(uix_name, "$i") then
+					uix_name = string.gsub(uix_name, "%$i", uix_index)
+				end
+				SetComponentName(uix_object, uix_name)
+				if IsSameComponent(uix_object, menu.contextMenuData.component) then
+					uix_isAlreadyRenamed = true
+				end
+				-- local dpsTable = ffi.new("DPSData[?]", 6)
+				-- C.GetDefensibleDPS(dpsTable, uix_object, true, true, true, false, true, false, false)
+				-- Helper.debugText_forced(ffi.string(C.GetObjectIDCode(uix_object)), dpsTable[0].dps)
+				-- Helper.debugText_forced("    ", dpsTable[1].dps)
+				-- Helper.debugText_forced("    ", dpsTable[2].dps)
+				-- Helper.debugText_forced("    ", dpsTable[3].dps)
+				-- Helper.debugText_forced("    ", dpsTable[4].dps)
+				-- Helper.debugText_forced("    ", dpsTable[5].dps)
 			end
 			if callbacks ["buttonRenameConfirm_onMultiRename_on_after_rename"] then
 				for _, callback in ipairs (callbacks ["buttonRenameConfirm_onMultiRename_on_after_rename"]) do
@@ -23174,7 +23191,13 @@ function menu.buttonRenameConfirm()
 		if menu.contextMenuData.fleetrename then
 			C.SetFleetName(menu.contextMenuData.component, menu.contextMenuData.newtext)
 		else
-			SetComponentName(menu.contextMenuData.component, menu.contextMenuData.newtext)
+
+			-- kuertee start: multi-rename
+			-- SetComponentName(menu.contextMenuData.component, menu.contextMenuData.newtext)
+			if not uix_isAlreadyRenamed then
+				SetComponentName(menu.contextMenuData.component, menu.contextMenuData.newtext)
+			end
+			-- kuertee end: multi-rename
 
 			-- [UniTrader's Advanced Renaming] Forleyor start: callback
 			if callbacks ["utRenaming_buttonRenameConfirm"] then
@@ -29068,6 +29091,7 @@ function menu.sortDistanceFromPlayer (a, b, invert)
 		return distance_a < distance_b
 	end
 end
+
 function menu.sortDistanceFromObject (a, b, invert)
 	local distance_a = C.GetDistanceBetween (ConvertStringTo64Bit (tostring (a.id)), ConvertStringTo64Bit (tostring (menu.infoSubmenuObject)))
 	local distance_b = C.GetDistanceBetween (ConvertStringTo64Bit (tostring (b.id)), ConvertStringTo64Bit (tostring (menu.infoSubmenuObject)))
@@ -29075,6 +29099,77 @@ function menu.sortDistanceFromObject (a, b, invert)
 		return distance_a > distance_b
 	else
 		return distance_a < distance_b
+	end
+end
+
+function menu.sortDanger (a, b, invert)
+	-- danger = menu.object.dps * purpose.fighter * 100
+	-- uint32_t GetDefensibleDPS(DPSData* result, UniverseID defensibleid, bool primary, bool secondary, bool lasers, bool missiles, bool turrets, bool includeheat, bool includeinactive);
+	-- local activedpstable = ffi.new("DPSData[?]", 6)
+	-- local numtotalquadrants = C.GetDefensibleDPS(activedpstable, ship, true, true, true, false, false, false, false)
+	-- hasactiveguns = activedpstable[0].dps > 0
+	-- local inactivedpstable = ffi.new("DPSData[?]", 6)
+	-- local numtotalquadrants = C.GetDefensibleDPS(inactivedpstable, ship, true, true, true, false, false, false, true)
+	-- hasinactiveguns = inactivedpstable[0].dps > 0
+	local purpose_a = GetComponentData(a, "primarypurpose")
+	local dpsTable_a = ffi.new("DPSData[?]", 6)
+	C.GetDefensibleDPS(dpsTable_a, a, true, true, true, false, true, false, false)
+	local danger_a = dpsTable_a[0].dps + dpsTable_a[1].dps + dpsTable_a[2].dps + dpsTable_a[3].dps + dpsTable_a[4].dps + dpsTable_a[5].dps
+	if purpose_a == "fighter" then
+		danger_a = danger_a * 100
+	end
+	local purpose_b = GetComponentData(b, "primarypurpose")
+	local dpsTable_b = ffi.new("DPSData[?]", 6)
+	C.GetDefensibleDPS(dpsTable_b, b, true, true, true, false, true, false, false)
+	local danger_b = dpsTable_b[0].dps + dpsTable_b[1].dps + dpsTable_b[2].dps + dpsTable_b[3].dps + dpsTable_b[4].dps + dpsTable_b[5].dps
+	if purpose_b == "fighter" then
+		danger_b = danger_b * 100
+	end
+	if danger_a == danger_b then
+		return menu.sortCombinedSkill(a, b, invert)
+	elseif invert then
+		return danger_a > danger_b
+	else
+		return danger_a < danger_b
+	end
+end
+
+function menu.sortCombinedSkill(a, b, invert)
+	local name_a = GetComponentData(a, "name")
+	local name_b = GetComponentData(b, "name")
+	local idCode_a = ffi.string(C.GetObjectIDCode(a))
+	local idCode_b = ffi.string(C.GetObjectIDCode(b))
+	local skill_a, skill_b = 0, 0
+	local isLaserTower_a = GetMacroData(GetComponentData(a, "macro"), "islasertower")
+	if C.IsRealComponentClass(a, "ship") and (not isLaserTower_a) then
+		skill_a = math.floor(C.GetShipCombinedSkill(a) * 15 / 100)
+	end
+	local isLaserTower_b = GetMacroData(GetComponentData(b, "macro"), "islasertower")
+	if C.IsRealComponentClass(b, "ship") and (not isLaserTower_b) then
+		skill_b = math.floor(C.GetShipCombinedSkill(b) * 15 / 100)
+	end
+	if invert then
+		if skill_a == skill_b then
+			-- name and idcode sorts are always ascending
+			if name_a == name_b then
+				return idCode_a < idCode_b
+			else
+				return name_a < name_b
+			end
+		else
+			return skill_a > skill_b
+		end
+	else
+		if skill_a == skill_b then
+			-- name and idcode sorts are always ascending
+			if name_a == name_b then
+				return idCode_a < idCode_b
+			else
+				return name_a < name_b
+			end
+		else
+			return skill_a < skill_b
+		end
 	end
 end
 
