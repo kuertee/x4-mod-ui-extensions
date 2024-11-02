@@ -5,8 +5,8 @@ by kuertee. Contributors: Erixon, Forleyor, Mycu, Runekn, AlexandreTK.
 
 Updates
 =======
-v7.1.1X, X:
--New feature: Rename multiple objects.
+v7.1.12, 2 Nov 2024:
+-New feature: Rename multiple objects. More information in the Multi-rename section.
 -New feature: The Custom Actions menu is shown when no menu is valid. E.g. when selecting multiple stations. Allows setting a station profile from the Trade Analytics mod to multiple stations at once.
 -Tweak: Tweaked some callbacks for UT Advanced Renaming.
 
@@ -16,6 +16,7 @@ Just install UI Extensions as normal - that is IF you have a mod that requires U
 You don't need UI Extensions if you're not using mods that require UI Extensions.
 When extracting the package from github, ensure that the folder you install the mod to is: "game/extensions/kuertee_ui_extensions/".
 Extracting the package from Nexus Mods will extract it to "game/extensions/kuertee_ui_extensions/". But be sure it does anyway.
+Read the CHANGES BUILT INTO THIS MOD (for players) section.
 
 Instructions for developers
 ===========================
@@ -98,8 +99,21 @@ But the callbacks, along with their function parameters and their expected retur
 
 But here is documentation on NEW features (not connected to mod-specific changes via call-backs) that UIX offers.
 
-CHANGES BUILT INTO THIS MOD
-===========================
+CHANGES BUILT INTO THIS MOD (for players)
+=========================================
+
+Map Menu: Distance tool
+=======================
+Click on an object or a position on the map.
+Right-click on another object or another position on the map.
+The distance between the two points will be listed.
+
+Map Menu: Multi-rename
+======================
+When renaming multiple objects, this special text will be replaced with an appropriate value.
+$i: The object's position in the list based on descending DPS value.
+Example: "Red $i" will name all the objects "Red X" in which X is the object's order in the list.
+(There's only one special text at the moment.)
 
 Map Menu: Sort by distance
 ==========================
@@ -115,6 +129,9 @@ In the base game, the Mission Guidance tab lists only the Guidance created manua
 The "Set to inactive" and "Set to active" buttons are available on missions listed in the Mission Guidance tab.
 The base game makes these buttons unavailable for Guidance Missions.
 
+CHANGES BUILT INTO THIS MOD (for developers)
+============================================
+
 Map Menu: selectComponent mode
 ==============================
 The selectComponent mode is now available to use from directly within the Map Menu. In the base game, the use of this mode is limited to conversations triggered from the Mission Director (md). E.g. &lt;open_conversation_menu menu="MapMenu" param="[0, 0, true, player.entity, null, 'selectComponent', ['kTFTR_set_destination', [class.ship_s, class.ship_m, class.ship_l, class.ship_xl, class.station]]]" /&gt;. Which then triggers an "event_conversation_next_section" with the menu.modeparam[1] as the section of the conversation. In this version, this mode can be called directly from the Map Menu.
@@ -126,7 +143,7 @@ To use:
 4. To disable the default "event_conversation_next_section" after the player selects an object, set returnsection to nil in the mapMenu.setSelectComponentMode call.
 
 Add Custom Actions/Orders Group to the Interact Menu (via MD)
-======================================================
+=============================================================
 1. Load UIX's customised Interact Menu with: <raise_lua_event name="'Lua_Loader.Load'" param="'extensions.kuertee_ui_extensions.ui.kuertee_menu_interactmenu'"/>
 2. At <event_ui_triggered screen="'UIXInteractMenu'" control="'loaded'" />, add the Custom Actions/Orders below.
 3. Add the new Custom Actions/Orders Group Id <raise_lua_event name="'Interact_Menu_API.Add_Custom_Actions_Group_Id'" param="'my_custom_actions_group_id'" />
