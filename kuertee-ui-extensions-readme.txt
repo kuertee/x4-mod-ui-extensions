@@ -38,6 +38,8 @@ An an alternative installation instructions for advanced developers:
 
 Any questions, it's best to @ me on Egosoft's unofficial Discord modding channel: https://discord.gg/RzAGhcY
 
+Read the CHANGES BUILT INTO THIS MOD sections.
+
 Mod-specific lua files
 ======================
 The actual lua that modifies the UI need to exist in the mod's lua file in the mod's folder.
