@@ -112,10 +112,13 @@ The distance between the two points will be listed.
 
 Map Menu: Multi-rename
 ======================
-When renaming multiple objects, this special text will be replaced with an appropriate value.
-$i: The object's position in the list based on descending DPS value.
-Example: "Red $i" will name all the objects "Red X" in which X is the object's order in the list.
-(There's only one special text at the moment.)
+When renaming multiple objects, these special texts in the name will be replaced with the listed value.
+	$name: The object's current name.
+	$name_AR: The object's internal name used with UniTrader's Advanced Renaming.
+	$i: The object's position in the list based on descending DPS value.
+Examples:
+	"Red $i" will name all the objects "Red X" in which X is the object's order in the list.
+	"$name $i" will add the object's order in the list to the object's current name.
 
 Map Menu: Sort by distance
 ==========================

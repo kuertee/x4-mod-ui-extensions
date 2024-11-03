@@ -23161,10 +23161,7 @@ function menu.buttonRenameConfirm()
 			end
 			table.sort(menu.contextMenuData.uix_multiRename_objects, function (a, b) return menu.sortDanger(a, b, true) end)
 			for uix_index, uix_object in ipairs(menu.contextMenuData.uix_multiRename_objects) do
-				local uix_name = newtext
-				if string.find(uix_name, "$i") then
-					uix_name = string.gsub(uix_name, "%$i", uix_index)
-				end
+				local uix_name = menu.uix_multiRename_formatName(uix_object, newtext, uix_index)
 				SetComponentName(uix_object, uix_name)
 				if IsSameComponent(uix_object, menu.contextMenuData.component) then
 					uix_isAlreadyRenamed = true
@@ -23213,6 +23210,36 @@ function menu.buttonRenameConfirm()
 	menu.refreshInfoFrame()
 	menu.closeContextMenu("back")
 end
+
+-- kuertee start: multi-rename
+function menu.uix_multiRename_formatName(object, newName, uix_index)
+	local uix_name = newName
+	if string.find(uix_name, "$name") then
+		uix_name = string.gsub(uix_name, "%$name", GetComponentData(object, "name"))
+	end
+	if string.find(uix_name, "$name_UTAR") then
+		local editName
+		-- start: from utrenaming.lua utRenaming.setupInfoSubmenuRows() --
+		local editNames = GetNPCBlackboard(ConvertStringTo64Bit(tostring(C.GetPlayerID())) , "$unformatted_names")
+		if editNames then
+			for k,v in pairs(editNames) do
+				--DebugError(tostring(k))
+				--DebugError("ID: "..tostring(inputobject))
+				if tostring(k) == "ID: "..tostring(station) then
+					editName = v
+					--DebugError(editName)
+					break
+				end
+			end
+		end
+		uix_name = string.gsub(uix_name, "%$name_UTAR", GetComponentData(object, "editName"))
+	end
+	if string.find(uix_name, "$i") then
+		uix_name = string.gsub(uix_name, "%$i", uix_index)
+	end
+	return uix_name
+end
+-- kuertee end: multi-rename
 
 function menu.initializeBoardingData(target)
 	menu.boardingData = {
