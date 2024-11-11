@@ -5,6 +5,12 @@ by kuertee. Contributors: Erixon, Forleyor, Mycu, Runekn, AlexandreTK.
 
 Updates
 =======
+v7.1.15, 11 Nov 2024:
+-Bug-fix: The multi-rename feature was buggy. e.g. preventing the single-rename function from working. In this version, the right-clicked object needs to be in the selected list for the multi-rename button to be active.
+
+v7.1.14, 7 Nov 2024:
+-Bug-fix: The multi-rename feature was renaming a non-player-owned object if it was right-clicked on along with selected playerr objects.
+
 v7.1.12, 2 Nov 2024:
 -New feature: Rename multiple objects. More information in the Multi-rename section.
 -New feature: The Custom Actions menu is shown when no menu is valid. E.g. when selecting multiple stations. Allows setting a station profile from the Trade Analytics mod to multiple stations at once.

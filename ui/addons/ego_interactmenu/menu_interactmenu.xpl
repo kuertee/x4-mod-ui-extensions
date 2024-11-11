@@ -493,6 +493,10 @@ function menu.cleanup()
 	menu.forceSubSectionToLeft = nil
 
 	Helper.ffiClearNewHelper()
+
+	-- kurtee start: multi-rename
+	menu.uix_multiRename_removedActionTarget = nil
+	-- kurtee end: multi-rename
 end
 
 -- perform helpers
@@ -2311,16 +2315,33 @@ function menu.buttonRemoveOrder()
 end
 
 -- kuertee start: multi-rename
+menu.uix_multiRename_removedActionTarget = nil
 function menu.uix_multiRename_getObjects()
+	-- Helper.debugText_forced("")
+	-- Helper.debugText_forced("")
+	-- Helper.debugText_forced("")
+	-- Helper.debugText_forced("uix_multiRename_getObjects")
+	-- Helper.debugText_forced("menu.componentSlot.component", tostring(ConvertStringTo64Bit(tostring(menu.componentSlot.component))))
+	local actionTarget = ConvertStringTo64Bit(tostring(menu.componentSlot.component))
+	-- local name = GetComponentData(actionTarget, "name")
+	-- local idcode = ""
+	-- if C.IsComponentClass(actionTarget, "object") then
+	-- 	idcode = ffi.string(C.GetObjectIDCode(actionTarget))
+	-- end
+	-- Helper.debugText_forced("actionTarget " .. tostring(actionTarget), name .. " " .. tostring(idcode))
+	local isActionTargetInList
 	uix_multiRename_objects = {}
-	local primaryObject = ConvertIDTo64Bit(ConvertStringToLuaID(tostring(menu.componentSlot.component)))
-	if IsValidComponent(primaryObject) then
-		table.insert(uix_multiRename_objects, primaryObject)
-	end
 	if menu.selectedplayerships and #menu.selectedplayerships > 0 then
 		for _, object in ipairs(menu.selectedplayerships) do
 			if IsValidComponent(object) then
+				-- local name = GetComponentData(object, "name")
+				-- local idcode = ""
+				-- if C.IsComponentClass(object, "object") then
+				-- 	idcode = ffi.string(C.GetObjectIDCode(object))
+				-- end
+				-- Helper.debugText_forced("selectedplayerships " .. tostring(object), name .. " " .. tostring(idcode))
 				table.insert(uix_multiRename_objects, object)
+				isActionTargetInList = isActionTargetInList or IsSameComponent(object, actionTarget)
 			end
 		end
 	end
@@ -2329,7 +2350,15 @@ function menu.uix_multiRename_getObjects()
 			if IsValidComponent(object) then
 				local isplayerowned = GetComponentData(ConvertStringTo64Bit(tostring(object)), "isplayerowned")
 				if isplayerowned then
+					-- local name = GetComponentData(object, "name")
+					-- local idcode = ""
+					-- if C.IsComponentClass(object, "object") then
+					-- 	idcode = ffi.string(C.GetObjectIDCode(object))
+					-- end
+					-- Helper.debugText_forced("selectedotherobjects " .. tostring(object), name .. " " .. tostring(idcode))
+					-- Helper.debugText_forced("selectedotherobjects isplayerowned", isplayerowned)
 					table.insert(uix_multiRename_objects, object)
+					isActionTargetInList = isActionTargetInList or IsSameComponent(object, actionTarget)
 				end
 			end
 		end
@@ -2337,14 +2366,52 @@ function menu.uix_multiRename_getObjects()
 	if menu.selectedplayerdeployables and #menu.selectedplayerdeployables > 0 then
 		for _, object in ipairs(menu.selectedplayerdeployables) do
 			if IsValidComponent(object) then
+				-- local name = GetComponentData(object, "name")
+				-- local idcode = ""
+				-- if C.IsComponentClass(object, "object") then
+				-- 	idcode = ffi.string(C.GetObjectIDCode(object))
+				-- end
+				-- Helper.debugText_forced("selectedplayerdeployables " .. tostring(object), name .. " " .. tostring(idcode))
 				table.insert(uix_multiRename_objects, object)
+				isActionTargetInList = isActionTargetInList or IsSameComponent(object, actionTarget)
 			end
 		end
 	end
 	if menu.removedOccupiedPlayerShip then
+		-- local name = GetComponentData(menu.removedOccupiedPlayerShip, "name")
+		-- local idcode = ""
+		-- if C.IsComponentClass(menu.removedOccupiedPlayerShip, "object") then
+		-- 	idcode = ffi.string(C.GetObjectIDCode(menu.removedOccupiedPlayerShip))
+		-- end
+		-- Helper.debugText_forced("menu.removedOccupiedPlayerShip " .. tostring(menu.removedOccupiedPlayerShip), name .. " " .. tostring(idcode))
 		table.insert(uix_multiRename_objects, menu.removedOccupiedPlayerShip)
+		isActionTargetInList = isActionTargetInList or IsSameComponent(menu.removedOccupiedPlayerShip, actionTarget)
 	end
-	return uix_multiRename_objects
+	if menu.uix_multiRename_removedActionTarget then
+		-- local name = GetComponentData(menu.uix_multiRename_removedActionTarget, "name")
+		-- local idcode = ""
+		-- if C.IsComponentClass(menu.uix_multiRename_removedActionTarget, "object") then
+		-- 	idcode = ffi.string(C.GetObjectIDCode(menu.uix_multiRename_removedActionTarget))
+		-- end
+		-- Helper.debugText_forced("menu.uix_multiRename_removedActionTarget " .. tostring(menu.uix_multiRename_removedActionTarget), name .. " " .. tostring(idcode))
+		table.insert(uix_multiRename_objects, menu.uix_multiRename_removedActionTarget)
+	end
+	if menu.uix_multiRename_removedActionTarget or isActionTargetInList then
+		-- if uix_multiRename_removedActionTarget, then right-click target was removed from one of the lists, and so multi-rename is valid.
+		-- if isActionTargetinList, then right-click target was already in one of the lists, and so multi-rename is valid.
+		-- i.e. right-clicking on a deployable will not remove it from one of the lists.
+		-- for _, object in ipairs(uix_multiRename_objects) do
+		-- 	local name = GetComponentData(object, "name")
+		-- 	local idcode = ""
+		-- 	if C.IsComponentClass(object, "object") then
+		-- 		idcode = ffi.string(C.GetObjectIDCode(object))
+		-- 	end
+		-- 	Helper.debugText_forced(object, name .. " " .. tostring(idcode))
+		-- end
+		return uix_multiRename_objects
+	else
+		return {}
+	end
 end
 -- kuertee end: multi-rename
 
@@ -3418,7 +3485,19 @@ function menu.createContentTable(frame, position)
 	-- kuertee end
 
 	-- kuertee start: multi-rename
-	if #menu.selectedplayerships > 0 or #menu.selectedotherobjects > 0 or #menu.selectedplayerdeployables > 0 then
+	local hasPlayerOwnedSelectedOtherObjects
+	if menu.selectedotherobjects and #menu.selectedotherobjects > 0 then
+		for _, object in ipairs(menu.selectedotherobjects) do
+			if IsValidComponent(object) then
+				local isplayerowned = GetComponentData(ConvertStringTo64Bit(tostring(object)), "isplayerowned")
+				if isplayerowned then
+					hasPlayerOwnedSelectedOtherObjects = true
+					break
+				end
+			end
+		end
+	end
+	if #menu.selectedplayerships > 0 or hasPlayerOwnedSelectedOtherObjects or #menu.selectedplayerdeployables > 0 then
 		height = height + menu.uix_multiRename_addButton(ftable)
 	end
 	-- kuertee end: multi-rename
@@ -3640,18 +3719,20 @@ end
 -- kuertee start: multi-rename
 local uix_multiRename_objects
 function menu.uix_multiRename_addButton(ftable)
-	local height = 0
-	local row = ftable:addRow(true, {  })
-	local button = row[1]:setColSpan(5):createButton({
-		active = true,
-		bgColor = Color["button_background_inactive"],
-		highlightColor = Color["button_highlight_default"],
-	}):setText((ReadText(1001, 1114)))
 	uix_multiRename_objects = menu.uix_multiRename_getObjects()
-	local text2 = string.format(ReadText(1001, 11105), #uix_multiRename_objects)
-	button:setText2(text2, { halign = "right", color = menu.colors.target })
-	row[1].handlers.onClick = function () return menu.buttonRename() end
-	height = height + row:getHeight() + Helper.borderSize
+	local height = 0
+	if #uix_multiRename_objects > 1 then
+		local row = ftable:addRow(true, {  })
+		local button = row[1]:setColSpan(5):createButton({
+			active = true,
+			bgColor = Color["button_background_inactive"],
+			highlightColor = Color["button_highlight_default"],
+		}):setText((ReadText(1001, 1114)))
+		local text2 = string.format(ReadText(1001, 11105), #uix_multiRename_objects)
+		button:setText2(text2, { halign = "right", color = menu.colors.target })
+		row[1].handlers.onClick = function () return menu.buttonRename() end
+		height = height + row:getHeight() + Helper.borderSize
+	end
 	return height
 end
 -- kuertee end: multi-rename
@@ -3912,6 +3993,11 @@ function menu.processSelectedPlayerShips()
 
 		if ship == menu.componentSlot.component then
 			table.remove(menu.selectedplayerships, i)
+
+			-- kuertee start: multi-rename
+			menu.uix_multiRename_removedActionTarget = ship
+			-- kuertee end: multi-rename
+
 		elseif C.IsUnit(ship) then
 			table.remove(menu.selectedplayerships, i)
 		elseif isonlineobject then
@@ -4008,6 +4094,11 @@ function menu.processSelectedPlayerShips()
 		local ship = menu.selectedotherobjects[i]
 		if ship == menu.componentSlot.component then
 			table.remove(menu.selectedotherobjects, i)
+
+			-- kuertee start: multi-rename
+			menu.uix_multiRename_removedActionTarget = ship
+			-- kuertee end: multi-rename
+
 			break
 		end
 	end

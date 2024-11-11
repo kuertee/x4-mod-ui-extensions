@@ -23147,25 +23147,23 @@ end
 
 function menu.buttonRenameConfirm()
 	-- kuertee start: multi-rename
-	local uix_isAlreadyRenamed
-	if not menu.contextMenuData.fleetrename then
-		if menu.contextMenuData.uix_multiRename_objects and #menu.contextMenuData.uix_multiRename_objects > 0 then
-			local newtext = menu.contextMenuData.newtext
-			if not newtext then
-				newtext = GetComponentData(menu.contextMenuData.uix_multiRename_objects[1], "name")
+	local uix_isMultiRename = menu.contextMenuData.uix_multiRename_objects and #menu.contextMenuData.uix_multiRename_objects > 1 and (not menu.contextMenuData.fleetrename)
+	if uix_isMultiRename then
+		local newtext = menu.contextMenuData.newtext
+		if not newtext then
+			newtext = GetComponentData(menu.contextMenuData.uix_multiRename_objects[1], "name")
+		end
+		if callbacks ["buttonRenameConfirm_onMultiRename_on_before_rename"] then
+			for _, callback in ipairs (callbacks ["buttonRenameConfirm_onMultiRename_on_before_rename"]) do
+				callback ()
 			end
-			if callbacks ["buttonRenameConfirm_onMultiRename_on_before_rename"] then
-				for _, callback in ipairs (callbacks ["buttonRenameConfirm_onMultiRename_on_before_rename"]) do
-					callback ()
-				end
-			end
-			table.sort(menu.contextMenuData.uix_multiRename_objects, function (a, b) return menu.sortDanger(a, b, true) end)
-			for uix_index, uix_object in ipairs(menu.contextMenuData.uix_multiRename_objects) do
+		end
+		table.sort(menu.contextMenuData.uix_multiRename_objects, function (a, b) return menu.sortDanger(a, b, true) end)
+		for uix_index, uix_object in ipairs(menu.contextMenuData.uix_multiRename_objects) do
+			local isplayerowned = GetComponentData(ConvertStringTo64Bit(tostring(uix_object)), "isplayerowned")
+			if isplayerowned then
 				local uix_name = menu.uix_multiRename_formatName(uix_object, newtext, uix_index)
 				SetComponentName(uix_object, uix_name)
-				if IsSameComponent(uix_object, menu.contextMenuData.component) then
-					uix_isAlreadyRenamed = true
-				end
 				-- local dpsTable = ffi.new("DPSData[?]", 6)
 				-- C.GetDefensibleDPS(dpsTable, uix_object, true, true, true, false, true, false, false)
 				-- Helper.debugText_forced(ffi.string(C.GetObjectIDCode(uix_object)), dpsTable[0].dps)
@@ -23175,26 +23173,36 @@ function menu.buttonRenameConfirm()
 				-- Helper.debugText_forced("    ", dpsTable[4].dps)
 				-- Helper.debugText_forced("    ", dpsTable[5].dps)
 			end
-			if callbacks ["buttonRenameConfirm_onMultiRename_on_after_rename"] then
-				for _, callback in ipairs (callbacks ["buttonRenameConfirm_onMultiRename_on_after_rename"]) do
-					callback ()
-				end
+		end
+		if callbacks ["buttonRenameConfirm_onMultiRename_on_after_rename"] then
+			for _, callback in ipairs (callbacks ["buttonRenameConfirm_onMultiRename_on_after_rename"]) do
+				callback ()
 			end
 		end
-	end
+
+		-- [UniTrader's Advanced Renaming] Forleyor start: callback
+		if callbacks ["utRenaming_buttonRenameConfirm"] then
+			for _, callback in ipairs (callbacks ["utRenaming_buttonRenameConfirm"]) do
+				callback ()
+			end
+		end
+		-- [UniTrader's Advanced Renaming] Forleyor end: callback
 	-- kuertee end: multi-rename
 
-	if menu.contextMenuData.newtext then
+	-- kuertee start: multi-rename
+	-- if menu.contextMenuData.newtext then
+	elseif menu.contextMenuData.newtext then
+	-- kuertee end: multi-rename
+
 		if menu.contextMenuData.fleetrename then
 			C.SetFleetName(menu.contextMenuData.component, menu.contextMenuData.newtext)
 		else
+			local uix_name_old = GetComponentData(menu.contextMenuData.component, "name")
+			local uix_idcode = C.GetObjectIDCode(menu.contextMenuData.component)
+			Helper.debugText_forced(menu.contextMenuData.component, uix_name_old .. tostring(uix_idcode))
+			Helper.debugText_forced("newtext", menu.contextMenuData.newtext)
 
-			-- kuertee start: multi-rename
-			-- SetComponentName(menu.contextMenuData.component, menu.contextMenuData.newtext)
-			if not uix_isAlreadyRenamed then
-				SetComponentName(menu.contextMenuData.component, menu.contextMenuData.newtext)
-			end
-			-- kuertee end: multi-rename
+			SetComponentName(menu.contextMenuData.component, menu.contextMenuData.newtext)
 
 			-- [UniTrader's Advanced Renaming] Forleyor start: callback
 			if callbacks ["utRenaming_buttonRenameConfirm"] then
