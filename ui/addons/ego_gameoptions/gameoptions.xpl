@@ -103,6 +103,16 @@ ffi.cdef[[
 	void FadeScreen2(float fadeouttime, float fadeintime, float holdtime);
 	const char* GetAAOption(bool useconfig);
 	bool GetAchievement(const char* name);
+	float GetActiveHeadTrackerAngleFactor(void);
+	float GetActiveHeadTrackerDeadzoneAngle(void);
+	float GetActiveHeadTrackerDeadzonePosition(void);
+	float GetActiveHeadTrackerGazeAngleFactor(void);
+	float GetActiveHeadTrackerGazeDeadzone(void);
+	size_t GetActiveHeadTrackerGazeFilterStrength(void);
+	size_t GetActiveHeadTrackerHeadFilterStrength(void);
+	float GetActiveHeadTrackerHeadPositionFactor(void);
+	const char* GetActiveHeadTrackerMode();
+	const char* GetActiveHeadTrackerName();
 	float GetAdaptiveSamplingOption(void);
 	uint32_t GetAllColorMapColors(EditableColorMapEntry* result, uint32_t resultlen);
 	uint32_t GetAllColorMapMappings(EditableColorMapEntry* result, uint32_t resultlen);
@@ -120,6 +130,9 @@ ffi.cdef[[
 	int32_t GetCurrentLanguage(void);
 	const char* GetCurrentSoundDevice(void);
 	const char* GetDisplayedModifierKey(const char* uimodifier);
+	const char* GetDLSSAutoMode(void);
+	const char* GetDLSSModeOption(bool useconfig);
+	bool GetDLSSOption(bool useconfig);
 	bool GetEmergencyEjectOption(void);
 	const char* GetEnemyWarningAttackSound(void);
 	const char* GetEnemyWarningNearbySound(void);
@@ -146,6 +159,7 @@ ffi.cdef[[
 	uint32_t GetLUTMode(void);
 	uint32_t GetMapEditorMacros(const char** result, uint32_t resultlen);
 	float GetMenuWidthScale(void);
+	const char* GetModifiedBasegameUIFilesExtensions(void);
 	bool GetMouseOverTextOption(void);
 	bool GetMouseSteeringInvertedOption(const char* paramname);
 	uint32_t GetNumAllColorMapColors(void);
@@ -161,6 +175,8 @@ ffi.cdef[[
 	uint32_t GetNumPlayerAlertSounds2(const char* tags);
 	uint32_t GetNumSoundDevices(void);
 	uint32_t GetNumStartmenuBackgrounds(void);
+	const char* GetOpenTrackConnectionStatus(void);
+	bool GetOpenTrackSupportOption(void);
 	uint32_t GetPlayerAlertSounds2(SoundInfo* result, uint32_t resultlen, const char* tags);
 	const char* GetPOMOption(void);
 	const char* GetPresentModeOption(void);
@@ -183,15 +199,6 @@ ffi.cdef[[
 	const char* GetSteamID(void);
 	const char* GetTextureQualityOption(void);
 	bool GetThirdPersonFlightOption(void);
-	const char* GetTobiiMode(void);
-	float GetTobiiAngleFactor(void);
-	float GetTobiiDeadzoneAngle(void);
-	float GetTobiiDeadzonePosition(void);
-	float GetTobiiGazeAngleFactor(void);
-	float GetTobiiGazeDeadzone(void);
-	size_t GetTobiiGazeFilterStrength(void);
-	size_t GetTobiiHeadFilterStrength(void);
-	float GetTobiiHeadPositionFactor(void);
 	const char* GetTrackerNameOption(void);
 	const char* GetTrackerSDKOption(void);
 	float GetUIGlowIntensity(void);
@@ -211,11 +218,14 @@ ffi.cdef[[
 	void ImportColorProfile(const char* filename);
 	void ImportInputFeedbackConfig(bool usedefault);
 	bool IsAAOptionSupported(const char* mode);
+	bool IsActiveHeadTrackerAvailable(void);
+	bool IsActiveHeadTrackerSettingSupported(const char* settingid);
 	bool IsAppStoreVersion(void);
 	bool IsClientModified(void);
 	bool IsControlPressed(void);
 	bool IsCurrentGPUDiscrete(void);
 	bool IsDemoVersion(void);
+	bool IsDLSSSupported(void);
 	bool IsExtensionEnabled(const char* extensionid, bool personal);
 	bool IsFSROnWithoutAA(void);
 	bool IsGameModified(void);
@@ -224,6 +234,7 @@ ffi.cdef[[
 	bool IsGPUAutomaticallySelected(void);
 	bool IsGPUCompatible(uint32_t idx);
 	bool IsHUDRadarActive(void);
+	bool IsInputModifierPressed(const char* uimodifier);
 	bool IsJoystickSteeringAdapative(void);
 	bool IsMouseSteeringAdapative(void);
 	bool IsMouseSteeringLineEnabled(void);
@@ -232,6 +243,7 @@ ffi.cdef[[
 	bool IsLanguageValid(void);
 	bool IsNetworkEngineEnabled(void);
 	bool IsOnlineEnabled(void);
+	bool IsOpenTrackEnabled(void);
 	bool IsPresentModeOptionSupported(const char* mode);
 	bool IsRequestedGPUCurrent(void);
 	bool IsRunningOnSteamDeck(void);
@@ -239,7 +251,6 @@ ffi.cdef[[
 	bool IsShiftPressed(void);
 	bool IsStartmenu();
 	bool IsTimelinesScenario(void);
-	bool IsTobiiAvailable(void);
 	bool IsTradeShowVersion(void);
 	bool IsTutorial(void);
 	bool IsUpscalingOptionSupported(const char* mode);
@@ -251,7 +262,7 @@ ffi.cdef[[
 	bool IsVRVersion(void);
 	bool IsSaveListLoadingComplete(void);
 	bool IsThrottleBidirectional(void);
-	bool MapModifierKey(const char* uimodifier, int32_t keycode, bool checkonly);
+	bool MapModifierButton(const char* uimodifier, int32_t source, int32_t code, bool checkonly);
 	void NewGame(const char* modulename, uint32_t numparams, NewGameParameter* uiparams);
 	void NewMultiplayerGame(const char* modulename, const char* difficulty);
 	void OpenWebBrowser(const char* url);
@@ -269,9 +280,20 @@ ffi.cdef[[
 	void RestoreAccessibilityOptions(void);
 	void RestoreMiscOptions(void);
 	void SaveAAOption(void);
+	void SaveDLSSModeOption(void);
+	void SaveDLSSOption(void);
 	void SaveUIUserData(void);
 	void SaveUpscalingOption(void);
 	void SetAAOption(const char* fxaa);
+	void SetActiveHeadTrackerAngleFactor(float value);
+	void SetActiveHeadTrackerDeadzoneAngle(float value);
+	void SetActiveHeadTrackerDeadzonePosition(float value);
+	void SetActiveHeadTrackerGazeAngleFactor(float value);
+	void SetActiveHeadTrackerGazeDeadzone(float value);
+	void SetActiveHeadTrackerGazeFilterStrength(size_t value);
+	void SetActiveHeadTrackerHeadFilterStrength(size_t value);
+	void SetActiveHeadTrackerHeadPositionFactor(float value);
+	void SetActiveHeadTrackerMode(const char* mode);
 	void SetAdaptiveSamplingOption(float value);
 	void SetAutosaveIntervalOption(float factor);
 	void SetAutoZoomResetOption(bool value);
@@ -281,6 +303,8 @@ ffi.cdef[[
 	void SetColorBlindOptionStrength(float value);
 	void SetColorMapDefinition(const char* colorid, Color color, float glowfactor);
 	void SetColorMapReference(const char* mappingid, const char* colorid);
+	void SetDLSSModeOption(const char* value);
+	void SetDLSSOption(bool value);
 	void SetEditBoxText(const int editboxid, const char* text);
 	void SetEmergencyEjectOption(bool setting);
 	void SetEnemyWarningAttackSound(const char* soundid);
@@ -300,11 +324,13 @@ ffi.cdef[[
 	void SetJoystickSteeringAdapative(bool value);
 	void SetLUTMode(uint32_t mode);
 	void SetMenuWidthScale(float value);
-	bool SetModifierKeyPosition(const char* uimodifier, int32_t keycode, size_t pos, bool checkonly);
+	bool SetModifierButtonPosition(const char* uimodifier, int32_t source, int32_t code, size_t pos, bool checkonly);
 	void SetMouseSteeringAdapative(bool value);
 	void SetMouseSteeringLine(bool value);
 	void SetMouseSteeringPersistent(bool value);
 	void SetMouseSteeringInvertedOption(const char* paramname, bool value);
+	void SetMultipleGfxModes(const char* aamode, const char* upmode, bool dlss, const char* dlssmode);
+	void SetOpenTrackSupportOption(bool value);
 	void SetPOMOption(const char* quality);
 	void SetPresentModeOption(const char* mode);
 	void SetReducedSpeedModeOption(double value);
@@ -316,15 +342,6 @@ ffi.cdef[[
 	void SetTextureQualityOption(const char* mode);
 	void SetThirdPersonFlightOption(bool value);
 	void SetThrottleBidirectional(bool newsetting);
-	void SetTobiiMode(const char* mode);
-	void SetTobiiAngleFactor(float value);
-	void SetTobiiDeadzoneAngle(float value);
-	void SetTobiiDeadzonePosition(float value);
-	void SetTobiiGazeAngleFactor(float value);
-	void SetTobiiGazeDeadzone(float value);
-	void SetTobiiGazeFilterStrength(size_t value);
-	void SetTobiiHeadFilterStrength(size_t value);
-	void SetTobiiHeadPositionFactor(float value);
 	void SetVisitorNamesShownOption(bool setting);
 	void SetVRVivePointerHand(int hand);
 	void SetVolumetricFogOption(int32_t setting);
@@ -341,7 +358,7 @@ ffi.cdef[[
 	void StopStartMenuBGMusic(void);
 	void StopVoiceSequence(void);
 	void ToggleScreenDisplayOption(void);
-	bool UnmapModifierKey(const char* uimodifier, int32_t keycode, bool checkonly);
+	bool UnmapModifierButton(const char* uimodifier, int32_t source, int32_t code, bool checkonly);
 	bool WasSessionOnline(void);
 ]]
 
@@ -402,10 +419,13 @@ local function init()
 		OpenMenu("OptionsMenu", (submenu ~= "") and submenu or nil, nil, true)
 		C.ClearStartmenuParam()
 	end
-	if menu.isStartmenu then
-		if (__CORE_GAMEOPTIONS_RESTORE == nil) and C.IsGameModified() then
+	if menu.isStartmenu and (__CORE_GAMEOPTIONS_RESTORE == nil) then
+		if C.IsGameModified() and (not __CORE_DETAILMONITOR_USERQUESTION["modified"]) then
 			menu.contextMenuMode = "modified"
 			menu.contextMenuData = { width = Helper.scaleX(400), y = Helper.viewHeight / 2 }
+		elseif GetUISafeModeOption() and (ffi.string(C.GetModifiedBasegameUIFilesExtensions()) ~= "") and (not __CORE_DETAILMONITOR_USERQUESTION["uisecurity"]) then
+			menu.contextMenuMode = "uisecurity"
+			menu.contextMenuData = { width = Helper.scaleX(550), y = Helper.viewHeight / 2 }
 		elseif not C.DoesUserDataExist() then
 			menu.contextMenuMode = "firstgame"
 			menu.contextMenuData = { width = Helper.scaleX(500), y = Helper.viewHeight / 2 }
@@ -564,8 +584,14 @@ config.input = {
 		["ranges"]  = 1007,
 	},
 	modifiers = {
-		[1] = { id = "shift", name = ReadText(1001, 12644), offset = 256 },
-		[2] = { id = "ctrl",  name = ReadText(1001, 12645), offset = 512 },
+		[1] = { id = "shift",			name = ReadText(1001, 12644),	offset = 256 },
+		[2] = { id = "ctrl",			name = ReadText(1001, 12645),	offset = 512 },
+		[3] = { id = "joystickmod1",	name = ReadText(1001, 12745),	offset = 1024,	controller = true },
+		[4] = { id = "joystickmod2",	name = ReadText(1001, 12746),	offset = 2048,	controller = true },
+	},
+	iscontrollermodifier = {
+		["joystickmod1"] = true,
+		["joystickmod2"] = true,
 	},
 	modifierFilter = 256,
 	forbiddenKeys = {
@@ -974,6 +1000,7 @@ config.input.controlsorder = {
 			{ "actions", 350, { 1, 2 } },
 			{ "actions", 351, { 1, 2 } },
 			{ "actions", 352, { 1, 2 } },
+			{ "actions", 377, { 1, 2 }, ReadText(1026, 4809) },
 		},
 		[12] = {
 			["title"] = ReadText(1001, 4815),	-- "Expert Settings - Use with Caution!"
@@ -1521,20 +1548,39 @@ config.optionDefinitions = {
 		[3] = {
 			id = "antialias",
 			name = ReadText(1001, 2620),
+			mouseOverText = function () return (not C.GetDLSSOption(false)) and "" or (ColorText["text_error"] ..  ReadText(1026, 4813)) end,
 			valuetype = "dropdown",
 			value = function () return menu.valueGfxAA() end,
 			callback = function (id, option) return menu.callbackGfxAA(id, option) end,
+			selectable = function () return not C.GetDLSSOption(false) end,
 		},
 		[4] = {
-			id = "upscaling",
+			id = "fsr1",
 			name = ReadText(1001, 11726),
-			mouseOverText = function () return menu.selectableGfxUpscaling() and "" or (ColorText["text_error"] ..  ReadText(1026, 2657)) end,
+			mouseOverText = function () return menu.mouseOverTextGfxUpscaling() end,
 			valuetype = "dropdown",
-			value = function () return menu.valueGfxUpscaling() end,
-			callback = function (id, option) return menu.callbackGfxUpscaling(id, option) end,
-			selectable = function () return menu.selectableGfxUpscaling() end,
+			value = function () return menu.valueGfxFSR1() end,
+			callback = function (id, option) return menu.callbackGfxFSR1(id, option) end,
+			selectable = function () return menu.selectableGfxUpscaling() == 0 end,
 		},
 		[5] = {
+			id = "dlss",
+			name = ReadText(1001, 12735),
+			valuetype = "dropdown",
+			value = function () return menu.valueGfxDLSS() end,
+			callback = function (id, option) return menu.callbackGfxDLSS(id, option) end,
+			display = C.IsDLSSSupported,
+		},
+		[6] = {
+			id = "dlssmode",
+			name = "    " .. ReadText(1001, 12736),
+			valuetype = "dropdown",
+			value = function () return menu.valueGfxDLSSMode() end,
+			callback = function (id, option) return menu.callbackGfxDLSSMode(id, option) end,
+			selectable = function () return C.GetDLSSOption(false) end,
+			display = C.IsDLSSSupported,
+		},
+		[7] = {
 			id = "adaptivesampling",
 			name = ReadText(1001, 7221),
 			valuetype = "dropdown",
@@ -1542,29 +1588,29 @@ config.optionDefinitions = {
 			callback = function (id, option) return menu.callbackGfxAdaptiveSampling(id, option) end,
 			display = C.IsVRVersion,
 		},
-		[6] = {
+		[8] = {
 			id = "hmd_fullscreen",
 			name = ReadText(1001, 4817),
 			value = function () return ReadText(1001, 2622), Color["text_normal"] end,
 			display = C.IsVRVersion,
 		},
-		[7] = {
+		[9] = {
 			id = "hmd_sdk",
 			name = ReadText(1001, 7214),
 			value = function () return ffi.string(C.GetTrackerSDKOption()), Color["text_normal"] end,
 			display = C.IsVRVersion,
 		},
-		[8] = {
+		[10] = {
 			id = "line",
 			display = C.IsVRVersion,
 		},
-		[9] = {
+		[11] = {
 			id = "hmd_adapter",
 			name = ReadText(1001, 2623),
 			value = function () return ffi.string(C.GetTrackerNameOption()), Color["text_normal"] end,
 			display = C.IsVRVersion,
 		},
-		[10] = {
+		[12] = {
 			id = "screendisplay",
 			name = ReadText(1001, 7210),
 			valuetype = "button",
@@ -1572,7 +1618,7 @@ config.optionDefinitions = {
 			callback = function () return menu.callbackGfxScreenDisplay() end,
 			display = C.IsVRVersion,
 		},
-		[11] = {
+		[13] = {
 			-- VR case
 			id = "resolution",
 			name = ReadText(1001, 7211),
@@ -1582,7 +1628,7 @@ config.optionDefinitions = {
 			display = C.IsVRVersion,
 			selectable = function () return menu.selectableGfxResolution() end,
 		},
-		[12] = {
+		[14] = {
 			id = "fullscreen",
 			name = function () return C.IsVRVersion() and ReadText(1001, 7213) or ReadText(1001, 4817) end,
 			valuetype = "dropdown",
@@ -1590,14 +1636,14 @@ config.optionDefinitions = {
 			callback = function (id, option) return menu.callbackGfxFullscreen(id, option) end,
 			selectable = function () return menu.selectableGfxFullscreen() end,
 		},
-		[13] = {
+		[15] = {
 			id = "autogpu",
 			name = ReadText(1001, 11709),
 			valuetype = "button",
 			value = function () return C.IsGPUAutomaticallySelected() and ReadText(1001, 2648) or ReadText(1001, 2649) end,
 			callback = function () return menu.callbackGfxAutoGPU() end,
 		},
-		[14] = {
+		[16] = {
 			id = "gpu",
 			name = ReadText(1001, 8920),
 			valuetype = "dropdown",
@@ -1605,7 +1651,7 @@ config.optionDefinitions = {
 			callback = function (id, option) return menu.callbackGfxGPU(id, option) end,
 			selectable = function () return menu.selectableGfxGPU() end,
 		},
-		[15] = {
+		[17] = {
 			id = "adapter",
 			name = ReadText(1001, 8921),
 			valuetype = "dropdown",
@@ -1613,45 +1659,45 @@ config.optionDefinitions = {
 			callback = function (id, option) return menu.callbackGfxAdapter(id, option) end,
 			selectable = function () return menu.selectableGfxAdapter() end,
 		},
-		[16] = {
+		[18] = {
 			id = "presentmode",
 			name = ReadText(1001, 7265),
 			valuetype = "dropdown",
 			value = function () return menu.valueGfxPresentMode() end,
 			callback = function (id, option) return menu.callbackGfxPresentMode(id, option) end,
 		},
-		[17] = {
+		[19] = {
 			id = "lut",
 			name = ReadText(1001, 7238),
 			valuetype = "dropdown",
 			value = function () return menu.valueGfxLUT(false) end,
 			callback = function (id, option) return menu.callbackGfxLUT(id, option) end,
 		},
-		[18] = {
+		[20] = {
 			id = "gamma",
 			name = ReadText(1001, 2629),
 			valuetype = "slidercell",
 			value = function () return menu.valueGfxGamma() end,
 			callback = function (value) return menu.callbackGfxGamma(value) end,
 		},
-		[19] = {
+		[21] = {
 			id = "fov",
 			name = ReadText(1001, 4814),
 			valuetype = "slidercell",
 			value = function () return menu.valueGfxFOV() end,
 			callback = function (value) return menu.callbackGfxFOV(value) end,
 		},
-		[20] = {
+		[22] = {
 			id = "line",
 		},
-		[21] = {
+		[23] = {
 			id = "gfx_preset",
 			name = ReadText(1001, 4840),
 			valuetype = "dropdown",
 			value = function () return menu.valueGfxPreset() end,
 			callback = function (id, option) return menu.callbackGfxPreset(id, option) end,
 		},
-		[22] = {
+		[24] = {
 			id = "texturequality",
 			name = ReadText(1001, 8900),
 			valuetype = "dropdown",
@@ -1659,7 +1705,7 @@ config.optionDefinitions = {
 			callback = function (id, option) return menu.callbackGfxTexture(id, option) end,
 			selectable = function () return menu.selectableGfxPreset() end,
 		},
-		[23] = {
+		[25] = {
 			id = "shadows",
 			name = ReadText(1001, 2625),
 			valuetype = "dropdown",
@@ -1667,7 +1713,7 @@ config.optionDefinitions = {
 			callback = function (id, option) return menu.callbackGfxShadows(id, option) end,
 			selectable = function () return menu.selectableGfxPreset() end,
 		},
-		[24] = {
+		[26] = {
 			id = "softshadows",
 			name = ReadText(1001, 4841),
 			valuetype = "button",
@@ -1675,7 +1721,7 @@ config.optionDefinitions = {
 			callback = function () return menu.callbackGfxSoftShadows() end,
 			selectable = function () return menu.selectableGfxPreset() end,
 		},
-		[25] = {
+		[27] = {
 			id = "ssao",
 			name = ReadText(1001, 2626),
 			valuetype = "dropdown",
@@ -1683,7 +1729,7 @@ config.optionDefinitions = {
 			callback = function (id, option) return menu.callbackGfxSSAO(id, option) end,
 			selectable = function () return menu.selectableGfxPreset() end,
 		},
-		[26] = {
+		[28] = {
 			id = "glow",
 			name = ReadText(1001, 11752),
 			valuetype = "dropdown",
@@ -1691,7 +1737,7 @@ config.optionDefinitions = {
 			callback = function (id, option) return menu.callbackGfxGlow(id, option) end,
 			selectable = function () return menu.selectableGfxPreset() end,
 		},
-		[27] = {
+		[29] = {
 			id = "uiglow",
 			name = ReadText(1001, 11779),
 			valuetype = "dropdown",
@@ -1699,7 +1745,7 @@ config.optionDefinitions = {
 			callback = function (id, option) return menu.callbackGfxUIGlow(id, option) end,
 			selectable = function () return menu.selectableGfxPreset() end,
 		},
-		[28] = {
+		[30] = {
 			id = "uiglowintensity",
 			name = ReadText(1001, 12701),
 			valuetype = "slidercell",
@@ -1707,7 +1753,7 @@ config.optionDefinitions = {
 			callback = function (value) return menu.callbackGfxUIGlowIntensity(value) end,
 			selectable = function () return menu.selectableGfxPreset() end,
 		},
-		[29] = {
+		[31] = {
 			id = "chromaticaberration",
 			name = ReadText(1001, 8987),
 			valuetype = "button",
@@ -1715,7 +1761,7 @@ config.optionDefinitions = {
 			callback = function () return menu.callbackGfxChromaticAberration() end,
 			selectable = function () return menu.selectableGfxPreset() end,
 		},
-		[30] = {
+		[32] = {
 			id = "distortion",
 			name = ReadText(1001, 4822),
 			valuetype = "button",
@@ -1723,7 +1769,7 @@ config.optionDefinitions = {
 			callback = function () return menu.callbackGfxDistortion() end,
 			selectable = function () return menu.selectableGfxPreset() end,
 		},
-		[31] = {
+		[33] = {
 			id = "pom",
 			name = ReadText(1001, 11731),
 			valuetype = "dropdown",
@@ -1731,7 +1777,7 @@ config.optionDefinitions = {
 			callback = function (id, option) return menu.callbackGfxPOM(id, option) end,
 			selectable = function () return menu.selectableGfxPreset() end,
 		},
-		[32] = {
+		[34] = {
 			id = "lod",
 			name = ReadText(1001, 2628),
 			valuetype = "slidercell",
@@ -1739,7 +1785,7 @@ config.optionDefinitions = {
 			callback = function (value) return menu.callbackGfxLOD(value) end,
 			selectable = function () return menu.selectableGfxPreset() end,
 		},
-		[33] = {
+		[35] = {
 			id = "effectdist",
 			name = ReadText(1001, 2699),
 			valuetype = "slidercell",
@@ -1747,7 +1793,7 @@ config.optionDefinitions = {
 			callback = function (value) return menu.callbackGfxEffectDistance(value) end,
 			selectable = function () return menu.selectableGfxPreset() end,
 		},
-		[34] = {
+		[36] = {
 			id = "shaderquality",
 			name = ReadText(1001, 2680),
 			valuetype = "dropdown",
@@ -1756,7 +1802,7 @@ config.optionDefinitions = {
 			selectable = function () return menu.selectableGfxPreset() end,
 			display = function () return false end, -- TEMP hidden until we get shaders with different quality
 		},
-		[35] = {
+		[37] = {
 			id = "radar",
 			name = ReadText(1001, 1706),
 			valuetype = "dropdown",
@@ -1764,7 +1810,7 @@ config.optionDefinitions = {
 			callback = function (id, option) return menu.callbackGfxRadar(id, option) end,
 			selectable = function () return menu.selectableGfxPreset() end,
 		},
-		[36] = {
+		[38] = {
 			id = "ssr",
 			name = ReadText(1001, 7288),
 			valuetype = "dropdown",
@@ -1772,7 +1818,7 @@ config.optionDefinitions = {
 			callback = function (id, option) return menu.callbackGfxSSR(id, option) end,
 			selectable = function () return menu.selectableGfxPreset() end,
 		},
-		[37] = {
+		[39] = {
 			id = "envmapprobes",
 			name = ReadText(1001, 11733),
 			valuetype = "dropdown",
@@ -1780,7 +1826,7 @@ config.optionDefinitions = {
 			callback = function (id, option) return menu.callbackGfxEnvMapProbes(id, option) end,
 			selectable = function () return menu.selectableGfxPreset() end,
 		},
-		[38] = {
+		[40] = {
 			id = "volumetric",
 			name = ReadText(1001, 8990),
 			valuetype = "dropdown",
@@ -1788,27 +1834,27 @@ config.optionDefinitions = {
 			callback = function (id, option) return menu.callbackGfxVolumetric(id, option) end,
 			selectable = function () return menu.selectableGfxPreset() end,
 		},
-		[39] = {
+		[41] = {
 			id = "line",
 		},
-		[40] = {
+		[42] = {
 			id = "envmapprobesinsideglassfade",
 			name = ReadText(1001, 11754),
 			valuetype = "slidercell",
 			value = function () return menu.valueGfxEnvMapProbesInsideGlassFade() end,
 			callback = function (value) return menu.callbackGfxEnvMapProbesInsideGlassFade(value) end,
 		},
-		[41] = {
+		[43] = {
 			id = "capturehq",
 			name = ReadText(1001, 4816),
 			valuetype = "button",
 			value = function () return GetCaptureHQOption() and ReadText(1001, 2648) or ReadText(1001, 2649) end,
 			callback = function () return menu.callbackGfxCaptureHQ() end,
 		},
-		[42] = {
+		[44] = {
 			id = "line",
 		},
-		[43] = {
+		[45] = {
 			id = "gfx_defaults",
 			name = ReadText(1001, 8982),
 			submenu = "gfx_defaults",
@@ -2108,11 +2154,6 @@ config.optionDefinitions = {
 			value = function () return menu.valueGameStartmenuBackground() end,
 			callback = function (id, option) return menu.callbackGameStartmenuBackground(id, option) end,
 			display = function () return menu.isStartmenu end,
-			confirmline = {
-				positive = function () return menu.callbackGameStartmenuBackgroundConfirm() end,
-				pos_name = ReadText(1001, 11778),
-				pos_selectable = function () return menu.selectableGameStartmenuBackgroundConfirm() end,
-			},
 		},
 		[32] = {
 			id = "header",
@@ -2430,100 +2471,127 @@ config.optionDefinitions = {
 		},
 		[38] = {
 			id = "header",
-			name = ReadText(1001, 8940),
-			display = C.IsTobiiAvailable,
+			name = ReadText(1001, 12729),
+			display = C.IsOpenTrackEnabled,
 		},
 		[39] = {
-			id = "tobii_mode",
-			name = ReadText(1001, 8941),
-			valuetype = "dropdown",
-			value = function () return menu.valueInputTobiiMode() end,
-			callback = function (id, option) return menu.callbackInputTobiiMode(id, option) end,
-			display = C.IsTobiiAvailable,
+			id = "tracker_support_opentrack",
+			name = ReadText(1001, 12730),
+			mouseOverText = ReadText(1026, 4810),
+			valuetype = "button",
+			value = function () return menu.valueInputOpenTrackSupport() end,
+			callback = function () return menu.callbackInputOpenTrackSupport() end,
+			display = C.IsOpenTrackEnabled,
 		},
 		[40] = {
-			id = "tobii_headfilterstrength",
-			name = ReadText(1001, 8954),
-			mouseOverText = ReadText(1026, 2647),
-			valuetype = "slidercell",
-			value = function () return menu.valueInputTobiiHeadFilterStrength() end,
-			callback = function(value) return menu.callbackInputTobiiHeadFilterStrength(value) end,
-			display = function () return menu.displayTobiiHeadTracking() end,
+			id = "tracker_support_opentrack_info",
+			name = "",
+			value = function () return menu.valueInputOpenTrackStatus() end,
+			display = C.GetOpenTrackSupportOption,
+			interactive = false,
 		},
 		[41] = {
-			id = "tobii_anglefactor",
-			name = ReadText(1001, 8950),
-			mouseOverText = ReadText(1026, 2644),
-			valuetype = "slidercell",
-			value = function () return menu.valueInputTobiiAngleFactor() end,
-			callback = function(value) return menu.callbackInputTobiiAngleFactor(value) end,
-			display = function () return menu.displayTobiiHeadTracking() end,
-		},
-		[42] = {
-			id = "tobii_deadzoneangle",
-			name = ReadText(1001, 8952),
-			mouseOverText = ReadText(1026, 2645),
-			valuetype = "slidercell",
-			value = function () return menu.valueInputTobiiDeadzoneAngle() end,
-			callback = function(value) return menu.callbackInputTobiiDeadzoneAngle(value) end,
-			display = function () return menu.displayTobiiHeadTracking() end,
-		},
-		[43] = {
-			id = "tobii_positionfactor",
-			name = ReadText(1001, 8958),
-			mouseOverText = ReadText(1026, 2650),
-			valuetype = "slidercell",
-			value = function () return menu.valueInputTobiiPositionFactor() end,
-			callback = function(value) return menu.callbackInputTobiiPositionFactor(value) end,
-			display = function () return menu.displayTobiiHeadTracking() end,
-		},
-		[44] = {
-			id = "tobii_deadzoneposition",
-			name = ReadText(1001, 8953),
-			mouseOverText = ReadText(1026, 2646),
-			valuetype = "slidercell",
-			value = function () return menu.valueInputTobiiDeadzonePosition() end,
-			callback = function(value) return menu.callbackInputTobiiDeadzonePosition(value) end,
-			display = function () return menu.displayTobiiHeadTracking() end,
-		},
-		[45] = {
-			id = "tobii_gazefilterstrength",
-			name = ReadText(1001, 8955),
-			mouseOverText = ReadText(1026, 2648),
-			valuetype = "slidercell",
-			value = function () return menu.valueInputTobiiGazeFilterStrength() end,
-			callback = function(value) return menu.callbackInputTobiiGazeFilterStrength(value) end,
-			display = function () return menu.displayTobiiGazeContinous() end,
-		},
-		[46] = {
-			id = "tobii_gazeanglefactor",
-			name = ReadText(1001, 8951),
-			mouseOverText = ReadText(1026, 2644),
-			valuetype = "slidercell",
-			value = function () return menu.valueInputTobiiGazeAngleFactor() end,
-			callback = function(value) return menu.callbackInputTobiiGazeAngleFactor(value) end,
-			display = function () return menu.displayTobiiGazeContinous() end,
-		},
-		[47] = {
-			id = "tobii_gazedeadzone",
-			name = ReadText(1001, 8949),
-			mouseOverText = ReadText(1026, 2649),
-			valuetype = "slidercell",
-			value = function () return menu.valueInputTobiiGazeDeadzone() end,
-			callback = function(value) return menu.callbackInputTobiiGazeDeadzone(value) end,
-			display = function () return menu.displayTobiiGazeContinous() end,
-		},
-		[48] = {
 			id = "line",
 			linecolor = Color["row_background"],
 			lineheight = 4,
-			display = C.IsTobiiAvailable,
+			display = C.IsOpenTrackEnabled,
+		},
+		[42] = {
+			id = "header",
+			name = function () return ffi.string(C.GetActiveHeadTrackerName()) end,
+			display = C.IsActiveHeadTrackerAvailable,
+		},
+		[43] = {
+			id = "tracker_mode",
+			name = ReadText(1001, 8941),
+			valuetype = "dropdown",
+			value = function () return menu.valueInputTrackerMode() end,
+			callback = function (id, option) return menu.callbackInputTrackerMode(id, option) end,
+			display = function () return C.IsActiveHeadTrackerAvailable() and C.IsActiveHeadTrackerSettingSupported("mode") end,
+		},
+		[44] = {
+			id = "tracker_headfilterstrength",
+			name = ReadText(1001, 8954),
+			mouseOverText = ReadText(1026, 2647),
+			valuetype = "slidercell",
+			value = function () return menu.valueInputTrackerHeadFilterStrength() end,
+			callback = function(value) return menu.callbackInputTrackerHeadFilterStrength(value) end,
+			display = function () return C.IsActiveHeadTrackerAvailable() and C.IsActiveHeadTrackerSettingSupported("filterstrength") end,
+		},
+		[45] = {
+			id = "tracker_anglefactor",
+			name = ReadText(1001, 8950),
+			mouseOverText = ReadText(1026, 2644),
+			valuetype = "slidercell",
+			value = function () return menu.valueInputTrackerAngleFactor() end,
+			callback = function(value) return menu.callbackInputTrackerAngleFactor(value) end,
+			display = function () return C.IsActiveHeadTrackerAvailable() and C.IsActiveHeadTrackerSettingSupported("anglefactor") end,
+		},
+		[46] = {
+			id = "tracker_deadzoneangle",
+			name = ReadText(1001, 8952),
+			mouseOverText = ReadText(1026, 2645),
+			valuetype = "slidercell",
+			value = function () return menu.valueInputTrackerDeadzoneAngle() end,
+			callback = function(value) return menu.callbackInputTrackerDeadzoneAngle(value) end,
+			display = function () return C.IsActiveHeadTrackerAvailable() and C.IsActiveHeadTrackerSettingSupported("deadzoneangle") end,
+		},
+		[47] = {
+			id = "tracker_positionfactor",
+			name = ReadText(1001, 8958),
+			mouseOverText = ReadText(1026, 2650),
+			valuetype = "slidercell",
+			value = function () return menu.valueInputTrackerPositionFactor() end,
+			callback = function(value) return menu.callbackInputTrackerPositionFactor(value) end,
+			display = function () return C.IsActiveHeadTrackerAvailable() and C.IsActiveHeadTrackerSettingSupported("positionfactor") end,
+		},
+		[48] = {
+			id = "tracker_deadzoneposition",
+			name = ReadText(1001, 8953),
+			mouseOverText = ReadText(1026, 2646),
+			valuetype = "slidercell",
+			value = function () return menu.valueInputTrackerDeadzonePosition() end,
+			callback = function(value) return menu.callbackInputTrackerDeadzonePosition(value) end,
+			display = function () return C.IsActiveHeadTrackerAvailable() and C.IsActiveHeadTrackerSettingSupported("deadzoneposition") end,
 		},
 		[49] = {
+			id = "tracker_gazefilterstrength",
+			name = ReadText(1001, 8955),
+			mouseOverText = ReadText(1026, 2648),
+			valuetype = "slidercell",
+			value = function () return menu.valueInputTrackerGazeFilterStrength() end,
+			callback = function(value) return menu.callbackInputTrackerGazeFilterStrength(value) end,
+			display = function () return C.IsActiveHeadTrackerAvailable() and C.IsActiveHeadTrackerSettingSupported("gazefilterstrength") end,
+		},
+		[50] = {
+			id = "tracker_gazeanglefactor",
+			name = ReadText(1001, 8951),
+			mouseOverText = ReadText(1026, 2644),
+			valuetype = "slidercell",
+			value = function () return menu.valueInputTrackerGazeAngleFactor() end,
+			callback = function(value) return menu.callbackInputTrackerGazeAngleFactor(value) end,
+			display = function () return C.IsActiveHeadTrackerAvailable() and C.IsActiveHeadTrackerSettingSupported("gazeanglefactor") end,
+		},
+		[51] = {
+			id = "tracker_gazedeadzone",
+			name = ReadText(1001, 8949),
+			mouseOverText = ReadText(1026, 2649),
+			valuetype = "slidercell",
+			value = function () return menu.valueInputTrackerGazeDeadzone() end,
+			callback = function(value) return menu.callbackInputTrackerGazeDeadzone(value) end,
+			display = function () return C.IsActiveHeadTrackerAvailable() and C.IsActiveHeadTrackerSettingSupported("gazedeadzone") end,
+		},
+		[52] = {
+			id = "line",
+			linecolor = Color["row_background"],
+			lineheight = 4,
+			display = C.IsActiveHeadTrackerAvailable,
+		},
+		[53] = {
 			id = "header",
 			name = function () return ReadText(1001, 4815) end,
 		},
-		[50] = {
+		[54] = {
 			id = "input_modifiers",
 			name = ReadText(1001, 12643),
 			submenu = "input_modifiers",
@@ -2793,6 +2861,16 @@ config.optionDefinitions = {
 	},
 }
 
+config.DLSSmodes = {
+	["off"] = ReadText(1001, 12641),
+	["auto"] = ReadText(1001, 12737),
+	["quality"] = ReadText(1001, 12738),
+	["balanced"] = ReadText(1001, 12739),
+	["performance"] = ReadText(1001, 12740),
+	["ultra_performance"] = ReadText(1001, 12741),
+	["dlaa"] = ReadText(1001, 12742),
+}
+
 
 --- widget hooks ---
 
@@ -2927,7 +3005,7 @@ end
 function menu.buttonAddControl(row, data)
 	if data and not menu.remapControl then
 		-- set update to blink "_" and pass variables on to menu.remapInput
-		menu.remapControl = { row = row, col = data[6], controltype = data[1], controlcode = data[2], controlcontext = data[8] or 1, oldinputtype = data[3], oldinputcode = data[4], oldinputsgn = data[5], nokeyboard = data[7], allowmouseaxis = data[9], mouseonly = data[11] }
+		menu.remapControl = { row = row, col = data[6], controltype = data[1], controlcode = data[2], controlcontext = data[8] or 1, oldinputtype = data[3], oldinputcode = data[4], oldinputsgn = data[5], nokeyboard = data[7], allowmouseaxis = data[9], mouseonly = data[11], mousewheelonly = data[14] }
 
 		-- open popup
 		menu.contextMenuMode = "directinput"
@@ -3228,6 +3306,15 @@ function menu.buttonExtensionGlobalSync()
 	SetExtensionSettings("", false, "sync", not globalsync)
 	menu.extensionSettingsChanged = nil
 	menu.extensionSettings = GetAllExtensionSettings()
+end
+
+function menu.buttonExtensionUISecurityMode()
+	table.insert(menu.history, 1, { optionParameter = menu.currentOption, topRow = GetTopRow(menu.optionTable), selectedOption = "uisecurity" })
+	__CORE_GAMEOPTIONS_RESTORE = true
+	__CORE_GAMEOPTIONS_RESTOREINFO.optionParameter = nil
+	__CORE_GAMEOPTIONS_RESTOREINFO.history = menu.history
+	SetUISafeModeOption(not GetUISafeModeOption())
+	menu.displayInit(ReadText(1001, 409))
 end
 
 function menu.buttonSoundTest(optionid)
@@ -3536,7 +3623,7 @@ function menu.createContextMenu()
 
 	local sizeextension = 2 * Helper.borderSize
 	local xoffset = menu.frameOffsetX + (menu.width - menu.contextMenuData.width) / 2
-	if (menu.contextMenuMode == "modified") or (menu.contextMenuMode == "ventureextension") or (menu.contextMenuMode == "info") or (menu.contextMenuMode == "userquestion") or (menu.contextMenuMode == "firstgame") then
+	if (menu.contextMenuMode == "modified") or (menu.contextMenuMode == "uisecurity") or (menu.contextMenuMode == "ventureextension") or (menu.contextMenuMode == "info") or (menu.contextMenuMode == "userquestion") or (menu.contextMenuMode == "firstgame") then
 		sizeextension = 6 * Helper.borderSize
 		xoffset = (Helper.viewWidth - menu.contextMenuData.width) / 2
 	end
@@ -3556,6 +3643,8 @@ function menu.createContextMenu()
 		menu.contextFrame:setBackground2("gradient_alpha_04", { color = Color["frame_background_semitransparent"], width = Helper.viewWidth, height = Helper.viewHeight })
 	elseif menu.contextMenuMode == "modified" then
 		height = menu.createContextMenuModified(menu.contextFrame)
+	elseif menu.contextMenuMode == "uisecurity" then
+		height = menu.createContextMenuUISecurity(menu.contextFrame)
 	elseif menu.contextMenuMode == "ventureextension" then
 		height = menu.createContextMenuVentureExtension(menu.contextFrame)
 	elseif menu.contextMenuMode == "editcolor" then
@@ -3576,7 +3665,7 @@ function menu.createContextMenu()
 	end
 
 	menu.contextFrame.properties.height = height + sizeextension
-	if (menu.contextMenuMode == "modified") or (menu.contextMenuMode == "ventureextension") or (menu.contextMenuMode == "info") or (menu.contextMenuMode == "userquestion") or (menu.contextMenuMode == "firstgame") then
+	if (menu.contextMenuMode == "modified") or (menu.contextMenuMode == "uisecurity") or (menu.contextMenuMode == "ventureextension") or (menu.contextMenuMode == "info") or (menu.contextMenuMode == "userquestion") or (menu.contextMenuMode == "firstgame") then
 		menu.contextFrame.properties.y = menu.contextFrame.properties.y - menu.contextFrame.properties.height / 2
 	elseif menu.contextMenuMode == "editcolor" then
 		menu.contextFrame.properties.x = math.min(menu.contextFrame.properties.x, Helper.viewWidth - menu.contextMenuData.width - Helper.frameBorder)
@@ -3664,9 +3753,9 @@ function menu.createContextMenuRemap(frame)
 	local row = ftable:addRow(nil, { fixed = true })
 	local title = ReadText(1001, 8978)
 	if menu.contextMenuData.modifier then
-		title = ReadText(1001, 12647)
+		title = config.input.iscontrollermodifier[menu.contextMenuData.modifier] and ReadText(1001, 12747) or ReadText(1001, 12647)
 	elseif menu.contextMenuData.removemodifier then
-		title = ReadText(1001, 12649)
+		title = config.input.iscontrollermodifier[menu.contextMenuData.modifier] and ReadText(1001, 12749) or ReadText(1001, 12649)
 	end
 	row[1]:setColSpan(5):createText(title, config.subHeaderTextProperties)
 
@@ -3692,7 +3781,7 @@ function menu.createContextMenuRemap(frame)
 	if not active then
 		desc = ReadText(1001, 12658)
 	elseif menu.contextMenuData.modifier then
-		desc = ReadText(1001, 12648)
+		desc = config.input.iscontrollermodifier[menu.contextMenuData.modifier] and ReadText(1001, 12748) or ReadText(1001, 12648)
 	elseif menu.contextMenuData.removemodifier then
 		desc = ReadText(1001, 12650)
 	end
@@ -3758,7 +3847,7 @@ function menu.buttonContextRemapConfirm()
 		menu.checkForModifier(menu.contextMenuData.removemodifier[1], false)
 		SaveInputSettings(menu.controls.actions, menu.controls.states, menu.controls.ranges)
 
-		C.UnmapModifierKey(menu.contextMenuData.removemodifier[1], menu.contextMenuData.removemodifier[2], false)
+		C.UnmapModifierButton(menu.contextMenuData.removemodifier[1], menu.contextMenuData.removemodifier[2], menu.contextMenuData.removemodifier[3], false)
 
 		menu.topRows["input_modifiers"] = GetTopRow(menu.optionTable)
 		menu.selectedRows["input_modifiers"] = Helper.currentTableRow[menu.optionTable]
@@ -3815,7 +3904,7 @@ function menu.createContextMenuDirectInput(frame)
 
 	local row = ftable:addRow(nil, { fixed = true })
 	row[2]:setColSpan(2):createText(ReadText(1001, 12673) .. ReadText(1001, 120))
-	row[4]:createText(menu.nameNewAssignment)
+	row[4]:createText(function () return menu.nameNewAssignment(menu.remapControl.nokeyboard, menu.remapControl.mouseonly or menu.remapControl.mousewheelonly) end)
 
 	local row = ftable:addRow(nil, { fixed = true })
 	row[1]:setColSpan(5):createText(" ", { titleColor = Color["row_title"] })
@@ -3836,13 +3925,25 @@ function menu.createContextMenuDirectInput(frame)
 	return ftable:getVisibleHeight()
 end
 
-function menu.nameNewAssignment()
+function menu.nameNewAssignment(nokeyboard, nocontroller)
 	local text = ""
-	if C.IsControlPressed() then
-		text = text .. ffi.string(C.GetDisplayedModifierKey("ctrl")) .. "+"
+	if not nokeyboard then
+		if C.IsControlPressed() then
+			text = text .. ffi.string(C.GetDisplayedModifierKey("ctrl")) .. "+"
+		end
+		if C.IsShiftPressed() then
+			text = text .. ffi.string(C.GetDisplayedModifierKey("shift")) .. "+"
+		end
 	end
-	if C.IsShiftPressed() then
-		text = text .. ffi.string(C.GetDisplayedModifierKey("shift")) .. "+"
+	if not nocontroller then
+		if text == "" then		-- do not allow mixture of keyboard and joystick modifiers displayed simultaneously - only one of the types will takes effect
+			if C.IsInputModifierPressed("joystickmod1") then
+				text = text .. ffi.string(C.GetDisplayedModifierKey("joystickmod1")) .. "+"
+			end
+			if C.IsInputModifierPressed("joystickmod2") then
+				text = text .. ffi.string(C.GetDisplayedModifierKey("joystickmod2")) .. "+"
+			end
+		end
 	end
 	local _, secondfraction = math.modf(getElapsedTime())
 	if secondfraction > 0.5 then
@@ -3920,8 +4021,62 @@ function menu.createContextMenuModified(frame)
 	row[2]:setColSpan(3):createButton({ bgColor = Color["button_background_hidden"] }):setText(ReadText(1001, 9711))
 	row[2].handlers.onClick = function () menu.contextMenuData.saveOption = not menu.contextMenuData.saveOption end
 	row[6]:createButton({ helpOverlayID = "modified_client_confirm", helpOverlayText = " ", helpOverlayHighlightOnly = true }):setText(ReadText(1001, 14), { halign = "center" })
-	row[6].handlers.onClick = function() __CORE_DETAILMONITOR_USERQUESTION[menu.contextMenuMode] = menu.contextMenuData.saveOption; menu.closeContextMenu() end
+	row[6].handlers.onClick = menu.buttonContextModifiedConfirm
 	ftable:setSelectedCol(6)
+
+	return ftable:getVisibleHeight()
+end
+
+function menu.buttonContextModifiedConfirm()
+	__CORE_DETAILMONITOR_USERQUESTION[menu.contextMenuMode] = menu.contextMenuData.saveOption
+	if GetUISafeModeOption() and (ffi.string(C.GetModifiedBasegameUIFilesExtensions()) ~= "") then
+		menu.contextMenuMode = "uisecurity"
+		menu.contextMenuData = { width = Helper.scaleX(550), y = Helper.viewHeight / 2 }
+		menu.createContextMenu()
+	else
+		menu.closeContextMenu()
+	end
+end
+
+function menu.createContextMenuUISecurity(frame)
+	local ftable = frame:addTable(6, { tabOrder = 1, width = menu.contextMenuData.width, x = 3 * Helper.borderSize, y = 3 * Helper.borderSize, defaultInteractiveObject = true })
+	ftable:setColWidth(1, Helper.scaleY(Helper.standardButtonHeight), false)
+	ftable:setColWidthPercent(5, 30, false)
+	ftable:setColWidthPercent(6, 30, false)
+
+	local row = ftable:addRow(false, { fixed = true })
+	row[1]:setColSpan(6):createText(ReadText(1001, 12723), Helper.headerRowCenteredProperties)
+
+	local row = ftable:addRow(false, { fixed = true })
+	row[1]:setColSpan(6):createText(ReadText(1001, 12724) .. " " .. ReadText(1001, 12725), { wordwrap = true })
+
+	ftable:addEmptyRow()
+
+	local extensions = ffi.string(C.GetModifiedBasegameUIFilesExtensions())
+	local extensiontext = ReadText(1001, 12726) .. ReadText(1001, 120)
+	for extension in utf8.gmatch(extensions, "([^;]+)") do
+		extensiontext = extensiontext .. "\n· " .. extension
+	end
+	local row = ftable:addRow(false, { fixed = true })
+	row[1]:setColSpan(6):createText(extensiontext, { wordwrap = true })
+
+	ftable:addEmptyRow()
+
+	local row = ftable:addRow(false, { fixed = true })
+	row[1]:setColSpan(6):createText(ReadText(1001, 12727), { wordwrap = true })
+
+	ftable:addEmptyRow()
+
+	local row = ftable:addRow(true, { fixed = true })
+	row[1]:createCheckBox(function () return menu.contextMenuData.saveOption == true end, { height = Helper.standardButtonHeight })
+	row[1].handlers.onClick = function () menu.contextMenuData.saveOption = not menu.contextMenuData.saveOption end
+	row[2]:setColSpan(3):createButton({ bgColor = Color["button_background_hidden"] }):setText(ReadText(1001, 9711))
+	row[2].handlers.onClick = function () menu.contextMenuData.saveOption = not menu.contextMenuData.saveOption end
+	row[5]:createButton({  }):setText(ReadText(1001, 12728), { halign = "center" })
+	row[5].handlers.onClick = function() __CORE_DETAILMONITOR_USERQUESTION[menu.contextMenuMode] = menu.contextMenuData.saveOption; menu.closeContextMenu() end
+	row[6]:createButton({  }):setText(ReadText(1001, 12731), { halign = "center" })
+	row[6].handlers.onClick = function() __CORE_DETAILMONITOR_USERQUESTION[menu.contextMenuMode] = menu.contextMenuData.saveOption; SetUISafeModeOption(false); menu.displayInit(ReadText(1001, 409)) end
+	ftable:setSelectedCol(5)
 
 	return ftable:getVisibleHeight()
 end
@@ -4541,7 +4696,11 @@ function menu.displayOption(ftable, option, numCols)
 			row[2]:setColSpan(numCols - 1):createText(option.name, config.subHeaderTextProperties)
 		else
 			local isselectable = (not option.selectable) or option.selectable()
-			row = ftable:addRow(isselectable and option or {}, { interactive = isselectable })
+			local interactive = option.interactive
+			if interactive == nil then
+				interactive = isselectable
+			end
+			row = ftable:addRow(isselectable and option or {}, { interactive = interactive })
 			if isselectable and (option.id == menu.preselectOption) then
 				ftable:setSelectedRow(row.index)
 			end
@@ -4715,6 +4874,16 @@ function menu.getControlsData()
 			end
 		end
 	end
+
+	local joysticks = GetJoysticksOption()
+	menu.mappedjoysticks = GetMappedJoysticks()
+	for i, joystick in ipairs(menu.mappedjoysticks) do
+		if joystick <= 8 then
+			menu.mappedjoysticks[i] = joysticks[joystick] or {}
+		else
+			menu.mappedjoysticks[i] = {}
+		end
+	end
 end
 
 function menu.getDefaultControlsData()
@@ -4739,29 +4908,27 @@ function menu.getInputName(source, code, signum)
 		local icon = ColorText["text_input_device_keyboard"] .. menu.getInputDeviceIcon("keyboard")
 		return name, icon
 	elseif source >= 2 and source <= 9 then
-		if menu.mappedjoysticks[source - 1].xinput then
-			-- xinput axis
-			local name = ffi.string(C.GetLocalizedInputName(source, code)) .. signumstr
-			local icon = ColorText["text_input_device_controller"] .. menu.getInputDeviceIcon("controller") .. ((source > 2) and menu.getInputDeviceIcon("number_" .. (source - 1)) or "")
-			return name, icon
-		else
-			-- directinput axis
-			local name = ReadText(1017, code) .. signumstr
-			local icon = ColorText["text_input_device_joystick"] .. menu.getInputDeviceIcon("joystick") .. ((source > 2) and menu.getInputDeviceIcon("number_" .. (source - 1)) or "")
-			return name, icon
+		-- joystick/controller axis
+		local joystickindex = source - 1
+		local name = ffi.string(C.GetLocalizedInputName(source, code)) .. signumstr
+		local icon = (joystickindex > 1) and menu.getInputDeviceIcon("number_" .. joystickindex) or ""
+		if menu.mappedjoysticks[joystickindex].xinput then															-- xinput / controller
+			icon = ColorText["text_input_device_controller"] .. menu.getInputDeviceIcon("controller") .. icon
+		else																									-- directinput / joystick
+			icon = ColorText["text_input_device_joystick"] .. menu.getInputDeviceIcon("joystick") .. icon
 		end
+		return name, icon
 	elseif source >= 10 and source <= 17 then
-		if menu.mappedjoysticks[source - 9].xinput then
-			-- xinput buttons
-			local name = ffi.string(C.GetLocalizedInputName(source, code)) --string.format(ReadText(1001, 2673), ReadText(1009, code))
-			local icon = ColorText["text_input_device_controller"] .. menu.getInputDeviceIcon("controller") .. ((source > 10) and menu.getInputDeviceIcon("number_" .. (source - 9)) or "")
-			return name, icon
-		else
-			-- directinput buttons
-			local name = ffi.string(C.GetLocalizedInputName(source, code)) --ReadText(1022, code)
-			local icon = ColorText["text_input_device_joystick"] .. menu.getInputDeviceIcon("joystick") .. ((source > 10) and menu.getInputDeviceIcon("number_" .. (source - 9)) or "")
-			return name, icon
+		-- joystick/controller buttons
+		local joystickindex = source - 9
+		local name = ffi.string(C.GetLocalizedInputName(source, code))
+		local icon = (joystickindex > 1) and menu.getInputDeviceIcon("number_" .. joystickindex) or ""
+		if menu.mappedjoysticks[joystickindex].xinput then															-- xinput / controller
+			icon = ColorText["text_input_device_controller"] .. menu.getInputDeviceIcon("controller") .. icon
+		else																									-- directinput / joystick
+			icon = ColorText["text_input_device_joystick"] .. menu.getInputDeviceIcon("joystick") .. icon
 		end
+		return name, icon
 	elseif source == 18 then
 		-- mouse axis
 		local name = ffi.string(C.GetLocalizedRawMouseAxisName(code))
@@ -5151,7 +5318,7 @@ function menu.remapInput(newinputtype, newinputcode, newinputsgn, checked)
 
 	-- setting modifier
 	if menu.remapControl.modifier then
-		if newinputtype == menu.remapControl.modifiersource then
+		if menu.remapControl.modifiersource[newinputtype] then
 			-- check for conflicts with existing mappings -> popup
 			local _, unmodified = math.modf(newinputcode / config.input.modifierFilter)
 			unmodified = unmodified * config.input.modifierFilter
@@ -5480,7 +5647,7 @@ end
 
 function menu.remapInputInternal(newinputtype, newinputcode, newinputsgn, newinputtoggle, nosave)
 	if menu.remapControl.modifier then
-		C.MapModifierKey(menu.remapControl.modifier, newinputcode, false)
+		C.MapModifierButton(menu.remapControl.modifier, newinputtype, newinputcode, false)
 		menu.remapControl = nil
 
 		menu.topRows["input_modifiers"] = GetTopRow(menu.optionTable)
@@ -5603,22 +5770,6 @@ function menu.remapInputInternal(newinputtype, newinputcode, newinputsgn, newinp
 		menu.remapControl = nil
 		menu.submenuHandler(menu.currentOption)
 	end
-end
-
-function menu.displayTobiiHeadTracking()
-	if not C.IsTobiiAvailable() then
-		return false
-	end
-	local mode = ffi.string(C.GetTobiiMode())
-	return (mode == "head_tracking") or (mode == "combined")
-end
-
-function menu.displayTobiiGazeContinous()
-	if not C.IsTobiiAvailable() then
-		return false
-	end
-	local mode = ffi.string(C.GetTobiiMode())
-	return (mode == "gaze_continous") or (mode == "combined")
 end
 
 function menu.isVentureExtensionRestartRequired()
@@ -6216,6 +6367,16 @@ function menu.warningSettings()
 	return languageWarning, languageFont
 end
 
+function menu.mouseOverTextGfxUpscaling()
+	local selectable = menu.selectableGfxUpscaling()
+	if selectable == 1 then
+		return ColorText["text_error"] ..  ReadText(1026, 4814)
+	elseif selectable == 2 then
+		return ColorText["text_error"] ..  ReadText(1026, 4815)
+	end
+	return ""
+end
+
 function menu.valueAccessibilityGlobalLightScale()
 	local enginevalue = C.GetGlobalLightScale() -- 0.5 - 1.0
 	local uivalue = (enginevalue - 0.5) / 0.5 * 0.9 + 0.1 -- 0.1 - 1.0
@@ -6666,6 +6827,44 @@ function menu.valueGfxAdapter()
 	return options, currentOption
 end
 
+function menu.valueGfxDLSS()
+	local options = {}
+	local currentOption = C.GetDLSSOption(false) and "on" or "off"
+
+	local settings = {
+		{"off",					ReadText(1001, 12641)},
+		{"on",					ReadText(1001, 12642)},
+	}
+
+	for i, entry in ipairs(settings) do
+		table.insert(options, { id = entry[1], text = entry[2], icon = "", displayremoveoption = false, mouseovertext = entry[3] or "" })
+	end
+
+	return options, currentOption
+end
+
+function menu.valueGfxDLSSMode()
+	local options = {}
+	local currentOption = ffi.string(C.GetDLSSModeOption(false))
+	local automode = ffi.string(C.GetDLSSAutoMode())
+
+	local settings = {
+		{"off",					config.DLSSmodes["off"]},
+		{"auto",				config.DLSSmodes["auto"] .. " (" .. (config.DLSSmodes[automode] or "-") .. ")"},
+		{"quality",				config.DLSSmodes["quality"]},
+		{"balanced",			config.DLSSmodes["balanced"]},
+		{"performance",			config.DLSSmodes["performance"]},
+		{"ultra_performance",	config.DLSSmodes["ultra_performance"], ReadText(1026, 4811)},
+		{"dlaa",				config.DLSSmodes["dlaa"]},
+	}
+
+	for i, entry in ipairs(settings) do
+		table.insert(options, { id = entry[1], text = entry[2], icon = "", displayremoveoption = false, mouseovertext = entry[3] or "" })
+	end
+
+	return options, currentOption
+end
+
 function menu.valueGfxEffectDistance()
 	local start = Helper.round(GetEffectDistanceOption() * 100)
 
@@ -7084,16 +7283,21 @@ function menu.valueGfxTexture()
 	return options, currentOption
 end
 
-function menu.valueGfxUpscaling()
+function menu.valueGfxFSR1()
 	local options = {}
 	local currentOption = ffi.string(C.GetUpscalingOption(false))
 
 	local settings = {
-		{"none",				ReadText(1001, 11725)},
-		{"fsr_performance",		ReadText(1001, 11724),	ReadText(1026, 2661)},
-		{"fsr_balanced",		ReadText(1001, 11723),	ReadText(1026, 2660)},
-		{"fsr_quality",			ReadText(1001, 11722),	ReadText(1026, 2659)},
-		{"fsr_ultra_quality",	ReadText(1001, 11721),	ReadText(1026, 2658)},
+		{"none",					ReadText(1001, 11725)},
+		{"fsr3_native",				ReadText(1001, 12754),	ReadText(1026, 4816)},
+		{"fsr3_quality",			ReadText(1001, 12755),	ReadText(1026, 4817)},
+		{"fsr3_balanced",			ReadText(1001, 12756),	ReadText(1026, 4818)},
+		{"fsr3_performance",		ReadText(1001, 12757),	ReadText(1026, 4819)},
+		{"fsr3_ultra_performance",	ReadText(1001, 12758),	ReadText(1026, 4820)},
+		{"fsr_ultra_quality",		ReadText(1001, 12759),	ReadText(1026, 2658)},
+		{"fsr_quality",				ReadText(1001, 12760),	ReadText(1026, 2659)},
+		{"fsr_balanced",			ReadText(1001, 12761),	ReadText(1026, 2660)},
+		{"fsr_performance",			ReadText(1001, 12762),	ReadText(1026, 2661)},
 	}
 	for i, entry in ipairs(settings) do
 		entry.id = i
@@ -7165,6 +7369,28 @@ function menu.valueInputMouseSteeringInvert(configname)
 	return C.GetMouseSteeringInvertedOption(configname) and ReadText(1001, 2676) or ReadText(1001, 2677)
 end
 
+function menu.valueInputOpenTrackSupport()
+	return C.GetOpenTrackSupportOption() and ReadText(1001, 2648) or ReadText(1001, 2649)
+end
+
+function menu.valueInputOpenTrackStatus()
+	local status = ffi.string(C.GetOpenTrackConnectionStatus())
+	if menu.pendingOpenTrackActivation then
+		if status ==  "OPENTRACK_CONNECTED" then
+			menu.delayedRefresh = getElapsedTime()
+			menu.pendingOpenTrackActivation = nil
+		end
+	end
+	if status == "OPENTRACK_ERROR" then
+		return ReadText(1001, 12732), Color["text_error"]
+	elseif status == "OPENTRACK_PENDING" then
+		return ReadText(1001, 12733), Color["text_normal"]
+	elseif status == "OPENTRACK_CONNECTED" then
+		return ReadText(1001, 12734), Color["text_normal"]
+	end
+	return "", Color["text_normal"]
+end
+
 function menu.valueInputSensitivity(rangeid)
 	local start = math.max(1, math.min(100, Helper.round(GetSensitivitySetting(rangeid) * 100)))
 
@@ -7182,8 +7408,8 @@ function menu.valueInputSensitivity(rangeid)
 	return scale
 end
 
-function menu.valueInputTobiiAngleFactor()
-	local start = math.max(50, math.min(200, C.GetTobiiAngleFactor() * 100))
+function menu.valueInputTrackerAngleFactor()
+	local start = math.max(50, math.min(200, C.GetActiveHeadTrackerAngleFactor() * 100))
 
 	local scale = {
 		min            = 0,
@@ -7199,8 +7425,8 @@ function menu.valueInputTobiiAngleFactor()
 	return scale
 end
 
-function menu.valueInputTobiiGazeAngleFactor()
-	local start = math.max(10, math.min(200, C.GetTobiiGazeAngleFactor() * 100))
+function menu.valueInputTrackerGazeAngleFactor()
+	local start = math.max(10, math.min(200, C.GetActiveHeadTrackerGazeAngleFactor() * 100))
 
 	local scale = {
 		min            = 0,
@@ -7216,8 +7442,8 @@ function menu.valueInputTobiiGazeAngleFactor()
 	return scale
 end
 
-function menu.valueInputTobiiGazeFilterStrength()
-	local start = math.max(5, math.min(50, tonumber(C.GetTobiiGazeFilterStrength())))
+function menu.valueInputTrackerGazeFilterStrength()
+	local start = math.max(5, math.min(50, tonumber(C.GetActiveHeadTrackerGazeFilterStrength())))
 
 	local scale = {
 		min            = 0,
@@ -7232,8 +7458,8 @@ function menu.valueInputTobiiGazeFilterStrength()
 	return scale
 end
 
-function menu.valueInputTobiiHeadFilterStrength()
-	local start = math.max(5, math.min(25, tonumber(C.GetTobiiHeadFilterStrength())))
+function menu.valueInputTrackerHeadFilterStrength()
+	local start = math.max(5, math.min(25, tonumber(C.GetActiveHeadTrackerHeadFilterStrength())))
 
 	local scale = {
 		min            = 0,
@@ -7248,8 +7474,8 @@ function menu.valueInputTobiiHeadFilterStrength()
 	return scale
 end
 
-function menu.valueInputTobiiDeadzoneAngle()
-	local start = math.max(0, math.min(10, C.GetTobiiDeadzoneAngle()))
+function menu.valueInputTrackerDeadzoneAngle()
+	local start = math.max(0, math.min(10, C.GetActiveHeadTrackerDeadzoneAngle()))
 
 	local scale = {
 		min            = 0,
@@ -7263,8 +7489,8 @@ function menu.valueInputTobiiDeadzoneAngle()
 	return scale
 end
 
-function menu.valueInputTobiiGazeDeadzone()
-	local start = math.max(0, math.min(20, C.GetTobiiGazeDeadzone() * 100))
+function menu.valueInputTrackerGazeDeadzone()
+	local start = math.max(0, math.min(20, C.GetActiveHeadTrackerGazeDeadzone() * 100))
 
 	local scale = {
 		min            = 0,
@@ -7279,8 +7505,8 @@ function menu.valueInputTobiiGazeDeadzone()
 	return scale
 end
 
-function menu.valueInputTobiiDeadzonePosition()
-	local start = math.max(0, math.min(150, C.GetTobiiDeadzonePosition()))
+function menu.valueInputTrackerDeadzonePosition()
+	local start = math.max(0, math.min(150, C.GetActiveHeadTrackerDeadzonePosition()))
 
 	local scale = {
 		min            = 0,
@@ -7294,9 +7520,9 @@ function menu.valueInputTobiiDeadzonePosition()
 	return scale
 end
 
-function menu.valueInputTobiiMode()
+function menu.valueInputTrackerMode()
 	local options = {}
-	local currentOption = ffi.string(C.GetTobiiMode())
+	local currentOption = ffi.string(C.GetActiveHeadTrackerMode())
 
 	local settings = {
 		{ "disabled"		, ReadText(1001, 8942) },
@@ -7311,8 +7537,8 @@ function menu.valueInputTobiiMode()
 	return options, currentOption
 end
 
-function menu.valueInputTobiiPositionFactor()
-	local start = math.max(25, math.min(150, C.GetTobiiHeadPositionFactor() * 100))
+function menu.valueInputTrackerPositionFactor()
+	local start = math.max(25, math.min(150, C.GetActiveHeadTrackerHeadPositionFactor() * 100))
 
 	local scale = {
 		min            = 0,
@@ -7548,9 +7774,12 @@ function menu.selectableGfxUpscaling()
 	local currentAAOption = ffi.string(C.GetAAOption(false))
 
 	if (currentAAOption == "ssaa_2x") or (currentAAOption == "ssaa_4x") or (currentAAOption == "ssaa_6x") or (currentAAOption == "ssaa_9x") then
-		return false
+		return 1
 	end
-	return true
+	if C.GetDLSSOption(false) then
+		return 2
+	end
+	return 0
 end
 
 function menu.selectableOnlineSeason()
@@ -7948,6 +8177,12 @@ function menu.callbackGameStartmenuBackground(id, option)
 	if option ~= menu.curDropDownOption[id] then
 		menu.curDropDownOption[id] = option
 		C.SetStartmenuBackgroundOption(option)
+
+		table.insert(menu.history, 1, { optionParameter = menu.currentOption, topRow = GetTopRow(menu.optionTable), selectedOption = "startmenu_background" })
+		__CORE_GAMEOPTIONS_RESTORE = true
+		__CORE_GAMEOPTIONS_RESTOREINFO.optionParameter = nil
+		__CORE_GAMEOPTIONS_RESTOREINFO.history = menu.history
+		NewGame("startmenu")
 	end
 end
 
@@ -8068,7 +8303,13 @@ function menu.callbackGfxAAConfirm()
 end
 
 function menu.callbackGfxAACancel()
-	C.SetAAOption(ffi.string(C.GetAAOption(true)))
+	-- testing AA could have changed other settings -> restore all
+	local upmode = ffi.string(C.GetUpscalingOption(true))
+	if upmode == "" then
+		upmode = "none"
+	end
+	C.SetMultipleGfxModes(ffi.string(C.GetAAOption(true)), upmode, C.GetDLSSOption(true), ffi.string(C.GetDLSSModeOption(true)))
+
 	__CORE_GAMEOPTIONS_RESTORE = true
 	__CORE_GAMEOPTIONS_RESTOREINFO.optionParameter = nil
 	__CORE_GAMEOPTIONS_RESTOREINFO.history = menu.history
@@ -8120,6 +8361,84 @@ end
 
 function menu.callbackGfxDistortion()
 	SetDistortionOption()
+end
+
+function menu.callbackGfxDLSS(id, option)
+	if option ~= menu.curDropDownOption[id] then
+		menu.curDropDownOption[id] = option
+		C.SetDLSSOption(option == "on")
+
+		table.insert(menu.history, 1, { optionParameter = menu.currentOption, topRow = GetTopRow(menu.optionTable), selectedOption = "dlss" })
+		__CORE_GAMEOPTIONS_RESTORE = true
+		__CORE_GAMEOPTIONS_RESTOREINFO.history = menu.history
+		__CORE_GAMEOPTIONS_RESTOREINFO.questionParameter = {
+			question = ReadText(1001, 2602),
+			callback = "callbackGfxDLSSConfirm",
+			negCallback = "callbackGfxDLSSCancel",
+			timer = 15.9,
+			waitforgfx = true,
+
+		}
+		__CORE_GAMEOPTIONS_RESTOREINFO.optionParameter = "question"
+	end
+end
+
+function menu.callbackGfxDLSSConfirm()
+	C.SaveDLSSOption()
+	menu.userQuestion = nil
+	menu.onCloseElement("back")
+end
+
+function menu.callbackGfxDLSSCancel()
+	-- testing DLSS could have changed other settings -> restore all
+	local upmode = ffi.string(C.GetUpscalingOption(true))
+	if upmode == "" then
+		upmode = "none"
+	end
+	C.SetMultipleGfxModes(ffi.string(C.GetAAOption(true)), upmode, C.GetDLSSOption(true), ffi.string(C.GetDLSSModeOption(true)))
+
+	__CORE_GAMEOPTIONS_RESTORE = true
+	__CORE_GAMEOPTIONS_RESTOREINFO.optionParameter = nil
+	__CORE_GAMEOPTIONS_RESTOREINFO.history = menu.history
+end
+
+function menu.callbackGfxDLSSMode(id, option)
+	if option ~= menu.curDropDownOption[id] then
+		menu.curDropDownOption[id] = option
+		C.SetDLSSModeOption(option)
+
+		table.insert(menu.history, 1, { optionParameter = menu.currentOption, topRow = GetTopRow(menu.optionTable), selectedOption = "dlssmode" })
+		__CORE_GAMEOPTIONS_RESTORE = true
+		__CORE_GAMEOPTIONS_RESTOREINFO.history = menu.history
+		__CORE_GAMEOPTIONS_RESTOREINFO.questionParameter = {
+			question = ReadText(1001, 2602),
+			callback = "callbackGfxDLSSModeConfirm",
+			negCallback = "callbackGfxDLSSModeCancel",
+			timer = 15.9,
+			waitforgfx = true,
+
+		}
+		__CORE_GAMEOPTIONS_RESTOREINFO.optionParameter = "question"
+	end
+end
+
+function menu.callbackGfxDLSSModeConfirm()
+	C.SaveDLSSModeOption()
+	menu.userQuestion = nil
+	menu.onCloseElement("back")
+end
+
+function menu.callbackGfxDLSSModeCancel()
+	-- testing DLSS mode could have changed other settings -> restore all
+	local upmode = ffi.string(C.GetUpscalingOption(true))
+	if upmode == "" then
+		upmode = "none"
+	end
+	C.SetMultipleGfxModes(ffi.string(C.GetAAOption(true)), upmode, C.GetDLSSOption(true), ffi.string(C.GetDLSSModeOption(true)))
+
+	__CORE_GAMEOPTIONS_RESTORE = true
+	__CORE_GAMEOPTIONS_RESTOREINFO.optionParameter = nil
+	__CORE_GAMEOPTIONS_RESTOREINFO.history = menu.history
 end
 
 function menu.callbackGfxEffectDistance(value)
@@ -8351,12 +8670,12 @@ function menu.callbackGfxTexture(id, option)
 	end
 end
 
-function menu.callbackGfxUpscaling(id, option)
+function menu.callbackGfxFSR1(id, option)
 	if option ~= menu.curDropDownOption[id] then
 		menu.curDropDownOption[id] = option
 		C.SetUpscalingOption(option)
 
-		table.insert(menu.history, 1, { optionParameter = menu.currentOption, topRow = GetTopRow(menu.optionTable), selectedOption = "upscaling" })
+		table.insert(menu.history, 1, { optionParameter = menu.currentOption, topRow = GetTopRow(menu.optionTable), selectedOption = "fsr1" })
 		__CORE_GAMEOPTIONS_RESTORE = true
 		__CORE_GAMEOPTIONS_RESTOREINFO.history = menu.history
 		__CORE_GAMEOPTIONS_RESTOREINFO.questionParameter = {
@@ -8378,11 +8697,13 @@ function menu.callbackGfxUpscalingConfirm()
 end
 
 function menu.callbackGfxUpscalingCancel()
+	-- testing FSR could have changed other settings -> restore all
 	local upmode = ffi.string(C.GetUpscalingOption(true))
 	if upmode == "" then
 		upmode = "none"
 	end
-	C.SetUpscalingOption(upmode)
+	C.SetMultipleGfxModes(ffi.string(C.GetAAOption(true)), upmode, C.GetDLSSOption(true), ffi.string(C.GetDLSSModeOption(true)))
+
 	__CORE_GAMEOPTIONS_RESTORE = true
 	__CORE_GAMEOPTIONS_RESTOREINFO.optionParameter = nil
 	__CORE_GAMEOPTIONS_RESTOREINFO.history = menu.history
@@ -8440,6 +8761,12 @@ function menu.callbackInputMouseSteeringInvert(configname)
 	C.SetMouseSteeringInvertedOption(configname, not C.GetMouseSteeringInvertedOption(configname))
 end
 
+function menu.callbackInputOpenTrackSupport()
+	C.SetOpenTrackSupportOption(not C.GetOpenTrackSupportOption())
+	menu.pendingOpenTrackActivation = true
+	menu.refresh()
+end
+
 function menu.callbackInputProfileLoad(profile)
 	LoadInputProfile(profile.filename, profile.personal)
 	menu.userQuestion = nil
@@ -8464,59 +8791,59 @@ function menu.callbackInputSensitivity(rangeid, configname, value)
 	end
 end
 
-function menu.callbackInputTobiiAngleFactor(value)
+function menu.callbackInputTrackerAngleFactor(value)
 	if value then
-		C.SetTobiiAngleFactor(value / 100)
+		C.SetActiveHeadTrackerAngleFactor(value / 100)
 	end
 end
 
-function menu.callbackInputTobiiGazeAngleFactor(value)
+function menu.callbackInputTrackerGazeAngleFactor(value)
 	if value then
-		C.SetTobiiGazeAngleFactor(value / 100)
+		C.SetActiveHeadTrackerGazeAngleFactor(value / 100)
 	end
 end
 
-function menu.callbackInputTobiiGazeFilterStrength(value)
+function menu.callbackInputTrackerGazeFilterStrength(value)
 	if value then
-		C.SetTobiiGazeFilterStrength(value)
+		C.SetActiveHeadTrackerGazeFilterStrength(value)
 	end
 end
 
-function menu.callbackInputTobiiHeadFilterStrength(value)
+function menu.callbackInputTrackerHeadFilterStrength(value)
 	if value then
-		C.SetTobiiHeadFilterStrength(value)
+		C.SetActiveHeadTrackerHeadFilterStrength(value)
 	end
 end
 
-function menu.callbackInputTobiiDeadzoneAngle(value)
+function menu.callbackInputTrackerDeadzoneAngle(value)
 	if value then
-		C.SetTobiiDeadzoneAngle(value)
+		C.SetActiveHeadTrackerDeadzoneAngle(value)
 	end
 end
 
-function menu.callbackInputTobiiGazeDeadzone(value)
+function menu.callbackInputTrackerGazeDeadzone(value)
 	if value then
-		C.SetTobiiGazeDeadzone(value / 100)
+		C.SetActiveHeadTrackerGazeDeadzone(value / 100)
 	end
 end
 
-function menu.callbackInputTobiiDeadzonePosition(value)
+function menu.callbackInputTrackerDeadzonePosition(value)
 	if value then
-		C.SetTobiiDeadzonePosition(value)
+		C.SetActiveHeadTrackerDeadzonePosition(value)
 	end
 end
 
-function menu.callbackInputTobiiMode(id, option)
+function menu.callbackInputTrackerMode(id, option)
 	if option ~= menu.curDropDownOption[id] then
 		menu.curDropDownOption[id] = option
-		C.SetTobiiMode(option)
+		C.SetActiveHeadTrackerMode(option)
 		menu.refresh()
 	end
 end
 
-function menu.callbackInputTobiiPositionFactor(value)
+function menu.callbackInputTrackerPositionFactor(value)
 	if value then
-		C.SetTobiiHeadPositionFactor(value / 100)
+		C.SetActiveHeadTrackerHeadPositionFactor(value / 100)
 	end
 end
 
@@ -8595,15 +8922,6 @@ function menu.callbackSave(savegame, name)
 			name = "#" .. savegame.empty
 		end
 		SaveGame("save_" .. savegame.empty, name)
-
-		-- kuertee start: callback
-		if callbacks ["callbackSave_onSaveGame"] then
-			for _, callback in ipairs (callbacks ["callbackSave_onSaveGame"]) do
-				callback(savegame, name)
-			end
-		end
-		-- kuertee end: callback
-
 	else
 		--  don't save the default name, so on next save to this slot it gets updated
 		if type(savegame.name) == "string" then
@@ -8618,15 +8936,6 @@ function menu.callbackSave(savegame, name)
 			SaveOnlineGame()
 		else
 			SaveGame(savegame.filename, name)
-
-			-- kuertee start: callback
-			if callbacks ["callbackSave_onSaveGame"] then
-				for _, callback in ipairs (callbacks ["callbackSave_onSaveGame"]) do
-					callback(savegame, name)
-				end
-			end
-			-- kuertee end: callback
-
 		end
 	end
 	menu.closeMenu("close")
@@ -8668,14 +8977,6 @@ function menu.displayOptions(optionParameter)
 
 	menu.currentOption = optionParameter
 	local options = config.optionDefinitions[optionParameter]
-
-	-- kuertee start: callback
-	if callbacks ["displayOptions_modifyOptions"] then
-		for _, callback in ipairs (callbacks ["displayOptions_modifyOptions"]) do
-			options = callback(options)
-		end
-	end
-	-- kuertee end: callback
 
 	local frame = menu.createOptionsFrame()
 
@@ -9681,27 +9982,22 @@ function menu.displayExtensions()
 		row[2]:setColSpan(6):createText(" ", { fontsize = 1, height = Helper.borderSize, cellBGColor = Color["row_separator"] })
 	end
 
+	local row = optiontable:addRow("uisecurity", {  })
+	row[2]:createText(ReadText(1001, 12723), config.standardTextProperties)
+	row[2].properties.mouseOverText = ReadText(1001, 12725)
+	row[6]:createButton({ mouseOverText = ReadText(1001, 12725) }):setText(function () return GetUISafeModeOption() and ReadText(1001, 2648) or ReadText(1001, 2649) end, { fontsize = config.standardFontSize, halign = "center" })
+	row[6].handlers.onClick = menu.buttonExtensionUISecurityMode
+
+	local row = optiontable:addRow(false, {  })
+	row[2]:setColSpan(6):createText(" ", { fontsize = 1, height = Helper.borderSize, cellBGColor = Color["row_separator"] })
+
 	row = optiontable:addRow(false, {  })
-	row[2]:createText(ReadText(1001, 8999), config.subHeaderTextProperties)
-	row[2].properties.halign = "left"
-	row[3]:createText(ReadText(1001, 4823), config.subHeaderTextProperties)
-	row[4]:createText(ReadText(1001, 2655), config.subHeaderTextProperties)
-	row[5]:createText(ReadText(1001, 2691), config.subHeaderTextProperties)
+	row[2]:createText(ReadText(1001, 8999), config.subHeaderLeftTextProperties)
+	row[3]:createText(ReadText(1001, 4823), config.subHeaderLeftTextProperties)
+	row[4]:createText(ReadText(1001, 2655), config.subHeaderLeftTextProperties)
+	row[5]:createText(ReadText(1001, 2691), config.subHeaderLeftTextProperties)
 	if #extensions > 0 then
-		-- kuertee start: sort by enabled then by name
-		-- table.sort(extensions, Helper.sortName)
-		table.sort(extensions, function(a, b)
-			if a.enabled and b.enabled then
-				return a.name < b.name
-			elseif a.enabled then
-				return true
-			elseif b.enabled then
-				return false
-			else
-				return a.name < b.name
-			end
-		end)
-		-- kuertee end: sort by enabled then by name
+		table.sort(extensions, Helper.sortName)
 
 		for _, extension in ipairs(extensions) do
 			if extension.egosoftextension and extension.enabledbydefault then
@@ -10472,7 +10768,7 @@ function menu.displayInputFeedback()
 	row[3].handlers.onClick = function () return menu.buttonSetAllInputFeedbackTextOption("controlmessage") end
 
 	local row = optiontable:addRow(true, { fixed = true })
-	row[2]:setColSpan(4):createEditBox({ defaultText = ReadText(1001, 3250) }):setText(menu.searchtext, { x = Helper.standardTextOffsetx }):setHotkey("INPUT_STATE_DETAILMONITOR_0", { displayIcon = true })
+	row[2]:setColSpan(4):createEditBox({ height = config.standardTextHeight, defaultText = ReadText(1001, 3250) }):setText(menu.searchtext, { x = Helper.standardTextOffsetx }):setHotkey("INPUT_STATE_DETAILMONITOR_0", { displayIcon = true })
 	row[2].handlers.onEditBoxDeactivated = menu.editboxControlsSearchUpdateText
 
 	local count = 0
@@ -10686,7 +10982,7 @@ function menu.displayInputModifiers()
 
 	-- explanation
 	local row = optiontable:addRow(false, { fixed = true })
-	row[2]:setColSpan(4):createText(ReadText(1001, 12651) .. "\n\n" .. ReadText(1001, 12652) .. "\n\n" .. ReadText(1001, 12653), config.warningTextProperties)
+	row[2]:setColSpan(4):createText(ReadText(1001, 12743) .. "\n\n" .. ReadText(1001, 12744), config.warningTextProperties)
 
 	for j, modifier in ipairs(config.input.modifiers) do
 		if j ~= 1 then
@@ -10713,10 +11009,10 @@ function menu.displayInputModifiers()
 				row[3]:setColSpan((i == 1) and 2 or 1):createText(keyname, config.standardTextProperties)
 				if i ~= 1 then
 					row[4]:createButton({ mouseOverText = ReadText(1026, 2672) }):setIcon("widget_arrow_up_01")
-					row[4].handlers.onClick = function () menu.buttonPrimaryModifier(modifier.id, input[2]) end
+					row[4].handlers.onClick = function () menu.buttonPrimaryModifier(modifier.id, input[1], input[2]) end
 				end
 				row[5]:createButton({ mouseOverText = ReadText(1026, 2673) }):setText("x", { x = 0, y = 1, halign = "center" })
-				row[5].handlers.onClick = function () return menu.buttonDeleteModifier(modifier.id, input[2], #modifierkeys == 1) end
+				row[5].handlers.onClick = function () return menu.buttonDeleteModifier(modifier.id, input[1], input[2], #modifierkeys == 1) end
 
 				if i == 1 then
 					local row = optiontable:addRow(nil, {  })
@@ -10726,12 +11022,12 @@ function menu.displayInputModifiers()
 
 			local row = optiontable:addRow(true, {  })
 			local active = #modifierkeys < 8
-			row[3]:setColSpan(3):createButton({ active = active, mouseOverText = (not active) and ReadText(1026, 2674) or "" }):setText(function () return menu.nameModifier(ReadText(1001, 12647), row.index) end, { halign = "center" })
+			row[3]:setColSpan(3):createButton({ active = active, mouseOverText = (not active) and ReadText(1026, 2674) or "" }):setText(function () return menu.nameModifier(modifier.controller and ReadText(1001, 12747) or ReadText(1001, 12647), row.index) end, { halign = "center" })
 			row[3].handlers.onClick = function () return menu.buttonAddModifier(row.index, modifier.id) end
 		else
 			local row = optiontable:addRow(true, {  })
 			row[2]:createText(modifier.name, config.standardTextProperties)
-			row[3]:setColSpan(3):createButton({  }):setText(function () return menu.nameModifier(ReadText(1001, 12647), row.index) end, { halign = "center" })
+			row[3]:setColSpan(3):createButton({  }):setText(function () return menu.nameModifier(modifier.controller and ReadText(1001, 12747) or ReadText(1001, 12647), row.index) end, { halign = "center" })
 			row[3].handlers.onClick = function () return menu.buttonAddModifier(row.index, modifier.id) end
 		end
 	end
@@ -10746,8 +11042,8 @@ function menu.displayInputModifiers()
 	frame:display()
 end
 
-function menu.buttonPrimaryModifier(modifier, keycode)
-	C.SetModifierKeyPosition(modifier, keycode, 0, false)
+function menu.buttonPrimaryModifier(modifier, source, code)
+	C.SetModifierButtonPosition(modifier, source, code, 0, false)
 	menu.topRows["input_modifiers"] = GetTopRow(menu.optionTable)
 	menu.selectedRows["input_modifiers"] = Helper.currentTableRow[menu.optionTable]
 	menu.selectedCols["input_modifiers"] = Helper.currentTableCol[menu.optionTable]
@@ -10770,8 +11066,16 @@ end
 
 function menu.buttonAddModifier(row, modifier)
 	if modifier and (not menu.remapControl) then
+		local modifiersource = { [1] = true }
+		if config.input.iscontrollermodifier[modifier] then
+			modifiersource = {}
+			for i = 10, 17 do
+				modifiersource[i] = true
+			end
+		end
+
 		-- set update to blink "_" and pass variables on to menu.remapInput
-		menu.remapControl = { row = row, modifier = modifier, oldinputcode = -1, modifiersource = 1 }
+		menu.remapControl = { row = row, modifier = modifier, oldinputcode = -1, modifiersource = modifiersource }
 
 		-- restore selection after mapping
 		menu.topRows["input_modifiers"] = GetTopRow(menu.optionTable)
@@ -10873,9 +11177,9 @@ function menu.checkForModifier(modifier, checkonly)
 	return returnvalue
 end
 
-function menu.buttonDeleteModifier(modifier, keycode, lastkey)
+function menu.buttonDeleteModifier(modifier, source, code, lastkey)
 	if not lastkey then
-		C.UnmapModifierKey(modifier, keycode, false)
+		C.UnmapModifierButton(modifier, source, code, false)
 		menu.topRows["input_modifiers"] = GetTopRow(menu.optionTable)
 		menu.selectedRows["input_modifiers"] = Helper.currentTableRow[menu.optionTable]
 		menu.selectedCols["input_modifiers"] = Helper.currentTableCol[menu.optionTable]
@@ -10883,7 +11187,7 @@ function menu.buttonDeleteModifier(modifier, keycode, lastkey)
 	else
 		local conflicts = menu.checkForModifier(modifier, true)
 		if #conflicts == 0 then
-			C.UnmapModifierKey(modifier, keycode, false)
+			C.UnmapModifierButton(modifier, source, code, false)
 			menu.topRows["input_modifiers"] = GetTopRow(menu.optionTable)
 			menu.selectedRows["input_modifiers"] = Helper.currentTableRow[menu.optionTable]
 			menu.selectedCols["input_modifiers"] = Helper.currentTableCol[menu.optionTable]
@@ -10891,7 +11195,7 @@ function menu.buttonDeleteModifier(modifier, keycode, lastkey)
 		else
 			-- show popup
 			menu.contextMenuMode = "remap"
-			menu.contextMenuData = { width = Helper.scaleX(400), height = Helper.scaleY(200), y = Helper.scaleY(300), conflicts = conflicts, removemodifier = { modifier, keycode } }
+			menu.contextMenuData = { width = Helper.scaleX(400), height = Helper.scaleY(200), y = Helper.scaleY(300), conflicts = conflicts, removemodifier = { modifier, source, code } }
 
 			menu.createContextMenu()
 		end
@@ -10927,18 +11231,7 @@ function menu.displaySavegameOptions(optionParameter)
 		end
 	end
 	if next(menu.savegames) then
-
-		-- table.sort(menu.savegames, function (a, b) return a.rawtime > b.rawtime end)
-		-- kuertee start: callback
-		if callbacks ["displaySaveGameOptions_sortSaveGames"] then
-			for _, callback in ipairs (callbacks ["displaySaveGameOptions_sortSaveGames"]) do
-				callback(menu.savegames, "rawtime", true)
-			end
-		else
-			table.sort(menu.savegames, function (a, b) return a.rawtime > b.rawtime end)
-		end
-		-- kuertee end: callback
-
+		table.sort(menu.savegames, function (a, b) return a.rawtime > b.rawtime end)
 	end
 
 	local usedsavegamenames = {}
@@ -11701,6 +11994,7 @@ end
 function menu.displayControls(optionParameter)
 	-- remove old data
 	Helper.clearDataForRefresh(menu, config.optionsLayer)
+	Helper.clearTableConnectionColumn(menu, 2)
 	menu.selectedOption = nil
 
 	menu.currentOption = optionParameter
@@ -11760,16 +12054,6 @@ function menu.displayControls(optionParameter)
 		menu.controlsorder = config.input.controlsorder.firstperson
 	end
 
-	local joysticks = GetJoysticksOption()
-	menu.mappedjoysticks = GetMappedJoysticks()
-	for i, joystick in ipairs(menu.mappedjoysticks) do
-		if joystick <= 8 then
-			menu.mappedjoysticks[i] = joysticks[joystick] or {}
-		else
-			menu.mappedjoysticks[i] = {}
-		end
-	end
-
 	local row
 	local i = 1
 	for _, entry in ipairs(config.input.filters) do
@@ -11791,7 +12075,7 @@ function menu.displayControls(optionParameter)
 	end
 
 	local row = headertable:addRow(true, { fixed = true })
-	row[2]:setColSpan(numheadercols - 1):createEditBox({ defaultText = ReadText(1001, 3250) }):setText(menu.searchtext, { x = Helper.standardTextOffsetx }):setHotkey("INPUT_STATE_DETAILMONITOR_0", { displayIcon = true })
+	row[2]:setColSpan(numheadercols - 1):createEditBox({ height = config.standardTextHeight, defaultText = ReadText(1001, 3250) }):setText(menu.searchtext, { x = Helper.standardTextOffsetx }):setHotkey("INPUT_STATE_DETAILMONITOR_0", { displayIcon = true })
 	row[2].handlers.onEditBoxDeactivated = menu.editboxControlsSearchUpdateText
 
 	local row = ftable:addRow(nil, { fixed = true })
@@ -12456,6 +12740,14 @@ function menu.onShowMenu()
 				menu.preselectTopRow = lastOption.topRow
 				menu.preselectOption = lastOption.selectedOption
 				menu.submenuHandler(lastOption.optionParameter)
+
+				if lastOption.selectedOption == "uisecurity" then
+					if GetUISafeModeOption() and (ffi.string(C.GetModifiedBasegameUIFilesExtensions()) ~= "") then
+						menu.contextMenuMode = "uisecurity"
+						menu.contextMenuData = { width = Helper.scaleX(550), y = Helper.viewHeight / 2 }
+						menu.createContextMenu()
+					end
+				end
 			end
 		end
 		__CORE_GAMEOPTIONS_RESTORE = nil

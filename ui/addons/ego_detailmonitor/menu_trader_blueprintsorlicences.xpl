@@ -382,45 +382,46 @@ function menu.display(firsttime)
 							for i = 1, #sortedwares do
 								local ware = sortedwares[i]
 								local price = menu.table_wares[tag][equipmenttag][ware]
-								local tradelicence = GetWareData(ware, "tradelicence")
+								local tradelicence, ishiddenwithoutlicence = GetWareData(ware, "tradelicence", "ishiddenwithoutlicence")
 								local licenced = HasLicence("player", tradelicence, menu.traderfaction)
-								local licencename, precursorname = "", ""
 
-								local licencedata = GetLibraryEntry("licences", menu.traderfaction .. "." .. tradelicence)
-								licencename = licencedata.name
-								if licencedata.precursor ~= nil then
-									local licenceinfo = ffi.new("LicenceInfo")
-									C.GetLicenceInfo(licenceinfo, menu.traderfaction, licencedata.precursor)
-									precursorname = ffi.string(licenceinfo.name)
-								end
-								row = menu.table_top:addRow({ "entry", ware }, {  })
+								if (not ishiddenwithoutlicence) or licenced then
+									local licencename, precursorname = "", ""
+									local licencedata = GetLibraryEntry("licences", menu.traderfaction .. "." .. tradelicence)
+									licencename = licencedata.name
+									if licencedata.precursor ~= nil then
+										local licenceinfo = ffi.new("LicenceInfo")
+										C.GetLicenceInfo(licenceinfo, menu.traderfaction, licencedata.precursor)
+										precursorname = ffi.string(licenceinfo.name)
+									end
+									row = menu.table_top:addRow({ "entry", ware }, {  })
 
-								row[3]:createText(GetWareData(ware, "name"), {color = function() return menu.blueprintstopurchase[ware] and Color["text_positive"] or Color["text_normal"] end, x = Helper.standardTextOffsetx + Helper.standardIndentStep * 2})
+									row[3]:createText(GetWareData(ware, "name"), {color = function() return menu.blueprintstopurchase[ware] and Color["text_positive"] or Color["text_normal"] end, x = Helper.standardTextOffsetx + Helper.standardIndentStep * 2})
 
-								-- start: mycu callback
-								if callbacks ["display_on_after_create_equipment_text"] then
-									for _, callback in ipairs (callbacks ["display_on_after_create_equipment_text"]) do
-										local name, macro = GetWareData(ware, "name", "component")
-										result = callback (macro, macro, name)
-										if result then
-											row[3].properties.mouseOverText = result.mouseovertext
+									-- start: mycu callback
+									if callbacks ["display_on_after_create_equipment_text"] then
+										for _, callback in ipairs (callbacks ["display_on_after_create_equipment_text"]) do
+											local name, macro = GetWareData(ware, "name", "component")
+											result = callback (macro, macro, name)
+											if result then
+												row[3].properties.mouseOverText = result.mouseovertext
+											end
 										end
 									end
-								end
-								-- end: mycu callback
+									-- end: mycu callback
+									if not menu.blueprintlist[ware] then
+										row[4]:createText((ConvertMoneyString(tostring(price), false, true, nil, true) .. " " .. ReadText(1001, 101)), {halign = "right", color = function() return menu.blueprintstopurchase[ware] and Color["text_positive"] or Color["text_normal"] end})
+									end
 
-								if not menu.blueprintlist[ware] then
-									row[4]:createText((ConvertMoneyString(tostring(price), false, true, nil, true) .. " " .. ReadText(1001, 101)), {halign = "right", color = function() return menu.blueprintstopurchase[ware] and Color["text_positive"] or Color["text_normal"] end})
-								end
-
-								if menu.blueprintlist[ware] then
-									row[5]:createText(ReadText(1001, 84), { halign = "center", color = Color["text_player"], x = 0 })
-								else
-									row[5]:createButton({ active = menu.blueprintstopurchase[ware] and true or (licenced and (menu.playermoney - menu.totalprice) > price) })
-									row[5]:setText(function() return menu.blueprintstopurchase[ware] and ReadText(1001, 17) or ReadText(1001, 3102) end, {halign = "center"})		-- Selected, Select
-									row[5].handlers.onClick = function() return menu.buttonSelectBlueprint(ware, price) end
-									row[5].properties.bgColor = function() return menu.blueprintstopurchase[ware] and Color["row_background_selected"] or Color["button_background_default"] end
-									row[5].properties.mouseOverText = row[5].properties.active and "" or (licenced and ReadText(1026, 8111) or string.format(ReadText(1026, 8104), ColorText["licence"] .. licencename .. "\27X", ColorText["licence"] .. precursorname .. "\27X", licencedata.minrelation))		-- "You cannot afford this blueprint.", "Requires the %s($LICENCE_NAME$) awarded in the %s($OTHER_LICENCE_NAME$) ceremony \(Relation: %s\)."
+									if menu.blueprintlist[ware] then
+										row[5]:createText(ReadText(1001, 84), { halign = "center", color = Color["text_player"], x = 0 })
+									else
+										row[5]:createButton({ active = menu.blueprintstopurchase[ware] and true or (licenced and (menu.playermoney - menu.totalprice) > price) })
+										row[5]:setText(function() return menu.blueprintstopurchase[ware] and ReadText(1001, 17) or ReadText(1001, 3102) end, {halign = "center"})		-- Selected, Select
+										row[5].handlers.onClick = function() return menu.buttonSelectBlueprint(ware, price) end
+										row[5].properties.bgColor = function() return menu.blueprintstopurchase[ware] and Color["row_background_selected"] or Color["button_background_default"] end
+										row[5].properties.mouseOverText = row[5].properties.active and "" or (licenced and ReadText(1026, 8111) or string.format(ReadText(1026, 8104), ColorText["licence"] .. licencename .. "\27X", ColorText["licence"] .. precursorname .. "\27X", licencedata.minrelation))		-- "You cannot afford this blueprint.", "Requires the %s($LICENCE_NAME$) awarded in the %s($OTHER_LICENCE_NAME$) ceremony \(Relation: %s\)."
+									end
 								end
 							end
 						end
@@ -544,11 +545,15 @@ end
 function menu.showEntry(entry, tag, indent)
 	local ware = entry.ware
 	local price = menu.table_wares[tag][ware]
-	local tradelicence = GetWareData(ware, "tradelicence")
+	local tradelicence, ishiddenwithoutlicence = GetWareData(ware, "tradelicence", "ishiddenwithoutlicence")
 	local licenced = HasLicence("player", tradelicence, menu.traderfaction)
+	if ishiddenwithoutlicence and (not licenced) then
+		-- don't show hidden 
+		return
+	end
+
 	local licenceinfo = ffi.new("LicenceInfo")
 	local licencename, precursorname, minrelation = "", ""
-
 	local licencedata = GetLibraryEntry("licences", menu.traderfaction .. "." .. tradelicence)
 	licencename = licencedata.name or ""
 	if licencedata.precursor ~= nil then

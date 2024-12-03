@@ -196,6 +196,7 @@ ffi.cdef[[
 	uint32_t GetLoadoutInvalidPatches(InvalidPatchInfo* result, uint32_t resultlen, UniverseID defensibleid, const char* macroname, const char* loadoutid);
 	uint32_t GetLoadoutsInfo(UILoadoutInfo* result, uint32_t resultlen, UniverseID componentid, const char* macroname);
 	const char* GetMissingConstructionPlanBlueprints3(UniverseID containerid, UniverseID holomapid, const char* constructionplanid, bool useplanned);
+	const char* GetMissingLoadoutBlueprints(UniverseID containerid, UniverseID defensibleid, const char* macroname, const char* loadoutid);
 	uint32_t GetNumAssignedConstructionVessels(UniverseID containerid);
 	uint32_t GetNumBlueprints(const char* set, const char* category, const char* macroname);
 	size_t GetNumBuildMapConstructionPlan(UniverseID holomapid, bool usestoredplan);
@@ -230,6 +231,7 @@ ffi.cdef[[
 	uint32_t GetWares(const char** result, uint32_t resultlen, const char* tags, bool research, const char* licenceownerid, const char* exclusiontags);
 	WorkForceInfo GetWorkForceInfo(UniverseID containerid, const char* raceid);
 	bool HasContainerOwnTradeRule(UniverseID containerid, const char* ruletype, const char* wareid);
+	bool HasProductionModuleIllegalProducts(const char* macroname, const char* licencefactionid, const char* policefactionid);
 	void ImportMapConstructionPlan(const char* filename, const char* id);
 	bool IsBuildWaitingForSecondaryComponentResources(UniverseID containerid);
 	bool IsConstructionPlanValid(const char* constructionplanid, uint32_t* numinvalidpatches);
@@ -947,7 +949,7 @@ end
 
 function menu.buttonCancelTradeActive(tradeid)
 	if not C.IsValidTrade(tradeid) then
-		menu.refresh = getElapsedTime()
+		menu.refresh = menu.refresh or getElapsedTime()
 		return
 	end
 	return C.CancelPlayerInvolvedTradeDeal(menu.container, tradeid, true)
@@ -970,6 +972,7 @@ function menu.dropdownLoad(_, id)
 		C.ShowConstructionMap(menu.holomap, menu.container, id, false)
 		menu.applySettings()
 		menu.currentCPID = id
+		menu.defaultLoadout = -1
 		menu.closeContextMenu()
 
 		menu.topRows.modules = GetTopRow(menu.moduletable)
@@ -981,6 +984,7 @@ function menu.dropdownLoad(_, id)
 		menu.refreshPlan()
 		menu.displayMenu()
 	end
+	menu.noupdate = false
 end
 
 function menu.dropdownRemovedCP(_, id)
@@ -1789,22 +1793,33 @@ function menu.updateConstructionPlans()
 				end
 
 				local hasmissinglimitedmodules = false
+				local hasmissinglimitedventuremodules = false
 				local limitedmoduletext = ""
+				local limitedventuremoduletext = ""
 				local n = C.GetNumPlannedLimitedModules(id)
 				local macrocounts = ffi.new("UIMacroCount[?]", n)
 				n = C.GetPlannedLimitedModules(macrocounts, n, id)
 				for j = 0, n - 1 do
 					local macro = ffi.string(macrocounts[j].macro)
 					local ware = GetMacroData(macro, "ware")
-					if macrocounts[j].amount > OnlineGetUserItemAmount(ware) - (menu.externalUsedLimitedModules[macro] or 0) then
-						active = false
-						hasmissinglimitedmodules = true
-						limitedmoduletext = limitedmoduletext .. "\n· " .. GetMacroData(macro, "name")
+					local islimited = GetWareData(ware, "islimited")
+					if islimited then
+						if macrocounts[j].amount > Helper.getLimitedWareAmount(ware) - (menu.externalUsedLimitedModules[macro] or 0) then
+							active = false
+							hasmissinglimitedmodules = true
+							limitedmoduletext = limitedmoduletext .. "\n· " .. GetMacroData(macro, "name")
+						end
+					else
+						if macrocounts[j].amount > OnlineGetUserItemAmount(ware) - (menu.externalUsedLimitedModules[macro] or 0) then
+							active = false
+							hasmissinglimitedventuremodules = true
+							limitedventuremoduletext = limitedventuremoduletext .. "\n· " .. GetMacroData(macro, "name")
+						end
 					end
 				end
 
 				if (not active) and (mouseovertext == nil) then
-					mouseovertext = ReadText(1026, 7912) .. blueprinttext .. (hasmissinglimitedmodules and ("\n" .. ReadText(1026, 7915) .. limitedmoduletext) or "")
+					mouseovertext = ReadText(1026, 7912) .. blueprinttext .. (hasmissinglimitedmodules and ("\n" .. ReadText(1026, 7934) .. limitedmoduletext) or "") .. (hasmissinglimitedventuremodules and ("\n" .. ReadText(1026, 7915) .. limitedventuremoduletext) or "")
 				end
 			end
 
@@ -1858,6 +1873,7 @@ function menu.createTitleBar(frame)
 		end
 		table.sort(loadOptions, function (a, b) return a.text < b.text end)
 		row[2]:createDropDown(loadOptions, { textOverride = ReadText(1001, 7904), optionWidth = menu.titleData.dropdownWidth + menu.titleData.height + Helper.borderSize }):setTextProperties(config.dropDownTextProperties)
+		row[2].handlers.onDropDownActivated = function () menu.noupdate = true end
 		row[2].handlers.onDropDownConfirmed = menu.dropdownLoad
 		row[2].handlers.onDropDownRemoved = menu.dropdownRemovedCP
 		-- save
@@ -1938,7 +1954,7 @@ function menu.refreshTitleBar()
 		Helper.setCellContent(menu, menu.titlebartable, desc, 1, 1, nil, "editbox", nil, menu.editboxNameUpdateText)
 		-- dropdown
 		local desc = Helper.createDropDown(loadOptions, "", text, nil, true, true, 0, 0, 0, 0, nil, nil, "", menu.titleData.dropdownWidth + menu.titleData.height + Helper.borderSize)
-		Helper.setCellContent(menu, menu.titlebartable, desc, 1, 2, nil, "dropdown", nil, nil, menu.dropdownLoad, menu.dropdownRemovedCP)
+		Helper.setCellContent(menu, menu.titlebartable, desc, 1, 2, nil, "dropdown", nil, function () menu.noupdate = true end, menu.dropdownLoad, menu.dropdownRemovedCP)
 		-- save
 		local desc = Helper.createButton(nil, Helper.createButtonIcon("menu_save", nil, 255, 255, 255, 100), true, true, 0, 0, 0, menu.titleData.height, nil, nil, nil, ReadText(1026, 7901))
 		Helper.setCellContent(menu, menu.titlebartable, desc, 1, 3, nil, "button", nil, menu.buttonTitleSave)
@@ -1998,9 +2014,25 @@ function menu.getPresetLoadouts()
 		elseif not C.IsLoadoutCompatible(currentmacro, id) then
 			mouseovertext = ReadText(1026, 8024)
 		else
-			active = C.CanBuildLoadout(menu.buildstorage, 0, menu.loadoutModule.macro, id)
+			local result = ffi.string(C.GetMissingLoadoutBlueprints(menu.buildstorage, 0, menu.loadoutModule.macro, id))
+			active = result == ""
 			if not active then
 				mouseovertext = ReadText(1026, 8011)
+
+				local missingmacros = {}
+				if string.find(result, "error") ~= 1 then
+					for macro in string.gmatch(result, "([^;]+);") do
+						missingmacros[macro] = true
+					end
+				end
+				local missingmacronames = {}
+				for macro, v in pairs(missingmacros) do
+					table.insert(missingmacronames, GetMacroData(macro, "name"))
+				end
+				table.sort(missingmacronames)
+				for _, name in ipairs(missingmacronames) do
+					mouseovertext = mouseovertext .. "\n· " .. name
+				end
 			end
 		end
 
@@ -2403,11 +2435,21 @@ function menu.displayModules(frame, firsttime)
 								local y = columnWidth / 2 - Helper.scaleY(Helper.largeIconTextHeight) / 2 - Helper.configButtonBorderSize
 								row[i]:setText(makertext, { y = y, halign = "right", color = Color["slider_value"], fontsize = fontsize })
 							end
+							local ware = GetMacroData(group[i], "ware")
+							local islimited = GetWareData(ware, "islimited")
+							if islimited then
+								local amount = math.max(0, Helper.getLimitedWareAmount(ware) - (menu.externalUsedLimitedModules[group[i]] or 0) - (menu.usedLimitedModules[group[i]] or 0))
+								row[i]:setText2(amount and (ReadText(1001, 42) .. " " .. amount) or "", { x = Helper.scaleX(Helper.configButtonBorderSize), y = - maxColumnWidth / 2 + Helper.standardTextHeight / 2 + Helper.configButtonBorderSize, halign = "right", fontsize = Helper.scaleFont(Helper.standardFont, Helper.headerRow1FontSize) })
+								active = (not amount) or (amount > 0)
+								row[i].properties.active = active
+								if not active then
+									row[i].properties.mouseOverText = name .. "\n\n" .. ReadText(1026, 7933)
+								end
+							end
 							if menu.modulesMode == "moduletypes_venture" then
 								local amount
 								local isventureplatform = IsMacroClass(group[i], "ventureplatform")
 								if isventureplatform or IsMacroClass(group[i], "dockarea") then
-									local ware = GetMacroData(group[i], "ware")
 									amount = math.max(0, OnlineGetUserItemAmount(ware) - (menu.externalUsedLimitedModules[group[i]] or 0) - (menu.usedLimitedModules[group[i]] or 0))
 								end
 								row[i]:setText2(amount and (ReadText(1001, 42) .. " " .. amount) or "", { x = Helper.scaleX(Helper.configButtonBorderSize), y = - maxColumnWidth / 2 + Helper.standardTextHeight / 2 + Helper.configButtonBorderSize, halign = "right", fontsize = Helper.scaleFont(Helper.standardFont, Helper.headerRow1FontSize) })
@@ -2858,7 +2900,10 @@ function menu.refreshPlan()
 			-- limited module check
 			menu.usedLimitedModules = {}
 			for _, entry in ipairs(menu.constructionplan) do
-				if IsMacroClass(entry.macro, "ventureplatform") or (IsMacroClass(entry.macro, "dockarea") and GetMacroData(entry.macro, "isventuremodule")) then
+				local isventuremodule = IsMacroClass(entry.macro, "ventureplatform") or (IsMacroClass(entry.macro, "dockarea") and GetMacroData(entry.macro, "isventuremodule"))
+				local ware = GetMacroData(entry.macro, "ware")
+				local islimited = GetWareData(ware, "islimited")
+				if isventuremodule or islimited then
 					if menu.usedLimitedModules[entry.macro] then
 						menu.usedLimitedModules[entry.macro] = menu.usedLimitedModules[entry.macro] + 1
 					else
@@ -2927,7 +2972,10 @@ function menu.refreshPlan()
 				end
 			end
 
-			local haspier, hasdock, ismissingventureplatform, ismissingventuredocks, haswaveprotection = false, false, false, false, false
+			local haspier, hasdock, ismissingventureplatform, ismissingventuredocks, haswaveprotection, hasillegalproductions = false, false, false, false, false, false
+			
+			local sector, sectorid = GetComponentData(menu.container, "sector", "sectorid")
+			local policefaction, containsthewave = GetComponentData(sectorid, "policefaction", "containsthewave")
 			for idx, entry in ipairs(menu.constructionplan) do
 				local data = GetLibraryEntry(GetMacroData(entry.macro, "infolibrary"), entry.macro)
 				if IsMacroClass(entry.macro, "pier") then
@@ -2942,6 +2990,10 @@ function menu.refreshPlan()
 				elseif IsMacroClass(entry.macro, "buildmodule") then
 					if (data.docks_m > 0) or (data.docks_s > 0) then
 						hasdock = true
+					end
+				elseif IsMacroClass(entry.macro, "production") then
+					if policefaction then
+						hasillegalproductions = C.HasProductionModuleIllegalProducts(entry.macro, "player", policefaction)
 					end
 				end
 				haswaveprotection = haswaveprotection or GetMacroData(entry.macro, "haswaveprotection")
@@ -2980,13 +3032,15 @@ function menu.refreshPlan()
 				menu.modulewarnings[5] = ReadText(1001, 7959)
 			end
 			if not haswaveprotection then
-				local sector = GetComponentData(menu.container, "sectorid")
-				if GetComponentData(sector, "containsthewave") then
+				if containsthewave then
 					menu.modulewarnings[6] = ReadText(1001, 11917)
 				end
 			end
 			if missingblueprintmodulemismatch ~= "" then
 				menu.modulewarnings[7] = ReadText(1001, 11921) .. missingblueprintmodulemismatch
+			end
+			if hasillegalproductions then
+				menu.modulewarnings[8] = ReadText(1001, 11926) .. ReadText(1001, 120) .. " " .. sector
 			end
 		end
 	end
@@ -3312,9 +3366,9 @@ function menu.displayPlan(frame)
 					local tradedeal = buf[i].tradedealid
 					if not menu.dirtyreservations[tostring(tradedeal)] then
 						if reservations[ware] then
-							table.insert(reservations[ware], { reserver = buf[i].reserverid, amount = buf[i].amount, eta = buf[i].eta, tradedeal = tradedeal })
+							table.insert(reservations[ware], { reserver = buf[i].reserverid, amount = buf[i].isbuyreservation and -buf[i].amount or buf[i].amount, eta = buf[i].eta, tradedeal = tradedeal })
 						else
-							reservations[ware] = { { reserver = buf[i].reserverid, amount = buf[i].amount, eta = buf[i].eta, tradedeal = tradedeal } }
+							reservations[ware] = { { reserver = buf[i].reserverid, amount = buf[i].isbuyreservation and -buf[i].amount or buf[i].amount, eta = buf[i].eta, tradedeal = tradedeal } }
 						end
 					end
 				end
@@ -4507,12 +4561,19 @@ function menu.createModuleContext()
 	local active = not menu.contextData.item.isfixed
 	local mouseovertext = ""
 	if active then
+		local ware = GetMacroData(macro, "ware")
+		local islimited = GetWareData(ware, "islimited")
 		if IsMacroClass(macro, "ventureplatform") or (IsMacroClass(macro, "dockarea") and GetMacroData(macro, "isventuremodule")) then
-			local ware = GetMacroData(macro, "ware")
 			local availableamount = math.max(0, OnlineGetUserItemAmount(ware) - (menu.externalUsedLimitedModules[macro] or 0) - (menu.usedLimitedModules[macro] or 0))
 			if availableamount < 1 then
 				active = false
 				mouseovertext = menu.ventureModuleUnavailableMouseOverText()
+			end
+		elseif islimited then
+			local availableamount = math.max(0, Helper.getLimitedWareAmount(ware) - (menu.externalUsedLimitedModules[macro] or 0) - (menu.usedLimitedModules[macro] or 0))
+			if availableamount < 1 then
+				active = false
+				mouseovertext = ReadText(1026, 7933)
 			end
 		end
 	end
@@ -4536,7 +4597,13 @@ function menu.createModuleContext()
 
 		for macro, amount in pairs(usedLimitedModulesInSequence) do
 			local ware = GetMacroData(macro, "ware")
-			local availableamount = math.max(0, OnlineGetUserItemAmount(ware) - (menu.externalUsedLimitedModules[macro] or 0) - (menu.usedLimitedModules[macro] or 0))
+			local islimited = GetWareData(ware, "islimited")
+			local availableamount = 0
+			if islimited then
+				availableamount = math.max(0, Helper.getLimitedWareAmount(ware) - (menu.externalUsedLimitedModules[macro] or 0) - (menu.usedLimitedModules[macro] or 0))
+			else
+				availableamount = math.max(0, OnlineGetUserItemAmount(ware) - (menu.externalUsedLimitedModules[macro] or 0) - (menu.usedLimitedModules[macro] or 0))
+			end
 			if amount > availableamount then
 				active = false
 				mouseovertext = menu.ventureModuleUnavailableMouseOverText()

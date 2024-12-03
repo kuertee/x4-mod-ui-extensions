@@ -452,7 +452,7 @@ local config = {
 		{ name = ReadText(1001, 2424),	classes = { ["defencemodule"] = true } },
 		{ name = ReadText(1001, 2452),	classes = { ["pier"] = true, ["dockarea"] = true } },
 		{ name = ReadText(1001, 9621),	classes = { ["processingmodule"] = true } },
-		{ name = ReadText(1001, 2453),	classes = { ["connectionmodule"] = true } },
+		{ name = ReadText(1001, 2453),	classes = { ["connectionmodule"] = true, ["radar"] = true } },
 
 		{ name = ReadText(1001, 11003),	classes = { ["ship_xl"] = true } },
 		{ name = ReadText(1001, 11002),	classes = { ["ship_l"] = true } },
@@ -2106,7 +2106,7 @@ function menu.openShipConfig()
 	-- kuertee end: callback
 
 	menu.usespacesuit = nil
-	Helper.closeMenuAndOpenNewMenu(menu, "ShipConfigurationMenu", { 0, 0, nil, "customgamestart", { menu.customgamestart, menu.creative, "ship", "shiploadout", "shippeople", "shippeoplefillpercent", nil, "playerpainttheme" } })
+	Helper.closeMenuAndOpenNewMenu(menu, "ShipConfigurationMenu", { 0, 0, nil, "customgamestart", { menu.customgamestart, menu.creative, "ship", "shiploadout", "shippeople", "shippeoplefillpercent", nil, "playerpainttheme", nil, nil, nil, nil, nil, nil, menu.paused ~= nil } })
 	menu.cleanup()
 
 	-- kuertee start: callback
@@ -2122,7 +2122,7 @@ function menu.openPlayerPropertyShipConfig(row, entryid, macro, commanderid, peo
 	menu.addingFleet = true
 	menu.selectedRows.propertyTable = row
 	menu.selectedCols.propertyTable = 2
-	Helper.closeMenuAndOpenNewMenu(menu, "ShipConfigurationMenu", { 0, 0, nil, "customgamestart", { menu.customgamestart, menu.creative, "playerproperty", nil, nil, nil, nil, "playerpainttheme", entryid, macro, commanderid, peopledef, peoplefillpercentage, count } })
+	Helper.closeMenuAndOpenNewMenu(menu, "ShipConfigurationMenu", { 0, 0, nil, "customgamestart", { menu.customgamestart, menu.creative, "playerproperty", nil, nil, nil, nil, "playerpainttheme", entryid, macro, commanderid, peopledef, peoplefillpercentage, count, menu.paused ~= nil } })
 	menu.cleanup()
 
 	-- kuertee start: callback
@@ -3638,15 +3638,24 @@ function menu.display()
 						end
 
 						local limitedmodulestext = ""
+						local limitedventuremodulestext = ""
 						local num_modules = C.GetNumPlannedLimitedModules(id)
 						local buf_modules = ffi.new("UIMacroCount[?]", num_modules)
 						num_modules = C.GetPlannedLimitedModules(buf_modules, num_modules, id)
 						for j = 0, num_modules - 1 do
 							local macro = ffi.string(buf_modules[j].macro)
 							local ware = GetMacroData(macro, "ware")
-							if (limitedmodulesused[macro] or 0) + buf_modules[j].amount > (onlineitems[ware] and onlineitems[ware].amount or 0) then
-								exceedslimitedmodules = true
-								limitedmodulestext = limitedmodulestext .. "\n- " .. GetMacroData(macro, "name")
+							local islimited = GetWareData(ware, "islimited")
+							if islimited then
+								if (limitedmodulesused[macro] or 0) + buf_modules[j].amount > Helper.getLimitedWareAmount(ware) then
+									exceedslimitedmodules = true
+									limitedmodulestext = limitedmodulestext .. "\n- " .. GetMacroData(macro, "name")
+								end
+							else
+								if (limitedmodulesused[macro] or 0) + buf_modules[j].amount > (onlineitems[ware] and onlineitems[ware].amount or 0) then
+									exceedslimitedmodules = true
+									limitedventuremodulestext = limitedventuremodulestext .. "\n- " .. GetMacroData(macro, "name")
+								end
 							end
 						end
 						if limitedmodulestext ~= "" then
@@ -3655,7 +3664,15 @@ function menu.display()
 							else
 								mouseovertext = ""
 							end
-							mouseovertext = mouseovertext .. ReadText(1026, 7915) .. limitedmodulestext
+							mouseovertext = mouseovertext .. ReadText(1026, 7934) .. limitedmodulestext
+						end
+						if limitedventuremodulestext ~= "" then
+							if mouseovertext then
+								mouseovertext = mouseovertext .. "\n"
+							else
+								mouseovertext = ""
+							end
+							mouseovertext = mouseovertext .. ReadText(1026, 7915) .. limitedventuremodulestext
 						end
 
 						local excludedmacrosmouseovertext = ""
@@ -5558,7 +5575,7 @@ function menu.checkConstructionPlan(source, id, limitedmodulesused, onlineitems,
 			return false
 		end
 
-		local limitedmodulestext = ""
+		local limitedmodulesexceeded = false
 		local num_modules = C.GetNumPlannedLimitedModules(id)
 		local buf_modules = ffi.new("UIMacroCount[?]", num_modules)
 		num_modules = C.GetPlannedLimitedModules(buf_modules, num_modules, id)
@@ -5566,12 +5583,19 @@ function menu.checkConstructionPlan(source, id, limitedmodulesused, onlineitems,
 			local macro = ffi.string(buf_modules[j].macro)
 			local ware = GetMacroData(macro, "ware")
 			local usedamount = limitedmodulesused[macro] or 0
-			if usedamount + buf_modules[j].amount > (onlineitems[ware] and onlineitems[ware].amount or 0) then
-				limitedmodulestext = limitedmodulestext .. "\n- " .. GetMacroData(macro, "name")
+			local islimited = GetWareData(ware, "islimited")
+			if islimited then
+				if usedamount + buf_modules[j].amount > Helper.getLimitedWareAmount(ware) then
+					limitedmodulesexceeded = true
+				end
+			else
+				if usedamount + buf_modules[j].amount > (onlineitems[ware] and onlineitems[ware].amount or 0) then
+					limitedmodulesexceeded = true
+				end
 			end
 			limitedmodulesused[macro] = usedamount + buf_modules[j].amount
 		end
-		if limitedmodulestext ~= "" then
+		if limitedmodulesexceeded then
 			return false
 		end
 

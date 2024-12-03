@@ -9,7 +9,7 @@ ffi.cdef[[
 	typedef uint64_t TradeID;
 	typedef int32_t TradeRuleID;
 	typedef uint64_t UniverseID;
-	
+
 	typedef struct {
 		uint32_t nummacros;
 		uint32_t numfactions;
@@ -111,8 +111,10 @@ ffi.cdef[[
 		uint32_t Quality;
 		const char* PropertyType;
 		float ForwardThrustFactor;
+		float StrafeAccFactor;
 		float StrafeThrustFactor;
 		float RotationThrustFactor;
+		float BoostAccFactor;
 		float BoostThrustFactor;
 		float BoostDurationFactor;
 		float BoostAttackTimeFactor;
@@ -124,7 +126,7 @@ ffi.cdef[[
 		float TravelAttackTimeFactor;
 		float TravelReleaseTimeFactor;
 		float TravelChargeTimeFactor;
-	} UIEngineMod;
+	} UIEngineMod2;
 	typedef struct {
 		const char* factionid;
 		const char* civiliansetting;
@@ -306,7 +308,7 @@ ffi.cdef[[
 	FightRuleCounts GetFightRuleInfoCounts(FightRuleID id);
 	GameStartDateInfo GetGameStartDate();
 	const char* GetGameStartName();
-	bool GetInstalledEngineMod(UniverseID objectid, UIEngineMod* enginemod);
+	bool GetInstalledEngineMod2(UniverseID objectid, UIEngineMod2* enginemod);
 	bool GetInstalledGroupedWeaponMod(UniverseID defensibleid, UniverseID contextid, const char* group, UIWeaponMod* weaponmod);
 	bool GetInstalledShieldMod(UniverseID defensibleid, UniverseID contextid, const char* group, UIShieldMod* shieldmod);
 	bool GetInstalledShipMod2(UniverseID shipid, UIShipMod2* shipmod);
@@ -570,6 +572,7 @@ Helper = {
 	-- kuertee end: colour backward compatibility
 
 }
+MakeGlobalAvailable("Helper")
 
 Helper.titleTextProperties = {
 	font = Helper.titleFont,
@@ -712,13 +715,15 @@ local callbacks = {}
 
 local function init()
 	SetScript("onUpdate", onUpdate)
-	
+
 	RegisterEvent("playerUndock", function () Helper.isPlayerUndocking = true end)
 	RegisterEvent("playerUndocked", function () Helper.isPlayerUndocking = nil end)
 	RegisterEvent("textdbreload", function () Helper.texts = {} end)
 
 	C.ClearTrackedMenus()
 
+	Menus = Menus or {}
+	MakeGlobalAvailable("Menus")
 	if Menus then
 		-- Register menus that have been initialized before Helper
 		-- (menus that are initialized after Helper have to call Helper.registerMenu() themselves)
@@ -1466,6 +1471,7 @@ function Helper.minimizeMenu(menu, text)
 				View.minimizeMenu("Helper" .. layer, text)
 			end
 		end
+		onUpdateHandler = nil
 		table.insert(onUpdateOneTimeCallbacks, function ()
 				for layer, frame in pairs(menu.frames) do
 					if IsValidWidgetElement(frame) then
@@ -1749,12 +1755,32 @@ function Helper.closeMenuForNewConversation(menu, conversation, actor, convparam
 	closeMenu(menu, resultfunc, false)
 end
 
+function Helper.getMenu(name)
+	for _, menu in ipairs(Menus) do
+		if menu.name == name then
+			return menu
+		end
+	end
+end
+
 function Helper.onConversationReturned(eventname, sectionname)
 	Helper.savedState = Helper.savedState or {}
 	local state = Helper.savedState[1]
 	if state then
-		if sectionname ~= "g_cancel" then
-			OpenMenu(state[1], state[2], state[3])
+		if not View.hasMenu({ Helper = true }) then
+			-- conversation did not open another (non-conversation) menu -> restore previous menu
+			if sectionname ~= "g_cancel" then
+				OpenMenu(state[1], state[2], state[3])
+			end
+		else
+			-- pass previous menu information to currently open menu
+			local menuname = View.getMenu({ Helper = true })
+			if menuname then
+				local menu = Helper.getMenu(menuname)
+				if menu then
+					menu.param2 = { state[1], state[2], state[3] }
+				end
+			end
 		end
 		table.remove(Helper.savedState, 1)
 	end
@@ -1891,7 +1917,7 @@ end
 --        },
 --		  [x]		= number,	   -- x offset
 --		  [y]		= number	   -- y offset
---    } 
+--    }
 function Helper.createButton(text, icon, noscaling, active, offsetx, offsety, width, height, color, hotkey, icon2, mouseovertext, helpoverlayid)
 	local buttonDescriptor = {}
 	buttonDescriptor.text = text
@@ -1938,7 +1964,7 @@ function Helper.createButton(text, icon, noscaling, active, offsetx, offsety, wi
 	if text and width and width ~= 0 then
 		buttonDescriptor.text.text = TruncateText(buttonDescriptor.text.text, buttonDescriptor.text.fontname, buttonDescriptor.text.fontsize, width - (buttonDescriptor.text.x and (2 * buttonDescriptor.text.x) or 0))
 	end
-	
+
 	buttonDescriptor.active = active
 	buttonDescriptor.offset = {x = offsetx, y = offsety}
 	buttonDescriptor.size = {width = width , height = height}
@@ -2061,7 +2087,7 @@ function Helper.createDropDown(options, startoption, text, icon, noscaling, acti
 	if text and width and width ~= 0 then
 		--dropdownDescriptor.text.text = TruncateText(dropdownDescriptor.text.text, dropdownDescriptor.text.fontname, dropdownDescriptor.text.fontsize, width - (dropdownDescriptor.text.x and (2 * dropdownDescriptor.text.x) or 0)) TODO
 	end
-	
+
 	dropdownDescriptor.active = active
 	if allowmouseoverinteraction == nil then
 		allowmouseoverinteraction = false
@@ -2087,7 +2113,7 @@ end
 --            [b] = number         -- blue color value 0-255
 --            [a] = number         -- alpha value 0-100
 --        }
---    } 
+--    }
 function Helper.createEditBox(text, noscaling, offsetx, offsety, width, height, color, hotkey, closemenuonback, mouseovertext, defaulttext, texthidden)
 	local editboxDescriptor = {}
 	editboxDescriptor.text = text
@@ -2111,7 +2137,7 @@ function Helper.createEditBox(text, noscaling, offsetx, offsety, width, height, 
 		height		= height	and Helper.scaleY(height)		or height
 		width		= width		and Helper.scaleX(width)		or width
 	end
-	
+
 	editboxDescriptor.offset = {x = offsetx, y = offsety}
 	editboxDescriptor.size = {width = width , height = height}
 	editboxDescriptor.closemenu = closemenuonback
@@ -2165,7 +2191,7 @@ end
 --			[b] = number,			-- blue color value 0-255
 --			[a] = number			-- alpha color value 0-100
 --		},
---		[text] = {					-- the slider text 
+--		[text] = {					-- the slider text
 --			[text]      = string,	-- the text to be displayed
 --			[fontsize]  = number,	-- the font size
 --			[fontname]	= string,	-- the font name
@@ -2214,7 +2240,7 @@ function Helper.createSliderCell(text, noscaling, offsetx, offsety, width, heigh
 		height		= height	and Helper.scaleY(height)		or height
 		width		= width		and Helper.scaleX(width)		or width
 	end
-	
+
 	if height < Helper.slidercellMinHeight then
 		height = Helper.slidercellMinHeight
 	end
@@ -2694,7 +2720,7 @@ function Helper.setEditBoxScript(menu, id, tableobj, row, col, script, textchang
 	table.insert(menu.editboxScriptMap, { layer = layer, tableobj = tableobj, row = row, col = col, type = "onCursorChanged", script = cursorchangedscript })
 	table.insert(menu.editboxScriptMap, { layer = layer, tableobj = tableobj, row = row, col = col, type = "onEditBoxActivated", script = activatedscript })
 	table.insert(menu.editboxScriptMap, { layer = layer, tableobj = tableobj, row = row, col = col, type = "onRightClick", script = onRightClickScript })
-		
+
 	local cell = GetCellContent(tableobj, row, col)
 	SetScript(cell, "onEditBoxDeactivated", scriptWrapper)
 	SetScript(cell, "onTextChanged", textchangedscript)
@@ -2746,7 +2772,7 @@ end
 function Helper.setSliderCellScript(menu, id, tableobj, row, col, changedScript, activateScript, deactivateScript, onRightClickScript, confirmScript)
 	menu.slidercellScriptMap = menu.slidercellScriptMap or {}
 	local layer = Helper.findFrameLayer(menu, tableobj)
-	
+
 	if not changedScript then
 		changedScript = menu.slidercellChanged
 	end
@@ -2762,7 +2788,7 @@ function Helper.setSliderCellScript(menu, id, tableobj, row, col, changedScript,
 	if not confirmScript then
 		confirmScript = menu.slidercellConfirm
 	end
-	
+
 	table.insert(menu.slidercellScriptMap, { layer = layer, tableobj = tableobj, row = row, col = col, type = "onSliderCellChanged", script = changedScript })
 	table.insert(menu.slidercellScriptMap, { layer = layer, tableobj = tableobj, row = row, col = col, type = "onSliderCellActivated", script = activateScript })
 	table.insert(menu.slidercellScriptMap, { layer = layer, tableobj = tableobj, row = row, col = col, type = "onSliderCellDeactivated", script = deactivateScript })
@@ -2911,7 +2937,7 @@ end
 function Helper.setKeyBinding(menu, script)
 	menu.keyBindingMap = menu.keyBindingMap or { }
 	table.insert(menu.keyBindingMap, { script = script })
-	
+
 	SetScript("onHotkey", script)
 end
 
@@ -2930,7 +2956,7 @@ end
 function Helper.setTabScrollCallback(menu, script)
 	menu.tabScrollMap = menu.tabScrollMap or { }
 	table.insert(menu.tabScrollMap, { script = script })
-	
+
 	SetScript("onTabScroll", script)
 
 	AddUITriggeredEvent("MenuTabScroll", menu.name, "enabled")
@@ -3377,7 +3403,7 @@ for widgettype, properties in pairs(defaultWidgetProperties) do
 						for prop, value in pairs(input) do
 							self[prop] = value
 						end
-					end 
+					end
 				end
 			end
 			local v = properties[prop]
@@ -3617,7 +3643,7 @@ function Helper.createFrameHandle(menu, properties)
 	-- set metatables to enable member functions and default properties
 	setmetatable(frame, widgetMetatables.frame)
 	setmetatable(frame.properties, widgetPropertyMetatables.frame)
-	
+
 	-- create complex frame properties
 	local complexprops = complexCellProperties.frame
 	if complexprops then
@@ -3889,7 +3915,7 @@ function widgetPrototypes.frame:display()
 
 	Helper.closeMinimizedMenus()
 	-- TODO: Adjust callbacks
-	View.registerMenu("Helper" .. layer, self.properties.viewHelperType, function (frames) return onFrameHandleViewCreated(self, frames) end, function () return menu.onCloseElement("close", nil, true) end, {[layer] = framedesc}, exclusiveInteractions, closeOnUnhandledClick, nil, playerControls, self.properties.useMiniWidgetSystem, startAnimation, keepHUDVisible, keepCrosshairVisible, showTickerPermanently)
+	View.registerMenu("Helper" .. layer, self.properties.viewHelperType, function (frames) return onFrameHandleViewCreated(self, frames) end, function () return menu.onCloseElement("close", nil, true) end, {[layer] = framedesc}, exclusiveInteractions, closeOnUnhandledClick, nil, playerControls, self.properties.useMiniWidgetSystem, startAnimation, keepHUDVisible, keepCrosshairVisible, showTickerPermanently, menu.name)
 end
 
 function onFrameHandleViewCreated(framehandle, frames)
@@ -4849,7 +4875,7 @@ function widgetHelpers.table:createDescriptor()
 	if selectedrow > 0 and toprow > selectedrow then
 		-- TODO Klaus: check - this kept scroling the table up if you didn't change the selection, what was it's purpose?
 		--toprow = selectedrow
-	end 
+	end
 	if toprow <= numfixedrows then
 		toprow = 0
 	end
@@ -4860,7 +4886,7 @@ function widgetHelpers.table:createDescriptor()
 				DebugError("table:createDescriptor(): Initial selected cell '" .. selectedrow .. " / " .. selectedcol .. "' specified, but is not interactive. Skipping selection. (widget type = '" .. cell.type .. "')")
 				selectedcol = 0
 			end
-		end 
+		end
 	end
 
 	local initialSelection = {
@@ -4876,7 +4902,7 @@ function widgetHelpers.table:createDescriptor()
 		DebugError(TraceBack())
 		return
 	end
-	
+
 	if taborder == 1 then
 		-- TODO
 		self.frame.menu.defaulttable = desc
@@ -5608,7 +5634,7 @@ function widgetHelpers.editbox:createDescriptor()
 	if isfunctioncell then
 		table.insert(self.row.table.frame.functionCells, self)
 	end
-	
+
 	local editboxDescriptor = {}
 	editboxDescriptor.text = createTextPropertyInfo(self, self.properties.text)
 	editboxDescriptor.defaulttext = defaultText
@@ -5617,7 +5643,7 @@ function widgetHelpers.editbox:createDescriptor()
 	editboxDescriptor.mouseovertext = mouseovertext
 	editboxDescriptor.color = bgColor
 	editboxDescriptor.glowfactor = bgColor.glow
-	
+
 	editboxDescriptor.closemenu = closeMenuOnBack
 	editboxDescriptor.texthidden = textHidden
 	editboxDescriptor.encrypted = encrypted
@@ -7255,6 +7281,8 @@ function setupDAGLayoutHelper:init(nodes)
 			numpredecessors = 0,
 			successors = { },
 			numsuccessors = 0,
+			prevnodes = { },
+			exclusivetier = originalnode.exclusivetier or 0,
 			numrows = originalnode.numrows or 1,
 			numcols = originalnode.numcols or 1,
 			slotrowoffset = math.floor(((originalnode.numrows or 1) - 1) / 2),
@@ -7287,6 +7315,16 @@ function setupDAGLayoutHelper:init(nodes)
 					predecessor.numsuccessors = predecessor.numsuccessors + 1
 				else
 					DebugError(string.format("setupDAGLayoutHelper: Found a node with an invalid predecessor, ignoring"))
+				end
+			end
+		end
+		if node.originalnode.prevnodes then
+			for originalprevnode in pairs(node.originalnode.prevnodes) do
+				local prevnode = self.nodes[originalprevnode]
+				if prevnode then
+					node.prevnodes[prevnode] = true
+				else
+					DebugError(string.format("setupDAGLayoutHelper: Found a node with an invalid previous node, ignoring"))
 				end
 			end
 		end
@@ -7357,20 +7395,35 @@ end
 
 -- helper for attemptBuildTiers(): return array of nodes that have no predecessors in remainingnodes
 function setupDAGLayoutHelper:getNextTier(remainingnodes)
+	local hasexclusivetier
 	local tier = { }
 	-- note: iterating over remainingnodes would be more efficient but would produce random results
 	for _, originalnode in pairs(self.originalnodes) do
 		local node = self.nodes[originalnode]
 		if remainingnodes[node] then
-			local ok = true
-			for predecessor, _ in pairs(node.predecessors) do
-				if remainingnodes[predecessor] then
-					ok = false
-					break
+			if (not hasexclusivetier) or (hasexclusivetier == node.exclusivetier) then
+				local ok = true
+				for predecessor, _ in pairs(node.predecessors) do
+					if remainingnodes[predecessor] then
+						ok = false
+						break
+					end
 				end
-			end
-			if ok then
-				table.insert(tier, node)
+				-- check whether all nodes that were defined as "previous" have been dealt with
+				for excludednode in pairs(node.prevnodes) do
+					if remainingnodes[excludednode] then
+						ok = false
+						break
+					end
+				end
+				if ok then
+					-- reset tier data for exclusive tier
+					if (not hasexclusivetier) and (node.exclusivetier ~= 0) then
+						tier = {}
+						hasexclusivetier = node.exclusivetier
+					end
+					table.insert(tier, node)
+				end
 			end
 		end
 	end
@@ -7392,7 +7445,7 @@ function setupDAGLayoutHelper:removeCyclicEdge(remainingnodes)
 	return false
 end
 
--- partially based on dot's algorithm (1993): http://www.graphviz.org/Documentation/TSE93.pdf
+-- partially based on dot's algorithm (1993): https://graphviz.org/documentation/TSE93.pdf
 function setupDAGLayoutHelper:reduceEdgeCrossings()
 	-- first, go through the tiers from left to right and arrange nodes in each tier, minimising edge crossings to tiers on the left side
 	-- (note: for the Logical Station Overview case, this step is not strictly needed, since there are usually fewer nodes on the right side than on the left side)
@@ -7762,9 +7815,9 @@ function Helper.roundStr(x, digits)
 		return math.floor(x + 0.5)
 	end
 end
-	
+
 function Helper.percent(x, digits)
-	-- Convert from decimal fraction to percent number 
+	-- Convert from decimal fraction to percent number
 	-- and round with optional number of decimal digits
 	return Helper.round(x * 100, digits)
 end
@@ -7773,16 +7826,16 @@ function Helper.diffpercent(x, isbuyoffer)
 	-- Convert from decimal fraction to percent number
 	-- and round with optional number of decimal digits
 	-- and prefix with + or -
+	if x == 0 then
+		return "0.0", 0
+	end
 	local val
 	if isbuyoffer then
-		val = math.floor(x)
+		val = math.floor(x * 10 + 0.0001) / 10
 	else
-		val = math.ceil(x)
+		val = math.ceil(x * 10 - 0.0001) / 10
 	end
-	if x > 0 then
-		val = "+" .. val
-	end
-	return val
+	return string.format("%+.1f", val), val
 end
 
 function Helper.interpolatePriceColor(ware, price, isselloffer, darkbasecolor)
@@ -8459,40 +8512,40 @@ end
 -- Loadouts
 ---------------------------------------------------------------------------------
 
-Helper.upgradetypes = { 
-	{ supertype = "macro",			type = "engine",			category = "engines",			mergeslots = true,	allowempty = false,	emode = "Equipment",								pseudogroup = true, 
+Helper.upgradetypes = {
+	{ supertype = "macro",			type = "engine",			category = "engines",			mergeslots = true,	allowempty = false,	emode = "Equipment",								pseudogroup = true,
 		text =			{ small = ReadText(1001, 8087),	medium = ReadText(1001, 8088),	large = ReadText(1001, 8089),	extralarge = ReadText(1001, 8090) },
 		shorttext =		{ small = ReadText(1001, 51),	medium = ReadText(1001, 50),	large = ReadText(1001, 49),		extralarge = ReadText(1001, 48) },
 	},
-	{ supertype = "group",			type = "enginegroup",		category = "engines",			mergeslots = true,	allowempty = false,	emode = "Equipment",	grouptype = "engine",		pseudogroup = true, 
+	{ supertype = "group",			type = "enginegroup",		category = "engines",			mergeslots = true,	allowempty = false,	emode = "Equipment",	grouptype = "engine",		pseudogroup = true,
 		text =			{ default = ReadText(1001, 8071),	small = ReadText(1001, 8504),	medium = ReadText(1001, 8505),	large = ReadText(1001, 8506),	extralarge = ReadText(1001, 8507) },
 		shorttext =		{ default = "",						small = ReadText(1001, 51),		medium = ReadText(1001, 50),	large = ReadText(1001, 49),		extralarge = ReadText(1001, 48) },
 		headertext =	{ default = ReadText(1001, 1103),	small = ReadText(1001, 8087),	medium = ReadText(1001, 8088),	large = ReadText(1001, 8089),	extralarge = ReadText(1001, 8090) },
 		nonetext =		{ default = ReadText(1001, 8565) },
 	},
-	{ supertype = "virtualmacro",	type = "thruster",			category = "thrusters",			mergeslots = true,	allowempty = false,	emode = "Equipment", 
+	{ supertype = "virtualmacro",	type = "thruster",			category = "thrusters",			mergeslots = true,	allowempty = false,	emode = "Equipment",
 		text =			{ small = ReadText(1001, 8091),	medium = ReadText(1001, 8092),	large = ReadText(1001, 8093),	extralarge = ReadText(1001, 8094) },
 		shorttext =		{ small = ReadText(1001, 51),	medium = ReadText(1001, 50),	large = ReadText(1001, 49),		extralarge = ReadText(1001, 48) },
 	},
-	{ supertype = "macro",			type = "shield",			category = "shields",			mergeslots = false,	allowempty = true,	emode = "Equipment", 
+	{ supertype = "macro",			type = "shield",			category = "shields",			mergeslots = false,	allowempty = true,	emode = "Equipment",
 		text =			{ default = ReadText(1001, 1317),	small = ReadText(1001, 8083),	medium = ReadText(1001, 8084),	large = ReadText(1001, 8085),	extralarge = ReadText(1001, 8086) },
 		shorttext =		{ default = "",						small = ReadText(1001, 51),		medium = ReadText(1001, 50),	large = ReadText(1001, 49),		extralarge = ReadText(1001, 48) },
 	},
-	{ supertype = "macro",			type = "weapon",			category = "weapons",			mergeslots = false,	allowempty = true,	emode = "Weapons", 
+	{ supertype = "macro",			type = "weapon",			category = "weapons",			mergeslots = false,	allowempty = true,	emode = "Weapons",
 		text =			{ small = ReadText(1001, 8075),	medium = ReadText(1001, 8076),	large = ReadText(1001, 8077),	extralarge = ReadText(1001, 8078) },
 		shorttext =		{ small = ReadText(1001, 51),	medium = ReadText(1001, 50),	large = ReadText(1001, 49),		extralarge = ReadText(1001, 48) },
-	}, 
-	{ supertype = "macro",			type = "turret",			category = "turrets",			mergeslots = false,	allowempty = true,	emode = "Weapons", 
+	},
+	{ supertype = "macro",			type = "turret",			category = "turrets",			mergeslots = false,	allowempty = true,	emode = "Weapons",
 		text =			{ small = ReadText(1001, 8079),	medium = ReadText(1001, 8080),	large = ReadText(1001, 8081),	extralarge = ReadText(1001, 8082) },
 		shorttext =		{ small = ReadText(1001, 51),	medium = ReadText(1001, 50),	large = ReadText(1001, 49),		extralarge = ReadText(1001, 48) },
-	}, 
-	{ supertype = "group",			type = "turretgroup",		category = "turretgroups",		mergeslots = false,	allowempty = true,	emode = "Weapons",		grouptype = "turret",		pseudogroup = false, 
+	},
+	{ supertype = "group",			type = "turretgroup",		category = "turretgroups",		mergeslots = false,	allowempty = true,	emode = "Weapons",		grouptype = "turret",		pseudogroup = false,
 		text =			{ default = ReadText(1001, 8070),	small = ReadText(1001, 8095),	medium = ReadText(1001, 8096),	large = ReadText(1001, 8097),	extralarge = ReadText(1001, 8098) },
 		shorttext =		{ default = "", 					small = ReadText(1001, 51),		medium = ReadText(1001, 50),	large = ReadText(1001, 49),		extralarge = ReadText(1001, 48) },
 		headertext =	{ default = ReadText(1001, 1319),	small = ReadText(1001, 8079),	medium = ReadText(1001, 8080),	large = ReadText(1001, 8081),	extralarge = ReadText(1001, 8082) },
 		nonetext =		{ default = ReadText(1001, 8564) },
 	},
-	{ supertype = "group",			type = "shieldgroup",		category = "shieldgroups",		mergeslots = false,	allowempty = true,	emode = "Equipment",	grouptype = "shield",		pseudogroup = false, 
+	{ supertype = "group",			type = "shieldgroup",		category = "shieldgroups",		mergeslots = false,	allowempty = true,	emode = "Equipment",	grouptype = "shield",		pseudogroup = false,
 		text =			{ default = ReadText(1001, 8072),	small = ReadText(1001, 8099),	medium = ReadText(1001, 8501),	large = ReadText(1001, 8502),	extralarge = ReadText(1001, 8503) },
 		shorttext =		{ default = "",						small = ReadText(1001, 51),		medium = ReadText(1001, 50),	large = ReadText(1001, 49),		extralarge = ReadText(1001, 48) },
 		headertext =	{ default = ReadText(1001, 1317),	small = ReadText(1001, 8083),	medium = ReadText(1001, 8084),	large = ReadText(1001, 8085),	extralarge = ReadText(1001, 8086) },
@@ -9055,6 +9108,11 @@ function Helper.convertLoadoutStats(stats)
 	result.ForwardAcceleration = stats.ForwardAcceleration
 	result.HorizontalStrafeAcceleration = stats.HorizontalStrafeAcceleration
 	result.VerticalStrafeAcceleration = stats.VerticalStrafeAcceleration
+	result.BoostAcceleration = stats.BoostAcceleration
+	result.BoostRechargeRate = stats.BoostRechargeRate
+	result.BoostMaxDuration = stats.BoostMaxDuration
+	result.TravelAcceleration = stats.TravelAcceleration
+	result.TravelChargeTime = stats.TravelChargeTime
 	result.NumDocksShipMedium = stats.NumDocksShipMedium
 	result.NumDocksShipSmall = stats.NumDocksShipSmall
 	result.ShipCapacityMedium = stats.ShipCapacityMedium
@@ -9135,8 +9193,8 @@ function Helper.getInstalledModInfo(type, component, context, group, isgroup)
 	local buf
 	local modtype
 	if type == "engine" then
-		buf = ffi.new("UIEngineMod")
-		hasinstalledmod = C.GetInstalledEngineMod(component, buf)
+		buf = ffi.new("UIEngineMod2")
+		hasinstalledmod = C.GetInstalledEngineMod2(component, buf)
 	elseif type == "shield" then
 		buf = ffi.new("UIShieldMod")
 		hasinstalledmod = C.GetInstalledShieldMod(component, context, group, buf)
@@ -9793,7 +9851,7 @@ function Helper.createTransactionLog(frame, container, tableProperties, refreshC
 	for i = 0, n - 1 do
 		local partnername = ffi.string(buf[i].partnername)
 
-		table.insert(Helper.transactionLogData.accountLogUnfiltered, { 
+		table.insert(Helper.transactionLogData.accountLogUnfiltered, {
 			time = buf[i].time,
 			money = tonumber(buf[i].money) / 100,
 			entryid = ConvertStringTo64Bit(tostring(buf[i].entryid)),
@@ -9866,7 +9924,7 @@ function Helper.createTransactionLog(frame, container, tableProperties, refreshC
 		local prevmoney = (i > 0) and (tonumber(buf[i - 1].money) / 100) or nil
 		local nextmoney = (i < numdata - 1) and (tonumber(buf[i + 1].money) / 100) or nil
 		if (money ~= prevmoney) or (money ~= nextmoney) then
-			table.insert(Helper.transactionLogData.graphdata, { 
+			table.insert(Helper.transactionLogData.graphdata, {
 				t = buf[i].time,
 				y = money,
 				entryid = ConvertStringTo64Bit(tostring(buf[i].entryid)),
@@ -10155,7 +10213,7 @@ function Helper.updateVenturePlatforms()
 		for i, platform in ipairs(ventureplatforms) do
 			local docks = {}
 			Helper.ffiVLA(docks, "UniverseID", C.GetNumVenturePlatformDocks, C.GetVenturePlatformDocks, platform)
-		
+
 			local isbusy = GetComponentData(ConvertStringTo64Bit(tostring(platform)), "isbusy")
 			local ships = {}
 			local missioninfo
@@ -10632,7 +10690,7 @@ function Helper.updateLSOStorageNode(menu, node, container, ware)
 	local hasrestrictions = Helper.isTradeRestricted(container, ware)
 	local hasstorage = node.customdata.nodedata.hasstorage
 	local edgecolor = Color["flowchart_edge_default"]
-	
+
 	local statusicon = hasrestrictions and "lso_error" or nil
 	local statusiconmouseovertext = hasrestrictions and (ColorText["text_warning"] .. ReadText(1026, 8404)) or ""
 	local statuscolor = hasrestrictions and Color["icon_warning"] or nil
@@ -10797,7 +10855,7 @@ function Helper.onExpandLSOStorageNode(menu, container, _, ftable, _, nodedata)
 	local storageinfo_amounts =		C.IsInfoUnlockedForPlayer(container, "storage_amounts")
 
 	local waretype = Helper.getContainerWareType(container, nodedata.ware)
-	
+
 	local reservations = {}
 	local n = C.GetNumContainerWareReservations2(container, false, false, true)
 	local buf = ffi.new("WareReservationInfo2[?]", n)
@@ -11307,7 +11365,7 @@ function Helper.onExpandLSOStorageNode(menu, container, _, ftable, _, nodedata)
 			Helper.LSOStorageNodeBuySlider.widget.handlers.onSliderCellActivated = function (id) menu.noupdate = true end
 			Helper.LSOStorageNodeBuySlider.widget.handlers.onSliderCellDeactivated = function (id) menu.noupdate = false end
 		end
-		if Helper.LSOStorageNodeSellSlider then 
+		if Helper.LSOStorageNodeSellSlider then
 			Helper.LSOStorageNodeSellSlider.widget.handlers.onSliderCellChanged = function(_, value) return Helper.slidercellSellLimitOverride(menu, container, nodedata.ware, value, Helper.LSOStorageNodeBuySlider) end
 			Helper.LSOStorageNodeSellSlider.widget.handlers.onSliderCellActivated = function (id) menu.noupdate = true end
 			Helper.LSOStorageNodeSellSlider.widget.handlers.onSliderCellDeactivated = function (id) menu.noupdate = false end
@@ -11437,7 +11495,7 @@ end
 
 function Helper.buttonCancelTradeActive(menu, container, tradeid)
 	if not C.IsValidTrade(tradeid) then
-		menu.refreshnode = getElapsedTime()
+		menu.refreshnode = menu.refreshnode or getElapsedTime()
 		return
 	end
 	return C.CancelPlayerInvolvedTradeDeal(container, tradeid, true)
@@ -11564,9 +11622,9 @@ function Helper.checkboxStorageWarePriceOverride(menu, container, ware, row, buy
 
 	menu.updateExpandedNode(row, 3)
 end
-	 
+
 function Helper.checkboxSetTradeRuleOverride(menu, container, type, ware, checked)
-	if checked then 
+	if checked then
 		C.SetContainerTradeRule(container, -1, type, ware, false)
 	else
 		local currentid = C.GetContainerTradeRuleID(container, type, ware or "")
@@ -11616,7 +11674,7 @@ function Helper.dropdownAssignment(_, ship, subordinategroupid, commander, newas
 		if ship then
 			local commander = GetCommander(ship)
 			local orderindex = C.CreateOrder(ship, "AssignCommander", false)
-		
+
 			if orderindex > 0 then
 				-- commander
 				SetOrderParam(ship, orderindex, 1, nil, ConvertStringToLuaID(tostring(commander)))
@@ -11664,7 +11722,7 @@ end
 
 function  Helper.dropdownTradeRule(menu, container, type, ware, id)
 	C.SetContainerTradeRule(container, tonumber(id), type, ware, true)
-	
+
 	if (type == "buy") or (type == "sell") then
 
 		-- kuertee start: callback
@@ -12105,6 +12163,30 @@ function Helper.getDisplayableGateDestinationSpace(gate)
 	return nil
 end
 
+-- substitute placeholders in str based on substitutions table and returns substituted string (analogous to <substitute_text> script action)
+-- example usage: local text = Helper.substituteText(sourcetext, { ["$SHIPNAME$"] = shipname })
+function Helper.substituteText(str, substitutions)
+	local resultstr = str
+	for oldstr, newstr in pairs(substitutions) do
+		-- replace oldstr placeholders with newstr globally (without pattern matching)
+		-- NOTE: string.gsub() is not suitable for generic inputs because it would interpret both old and new strings as regex-style patterns
+		if type(oldstr) == "string" and string.len(oldstr) > 0 then
+			local prevstr = resultstr
+			local off = string.find(prevstr, oldstr, 1, true)
+			if off then
+				resultstr = ""
+				repeat
+					resultstr = resultstr .. string.sub(prevstr, 1, off - 1) .. tostring(newstr)
+					prevstr = string.sub(prevstr, off + string.len(oldstr))
+					off = string.find(prevstr, oldstr, 1, true)
+				until off == nil
+				resultstr = resultstr .. prevstr
+			end
+		end
+	end
+	return resultstr
+end
+
 function Helper.getHoloMapColors()
 	local productioncolor, buildcolor, storagecolor, radarcolor, dronedockcolor, efficiencycolor, defencecolor, playercolor, friendcolor, enemycolor, missioncolor, currentplayershipcolor, visitorcolor, lowalertcolor, mediumalertcolor, highalertcolor, gatecolor, highwaygatecolor, missilecolor, superhighwaycolor, highwaycolor, hostilecolor = GetHoloMapColors()
 	return { productioncolor = productioncolor, buildcolor = buildcolor, storagecolor = storagecolor, radarcolor = radarcolor, dronedockcolor = dronedockcolor, efficiencycolor = efficiencycolor, defencecolor = defencecolor, playercolor = playercolor, friendcolor = friendcolor, enemycolor = enemycolor, missioncolor = missioncolor, currentplayershipcolor = currentplayershipcolor, visitorcolor = visitorcolor, lowalertcolor = lowalertcolor, mediumalertcolor = mediumalertcolor, highalertcolor = highalertcolor, gatecolor = gatecolor, highwaygatecolor = highwaygatecolor, missilecolor = missilecolor, superhighwaycolor = superhighwaycolor, highwaycolor = highwaycolor, hostilecolor = hostilecolor }
@@ -12513,7 +12595,7 @@ function Helper.createVentureContactContext(menu, frame)
 		local row = infotable:addRow(true, { fixed = true })
 		row[1]:setColSpan(2):createButton({  }):setText(contact.isblocked and ReadText(1001, 11389) or ReadText(1001, 11388))
 		row[1].handlers.onClick = function () return Helper.buttonAddContact(menu, contact.id, not contact.isblocked) end
-	end 
+	end
 
 	local row = infotable:addRow(true, { fixed = true })
 	row[1]:setColSpan(2):createButton({  }):setText(ReadText(1001, 11392))
@@ -12593,7 +12675,7 @@ function Helper.buttonReportContact(menu, userid, reason)
 	if menu.contextMenuData.xoffset + width > Helper.viewWidth then
 		menu.contextMenuData.xoffset = Helper.viewWidth - width - Helper.frameBorder
 	end
-	
+
 	if menu.ventureMode == "venturecontacts" then
 		menu.createContextFrame(width, nil, menu.contextMenuData.xoffset, menu.contextMenuData.yoffset)
 	elseif menu.mode == "venturecontacts" then
@@ -12713,9 +12795,13 @@ function Helper.unregisterVentureContactCallbacks()
 end
 
 function Helper.getLimitedWareAmount(ware)
-	if C.IsGameModified() then
-		return tonumber(ffi.string(C.GetUserData("limited_blueprint_" .. ware))) or 0
-	end
+
+	-- kuertee start: do not fail when modified
+	-- if C.IsGameModified() then
+	-- 	return tonumber(ffi.string(C.GetUserData("limited_blueprint_" .. ware))) or 0
+	-- end
+	-- kuertee end: do not fail when modified
+
 	return tonumber(ffi.string(C.GetUserDataSigned("limited_blueprint_" .. ware))) or 0
 end
 

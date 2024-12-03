@@ -118,7 +118,7 @@ ffi.cdef[[
 	uint32_t GetNumWares(const char* tags, bool research, const char* licenceownerid, const char* exclusiontags);
 	uint32_t GetNumWareSources(const char* wareid);
 	uint32_t GetNumWareTransportTypes(void);
-	uint32_t GetPeopleCapacity(UniverseID controllableid, const char* macroname, bool includecrew);
+	uint32_t GetPeopleCapacity(UniverseID controllableid, const char* macroname, bool includepilot);
 	UniverseID GetPlayerZoneID(void);
 	ProductionMethodInfo2 GetProductionMethodInfo(const char* wareid, const char* productionmethod);
 	uint32_t GetProductionMethodResources(UIWareAmount* result, uint32_t resultlen, const char* wareid, const char* productionmethod);
@@ -407,28 +407,27 @@ function menu.onShowMenu(state)
 
 		menu.printedshipsizes = { "capital", "noncapital" }
 		menu.printedshipdata = { 
-		trade = {
-			text = ReadText(1001, 9010),									-- "Trading Ships"
-			capital = {text = ReadText(1001, 9022), ships = {}},			-- "Heavy Freighters"
-			noncapital = {text = ReadText(1001, 9023), ships = {}}},		-- "Light Freighters"
-		fight = {
-			text = ReadText(1001, 9011),									-- "Combat Ships"
-			capital = {text = ReadText(1001, 9024), ships = {}},			-- "Carriers and Destroyers"
-			noncapital = {text = ReadText(1001, 9025), ships = {}}},		-- "Fighters and Support Ships"
-		build = {
-			text = ReadText(1001, 9012),									-- "Construction Ships"
-			capital = {text = ReadText(1001, 9026), ships = {}},			-- "Heavy Construction Ships"
-			noncapital = {text = ReadText(1001, 9027), ships = {}}},		-- "Light Construction Ships"
-		mine = {
-			text = ReadText(1001, 9013),									-- "Mining Ships"
-			capital = {text = ReadText(1001, 9028), ships = {}},			-- "Heavy Mining Ships"
-			noncapital = {text = ReadText(1001, 9029), ships = {}}},		-- "Light Mining Ships"
-		misc = {
-			text = ReadText(1001, 9014),									-- "Other Ships"
-			capital = {text = ReadText(1001, 9020), ships = {}},			-- "Heavy"
-			noncapital = {text = ReadText(1001, 9021), ships = {}}}			-- "Light"
-		}
-
+								trade = {
+									text = ReadText(1001, 9010),								-- "Trading Ships"
+									capital = {text = ReadText(1001, 9022), ships = {}},			-- "Heavy Freighters"
+									noncapital = {text = ReadText(1001, 9023), ships = {}}},		-- "Light Freighters"
+								fight = {
+									text = ReadText(1001, 9011),								-- "Combat Ships"
+									capital = {text = ReadText(1001, 9024), ships = {}},			-- "Carriers and Destroyers"
+									noncapital = {text = ReadText(1001, 9025), ships = {}}},		-- "Fighters and Support Ships"
+								build = {
+									text = ReadText(1001, 9012),								-- "Construction Ships"
+									capital = {text = ReadText(1001, 9026), ships = {}},			-- "Heavy Construction Ships"
+									noncapital = {text = ReadText(1001, 9027), ships = {}}},		-- "Light Construction Ships"
+								mine = {
+									text = ReadText(1001, 9013),								-- "Mining Ships"
+									capital = {text = ReadText(1001, 9028), ships = {}},			-- "Heavy Mining Ships"
+									noncapital = {text = ReadText(1001, 9029), ships = {}}},		-- "Light Mining Ships"
+								misc = {
+									text = ReadText(1001, 9014),								-- "Other Ships"
+									capital = {text = ReadText(1001, 9020), ships = {}},			-- "Heavy"
+									noncapital = {text = ReadText(1001, 9021), ships = {}}}			-- "Light"
+							}
 	end
 
 	menu.index = {

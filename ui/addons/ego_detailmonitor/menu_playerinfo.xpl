@@ -223,7 +223,7 @@ ffi.cdef[[
 	int32_t GetPersonCombinedSkill(UniverseID controllableid, NPCSeed person, const char* role, const char* postid);
 	const char* GetPersonName(NPCSeed person, UniverseID controllableid);
 	const char* GetPersonRoleName(NPCSeed person, UniverseID controllableid);
-	uint32_t GetPersonSkills3(SkillInfo* result, uint32_t resultlen, NPCSeed person, UniverseID controllableid);
+	uint32_t GetPersonSkillsForAssignment(Skill2* result, NPCSeed person, UniverseID controllableid, const char* role, const char* postid);
 	uint32_t GetPeople2(PeopleInfo* result, uint32_t resultlen, UniverseID controllableid, bool includearriving);
 	uint32_t GetPlayerAlertCounts(PlayerAlertCounts* result, uint32_t resultlen);
 	uint32_t GetPlayerAlerts2(PlayerAlertInfo2* result, uint32_t resultlen);
@@ -960,6 +960,9 @@ end
 
 function menu.buttonMessagesToggleCutsceneFullscreen()
 	menu.messageData.showFullscreen = not menu.messageData.showFullscreen
+	if not menu.messageData.cutsceneStopped then
+		menu.messageData.fullscreenToggled = true
+	end
 	menu.refreshInfoFrame()
 end
 
@@ -1035,8 +1038,13 @@ end
 
 function menu.buttonAccountAllEstimates()
 	for i, station in ipairs(menu.accountData.stations) do
-		menu.accountSetEstimate(station)
-		local buildstorage = GetComponentData(station, "buildstorage")
+		local productionmoney, buildstorage = GetComponentData(station, "money", "buildstorage")
+		if productionmoney then
+			menu.accountSetEstimate(station)
+		end
+		menu.accountSetEstimate(buildstorage, true)
+	end
+	for i, buildstorage in ipairs(menu.accountData.buildstorages) do
 		menu.accountSetEstimate(buildstorage, true)
 	end
 
@@ -1114,14 +1122,56 @@ function menu.slidercellAccountChanged(station, row, value, functable)
 
 	if changed then
 		local playermoney = ConvertMoneyString(menu.getAccountPlayerMoney(), false, true, nil, true) .. " " .. ReadText(1001, 101)
-		for i in ipairs(menu.accountData.stations) do
-			Helper.updateCellText(functable, i * 7 - 3, 5, playermoney)
-			Helper.updateCellText(functable, i * 7, 5, playermoney)
-			if (i * 7 - 3) == row then
-				Helper.updateCellText(functable, i * 7 - 3, 2, ConvertMoneyString(GetComponentData(station, "money") - value, false, true, nil, true) .. " " .. ReadText(1001, 101))
-			elseif (i * 7) == row then
-				Helper.updateCellText(functable, i * 7, 2, ConvertMoneyString(GetComponentData(station, "money") - value, false, true, nil, true) .. " " .. ReadText(1001, 101))
+
+		local offset = 2
+		for i, otherstation in ipairs(menu.accountData.stations) do
+			if i ~= 1 then
+				-- empty row
+				offset = offset + 1
 			end
+			-- title
+			offset = offset + 1
+
+			local stationmoney, buildstorage = GetComponentData(otherstation, "money", "buildstorage")
+
+			if stationmoney then
+				local stationsliderrow = offset + 1
+
+				Helper.updateCellText(functable, stationsliderrow, 5, playermoney)
+				if stationsliderrow == row then
+					Helper.updateCellText(functable, stationsliderrow, 2, ConvertMoneyString(GetComponentData(station, "money") - value, false, true, nil, true) .. " " .. ReadText(1001, 101))
+				end
+
+				offset = offset + 3
+			end
+
+			if buildstorage then
+				local buildstoragesliderrow = offset + 1
+
+				Helper.updateCellText(functable, buildstoragesliderrow, 5, playermoney)
+				if buildstoragesliderrow == row then
+					Helper.updateCellText(functable, buildstoragesliderrow, 2, ConvertMoneyString(GetComponentData(station, "money") - value, false, true, nil, true) .. " " .. ReadText(1001, 101))
+				end
+
+				offset = offset + 2
+			end
+		end
+		for i in ipairs(menu.accountData.buildstorages) do
+			if (i ~= 1) or (#menu.accountData.stations > 0) then
+				-- empty row
+				offset = offset + 1
+			end
+			-- title
+			offset = offset + 1
+
+			local sliderrow = offset + 1
+
+			Helper.updateCellText(functable, sliderrow, 5, playermoney)
+			if sliderrow == row then
+				Helper.updateCellText(functable, sliderrow, 2, ConvertMoneyString(GetComponentData(station, "money") - value, false, true, nil, true) .. " " .. ReadText(1001, 101))
+			end
+
+			offset = offset + 2
 		end
 	end
 end
@@ -1298,6 +1348,7 @@ function menu.onShowMenu(state)
 
 	Helper.setTabScrollCallback(menu, menu.onTabScroll)
 	registerForEvent("inputModeChanged", getElement("Scene.UIContract"), menu.onInputModeChanged)
+	registerForEvent("cutsceneStopped", getElement("Scene.UIContract"), menu.onCutsceneStopped)
 
 	if state then
 		menu.onRestoreState(state)
@@ -1405,6 +1456,17 @@ function menu.onInputModeChanged(_, mode)
 		menu.refreshInfoFrame()
 	else
 		menu.inputModeHasChanged = true
+	end
+end
+
+function menu.onCutsceneStopped(_, cutsceneID)
+	if cutsceneID == menu.cutsceneid then
+		if next(menu.messageData.curEntry) then
+			if menu.messageData.showFullscreen then
+				menu.buttonMessagesToggleCutsceneFullscreen()
+			end
+			menu.messageData.cutsceneStopped = true
+		end
 	end
 end
 
@@ -2459,10 +2521,23 @@ function menu.createAccounts(frame, tableProperties, tabOrderOffset)
 
 	local playermoney = menu.getAccountPlayerMoney()
 
-	menu.accountData.stations = GetContainedStationsByOwner("player")
+	menu.accountData.stations = GetContainedStationsByOwner("player", nil, true)
 	table.sort(menu.accountData.stations, Helper.sortComponentName)
-	if #menu.accountData.stations > 0 then
+
+	menu.accountData.buildstorages = GetContainedBuildStoragesByOwner("player")
+	for i = #menu.accountData.buildstorages, 1, -1 do
+		if GetComponentData(menu.accountData.buildstorages[i], "basestation") then
+			table.remove(menu.accountData.buildstorages, i)
+		end
+	end
+	table.sort(menu.accountData.buildstorages, Helper.sortComponentName)
+
+	if (#menu.accountData.stations > 0) or (#menu.accountData.buildstorages > 0) then
 		for i, station in ipairs(menu.accountData.stations) do
+			if i ~= 1 then
+				infotable:addEmptyRow()
+			end
+
 			local name, sector, stationmoney, productionmoney, buildstorage = GetComponentData(station, "name", "sector", "money", "productionmoney", "buildstorage")
 			local station64 = ConvertIDTo64Bit(station)
 			-- station name
@@ -2472,29 +2547,31 @@ function menu.createAccounts(frame, tableProperties, tabOrderOffset)
 			row[1].properties.color = menu.holomapcolor.playercolor
 			row[1].properties.mouseOverText = mouseovertext
 
-			-- station account
-			local transaction = menu.findAccountTransaction(station)
-			local row = infotable:addRow(true, {  })
-			row[1]:createText(ReadText(1001, 7710) .. ReadText(1001, 120), { x = Helper.standardTextHeight })
-			row[2]:createText(ConvertMoneyString(stationmoney - transaction, false, true, nil, true) .. " " .. ReadText(1001, 101), { halign = "right" })
-			row[3]:setColSpan(2):createSliderCell({ min = math.min((-playermoney + transaction), transaction), max = math.max(stationmoney, transaction), start = transaction, fromCenter = true, suffix = ReadText(1001, 101), height = config.rowHeight })
-			row[3].handlers.onSliderCellChanged = function (_, value) return menu.slidercellAccountChanged(station, row.index, value, infotable.id) end
-			row[3].handlers.onSliderCellConfirm = function () menu.refreshdata = { nil, nil, "accounts", row.index } menu.refresh = getElapsedTime() + 0.1 end
-			row[5]:createText(ConvertMoneyString(playermoney, false, true, nil, true) .. " " .. ReadText(1001, 101), { halign = "left" })
+			if stationmoney then
+				-- station account
+				local transaction = menu.findAccountTransaction(station)
+				local row = infotable:addRow(true, {  })
+				row[1]:createText(ReadText(1001, 7710) .. ReadText(1001, 120), { x = Helper.standardTextHeight })
+				row[2]:createText(ConvertMoneyString(stationmoney - transaction, false, true, nil, true) .. " " .. ReadText(1001, 101), { halign = "right" })
+				row[3]:setColSpan(2):createSliderCell({ min = math.min((-playermoney + transaction), transaction), max = math.max(stationmoney, transaction), start = transaction, fromCenter = true, suffix = ReadText(1001, 101), height = config.rowHeight })
+				row[3].handlers.onSliderCellChanged = function (_, value) return menu.slidercellAccountChanged(station, row.index, value, infotable.id) end
+				row[3].handlers.onSliderCellConfirm = function () menu.refreshdata = { nil, nil, "accounts", row.index } menu.refresh = getElapsedTime() + 0.1 end
+				row[5]:createText(ConvertMoneyString(playermoney, false, true, nil, true) .. " " .. ReadText(1001, 101), { halign = "left" })
 
-			-- station estimated budget
-			local supplymoney = tonumber(C.GetSupplyBudget(station64)) / 100
-			local tradewaremoney = tonumber(C.GetTradeWareBudget(station64)) / 100
-			local row = infotable:addRow(true, {  })
-			row[1]:createText(ReadText(1001, 9434) .. ReadText(1001, 120), { x = Helper.standardTextHeight })
-			local mouseovertext =	ReadText(1001, 8420) .. ReadText(1001, 120) .. " " .. ConvertMoneyString(productionmoney, false, true, 0, true)	.. " " .. ReadText(1001, 101) .. "\n" ..
-									ReadText(1001, 8423) .. ReadText(1001, 120) .. " " .. ConvertMoneyString(supplymoney, false, true, 0, true)		.. " " .. ReadText(1001, 101) .. "\n" ..
-									ReadText(1001, 8447) .. ReadText(1001, 120) .. " " .. ConvertMoneyString(tradewaremoney, false, true, 0, true)	.. " " .. ReadText(1001, 101)
-			row[2]:createText(ConvertMoneyString(productionmoney + supplymoney + tradewaremoney, false, true, 0, true) .. " " .. ReadText(1001, 101), { halign = "right", mouseOverText = mouseovertext })
-			row[5]:createButton({ active = function () local money, estimate = GetComponentData(station64, "money", "productionmoney"); estimate = estimate + tonumber(C.GetSupplyBudget(station64)) / 100 + tonumber(C.GetTradeWareBudget(station64)) / 100; return (money + GetPlayerMoney()) > estimate end }):setText(ReadText(1001, 7965), { halign = "center", fontsize = config.mapFontSize })
-			row[5].handlers.onClick = function () return menu.buttonAccountToEstimate(station) end
+				-- station estimated budget
+				local supplymoney = tonumber(C.GetSupplyBudget(station64)) / 100
+				local tradewaremoney = tonumber(C.GetTradeWareBudget(station64)) / 100
+				local row = infotable:addRow(true, {  })
+				row[1]:createText(ReadText(1001, 9434) .. ReadText(1001, 120), { x = Helper.standardTextHeight })
+				local mouseovertext =	ReadText(1001, 8420) .. ReadText(1001, 120) .. " " .. ConvertMoneyString(productionmoney, false, true, 0, true)	.. " " .. ReadText(1001, 101) .. "\n" ..
+										ReadText(1001, 8423) .. ReadText(1001, 120) .. " " .. ConvertMoneyString(supplymoney, false, true, 0, true)		.. " " .. ReadText(1001, 101) .. "\n" ..
+										ReadText(1001, 8447) .. ReadText(1001, 120) .. " " .. ConvertMoneyString(tradewaremoney, false, true, 0, true)	.. " " .. ReadText(1001, 101)
+				row[2]:createText(ConvertMoneyString(productionmoney + supplymoney + tradewaremoney, false, true, 0, true) .. " " .. ReadText(1001, 101), { halign = "right", mouseOverText = mouseovertext })
+				row[5]:createButton({ active = function () local money, estimate = GetComponentData(station64, "money", "productionmoney"); estimate = estimate + tonumber(C.GetSupplyBudget(station64)) / 100 + tonumber(C.GetTradeWareBudget(station64)) / 100; return (money + GetPlayerMoney()) > estimate end }):setText(ReadText(1001, 7965), { halign = "center", fontsize = config.mapFontSize })
+				row[5].handlers.onClick = function () return menu.buttonAccountToEstimate(station) end
 
-			infotable:addEmptyRow(Helper.standardTextHeight / 2)
+				infotable:addEmptyRow(Helper.standardTextHeight / 2)
+			end
 
 			-- buildstorage account
 			if buildstorage then
@@ -2517,10 +2594,36 @@ function menu.createAccounts(frame, tableProperties, tabOrderOffset)
 				row[5]:createButton({ active = function () local money, estimate = GetComponentData(buildstorage64, "money", "wantedmoney"); return (money + GetPlayerMoney()) > estimate end }):setText(ReadText(1001, 7965), { halign = "center", fontsize = config.mapFontSize })
 				row[5].handlers.onClick = function () return menu.buttonAccountToEstimate(buildstorage, true) end
 			end
-
-			if i ~= #menu.accountData.stations then
+		end
+		for i, buildstorage in ipairs(menu.accountData.buildstorages) do
+			if (i ~= 1) or (#menu.accountData.stations > 0) then
 				infotable:addEmptyRow()
 			end
+
+			local name, sector, buildstoragemoney, wantedmoney = GetComponentData(buildstorage, "name", "sector", "money", "wantedmoney")
+
+			-- station name
+			local mouseovertext = ReadText(20001, 201) .. ReadText(1001, 120) .. " " .. sector
+			local row = infotable:addRow(false, { bgColor = Color["row_background_blue"] })
+			row[1]:setColSpan(5):createText(name .. " (" .. ffi.string(C.GetObjectIDCode(ConvertIDTo64Bit(buildstorage))) .. ")", Helper.subHeaderTextProperties)
+			row[1].properties.color = menu.holomapcolor.playercolor
+			row[1].properties.mouseOverText = mouseovertext
+
+			local transaction = menu.findAccountTransaction(buildstorage)
+			local row = infotable:addRow(true, {  })
+			row[1]:createText(ReadText(1001, 9429) .. ReadText(1001, 120), { x = Helper.standardTextHeight })
+			row[2]:createText(ConvertMoneyString(buildstoragemoney - transaction, false, true, nil, true) .. " " .. ReadText(1001, 101), { halign = "right" })
+			row[3]:setColSpan(2):createSliderCell({ min = math.min((-playermoney + transaction), transaction), max = math.max(buildstoragemoney, transaction), start = transaction, fromCenter = true, suffix = ReadText(1001, 101), height = config.rowHeight })
+			row[3].handlers.onSliderCellChanged = function (_, value) return menu.slidercellAccountChanged(buildstorage, row.index, value, infotable.id) end
+			row[3].handlers.onSliderCellConfirm = function () menu.refreshdata = { nil, nil, "accounts", row.index } menu.refresh = getElapsedTime() + 0.1 end
+			row[5]:createText(ConvertMoneyString(playermoney, false, true, nil, true) .. " " .. ReadText(1001, 101), { halign = "left" })
+
+			-- buildstorage estimated budget
+			local row = infotable:addRow(true, {  })
+			row[1]:createText(ReadText(1001, 9436) .. ReadText(1001, 120), { x = Helper.standardTextHeight })
+			row[2]:createText(ConvertMoneyString(wantedmoney, false, true, 0, true) .. " " .. ReadText(1001, 101), { halign = "right" })
+			row[5]:createButton({ active = function () local money, estimate = GetComponentData(buildstorage, "money", "wantedmoney"); return (money + GetPlayerMoney()) > estimate end }):setText(ReadText(1001, 7965), { halign = "center", fontsize = config.mapFontSize })
+			row[5].handlers.onClick = function () return menu.buttonAccountToEstimate(buildstorage, true) end
 		end
 	else
 		local row = infotable:addRow(true, {  })
@@ -3182,7 +3285,16 @@ function menu.createMessages(frame, tableProperties)
 			end
 
 			menu.rendertarget = frame:addRenderTarget(mediaProperties)
-			menu.messageData.activatecutscene = true
+			if not menu.messageData.fullscreenToggled then
+				menu.messageData.activatecutscene = true
+				menu.messageData.cutsceneStopped = nil
+
+				if not menu.cutsceneStoppedNotification then
+					menu.cutsceneStoppedNotification = true
+					NotifyOnCutsceneStopped(getElement("Scene.UIContract"))
+				end
+			end
+			menu.messageData.fullscreenToggled = nil
 
 			local buttonsize = 2 * config.rowHeight
 			local rendertargetbuttontable = frame:addTable(2, { tabOrder = 4, width = mediaProperties.width, x = mediaProperties.x, y = mediaProperties.y + mediaProperties.height - Helper.scaleX(buttonsize) })
@@ -7180,6 +7292,7 @@ function menu.onCloseElement(dueToClose)
 		menu.closeContextMenu()
 	elseif menu.messageData.showFullscreen and (dueToClose == "back") then
 		menu.messageData.showFullscreen = nil
+		menu.messageData.fullscreenToggled = true
 		menu.refreshInfoFrame()
 	elseif menu.mode and (dueToClose == "back") then
 		menu.deactivatePlayerInfo()

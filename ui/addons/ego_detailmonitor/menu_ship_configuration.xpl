@@ -4,7 +4,7 @@
 -- modes:	"purchase",	param:	{}
 --			"upgrade",			{ selectableships }
 --			"modify",			{ [ paintonly = false, selectedships = {} ] }
---			"customgamestart",	{ gamestartid, creative, shipproperty, shiploadoutproperty, shippeopleproperty, shippeoplefillpercentageproperty, shippilotproperty, paintthemeproperty, playerpropertyid, propertymacro, propertycommander, propertypeopledef, propertypeoplefillpercentage }
+--			"customgamestart",	{ gamestartid, creative, shipproperty, shiploadoutproperty, shippeopleproperty, shippeoplefillpercentageproperty, shippilotproperty, paintthemeproperty, playerpropertyid, propertymacro, propertycommander, propertypeopledef, propertypeoplefillpercentage, propertycount, paused }
 --			"comparison",		{ id }
 
 -- ffi setup
@@ -183,8 +183,10 @@ ffi.cdef[[
 		uint32_t Quality;
 		const char* PropertyType;
 		float ForwardThrustFactor;
+		float StrafeAccFactor;
 		float StrafeThrustFactor;
 		float RotationThrustFactor;
+		float BoostAccFactor;
 		float BoostThrustFactor;
 		float BoostDurationFactor;
 		float BoostAttackTimeFactor;
@@ -196,7 +198,7 @@ ffi.cdef[[
 		float TravelAttackTimeFactor;
 		float TravelReleaseTimeFactor;
 		float TravelChargeTimeFactor;
-	} UIEngineMod;
+	} UIEngineMod2;
 	typedef struct {
 		const char* Name;
 		const char* RawName;
@@ -340,6 +342,11 @@ ffi.cdef[[
 		float ForwardAcceleration;
 		float HorizontalStrafeAcceleration;
 		float VerticalStrafeAcceleration;
+		float BoostAcceleration;
+		float BoostRechargeRate;
+		float BoostMaxDuration;
+		float TravelAcceleration;
+		float TravelChargeTime;
 		uint32_t NumDocksShipMedium;
 		uint32_t NumDocksShipSmall;
 		uint32_t ShipCapacityMedium;
@@ -354,7 +361,7 @@ ffi.cdef[[
 		uint32_t CountermeasureCapacity;
 		uint32_t DeployableCapacity;
 		float RadarRange;
-	} UILoadoutStatistics4;
+	} UILoadoutStatistics5;
 	typedef struct {
 		const char* Name;
 		const char* RawName;
@@ -432,9 +439,9 @@ ffi.cdef[[
 		uint32_t numblacklists;
 		FightRuleTypeID* fightrules;
 		uint32_t numfightrules;
-	} AddBuildTask5Container;
-	BuildTaskID AddBuildTask4(UniverseID containerid, UniverseID defensibleid, const char* macroname, UILoadout2 uiloadout, int64_t price, CrewTransferInfo2 crewtransfer, bool immediate, const char* customname);
-	BuildTaskID AddBuildTask5(UniverseID containerid, UniverseID defensibleid, const char* macroname, UILoadout2 uiloadout, int64_t price, CrewTransferInfo2 crewtransfer, bool immediate, const char* customname, AddBuildTask5Container* additionalinfo);
+		const char* paintmodwareid;
+	} AddBuildTask6Container;
+	BuildTaskID AddBuildTask6(UniverseID containerid, UniverseID defensibleid, const char* macroname, UILoadout2 uiloadout, int64_t price, CrewTransferInfo2 crewtransfer, bool immediate, const char* customname, AddBuildTask6Container* additionalinfo);
 	bool CanApplyKnownLoadout(const char* macroname, const char* loadoutid);
 	bool CanBuildLoadout(UniverseID containerid, UniverseID defensibleid, const char* macroname, const char* loadoutid);
 	bool CanBuildMissionLoadout(UniverseID containerid, MissionID missionid, const char* uimacroname);
@@ -448,6 +455,8 @@ ffi.cdef[[
 	bool CheckWeaponModCompatibility(UniverseID weaponid, const char* wareid);
 	void ClearMapBehaviour(UniverseID holomapid);
 	void ClearSelectedMapMacroSlots(UniverseID holomapid);
+	BlacklistID GetControllableBlacklistID(UniverseID controllableid, const char* listtype, const char* defaultgroup);
+	FightRuleID GetControllableFightRuleID(UniverseID controllableid, const char* listtype);
 	const char* ConvertInputString(const char* text, const char* defaultvalue);
 	uint32_t CreateOrder(UniverseID controllableid, const char* orderid, bool defaultorder);
 	void DismantleEngineMod(UniverseID objectid);
@@ -487,7 +496,7 @@ ffi.cdef[[
 	const char* GetComponentName(UniverseID componentid);
 	uint32_t GetContainerBuilderMacros(const char** result, uint32_t resultlen, UniverseID containerid);
 	float GetContainerBuildPriceFactor(UniverseID containerid);
-	UILoadoutStatistics4 GetCurrentLoadoutStatistics4(UniverseID shipid);
+	UILoadoutStatistics5 GetCurrentLoadoutStatistics5(UniverseID shipid);
 	float GetCustomGameStartFloatProperty(const char* id, const char* propertyid, CustomGameStartFloatPropertyState* state);
 	void GetCustomGameStartLoadoutProperty2(UILoadout2* result, const char* id, const char* propertyid);
 	void GetCustomGameStartLoadoutPropertyCounts2(UILoadoutCounts2* result, const char* id, const char* propertyid);
@@ -506,7 +515,8 @@ ffi.cdef[[
 	uint32_t GetDefensibleDeployableCapacity(UniverseID defensibleid);
 	uint32_t GetDockedShips(UniverseID* result, uint32_t resultlen, UniverseID dockingbayorcontainerid, const char* factionid);
 	const char* GetEquipmentModPropertyName(const char* wareid);
-	bool GetInstalledEngineMod(UniverseID objectid, UIEngineMod* enginemod);
+	uint32_t GetHighestEquipmentModQuality(UniverseID defensibleid);
+	bool GetInstalledEngineMod2(UniverseID objectid, UIEngineMod2* enginemod);
 	bool GetInstalledPaintMod(UniverseID objectid, UIPaintMod* paintmod);
 	bool GetInstalledShieldMod(UniverseID defensibleid, UniverseID contextid, const char* group, UIShieldMod* shieldmod);
 	bool GetInstalledWeaponMod(UniverseID weaponid, UIWeaponMod* weaponmod);
@@ -517,14 +527,16 @@ ffi.cdef[[
 	uint32_t GetLoadoutCounts2(UILoadoutCounts2* result, UniverseID defensibleid, const char* macroname, const char* loadoutid);
 	uint32_t GetLoadoutInvalidPatches(InvalidPatchInfo* result, uint32_t resultlen, UniverseID defensibleid, const char* macroname, const char* loadoutid);
 	uint32_t GetLoadoutsInfo(UILoadoutInfo* result, uint32_t resultlen, UniverseID componentid, const char* macroname);
-	UILoadoutStatistics4 GetLoadoutStatistics4(UniverseID shipid, const char* macroname, UILoadout uiloadout);
+	UILoadoutStatistics5 GetLoadoutStatistics5(UniverseID shipid, const char* macroname, UILoadout uiloadout);
 	const char* GetMacroClass(const char* macroname);
 	uint32_t GetMacroDeployableCapacity(const char* macroname);
 	uint32_t GetMacroMissileCapacity(const char* macroname);
-	UILoadoutStatistics4 GetMaxLoadoutStatistics4(UniverseID shipid, const char* macroname);
+	UILoadoutStatistics5 GetMaxLoadoutStatistics5(UniverseID shipid, const char* macroname);
 	uint32_t GetMissileCargo(UIWareInfo* result, uint32_t resultlen, UniverseID containerid);
 	uint32_t GetMissingBuildResources(UIWareInfo* result, uint32_t resultlen);
+	const char* GetMissingLoadoutBlueprints(UniverseID containerid, UniverseID defensibleid, const char* macroname, const char* loadoutid);
 	uint32_t GetMissingLoadoutResources(UIWareInfo* result, uint32_t resultlen);
+	const char* GetMissingMissionLoadoutBlueprints(UniverseID containerid, MissionID missionid, const char* uimacroname);
 	void GetMissionLoadout(UILoadout2* result, MissionID missionid, const char* uimacroname);
 	void GetMissionLoadoutCounts(UILoadoutCounts2* result, MissionID missionid, const char* uimacroname);
 	uint32_t GetNumAllCountermeasures(UniverseID defensibleid);
@@ -573,7 +585,7 @@ ffi.cdef[[
 	const char* GetObjectIDCode(UniverseID objectid);
 	bool GetPaintThemeMod(const char* themeid, const char* factionid, UIPaintMod* paintmod);
 	uint32_t GetPeople2(PeopleInfo* result, uint32_t resultlen, UniverseID controllableid, bool includearriving);
-	uint32_t GetPeopleCapacity(UniverseID controllableid, const char* macroname, bool includecrew);
+	uint32_t GetPeopleCapacity(UniverseID controllableid, const char* macroname, bool includepilot);
 	bool GetPickedMapMacroSlot(UniverseID holomapid, UniverseID defensibleid, UniverseID moduleid, const char* macroname, bool ismodule, UILoadoutSlot* result);
 	UniverseID GetPlayerOccupiedShipID(void);
 	const char* GetPlayerPaintTheme(void);
@@ -605,6 +617,8 @@ ffi.cdef[[
 	uint32_t GetUsedLimitedShips(UIMacroCount* result, uint32_t resultlen);
 	const char* GetVirtualUpgradeSlotCurrentMacro(UniverseID defensibleid, const char* upgradetypename, size_t slot);
 	WorkForceInfo GetWorkForceInfo(UniverseID containerid, const char* raceid);
+	bool HasControllableOwnBlacklist(UniverseID controllableid, const char* listtype);
+	bool HasControllableOwnFightRule(UniverseID controllableid, const char* listtype);
 	bool HasDefaultLoadout2(const char* macroname, bool allowloadoutoverride);
 	bool HasResearched(const char* wareid);
 	bool HasSuitableBuildModule(UniverseID containerid, UniverseID defensibleid, const char* macroname);
@@ -682,6 +696,8 @@ local config = {
 		{ spacing = true,																			comparison = false },
 		{ name = ReadText(1001, 8003),	icon = "shipbuildst_consumable",	mode = "consumables",	comparison = false },
 		{ name = ReadText(1001, 80),	icon = "shipbuildst_crew",			mode = "crew",			comparison = false },
+		{ spacing = true,																			customgamestart = false,	comparison = false },
+		{ name = ReadText(1001, 8510),	icon = "shipbuildst_paint",			mode = "paintmods",		customgamestart = false,	comparison = false,		upgrademode = "paint",	modclass = "paint" },
 		{ spacing = true,																			customgamestart = false,	comparison = false,		hascontainer = true },
 		{ name = ReadText(1001, 3000),	icon = "shipbuildst_repair",		mode = "repair",		customgamestart = false,	comparison = false,		hascontainer = true },
 		{ spacing = true,																			comparison = false,			hascontainer = true },
@@ -723,45 +739,75 @@ local config = {
 		ship = 1.3,
 	},
 	stats = {
-		{ id = "HullValue",					name = ReadText(1001, 8048),	unit = ReadText(1001, 118),	type = "float",		accuracy = 0 },
-		{ id = "ShieldValue",				name = ReadText(1001, 8049),	unit = ReadText(1001, 118),	type = "float",		accuracy = 0 },
-		{ id = "ShieldRate",				name = "   " .. ReadText(1001, 8553),	unit = ReadText(1001, 119),	type = "float",		accuracy = 0 },
-		{ id = "ShieldDelay",				name = "   " .. ReadText(1001, 8554),	unit = ReadText(1001, 100),	type = "double",	accuracy = 2,	inverted = true },
-		{ id = "GroupedShieldValue",		name = ReadText(1001, 8533),	unit = ReadText(1001, 118),	type = "float",		accuracy = 0,	mouseovertext = ReadText(1026, 8018) },
-		{ id = "GroupedShieldRate",			name = "   " .. ReadText(1001, 8553),	unit = ReadText(1001, 119),	type = "float",		accuracy = 0 },
-		{ id = "GroupedShieldDelay",		name = "   " .. ReadText(1001, 8554),	unit = ReadText(1001, 100),	type = "double",	accuracy = 2,	inverted = true },
-		{ id = "RadarRange",				name = ReadText(1001, 8068),	unit = ReadText(1001, 108),	type = "float",		accuracy = 0 },
-		{ id = "BurstDPS",					name = ReadText(1001, 8073),	unit = ReadText(1001, 119),	type = "float",		accuracy = 0 },
-		{ id = "SustainedDPS",				name = ReadText(1001, 8074),	unit = ReadText(1001, 119),	type = "float",		accuracy = 0 },
-		{ id = "TurretSustainedDPS",		name = ReadText(1001, 8532),	unit = ReadText(1001, 119),	type = "float",		accuracy = 0,	mouseovertext = ReadText(1026, 8017),	capshipid = "GroupedTurretSustainedDPS" },
+		{ id = "HullValue",						name = ReadText(1001, 8048),			unit = ReadText(1001, 118),	type = "float",		accuracy = 0 },
+		{ id = "ShieldValue",					name = ReadText(1001, 8049),			unit = ReadText(1001, 118),	type = "float",		accuracy = 0 },
+		{ id = "ShieldRate",					name = "   " .. ReadText(1001, 8553),	unit = ReadText(1001, 119),	type = "float",		accuracy = 0 },
+		{ id = "ShieldDelay",					name = "   " .. ReadText(1001, 8554),	unit = ReadText(1001, 100),	type = "double",	accuracy = 2,	inverted = true },
+		{ id = "GroupedShieldValue",			name = ReadText(1001, 8533),			unit = ReadText(1001, 118),	type = "float",		accuracy = 0,	mouseovertext = ReadText(1026, 8018) },
+		{ id = "GroupedShieldRate",				name = "   " .. ReadText(1001, 8553),	unit = ReadText(1001, 119),	type = "float",		accuracy = 0 },
+		{ id = "GroupedShieldDelay",			name = "   " .. ReadText(1001, 8554),	unit = ReadText(1001, 100),	type = "double",	accuracy = 2,	inverted = true },
+		{ id = "RadarRange",					name = ReadText(1001, 8068),			unit = ReadText(1001, 108),	type = "float",		accuracy = 0 },
+		{ id = "BurstDPS",						name = ReadText(1001, 8073),			unit = ReadText(1001, 119),	type = "float",		accuracy = 0 },
+		{ id = "SustainedDPS",					name = ReadText(1001, 8074),			unit = ReadText(1001, 119),	type = "float",		accuracy = 0 },
+		{ id = "TurretSustainedDPS",			name = ReadText(1001, 8532),			unit = ReadText(1001, 119),	type = "float",		accuracy = 0,	mouseovertext = ReadText(1026, 8017),	capshipid = "GroupedTurretSustainedDPS" },
 		{ id = "" },
-		{ id = "CrewCapacity",				name = ReadText(1001, 8057),	unit = "",					type = "UINT",		accuracy = 0 },
-		{ id = "UnitCapacity",				name = ReadText(1001, 8061),	unit = "",					type = "UINT",		accuracy = 0 },
-		{ id = "MissileCapacity",			name = ReadText(1001, 8062),	unit = "",					type = "UINT",		accuracy = 0 },
-		{ id = "DeployableCapacity",		name = ReadText(1001, 8064),	unit = "",					type = "UINT",		accuracy = 0 },
-		{ id = "CountermeasureCapacity",	name = ReadText(1001, 8063),	unit = "",					type = "UINT",		accuracy = 0 },
+		{ id = "ContainerCapacity",				name = ReadText(1001, 8058),			unit = ReadText(1001, 110),	type = "UINT",		accuracy = 0 },
+		{ id = "SolidCapacity",					name = ReadText(1001, 8059),			unit = ReadText(1001, 110),	type = "UINT",		accuracy = 0 },
+		{ id = "LiquidCapacity",				name = ReadText(1001, 8060),			unit = ReadText(1001, 110),	type = "UINT",		accuracy = 0 },
+		{ id = "CondensateCapacity",			name = ReadText(20109, 9801),			unit = ReadText(1001, 110),	type = "UINT",		accuracy = 0 },
 		{ id = "" },
-		{ id = "" },
+		{ id = "NumDocksShipMedium",			name = ReadText(1001, 8524),			unit = "",					type = "UINT",		accuracy = 0 },
+		{ id = "ShipCapacityMedium",			name = ReadText(1001, 8526),			unit = "",					type = "UINT",		accuracy = 0 },
+		{ id = "NumDocksShipSmall",				name = ReadText(1001, 8525),			unit = "",					type = "UINT",		accuracy = 0 },
+		{ id = "ShipCapacitySmall",				name = ReadText(1001, 8527),			unit = "",					type = "UINT",		accuracy = 0 },
 		-- new column
-		{ id = "ForwardSpeed",				name = ReadText(1001, 8051),	unit = ReadText(1001, 113),	type = "float",		accuracy = 0 },
-		{ id = "ForwardAcceleration",		name = ReadText(1001, 8069),	unit = ReadText(1001, 111),	type = "float",		accuracy = 0 },
-		{ id = "BoostSpeed",				name = ReadText(1001, 8052),	unit = ReadText(1001, 113),	type = "float",		accuracy = 0 },
-		{ id = "TravelSpeed",				name = ReadText(1001, 8053),	unit = ReadText(1001, 113),	type = "float",		accuracy = 0 },
-		{ id = "HorizontalStrafeSpeed",		name = ReadText(1001, 8559),	unit = ReadText(1001, 113),	type = "float",		accuracy = 1 },
-		{ id = "HorizontalStrafeAcceleration",	name = ReadText(1001, 8560),	unit = ReadText(1001, 111),	type = "float",		accuracy = 1 },
-		{ id = "YawSpeed",					name = ReadText(1001, 8054),	unit = ReadText(1001, 117),	type = "float",		accuracy = 1 },
-		{ id = "PitchSpeed",				name = ReadText(1001, 8055),	unit = ReadText(1001, 117),	type = "float",		accuracy = 1 },
-		{ id = "RollSpeed",					name = ReadText(1001, 8056),	unit = ReadText(1001, 117),	type = "float",		accuracy = 1 },
+		{ id = "ForwardSpeed",					name = ReadText(1001, 8051),			unit = ReadText(1001, 113),	type = "float",		accuracy = 0 },
+		{ id = "ForwardAcceleration",			name = "   " .. ReadText(1001, 8069),	unit = ReadText(1001, 111),	type = "float",		accuracy = 0 },
+		{ id = "BoostSpeed",					name = ReadText(1001, 8052),			unit = ReadText(1001, 113),	type = "float",		accuracy = 0 },
+		{ id = "BoostAcceleration",				name = "   " .. ReadText(1001, 8590),	unit = ReadText(1001, 111),	type = "float",		accuracy = 0 },
+		{ id = "BoostMaxDuration",				name = "   " .. ReadText(1001, 8592),	unit = ReadText(1001, 100),	type = "float",		accuracy = 1 },
+		{ id = "BoostRechargeRate",				name = "   " .. ReadText(1001, 8591),	unit = ReadText(1001, 125),	type = "float",		accuracy = 1 },
+		{ id = "TravelSpeed",					name = ReadText(1001, 8053),			unit = ReadText(1001, 113),	type = "float",		accuracy = 0 },
+		{ id = "TravelAcceleration",			name = "   " .. ReadText(1001, 8593),	unit = ReadText(1001, 111),	type = "float",		accuracy = 0 },
+		{ id = "TravelChargeTime",				name = "   " .. ReadText(1001, 8594),	unit = ReadText(1001, 100),	type = "float",		accuracy = 1,	inverted = true },
+		{ id = "HorizontalStrafeSpeed",			name = ReadText(1001, 8559),			unit = ReadText(1001, 113),	type = "float",		accuracy = 1 },
+		{ id = "HorizontalStrafeAcceleration",	name = "   " .. ReadText(1001, 8560),	unit = ReadText(1001, 111),	type = "float",		accuracy = 1 },
+		{ id = "YawSpeed",						name = ReadText(1001, 8054),			unit = ReadText(1001, 117),	type = "float",		accuracy = 1 },
+		{ id = "PitchSpeed",					name = ReadText(1001, 8055),			unit = ReadText(1001, 117),	type = "float",		accuracy = 1 },
+		{ id = "RollSpeed",						name = ReadText(1001, 8056),			unit = ReadText(1001, 117),	type = "float",		accuracy = 1 },
 		{ id = "" },
-		{ id = "ContainerCapacity",			name = ReadText(1001, 8058),	unit = ReadText(1001, 110),	type = "UINT",		accuracy = 0 },
-		{ id = "SolidCapacity",				name = ReadText(1001, 8059),	unit = ReadText(1001, 110),	type = "UINT",		accuracy = 0 },
-		{ id = "LiquidCapacity",			name = ReadText(1001, 8060),	unit = ReadText(1001, 110),	type = "UINT",		accuracy = 0 },
-		{ id = "CondensateCapacity",		name = ReadText(20109, 9801),	unit = ReadText(1001, 110),	type = "UINT",		accuracy = 0 },
-		{ id = "" },
-		{ id = "NumDocksShipMedium",		name = ReadText(1001, 8524),	unit = "",					type = "UINT",		accuracy = 0 },
-		{ id = "NumDocksShipSmall",			name = ReadText(1001, 8525),	unit = "",					type = "UINT",		accuracy = 0 },
-		{ id = "ShipCapacityMedium",		name = ReadText(1001, 8526),	unit = "",					type = "UINT",		accuracy = 0 },
-		{ id = "ShipCapacitySmall",			name = ReadText(1001, 8527),	unit = "",					type = "UINT",		accuracy = 0 },
+		{ id = "CrewCapacity",					name = ReadText(1001, 8057),			unit = "",					type = "UINT",		accuracy = 0 },
+		{ id = "UnitCapacity",					name = ReadText(1001, 8061),			unit = "",					type = "UINT",		accuracy = 0 },
+		{ id = "MissileCapacity",				name = ReadText(1001, 8062),			unit = "",					type = "UINT",		accuracy = 0 },
+		{ id = "DeployableCapacity",			name = ReadText(1001, 8064),			unit = "",					type = "UINT",		accuracy = 0 },
+		{ id = "CountermeasureCapacity",		name = ReadText(1001, 8063),			unit = "",					type = "UINT",		accuracy = 0 },
+	},
+	limitedStats = {
+		{ id = "HullValue",						name = ReadText(1001, 8048),			unit = ReadText(1001, 118),	type = "float",		accuracy = 0 },
+		{ id = "ShieldValue",					name = ReadText(1001, 8049),			unit = ReadText(1001, 118),	type = "float",		accuracy = 0 },
+		{ id = "RadarRange",					name = ReadText(1001, 8068),			unit = ReadText(1001, 108),	type = "float",		accuracy = 0 },
+		{ id = "BurstDPS",						name = ReadText(1001, 8073),			unit = ReadText(1001, 119),	type = "float",		accuracy = 0 },
+		{ id = "TurretSustainedDPS",			name = ReadText(1001, 8532),			unit = ReadText(1001, 119),	type = "float",		accuracy = 0,	mouseovertext = ReadText(1026, 8017),	capshipid = "GroupedTurretSustainedDPS" },
+		{ id = "ContainerCapacity",				name = ReadText(1001, 8058),			unit = ReadText(1001, 110),	type = "UINT",		accuracy = 0,	hasany = true },
+		{ id = "SolidCapacity",					name = ReadText(1001, 8059),			unit = ReadText(1001, 110),	type = "UINT",		accuracy = 0,	hasany = true },
+		{ id = "LiquidCapacity",				name = ReadText(1001, 8060),			unit = ReadText(1001, 110),	type = "UINT",		accuracy = 0,	hasany = true },
+		{ id = "CondensateCapacity",			name = ReadText(20109, 9801),			unit = ReadText(1001, 110),	type = "UINT",		accuracy = 0,	hasany = true },
+		{ id = "NumDocksShipMedium",			name = ReadText(1001, 8524),			unit = "",					type = "UINT",		accuracy = 0,	class = { ["ship_l"] = true, ["ship_xl"] = true } },
+		{ id = "ShipCapacityMedium",			name = ReadText(1001, 8526),			unit = "",					type = "UINT",		accuracy = 0,	class = { ["ship_l"] = true, ["ship_xl"] = true } },
+		{ id = "NumDocksShipSmall",				name = ReadText(1001, 8525),			unit = "",					type = "UINT",		accuracy = 0,	class = { ["ship_m"] = true, ["ship_l"] = true, ["ship_xl"] = true } },
+		{ id = "ShipCapacitySmall",				name = ReadText(1001, 8527),			unit = "",					type = "UINT",		accuracy = 0,	class = { ["ship_m"] = true, ["ship_l"] = true, ["ship_xl"] = true } },
+		{ id = "",	class = { ["ship_s"] = true } },
+		{ id = "",	class = { ["ship_s"] = true } },
+		{ id = "ForwardSpeed",					name = ReadText(1001, 8051),			unit = ReadText(1001, 113),	type = "float",		accuracy = 0 },
+		{ id = "BoostSpeed",					name = ReadText(1001, 8052),			unit = ReadText(1001, 113),	type = "float",		accuracy = 0 },
+		{ id = "TravelSpeed",					name = ReadText(1001, 8053),			unit = ReadText(1001, 113),	type = "float",		accuracy = 0 },
+		{ id = "CrewCapacity",					name = ReadText(1001, 8057),			unit = "",					type = "UINT",		accuracy = 0 },
+		{ id = "UnitCapacity",					name = ReadText(1001, 8061),			unit = "",					type = "UINT",		accuracy = 0 },
+		{ id = "MissileCapacity",				name = ReadText(1001, 8062),			unit = "",					type = "UINT",		accuracy = 0 },
+		{ id = "DeployableCapacity",			name = ReadText(1001, 8064),			unit = "",					type = "UINT",		accuracy = 0 },
+		{ id = "CountermeasureCapacity",		name = ReadText(1001, 8063),			unit = "",					type = "UINT",		accuracy = 0 },
+		{ id = "",	class = { ["ship_l"] = true, ["ship_xl"] = true } },
+		{ id = "",	class = { ["ship_l"] = true, ["ship_xl"] = true } },
 	},
 	scaleSize = 2,
 	deployableOrder = {
@@ -789,13 +835,18 @@ local config = {
 	maxCenterPanelWidth = 1600,
 	compatibilityFontSize = 5,
 	equipmentfilter_races_width = 300,
-	persistentdataversion = 1,
+	persistentdataversion = 2,
+	statsStateOrder = {
+		"hidden",
+		"limited",
+		"full",
+	},
 }
 
 __CORE_DETAILMONITOR_SHIPBUILD = __CORE_DETAILMONITOR_SHIPBUILD or {
 	version = config.persistentdataversion,
-	["showStats"] = true,
-	["showStatsPaintMod"] = false,
+	["showStats"] = "limited",
+	["showStatsPaintMod"] = "hidden",
 }
 
 -- kuertee start:
@@ -828,6 +879,11 @@ end
 -- kuertee end
 
 function menu.cleanup()
+	if menu.paused then
+		Unpause()
+		menu.paused = nil
+	end
+
 	menu.isReadOnly = nil
 	menu.container = nil
 	menu.containerowner = nil
@@ -867,8 +923,6 @@ function menu.cleanup()
 	menu.contextMode = nil
 	menu.validLoadoutPossible = nil
 	menu.customshipname = nil
-	menu.useloadoutname = nil
-	menu.playershipname = nil
 	menu.warningShown = nil
 	menu.customgamestartpeopledef = ""
 	menu.customgamestartpeoplefillpercentage = nil
@@ -1089,26 +1143,19 @@ function menu.checkboxSelectSoftware(type, slot, software, row, keepcontext)
 	end
 end
 
-function menu.checkboxLoadoutName(_, checked)
-	menu.useloadoutname = not menu.useloadoutname
-	menu.playershipname = nil
-	menu.setCustomShipName()
-end
-
 function menu.setCustomShipName()
-	if menu.useloadoutname then
-		menu.customshipname = menu.getCustomShipName()
-	else
-		menu.customshipname = menu.playershipname or ""
-	end
-	if menu.customShipNameEditBox then
+	if menu.customshipname == nil then
 		local name = ""
 		if menu.object ~= 0 then
 			name = ffi.string(C.GetComponentName(menu.object))
 		else
 			name = GetMacroData(menu.macro, "name")
 		end
-		C.SetEditBoxText(menu.customShipNameEditBox.id, (menu.customshipname ~= "") and menu.customshipname or name)
+		menu.customshipname = name
+	end
+
+	if menu.customShipNameEditBox then
+		C.SetEditBoxText(menu.customShipNameEditBox.id, menu.customshipname)
 	end
 end
 
@@ -1272,7 +1319,7 @@ function menu.buttonSave(overwrite)
 end
 
 function menu.buttonDismantleMod(type, component, context, group)
-	local fficurrentloadoutstats = C.GetCurrentLoadoutStatistics4(menu.object)
+	local fficurrentloadoutstats = C.GetCurrentLoadoutStatistics5(menu.object)
 	menu.initialLoadoutStatistics = Helper.convertLoadoutStats(fficurrentloadoutstats)
 
 	if (type == "turret") and group then
@@ -1292,7 +1339,7 @@ end
 
 function menu.buttonInstallMod(type, component, ware, price, context, group, dismantle)
 	if menu.isplayerowned or (GetPlayerMoney() >= price * menu.moddingdiscounts.totalfactor) then
-		local fficurrentloadoutstats = C.GetCurrentLoadoutStatistics4(menu.object)
+		local fficurrentloadoutstats = C.GetCurrentLoadoutStatistics5(menu.object)
 		menu.initialLoadoutStatistics = Helper.convertLoadoutStats(fficurrentloadoutstats)
 
 		if (type == "turret") and group then
@@ -1374,12 +1421,49 @@ function menu.buttonInteract(selectedData, button, row, col, posx, posy)
 	end
 end
 
-function menu.buttonShowStats()
+function menu.buttonExpandStats()
 	local statskeyword = "showStats"
 	if (menu.mode == "modify") and (menu.upgradetypeMode == "paintmods") then
 		statskeyword = "showStatsPaintMod"
 	end
-	__CORE_DETAILMONITOR_SHIPBUILD[statskeyword] = not __CORE_DETAILMONITOR_SHIPBUILD[statskeyword]
+
+	local index = #config.statsStateOrder
+	local curstate = __CORE_DETAILMONITOR_SHIPBUILD[statskeyword]
+	for i, state in ipairs(config.statsStateOrder) do
+		if state == curstate then
+			index = i
+			break
+		end
+	end
+	if index < #config.statsStateOrder then
+		index = index + 1
+	end
+
+	__CORE_DETAILMONITOR_SHIPBUILD[statskeyword] = config.statsStateOrder[index]
+	menu.selectedCols.stats = 2
+	menu.refreshMenu()
+end
+
+function menu.buttonCollapseStats()
+	local statskeyword = "showStats"
+	if (menu.mode == "modify") and (menu.upgradetypeMode == "paintmods") then
+		statskeyword = "showStatsPaintMod"
+	end
+
+	local index = 1
+	local curstate = __CORE_DETAILMONITOR_SHIPBUILD[statskeyword]
+	for i, state in ipairs(config.statsStateOrder) do
+		if state == curstate then
+			index = i
+			break
+		end
+	end
+	if index > 1 then
+		index = index - 1
+	end
+
+	__CORE_DETAILMONITOR_SHIPBUILD[statskeyword] = config.statsStateOrder[index]
+	menu.selectedCols.stats = 3
 	menu.refreshMenu()
 end
 
@@ -1776,7 +1860,7 @@ function menu.buttonSelectPaintMod(entry, row, col)
 end
 
 function menu.buttonInstallPaintMod()
-	if menu.modeparam[1] then
+	if (menu.mode == "modify") and menu.modeparam[1] then
 		for _, ship in pairs(menu.modeparam[2]) do
 			local change = false
 			local paintmod = ffi.new("UIPaintMod")
@@ -1793,8 +1877,26 @@ function menu.buttonInstallPaintMod()
 			end
 		end
 	else
-		C.InstallPaintMod(menu.object, menu.selectedPaintMod.ware, not menu.selectedPaintMod.isdefault)
-		AddUITriggeredEvent(menu.name, "paintmodinstalled", { ConvertStringToLuaID(tostring(menu.object)), menu.selectedPaintMod.ware })
+		if menu.objectgroup then
+			for i, ship in ipairs(menu.objectgroup.ships) do
+				local change = false
+				local paintmod = ffi.new("UIPaintMod")
+				if C.GetInstalledPaintMod(ship.ship, paintmod) then
+					if menu.selectedPaintMod.ware ~= ffi.string(paintmod.Ware) then
+						change = true
+					end
+				else
+					change = true
+				end
+				if change then
+					C.InstallPaintMod(ship.ship, menu.selectedPaintMod.ware, not menu.selectedPaintMod.isdefault)
+					AddUITriggeredEvent(menu.name, "paintmodinstalled", { ConvertStringToLuaID(tostring(ship)), menu.selectedPaintMod.ware })
+				end
+			end
+		else
+			C.InstallPaintMod(menu.object, menu.selectedPaintMod.ware, not menu.selectedPaintMod.isdefault)
+			AddUITriggeredEvent(menu.name, "paintmodinstalled", { ConvertStringToLuaID(tostring(menu.object)), menu.selectedPaintMod.ware })
+		end
 	end
 
 	menu.selectedRows.slots = Helper.currentTableRow[menu.slottable]
@@ -1842,16 +1944,14 @@ function menu.dropdownShipClass(_, class)
 					menu.captainSelected = false
 				end
 			elseif menu.mode == "modify" then
-				local fficurrentloadoutstats = C.GetCurrentLoadoutStatistics4(menu.object)
+				local fficurrentloadoutstats = C.GetCurrentLoadoutStatistics5(menu.object)
 				menu.initialLoadoutStatistics = Helper.convertLoadoutStats(fficurrentloadoutstats)
-				menu.selectedPaintMod = nil
-				menu.prepareModWares()
 			end
 		end
-		menu.customshipname = ""
-		menu.useloadoutname = false
+		menu.prepareModWares()
+		menu.customshipname = nil
 		menu.loadoutName = ""
-		menu.playershipname = nil
+		menu.selectedPaintMod = nil
 		menu.clearUndoStack()
 		menu.getDataAndDisplay()
 	end
@@ -1888,10 +1988,9 @@ function menu.dropdownShip(_, shipid)
 			else
 				menu.validLoadoutPossible = (not menu.isReadOnly) and menu.container and C.CanGenerateValidLoadout(menu.container, menu.macro)
 			end
-			menu.customshipname = ""
-			menu.useloadoutname = false
+			menu.customshipname = nil
 			menu.loadoutName = ""
-			menu.playershipname = nil
+			menu.selectedPaintMod = nil
 			menu.clearUndoStack()
 			menu.getDataAndDisplay()
 		end
@@ -1953,11 +2052,11 @@ function menu.dropdownShip(_, shipid)
 					menu.captainSelected = false
 				end
 			elseif menu.mode == "modify" then
-				local fficurrentloadoutstats = C.GetCurrentLoadoutStatistics4(menu.object)
+				local fficurrentloadoutstats = C.GetCurrentLoadoutStatistics5(menu.object)
 				menu.initialLoadoutStatistics = Helper.convertLoadoutStats(fficurrentloadoutstats)
-				menu.selectedPaintMod = nil
-				menu.prepareModWares()
 			end
+			menu.selectedPaintMod = nil
+			menu.prepareModWares()
 
 			local found = false
 			for idx, entry in ipairs(menu.shoppinglist) do
@@ -1986,10 +2085,9 @@ function menu.dropdownShip(_, shipid)
 				menu.editingshoppinglist = nil
 
 				menu.currentSlot = nil
-				menu.customshipname = ""
-				menu.useloadoutname = false
+				menu.customshipname = nil
 				menu.loadoutName = ""
-				menu.playershipname = nil
+				menu.selectedPaintMod = nil
 				menu.clearUndoStack()
 				menu.getDataAndDisplay(nil, nil, nil, true)
 			end
@@ -2109,16 +2207,19 @@ function menu.buttonAddPurchase(hasupgrades, hasrepairs)
 		object = nil
 		groupstates = menu.objectgroup.states
 	end
+	local paintmodware
+	if menu.mode == "purchase" then
+		paintmodware = menu.selectedPaintMod and menu.selectedPaintMod.ware or nil
+	end
 
-	table.insert(menu.shoppinglist, { objectgroup = objectgroup, groupstates = groupstates, object = object, macro = menu.macro, hasupgrades = hasupgrades, upgradeplan = menu.upgradeplan, crew = menu.crew, settings = menu.settings, amount = 1, price = menu.total, crewprice = menu.crewtotal, duration = menu.duration, warnings = menu.warnings, customshipname = menu.customshipname, useloadoutname = menu.useloadoutname, loadoutName = menu.loadoutName, playershipname = menu.playershipname })
+	table.insert(menu.shoppinglist, { objectgroup = objectgroup, groupstates = groupstates, object = object, macro = menu.macro, hasupgrades = hasupgrades, upgradeplan = menu.upgradeplan, crew = menu.crew, settings = menu.settings, amount = 1, price = menu.total, crewprice = menu.crewtotal, duration = menu.duration, warnings = menu.warnings, customshipname = menu.customshipname, loadoutName = menu.loadoutName, paintmodware = paintmodware })
 	menu.object = 0
 	menu.objectgroup = nil
 	menu.damagedcomponents = {}
 	menu.macro = ""
-	menu.customshipname = ""
-	menu.useloadoutname = false
+	menu.customshipname = nil
 	menu.loadoutName = ""
-	menu.playershipname = nil
+	menu.selectedPaintMod = nil
 	menu.clearUndoStack()
 	menu.getDataAndDisplay()
 end
@@ -2145,19 +2246,17 @@ function menu.buttonConfirmPurchaseEdit(hasupgrades, hasrepairs)
 		menu.shoppinglist[menu.editingshoppinglist].duration = menu.duration
 		menu.shoppinglist[menu.editingshoppinglist].warnings = menu.warnings
 		menu.shoppinglist[menu.editingshoppinglist].customshipname = menu.customshipname
-		menu.shoppinglist[menu.editingshoppinglist].useloadoutname = menu.useloadoutname
 		menu.shoppinglist[menu.editingshoppinglist].loadoutName = menu.loadoutName
-		menu.shoppinglist[menu.editingshoppinglist].playershipname = menu.playershipname
+		menu.shoppinglist[menu.editingshoppinglist].paintmodware = menu.selectedPaintMod and menu.selectedPaintMod.ware or nil
 	end
 
 	menu.object = 0
 	menu.objectgroup = nil
 	menu.damagedcomponents = {}
 	menu.macro = ""
-	menu.customshipname = ""
-	menu.useloadoutname = false
+	menu.customshipname = nil
 	menu.loadoutName = ""
-	menu.playershipname = nil
+	menu.selectedPaintMod = nil
 	menu.editingshoppinglist = nil
 	menu.clearUndoStack()
 	menu.getDataAndDisplay()
@@ -2185,9 +2284,22 @@ function menu.buttonEditPurchase(idx)
 		menu.class = ffi.string(C.GetMacroClass(menu.macro))
 	end
 	menu.customshipname = entry.customshipname
-	menu.useloadoutname = entry.useloadoutname
 	menu.loadoutName = entry.loadoutName
-	menu.playershipname = entry.playershipname
+	if entry.paintmodware then
+		local found = false
+		for _, modwares in pairs(menu.modwares) do
+			for _, modentry in ipairs(modwares) do
+				if modentry.ware == entry.paintmodware then
+					menu.selectedPaintMod = modentry
+					found = true
+					break
+				end
+			end
+			if found then
+				break
+			end
+		end
+	end
 	menu.captainSelected = true
 	menu.validLoadoutPossible = (not menu.isReadOnly) and menu.container and C.CanGenerateValidLoadout(menu.container, (menu.object ~= 0) and GetComponentData(ConvertStringTo64Bit(tostring(menu.object)), "macro") or menu.macro)
 	menu.clearUndoStack()
@@ -2305,6 +2417,46 @@ function menu.buttonFireCrew()
 	menu.refreshMenu()
 end
 
+function menu.buttonClearCustomShipName()
+	menu.customshipname = ""
+	if menu.customShipNameEditBox then
+		C.SetEditBoxText(menu.customShipNameEditBox.id, menu.customshipname)
+	end
+	menu.refreshMenu()
+end
+
+function menu.buttonCustomShipNameAppendShip(name)
+	if menu.customshipname == "" then
+		menu.customshipname = name
+	else
+		if utf8.sub(menu.customshipname, -1) ~= " " then
+			menu.customshipname = menu.customshipname .. " "
+		end
+		menu.customshipname = menu.customshipname .. name
+	end
+
+	if menu.customShipNameEditBox then
+		C.SetEditBoxText(menu.customShipNameEditBox.id, menu.customshipname)
+	end
+	menu.refreshMenu()
+end
+
+function menu.buttonCustomShipNameAppendLoadout()
+	if menu.customshipname == "" then
+		menu.customshipname = menu.loadoutName
+	else
+		if utf8.sub(menu.customshipname, -1) ~= " " then
+			menu.customshipname = menu.customshipname .. " "
+		end
+		menu.customshipname = menu.customshipname .. menu.loadoutName
+	end
+
+	if menu.customShipNameEditBox then
+		C.SetEditBoxText(menu.customShipNameEditBox.id, menu.customshipname)
+	end
+	menu.refreshMenu()
+end
+
 -- editbox scripts
 function menu.editboxSearchUpdateText(_, text, textchanged)
 	if textchanged then
@@ -2321,19 +2473,11 @@ function menu.editboxLoadoutNameUpdateText(_, text)
 end
 
 function menu.editboxCustomShipName(_, text)
-	if text == "" then
-		menu.playershipname = nil
-	else
-		menu.playershipname = text
-	end
-	menu.useloadoutname = false
 	menu.customshipname = text
 end
 
 function menu.editboxCustomShipNameDeactivated(_, text, textchanged)
-	if text == "" then
-		menu.setCustomShipName()
-	end
+	menu.refreshMenu()
 end
 
 -- Menu member functions
@@ -2539,6 +2683,10 @@ function menu.onShowMenu(state)
 			menu.modeparam.propertypeopledef					= menu.modeparam[12]
 			menu.modeparam.propertypeoplefillpercentage			= menu.modeparam[13]
 			menu.modeparam.propertycount						= menu.modeparam[14] or 1
+			if menu.modeparam[15] ~= 0 then
+				menu.paused = true
+				Pause()
+			end
 		elseif menu.mode == "comparison" then
 			menu.modeparam = menu.param[5]
 		else
@@ -2578,10 +2726,8 @@ function menu.onShowMenu(state)
 		if not menu.macro then
 			menu.macro = ""
 		end
-		menu.customshipname = ""
-		menu.useloadoutname = false
+		menu.customshipname = nil
 		menu.loadoutName = ""
-		menu.playershipname = nil
 		menu.class = ""
 
 		menu.availableshipmacrosbyclass = {}
@@ -2642,10 +2788,8 @@ function menu.onShowMenu(state)
 			menu.object = menu.selectableships[1] and menu.selectableships[1].ship
 		end
 		menu.macro = ""
-		menu.customshipname = ""
-		menu.useloadoutname = false
+		menu.customshipname = nil
 		menu.loadoutName = ""
-		menu.playershipname = nil
 
 		menu.class = ""
 		menu.repairplan = {}
@@ -2721,6 +2865,7 @@ function menu.onShowMenu(state)
 			end
 		end
 
+		menu.prepareModWares()
 	elseif menu.mode == "modify" then
 		menu.selectableships = {}
 		if menu.modeparam[1] then
@@ -2760,7 +2905,7 @@ function menu.onShowMenu(state)
 			menu.class = ffi.string(C.GetComponentClass(menu.object))
 			menu.validLoadoutPossible = (not menu.isReadOnly) and menu.container and C.CanGenerateValidLoadout(menu.container, GetComponentData(ConvertStringTo64Bit(tostring(menu.object)), "macro"))
 
-			local fficurrentloadoutstats = C.GetCurrentLoadoutStatistics4(menu.object)
+			local fficurrentloadoutstats = C.GetCurrentLoadoutStatistics5(menu.object)
 			menu.initialLoadoutStatistics = Helper.convertLoadoutStats(fficurrentloadoutstats)
 		else
 			menu.object = 0
@@ -3305,6 +3450,10 @@ function menu.displayLeftBar(frame)
 							end
 						end
 					end
+				elseif entry.mode == "paintmods" then
+					if (menu.object ~= 0) or (menu.macro ~= "") then
+						active = true
+					end
 				elseif upgradetype and (upgradetype.supertype == "macro") then
 					skip = not canequip
 					if menu.slots[entry.mode] and (menu.slots[entry.mode].count > 0) then
@@ -3424,6 +3573,8 @@ function menu.displayLeftBar(frame)
 	ftable:setSelectedRow(menu.selectedRows.left)
 	menu.topRows.left = nil
 	menu.selectedRows.left = nil
+
+	ftable:addConnection(1, 1, true)
 end
 
 function menu.buttonLeftBarColor(mode, active, missing)
@@ -3571,9 +3722,25 @@ function menu.getPresetLoadouts()
 						mouseovertext = ReadText(1026, 8015)
 					end
 				else
-					active = C.CanBuildLoadout(menu.container, menu.object, menu.macro, id)
+					local result = ffi.string(C.GetMissingLoadoutBlueprints(menu.container, menu.object, menu.macro, id))
+					active = result == ""
 					if not active then
 						mouseovertext = ReadText(1026, 8011)
+
+						local missingmacros = {}
+						if string.find(result, "error") ~= 1 then
+							for macro in string.gmatch(result, "([^;]+);") do
+								missingmacros[macro] = true
+							end
+						end
+						local missingmacronames = {}
+						for macro, v in pairs(missingmacros) do
+							table.insert(missingmacronames, GetMacroData(macro, "name"))
+						end
+						table.sort(missingmacronames)
+						for _, name in ipairs(missingmacronames) do
+							mouseovertext = mouseovertext .. "\n· " .. name
+						end
 					end
 				end
 				table.insert(menu.loadouts, { id = id, name = ffi.string(buf[i].name), icon = ffi.string(buf[i].iconid), deleteable = buf[i].deleteable, active = active, mouseovertext = mouseovertext })
@@ -3593,10 +3760,28 @@ function menu.getPresetLoadouts()
 					local macro = ffi.string(buf[i].macroname)
 					if macro == currentmacro then
 						local missiondetails = C.GetMissionIDDetails(id)
-						local active = C.CanBuildMissionLoadout(menu.container, id, macro)
+
+						local result = ffi.string(C.GetMissingMissionLoadoutBlueprints(menu.container, id, macro))
+						active = result == ""
 						if not active then
 							mouseovertext = ReadText(1026, 8011)
+
+							local missingmacros = {}
+							if string.find(result, "error") ~= 1 then
+								for macro in string.gmatch(result, "([^;]+);") do
+									missingmacros[macro] = true
+								end
+							end
+							local missingmacronames = {}
+							for macro, v in pairs(missingmacros) do
+								table.insert(missingmacronames, GetMacroData(macro, "name"))
+							end
+							table.sort(missingmacronames)
+							for _, name in ipairs(missingmacronames) do
+								mouseovertext = mouseovertext .. "\n· " .. name
+							end
 						end
+
 						table.insert(missionloadouts, 1, { id = "mission" .. i, name = ColorText["text_mission"] .. "\27[" .. "missiontype_" .. ffi.string(missiondetails.subType) .. "] " .. ffi.string(missiondetails.missionName) .. "\27X", icon = "", deleteable = false, mission = { id = id, macro = macro }, active = active, mouseovertext = mouseovertext })
 					end
 				end
@@ -3812,6 +3997,9 @@ function menu.getDataAndDisplay(upgradeplan, crew, newedit, firsttime, noundo, s
 			menu.defaultpaintmod.ware = ffi.string(buf.Ware)
 			menu.defaultpaintmod.quality = buf.Quality
 			menu.defaultpaintmod.isdefault = true
+			if (menu.mode ~= "customgamestart") and (menu.mode ~= "comparison") then
+				menu.modwaresByWare[menu.defaultpaintmod.ware] = menu.defaultpaintmod
+			end
 		end
 	end
 
@@ -3987,7 +4175,9 @@ function menu.getDataAndDisplay(upgradeplan, crew, newedit, firsttime, noundo, s
 				end
 			end
 		end
+	end
 
+	if (menu.mode ~= "customgamestart") and (menu.mode ~= "comparison") then
 		if menu.installedPaintMod then
 			if menu.modwares["paint"] then
 				local found = false
@@ -3999,9 +4189,11 @@ function menu.getDataAndDisplay(upgradeplan, crew, newedit, firsttime, noundo, s
 				end
 				if not found then
 					table.insert(menu.modwares["paint"], menu.installedPaintMod)
+					menu.modwaresByWare[menu.installedPaintMod.ware] = menu.installedPaintMod
 				end
 			else
 				menu.modwares["paint"] = { menu.installedPaintMod }
+				menu.modwaresByWare[menu.installedPaintMod.ware] = menu.installedPaintMod
 			end
 		end
 	end
@@ -4232,7 +4424,9 @@ function menu.getDataAndDisplay(upgradeplan, crew, newedit, firsttime, noundo, s
 				menu.currentIdx = menu.currentIdx + 1
 				Helper.callLoadoutFunction(menu.upgradeplan, nil, function (loadout, _) return C.ShowObjectConfigurationMap2(menu.holomap, menu.object, 0, menu.macro, false, loadout, 0) end)
 			end
-			if menu.installedPaintMod then
+			if menu.selectedPaintMod then
+				C.SetMapPaintMod(menu.holomap, menu.selectedPaintMod.ware)
+			elseif menu.installedPaintMod then
 				C.SetMapPaintMod(menu.holomap, menu.installedPaintMod.ware)
 			end
 			menu.selectMapMacroSlot()
@@ -4372,9 +4566,30 @@ function menu.displayCrewSlot(ftable, idx, data, buttonWidth, price, first)
 	if data.canhire then
 		local color = Color["text_normal"]
 		local capacity = menu.crew.capacity
-		for _, entry in ipairs(menu.crew.roles) do
-			if entry.id ~= data.id then
-				capacity = capacity - entry.wanted
+		if menu.object ~= 0 then
+			local n = C.GetNumAllRoles()
+			local buf = ffi.new("PeopleInfo[?]", n)
+			n = C.GetPeople2(buf, n, menu.object, true)
+			for i = 0, n - 1 do
+				local role = ffi.string(buf[i].id)
+				local wanted = buf[i].amount
+				for _, entry in ipairs(menu.crew.roles) do
+					if role == entry.id then
+						if wanted ~= entry.wanted then
+							wanted = entry.wanted
+						end
+						break
+					end
+				end
+				if role ~= data.id then
+					capacity = capacity - wanted
+				end
+			end
+		else
+			for _, entry in ipairs(menu.crew.roles) do
+				if entry.id ~= data.id then
+					capacity = capacity - entry.wanted
+				end
 			end
 		end
 		capacity = math.max(0, capacity)
@@ -4402,6 +4617,7 @@ function menu.displayCrewSlot(ftable, idx, data, buttonWidth, price, first)
 				exceedMaxValue = false,
 				readOnly       = menu.isReadOnly,
 			}
+			--print("role: " .. tostring(data.id) .. ", maxSelect: " .. tostring(math.min(data.wanted + #menu.crew.unassigned + menu.crew.availableworkforce + menu.crew.availabledockcrew, capacity)))
 		end
 
 		if not first then
@@ -5237,7 +5453,7 @@ function menu.displaySlots(frame, firsttime)
 
 											mouseovertext = untruncatedExtraText .. ((mouseovertext ~= "") and ("\n\n" .. mouseovertext) or "")
 
-											local active = ((group[i].macro == plandata.macro) or (not hasmod)) 
+											local active = ((group[i].macro == plandata.macro) or (not hasmod))
 											local useable = hasstock and haslicence
 											local overlayid
 											if group[i].macro == "" then
@@ -5892,11 +6108,17 @@ function menu.displaySlots(frame, firsttime)
 					row = ftable:addRow(false, { scaling = true })
 					row[1]:setColSpan(11):createText(entry.name .. ReadText(1001, 120))
 
-					local blacklistid = menu.settings.blacklists[entry.type] or 0
+					local hasownlist = false
+					local currentblacklistid = 0
+					if menu.object then
+						hasownlist = C.HasControllableOwnBlacklist(menu.object, entry.type)
+						currentblacklistid = C.GetControllableBlacklistID(menu.object, entry.type, group)
+					end
+					menu.settings.blacklists[entry.type] = menu.settings.blacklists[entry.type] or (hasownlist and currentblacklistid or 0)
 
 					local rowdata = "orders_blacklist_" .. entry.type .. "_global"
 					local row = ftable:addRow({ rowdata }, { scaling = true })
-					row[1]:setColSpan(1):createCheckBox(blacklistid == 0, { width = Helper.standardTextHeight, height = Helper.standardTextHeight })
+					row[1]:setColSpan(1):createCheckBox(menu.settings.blacklists[entry.type] == 0, { width = Helper.standardTextHeight, height = Helper.standardTextHeight })
 					row[1].handlers.onClick = function(_, checked) menu.settings.blacklists[entry.type] = checked and 0 or -1; menu.refreshMenu() end
 					row[2]:setColSpan(10):createText(ReadText(1001, 8367))
 
@@ -5914,7 +6136,7 @@ function menu.displaySlots(frame, firsttime)
 						end
 					end
 					local row = ftable:addRow("orders_resupply", { scaling = true })
-					row[1]:setColSpan(10):createDropDown(locresponses, { startOption = (blacklistid ~= 0) and blacklistid or defaultblacklistid, active = blacklistid ~= 0 })
+					row[1]:setColSpan(10):createDropDown(locresponses, { startOption = (menu.settings.blacklists[entry.type] ~= 0) and menu.settings.blacklists[entry.type] or defaultblacklistid, active = menu.settings.blacklists[entry.type] ~= 0 })
 					row[1].handlers.onDropDownConfirmed = function (_, id) menu.settings.blacklists[entry.type] = tonumber(id) end
 					row[11]:createButton({ mouseOverText = ReadText(1026, 8413) }):setIcon("menu_edit")
 					row[11].handlers.onClick = menu.buttonEditBlacklist
@@ -5928,11 +6150,17 @@ function menu.displaySlots(frame, firsttime)
 
 				local fightrules = Helper.getFightRules()
 
-				local fightruleid = menu.settings.fightrules["attack"] or 0
+				local hasownlist = false
+				local currentfightruleid = 0
+				if menu.object then
+					hasownlist = C.HasControllableOwnFightRule(menu.object, "attack")
+					currentfightruleid = C.GetControllableFightRuleID(menu.object, "attack")
+				end
+				menu.settings.fightrules["attack"] = menu.settings.fightrules["attack"] or (hasownlist and currentfightruleid or 0)
 
 				local rowdata = "orders_fightrule_attack_global"
 				local row = ftable:addRow({ rowdata }, { scaling = true })
-				row[1]:setColSpan(1):createCheckBox(fightruleid == 0, { width = Helper.standardTextHeight, height = Helper.standardTextHeight })
+				row[1]:setColSpan(1):createCheckBox(menu.settings.fightrules["attack"] == 0, { width = Helper.standardTextHeight, height = Helper.standardTextHeight })
 				row[1].handlers.onClick = function(_, checked) menu.settings.fightrules["attack"] = checked and 0 or -1; menu.refreshMenu() end
 				row[2]:setColSpan(10):createText(ReadText(1001, 8367))
 
@@ -5948,7 +6176,7 @@ function menu.displaySlots(frame, firsttime)
 					table.insert(locresponses, { id = fightrule.id, text = fightrule.name, icon = "", displayremoveoption = false })
 				end
 				local row = ftable:addRow("orders_resupply", { scaling = true })
-				row[1]:setColSpan(10):createDropDown(locresponses, { startOption = (fightruleid ~= 0) and fightruleid or defaultfightruleid, active = fightruleid ~= 0 })
+				row[1]:setColSpan(10):createDropDown(locresponses, { startOption = (menu.settings.fightrules["attack"] ~= 0) and menu.settings.fightrules["attack"] or defaultfightruleid, active = menu.settings.fightrules["attack"] ~= 0 })
 				row[1].handlers.onDropDownConfirmed = function (_, id) menu.settings.fightrules["attack"] = tonumber(id) end
 				row[11]:createButton({ mouseOverText = ReadText(1026, 8414) }):setIcon("menu_edit")
 				row[11].handlers.onClick = menu.buttonEditFightRule
@@ -6017,6 +6245,10 @@ function menu.displaySlots(frame, firsttime)
 		ftable:setTopRow(menu.topRows.slots)
 		ftable:setSelectedRow(menu.selectedRows.slots)
 		ftable:setSelectedCol(menu.selectedCols.slots or 0)
+
+		ftable:addConnection(1, 2, true)
+	else
+		Helper.clearTableConnectionColumn(menu, 2)
 	end
 
 	menu.topRows.slots = nil
@@ -6181,6 +6413,10 @@ function menu.displayModifySlots(frame)
 		ftable:setTopRow(menu.topRows.slots)
 		ftable:setSelectedRow(menu.selectedRows.slots)
 		ftable:setSelectedCol(menu.selectedCols.slots or 0)
+
+		ftable:addConnection(1, 2, true)
+	else
+		Helper.clearTableConnectionColumn(menu, 2)
 	end
 	menu.topRows.slots = nil
 	menu.selectedRows.slots = nil
@@ -6236,59 +6472,79 @@ function menu.displayModifyPaintSlots(frame)
 			end
 		end
 
-		local buttontable = frame:addTable(3, { tabOrder = 9, width = menu.slotData.width, height = 0, x = menu.slotData.offsetX, y = 0, backgroundID = "solid", backgroundColor = Color["table_background_3d_editor"] })
-		buttontable:setColWidth(1, Helper.standardTextHeight)
-		buttontable:setColWidthPercent(3, 40)
+		local offsety = Helper.viewHeight - Helper.frameBorder
+		local buttontable
+		if (menu.mode == "modify") or (menu.mode == "upgrade") then
+			buttontable = frame:addTable(3, { tabOrder = 9, width = menu.slotData.width, height = 0, x = menu.slotData.offsetX, y = 0, backgroundID = "solid", backgroundColor = Color["table_background_3d_editor"] })
+			buttontable:setColWidth(1, Helper.standardTextHeight)
+			buttontable:setColWidthPercent(3, 40)
 
-		local row = buttontable:addRow(false, { fixed = true, bgColor = Color["row_title_background"] })
-		row[1]:setColSpan(3):createText(ReadText(1001, 8550), menu.headerTextProperties)
+			local row = buttontable:addRow(false, { fixed = true, bgColor = Color["row_title_background"] })
+			row[1]:setColSpan(3):createText(ReadText(1001, 8550), menu.headerTextProperties)
 
-		local row = buttontable:addRow(false, { fixed = true })
-		row[1]:setColSpan(3):createText(menu.installedPaintMod and (menu.installedPaintMod.isdefault and ReadText(1001, 8516) or menu.installedPaintMod.name) or "", { color =  menu.installedPaintMod and Helper.modQualities[menu.installedPaintMod.quality].color or Color["text_normal"] })
+			local row = buttontable:addRow(false, { fixed = true })
+			row[1]:setColSpan(3):createText(menu.installedPaintMod and (menu.installedPaintMod.isdefault and ReadText(1001, 8516) or menu.installedPaintMod.name) or "", { color =  menu.installedPaintMod and Helper.modQualities[menu.installedPaintMod.quality].color or Color["text_normal"] })
 
-		local row = buttontable:addRow(true, { fixed = true })
-		local islocked = false
-		if menu.object ~= 0 then
-			islocked = GetComponentData(ConvertStringTo64Bit(tostring(menu.object)), "paintmodlocked")
-		end
-		row[1]:createCheckBox(islocked, { active = true })
-		row[1].handlers.onClick = function () return C.SetPaintModLocked(menu.object, not islocked) end
-		row[2]:setColSpan(2):createText(ReadText(1001, 8551))
+			local row = buttontable:addRow(true, { fixed = true })
+			local islocked = false
+			if menu.object ~= 0 then
+				islocked = GetComponentData(ConvertStringTo64Bit(tostring(menu.object)), "paintmodlocked")
+			end
+			row[1]:createCheckBox(islocked, { active = true })
+			row[1].handlers.onClick = function () return C.SetPaintModLocked(menu.object, not islocked) end
+			row[2]:setColSpan(2):createText(ReadText(1001, 8551))
 
-		local row = buttontable:addRow(false, { fixed = true, bgColor = Color["row_title_background"] })
-		row[1]:setColSpan(3):createText(ReadText(1001, 8514), menu.headerTextProperties)
+			local row = buttontable:addRow(false, { fixed = true, bgColor = Color["row_title_background"] })
+			row[1]:setColSpan(3):createText(ReadText(1001, 8514), menu.headerTextProperties)
 
-		local active = menu.selectedPaintMod ~= nil
-		local missingcount
-		if menu.selectedPaintMod then
-			if menu.modeparam[1] then
-				missingcount = 0
-				for _, ship in pairs(menu.modeparam[2]) do
-					local paintmod = ffi.new("UIPaintMod")
-					if C.GetInstalledPaintMod(ship, paintmod) then
-						if menu.selectedPaintMod.ware ~= ffi.string(paintmod.Ware) then
+			local active = menu.selectedPaintMod ~= nil
+			local missingcount
+			if menu.selectedPaintMod then
+				if (menu.mode == "modify") and menu.modeparam[1] then
+					missingcount = 0
+					for _, ship in pairs(menu.modeparam[2]) do
+						local paintmod = ffi.new("UIPaintMod")
+						if C.GetInstalledPaintMod(ship, paintmod) then
+							if menu.selectedPaintMod.ware ~= ffi.string(paintmod.Ware) then
+								missingcount = missingcount + 1
+							end
+						else
 							missingcount = missingcount + 1
 						end
-					else
-						missingcount = missingcount + 1
 					end
+					if (missingcount == 0) or ((not menu.selectedPaintMod.isdefault) and (missingcount > menu.selectedPaintMod.amount)) then
+						active = false
+					end
+				elseif menu.objectgroup then
+					local missingcount = 0
+					for i, ship in ipairs(menu.objectgroup.ships) do
+						local paintmod = ffi.new("UIPaintMod")
+						if C.GetInstalledPaintMod(ship.ship, paintmod) then
+							if menu.selectedPaintMod.ware ~= ffi.string(paintmod.Ware) then
+								missingcount = missingcount + 1
+							end
+						else
+							missingcount = missingcount + 1
+						end
+					end
+					if (missingcount == 0) or ((not menu.selectedPaintMod.isdefault) and (missingcount > menu.selectedPaintMod.amount)) then
+						active = false
+					end
+				else
+					active = menu.selectedPaintMod.ware ~= (menu.installedPaintMod and menu.installedPaintMod.ware or "")
 				end
-				if (missingcount == 0) or ((not menu.selectedPaintMod.isdefault) and (missingcount > menu.selectedPaintMod.amount)) then
-					active = false
-				end
-			else
-				active = menu.selectedPaintMod.ware ~= (menu.installedPaintMod and menu.installedPaintMod.ware or "")
 			end
+
+			local row = buttontable:addRow(false, { fixed = true })
+			row[1]:setColSpan(3):createText(menu.selectedPaintMod and (menu.selectedPaintMod.isdefault and ReadText(1001, 8516) or (((missingcount and (missingcount > 0)) and (missingcount .. ReadText(1001, 42) .. " ") or "") .. menu.selectedPaintMod.name)) or "", { color =  menu.selectedPaintMod and Helper.modQualities[menu.selectedPaintMod.quality].color or Color["text_normal"] })
+
+			local row = buttontable:addRow(true, { fixed = true })
+			row[3]:createButton({ active = active }):setText(ReadText(1001, 4803), { halign = "center" })
+			row[3].handlers.onClick = menu.buttonInstallPaintMod
+
+			buttontable.properties.y = Helper.viewHeight - buttontable:getFullHeight() - Helper.frameBorder
+			offsety = buttontable.properties.y
 		end
-
-		local row = buttontable:addRow(false, { fixed = true })
-		row[1]:setColSpan(3):createText(menu.selectedPaintMod and (menu.selectedPaintMod.isdefault and ReadText(1001, 8516) or (((missingcount and (missingcount > 0)) and (missingcount .. ReadText(1001, 42) .. " ") or "") .. menu.selectedPaintMod.name)) or "", { color =  menu.selectedPaintMod and Helper.modQualities[menu.selectedPaintMod.quality].color or Color["text_normal"] })
-
-		local row = buttontable:addRow(true, { fixed = true })
-		row[3]:createButton({ active = active }):setText(ReadText(1001, 4803), { halign = "center" })
-		row[3].handlers.onClick = menu.buttonInstallPaintMod
-
-		buttontable.properties.y = Helper.viewHeight - buttontable:getFullHeight() - Helper.frameBorder
 
 		menu.extraFontSize = Helper.scaleFont(Helper.standardFont, Helper.standardFontSize)
 		local maxSlotWidth = math.floor((menu.slotData.width - 8 * Helper.borderSize) / 9)
@@ -6299,7 +6555,7 @@ function menu.displayModifyPaintSlots(frame)
 			print(headerHeight)
 			print(boxTextHeight)
 			print(#menu.paintmodgroups .. " * " .. 3 * (maxSlotWidth + Helper.borderSize) + boxTextHeight) --]]
-		if (buttontable.properties.y - menu.slotData.offsetY) < (headerHeight + #menu.paintmodgroups * (3 * (maxSlotWidth + Helper.borderSize) + boxTextHeight)) then
+		if (offsety - menu.slotData.offsetY) < (headerHeight + #menu.paintmodgroups * (3 * (maxSlotWidth + Helper.borderSize) + boxTextHeight)) then
 			hasScrollbar = true
 		end
 
@@ -6318,7 +6574,7 @@ function menu.displayModifyPaintSlots(frame)
 			maxColumnWidth = math.max(maxColumnWidth, columnWidths[i])
 		end
 
-		local ftable = frame:addTable(9, { tabOrder = 1, width = menu.slotData.width, maxVisibleHeight = buttontable.properties.y - menu.slotData.offsetY, x = menu.slotData.offsetX, y = menu.slotData.offsetY, scaling = false, reserveScrollBar = false, backgroundID = "solid", backgroundColor = Color["table_background_3d_editor"], highlightMode = "column" })
+		local ftable = frame:addTable(9, { tabOrder = 1, width = menu.slotData.width, maxVisibleHeight = offsety - menu.slotData.offsetY, x = menu.slotData.offsetX, y = menu.slotData.offsetY, scaling = false, reserveScrollBar = false, backgroundID = "solid", backgroundColor = Color["table_background_3d_editor"], highlightMode = "column" })
 		if menu.setdefaulttable then
 			ftable.properties.defaultInteractiveObject = true
 			menu.setdefaulttable = nil
@@ -6343,69 +6599,99 @@ function menu.displayModifyPaintSlots(frame)
 			row[col].handlers.onClick = function () return menu.buttonModCategory(entry.category, row.index, col) end
 		end
 
-		if menu.object ~= 0 then
-			if next(menu.paintmodgroups) then
-				for _, group in ipairs(menu.paintmodgroups) do
-					local row = ftable:addRow(true, { borderBelow = false })
-					local row2 = ftable:addRow(false, {  })
-					for i, entry in ipairs(group) do
-						local col = i * 3 - 2
-
-						local active, overridecolor = true, nil
-						if menu.modeparam[1] then
-							local missingcount = 0
-							for _, ship in pairs(menu.modeparam[2]) do
-								local paintmod = ffi.new("UIPaintMod")
-								if C.GetInstalledPaintMod(ship, paintmod) then
-									if entry.ware ~= ffi.string(paintmod.Ware) then
-										missingcount = missingcount + 1
-									end
-								else
-									missingcount = missingcount + 1
-								end
-							end
-							if (not entry.isdefault) and (missingcount > entry.amount) then
-								active = false
-								overridecolor = Color["text_error"]
-							end
+		if next(menu.paintmodgroups) then
+			local shoppinglistpaintmods = {}
+			if menu.mode == "purchase" then
+				for i, entry in ipairs(menu.shoppinglist) do
+					if i ~= menu.editingshoppinglist then
+						if entry.paintmodware then
+							shoppinglistpaintmods[entry.paintmodware] = (shoppinglistpaintmods[entry.paintmodware] or 0) + entry.amount
 						end
-
-						local installicon, installcolor = "", Color["text_normal"]
-						if entry.ware == menu.selectedPaintMod.ware then
-							installicon = "be_upgrade_installed"
-							installcolor = Color["text_positive"]
-						elseif menu.installedPaintMod and (entry.ware == menu.installedPaintMod.ware) then
-							installicon = "be_upgrade_uninstalled"
-							installcolor = Color["text_negative"]
-						end
-
-						row[col]:setColSpan(3):createButton({
-							width = columnWidths[i],
-							height = maxColumnWidth,
-							bgColor = active and Color["button_background_default"] or Color["button_background_inactive"],
-							highlightColor = active and Color["button_highlight_default"] or Color["button_highlight_inactive"],
-						}):setIcon(entry.ware):setIcon2(installicon, { color = installcolor }):setText((entry.amount and (entry.amount > 0)) and (ReadText(1001, 42) .. " " .. entry.amount) or "", { x = Helper.scaleX(Helper.configButtonBorderSize), y = - maxColumnWidth / 2 + Helper.standardTextHeight / 2 + Helper.configButtonBorderSize, halign = "right", fontsize = Helper.scaleFont(Helper.standardFont, Helper.headerRow1FontSize), color = overridecolor })
-						if active then
-							row[col].handlers.onClick = function () return menu.buttonSelectPaintMod(entry, row.index, col) end
-						end
-
-						local untruncatedExtraText = entry.isdefault and ReadText(1001, 8516) or entry.name
-						local extraText = TruncateText(untruncatedExtraText, Helper.standardFont, menu.extraFontSize, columnWidths[i] - 2 * Helper.borderSize)
-						row2[col]:setColSpan(3):createBoxText(extraText, { width = columnWidths[i], fontsize = menu.extraFontSize, color = overridecolor, boxColor = active and Color["button_background_default"] or Color["button_background_inactive"], mouseOverText = (extraText ~= untruncatedExtraText) and untruncatedExtraText or "" })
 					end
 				end
-			else
-				local row = ftable:addRow(true, { scaling = true })
-				row[1]:setColSpan(9):createText("  " .. Helper.modQualities[categoryQuality].paintnonetext, { color = Helper.modQualities[categoryQuality].color })
 			end
+
+			for _, group in ipairs(menu.paintmodgroups) do
+				local row = ftable:addRow(true, { borderBelow = false })
+				local row2 = ftable:addRow(false, {  })
+				for i, entry in ipairs(group) do
+					local col = i * 3 - 2
+
+					local amount = (entry.amount or 0) - (shoppinglistpaintmods[entry.ware] or 0)
+					local active, overridecolor = entry.isdefault or (amount >= (menu.shoppinglist[menu.editingshoppinglist] and menu.shoppinglist[menu.editingshoppinglist].amount or 1)), nil
+					if (menu.mode == "modify") and menu.modeparam[1] then
+						local missingcount = 0
+						for _, ship in pairs(menu.modeparam[2]) do
+							local paintmod = ffi.new("UIPaintMod")
+							if C.GetInstalledPaintMod(ship, paintmod) then
+								if entry.ware ~= ffi.string(paintmod.Ware) then
+									missingcount = missingcount + 1
+								end
+							else
+								missingcount = missingcount + 1
+							end
+						end
+						if (not entry.isdefault) and (missingcount > amount) then
+							active = false
+							overridecolor = Color["text_error"]
+						end
+					elseif menu.objectgroup then
+						local missingcount = 0
+						for i, ship in ipairs(menu.objectgroup.ships) do
+							local paintmod = ffi.new("UIPaintMod")
+							if C.GetInstalledPaintMod(ship.ship, paintmod) then
+								if entry.ware ~= ffi.string(paintmod.Ware) then
+									missingcount = missingcount + 1
+								end
+							else
+								missingcount = missingcount + 1
+							end
+						end
+						if (not entry.isdefault) and (missingcount > amount) then
+							active = false
+							overridecolor = Color["text_error"]
+						end
+					end
+
+					local installicon, installcolor = "", Color["text_normal"]
+					if entry.ware == menu.selectedPaintMod.ware then
+						installicon = "be_upgrade_installed"
+						installcolor = Color["text_positive"]
+					elseif menu.installedPaintMod and (entry.ware == menu.installedPaintMod.ware) then
+						installicon = "be_upgrade_uninstalled"
+						installcolor = Color["text_negative"]
+					end
+
+					row[col]:setColSpan(3):createButton({
+						width = columnWidths[i],
+						height = maxColumnWidth,
+						bgColor = active and Color["button_background_default"] or Color["button_background_inactive"],
+						highlightColor = active and Color["button_highlight_default"] or Color["button_highlight_inactive"],
+					}):setIcon(entry.ware):setIcon2(installicon, { color = installcolor }):setText((amount > 0) and (ReadText(1001, 42) .. " " .. amount) or "", { x = Helper.scaleX(Helper.configButtonBorderSize), y = - maxColumnWidth / 2 + Helper.standardTextHeight / 2 + Helper.configButtonBorderSize, halign = "right", fontsize = Helper.scaleFont(Helper.standardFont, Helper.headerRow1FontSize), color = overridecolor })
+					if active then
+						row[col].handlers.onClick = function () return menu.buttonSelectPaintMod(entry, row.index, col) end
+					end
+
+					local untruncatedExtraText = entry.isdefault and ReadText(1001, 8516) or entry.name
+					local extraText = TruncateText(untruncatedExtraText, Helper.standardFont, menu.extraFontSize, columnWidths[i] - 2 * Helper.borderSize)
+					row2[col]:setColSpan(3):createBoxText(extraText, { width = columnWidths[i], fontsize = menu.extraFontSize, color = overridecolor, boxColor = active and Color["button_background_default"] or Color["button_background_inactive"], mouseOverText = (extraText ~= untruncatedExtraText) and untruncatedExtraText or "" })
+				end
+			end
+		else
+			local row = ftable:addRow(true, { scaling = true })
+			row[1]:setColSpan(9):createText("  " .. Helper.modQualities[categoryQuality].paintnonetext, { color = Helper.modQualities[categoryQuality].color })
 		end
 
 		ftable:setTopRow(menu.topRows.slots)
 		ftable:setSelectedRow(menu.selectedRows.slots)
 		ftable:setSelectedCol(menu.selectedCols.slots or 0)
 
-		ftable.properties.nextTable = buttontable.index
-		buttontable.properties.prevTable = ftable.index
+		ftable:addConnection(1, 2, true)
+		if buttontable then
+			buttontable:addConnection(2, 2)
+		end
+	else
+		Helper.clearTableConnectionColumn(menu, 2)
 	end
 	menu.topRows.slots = nil
 	menu.selectedRows.slots = nil
@@ -6755,6 +7041,8 @@ function menu.displayEmptySlots(frame)
 	row = ftable:addRow(false, { scaling = true })
 	row[1]:createText(ReadText(1001, 8013))
 
+	ftable:addConnection(1, 2, true)
+
 	menu.topRows.slots = nil
 	menu.selectedRows.slots = nil
 	menu.selectedCols.slots = nil
@@ -6867,8 +7155,8 @@ function menu.checkMod(type, component, isgroup)
 				modicon = "\27[" .. Helper.modQualities[buf.Quality].icon2 .. "]"
 			end
 		elseif type == "engine" then
-			local buf = ffi.new("UIEngineMod")
-			hasmod = C.GetInstalledEngineMod(menu.object, buf)
+			local buf = ffi.new("UIEngineMod2")
+			hasmod = C.GetInstalledEngineMod2(menu.object, buf)
 			if hasmod then
 				modicon = "\27[" .. Helper.modQualities[buf.Quality].icon2 .. "]"
 			end
@@ -7236,6 +7524,9 @@ function menu.displayPlan(frame)
 			if not C.HasSuitableBuildModule(menu.container, menu.object, menu.macro) then
 				menu.errors[4] = menu.objectgroup and ReadText(1001, 8572) or ReadText(1001, 8563)
 			end
+			if menu.customshipname == "" then
+				menu.errors[5] = ReadText(1001, 8587)
+			end
 		end
 	end
 
@@ -7494,6 +7785,7 @@ function menu.displayPlan(frame)
 	menu.shoppinglisttotal = 0
 	menu.shoppinglistrefund = 0
 	menu.timetotal = 0
+	local shoppinglistpaintmods = {}
 	for i, entry in ipairs(menu.shoppinglist) do
 		entry.color = menu.warnings[4] and Color["text_warning"] or Color["text_normal"]
 		if i ~= menu.editingshoppinglist then
@@ -7504,7 +7796,7 @@ function menu.displayPlan(frame)
 				object = groupentry.ships[1].ship
 				groupamount = #groupentry.ships
 			end
-			menu.timetotal = menu.timetotal + math.ceil(entry.amount * groupamount / C.GetNumSuitableBuildProcessors(menu.container, object, entry.macro)) * entry.duration
+			menu.timetotal = menu.timetotal + math.max(math.ceil(entry.amount * groupamount / C.GetNumSuitableBuildProcessors(menu.container, object, entry.macro)) * entry.duration, entry.duration)
 			menu.shoppinglisttotal = menu.shoppinglisttotal + entry.amount * (entry.price + entry.crewprice)
 			if (entry.price + entry.crewprice) < 0 then
 				menu.shoppinglistrefund = menu.shoppinglistrefund + entry.amount * (entry.price + entry.crewprice)
@@ -7518,6 +7810,9 @@ function menu.displayPlan(frame)
 			if #entry.crew.unassigned > 0 then
 				entry.color = Color["text_criticalerror"]
 				menu.criticalerrors[4] = ReadText(1001, 8017)
+			end
+			if entry.paintmodware then
+				shoppinglistpaintmods[entry.paintmodware] = (shoppinglistpaintmods[entry.paintmodware] or 0) + entry.amount
 			end
 		end
 		for _, upgradetype in ipairs(Helper.upgradetypes) do
@@ -7768,25 +8063,26 @@ function menu.displayPlan(frame)
 			maxVisibleHeight = resourcetable.properties.y - menu.planData.offsetY
 		end
 	end
-	local ftable = frame:addTable(5, { tabOrder = 3, width = menu.planData.width, maxVisibleHeight = maxVisibleHeight, x = menu.planData.offsetX, y = menu.planData.offsetY, reserveScrollBar = true, backgroundID = "solid", backgroundColor = Color["table_background_3d_editor"] })
+	local ftable = frame:addTable(6, { tabOrder = 3, width = menu.planData.width, maxVisibleHeight = maxVisibleHeight, x = menu.planData.offsetX, y = menu.planData.offsetY, reserveScrollBar = true, backgroundID = "solid", backgroundColor = Color["table_background_3d_editor"] })
 	local iconwidth = 5 * Helper.scaleY(Helper.standardTextHeight) + 4 * Helper.borderSize
 	local dropdownWidth = 0.2 * menu.planData.width
 	local valueWidth = (menu.planData.width - iconwidth - Helper.borderSize) / 2
 	ftable:setColWidth(1, Helper.scaleY(Helper.standardTextHeight), false)
 	ftable:setColWidth(2, iconwidth - Helper.scaleY(Helper.standardTextHeight) - Helper.borderSize, false)
-	ftable:setColWidth(4, valueWidth - dropdownWidth - Helper.borderSize, false)
-	ftable:setColWidth(5, dropdownWidth, false)
+	ftable:setColWidth(4, Helper.scaleY(Helper.standardTextHeight), false)
+	ftable:setColWidth(5, valueWidth - dropdownWidth - Helper.borderSize, false)
+	ftable:setColWidth(6, dropdownWidth, false)
 
 	if IsCheatVersion() and (menu.mode == "customgamestart") then
 		local row = ftable:addRow(true, {  })
 		row[1]:createCheckBox(menu.allownonplayerblueprints)
 		row[1].handlers.onClick = function () menu.allownonplayerblueprints = not menu.allownonplayerblueprints; menu.onShowMenu(menu.onSaveState()) end
-		row[2]:setColSpan(4):createText("Allow non-playerblueprint ships and equipment [Cheat only]") -- cheat only
+		row[2]:setColSpan(5):createText("Allow non-playerblueprint ships and equipment [Cheat only]") -- cheat only
 	end
 
 	-- currently editing
 	local row = ftable:addRow(false, { bgColor = Color["row_title_background"] })
-	row[1]:setColSpan(5):createText(menu.isReadOnly and ReadText(1001, 8045) or ReadText(1001, 8005), menu.headerTextProperties)
+	row[1]:setColSpan(6):createText(menu.isReadOnly and ReadText(1001, 8045) or ReadText(1001, 8005), menu.headerTextProperties)
 
 	if (menu.object ~= 0) or (menu.macro ~= "") then
 		local removedEquipment = {}
@@ -7819,9 +8115,9 @@ function menu.displayPlan(frame)
 			menu.duration = (not menu.errors[4]) and C.GetBuildDuration(menu.container, buildorder) or 0
 		end
 
-		local colspan = 2
+		local colspan = 3
 		if menu.isReadOnly then
-			colspan = 4
+			colspan = 5
 		end
 
 		local row = ftable:addRow(true, {  })
@@ -7831,31 +8127,39 @@ function menu.displayPlan(frame)
 		else
 			name = GetMacroData(menu.macro, "name")
 		end
+		if menu.customshipname == nil then
+			menu.customshipname = name
+		end
 
 		if menu.objectgroup then
-			row[1]:setColSpan(colspan + 1):createText(#menu.objectgroup.ships .. ReadText(1001, 42) .. " " .. GetMacroData(menu.objectgroup.macro, "name"))
+			row[1]:setColSpan(colspan + 2):createText(#menu.objectgroup.ships .. ReadText(1001, 42) .. " " .. GetMacroData(menu.objectgroup.macro, "name"))
 		elseif (not menu.isReadOnly) and (menu.mode ~= "customgamestart") and (menu.mode ~= "comparison") then
-			menu.customShipNameEditBox = row[1]:setColSpan(colspan + 1):createEditBox({ description = ReadText(1001, 8537), height = Helper.standardTextHeight }):setText((menu.customshipname ~= "") and menu.customshipname or name, { halign = "left" })
+			menu.customShipNameEditBox = row[1]:setColSpan(colspan):createEditBox({ description = ReadText(1001, 8537), height = Helper.standardTextHeight }):setText(menu.customshipname, { halign = "left" })
 			row[1].handlers.onTextChanged = menu.editboxCustomShipName
 			row[1].handlers.onEditBoxDeactivated = menu.editboxCustomShipNameDeactivated
+			row[colspan + 1]:createButton({ height = Helper.standardTextHeight }):setText("X", { halign = "center" })
+			row[colspan + 1].handlers.onClick = menu.buttonClearCustomShipName
 
 			if not menu.isplayerowned then
-				row[4]:setColSpan(2):createText(ConvertMoneyString(menu.total + menu.crewtotal, false, true, 0, true, false) .. " " .. ReadText(1001, 101), { halign = "right" })
+				row[5]:setColSpan(2):createText(ConvertMoneyString(menu.total + menu.crewtotal, false, true, 0, true, false) .. " " .. ReadText(1001, 101), { halign = "right" })
 			end
 
 			local row = ftable:addRow(true, {  })
-			row[1]:createCheckBox(function () return menu.useloadoutname end, { active = menu.loadoutName ~= "" })
-			row[1].handlers.onClick = menu.checkboxLoadoutName
-			row[2]:setColSpan(4):createText(function () return ReadText(1001, 8536) .. ((menu.loadoutName ~= "") and (" - " .. menu.getCustomShipName()) or "") end, { color = function () return (menu.loadoutName ~= "") and Color["text_normal"] or Color["text_inactive"] end })
+			row[1]:setColSpan(colspan + 1):createButton({ height = Helper.standardTextHeight, active = function () return not utf8.find(menu.customshipname, name) end }):setText(ReadText(1001, 8588), { halign = "center" })
+			row[1].handlers.onClick = function () return menu.buttonCustomShipNameAppendShip(name) end
+
+			local row = ftable:addRow(true, {  })
+			row[1]:setColSpan(colspan + 1):createButton({ height = Helper.standardTextHeight, active = function () return not utf8.find(menu.customshipname, menu.loadoutName) end }):setText(ReadText(1001, 8589), { halign = "center" })
+			row[1].handlers.onClick = menu.buttonCustomShipNameAppendLoadout
 
 			local row = ftable:addRow(false, { bgColor = Color["row_background_unselectable"] })
-			row[1]:setBackgroundColSpan(5)
+			row[1]:setBackgroundColSpan(6)
 			if (next(removedEquipment) == nil) and (next(newEquipment) == nil) and (#repairedEquipment > 0) then
-				row[2]:setColSpan(2):createText(ReadText(1001, 8535))
+				row[2]:setColSpan(3):createText(ReadText(1001, 8535))
 			else
-				row[2]:setColSpan(2):createText(ReadText(1001, 8508))
+				row[2]:setColSpan(3):createText(ReadText(1001, 8508))
 			end
-			row[4]:setColSpan(2):createText((menu.warnings[4] and "--:--" or ConvertTimeString(menu.duration, (menu.duration >= 3600) and "%h:%M:%S" or "%M:%S")), { halign = "right" })
+			row[5]:setColSpan(2):createText((menu.warnings[4] and "--:--" or ConvertTimeString(menu.duration, (menu.duration >= 3600) and "%h:%M:%S" or "%M:%S")), { halign = "right" })
 		else
 			row[1]:setColSpan(colspan + 1):createText((menu.customshipname ~= "") and menu.customshipname or name)
 		end
@@ -7876,7 +8180,7 @@ function menu.displayPlan(frame)
 					end
 					row[2]:setColSpan(colspan):createText(ReadText(1001, 8008), { color = Color["text_positive"] })
 					if (not menu.isReadOnly) and (not menu.isplayerowned) and (menu.mode ~= "customgamestart") and (menu.mode ~= "comparison") then
-						row[4]:setColSpan(2):createText(ConvertMoneyString(tonumber(C.GetBuildWarePrice(menu.container, ware or "")), false, true, 0, true, false) .. " " .. ReadText(1001, 101), { halign = "right", color = Color["text_positive"] })
+						row[5]:setColSpan(2):createText(ConvertMoneyString(tonumber(C.GetBuildWarePrice(menu.container, ware or "")), false, true, 0, true, false) .. " " .. ReadText(1001, 101), { halign = "right", color = Color["text_positive"] })
 					end
 					if resources and (#resources > 0) and isextended then
 						menu.displayUpgradeResources(ftable, resources, 1)
@@ -7886,7 +8190,7 @@ function menu.displayPlan(frame)
 			for _, entry in ipairs(config.leftBar) do
 				if removedEquipment[entry.mode] or currentEquipment[entry.mode] or newEquipment[entry.mode] then
 					row = ftable:addRow(true, {  })
-					row[2]:setColSpan(4):createText(entry.name,{ font = Helper.standardFontBold, titleColor = Color["row_title"] })
+					row[2]:setColSpan(5):createText(entry.name,{ font = Helper.standardFontBold, titleColor = Color["row_title"] })
 				end
 				-- removed
 				if removedEquipment[entry.mode] then
@@ -7902,7 +8206,7 @@ function menu.displayPlan(frame)
 						end
 						row[2]:setColSpan(colspan):createText(entry.amount .. ReadText(1001, 42) .. " " .. (name or ""), { color = Color["text_negative"], mouseOverText = mouseOverText })
 						if entry.price and (entry.price > 0) and (not menu.isplayerowned) then
-							row[4]:setColSpan(2):createText(ConvertMoneyString(-entry.amount * entry.price, false, true, 0, true, false) .. " " .. ReadText(1001, 101), { halign = "right", color = Color["text_negative"], mouseOverText = mouseOverText })
+							row[5]:setColSpan(2):createText(ConvertMoneyString(-entry.amount * entry.price, false, true, 0, true, false) .. " " .. ReadText(1001, 101), { halign = "right", color = Color["text_negative"], mouseOverText = mouseOverText })
 						end
 						if resources and (#resources > 0) and isextended then
 							menu.displayUpgradeResources(ftable, resources, entry.amount)
@@ -7936,7 +8240,7 @@ function menu.displayPlan(frame)
 						end
 						row[2]:setColSpan(colspan):createText(entry.amount .. ReadText(1001, 42) .. " " .. (name or ""), { color = Color["text_positive"], mouseOverText = mouseOverText })
 						if entry.price and (entry.price > 0) and (not menu.isplayerowned) then
-							row[4]:setColSpan(2):createText(ConvertMoneyString(entry.amount * entry.price, false, true, 0, true, false) .. " " .. ReadText(1001, 101), { halign = "right", color = Color["text_positive"], mouseOverText = mouseOverText })
+							row[5]:setColSpan(2):createText(ConvertMoneyString(entry.amount * entry.price, false, true, 0, true, false) .. " " .. ReadText(1001, 101), { halign = "right", color = Color["text_positive"], mouseOverText = mouseOverText })
 						end
 						if resources and (#resources > 0) and isextended then
 							menu.displayUpgradeResources(ftable, resources, entry.amount)
@@ -7947,7 +8251,7 @@ function menu.displayPlan(frame)
 			-- repaired
 			if #repairedEquipment > 0 then
 				row = ftable:addRow(true, {  })
-				row[2]:setColSpan(4):createText(ReadText(1001, 3000),{ font = Helper.standardFontBold, titleColor = Color["row_title"] })
+				row[2]:setColSpan(5):createText(ReadText(1001, 3000),{ font = Helper.standardFontBold, titleColor = Color["row_title"] })
 			end
 			for _, entry in ipairs(repairedEquipment) do
 				local repaircomponent = ConvertStringTo64Bit(entry.component)
@@ -7972,7 +8276,7 @@ function menu.displayPlan(frame)
 				end
 				row[2]:setColSpan(colspan):createText(ReadText(1001, 4217) .. ReadText(1001, 120) .. " " .. name, { color = Color["text_positive"], mouseOverText = name })
 				if not menu.isplayerowned then
-					row[4]:setColSpan(2):createText(ConvertMoneyString(tonumber(C.GetRepairPrice(repaircomponent, menu.container) * menu.repairdiscounts.totalfactor), false, true, 0, true, false) .. " " .. ReadText(1001, 101), { halign = "right", color = Color["text_positive"] })
+					row[5]:setColSpan(2):createText(ConvertMoneyString(tonumber(C.GetRepairPrice(repaircomponent, menu.container) * menu.repairdiscounts.totalfactor), false, true, 0, true, false) .. " " .. ReadText(1001, 101), { halign = "right", color = Color["text_positive"] })
 				end
 				if (#resources > 0) and isextended then
 					menu.displayUpgradeResources(ftable, resources, 1)
@@ -7980,7 +8284,7 @@ function menu.displayPlan(frame)
 			end
 		else
 			row = ftable:addRow(true, {  })
-			row[2]:setColSpan(4):createText("--- " .. ReadText(1001, 7936) .. " ---", { halign = "center" } )
+			row[2]:setColSpan(5):createText("--- " .. ReadText(1001, 7936) .. " ---", { halign = "center" } )
 		end
 
 		if (not menu.isReadOnly) and (menu.mode ~= "customgamestart") and (menu.mode ~= "comparison") then
@@ -7998,7 +8302,7 @@ function menu.displayPlan(frame)
 					mouseovertext = mouseovertext .. ((type(error) == "function") and error(nil, true) or error)
 				end
 			end
-			local button = row[3]:setColSpan(3):createButton({ active = (not menu.errors[1]) and (not menu.errors[2]) and (not menu.errors[3]) and (hasupgrades or hasrepairs), mouseOverText = mouseovertext, helpOverlayID = "shipconfig_addtoshoppinglist", helpOverlayText = " ", helpOverlayHighlightOnly = true, uiTriggerID = "shipconfig_addtoshoppinglist" }):setText(ReadText(1001, 8006), { halign = "center" })
+			local button = row[3]:setColSpan(4):createButton({ active = (not menu.errors[1]) and (not menu.errors[2]) and (not menu.errors[3]) and (not menu.errors[5]) and (hasupgrades or hasrepairs), mouseOverText = mouseovertext, helpOverlayID = "shipconfig_addtoshoppinglist", helpOverlayText = " ", helpOverlayHighlightOnly = true, uiTriggerID = "shipconfig_addtoshoppinglist" }):setText(ReadText(1001, 8006), { halign = "center" })
 			if (menu.object ~= 0) or (menu.macro ~= "") then
 				button:setHotkey("INPUT_STATE_DETAILMONITOR_X", { displayIcon = true })
 			end
@@ -8007,16 +8311,16 @@ function menu.displayPlan(frame)
 	else
 		-- nothing selected
 		local row = ftable:addRow(true, {  })
-		row[2]:setColSpan(4):createText(ReadText(1001, 8007))
+		row[2]:setColSpan(5):createText(ReadText(1001, 8007))
 
 		local row = ftable:addRow(true, {  })
-		row[3]:setColSpan(3):createButton({ active = false, helpOverlayID = "shipconfig_addtoshoppinglist", helpOverlayText = " ", helpOverlayHighlightOnly = true, uiTriggerID = "shipconfig_addtoshoppinglist" }):setText(ReadText(1001, 8006), { halign = "center" })
+		row[3]:setColSpan(4):createButton({ active = false, helpOverlayID = "shipconfig_addtoshoppinglist", helpOverlayText = " ", helpOverlayHighlightOnly = true, uiTriggerID = "shipconfig_addtoshoppinglist" }):setText(ReadText(1001, 8006), { halign = "center" })
 	end
 
 	if (not menu.isReadOnly) and (menu.mode ~= "customgamestart") and (menu.mode ~= "comparison") then
 		-- shoppinglist
 		local row = ftable:addRow(false, { bgColor = Color["row_title_background"] })
-		row[1]:setColSpan(5):createText(ReadText(1001, 8009), menu.headerTextProperties)
+		row[1]:setColSpan(6):createText(ReadText(1001, 8009), menu.headerTextProperties)
 
 		if next(menu.shoppinglist) then
 			for i, entry in ipairs(menu.shoppinglist) do
@@ -8037,7 +8341,7 @@ function menu.displayPlan(frame)
 					end
 					local row = ftable:addRow(false, {  })
 					row[1]:setColSpan(2):createIcon(icon, { width = iconwidth, height = iconwidth, scaling = false, affectRowHeight = false, y = (iconwidth - Helper.scaleY(Helper.standardTextHeight)) / 2 })
-					row[3]:setColSpan(3):createText((entry.customshipname ~= "") and entry.customshipname or name, { color = entry.color, font = Helper.standardFontBold, mouseOverText = menu.getLoadoutSummary(entry.upgradeplan, entry.crew, menu.repairplan and menu.repairplan[tostring(entry.object)]) })
+					row[3]:setColSpan(4):createText((entry.customshipname ~= "") and entry.customshipname or name, { color = entry.color, font = Helper.standardFontBold, mouseOverText = menu.getLoadoutSummary(entry.upgradeplan, entry.crew, menu.repairplan and menu.repairplan[tostring(entry.object)], entry.paintmodware) })
 					-- amount
 					local researchprecursors, limitedamount
 					if menu.mode == "purchase" then
@@ -8062,35 +8366,57 @@ function menu.displayPlan(frame)
 					end
 					if (menu.mode == "purchase") and ((not researchprecursors) or (#researchprecursors == 0)) then
 						local row = ftable:addRow(true, {  })
-						row[3]:setColSpan(2):createText(ReadText(1001, 1202) .. ReadText(1001, 120))
+						row[3]:setColSpan(3):createText(ReadText(1001, 1202) .. ReadText(1001, 120))
 						local options = {}
 						for i = 1, 20 do
 							if (not limitedamount) or (i <= limitedamount) then
-								local active = menu.isplayerowned or (playerMoney - menu.shoppinglisttotal - (i - entry.amount) * entry.price > 0)
-								table.insert(options, { id = i, text = i, icon = "", displayremoveoption = false, active = active, mouseovertext = active and "" or (ColorText["text_error"] .. ReadText(1026, 8016)), helpOverlayID = "shipconfig_purchaseamount_" .. i, helpOverlayText = " ", helpOverlayHighlightOnly = true })
+								local active = true
+								local mouseovertext = ""
+								if (not menu.isplayerowned) and (playerMoney - menu.shoppinglisttotal - (i - entry.amount) * entry.price < 0) then
+									active = false
+									mouseovertext = ColorText["text_error"] .. ReadText(1026, 8016)
+								end
+								if entry.paintmodware and (not menu.modwaresByWare[entry.paintmodware].isdefault) then
+									if (menu.modwaresByWare[entry.paintmodware].amount - shoppinglistpaintmods[entry.paintmodware]) < (i - entry.amount) then
+										active = false
+										mouseovertext = ColorText["text_error"] .. ReadText(1026, 8029)
+									end
+								end
+								table.insert(options, { id = i, text = i, icon = "", displayremoveoption = false, active = active, mouseovertext = mouseovertext, helpOverlayID = "shipconfig_purchaseamount_" .. i, helpOverlayText = " ", helpOverlayHighlightOnly = true })
 							end
 						end
 						for i = 30, 100, 10 do
 							if (not limitedamount) or (i <= limitedamount) then
-								local active = menu.isplayerowned or (playerMoney - menu.shoppinglisttotal - (i - entry.amount) * entry.price > 0)
-								table.insert(options, { id = i, text = i, icon = "", displayremoveoption = false, active = active, mouseovertext = active and "" or (ColorText["text_error"] .. ReadText(1026, 8016)), helpOverlayID = "shipconfig_purchaseamount_" .. i, helpOverlayText = " ", helpOverlayHighlightOnly = true })
+								local active = true
+								local mouseovertext = ""
+								if (not menu.isplayerowned) and (playerMoney - menu.shoppinglisttotal - (i - entry.amount) * entry.price < 0) then
+									active = false
+									mouseovertext = ColorText["text_error"] .. ReadText(1026, 8016)
+								end
+								if entry.paintmodware and (not menu.modwaresByWare[entry.paintmodware].isdefault) then
+									if (menu.modwaresByWare[entry.paintmodware].amount - shoppinglistpaintmods[entry.paintmodware]) < (i - entry.amount) then
+										active = false
+										mouseovertext = ColorText["text_error"] .. ReadText(1026, 8029)
+									end
+								end
+								table.insert(options, { id = i, text = i, icon = "", displayremoveoption = false, active = active, mouseovertext = mouseovertext, helpOverlayID = "shipconfig_purchaseamount_" .. i, helpOverlayText = " ", helpOverlayHighlightOnly = true })
 							end
 						end
-						row[5]:createDropDown(options, { startOption = entry.amount, helpOverlayID = "shipconfig_purchaseamount", helpOverlayText = " ", helpOverlayHighlightOnly = true }):setTextProperties({ halign = "right", x = Helper.standardTextOffsetx })
-						row[5].handlers.onDropDownConfirmed = function (_, amountstring) return menu.dropdownChangePurchaseAmount(i, amountstring) end
+						row[6]:createDropDown(options, { startOption = entry.amount, helpOverlayID = "shipconfig_purchaseamount", helpOverlayText = " ", helpOverlayHighlightOnly = true }):setTextProperties({ halign = "right", x = Helper.standardTextOffsetx })
+						row[6].handlers.onDropDownConfirmed = function (_, amountstring) return menu.dropdownChangePurchaseAmount(i, amountstring) end
 					else
 						local row = ftable:addRow(false, {  })
-						row[1]:setColSpan(5):createText(" ")
+						row[1]:setColSpan(6):createText(" ")
 					end
 					-- price
 					if not menu.isplayerowned then
 						local row = ftable:addRow(false, {  })
-						row[3]:createText(ReadText(1001, 2927) .. ReadText(1001, 120))
-						row[4]:setColSpan(2):createText(ConvertMoneyString(entry.amount * (entry.price and (entry.price + entry.crewprice) or 0), false, true, 0, true, false) .. " " .. ReadText(1001, 101), { halign = "right" })
+						row[3]:setColSpan(2):createText(ReadText(1001, 2927) .. ReadText(1001, 120))
+						row[5]:setColSpan(2):createText(ConvertMoneyString(entry.amount * (entry.price and (entry.price + entry.crewprice) or 0), false, true, 0, true, false) .. " " .. ReadText(1001, 101), { halign = "right" })
 					end
 					-- Time estimate
 					local row = ftable:addRow(false, {  })
-					row[3]:createText(ReadText(1001, 8508) .. ReadText(1001, 120))
+					row[3]:setColSpan(2):createText(ReadText(1001, 8508) .. ReadText(1001, 120))
 					local object = entry.object
 					local groupamount = 1
 					if entry.objectgroup then
@@ -8098,25 +8424,38 @@ function menu.displayPlan(frame)
 						object = groupentry.ships[1].ship
 						groupamount = #groupentry.ships
 					end
-					local duration = math.ceil(entry.amount * groupamount / C.GetNumSuitableBuildProcessors(menu.container, object, entry.macro)) * entry.duration
-					row[4]:setColSpan(2):createText((menu.warnings[4] and "- -:- -" or ConvertTimeString(duration, (duration >= 3600) and "%h:%M:%S" or "%M:%S")), { halign = "right" })
+					local duration = math.max(math.ceil(entry.amount * groupamount / C.GetNumSuitableBuildProcessors(menu.container, object, entry.macro)) * entry.duration, entry.duration)
+					row[5]:setColSpan(2):createText((menu.warnings[4] and "- -:- -" or ConvertTimeString(duration, (duration >= 3600) and "%h:%M:%S" or "%M:%S")), { halign = "right" })
 					-- edit & remove
 					local row = ftable:addRow(true, {  })
-					row[3]:createButton({ height = Helper.standardTextHeight }):setText(ReadText(1001, 8529), { halign = "center" })
+					row[3]:setColSpan(2):createButton({ height = Helper.standardTextHeight }):setText(ReadText(1001, 8529), { halign = "center" })
 					row[3].handlers.onClick = function () return menu.buttonEditPurchase(i) end
-					row[4]:setColSpan(2):createButton({ height = Helper.standardTextHeight }):setText(ReadText(1001, 8530), { halign = "center" })
-					row[4].handlers.onClick = function () return menu.buttonRemovePurchase(i) end
+					row[5]:setColSpan(2):createButton({ height = Helper.standardTextHeight }):setText(ReadText(1001, 8530), { halign = "center" })
+					row[5].handlers.onClick = function () return menu.buttonRemovePurchase(i) end
 					if i ~= #menu.shoppinglist then
 						local row = ftable:addRow(false, { bgColor = Color["row_background_blue"] })
-						row[1]:setColSpan(5):createText(" ", { height = 2, fontsize = 1 })
+						row[1]:setColSpan(6):createText(" ", { height = 2, fontsize = 1 })
 					end
 				end
 			end
 		else
 			local row = ftable:addRow(true, {  })
-			row[2]:setColSpan(4):createText("--- " .. ReadText(1001, 34) .. " ---")
+			row[2]:setColSpan(5):createText("--- " .. ReadText(1001, 34) .. " ---")
 		end
 	end
+
+	ftable:addConnection(1, 4, true)
+	local offset = 1
+	if statustable then
+		offset = offset + 1
+		statustable:addConnection(offset, 4)
+	end
+	if resourcetable then
+		offset = offset + 1
+		resourcetable:addConnection(offset, 4)
+	end
+	offset = offset + 1
+	buttontable:addConnection(offset, 4)
 
 	menu.topRows.plan = nil
 	menu.selectedRows.plan = nil
@@ -8324,6 +8663,8 @@ function menu.displayModifyPlan(frame)
 		end
 	end
 
+	buttontable:addConnection(1, 4, true)
+
 	menu.topRows.plan = nil
 	menu.selectedRows.plan = nil
 	menu.selectedCols.plan = nil
@@ -8331,13 +8672,15 @@ end
 
 function menu.displayStats(frame)
 	-- title
-	local titletable = frame:addTable(5, { tabOrder = 19, width = menu.statsData.width, x = menu.statsData.offsetX, y = 0, reserveScrollBar = false, skipTabChange = true })
+	local titletable = frame:addTable(7, { tabOrder = 19, width = menu.statsData.width, x = menu.statsData.offsetX, y = 0, reserveScrollBar = false })
 	local title = ReadText(1001, 8534)
 	local titlewidth = C.GetTextWidth(title, Helper.headerRow1Font, Helper.scaleFont(Helper.headerRow1Font, Helper.headerRow1FontSize)) + 2 * (Helper.headerRow1Offsetx + Helper.borderSize)
 	local checkboxwidth = Helper.scaleY(Helper.headerRow1Height) - Helper.borderSize
 	titletable:setColWidth(2, checkboxwidth, false)
-	titletable:setColWidth(3, titlewidth, false)
-	titletable:setColWidth(4, checkboxwidth, false)
+	titletable:setColWidth(3, checkboxwidth, false)
+	titletable:setColWidth(4, titlewidth, false)
+	titletable:setColWidth(5, checkboxwidth, false)
+	titletable:setColWidth(6, checkboxwidth, false)
 
 	local statskeyword = "showStats"
 	if (menu.mode == "modify") and (menu.upgradetypeMode == "paintmods") then
@@ -8345,34 +8688,45 @@ function menu.displayStats(frame)
 	end
 
 	local row = titletable:addRow(true, { fixed = true, borderBelow = false })
-	row[2]:setBackgroundColSpan(2):createCheckBox(__CORE_DETAILMONITOR_SHIPBUILD[statskeyword], { height = checkboxwidth, scaling = false })
-	row[2].handlers.onClick = menu.buttonShowStats
-	row[3]:createButton({ bgColor = Color["button_background_hidden"], height = Helper.headerRow1Height }):setText(title, { font = Helper.headerRow1Font, fontsize = Helper.headerRow1FontSize, x = Helper.headerRow1Offsetx, y = Helper.headerRow1Offsety, halign = "left" })
-	row[3].handlers.onClick = menu.buttonShowStats
-	if __CORE_DETAILMONITOR_SHIPBUILD[statskeyword] then
+	local upactive = __CORE_DETAILMONITOR_SHIPBUILD[statskeyword] ~= "full"
+	row[2]:createButton({ height = checkboxwidth, scaling = false, active = upactive }):setIcon("widget_arrow_up_02")
+	row[2].handlers.onClick = menu.buttonExpandStats
+	local downactive = __CORE_DETAILMONITOR_SHIPBUILD[statskeyword] ~= "hidden"
+	row[3]:createButton({ height = checkboxwidth, scaling = false, active = downactive }):setIcon("widget_arrow_down_02")
+	row[3].handlers.onClick = menu.buttonCollapseStats
+	row[4]:createText(title, { font = Helper.headerRow1Font, fontsize = Helper.headerRow1FontSize, x = Helper.headerRow1Offsetx, y = Helper.headerRow1Offsety, halign = "left" })
+
+	if menu.selectedCols.stats then
+		if ((menu.selectedCols.stats ~= 2) or upactive) and ((menu.selectedCols.stats ~= 3) or downactive) then
+			titletable:setSelectedCol(menu.selectedCols.stats)
+		end
+	end
+	menu.selectedCols.stats = nil
+
+	if __CORE_DETAILMONITOR_SHIPBUILD[statskeyword] ~= "hidden" then
 		local row = titletable:addRow(false, { fixed = true, bgColor = Color["row_background_blue"] })
-		row[1]:setColSpan(5):createText(" ", { fontsize = 1, height = 2 })
+		row[1]:setColSpan(7):createText(" ", { fontsize = 1, height = 2 })
 
 		local loadoutstats, currentloadoutstats
 		if menu.usemacro then
-			local ffiloadoutstats = Helper.callLoadoutFunction(menu.upgradeplan, nil, function (loadout, _) return C.GetLoadoutStatistics4(0, menu.macro, loadout) end)
+			local ffiloadoutstats = Helper.callLoadoutFunction(menu.upgradeplan, nil, function (loadout, _) return C.GetLoadoutStatistics5(0, menu.macro, loadout) end)
 			loadoutstats = Helper.convertLoadoutStats(ffiloadoutstats)
 
-			currentloadoutstats = Helper.convertLoadoutStats(ffi.new("UILoadoutStatistics4", 0))
+			currentloadoutstats = Helper.convertLoadoutStats(ffi.new("UILoadoutStatistics5", 0))
 		elseif menu.mode == "upgrade" then
-			local ffiloadoutstats = Helper.callLoadoutFunction(menu.upgradeplan, nil, function (loadout, _) return C.GetLoadoutStatistics4(menu.object, "", loadout) end)
+			local ffiloadoutstats = Helper.callLoadoutFunction(menu.upgradeplan, nil, function (loadout, _) return C.GetLoadoutStatistics5(menu.object, "", loadout) end)
 			loadoutstats = Helper.convertLoadoutStats(ffiloadoutstats)
 
-			local fficurrentloadoutstats = C.GetCurrentLoadoutStatistics4(menu.object)
+			local fficurrentloadoutstats = C.GetCurrentLoadoutStatistics5(menu.object)
 			currentloadoutstats = Helper.convertLoadoutStats(fficurrentloadoutstats)
 		elseif menu.mode == "modify" then
-			local fficurrentloadoutstats = C.GetCurrentLoadoutStatistics4(menu.object)
+			local fficurrentloadoutstats = C.GetCurrentLoadoutStatistics5(menu.object)
 			loadoutstats = Helper.convertLoadoutStats(fficurrentloadoutstats)
 
 			currentloadoutstats = menu.initialLoadoutStatistics
 		end
 
-		local ffimaxloadoutstats = C.GetMaxLoadoutStatistics4(menu.object, menu.macro)
+		local ffimaxloadoutstats = C.GetMaxLoadoutStatistics5(menu.object, menu.macro)
 		local maxloadoutstats = Helper.convertLoadoutStats(ffimaxloadoutstats)
 
 		local ftable = frame:addTable(6, { tabOrder = 0, width = menu.statsData.width, x = menu.statsData.offsetX, y = titletable:getFullHeight() + Helper.borderSize, reserveScrollBar = false, backgroundID = "solid", backgroundColor = Color["table_background_3d_editor"] })
@@ -8387,89 +8741,106 @@ function menu.displayStats(frame)
 			iscapship = IsMacroClass(menu.macro, "ship_l") or IsMacroClass(menu.macro, "ship_xl")
 		end
 
-		local numRows = math.ceil(#config.stats / 2)
+		local stats = {}
+		local islimited = __CORE_DETAILMONITOR_SHIPBUILD[statskeyword] == "limited"
+		if islimited then
+			stats = Helper.tableCopy(config.limitedStats)
+			for i = #stats, 1, -1 do
+				if stats[i].hasany and (loadoutstats[stats[i].id] == 0) then
+					table.remove(stats, i)
+				elseif stats[i].class and (not stats[i].class[menu.class]) then
+					table.remove(stats, i)
+				end
+			end
+		else
+			stats = config.stats
+		end
+
+		local numRows = math.ceil(#stats / 2)
 		for i = 1, numRows do
-			local row = ftable:addRow(false, {  })
-			local entry = config.stats[i]
+			if (not islimited) or (stats[i].id ~= "") or ((i + numRows <= #stats) and (stats[i + numRows].id ~= "")) then
+				local row = ftable:addRow(false, {  })
+				local entry = stats[i]
 
-			local id = entry.id
-			if entry.capshipid ~= nil then
-				id = iscapship and entry.capshipid or id
-			end
-
-			if id ~= "" then
-				row[1]:createText(entry.name .. ((entry.unit ~= "") and (" (" .. entry.unit .. ")") or ""), { mouseOverText = entry.mouseovertext })
-				local color = Color["text_normal"]
-				if loadoutstats[id] > currentloadoutstats[id] then
-					color = entry.inverted and (menu.usemacro and Color["text_normal"] or Color["text_negative"]) or Color["text_positive"]
-				elseif loadoutstats[id] < currentloadoutstats[id] then
-					color = entry.inverted and Color["text_positive"] or Color["text_negative"]
-				end
-				local value
-				if entry.type == "UINT" then
-					value = ConvertIntegerString(Helper.round(loadoutstats[id], 0), true, 0, true, false)
-				elseif (entry.type == "float") or (entry.type == "double") then
-					local int, frac = math.modf(Helper.round(loadoutstats[id], entry.accuracy))
-					value = ConvertIntegerString(int, true, 0, true, false)
-					if entry.accuracy > 0 then
-						frac = Helper.round(math.abs(frac or 0) * (10 ^ entry.accuracy))
-						value = value .. ReadText(1001, 105) .. string.format("%0".. (entry.accuracy) .."d", frac)
-					end
-				end
-				row[2]:createText(value, { halign = "right", color = color })
-					local posChangeColor, negChangeColor
-					if entry.inverted then
-						if menu.usemacro then
-							posChangeColor = Color["statusbar_value_default"]
-						else
-							posChangeColor = Color["statusbar_diff_neg_default"]
-						end
-						negChangeColor = Color["statusbar_diff_pos_default"]
-					end
-				row[3]:createStatusBar({ current = loadoutstats[id], start = currentloadoutstats[id], max = maxloadoutstats[id], cellBGColor = Color["ship_stat_background"], posChangeColor = posChangeColor, negChangeColor = negChangeColor })
-			else
-				row[1]:createText("")
-			end
-			if i + numRows <= #config.stats then
-				local entry2 = config.stats[i + numRows]
-
-				local id2 = entry2.id
-				if entry2.capshipid ~= nil then
-					id2 = iscapship and entry2.capshipid or id2
+				local id = entry.id
+				if entry.capshipid ~= nil then
+					id = iscapship and entry.capshipid or id
 				end
 
-				if id2 ~= "" then
-					row[4]:createText(entry2.name .. ((entry2.unit ~= "") and (" (" .. entry2.unit .. ")") or ""))
-					local color = Color["text_normal"]
-					if loadoutstats[id2] > currentloadoutstats[id2] then
-						color = entry2.inverted and (menu.usemacro and Color["text_normal"] or Color["text_negative"]) or Color["text_positive"]
-					elseif loadoutstats[id2] < currentloadoutstats[id2] then
-						color = entry2.inverted and Color["text_positive"] or Color["text_negative"]
+				if id ~= "" then
+					local color = (maxloadoutstats[id] == 0) and Color["text_inactive"] or Color["text_normal"]
+					row[1]:createText(entry.name .. ((entry.unit ~= "") and (" (" .. entry.unit .. ")") or ""), { mouseOverText = entry.mouseovertext, color = color })
+					if loadoutstats[id] > currentloadoutstats[id] then
+						color = entry.inverted and (menu.usemacro and Color["text_normal"] or Color["text_negative"]) or Color["text_positive"]
+					elseif loadoutstats[id] < currentloadoutstats[id] then
+						color = entry.inverted and Color["text_positive"] or Color["text_negative"]
 					end
 					local value
-					if entry2.type == "UINT" then
-						value = ConvertIntegerString(Helper.round(loadoutstats[id2], 0), true, 0, true, false)
-					elseif (entry2.type == "float") or (entry2.type == "double") then
-						local int, frac = math.modf(Helper.round(loadoutstats[id2], entry2.accuracy))
+					if entry.type == "UINT" then
+						value = ConvertIntegerString(Helper.round(loadoutstats[id], 0), true, 0, true, false)
+					elseif (entry.type == "float") or (entry.type == "double") then
+						local int, frac = math.modf(Helper.round(loadoutstats[id], entry.accuracy))
 						value = ConvertIntegerString(int, true, 0, true, false)
-						if entry2.accuracy > 0 then
-							frac = Helper.round(math.abs(frac or 0) * (10 ^ entry2.accuracy))
-							value = value .. ReadText(1001, 105) .. string.format("%0".. (entry2.accuracy) .."d", frac)
+						if entry.accuracy > 0 then
+							frac = Helper.round(math.abs(frac or 0) * (10 ^ entry.accuracy))
+							value = value .. ReadText(1001, 105) .. string.format("%0".. (entry.accuracy) .."d", frac)
 						end
 					end
-					row[5]:createText(value, { halign = "right", color = color })
-					local posChangeColor, negChangeColor
-					if entry2.inverted then
-						if menu.usemacro then
-							posChangeColor = Color["statusbar_value_default"]
-						else
-							posChangeColor = Color["statusbar_diff_neg_default"]
+					row[2]:createText(value, { halign = "right", color = color })
+						local posChangeColor, negChangeColor
+						if entry.inverted then
+							if menu.usemacro then
+								posChangeColor = Color["statusbar_value_default"]
+							else
+								posChangeColor = Color["statusbar_diff_neg_default"]
+							end
+							negChangeColor = Color["statusbar_diff_pos_default"]
 						end
-						negChangeColor = Color["statusbar_diff_pos_default"]
-					end
-					row[6]:createStatusBar({ current = loadoutstats[id2], start = currentloadoutstats[id2], max = maxloadoutstats[id2], cellBGColor = Color["ship_stat_background"], posChangeColor = posChangeColor, negChangeColor = negChangeColor })
+					row[3]:createStatusBar({ current = loadoutstats[id], start = currentloadoutstats[id], max = maxloadoutstats[id], cellBGColor = Color["ship_stat_background"], posChangeColor = posChangeColor, negChangeColor = negChangeColor })
 				else
-					row[4]:createText("")
+					row[1]:createText("")
+				end
+				if i + numRows <= #stats then
+					local entry2 = stats[i + numRows]
+
+					local id2 = entry2.id
+					if entry2.capshipid ~= nil then
+						id2 = iscapship and entry2.capshipid or id2
+					end
+
+					if id2 ~= "" then
+						row[4]:createText(entry2.name .. ((entry2.unit ~= "") and (" (" .. entry2.unit .. ")") or ""))
+						local color = Color["text_normal"]
+						if loadoutstats[id2] > currentloadoutstats[id2] then
+							color = entry2.inverted and (menu.usemacro and Color["text_normal"] or Color["text_negative"]) or Color["text_positive"]
+						elseif loadoutstats[id2] < currentloadoutstats[id2] then
+							color = entry2.inverted and Color["text_positive"] or Color["text_negative"]
+						end
+						local value
+						if entry2.type == "UINT" then
+							value = ConvertIntegerString(Helper.round(loadoutstats[id2], 0), true, 0, true, false)
+						elseif (entry2.type == "float") or (entry2.type == "double") then
+							local int, frac = math.modf(Helper.round(loadoutstats[id2], entry2.accuracy))
+							value = ConvertIntegerString(int, true, 0, true, false)
+							if entry2.accuracy > 0 then
+								frac = Helper.round(math.abs(frac or 0) * (10 ^ entry2.accuracy))
+								value = value .. ReadText(1001, 105) .. string.format("%0".. (entry2.accuracy) .."d", frac)
+							end
+						end
+						row[5]:createText(value, { halign = "right", color = color })
+						local posChangeColor, negChangeColor
+						if entry2.inverted then
+							if menu.usemacro then
+								posChangeColor = Color["statusbar_value_default"]
+							else
+								posChangeColor = Color["statusbar_diff_neg_default"]
+							end
+							negChangeColor = Color["statusbar_diff_pos_default"]
+						end
+						row[6]:createStatusBar({ current = loadoutstats[id2], start = currentloadoutstats[id2], max = maxloadoutstats[id2], cellBGColor = Color["ship_stat_background"], posChangeColor = posChangeColor, negChangeColor = negChangeColor })
+					else
+						row[4]:createText("")
+					end
 				end
 			end
 		end
@@ -8481,6 +8852,8 @@ function menu.displayStats(frame)
 	end
 
 	menu.statsTableOffsetY = titletable.properties.y
+
+	titletable:addConnection(2, 3)
 end
 
 function menu.evaluateShipOptions()
@@ -8503,7 +8876,7 @@ function menu.evaluateShipOptions()
 		if menu.class ~= "" then
 			for _, macro in ipairs(menu.availableshipmacrosbyclass[menu.class]) do
 				local haslicence, icon, overridecolor, mouseovertext, limitstring = menu.checkLicence(macro, true)
-				local name, infolibrary, shiptypename, primarypurpose, shipicon = GetMacroData(macro, "name", "infolibrary", "shiptypename", "primarypurpose", "icon")
+				local name, infolibrary, shiptypename, primarypurpose, shipicon, ware = GetMacroData(macro, "name", "infolibrary", "shiptypename", "primarypurpose", "icon", "ware")
 
 				-- start: alexandretk call-back
 				if callbacks ["evaluateShipOptions_override_shiptypename"] then
@@ -8518,8 +8891,11 @@ function menu.evaluateShipOptions()
 				end
 				-- end: alexandretk call-back
 
-				table.insert(shipOptions, { id = macro, text = "\27[" .. shipicon .. "] " .. name .. " - " .. shiptypename .. limitstring, icon = icon or "", displayremoveoption = false, overridecolor = overridecolor, mouseovertext = mouseovertext, name = name .. " - " .. shiptypename, objectid = "", class = menu.class, purpose = primarypurpose, helpOverlayID = "shipconfig_shipoptions_" .. macro, helpOverlayText = " ", helpOverlayHighlightOnly = true })
-				AddKnownItem(infolibrary, macro)
+				local ishiddenwithoutlicence = GetWareData(ware, "ishiddenwithoutlicence")
+				if (not ishiddenwithoutlicence) or haslicence then
+					table.insert(shipOptions, { id = macro, text = "\27[" .. shipicon .. "] " .. name .. " - " .. shiptypename .. limitstring, icon = icon or "", displayremoveoption = false, overridecolor = overridecolor, mouseovertext = mouseovertext, name = name .. " - " .. shiptypename, objectid = "", class = menu.class, purpose = primarypurpose, helpOverlayID = "shipconfig_shipoptions_" .. macro, helpOverlayText = " ", helpOverlayHighlightOnly = true })
+					AddKnownItem(infolibrary, macro)
+				end
 			end
 		end
 		curShipOption = menu.macro
@@ -8575,7 +8951,13 @@ function menu.evaluateShipOptions()
 						end
 					end
 
-					table.insert(shipOptions, { id = tostring(entry.ship), text = "\27[" .. entry.icon .. "] " .. entry.name .. " (" .. entry.objectid .. ")", icon = icon, displayremoveoption = false })
+					local modicon = ""
+					local modquality = C.GetHighestEquipmentModQuality(entry.ship)
+					if modquality > 0 then
+						modicon = " \27[mods_grade_0" .. modquality .. "]"
+					end
+
+					table.insert(shipOptions, { id = tostring(entry.ship), text = "\27[" .. entry.icon .. "] " .. entry.name .. " (" .. entry.objectid .. ")" .. modicon, icon = icon, displayremoveoption = false })
 				end
 			end
 			if menu.objectgroup then
@@ -8642,6 +9024,8 @@ function menu.createTitleBar(frame)
 		-- redo
 		row[5]:createButton({ active = function () return (#menu.undoStack > 1) and (menu.undoIndex > 1) end, height = menu.titleData.height, mouseOverText = ReadText(1026, 7904) .. Helper.formatOptionalShortcut(" (%s)", "action", 279) }):setIcon("menu_redo")
 		row[5].handlers.onClick = function () return menu.undoHelper(false) end
+
+		ftable:addConnection(1, 3, true)
 	else
 		local ftable = frame:addTable(7, { tabOrder = 4, height = 0, x = menu.titleData.offsetX, y = menu.titleData.offsetY, scaling = false, reserveScrollBar = false })
 		if ((menu.macro == "") and (menu.object == 0)) then
@@ -8718,6 +9102,8 @@ function menu.createTitleBar(frame)
 		-- redo
 		row[7]:createButton({ active = function () return (#menu.undoStack > 1) and (menu.undoIndex > 1) end, height = menu.titleData.height, mouseOverText = ReadText(1026, 7904) .. Helper.formatOptionalShortcut(" (%s)", "action", 279) }):setIcon("menu_redo")
 		row[7].handlers.onClick = function () return menu.undoHelper(false) end
+
+		ftable:addConnection(1, 3, true)
 	end
 
 	menu.topRows.ship = nil
@@ -8745,7 +9131,11 @@ function menu.displayMenu(firsttime)
 	menu.displayLeftBar(menu.infoFrame)
 
 	if (menu.usemacro and (menu.macro ~= "")) or ((menu.mode == "upgrade") and (menu.object ~= 0)) then
-		menu.displaySlots(menu.infoFrame, firsttime)
+		if menu.upgradetypeMode == "paintmods" then
+			menu.displayModifyPaintSlots(menu.infoFrame)
+		else
+			menu.displaySlots(menu.infoFrame, firsttime)
+		end
 	elseif menu.mode == "modify" then
 		if menu.upgradetypeMode == "paintmods" then
 			menu.displayModifyPaintSlots(menu.infoFrame)
@@ -9297,7 +9687,9 @@ function menu.onUpdate()
 				if menu.holomap and (menu.holomap ~= 0) then
 					menu.currentIdx = menu.currentIdx + 1
 					Helper.callLoadoutFunction(menu.upgradeplan, nil, function (loadout, _) return C.ShowObjectConfigurationMap2(menu.holomap, menu.object, 0, menu.macro, false, loadout, 0) end)
-					if menu.installedPaintMod then
+					if menu.selectedPaintMod then
+						C.SetMapPaintMod(menu.holomap, menu.selectedPaintMod.ware)
+					elseif menu.installedPaintMod then
 						C.SetMapPaintMod(menu.holomap, menu.installedPaintMod.ware)
 					end
 					menu.selectMapMacroSlot()
@@ -9342,9 +9734,7 @@ function menu.onUpdate()
 		menu.modeparam[2] = {}
 		menu.macro = ""
 		menu.customshipname = ""
-		menu.useloadoutname = false
 		menu.loadoutName = ""
-		menu.playershipname = nil
 		menu.clearUndoStack()
 		menu.getDataAndDisplay()
 		return
@@ -9482,6 +9872,8 @@ function menu.selectMapMacroSlot()
 				C.ClearSelectedMapMacroSlots(menu.holomap)
 			end
 		elseif menu.upgradetypeMode == "settings" then
+			C.ClearSelectedMapMacroSlots(menu.holomap)
+		elseif menu.upgradetypeMode == "paintmods" then
 			C.ClearSelectedMapMacroSlots(menu.holomap)
 		elseif menu.mode == "modify" then
 			local entry = menu.getLeftBarEntry(menu.upgradetypeMode)
@@ -9652,7 +10044,6 @@ function menu.onRestoreState(state)
 			for i, entry in ipairs(menu.shoppinglist) do
 				menu.shoppinglist[i].object = ffi.new("UniverseID", ConvertIDTo64Bit(entry.object))
 				menu.shoppinglist[i].hasupgrades = entry.hasupgrades ~= 0
-				menu.shoppinglist[i].useloadoutname = entry.useloadoutname ~= 0
 			end
 		else
 			if key[2] == "UniverseID" then
@@ -9704,7 +10095,7 @@ function menu.getAmmoUsage(type)
 			end
 		elseif menu.mode == "upgrade" then
 			if menu.object ~= 0 then
-				capacity = GetComponentData(ConvertStringTo64Bit(tostring(menu.object)), "missilecapacity")
+				capacity = GetComponentData(ConvertStringTo64Bit(tostring(menu.object)), "missilecapacity") or 0
 			end
 		end
 		for slot, data in pairs(menu.upgradeplan.weapon) do
@@ -10275,6 +10666,7 @@ function menu.prepareModWares()
 	menu.inventory = GetPlayerInventory()
 
 	menu.modwares = {}
+	menu.modwaresByWare = {}
 	local n = C.GetNumAvailableEquipmentMods()
 	local buf = ffi.new("UIEquipmentMod[?]", n)
 	n = C.GetAvailableEquipmentMods(buf, n)
@@ -10311,6 +10703,7 @@ function menu.prepareModWares()
 		else
 			menu.modwares[modclass] = { entry }
 		end
+		menu.modwaresByWare[entry.ware] = entry
 	end
 
 	n = C.GetNumInventoryPaintMods()
@@ -10328,6 +10721,7 @@ function menu.prepareModWares()
 		else
 			menu.modwares["paint"] = { entry }
 		end
+		menu.modwaresByWare[entry.ware] = entry
 	end
 end
 
@@ -10412,7 +10806,7 @@ function menu.insertComponent(array, objectarray, component, pricetype)
 	table.insert(objectarray, { component = component, price = price })
 end
 
-function menu.getLoadoutSummary(upgradeplan, crew, repairplan)
+function menu.getLoadoutSummary(upgradeplan, crew, repairplan, paintmodware)
 	local wareAmounts = {}
 
 	for i, upgradetype in ipairs(Helper.upgradetypes) do
@@ -10458,6 +10852,11 @@ function menu.getLoadoutSummary(upgradeplan, crew, repairplan)
 	local summary = ReadText(1001, 7935) .. ReadText(1001, 120)
 	for _, entry in ipairs(wareAmounts) do
 		summary = summary .. "\n" .. entry.amount .. ReadText(1001, 42) .. " " .. GetWareData(entry.ware, "name")
+	end
+
+	-- Paint mod
+	if paintmodware and (not menu.modwaresByWare[paintmodware].isdefault) then
+		summary = summary .. "\n" .. ReadText(1026, 8030) .. ReadText(1001, 120) .. " " .. GetWareData(paintmodware, "name")
 	end
 
 	-- Repair
@@ -10662,18 +11061,18 @@ function menu.repairandupgrade(shoppinglistentry, object, macro, hasupgrades, ha
 			for fightruletype, id in pairs(shoppinglistentry.settings.fightrules) do
 				fightrules[i].type = fightruletype
 				fightrules[i].id = id
-				print(id)
 				i = i + 1
 			end
 
-			local additionalinfo = ffi.new("AddBuildTask5Container", {
+			local additionalinfo = ffi.new("AddBuildTask6Container", {
 				blacklists = blacklists,
 				numblacklists = numblacklisttypes,
 				fightrules = fightrules,
-				numfightrules = numfightruletypes
+				numfightrules = numfightruletypes,
+				paintmodwareid = shoppinglistentry.paintmodware
 			})
 
-			local buildtaskid = Helper.callLoadoutFunction(shoppinglistentry.upgradeplan, shoppinglistentry.crew, function (loadout, crewtransfer) return C.AddBuildTask5(menu.container, object, macro, loadout, menu.isplayerowned and 0 or (objectprice or shoppinglistentry.price), crewtransfer, menu.immediate, shoppinglistentry.customshipname, additionalinfo) end, nil, "UILoadout2")
+			local buildtaskid = Helper.callLoadoutFunction(shoppinglistentry.upgradeplan, shoppinglistentry.crew, function (loadout, crewtransfer) return C.AddBuildTask6(menu.container, object, macro, loadout, menu.isplayerowned and 0 or (objectprice or shoppinglistentry.price), crewtransfer, menu.immediate, shoppinglistentry.customshipname, additionalinfo) end, nil, "UILoadout2")
 			if (buildtaskid ~= 0) and haspaid then
 				C.SetBuildTaskTransferredMoney(buildtaskid, objectprice and (objectprice + objectcrewprice) or haspaid)
 			end
@@ -10694,7 +11093,8 @@ function menu.upgradeSettingsVersion()
 	local oldversion = __CORE_DETAILMONITOR_SHIPBUILD.version
 
 	if oldversion < 2 then
-
+		__CORE_DETAILMONITOR_SHIPBUILD["showStats"] = __CORE_DETAILMONITOR_SHIPBUILD["showStats"] and "limited" or "hidden"
+		__CORE_DETAILMONITOR_SHIPBUILD["showStatsPaintMod"] = __CORE_DETAILMONITOR_SHIPBUILD["showStatsPaintMod"] and "limited" or "hidden"
 	end
 
 	__CORE_DETAILMONITOR_SHIPBUILD.version = config.persistentdataversion

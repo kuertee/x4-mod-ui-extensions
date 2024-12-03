@@ -210,9 +210,13 @@ menu.updateInterval = 0.1
 
 function menu.onUpdate()
 	Helper.onTransactionLogUpdate()
+
+	-- kuertee start: in case onUpdate is called without the menu being opened. i.e. from kuertee_trade_analytics mod.
 	if not menu.infoFrame then
 		return
 	end
+	-- kuertee end: in case onUpdate is called without the menu being opened. i.e. from kuertee_trade_analytics mod.
+
 	menu.infoFrame:update()
 
 	if not Helper.transactionLogData.noupdate then

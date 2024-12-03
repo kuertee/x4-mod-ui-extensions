@@ -1,15 +1,16 @@
 ﻿
 -- param == { 0, 0, mode, modeparam }
--- modes: - "hackpanel",		param: { panelcomponent, panelconnection, paneltype }
---		  - "abortupgrade",		param: { container, task, price }
---		  - "transporter",		param: { transportercomponent, transporterconnection }
---		  - "markashostile",	param: { component }
+-- modes: - "hackpanel",			param: { panelcomponent, panelconnection, paneltype }
+--		  - "abortupgrade",			param: { container, task, price }
+--		  - "transporter",			param: { transportercomponent, transporterconnection }
+--		  - "markashostile",		param: { component }
 --		  - "discardstationeditor"
---		  - "custom",			param: { title, question, { leftoptionid, leftoptionname[, uicallbackparam, ...] }, { rightoptionid, rightoptionname[, uicallbackparam, ...] }[, uicallbackmode][, preselectoption ("left"|"right")] }
---			uicallbackmodes:	- "invertinput",				param: { rangeid, configname, value }
---								- "autoroll",					param: { value }
---								- "mouse_steering_adaptive",	param: { value }
---								- "stick_steering_adaptive",	param: { value }
+--		  - "removebuildstorage",	param: { buildstorage }
+--		  - "custom",				param: { title, question, { leftoptionid, leftoptionname[, uicallbackparam, ...] }, { rightoptionid, rightoptionname[, uicallbackparam, ...] }[, uicallbackmode][, preselectoption ("left"|"right")] }
+--			uicallbackmodes:		- "invertinput",				param: { rangeid, configname, value }
+--									- "autoroll",					param: { value }
+--									- "mouse_steering_adaptive",	param: { value }
+--									- "stick_steering_adaptive",	param: { value }
 
 -- ffi setup
 local ffi = require("ffi")
@@ -23,6 +24,7 @@ ffi.cdef[[
 	} UIComponentSlot;
 	bool CancelConstruction(UniverseID containerid, BuildTaskID id);
 	const char* GetControlPanelName(UIComponentSlot controlpanel);
+	bool RemoveBuildStorage(UniverseID buildstorageid);
 	void SetAutoRoll(bool value);
 	void SetInversionSetting(uint32_t uirangeid, const char* parametername, bool value);
 	void SetJoystickSteeringAdapative(bool value);
@@ -83,6 +85,7 @@ function menu.cleanup()
 	menu.upgradecontainer = nil
 	menu.upgradetask = nil
 	menu.upgradeprice = nil
+	menu.buildstorage = nil
 	menu.saveOption = false
 
 	-- kuertee start:
@@ -127,6 +130,8 @@ function menu.confirm()
 			C.SetUserData("tutorial_started_from", tostring(menu.modeparam[2]))
 			NewGame(menu.modeparam[1])
 		end
+	elseif menu.mode == "removebuildstorage" then
+		C.RemoveBuildStorage(menu.buildstorage)
 	end
 	if menu.saveOption then
 		__CORE_DETAILMONITOR_USERQUESTION[menu.mode] = true
@@ -183,6 +188,8 @@ function menu.onShowMenu()
 		menu.hostilecomponent = ConvertIDTo64Bit(menu.modeparam[1])
 	elseif menu.mode == "discardstationeditor" then
 		Helper.unregisterStationEditorChanges()
+	elseif menu.mode == "removebuildstorage" then
+		menu.buildstorage = ConvertIDTo64Bit(menu.modeparam[1])
 	end
 
 	if __CORE_DETAILMONITOR_USERQUESTION[menu.mode] then
@@ -258,10 +265,15 @@ function menu.createTable(frame, tableProperties)
 	end
 	-- kuertee end: custom mode
 
+	local hasSaveOption = true
+	if (menu.mode == "custom") or (menu.mode == "starttutorial") or (menu.mode == "removebuildstorage") then
+		hasSaveOption = false
+	end
 	local numCols = 6
-	if (menu.mode == "custom") or (menu.mode == "starttutorial") then
+	if not hasSaveOption then
 		numCols = 5
 	end
+
 	local ftable = frame:addTable(numCols, { tabOrder = 1, borderEnabled = true, width = tableProperties.width, x = tableProperties.x, y = tableProperties.y, defaultInteractiveObject = true })
 	if menu.mode == "custom" then
 		local leftwith = math.ceil(C.GetTextWidth(menu.modeparam[3][2] or "", Helper.standardFont, Helper.scaleFont(Helper.standardFont, Helper.standardFontSize)))
@@ -272,7 +284,7 @@ function menu.createTable(frame, tableProperties)
 		local buttonwidth = math.max(minbuttonwidth, math.min(maxbuttonwidth, math.max(leftwith, rightwidth) + 2 * Helper.standardTextOffsetx))
 		ftable:setColWidth(2, buttonwidth, false)
 		ftable:setColWidth(4, buttonwidth, false)
-	elseif menu.mode == "starttutorial" then
+	elseif not hasSaveOption then
 		ftable:setColWidth(2, 0.4 * tableProperties.width - Helper.borderSize, false)
 		ftable:setColWidth(4, 0.4 * tableProperties.width - Helper.borderSize, false)
 	else
@@ -320,6 +332,12 @@ function menu.createTable(frame, tableProperties)
 
 		local row = ftable:addRow(false, { fixed = true })
 		row[1]:setColSpan(numCols):createText(ReadText(1001, 9727), { wordwrap = true })
+	elseif menu.mode == "removebuildstorage" then
+		local row = ftable:addRow(false, { fixed = true })
+		row[1]:setColSpan(numCols):createText(ReadText(1001, 11667), Helper.headerRowCenteredProperties)
+
+		local row = ftable:addRow(false, { fixed = true })
+		row[1]:setColSpan(numCols):createText(ReadText(1001, 11668), { wordwrap = true })
 	elseif menu.mode == "custom" then
 		local row = ftable:addRow(false, { fixed = true })
 		row[1]:setColSpan(numCols):createText(menu.modeparam[1] or "", Helper.headerRowCenteredProperties)
@@ -349,6 +367,13 @@ function menu.createTable(frame, tableProperties)
 		row[2].handlers.onClick = menu.confirm
 		row[4]:createButton({ helpOverlayID = "custom_" .. menu.mode .. "_cancel", helpOverlayText = " ", helpOverlayHighlightOnly = true }):setText(ReadText(1001, 64), { halign = "center" })
 		row[4].handlers.onClick = function () return menu.onCloseElement("back", true) end
+	elseif not hasSaveOption then
+		local row = ftable:addRow(true, { fixed = true })
+		row[2]:createButton({ helpOverlayID = "custom_" .. menu.mode .. "_confirm", helpOverlayText = " ", helpOverlayHighlightOnly = true }):setText(ReadText(1001, 2821), { halign = "center" })
+		row[2].handlers.onClick = menu.confirm
+		row[4]:createButton({ helpOverlayID = "custom_" .. menu.mode .. "_cancel", helpOverlayText = " ", helpOverlayHighlightOnly = true }):setText(ReadText(1001, 64), { halign = "center" })
+		row[4].handlers.onClick = function () return menu.onCloseElement("back", true) end
+		ftable:setSelectedCol(4)
 	else
 		local row = ftable:addRow(true, { fixed = true })
 		row[1]:createCheckBox(function () return menu.saveOption end, { height = Helper.standardButtonHeight })
