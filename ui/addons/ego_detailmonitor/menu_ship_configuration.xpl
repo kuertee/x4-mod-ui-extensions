@@ -873,8 +873,6 @@ end
 
 -- kuertee start:
 function menu.init_kuertee ()
-	menu.loadModLuas()
-	-- DebugError("uix load success: " .. tostring(debug.getinfo(1).source))
 end
 -- kuertee end
 
@@ -11126,12 +11124,6 @@ function menu.deregisterCallback(callbackName, callbackFunction)
 				table.remove(callbacks[callbackName], i)
 			end
 		end
-	end
-end
-
-function menu.loadModLuas()
-	if Helper then
-		Helper.loadModLuas(menu.name, "menu_shipconfiguration_uix")
 	end
 end
 -- kuertee end

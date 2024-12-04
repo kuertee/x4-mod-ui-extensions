@@ -1823,8 +1823,6 @@ end
 
 -- kuertee start:
 function menu.init_kuertee ()
-	menu.loadModLuas()
-	-- DebugError("uix load success: " .. tostring(debug.getinfo(1).source))
 end
 -- kuertee end
 
@@ -30229,12 +30227,6 @@ function menu.sortCombinedSkill(a, b, invert)
 		else
 			return skill_a < skill_b
 		end
-	end
-end
-
-function menu.loadModLuas()
-	if Helper then
-		Helper.loadModLuas(menu.name, "menu_map_uix")
 	end
 end
 -- kuertee end

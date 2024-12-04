@@ -747,7 +747,6 @@ end
 Helper.time_kuerteeInited = nil
 function Helper.init_kuertee ()
 	Helper.time_kuerteeInited = GetCurRealTime()
-	Helper.loadModLuas("Helper", "helper_uix")
 	Helper.SWIUI_Init()
 	-- DebugError("uix load success: " .. tostring(debug.getinfo(1).source))
 end

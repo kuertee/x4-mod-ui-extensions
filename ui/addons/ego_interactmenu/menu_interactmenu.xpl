@@ -6944,13 +6944,6 @@ function menu.Add_Custom_Actions_Group(id, text)
 		Helper.debugText("Add_Custom_Actions_Group customOrdersSection.subsections", customOrdersSection.subsections)
 	end
 end
-
-function menu.loadModLuas()
-	if Helper then
-		Helper.loadModLuas(menu.name, "menu_interactmenu_uix")
-	end
-end
-
 -- kuertee end
 
 init()
