@@ -5331,9 +5331,6 @@ function menu.deregisterCallback(callbackName, callbackFunction)
 		end
 	end
 end
-
-function menu.loadModLuas()
-end
 -- kuertee end
 
 init()
