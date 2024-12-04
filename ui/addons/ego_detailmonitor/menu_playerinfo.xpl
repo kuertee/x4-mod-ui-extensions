@@ -1572,7 +1572,17 @@ function menu.createInventory(frame, tableProperties, mode, tabOrderOffset)
 
 	local isonline = Helper.isOnlineGame()
 	-- show venture inventory partially if we have permanent online items
-	local onlineitems = OnlineGetUserItems()
+
+	-- kuertee start: prevent online funcs when modified
+	-- local onlineitems = OnlineGetUserItems()
+	local onlineitems
+	if C.IsGameModified() then
+		onlineitems = {}
+	else
+		onlineitems = OnlineGetUserItems()
+	end
+	-- kuertee end: prevent online funcs when modified
+
 	for ware, waredata in pairs(onlineitems) do
 		local isoperationvolatile, isseasonvolatile = GetWareData(ware, "isoperationvolatile", "isseasonvolatile")
 		if (not isoperationvolatile) and (not isseasonvolatile) then
@@ -1611,7 +1621,16 @@ function menu.createInventory(frame, tableProperties, mode, tabOrderOffset)
 		end
 
 		menu.inventory = GetPlayerInventory()
-		menu.onlineitems = OnlineGetUserItems()
+
+		-- kuertee start: prevent online funcs when modified
+		-- menu.onlineitems = OnlineGetUserItems()
+		if C.IsGameModified() then
+			menu.onlineitems = {}
+		else
+			menu.onlineitems = OnlineGetUserItems()
+		end
+		-- kuertee end: prevent online funcs when modified
+
 		for ware, waredata in Helper.orderedPairs(menu.inventory) do
 			local iscraftingresource, ismodpart, isprimarymodpart, ispersonalupgrade, tradeonly, ispaintmod, isbraneitem = GetWareData(ware, "iscraftingresource", "ismodpart", "isprimarymodpart", "ispersonalupgrade", "tradeonly", "ispaintmod", "isbraneitem")
 			if iscraftingresource or ismodpart or isprimarymodpart then
@@ -3845,7 +3864,15 @@ function menu.initEmpireData()
 
 	menu.getEmployeeList()
 
-	local onlineitems = OnlineGetUserItems()
+	-- kuertee start: prevent online funcs when modified
+	-- local onlineitems = OnlineGetUserItems()
+	local onlineitems
+	if C.IsGameModified() then
+		onlineitems = {}
+	else
+		onlineitems = OnlineGetUserItems()
+	end
+	-- kuertee end: prevent online funcs when modified
 
 	local numinventoryitems = 0
 	-- { [ware1] = { name = "", amount = 0, price = 0 }, [ware2] = {} }

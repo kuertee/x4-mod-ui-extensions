@@ -18538,7 +18538,11 @@ function menu.createPlayerInfo(frame, width, height, offsetx, offsety)
 		button.handlers.onClick = function () return menu.allowResetView() and menu.buttonResetView() or nil end
 	end
 
-	if OnlineIsCurrentTeamValid() then
+	-- kuertee start: prevent online funcs when modified
+	-- if OnlineIsCurrentTeamValid() then
+	if (not C.IsGameModified()) and OnlineIsCurrentTeamValid() then
+	-- kuertee end: prevent online funcs when modified
+
 		local button = row[3]:createButton({
 			width = row[3]:getColSpanWidth(),
 			height = Helper.scaleY(Helper.standardTextHeight),

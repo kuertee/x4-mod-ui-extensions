@@ -2875,11 +2875,25 @@ config.DLSSmodes = {
 --- widget hooks ---
 
 function menu.onClientStarted()
-	__CORE_GAMEOPTIONS_VENTURECONFIG = {
-		allow_validation = OnlineGetVentureConfig("allow_validation"),
-		allow_update = OnlineGetVentureConfig("allow_update"),
-		allow_update_once = OnlineGetVentureConfig("allow_update_once"),
-	}
+	-- kuertee start: prevent online funcs when modified
+	if C.IsGameModified() then
+		__CORE_GAMEOPTIONS_VENTURECONFIG = {
+			allow_validation = false,
+			allow_update = false,
+			allow_update_once = false,
+		}
+	else
+	-- kuertee end: prevent online funcs when modified
+
+		__CORE_GAMEOPTIONS_VENTURECONFIG = {
+			allow_validation = OnlineGetVentureConfig("allow_validation"),
+			allow_update = OnlineGetVentureConfig("allow_update"),
+			allow_update_once = OnlineGetVentureConfig("allow_update_once"),
+		}
+
+	-- kuertee start: prevent online funcs when modified
+	end
+	-- kuertee end: prevent online funcs when modified
 end
 
 function menu.onOpenSubMenu(_, submenu)
@@ -3313,7 +3327,18 @@ function menu.buttonExtensionUISecurityMode()
 	__CORE_GAMEOPTIONS_RESTORE = true
 	__CORE_GAMEOPTIONS_RESTOREINFO.optionParameter = nil
 	__CORE_GAMEOPTIONS_RESTOREINFO.history = menu.history
-	SetUISafeModeOption(not GetUISafeModeOption())
+
+	-- kuertee start: prevent online funcs when modified
+	if C.IsGameModified() then
+	else
+	-- kuertee end: prevent online funcs when modified
+
+		SetUISafeModeOption(not GetUISafeModeOption())
+
+	-- kuertee start: prevent online funcs when modified
+	end
+	-- kuertee end: prevent online funcs when modified
+
 	menu.displayInit(ReadText(1001, 409))
 end
 
@@ -4074,8 +4099,19 @@ function menu.createContextMenuUISecurity(frame)
 	row[2].handlers.onClick = function () menu.contextMenuData.saveOption = not menu.contextMenuData.saveOption end
 	row[5]:createButton({  }):setText(ReadText(1001, 12728), { halign = "center" })
 	row[5].handlers.onClick = function() __CORE_DETAILMONITOR_USERQUESTION[menu.contextMenuMode] = menu.contextMenuData.saveOption; menu.closeContextMenu() end
-	row[6]:createButton({  }):setText(ReadText(1001, 12731), { halign = "center" })
-	row[6].handlers.onClick = function() __CORE_DETAILMONITOR_USERQUESTION[menu.contextMenuMode] = menu.contextMenuData.saveOption; SetUISafeModeOption(false); menu.displayInit(ReadText(1001, 409)) end
+
+	-- kuertee start: prevent online funcs when modified
+	if C.IsGameModified() then
+	else
+	-- kuertee end: prevent online funcs when modified
+
+		row[6]:createButton({  }):setText(ReadText(1001, 12731), { halign = "center" })
+		row[6].handlers.onClick = function() __CORE_DETAILMONITOR_USERQUESTION[menu.contextMenuMode] = menu.contextMenuData.saveOption; SetUISafeModeOption(false); menu.displayInit(ReadText(1001, 409)) end
+
+	-- kuertee start: prevent online funcs when modified
+	end
+	-- kuertee end: prevent online funcs when modified
+
 	ftable:setSelectedCol(5)
 
 	return ftable:getVisibleHeight()
@@ -5773,13 +5809,23 @@ function menu.remapInputInternal(newinputtype, newinputcode, newinputsgn, newinp
 end
 
 function menu.isVentureExtensionRestartRequired()
-	if OnlineGetVentureConfig("allow_update") and (not __CORE_GAMEOPTIONS_VENTURECONFIG.allow_update) then
-		return true
+	-- kuertee start: prevent online funcs when modified 
+	if C.IsGameModified() then
+		return false
+	else
+	-- kuertee end: prevent online funcs when modified
+
+		if OnlineGetVentureConfig("allow_update") and (not __CORE_GAMEOPTIONS_VENTURECONFIG.allow_update) then
+			return true
+		end
+		if OnlineGetVentureConfig("allow_update_once") and (not __CORE_GAMEOPTIONS_VENTURECONFIG.allow_update_once) then
+			return true
+		end
+		return false
+
+	-- kuertee start: prevent online funcs when modified 
 	end
-	if OnlineGetVentureConfig("allow_update_once") and (not __CORE_GAMEOPTIONS_VENTURECONFIG.allow_update_once) then
-		return true
-	end
-	return false
+	-- kuertee end: prevent online funcs when modified
 end
 
 
@@ -5982,7 +6028,17 @@ function menu.nameOnlineSeason()
 		if (not C.AreVenturesEnabled()) or (not OnlineHasSession()) then
 			return ReadText(1001, 11753)
 		end
-		local state = OnlineGetVersionIncompatibilityState()
+
+		-- kuertee start: prevent online funcs when modified
+		-- local state = OnlineGetVersionIncompatibilityState()
+		local state
+		if C.IsGameModified() then
+			state = 0
+		else
+			state = OnlineGetVersionIncompatibilityState()
+		end
+		-- kuertee end: prevent online funcs when modified
+
 		local entry = menu.getLatestOnlineSave()
 		if state ~= 0 then
 			local basename = entry and (menu.isStartmenu and ReadText(1001, 11717) or ReadText(1001, 11572)) or ReadText(1001, 11300)
@@ -6154,7 +6210,16 @@ function menu.warningIconOnline()
 	local icon = ""
 	local iconcolor = Color["icon_warning"]
 
-	local state = OnlineGetVersionIncompatibilityState()
+	-- kuertee start: prevent online funcs when modified
+	-- local state = OnlineGetVersionIncompatibilityState()
+	local state
+	if C.IsGameModified() then
+		state = 0
+	else
+		state = OnlineGetVersionIncompatibilityState()
+	end
+	-- kuertee end: prevent online funcs when modified
+
 	local dlcstate = config.ventureDLCStates[C.GetVentureDLCStatus()] or "unknownerror"
 	if state ~= 0 then
 		iconcolor = Color["icon_error"]
@@ -6328,7 +6393,16 @@ end
 function menu.warningOnline()
 	local warningtext = ""
 
-	local state = OnlineGetVersionIncompatibilityState()
+	-- kuertee start: prevent online funcs when modified
+	-- local state = OnlineGetVersionIncompatibilityState()
+	local state
+	if C.IsGameModified() then
+		state = 0
+	else
+		state = OnlineGetVersionIncompatibilityState()
+	end
+	-- kuertee end: prevent online funcs when modified
+
 	if state ~= 0 then
 		if state == 1 then
 			warningtext = ColorText["text_error"] .. ReadText(1001, 11351) .. "\27X"
@@ -7788,7 +7862,17 @@ function menu.selectableOnlineSeason()
 		if (not C.AreVenturesEnabled()) or (not OnlineHasSession()) then
 			return false
 		end
-		local state = OnlineGetVersionIncompatibilityState()
+
+		-- kuertee start: prevent online funcs when modified
+		-- local state = OnlineGetVersionIncompatibilityState()
+		local state
+		if C.IsGameModified() then
+			state = 0
+		else
+			state = OnlineGetVersionIncompatibilityState()
+		end
+		-- kuertee end: prevent online funcs when modified
+
 		if state == 0 then
 			return OnlineHasSession() and (not (entry.invalidpatches or entry.invalidversion or entry.invalidgameid))
 		end
@@ -7826,7 +7910,16 @@ end
 
 function menu.loadGameCallback(filename, checked)
 	local playerinventory = GetPlayerInventory()
-	local onlineitems = OnlineGetUserItems()
+
+	-- kuertee start: prevent online funcs when modified
+	-- local onlineitems = OnlineGetUserItems()
+	local onlineitems
+	if C.IsGameModified() then
+		onlineitems = {}
+	else
+		onlineitems = OnlineGetUserItems()
+	end
+	-- kuertee end: prevent online funcs when modified
 
 	local hasnotuploadeditems = false
 	for ware, waredata in Helper.orderedPairs(playerinventory) do
@@ -11732,7 +11825,16 @@ function menu.displayOnlineLogin()
 	local row = ftable:addRow(false, { fixed = true })
 	row[2]:setColSpan(10):createText(menu.warningOnline, config.warningTextProperties)
 
-	local state = OnlineGetVersionIncompatibilityState()
+	-- kuertee start: prevent online funcs when modified
+	-- local state = OnlineGetVersionIncompatibilityState()
+	local state
+	if C.IsGameModified() then
+		state = 0
+	else
+		state = OnlineGetVersionIncompatibilityState()
+	end
+	-- kuertee end: prevent online funcs when modified
+
 	local hassession = OnlineHasSession()
 	local active = (not hassession) and (not menu.onlineData.loginAttempt) and (state ~= 1)
 

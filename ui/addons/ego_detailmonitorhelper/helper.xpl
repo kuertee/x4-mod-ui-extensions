@@ -10250,7 +10250,17 @@ function Helper.updateVenturePlatforms()
 end
 
 function Helper.isOnlineGame()
-	return OnlineIsOnlineModeActive()
+
+	-- kuertee start: prevent online funcs when modified
+	if C.IsGameModified() then
+		return false
+	else
+	-- kuertee end: prevent online funcs when modified
+
+		return OnlineIsOnlineModeActive()
+	-- kuertee start: prevent online funcs when modified
+	end
+	-- kuertee end: prevent online funcs when modified
 end
 
 function Helper.hasVentureRewards()

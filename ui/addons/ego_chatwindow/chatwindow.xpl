@@ -12,6 +12,7 @@ ffi.cdef[[
 	void NotifyChatMessageRead(void);
 	void SetUserData(const char* name, const char* value);
 	void TriggerInputFeedback(const char* type, const char* idname, const char* triggerid, const char* contextid);
+	bool IsGameModified(void);
 ]]
 
 local menu = {
@@ -234,7 +235,17 @@ end
 
 function menu.getChatMessages()
 	if menu.messagesOutdated then
-		local username, userid = OnlineGetUserName()
+		-- kuertee start: fix if modded
+		-- local username, userid = OnlineGetUserName()
+		local username, userid
+		if C.IsGameModified() then
+			username = ""
+			userid = ""
+		else
+			username, userid = OnlineGetUserName()
+		end
+		-- kuertee end: fix if modded
+
 		local fontsize = Helper.scaleFont(Helper.standardFont, Helper.standardFontSize)
 		menu.messagetexts = {}
 		for i in ipairs(menu.privatemessages) do
@@ -242,7 +253,17 @@ function menu.getChatMessages()
 		end
 
 		local prevdate = ""
-		local messages = OnlineGetChatMessages()
+
+		-- kuertee start: fix if modded
+		-- local messages = OnlineGetChatMessages()
+		local messages
+		if C.IsGameModified() then
+			messages = {}
+		else
+			messages = OnlineGetChatMessages()
+		end
+		-- kuertee end: fix if modded
+
 		for i, message in ipairs(messages) do
 			local color = menu.getChatColor(message.author, message.authorid, userid)
 
