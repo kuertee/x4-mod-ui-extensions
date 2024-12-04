@@ -10237,7 +10237,7 @@ end
 function Helper.isOnlineGame()
 
 	-- kuertee start: prevent online funcs when modified
-	if C.IsGameModified() then
+	if GetUISafeModeOption() then
 		return false
 	else
 	-- kuertee end: prevent online funcs when modified

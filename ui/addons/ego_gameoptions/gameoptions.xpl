@@ -2874,7 +2874,7 @@ config.DLSSmodes = {
 
 function menu.onClientStarted()
 	-- kuertee start: prevent online funcs when modified
-	if C.IsGameModified() then
+	if not GetUISafeModeOption() then
 		__CORE_GAMEOPTIONS_VENTURECONFIG = {
 			allow_validation = false,
 			allow_update = false,
@@ -3325,18 +3325,7 @@ function menu.buttonExtensionUISecurityMode()
 	__CORE_GAMEOPTIONS_RESTORE = true
 	__CORE_GAMEOPTIONS_RESTOREINFO.optionParameter = nil
 	__CORE_GAMEOPTIONS_RESTOREINFO.history = menu.history
-
-	-- kuertee start: prevent online funcs when modified
-	if C.IsGameModified() then
-	else
-	-- kuertee end: prevent online funcs when modified
-
-		SetUISafeModeOption(not GetUISafeModeOption())
-
-	-- kuertee start: prevent online funcs when modified
-	end
-	-- kuertee end: prevent online funcs when modified
-
+	SetUISafeModeOption(not GetUISafeModeOption())
 	menu.displayInit(ReadText(1001, 409))
 end
 
@@ -4099,7 +4088,7 @@ function menu.createContextMenuUISecurity(frame)
 	row[5].handlers.onClick = function() __CORE_DETAILMONITOR_USERQUESTION[menu.contextMenuMode] = menu.contextMenuData.saveOption; menu.closeContextMenu() end
 
 	-- kuertee start: prevent online funcs when modified
-	if C.IsGameModified() then
+	if not GetUISafeModeOption() then
 	else
 	-- kuertee end: prevent online funcs when modified
 
@@ -5808,7 +5797,7 @@ end
 
 function menu.isVentureExtensionRestartRequired()
 	-- kuertee start: prevent online funcs when modified 
-	if C.IsGameModified() then
+	if not GetUISafeModeOption() then
 		return false
 	else
 	-- kuertee end: prevent online funcs when modified
@@ -6030,7 +6019,7 @@ function menu.nameOnlineSeason()
 		-- kuertee start: prevent online funcs when modified
 		-- local state = OnlineGetVersionIncompatibilityState()
 		local state
-		if C.IsGameModified() then
+		if not GetUISafeModeOption() then
 			state = 0
 		else
 			state = OnlineGetVersionIncompatibilityState()
@@ -6211,7 +6200,7 @@ function menu.warningIconOnline()
 	-- kuertee start: prevent online funcs when modified
 	-- local state = OnlineGetVersionIncompatibilityState()
 	local state
-	if C.IsGameModified() then
+	if not GetUISafeModeOption() then
 		state = 0
 	else
 		state = OnlineGetVersionIncompatibilityState()
@@ -6394,7 +6383,7 @@ function menu.warningOnline()
 	-- kuertee start: prevent online funcs when modified
 	-- local state = OnlineGetVersionIncompatibilityState()
 	local state
-	if C.IsGameModified() then
+	if not GetUISafeModeOption() then
 		state = 0
 	else
 		state = OnlineGetVersionIncompatibilityState()
@@ -7864,7 +7853,7 @@ function menu.selectableOnlineSeason()
 		-- kuertee start: prevent online funcs when modified
 		-- local state = OnlineGetVersionIncompatibilityState()
 		local state
-		if C.IsGameModified() then
+		if not GetUISafeModeOption() then
 			state = 0
 		else
 			state = OnlineGetVersionIncompatibilityState()
@@ -7912,7 +7901,7 @@ function menu.loadGameCallback(filename, checked)
 	-- kuertee start: prevent online funcs when modified
 	-- local onlineitems = OnlineGetUserItems()
 	local onlineitems
-	if C.IsGameModified() then
+	if not GetUISafeModeOption() then
 		onlineitems = {}
 	else
 		onlineitems = OnlineGetUserItems()
@@ -11826,7 +11815,7 @@ function menu.displayOnlineLogin()
 	-- kuertee start: prevent online funcs when modified
 	-- local state = OnlineGetVersionIncompatibilityState()
 	local state
-	if C.IsGameModified() then
+	if not GetUISafeModeOption() then
 		state = 0
 	else
 		state = OnlineGetVersionIncompatibilityState()

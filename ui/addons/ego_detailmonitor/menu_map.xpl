@@ -18538,7 +18538,7 @@ function menu.createPlayerInfo(frame, width, height, offsetx, offsety)
 
 	-- kuertee start: prevent online funcs when modified
 	-- if OnlineIsCurrentTeamValid() then
-	if (not C.IsGameModified()) and OnlineIsCurrentTeamValid() then
+	if (not GetUISafeModeOption()) and OnlineIsCurrentTeamValid() then
 	-- kuertee end: prevent online funcs when modified
 
 		local button = row[3]:createButton({

@@ -235,16 +235,16 @@ end
 
 function menu.getChatMessages()
 	if menu.messagesOutdated then
-		-- kuertee start: fix if modded
+		-- kuertee start: prevent online funcs when modified
 		-- local username, userid = OnlineGetUserName()
 		local username, userid
-		if C.IsGameModified() then
+		if not GetUISafeModeOption() then
 			username = ""
 			userid = ""
 		else
 			username, userid = OnlineGetUserName()
 		end
-		-- kuertee end: fix if modded
+		-- kuertee end: prevent online funcs when modified
 
 		local fontsize = Helper.scaleFont(Helper.standardFont, Helper.standardFontSize)
 		menu.messagetexts = {}
@@ -254,15 +254,15 @@ function menu.getChatMessages()
 
 		local prevdate = ""
 
-		-- kuertee start: fix if modded
+		-- kuertee start: prevent online funcs when modified
 		-- local messages = OnlineGetChatMessages()
 		local messages
-		if C.IsGameModified() then
+		if not GetUISafeModeOption() then
 			messages = {}
 		else
 			messages = OnlineGetChatMessages()
 		end
-		-- kuertee end: fix if modded
+		-- kuertee end: prevent online funcs when modified
 
 		for i, message in ipairs(messages) do
 			local color = menu.getChatColor(message.author, message.authorid, userid)
@@ -777,7 +777,16 @@ function menu.createReportContext(frame)
 	row[1]:createText(data.author, Helper.headerRowCenteredProperties)
 	row[1].properties.color = data.authorcolor
 
-	local _, userid = OnlineGetUserName()
+	-- kuertee start: prevent online funcs when modified
+	-- local _, userid = OnlineGetUserName()
+	local _, userid
+	if not GetUISafeModeOption() then
+		userid = ""
+	else
+		_, userid = OnlineGetUserName()
+	end
+	-- kuertee end: prevent online funcs when modified
+
 	if data.authorid ~= userid then
 		local row = ftable:addRow(true, { fixed = true })
 		row[1]:createButton({  }):setText(ReadText(1001, 12115))
@@ -925,7 +934,17 @@ function menu.onTableRightMouseClick(uitable, row, posx, posy)
 	if uitable == menu.chatTable then
 		local rowdata = menu.rowDataMap[uitable] and menu.rowDataMap[uitable][row]
 		if type(rowdata) == "table" then
-			local username, userid = OnlineGetUserName()
+
+			-- kuertee start: prevent online funcs when modified
+			-- local username, userid = OnlineGetUserName()
+			if not GetUISafeModeOption() then
+				username = ""
+				userid = ""
+			else
+				username, userid = OnlineGetUserName()
+			end
+			-- kuertee end: prevent online funcs when modified
+
 			if rowdata.authorid ~= userid then
 				local x, y = GetLocalMousePosition()
 				if x == nil then

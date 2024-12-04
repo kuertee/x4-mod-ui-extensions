@@ -1574,7 +1574,7 @@ function menu.createInventory(frame, tableProperties, mode, tabOrderOffset)
 	-- kuertee start: prevent online funcs when modified
 	-- local onlineitems = OnlineGetUserItems()
 	local onlineitems
-	if C.IsGameModified() then
+	if not GetUISafeModeOption() then
 		onlineitems = {}
 	else
 		onlineitems = OnlineGetUserItems()
@@ -1622,7 +1622,7 @@ function menu.createInventory(frame, tableProperties, mode, tabOrderOffset)
 
 		-- kuertee start: prevent online funcs when modified
 		-- menu.onlineitems = OnlineGetUserItems()
-		if C.IsGameModified() then
+		if not GetUISafeModeOption() then
 			menu.onlineitems = {}
 		else
 			menu.onlineitems = OnlineGetUserItems()
@@ -3865,7 +3865,7 @@ function menu.initEmpireData()
 	-- kuertee start: prevent online funcs when modified
 	-- local onlineitems = OnlineGetUserItems()
 	local onlineitems
-	if C.IsGameModified() then
+	if not GetUISafeModeOption() then
 		onlineitems = {}
 	else
 		onlineitems = OnlineGetUserItems()
