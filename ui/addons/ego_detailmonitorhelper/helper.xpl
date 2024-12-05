@@ -9535,13 +9535,13 @@ function Helper.playerInfoConfigTextLeft(_, width, ismultiverse)
 	local connectionStatus = ""
 	if C.IsOnlineEnabled() then
 
-		-- kuertee start: prevent online funcs when modified
+		-- kuertee start: prevent online funcs when protected ui mod is disabled
 		-- connectionStatus = (Helper.isOnlineGame() and OnlineHasSession()) and (ReadText(1001, 11624) .. " \27[vt_connected]") or (ReadText(1001, 11625) .. " \27[vt_disconnected]")
 		connectionStatus = ReadText(1001, 11625) .. " \27[vt_disconnected]"
 		if GetUISafeModeOption() then
 			connectionStatus = (Helper.isOnlineGame() and OnlineHasSession()) and (ReadText(1001, 11624) .. " \27[vt_connected]") or (ReadText(1001, 11625) .. " \27[vt_disconnected]")
 		end
-		-- kuertee end: prevent online funcs when modified
+		-- kuertee end: prevent online funcs when protected ui mod is disabled
 
 	end
 	local connectedtextwidth = C.GetTextWidth(connectionStatus .. " ", Helper.playerInfoConfig.fontname, Helper.playerInfoConfig.fontsize)
@@ -9561,9 +9561,9 @@ function Helper.playerInfoConfigTextRight(_, ismultiverse)
 	local connectionStatus = ""
 	if C.AreVenturesEnabled() then
 
-		-- kuertee start: prevent online funcs when modified
+		-- kuertee start: prevent online funcs when protected ui mod is disabled
 		if GetUISafeModeOption() then
-		-- kuertee end: prevent online funcs when modified
+		-- kuertee end: prevent online funcs when protected ui mod is disabled
 
 			if OnlineIsCurrentTeamValid() then
 				connectionStatus = (Helper.isOnlineGame() and OnlineHasSession()) and "\27[vt_connected]" or (ColorText["text_warning"] .. "\27[vt_disconnected]\27X")
@@ -9571,9 +9571,9 @@ function Helper.playerInfoConfigTextRight(_, ismultiverse)
 				connectionStatus = (Helper.isOnlineGame() and OnlineHasSession()) and (ReadText(1001, 11624) .. " \27[vt_connected]") or (ColorText["text_warning"] .. ReadText(1001, 11625) .. " \27[vt_disconnected]\27X")
 			end
 
-		-- kuertee start: prevent online funcs when modified
+		-- kuertee start: prevent online funcs when protected ui mod is disabled
 		end
-		-- kuertee end: prevent online funcs when modified
+		-- kuertee end: prevent online funcs when protected ui mod is disabled
 
 	end
 
@@ -10254,22 +10254,22 @@ end
 
 function Helper.isOnlineGame()
 
-	-- kuertee start: prevent online funcs when modified
+	-- kuertee start: prevent online funcs when protected ui mod is disabled
 	if GetUISafeModeOption() then
 		return OnlineIsOnlineModeActive()
 	end
-	-- kuertee end: prevent online funcs when modified
+	-- kuertee end: prevent online funcs when protected ui mod is disabled
 
 end
 
 function Helper.hasVentureRewards()
 
-	-- kuertee start: prevent online funcs when modified
+	-- kuertee start: prevent online funcs when protected ui mod is disabled
 	-- return OnlineHasVentureLogbookReward()
 	if GetUISafeModeOption() then
 		return OnlineHasVentureLogbookReward()
 	end
-	-- kuertee end: prevent online funcs when modified
+	-- kuertee end: prevent online funcs when protected ui mod is disabled
 
 end
 
@@ -10411,13 +10411,13 @@ end
 
 function Helper.ventureOperationTimeLeftText()
 
-	-- kuertee start: prevent online funcs when modified
+	-- kuertee start: prevent online funcs when protected ui mod is disabled
 	-- local operation = OnlineGetCurrentOperation()
 	local operation
 	if GetUISafeModeOption() then
 		operation = OnlineGetCurrentOperation()
 	end
-	-- kuertee end: prevent online funcs when modified
+	-- kuertee end: prevent online funcs when protected ui mod is disabled
 
 	local operationtimestring = "---"
 	if operation.isvalid then
@@ -10430,13 +10430,13 @@ end
 function Helper.ventureSeasonTimeLeftText()
 	local curtime = C.GetCurrentUTCDataTime()
 
-	-- kuertee start: prevent online funcs when modified
+	-- kuertee start: prevent online funcs when protected ui mod is disabled
 	-- local season = OnlineGetCurrentSeason()
 	local season
 	if GetUISafeModeOption() then
 		season = OnlineGetCurrentSeason()
 	end
-	-- kuertee end: prevent online funcs when modified
+	-- kuertee end: prevent online funcs when protected ui mod is disabled
 
 	local seasontimestring = ReadText(1001, 11581)
 	if next(season) then
@@ -12466,13 +12466,13 @@ function Helper.createVentureContactsHeader(menu, frame, instance, x, y)
 				bgcolor = Color["row_background_blue"]
 			end
 
-			-- kuertee start: prevent online funcs when modified
+			-- kuertee start: prevent online funcs when protected ui mod is disabled
 			-- local hassession = OnlineHasSession()
 			local hassession
 			if GetUISafeModeOption() then
 				hassession = OnlineHasSession()
 			end
-			-- kuertee end: prevent online funcs when modified
+			-- kuertee end: prevent online funcs when protected ui mod is disabled
 
 			local loccount = count
 			row[loccount]:createButton({ active = hassession, height = sidebarwidth, bgColor = bgcolor, mouseOverText = entry.name, scaling = false, helpOverlayID = entry.helpOverlayID, helpOverlayText = entry.helpOverlayText }):setIcon(entry.icon, { color = color})
@@ -12560,11 +12560,11 @@ end
 
 function Helper.buttonCreateFriendListContext(menu)
 
-	-- kuertee start: prevent online funcs when modified
+	-- kuertee start: prevent online funcs when protected ui mod is disabled
 	if GetUISafeModeOption() then
 		OnlineRequestPlatformFriendList()
 	end
-	-- kuertee end: prevent online funcs when modified
+	-- kuertee end: prevent online funcs when protected ui mod is disabled
 
 end
 
@@ -12602,13 +12602,13 @@ end
 
 function Helper.onPlatformFriendsLookedUp(menu)
 
-	-- kuertee start: prevent online funcs when modified
+	-- kuertee start: prevent online funcs when protected ui mod is disabled
 	-- local friendlist = OnlineGetPlatformFriendList()
 	local friendlist = {}
 	if GetUISafeModeOption() then
 		friendlist = OnlineGetPlatformFriendList()
 	end
-	-- kuertee end: prevent online funcs when modified
+	-- kuertee end: prevent online funcs when protected ui mod is disabled
 
 	menu.contextMenuMode = "venturefriendlist"
 	local offsetx = Helper.ventureContactsMode.x + Helper.ventureContactsMode.width + Helper.borderSize + Helper.ventureContactsConfig.contextBorder
@@ -12632,13 +12632,13 @@ function Helper.createVentureContactContext(menu, frame)
 
 	if C.IsVentureSeasonSupported() then
 
-		-- kuertee start: prevent online funcs when modified
+		-- kuertee start: prevent online funcs when protected ui mod is disabled
 		-- local _, userid = OnlineGetUserName()
 		local userid = ""
 		if GetUISafeModeOption() then
 			_, userid = OnlineGetUserName()
 		end
-		-- kuertee end: prevent online funcs when modified
+		-- kuertee end: prevent online funcs when protected ui mod is disabled
 
 		local _, userid = OnlineGetUserName()
 		if contact.id ~= userid then

@@ -4957,13 +4957,13 @@ function menu.insertLuaAction(actiontype, istobedisplayed)
 				local inventory = GetInventory(pilot)
 				if next(inventory) then
 
-					-- kuertee start: prevent online funcs when modified
+					-- kuertee start: prevent online funcs when protected ui mod is disabled
 					-- local onlineitems = OnlineGetUserItems()
 					local onlineitems = {}
 					if GetUISafeModeOption() then
 						onlineitems = OnlineGetUserItems()
 					end
-					-- kuertee end: prevent online funcs when modified
+					-- kuertee end: prevent online funcs when protected ui mod is disabled
 
 					local sortedWares = {}
 					for ware, entry in pairs(inventory) do

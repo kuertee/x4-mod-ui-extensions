@@ -430,10 +430,10 @@ local function init()
 			menu.contextMenuMode = "firstgame"
 			menu.contextMenuData = { width = Helper.scaleX(500), y = Helper.viewHeight / 2 }
 
-		-- kuertee start: prevent online funcs when modified
+		-- kuertee start: prevent online funcs when protected ui mod is disabled
 		-- elseif C.IsVentureSeasonSupported() and OnlineHasSession() and (not OnlineGetVentureConfig("allow_validation")) and (not OnlineGetVentureConfig("disable_popup")) then
 		elseif C.IsVentureSeasonSupported() and GetUISafeModeOption() and OnlineHasSession() and (not OnlineGetVentureConfig("allow_validation")) and (not OnlineGetVentureConfig("disable_popup")) then
-		-- kuertee end: prevent online funcs when modified
+		-- kuertee end: prevent online funcs when protected ui mod is disabled
 
 			menu.contextMenuMode = "ventureextension"
 			menu.contextMenuData = { width = Helper.scaleX(400), y = Helper.viewHeight / 2 }
@@ -1392,10 +1392,10 @@ config.optionDefinitions = {
 			value = function () return menu.valueOnlineAllowInvites() end,
 			callback = function () return menu.callbackOnlineAllowInvites() end,
 
-			-- kuertee start: prevent online funcs when modified
+			-- kuertee start: prevent online funcs when protected ui mod is disabled
 			-- display = function () return C.IsVentureSeasonSupported() and OnlineHasSession() end,
 			display = function () return C.IsVentureSeasonSupported() and (GetUISafeModeOption() and OnlineHasSession()) end,
-			-- kuertee end: prevent online funcs when modified
+			-- kuertee end: prevent online funcs when protected ui mod is disabled
 
 		},
 		[4] = {
@@ -1406,10 +1406,10 @@ config.optionDefinitions = {
 			value = function () return menu.valueOnlineAllowPrivateMessages() end,
 			callback = function () return menu.callbackOnlineAllowPrivateMessages() end,
 
-			-- kuertee start: prevent online funcs when modified
+			-- kuertee start: prevent online funcs when protected ui mod is disabled
 			-- display = function () return C.IsVentureSeasonSupported() and OnlineHasSession() end,
 			display = function () return C.IsVentureSeasonSupported() and (GetUISafeModeOption() and OnlineHasSession()) end,
-			-- kuertee end: prevent online funcs when modified
+			-- kuertee end: prevent online funcs when protected ui mod is disabled
 
 		},
 		[5] = {
@@ -2888,7 +2888,7 @@ config.DLSSmodes = {
 --- widget hooks ---
 
 function menu.onClientStarted()
-	-- kuertee start: prevent online funcs when modified
+	-- kuertee start: prevent online funcs when protected ui mod is disabled
 	__CORE_GAMEOPTIONS_VENTURECONFIG = {
 		allow_validation = false,
 		allow_update = false,
@@ -2901,7 +2901,7 @@ function menu.onClientStarted()
 			allow_update_once = OnlineGetVentureConfig("allow_update_once"),
 		}
 	end
-	-- kuertee end: prevent online funcs when modified
+	-- kuertee end: prevent online funcs when protected ui mod is disabled
 end
 
 function menu.onOpenSubMenu(_, submenu)
@@ -2984,13 +2984,13 @@ function menu.onOnlineLogin(_, serializedArg)
 			menu.onlineData.loginError = error
 		else
 
-			-- kuertee start: prevent online funcs when modified
+			-- kuertee start: prevent online funcs when protected ui mod is disabled
 			-- menu.onlineData.username = OnlineGetUserName()
 			menu.onlineData.username = ""
 			if GetUISafeModeOption() then
 				menu.onlineData.username = OnlineGetUserName()
 			end
-			-- kuertee end: prevent online funcs when modified
+			-- kuertee end: prevent online funcs when protected ui mod is disabled
 
 		end
 		menu.onlineData.loginAttempt = false
@@ -3308,15 +3308,15 @@ function menu.buttonOnlineLogout()
 	if not isonline then
 		__CORE_GAMEOPTIONS_PRIVACYPOLICY = false
 
-		-- kuertee start: prevent online funcs when modified
+		-- kuertee start: prevent online funcs when protected ui mod is disabled
 		if GetUISafeModeOption() then
-		-- kuertee end: prevent online funcs when modified
+		-- kuertee end: prevent online funcs when protected ui mod is disabled
 
 			OnlineLogOut()
 
-		-- kuertee start: prevent online funcs when modified
+		-- kuertee start: prevent online funcs when protected ui mod is disabled
 		end
-		-- kuertee end: prevent online funcs when modified
+		-- kuertee end: prevent online funcs when protected ui mod is disabled
 
 		menu.onlineData.hasRegisteredGame = nil
 		menu.onlineRefresh = true
@@ -3502,10 +3502,10 @@ function menu.addSavegameRow(ftable, savegame, name, slot)
 	local warningicon = ""
 	if savegame.isonline then
 
-		-- kuertee start: prevent online funcs when modified
+		-- kuertee start: prevent online funcs when protected ui mod is disabled
 		-- if C.IsClientModified() or (not OnlineHasSession()) or (C.GetVentureDLCStatus() ~= 0) then
 		if C.IsClientModified() or (GetUISafeModeOption() and (not OnlineHasSession())) or (C.GetVentureDLCStatus() ~= 0) then
-		-- kuertee end: prevent online funcs when modified
+		-- kuertee end: prevent online funcs when protected ui mod is disabled
 
 			warningicon = ColorText["icon_warning"] .. "\27[workshop_error]\27X"
 		end
@@ -4120,16 +4120,16 @@ function menu.createContextMenuUISecurity(frame)
 	row[5]:createButton({  }):setText(ReadText(1001, 12728), { halign = "center" })
 	row[5].handlers.onClick = function() __CORE_DETAILMONITOR_USERQUESTION[menu.contextMenuMode] = menu.contextMenuData.saveOption; menu.closeContextMenu() end
 
-	-- kuertee start: prevent online funcs when modified
+	-- kuertee start: prevent online funcs when protected ui mod is disabled
 	if GetUISafeModeOption() then
-	-- kuertee end: prevent online funcs when modified
+	-- kuertee end: prevent online funcs when protected ui mod is disabled
 
 		row[6]:createButton({  }):setText(ReadText(1001, 12731), { halign = "center" })
 		row[6].handlers.onClick = function() __CORE_DETAILMONITOR_USERQUESTION[menu.contextMenuMode] = menu.contextMenuData.saveOption; SetUISafeModeOption(false); menu.displayInit(ReadText(1001, 409)) end
 
-	-- kuertee start: prevent online funcs when modified
+	-- kuertee start: prevent online funcs when protected ui mod is disabled
 	end
-	-- kuertee end: prevent online funcs when modified
+	-- kuertee end: prevent online funcs when protected ui mod is disabled
 
 	ftable:setSelectedCol(5)
 
@@ -5828,9 +5828,9 @@ function menu.remapInputInternal(newinputtype, newinputcode, newinputsgn, newinp
 end
 
 function menu.isVentureExtensionRestartRequired()
-	-- kuertee start: prevent online funcs when modified 
+	-- kuertee start: prevent online funcs when protected ui mod is disabled 
 	if GetUISafeModeOption() then
-	-- kuertee end: prevent online funcs when modified
+	-- kuertee end: prevent online funcs when protected ui mod is disabled
 
 		if OnlineGetVentureConfig("allow_update") and (not __CORE_GAMEOPTIONS_VENTURECONFIG.allow_update) then
 			return true
@@ -5840,11 +5840,11 @@ function menu.isVentureExtensionRestartRequired()
 		end
 		return false
 
-	-- kuertee start: prevent online funcs when modified 
+	-- kuertee start: prevent online funcs when protected ui mod is disabled 
 	else
 		return false
 	end
-	-- kuertee end: prevent online funcs when modified
+	-- kuertee end: prevent online funcs when protected ui mod is disabled
 end
 
 
@@ -6045,21 +6045,21 @@ function menu.nameOnlineSeason()
 		return ReadText(1001, 7203)
 	elseif menu.onlinesave then
 
-		-- kuertee start: prevent online funcs when modified
+		-- kuertee start: prevent online funcs when protected ui mod is disabled
 		-- if (not C.AreVenturesEnabled()) or (not OnlineHasSession()) then
 		if (not C.AreVenturesEnabled()) or (GetUISafeModeOption() and (not OnlineHasSession())) then
-		-- kuertee end: prevent online funcs when modified
+		-- kuertee end: prevent online funcs when protected ui mod is disabled
 
 			return ReadText(1001, 11753)
 		end
 
-		-- kuertee start: prevent online funcs when modified
+		-- kuertee start: prevent online funcs when protected ui mod is disabled
 		-- local state = OnlineGetVersionIncompatibilityState()
 		local state = 0
 		if GetUISafeModeOption() then
 			state = OnlineGetVersionIncompatibilityState()
 		end
-		-- kuertee end: prevent online funcs when modified
+		-- kuertee end: prevent online funcs when protected ui mod is disabled
 
 		local entry = menu.getLatestOnlineSave()
 		if state ~= 0 then
@@ -6232,13 +6232,13 @@ function menu.warningIconOnline()
 	local icon = ""
 	local iconcolor = Color["icon_warning"]
 
-	-- kuertee start: prevent online funcs when modified
+	-- kuertee start: prevent online funcs when protected ui mod is disabled
 	-- local state = OnlineGetVersionIncompatibilityState()
 	local state = 0
 	if GetUISafeModeOption() then
 		state = OnlineGetVersionIncompatibilityState()
 	end
-	-- kuertee end: prevent online funcs when modified
+	-- kuertee end: prevent online funcs when protected ui mod is disabled
 
 	local dlcstate = config.ventureDLCStates[C.GetVentureDLCStatus()] or "unknownerror"
 	if state ~= 0 then
@@ -6413,13 +6413,13 @@ end
 function menu.warningOnline()
 	local warningtext = ""
 
-	-- kuertee start: prevent online funcs when modified
+	-- kuertee start: prevent online funcs when protected ui mod is disabled
 	-- local state = OnlineGetVersionIncompatibilityState()
 	local state = 0
 	if GetUISafeModeOption() then
 		state = OnlineGetVersionIncompatibilityState()
 	end
-	-- kuertee end: prevent online funcs when modified
+	-- kuertee end: prevent online funcs when protected ui mod is disabled
 
 	if state ~= 0 then
 		if state == 1 then
@@ -7663,28 +7663,28 @@ end
 
 function menu.valueOnlineAllowInvites()
 
-	-- kuertee start: prevent online funcs when modified
+	-- kuertee start: prevent online funcs when protected ui mod is disabled
 	-- local _, _, areinvitationsallowed = OnlineGetUserName()
 	local areinvitationsallowed
 	if GetUISafeModeOption() then
 		_, _, areinvitationsallowed = OnlineGetUserName()
 	end
-	-- kuertee end: prevent online funcs when modified
+	-- kuertee end: prevent online funcs when protected ui mod is disabled
 
 	return areinvitationsallowed and ReadText(1001, 2617) or ReadText(1001, 2618)
 end
 
 function menu.valueOnlineAllowPrivateMessages()
 
-	-- kuertee start: prevent online funcs when modified
+	-- kuertee start: prevent online funcs when protected ui mod is disabled
 	if GetUISafeModeOption() then
-	-- kuertee end: prevent online funcs when modified
+	-- kuertee end: prevent online funcs when protected ui mod is disabled
 
 		return OnlineUserArePrivateMessagesAllowed() and ReadText(1001, 2617) or ReadText(1001, 2618)
 
-	-- kuertee start: prevent online funcs when modified
+	-- kuertee start: prevent online funcs when protected ui mod is disabled
 	end
-	-- kuertee end: prevent online funcs when modified
+	-- kuertee end: prevent online funcs when protected ui mod is disabled
 end
 
 function menu.valueOnlineOperationUpdates()
@@ -7705,13 +7705,13 @@ end
 function menu.valueOnlinePreferredLanguage()
 	local options = {}
 
-	-- kuertee start: prevent online funcs when modified
+	-- kuertee start: prevent online funcs when protected ui mod is disabled
 	-- local currentOption = OnlineGetCurrentUserLanguage()
 	local currentOption
 	if GetUISafeModeOption() then
 		currentOption = OnlineGetCurrentUserLanguage()
 	end
-	-- kuertee end: prevent online funcs when modified
+	-- kuertee end: prevent online funcs when protected ui mod is disabled
 
 	menu.getLanguageData()
 	for _, language in ipairs(menu.languagedata) do
@@ -7902,32 +7902,32 @@ function menu.selectableOnlineSeason()
 	local entry = menu.getLatestOnlineSave()
 	if entry then
 
-		-- kuertee start: prevent online funcs when modified
+		-- kuertee start: prevent online funcs when protected ui mod is disabled
 		-- if (not C.AreVenturesEnabled()) or (not OnlineHasSession()) then
 		if (not C.AreVenturesEnabled()) or (GetUISafeModeOption() and (not OnlineHasSession())) then
-		-- kuertee end: prevent online funcs when modified
+		-- kuertee end: prevent online funcs when protected ui mod is disabled
 
 			return false
 		end
 
-		-- kuertee start: prevent online funcs when modified
+		-- kuertee start: prevent online funcs when protected ui mod is disabled
 		-- local state = OnlineGetVersionIncompatibilityState()
 		local state = 0
 		if GetUISafeModeOption() then
 			state = OnlineGetVersionIncompatibilityState()
 		end
-		-- kuertee end: prevent online funcs when modified
+		-- kuertee end: prevent online funcs when protected ui mod is disabled
 
 		if state == 0 then
 
-			-- kuertee start: prevent online funcs when modified
+			-- kuertee start: prevent online funcs when protected ui mod is disabled
 			-- return OnlineHasSession() and (not (entry.invalidpatches or entry.invalidversion or entry.invalidgameid))
 			if GetUISafeModeOption() then
 				return OnlineHasSession() and (not (entry.invalidpatches or entry.invalidversion or entry.invalidgameid))
 			else
 				return false
 			end
-			-- kuertee end: prevent online funcs when modified
+			-- kuertee end: prevent online funcs when protected ui mod is disabled
 
 		end
 	end
@@ -7965,13 +7965,13 @@ end
 function menu.loadGameCallback(filename, checked)
 	local playerinventory = GetPlayerInventory()
 
-	-- kuertee start: prevent online funcs when modified
+	-- kuertee start: prevent online funcs when protected ui mod is disabled
 	-- local onlineitems = OnlineGetUserItems()
 	local onlineitems = {}
 	if GetUISafeModeOption() then
 		onlineitems = OnlineGetUserItems()
 	end
-	-- kuertee end: prevent online funcs when modified
+	-- kuertee end: prevent online funcs when protected ui mod is disabled
 
 	local hasnotuploadeditems = false
 	for ware, waredata in Helper.orderedPairs(playerinventory) do
@@ -9006,7 +9006,7 @@ end
 
 function menu.callbackOnlineAllowInvites()
 
-	-- kuertee start: prevent online funcs when modified
+	-- kuertee start: prevent online funcs when protected ui mod is disabled
 	-- local _, _, areinvitationsallowed = OnlineGetUserName()
 	-- OnlineUserAllowInvites(not areinvitationsallowed)
 	local areinvitationsallowed
@@ -9014,21 +9014,21 @@ function menu.callbackOnlineAllowInvites()
 		_, _, areinvitationsallowed = OnlineGetUserName()
 		OnlineUserAllowInvites(not areinvitationsallowed)
 	end
-	-- kuertee end: prevent online funcs when modified
+	-- kuertee end: prevent online funcs when protected ui mod is disabled
 
 end
 
 function menu.callbackOnlineAllowPrivateMessages()
 
-	-- kuertee start: prevent online funcs when modified
+	-- kuertee start: prevent online funcs when protected ui mod is disabled
 	if GetUISafeModeOption() then
-	-- kuertee end: prevent online funcs when modified
+	-- kuertee end: prevent online funcs when protected ui mod is disabled
 
 		OnlineUserAllowPrivateMessages(not OnlineUserArePrivateMessagesAllowed())
 
-	-- kuertee start: prevent online funcs when modified
+	-- kuertee start: prevent online funcs when protected ui mod is disabled
 	end
-	-- kuertee end: prevent online funcs when modified
+	-- kuertee end: prevent online funcs when protected ui mod is disabled
 
 end
 
@@ -11849,19 +11849,19 @@ function menu.displayOnlineLogin()
 
 	local hasRegisteredGame
 
-	-- kuertee start: prevent online funcs when modified
+	-- kuertee start: prevent online funcs when protected ui mod is disabled
 	-- if OnlineHasSession() then
 	if GetUISafeModeOption() and OnlineHasSession() then
-	-- kuertee end: prevent online funcs when modified
+	-- kuertee end: prevent online funcs when protected ui mod is disabled
 
 		hasRegisteredGame = OnlineIsGameRegistered()
 	end
 	if not menu.onlineData then
 		C.ResetEncryptedDirectInputData()
 
-		-- kuertee start: prevent online funcs when modified
+		-- kuertee start: prevent online funcs when protected ui mod is disabled
 		if GetUISafeModeOption() then
-		-- kuertee end: prevent online funcs when modified
+		-- kuertee end: prevent online funcs when protected ui mod is disabled
 
 			menu.onlineData = {
 				username = OnlineGetUserName(),
@@ -11871,7 +11871,7 @@ function menu.displayOnlineLogin()
 				usernameHidden = false,
 			}
 
-		-- kuertee start: prevent online funcs when modified
+		-- kuertee start: prevent online funcs when protected ui mod is disabled
 		else
 			menu.onlineData = {
 				username = false,
@@ -11881,7 +11881,7 @@ function menu.displayOnlineLogin()
 				usernameHidden = false,
 			}
 		end
-		-- kuertee end: prevent online funcs when modified
+		-- kuertee end: prevent online funcs when protected ui mod is disabled
 
 	end
 
@@ -11919,7 +11919,7 @@ function menu.displayOnlineLogin()
 	local row = ftable:addRow(false, { fixed = true })
 	row[2]:setColSpan(10):createText(menu.warningOnline, config.warningTextProperties)
 
-	-- kuertee start: prevent online funcs when modified
+	-- kuertee start: prevent online funcs when protected ui mod is disabled
 	-- local state = OnlineGetVersionIncompatibilityState()
 	-- local hassession = OnlineHasSession()
 	local state = 0
@@ -11928,7 +11928,7 @@ function menu.displayOnlineLogin()
 		state = OnlineGetVersionIncompatibilityState()
 		hassession = OnlineHasSession()
 	end
-	-- kuertee end: prevent online funcs when modified
+	-- kuertee end: prevent online funcs when protected ui mod is disabled
 
 	local active = (not hassession) and (not menu.onlineData.loginAttempt) and (state ~= 1)
 
@@ -11976,10 +11976,10 @@ function menu.displayOnlineLogin()
 	-- login button
 	local row = ftable:addRow(true, {  })
 
-	-- kuertee start: prevent online funcs when modified
+	-- kuertee start: prevent online funcs when protected ui mod is disabled
 	-- if OnlineHasSession() then
 	if GetUISafeModeOption() and OnlineHasSession() then
-	-- kuertee end: prevent online funcs when modified
+	-- kuertee end: prevent online funcs when protected ui mod is disabled
 
 		local isonline = Helper.isOnlineGame()
 		row[2]:setColSpan(5):createButton({ height = config.standardTextHeight, active = not isonline, mouseOverText = isonline and ReadText(1026, 2654) or "" }):setText(ReadText(1001, 7250), { fontsize = config.standardFontSize, halign = "center" })
@@ -12038,10 +12038,10 @@ function menu.displayOnlineLogin()
 		end
 	end
 
-	-- kuertee start: prevent online funcs when modified
+	-- kuertee start: prevent online funcs when protected ui mod is disabled
 	-- if (not OnlineHasSession()) or (menu.onlineData.hasRegisteredGame == false) then
 	if (GetUISafeModeOption() and (not OnlineHasSession())) or (menu.onlineData.hasRegisteredGame == false) then
-	-- kuertee end: prevent online funcs when modified
+	-- kuertee end: prevent online funcs when protected ui mod is disabled
 
 		ftable:addEmptyRow()
 		-- create account
@@ -12052,10 +12052,10 @@ function menu.displayOnlineLogin()
 		row[2]:setColSpan(10):createText((menu.onlineData.hasRegisteredGame == false) and ReadText(1001, 8907) or ReadText(1001, 7291))
 	end
 
-	-- kuertee start: prevent online funcs when modified
+	-- kuertee start: prevent online funcs when protected ui mod is disabled
 	-- if (not OnlineHasSession()) or (menu.onlineData.hasRegisteredGame == false) then
 	if (GetUISafeModeOption() and (not OnlineHasSession())) or (menu.onlineData.hasRegisteredGame == false) then
-	-- kuertee end: prevent online funcs when modified
+	-- kuertee end: prevent online funcs when protected ui mod is disabled
 
 		row = ftable:addRow(true, {  })
 		-- register
@@ -12066,10 +12066,10 @@ function menu.displayOnlineLogin()
 	row[7]:setColSpan(5):createButton({ height = config.standardTextHeight, active = C.CanOpenWebBrowser() }):setText(ReadText(1001, 7292) .. " \27[mm_externallink]", { fontsize = config.standardFontSize, halign = "center" })
 	row[7].handlers.onClick = menu.buttonPrivacyPolicy
 
-	-- kuertee start: prevent online funcs when modified
+	-- kuertee start: prevent online funcs when protected ui mod is disabled
 	-- if not OnlineHasSession() then
 	if GetUISafeModeOption() and (not OnlineHasSession()) then
-	-- kuertee end: prevent online funcs when modified
+	-- kuertee end: prevent online funcs when protected ui mod is disabled
 
 		local row = ftable:addRow(false, {  })
 		row[2]:setColSpan(10):createText(ReadText(1001, 8964) .. "\n" .. ReadText(1001, 8923), { wordwrap = true })
@@ -12737,13 +12737,13 @@ function menu.displayOnlineSeason(option)
 
 	local counter = 1
 
-	-- kuertee start: prevent online funcs when modified
+	-- kuertee start: prevent online funcs when protected ui mod is disabled
 	-- local completed = OnlineHasSession()
 	local completed
 	if GetUISafeModeOption() then
 		completed = OnlineHasSession()
 	end
-	-- kuertee end: prevent online funcs when modified
+	-- kuertee end: prevent online funcs when protected ui mod is disabled
 
 	local row = ftable:addRow(nil, {  })
 	row[2]:setColSpan(2):createText((completed and ColorText["text_positive"] or "") .. counter .. ". " .. ReadText(1001, 11301) .. (completed and " \27[widget_tick_01]" or ""), config.standardTextProperties)
@@ -13348,13 +13348,13 @@ function menu.newGameCallback(option, checked)
 		else
 			local playerinventory = GetPlayerInventory()
 
-			-- kuertee start: prevent online funcs when modified
+			-- kuertee start: prevent online funcs when protected ui mod is disabled
 			-- local onlineitems = OnlineGetUserItems()
 			local onlineitems = {}
 			if GetUISafeModeOption() then
 				onlineitems = OnlineGetUserItems()
 			end
-			-- kuertee end: prevent online funcs when modified
+			-- kuertee end: prevent online funcs when protected ui mod is disabled
 
 			local hasnotuploadeditems = false
 			for ware, waredata in Helper.orderedPairs(playerinventory) do

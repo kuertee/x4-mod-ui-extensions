@@ -3024,13 +3024,13 @@ function menu.display()
 				-- cps
 				if active then
 
-					-- kuertee start: prevent online funcs when modified
+					-- kuertee start: prevent online funcs when protected ui mod is disabled
 					-- local onlineitems = OnlineGetUserItems()
 					local onlineitems = {}
 					if GetUISafeModeOption() then
 						onlineitems = OnlineGetUserItems()
 					end
-					-- kuertee end: prevent online funcs when modified
+					-- kuertee end: prevent online funcs when protected ui mod is disabled
 
 					local limitedmodulesused = {}
 					for j = 0, buf_content.numconstructionplans - 1 do
@@ -3602,13 +3602,13 @@ function menu.display()
 					end
 				end
 
-				-- kuertee start: prevent online funcs when modified
+				-- kuertee start: prevent online funcs when protected ui mod is disabled
 				-- local onlineitems = OnlineGetUserItems()
 				local onlineitems = {}
 				if GetUISafeModeOption() then
 					onlineitems = OnlineGetUserItems()
 				end
-				-- kuertee end: prevent online funcs when modified
+				-- kuertee end: prevent online funcs when protected ui mod is disabled
 
 				-- stations
 				menu.constructionplans = {}
