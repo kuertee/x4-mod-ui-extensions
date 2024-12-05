@@ -18617,7 +18617,7 @@ function menu.createPlayerInfo(frame, width, height, offsetx, offsety)
 
 	-- kuertee start: prevent online funcs when protected ui mod is disabled
 	-- if OnlineIsCurrentTeamValid() then
-	if (not GetUISafeModeOption()) and OnlineIsCurrentTeamValid() then
+	if GetUISafeModeOption() and OnlineIsCurrentTeamValid() then
 	-- kuertee end: prevent online funcs when protected ui mod is disabled
 
 		local button = row[3]:createButton({

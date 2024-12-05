@@ -370,10 +370,11 @@ local config = {
 
 		-- kuertee start: prevent online funcs when protected ui mod is disabled
 		-- { spacing = true,	condition = function () return OnlineHasSession() end },
+		-- { name = ReadText(1001, 11386),		icon = "vt_contactlist",			mode = "venturecontacts",	active = true, helpOverlayID = "playerinfo_sidebar_contacts",		helpOverlayText = ReadText(1028, 3275),	condition = function () return OnlineHasSession() end },
 		{ spacing = true,	condition = function () return GetUISafeModeOption() and OnlineHasSession() end },
+		{ name = ReadText(1001, 11386),		icon = "vt_contactlist",			mode = "venturecontacts",	active = true, helpOverlayID = "playerinfo_sidebar_contacts",		helpOverlayText = ReadText(1028, 3275),	condition = function () return GetUISafeModeOption() and OnlineHasSession() end },
 		-- kuertee end: prevent online funcs when protected ui mod is disabled
 
-		{ name = ReadText(1001, 11386),		icon = "vt_contactlist",			mode = "venturecontacts",	active = true, helpOverlayID = "playerinfo_sidebar_contacts",		helpOverlayText = ReadText(1028, 3275),	condition = function () return OnlineHasSession() end },
 	},
 	rightAlignTextProperties = {
 		halign = "right"
