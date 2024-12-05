@@ -3197,7 +3197,16 @@ function menu.buttonToggleMultiverseMap()
 			menu.createContextFrame(nil, nil, nil, nil, 0)
 		elseif operationRewardPending then
 			menu.contextMenuMode = "onlinereward"
-			menu.contextMenuData = { xoffset = 0, yoffset = menu.topLevelHeight, instance = instance, width = Helper.viewWidth, height = Helper.viewHeight - 2 * menu.topLevelHeight, rewardentries = OnlineGetLogbookRewards() }
+
+			-- kuertee start: prevent online funcs when modified
+			-- menu.contextMenuData = { xoffset = 0, yoffset = menu.topLevelHeight, instance = instance, width = Helper.viewWidth, height = Helper.viewHeight - 2 * menu.topLevelHeight, rewardentries = OnlineGetLogbookRewards() }
+			if GetUISafeModeOption() then
+				menu.contextMenuData = { xoffset = 0, yoffset = menu.topLevelHeight, instance = instance, width = Helper.viewWidth, height = Helper.viewHeight - 2 * menu.topLevelHeight, rewardentries = OnlineGetLogbookRewards() }
+			else
+				menu.contextMenuData = { xoffset = 0, yoffset = menu.topLevelHeight, instance = instance, width = Helper.viewWidth, height = Helper.viewHeight - 2 * menu.topLevelHeight, rewardentries = {} }
+			end
+			-- kuertee end: prevent online funcs when modified
+
 			menu.createContextFrame(nil, nil, nil, nil, 0)
 		end
 	end
@@ -6191,8 +6200,18 @@ function menu.displayMenu(firsttime)
 
 			local isonline = Helper.isOnlineGame()
 			if isonline then
-				local operation = OnlineGetCurrentOperation()
-				local currentteam = OnlineGetCurrentTeam()
+
+				-- kuertee start: prevent online funcs when modified
+				-- local operation = OnlineGetCurrentOperation()
+				-- local currentteam = OnlineGetCurrentTeam()
+				local operation = {}
+				local currentteam = {}
+				if GetUISafeModeOption() then
+					operation = OnlineGetCurrentOperation()
+					currentteam = OnlineGetCurrentTeam()
+				end
+				-- kuertee end: prevent online funcs when modified
+
 				if operation.isvalid and currentteam.isvalid then
 					menu.ventureMode = "ventureoperation"
 				else
@@ -6277,7 +6296,14 @@ function menu.displayMenu(firsttime)
 
 		if menu.contextMenuData.mode == "inventory" then
 			local inventory = GetInventory(menu.contextMenuData.entity)
-			local onlineitems = OnlineGetUserItems()
+
+			-- kuertee start: prevent online funcs when modified
+			-- local onlineitems = OnlineGetUserItems()
+			local onlineitems = {}
+			if GetUISafeModeOption() then
+				onlineitems = OnlineGetUserItems()
+			end
+			-- kuertee end: prevent online funcs when modified
 
 			for ware, entry in pairs(inventory) do
 				local ispersonalupgrade = GetWareData(ware, "ispersonalupgrade")
@@ -6393,7 +6419,16 @@ function menu.displayMenu(firsttime)
 				menu.createContextFrame(nil, nil, nil, nil, 0)
 			elseif operationRewardPending then
 				menu.contextMenuMode = "onlinereward"
-				menu.contextMenuData = { xoffset = 0, yoffset = menu.topLevelHeight, instance = instance, width = Helper.viewWidth, height = Helper.viewHeight - 2 * menu.topLevelHeight, rewardentries = OnlineGetLogbookRewards() }
+
+				-- kuertee start: prevent online funcs when modified
+				-- menu.contextMenuData = { xoffset = 0, yoffset = menu.topLevelHeight, instance = instance, width = Helper.viewWidth, height = Helper.viewHeight - 2 * menu.topLevelHeight, rewardentries = OnlineGetLogbookRewards() }
+				if GetUISafeModeOption() then
+					menu.contextMenuData = { xoffset = 0, yoffset = menu.topLevelHeight, instance = instance, width = Helper.viewWidth, height = Helper.viewHeight - 2 * menu.topLevelHeight, rewardentries = OnlineGetLogbookRewards() }
+				else
+					menu.contextMenuData = { xoffset = 0, yoffset = menu.topLevelHeight, instance = instance, width = Helper.viewWidth, height = Helper.viewHeight - 2 * menu.topLevelHeight, rewardentries = {} }
+				end
+				-- kuertee end: prevent online funcs when modified
+
 				menu.createContextFrame(nil, nil, nil, nil, 0)
 			end
 		end
@@ -7867,7 +7902,13 @@ function menu.createPropertyOwned(frame, instance)
 
 	local onlineitems = {}
 	if menu.propertyMode == "inventoryships" then
-		onlineitems = OnlineGetUserItems()
+
+		-- kuertee start: prevent online funcs when modified
+		-- onlineitems = OnlineGetUserItems()
+		if GetUISafeModeOption() then
+			onlineitems = OnlineGetUserItems()
+		end
+		-- kuertee end: prevent online funcs when modified
 	end
 
 	local playerobjects = {}
@@ -14622,7 +14663,14 @@ function menu.setupCrewInfoSubmenuRows(mode, inputtable, inputobject, instance)
 		-- inventory
 		if isplayerowned and pilot and IsValidComponent(pilot) then
 			local inventory = GetInventory(pilot)
-			local onlineitems = OnlineGetUserItems()
+
+			-- kuertee start: prevent online funcs when modified
+			-- local onlineitems = OnlineGetUserItems()
+			local onlineitems = {}
+			if GetUISafeModeOption() then
+				onlineitems = OnlineGetUserItems()
+			end
+			-- kuertee end: prevent online funcs when modified
 
 			local sortedWares = {}
 			local totalamount = 0
@@ -18168,7 +18216,12 @@ function menu.createVentureSeasonHeader(frame, instance)
 
 	local isonline = Helper.isOnlineGame()
 	local invitations = {}
-	if not OnlineGetCurrentTeam().isvalid then
+
+	-- kuertee start: prevent online funcs when modified
+	-- if not OnlineGetCurrentTeam().isvalid then
+	if GetUISafeModeOption() and (not OnlineGetCurrentTeam().isvalid) then
+	-- kuertee end: prevent online funcs when modified
+
 		invitations = Helper.callExtensionFunction("multiverse", "getTeamInvites") or {}
 	end
 
@@ -18182,7 +18235,12 @@ function menu.createVentureSeasonHeader(frame, instance)
 				bgcolor = Color["row_background_selected"]
 			end
 			if entry.category == "ventureteam" then
-				if not OnlineGetCurrentTeam().isvalid then
+
+				-- kuertee start: prevent online funcs when modified
+				-- if not OnlineGetCurrentTeam().isvalid then
+				if GetUISafeModeOption() and (not OnlineGetCurrentTeam().isvalid) then
+				-- kuertee end: prevent online funcs when modified
+
 					if #invitations > 0 then
 						color = Color["icon_mission"]
 					end
@@ -18224,7 +18282,13 @@ function menu.createVentureSeason(frame, instance)
 	table_desc:setColWidthPercent(2, 33)
 	table_desc:setDefaultBackgroundColSpan(1, numCols)
 
-	local season = OnlineGetCurrentSeason()
+	-- kuertee start: prevent online funcs when modified
+	-- local season = OnlineGetCurrentSeason()
+	local season
+	if GetUISafeModeOption() then
+		season = OnlineGetCurrentSeason()
+	end
+	-- kuertee end: prevent online funcs when modified
 
 	-- title
 	local row = table_desc:addRow(nil, { fixed = true, bgColor = Color["row_title_background"] })
@@ -18314,7 +18378,15 @@ function menu.createVentureSeason(frame, instance)
 		row[1]:createText(ReadText(1001, 11341) .. ReadText(1001, 120))
 
 		local coalitionname = ""
-		local currentcoalition = OnlineGetCurrentCoalition()
+
+		-- kuertee start: prevent online funcs when modified
+		-- local currentcoalition = OnlineGetCurrentCoalition()
+		local currentcoalition
+		if GetUISafeModeOption() then
+			currentcoalition = OnlineGetCurrentCoalition()
+		end
+		-- kuertee end: prevent online funcs when modified
+
 		if currentcoalition.isvalid then
 			coalitionname = currentcoalition.name
 		else
@@ -18328,7 +18400,14 @@ function menu.createVentureSeason(frame, instance)
 		row[1]:createText(ReadText(1001, 11582) .. ReadText(1001, 120))
 
 		local teamname = ""
-		local currentteam = OnlineGetCurrentTeam()
+
+		-- kuertee start: prevent online funcs when modified
+		-- local currentteam = OnlineGetCurrentTeam()
+		if GetUISafeModeOption() then
+			currentteam = OnlineGetCurrentTeam()
+		end
+		-- kuertee end: prevent online funcs when modified
+
 		if currentteam.isvalid then
 			teamname = currentteam.name
 		else
@@ -23903,7 +23982,14 @@ function menu.createOnlineModeContext(frame)
 
 	local counter = 1
 
-	local hassession = OnlineHasSession()
+	-- kuertee start: prevent online funcs when modified
+	-- local hassession = OnlineHasSession()
+	local hassession
+	if GetUISafeModeOption() then
+		hassession = OnlineHasSession()
+	end
+	-- kuertee end: prevent online funcs when modified
+
 	local hasdocks = false
 	local hasmultipledocksperplatform = false
 	for _, entry in ipairs(Helper.ventureplatforms) do
@@ -28711,7 +28797,13 @@ function menu.closeContextMenu(dueToClose)
 				return false
 			end
 		elseif (menu.contextMenuMode == "onlinereward") then
-			OnlineClearLogbookRewards()
+
+			-- kuertee start: prevent online funcs when modified
+			if GetUISafeModeOption() then
+				OnlineClearLogbookRewards()
+			end
+			-- kuertee end: prevent online funcs when modified
+
 		elseif (menu.contextMenuMode == "ventureconfig") or (menu.contextMenuMode == "venturecreateparty") or (menu.contextMenuMode == "ventureoutcome") or (menu.contextMenuMode == "venturefriendlist") then
 			if not Helper.callExtensionFunction("multiverse", "closeContextMenu", menu, menu.contextMenuMode, dueToClose) then
 				return true
@@ -28888,7 +28980,14 @@ function menu.onInteractMenuCallback(type, param)
 
 		if menu.contextMenuData.mode == "inventory" then
 			local inventory = GetInventory(menu.contextMenuData.entity)
-			local onlineitems = OnlineGetUserItems()
+
+			-- kuertee start: prevent online funcs when modified
+			-- local onlineitems = OnlineGetUserItems()
+			local onlineitems = {}
+			if GetUISafeModeOption() then
+				onlineitems = OnlineGetUserItems()
+			end
+			-- kuertee end: prevent online funcs when modified
 
 			for ware, entry in pairs(inventory) do
 				local ispersonalupgrade = GetWareData(ware, "ispersonalupgrade")

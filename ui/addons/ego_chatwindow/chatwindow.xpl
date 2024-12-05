@@ -235,6 +235,7 @@ end
 
 function menu.getChatMessages()
 	if menu.messagesOutdated then
+
 		-- kuertee start: prevent online funcs when modified
 		-- local username, userid = OnlineGetUserName()
 		local username, userid

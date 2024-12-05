@@ -9534,7 +9534,15 @@ function Helper.playerInfoConfigTextLeft(_, width, ismultiverse)
 
 	local connectionStatus = ""
 	if C.IsOnlineEnabled() then
-		connectionStatus = (Helper.isOnlineGame() and OnlineHasSession()) and (ReadText(1001, 11624) .. " \27[vt_connected]") or (ReadText(1001, 11625) .. " \27[vt_disconnected]")
+
+		-- kuertee start: prevent online funcs when modified
+		-- connectionStatus = (Helper.isOnlineGame() and OnlineHasSession()) and (ReadText(1001, 11624) .. " \27[vt_connected]") or (ReadText(1001, 11625) .. " \27[vt_disconnected]")
+		connectionStatus = ReadText(1001, 11625) .. " \27[vt_disconnected]"
+		if GetUISafeModeOption() then
+			connectionStatus = (Helper.isOnlineGame() and OnlineHasSession()) and (ReadText(1001, 11624) .. " \27[vt_connected]") or (ReadText(1001, 11625) .. " \27[vt_disconnected]")
+		end
+		-- kuertee end: prevent online funcs when modified
+
 	end
 	local connectedtextwidth = C.GetTextWidth(connectionStatus .. " ", Helper.playerInfoConfig.fontname, Helper.playerInfoConfig.fontsize)
 	playername = TruncateText(playername, Helper.playerInfoConfig.fontname, Helper.playerInfoConfig.fontsize, width or Helper.playerInfoConfig.width - Helper.playerInfoConfig.height - 2 * Helper.borderSize - connectedtextwidth)
@@ -9552,11 +9560,21 @@ end
 function Helper.playerInfoConfigTextRight(_, ismultiverse)
 	local connectionStatus = ""
 	if C.AreVenturesEnabled() then
-		if OnlineIsCurrentTeamValid() then
-			connectionStatus = (Helper.isOnlineGame() and OnlineHasSession()) and "\27[vt_connected]" or (ColorText["text_warning"] .. "\27[vt_disconnected]\27X")
-		else
-			connectionStatus = (Helper.isOnlineGame() and OnlineHasSession()) and (ReadText(1001, 11624) .. " \27[vt_connected]") or (ColorText["text_warning"] .. ReadText(1001, 11625) .. " \27[vt_disconnected]\27X")
+
+		-- kuertee start: prevent online funcs when modified
+		if GetUISafeModeOption() then
+		-- kuertee end: prevent online funcs when modified
+
+			if OnlineIsCurrentTeamValid() then
+				connectionStatus = (Helper.isOnlineGame() and OnlineHasSession()) and "\27[vt_connected]" or (ColorText["text_warning"] .. "\27[vt_disconnected]\27X")
+			else
+				connectionStatus = (Helper.isOnlineGame() and OnlineHasSession()) and (ReadText(1001, 11624) .. " \27[vt_connected]") or (ColorText["text_warning"] .. ReadText(1001, 11625) .. " \27[vt_disconnected]\27X")
+			end
+
+		-- kuertee start: prevent online funcs when modified
 		end
+		-- kuertee end: prevent online funcs when modified
+
 	end
 
 	if ismultiverse then
@@ -10238,18 +10256,21 @@ function Helper.isOnlineGame()
 
 	-- kuertee start: prevent online funcs when modified
 	if GetUISafeModeOption() then
-		return false
-	else
-	-- kuertee end: prevent online funcs when modified
-
 		return OnlineIsOnlineModeActive()
-	-- kuertee start: prevent online funcs when modified
 	end
 	-- kuertee end: prevent online funcs when modified
+
 end
 
 function Helper.hasVentureRewards()
-   return OnlineHasVentureLogbookReward()
+
+	-- kuertee start: prevent online funcs when modified
+	-- return OnlineHasVentureLogbookReward()
+	if GetUISafeModeOption() then
+		return OnlineHasVentureLogbookReward()
+	end
+	-- kuertee end: prevent online funcs when modified
+
 end
 
 function Helper.getProjectEntry(cluster, buffer, isevent)
@@ -10389,7 +10410,15 @@ function Helper.ventureTimeLeft(timeleft)
 end
 
 function Helper.ventureOperationTimeLeftText()
-	local operation = OnlineGetCurrentOperation()
+
+	-- kuertee start: prevent online funcs when modified
+	-- local operation = OnlineGetCurrentOperation()
+	local operation
+	if GetUISafeModeOption() then
+		operation = OnlineGetCurrentOperation()
+	end
+	-- kuertee end: prevent online funcs when modified
+
 	local operationtimestring = "---"
 	if operation.isvalid then
 		local timeleft = operation.remainingtime
@@ -10400,7 +10429,15 @@ end
 
 function Helper.ventureSeasonTimeLeftText()
 	local curtime = C.GetCurrentUTCDataTime()
-	local season = OnlineGetCurrentSeason()
+
+	-- kuertee start: prevent online funcs when modified
+	-- local season = OnlineGetCurrentSeason()
+	local season
+	if GetUISafeModeOption() then
+		season = OnlineGetCurrentSeason()
+	end
+	-- kuertee end: prevent online funcs when modified
+
 	local seasontimestring = ReadText(1001, 11581)
 	if next(season) then
 		if season.isrunning then
@@ -12429,7 +12466,14 @@ function Helper.createVentureContactsHeader(menu, frame, instance, x, y)
 				bgcolor = Color["row_background_blue"]
 			end
 
-			local hassession = OnlineHasSession()
+			-- kuertee start: prevent online funcs when modified
+			-- local hassession = OnlineHasSession()
+			local hassession
+			if GetUISafeModeOption() then
+				hassession = OnlineHasSession()
+			end
+			-- kuertee end: prevent online funcs when modified
+
 			local loccount = count
 			row[loccount]:createButton({ active = hassession, height = sidebarwidth, bgColor = bgcolor, mouseOverText = entry.name, scaling = false, helpOverlayID = entry.helpOverlayID, helpOverlayText = entry.helpOverlayText }):setIcon(entry.icon, { color = color})
 			row[loccount].handlers.onClick = function () return Helper.buttonVentureContactsSubMode(menu, entry.category, loccount, instance) end
@@ -12515,7 +12559,13 @@ function Helper.buttonAddForumUser(menu, instance, userid, block)
 end
 
 function Helper.buttonCreateFriendListContext(menu)
-	OnlineRequestPlatformFriendList()
+
+	-- kuertee start: prevent online funcs when modified
+	if GetUISafeModeOption() then
+		OnlineRequestPlatformFriendList()
+	end
+	-- kuertee end: prevent online funcs when modified
+
 end
 
 function Helper.onCheckUsername(menu, result)
@@ -12551,7 +12601,14 @@ function Helper.onCheckUsername(menu, result)
 end
 
 function Helper.onPlatformFriendsLookedUp(menu)
-	local friendlist = OnlineGetPlatformFriendList()
+
+	-- kuertee start: prevent online funcs when modified
+	-- local friendlist = OnlineGetPlatformFriendList()
+	local friendlist {}
+	if GetUISafeModeOption() then
+		friendlist = OnlineGetPlatformFriendList()
+	end
+	-- kuertee end: prevent online funcs when modified
 
 	menu.contextMenuMode = "venturefriendlist"
 	local offsetx = Helper.ventureContactsMode.x + Helper.ventureContactsMode.width + Helper.borderSize + Helper.ventureContactsConfig.contextBorder
@@ -12574,6 +12631,15 @@ function Helper.createVentureContactContext(menu, frame)
 	row[1]:setColSpan(2):createText(contact.name, Helper.headerRowCenteredProperties)
 
 	if C.IsVentureSeasonSupported() then
+
+		-- kuertee start: prevent online funcs when modified
+		-- local _, userid = OnlineGetUserName()
+		local userid = ""
+		if GetUISafeModeOption() then
+			_, userid = OnlineGetUserName()
+		end
+		-- kuertee end: prevent online funcs when modified
+
 		local _, userid = OnlineGetUserName()
 		if contact.id ~= userid then
 			local row = infotable:addRow(true, { fixed = true })

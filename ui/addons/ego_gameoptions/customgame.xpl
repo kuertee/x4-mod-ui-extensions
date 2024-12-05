@@ -3023,7 +3023,15 @@ function menu.display()
 				end
 				-- cps
 				if active then
-					local onlineitems = OnlineGetUserItems()
+
+					-- kuertee start: prevent online funcs when modified
+					-- local onlineitems = OnlineGetUserItems()
+					local onlineitems = {}
+					if GetUISafeModeOption() then
+						onlineitems = OnlineGetUserItems()
+					end
+					-- kuertee end: prevent online funcs when modified
+
 					local limitedmodulesused = {}
 					for j = 0, buf_content.numconstructionplans - 1 do
 						local source, constructionplanid, isHQ = string.match(constructionplanids[j], "(.*):(.*):(%d)")
@@ -3594,7 +3602,13 @@ function menu.display()
 					end
 				end
 
-				local onlineitems = OnlineGetUserItems()
+				-- kuertee start: prevent online funcs when modified
+				-- local onlineitems = OnlineGetUserItems()
+				local onlineitems = {}
+				if GetUISafeModeOption() then
+					onlineitems = OnlineGetUserItems()
+				end
+				-- kuertee end: prevent online funcs when modified
 
 				-- stations
 				menu.constructionplans = {}
