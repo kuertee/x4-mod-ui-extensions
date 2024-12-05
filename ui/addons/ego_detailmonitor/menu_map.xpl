@@ -9720,12 +9720,7 @@ function menu.getPropertyOwnedFleetDataInternal(instance, component, shiptyperan
 		menu.infoTableData[instance].subordinates[tostring(component)] = subordinates
 	end
 	for _, subordinate in ipairs(subordinates) do
-
-		-- kuertee start: allow for .hasrendered added by menu.getSubordinates(component, nil)
-		-- if subordinate.component then
-		if type(subordinate) ~= "userdata" and subordinate.component then
-		-- kuertee end: allow for .hasrendered added by menu.getSubordinates(component, nil)
-
+		if subordinate.component then
 			menu.getPropertyOwnedFleetDataInternal(instance, subordinate.component, shiptyperanks, shiptypedata)
 		end
 	end
