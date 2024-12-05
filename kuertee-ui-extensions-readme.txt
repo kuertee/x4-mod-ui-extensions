@@ -11,8 +11,7 @@ PROTECTED UI MODE:
 -1. Mods that use UI Extensions will need the new Protected UI Mode setting in the Extensions menu disabled.
 
 LOADING CUSTOM LUAS:
--2. The lua function, require(), is now disabled.
--2a. ModSupportAPIs' Lua_Loader (and in extension its <raise_lua_event name="'Lua_Loader.Load'" param="'X'"/>) no longer function.
+-2. ModSupportAPIs' Lua_Loader (and in extension its <raise_lua_event name="'Lua_Loader.Load'" param="'X'"/>) no longer function.
 
 UI.XML FILE:
 -3. To load custom lua files, use ui.xml as described here: https://wiki.egosoft.com:1337/X%20Rebirth%20Wiki/Modding%20support/UI%20Modding%20support/Getting%20started%20guide/
@@ -180,11 +179,10 @@ To use:
 
 Add Custom Actions/Orders Group to the Interact Menu (via MD)
 =============================================================
-1. Load UIX's customised Interact Menu with: <raise_lua_event name="'Lua_Loader.Load'" param="'extensions.kuertee_ui_extensions.ui.kuertee_menu_interactmenu'"/>
-2. At <event_ui_triggered screen="'UIXInteractMenu'" control="'loaded'" />, add the Custom Actions/Orders below.
-3. Add the new Custom Actions/Orders Group Id <raise_lua_event name="'Interact_Menu_API.Add_Custom_Actions_Group_Id'" param="'my_custom_actions_group_id'" />
-4. Add the new Custom Actions/Orders Group Name <raise_lua_event name="'Interact_Menu_API.Add_Custom_Actions_Group_Text'" param="'My Custom Actions/Orders Group'" />
-5. Use the new id in Mod Support API's Add_Action function like this:
+1. At <event_ui_triggered screen="'Interact_Menu_API'" control="'reloaded'" />, add the Custom Actions/Orders below.
+2. Add the new Custom Actions/Orders Group Id <raise_lua_event name="'Interact_Menu_API.Add_Custom_Actions_Group_Id'" param="'my_custom_actions_group_id'" />
+3. Add the new Custom Actions/Orders Group Name <raise_lua_event name="'Interact_Menu_API.Add_Custom_Actions_Group_Text'" param="'My Custom Actions/Orders Group'" />
+4. Use the new id in Mod Support API's Add_Action function like this:
 					<signal_cue_instantly cue="md.Interact_Menu_API.Add_Action" param = "table[
 						$id = 'my_custom_action_1,
 						$section = 'my_custom_actions_group_id',
@@ -199,8 +197,8 @@ Add Custom Actions/Orders Group to the Interact Menu (via MD)
 						$mouseover = 'My Custom Action 2 mouse over',
 						$callback = My_Custom_Action_2_Cue
 					]" />
-6. The custom commands will be added to both the Custom Actions and Custom Orders sub-menus.
-7. To add only to one sub-menu and not the other, start the section name with either "actions_" or "orders_". E.g. "actions_my_custom_actions" will add the custom action to only the Custom Actions sub-menu. And "orders_my_custom_orders" will add the custom order to only the Custom Orders sub-menu.
+5. The custom commands will be added to both the Custom Actions and Custom Orders sub-menus.
+6. To add only to one sub-menu and not the other, start the section name with either "actions_" or "orders_". E.g. "actions_my_custom_actions" will add the custom action to only the Custom Actions sub-menu. And "orders_my_custom_orders" will add the custom order to only the Custom Orders sub-menu.
 
 Requirements
 ============

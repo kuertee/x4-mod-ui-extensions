@@ -15,7 +15,7 @@ ui/addons/ego_detailmonitor/menu_userquestion.xpl 22662 1733363941 2fffc568eb2e2
 ui/addons/ego_detailmonitorhelper/helper.xpl 532465 1733396355 765eb183468a3aaf51257152af466f50
 ui/addons/ego_gameoptions/customgame.xpl 233534 1733363941 554efbff868442143df60c16a9457a0c
 ui/addons/ego_gameoptions/gameoptions.xpl 536800 1733363941 bace4a61e734d6abbaa53f79566781ff
-ui/addons/ego_interactmenu/menu_interactmenu.xpl 332052 1733397272 bb58c1dfc8dc7714105eb562309deaff
+ui/addons/ego_interactmenu/menu_interactmenu.xpl 331996 1733403948 cf4244de40286da2b509446c30c9f710
 ui/kuertee_helper.lua 105 1703252803 0fab48a904ac537bfc6ca31142cfb17c
 ui/kuertee_hud.lua 105 1727920214 0fab48a904ac537bfc6ca31142cfb17c
 ui/kuertee_menu_docked.lua 108 1703252803 f113fd3aca31b347e38dfcdb2a2a3074
