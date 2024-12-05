@@ -5,16 +5,16 @@ by kuertee. Contributors: Erixon, Forleyor, Mycu, Runekn, AlexandreTK.
 
 Updates
 =======
-#v7.5.001 beta, 05 Dec 2024:
-##-NOTES FOR MOD DEVELOPERS:
-###PROTECTED UI MODE:
+# v7.5.001 beta, 05 Dec 2024:
+## NOTES FOR MOD DEVELOPERS:
+### PROTECTED UI MODE:
 -1. Mods that use UI Extensions will need the new Protected UI Mode setting in the Extensions menu disabled.
 
-###LOADING CUSTOM LUAS:
+### LOADING CUSTOM LUAS:
 -2. The lua function, require(), is now disabled.
 -2a. ModSupportAPIs' Lua_Loader (and in extension its <raise_lua_event name="'Lua_Loader.Load'" param="'X'"/>) no longer function.
 
-###UI.XML FILE:
+### UI.XML FILE:
 -3. To load custom lua files, use ui.xml as described here: https://wiki.egosoft.com:1337/X%20Rebirth%20Wiki/Modding%20support/UI%20Modding%20support/Getting%20started%20guide/
 -3a. Note that guideline is for X Rebirth. But its use in X4 is similar.
 -3b. Here is the extensions\kuertee_alternatives_to_death\ui.xml file for my mod Alternatives To Death:
@@ -32,13 +32,13 @@ Updates
 -3c note: Pre 7.5 UIX loaded and, if set-up a particularly way like my mods are, UIX also called their init() functions.
 -3d. E.g. instead of "return ModLua" at the bottom of my mods' custom lua files, I now call "ModLua.init()". E.g.: kuertee_uix_mod_sample from UIX's Nexus Mods page (https://www.nexusmods.com/x4foundations/mods/552?tab=files)/.
 
-#v7.1.15, 11 Nov 2024:
+# v7.1.15, 11 Nov 2024:
 -Bug-fix: The multi-rename feature was buggy. e.g. preventing the single-rename function from working. In this version, the right-clicked object needs to be in the selected list for the multi-rename button to be active.
 
-#v7.1.14, 7 Nov 2024:
+# v7.1.14, 7 Nov 2024:
 -Bug-fix: The multi-rename feature was renaming a non-player-owned object if it was right-clicked on along with selected playerr objects.
 
-#v7.1.12, 2 Nov 2024:
+# v7.1.12, 2 Nov 2024:
 -New feature: Rename multiple objects. More information in the Multi-rename section.
 -New feature: The Custom Actions menu is shown when no menu is valid. E.g. when selecting multiple stations. Allows setting a station profile from the Trade Analytics mod to multiple stations at once.
 -Tweak: Tweaked some callbacks for UT Advanced Renaming.
