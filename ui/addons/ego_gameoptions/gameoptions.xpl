@@ -2889,22 +2889,17 @@ config.DLSSmodes = {
 
 function menu.onClientStarted()
 	-- kuertee start: prevent online funcs when modified
-	if not GetUISafeModeOption() then
-		__CORE_GAMEOPTIONS_VENTURECONFIG = {
-			allow_validation = false,
-			allow_update = false,
-			allow_update_once = false,
-		}
-	else
-	-- kuertee end: prevent online funcs when modified
-
+	__CORE_GAMEOPTIONS_VENTURECONFIG = {
+		allow_validation = false,
+		allow_update = false,
+		allow_update_once = false,
+	}
+	if GetUISafeModeOption() then
 		__CORE_GAMEOPTIONS_VENTURECONFIG = {
 			allow_validation = OnlineGetVentureConfig("allow_validation"),
 			allow_update = OnlineGetVentureConfig("allow_update"),
 			allow_update_once = OnlineGetVentureConfig("allow_update_once"),
 		}
-
-	-- kuertee start: prevent online funcs when modified
 	end
 	-- kuertee end: prevent online funcs when modified
 end
@@ -2991,10 +2986,9 @@ function menu.onOnlineLogin(_, serializedArg)
 
 			-- kuertee start: prevent online funcs when modified
 			-- menu.onlineData.username = OnlineGetUserName()
+			menu.onlineData.username = ""
 			if GetUISafeModeOption() then
 				menu.onlineData.username = OnlineGetUserName()
-			else
-				menu.onlineData.username = ""
 			end
 			-- kuertee end: prevent online funcs when modified
 
@@ -4127,8 +4121,7 @@ function menu.createContextMenuUISecurity(frame)
 	row[5].handlers.onClick = function() __CORE_DETAILMONITOR_USERQUESTION[menu.contextMenuMode] = menu.contextMenuData.saveOption; menu.closeContextMenu() end
 
 	-- kuertee start: prevent online funcs when modified
-	if not GetUISafeModeOption() then
-	else
+	if GetUISafeModeOption() then
 	-- kuertee end: prevent online funcs when modified
 
 		row[6]:createButton({  }):setText(ReadText(1001, 12731), { halign = "center" })
@@ -5836,9 +5829,7 @@ end
 
 function menu.isVentureExtensionRestartRequired()
 	-- kuertee start: prevent online funcs when modified 
-	if not GetUISafeModeOption() then
-		return false
-	else
+	if GetUISafeModeOption() then
 	-- kuertee end: prevent online funcs when modified
 
 		if OnlineGetVentureConfig("allow_update") and (not __CORE_GAMEOPTIONS_VENTURECONFIG.allow_update) then
@@ -5850,6 +5841,8 @@ function menu.isVentureExtensionRestartRequired()
 		return false
 
 	-- kuertee start: prevent online funcs when modified 
+	else
+		return false
 	end
 	-- kuertee end: prevent online funcs when modified
 end

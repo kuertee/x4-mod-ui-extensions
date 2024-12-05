@@ -12,7 +12,6 @@ ffi.cdef[[
 	void NotifyChatMessageRead(void);
 	void SetUserData(const char* name, const char* value);
 	void TriggerInputFeedback(const char* type, const char* idname, const char* triggerid, const char* contextid);
-	bool IsGameModified(void);
 ]]
 
 local menu = {
@@ -238,11 +237,8 @@ function menu.getChatMessages()
 
 		-- kuertee start: prevent online funcs when modified
 		-- local username, userid = OnlineGetUserName()
-		local username, userid
-		if not GetUISafeModeOption() then
-			username = ""
-			userid = ""
-		else
+		local username, userid = "", ""
+		if GetUISafeModeOption() then
 			username, userid = OnlineGetUserName()
 		end
 		-- kuertee end: prevent online funcs when modified
@@ -257,10 +253,8 @@ function menu.getChatMessages()
 
 		-- kuertee start: prevent online funcs when modified
 		-- local messages = OnlineGetChatMessages()
-		local messages
-		if not GetUISafeModeOption() then
-			messages = {}
-		else
+		local messages = {}
+		if GetUISafeModeOption() then
 			messages = OnlineGetChatMessages()
 		end
 		-- kuertee end: prevent online funcs when modified
@@ -780,10 +774,8 @@ function menu.createReportContext(frame)
 
 	-- kuertee start: prevent online funcs when modified
 	-- local _, userid = OnlineGetUserName()
-	local _, userid
-	if not GetUISafeModeOption() then
-		userid = ""
-	else
+	local userid = ""
+	if GetUISafeModeOption() then
 		_, userid = OnlineGetUserName()
 	end
 	-- kuertee end: prevent online funcs when modified
@@ -938,10 +930,8 @@ function menu.onTableRightMouseClick(uitable, row, posx, posy)
 
 			-- kuertee start: prevent online funcs when modified
 			-- local username, userid = OnlineGetUserName()
-			if not GetUISafeModeOption() then
-				username = ""
-				userid = ""
-			else
+			local username, userid = "", ""
+			if GetUISafeModeOption() then
 				username, userid = OnlineGetUserName()
 			end
 			-- kuertee end: prevent online funcs when modified

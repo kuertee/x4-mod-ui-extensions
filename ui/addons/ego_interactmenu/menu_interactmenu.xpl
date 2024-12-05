@@ -4959,7 +4959,7 @@ function menu.insertLuaAction(actiontype, istobedisplayed)
 
 					-- kuertee start: prevent online funcs when modified
 					-- local onlineitems = OnlineGetUserItems()
-					local onlineitems
+					local onlineitems = {}
 					if GetUISafeModeOption() then
 						onlineitems = OnlineGetUserItems()
 					end

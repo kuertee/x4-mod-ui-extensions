@@ -1578,10 +1578,8 @@ function menu.createInventory(frame, tableProperties, mode, tabOrderOffset)
 
 	-- kuertee start: prevent online funcs when modified
 	-- local onlineitems = OnlineGetUserItems()
-	local onlineitems
-	if not GetUISafeModeOption() then
-		onlineitems = {}
-	else
+	local onlineitems = {}
+	if GetUISafeModeOption() then
 		onlineitems = OnlineGetUserItems()
 	end
 	-- kuertee end: prevent online funcs when modified
@@ -1627,9 +1625,8 @@ function menu.createInventory(frame, tableProperties, mode, tabOrderOffset)
 
 		-- kuertee start: prevent online funcs when modified
 		-- menu.onlineitems = OnlineGetUserItems()
-		if not GetUISafeModeOption() then
-			menu.onlineitems = {}
-		else
+		menu.onlineitems = {}
+		if GetUISafeModeOption() then
 			menu.onlineitems = OnlineGetUserItems()
 		end
 		-- kuertee end: prevent online funcs when modified
@@ -3869,10 +3866,8 @@ function menu.initEmpireData()
 
 	-- kuertee start: prevent online funcs when modified
 	-- local onlineitems = OnlineGetUserItems()
-	local onlineitems
-	if not GetUISafeModeOption() then
-		onlineitems = {}
-	else
+	local onlineitems = {}
+	if GetUISafeModeOption() then
 		onlineitems = OnlineGetUserItems()
 	end
 	-- kuertee end: prevent online funcs when modified

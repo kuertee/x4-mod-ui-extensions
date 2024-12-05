@@ -12604,7 +12604,7 @@ function Helper.onPlatformFriendsLookedUp(menu)
 
 	-- kuertee start: prevent online funcs when modified
 	-- local friendlist = OnlineGetPlatformFriendList()
-	local friendlist {}
+	local friendlist = {}
 	if GetUISafeModeOption() then
 		friendlist = OnlineGetPlatformFriendList()
 	end
