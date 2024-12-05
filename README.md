@@ -12,11 +12,14 @@ Updates
 
 ### LOADING CUSTOM LUAS:
 -2. The lua function, require(), is now disabled.
+
 -2a. ModSupportAPIs' Lua_Loader (and in extension its <raise_lua_event name="'Lua_Loader.Load'" param="'X'"/>) no longer function.
 
 ### UI.XML FILE:
 -3. To load custom lua files, use ui.xml as described here: https://wiki.egosoft.com:1337/X%20Rebirth%20Wiki/Modding%20support/UI%20Modding%20support/Getting%20started%20guide/
+
 -3a. Note that guideline is for X Rebirth. But its use in X4 is similar.
+
 -3b. Here is the extensions\kuertee_alternatives_to_death\ui.xml file for my mod Alternatives To Death:
 ```
 <?xml version="1.0" encoding="UTF-8"?>
@@ -29,7 +32,9 @@ Updates
 </addon>
 ```
 -3c. With the game now loading custom lua files (instead of UIX loading them), make sure that any init() functions are called after they are loaded.
+
 -3c note: Pre 7.5 UIX loaded and, if set-up a particularly way like my mods are, UIX also called their init() functions.
+
 -3d. E.g. instead of "return ModLua" at the bottom of my mods' custom lua files, I now call "ModLua.init()". E.g.: kuertee_uix_mod_sample from UIX's Nexus Mods page (https://www.nexusmods.com/x4foundations/mods/552?tab=files)/.
 
 # v7.1.15, 11 Nov 2024:
