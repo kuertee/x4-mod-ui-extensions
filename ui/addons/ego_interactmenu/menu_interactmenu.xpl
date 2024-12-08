@@ -3578,6 +3578,21 @@ function menu.createContentTable(frame, position)
 		local first = true
 
 		for _, section in ipairs(config.sections) do
+			-- kuertee start: callback
+			local kUIX_isSectionValid = true
+			if callbacks ["createContentTable_getIsSectionValid"] then
+				for _, callback in ipairs (callbacks ["createContentTable_getIsSectionValid"]) do
+					kUIX_isSectionValid = callback (section)
+					if kUIX_isSectionValid ~= true then
+						break
+					end
+				end
+			end
+			if kUIX_isSectionValid ~= true then
+				goto createContentTable_skipSection
+			end
+			-- kuertee end: callback
+
 			local pass = false
 			if menu.showPlayerInteractions then
 				if section.isplayerinteraction or (menu.shown and (not section.isorder)) then
@@ -3608,6 +3623,21 @@ function menu.createContentTable(frame, position)
 				if section.subsections then
 					local hastitle = false
 					for _, subsection in ipairs(section.subsections) do
+						-- kuertee start: callback
+						local kUIX_isSubsectionValid = true
+						if callbacks ["createContentTable_getIsSubsectionValid"] then
+							for _, callback in ipairs (callbacks ["createContentTable_getIsSubsectionValid"]) do
+								kUIX_isSubsectionValid = callback (subsection)
+								if kUIX_isSubsectionValid ~= true then
+									break
+								end
+							end
+						end
+						if kUIX_isSubsectionValid ~= true then
+							goto createContentTable_skipSubsection
+						end
+						-- kuertee end: callback
+
 						if (#menu.actions[subsection.id] > 0) or menu.forceSubSection[subsection.id] then
 							if not hastitle then
 								height = height + menu.addSectionTitle(ftable, section, first)
@@ -3628,6 +3658,10 @@ function menu.createContentTable(frame, position)
 							row[1].handlers.onClick = function () return menu.handleSubSectionOption(data, true) end
 							height = height + row:getHeight() + Helper.borderSize
 						end
+
+						-- kuertee start: callback
+						:: createContentTable_skipSubsection ::
+						-- kuertee end: callback
 					end
 				elseif #menu.actions[section.id] > 0 then
 					height = height + menu.addSectionTitle(ftable, section, first)
@@ -3644,6 +3678,22 @@ function menu.createContentTable(frame, position)
 					end
 
 					for _, entry in ipairs(menu.actions[section.id]) do
+
+						-- kuertee start: callback
+						local kUIX_isActionValid = true
+						if callbacks ["createContentTable_getIsActionValid"] then
+							for _, callback in ipairs (callbacks ["createContentTable_getIsActionValid"]) do
+								kUIX_isActionValid = callback (entry)
+								if kUIX_isActionValid ~= true then
+									break
+								end
+							end
+						end
+						if kUIX_isActionValid ~= true then
+							goto createContentTable_skipAction
+						end
+						-- kuertee end: callback
+
 						if entry.active == nil then
 							entry.active = true
 						end
@@ -3698,9 +3748,18 @@ function menu.createContentTable(frame, position)
 							row[1].handlers.onClick = entry.script
 						end
 						height = height + row:getHeight() + Helper.borderSize
+
+						-- kuertee start: callback
+						:: createContentTable_skipAction ::
+						-- kuertee end: callback
 					end
 				end
 			end
+
+
+			-- kuertee start: callback
+			:: createContentTable_skipSection ::
+			-- kuertee end: callback
 		end
 		if first then
 			local row = ftable:addRow(true, {  })
