@@ -52,7 +52,7 @@ local config = {
 			{ key = "moduletypes_defence" },
 			{ key = "moduletypes_dock" },
 			{ key = "moduletypes_processing" },
-			{ key = "moduletypes_other" },
+			{ key = "moduletypes_other", additionalcategories = { "moduletypes_radar" } },
 			{ key = "moduletypes_venture" },
 		},
 		["ship"] = {
@@ -474,6 +474,13 @@ function menu.display(firsttime)
 								if menu.expanded[key.key] then
 									for _, entry in ipairs(wares[key.key]) do
 										menu.showEntry(entry, tag, 2)
+									end
+									if key.additionalcategories then
+										for _, additionalcategory in ipairs(key.additionalcategories) do
+											for _, entry in ipairs(wares[additionalcategory]) do
+												menu.showEntry(entry, tag, 2)
+											end
+										end
 									end
 								end
 							end

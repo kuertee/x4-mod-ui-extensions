@@ -319,7 +319,7 @@ local config = {
 		{ name = ReadText(1001, 2452),	icon = "stationbuildst_dock",			mode = "moduletypes_dock",			helpOverlayID = "stationbuildst_dock",			helpOverlayText = ReadText(1028, 3254)  },
 		{ name = ReadText(1001, 2424),	icon = "stationbuildst_defense",		mode = "moduletypes_defence",		helpOverlayID = "stationbuildst_defense",		helpOverlayText = ReadText(1028, 3255)  },
 		{ name = ReadText(1001, 9621),	icon = "stationbuildst_processing",		mode = "moduletypes_processing",	helpOverlayID = "stationbuildst_processing",	helpOverlayText = ReadText(1028, 3259)  },
-		{ name = ReadText(1001, 2453),	icon = "stationbuildst_other",			mode = "moduletypes_other",			helpOverlayID = "stationbuildst_other",			helpOverlayText = ReadText(1028, 3256)  },
+		{ name = ReadText(1001, 2453),	icon = "stationbuildst_other",			mode = "moduletypes_other",			helpOverlayID = "stationbuildst_other",			helpOverlayText = ReadText(1028, 3256),		additionaltypes = { "moduletypes_radar" }  },
 		{ name = ReadText(1001, 2454),	icon = "stationbuildst_venture",		mode = "moduletypes_venture",		helpOverlayID = "stationbuildst_venture",		helpOverlayText = ReadText(1028, 3257),		condition = C.IsVentureSeasonSupported },
 	},
 	leftBarLoadout = {
@@ -1463,6 +1463,27 @@ function menu.newWareReservationCallback(_, data)
 	end
 end
 
+function menu.getModules(uitype, moduletype, races, connectionmoduleraces)
+	local n = C.GetNumBlueprints(menu.set, moduletype, "")
+	if n > 0 then
+		local buf = ffi.new("UIBlueprint[?]", n)
+		n = C.GetBlueprints(buf, n, menu.set, moduletype, "")
+		for i = 0, n - 1 do
+			local macro = ffi.string(buf[i].macro)
+			local makerrace, makerracename = GetMacroData(macro, "makerraceid", "makerracename")
+			for i, race in ipairs(makerrace) do
+				races[race] = makerracename[i]
+				if IsMacroClass(macro, "connectionmodule") then
+					connectionmoduleraces[race] = makerracename[i]
+				end
+			end
+			table.insert(menu.modules[uitype], macro)
+		end
+	end
+
+	return n
+end
+
 function menu.onShowMenu(state)
 	-- layout
 	menu.scaleSize = Helper.scaleX(config.scaleSize)
@@ -1564,20 +1585,14 @@ function menu.onShowMenu(state)
 	local connectionmoduleraces = {}
 	for _, entry in ipairs(config.leftBar) do
 		menu.modules[entry.mode] = {}
-		local n = C.GetNumBlueprints(menu.set, entry.mode, "")
-		local buf = ffi.new("UIBlueprint[?]", n)
-		n = C.GetBlueprints(buf, n, menu.set, entry.mode, "")
-		for i = 0, n - 1 do
-			local macro = ffi.string(buf[i].macro)
-			local makerrace, makerracename = GetMacroData(macro, "makerraceid", "makerracename")
-			for i, race in ipairs(makerrace) do
-				races[race] = makerracename[i]
-				if IsMacroClass(macro, "connectionmodule") then
-					connectionmoduleraces[race] = makerracename[i]
-				end
+		local n = menu.getModules(entry.mode, entry.mode, races, connectionmoduleraces)
+
+		if entry.additionaltypes then
+			for _, moduletype in ipairs(entry.additionaltypes) do
+				n = n + menu.getModules(entry.mode, moduletype, races, connectionmoduleraces)
 			end
-			table.insert(menu.modules[entry.mode], macro)
 		end
+
 		table.sort(menu.modules[entry.mode], function (a, b) return menu.sorterModules(entry.mode, a, b) end)
 		entry.active = n > 0
 	end

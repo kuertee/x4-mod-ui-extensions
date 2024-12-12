@@ -835,7 +835,7 @@ local config = {
 	maxCenterPanelWidth = 1600,
 	compatibilityFontSize = 5,
 	equipmentfilter_races_width = 300,
-	persistentdataversion = 2,
+	persistentdataversion = 3,
 	statsStateOrder = {
 		"hidden",
 		"limited",
@@ -845,8 +845,8 @@ local config = {
 
 __CORE_DETAILMONITOR_SHIPBUILD = __CORE_DETAILMONITOR_SHIPBUILD or {
 	version = config.persistentdataversion,
-	["showStats"] = "limited",
-	["showStatsPaintMod"] = "hidden",
+	["showStats2"] = "limited",
+	["showStatsPaintMod2"] = "hidden",
 }
 
 -- kuertee start:
@@ -1420,9 +1420,9 @@ function menu.buttonInteract(selectedData, button, row, col, posx, posy)
 end
 
 function menu.buttonExpandStats()
-	local statskeyword = "showStats"
+	local statskeyword = "showStats2"
 	if (menu.mode == "modify") and (menu.upgradetypeMode == "paintmods") then
-		statskeyword = "showStatsPaintMod"
+		statskeyword = "showStatsPaintMod2"
 	end
 
 	local index = #config.statsStateOrder
@@ -1443,9 +1443,9 @@ function menu.buttonExpandStats()
 end
 
 function menu.buttonCollapseStats()
-	local statskeyword = "showStats"
+	local statskeyword = "showStats2"
 	if (menu.mode == "modify") and (menu.upgradetypeMode == "paintmods") then
-		statskeyword = "showStatsPaintMod"
+		statskeyword = "showStatsPaintMod2"
 	end
 
 	local index = 1
@@ -8680,9 +8680,9 @@ function menu.displayStats(frame)
 	titletable:setColWidth(5, checkboxwidth, false)
 	titletable:setColWidth(6, checkboxwidth, false)
 
-	local statskeyword = "showStats"
+	local statskeyword = "showStats2"
 	if (menu.mode == "modify") and (menu.upgradetypeMode == "paintmods") then
-		statskeyword = "showStatsPaintMod"
+		statskeyword = "showStatsPaintMod2"
 	end
 
 	local row = titletable:addRow(true, { fixed = true, borderBelow = false })
@@ -11090,9 +11090,23 @@ end
 function menu.upgradeSettingsVersion()
 	local oldversion = __CORE_DETAILMONITOR_SHIPBUILD.version
 
+	--[[ This caused backwards compatibility issues - see below
 	if oldversion < 2 then
 		__CORE_DETAILMONITOR_SHIPBUILD["showStats"] = __CORE_DETAILMONITOR_SHIPBUILD["showStats"] and "limited" or "hidden"
 		__CORE_DETAILMONITOR_SHIPBUILD["showStatsPaintMod"] = __CORE_DETAILMONITOR_SHIPBUILD["showStatsPaintMod"] and "limited" or "hidden"
+	end--]]
+	if oldversion < 3 then
+		if oldversion == 2 then
+			-- was already patched, keep new settings, restore old ones
+			__CORE_DETAILMONITOR_SHIPBUILD["showStats2"] = __CORE_DETAILMONITOR_SHIPBUILD["showStats"]
+			__CORE_DETAILMONITOR_SHIPBUILD["showStatsPaintMod2"] = __CORE_DETAILMONITOR_SHIPBUILD["showStatsPaintMod"]
+			__CORE_DETAILMONITOR_SHIPBUILD["showStats"] = true
+			__CORE_DETAILMONITOR_SHIPBUILD["showStatsPaintMod"] = false
+		else
+			-- patch to new fields to avoid backwards compatibility issue
+			__CORE_DETAILMONITOR_SHIPBUILD["showStats2"] = __CORE_DETAILMONITOR_SHIPBUILD["showStats"] and "limited" or "hidden"
+			__CORE_DETAILMONITOR_SHIPBUILD["showStatsPaintMod2"] = __CORE_DETAILMONITOR_SHIPBUILD["showStatsPaintMod"] and "limited" or "hidden"
+		end
 	end
 
 	__CORE_DETAILMONITOR_SHIPBUILD.version = config.persistentdataversion

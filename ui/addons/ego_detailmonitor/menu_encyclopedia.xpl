@@ -343,7 +343,7 @@ function menu.onShowMenu(state)
 						["moduletypes_defence"] = {},
 						["moduletypes_dock"] = {},
 						["moduletypes_processing"] = {},
-						["moduletypes_other"] = {},
+						["moduletypes_other"] = { additionalcategories = { "moduletypes_radar" } },
 						["moduletypes_venture"] = {},
 					},
 					["Ships"] = {
@@ -475,7 +475,7 @@ function menu.onShowMenu(state)
 				{ key = "moduletypes_defence" },
 				{ key = "moduletypes_dock" },
 				{ key = "moduletypes_processing" },
-				{ key = "moduletypes_other" },
+				{ key = "moduletypes_other", additionalcategories = { "moduletypes_radar" } },
 				{ key = "moduletypes_venture" },
 			}},
 			[2] = { key = "ships",		name = ReadText(1001, 6),		description = ReadText(1001, 9096), subcategories = {
@@ -712,9 +712,17 @@ function menu.onShowMenu(state)
 
 	for category in pairs(menu.data) do
 		if (category ~= "Factions") and (category ~= "Galaxy") and (category ~= "Blueprints") and (category ~= "FixedStations") then
-			for subcategory in pairs(menu.data[category]) do
+			for subcategory, entry in pairs(menu.data[category]) do
 				--print("category: " .. tostring(category) .. ", subcategory: " .. tostring(subcategory))
 				menu.data[category][subcategory] = GetLibrary(subcategory)
+				if entry.additionalcategories then
+					for _, additionalcategory in ipairs(entry.additionalcategories) do
+						local data = GetLibrary(additionalcategory)
+						for _, v in ipairs(data) do
+							table.insert(menu.data[category][subcategory], v)
+						end
+					end
+				end
 				table.sort(menu.data[category][subcategory], Helper.sortName)
 			end
 		end
@@ -1807,10 +1815,10 @@ function menu.onUpdate()
 			locparam2 = menu.delayedrenderobject[2]
 			locparam3 = menu.delayedrenderobject[3]
 			locparam4 = menu.delayedrenderobject[4]
-			menu.delayedrenderobject = {}
 		end
 		if menu.setupRenderTarget(locparam1, locparam2, locparam3, locparam4) then
 			menu.activatecutscene = nil
+			menu.delayedrenderobject = {}
 		end
 	end
 
@@ -1951,12 +1959,21 @@ function menu.initWareData(funcware)
 			end
 		end
 
+		local tradelicence, ishiddenwithoutlicence = GetWareData(funcware, "tradelicence", "ishiddenwithoutlicence")
 		local n = C.GetNumWareBlueprintOwners(funcware)
 		local buf = ffi.new("const char*[?]", n)
 		n = C.GetWareBlueprintOwners(buf, n, funcware)
 		for i = 0, n - 1 do
 			local faction = ffi.string(buf[i])
-			if IsKnownItem("factions", faction) then
+
+			local hidden = false
+			if ishiddenwithoutlicence then
+				if not HasLicence("player", tradelicence, faction) then
+					hidden = true
+				end
+			end
+
+			if (not hidden) and IsKnownItem("factions", faction) then
 				table.insert(menu.details.blueprintowners, faction)
 			end
 		end
@@ -2125,6 +2142,7 @@ function menu.setObject(rowdata)
 
 	--print("menu.mode: " .. tostring(menu.mode))
 	if not menu.delayrendertarget then
+		menu.activatecutscene = nil
 		if not menu.setupRenderTarget(renderobject, isicon, paintmod, iscomponent) then
 			menu.activatecutscene = true
 			menu.delayedrenderobject = { renderobject, isicon, paintmod, iscomponent }
@@ -3112,9 +3130,9 @@ function menu.addDetailRows(ftable)
 			menu.addDetailRow(ftable, ReadText(1001, 9062), ConvertIntegerString(menu.object.unitcapacity, true, 0, true))
 			-- build resources
 			if menu.details.productionmethods and (#menu.details.productionmethods > 0) then
-				-- empty line
-				menu.addDetailRow(ftable, "")
 				if #menu.details.blueprintowners > 0 then
+					-- empty line
+					menu.addDetailRow(ftable, "")
 					-- produced by
 					menu.addDetailRow(ftable, ReadText(1001, 8391) .. ReadText(1001, 120))
 					for i, entry in ipairs(menu.details.blueprintowners) do
@@ -3799,7 +3817,15 @@ function menu.addDetailRows(ftable)
 			end
 		elseif menu.mode == "Blueprints" then
 			for i, subcategory in ipairs(menu.index["Blueprints"][menu.object].subcategories) do
-				local data = menu.details[subcategory.key]
+				local data = Helper.tableCopy(menu.details[subcategory.key])
+				if subcategory.additionalcategories then
+					for _, additionalcategory in ipairs(subcategory.additionalcategories) do
+						for _, v in ipairs(menu.details[additionalcategory]) do
+							table.insert(data, v)
+						end
+					end
+					table.sort(data, Helper.sortName)
+				end
 				if data then
 					if i > 1 then
 						-- empty line
@@ -3831,6 +3857,7 @@ function menu.addDetailRows(ftable)
 							row[3]:setColSpan(2):createText(entry.owned and (ColorText["text_player"] .. ReadText(1001, 84)) or "", { halign = "right" })
 						end
 					end
+
 					if unlocked < count then
 						menu.addDetailRow(ftable, string.format(ReadText(1001, 9623), count - unlocked))
 					end

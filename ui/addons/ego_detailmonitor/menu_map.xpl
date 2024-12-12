@@ -585,7 +585,7 @@ ffi.cdef[[
 	UniverseID GetContextByRealClass(UniverseID componentid, const char* classname, bool includeself);
 	BlacklistID GetControllableBlacklistID(UniverseID controllableid, const char* listtype, const char* defaultgroup);
 	FightRuleID GetControllableFightRuleID(UniverseID controllableid, const char* listtype);
-	uint32_t GetControllableSubordinateFleetUnits(FleetUnitID* result, uint32_t resultlen, UniverseID controllableid);
+	uint32_t GetControllableSubordinateFleetUnits(FleetUnitID* result, uint32_t resultlen, UniverseID controllableid, int subordinategroupid);
 	const char* GetCurrentAmmoOfWeapon(UniverseID weaponid);
 	const char* GetCurrentBoardingPhase(UniverseID defensibletargetid, const char* boarderfactionid);
 	float GetCurrentBuildProgress(UniverseID containerid);
@@ -611,13 +611,15 @@ ffi.cdef[[
 	FactionDetails GetFactionDetails(const char* factionid);
 	const char* GetFleetName(UniverseID controllableid);
 	FleetUnitID GetFleetUnit(UniverseID controllableid);
+	const char* GetFleetUnitBuildIssues(FleetUnitID fleetunitid);
 	UniverseID GetFleetUnitFirstCommanderComponent(FleetUnitID fleetunitid);
 	const char* GetFleetUnitFleetName(FleetUnitID fleetunitid);
 	FleetUnitInfo GetFleetUnitInfo(FleetUnitID fleetunitid);
-	uint32_t GetFleetUnitSubordinateFleetUnits(FleetUnitID* result, uint32_t resultlen, FleetUnitID fleetunitid);
+	uint32_t GetFleetUnitProblematicEquipmentWares(const char** result, uint32_t resultlen, FleetUnitID fleetunitid);
+	uint32_t GetFleetUnitSubordinateFleetUnits(FleetUnitID* result, uint32_t resultlen, FleetUnitID fleetunitid, int subordinategroupid);
 	int32_t GetFleetUnitSubordinateGroup(FleetUnitID fleetunitid);
 	const char* GetFleetUnitSubordinateGroupAssignment(FleetUnitID fleetunitid, int32_t group);
-	uint32_t GetFleetUnitSubordinates(UniverseID* result, uint32_t resultlen, FleetUnitID fleetunitid);
+	uint32_t GetFleetUnitSubordinates(UniverseID* result, uint32_t resultlen, FleetUnitID fleetunitid, int32_t subordinategroupid);
 	uint32_t GetFormationShapes(UIFormationInfo* result, uint32_t resultlen);
 	uint32_t GetFreeCountermeasureStorageAfterTradeOrders(UniverseID defensibleid);
 	uint32_t GetFreeDeployableStorageAfterTradeOrders(UniverseID defensibleid);
@@ -676,13 +678,14 @@ ffi.cdef[[
 	uint32_t GetNumCargoTransportTypes(UniverseID containerid, bool merge);
 	uint32_t GetNumContainerCriticalWares(UniverseID containerid);
 	uint32_t GetNumContainerWareReservations2(UniverseID containerid, bool includevirtual, bool includemission, bool includesupply);
-	uint32_t GetNumControllableSubordinateFleetUnits(UniverseID controllableid);
+	uint32_t GetNumControllableSubordinateFleetUnits(UniverseID controllableid, int subordinategroupid);
 	uint32_t GetNumCurrentMissionOffers(bool showninbbs);
 	uint32_t GetNumDiscoveredSectorResources(UniverseID sectorid);
 	uint32_t GetNumDockedShips(UniverseID dockingbayorcontainerid, const char* factionid);
 	uint32_t GetNumDroneModes(UniverseID defensibleid, const char* dronetype);
-	uint32_t GetNumFleetUnitSubordinateFleetUnits(FleetUnitID fleetunitid);
-	uint32_t GetNumFleetUnitSubordinates(FleetUnitID fleetunitid);
+	uint32_t GetNumFleetUnitProblematicEquipmentWares(FleetUnitID fleetunitid);
+	uint32_t GetNumFleetUnitSubordinateFleetUnits(FleetUnitID fleetunitid, int subordinategroupid);
+	uint32_t GetNumFleetUnitSubordinates(FleetUnitID fleetunitid, int32_t subordinategroupid);
 	uint32_t GetNumFormationShapes(void);
 	uint32_t GetNumIllegalToFactions(const char* wareid);
 	uint32_t GetNumMapComponentMissions(UniverseID holomapid, UniverseID componentid);
@@ -903,7 +906,6 @@ ffi.cdef[[
 	void SetAllTurretsArmed(UniverseID defensibleid, bool arm);
 	bool SetAmmoOfWeapon(UniverseID weaponid, const char* newammomacro);
 	void SetCheckBoxChecked2(const int checkboxid, bool checked, bool update);
-	bool SetCommander(UniverseID controllableid, UniverseID commanderid, const char* assignment);
 	void SetConfigSetting(const char*const setting, const bool value);
 	void SetContainerBuildMethod(UniverseID containerid, const char* buildmethodid);
 	void SetContainerTradeRule(UniverseID containerid, TradeRuleID id, const char* ruletype, const char* wareid, bool value);
@@ -1049,7 +1051,7 @@ local config = {
 		{ type = "moduletypes_dock",       name = ReadText(1001, 2452) },
 		{ type = "moduletypes_defence",    name = ReadText(1001, 2424) },
 		{ type = "moduletypes_processing", name = ReadText(1001, 9621) },
-		{ type = "moduletypes_other",      name = ReadText(1001, 2453) },
+		{ type = "moduletypes_other",      name = ReadText(1001, 2453),		additionaltypes = { "moduletypes_radar" } },
 		{ type = "moduletypes_venture",    name = ReadText(1001, 2454) },
 	},
 	stateKeys = {
@@ -7350,10 +7352,10 @@ function menu.getSubordinates(controllable, checkrendered)
 			end
 		end
 
-		local n = C.GetNumControllableSubordinateFleetUnits(controllable64)
+		local n = C.GetNumControllableSubordinateFleetUnits(controllable64, -1)
 		if n > 0 then
 			local buf = ffi.new("FleetUnitID[?]", n)
-			n = C.GetControllableSubordinateFleetUnits(buf, n, controllable64)
+			n = C.GetControllableSubordinateFleetUnits(buf, n, controllable64, -1)
 			for i = 0, n - 1 do
 				local fleetunit = buf[i]
 				table.insert(subordinates, { fleetunit = fleetunit })
@@ -7417,22 +7419,37 @@ end
 function menu.getFleetUnitSubordinates(instance, controllable, checkrendered)
 	local infoTableData = menu.infoTableData[instance]
 
+	local controllableid = tostring(ConvertStringToLuaID(tostring(controllable)))
+	infoTableData.fleetUnitData[controllableid] = { count = 0, haserrors = false }
+
 	local n = C.GetNumAllFleetUnits(controllable)
 	if n > 0 then
 		local fleetunits = {}
 
 		local buf = ffi.new("FleetUnitID[?]", n)
 		n = C.GetAllFleetUnits(buf, n, controllable)
+
+		infoTableData.fleetUnitData[controllableid].count = n
+
 		for i = 0, n - 1 do
 			local fleetunit = buf[i]
 			table.insert(fleetunits, fleetunit)
-			local replacingcomponent
+
+			if not infoTableData.fleetUnitData[controllableid].haserrors then
+				local issues = ffi.string(C.GetFleetUnitBuildIssues(fleetunit))
+				for issue in string.gmatch(issues, "[^;]+") do
+					if (issue == "nocontainer") or (issue == "objectmacro") or (issue == "equipment") or (issue == "paused") then
+						infoTableData.fleetUnitData[controllableid].haserrors = true
+						break
+					end
+				end
+			end
 
 			local fleetunitsubordinates = {}
-			local num_subordinates = C.GetNumFleetUnitSubordinates(fleetunit)
+			local num_subordinates = C.GetNumFleetUnitSubordinates(fleetunit, -1)
 			if num_subordinates > 0 then
 				local buf_subordinates = ffi.new("UniverseID[?]", num_subordinates)
-				num_subordinates = C.GetFleetUnitSubordinates(buf_subordinates, num_subordinates, fleetunit)
+				num_subordinates = C.GetFleetUnitSubordinates(buf_subordinates, num_subordinates, fleetunit, -1)
 				for j = 0, num_subordinates - 1 do
 					local fleetunitsubordinate = ConvertStringToLuaID(tostring(buf_subordinates[j]))
 					table.insert(fleetunitsubordinates, { component = fleetunitsubordinate })
@@ -7443,10 +7460,10 @@ function menu.getFleetUnitSubordinates(instance, controllable, checkrendered)
 				end
 			end
 
-			local num_fleetunits = C.GetNumFleetUnitSubordinateFleetUnits(fleetunit)
+			local num_fleetunits = C.GetNumFleetUnitSubordinateFleetUnits(fleetunit, -1)
 			if num_fleetunits > 0 then
 				local buf_fleetunits = ffi.new("FleetUnitID[?]", num_fleetunits)
-				num_fleetunits = C.GetFleetUnitSubordinateFleetUnits(buf_fleetunits, num_fleetunits, fleetunit)
+				num_fleetunits = C.GetFleetUnitSubordinateFleetUnits(buf_fleetunits, num_fleetunits, fleetunit, -1)
 				for j = 0, num_fleetunits - 1 do
 					local fleetunitsubordinate = buf_fleetunits[j]
 					table.insert(fleetunitsubordinates, { fleetunit = fleetunitsubordinate })
@@ -7564,6 +7581,7 @@ function menu.createObjectList(frame, instance)
 	infoTableData.subordinates = { }
 	infoTableData.dockedships = { }
 	infoTableData.constructions = { }
+	infoTableData.fleetUnitData = { }
 	infoTableData.fleetUnitSubordinates = { }
 	infoTableData.fleetUnitReplacements = { }
 
@@ -7888,6 +7906,7 @@ function menu.createPropertyOwned(frame, instance)
 	infoTableData.subordinates = { }
 	infoTableData.dockedships = { }
 	infoTableData.constructions = { }
+	infoTableData.fleetUnitData = { }
 	infoTableData.fleetUnitSubordinates = { }
 	infoTableData.fleetUnitReplacements = { }
 	infoTableData.moduledata = { }
@@ -9112,7 +9131,7 @@ function menu.createFleetUnitRow(instance, ftable, fleetunit, iteration, command
 
 	local info = C.GetFleetUnitInfo(fleetunit)
 	local macro = ffi.string(info.macro)
-	local icon = GetMacroData(macro, "icon")
+	local macroname, icon = GetMacroData(macro, "name", "icon")
 	local mouseovertext = ""
 	local mouseovertext2 = ""
 	local color = Color["text_inactive"]
@@ -9149,59 +9168,99 @@ function menu.createFleetUnitRow(instance, ftable, fleetunit, iteration, command
 			namecols = 2
 		end
 
-		if info.replacementid ~= 0 then
-			local replacement64 = ConvertStringTo64Bit(tostring(info.replacementid))
-			color = Color["text_player_inactive"]
-			name = menu.getContainerNameAndColors(replacement64, 0, false, false)
-			for i = 1, iteration do
-				name = "    " .. name
+		local issues = ffi.string(C.GetFleetUnitBuildIssues(fleetunit))
+		local first = true
+		for issue in string.gmatch(issues, "[^;]+") do
+			if (issue == "nocontainer") or (issue == "objectmacro") or (issue == "equipment") or (issue == "hacked") or (issue == "paused") then
+				if first then
+					if issue == "hacked" then
+						duration = ColorText["text_warning"] .. "\27[menu_hammer] --:--"
+					else
+						duration = ColorText["text_error"] .. "\27[menu_hammer] --:--"
+					end
+					first = false
+				else
+					mouseovertext2 = mouseovertext2 .. "\n\n"
+				end
 			end
-			if C.IsComponentOperational(info.replacementid) then
-				name = name .. " " .. ColorText["text_player"] .. "(" .. ReadText(1001, 11662) .. ")\27X"
 
-				currentordericon, currentorderrawicon, currentordercolor, currentordername, currentorderdescription, currentorderisoverride, currentordermouseovertext = menu.getOrderInfo(replacement64)
-				location, locationname = GetComponentData(replacement64, "sectorid", "sector")
-				local displaylocation = location and not (commanderlocation and IsSameComponent(location, commanderlocation))
-				duration = (displaylocation and ((locationname .. " ") or "") or "")
-				shieldhullbar = true
-			else
-				name = name .. " " .. ColorText["text_player"] .. "(" .. math.floor(C.GetCurrentBuildProgress(info.replacementid)) .. " %)\27X"
+			if issue == "nocontainer" then
+				local iscapship = IsMacroClass(macro, "ship_l") or IsMacroClass(macro, "ship_xl")
+				mouseovertext2 = mouseovertext2 .. (iscapship and ReadText(1026, 3289) or ReadText(1026, 3290))
+			elseif issue == "objectmacro" then
+				mouseovertext2 = mouseovertext2 .. ReadText(1026, 3291) .. ReadText(1001, 120) .. " " .. macroname
+			elseif issue == "equipment" then
+				mouseovertext2 = mouseovertext2 .. ReadText(1026, 3292) .. ReadText(1001, 120)
+				local n = C.GetNumFleetUnitProblematicEquipmentWares(fleetunit)
+				if n > 0 then
+					local buf = ffi.new("const char*[?]", n)
+					n = C.GetFleetUnitProblematicEquipmentWares(buf, n, fleetunit)
+					for i = 0, n - 1 do
+						mouseovertext2 = mouseovertext2 .. "\n· " .. GetWareData(ffi.string(buf[i]), "name")
+					end
+				end
+			elseif issue == "hacked" then
+				mouseovertext2 = mouseovertext2 .. ReadText(1026, 3293)
+			elseif issue == "paused" then
+				mouseovertext2 = mouseovertext2 .. ReadText(1026, 3294)
+			end
+		end
 
-				if info.buildtaskid ~= 0 then
-					local buildtaskinfo = C.GetBuildTaskInfo(info.buildtaskid)
-					if buildtaskinfo.buildercomponent ~= 0 then
-						if menu.infoTableMode == "objectlist" then
-							duration = function () return "\27[menu_hammer] " .. Helper.formatTimeLeft(C.GetBuildProcessorEstimatedTimeLeft(buildtaskinfo.buildercomponent)) end
-						else
-							duration = function () return menu.fleetUnitBuildProgress(replacement64, buildtaskinfo.buildercomponent, commanderlocation) end
+		if mouseovertext2 == "" then
+			if info.replacementid ~= 0 then
+				local replacement64 = ConvertStringTo64Bit(tostring(info.replacementid))
+				color = Color["text_player_inactive"]
+				name = menu.getContainerNameAndColors(replacement64, 0, false, false)
+				for i = 1, iteration do
+					name = "    " .. name
+				end
+				if C.IsComponentOperational(info.replacementid) then
+					name = name .. " " .. ColorText["text_player"] .. "(" .. ReadText(1001, 11662) .. ")\27X"
+
+					currentordericon, currentorderrawicon, currentordercolor, currentordername, currentorderdescription, currentorderisoverride, currentordermouseovertext = menu.getOrderInfo(replacement64)
+					location, locationname = GetComponentData(replacement64, "sectorid", "sector")
+					local displaylocation = location and not (commanderlocation and IsSameComponent(location, commanderlocation))
+					duration = (displaylocation and ((locationname .. " ") or "") or "")
+					shieldhullbar = true
+				else
+					name = name .. " " .. ColorText["text_player"] .. "(" .. math.floor(C.GetCurrentBuildProgress(info.replacementid)) .. " %)\27X"
+
+					if info.buildtaskid ~= 0 then
+						local buildtaskinfo = C.GetBuildTaskInfo(info.buildtaskid)
+						if buildtaskinfo.buildercomponent ~= 0 then
+							if menu.infoTableMode == "objectlist" then
+								duration = function () return "\27[menu_hammer] " .. Helper.formatTimeLeft(C.GetBuildProcessorEstimatedTimeLeft(buildtaskinfo.buildercomponent)) end
+							else
+								duration = function () return menu.fleetUnitBuildProgress(replacement64, buildtaskinfo.buildercomponent, commanderlocation) end
+							end
 						end
 					end
 				end
-			end
-		elseif info.buildtaskid ~= 0 then
-			color = Color["text_player_inactive"]
-			local buildtaskinfo = C.GetBuildTaskInfo(info.buildtaskid)
+			elseif info.buildtaskid ~= 0 then
+				color = Color["text_player_inactive"]
+				local buildtaskinfo = C.GetBuildTaskInfo(info.buildtaskid)
 
-			mouseovertext2 = ReadText(1026, 3288) .. ReadText(1001, 120) .. " " .. ColorText["text_player"] .. ffi.string(C.GetComponentName(buildtaskinfo.buildingcontainer)) .. " (" .. ffi.string(C.GetObjectIDCode(buildtaskinfo.buildingcontainer)) .. ")\27X"
+				mouseovertext2 = ReadText(1026, 3288) .. ReadText(1001, 120) .. " " .. ColorText["text_player"] .. ffi.string(C.GetComponentName(buildtaskinfo.buildingcontainer)) .. " (" .. ffi.string(C.GetObjectIDCode(buildtaskinfo.buildingcontainer)) .. ")\27X"
 
-			local missingresources = {}
-			local n = C.GetNumMissingBuildResources2(buildtaskinfo.buildingcontainer, nil, 0, true)
-			if n > 0 then
-				local buf = ffi.new("UIWareInfo[?]", n)
-				n = C.GetMissingBuildResources(buf, n)
-				for i = 0, n - 1 do
-					table.insert(missingresources, { ware = ffi.string(buf[i].ware), amount = buf[i].amount })
+				local missingresources = {}
+				local n = C.GetNumMissingBuildResources2(buildtaskinfo.buildingcontainer, nil, 0, true)
+				if n > 0 then
+					local buf = ffi.new("UIWareInfo[?]", n)
+					n = C.GetMissingBuildResources(buf, n)
+					for i = 0, n - 1 do
+						table.insert(missingresources, { ware = ffi.string(buf[i].ware), amount = buf[i].amount })
+					end
 				end
-			end
-			if #missingresources > 0 then
-				duration = ColorText["text_warning"]
-				mouseovertext2 = mouseovertext2 .. "\n\n" .. ColorText["text_warning"] .. ReadText(1001, 8018) .. "\n\n" .. ReadText(1001, 8046) .. ReadText(1001, 120)
-				for i, entry in ipairs(missingresources) do
-					mouseovertext2 = mouseovertext2 .. "\n· " .. entry.amount .. ReadText(1001, 42) .. " " .. GetWareData(entry.ware, "name")
+				if #missingresources > 0 then
+					duration = ColorText["text_warning"]
+					mouseovertext2 = mouseovertext2 .. "\n\n" .. ColorText["text_warning"] .. ReadText(1001, 8018) .. "\n\n" .. ReadText(1001, 8046) .. ReadText(1001, 120)
+					for i, entry in ipairs(missingresources) do
+						mouseovertext2 = mouseovertext2 .. "\n· " .. entry.amount .. ReadText(1001, 42) .. " " .. GetWareData(entry.ware, "name")
+					end
 				end
-			end
 
-			duration = (duration or "") .. "\27[menu_hammer] " .. ColorText["text_inactive"] .. Helper.formatTimeLeft(C.GetBuildTaskDuration(buildtaskinfo.buildingcontainer, buildtaskinfo.id))
+				duration = (duration or "") .. "\27[menu_hammer] " .. ColorText["text_inactive"] .. Helper.formatTimeLeft(C.GetBuildTaskDuration(buildtaskinfo.buildingcontainer, buildtaskinfo.id))
+			end
 		end
 
 		local hascomponentsubordinate = false
@@ -9394,7 +9453,15 @@ function menu.createModuleSection(instance, ftable, component, iteration)
 	local maxicons = menu.infoTableData[instance].maxIcons
 
 	for _, moduletype in ipairs(config.moduletypes) do
-		local modules = moduledata[moduletype.type] or {}
+		local modules = Helper.tableCopy(moduledata[moduletype.type]) or {}
+		if moduletype.additionaltypes then
+			for _, additionaltype in ipairs(moduletype.additionaltypes) do
+				for _, v in ipairs(moduledata[additionaltype] or {}) do
+					table.insert(modules, v)
+				end
+			end
+		end
+
 		if next(modules) then
 			if (not menu.isModuleTypeExtended(component, moduletype.type)) then
 				for _, moduleentry in ipairs(modules) do
@@ -9649,8 +9716,9 @@ function menu.getPropertyOwnedFleetData(instance, component, maxentries)
 
 	local isfleetlead = GetComponentData(component, "isfleetlead")
 	if isfleetlead then
-		local count = C.GetNumAllFleetUnits(C.ConvertStringTo64Bit(tostring(component)))
-		table.insert(result, 1, { icon = "menu_hammer", count = (count > 0) and count or nil })
+		local count = menu.infoTableData[instance].fleetUnitData[tostring(component)].count
+
+		table.insert(result, 1, { icon = "menu_hammer", count = (count > 0) and count or nil, color = menu.infoTableData[instance].fleetUnitData[tostring(component)].haserrors and Color["text_error"] or nil })
 	end
 
 	-- If there are too many entries, accumulate counts in last entry and invalidate icon
@@ -13282,6 +13350,8 @@ function menu.setupInfoSubmenuRows(mode, inputtable, inputobject, instance)
 		row = menu.addInfoSubmenuRow(instance, inputtable, row, locrowdata, false, false, false, 1, indentsize)
 
 		if ware then
+			local tradelicence, ishiddenwithoutlicence = GetWareData(ware, "tradelicence", "ishiddenwithoutlicence")
+
 			local n = C.GetNumWareBlueprintOwners(ware)
 			local buf = ffi.new("const char*[?]", n)
 			n = C.GetWareBlueprintOwners(buf, n, ware)
@@ -13290,7 +13360,15 @@ function menu.setupInfoSubmenuRows(mode, inputtable, inputobject, instance)
 				local faction = ffi.string(buf[i])
 				local name = GetFactionData(faction, "name")
 				local known = IsKnownItem("factions", faction)
-				if known then
+
+				local hidden = false
+				if ishiddenwithoutlicence then
+					if not HasLicence("player", tradelicence, faction) then
+						hidden = true
+					end
+				end
+
+				if known and (not hidden) then
 					locrowdata = { false, first and (ReadText(1001, 8391) .. ReadText(1001, 120)) or "", Helper.unlockInfo(nameinfo, name) }	-- Produced by
 					row = menu.addInfoSubmenuRow(instance, inputtable, row, locrowdata, false, false, false, 1, indentsize)
 					first = false
@@ -24165,10 +24243,12 @@ function menu.buttonRenameConfirm(isconfirmed)
 			if menu.contextMenuData.fleetrename then
 				C.SetFleetName(menu.contextMenuData.component, menu.contextMenuData.newtext)
 			else
+				-- kuertee start: debug
 				local uix_name_old = GetComponentData(menu.contextMenuData.component, "name")
 				local uix_idcode = C.GetObjectIDCode(menu.contextMenuData.component)
 				Helper.debugText_forced(menu.contextMenuData.component, uix_name_old .. tostring(uix_idcode))
 				Helper.debugText_forced("newtext", menu.contextMenuData.newtext)
+				-- kuertee end: debug
 
 				SetComponentName(menu.contextMenuData.component, menu.contextMenuData.newtext)
 
@@ -27202,7 +27282,6 @@ function menu.onRenderTargetRightMouseUp(modified)
 							local missions = {}
 							Helper.ffiVLA(missions, "MissionID", C.GetNumMapComponentMissions, C.GetMapComponentMissions, menu.holomap, ConvertIDTo64Bit(tradedata.station))
 
-							local playerships, otherobjects, playerdeployables = menu.getSelectedComponentCategories()
 							Helper.openInteractMenu(menu, { component = tradedata.station, offsetcomponent = posrotcomponent, offset = posrot, playerships = playerships, otherobjects = otherobjects, playerdeployables = playerdeployables, componentmissions = missions, behaviourInspectionComponent = menu.behaviourInspectionComponent })
 						end
 					end
@@ -27272,7 +27351,6 @@ function menu.onRenderTargetRightMouseUp(modified)
 						local missions = {}
 						Helper.ffiVLA(missions, "MissionID", C.GetNumMapComponentMissions, C.GetMapComponentMissions, menu.holomap, pickedcomponent)
 
-						local playerships, otherobjects, playerdeployables = menu.getSelectedComponentCategories()
 						Helper.openInteractMenu(menu, { component = pickedcomponent, offsetcomponent = posrotcomponent, offset = posrot, playerships = playerships, otherobjects = otherobjects, playerdeployables = playerdeployables, componentmissions = missions, behaviourInspectionComponent = menu.behaviourInspectionComponent, buildStationMode = menu.mode == "selectbuildlocation" })
 					end
 				else
@@ -27726,7 +27804,9 @@ function menu.onTableRightMouseClick(uitable, row, posx, posy)
 							if fleetunit then
 								local playerships, otherobjects, playerdeployables = menu.getSelectedComponentCategories()
 								if rowdata[1] == "fleetunit" then
-									Helper.openInteractMenu(menu, { fleetunit = fleetunit, playerships = playerships, otherobjects = otherobjects, playerdeployables = playerdeployables, mouseX = posx, mouseY = posy, componentmissions = {}, behaviourInspectionComponent = menu.behaviourInspectionComponent })
+									Helper.openInteractMenu(menu, { fleetunit = fleetunit, replacingcontrollable = menu.infoTableData.left.fleetUnitReplacements["fleetunit:" .. tostring(fleetunit)], playerships = playerships, otherobjects = otherobjects, playerdeployables = playerdeployables, selectedfleetunit = menu.prevselectedfleetunit, selectedreplacingcontrollable = menu.infoTableData.left.fleetUnitReplacements["fleetunit:" .. tostring(menu.prevselectedfleetunit)], mouseX = posx, mouseY = posy, componentmissions = {}, behaviourInspectionComponent = menu.behaviourInspectionComponent })
+								else
+									Helper.openInteractMenu(menu, { fleetunit = fleetunit, replacingcontrollable = menu.infoTableData.left.fleetUnitReplacements["fleetunit:" .. tostring(fleetunit)], playerships = playerships, otherobjects = otherobjects, playerdeployables = playerdeployables, selectedfleetunit = menu.prevselectedfleetunit, selectedreplacingcontrollable = menu.infoTableData.left.fleetUnitReplacements["fleetunit:" .. tostring(menu.prevselectedfleetunit)], mouseX = posx, mouseY = posy, subordinategroup = rowdata[3], componentmissions = missions, behaviourInspectionComponent = menu.behaviourInspectionComponent })
 								end
 							elseif convertedRowComponent and (convertedRowComponent ~= 0) then
 
@@ -27769,7 +27849,7 @@ function menu.onTableRightMouseClick(uitable, row, posx, posy)
 									elseif string.find(rowdata[1], "subordinates") then
 										Helper.openInteractMenu(menu, { component = convertedRowComponent, playerships = playerships, otherobjects = otherobjects, playerdeployables = playerdeployables, mouseX = posx, mouseY = posy, subordinategroup = rowdata[3], componentmissions = missions, behaviourInspectionComponent = menu.behaviourInspectionComponent })
 									else
-										Helper.openInteractMenu(menu, { component = convertedRowComponent, playerships = playerships, otherobjects = otherobjects, playerdeployables = playerdeployables, mouseX = posx, mouseY = posy, componentmissions = missions, behaviourInspectionComponent = menu.behaviourInspectionComponent })
+										Helper.openInteractMenu(menu, { component = convertedRowComponent, playerships = playerships, otherobjects = otherobjects, playerdeployables = playerdeployables, selectedfleetunit = menu.prevselectedfleetunit, selectedreplacingcontrollable = menu.infoTableData.left.fleetUnitReplacements["fleetunit:" .. tostring(menu.prevselectedfleetunit)], mouseX = posx, mouseY = posy, componentmissions = missions, behaviourInspectionComponent = menu.behaviourInspectionComponent })
 									end
 								end
 							end
@@ -29055,13 +29135,24 @@ function menu.onInteractMenuCallback(type, param)
 
 		menu.createContextFrame(width, nil, menu.contextMenuData.xoffset, menu.contextMenuData.yoffset)
 	elseif type == "selectsubordinates" then
-		local subordinates = GetSubordinates(param[1])
 		local groupShips = {}
-		for _, subordinate in ipairs(subordinates) do
-			local group = GetComponentData(subordinate, "subordinategroup")
-			if group and group > 0 then
-				if group == param[2] then
-					table.insert(groupShips, subordinate)
+		if param[3] and (param[3] ~= 0) then
+			local num_subordinates = C.GetNumFleetUnitSubordinates(param[3], param[2])
+			if num_subordinates > 0 then
+				local buf_subordinates = ffi.new("UniverseID[?]", num_subordinates)
+				num_subordinates = C.GetFleetUnitSubordinates(buf_subordinates, num_subordinates, param[3], param[2])
+				for i = 0, num_subordinates - 1 do
+					table.insert(groupShips, ConvertStringToLuaID(tostring(buf_subordinates[i])))
+				end
+			end
+		else
+			local subordinates = GetSubordinates(param[1])
+			for _, subordinate in ipairs(subordinates) do
+				local group = GetComponentData(subordinate, "subordinategroup")
+				if group and group > 0 then
+					if group == param[2] then
+						table.insert(groupShips, subordinate)
+					end
 				end
 			end
 		end
@@ -29151,6 +29242,7 @@ function menu.updateSelectedComponents(modified, keepselection, changedComponent
 		end
 	end
 
+	menu.prevselectedfleetunit = nil
 	for _, row in ipairs(rows) do
 		local rowdata = menu.rowDataMap[menu.infoTable][row]
 		if type(rowdata) == "table" then
@@ -29163,7 +29255,8 @@ function menu.updateSelectedComponents(modified, keepselection, changedComponent
 						end
 					end
 				elseif rowdata[1] == "fleetunit" then
-					if rowdata[2] ~= 0 then
+					menu.prevselectedfleetunit = rowdata[3].fleetunit
+					if rowdata[2] and (rowdata[2] ~= 0) then
 						if ischangedselected or (rowdata[2] ~= changedComponent) then
 							table.insert(components, ConvertStringTo64Bit(tostring(rowdata[2])))
 						end
