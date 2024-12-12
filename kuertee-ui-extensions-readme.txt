@@ -221,6 +221,11 @@ Troubleshooting
 (4) Play for long enough for the mod to log its events.
 (5) Send me (at kuertee@gmail.com) the log found in My Documents\Egosoft\X4\(your player-specific number)\debug.log.
 
+Credits
+=======
+kuertee
+French localisation by Calvitix.
+
 History
 =======
 v7.1.11, 18 Oct 2024:
