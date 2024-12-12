@@ -17,6 +17,11 @@ ffi.cdef[[
 		uint32_t capacity;
 	} AmmoData;
 	typedef struct {
+		UniverseID controllableid;
+		FleetUnitID fleetunitid;
+		int32_t groupindex;
+	} CommanderInfo;
+	typedef struct {
 		int x;
 		int y;
 	} Coord2D;
@@ -138,6 +143,7 @@ ffi.cdef[[
 		int32_t amount;
 	} YieldInfo;
 	void ActivateObject(UniverseID objectid, bool active);
+	void AddFleetUnitSubordinate(FleetUnitID fleetunitid, UniverseID subordinateid, FleetUnitID subordinatefleetunitid, int32_t subordinategroupid);
 	bool AdjustOrder(UniverseID controllableid, size_t idx, size_t newidx, bool enabled, bool forcestates, bool checkonly);
 	bool CanAcceptSubordinate(UniverseID commanderid, UniverseID potentialsubordinateid);
 	bool CanBeDismantled(UniverseID componentid);
@@ -158,18 +164,26 @@ ffi.cdef[[
 	uint32_t CreateOrder(UniverseID controllableid, const char* orderid, bool defaultorder);
 	uint32_t CreateOrder3(UniverseID controllableid, const char* orderid, bool defaultorder, bool isoverride, bool istemp);
 	bool DoesConstructionSequenceRequireBuilder(UniverseID containerid);
+	uint32_t GetAllFleetUnitSubordinates(UniverseID* result, uint32_t resultlen, FleetUnitID fleetunitid);
 	uint32_t GetAllLaserTowers(AmmoData* result, uint32_t resultlen, UniverseID defensibleid);
 	uint32_t GetAllMines(AmmoData* result, uint32_t resultlen, UniverseID defensibleid);
 	uint32_t GetAllNavBeacons(AmmoData* result, uint32_t resultlen, UniverseID defensibleid);
 	uint32_t GetAllResourceProbes(AmmoData* result, uint32_t resultlen, UniverseID defensibleid);
 	uint32_t GetAllSatellites(AmmoData* result, uint32_t resultlen, UniverseID defensibleid);
+	CommanderInfo GetCommander(UniverseID controllableid, FleetUnitID fleetunitid);
 	uint32_t GetCompSlotPlayerActions(UIAction* result, uint32_t resultlen, UIComponentSlot compslot);
 	Coord2D GetCompSlotScreenPos(UIComponentSlot compslot);
 	UniverseID GetContextByClass(UniverseID componentid, const char* classname, bool includeself);
+	uint32_t GetControllableSubordinateFleetUnits(FleetUnitID* result, uint32_t resultlen, UniverseID controllableid, int subordinategroupid);
 	uint32_t GetDefensibleDPS(DPSData* result, UniverseID defensibleid, bool primary, bool secondary, bool lasers, bool missiles, bool turrets, bool includeheat, bool includeinactive);
 	float GetDistanceBetween(UniverseID component1id, UniverseID component2id);
 	uint32_t GetDockedShips(UniverseID* result, uint32_t resultlen, UniverseID dockingbayorcontainerid, const char* factionid);
+	UniverseID GetFleetLead(UniverseID controllableid, FleetUnitID fleetunitid);
 	FleetUnitInfo GetFleetUnitInfo(FleetUnitID fleetunitid);
+	uint32_t GetFleetUnitSubordinateFleetUnits(FleetUnitID* result, uint32_t resultlen, FleetUnitID fleetunitid, int subordinategroupid);
+	int32_t GetFleetUnitSubordinateGroup(FleetUnitID fleetunitid);
+	const char* GetFleetUnitSubordinateGroupAssignment(FleetUnitID fleetunitid, int32_t group);
+	uint32_t GetFleetUnitSubordinates(UniverseID* result, uint32_t resultlen, FleetUnitID fleetunitid, int32_t subordinategroupid);
 	uint32_t GetFormationShapes(UIFormationInfo* result, uint32_t resultlen);
 	uint32_t GetHQs(UniverseID* result, uint32_t resultlen, const char* factionid);
 	LastAttackerInfo GetLastAttackInfo(UniverseID destructibleid);
@@ -177,6 +191,7 @@ ffi.cdef[[
 	void GetMissionDeliveryWares(MissionWareDeliveryInfo* result, MissionID missionid);
 	uint32_t GetMissionThreadSubMissions(MissionID* result, uint32_t resultlen, MissionID missionid);
 	MonitorExtents GetMonitorExtents(const char* monitorid);
+	uint32_t GetNumAllFleetUnitSubordinates(FleetUnitID fleetunitid);
 	uint32_t GetNumAllLaserTowers(UniverseID defensibleid);
 	uint32_t GetNumAllMines(UniverseID defensibleid);
 	uint32_t GetNumAllRoles(void);
@@ -184,7 +199,10 @@ ffi.cdef[[
 	uint32_t GetNumAllResourceProbes(UniverseID defensibleid);
 	uint32_t GetNumAllSatellites(UniverseID defensibleid);
 	uint32_t GetNumCompSlotPlayerActions(UIComponentSlot compslot);
+	uint32_t GetNumControllableSubordinateFleetUnits(UniverseID controllableid, int subordinategroupid);
 	uint32_t GetNumDockedShips(UniverseID dockingbayorcontainerid, const char* factionid);
+	uint32_t GetNumFleetUnitSubordinateFleetUnits(FleetUnitID fleetunitid, int subordinategroupid);
+	uint32_t GetNumFleetUnitSubordinates(FleetUnitID fleetunitid, int32_t subordinategroupid);
 	uint32_t GetNumFormationShapes(void);
 	uint32_t GetNumHQs(const char* factionid);
 	uint32_t GetNumMineablesAtSectorPos(UniverseID sectorid, Coord3D position);
@@ -231,6 +249,7 @@ ffi.cdef[[
 	bool IsComponentWrecked(const UniverseID componentid);
 	bool IsDefensibleBeingBoardedBy(UniverseID defensibleid, const char* factionid);
 	bool IsExternalViewDisabled();
+	bool IsFleetManagerPlayerEnabled(void);
 	bool IsMissionLimitReached(bool includeupkeep, bool includeguidance, bool includeplot);
 	bool IsMouseEmulationActive(void);
 	bool IsObjectKnown(const UniverseID componentid);
@@ -250,9 +269,11 @@ ffi.cdef[[
 	void NotifyInteractMenuShown(const uint32_t id);
 	bool PerformCompSlotPlayerAction(UIComponentSlot compslot, uint32_t actionid);
 	void PutShipIntoStorage(UniverseID containerid, UniverseID shipid);
+	void ReassignControllableToFleetUnit(UniverseID controllableid, FleetUnitID commanderfleetunitid, int32_t subordinategroupid);
 	void ReleaseOrderSyncPoint(uint32_t syncid);
 	void ReleaseOrderSyncPointFromOrder(UniverseID controllableid, size_t idx);
 	bool RemoveCommander2(UniverseID controllableid);
+	void RemoveFleetUnit(FleetUnitID fleetunitid);
 	bool RemoveOrder(UniverseID controllableid, size_t idx, bool playercancelled, bool checkonly);
 	bool RequestDockAt(UniverseID containerid, bool checkonly);
 	const char* RequestDockAtReason(UniverseID containerid, bool checkonly);
@@ -262,12 +283,15 @@ ffi.cdef[[
 	void SetAllDronesArmed(UniverseID defensibleid, bool arm);
 	void SetDockingBayReservation(UniverseID dockingbayid, double duration);
 	void SetFleetManagement(UniverseID controllableid, bool enable);
+	void SetFleetUnitCommander(FleetUnitID fleetunitid, UniverseID commanderid, FleetUnitID commanderfleetunitid, int32_t subordinategroupid);
+	void SetFleetUnitSubordinateGroupAssignment(FleetUnitID fleetunitid, int group, const char* assignment);
 	UIFormationInfo SetFormationShape(UniverseID objectid, const char* formationshape);
 	void SetGroupAndAssignment(UniverseID controllableid, int group, const char* assignment);
 	void SetGuidance(UniverseID componentid, UIPosRot offset);
 	void SetPlayerCameraCinematicView(UniverseID componentid);
 	void SetRelationBoostToFaction(UniverseID componentid, const char* factionid, const char* reasonid, float boostvalue, float decayrate, double decaydelay);
 	bool SetSofttarget(UniverseID componentid, const char*const connectionname);
+	void SetSubordinateGroupAssignment(UniverseID controllableid, int group, const char* assignment);
 	void SetSubordinateGroupAttackOnSight(UniverseID controllableid, int group, bool value);
 	void SetSubordinateGroupProtectedLocation(UniverseID controllableid, int group, UniverseID sectorid, UIPosRot offset);
 	void SetSubordinateGroupReinforceFleet(UniverseID controllableid, int group, bool value);
@@ -467,6 +491,9 @@ function menu.cleanup()
 	menu.missionoffer = nil
 	menu.construction = nil
 	menu.fleetunit = nil
+	menu.replacingcontrollable = nil
+	menu.selectedfleetunit = nil
+	menu.selectedreplacingcontrollable = nil
 	menu.subordinategroup = nil
 	menu.selectedplayerships = {}
 	menu.selectedotherobjects = {}
@@ -513,7 +540,7 @@ end
 
 -- perform helpers
 
-function menu.orderAssignCommander(component, commander, assignment, group)
+function menu.orderAssignCommander(component, commander, assignment, group, informfleetmanager)
 	if (not C.IsOrderSelectableFor("AssignCommander", component)) or (not GetComponentData(component, "assignedpilot")) then
 		return
 	end
@@ -532,6 +559,11 @@ function menu.orderAssignCommander(component, commander, assignment, group)
 		SetOrderParam(component, orderindex, 5, nil, true)
 		-- response
 		SetOrderParam(component, orderindex, 6, nil, true)
+		-- informfleetmanager
+		if informfleetmanager == nil then
+			informfleetmanager = true
+		end
+		SetOrderParam(component, orderindex, 8, nil, informfleetmanager)
 
 		C.EnableOrder(component, orderindex)
 		if orderindex ~= 1 then
@@ -1279,10 +1311,10 @@ function menu.buttonArmTurrets(armed)
 end
 
 function menu.buttonAssignCommander(assignment, group)
-	local convertedComponent = ConvertStringTo64Bit(tostring(menu.componentSlot.component))
-	local isplayerownedtarget = GetComponentData(convertedComponent, "isplayerowned")
-
 	if menu.showPlayerInteractions or ((#menu.selectedplayerships == 0) and (not menu.shown)) then
+		local convertedComponent = ConvertStringTo64Bit(tostring(menu.componentSlot.component))
+		local isplayerownedtarget = GetComponentData(convertedComponent, "isplayerowned")
+
 		local playeroccupiedship = C.GetPlayerOccupiedShipID()
 		local oldassignment = ffi.string(C.GetSubordinateGroupAssignment(playeroccupiedship, group))
 		if assignment == "positiondefence" and oldassignment ~= "positiondefence" then
@@ -1292,7 +1324,46 @@ function menu.buttonAssignCommander(assignment, group)
 		C.ResetOrderLoop(menu.componentSlot.component)
 		menu.orderAssignCommander(convertedComponent, playeroccupiedship, assignment, group)
 	else
-		if C.IsComponentClass(menu.componentSlot.component, "controllable") then
+		if menu.fleetunit then
+			C.SetFleetUnitSubordinateGroupAssignment(menu.fleetunit, group, assignment)
+
+			local replacingcontrollable64
+			if menu.replacingcontrollable then
+				replacingcontrollable64 = ConvertStringTo64Bit(tostring(menu.replacingcontrollable))
+
+				if assignment == "positiondefence" then
+					Helper.setIntersectorDefence(replacingcontrollable64, group)
+				end
+			end
+
+			for _, ship in ipairs(menu.selectedplayerships) do
+				local skip = false
+				if not GetComponentData(ship, "assignedpilot") then
+					skip = true
+				elseif GetComponentData(ship, "primarypurpose") == "mine" then
+					if assignment == "tradeforbuildstorage" then
+						skip = true
+					end
+				else
+					if assignment == "mining" then
+						skip = true
+					end
+				end
+				if not skip then
+					C.ResetOrderLoop(ship)
+					C.AddFleetUnitSubordinate(menu.fleetunit, ship, 0, group)
+
+					if menu.replacingcontrollable then
+						if ship ~= replacingcontrollable64 then
+							menu.orderAssignCommander(ship, replacingcontrollable64, assignment, group, false)
+						end
+					end
+				end
+			end
+		elseif C.IsComponentClass(menu.componentSlot.component, "controllable") then
+			local convertedComponent = ConvertStringTo64Bit(tostring(menu.componentSlot.component))
+			local isplayerownedtarget = GetComponentData(convertedComponent, "isplayerowned")
+
 			local oldassignment = ffi.string(C.GetSubordinateGroupAssignment(menu.componentSlot.component, group))
 			if assignment == "positiondefence" and oldassignment ~= "positiondefence" then
 				Helper.setIntersectorDefence(convertedComponent, group)
@@ -1316,6 +1387,120 @@ function menu.buttonAssignCommander(assignment, group)
 						C.ResetOrderLoop(ship)
 						menu.orderAssignCommander(ship, menu.componentSlot.component, assignment, group)
 					end
+				end
+			end
+		end
+	end
+
+	if menu.shown then
+		menu.onCloseElement("close")
+	else
+		Helper.resetUpdateHandler()
+		Helper.clearFrame(menu, config.layer)
+		Helper.returnFromInteractMenu(menu.currentOverTable, "refresh")
+		menu.cleanup()
+	end
+end
+
+function menu.clearExtraSubordinates(selectedfleetunit, selectedreplacingcomponent)
+	-- find all subordinates of the re-assigned fleetunit
+	local subordinates = {}
+	local n = C.GetNumAllFleetUnitSubordinates(selectedfleetunit)
+	if n > 0 then
+		local buf = ffi.new("UniverseID[?]", n)
+		n = C.GetAllFleetUnitSubordinates(buf, n, selectedfleetunit)
+		for i = 0, n - 1 do
+			subordinates[ConvertStringTo64Bit(tostring(buf[i]))] = true
+		end
+	end
+
+	local newreplacementcomponent
+	local oldcommander = GetCommander(selectedreplacingcomponent)
+	local oldgroup = GetComponentData(selectedreplacingcomponent, "subordinategroup")
+	local oldassignment = ffi.string(C.GetSubordinateGroupAssignment(C.ConvertStringTo64Bit(tostring(oldcommander)), oldgroup))
+
+	-- find all subordinates of selectedreplacingcontrollable that is not a subordinate of the fleet unit
+	local commandersubordinates = GetSubordinates(selectedreplacingcomponent)
+	for _, commandersubordinate in ipairs(commandersubordinates) do
+		local commandersubordinate64 = ConvertStringTo64Bit(tostring(commandersubordinate))
+		if not subordinates[commandersubordinate64] then
+			if not newreplacementcomponent then
+				-- promote the first such subordinate to be the new replacing subordinate
+				menu.orderAssignCommander(commandersubordinate64, oldcommander, oldassignment, oldgroup, false)
+				newreplacementcomponent = commandersubordinate
+			else
+				-- assign all other subordinates to the new replacing one
+				local currentgroup = GetComponentData(commandersubordinate, "subordinategroup")
+				local currentassignment = ffi.string(C.GetSubordinateGroupAssignment(selectedreplacingcomponent, currentgroup))
+				menu.orderAssignCommander(commandersubordinate64, newreplacementcomponent, currentassignment, currentgroup)
+			end
+		end
+	end
+end
+
+function menu.buttonAssignFleetUnitCommander(assignment, group)
+	if menu.fleetunit then
+		local unitinfo = C.GetFleetUnitInfo(menu.selectedfleetunit)
+		local primarypurpose = GetMacroData(ffi.string(unitinfo.macro), "primarypurpose")
+
+		local skip = false
+		if primarypurpose == "mine" then
+			if assignment == "tradeforbuildstorage" then
+				skip = true
+			end
+		else
+			if assignment == "mining" then
+				skip = true
+			end
+		end
+		if not skip then
+			C.SetFleetUnitSubordinateGroupAssignment(menu.fleetunit, group, assignment)
+			C.SetFleetUnitCommander(menu.selectedfleetunit, 0, menu.fleetunit, group)
+
+			if menu.selectedreplacingcontrollable then
+				local replacingComponent = ConvertStringTo64Bit(tostring(menu.selectedreplacingcontrollable))
+				menu.clearExtraSubordinates(menu.selectedfleetunit, replacingComponent)
+
+				-- re-assign the selectedreplacingcontrollable with the remaining subordinates to the replacingcomponent of the new commander fleet unit
+				if menu.replacingcontrollable then
+					local convertedComponent = ConvertStringTo64Bit(tostring(menu.replacingcontrollable))
+					menu.orderAssignCommander(replacingComponent, convertedComponent, assignment, group, false)
+				end
+			end
+		end
+	else
+		local convertedComponent = ConvertStringTo64Bit(tostring(menu.componentSlot.component))
+		local isplayerownedtarget = GetComponentData(convertedComponent, "isplayerowned")
+
+		if C.IsComponentClass(menu.componentSlot.component, "controllable") then
+			local oldassignment = ffi.string(C.GetSubordinateGroupAssignment(menu.componentSlot.component, group))
+			if assignment == "positiondefence" and oldassignment ~= "positiondefence" then
+				Helper.setIntersectorDefence(convertedComponent, group)
+			end
+
+			local unitinfo = C.GetFleetUnitInfo(menu.selectedfleetunit)
+			local primarypurpose = GetMacroData(ffi.string(unitinfo.macro), "primarypurpose")
+
+			local skip = false
+			if primarypurpose == "mine" then
+				if assignment == "tradeforbuildstorage" then
+					skip = true
+				end
+			else
+				if assignment == "mining" then
+					skip = true
+				end
+			end
+			if not skip then
+				C.SetSubordinateGroupAssignment(menu.componentSlot.component, group, assignment)
+				C.SetFleetUnitCommander(menu.selectedfleetunit, menu.componentSlot.component, 0, group)
+
+				if menu.selectedreplacingcontrollable then
+					local replacingComponent = ConvertStringTo64Bit(tostring(menu.selectedreplacingcontrollable))
+					menu.clearExtraSubordinates(menu.selectedfleetunit, replacingComponent)
+
+					-- re-assign the selectedreplacingcontrollable with the remaining subordinates to the new commander of the selected fleetunit
+					menu.orderAssignCommander(replacingComponent, convertedComponent, assignment, group, false)
 				end
 			end
 		end
@@ -1447,22 +1632,97 @@ function menu.buttonCancelAllConstruction()
 end
 
 function menu.buttonChangeAssignment(assignment, group)
-	if assignment == "positiondefence" then
-		Helper.setIntersectorDefence(ConvertStringTo64Bit(tostring(menu.componentSlot.component)), group)
-	end
+	if menu.fleetunit then
+		C.SetFleetUnitSubordinateGroupAssignment(menu.fleetunit, group, assignment)
 
-	if menu.shipswithcurrentcommander and #menu.shipswithcurrentcommander > 0 then
-		for _, ship in ipairs(menu.shipswithcurrentcommander) do
-			menu.orderAssignCommander(ship, menu.componentSlot.component, assignment, group)
+		local replacingcontrollable64
+		if menu.replacingcontrollable then
+			replacingcontrollable64 = ConvertStringTo64Bit(tostring(menu.replacingcontrollable))
+
+			if assignment == "positiondefence" then
+				Helper.setIntersectorDefence(replacingcontrollable64, group)
+			end
 		end
-	elseif menu.groupShips and #menu.groupShips > 0 then
-		for _, shipentry in ipairs(menu.groupShips) do
-			menu.orderAssignCommander(ConvertIDTo64Bit(shipentry.component), menu.componentSlot.component, assignment, group)
+		if menu.groupShips and #menu.groupShips > 0 then
+			for _, shipentry in ipairs(menu.groupShips) do
+				if shipentry.component then
+					local shipentry64 = ConvertIDTo64Bit(shipentry.component)
+					C.ReassignControllableToFleetUnit(shipentry64, menu.fleetunit, group)
+
+					if menu.replacingcontrollable then
+						if shipentry64 ~= replacingcontrollable64 then
+							menu.orderAssignCommander(shipentry64, replacingcontrollable64, assignment, group)
+						end
+					end
+				else
+					C.SetFleetUnitCommander(shipentry.fleetunit, 0, menu.fleetunit, group)
+				end
+			end
 		end
 	else
-		local convertedComponent = ConvertStringTo64Bit(tostring(menu.componentSlot.component))
-		menu.orderAssignCommander(convertedComponent, GetCommander(convertedComponent), assignment, group)
+		if menu.shipswithcurrentcommander and #menu.shipswithcurrentcommander > 0 then
+			if assignment == "positiondefence" then
+				Helper.setIntersectorDefence(ConvertStringTo64Bit(tostring(menu.componentSlot.component)), group)
+			end
+
+			for _, ship in ipairs(menu.shipswithcurrentcommander) do
+				menu.orderAssignCommander(ship, menu.componentSlot.component, assignment, group)
+			end
+		elseif menu.groupShips and #menu.groupShips > 0 then
+			if assignment == "positiondefence" then
+				Helper.setIntersectorDefence(ConvertStringTo64Bit(tostring(menu.componentSlot.component)), group)
+			end
+
+			for _, shipentry in ipairs(menu.groupShips) do
+				if shipentry.component then
+					menu.orderAssignCommander(ConvertIDTo64Bit(shipentry.component), menu.componentSlot.component, assignment, group)
+				else
+					C.SetSubordinateGroupAssignment(menu.componentSlot.component, group, assignment)
+					C.SetFleetUnitCommander(shipentry.fleetunit, menu.componentSlot.component, 0, group)
+				end
+			end
+		else
+			local convertedComponent = ConvertStringTo64Bit(tostring(menu.componentSlot.component))
+			local commander = C.GetCommander(menu.componentSlot.component, 0)
+
+			if commander.fleetunitid ~= 0 then
+				C.SetFleetUnitSubordinateGroupAssignment(commander.fleetunitid, group, assignment)
+				C.ReassignControllableToFleetUnit(menu.componentSlot.component, commander.fleetunitid, group)
+
+				menu.orderAssignCommander(convertedComponent, GetCommander(convertedComponent), assignment, group)
+			else
+				menu.orderAssignCommander(convertedComponent, commander.controllableid, assignment, group)
+			end
+		end
 	end
+
+	if menu.shown then
+		menu.onCloseElement("close")
+	else
+		Helper.resetUpdateHandler()
+		Helper.clearFrame(menu, config.layer)
+		Helper.returnFromInteractMenu(menu.currentOverTable, "refresh")
+		menu.cleanup()
+	end
+end
+
+function menu.buttonChangeFleetUnitAssignment(assignment, group)
+	local commander = C.GetCommander(0, menu.fleetunit)
+	if commander.controllableid ~= 0 then
+		C.SetSubordinateGroupAssignment(commander.controllableid, group, assignment)
+	else
+		C.SetFleetUnitSubordinateGroupAssignment(commander.fleetunitid, group, assignment)
+	end
+	C.SetFleetUnitCommander(menu.fleetunit, commander.controllableid, commander.fleetunitid, group)
+
+	if menu.replacingcontrollable then
+		-- check whether the fleet units commander is a component. If not the replacingcontrollable is filling in for another
+		if commander.controllableid ~= 0 then
+			local convertedComponent = ConvertStringTo64Bit(tostring(menu.replacingcontrollable))
+			menu.orderAssignCommander(convertedComponent, GetCommander(convertedComponent), assignment, group)
+		end
+	end
+
 	if menu.shown then
 		menu.onCloseElement("close")
 	else
@@ -2350,7 +2610,8 @@ function menu.buttonRemoveAssignment(removeall)
 end
 
 function menu.buttonRemoveFleetUnit()
-	print("NYI")
+	C.RemoveFleetUnit(menu.fleetunit)
+	menu.onCloseElement("close")
 end
 
 function menu.buttonRemoveOrder()
@@ -2671,7 +2932,11 @@ function menu.buttonSelectSubordinateGroup()
 	if not menu.shown then
 		Helper.resetUpdateHandler()
 		Helper.clearFrame(menu, config.layer)
-		Helper.returnFromInteractMenu(menu.currentOverTable, "selectsubordinates", { ConvertStringTo64Bit(tostring(menu.componentSlot.component)), menu.subordinategroup })
+		if menu.componentSlot.component ~= 0 then
+			Helper.returnFromInteractMenu(menu.currentOverTable, "selectsubordinates", { ConvertStringTo64Bit(tostring(menu.componentSlot.component)), menu.subordinategroup })
+		else
+			Helper.returnFromInteractMenu(menu.currentOverTable, "selectsubordinates", { 0, menu.subordinategroup, ConvertStringTo64Bit(tostring(menu.fleetunit)) })
+		end
 		menu.cleanup()
 	else
 		menu.onCloseElement("close")
@@ -2918,6 +3183,9 @@ function menu.showInteractMenu(param)
 	menu.syncpointorder = param.syncpointorder
 	menu.intersectordefencegroup = param.intersectordefencegroup
 	menu.fleetunit = param.fleetunit
+	menu.replacingcontrollable = param.replacingcontrollable
+	menu.selectedfleetunit = param.selectedfleetunit
+	menu.selectedreplacingcontrollable = param.selectedreplacingcontrollable
 	menu.mission = param.mission
 	menu.componentMissions = param.componentmissions
 	menu.missionoffer = param.missionoffer
@@ -2935,6 +3203,10 @@ function menu.showInteractMenu(param)
 	menu.mouseY = param.mouseY
 
 	menu.processSelectedPlayerShips()
+	if menu.fleetunit == menu.selectedfleetunit then
+		menu.selectedfleetunit = nil
+		menu.selectedreplacingcontrollable = nil
+	end
 
 	menu.display()
 end
@@ -3336,7 +3608,12 @@ function menu.addSectionTitle(ftable, section, first)
 				local selectiontext = menu.texts.selectedName
 				local fullselectiontext = menu.texts.selectedFullNames
 				if menu.groupShips and (#menu.groupShips > 0) then
-					selectiontext = GetComponentData(menu.groupShips[1].component, "name")
+					if menu.groupShips[1].component then
+						selectiontext = GetComponentData(menu.groupShips[1].component, "name")
+					else
+						local unitinfo = C.GetFleetUnitInfo(menu.groupShips[1].fleetunit)
+						selectiontext = ffi.string(unitinfo.name)
+					end
 					if #menu.groupShips > 1 then
 						selectiontext = string.format(ReadText(1001, 7801), #menu.groupShips)
 					end
@@ -3437,7 +3714,7 @@ function menu.createContentTable(frame, position)
 	end
 
 	local modetext = ReadText(1001, 7804)
-	if (not menu.syncpoint) and (not menu.syncpointorder) and (not menu.intersectordefencegroup) and (not menu.mission) and (not menu.missionoffer) and (not menu.fleetunit) then
+	if (not menu.syncpoint) and (not menu.syncpointorder) and (not menu.intersectordefencegroup) and (not menu.mission) and (not menu.missionoffer) and (not menu.fleetunit) and (not menu.selectedfleetunit) then
 		if (not menu.showPlayerInteractions) and (#menu.selectedplayerships > 0) then
 			if #menu.actions["selected_orders_all"] > 0 then
 				modetext = ReadText(1001, 7804)
@@ -3518,8 +3795,7 @@ function menu.createContentTable(frame, position)
 	ftable:setDefaultColSpan(4, 2)
 
 	local height = 0
-	if (((not menu.showPlayerInteractions) and (#menu.selectedplayerships > 0)) or ((#menu.selectedplayerships == 0) and (#menu.selectedotherobjects > 0))) and (not menu.syncpoint) and (not menu.syncpointorder) and (not menu.intersectordefencegroup) and (not menu.mission) and (not menu.missionoffer) and (not menu.fleetunit) then
-
+	if (((not menu.showPlayerInteractions) and (#menu.selectedplayerships > 0)) or ((#menu.selectedplayerships == 0) and (#menu.selectedotherobjects > 0))) and (not menu.syncpoint) and (not menu.syncpointorder) and (not menu.intersectordefencegroup) and (not menu.mission) and (not menu.missionoffer) and (not menu.fleetunit) and (not menu.selectedfleetunit) then
 		-- modemarker
 		local row = ftable:addRow(false, {  })
 		row[1]:setBackgroundColSpan(5):setColSpan(2):createIcon("be_diagonal_01", { width = bordericonsize, height = bordericonsize, x = borderwidth - bordericonsize + Helper.borderSize, scaling = false, color = Color["row_background_blue_opaque"] })
@@ -3580,7 +3856,7 @@ function menu.createContentTable(frame, position)
 
 	local skipped = false
 	local skiporders = false
-	if (not menu.syncpoint) and (not menu.syncpointorder) and (not menu.intersectordefencegroup) and (not menu.mission) and (not menu.missionoffer) and (not menu.fleetunit) then
+	if (not menu.syncpoint) and (not menu.syncpointorder) and (not menu.intersectordefencegroup) and (not menu.mission) and (not menu.missionoffer) and (not menu.fleetunit) and (not menu.selectedfleetunit) then
 		if (#menu.selectedplayerships == 0) and (#menu.selectedotherobjects > 0) then
 			-- show the player that they cannot do anything with their selection
 			menu.noopreason = {}
@@ -3948,16 +4224,64 @@ function menu.getSubordinatesInGroups(commander, isstation, assignment, singlegr
 			process = locassignment ~= ""
 		end
 		if process then
-			--groups[group] = { assignment = locassignment, subordinates = {} }
-
 			local numsubordinates = C.GetNumSubordinatesOfGroup(commander, group)
 			if numsubordinates > 0 then
 				local subordinates = ffi.new("UniverseID[?]", numsubordinates)
 				numsubordinates = C.GetSubordinatesOfGroup(subordinates, numsubordinates, commander, group)
 				if numsubordinates > 0 then
+					for i = 0, numsubordinates - 1 do
+						local component = ConvertStringToLuaID(tostring(subordinates[i]))
+						-- filter out subordinates that are actually subordinates of a fleetunit, we want to show the fleetunit instead
+						local commander = C.GetCommander(subordinates[i], 0)
+						if commander.controllableid ~= 0 then
+							groups[group] = groups[group] or { assignment = locassignment, subordinates = {} }
+							table.insert(groups[group].subordinates, { component = component, name = GetComponentData(component, "name"), objectid = ffi.string(C.GetObjectIDCode(subordinates[i])) })
+						end
+					end
+				end
+			end
+
+			local n = C.GetNumControllableSubordinateFleetUnits(commander, group)
+			if n > 0 then
+				groups[group] = groups[group] or { assignment = locassignment, subordinates = {} }
+				local buf = ffi.new("FleetUnitID[?]", n)
+				n = C.GetControllableSubordinateFleetUnits(buf, n, commander, group)
+				for i = 0, n - 1 do
+					local fleetunit = buf[i]
+					local unitinfo = C.GetFleetUnitInfo(fleetunit)
+					table.insert(groups[group].subordinates, { fleetunit = fleetunit, name = ffi.string(unitinfo.name), objectid = ffi.string(unitinfo.idcode) })
+				end
+			end
+
+			if groups[group] then
+				table.sort(groups[group].subordinates, Helper.sortNameAndObjectID)
+				if singlegroup then
+					break
+				end
+			end
+		end
+	end
+	return groups
+end
+
+function menu.getSubordinatesInFleetUnitGroups(commanderfleetunit, assignment, singlegroup)
+	local groups = {}
+	for group = 1, 10 do
+		local locassignment = ffi.string(C.GetFleetUnitSubordinateGroupAssignment(commanderfleetunit, group))
+		local process
+		if assignment then
+			process = assignment == locassignment
+		else
+			process = locassignment ~= ""
+		end
+		if process then
+			local numsubordinates = C.GetNumFleetUnitSubordinates(commanderfleetunit, group)
+			if numsubordinates > 0 then
+				local subordinates = ffi.new("UniverseID[?]", numsubordinates)
+				numsubordinates = C.GetFleetUnitSubordinates(subordinates, numsubordinates, commanderfleetunit, group)
+				if numsubordinates > 0 then
 					groups[group] = { assignment = locassignment, subordinates = {} }
 					for i = 0, numsubordinates - 1 do
-						--print(tostring(ConvertStringToLuaID(tostring(subordinates[i]))))
 						local component = ConvertStringToLuaID(tostring(subordinates[i]))
 						table.insert(groups[group].subordinates, { component = component, name = GetComponentData(component, "name"), objectid = ffi.string(C.GetObjectIDCode(subordinates[i])) })
 					end
@@ -3965,6 +4289,25 @@ function menu.getSubordinatesInGroups(commander, isstation, assignment, singlegr
 					if singlegroup then
 						break
 					end
+				end
+			end
+
+			local num_fleetunits = C.GetNumFleetUnitSubordinateFleetUnits(commanderfleetunit, group)
+			if num_fleetunits > 0 then
+				groups[group] = groups[group] or { assignment = locassignment, subordinates = {} }
+				local buf_fleetunits = ffi.new("FleetUnitID[?]", num_fleetunits)
+				num_fleetunits = C.GetFleetUnitSubordinateFleetUnits(buf_fleetunits, num_fleetunits, commanderfleetunit, group)
+				for j = 0, num_fleetunits - 1 do
+					local fleetunitsubordinate = buf_fleetunits[j]
+					local unitinfo = C.GetFleetUnitInfo(fleetunitsubordinate)
+					table.insert(groups[group].subordinates, { fleetunit = fleetunitsubordinate, name = ffi.string(unitinfo.name), objectid = ffi.string(unitinfo.idcode) })
+				end
+			end
+
+			if groups[group] then
+				table.sort(groups[group].subordinates, Helper.sortNameAndObjectID)
+				if singlegroup then
+					break
 				end
 			end
 		end
@@ -4026,6 +4369,7 @@ function menu.processSelectedPlayerShips()
 	local isplayerownedtarget, istargetatdockrelation, istargetdockingenabled = false, false, false
 	if convertedComponent ~= 0 then
 		isplayerownedtarget, istargetatdockrelation, istargetdockingenabled = GetComponentData(convertedComponent, "isplayerowned", "isdock", "isdockingenabled")
+		iscontrollable = C.IsComponentClass(menu.componentSlot.component, "controllable")
 	end
 	local playercontainer = C.GetPlayerContainerID()
 	local convertedPlayerContainer
@@ -4169,8 +4513,8 @@ function menu.processSelectedPlayerShips()
 			end
 
 			-- Check assignments
-			if isplayerownedtarget and C.IsComponentClass(menu.componentSlot.component, "controllable") and GetComponentData(ship, "assignedpilot") and (not isspacesuit) then
-				if commander ~= convertedComponent and C.CanAcceptSubordinate(menu.componentSlot.component, ship) then
+			if (not isspacesuit) and GetComponentData(ship, "assignedpilot") then
+				if menu.fleetunit or (isplayerownedtarget and iscontrollable and (commander ~= convertedComponent) and C.CanAcceptSubordinate(menu.componentSlot.component, ship)) then
 					menu.numassignableships = menu.numassignableships + 1
 					if GetComponentData(ship, "primarypurpose") == "mine" then
 						menu.numassignableminingships = menu.numassignableminingships + 1
@@ -4330,7 +4674,7 @@ function menu.insertAssignSubActions(section, assignment, callback, groups, isst
 			local mouseovertext = ""
 			if active then
 				for i, subordinateentry in ipairs(groups[i].subordinates) do
-					mouseovertext = mouseovertext .. ((i > 1) and "\n" or "") .. Helper.convertColorToText(menu.holomapcolor.playercolor) .. subordinateentry.name .. " (" .. subordinateentry.objectid .. ")"
+					mouseovertext = mouseovertext .. ((i > 1) and "\n" or "") .. (subordinateentry.fleetunit and ColorText["text_player_lowlight"] or Helper.convertColorToText(menu.holomapcolor.playercolor)) .. subordinateentry.name .. " (" .. subordinateentry.objectid .. ")"
 				end
 				if mouseovertextadd and (mouseovertextadd ~= "") then
 					mouseovertext = mouseovertextadd .. ((mouseovertext ~= "") and "\n\n" or "") .. mouseovertext
@@ -5143,40 +5487,7 @@ function menu.insertLuaAction(actiontype, istobedisplayed)
 			menu.insertInteractionContent("interaction", { type = actiontype, text = ReadText(1001, 11133), script = menu.buttonChangeLogo })
 		end
 	elseif actiontype == "fleetmanagement" then
-		if istobedisplayed and C.IsComponentClass(menu.componentSlot.component, "controllable") then
-			local active = true
-			local mouseovertext = ""
-
-			local needsshipyard, needswharf
-			local allsubordinates = GetSubordinates(convertedComponent, nil, true)
-			for _, subordinate in ipairs(allsubordinates) do
-				local subordinate64 = C.ConvertStringTo64Bit(tostring(subordinate))
-				if C.IsComponentClass(subordinate64, "ship_l") or C.IsComponentClass(subordinate64, "ship_xl") then
-					needsshipyard = true
-				else
-					needswharf = true
-				end
-				if needsshipyard and needswharf then
-					break
-				end
-			end
-			if needsshipyard then
-				if not C.HasFactionShipyard("player") then
-					active = false
-					mouseovertext = ReadText(1026, 7871)
-				end
-			end
-			if needswharf then
-				if not C.HasFactionWharf("player") then
-					active = false
-					if mouseovertext ~= "" then
-						mouseovertext = ReadText(1026, 7873)
-					else
-						mouseovertext = ReadText(1026, 7872)
-					end
-				end
-			end
-
+		if istobedisplayed and C.IsComponentClass(menu.componentSlot.component, "controllable") and C.IsFleetManagerPlayerEnabled() then
 			local isfleetlead = GetComponentData(convertedComponent, "isfleetlead")
 			menu.insertInteractionContent("main_orders", { type = actiontype, text = isfleetlead and ReadText(1001, 11147) or ReadText(1001, 11146), helpOverlayID = "interactmenu_fleetmanagement", helpOverlayText = " ", helpOverlayHighlightOnly = true, script = function () return menu.buttonFleetManagement(menu.componentSlot.component, not isfleetlead) end, active = active, mouseOverText = mouseovertext })
 		end
@@ -5303,15 +5614,23 @@ function menu.insertLuaAction(actiontype, istobedisplayed)
 		menu.insertInteractionContent("main", { type = actiontype, text = ReadText(1001,8401), helpOverlayID = "interactmenu_logicalstationoverview", helpOverlayText = " ", helpOverlayHighlightOnly = true, script = menu.buttonStationOverview })
 	elseif actiontype == "manageassignments" then
 		if istobedisplayed and IsComponentOperational(convertedComponent) and not C.IsUnit(convertedComponent) then
-			local commander = ConvertIDTo64Bit(GetCommander(convertedComponent))
-			if commander and commander ~= 0 then
+			local commander = C.GetCommander(convertedComponent, 0)
+			if (commander.controllableid ~= 0) or (commander.fleetunitid ~= 0) then
 				menu.insertInteractionContent("main_assignments", { type = actiontype, text = ReadText(1001, 7810), script = function () menu.buttonRemoveAssignment() end })
 				local currentgroup, purpose, shiptype = GetComponentData(convertedComponent, "subordinategroup", "primarypurpose", "shiptype")
-				local subordinates = GetSubordinates(commander)
 
-				local isstation = C.IsComponentClass(commander, "station")
-				local isship = C.IsComponentClass(commander, "ship")
-				local groups = menu.getSubordinatesInGroups(commander, isstation)
+				local groups = {}
+				local isstation = false
+				local isship = false
+				if commander.controllableid ~= 0 then
+					groups = menu.getSubordinatesInGroups(commander.controllableid, isstation)
+					isstation = C.IsComponentClass(commander.controllableid, "station")
+					isship = C.IsComponentClass(commander.controllableid, "ship")
+				else
+					groups = menu.getSubordinatesInFleetUnitGroups(commander.fleetunitid, isstation)
+					isship = true
+				end
+
 				if isstation and C.CanClaimOwnership(menu.componentSlot.component) then
 					menu.insertAssignSubActions("main_assignments_positiondefence", "positiondefence", menu.buttonChangeAssignment, groups, isstation, isstation, currentgroup)
 				end
@@ -5336,21 +5655,29 @@ function menu.insertLuaAction(actiontype, istobedisplayed)
 					end
 				elseif isship then
 					-- position defence
-					local shiptype = GetComponentData(commander, "shiptype")
-					local parentcommander = ConvertIDTo64Bit(GetCommander(commander))
-					local isfleetcommander = (not parentcommander) and (#subordinates > 0)
-					if (shiptype == "carrier") and isfleetcommander then
+					local commandershiptype
+					if commander.controllableid ~= 0 then
+						commandershiptype = GetComponentData(ConvertStringToLuaID(tostring(commander.controllableid)), "shiptype")
+					else
+						local unitinfo = C.GetFleetUnitInfo(commander.fleetunitid)
+						commandershiptype = GetMacroData(ffi.string(unitinfo.macro), "shiptype")
+					end
+					local parentcommander = C.GetCommander(commander.controllableid, commander.fleetunitid)
+					local isfleetcommander = (parentcommander.controllableid == 0) and (commander.fleetunitid == 0)
+					if (commandershiptype == "carrier") and isfleetcommander then
 						menu.insertAssignSubActions("main_assignments_positiondefence", "positiondefence", menu.buttonChangeAssignment, groups, isstation, nil, currentgroup)
 					end
 					menu.insertAssignSubActions("main_assignments_attack", "attack", menu.buttonChangeAssignment, groups, isstation, nil, currentgroup)
 					menu.insertAssignSubActions("main_assignments_interception", "interception", menu.buttonChangeAssignment, groups, isstation, nil, currentgroup)
 					menu.insertAssignSubActions("main_assignments_bombardment", "bombardment", menu.buttonChangeAssignment, groups, isstation, nil, currentgroup)
 					menu.insertAssignSubActions("main_assignments_follow", "follow", menu.buttonChangeAssignment, groups, isstation, true, currentgroup)
-					local buf = ffi.new("Order")
-					if C.GetDefaultOrder(buf, commander) then
-						menu.insertAssignSubActions("main_assignments_assist", "assist", menu.buttonChangeAssignment, groups, isstation, true, currentgroup)
+					if commander.controllableid ~= 0 then
+						local buf = ffi.new("Order")
+						if C.GetDefaultOrder(buf, commander.controllableid) then
+							menu.insertAssignSubActions("main_assignments_assist", "assist", menu.buttonChangeAssignment, groups, isstation, true, currentgroup)
+						end
 					end
-					if shiptype == "resupplier" then
+					if commandershiptype == "resupplier" then
 						menu.insertAssignSubActions("main_assignments_trade", "trade", menu.buttonChangeAssignment, groups, isstation, true, currentgroup)
 					end
 				end
@@ -6155,7 +6482,7 @@ function menu.prepareActions()
 
 	local hasanydisplayed = false
 	-- player actions
-	if (not menu.fleetunit) and (not menu.componentOrder) and (not menu.syncpoint) and (not menu.syncpointorder) and (not menu.intersectordefencegroup) and (not menu.construction) and (not menu.mission) and (not menu.missionoffer) and (not menu.subordinategroup) and (menu.mode ~= "shipconsole" or (menu.isdockedship)) then
+	if (not menu.fleetunit) and (not menu.selectedfleetunit) and (not menu.componentOrder) and (not menu.syncpoint) and (not menu.syncpointorder) and (not menu.intersectordefencegroup) and (not menu.construction) and (not menu.mission) and (not menu.missionoffer) and (not menu.subordinategroup) and (menu.mode ~= "shipconsole" or (menu.isdockedship)) then
 		local isknown = C.IsObjectKnown(menu.componentSlot.component)
 		local n = C.GetNumCompSlotPlayerActions(menu.componentSlot)
 		if n == 0 then
@@ -6472,14 +6799,18 @@ function menu.prepareActions()
 			local cancelcount = menu.getCanCancelConstructionCount()
 			menu.insertInteractionContent("main", { text = ReadText(1041, 10022), text2 = (cancelcount > 0) and (cancelcount .. ReadText(1001, 42) .. " " .. GetMacroData(menu.construction.macro, "name")) or "", script = menu.buttonCancelAllConstruction, active = (cancelcount > 1) and ((menu.construction.factionid == "player") or GetComponentData(convertedComponent, "isplayerowned")) })
 		end
-	elseif menu.fleetunit then
-		hasanydisplayed = true
-		menu.insertInteractionContent("main", { text = ReadText(1001, 11148) .. " (NYI)", script = menu.buttonRemoveFleetUnit, active = true }) -- TEMPTEXT Florian
 	elseif menu.subordinategroup then
 		hasanydisplayed = true
 		-- subordinate group (not action based at all)
-		local isplayerowned = GetComponentData(convertedComponent, "isplayerowned")
-		local groups = menu.getSubordinatesInGroups(menu.componentSlot.component, C.IsComponentClass(menu.componentSlot.component, "station"))
+		local isplayerowned
+		local groups
+		if menu.componentSlot.component ~= 0 then
+			isplayerowned = GetComponentData(convertedComponent, "isplayerowned")
+			groups = menu.getSubordinatesInGroups(menu.componentSlot.component, C.IsComponentClass(menu.componentSlot.component, "station"))
+		else
+			isplayerowned = true
+			groups = menu.getSubordinatesInFleetUnitGroups(menu.fleetunit, false)
+		end
 		menu.groupShips = {}
 		if groups[menu.subordinategroup] and #groups[menu.subordinategroup].subordinates then
 			menu.groupShips = groups[menu.subordinategroup].subordinates
@@ -6490,18 +6821,20 @@ function menu.prepareActions()
 		local allnomining = true
 		local alltugs = true
 		for _, shipentry in ipairs(menu.groupShips) do
-			local purpose, shiptype = GetComponentData(shipentry.component, "primarypurpose", "shiptype")
-			if shiptype ~= "resupplier" then
-				allresupplier = false
-			end
-			if purpose == "mine" then
-				allnomining = false
-			end
-			if purpose ~= "mine" then
-				allmining = false
-			end
-			if shiptype ~= "tug" then
-				alltugs = false
+			if shipentry.component then
+				local purpose, shiptype = GetComponentData(shipentry.component, "primarypurpose", "shiptype")
+				if shiptype ~= "resupplier" then
+					allresupplier = false
+				end
+				if purpose == "mine" then
+					allnomining = false
+				end
+				if purpose ~= "mine" then
+					allmining = false
+				end
+				if shiptype ~= "tug" then
+					alltugs = false
+				end
 			end
 		end
 
@@ -6509,17 +6842,31 @@ function menu.prepareActions()
 			-- select
 			menu.insertInteractionContent("main", { text = ReadText(1001, 11100), script = menu.buttonSelectSubordinateGroup })
 			-- manage assignments
-			local isstation = C.IsComponentClass(menu.componentSlot.component, "station")
-			local isship = C.IsComponentClass(menu.componentSlot.component, "ship")
+			local isstation, isship
+			if menu.fleetunit then
+				isstation = false
+				isship = true
+			else
+				isstation = C.IsComponentClass(menu.componentSlot.component, "station")
+				isship = C.IsComponentClass(menu.componentSlot.component, "ship")
+			end
 			-- inter-sector defense
-			local shiptype = GetComponentData(convertedComponent, "shiptype")
-			local commander = ConvertIDTo64Bit(GetCommander(convertedComponent))
-			local subordinates = GetSubordinates(convertedComponent)
-			local isfleetcommander = (not commander) and (#subordinates > 0)
-			local hasintersectorgroup = C.HasSubordinateAssignment(convertedComponent, "positiondefence")
-			if (#menu.selectedplayerships == 0) and ((shiptype == "carrier") or (isstation and not hasintersectorgroup and C.CanClaimOwnership(convertedComponent))) and isfleetcommander then
-				local isintersectorgroup = ffi.string(C.GetSubordinateGroupAssignment(menu.componentSlot.component, menu.subordinategroup)) == "positiondefence"
-				menu.insertInteractionContent("main", { text = isintersectorgroup and ReadText(1001, 11137) or ReadText(1001, 11136), script = function () return menu.buttonSubordinateGroupInterSectorDefence(menu.subordinategroup, isintersectorgroup) end })
+			local commandershiptype
+			if menu.componentSlot.component ~= 0 then
+				commandershiptype = GetComponentData(convertedComponent, "shiptype")
+			else
+				local unitinfo = C.GetFleetUnitInfo(menu.fleetunit)
+				commandershiptype = GetMacroData(ffi.string(unitinfo.macro), "shiptype")
+			end
+			local parentcommander = C.GetCommander(menu.componentSlot.component, menu.fleetunit or 0)
+			local isfleetcommander = (parentcommander.controllableid == 0) and (parentcommander.fleetunitid == 0)
+
+			if menu.componentSlot.component ~= 0 then
+				local hasintersectorgroup = C.HasSubordinateAssignment(convertedComponent, "positiondefence")
+				if (#menu.selectedplayerships == 0) and ((shiptype == "carrier") or (isstation and not hasintersectorgroup and C.CanClaimOwnership(convertedComponent))) and isfleetcommander then
+					local isintersectorgroup = ffi.string(C.GetSubordinateGroupAssignment(menu.componentSlot.component, menu.subordinategroup)) == "positiondefence"
+					menu.insertInteractionContent("main", { text = isintersectorgroup and ReadText(1001, 11137) or ReadText(1001, 11136), script = function () return menu.buttonSubordinateGroupInterSectorDefence(menu.subordinategroup, isintersectorgroup) end })
+				end
 			end
 			-- defence
 			menu.insertAssignSubActions("main_assignments_defence", "defence", menu.buttonChangeAssignment, groups, isstation, isstation)
@@ -6545,19 +6892,182 @@ function menu.prepareActions()
 				menu.insertAssignSubActions("main_assignments_interception", "interception", menu.buttonChangeAssignment, groups, isstation, nil)
 				menu.insertAssignSubActions("main_assignments_bombardment", "bombardment", menu.buttonChangeAssignment, groups, isstation, nil)
 				menu.insertAssignSubActions("main_assignments_follow", "follow", menu.buttonChangeAssignment, groups, isstation, true)
-				local buf = ffi.new("Order")
-				if C.GetDefaultOrder(buf, menu.componentSlot.component) then
-					menu.insertAssignSubActions("main_assignments_assist", "assist", menu.buttonChangeAssignment, groups, isstation, true)
+				if menu.componentSlot.component ~= 0 then
+					local buf = ffi.new("Order")
+					if C.GetDefaultOrder(buf, menu.componentSlot.component) then
+						menu.insertAssignSubActions("main_assignments_assist", "assist", menu.buttonChangeAssignment, groups, isstation, true)
+					end
 				end
-				if GetComponentData(convertedComponent, "shiptype") == "resupplier" then
+				if commandershiptype == "resupplier" then
 					menu.insertAssignSubActions("main_assignments_trade", "trade", menu.buttonChangeAssignment, groups, isstation, true)
 				end
 			end
 
-			local assignment = ffi.string(C.GetSubordinateGroupAssignment(menu.componentSlot.component, menu.subordinategroup))
+			local assignment
+			if menu.componentSlot.component ~= 0 then
+				assignment = ffi.string(C.GetSubordinateGroupAssignment(menu.componentSlot.component, menu.subordinategroup))
+			else
+				assignment = ffi.string(C.GetFleetUnitSubordinateGroupAssignment(menu.fleetunit, menu.subordinategroup))
+			end
 			menu.insertInteractionContent("selected_orders", { text = ReadText(1001, 11122), text2 = string.format(ReadText(1001, 8398), ReadText(20401, menu.subordinategroup)), script = function () return menu.buttonAssignCommander(assignment, menu.subordinategroup) end })
 		else
 			menu.insertInteractionContent("main", { text = ReadText(1001, 7852), active = false })
+		end
+	elseif menu.fleetunit then
+		hasanydisplayed = true
+
+		-- remove fleetunit
+		menu.insertInteractionContent("main", { text = ReadText(1001, 11148), script = menu.buttonRemoveFleetUnit, active = true })
+
+		-- Change assignment
+		local shiptype = GetMacroData(menu.fleetunitinfo.macro, "shiptype")
+		local commander = C.GetCommander(0, menu.fleetunit)
+		local currentgroup = C.GetFleetUnitSubordinateGroup(menu.fleetunit)
+		local groups = {}
+		if commander.controllableid ~= 0 then
+			groups = menu.getSubordinatesInGroups(commander.controllableid, isstation)
+		else
+			groups = menu.getSubordinatesInFleetUnitGroups(commander.fleetunitid, isstation)
+		end
+		-- defence
+		menu.insertAssignSubActions("main_assignments_defence", "defence", menu.buttonChangeFleetUnitAssignment, groups, false, false, currentgroup)
+		-- supplyfleet
+		if shiptype == "resupplier" then
+			menu.insertAssignSubActions("main_assignments_supplyfleet", "supplyfleet", menu.buttonChangeFleetUnitAssignment, groups, false, true, currentgroup)
+		end
+		-- position defence
+		local commandershiptype
+		if commander.controllableid ~= 0 then
+			commandershiptype = GetComponentData(ConvertStringToLuaID(tostring(commander.controllableid)), "shiptype")
+		else
+			local unitinfo = C.GetFleetUnitInfo(commander.fleetunitid)
+			commandershiptype = GetMacroData(ffi.string(unitinfo.macro), "shiptype")
+		end
+		local parentcommander = C.GetCommander(commander.controllableid, commander.fleetunitid)
+		local isfleetcommander = (parentcommander.controllableid == 0) and (commander.fleetunitid == 0)
+		if (commandershiptype == "carrier") and isfleetcommander then
+			menu.insertAssignSubActions("main_assignments_positiondefence", "positiondefence", menu.buttonChangeFleetUnitAssignment, groups, false, nil, currentgroup)
+		end
+		menu.insertAssignSubActions("main_assignments_attack", "attack", menu.buttonChangeFleetUnitAssignment, groups, false, nil, currentgroup)
+		menu.insertAssignSubActions("main_assignments_interception", "interception", menu.buttonChangeFleetUnitAssignment, groups, false, nil, currentgroup)
+		menu.insertAssignSubActions("main_assignments_bombardment", "bombardment", menu.buttonChangeFleetUnitAssignment, groups, false, nil, currentgroup)
+		menu.insertAssignSubActions("main_assignments_follow", "follow", menu.buttonChangeFleetUnitAssignment, groups, false, true, currentgroup)
+		if commander.controllableid ~= 0 then
+			local buf = ffi.new("Order")
+			if C.GetDefaultOrder(buf, commander.controllableid) then
+				menu.insertAssignSubActions("main_assignments_assist", "assist", menu.buttonChangeFleetUnitAssignment, groups, false, true, currentgroup)
+			end
+		end
+		if commandershiptype == "resupplier" then
+			menu.insertAssignSubActions("main_assignments_trade", "trade", menu.buttonChangeFleetUnitAssignment, groups, false, true, currentgroup)
+		end
+
+		if menu.selectedfleetunit then
+			-- reassign
+			local fleetlead = C.GetFleetLead(0, menu.fleetunit)
+			local selectedfleetlead = C.GetFleetLead(0, menu.selectedfleetunit)
+
+			if fleetlead == selectedfleetlead then
+				local unitinfo = C.GetFleetUnitInfo(menu.selectedfleetunit)
+				local shiptype, primarypurpose = GetMacroData(ffi.string(unitinfo.macro), "shiptype", "primarypurpose")
+
+				local groups = menu.getSubordinatesInFleetUnitGroups(menu.fleetunit, false)
+				-- defence
+				menu.insertAssignSubActions("selected_assignments_defence", "defence", menu.buttonAssignFleetUnitCommander, groups, false, false)
+				-- supplyfleet
+				if shiptype == "resupplier" then
+					menu.insertAssignSubActions("selected_assignments_supplyfleet", "supplyfleet", menu.buttonAssignFleetUnitCommander, groups, false, true)
+				end
+				-- position defence
+				local unitinfo = C.GetFleetUnitInfo(menu.fleetunit)
+				local commandershiptype = GetMacroData(ffi.string(unitinfo.macro), "shiptype")
+				menu.insertAssignSubActions("selected_assignments_attack", "attack", menu.buttonAssignFleetUnitCommander, groups, false)
+				menu.insertAssignSubActions("selected_assignments_interception", "interception", menu.buttonAssignFleetUnitCommander, groups, false)
+				menu.insertAssignSubActions("selected_assignments_bombardment", "bombardment", menu.buttonAssignFleetUnitCommander, groups, false)
+				menu.insertAssignSubActions("selected_assignments_follow", "follow", menu.buttonAssignFleetUnitCommander, groups, false, true)
+				if commandershiptype == "resupplier" then
+					menu.insertAssignSubActions("selected_assignments_trade", "trade", menu.buttonAssignFleetUnitCommander, groups, false, true)
+				end
+			end
+		elseif menu.numassignableships > 0 then
+			local groups = menu.getSubordinatesInFleetUnitGroups(menu.fleetunit, false)
+			-- defence
+			menu.insertAssignSubActions("selected_assignments_defence", "defence", menu.buttonAssignFleetUnitCommander, groups, false, false)
+			-- supplyfleet
+			if menu.numassignableresupplyships > 0 then
+				menu.insertAssignSubActions("selected_assignments_supplyfleet", "supplyfleet", menu.buttonAssignCommander, groups, isstation, true)
+			end
+			-- position defence
+			local unitinfo = C.GetFleetUnitInfo(menu.fleetunit)
+			local commandershiptype = GetMacroData(ffi.string(unitinfo.macro), "shiptype")
+			menu.insertAssignSubActions("selected_assignments_attack", "attack", menu.buttonAssignCommander, groups, isstation)
+			menu.insertAssignSubActions("selected_assignments_interception", "interception", menu.buttonAssignCommander, groups, isstation)
+			menu.insertAssignSubActions("selected_assignments_bombardment", "bombardment", menu.buttonAssignCommander, groups, isstation)
+			menu.insertAssignSubActions("selected_assignments_follow", "follow", menu.buttonAssignCommander, groups, isstation, true)
+			if commandershiptype == "resupplier" then
+				menu.insertAssignSubActions("selected_assignments_trade", "trade", menu.buttonAssignCommander, groups, isstation, true)
+			end
+		end
+	elseif menu.selectedfleetunit then
+		hasanydisplayed = true
+
+		-- reassign
+		local fleetlead = C.GetFleetLead(menu.componentSlot.component, 0)
+		local selectedfleetlead = C.GetFleetLead(0, menu.selectedfleetunit)
+
+		if fleetlead == selectedfleetlead then
+			local unitinfo = C.GetFleetUnitInfo(menu.selectedfleetunit)
+			local shiptype, primarypurpose = GetMacroData(ffi.string(unitinfo.macro), "shiptype", "primarypurpose")
+
+			local subordinates = GetSubordinates(convertedComponent)
+
+			local isstation = C.IsComponentClass(menu.componentSlot.component, "station")
+			local isship = C.IsComponentClass(menu.componentSlot.component, "ship")
+			local groups = menu.getSubordinatesInGroups(menu.componentSlot.component, isstation)
+			if isstation and C.CanClaimOwnership(menu.componentSlot.component) then
+				menu.insertAssignSubActions("selected_assignments_positiondefence", "positiondefence", menu.buttonAssignFleetUnitCommander, groups, isstation, isstation)
+			end
+			-- defence
+			menu.insertAssignSubActions("selected_assignments_defence", "defence", menu.buttonAssignFleetUnitCommander, groups, isstation, isstation)
+			-- supplyfleet
+			if shiptype == "resupplier" then
+				menu.insertAssignSubActions("selected_assignments_supplyfleet", "supplyfleet", menu.buttonAssignFleetUnitCommander, groups, isstation, true)
+			end
+			if isstation then
+				local isminingfleetunit = primarypurpose == "mine"
+				-- trading
+				menu.insertAssignSubActions("selected_assignments_trade", "trade", menu.buttonAssignFleetUnitCommander, groups, isstation, true, nil, isminingfleetunit and (ColorText["text_warning"] .. ReadText(1026, 8609)) or "")
+				-- mining
+				if isminingfleetunit then
+					menu.insertAssignSubActions("selected_assignments_mining", "mining", menu.buttonAssignFleetUnitCommander, groups, isstation, true)
+				end
+				-- trading for buildstorage
+				if not isminingfleetunit then
+					menu.insertAssignSubActions("selected_assignments_tradeforbuildstorage", "tradeforbuildstorage", menu.buttonAssignFleetUnitCommander, groups, isstation, true)
+				end
+				if shiptype == "tug" then
+					menu.insertAssignSubActions("selected_assignments_salvage", "salvage", menu.buttonAssignFleetUnitCommander, groups, isstation, true)
+				end
+			elseif isship then
+				-- position defence
+				local commandershiptype = GetComponentData(convertedComponent, "shiptype")
+				local parentcommander = ConvertIDTo64Bit(GetCommander(convertedComponent))
+				local isfleetcommander = (not parentcommander) and (#subordinates > 0)
+				if (commandershiptype == "carrier") and isfleetcommander then
+					menu.insertAssignSubActions("selected_assignments_positiondefence", "positiondefence", menu.buttonAssignFleetUnitCommander, groups, isstation)
+				end
+				menu.insertAssignSubActions("selected_assignments_attack", "attack", menu.buttonAssignFleetUnitCommander, groups, isstation)
+				menu.insertAssignSubActions("selected_assignments_interception", "interception", menu.buttonAssignFleetUnitCommander, groups, isstation)
+				menu.insertAssignSubActions("selected_assignments_bombardment", "bombardment", menu.buttonAssignFleetUnitCommander, groups, isstation)
+				menu.insertAssignSubActions("selected_assignments_follow", "follow", menu.buttonAssignFleetUnitCommander, groups, isstation, true)
+				local buf = ffi.new("Order")
+				if C.GetDefaultOrder(buf, menu.componentSlot.component) then
+					menu.insertAssignSubActions("selected_assignments_assist", "assist", menu.buttonAssignFleetUnitCommander, groups, isstation, true)
+				end
+				if commandershiptype == "resupplier" then
+					menu.insertAssignSubActions("selected_assignments_trade", "trade", menu.buttonAssignFleetUnitCommander, groups, isstation, true)
+				end
+			end
 		end
 	end
 	if menu.mode == "shipconsole" then
@@ -6642,15 +7152,23 @@ function menu.prepareTexts()
 		end
 
 		if C.IsComponentClass(menu.componentSlot.component, "controllable") then
-			local commander = ConvertIDTo64Bit(GetCommander(convertedComponent))
-			if commander and commander ~= 0 then
-				menu.texts.commanderShortName = Helper.unlockInfo(IsInfoUnlockedForPlayer(commander, "name"), ffi.string(C.GetComponentName(commander)))
-				local idcode = ""
-				if C.IsComponentClass(commander, "object") then
-					idcode = " (" .. ffi.string(C.GetObjectIDCode(commander)) .. ")"
+			local commander = C.GetCommander(convertedComponent, 0)
+			if (commander.controllableid ~= 0) or (commander.fleetunitid ~= 0) then
+				if commander.controllableid ~= 0 then
+					local commander64 = ConvertIDTo64Bit(GetCommander(convertedComponent))
+					menu.texts.commanderShortName = Helper.unlockInfo(IsInfoUnlockedForPlayer(commander64, "name"), ffi.string(C.GetComponentName(commander.controllableid)))
+					local idcode = ""
+					if C.IsComponentClass(commander.controllableid, "object") then
+						idcode = " (" .. ffi.string(C.GetObjectIDCode(commander.controllableid)) .. ")"
+					end
+					menu.texts.commanderName = sectorprefix .. Helper.unlockInfo(IsInfoUnlockedForPlayer(commander64, "name"), ffi.string(C.GetComponentName(commander.controllableid)) .. idcode)
+					menu.colors.commander = GetComponentData(commander64, "isplayerowned") and ((commander64 == playerObject) and menu.holomapcolor.currentplayershipcolor or menu.holomapcolor.playercolor) or Color["text_normal"]
+				else
+					local info = C.GetFleetUnitInfo(commander.fleetunitid)
+					menu.texts.commanderShortName = ffi.string(info.name)
+					menu.texts.commanderName = sectorprefix .. menu.texts.commanderShortName .. " (" .. ffi.string(info.idcode) .. ")"
+					menu.colors.commander = Color["text_player_inactive"]
 				end
-				menu.texts.commanderName = sectorprefix .. Helper.unlockInfo(IsInfoUnlockedForPlayer(commander, "name"), ffi.string(C.GetComponentName(commander)) .. idcode)
-				menu.colors.commander = GetComponentData(commander, "isplayerowned") and ((commander == playerObject) and menu.holomapcolor.currentplayershipcolor or menu.holomapcolor.playercolor) or Color["text_normal"]
 				menu.texts.commanderShortName = Helper.convertColorToText(menu.colors.commander) .. menu.texts.commanderShortName
 				menu.texts.commanderName = Helper.convertColorToText(menu.colors.commander) .. menu.texts.commanderName
 			end
@@ -6670,6 +7188,11 @@ function menu.prepareTexts()
 				menu.texts.selectedFullNames = menu.texts.selectedFullNames .. (first and "" or "\n") .. Helper.convertColorToText(color) .. GetComponentData(selectedcomponent, "name") .. " (" .. ffi.string(C.GetObjectIDCode(selectedcomponent)) .. ")" .. (isCurrentPlayerObject and (" (" .. ReadText(1001, 7836) .. ")") or "")
 				first = false
 			end
+		elseif menu.selectedfleetunit then
+			local info = C.GetFleetUnitInfo(menu.selectedfleetunit)
+			menu.texts.selectedName = ffi.string(info.name)
+			menu.colors.selected = Color["text_player_inactive"]
+			menu.texts.selectedFullNames = menu.texts.selectedName .. " (" .. ffi.string(info.idcode) .. ")"
 		end
 		-- count the interacted object here too
 		if isplayerowned and C.IsRealComponentClass(menu.componentSlot.component, "ship") then
@@ -6711,10 +7234,25 @@ function menu.prepareTexts()
 		menu.texts.targetShortName = ReadText(1001, 3237) .. ReadText(1001, 120) .. " " .. Helper.getSyncPointName(menu.syncpoint)
 	elseif menu.fleetunit then
 		local info = C.GetFleetUnitInfo(menu.fleetunit)
-		menu.texts.targetShortName = ffi.string(info.name)
+		menu.fleetunitinfo = {
+			name = ffi.string(info.name),
+			idcode = ffi.string(info.idcode),
+			macro = ffi.string(info.macro),
+			buildtaskid = info.buildtaskid,
+			replacementid = inforeplacementid,
+		}
+
+		menu.texts.targetShortName = menu.fleetunitinfo.name
 		menu.colors.target = Color["text_inactive"]
-		if (info.replacementid ~= 0) or (info.buildtaskid ~= 0) then
+		if (menu.fleetunitinfo.replacementid ~= 0) or (menu.fleetunitinfo.buildtaskid ~= 0) then
 			menu.colors.target = Color["text_player_inactive"]
+		end
+
+		if menu.selectedfleetunit then
+			local info = C.GetFleetUnitInfo(menu.selectedfleetunit)
+			menu.texts.selectedName = ffi.string(info.name)
+			menu.colors.selected = Color["text_player_inactive"]
+			menu.texts.selectedFullNames = menu.texts.selectedName .. " (" .. ffi.string(info.idcode) .. ")"
 		end
 	elseif menu.mission then
 		local missiondetails = C.GetMissionIDDetails(menu.mission)
