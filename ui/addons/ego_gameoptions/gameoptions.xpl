@@ -10161,7 +10161,18 @@ function menu.displayExtensions()
 	row[4]:createText(ReadText(1001, 2655), config.subHeaderLeftTextProperties)
 	row[5]:createText(ReadText(1001, 2691), config.subHeaderLeftTextProperties)
 	if #extensions > 0 then
-		table.sort(extensions, Helper.sortName)
+		-- kuertee start: put disabled extensions last
+		-- table.sort(extensions, Helper.sortName)
+		table.sort(extensions, function (a, b)
+			if a.enabled == b.enabled then
+				return a.name < b.name
+			elseif a.enabled then
+				return true
+			else
+				return false
+			end
+		end)
+		-- kuertee end: put disabled extensions last
 
 		for _, extension in ipairs(extensions) do
 			if extension.egosoftextension and extension.enabledbydefault then
