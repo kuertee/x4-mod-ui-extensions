@@ -11,16 +11,6 @@ enabled="1">
 description="UI Extensions and HUD&#13;&#10;
 https://www.nexusmods.com/x4foundations/mods/552&#13;&#10;
 Code: https://github.com/kuertee/x4-mod-ui-extensions.git&#13;&#10;
-by kuertee. Contributors: Forleyor, Mycu.&#13;&#10;
-&#13;&#10;
-Features:&#13;&#10;
-Modded Lua files with callbacks that allow more than one mod to change the same UI element.&#13;&#10;
-&#13;&#10;
-Functionality that adds HUD elements to the Top Level Menu.&#13;&#10;
-&#13;&#10;
-Allows other mods to create guidance missions (i.e. missiontype.guidance) that will be listed in the Guidance Missions tab.
-Also enables the Set Active and Set Inactive buttons in missions listed in the Guidance Missions tab.&#13;&#10;"
+by kuertee. Contributors: Forleyor, Mycu.&#13;&#10;"
 />
-
-<dependency id="ws_2042901274" optional="false" name="SirNukes Mod Support APIs"></dependency>
 </content>

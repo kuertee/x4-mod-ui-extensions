@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<addon name="kuertee_ui_extensions" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../core/addon.xsd">
+  <environment type="menus">
+    <dependency name="ego_detailmonitorhelper" />
+    <dependency name="ego_gameoptions" />
+    <dependency name="ego_detailmonitor" />
+    <dependency name="ego_interactmenu" />
+  </environment>
+</addon>
