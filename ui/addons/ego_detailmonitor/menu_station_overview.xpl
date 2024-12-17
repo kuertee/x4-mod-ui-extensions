@@ -255,7 +255,7 @@ local config = {
 	contextFrameLayer = 2,
 	nodeoffsetx = 30,
 	nodewidth = 270,
-	dronetypes = { 
+	dronetypes = {
 		{ type = "transport",	name = ReadText(1001, 7104),	autoname = ReadText(1001, 4207) },
 		{ type = "defence",		name = ReadText(1001, 1310),	autoname = ReadText(1001, 4216) },
 		{ type = "repair",		name = ReadText(1001, 3000),	autoname = ReadText(1001, 4232) },
@@ -1115,7 +1115,7 @@ function menu.getSupplyResourceMax(ware, raw)
 			menu.supplyResources[ware] = { value = current, max = total }
 		end
 	end
-	
+
 	if raw then
 		return menu.supplyResources[ware] and menu.supplyResources[ware].max or 0
 	else
@@ -1319,65 +1319,67 @@ function menu.setupFlowchartData()
 	end
 
 	-- protectyon section
-	local condensateware = "condensate"
-	local transporttype = GetWareData(condensateware, "transport")
-	local sector, haswaveprotectionmodule = GetComponentData(menu.containerid, "sectorid", "haswaveprotectionmodule")
-	local sectorcontainsthewave = GetComponentData(sector, "containsthewave")
-	local hascondensatestorage = false
-	if C.IsComponentClass(menu.container, "container") then
-		hascondensatestorage = CheckSuitableTransportType(menu.containerid, condensateware)
-	end
-	if #menu.constructionplan > 0 then
-		local found = false
-		for i = 1, #menu.constructionplan do
-			local entry = menu.constructionplan[i]
-			if IsMacroClass(entry.macro, "storage") then
-				local data = GetLibraryEntry("moduletypes_storage", entry.macro)
-				if data.storagetags[transporttype] then
-					found = true
-					break
+	if not menu.isdummy then
+		local condensateware = "condensate"
+		local transporttype = GetWareData(condensateware, "transport")
+		local sector, haswaveprotectionmodule = GetComponentData(menu.containerid, "sectorid", "haswaveprotectionmodule")
+		local sectorcontainsthewave = GetComponentData(sector, "containsthewave")
+		local hascondensatestorage = false
+		if C.IsComponentClass(menu.container, "container") then
+			hascondensatestorage = CheckSuitableTransportType(menu.containerid, condensateware)
+		end
+		if #menu.constructionplan > 0 then
+			local found = false
+			for i = 1, #menu.constructionplan do
+				local entry = menu.constructionplan[i]
+				if IsMacroClass(entry.macro, "storage") then
+					local data = GetLibraryEntry("moduletypes_storage", entry.macro)
+					if data.storagetags[transporttype] then
+						found = true
+						break
+					end
 				end
 			end
+			if not found then
+				hascondensatestorage = false
+			end
 		end
-		if not found then
-			hascondensatestorage = false
-		end
-	end
 
-	if sectorcontainsthewave and hascondensatestorage then
-		local condensatenodes = {}
+		if sectorcontainsthewave and hascondensatestorage then
+			local condensatenodes = {}
 
-		local condensateshieldnode
-		if haswaveprotectionmodule then
-			local production_products =	C.IsInfoUnlockedForPlayer(menu.container, "production_products")
-			-- add condensate shield node
-			condensateshieldnode = {
-				condensateshield = condensateware,
-				text = Helper.unlockInfo(production_products, ReadText(20104, 92501)),
-				type = transporttype,
-				row = 1, col = 2, numrows = 1, numcols = 1,
-				{
-					properties = {
-						value = 0,
-						max = 0,
-						shape = "hexagon",
-					},
-					expandedTableNumColumns = 2,
-					expandHandler = menu.onExpandCondensateShield,
+			local condensateshieldnode
+			if haswaveprotectionmodule then
+				local production_products =	C.IsInfoUnlockedForPlayer(menu.container, "production_products")
+				-- add condensate shield node
+				condensateshieldnode = {
+					condensateshield = condensateware,
+					text = Helper.unlockInfo(production_products, ReadText(20104, 92501)),
+					type = transporttype,
+					row = 1, col = 2, numrows = 1, numcols = 1,
+					{
+						properties = {
+							value = 0,
+							max = 0,
+							shape = "hexagon",
+						},
+						expandedTableNumColumns = 2,
+						expandHandler = menu.onExpandCondensateShield,
+					}
 				}
-			}
-			table.insert(condensatenodes, condensateshieldnode)
-		end
+				table.insert(condensatenodes, condensateshieldnode)
+			end
 
-		-- add condensate storage node
-		local node = Helper.createLSOStorageNode(menu, menu.container, condensateware, false, true, true)
-		table.insert(condensatenodes, node)
-		warenodes[condensateware] = node
-		if condensateshieldnode then
-			addFlowchartEdge(node, condensateshieldnode)
-		end
+			-- add condensate storage node
+			local node = Helper.createLSOStorageNode(menu, menu.container, condensateware, false, true, true)
+			table.insert(condensatenodes, node)
+			warenodes[condensateware] = node
+			if condensateshieldnode then
+				addFlowchartEdge(node, condensateshieldnode)
+			end
 
-		table.insert(flowchartsections, { nodes = condensatenodes, junctions = { }, numrows = 1, numcols = 2 })
+			table.insert(flowchartsections, { nodes = condensatenodes, junctions = { }, numrows = 1, numcols = 2 })
+		end
 	end
 
 	-- supply section
@@ -1466,10 +1468,11 @@ function menu.setupFlowchartData()
 		table.insert(supplyresources, { ware = ware, name = GetWareData(ware, "name"), max = total, value = current, supplytypes = ffi.string(buf[i].supplytypes) })
 	end
 	table.sort(supplyresources, Helper.sortName)
-	
+
 	local storageinfo_warelist =	C.IsInfoUnlockedForPlayer(menu.container, "storage_warelist")
 	for i, entry in ipairs(supplyresources) do
 		local hasrestrictions = C.GetContainerTradeRuleID(menu.container, "supply", entry.ware) > 0
+		local transporttype = GetWareData(entry.ware, "transport")
 
 		local warenode = {
 			ware = entry.ware,
@@ -1799,7 +1802,7 @@ function menu.display()
 	--row = ftable:addRow(false)
 	--row[1]:createText("Antigone Memorial")
 
-	usablewidth = menu.rightBarX - Helper.borderSize - Helper.frameBorder 
+	usablewidth = menu.rightBarX - Helper.borderSize - Helper.frameBorder
 
 	menu.flowchart = menu.frame:addFlowchart(menu.flowchartNumRows, menu.flowchartNumCols, { borderHeight = 3, borderColor = Color["row_background_blue"], minRowHeight = 45, minColWidth = 80, x = Helper.frameBorder, y = ftable:getVisibleHeight() + Helper.borderSize, width = usablewidth })
 	menu.flowchart:setDefaultNodeProperties({
@@ -2256,7 +2259,7 @@ function menu.display()
 			local row = menu.keyTable:addRow(dataIdx, {  })
 			row[1]:setColSpan(5):createText(ReadText(1001, 6526))
 		end
-		
+
 		menu.restoreTableState("keyTable", menu.keyTable)
 	end
 
@@ -2371,7 +2374,7 @@ end
 function menu.onExpandSupplyResource(_, ftable, _, nodedata)
 	local storageinfo_capacity =	C.IsInfoUnlockedForPlayer(menu.container, "storage_capacity")
 	local storageinfo_amounts =		C.IsInfoUnlockedForPlayer(menu.container, "storage_amounts")
-	
+
 	local reservations = {}
 	local n = C.GetNumContainerWareReservations2(menu.container, false, false, true)
 	local buf = ffi.new("WareReservationInfo2[?]", n)
@@ -2484,7 +2487,7 @@ function menu.compareTradeWareSelection()
 	return next(tradewares) == nil
 end
 
-function menu.setTradeWares()	
+function menu.setTradeWares()
 	local tradewares = Helper.tableCopy(menu.origSelectedWares)
 	for ware in pairs(menu.selectedWares) do
 		if not tradewares[ware] then
@@ -3335,7 +3338,7 @@ function menu.onExpandBuildModule(_, ftable, _, nodedata, buildmodule)
 				local row = ftable:addRow(nil, {  })
 				row[1]:setColSpan(4):createText(Helper.unlockInfo(productioninfo_products, name .. " (" .. ffi.string(C.GetObjectIDCode(construction.component)) .. ")"), { color = color, mouseOverText = construction.ismissingresources and ReadText(1026, 3223) or "" })
 				local row = ftable:addRow(nil, {  })
-				row[1]:createText(Helper.unlockInfo(productioninfo_time, function () return menu.getShipBuildProgress(construction.component, "") end), { color = color, mouseOverText = construction.ismissingresources and ReadText(1026, 3223) or "" }) 
+				row[1]:createText(Helper.unlockInfo(productioninfo_time, function () return menu.getShipBuildProgress(construction.component, "") end), { color = color, mouseOverText = construction.ismissingresources and ReadText(1026, 3223) or "" })
 				row[2]:setColSpan(3):createText(Helper.unlockInfo(productioninfo_time, function () return (construction.ismissingresources and (ColorText["text_warning"] .. "\27[warning] ") or "") .. ConvertTimeString(C.GetBuildProcessorEstimatedTimeLeft(construction.buildercomponent), "%h:%M:%S") end), { halign = "right", color = color, mouseOverText = construction.ismissingresources and ReadText(1026, 3223) or "" })
 			end
 		end
@@ -3589,7 +3592,7 @@ function menu.onExpandWorkforce(_, ftable, _, nodedata)
 						resourcedata = resourceinfo
 					end
 				end
-			
+
 				row = ftable:addRow(nil, {  })
 				row[1]:setColSpan(4):createText(ReadText(1001, 8451) .. " / " .. ReadText(1001, 102) .. ReadText(1001, 120))
 				for i, resource in ipairs(resourcedata.resources) do
@@ -3742,7 +3745,7 @@ function menu.onExpandSupply(_, ftable, _, nodedata)
 				-- available macros
 				if #menu.supplies[supplytypeentry.type] > 0 then
 					for i, entry in ipairs(menu.supplies[supplytypeentry.type]) do
-						
+
 						local limit = 0
 						if auto then
 							if menu.supplyoverride[entry.macro] then
@@ -3787,7 +3790,7 @@ function menu.onExpandSupply(_, ftable, _, nodedata)
 			end
 		end
 	end
-	
+
 	if isplayerowned then
 		-- trade rule
 		local hasownlist = C.HasContainerOwnTradeRule(menu.container, "supply", "")
@@ -4092,7 +4095,7 @@ function menu.buttonAccountConfirm()
 
 		SetMaxBudget(menu.containerid, (menu.newAccountValue * 3) / 2)
 		SetMinBudget(menu.containerid, menu.newAccountValue)
-		
+
 		if amount > 0 then
 			TransferPlayerMoneyTo(amount, menu.containerid)
 		else
@@ -4172,7 +4175,7 @@ function menu.buttonTimeFrame(type)
 			menu.xGranularity = menu.xGranularity / 2
 		end
 	end
-	
+
 	menu.getData(config.graph.numdatapoints)
 	menu.saveFlowchartState("flowchart", menu.flowchart)
 	menu.saveTableState("keyTable", menu.keyTable)
@@ -4254,7 +4257,7 @@ function menu.checkboxSelected(idx, row, col)
 				end
 			end
 		end
-		
+
 		menu.saveFlowchartState("flowchart", menu.flowchart)
 		menu.saveTableState("keyTable", menu.keyTable, row, col)
 		if menu.expandedNode then
@@ -4318,9 +4321,9 @@ function menu.checkboxToggleMultiSelect(checked)
 		menu.contextMenuData.selectedOptions[entry.id] = checked or nil
 	end
 end
-	 
+
 function menu.checkboxSetTradeRuleOverride(container, type, ware, checked)
-	if checked then 
+	if checked then
 		C.SetContainerTradeRule(container, -1, type, ware, false)
 	else
 		local currentid = C.GetContainerTradeRuleID(container, type, ware or "")
@@ -4341,7 +4344,7 @@ end
 
 function  menu.dropdownTradeRule(container, type, ware, id)
 	C.SetContainerTradeRule(container, tonumber(id), type, ware, true)
-	
+
 	if (type == "buy") or (type == "sell") then
 		menu.expandedNode:updateStatus(nil, Helper.isTradeRestricted(menu.container, ware) and "lso_error" or nil, nil, Color["icon_warning"])
 	end
@@ -4858,7 +4861,7 @@ function menu.updateProductionNode(node, productionmodules)
 	else
 		text = "(" .. producing .. "/" .. total .. ") " .. text
 	end
-	
+
 	if not statusicon then
 		if producing > 0 then
 			statusicon = string.format("lso_pie_%02d", progress)
@@ -5012,7 +5015,7 @@ function menu.updateProcessingNode(node, processingmodules)
 	else
 		text = "(" .. producing .. "/" .. total .. ") " .. text
 	end
-	
+
 	if not statusicon then
 		if producing > 0 then
 			statusicon = string.format("lso_pie_%02d", progress)
@@ -5064,7 +5067,7 @@ function menu.updateResearchNode(node, researchmodule)
 	local proddata = GetProductionModuleData(researchmodule)
 	if (proddata.state == "producing") or (proddata.state == "waitingforresources") then
 		local progress = math.floor((proddata.cycleprogress * 12 / 100) + 0.5)
-	
+
 		if proddata.state == "waitingforresources" then
 			statusicon = "lso_warning"
 			statuscolor = Color["icon_warning"]
@@ -5152,7 +5155,7 @@ function menu.updateAccountNode(node)
 	end
 	node:updateMaxValue(shownmax)
 	node:updateValue(shownamount)
-	
+
 	local statustext = string.format("%s/%s %s", ConvertMoneyString(money, false, true, 3, true, false), ConvertMoneyString(productionmoney + supplymoney + tradewaremoney, false, true, 3, true, false), ReadText(1001, 101))
 	local statuscolor = (money < budget) and ((money == 0) and Color["lso_node_error"] or Color["lso_node_warning"]) or Color["flowchart_node_default"]
 	node:updateStatus(statustext)

@@ -14435,7 +14435,7 @@ function menu.setupInfoSubmenuRows(mode, inputtable, inputobject, instance)
 		row = menu.addInfoSubmenuRow(instance, inputtable, row, locrowdata, false, false, false, 1, indentsize)
 
 		local destinationowner = unknowntext
-		if C.IsInfoUnlockedForPlayer(gatedestinationsector64, "name") then
+		if gatedestinationsector64 and C.IsInfoUnlockedForPlayer(gatedestinationsector64, "name") then
 			destinationowner = GetComponentData(gatedestinationsector, "ownername") or ""
 			if C.IsContestedSector(gatedestinationsector64) then
 				destinationowner = destinationowner .. " " .. ReadText(1001, 3247)

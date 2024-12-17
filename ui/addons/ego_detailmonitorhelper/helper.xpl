@@ -3217,7 +3217,7 @@ local defaultWidgetProperties = {
 		maxVisibleHeight = 0,									-- maximum visible height of flowchart (enables scrollbar if required height for all rows exceeds max height, 0 = use available height in frame)
 		minRowHeight = 0,										-- minimal row height
 		minColWidth = 0,										-- minimal column width (can be overridden with flowchart:setColWidthMin())
-		edgeWidth = 1,											-- edge width
+		edgeWidth = 3,											-- edge width
 		firstVisibleRow = 1,									-- first visible row
 		firstVisibleCol = 1,									-- first visible column
 		selectedRow = 1,										-- selected row

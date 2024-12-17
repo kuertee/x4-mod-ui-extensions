@@ -3502,14 +3502,22 @@ function menu.excludeMonitorZone(frame, monitorexclusionzone, framewidth, frameh
 				mouseOutBoxExtension.bottom = origFrameY - newY
 				menu.frameY = math.max(0, newY)
 				needschange = false
-			elseif (not menu.forceSubSectionToLeft) and (menu.frameX + framewidth > monitorexclusionzone.x) then
+			elseif menu.frameX + framewidth > monitorexclusionzone.x then
 				-- overlapping with the monitor, flip to left from cursor
-				local newX = menu.frameX - framewidth
-				-- make sure we have enough space left for a subsection on the left
-				if newX > menu.width + Helper.borderSize then
-					menu.frameX = newX
+				if not menu.forceSubSectionToLeft then
+					local newX = menu.frameX - framewidth
+					-- make sure we have enough space left for a subsection on the left
+					if newX > menu.width + Helper.borderSize then
+						menu.frameX = newX
+						needschange = false
+						menu.forceSubSectionToLeft = true
+					end
+				else
+					-- we already flipped to the left (from a previous monitor), move up now
+					local newY = monitorexclusionzone.y - frameheight
+					mouseOutBoxExtension.bottom = origFrameY - newY
+					menu.frameY = math.max(0, newY)
 					needschange = false
-					menu.forceSubSectionToLeft = true
 				end
 			elseif menu.frameX + 2 * menu.width + Helper.borderSize > monitorexclusionzone.x then
 				-- ok, but no space for subsection -> force to left

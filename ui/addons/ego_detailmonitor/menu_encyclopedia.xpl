@@ -2793,6 +2793,10 @@ function menu.addDetailRows(ftable)
 			if menu.library ~= "stationtypes" then
 				-- hull
 				menu.addDetailRow(ftable, ReadText(1001, 9083), ConvertIntegerString(menu.object.hull, true, 0, true) .. " " .. ReadText(1001, 118))
+				-- radar range
+				if menu.object.radarrange then
+					menu.addDetailRow(ftable, ReadText(1001, 2426), ConvertIntegerString(menu.object.radarrange / 1000, true, 0, true) .. " " .. ReadText(1001, 108))
+				end
 				-- canclaim
 				if menu.object.canclaim then
 					menu.addDetailRow(ftable, ReadText(1001, 9637), ReadText(1001, 2617))

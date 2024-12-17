@@ -295,6 +295,7 @@ ffi.cdef[[
 	void SetActiveHeadTrackerHeadPositionFactor(float value);
 	void SetActiveHeadTrackerMode(const char* mode);
 	void SetAdaptiveSamplingOption(float value);
+	void SetAllUIInputIgnored(bool value);
 	void SetAutosaveIntervalOption(float factor);
 	void SetAutoZoomResetOption(bool value);
 	void SetChromaticAberrationOption(bool value);
@@ -387,6 +388,7 @@ local callbacks = {}
 local function init()
 	-- register callbacks
 	RegisterEvent("gfx_ok", menu.onGfxDone)
+	RegisterEvent("gfx_busy", menu.onGfxBusy)
 	RegisterEvent("loadSave", menu.loadSaveCallback)
 	RegisterEvent("serverDiscovered", menu.serverDiscoveredCallback)
 	RegisterEvent("extensionSettingChanged", menu.onExtensionSettingChanged)
@@ -2909,10 +2911,15 @@ function menu.onOpenSubMenu(_, submenu)
 end
 
 function menu.onGfxDone()
+	C.SetAllUIInputIgnored(false)
 	if menu.userQuestion and menu.userQuestion.timer then
 		menu.userQuestion.timer = getElapsedTime() + 15.9 -- to avoid the counter jumping to 14 immediately, but avoiding 16 -> see onUpdate()
 		menu.userQuestion.gfxDone = true
 	end
+end
+
+function menu.onGfxBusy()
+	C.SetAllUIInputIgnored(true)
 end
 
 function menu.loadSaveCallback(_, filename)
@@ -6687,10 +6694,17 @@ end
 function menu.valueGameMenuWidthScale()
 	menu.newMenuWidthScale = math.max(0.1, math.min(1.0, Helper.round(C.GetMenuWidthScale(), 2)))
 
+	-- option is limited, see widgetSystem.prepareSize()
+	local width, height = getScreenInfo()
+	local minwidth = 0.2 * width * (16 / 9) / (width / height)
+	local minselect = math.ceil(minwidth / width * 100) / 100
+	minselect = math.max(0.1, minselect)
+
 	local scale = {
-		min            = 0.1,
+		min            = 0.0,
+		minSelect      = minselect,
 		max            = 1.0,
-		start          = menu.newMenuWidthScale,
+		start          = math.max(minselect, menu.newMenuWidthScale),
 		step           = 0.01,
 		suffix         = "",
 		exceedMaxValue = false,

@@ -3407,7 +3407,7 @@ function menu.display()
 			local yoffset = menu.propertyTable.properties.y + menu.propertyTable:getFullHeight() + 2 * Helper.borderSize
 			local width = 3 * menu.width / 4 - 4 * Helper.borderSize
 			local height = menu.budgetTable.properties.y - Helper.borderSize - yoffset
-			menu.flowchart = menu.mainFrame:addFlowchart(menu.flowchartRows, menu.flowchartCols, { minRowHeight = 45, minColWidth = config.nodewidth, x = xoffset, y = yoffset, width = width, maxVisibleHeight = height, edgeWidth = 1 })
+			menu.flowchart = menu.mainFrame:addFlowchart(menu.flowchartRows, menu.flowchartCols, { minRowHeight = 45, minColWidth = config.nodewidth, x = xoffset, y = yoffset, width = width, maxVisibleHeight = height })
 			menu.flowchart:setDefaultNodeProperties({
 				expandedFrameLayer = config.expandedMenuFrameLayer,
 				expandedTableNumColumns = 2,
