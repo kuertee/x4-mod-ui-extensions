@@ -2739,7 +2739,10 @@ function menu.buttonRemoveBuildStorage()
 	end
 end
 
-function menu.buttonRename(isfleet)
+-- kuertee start: multi-rename
+-- function menu.buttonRename(isfleet)
+-- kuertee end: multi-rename
+function menu.buttonRename(isfleet, isMultiReanem)
 	if menu.shown then
 		if menu.interactMenuID then
 			C.NotifyInteractMenuHidden(menu.interactMenuID, true)
@@ -2747,7 +2750,7 @@ function menu.buttonRename(isfleet)
 
 		-- kuertee start: multi-rename
 		-- Helper.closeMenuAndOpenNewMenu(menu, "MapMenu", { 0, 0, true, nil, nil, 'renamecontext', { ConvertStringTo64Bit(tostring(menu.componentSlot.component)), isfleet } }, true)
-		if uix_multiRename_objects and #uix_multiRename_objects > 0 then
+		if isMultiReanem and uix_multiRename_objects and #uix_multiRename_objects > 0 then
 			Helper.closeMenuAndOpenNewMenu(menu, "MapMenu", { 0, 0, true, nil, nil, 'renamecontext', { ConvertStringTo64Bit(tostring(menu.componentSlot.component)), isfleet, uix_multiRename_objects } }, true)
 			uix_multiRename_objects = nil
 		else
@@ -2762,7 +2765,7 @@ function menu.buttonRename(isfleet)
 
 		-- kuertee start: multi-rename
 		-- Helper.returnFromInteractMenu(menu.currentOverTable, "renamecontext", { ConvertStringTo64Bit(tostring(menu.componentSlot.component)), isfleet } )
-		if uix_multiRename_objects and #uix_multiRename_objects > 0 then
+		if isMultiReanem and uix_multiRename_objects and #uix_multiRename_objects > 0 then
 			Helper.returnFromInteractMenu(menu.currentOverTable, "renamecontext", { ConvertStringTo64Bit(tostring(menu.componentSlot.component)), isfleet, uix_multiRename_objects } )
 			uix_multiRename_objects = nil
 		else
@@ -4148,7 +4151,7 @@ function menu.uix_multiRename_addButton(ftable)
 		}):setText((ReadText(1001, 1114)))
 		local text2 = string.format(ReadText(1001, 11105), #uix_multiRename_objects)
 		button:setText2(text2, { halign = "right", color = menu.colors.target })
-		row[1].handlers.onClick = function () return menu.buttonRename() end
+		row[1].handlers.onClick = function () return menu.buttonRename(nil, true) end
 		height = height + row:getHeight() + Helper.borderSize
 	end
 	return height
