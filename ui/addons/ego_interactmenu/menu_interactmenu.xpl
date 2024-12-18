@@ -2742,7 +2742,7 @@ end
 -- kuertee start: multi-rename
 -- function menu.buttonRename(isfleet)
 -- kuertee end: multi-rename
-function menu.buttonRename(isfleet, isMultiReanem)
+function menu.buttonRename(isfleet, isMultiRename)
 	if menu.shown then
 		if menu.interactMenuID then
 			C.NotifyInteractMenuHidden(menu.interactMenuID, true)
@@ -2750,7 +2750,7 @@ function menu.buttonRename(isfleet, isMultiReanem)
 
 		-- kuertee start: multi-rename
 		-- Helper.closeMenuAndOpenNewMenu(menu, "MapMenu", { 0, 0, true, nil, nil, 'renamecontext', { ConvertStringTo64Bit(tostring(menu.componentSlot.component)), isfleet } }, true)
-		if isMultiReanem and uix_multiRename_objects and #uix_multiRename_objects > 0 then
+		if isMultiRename and uix_multiRename_objects and #uix_multiRename_objects > 0 then
 			Helper.closeMenuAndOpenNewMenu(menu, "MapMenu", { 0, 0, true, nil, nil, 'renamecontext', { ConvertStringTo64Bit(tostring(menu.componentSlot.component)), isfleet, uix_multiRename_objects } }, true)
 			uix_multiRename_objects = nil
 		else
@@ -2765,7 +2765,7 @@ function menu.buttonRename(isfleet, isMultiReanem)
 
 		-- kuertee start: multi-rename
 		-- Helper.returnFromInteractMenu(menu.currentOverTable, "renamecontext", { ConvertStringTo64Bit(tostring(menu.componentSlot.component)), isfleet } )
-		if isMultiReanem and uix_multiRename_objects and #uix_multiRename_objects > 0 then
+		if isMultiRename and uix_multiRename_objects and #uix_multiRename_objects > 0 then
 			Helper.returnFromInteractMenu(menu.currentOverTable, "renamecontext", { ConvertStringTo64Bit(tostring(menu.componentSlot.component)), isfleet, uix_multiRename_objects } )
 			uix_multiRename_objects = nil
 		else
