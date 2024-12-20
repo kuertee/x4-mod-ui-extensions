@@ -3973,6 +3973,12 @@ function menu.createContentTable(frame, position)
 			end
 			-- kuertee end: forceShowMenus: show main, interaction, custom_actions menu when no actions to show
 
+			-- kuertee start: don't show custom actions in position defense options
+			if pass and section.id == "custom_actions" and menu.intersectordefencegroup then
+				pass = false
+			end
+			-- kuertee end: don't show custom actions in position defense options
+
 			if pass then
 				if section.subsections then
 					local hastitle = false
