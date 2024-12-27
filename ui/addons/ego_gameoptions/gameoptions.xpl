@@ -9156,6 +9156,14 @@ function menu.displayOptions(optionParameter)
 	menu.currentOption = optionParameter
 	local options = config.optionDefinitions[optionParameter]
 
+	-- kuertee start: callback
+	if callbacks ["displayOptions_modifyOptions"] then
+		for _, callback in ipairs (callbacks ["displayOptions_modifyOptions"]) do
+			options = callback(options)
+		end
+	end
+	-- kuertee end: callback
+
 	local frame = menu.createOptionsFrame()
 
 	local ftable = frame:addTable(5, { tabOrder = 1, x = menu.table.x, y = menu.table.y, width = menu.table.width, maxVisibleHeight = menu.table.height })
@@ -10175,18 +10183,20 @@ function menu.displayExtensions()
 	row[4]:createText(ReadText(1001, 2655), config.subHeaderLeftTextProperties)
 	row[5]:createText(ReadText(1001, 2691), config.subHeaderLeftTextProperties)
 	if #extensions > 0 then
-		-- kuertee start: put disabled extensions last
+		-- kuertee start: sort by enabled then by name
 		-- table.sort(extensions, Helper.sortName)
-		table.sort(extensions, function (a, b)
-			if a.enabled == b.enabled then
+		table.sort(extensions, function(a, b)
+			if a.enabled and b.enabled then
 				return a.name < b.name
 			elseif a.enabled then
 				return true
-			else
+			elseif b.enabled then
 				return false
+			else
+				return a.name < b.name
 			end
 		end)
-		-- kuertee end: put disabled extensions last
+		-- kuertee end: sort by enabled then by name
 
 		for _, extension in ipairs(extensions) do
 			if extension.egosoftextension and extension.enabledbydefault then
@@ -11420,7 +11430,18 @@ function menu.displaySavegameOptions(optionParameter)
 		end
 	end
 	if next(menu.savegames) then
-		table.sort(menu.savegames, function (a, b) return a.rawtime > b.rawtime end)
+
+		-- table.sort(menu.savegames, function (a, b) return a.rawtime > b.rawtime end)
+		-- kuertee start: callback
+		if callbacks ["displaySaveGameOptions_sortSaveGames"] then
+			for _, callback in ipairs (callbacks ["displaySaveGameOptions_sortSaveGames"]) do
+				callback(menu.savegames, "rawtime", true)
+			end
+		else
+			table.sort(menu.savegames, function (a, b) return a.rawtime > b.rawtime end)
+		end
+		-- kuertee end: callback
+
 	end
 
 	local usedsavegamenames = {}
