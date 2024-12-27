@@ -5,16 +5,9 @@ by kuertee. Contributors: Erixon, Forleyor, Mycu, Runekn, AlexandreTK.
 
 Updates
 =======
-v7.1.15, 11 Nov 2024:
--Bug-fix: The multi-rename feature was buggy. e.g. preventing the single-rename function from working. In this version, the right-clicked object needs to be in the selected list for the multi-rename button to be active.
-
-v7.1.14, 7 Nov 2024:
--Bug-fix: The multi-rename feature was renaming a non-player-owned object if it was right-clicked on along with selected playerr objects.
-
-v7.1.12, 2 Nov 2024:
--New feature: Rename multiple objects. More information in the Multi-rename section.
--New feature: The Custom Actions menu is shown when no menu is valid. E.g. when selecting multiple stations. Allows setting a station profile from the Trade Analytics mod to multiple stations at once.
--Tweak: Tweaked some callbacks for UT Advanced Renaming.
+v7.1.17, 27 Dec 2024:
+-New: French language file. Thanks, Calvitix!
+-Bug-fix: Multi-rename function was sometimes still adding some objects (e.g. the sector) that shouldn't be renamed in the list of objects to rename.
 
 Instructions for players
 ========================
@@ -198,8 +191,24 @@ Troubleshooting
 (4) Play for long enough for the mod to log its events.
 (5) Send me (at kuertee@gmail.com) the log found in My Documents\Egosoft\X4\(your player-specific number)\debug.log.
 
+Credits
+=======
+kuertee
+French localisation by Calvitix.
+
 History
 =======
+v7.1.15, 11 Nov 2024:
+-Bug-fix: The multi-rename feature was buggy. e.g. preventing the single-rename function from working. In this version, the right-clicked object needs to be in the selected list for the multi-rename button to be active.
+
+v7.1.14, 7 Nov 2024:
+-Bug-fix: The multi-rename feature was renaming a non-player-owned object if it was right-clicked on along with selected playerr objects.
+
+v7.1.12, 2 Nov 2024:
+-New feature: Rename multiple objects. More information in the Multi-rename section.
+-New feature: The Custom Actions menu is shown when no menu is valid. E.g. when selecting multiple stations. Allows setting a station profile from the Trade Analytics mod to multiple stations at once.
+-Tweak: Tweaked some callbacks for UT Advanced Renaming.
+
 v7.1.11, 18 Oct 2024:
 -Bug-fix: one more deregisterCallback bug.
 

@@ -2415,14 +2415,17 @@ function menu.uix_multiRename_getObjects()
 end
 -- kuertee end: multi-rename
 
-function menu.buttonRename(isfleet)
+-- kuertee start: multi-rename
+-- function menu.buttonRename(isfleet)
+function menu.buttonRename(isfleet, isMultiRename)
+-- kuertee end: multi-rename
 	if menu.shown then
 		if menu.interactMenuID then
 			C.NotifyInteractMenuHidden(menu.interactMenuID, true)
 		end
 
 		-- kuertee start: multi-rename
-		if uix_multiRename_objects and #uix_multiRename_objects > 0 then
+		if isMultiRename and uix_multiRename_objects and #uix_multiRename_objects > 0 then
 			Helper.closeMenuAndOpenNewMenu(menu, "MapMenu", { 0, 0, true, nil, nil, 'renamecontext', { ConvertStringTo64Bit(tostring(menu.componentSlot.component)), isfleet, uix_multiRename_objects } }, true)
 			uix_multiRename_objects = nil
 		else
@@ -2436,7 +2439,7 @@ function menu.buttonRename(isfleet)
 		Helper.clearFrame(menu, config.layer)
 
 		-- kuertee start: multi-rename
-		if uix_multiRename_objects and #uix_multiRename_objects > 0 then
+		if isMultiRename and uix_multiRename_objects and #uix_multiRename_objects > 0 then
 			Helper.returnFromInteractMenu(menu.currentOverTable, "renamecontext", { ConvertStringTo64Bit(tostring(menu.componentSlot.component)), isfleet, uix_multiRename_objects } )
 			uix_multiRename_objects = nil
 		else
@@ -3619,6 +3622,12 @@ function menu.createContentTable(frame, position)
 			end
 			-- kuertee end: forceShowMenus: show main, interaction, custom_actions menu when no actions to show
 
+			-- kuertee start: don't show custom actions in position defense options
+			if pass and section.id == "custom_actions" and menu.intersectordefencegroup then
+				pass = false
+			end
+			-- kuertee end: don't show custom actions in position defense options
+
 			if pass then
 				if section.subsections then
 					local hastitle = false
@@ -3789,7 +3798,7 @@ function menu.uix_multiRename_addButton(ftable)
 		}):setText((ReadText(1001, 1114)))
 		local text2 = string.format(ReadText(1001, 11105), #uix_multiRename_objects)
 		button:setText2(text2, { halign = "right", color = menu.colors.target })
-		row[1].handlers.onClick = function () return menu.buttonRename() end
+		row[1].handlers.onClick = function () return menu.buttonRename(nil, true) end
 		height = height + row:getHeight() + Helper.borderSize
 	end
 	return height
