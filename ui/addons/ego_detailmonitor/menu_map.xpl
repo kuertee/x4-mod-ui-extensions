@@ -23711,7 +23711,7 @@ function menu.createHireContext(frame)
 	local numskills = C.GetNumSkills()
 	local skills = {}
 	if npc then
-		local skilltable = GetComponentData(npc, "skills")
+		local skilltable = GetComponentData(npc, "skills") or {}
 		for _, entry in ipairs(skilltable) do
 			skills[entry.name] = entry.value
 		end

@@ -4263,8 +4263,12 @@ function menu.getSubordinatesInGroups(commander, isstation, assignment, singlegr
 				groups[group] = groups[group] or { assignment = locassignment, subordinates = {} }
 				local buf = ffi.new("FleetUnitID[?]", n)
 				n = C.GetControllableSubordinateFleetUnits(buf, n, commander, group)
+				local fleetunits = {}
 				for i = 0, n - 1 do
-					local fleetunit = buf[i]
+					table.insert(fleetunits, buf[i])
+				end
+
+				for _, fleetunit in ipairs(fleetunits) do
 					local unitinfo = C.GetFleetUnitInfo(fleetunit)
 					table.insert(groups[group].subordinates, { fleetunit = fleetunit, name = ffi.string(unitinfo.name), objectid = ffi.string(unitinfo.idcode) })
 				end
@@ -4314,8 +4318,12 @@ function menu.getSubordinatesInFleetUnitGroups(commanderfleetunit, assignment, s
 				groups[group] = groups[group] or { assignment = locassignment, subordinates = {} }
 				local buf_fleetunits = ffi.new("FleetUnitID[?]", num_fleetunits)
 				num_fleetunits = C.GetFleetUnitSubordinateFleetUnits(buf_fleetunits, num_fleetunits, commanderfleetunit, group)
+				local fleetunits = {}
 				for j = 0, num_fleetunits - 1 do
-					local fleetunitsubordinate = buf_fleetunits[j]
+					table.insert(fleetunits, buf[i])
+				end
+
+				for _, fleetunitsubordinate in ipairs(fleetunits) do
 					local unitinfo = C.GetFleetUnitInfo(fleetunitsubordinate)
 					table.insert(groups[group].subordinates, { fleetunit = fleetunitsubordinate, name = ffi.string(unitinfo.name), objectid = ffi.string(unitinfo.idcode) })
 				end
@@ -7260,6 +7268,7 @@ function menu.prepareTexts()
 		}
 
 		menu.texts.targetShortName = menu.fleetunitinfo.name
+		menu.texts.targetName = menu.fleetunitinfo.name .. " (" .. ffi.string(info.idcode) .. ")"
 		menu.colors.target = Color["text_inactive"]
 		if (menu.fleetunitinfo.replacementid ~= 0) or (menu.fleetunitinfo.buildtaskid ~= 0) then
 			menu.colors.target = Color["text_player_inactive"]

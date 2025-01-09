@@ -10853,7 +10853,7 @@ function menu.getLoadoutSummary(upgradeplan, crew, repairplan, paintmodware)
 	end
 
 	-- Paint mod
-	if paintmodware and (not menu.modwaresByWare[paintmodware].isdefault) then
+	if paintmodware and menu.modwaresByWare[paintmodware] and (not menu.modwaresByWare[paintmodware].isdefault) then
 		summary = summary .. "\n" .. ReadText(1026, 8030) .. ReadText(1001, 120) .. " " .. GetWareData(paintmodware, "name")
 	end
 

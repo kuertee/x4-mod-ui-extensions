@@ -193,6 +193,7 @@ ffi.cdef[[
 	uint32_t GetSoundDevices(const char** result, uint32_t resultlen);
 	bool GetSpeakTargetNameOption(void);
 	const char* GetSSROption2(void);
+	float GetStardustIntensityOption(void);
 	const char* GetStartmenuBackgroundOption(void);
 	uint32_t GetStartmenuBackgrounds(StartmenuBackgroundInfo* result, uint32_t resultlen);
 	const char* GetStartmenuParam(void);
@@ -339,6 +340,7 @@ ffi.cdef[[
 	void SetSignalLeakIndicatorOption(bool shown);
 	void SetSpeakTargetNameOption(bool value);
 	void SetSSROption2(const char* value);
+	void SetStardustIntensityOption(float value);
 	void SetStartmenuBackgroundOption(const char* value);
 	void SetTextureQualityOption(const char* mode);
 	void SetThirdPersonFlightOption(bool value);
@@ -351,6 +353,7 @@ ffi.cdef[[
 	void SetUIScaleFactor(const float scale);
 	void SetUpscalingOption(const char* mode);
 	void SetUserData(const char* name, const char* value);
+	void ShowInfoLine(const char* text, uint32_t timeout);
 	void ShowPromo(void);
 	void SkipNextStartAnimation(void);
 	void StartIntroAnimation(const char* triggername);
@@ -2246,22 +2249,29 @@ config.optionDefinitions = {
 			callback = function (value) return menu.callbackAccessibilityReducedSpeedMode(value) end,
 		},
 		[6] = {
-			id = "line",
+			id = "stardustintensity",
+			name = ReadText(1001, 12763),
+			valuetype = "slidercell",
+			value = function () return menu.valueAccessibilityStardustIntensity() end,
+			callback = function (value) return menu.callbackAccessibilityStardustIntensity(value) end,
 		},
 		[7] = {
+			id = "line",
+		},
+		[8] = {
 			id = "colorlibrary",
 			name = function () return menu.nameColorBlind() end,
 			submenu = "colorlibrary",
 		},
-		[8] = {
+		[9] = {
 			id = "inputfeedback",
 			name = ReadText(1001, 12628),
 			submenu = "inputfeedback",
 		},
-		[9] = {
+		[10] = {
 			id = "line",
 		},
-		[10] = {
+		[11] = {
 			id = "accessibility_defaults",
 			name = ReadText(1001, 8998),
 			submenu = "accessibility_defaults",
@@ -3360,7 +3370,7 @@ function menu.buttonExtensionUISecurityMode()
 	__CORE_GAMEOPTIONS_RESTORE = true
 	__CORE_GAMEOPTIONS_RESTOREINFO.optionParameter = nil
 	__CORE_GAMEOPTIONS_RESTOREINFO.history = menu.history
-	SetUISafeModeOption(not GetUISafeModeOption())
+	menu.delayedExecution = function () SetUISafeModeOption(not GetUISafeModeOption()) end
 	menu.displayInit(ReadText(1001, 409))
 end
 
@@ -4132,7 +4142,7 @@ function menu.createContextMenuUISecurity(frame)
 	-- kuertee end: prevent online funcs when protected ui mod is disabled
 
 		row[6]:createButton({  }):setText(ReadText(1001, 12731), { halign = "center" })
-		row[6].handlers.onClick = function() __CORE_DETAILMONITOR_USERQUESTION[menu.contextMenuMode] = menu.contextMenuData.saveOption; SetUISafeModeOption(false); menu.displayInit(ReadText(1001, 409)) end
+		row[6].handlers.onClick = function() menu.delayedExecution = function () __CORE_DETAILMONITOR_USERQUESTION[menu.contextMenuMode] = menu.contextMenuData.saveOption; SetUISafeModeOption(false) end; menu.displayInit(ReadText(1001, 409)) end
 
 	-- kuertee start: prevent online funcs when protected ui mod is disabled
 	end
@@ -6513,6 +6523,23 @@ function menu.valueAccessibilityReducedSpeedMode()
 	return scale
 end
 
+function menu.valueAccessibilityStardustIntensity()
+	local uivalue = C.GetStardustIntensityOption()
+	local start = math.floor(uivalue * 100)
+
+	local scale = {
+		min            = 0,
+		max            = 100,
+		start          = start,
+		step           = 1,
+		suffix         = "%",
+		exceedMaxValue = false,
+		hideMaxValue   = true,
+	}
+
+	return scale
+end
+
 function menu.valueExtensionGlobalSync()
 	local globalsync
 	local globalsynccolor = Color["text_normal"]
@@ -7976,6 +8003,13 @@ function menu.callbackAccessibilitySignalLeak()
 	C.SetSignalLeakIndicatorOption(not C.GetSignalLeakIndicatorOption())
 end
 
+function menu.callbackAccessibilityStardustIntensity(uivalue)
+	if uivalue then
+		local value = uivalue / 100
+		C.SetStardustIntensityOption(value)
+	end
+end
+
 function menu.loadGameCallback(filename, checked)
 	local playerinventory = GetPlayerInventory()
 
@@ -8006,16 +8040,18 @@ function menu.loadGameCallback(filename, checked)
 		table.insert(menu.history, 1, { optionParameter = menu.currentOption, topRow = GetTopRow(menu.optionTable), selectedOption = filename })
 		menu.displayUserQuestion(ReadText(1001, 2604) .. " - " .. ReadText(1001, 7720), function () return menu.loadGameCallback(filename, true) end, nil, nil, nil, nil, nil, ReadText(1001, 11707))
 	else
+		menu.delayedExecution = function ()
 
-		-- kuertee start: callback
-		if callbacks ["loadGameCallback_preLoadGame"] then
-			for _, callback in ipairs (callbacks ["loadGameCallback_preLoadGame"]) do
-				callback(filename)
+			-- kuertee start: callback
+			if callbacks ["loadGameCallback_preLoadGame"] then
+				for _, callback in ipairs (callbacks ["loadGameCallback_preLoadGame"]) do
+					callback(filename)
+				end
 			end
-		end
-		-- kuertee end: callback
+			-- kuertee end: callback
 
-		LoadGame(filename)
+			LoadGame(filename)
+		end
 		menu.displayInit()
 	end
 end
@@ -8222,7 +8258,7 @@ function menu.callbackGameDefaults()
 	__CORE_GAMEOPTIONS_RESTORE = true
 	__CORE_GAMEOPTIONS_RESTOREINFO.optionParameter = nil
 	__CORE_GAMEOPTIONS_RESTOREINFO.history = menu.history
-	RestoreGameOptions()
+	menu.delayedExecution = function () RestoreGameOptions() end
 	menu.displayInit(ReadText(1001, 409))
 end
 
@@ -8239,7 +8275,7 @@ function menu.callbackGameHUDScale(id, option)
 		__CORE_GAMEOPTIONS_RESTOREINFO.optionParameter = nil
 		__CORE_GAMEOPTIONS_RESTOREINFO.history = menu.history
 
-		C.SetHUDScaleOption(option)
+		menu.delayedExecution = function () C.SetHUDScaleOption(option) end
 		menu.displayInit(ReadText(1001, 409))
 	end
 end
@@ -8301,7 +8337,7 @@ function menu.callbackGameMenuWidthScaleConfirm()
 		__CORE_GAMEOPTIONS_RESTORE = true
 		__CORE_GAMEOPTIONS_RESTOREINFO.optionParameter = nil
 		__CORE_GAMEOPTIONS_RESTOREINFO.history = menu.history
-		C.SetMenuWidthScale(menu.newMenuWidthScale)
+		menu.delayedExecution = function () C.SetMenuWidthScale(menu.newMenuWidthScale) end
 		menu.displayInit(ReadText(1001, 409))
 	end
 end
@@ -8383,7 +8419,7 @@ function menu.callbackGameUIScaleConfirm()
 		__CORE_GAMEOPTIONS_RESTORE = true
 		__CORE_GAMEOPTIONS_RESTOREINFO.optionParameter = nil
 		__CORE_GAMEOPTIONS_RESTOREINFO.history = menu.history
-		C.SetUIScaleFactor(menu.newUIScale)
+		menu.delayedExecution = function () C.SetUIScaleFactor(menu.newUIScale) end
 		menu.displayInit(ReadText(1001, 409))
 	end
 end
@@ -9507,7 +9543,7 @@ function menu.displayNewGame(createAsServer, displayTimelinesScenarios, displayT
 		if #descriptiontext > 0 then
 			for linenum, descline in ipairs(descriptiontext) do
 				local row = infotable:addRow(true, { bgColor = Color["optionsmenu_cell_background"], borderBelow = false })
-				row[1]:createText(descline)
+				row[1]:createText(descline, { height = config.infoTextHeight })
 
 				hasdescription = true
 			end
@@ -10423,7 +10459,7 @@ function menu.displayMapEditor()
 
 	local row = optiontable:addRow(true, {  })
 	row[2]:setColSpan(2):createButton({ active = mapeditormacro ~= "" }):setText(ReadText(1001, 11782), { halign = "center" })
-	row[2].handlers.onClick = function () NewGame(menu.mapEditorSettings.gamestartid); menu.displayInit() end
+	row[2].handlers.onClick = function () menu.delayedExecution = function () NewGame(menu.mapEditorSettings.gamestartid) end; menu.displayInit() end
 
 	optiontable:addEmptyRow()
 
@@ -12886,13 +12922,15 @@ function menu.displayInit(text)
 	local ftable = menu.optionsFrame:addTable(1, { tabOrder = 0, width = math.floor(Helper.viewWidth / 2), x = math.floor(Helper.viewWidth / 4), y = math.floor(Helper.viewHeight / 2) })
 
 	local row = ftable:addRow(false, { fixed = true })
-	row[1]:createText(text or ReadText(1001, 7230), { halign = "center", font = config.fontBold, fontsize = config.headerFontSize, x = 0, y = 0 })
+	row[1]:createText(" ", { halign = "center", font = config.fontBold, fontsize = config.headerFontSize, x = 0, y = 0 })
 
 	ftable.properties.y = math.floor((Helper.viewHeight - ftable:getVisibleHeight()) / 2)
 
 	menu.optionsFrame:display()
 
 	menu.cleanup()
+
+	C.ShowInfoLine(text or ReadText(1001, 7230), 10)
 end
 
 function menu.displayEmptyMenu(cleanup)
@@ -13095,6 +13133,17 @@ function menu.onUpdate()
 		end
 	end
 	-- kuertee end: callback
+
+	if menu.delayedExecution then
+		if menu.hasDelayedExecution then
+			menu.delayedExecution()
+			menu.delayedExecution = nil
+			menu.hasDelayedExecution = nil
+			return
+		else
+			menu.hasDelayedExecution = true
+		end
+	end
 
 	if menu.animationDelay ~= nil then
 		if (not menu.animationDelay[3]) and (curtime > menu.animationDelay[1] - menu.animationDelay[4]) then
@@ -13422,7 +13471,7 @@ function menu.newGameCallback(option, checked)
 				menu.displayUserQuestion(ReadText(1001, 2603) .. " - " .. ReadText(1001, 7720), function () return menu.newGameCallback(option, true) end, nil, nil, nil, nil, nil, ReadText(1001, 11707))
 			else
 				if menu.currentOption == "multiplayer_server" then
-					C.NewMultiplayerGame(option.id)
+					menu.delayedExecution = function () C.NewMultiplayerGame(option.id) end
 				elseif option.tutorial then
 					local value = 1
 					if menu.isStartmenu or C.IsTutorial() then
@@ -13431,11 +13480,24 @@ function menu.newGameCallback(option, checked)
 						value = 2
 					end
 					if value == 1 then
-						Helper.closeMenuAndOpenNewMenu(menu, "UserQuestionMenu", { 0, 0, "starttutorial", { option.id, 1 } })
-						menu.cleanup()
+						menu.delayedExecution = function () Helper.closeMenuAndOpenNewMenu(menu, "UserQuestionMenu", { 0, 0, "starttutorial", { option.id, 1 } }); menu.cleanup() end
 					else
-						C.SetUserData("tutorial_started_from", tostring(value))
+						menu.delayedExecution = function ()
+							C.SetUserData("tutorial_started_from", tostring(value));
 
+							-- kuertee start: callback
+							if callbacks ["newGameCallback_preNewGame"] then
+								for _, callback in ipairs (callbacks ["newGameCallback_preNewGame"]) do
+									callback(option.id)
+								end
+							end
+							-- kuertee end: callback
+
+							NewGame(option.id)
+						end
+					end
+				else
+					menu.delayedExecution = function ()
 						-- kuertee start: callback
 						if callbacks ["newGameCallback_preNewGame"] then
 							for _, callback in ipairs (callbacks ["newGameCallback_preNewGame"]) do
@@ -13446,16 +13508,6 @@ function menu.newGameCallback(option, checked)
 
 						NewGame(option.id)
 					end
-				else
-					-- kuertee start: callback
-					if callbacks ["newGameCallback_preNewGame"] then
-						for _, callback in ipairs (callbacks ["newGameCallback_preNewGame"]) do
-							callback(option.id)
-						end
-					end
-					-- kuertee end: callback
-
-					NewGame(option.id)
 				end
 				menu.displayInit()
 			end
@@ -13489,7 +13541,8 @@ function menu.startMapEditorWithCopy()
 	params[0].value = Helper.ffiNewString(menu.mapEditorSettings.cluster)
 	params[1].key = Helper.ffiNewString("sectors")
 	params[1].value = Helper.ffiNewString(sectors)
-	C.NewGame(menu.mapEditorSettings.gamestartid, numparams, params)
+
+	menu.delayedExecution = function () C.NewGame(menu.mapEditorSettings.gamestartid, numparams, params) end
 	menu.displayInit()
 end
 

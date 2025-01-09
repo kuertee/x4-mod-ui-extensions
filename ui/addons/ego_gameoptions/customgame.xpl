@@ -327,6 +327,7 @@ ffi.cdef[[
 	void SetMacroMapLocalRingHighways(UniverseID holomapid, bool value);
 	void SetMacroMapSelection(UniverseID holomapid, bool selectplayer, const char* propertyentryid);
 	void SetMapRelativeMousePosition(UniverseID holomapid, bool valid, float x, float y);
+	void ShowInfoLine(const char* text, uint32_t timeout);
 	void ShowUniverseMacroMap2(UniverseID holomapid, const char* macroname, const char* startsectormacroname, UIPosRot sectoroffset, bool setoffset, bool showzone, const char* gamestartid);
 	void StartPanMap(UniverseID holomapid);
 	bool StopPanMap(UniverseID holomapid);
@@ -797,19 +798,21 @@ end
 
 function menu.buttonNewGame()
 	menu.closeContextMenu()
+	local customgamestart = menu.customgamestart
 	if menu.multiplayer then
-		C.NewMultiplayerGame(menu.customgamestart)
+		menu.delayedExecution = function () C.NewMultiplayerGame(customgamestart) end
 	else
-
-		-- kuertee start: callback
-		if callbacks ["buttonNewGame_preNewGame"] then
-			for _, callback in ipairs (callbacks ["buttonNewGame_preNewGame"]) do
-				callback(menu.customgamestart)
+		menu.delayedExecution = function ()
+			-- kuertee start: callback
+			if callbacks ["buttonNewGame_preNewGame"] then
+				for _, callback in ipairs (callbacks ["buttonNewGame_preNewGame"]) do
+					callback(menu.customgamestart)
+				end
 			end
-		end
-		-- kuertee end: callback
+			-- kuertee end: callback
 
-		NewGame(menu.customgamestart)
+			NewGame(customgamestart)
+		end
 	end
 	menu.displayInit()
 end
@@ -5143,13 +5146,15 @@ function menu.displayInit()
 	local ftable = menu.mainFrame:addTable(1, { tabOrder = 0, width = math.floor(Helper.viewWidth / 2), x = math.floor(Helper.viewWidth / 4), y = math.floor(Helper.viewHeight / 2) })
 
 	local row = ftable:addRow(false, { fixed = true })
-	row[1]:createText(ReadText(1001, 7230), { halign = "center", font = config.fontBold, fontsize = config.headerFontSize, x = 0, y = 0 })
+	row[1]:createText(" ", { halign = "center", font = config.fontBold, fontsize = config.headerFontSize, x = 0, y = 0 })
 
 	ftable.properties.y = math.floor((Helper.viewHeight - ftable:getVisibleHeight()) / 2)
 
 	menu.mainFrame:display()
 
 	menu.cleanup()
+
+	C.ShowInfoLine(ReadText(1001, 7230), 10)
 end
 
 function menu.refreshMenu()
@@ -5222,6 +5227,17 @@ end
 menu.updateInterval = 0.01
 function menu.onUpdate()
 	local curtime = getElapsedTime()
+	if menu.delayedExecution then
+		if menu.hasDelayedExecution then
+			menu.delayedExecution()
+			menu.delayedExecution = nil
+			menu.hasDelayedExecution = nil
+			return
+		else
+			menu.hasDelayedExecution = true
+		end
+	end
+
 	if menu.refresh and (menu.refresh < curtime) then
 		menu.refreshMenu()
 		menu.refresh = nil
