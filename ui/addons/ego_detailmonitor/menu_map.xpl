@@ -15154,6 +15154,28 @@ function menu.setupLoadoutInfoSubmenuRows(mode, inputtable, inputobject, instanc
 			end
 		end
 	end
+
+	-- start: aegs call-back
+		if callbacks ["map_loadoutinfo_double_insert"] then
+			local state,title_text,label_text_1,label_text_2,subsystems
+			for _, callback in ipairs (callbacks ["map_loadoutinfo_double_insert"]) do
+				state,title_text,label_text_1,label_text_2,subsystems = callback (GetComponentData(inputobject, "macro"))
+				if state then
+					local row = inputtable:addRow(false, { bgColor = Color["row_title_background"] })
+					row[1]:setColSpan(13):createText(title_text, Helper.headerRowCenteredProperties)
+					for _, subsystem in ipairs(subsystems) do
+						local row = inputtable:addRow(false, { interactive = false })
+						row[1]:setColSpan(13):createText(subsystem.name, {halign = "center"})
+						if subsystem.icon then
+							local row = inputtable:addRow(false, { interactive = false })
+							row[2]:setColSpan(11):createIcon(subsystem.icon, {height = config.mapRowHeight * 10, mouseOverText = subsystem.intro,halign = "center"})
+						end
+					end
+				end
+			end
+		end
+	-- end: aegs call-back
+
 	if mode == "ship" then
 		-- countermeasures
 		local numcountermeasuretypes = C.GetNumAllCountermeasures(inputobject)
