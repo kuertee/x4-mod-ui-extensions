@@ -10747,6 +10747,19 @@ function menu.createOrderQueue(frame, mode, instance)
 					mouseovertext = ReadText(1026, 8606)
 				end
 				table.insert(asssignmentOptions, { id = "assist", text = ReadText(20208, 41201), icon = "", displayremoveoption = false, active = active, mouseovertext = mouseovertext })
+				
+				-- start: aegs call-back
+				if callbacks ["map_ship_assignments_insert"] then
+					local data_o
+					for _, callback in ipairs (callbacks ["map_ship_assignments_insert"]) do
+						data_o = callback (GetComponentData(infoTableData.commander, "macro"),primarypurpose)
+						if data_o then
+							table.insert(asssignmentOptions, data_o)
+						end
+					end
+				end
+				-- end: aegs call-back
+
 				-- trade
 				if shiptype == "resupplier" then
 					table.insert(asssignmentOptions, { id = "trade", text = ReadText(20208, 40101), icon = "", displayremoveoption = false })
@@ -12586,6 +12599,19 @@ function menu.setupInfoSubmenuRows(mode, inputtable, inputobject, instance)
 		end
 
 		locrowdata = { false, ReadText(1001, 9051) .. ReadText(1001, 120), Helper.unlockInfo(nameinfo, (function() return tostring(GetComponentData(object64, "shiptypename") or 0, true, 0, true) end)) }	-- Ship Type
+		
+		-- start: aegs call-back
+		if callbacks ["map_shipInformation_shiptypename_override"] then
+			local shiptypename_override
+			for _, callback in ipairs (callbacks ["map_shipInformation_shiptypename_override"]) do
+				shiptypename_override = callback (GetComponentData(object64, "macro"))
+				if shiptypename_override then
+					locrowdata = { false, ReadText(1001, 9051) .. ReadText(1001, 120), Helper.unlockInfo(nameinfo, (function() return tostring(shiptypename_override or 0, true, 0, true) end)) }
+				end
+			end
+		end
+		-- end: aegs call-back
+
 		row = menu.addInfoSubmenuRow(instance, inputtable, row, locrowdata, false, false, false, 1, indentsize)
 
 		local hull_max = Helper.unlockInfo(defenceinfo_low, ConvertIntegerString(Helper.round(GetComponentData(object64, "hullmax")), true, 4, true, true, true))
@@ -15029,6 +15055,17 @@ function menu.setupLoadoutInfoSubmenuRows(mode, inputtable, inputobject, instanc
 								if (shiptype == "carrier") and isfleetcommander then
 									table.insert(subordinateassignments, { id = "positiondefence", text = ReadText(20208, 41501), icon = "", displayremoveoption = false })
 								end
+								-- start: aegs call-back
+								if callbacks ["map_ship_subordinateassignments_insert"] then
+									local ship_assignment
+									for _, callback in ipairs (callbacks ["map_ship_subordinateassignments_insert"]) do
+										ship_assignment = callback (GetComponentData(inputobject, "macro"),(groups[i].numassignableminingships == #groups[i].subordinates) and ((not usedassignments["mining"]) or (usedassignments["mining"] == i)),(groups[i].numassignabletugships == #groups[i].subordinates) and ((not usedassignments["salvage"]) or (usedassignments["salvage"] == i)))
+										if ship_assignment then
+											table.insert(subordinateassignments, ship_assignment)
+										end
+									end
+								end
+								-- end: aegs call-back
 								table.insert(subordinateassignments, { id = "attack", text = ReadText(20208, 40901), icon = "", displayremoveoption = false })
 								table.insert(subordinateassignments, { id = "interception", text = ReadText(20208, 41001), icon = "", displayremoveoption = false })
 								table.insert(subordinateassignments, { id = "bombardment", text = ReadText(20208, 41601), icon = "", displayremoveoption = false })
