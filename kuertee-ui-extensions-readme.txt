@@ -1,13 +1,12 @@
 UI Extensions and HUD
 https://www.nexusmods.com/x4foundations/mods/552
 Code: https://github.com/kuertee/x4-mod-ui-extensions
-by kuertee. Contributors: Erixon, Forleyor, Mycu, Runekn, AlexandreTK.
+by kuertee. Contributors: Erixon, Forleyor, Mycu, Runekn, AlexandreTK, IALuir.
 
 Updates
 =======
-v7.1.17, 27 Dec 2024:
--New: French language file. Thanks, Calvitix!
--Bug-fix: Multi-rename function was sometimes still adding some objects (e.g. the sector) that shouldn't be renamed in the list of objects to rename.
+v7.1.18, 12 Jan 2025:
+-New: UI Call-backs for the AEGS Faction mod by IALuir.
 
 Instructions for players
 ========================
@@ -198,6 +197,10 @@ French localisation by Calvitix.
 
 History
 =======
+v7.1.17, 27 Dec 2024:
+-New: French language file. Thanks, Calvitix!
+-Bug-fix: Multi-rename function was sometimes still adding some objects (e.g. the sector) that shouldn't be renamed in the list of objects to rename.
+
 v7.1.15, 11 Nov 2024:
 -Bug-fix: The multi-rename feature was buggy. e.g. preventing the single-rename function from working. In this version, the right-clicked object needs to be in the selected list for the multi-rename button to be active.
 
