@@ -4839,6 +4839,19 @@ function menu.insertLuaAction(actiontype, istobedisplayed)
 				if C.GetDefaultOrder(buf, menu.componentSlot.component) then
 					menu.insertAssignSubActions("selected_assignments_assist", "assist", menu.buttonAssignCommander, groups, isstation, true)
 				end
+
+				-- start: aegs call-back
+				if callbacks ["map_rightMenu_shipassignments_insert_01"] then
+					local state,main_o,assignment_o
+					for _, callback in ipairs (callbacks ["map_rightMenu_shipassignments_insert_01"]) do
+						state,main_o,assignment_o = callback (GetComponentData(convertedComponent, "macro"),menu.numassignableminingships,menu.numassignabletugs)
+						if state then
+							menu.insertAssignSubActions(main_o, assignment_o, menu.buttonAssignCommander, groups, isstation, true)
+						end
+					end
+				end
+				-- end: aegs call-back
+
 				if shiptype == "resupplier" then
 					menu.insertAssignSubActions("selected_assignments_trade", "trade", menu.buttonAssignCommander, groups, isstation, true)
 				end
@@ -4848,6 +4861,19 @@ function menu.insertLuaAction(actiontype, istobedisplayed)
 		if (#menu.selectedplayerships > 0) and menu.possibleorders["Attack"] and (not isplayerownedtarget) and C.IsComponentClass(menu.componentSlot.component, "destructible") then
 			menu.insertInteractionContent("selected_orders", { type = actiontype, text = menu.orderIconText("Attack") .. ReadText(1001, 7815), helpOverlayID = "interactmenu_attack", helpOverlayText = " ", helpOverlayHighlightOnly = true, script = function () return menu.buttonAttack(false) end, orderid = "Attack" })
 		end
+
+		-- start: aegs call-back
+		if callbacks ["map_rightMenu_shipOverview_insert"] then
+			local category_o,text_o
+			for _, callback in ipairs (callbacks ["map_rightMenu_shipOverview_insert"]) do
+				category_o,text_o = callback (GetComponentData(convertedComponent, "macro"))
+				if category_o then
+					menu.insertInteractionContent("main", { type = "logicalstationoverview", text = text_o, helpOverlayID = "interactmenu_logicalstationoverview", helpOverlayText = " ", helpOverlayHighlightOnly = true, script = menu.buttonStationOverview })
+				end
+			end
+		end
+		-- end: aegs call-back
+
 	elseif actiontype == "attackinrange" then
 		if menu.offsetcomponent and (menu.offsetcomponent ~= 0) then
 			if #menu.selectedplayerships > 0 and menu.possibleorders["AttackInRange"] then
@@ -5702,6 +5728,19 @@ function menu.insertLuaAction(actiontype, istobedisplayed)
 							menu.insertAssignSubActions("main_assignments_assist", "assist", menu.buttonChangeAssignment, groups, isstation, true, currentgroup)
 						end
 					end
+
+					-- start: aegs call-back
+					if callbacks ["map_rightMenu_shipassignments_insert_02"] then
+						local state,main_o,assignment_o,purpose_o
+						for _, callback in ipairs (callbacks ["map_rightMenu_shipassignments_insert_02"]) do
+							state,main_o,assignment_o,purpose_o = callback (GetComponentData(commander, "macro"))
+							if state and purpose == purpose_o then
+								menu.insertAssignSubActions(main_o, assignment_o, menu.buttonChangeAssignment, groups, isstation, true, currentgroup)
+							end
+						end
+					end
+					-- end: aegs call-back
+
 					if commandershiptype == "resupplier" then
 						menu.insertAssignSubActions("main_assignments_trade", "trade", menu.buttonChangeAssignment, groups, isstation, true, currentgroup)
 					end
@@ -5775,6 +5814,19 @@ function menu.insertLuaAction(actiontype, istobedisplayed)
 					if C.GetDefaultOrder(buf, menu.componentSlot.component) then
 						menu.insertAssignSubActions("selected_change_assignments_assist", "assist", menu.buttonChangeAssignment, groups, isstation, true)
 					end
+
+					-- start: aegs call-back
+					if callbacks ["map_rightMenu_shipassignments_insert_03"] then
+						local state,main_o,assignment_o
+						for _, callback in ipairs (callbacks ["map_rightMenu_shipassignments_insert_03"]) do
+							state,main_o,assignment_o = callback (GetComponentData(convertedComponent, "macro"),allmining,alltugs)
+							if state then
+								menu.insertAssignSubActions(main_o, assignment_o, menu.buttonChangeAssignment, groups, isstation, true)
+							end
+						end
+					end
+					-- end: aegs call-back
+
 					if shiptype == "resupplier" then
 						menu.insertAssignSubActions("selected_change_assignments_trade", "trade", menu.buttonChangeAssignment, groups, isstation, true)
 					end
@@ -6275,6 +6327,19 @@ function menu.insertLuaAction(actiontype, istobedisplayed)
 		if C.IsComponentClass(menu.componentSlot.component, "container") then
 			Helper.ffiVLA(dockedships, "UniverseID", C.GetNumDockedShips, C.GetDockedShips, menu.componentSlot.component, "player")
 		end
+
+		-- start: aegs call-back
+		if callbacks ["map_rightMenu_shipBuilding_insert"] then
+			local state,activate_o,text_o,mouseovertext_o
+			for _, callback in ipairs (callbacks ["map_rightMenu_shipBuilding_insert"]) do
+				state,activate_o,text_o,mouseovertext_o = callback (shiptrader,isdock,GetComponentData(convertedComponent, "macro"),doessellshipstoplayer,isplayerownedtarget)
+				if state then
+					menu.insertInteractionContent("main", { type = actiontype, text = text_o, helpOverlayID = "interactmenu_buildship", helpOverlayText = " ", helpOverlayHighlightOnly = true, script = function () return menu.buttonShipConfig("purchase") end, active = activate_o, mouseOverText = mouseovertext_o })
+				end
+			end
+		end
+		-- end: aegs call-back
+
 		if isdock and (C.IsComponentClass(menu.componentSlot.component, "station") or issupplyship) then
 			local active = false
 			for _, ship in ipairs(dockedships) do
