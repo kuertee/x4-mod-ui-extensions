@@ -3750,7 +3750,7 @@ function menu.displayPlan(frame)
 
 		local row = statustable:addRow(true, {  })
 		row[1]:setColSpan(1)
-		row[2]:createButton({ helpOverlayID = "stationconfig_closemenu", helpOverlayText = " ",  helpOverlayHighlightOnly = true }):setText(ReadText(1001, 8035), { halign = "center" })
+		row[2]:createButton({ helpOverlayID = "menu_close", helpOverlayText = " ",  helpOverlayHighlightOnly = true }):setText(ReadText(1001, 8035), { halign = "center" })
 		row[2].handlers.onClick = function () menu.modulesMode = nil; return menu.onCloseElement("back") end
 
 		statustable.properties.y = Helper.viewHeight - statustable:getFullHeight() - Helper.frameBorder

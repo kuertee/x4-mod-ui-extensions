@@ -912,6 +912,24 @@ function onUpdate()
 	-- kuertee end: callback
 end
 
+function Helper.addDelayedOneTimeCallbackOnUpdate(callback, blockinput, delaytime)
+	if blockinput then
+		C.SetAllUIInputIgnored(true)
+	end
+	table.insert(onUpdateOneTimeCallbacks,
+		function ()
+			if getElapsedTime() > delaytime then
+				callback()
+				if blockinput then
+					C.SetAllUIInputIgnored(false)
+				end
+			else
+				Helper.addDelayedOneTimeCallbackOnUpdate(callback, blockinput, delaytime)
+			end
+		end
+	)
+end
+
 local function createCustomHooks(menu)
 	menu.rowChanged = function(uitable, row, modified, input, source)
 							Helper.currentTableRow[uitable] = row

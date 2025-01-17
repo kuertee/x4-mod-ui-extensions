@@ -7061,7 +7061,7 @@ function menu.extendSectionAndRefresh(rowdata)
 	menu.updateMapAndInfoFrame()
 end
 
-function menu.getContainerNameAndColors(container, iteration, issquadleader, showScanLevel)
+function menu.getContainerNameAndColors(container, iteration, issquadleader, showScanLevel, showbehaviourinspection)
 	local convertedContainer = ConvertIDTo64Bit(container)
 	local isplayer, revealpercent, name, faction, icon, ismissiontarget, isonlineobject, isenemy, ishostile = GetComponentData(container, "isplayerowned", "revealpercent", "name", "owner", "icon", "ismissiontarget", "isonlineobject", "isenemy", "ishostile")
 	local unlocked = IsInfoUnlockedForPlayer(container, "name")
@@ -7146,6 +7146,9 @@ function menu.getContainerNameAndColors(container, iteration, issquadleader, sho
 				name = string.format("\027[%s] %s", iconid, name)
 			end
 		end
+	end
+	if showbehaviourinspection and (convertedContainer == menu.behaviourInspectionComponent) then
+		name = ColorText["behaviour_inspection_text"] .. "\27[menu_behaviourinspection]\27X " .. name
 	end
 	local mouseover = "" --name
 	for i = 1, iteration do
@@ -8712,7 +8715,7 @@ function menu.createPropertyRow(instance, ftable, component, iteration, commande
 
 		local isstation = C.IsRealComponentClass(convertedComponent, "station")
 		local isdoublerow = (iteration == 0 and (isstation or #subordinates > 0))
-		local name, color, bgcolor, font, mouseover, factioncolor = menu.getContainerNameAndColors(component, iteration, isdoublerow, false)
+		local name, color, bgcolor, font, mouseover, factioncolor = menu.getContainerNameAndColors(component, iteration, isdoublerow, false, true)
 		local alertString = ""
 		local alertMouseOver = ""
 		if menu.getFilterOption("layer_other", false) then
@@ -18715,6 +18718,7 @@ function menu.cheatAllResearch()
 		"research_mod_weapon_mk3",
 		"research_warp_hq_01",
 		"research_warp_hq_02",
+		"research_diplomacy_network",
 	}
 
 	for _, research in ipairs(researchwares) do

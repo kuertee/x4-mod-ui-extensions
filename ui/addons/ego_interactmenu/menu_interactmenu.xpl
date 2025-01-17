@@ -3446,12 +3446,43 @@ function menu.draw()
 		end
 	end
 
+	local xleft = frame.properties.x - Helper.viewWidth / 2
+	local ytop = -frame.properties.y + Helper.viewHeight / 2
+	local xright = xleft + width
+	local ybottom = ytop - frameheight
+
 	menu.mouseOutBox = {
-		x1 =   frame.properties.x -  Helper.viewWidth / 2                                      - config.mouseOutRange - mouseOutBoxExtension.left,
-		x2 =   frame.properties.x -  Helper.viewWidth / 2 + width                              + config.mouseOutRange + mouseOutBoxExtension.right,
-		y1 = - frame.properties.y + Helper.viewHeight / 2                                      + config.mouseOutRange + mouseOutBoxExtension.top,
-		y2 = - frame.properties.y + Helper.viewHeight / 2 - frameheight                        - config.mouseOutRange - mouseOutBoxExtension.bottom,
+		x1 = xleft   - config.mouseOutRange - mouseOutBoxExtension.left,
+		x2 = xright  + config.mouseOutRange + mouseOutBoxExtension.right,
+		y1 = ytop    + config.mouseOutRange + mouseOutBoxExtension.top,
+		y2 = ybottom - config.mouseOutRange - mouseOutBoxExtension.bottom,
 	}
+
+	if GetControllerInfo() == "gamepad" and menu.mode ~= "shipconsole" then
+		-- Prepare emulated mouse cursor when using gamepad:
+		-- Find a good default cursor position, even if emulated mouse cursor is currently not visible.
+		-- The menu auto-closes when the cursor is too far away from the menu, so make sure that it will be located within the menu frame.
+		local posx, posy = GetLocalMousePosition()
+		if posx and posy then
+			-- Cursor is already on screen: Keep unchanged if possible, but move it inside the frame if it is outside
+			if posx < xleft then
+				posx = xleft
+			elseif posx > xright then
+				posx = xright
+			end
+			if posy > ytop then
+				posy = ytop
+			elseif posy < ybottom then
+				posy = ybottom
+			end
+		else
+			-- No mouse position available: Place default cursor position at the top of the frame (horizontally centered) for when the cursor becomes visible
+			C.DeactivateMouseEmulation()		-- just to be safe (mouse emulation is most likely already disabled anyway)
+			posx = (xleft + xright) / 2
+			posy = ytop - Helper.headerRow1Height
+		end
+		C.SetMouseCursorPosition(posx, -posy)
+	end
 
 	frame:display()
 end
@@ -6605,7 +6636,7 @@ function menu.prepareActions()
 			local entry = {}
 			entry.id = action.id
 			entry.text = action.text
-			entry.active = action.ispossible
+			entry.active = action.active
 			local actiontype = action.actiontype
 			if (not menu.shown) and (actiontype == "containertrade") then
 				entry.script = function () return menu.buttonTrade(false) end
@@ -6953,7 +6984,7 @@ function menu.prepareActions()
 
 			if menu.componentSlot.component ~= 0 then
 				local hasintersectorgroup = C.HasSubordinateAssignment(convertedComponent, "positiondefence")
-				if (#menu.selectedplayerships == 0) and ((shiptype == "carrier") or (isstation and not hasintersectorgroup and C.CanClaimOwnership(convertedComponent))) and isfleetcommander then
+				if (#menu.selectedplayerships == 0) and ((commandershiptype == "carrier") or (isstation and not hasintersectorgroup and C.CanClaimOwnership(convertedComponent))) and isfleetcommander then
 					local isintersectorgroup = ffi.string(C.GetSubordinateGroupAssignment(menu.componentSlot.component, menu.subordinategroup)) == "positiondefence"
 					menu.insertInteractionContent("main", { text = isintersectorgroup and ReadText(1001, 11137) or ReadText(1001, 11136), script = function () return menu.buttonSubordinateGroupInterSectorDefence(menu.subordinategroup, isintersectorgroup) end })
 				end

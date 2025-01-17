@@ -800,19 +800,26 @@ function menu.buttonNewGame()
 	menu.closeContextMenu()
 	local customgamestart = menu.customgamestart
 	if menu.multiplayer then
-		menu.delayedExecution = function () C.NewMultiplayerGame(customgamestart) end
+		Helper.addDelayedOneTimeCallbackOnUpdate(function () C.NewMultiplayerGame(customgamestart) end, true, getElapsedTime() + 0.1)
 	else
-		menu.delayedExecution = function ()
-			-- kuertee start: callback
-			if callbacks ["buttonNewGame_preNewGame"] then
-				for _, callback in ipairs (callbacks ["buttonNewGame_preNewGame"]) do
-					callback(menu.customgamestart)
-				end
-			end
-			-- kuertee end: callback
 
-			NewGame(customgamestart)
-		end
+		-- kuertee start: callback
+		-- Helper.addDelayedOneTimeCallbackOnUpdate(function () NewGame(customgamestart) end, true, getElapsedTime() + 0.1)
+		Helper.addDelayedOneTimeCallbackOnUpdate(
+			function ()
+				-- kuertee start: callback
+				if callbacks ["buttonNewGame_preNewGame"] then
+					for _, callback in ipairs (callbacks ["buttonNewGame_preNewGame"]) do
+						callback(menu.customgamestart)
+					end
+				end
+				-- kuertee end: callback
+
+				NewGame(customgamestart)
+			end,
+		true, getElapsedTime() + 0.1)
+		-- kuertee end: callback
+
 	end
 	menu.displayInit()
 end
@@ -5227,17 +5234,6 @@ end
 menu.updateInterval = 0.01
 function menu.onUpdate()
 	local curtime = getElapsedTime()
-	if menu.delayedExecution then
-		if menu.hasDelayedExecution then
-			menu.delayedExecution()
-			menu.delayedExecution = nil
-			menu.hasDelayedExecution = nil
-			return
-		else
-			menu.hasDelayedExecution = true
-		end
-	end
-
 	if menu.refresh and (menu.refresh < curtime) then
 		menu.refreshMenu()
 		menu.refresh = nil

@@ -208,6 +208,7 @@ ffi.cdef[[
 	FloatRange GetUIScaleFactorRange(void);
 	const char* GetUpscalingOption(bool useconfig);
 	const char* GetUserData(const char* name);
+	bool GetVelocityIndicatorOption(void);
 	uint32_t GetVentureDLCStatus(void);
 	bool GetVisitorNamesShownOption(void);
 	int32_t GetVolumetricFogOption(void);
@@ -345,6 +346,7 @@ ffi.cdef[[
 	void SetTextureQualityOption(const char* mode);
 	void SetThirdPersonFlightOption(bool value);
 	void SetThrottleBidirectional(bool newsetting);
+	void SetVelocityIndicatorOption(bool setting);
 	void SetVisitorNamesShownOption(bool setting);
 	void SetVRVivePointerHand(int hand);
 	void SetVolumetricFogOption(int32_t setting);
@@ -2174,10 +2176,16 @@ config.optionDefinitions = {
 			display = function () return menu.isStartmenu end,
 		},
 		[32] = {
-			id = "header",
-			name = ReadText(1001, 4860),
+			id = "velocityindicator",
+			name = ReadText(1001, 12773),
+			valuetype = "button",
+			value = function () return C.GetVelocityIndicatorOption() and ReadText(1001, 2648) or ReadText(1001, 2649) end,
+			callback = function () return menu.callbackGameVelocityIndicator() end,
 		},
 		[33] = {
+			name = ReadText(1001, 4860),
+		},
+		[34] = {
 			id = "thirdpersonflight",
 			name = ReadText(1001, 11785),
 			valuetype = "dropdown",
@@ -2185,25 +2193,25 @@ config.optionDefinitions = {
 			callback = function (id, option) return menu.callbackThirdPersonFlight(id, option) end,
 			display = function () return false end, -- hidden due to not being used for the moment
 		},
-		[34] = {
+		[35] = {
 			id = "cockpitcamera",
 			name = ReadText(1001, 7289),
 			valuetype = "slidercell",
 			value = function () return menu.valueGameCockpitCamera() end,
 			callback = function (value) return menu.callbackGameCockpitCamera(value) end,
 		},
-		[35] = {
+		[36] = {
 			id = "autozoomreset",
 			name = ReadText(1001, 12702),
 			valuetype = "button",
 			value = function () return C.GetAutoZoomResetOption() and ReadText(1001, 2648) or ReadText(1001, 2649) end,
 			callback = function () return menu.callbackGameAutoZoomReset() end,
 		},
-		[36] = {
+		[37] = {
 			id = "header",
 			name = ReadText(1001, 2661),
 		},
-		[37] = {
+		[38] = {
 			id = "game_defaults",
 			name = ReadText(1001, 8984),
 			submenu = "game_defaults",
@@ -2720,6 +2728,20 @@ config.optionDefinitions = {
 			value = function () return menu.valueInputInvert(24) end,
 			callback = function () return menu.callbackInputInvert(24, "invert_controllermouse_y") end,
 		},
+		[16] = {
+			id = "invert_compassmenu_x",
+			name = ReadText(config.input.controltextpage.ranges, 36),
+			valuetype = "button",
+			value = function () return menu.valueInputInvert(36) end,
+			callback = function () return menu.callbackInputInvert(36, "invert_compassmenu_x") end,
+		},
+		[17] = {
+			id = "invert_compassmenu_y",
+			name = ReadText(config.input.controltextpage.ranges, 37),
+			valuetype = "button",
+			value = function () return menu.valueInputInvert(37) end,
+			callback = function () return menu.callbackInputInvert(37, "invert_compassmenu_y") end,
+		},
 	},
 	["joystick_sensitivity"] = {
 		name = ReadText(1001, 2674) .. ReadText(1001, 120) .. " " .. ReadText(1001, 2684),
@@ -2939,8 +2961,8 @@ function menu.loadSaveCallback(_, filename)
 	end
 	C.SkipNextStartAnimation()
 	menu.delayedLoadGame = filename
+	Helper.addDelayedOneTimeCallbackOnUpdate(function () LoadGame(filename) end, true, getElapsedTime() + 0.1)
 	menu.displayInit()
-	SetScript("onUpdate", function () if menu.delayedLoadGame then LoadGame(menu.delayedLoadGame); menu.delayedLoadGame = nil end end)
 end
 
 function menu.serverDiscoveredCallback(_, server)
@@ -3370,7 +3392,7 @@ function menu.buttonExtensionUISecurityMode()
 	__CORE_GAMEOPTIONS_RESTORE = true
 	__CORE_GAMEOPTIONS_RESTOREINFO.optionParameter = nil
 	__CORE_GAMEOPTIONS_RESTOREINFO.history = menu.history
-	menu.delayedExecution = function () SetUISafeModeOption(not GetUISafeModeOption()) end
+	Helper.addDelayedOneTimeCallbackOnUpdate(function () SetUISafeModeOption(not GetUISafeModeOption()) end, true, getElapsedTime() + 0.1)
 	menu.displayInit(ReadText(1001, 409))
 end
 
@@ -4142,7 +4164,7 @@ function menu.createContextMenuUISecurity(frame)
 	-- kuertee end: prevent online funcs when protected ui mod is disabled
 
 		row[6]:createButton({  }):setText(ReadText(1001, 12731), { halign = "center" })
-		row[6].handlers.onClick = function() menu.delayedExecution = function () __CORE_DETAILMONITOR_USERQUESTION[menu.contextMenuMode] = menu.contextMenuData.saveOption; SetUISafeModeOption(false) end; menu.displayInit(ReadText(1001, 409)) end
+		row[6].handlers.onClick = function() Helper.addDelayedOneTimeCallbackOnUpdate(function () __CORE_DETAILMONITOR_USERQUESTION[menu.contextMenuMode] = menu.contextMenuData.saveOption; SetUISafeModeOption(false) end, true, getElapsedTime() + 0.1); menu.displayInit(ReadText(1001, 409)) end
 
 	-- kuertee start: prevent online funcs when protected ui mod is disabled
 	end
@@ -8040,18 +8062,20 @@ function menu.loadGameCallback(filename, checked)
 		table.insert(menu.history, 1, { optionParameter = menu.currentOption, topRow = GetTopRow(menu.optionTable), selectedOption = filename })
 		menu.displayUserQuestion(ReadText(1001, 2604) .. " - " .. ReadText(1001, 7720), function () return menu.loadGameCallback(filename, true) end, nil, nil, nil, nil, nil, ReadText(1001, 11707))
 	else
-		menu.delayedExecution = function ()
-
-			-- kuertee start: callback
-			if callbacks ["loadGameCallback_preLoadGame"] then
-				for _, callback in ipairs (callbacks ["loadGameCallback_preLoadGame"]) do
-					callback(filename)
+		-- kuertee start: callback
+		-- Helper.addDelayedOneTimeCallbackOnUpdate(function () LoadGame(filename) end, true, getElapsedTime() + 0.1)
+		Helper.addDelayedOneTimeCallbackOnUpdate(
+			function ()
+				if callbacks ["loadGameCallback_preLoadGame"] then
+					for _, callback in ipairs (callbacks ["loadGameCallback_preLoadGame"]) do
+						callback(filename)
+					end
 				end
+				LoadGame(filename)
 			end
-			-- kuertee end: callback
+		, true, getElapsedTime() + 0.1)
+		-- kuertee end: callback
 
-			LoadGame(filename)
-		end
 		menu.displayInit()
 	end
 end
@@ -8254,11 +8278,15 @@ function menu.callbackGameControlModeMessages()
 	SetSteeringNoteOption()
 end
 
+function menu.callbackGameVelocityIndicator()
+	C.SetVelocityIndicatorOption(not C.GetVelocityIndicatorOption())
+end
+
 function menu.callbackGameDefaults()
 	__CORE_GAMEOPTIONS_RESTORE = true
 	__CORE_GAMEOPTIONS_RESTOREINFO.optionParameter = nil
 	__CORE_GAMEOPTIONS_RESTOREINFO.history = menu.history
-	menu.delayedExecution = function () RestoreGameOptions() end
+	Helper.addDelayedOneTimeCallbackOnUpdate(function () RestoreGameOptions() end, true, getElapsedTime() + 0.1)
 	menu.displayInit(ReadText(1001, 409))
 end
 
@@ -8275,7 +8303,7 @@ function menu.callbackGameHUDScale(id, option)
 		__CORE_GAMEOPTIONS_RESTOREINFO.optionParameter = nil
 		__CORE_GAMEOPTIONS_RESTOREINFO.history = menu.history
 
-		menu.delayedExecution = function () C.SetHUDScaleOption(option) end
+		Helper.addDelayedOneTimeCallbackOnUpdate(function () C.SetHUDScaleOption(option) end, true, getElapsedTime() + 0.1)
 		menu.displayInit(ReadText(1001, 409))
 	end
 end
@@ -8337,7 +8365,7 @@ function menu.callbackGameMenuWidthScaleConfirm()
 		__CORE_GAMEOPTIONS_RESTORE = true
 		__CORE_GAMEOPTIONS_RESTOREINFO.optionParameter = nil
 		__CORE_GAMEOPTIONS_RESTOREINFO.history = menu.history
-		menu.delayedExecution = function () C.SetMenuWidthScale(menu.newMenuWidthScale) end
+		Helper.addDelayedOneTimeCallbackOnUpdate(function () C.SetMenuWidthScale(menu.newMenuWidthScale) end, true, getElapsedTime() + 0.1)
 		menu.displayInit(ReadText(1001, 409))
 	end
 end
@@ -8419,7 +8447,7 @@ function menu.callbackGameUIScaleConfirm()
 		__CORE_GAMEOPTIONS_RESTORE = true
 		__CORE_GAMEOPTIONS_RESTOREINFO.optionParameter = nil
 		__CORE_GAMEOPTIONS_RESTOREINFO.history = menu.history
-		menu.delayedExecution = function () C.SetUIScaleFactor(menu.newUIScale) end
+		Helper.addDelayedOneTimeCallbackOnUpdate(function () C.SetUIScaleFactor(menu.newUIScale) end, true, getElapsedTime() + 0.1)
 		menu.displayInit(ReadText(1001, 409))
 	end
 end
@@ -9527,7 +9555,7 @@ function menu.displayNewGame(createAsServer, displayTimelinesScenarios, displayT
 				row[1].handlers.onClick = function () return menu.buttonOpenStore(menu.selectedOption.extensionsource) end
 			else
 				row[1]:createText(menu.selectedOption.requirement, { x = config.infoTextOffsetX, y = (Helper.standardButtonHeight - Helper.standardTextHeight) / 2, font = config.fontBold, cellBGColor = Color["icon_error"], minRowHeight = Helper.standardButtonHeight })
-		end
+			end
 		else
 			row[1]:createText(ReadText(1001, 11732) .. ReadText(1001, 120) .. " " .. menu.selectedOption.typename, { mouseOverText = menu.selectedOption.typedescription, x = config.infoTextOffsetX, y = (Helper.standardButtonHeight - Helper.standardTextHeight) / 2, font = config.fontBold, cellBGColor = Color["optionsmenu_cell_background_icon"], minRowHeight = Helper.standardButtonHeight })
 		end
@@ -9652,7 +9680,7 @@ function menu.displayNewGame(createAsServer, displayTimelinesScenarios, displayT
 			end
 		end
 		local imagerow, imageindex = nil, 1
-		
+
 		local rowcount = 0
 		for i, entry in ipairs(menu.selectedOption.info) do
 			local row
@@ -9692,7 +9720,7 @@ function menu.displayNewGame(createAsServer, displayTimelinesScenarios, displayT
 				row = infotable2:addRow(nil, { bgColor = Color["optionsmenu_cell_background"], borderBelow = false })
 				row[1]:createText("")
 			end
-			
+
 			if row then
 				rowcount = rowcount + 1
 				if (playerimage ~= "") or (infoimage ~= "") then
@@ -9875,7 +9903,7 @@ function menu.displayTimelines()
 				row[1].handlers.onClick = function () return menu.buttonOpenStore(timelinesgamestart.extensionsource) end
 			else
 				row[1]:createText(timelinesgamestart.requirement, { x = config.infoTextOffsetX, y = (Helper.standardButtonHeight - Helper.standardTextHeight) / 2, font = config.fontBold, cellBGColor = Color["icon_error"], minRowHeight = Helper.standardButtonHeight })
-		end
+			end
 		else
 			row[1]:createText(ReadText(1001, 11732) .. ReadText(1001, 120) .. " " .. timelinesgamestart.typename, { mouseOverText = timelinesgamestart.typedescription, x = config.infoTextOffsetX, y = (Helper.standardButtonHeight - Helper.standardTextHeight) / 2, font = config.fontBold, cellBGColor = Color["optionsmenu_cell_background_icon"], minRowHeight = Helper.standardButtonHeight })
 		end
@@ -10042,7 +10070,7 @@ function menu.displayTimelines()
 				row = infotable2:addRow(nil, { bgColor = Color["optionsmenu_cell_background"], borderBelow = false })
 				row[1]:createText("")
 			end
-			
+
 			if row then
 				rowcount = rowcount + 1
 				if (playerimage ~= "") or (infoimage ~= "") then
@@ -10459,7 +10487,7 @@ function menu.displayMapEditor()
 
 	local row = optiontable:addRow(true, {  })
 	row[2]:setColSpan(2):createButton({ active = mapeditormacro ~= "" }):setText(ReadText(1001, 11782), { halign = "center" })
-	row[2].handlers.onClick = function () menu.delayedExecution = function () NewGame(menu.mapEditorSettings.gamestartid) end; menu.displayInit() end
+	row[2].handlers.onClick = function () Helper.addDelayedOneTimeCallbackOnUpdate(function () NewGame(menu.mapEditorSettings.gamestartid) end, true, getElapsedTime() + 0.1); menu.displayInit() end
 
 	optiontable:addEmptyRow()
 
@@ -13134,17 +13162,6 @@ function menu.onUpdate()
 	end
 	-- kuertee end: callback
 
-	if menu.delayedExecution then
-		if menu.hasDelayedExecution then
-			menu.delayedExecution()
-			menu.delayedExecution = nil
-			menu.hasDelayedExecution = nil
-			return
-		else
-			menu.hasDelayedExecution = true
-		end
-	end
-
 	if menu.animationDelay ~= nil then
 		if (not menu.animationDelay[3]) and (curtime > menu.animationDelay[1] - menu.animationDelay[4]) then
 			menu.animationDelay[3] = true
@@ -13302,6 +13319,7 @@ function menu.onUpdate()
 			if curtime >= menu.userQuestion.timer then
 				if menu.userQuestion.negCallback then
 					menu.userQuestion.negCallback()
+					menu.userQuestion = nil
 				else
 					menu.onCloseElement("back")
 				end
@@ -13471,7 +13489,7 @@ function menu.newGameCallback(option, checked)
 				menu.displayUserQuestion(ReadText(1001, 2603) .. " - " .. ReadText(1001, 7720), function () return menu.newGameCallback(option, true) end, nil, nil, nil, nil, nil, ReadText(1001, 11707))
 			else
 				if menu.currentOption == "multiplayer_server" then
-					menu.delayedExecution = function () C.NewMultiplayerGame(option.id) end
+					Helper.addDelayedOneTimeCallbackOnUpdate(function () C.NewMultiplayerGame(option.id) end, true, getElapsedTime() + 0.1)
 				elseif option.tutorial then
 					local value = 1
 					if menu.isStartmenu or C.IsTutorial() then
@@ -13480,34 +13498,37 @@ function menu.newGameCallback(option, checked)
 						value = 2
 					end
 					if value == 1 then
-						menu.delayedExecution = function () Helper.closeMenuAndOpenNewMenu(menu, "UserQuestionMenu", { 0, 0, "starttutorial", { option.id, 1 } }); menu.cleanup() end
+						Helper.addDelayedOneTimeCallbackOnUpdate(function () Helper.closeMenuAndOpenNewMenu(menu, "UserQuestionMenu", { 0, 0, "starttutorial", { option.id, 1 } }); menu.cleanup() end, true, getElapsedTime() + 0.1)
 					else
-						menu.delayedExecution = function ()
-							C.SetUserData("tutorial_started_from", tostring(value));
-
-							-- kuertee start: callback
+						-- kuertee start: callback
+						-- Helper.addDelayedOneTimeCallbackOnUpdate(function () C.SetUserData("tutorial_started_from", tostring(value)); NewGame(option.id) end, true, getElapsedTime() + 0.1)
+						Helper.addDelayedOneTimeCallbackOnUpdate(
+							function ()
+								C.SetUserData("tutorial_started_from", tostring(value));
+								if callbacks ["newGameCallback_preNewGame"] then
+									for _, callback in ipairs (callbacks ["newGameCallback_preNewGame"]) do
+										callback(option.id)
+									end
+								end
+								NewGame(option.id)
+							end
+						, true, getElapsedTime() + 0.1)
+						-- kuertee end: callback
+					end
+				else
+					-- kuertee start: callback
+					Helper.addDelayedOneTimeCallbackOnUpdate(
+						function ()
 							if callbacks ["newGameCallback_preNewGame"] then
 								for _, callback in ipairs (callbacks ["newGameCallback_preNewGame"]) do
 									callback(option.id)
 								end
 							end
-							-- kuertee end: callback
-
-							NewGame(option.id)
+							NewGame(option.id) 
 						end
-					end
-				else
-					menu.delayedExecution = function ()
-						-- kuertee start: callback
-						if callbacks ["newGameCallback_preNewGame"] then
-							for _, callback in ipairs (callbacks ["newGameCallback_preNewGame"]) do
-								callback(option.id)
-							end
-						end
-						-- kuertee end: callback
+					, true, getElapsedTime() + 0.1)
+					-- kuertee end: callback
 
-						NewGame(option.id)
-					end
 				end
 				menu.displayInit()
 			end
@@ -13542,7 +13563,7 @@ function menu.startMapEditorWithCopy()
 	params[1].key = Helper.ffiNewString("sectors")
 	params[1].value = Helper.ffiNewString(sectors)
 
-	menu.delayedExecution = function () C.NewGame(menu.mapEditorSettings.gamestartid, numparams, params) end
+	Helper.addDelayedOneTimeCallbackOnUpdate(function () C.NewGame(menu.mapEditorSettings.gamestartid, numparams, params) end, true, getElapsedTime() + 0.1)
 	menu.displayInit()
 end
 
