@@ -13,9 +13,5 @@ ui/addons/ego_detailmonitor/menu_transporter.xpl 36351 1736633549 0361fc12debe65
 ui/addons/ego_detailmonitor/menu_userquestion.xpl 22662 1736633549 2fffc568eb2e2096fb1ede13a25e30bb
 ui/addons/ego_detailmonitorhelper/helper.xpl 533389 1737170060 0e683eb8e1361cb4c9cdc5d2b7ceb01c
 ui/addons/ego_gameoptions/customgame.xpl 234027 1737091801 b9051d0ae95fce727642729d69d79ae8
-ui/addons/ego_gameoptions/gameoptions.xpl.bak 541878 1737092543 c091268d038f654b5b9a95b584617fdb
 ui/addons/ego_interactmenu/menu_interactmenu.xpl 365785 1737092642 75093e8bc4a70603f5be73a6f058d316
-ui/gameoptions_uix.lua 45833 1737170616 cca51296c230c9d51255937a1a1fe345
-ui/hook-lua-LICENSE 1113 1460579431 4fabcc8d8f4efa07a34e98b49e7b040b
-ui/hook-lua-README.md 3401 1460579431 a61a0a0b0e9b1a360b89c3acee6ba3fe
-ui/hook.lua 3859 1737170593 930373014e9bd34760bbed3cac6eb512
+ui/gameoptions_uix.lua 169035 1737172791 58c5d49e130def073421657496575284

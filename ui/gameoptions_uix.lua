@@ -6,6 +6,8 @@ ffi.cdef[[]]
 
 --- config ---
 
+local menu = Helper.getMenu("OptionsMenu")
+
 local config = {
     contextLayer = 2,
     optionsLayer = 4,
@@ -2464,33 +2466,33 @@ config.DLSSmodes = {
     ["dlaa"] = ReadText(1001, 12742),
 }
 
-local OptionsMenu
 local OldFuncs = {}
-local NewFuncs = {}
 local callbacks = {}
 function ModLua.init ()
-    OptionsMenu = Helper.getMenu("OptionsMenu")
-    Helper.debugText_forced("OptionsMenu", tostring(OptionsMenu))
-    Helper.debugText_forced("UIXHook", tostring(UIXHook))
-    Helper.debugText_forced("UIXHook.add", tostring(UIXHook.add))
-    -- hooks
-    UIXHook.add(OptionsMenu.addSavegameRow, ModLua.addSavegameRow)
-    UIXHook.add(OptionsMenu.cleanup, ModLua.cleanup)
-    UIXHook.add(OptionsMenu.submenuHandler, ModLua.submenuHandler)
-    UIXHook.add(OptionsMenu.callbackDeleteSave, ModLua.callbackDeleteSave)
-    UIXHook.add(OptionsMenu.displayOptions, ModLua.displayOptions)
-    UIXHook.add(LoadGame, ModLua.LoadGame)
-    UIXHook.add(NewGame, ModLua.NewGame)
     -- rewrites
-    OldFuncs.displaySavegameOptions = OptionsMenu.displaySavegameOptions
-    OptionsMenu.displaySavegameOptions = ModLua.displaySavegameOptions
-    OldFuncs.onUpdate = OptionsMenu.onUpdate
-    OptionsMenu.onUpdate = ModLua.onUpdate
-    OldFuncs.newGameCallback = OptionsMenu.newGameCallback
-    OptionsMenu.newGameCallback = ModLua.newGameCallback
+    OldFuncs.addSavegameRow = menu.addSavegameRow
+    menu.addSavegameRow = ModLua.addSavegameRow
+    OldFuncs.cleanup = menu.cleanup
+    menu.cleanup = ModLua.cleanup
+    OldFuncs.submenuHandler = menu.submenuHandler
+    menu.submenuHandler = ModLua.submenuHandler
+    OldFuncs.callbackDeleteSave = menu.callbackDeleteSave
+    menu.callbackDeleteSave = ModLua.callbackDeleteSave
+    OldFuncs.displayOptions = menu.displayOptions
+    menu.displayOptions = ModLua.displayOptions
+    OldFuncs.displayExtensions = menu.displayExtensions
+    menu.displayExtensions = ModLua.displayExtensions
+    OldFuncs.displayExtensionRow = menu.displayExtensionRow
+    menu.displayExtensionRow = ModLua.displayExtensionRow
+    OldFuncs.displaySavegameOptions = menu.displaySavegameOptions
+    menu.displaySavegameOptions = ModLua.displaySavegameOptions
+    OldFuncs.onUpdate = menu.onUpdate
+    menu.onUpdate = ModLua.onUpdate
+    OldFuncs.newGameCallback = menu.newGameCallback
+    menu.newGameCallback = ModLua.newGameCallback
     -- new
-    OptionsMenu.registerCallback = ModLua.registerCallback
-    OptionsMenu.deregisterCallback = ModLua.deregisterCallback
+    menu.registerCallback = ModLua.registerCallback
+    menu.deregisterCallback = ModLua.deregisterCallback
 end
 
 function ModLua.addSavegameRow(ftable, savegame, name, slot)
@@ -2518,9 +2520,130 @@ function ModLua.addSavegameRow(ftable, savegame, name, slot)
         end
     end
     -- kuertee end: callback
+
+    local invalid = false
+    if menu.currentOption == "load" then
+        invalid = savegame.error or savegame.invalidgameid or savegame.invalidversion or savegame.invalidpatches
+    end
+
+    local row = ftable:addRow(savegame, {  })
+    if menu.preselectOption == nil then
+        menu.preselectOption = savegame.filename
+    end
+    if savegame.filename == menu.preselectOption then
+        ftable:setSelectedRow(row.index)
+        menu.selectedOption = savegame
+    end
+
+    if slot then
+        row[2]:createText(slot, (not invalid) and config.standardTextProperties or config.disabledTextProperties)
+        row[2].properties.halign = "right"
+    end
+    local nametruncated = TruncateText(name, config.fontBold, Helper.scaleFont(config.font, config.standardFontSize), row[3]:getWidth() - Helper.scaleX(config.standardTextOffsetX))
+    local mouseovertext = ""
+    if nametruncated ~= name then
+        mouseovertext = name
+    end
+
+    local isonlinesaveinofflineslot = IsCheatVersion() and savegame.isonline and not savegame.isonlinesavefilename
+
+    local height = Helper.scaleY(config.standardTextHeight) + Helper.borderSize
+    if invalid or savegame.modified or isonlinesaveinofflineslot then
+        height = 2 * Helper.scaleY(config.standardTextHeight) + Helper.borderSize
+    end
+
+    local warningicon = ""
+    if savegame.isonline then
+
+        -- kuertee start: prevent online funcs when protected ui mod is disabled
+        -- if C.IsClientModified() or (not OnlineHasSession()) or (C.GetVentureDLCStatus() ~= 0) then
+        if C.IsClientModified() or (GetUISafeModeOption() and (not OnlineHasSession())) or (C.GetVentureDLCStatus() ~= 0) then
+        -- kuertee end: prevent online funcs when protected ui mod is disabled
+
+            warningicon = ColorText["icon_warning"] .. "\27[workshop_error]\27X"
+        end
+    end
+
+    local icon = row[3]:createIcon("solid", { width = row[3]:getWidth(), height = height, color = Color["icon_transparent"], scaling = false, mouseOverText = mouseovertext }):setText(warningicon .. nametruncated, (not invalid) and config.standardTextProperties or config.disabledTextProperties)
+    row[3].properties.text.font = config.fontBold
+    row[3].properties.text.scaling = true
+    if invalid then
+        icon:setText2(function () return menu.errorSavegame(savegame) end, (not invalid) and config.standardTextProperties or config.disabledTextProperties)
+        row[3].properties.text2.y = config.standardTextHeight
+        row[3].properties.text2.scaling = true
+    elseif savegame.modified then
+        icon:setText2(ColorText["text_warning"] .. ReadText(1001, 8901) .. "\27X", (not invalid) and config.standardTextProperties or config.disabledTextProperties)
+        row[3].properties.text2.y = config.standardTextHeight
+        row[3].properties.text2.scaling = true
+    elseif isonlinesaveinofflineslot then
+        icon:setText2(ColorText["text_online_save"] .. ReadText(1001, 11570) .. "\27X", (not invalid) and config.standardTextProperties or config.disabledTextProperties)
+        row[3].properties.text2.y = config.standardTextHeight
+        row[3].properties.text2.scaling = true
+    end
+    row[4]:setColSpan(2):createText(savegame.error and "" or savegame.time, (not invalid) and config.standardTextProperties or config.disabledTextProperties)
+    row[4].properties.halign = "right"
+
+    return row:getHeight()
 end
 
 function ModLua.cleanup()
+    if not menu.isStartmenu then
+        if menu.paused then
+            Unpause()
+            menu.paused = nil
+        end
+        if menu.hasInputModeChangedRegistered then
+            unregisterForEvent("inputModeChanged", getElement("Scene.UIContract"), menu.onInputModeChanged)
+            menu.hasInputModeChangedRegistered = nil
+        end
+    end
+
+    C.ResetEncryptedDirectInputData()
+    if menu.onlineData then
+        menu.onlineData.password = ""
+    end
+
+    menu.currentOption = nil
+    menu.selectedOption = nil
+    menu.preselectOption = nil
+    menu.preselectTopRow = nil
+    menu.preselectCol = nil
+    menu.animationDelay = nil
+
+    menu.selectedRows = {}
+    menu.selectedCols = {}
+    menu.topRows = {}
+
+    menu.history = {}
+    menu.savegames = nil
+    menu.onlinesave = nil
+    menu.languagedata = {}
+    menu.remapControl = nil
+    menu.directInputActive = nil
+    menu.lobby = {}
+    menu.updateServers = nil
+    menu.selectedExtension = {}
+    menu.curDropDownOption = {}
+    menu.idleTimer = nil
+
+    menu.controls = {}
+
+    menu.contextFrame = nil
+
+    menu.titleTable = nil
+    menu.optionTable = nil
+    menu.infoTable = nil
+    menu.rendertarget = nil
+
+    menu.width = nil
+    menu.widthExtraWide = nil
+    menu.height = nil
+    menu.frameOffsetX = nil
+    menu.frameOffsetXExtraWide = nil
+    menu.frameOffsetY = nil
+
+    menu.table = {}
+
     -- kuertee start: callback
     if callbacks ["cleanup"] then
         for _, callback in ipairs (callbacks ["cleanup"]) do
@@ -2531,6 +2654,20 @@ function ModLua.cleanup()
 end
 
 function ModLua.submenuHandler(optionParameter)
+    menu.userQuestion = nil
+
+    if optionParameter == nil then
+        DebugError("Invalid call to menu.submenuHandler(): ")
+        DebugError(TraceBack())
+        return
+    end
+
+    AddUITriggeredEvent(menu.name, "menu_" .. optionParameter)
+
+    if optionParameter ~= "main" then
+        C.HidePromo()
+    end
+
     -- kuertee start: callback
     if callbacks ["submenuHandler_preDisplayOptions"] then
         for _, callback in ipairs (callbacks ["submenuHandler_preDisplayOptions"]) do
@@ -2538,9 +2675,101 @@ function ModLua.submenuHandler(optionParameter)
         end
     end
     -- kuertee end: callback
+
+    if optionParameter == "main" then
+        if menu.isStartmenu then
+            C.ShowPromo()
+        end
+        menu.displayOptions(optionParameter)
+    elseif optionParameter == "new" then
+        menu.displayNewGame(false, false, false)
+    elseif optionParameter == "tutorials" then
+        menu.displayNewGame(false, false, true)
+    elseif optionParameter == "load" then
+        menu.displaySavegameOptions(optionParameter)
+    elseif optionParameter == "save" then
+        menu.displaySavegameOptions(optionParameter)
+    elseif optionParameter == "saveoffline" then
+        menu.displaySavegameOptions(optionParameter)
+    elseif optionParameter == "multiplayer_server" then
+        menu.displayNewGame(true, false, false)
+    elseif optionParameter == "new_timelines" then
+        menu.displayNewGame(false, true, false)
+    elseif optionParameter == "lobby" then
+        menu.displayLobby()
+    elseif optionParameter == "online" then
+        __CORE_GAMEOPTIONS_PRIVACYPOLICY = false
+        menu.displayOnlineLogin()
+    elseif optionParameter == "extensions" then
+        menu.displayExtensions()
+    elseif optionParameter == "bonus" then
+        menu.displayBonusContent()
+    elseif optionParameter == "defaults" then
+        menu.displayUserQuestion(ReadText(1001, 2653), function () return menu.callbackDefaults() end)
+    elseif optionParameter == "gfx_defaults" then
+        menu.displayUserQuestion(ReadText(1001, 2653), function () return menu.callbackGfxDefaults() end)
+    elseif optionParameter == "sfx_defaults" then
+        menu.displayUserQuestion(ReadText(1001, 2653), function () return menu.callbackSfxDefaults() end)
+    elseif optionParameter == "game_defaults" then
+        menu.displayUserQuestion(ReadText(1001, 2653), function () return menu.callbackGameDefaults() end)
+    elseif optionParameter == "accessibility_defaults" then
+        menu.displayUserQuestion(ReadText(1001, 2653), function () return menu.callbackAccessibilityDefaults() end)
+    elseif optionParameter == "timelines_reset" then
+        menu.displayUserQuestion(ReadText(1001, 12622), function () return menu.callbackResetTimelines() end, nil, nil, nil, nil, nil, ReadText(1001, 12623))
+    elseif  (optionParameter == "vrtouch_space") or
+            (optionParameter == "vrtouch_firstperson") or
+            (optionParameter == "vrtouch_menus") or
+            (optionParameter == "vrvive_space") or
+            (optionParameter == "vrvive_firstperson") or
+            (optionParameter == "vrvive_menus") or
+            (optionParameter == "keyboard_space") or
+            (optionParameter == "keyboard_firstperson") or
+            (optionParameter == "keyboard_menus")
+    then
+        menu.displayControls(optionParameter)
+    elseif optionParameter == "joysticks" then
+        menu.displayJoysticks()
+    elseif optionParameter == "profile_load" then
+        menu.displayInputProfiles(optionParameter)
+    elseif optionParameter == "profile_save" then
+        menu.displayInputProfiles(optionParameter)
+    elseif optionParameter == "language" then
+        menu.displayLanguageOptions()
+    elseif optionParameter == "onlineseason" then
+        menu.displayOnlineSeason(optionParameter)
+    elseif optionParameter == "credits" then
+        menu.displayCredits(optionParameter)
+    elseif optionParameter == "idle" then
+        menu.displayCredits(optionParameter)
+    elseif optionParameter == "exit" then
+        menu.displayUserQuestion(ReadText(1001, 2645), function () return menu.callbackExit(false) end, nil, nil, nil, nil, nil, Helper.isOnlineGame() and ReadText(1001, 11710) or nil)
+    elseif optionParameter == "quit" then
+        menu.displayUserQuestion(ReadText(1001, 4876), function () return menu.callbackExit(true) end)
+    elseif optionParameter == "privacy" then
+        menu.displayOptionsInfo(optionParameter)
+    elseif optionParameter == "mapeditor" then
+        menu.displayMapEditor()
+    elseif optionParameter == "colorlibrary" then
+        menu.displayColorLibrary()
+    elseif optionParameter == "inputfeedback" then
+        menu.displayInputFeedback()
+    elseif optionParameter == "input_modifiers" then
+        menu.displayInputModifiers()
+    elseif optionParameter == "timelines" then
+        menu.displayTimelines()
+    elseif config.optionDefinitions[optionParameter] then
+        menu.displayOptions(optionParameter)
+    end
 end
 
 function ModLua.callbackDeleteSave(filename)
+    C.DeleteSavegame(filename)
+
+    menu.savegames = nil
+    menu.onlinesave = nil
+    C.ReloadSaveList()
+    menu.onCloseElement("back")
+
     -- kuertee start: callback
     if callbacks ["callbackDeleteSave_onDeleteSave"] then
         for _, callback in ipairs (callbacks ["callbackDeleteSave_onDeleteSave"]) do
@@ -2551,6 +2780,13 @@ function ModLua.callbackDeleteSave(filename)
 end
 
 function ModLua.displayOptions(optionParameter)
+    -- remove old data
+    Helper.clearDataForRefresh(menu, config.optionsLayer)
+    menu.selectedOption = nil
+
+    menu.currentOption = optionParameter
+    local options = config.optionDefinitions[optionParameter]
+
     -- kuertee start: callback
     if callbacks ["displayOptions_modifyOptions"] then
         for _, callback in ipairs (callbacks ["displayOptions_modifyOptions"]) do
@@ -2558,31 +2794,233 @@ function ModLua.displayOptions(optionParameter)
         end
     end
     -- kuertee end: callback
-end
 
-function ModLua.LoadGame(filename)
-    -- kuertee start: callback
-    if callbacks ["loadGameCallback_preLoadGame"] then
-        for _, callback in ipairs (callbacks ["loadGameCallback_preLoadGame"]) do
-            callback(filename)
+    local frame = menu.createOptionsFrame()
+
+    local ftable = frame:addTable(5, { tabOrder = 1, x = menu.table.x, y = menu.table.y, width = menu.table.width, maxVisibleHeight = menu.table.height })
+    ftable:setColWidth(1, menu.table.arrowColumnWidth, false)
+    ftable:setColWidth(3, menu.table.infoColumnWidth / 2, false)
+    ftable:setColWidth(4, menu.table.infoColumnWidth / 2 - Helper.scaleY(config.infoTextHeight) - Helper.borderSize, false)
+    ftable:setColWidth(5, Helper.scaleY(config.infoTextHeight), false)
+    ftable:setDefaultColSpan(3, 3)
+    ftable:setDefaultCellProperties("button", { height = config.standardTextHeight })
+    ftable:setDefaultComplexCellProperties("button", "text", { x = config.standardTextOffsetX, fontsize = config.standardFontSize })
+    ftable:setDefaultCellProperties("dropdown", { height = config.standardTextHeight })
+    ftable:setDefaultComplexCellProperties("dropdown", "text", { x = config.standardTextOffsetX, fontsize = config.standardFontSize })
+    ftable:setDefaultCellProperties("slidercell", { height = config.standardTextHeight })
+    ftable:setDefaultComplexCellProperties("slidercell", "text", { x = config.standardTextOffsetX, fontsize = config.standardFontSize })
+
+    -- title
+    local row = ftable:addRow(menu.currentOption ~= "main", { fixed = true })
+    row[1]:setBackgroundColSpan(5)
+    local colOffset = 1
+    if menu.currentOption ~= "main" then
+        row[1]:createButton({ height = config.headerTextHeight }):setIcon(config.backarrow, { x = config.backarrowOffsetX })
+        row[1].handlers.onClick = function () return menu.onCloseElement("back") end
+        colOffset = 0
+    end
+    if options.info then
+        row[2 - colOffset]:setColSpan(2 + colOffset):createText(options.name, config.headerTextProperties)
+        row[4]:setColSpan(2):createText(options.info, config.infoTextProperties)
+    else
+        row[2 - colOffset]:setColSpan(4 + colOffset):createText(options.name, config.headerTextProperties)
+    end
+
+    -- warning
+    if options.warning then
+        local warning, warningFont = options.warning()
+        local row = ftable:addRow(false, { fixed = true })
+        row[1]:setColSpan(5):createText(function () local text = options.warning() return text end, config.warningTextProperties)
+        if warningFont then
+            row[1].properties.font = warningFont
         end
     end
-    -- kuertee end: callback
+
+    -- options
+    for optionIdx, option in ipairs(options) do
+        menu.displayOption(ftable, option)
+    end
+
+    ftable:setTopRow(menu.preselectTopRow)
+    menu.preselectTopRow = nil
+    menu.preselectOption = nil
+
+    frame:display()
 end
 
-function ModLua.NewGame(newGameId)
-    -- kuertee start: callback
-    if callbacks ["newGameCallback_preNewGame"] then
-        for _, callback in ipairs (callbacks ["newGameCallback_preNewGame"]) do
-            callback(menu.animationDelay[2].id)
+function ModLua.displayExtensions()
+    -- remove old data
+    Helper.clearDataForRefresh(menu, config.optionsLayer)
+    menu.selectedOption = nil
+
+    menu.currentOption = "extensions"
+
+    local frame = menu.createOptionsFrame(true)
+
+    local infowidth = menu.table.width - menu.table.widthWithExtraInfo - Helper.borderSize
+
+    local titletable = frame:addTable(2, { tabOrder = 2, x = menu.table.x, y = menu.table.y, width = menu.table.widthExtraWide, skipTabChange = true })
+    titletable:setColWidth(1, menu.table.arrowColumnWidth, false)
+
+    -- title
+    local row = titletable:addRow(true, { fixed = true })
+    row[1]:setBackgroundColSpan(2)
+    row[1]:createButton({ height = config.headerTextHeight }):setIcon(config.backarrow, { x = config.backarrowOffsetX })
+    row[1].handlers.onClick = function () return menu.onCloseElement("back") end
+    row[2]:createText(ReadText(1001, 2697), config.headerTextProperties)
+
+    -- warning
+    local row = titletable:addRow(false, { fixed = true })
+    row[2]:createText(menu.warningExtensions, config.warningTextProperties)
+
+    local offsety = titletable.properties.y + titletable:getVisibleHeight() + Helper.borderSize
+    local height = menu.table.height - offsety
+
+    local optiontable = frame:addTable(7, { tabOrder = 1, x = menu.table.x, y = offsety, width = menu.table.widthExtraWide - infowidth - Helper.borderSize, maxVisibleHeight = height })
+    optiontable:setColWidth(1, menu.table.arrowColumnWidth, false)
+    optiontable:setColWidthPercent(2, 40)
+    optiontable:setColWidthPercent(4, 13)
+    optiontable:setColWidthPercent(6, 10)
+    optiontable:setColWidth(7, menu.table.arrowColumnWidth, false)
+
+    local extensions = GetExtensionList()
+    menu.extensionSettings = GetAllExtensionSettings()
+
+    local addline = false
+    if IsSteamworksEnabled() then
+        addline = true
+
+        local row = optiontable:addRow("globalsync", {  })
+        row[2]:createText(ReadText(1001, 4830), config.standardTextProperties)
+        row[6]:createButton({  }):setText(function () local text = menu.valueExtensionGlobalSync() return text end, { fontsize = config.standardFontSize, halign = "center", color = function () local _, color = menu.valueExtensionGlobalSync() return color end })
+        row[6].handlers.onClick = menu.buttonExtensionGlobalSync
+
+        local row = optiontable:addRow("workshop", {  })
+        row[2]:setColSpan(5):createText(ReadText(1001, 4831), config.standardTextProperties)
+    end
+
+    if #extensions > 0 then
+        addline = true
+
+        local row = optiontable:addRow( "defaults", {  })
+        row[2]:setColSpan(6):createText(ReadText(1001, 2647), config.standardTextProperties)
+        if menu.preselectOption == "defaults" then
+            optiontable:setSelectedRow(row.index)
         end
     end
-    -- kuertee end: callback
+
+    if addline then
+        local row = optiontable:addRow(false, {  })
+        row[2]:setColSpan(6):createText(" ", { fontsize = 1, height = Helper.borderSize, cellBGColor = Color["row_separator"] })
+    end
+
+    local row = optiontable:addRow("uisecurity", {  })
+    row[2]:createText(ReadText(1001, 12723), config.standardTextProperties)
+    row[2].properties.mouseOverText = ReadText(1001, 12725)
+    row[6]:createButton({ mouseOverText = ReadText(1001, 12725) }):setText(function () return GetUISafeModeOption() and ReadText(1001, 2648) or ReadText(1001, 2649) end, { fontsize = config.standardFontSize, halign = "center" })
+    row[6].handlers.onClick = menu.buttonExtensionUISecurityMode
+
+    local row = optiontable:addRow(false, {  })
+    row[2]:setColSpan(6):createText(" ", { fontsize = 1, height = Helper.borderSize, cellBGColor = Color["row_separator"] })
+
+    row = optiontable:addRow(false, {  })
+    row[2]:createText(ReadText(1001, 8999), config.subHeaderLeftTextProperties)
+    row[3]:createText(ReadText(1001, 4823), config.subHeaderLeftTextProperties)
+    row[4]:createText(ReadText(1001, 2655), config.subHeaderLeftTextProperties)
+    row[5]:createText(ReadText(1001, 2691), config.subHeaderLeftTextProperties)
+    if #extensions > 0 then
+        -- kuertee start: sort by enabled then by name
+        -- table.sort(extensions, Helper.sortName)
+        table.sort(extensions, function(a, b)
+            if a.enabled and b.enabled then
+                return a.name < b.name
+            elseif a.enabled then
+                return true
+            elseif b.enabled then
+                return false
+            else
+                return a.name < b.name
+            end
+        end)
+        -- kuertee end: sort by enabled then by name
+
+        for _, extension in ipairs(extensions) do
+            if extension.egosoftextension and extension.enabledbydefault then
+                menu.displayExtensionRow(optiontable, extension, menu.extensionSettings[extension.index])
+            end
+        end
+        row = optiontable:addRow(false, {  })
+        row[2]:setColSpan(6):createText(" ", { fontsize = 1, height = Helper.borderSize, cellBGColor = Color["row_separator"] })
+        local extraseparator = false
+        for _, extension in ipairs(extensions) do
+            if extension.egosoftextension and not extension.enabledbydefault then
+                menu.displayExtensionRow(optiontable, extension, menu.extensionSettings[extension.index])
+                extraseparator = true
+            end
+        end
+        if extraseparator then
+            row = optiontable:addRow(false, {  })
+            row[2]:setColSpan(6):createText(" ", { fontsize = 1, height = Helper.borderSize, cellBGColor = Color["row_separator"] })
+        end
+        for _, extension in ipairs(extensions) do
+            if not extension.egosoftextension then
+                menu.displayExtensionRow(optiontable, extension, menu.extensionSettings[extension.index])
+            end
+        end
+    else
+        local row = optiontable:addRow(false, {  })
+        row[2]:setColSpan(2):createText(ReadText(1001, 2693), config.disabledTextProperties)
+    end
+
+    optiontable:setTopRow(menu.preselectTopRow)
+    menu.preselectTopRow = nil
+    menu.preselectOption = nil
+
+    local offsetx = menu.table.x + menu.table.widthExtraWide - infowidth
+    local infotable = frame:addTable(1, { tabOrder = 0, x = offsetx, y = offsety, width = infowidth, maxVisibleHeight = height })
+
+    local row = infotable:addRow(false, { bgColor = Color["optionsmenu_cell_background"] })
+    row[1]:createText(menu.descriptionExtension, { scaling = false, width = infowidth, height = height, wordwrap = true, fontsize = Helper.scaleFont(config.font, config.infoFontSize) })
+
+    titletable.properties.nextTable = optiontable.index
+    optiontable.properties.prevTable = titletable.index
+
+    frame:display()
+end
+
+function ModLua.displayExtensionRow(ftable, extension, extensionSetting)
+    local row = ftable:addRow(extension, {  })
+    if extension.id == menu.preselectOption then
+        ftable:setSelectedRow(row.index)
+    end
+
+    local textcolor = Color["text_normal"]
+    if extension.error and extension.enabled then
+        textcolor = Color["text_error"]
+    elseif extension.warning then
+        textcolor = Color["text_warning"]
+
+    -- kuertee start: gray disabled extensions
+    elseif not extension.enabled then
+        textcolor = Helper.color.grey
+    -- kuertee end
+
+    end
+
+    row[2]:createText(extension.name, config.standardTextProperties)
+    row[2].properties.color = textcolor
+    row[3]:createText(extension.id, config.standardTextProperties)
+    row[4]:createText(extension.version, config.standardTextProperties)
+    row[4].properties.halign = "right"
+    row[5]:createText(extension.date, config.standardTextProperties)
+    row[5].properties.halign = "right"
+    row[6]:createButton({ }):setText(function() return menu.valueExtensionStatus(extension) end, { fontsize = config.standardFontSize, halign = "center", color = function () local _, color = menu.valueExtensionStatus(extension); return color end })
+    row[6].handlers.onClick = function () return menu.callbackExtensionSettingEnabled(extension) end
+    row[7]:createButton({ }):setText("...", { fontsize = config.standardFontSize, halign = "center" })
+    row[7].handlers.onClick = function () menu.selectedExtension = extension; menu.openSubmenu("extensionsettings", extension.id) end
 end
 
 function ModLua.displaySavegameOptions(optionParameter)
-    local menu = OptionsMenu
-
     -- remove old data
     Helper.clearDataForRefresh(menu, config.optionsLayer)
     menu.selectedOption = nil
@@ -3017,8 +3455,6 @@ function ModLua.displaySavegameOptions(optionParameter)
 end
 
 function ModLua.onUpdate()
-    local menu = OptionsMenu
-
     local curtime = getElapsedTime()
 
     -- kuertee start: callback
@@ -3043,6 +3479,15 @@ function ModLua.onUpdate()
             if menu.currentOption == "multiplayer_server" then
                 C.NewMultiplayerGame(menu.animationDelay[2].id)
             else
+
+                -- kuertee start: callback
+                if callbacks ["newGameCallback_preNewGame"] then
+                    for _, callback in ipairs (callbacks ["newGameCallback_preNewGame"]) do
+                        callback(menu.animationDelay[2].id)
+                    end
+                end
+                -- kuertee end: callback
+
                 NewGame(menu.animationDelay[2].id)
             end
             menu.closeMenu("close")
@@ -3206,8 +3651,6 @@ function ModLua.onUpdate()
 end
 
 function ModLua.newGameCallback(option, checked)
-    local menu = OptionsMenu
-
     if menu.playNewGameCutscene and menu.playNewGameCutscene.cutsceneid then
         StopCutscene(menu.playNewGameCutscene.cutsceneid)
         C.StopVoiceSequence()
@@ -3238,7 +3681,15 @@ function ModLua.newGameCallback(option, checked)
             menu.openSubmenu("mapeditor", option.id)
         else
             local playerinventory = GetPlayerInventory()
-            local onlineitems = OnlineGetUserItems()
+
+            -- kuertee start: prevent online funcs when protected ui mod is disabled
+            -- local onlineitems = OnlineGetUserItems()
+            local onlineitems = {}
+            if GetUISafeModeOption() then
+                onlineitems = OnlineGetUserItems()
+            end
+            -- kuertee end: prevent online funcs when protected ui mod is disabled
+
             local hasnotuploadeditems = false
             for ware, waredata in Helper.orderedPairs(playerinventory) do
                 local isbraneitem, isoperationvolatile, isseasonvolatile, isventureuploadallowed = GetWareData(ware, "isbraneitem", "isoperationvolatile", "isseasonvolatile", "isventureuploadallowed")
@@ -3270,10 +3721,35 @@ function ModLua.newGameCallback(option, checked)
                     if value == 1 then
                         Helper.addDelayedOneTimeCallbackOnUpdate(function () Helper.closeMenuAndOpenNewMenu(menu, "UserQuestionMenu", { 0, 0, "starttutorial", { option.id, 1 } }); menu.cleanup() end, true, getElapsedTime() + 0.1)
                     else
-                        Helper.addDelayedOneTimeCallbackOnUpdate(function () C.SetUserData("tutorial_started_from", tostring(value)); NewGame(option.id) end, true, getElapsedTime() + 0.1)
+                        -- kuertee start: callback
+                        -- Helper.addDelayedOneTimeCallbackOnUpdate(function () C.SetUserData("tutorial_started_from", tostring(value)); NewGame(option.id) end, true, getElapsedTime() + 0.1)
+                        Helper.addDelayedOneTimeCallbackOnUpdate(
+                            function ()
+                                C.SetUserData("tutorial_started_from", tostring(value));
+                                if callbacks ["newGameCallback_preNewGame"] then
+                                    for _, callback in ipairs (callbacks ["newGameCallback_preNewGame"]) do
+                                        callback(option.id)
+                                    end
+                                end
+                                NewGame(option.id)
+                            end
+                        , true, getElapsedTime() + 0.1)
+                        -- kuertee end: callback
                     end
                 else
-                    Helper.addDelayedOneTimeCallbackOnUpdate(function () NewGame(option.id) end, true, getElapsedTime() + 0.1)
+                    -- kuertee start: callback
+                    Helper.addDelayedOneTimeCallbackOnUpdate(
+                        function ()
+                            if callbacks ["newGameCallback_preNewGame"] then
+                                for _, callback in ipairs (callbacks ["newGameCallback_preNewGame"]) do
+                                    callback(option.id)
+                                end
+                            end
+                            NewGame(option.id) 
+                        end
+                    , true, getElapsedTime() + 0.1)
+                    -- kuertee end: callback
+
                 end
                 menu.displayInit()
             end
