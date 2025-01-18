@@ -11,7 +11,7 @@ ui/addons/ego_detailmonitor/menu_trader_blueprintsorlicences.xpl 35259 173663354
 ui/addons/ego_detailmonitor/menu_transactionlog.xpl 10719 1736633549 c2d41cf6c6622862d1d92105b7e7ba4c
 ui/addons/ego_detailmonitor/menu_transporter.xpl 36351 1736633549 0361fc12debe65c85c85a89231b7f69f
 ui/addons/ego_detailmonitor/menu_userquestion.xpl 22662 1736633549 2fffc568eb2e2096fb1ede13a25e30bb
-ui/addons/ego_detailmonitorhelper/helper.xpl 533389 1737170060 0e683eb8e1361cb4c9cdc5d2b7ceb01c
 ui/addons/ego_gameoptions/customgame.xpl 234027 1737091801 b9051d0ae95fce727642729d69d79ae8
 ui/addons/ego_interactmenu/menu_interactmenu.xpl 365785 1737092642 75093e8bc4a70603f5be73a6f058d316
-ui/gameoptions_uix.lua 169035 1737172791 58c5d49e130def073421657496575284
+ui/gameoptions_uix.lua 168889 1737180969 4c76a7037801f662c862d06980409ca0
+ui/helper_uix.lua 54973 1737180976 47af5f742960ddac744deb291b3cbfca

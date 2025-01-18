@@ -4,9 +4,9 @@ local ffi = require("ffi")
 local C = ffi.C
 ffi.cdef[[]]
 
---- config ---
-
 local menu = Helper.getMenu("OptionsMenu")
+
+--- config ---
 
 local config = {
     contextLayer = 2,
@@ -2466,10 +2466,12 @@ config.DLSSmodes = {
     ["dlaa"] = ReadText(1001, 12742),
 }
 
+-- kuertee start: rewrites
+
 local OldFuncs = {}
 local callbacks = {}
-function ModLua.init ()
-    -- rewrites
+
+function ModLua.rewriteFunctions()
     OldFuncs.addSavegameRow = menu.addSavegameRow
     menu.addSavegameRow = ModLua.addSavegameRow
     OldFuncs.cleanup = menu.cleanup
@@ -2490,9 +2492,6 @@ function ModLua.init ()
     menu.onUpdate = ModLua.onUpdate
     OldFuncs.newGameCallback = menu.newGameCallback
     menu.newGameCallback = ModLua.newGameCallback
-    -- new
-    menu.registerCallback = ModLua.registerCallback
-    menu.deregisterCallback = ModLua.deregisterCallback
 end
 
 function ModLua.addSavegameRow(ftable, savegame, name, slot)
@@ -3757,6 +3756,17 @@ function ModLua.newGameCallback(option, checked)
     end
 end
 
+ModLua.rewriteFunctions()
+
+-- kuertee end: rewrites
+
+-- kuertee start: new funcs
+
+function ModLua.addNewFunctions()
+    menu.registerCallback = ModLua.registerCallback
+    menu.deregisterCallback = ModLua.deregisterCallback
+end
+
 function ModLua.registerCallback(callbackName, callbackFunction)
     -- note 1: format is generally [function name]_[action]. e.g.: in kuertee_menu_transporter, "display_on_set_room_active" overrides the room's active property with the return of the callback.
     -- note 2: events have the word "_on_" followed by a PRESENT TENSE verb. e.g.: in kuertee_menu_transporter, "display_on_set_buttontable" is called after all of the rows of buttontable are set.
@@ -3780,4 +3790,6 @@ function ModLua.deregisterCallback(callbackName, callbackFunction)
     end
 end
 
-ModLua.init()
+ModLua.addNewFunctions()
+
+-- kuertee end: new funcs
