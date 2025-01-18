@@ -5,7 +5,7 @@ by kuertee. Contributors: Erixon, Forleyor, Mycu, Runekn, AlexandreTK.
 
 Updates
 =======
-v7.5.005 beta, 17 Jan 2025:
+v7.5.005 beta, 19 Jan 2025:
 -NOTES FOR MOD DEVELOPERS:
 PROTECTED UI MODE:
 -1. Mods that use UI Extensions will need the new Protected UI Mode setting in the Extensions menu disabled.

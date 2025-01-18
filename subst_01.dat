@@ -234,15 +234,7 @@ end
 
 function menu.getChatMessages()
 	if menu.messagesOutdated then
-
-		-- kuertee start: prevent online funcs when protected ui mod is disabled
-		-- local username, userid = OnlineGetUserName()
-		local username, userid = "", ""
-		if GetUISafeModeOption() then
-			username, userid = OnlineGetUserName()
-		end
-		-- kuertee end: prevent online funcs when protected ui mod is disabled
-
+		local username, userid = OnlineGetUserName()
 		local fontsize = Helper.scaleFont(Helper.standardFont, Helper.standardFontSize)
 		menu.messagetexts = {}
 		for i in ipairs(menu.privatemessages) do
@@ -250,14 +242,13 @@ function menu.getChatMessages()
 		end
 
 		local prevdate = ""
+		local messages = OnlineGetChatMessages()
 
-		-- kuertee start: prevent online funcs when protected ui mod is disabled
-		-- local messages = OnlineGetChatMessages()
-		local messages = {}
-		if GetUISafeModeOption() then
-			messages = OnlineGetChatMessages()
+		-- kuertee start:
+		if not messages then
+			messages = {}
 		end
-		-- kuertee end: prevent online funcs when protected ui mod is disabled
+		-- kuertee end
 
 		for i, message in ipairs(messages) do
 			local color = menu.getChatColor(message.author, message.authorid, userid)
@@ -772,14 +763,7 @@ function menu.createReportContext(frame)
 	row[1]:createText(data.author, Helper.headerRowCenteredProperties)
 	row[1].properties.color = data.authorcolor
 
-	-- kuertee start: prevent online funcs when protected ui mod is disabled
-	-- local _, userid = OnlineGetUserName()
-	local userid = ""
-	if GetUISafeModeOption() then
-		_, userid = OnlineGetUserName()
-	end
-	-- kuertee end: prevent online funcs when protected ui mod is disabled
-
+	local _, userid = OnlineGetUserName()
 	if data.authorid ~= userid then
 		local row = ftable:addRow(true, { fixed = true })
 		row[1]:createButton({  }):setText(ReadText(1001, 12115))
@@ -927,15 +911,7 @@ function menu.onTableRightMouseClick(uitable, row, posx, posy)
 	if uitable == menu.chatTable then
 		local rowdata = menu.rowDataMap[uitable] and menu.rowDataMap[uitable][row]
 		if type(rowdata) == "table" then
-
-			-- kuertee start: prevent online funcs when protected ui mod is disabled
-			-- local username, userid = OnlineGetUserName()
-			local username, userid = "", ""
-			if GetUISafeModeOption() then
-				username, userid = OnlineGetUserName()
-			end
-			-- kuertee end: prevent online funcs when protected ui mod is disabled
-
+			local username, userid = OnlineGetUserName()
 			if rowdata.authorid ~= userid then
 				local x, y = GetLocalMousePosition()
 				if x == nil then
@@ -9939,16 +9915,7 @@ function menu.buttonToggleMultiverseMap()
 			menu.createContextFrame(nil, nil, nil, nil, 0)
 		elseif operationRewardPending then
 			menu.contextMenuMode = "onlinereward"
-
-			-- kuertee start: prevent online funcs when protected ui mod is disabled
-			-- menu.contextMenuData = { xoffset = 0, yoffset = menu.topLevelHeight, instance = instance, width = Helper.viewWidth, height = Helper.viewHeight - 2 * menu.topLevelHeight, rewardentries = OnlineGetLogbookRewards() }
-			if GetUISafeModeOption() then
-				menu.contextMenuData = { xoffset = 0, yoffset = menu.topLevelHeight, instance = instance, width = Helper.viewWidth, height = Helper.viewHeight - 2 * menu.topLevelHeight, rewardentries = OnlineGetLogbookRewards() }
-			else
-				menu.contextMenuData = { xoffset = 0, yoffset = menu.topLevelHeight, instance = instance, width = Helper.viewWidth, height = Helper.viewHeight - 2 * menu.topLevelHeight, rewardentries = {} }
-			end
-			-- kuertee end: prevent online funcs when protected ui mod is disabled
-
+			menu.contextMenuData = { xoffset = 0, yoffset = menu.topLevelHeight, instance = instance, width = Helper.viewWidth, height = Helper.viewHeight - 2 * menu.topLevelHeight, rewardentries = OnlineGetLogbookRewards() }
 			menu.createContextFrame(nil, nil, nil, nil, 0)
 		end
 	end
@@ -12942,18 +12909,8 @@ function menu.displayMenu(firsttime)
 
 			local isonline = Helper.isOnlineGame()
 			if isonline then
-
-				-- kuertee start: prevent online funcs when protected ui mod is disabled
-				-- local operation = OnlineGetCurrentOperation()
-				-- local currentteam = OnlineGetCurrentTeam()
-				local operation = {}
-				local currentteam = {}
-				if GetUISafeModeOption() then
-					operation = OnlineGetCurrentOperation()
-					currentteam = OnlineGetCurrentTeam()
-				end
-				-- kuertee end: prevent online funcs when protected ui mod is disabled
-
+				local operation = OnlineGetCurrentOperation()
+				local currentteam = OnlineGetCurrentTeam()
 				if operation.isvalid and currentteam.isvalid then
 					menu.ventureMode = "ventureoperation"
 				else
@@ -13038,14 +12995,13 @@ function menu.displayMenu(firsttime)
 
 		if menu.contextMenuData.mode == "inventory" then
 			local inventory = GetInventory(menu.contextMenuData.entity)
+			local onlineitems = OnlineGetUserItems()
 
-			-- kuertee start: prevent online funcs when protected ui mod is disabled
-			-- local onlineitems = OnlineGetUserItems()
-			local onlineitems = {}
-			if GetUISafeModeOption() then
-				onlineitems = OnlineGetUserItems()
+			-- kuertee start:
+			if not onlineitems then
+				onlineitems = {}
 			end
-			-- kuertee end: prevent online funcs when protected ui mod is disabled
+			-- kuertee end
 
 			for ware, entry in pairs(inventory) do
 				local ispersonalupgrade = GetWareData(ware, "ispersonalupgrade")
@@ -13161,16 +13117,7 @@ function menu.displayMenu(firsttime)
 				menu.createContextFrame(nil, nil, nil, nil, 0)
 			elseif operationRewardPending then
 				menu.contextMenuMode = "onlinereward"
-
-				-- kuertee start: prevent online funcs when protected ui mod is disabled
-				-- menu.contextMenuData = { xoffset = 0, yoffset = menu.topLevelHeight, instance = instance, width = Helper.viewWidth, height = Helper.viewHeight - 2 * menu.topLevelHeight, rewardentries = OnlineGetLogbookRewards() }
-				if GetUISafeModeOption() then
-					menu.contextMenuData = { xoffset = 0, yoffset = menu.topLevelHeight, instance = instance, width = Helper.viewWidth, height = Helper.viewHeight - 2 * menu.topLevelHeight, rewardentries = OnlineGetLogbookRewards() }
-				else
-					menu.contextMenuData = { xoffset = 0, yoffset = menu.topLevelHeight, instance = instance, width = Helper.viewWidth, height = Helper.viewHeight - 2 * menu.topLevelHeight, rewardentries = {} }
-				end
-				-- kuertee end: prevent online funcs when protected ui mod is disabled
-
+				menu.contextMenuData = { xoffset = 0, yoffset = menu.topLevelHeight, instance = instance, width = Helper.viewWidth, height = Helper.viewHeight - 2 * menu.topLevelHeight, rewardentries = OnlineGetLogbookRewards() }
 				menu.createContextFrame(nil, nil, nil, nil, 0)
 			end
 		end
@@ -14664,13 +14611,14 @@ function menu.createPropertyOwned(frame, instance)
 
 	local onlineitems = {}
 	if menu.propertyMode == "inventoryships" then
+		onlineitems = OnlineGetUserItems()
 
-		-- kuertee start: prevent online funcs when protected ui mod is disabled
-		-- onlineitems = OnlineGetUserItems()
-		if GetUISafeModeOption() then
-			onlineitems = OnlineGetUserItems()
+		-- kuertee start:
+		if not onlineitems then
+			onlineitems = {}
 		end
-		-- kuertee end: prevent online funcs when protected ui mod is disabled
+		-- kuertee end
+
 	end
 
 	local playerobjects = {}
@@ -21511,13 +21459,13 @@ function menu.setupCrewInfoSubmenuRows(mode, inputtable, inputobject, instance)
 		if isplayerowned and pilot and IsValidComponent(pilot) then
 			local inventory = GetInventory(pilot)
 
-			-- kuertee start: prevent online funcs when protected ui mod is disabled
-			-- local onlineitems = OnlineGetUserItems()
-			local onlineitems = {}
-			if GetUISafeModeOption() then
-				onlineitems = OnlineGetUserItems()
+			local onlineitems = OnlineGetUserItems()
+
+			-- kuertee start:
+			if not onlineitems then
+				onlineitems = {}
 			end
-			-- kuertee end: prevent online funcs when protected ui mod is disabled
+			-- kuertee end
 
 			local sortedWares = {}
 			local totalamount = 0
@@ -25099,11 +25047,7 @@ function menu.createVentureSeasonHeader(frame, instance)
 	local isonline = Helper.isOnlineGame()
 	local invitations = {}
 
-	-- kuertee start: prevent online funcs when protected ui mod is disabled
-	-- if not OnlineGetCurrentTeam().isvalid then
-	if GetUISafeModeOption() and (not OnlineGetCurrentTeam().isvalid) then
-	-- kuertee end: prevent online funcs when protected ui mod is disabled
-
+	if not OnlineGetCurrentTeam().isvalid then
 		invitations = Helper.callExtensionFunction("multiverse", "getTeamInvites") or {}
 	end
 
@@ -25117,12 +25061,7 @@ function menu.createVentureSeasonHeader(frame, instance)
 				bgcolor = Color["row_background_selected"]
 			end
 			if entry.category == "ventureteam" then
-
-				-- kuertee start: prevent online funcs when protected ui mod is disabled
-				-- if not OnlineGetCurrentTeam().isvalid then
-				if GetUISafeModeOption() and (not OnlineGetCurrentTeam().isvalid) then
-				-- kuertee end: prevent online funcs when protected ui mod is disabled
-
+				if not OnlineGetCurrentTeam().isvalid then
 					if #invitations > 0 then
 						color = Color["icon_mission"]
 					end
@@ -25164,13 +25103,7 @@ function menu.createVentureSeason(frame, instance)
 	table_desc:setColWidthPercent(2, 33)
 	table_desc:setDefaultBackgroundColSpan(1, numCols)
 
-	-- kuertee start: prevent online funcs when protected ui mod is disabled
-	-- local season = OnlineGetCurrentSeason()
-	local season
-	if GetUISafeModeOption() then
-		season = OnlineGetCurrentSeason()
-	end
-	-- kuertee end: prevent online funcs when protected ui mod is disabled
+	local season = OnlineGetCurrentSeason()
 
 	-- title
 	local row = table_desc:addRow(nil, { fixed = true, bgColor = Color["row_title_background"] })
@@ -25260,15 +25193,7 @@ function menu.createVentureSeason(frame, instance)
 		row[1]:createText(ReadText(1001, 11341) .. ReadText(1001, 120))
 
 		local coalitionname = ""
-
-		-- kuertee start: prevent online funcs when protected ui mod is disabled
-		-- local currentcoalition = OnlineGetCurrentCoalition()
-		local currentcoalition
-		if GetUISafeModeOption() then
-			currentcoalition = OnlineGetCurrentCoalition()
-		end
-		-- kuertee end: prevent online funcs when protected ui mod is disabled
-
+		local currentcoalition = OnlineGetCurrentCoalition()
 		if currentcoalition.isvalid then
 			coalitionname = currentcoalition.name
 		else
@@ -25282,14 +25207,7 @@ function menu.createVentureSeason(frame, instance)
 		row[1]:createText(ReadText(1001, 11582) .. ReadText(1001, 120))
 
 		local teamname = ""
-
-		-- kuertee start: prevent online funcs when protected ui mod is disabled
-		-- local currentteam = OnlineGetCurrentTeam()
-		if GetUISafeModeOption() then
-			currentteam = OnlineGetCurrentTeam()
-		end
-		-- kuertee end: prevent online funcs when protected ui mod is disabled
-
+		local currentteam = OnlineGetCurrentTeam()
 		if currentteam.isvalid then
 			teamname = currentteam.name
 		else
@@ -25498,11 +25416,7 @@ function menu.createPlayerInfo(frame, width, height, offsetx, offsety)
 		button.handlers.onClick = function () return menu.allowResetView() and menu.buttonResetView() or nil end
 	end
 
-	-- kuertee start: prevent online funcs when protected ui mod is disabled
-	-- if OnlineIsCurrentTeamValid() then
-	if GetUISafeModeOption() and OnlineIsCurrentTeamValid() then
-	-- kuertee end: prevent online funcs when protected ui mod is disabled
-
+	if OnlineIsCurrentTeamValid() then
 		local button = row[3]:createButton({
 			width = row[3]:getColSpanWidth(),
 			height = Helper.scaleY(Helper.standardTextHeight),
@@ -30864,14 +30778,7 @@ function menu.createOnlineModeContext(frame)
 	ftable:setDefaultColSpan(1, 2)
 
 	local counter = 1
-
-	-- kuertee start: prevent online funcs when protected ui mod is disabled
-	-- local hassession = OnlineHasSession()
-	local hassession
-	if GetUISafeModeOption() then
-		hassession = OnlineHasSession()
-	end
-	-- kuertee end: prevent online funcs when protected ui mod is disabled
+	local hassession = OnlineHasSession()
 
 	local hasdocks = false
 	local hasmultipledocksperplatform = false
@@ -35682,13 +35589,7 @@ function menu.closeContextMenu(dueToClose)
 				return false
 			end
 		elseif (menu.contextMenuMode == "onlinereward") then
-
-			-- kuertee start: prevent online funcs when protected ui mod is disabled
-			if GetUISafeModeOption() then
-				OnlineClearLogbookRewards()
-			end
-			-- kuertee end: prevent online funcs when protected ui mod is disabled
-
+			OnlineClearLogbookRewards()
 		elseif (menu.contextMenuMode == "ventureconfig") or (menu.contextMenuMode == "venturecreateparty") or (menu.contextMenuMode == "ventureoutcome") or (menu.contextMenuMode == "venturefriendlist") then
 			if not Helper.callExtensionFunction("multiverse", "closeContextMenu", menu, menu.contextMenuMode, dueToClose) then
 				return true
@@ -35865,14 +35766,13 @@ function menu.onInteractMenuCallback(type, param)
 
 		if menu.contextMenuData.mode == "inventory" then
 			local inventory = GetInventory(menu.contextMenuData.entity)
+			local onlineitems = OnlineGetUserItems()
 
-			-- kuertee start: prevent online funcs when protected ui mod is disabled
-			-- local onlineitems = OnlineGetUserItems()
-			local onlineitems = {}
-			if GetUISafeModeOption() then
-				onlineitems = OnlineGetUserItems()
+			-- kuertee start:
+			if not onlineitems then
+				onlineitems = {}
 			end
-			-- kuertee end: prevent online funcs when protected ui mod is disabled
+			-- kuertee end
 
 			for ware, entry in pairs(inventory) do
 				local ispersonalupgrade = GetWareData(ware, "ispersonalupgrade")
@@ -37598,14 +37498,8 @@ local config = {
 		{ name = ReadText(1001, 7730),		icon = function () return menu.messageSidebarIcon() end,		mode = "messages",			active = true, helpOverlayID = "playerinfo_sidebar_messages",		helpOverlayText = ReadText(1028, 7712),		iconcolor = function () return menu.messageSidebarIconColor() end },
 		{ name = ReadText(1001, 7702),		icon = "pi_transactionlog",			mode = "transactionlog",	active = true, helpOverlayID = "playerinfo_sidebar_transactions",	helpOverlayText = ReadText(1028, 7719) },
 		{ name = ReadText(1001, 5700),		icon = "pi_logbook",				mode = "logbook",			active = true, helpOverlayID = "playerinfo_sidebar_logbook",		helpOverlayText = ReadText(1028, 7711) },
-
-		-- kuertee start: prevent online funcs when protected ui mod is disabled
-		-- { spacing = true,	condition = function () return OnlineHasSession() end },
-		-- { name = ReadText(1001, 11386),		icon = "vt_contactlist",			mode = "venturecontacts",	active = true, helpOverlayID = "playerinfo_sidebar_contacts",		helpOverlayText = ReadText(1028, 3275),	condition = function () return OnlineHasSession() end },
-		{ spacing = true,	condition = function () return GetUISafeModeOption() and OnlineHasSession() end },
-		{ name = ReadText(1001, 11386),		icon = "vt_contactlist",			mode = "venturecontacts",	active = true, helpOverlayID = "playerinfo_sidebar_contacts",		helpOverlayText = ReadText(1028, 3275),	condition = function () return GetUISafeModeOption() and OnlineHasSession() end },
-		-- kuertee end: prevent online funcs when protected ui mod is disabled
-
+		{ spacing = true,	condition = function () return OnlineHasSession() end },
+		{ name = ReadText(1001, 11386),		icon = "vt_contactlist",			mode = "venturecontacts",	active = true, helpOverlayID = "playerinfo_sidebar_contacts",		helpOverlayText = ReadText(1028, 3275),	condition = function () return OnlineHasSession() end },
 	},
 	rightAlignTextProperties = {
 		halign = "right"
@@ -38808,13 +38702,13 @@ function menu.createInventory(frame, tableProperties, mode, tabOrderOffset)
 	local isonline = Helper.isOnlineGame()
 	-- show venture inventory partially if we have permanent online items
 
-	-- kuertee start: prevent online funcs when protected ui mod is disabled
-	-- local onlineitems = OnlineGetUserItems()
-	local onlineitems = {}
-	if GetUISafeModeOption() then
-		onlineitems = OnlineGetUserItems()
+	local onlineitems = OnlineGetUserItems()
+
+	-- kuertee start:
+	if not onlineitems then
+		onlineitems = {}
 	end
-	-- kuertee end: prevent online funcs when protected ui mod is disabled
+	-- kuertee end
 
 	for ware, waredata in pairs(onlineitems) do
 		local isoperationvolatile, isseasonvolatile = GetWareData(ware, "isoperationvolatile", "isseasonvolatile")
@@ -38854,14 +38748,13 @@ function menu.createInventory(frame, tableProperties, mode, tabOrderOffset)
 		end
 
 		menu.inventory = GetPlayerInventory()
+		menu.onlineitems = OnlineGetUserItems()
 
-		-- kuertee start: prevent online funcs when protected ui mod is disabled
-		-- menu.onlineitems = OnlineGetUserItems()
-		menu.onlineitems = {}
-		if GetUISafeModeOption() then
-			menu.onlineitems = OnlineGetUserItems()
+		-- kuertee start:
+		if not onlineitems then
+			onlineitems = {}
 		end
-		-- kuertee end: prevent online funcs when protected ui mod is disabled
+		-- kuertee end
 
 		for ware, waredata in Helper.orderedPairs(menu.inventory) do
 			local iscraftingresource, ismodpart, isprimarymodpart, ispersonalupgrade, tradeonly, ispaintmod, isbraneitem = GetWareData(ware, "iscraftingresource", "ismodpart", "isprimarymodpart", "ispersonalupgrade", "tradeonly", "ispaintmod", "isbraneitem")
@@ -41096,13 +40989,13 @@ function menu.initEmpireData()
 
 	menu.getEmployeeList()
 
-	-- kuertee start: prevent online funcs when protected ui mod is disabled
-	-- local onlineitems = OnlineGetUserItems()
-	local onlineitems = {}
-	if GetUISafeModeOption() then
-		onlineitems = OnlineGetUserItems()
+	local onlineitems = OnlineGetUserItems()
+
+	-- kuertee start:
+	if not onlineitems then
+		onlineitems = {}
 	end
-	-- kuertee end: prevent online funcs when protected ui mod is disabled
+	-- kuertee end
 
 	local numinventoryitems = 0
 	-- { [ware1] = { name = "", amount = 0, price = 0 }, [ware2] = {} }
@@ -58032,12 +57925,7 @@ function menu.ventureModuleUnavailableMouseOverText()
 	local mouseovertext = ColorText["text_error"] .. ReadText(1026, 7913)
 	if not C.IsVentureExtensionSupported() then
 		mouseovertext = ColorText["text_error"] .. ReadText(1026, 7930)
-
-	-- kuertee start: prevent online funcs when protected ui mod is disabled
-	-- elseif not OnlineHasSession() then
-	elseif GetUISafeModeOption() and (not OnlineHasSession()) then
-	-- kuertee end: prevent online funcs when protected ui mod is disabled
-
+	elseif not OnlineHasSession() then
 		mouseovertext = mouseovertext .. "\n\n" .. ReadText(1026, 7921)
 	end
 	return mouseovertext
@@ -73379,13 +73267,13 @@ function menu.display()
 				-- cps
 				if active then
 
-					-- kuertee start: prevent online funcs when protected ui mod is disabled
-					-- local onlineitems = OnlineGetUserItems()
-					local onlineitems = {}
-					if GetUISafeModeOption() then
-						onlineitems = OnlineGetUserItems()
+					local onlineitems = OnlineGetUserItems()
+
+					-- kuertee start:
+					if not onlineitems then
+						onlineitems = {}
 					end
-					-- kuertee end: prevent online funcs when protected ui mod is disabled
+					-- kuertee end
 
 					local limitedmodulesused = {}
 					for j = 0, buf_content.numconstructionplans - 1 do
@@ -73957,13 +73845,13 @@ function menu.display()
 					end
 				end
 
-				-- kuertee start: prevent online funcs when protected ui mod is disabled
-				-- local onlineitems = OnlineGetUserItems()
-				local onlineitems = {}
-				if GetUISafeModeOption() then
-					onlineitems = OnlineGetUserItems()
+				local onlineitems = OnlineGetUserItems()
+
+				-- kuertee start:
+				if not onlineitems then
+					onlineitems = {}
 				end
-				-- kuertee end: prevent online funcs when protected ui mod is disabled
+				-- kuertee end
 
 				-- stations
 				menu.constructionplans = {}
@@ -81455,13 +81343,13 @@ function menu.insertLuaAction(actiontype, istobedisplayed)
 				local inventory = GetInventory(pilot)
 				if next(inventory) then
 
-					-- kuertee start: prevent online funcs when protected ui mod is disabled
-					-- local onlineitems = OnlineGetUserItems()
-					local onlineitems = {}
-					if GetUISafeModeOption() then
-						onlineitems = OnlineGetUserItems()
+					local onlineitems = OnlineGetUserItems()
+
+					-- kuertee start:
+					if not onlineitems then
+						onlineitems = {}
 					end
-					-- kuertee end: prevent online funcs when protected ui mod is disabled
+					-- kuertee end
 
 					local sortedWares = {}
 					for ware, entry in pairs(inventory) do
@@ -84623,12 +84511,7 @@ config.optionDefinitions = {
             valuetype = "button",
             value = function () return menu.valueOnlineAllowInvites() end,
             callback = function () return menu.callbackOnlineAllowInvites() end,
-
-            -- kuertee start: prevent online funcs when protected ui mod is disabled
-            -- display = function () return C.IsVentureSeasonSupported() and OnlineHasSession() end,
-            display = function () return C.IsVentureSeasonSupported() and (GetUISafeModeOption() and OnlineHasSession()) end,
-            -- kuertee end: prevent online funcs when protected ui mod is disabled
-
+            display = function () return C.IsVentureSeasonSupported() and OnlineHasSession() end,
         },
         [4] = {
             id = "acceptprivatemessages",
@@ -84637,12 +84520,7 @@ config.optionDefinitions = {
             valuetype = "button",
             value = function () return menu.valueOnlineAllowPrivateMessages() end,
             callback = function () return menu.callbackOnlineAllowPrivateMessages() end,
-
-            -- kuertee start: prevent online funcs when protected ui mod is disabled
-            -- display = function () return C.IsVentureSeasonSupported() and OnlineHasSession() end,
-            display = function () return C.IsVentureSeasonSupported() and (GetUISafeModeOption() and OnlineHasSession()) end,
-            -- kuertee end: prevent online funcs when protected ui mod is disabled
-
+            display = function () return C.IsVentureSeasonSupported() and OnlineHasSession() end,
         },
         [5] = {
             id = "seasonupdates",
@@ -86148,26 +86026,28 @@ config.DLSSmodes = {
 local OldFuncs = {}
 local callbacks = {}
 
-OldFuncs.addSavegameRow = menu.addSavegameRow
-menu.addSavegameRow = ModLua.addSavegameRow
-OldFuncs.cleanup = menu.cleanup
-menu.cleanup = ModLua.cleanup
-OldFuncs.submenuHandler = menu.submenuHandler
-menu.submenuHandler = ModLua.submenuHandler
-OldFuncs.callbackDeleteSave = menu.callbackDeleteSave
-menu.callbackDeleteSave = ModLua.callbackDeleteSave
-OldFuncs.displayOptions = menu.displayOptions
-menu.displayOptions = ModLua.displayOptions
-OldFuncs.displayExtensions = menu.displayExtensions
-menu.displayExtensions = ModLua.displayExtensions
-OldFuncs.displayExtensionRow = menu.displayExtensionRow
-menu.displayExtensionRow = ModLua.displayExtensionRow
-OldFuncs.displaySavegameOptions = menu.displaySavegameOptions
-menu.displaySavegameOptions = ModLua.displaySavegameOptions
-OldFuncs.onUpdate = menu.onUpdate
-menu.onUpdate = ModLua.onUpdate
-OldFuncs.newGameCallback = menu.newGameCallback
-menu.newGameCallback = ModLua.newGameCallback
+function ModLua.rewriteFunctions()
+    OldFuncs.addSavegameRow = menu.addSavegameRow
+    menu.addSavegameRow = ModLua.addSavegameRow
+    OldFuncs.cleanup = menu.cleanup
+    menu.cleanup = ModLua.cleanup
+    OldFuncs.submenuHandler = menu.submenuHandler
+    menu.submenuHandler = ModLua.submenuHandler
+    OldFuncs.callbackDeleteSave = menu.callbackDeleteSave
+    menu.callbackDeleteSave = ModLua.callbackDeleteSave
+    OldFuncs.displayOptions = menu.displayOptions
+    menu.displayOptions = ModLua.displayOptions
+    OldFuncs.displayExtensions = menu.displayExtensions
+    menu.displayExtensions = ModLua.displayExtensions
+    OldFuncs.displayExtensionRow = menu.displayExtensionRow
+    menu.displayExtensionRow = ModLua.displayExtensionRow
+    OldFuncs.displaySavegameOptions = menu.displaySavegameOptions
+    menu.displaySavegameOptions = ModLua.displaySavegameOptions
+    OldFuncs.onUpdate = menu.onUpdate
+    menu.onUpdate = ModLua.onUpdate
+    OldFuncs.newGameCallback = menu.newGameCallback
+    menu.newGameCallback = ModLua.newGameCallback
+end
 
 function ModLua.addSavegameRow(ftable, savegame, name, slot)
     -- kuertee start: callback
@@ -86228,12 +86108,7 @@ function ModLua.addSavegameRow(ftable, savegame, name, slot)
 
     local warningicon = ""
     if savegame.isonline then
-
-        -- kuertee start: prevent online funcs when protected ui mod is disabled
-        -- if C.IsClientModified() or (not OnlineHasSession()) or (C.GetVentureDLCStatus() ~= 0) then
-        if C.IsClientModified() or (GetUISafeModeOption() and (not OnlineHasSession())) or (C.GetVentureDLCStatus() ~= 0) then
-        -- kuertee end: prevent online funcs when protected ui mod is disabled
-
+        if C.IsClientModified() or (not OnlineHasSession()) or (C.GetVentureDLCStatus() ~= 0) then
             warningicon = ColorText["icon_warning"] .. "\27[workshop_error]\27X"
         end
     end
@@ -87355,14 +87230,13 @@ function ModLua.newGameCallback(option, checked)
             menu.openSubmenu("mapeditor", option.id)
         else
             local playerinventory = GetPlayerInventory()
+            local onlineitems = OnlineGetUserItems()
 
-            -- kuertee start: prevent online funcs when protected ui mod is disabled
-            -- local onlineitems = OnlineGetUserItems()
-            local onlineitems = {}
-            if GetUISafeModeOption() then
-                onlineitems = OnlineGetUserItems()
+            -- kuertee start:
+            if not onlineitems then
+                onlineitems = {}
             end
-            -- kuertee end: prevent online funcs when protected ui mod is disabled
+            -- kuertee end
 
             local hasnotuploadeditems = false
             for ware, waredata in Helper.orderedPairs(playerinventory) do
@@ -87431,9 +87305,16 @@ function ModLua.newGameCallback(option, checked)
     end
 end
 
+ModLua.rewriteFunctions()
+
 -- kuertee end: rewrites
 
 -- kuertee start: new funcs
+
+function ModLua.addNewFunctions()
+    menu.registerCallback = ModLua.registerCallback
+    menu.deregisterCallback = ModLua.deregisterCallback
+end
 
 function ModLua.registerCallback(callbackName, callbackFunction)
     -- note 1: format is generally [function name]_[action]. e.g.: in kuertee_menu_transporter, "display_on_set_room_active" overrides the room's active property with the return of the callback.
@@ -87457,6 +87338,8 @@ function ModLua.deregisterCallback(callbackName, callbackFunction)
         end
     end
 end
+
+ModLua.addNewFunctions()
 
 -- kuertee end: new funcs
 local ModLua = {}
@@ -87544,6 +87427,7 @@ Helper.color = {
 }
 -- kuertee end: colour backward compatibility
 
+local origreadtext = ReadText
 ReadText = function(page, line) 
 	-- kuertee start:
 	if page and line then
@@ -87573,28 +87457,30 @@ end
 local OldFuncs = {}
 local callbacks = {}
 
-OldFuncs.onUpdate = Helper.onUpdate
-Helper.onUpdate = ModLua.onUpdate
-OldFuncs.getPassedTime = Helper.getPassedTime
-Helper.getPassedTime = ModLua.getPassedTime
-OldFuncs.checkTopLevelConditions = Helper.checkTopLevelConditions
-Helper.checkTopLevelConditions = ModLua.checkTopLevelConditions
-OldFuncs.createLSOStorageNode = Helper.createLSOStorageNode
-Helper.createLSOStorageNode = ModLua.createLSOStorageNode
-OldFuncs.updateLSOStorageNode = Helper.updateLSOStorageNode
-Helper.updateLSOStorageNode = ModLua.updateLSOStorageNode
-OldFuncs.onExpandLSOStorageNode = Helper.onExpandLSOStorageNode
-Helper.onExpandLSOStorageNode = ModLua.onExpandLSOStorageNode
-OldFuncs.checkboxSetTradeRuleOverride = Helper.checkboxSetTradeRuleOverride
-Helper.checkboxSetTradeRuleOverride = ModLua.checkboxSetTradeRuleOverride
-OldFuncs.dropdownTradeRule = Helper.dropdownTradeRule
-Helper.dropdownTradeRule = ModLua.dropdownTradeRule
-OldFuncs.onCollapseLSOStorageNode = Helper.onCollapseLSOStorageNode
-Helper.onCollapseLSOStorageNode = ModLua.onCollapseLSOStorageNode
-OldFuncs.getLimitedWareAmount = Helper.getLimitedWareAmount
-Helper.getLimitedWareAmount = ModLua.getLimitedWareAmount
-OldFuncs.getLimitedWareAmount = Helper.getLimitedWareAmount
-Helper.getLimitedWareAmount = ModLua.getLimitedWareAmount
+function ModLua.rewriteFunctions()
+	OldFuncs.onUpdate = Helper.onUpdate
+	Helper.onUpdate = ModLua.onUpdate
+	OldFuncs.getPassedTime = Helper.getPassedTime
+	Helper.getPassedTime = ModLua.getPassedTime
+	OldFuncs.checkTopLevelConditions = Helper.checkTopLevelConditions
+	Helper.checkTopLevelConditions = ModLua.checkTopLevelConditions
+	OldFuncs.createLSOStorageNode = Helper.createLSOStorageNode
+	Helper.createLSOStorageNode = ModLua.createLSOStorageNode
+	OldFuncs.updateLSOStorageNode = Helper.updateLSOStorageNode
+	Helper.updateLSOStorageNode = ModLua.updateLSOStorageNode
+	OldFuncs.onExpandLSOStorageNode = Helper.onExpandLSOStorageNode
+	Helper.onExpandLSOStorageNode = ModLua.onExpandLSOStorageNode
+	OldFuncs.checkboxSetTradeRuleOverride = Helper.checkboxSetTradeRuleOverride
+	Helper.checkboxSetTradeRuleOverride = ModLua.checkboxSetTradeRuleOverride
+	OldFuncs.dropdownTradeRule = Helper.dropdownTradeRule
+	Helper.dropdownTradeRule = ModLua.dropdownTradeRule
+	OldFuncs.onCollapseLSOStorageNode = Helper.onCollapseLSOStorageNode
+	Helper.onCollapseLSOStorageNode = ModLua.onCollapseLSOStorageNode
+	OldFuncs.getLimitedWareAmount = Helper.getLimitedWareAmount
+	Helper.getLimitedWareAmount = ModLua.getLimitedWareAmount
+	OldFuncs.getLimitedWareAmount = Helper.getLimitedWareAmount
+	Helper.getLimitedWareAmount = ModLua.getLimitedWareAmount
+end
 
 function ModLua.onUpdate()
 	-- call registered onUpdate callbacks
@@ -88502,11 +88388,20 @@ function ModLua.getLimitedWareAmount(ware)
 	return tonumber(ffi.string(C.GetUserDataSigned("limited_blueprint_" .. ware))) or 0
 end
 
+ModLua.rewriteFunctions()
+
 -- kuertee end: rewrites
 
 -- kuertee start: new funcs
 
-function Helper.registerCallback(callbackName, callbackFunction)
+function ModLua.addNewFunctions()
+	Helper.registerCallback = ModLua.registerCallback
+	Helper.deregisterCallback = ModLua.deregisterCallback
+	Helper.debugText = ModLua.debugText
+	Helper.debugText_forced = ModLua.debugText_forced
+end
+
+function ModLua.registerCallback(callbackName, callbackFunction)
 	-- note 1: format is generally [function name]_[action]. e.g.: in kuertee_menu_transporter, "display_on_set_room_active" overrides the room's active property with the return of the callback.
 	-- note 2: events have the word "_on_" followed by a PRESET TENSE verb. e.g.: in kuertee_menu_transporter, "display_on_set_buttontable" is called after all of the rows of buttontable are set.
 	-- note 3: new callbacks can be added or existing callbacks can be edited. but commit your additions/changes to the mod's GIT repository.
@@ -88522,9 +88417,7 @@ function Helper.registerCallback(callbackName, callbackFunction)
 	table.insert (callbacks [callbackName], callbackFunction)
 end
 
-function Helper.deregisterCallback(callbackName, callbackFunction)
-	-- for i, callback in ipairs(callbacks[callbackName]) do
-	-- Helper.debugText_forced("#callbacks[" .. tostring(callbackName) .. "] (pre deregisterCallback)", #callbacks[callbackName])
+function ModLua.deregisterCallback(callbackName, callbackFunction)
 	if callbacks[callbackName] and #callbacks[callbackName] > 0 then
 		for i = #callbacks[callbackName], 1, -1 do
 			if callbacks[callbackName][i] == callbackFunction then
@@ -88532,10 +88425,9 @@ function Helper.deregisterCallback(callbackName, callbackFunction)
 			end
 		end
 	end
-	-- Helper.debugText_forced("#callbacks[" .. tostring(callbackName) .. "] (post deregisterCallback)", #callbacks[callbackName])
 end
 
-function Helper.debugText(data1, data2, indent, isForced, getinfodata)
+function ModLua.debugText(data1, data2, indent, isForced, getinfodata)
 	local isDebug = false
 	if isDebug == true or isForced == true then
 		if indent == nil then
@@ -88574,10 +88466,12 @@ function Helper.debugText(data1, data2, indent, isForced, getinfodata)
 	end
 end
 
-function Helper.debugText_forced(data1, data2, indent)
+function ModLua.debugText_forced(data1, data2, indent)
 	local getinfodata = debug.getinfo(2)
 	-- DebugError("func: " .. tostring(debug.getinfo(getinfodata.func).name) .. ", " .. tostring(debug.getinfo(getinfodata.func).linedefined) .. ", " .. tostring(debug.getinfo(getinfodata.func).short_src))
 	return Helper.debugText(data1, data2, indent, true, getinfodata)
 end
+
+ModLua.addNewFunctions()
 
 -- kuertee end: new funcs
