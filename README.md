@@ -29,9 +29,8 @@ UI.XML FILE:
 -3c note: Pre 7.5 UIX loaded and, if set-up a particularly way like my mods are, UIX also called their init() functions.
 -3d. E.g. instead of "return ModLua" at the bottom of my mods' custom lua files, I now call "ModLua.init()". E.g.: kuertee_uix_mod_sample from UIX's Nexus Mods page (https://www.nexusmods.com/x4foundations/mods/552?tab=files)/.
 
-v7.1.17, 27 Dec 2024:
--New: French language file. Thanks, Calvitix!
--Bug-fix: Multi-rename function was sometimes still adding some objects (e.g. the sector) that shouldn't be renamed in the list of objects to rename.
+v7.1.18, 12 Jan 2025:
+-New: UI Call-backs for the AEGS Faction mod by IALuir.
 
 Instructions for players
 ========================
@@ -221,6 +220,10 @@ French localisation by Calvitix.
 
 History
 =======
+v7.1.17, 27 Dec 2024:
+-New: French language file. Thanks, Calvitix!
+-Bug-fix: Multi-rename function was sometimes still adding some objects (e.g. the sector) that shouldn't be renamed in the list of objects to rename.
+
 v7.1.15, 11 Nov 2024:
 -Bug-fix: The multi-rename feature was buggy. e.g. preventing the single-rename function from working. In this version, the right-clicked object needs to be in the selected list for the multi-rename button to be active.
 
