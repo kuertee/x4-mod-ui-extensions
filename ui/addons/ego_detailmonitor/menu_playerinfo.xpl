@@ -367,14 +367,8 @@ local config = {
 		{ name = ReadText(1001, 7730),		icon = function () return menu.messageSidebarIcon() end,		mode = "messages",			active = true, helpOverlayID = "playerinfo_sidebar_messages",		helpOverlayText = ReadText(1028, 7712),		iconcolor = function () return menu.messageSidebarIconColor() end },
 		{ name = ReadText(1001, 7702),		icon = "pi_transactionlog",			mode = "transactionlog",	active = true, helpOverlayID = "playerinfo_sidebar_transactions",	helpOverlayText = ReadText(1028, 7719) },
 		{ name = ReadText(1001, 5700),		icon = "pi_logbook",				mode = "logbook",			active = true, helpOverlayID = "playerinfo_sidebar_logbook",		helpOverlayText = ReadText(1028, 7711) },
-
-		-- kuertee start: prevent online funcs when protected ui mod is disabled
-		-- { spacing = true,	condition = function () return OnlineHasSession() end },
-		-- { name = ReadText(1001, 11386),		icon = "vt_contactlist",			mode = "venturecontacts",	active = true, helpOverlayID = "playerinfo_sidebar_contacts",		helpOverlayText = ReadText(1028, 3275),	condition = function () return OnlineHasSession() end },
-		{ spacing = true,	condition = function () return GetUISafeModeOption() and OnlineHasSession() end },
-		{ name = ReadText(1001, 11386),		icon = "vt_contactlist",			mode = "venturecontacts",	active = true, helpOverlayID = "playerinfo_sidebar_contacts",		helpOverlayText = ReadText(1028, 3275),	condition = function () return GetUISafeModeOption() and OnlineHasSession() end },
-		-- kuertee end: prevent online funcs when protected ui mod is disabled
-
+		{ spacing = true,	condition = function () return OnlineHasSession() end },
+		{ name = ReadText(1001, 11386),		icon = "vt_contactlist",			mode = "venturecontacts",	active = true, helpOverlayID = "playerinfo_sidebar_contacts",		helpOverlayText = ReadText(1028, 3275),	condition = function () return OnlineHasSession() end },
 	},
 	rightAlignTextProperties = {
 		halign = "right"
@@ -1577,13 +1571,13 @@ function menu.createInventory(frame, tableProperties, mode, tabOrderOffset)
 	local isonline = Helper.isOnlineGame()
 	-- show venture inventory partially if we have permanent online items
 
-	-- kuertee start: prevent online funcs when protected ui mod is disabled
-	-- local onlineitems = OnlineGetUserItems()
-	local onlineitems = {}
-	if GetUISafeModeOption() then
-		onlineitems = OnlineGetUserItems()
+	local onlineitems = OnlineGetUserItems()
+
+	-- kuertee start:
+	if not onlineitems then
+		onlineitems = {}
 	end
-	-- kuertee end: prevent online funcs when protected ui mod is disabled
+	-- kuertee end
 
 	for ware, waredata in pairs(onlineitems) do
 		local isoperationvolatile, isseasonvolatile = GetWareData(ware, "isoperationvolatile", "isseasonvolatile")
@@ -1623,14 +1617,13 @@ function menu.createInventory(frame, tableProperties, mode, tabOrderOffset)
 		end
 
 		menu.inventory = GetPlayerInventory()
+		menu.onlineitems = OnlineGetUserItems()
 
-		-- kuertee start: prevent online funcs when protected ui mod is disabled
-		-- menu.onlineitems = OnlineGetUserItems()
-		menu.onlineitems = {}
-		if GetUISafeModeOption() then
-			menu.onlineitems = OnlineGetUserItems()
+		-- kuertee start:
+		if not onlineitems then
+			onlineitems = {}
 		end
-		-- kuertee end: prevent online funcs when protected ui mod is disabled
+		-- kuertee end
 
 		for ware, waredata in Helper.orderedPairs(menu.inventory) do
 			local iscraftingresource, ismodpart, isprimarymodpart, ispersonalupgrade, tradeonly, ispaintmod, isbraneitem = GetWareData(ware, "iscraftingresource", "ismodpart", "isprimarymodpart", "ispersonalupgrade", "tradeonly", "ispaintmod", "isbraneitem")
@@ -3865,13 +3858,13 @@ function menu.initEmpireData()
 
 	menu.getEmployeeList()
 
-	-- kuertee start: prevent online funcs when protected ui mod is disabled
-	-- local onlineitems = OnlineGetUserItems()
-	local onlineitems = {}
-	if GetUISafeModeOption() then
-		onlineitems = OnlineGetUserItems()
+	local onlineitems = OnlineGetUserItems()
+
+	-- kuertee start:
+	if not onlineitems then
+		onlineitems = {}
 	end
-	-- kuertee end: prevent online funcs when protected ui mod is disabled
+	-- kuertee end
 
 	local numinventoryitems = 0
 	-- { [ware1] = { name = "", amount = 0, price = 0 }, [ware2] = {} }

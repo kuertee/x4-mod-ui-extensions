@@ -234,15 +234,7 @@ end
 
 function menu.getChatMessages()
 	if menu.messagesOutdated then
-
-		-- kuertee start: prevent online funcs when protected ui mod is disabled
-		-- local username, userid = OnlineGetUserName()
-		local username, userid = "", ""
-		if GetUISafeModeOption() then
-			username, userid = OnlineGetUserName()
-		end
-		-- kuertee end: prevent online funcs when protected ui mod is disabled
-
+		local username, userid = OnlineGetUserName()
 		local fontsize = Helper.scaleFont(Helper.standardFont, Helper.standardFontSize)
 		menu.messagetexts = {}
 		for i in ipairs(menu.privatemessages) do
@@ -250,14 +242,13 @@ function menu.getChatMessages()
 		end
 
 		local prevdate = ""
+		local messages = OnlineGetChatMessages()
 
-		-- kuertee start: prevent online funcs when protected ui mod is disabled
-		-- local messages = OnlineGetChatMessages()
-		local messages = {}
-		if GetUISafeModeOption() then
-			messages = OnlineGetChatMessages()
+		-- kuertee start:
+		if not messages then
+			messages = {}
 		end
-		-- kuertee end: prevent online funcs when protected ui mod is disabled
+		-- kuertee end
 
 		for i, message in ipairs(messages) do
 			local color = menu.getChatColor(message.author, message.authorid, userid)
@@ -772,14 +763,7 @@ function menu.createReportContext(frame)
 	row[1]:createText(data.author, Helper.headerRowCenteredProperties)
 	row[1].properties.color = data.authorcolor
 
-	-- kuertee start: prevent online funcs when protected ui mod is disabled
-	-- local _, userid = OnlineGetUserName()
-	local userid = ""
-	if GetUISafeModeOption() then
-		_, userid = OnlineGetUserName()
-	end
-	-- kuertee end: prevent online funcs when protected ui mod is disabled
-
+	local _, userid = OnlineGetUserName()
 	if data.authorid ~= userid then
 		local row = ftable:addRow(true, { fixed = true })
 		row[1]:createButton({  }):setText(ReadText(1001, 12115))
@@ -927,15 +911,7 @@ function menu.onTableRightMouseClick(uitable, row, posx, posy)
 	if uitable == menu.chatTable then
 		local rowdata = menu.rowDataMap[uitable] and menu.rowDataMap[uitable][row]
 		if type(rowdata) == "table" then
-
-			-- kuertee start: prevent online funcs when protected ui mod is disabled
-			-- local username, userid = OnlineGetUserName()
-			local username, userid = "", ""
-			if GetUISafeModeOption() then
-				username, userid = OnlineGetUserName()
-			end
-			-- kuertee end: prevent online funcs when protected ui mod is disabled
-
+			local username, userid = OnlineGetUserName()
 			if rowdata.authorid ~= userid then
 				local x, y = GetLocalMousePosition()
 				if x == nil then

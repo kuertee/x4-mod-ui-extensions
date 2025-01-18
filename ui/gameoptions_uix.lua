@@ -946,12 +946,7 @@ config.optionDefinitions = {
             valuetype = "button",
             value = function () return menu.valueOnlineAllowInvites() end,
             callback = function () return menu.callbackOnlineAllowInvites() end,
-
-            -- kuertee start: prevent online funcs when protected ui mod is disabled
-            -- display = function () return C.IsVentureSeasonSupported() and OnlineHasSession() end,
-            display = function () return C.IsVentureSeasonSupported() and (GetUISafeModeOption() and OnlineHasSession()) end,
-            -- kuertee end: prevent online funcs when protected ui mod is disabled
-
+            display = function () return C.IsVentureSeasonSupported() and OnlineHasSession() end,
         },
         [4] = {
             id = "acceptprivatemessages",
@@ -960,12 +955,7 @@ config.optionDefinitions = {
             valuetype = "button",
             value = function () return menu.valueOnlineAllowPrivateMessages() end,
             callback = function () return menu.callbackOnlineAllowPrivateMessages() end,
-
-            -- kuertee start: prevent online funcs when protected ui mod is disabled
-            -- display = function () return C.IsVentureSeasonSupported() and OnlineHasSession() end,
-            display = function () return C.IsVentureSeasonSupported() and (GetUISafeModeOption() and OnlineHasSession()) end,
-            -- kuertee end: prevent online funcs when protected ui mod is disabled
-
+            display = function () return C.IsVentureSeasonSupported() and OnlineHasSession() end,
         },
         [5] = {
             id = "seasonupdates",
@@ -2553,12 +2543,7 @@ function ModLua.addSavegameRow(ftable, savegame, name, slot)
 
     local warningicon = ""
     if savegame.isonline then
-
-        -- kuertee start: prevent online funcs when protected ui mod is disabled
-        -- if C.IsClientModified() or (not OnlineHasSession()) or (C.GetVentureDLCStatus() ~= 0) then
-        if C.IsClientModified() or (GetUISafeModeOption() and (not OnlineHasSession())) or (C.GetVentureDLCStatus() ~= 0) then
-        -- kuertee end: prevent online funcs when protected ui mod is disabled
-
+        if C.IsClientModified() or (not OnlineHasSession()) or (C.GetVentureDLCStatus() ~= 0) then
             warningicon = ColorText["icon_warning"] .. "\27[workshop_error]\27X"
         end
     end
@@ -3680,14 +3665,13 @@ function ModLua.newGameCallback(option, checked)
             menu.openSubmenu("mapeditor", option.id)
         else
             local playerinventory = GetPlayerInventory()
+            local onlineitems = OnlineGetUserItems()
 
-            -- kuertee start: prevent online funcs when protected ui mod is disabled
-            -- local onlineitems = OnlineGetUserItems()
-            local onlineitems = {}
-            if GetUISafeModeOption() then
-                onlineitems = OnlineGetUserItems()
+            -- kuertee start:
+            if not onlineitems then
+                onlineitems = {}
             end
-            -- kuertee end: prevent online funcs when protected ui mod is disabled
+            -- kuertee end
 
             local hasnotuploadeditems = false
             for ware, waredata in Helper.orderedPairs(playerinventory) do

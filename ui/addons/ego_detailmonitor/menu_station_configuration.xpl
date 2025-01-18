@@ -2188,12 +2188,7 @@ function menu.ventureModuleUnavailableMouseOverText()
 	local mouseovertext = ColorText["text_error"] .. ReadText(1026, 7913)
 	if not C.IsVentureExtensionSupported() then
 		mouseovertext = ColorText["text_error"] .. ReadText(1026, 7930)
-
-	-- kuertee start: prevent online funcs when protected ui mod is disabled
-	-- elseif not OnlineHasSession() then
-	elseif GetUISafeModeOption() and (not OnlineHasSession()) then
-	-- kuertee end: prevent online funcs when protected ui mod is disabled
-
+	elseif not OnlineHasSession() then
 		mouseovertext = mouseovertext .. "\n\n" .. ReadText(1026, 7921)
 	end
 	return mouseovertext
