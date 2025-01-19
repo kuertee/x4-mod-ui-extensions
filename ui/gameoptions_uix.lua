@@ -2528,6 +2528,7 @@ function ModLua.addSavegameRow(ftable, savegame, name, slot)
         row[2]:createText(slot, (not invalid) and config.standardTextProperties or config.disabledTextProperties)
         row[2].properties.halign = "right"
     end
+
     local nametruncated = TruncateText(name, config.fontBold, Helper.scaleFont(config.font, config.standardFontSize), row[3]:getWidth() - Helper.scaleX(config.standardTextOffsetX))
     local mouseovertext = ""
     if nametruncated ~= name then
@@ -2537,9 +2538,24 @@ function ModLua.addSavegameRow(ftable, savegame, name, slot)
     local isonlinesaveinofflineslot = IsCheatVersion() and savegame.isonline and not savegame.isonlinesavefilename
 
     local height = Helper.scaleY(config.standardTextHeight) + Helper.borderSize
-    if invalid or savegame.modified or isonlinesaveinofflineslot then
-        height = 2 * Helper.scaleY(config.standardTextHeight) + Helper.borderSize
+
+    -- kuertee start: callback
+    local uix_isAddRowHeightForExtraInfo = nil
+    if callbacks ["addSavegameRow_getRowHeightForExtraInfo"] then
+        for _, callback in ipairs (callbacks ["addSavegameRow_getRowHeightForExtraInfo"]) do
+            uix_isAddRowHeightForExtraInfo = uix_isAddRowHeightForExtraInfo or callback(ftable, savegame, name, slot, name)
+        end
     end
+    if uix_isAddRowHeightForExtraInfo ~= false then
+    -- kuertee end: callback
+
+        if invalid or savegame.modified or isonlinesaveinofflineslot then
+            height = 2 * Helper.scaleY(config.standardTextHeight) + Helper.borderSize
+        end
+
+    -- kuertee start: callback
+    end
+    -- kuertee end: callback
 
     local warningicon = ""
     if savegame.isonline then
@@ -2549,21 +2565,47 @@ function ModLua.addSavegameRow(ftable, savegame, name, slot)
     end
 
     local icon = row[3]:createIcon("solid", { width = row[3]:getWidth(), height = height, color = Color["icon_transparent"], scaling = false, mouseOverText = mouseovertext }):setText(warningicon .. nametruncated, (not invalid) and config.standardTextProperties or config.disabledTextProperties)
-    row[3].properties.text.font = config.fontBold
-    row[3].properties.text.scaling = true
-    if invalid then
-        icon:setText2(function () return menu.errorSavegame(savegame) end, (not invalid) and config.standardTextProperties or config.disabledTextProperties)
-        row[3].properties.text2.y = config.standardTextHeight
-        row[3].properties.text2.scaling = true
-    elseif savegame.modified then
-        icon:setText2(ColorText["text_warning"] .. ReadText(1001, 8901) .. "\27X", (not invalid) and config.standardTextProperties or config.disabledTextProperties)
-        row[3].properties.text2.y = config.standardTextHeight
-        row[3].properties.text2.scaling = true
-    elseif isonlinesaveinofflineslot then
-        icon:setText2(ColorText["text_online_save"] .. ReadText(1001, 11570) .. "\27X", (not invalid) and config.standardTextProperties or config.disabledTextProperties)
-        row[3].properties.text2.y = config.standardTextHeight
-        row[3].properties.text2.scaling = true
+
+    -- kuertee start: callback
+    local uix_isBoldFileName = nil
+    if callbacks ["addSavegameRow_getIsBoldFilename"] then
+        for _, callback in ipairs (callbacks ["addSavegameRow_getIsBoldFilename"]) do
+            uix_isBoldFileName = uix_isBoldFileName or callback(ftable, savegame, name, slot, name)
+        end
     end
+    if uix_isBoldFileName ~= false then
+    -- kuertee end: callback
+
+        row[3].properties.text.font = config.fontBold
+
+    -- kuertee start: callback
+    end
+    -- kuertee end: callback
+
+    row[3].properties.text.scaling = true
+
+    -- kuertee start:
+    if uix_isAddRowHeightForExtraInfo ~= false then
+    -- kuertee end
+
+        if invalid then
+            icon:setText2(function () return menu.errorSavegame(savegame) end, (not invalid) and config.standardTextProperties or config.disabledTextProperties)
+            row[3].properties.text2.y = config.standardTextHeight
+            row[3].properties.text2.scaling = true
+        elseif savegame.modified then
+            icon:setText2(ColorText["text_warning"] .. ReadText(1001, 8901) .. "\27X", (not invalid) and config.standardTextProperties or config.disabledTextProperties)
+            row[3].properties.text2.y = config.standardTextHeight
+            row[3].properties.text2.scaling = true
+        elseif isonlinesaveinofflineslot then
+            icon:setText2(ColorText["text_online_save"] .. ReadText(1001, 11570) .. "\27X", (not invalid) and config.standardTextProperties or config.disabledTextProperties)
+            row[3].properties.text2.y = config.standardTextHeight
+            row[3].properties.text2.scaling = true
+        end
+
+    -- kuertee start:
+    end
+    -- kuertee end
+
     row[4]:setColSpan(2):createText(savegame.error and "" or savegame.time, (not invalid) and config.standardTextProperties or config.disabledTextProperties)
     row[4].properties.halign = "right"
 
@@ -3254,7 +3296,7 @@ function ModLua.displaySavegameOptions(optionParameter)
                 -- kuertee start: callback
                 if callbacks ["displaySaveGameOptions_preSaveGameRowAdd"] then
                     for _, callback in ipairs (callbacks ["displaySaveGameOptions_preSaveGameRowAdd"]) do
-                        maxRowHeight = math.max(maxRowHeight, callback(ftable, savegame, savegame.displayedname, i, #sortablesaves))
+                        maxRowHeight = math.max(maxRowHeight, callback(ftable, savegame, savegame.displayedname, i, #sortablesaves, config))
                     end
                 end
                 -- kuertee end: callback
