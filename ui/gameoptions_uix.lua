@@ -2468,6 +2468,8 @@ function ModLua.rewriteFunctions()
     menu.cleanup = ModLua.cleanup
     OldFuncs.submenuHandler = menu.submenuHandler
     menu.submenuHandler = ModLua.submenuHandler
+    OldFuncs.loadGameCallback = menu.loadGameCallback
+    menu.loadGameCallback = ModLua.loadGameCallback
     OldFuncs.callbackDeleteSave = menu.callbackDeleteSave
     menu.callbackDeleteSave = ModLua.callbackDeleteSave
     OldFuncs.displayOptions = menu.displayOptions
@@ -2785,6 +2787,47 @@ function ModLua.submenuHandler(optionParameter)
         menu.displayTimelines()
     elseif config.optionDefinitions[optionParameter] then
         menu.displayOptions(optionParameter)
+    end
+end
+
+function ModLua.loadGameCallback(filename, checked)
+    local playerinventory = GetPlayerInventory()
+    local onlineitems = OnlineGetUserItems()
+
+    local hasnotuploadeditems = false
+    for ware, waredata in Helper.orderedPairs(playerinventory) do
+        local isbraneitem, isoperationvolatile, isseasonvolatile, isventureuploadallowed = GetWareData(ware, "isbraneitem", "isoperationvolatile", "isseasonvolatile", "isventureuploadallowed")
+        if isbraneitem then
+            local serveramount = 0
+            if onlineitems[ware] then
+                serveramount = onlineitems[ware].amount
+            end
+            if isventureuploadallowed and (waredata.amount > serveramount) then
+                hasnotuploadeditems = true
+                break
+            end
+        end
+    end
+
+    if (not checked) and (not menu.isStartmenu) and Helper.isOnlineGame() and hasnotuploadeditems then
+        table.insert(menu.history, 1, { optionParameter = menu.currentOption, topRow = GetTopRow(menu.optionTable), selectedOption = filename })
+        menu.displayUserQuestion(ReadText(1001, 2604) .. " - " .. ReadText(1001, 7720), function () return menu.loadGameCallback(filename, true) end, nil, nil, nil, nil, nil, ReadText(1001, 11707))
+    else
+        -- kuertee start: callback
+        -- Helper.addDelayedOneTimeCallbackOnUpdate(function () LoadGame(filename) end, true, getElapsedTime() + 0.1)
+        Helper.addDelayedOneTimeCallbackOnUpdate(
+            function ()
+                if callbacks ["loadGameCallback_preLoadGame"] then
+                    for _, callback in ipairs (callbacks ["loadGameCallback_preLoadGame"]) do
+                        callback(filename)
+                    end
+                end
+                LoadGame(filename)
+            end
+        , true, getElapsedTime() + 0.1)
+        -- kuertee end: callback
+
+        menu.displayInit()
     end
 end
 
