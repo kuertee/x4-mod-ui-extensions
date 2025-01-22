@@ -7,20 +7,20 @@ Updates
 =======
 v7.5.0052 beta, 22 Jan 2025:
 -Tweak: callbacks can now be assigned an id so that they can be deregistered by other mods with "menu.registerCallback(callbackName, myCallbackFunc, myId)".
-E.g.
-MapMenu.registerCallback("buttonToggleObjectList_on_start", myCallbackFunc, "mod_a").
-Then another lua file can do this:
-MapMenu.deregisterCallback("buttonToggleObjectList_on_start", nil, "mod_a").
-This is useful when you want to override another mod's custom changes to different menus with your own mod.
-Note that deregistering callbacks are delayed by 1 second because there is no method to ensure that the callback of another mod that is to be deregistered has been registered.
+				E.g.
+				MapMenu.registerCallback("buttonToggleObjectList_on_start", myCallbackFunc, "mod_a").
+				Then another lua file can do this:
+				MapMenu.deregisterCallback("buttonToggleObjectList_on_start", nil, "mod_a").
+				This is useful when you want to override another mod's custom changes to different menus with your own mod.
+				Note that deregistering callbacks are delayed by 1 second because there is no method to ensure that the callback of another mod that is to be deregistered has been registered.
 -New feature: callbacks of other mods can be updated (i.e. rerouted) to your own callbacks with "updateCallback(callbackName, id, myCallbackFunc)".
-E.g. Mod_a registered a callback for "buttonToggleObjectList_on_start" with the id "mod_a".
-And Mod_b wants to reroute that callback for its own function.
-That callback can be rerouted like this:
-MapMenu.updateCallback("buttonToggleObjectList_on_start", "mod_a", modb_CallbackFunc).
-Note that rerouted callbacks will keep their original ids.
-It might be better to deregister the callback THEN register the new callback instead.
-Also note that updating callbacks are delayed by 1 second because there is no method to ensure that the callback of another mod that is to be updated has been registered.
+				E.g. Mod_a registered a callback for "buttonToggleObjectList_on_start" with the id "mod_a".
+				And Mod_b wants to reroute that callback for its own function.
+				That callback can be rerouted like this:
+				MapMenu.updateCallback("buttonToggleObjectList_on_start", "mod_a", modb_CallbackFunc).
+				Note that rerouted callbacks will keep their original ids.
+				It might be better to deregister the callback THEN register the new callback instead.
+				Also note that updating callbacks are delayed by 1 second because there is no method to ensure that the callback of another mod that is to be updated has been registered.
 
 v7.5.0051 beta, 19 Jan 2025:
 -NOTES FOR MOD DEVELOPERS:

@@ -3870,14 +3870,14 @@ function ModLua.deregisterCallback(callbackName, callbackFunction, id)
         if callbacks[callbackName] then
             for id, func in pairs(callbacks[callbackName]) do
                 if func == callbackFunction then
-                    table.insert(callbacks[callbackName], id)
+                    table.insert(uix_callbacks_toDeregister[callbackName], id)
                 end
             end
         end
     end
     if not uix_isDeregisterQueued then
         uix_isDeregisterQueued = true
-        Helper.addDelayedOneTimeCallbackOnUpdate(ModLua.deregisterCallbacksNow, true, getElapsedTime() + 1)
+        Helper.addDelayedOneTimeCallbackOnUpdate(menu.deregisterCallbacksNow, true, getElapsedTime() + 1)
     end
 end
 
@@ -3885,10 +3885,12 @@ function ModLua.deregisterCallbacksNow()
     uix_isDeregisterQueued = nil
     for callbackName, ids in pairs(uix_callbacks_toDeregister) do
         if callbacks[callbackName] then
-            if callbacks[callbackName][id] then
-                callbacks[callbackName][id] = nil
-            else
-                DebugError("uix deregisterCallback: callback at " .. callbackName .. " with id " .. tostring(id) .. " doesn't exist")
+            for _, id in ipairs(ids) do
+                if callbacks[callbackName][id] then
+                    callbacks[callbackName][id] = nil
+                else
+                    DebugError("uix updateCallback: callback at " .. callbackName .. " with id " .. tostring(id) .. " doesn't exist")
+                end
             end
         end
     end
@@ -3906,21 +3908,21 @@ function ModLua.updateCallback(callbackName, id, callbackFunction)
     end
     if not uix_isUpdateQueued then
         uix_isUpdateQueued = true
-        Helper.addDelayedOneTimeCallbackOnUpdate(ModLua.updateCallbacksNow, true, getElapsedTime() + 1)
+        Helper.addDelayedOneTimeCallbackOnUpdate(menu.updateCallbacksNow, true, getElapsedTime() + 1)
     end
 end
 
 function ModLua.updateCallbacksNow()
     uix_isUpdateQueued = nil
-    for callbackName, updateData in pairs(uix_callbacks_toUpdate) do
+    for callbackName, updateDatas in pairs(uix_callbacks_toUpdate) do
         if callbacks[callbackName] then
-            if callbacks[callbackName][updateData.id] then
-                callbacks[callbackName][updateData.id] = updateData.callbackFunction
-            else
-                DebugError("uix updateCallback: callback at " .. callbackName .. " with id " .. tostring(id) .. " doesn't exist")
+            for _, updateData in ipairs(updateDatas) do
+                if callbacks[callbackName][updateData.id] then
+                    callbacks[callbackName][updateData.id] = updateData.callbackFunction
+                else
+                    DebugError("uix updateCallback: callback at " .. callbackName .. " with id " .. tostring(id) .. " doesn't exist")
+                end
             end
-        else
-            DebugError("uix updateCallback: callback at " .. callbackName .. " with id " .. tostring(id) .. " doesn't exist")
         end
     end
 end
