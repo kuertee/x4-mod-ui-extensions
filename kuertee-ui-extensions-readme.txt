@@ -5,7 +5,16 @@ by kuertee. Contributors: Erixon, Forleyor, Mycu, Runekn, AlexandreTK.
 
 Updates
 =======
-v7.5.005 beta, 19 Jan 2025:
+v7.5.0052 beta, 22 Jan 2025:
+-Tweak: callbacks can now be assigned an id so that they can be deregistered by other mods.
+E.g.
+MapMenu.registerCallback("buttonToggleObjectList_on_start", myFunction, "mod_a").
+Then another lua file can do this:
+MapMenu.deregisterCallback("buttonToggleObjectList_on_start", nil, "mod_a").
+This is useful when you want to override another mod's custom changes to different menus with your own mod.
+Note that deregistering callbacks are delayed by 1 s because there is no method to ensure that the callback of another mod that is to be deregistered has been registered.
+
+v7.5.0051 beta, 19 Jan 2025:
 -NOTES FOR MOD DEVELOPERS:
 PROTECTED UI MODE:
 -1. Mods that use UI Extensions will need the new Protected UI Mode setting in the Extensions menu disabled.

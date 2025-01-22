@@ -789,7 +789,7 @@ function menu.cleanup()
 
 	-- kuertee start: callback
 	if callbacks ["cleanup"] then
-		for _, callback in ipairs (callbacks ["cleanup"]) do
+		for id, callback in pairs (callbacks ["cleanup"]) do
 			callback(menu.customgamestart)
 		end
 	end
@@ -809,7 +809,7 @@ function menu.buttonNewGame()
 			function ()
 				-- kuertee start: callback
 				if callbacks ["buttonNewGame_preNewGame"] then
-					for _, callback in ipairs (callbacks ["buttonNewGame_preNewGame"]) do
+					for id, callback in pairs (callbacks ["buttonNewGame_preNewGame"]) do
 						callback(menu.customgamestart)
 					end
 				end
@@ -862,7 +862,7 @@ function menu.buttonReset()
 
 	-- kuertee start: callback
 	if callbacks ["buttonReset_on_end"] then
-		for _, callback in ipairs (callbacks ["buttonReset_on_end"]) do
+		for id, callback in pairs (callbacks ["buttonReset_on_end"]) do
 			callback ()
 		end
 	end
@@ -1248,7 +1248,7 @@ end
 function menu.dropdownProperty(property, row, option)
 	-- kuertee start: callback
 	if callbacks ["dropdownProperty_on_start"] then
-		for _, callback in ipairs (callbacks ["dropdownProperty_on_start"]) do
+		for id, callback in pairs (callbacks ["dropdownProperty_on_start"]) do
 			callback (property, row, option)
 		end
 	end
@@ -1688,7 +1688,7 @@ function menu.editboxProperty(property, text)
 
 	-- kuertee start: callback
 	if callbacks ["editboxProperty_on_end"] then
-		for _, callback in ipairs (callbacks ["editboxProperty_on_end"]) do
+		for id, callback in pairs (callbacks ["editboxProperty_on_end"]) do
 			callback (property, text)
 		end
 	end
@@ -1730,7 +1730,7 @@ function menu.slidercellFaction(faction, value)
 
 	-- kuertee start: callback
 	if callbacks ["slidercellFaction_on_end"] then
-		for _, callback in ipairs (callbacks ["slidercellFaction_on_end"]) do
+		for id, callback in pairs (callbacks ["slidercellFaction_on_end"]) do
 			callback (faction, value)
 		end
 	end
@@ -1775,7 +1775,7 @@ function menu.removeFactionRelationHelper(faction)
 
 	-- kuertee start: callback
 	if callbacks ["removeFactionRelationHelper_on_end"] then
-		for _, callback in ipairs (callbacks ["removeFactionRelationHelper_on_end"]) do
+		for id, callback in pairs (callbacks ["removeFactionRelationHelper_on_end"]) do
 			callback (faction)
 		end
 	end
@@ -1923,7 +1923,7 @@ function menu.playerMacro(current, customoptions)
 
 	-- kuertee start: callback
 	if callbacks ["playerMacro_on_end"] then
-		for _, callback in ipairs (callbacks ["playerMacro_on_end"]) do
+		for id, callback in pairs (callbacks ["playerMacro_on_end"]) do
 			callback (current, customoptions, options, currentOption)
 		end
 	end
@@ -2040,7 +2040,7 @@ function menu.universeSector(current)
 
 	-- kuertee start: callback
 	if callbacks ["universeSector_on_end"] then
-		for _, callback in ipairs (callbacks ["universeSector_on_end"]) do
+		for id, callback in pairs (callbacks ["universeSector_on_end"]) do
 			callback (current, options, currentOption)
 		end
 	end
@@ -2107,7 +2107,7 @@ end
 function menu.openShipConfig()
 	-- kuertee start: callback
 	if callbacks ["openShipConfig_on_start"] then
-		for _, callback in ipairs (callbacks ["openShipConfig_on_start"]) do
+		for id, callback in pairs (callbacks ["openShipConfig_on_start"]) do
 			callback ()
 		end
 	end
@@ -2119,7 +2119,7 @@ function menu.openShipConfig()
 
 	-- kuertee start: callback
 	if callbacks ["openShipConfig_on_end"] then
-		for _, callback in ipairs (callbacks ["openShipConfig_on_end"]) do
+		for id, callback in pairs (callbacks ["openShipConfig_on_end"]) do
 			callback ()
 		end
 	end
@@ -2135,7 +2135,7 @@ function menu.openPlayerPropertyShipConfig(row, entryid, macro, commanderid, peo
 
 	-- kuertee start: callback
 	if callbacks ["openPlayerPropertyShipConfig_on_end"] then
-		for _, callback in ipairs (callbacks ["openPlayerPropertyShipConfig_on_end"]) do
+		for id, callback in pairs (callbacks ["openPlayerPropertyShipConfig_on_end"]) do
 			callback (row, entryid, macro, commanderid, peopledef, peoplefillpercentage, count)
 		end
 	end
@@ -2160,7 +2160,7 @@ function menu.setPlayerMacro(customgamestart, propertyid, option)
 
 	-- kuertee start: callback
 	if callbacks ["setPlayerMacro_on_end"] then
-		for _, callback in ipairs (callbacks ["setPlayerMacro_on_end"]) do
+		for id, callback in pairs (callbacks ["setPlayerMacro_on_end"]) do
 			callback (customgamestart, propertyid, option)
 		end
 	end
@@ -2186,7 +2186,7 @@ function menu.setPlayerSector(gamestartid, propertyid, sector, noreset)
 
 	-- kuertee start: callback
 	if callbacks ["setPlayerSector_on_end"] then
-		for _, callback in ipairs (callbacks ["setPlayerSector_on_end"]) do
+		for id, callback in pairs (callbacks ["setPlayerSector_on_end"]) do
 			callback (gamestartid, propertyid, sector, noreset)
 		end
 	end
@@ -2837,7 +2837,7 @@ end
 function menu.display()
 	-- kuertee start: callback
 	if callbacks ["display_on_start"] then
-		for _, callback in ipairs (callbacks ["display_on_start"]) do
+		for id, callback in pairs (callbacks ["display_on_start"]) do
 			callback (config)
 		end
 	end
@@ -3077,7 +3077,7 @@ function menu.display()
 
 	-- kuertee start: callback
 	if callbacks ["display_on_after_main_options"] then
-		for _, callback in ipairs (callbacks ["display_on_after_main_options"]) do
+		for id, callback in pairs (callbacks ["display_on_after_main_options"]) do
 			callback ()
 		end
 	end
@@ -3194,7 +3194,7 @@ function menu.display()
 
 		-- kuertee start: callback
 		if callbacks ["display_on_after_category_name"] then
-			for _, callback in ipairs (callbacks ["display_on_after_category_name"]) do
+			for id, callback in pairs (callbacks ["display_on_after_category_name"]) do
 				callback (numCols)
 			end
 		end
@@ -3233,7 +3233,7 @@ function menu.display()
 
 					-- kuertee start: callback
 					if callbacks ["display_on_after_property_name"] then
-						for _, callback in ipairs (callbacks ["display_on_after_property_name"]) do
+						for id, callback in pairs (callbacks ["display_on_after_property_name"]) do
 							callback (numCols, property)
 						end
 					end
@@ -3901,7 +3901,7 @@ function menu.display()
 
 		-- kuertee start: callback
 		if callbacks ["display_on_after_category_options"] then
-			for _, callback in ipairs (callbacks ["display_on_after_category_options"]) do
+			for id, callback in pairs (callbacks ["display_on_after_category_options"]) do
 				callback (numCols)
 			end
 		end
@@ -5641,25 +5641,70 @@ function menu.checkConstructionPlan(source, id, limitedmodulesused, onlineitems,
 end
 
 -- kuertee start:
-function menu.registerCallback (callbackName, callbackFunction)
-	-- note 1: format is generally [function name]_[action]. e.g.: in kuertee_menu_transporter, "display_on_set_room_active" overrides the room's active property with the return of the callback.
-	-- note 2: events have the word "_on_" followed by a PRESENT TENSE verb. e.g.: in kuertee_menu_transporter, "display_on_set_buttontable" is called after all of the rows of buttontable are set.
-	-- note 3: new callbacks can be added or existing callbacks can be edited. but commit your additions/changes to the mod's GIT repository.
-	-- note 4: search for the callback names to see where they are executed.
-	-- note 5: if a callback requires a return value, return it in an object var. e.g. "display_on_set_room_active" requires a return of {active = true | false}.
-	if callbacks [callbackName] == nil then
-		callbacks [callbackName] = {}
+local uix_callbackCount = 0
+function menu.registerCallback(callbackName, callbackFunction, id)
+    -- note 1: format is generally [function name]_[action]. e.g.: in kuertee_menu_transporter, "display_on_set_room_active" overrides the room's active property with the return of the callback.
+    -- note 2: events have the word "_on_" followed by a PRESENT TENSE verb. e.g.: in kuertee_menu_transporter, "display_on_set_buttontable" is called after all of the rows of buttontable are set.
+    -- note 3: new callbacks can be added or existing callbacks can be edited. but commit your additions/changes to the mod's GIT repository.
+    -- note 4: search for the callback names to see where they are executed.
+    -- note 5: if a callback requires a return value, return it in an object var. e.g. "display_on_set_room_active" requires a return of {active = true | false}.
+    if callbacks [callbackName] == nil then
+        callbacks [callbackName] = {}
+    end
+    if not callbacks[callbackName][id] then
+	    if not id then
+	    	uix_callbackCount = uix_callbackCount + 1
+	    	id = "_" .. tostring(uix_callbackCount)
+	    end
+	    callbacks[callbackName][id] = callbackFunction
+	else
+		DebugError("uix registerCallback: callback at " .. callbackName .. " with id " .. tostring(id) .. " was already previously registered")
 	end
-	table.insert (callbacks [callbackName], callbackFunction)
 end
 
-function menu.deregisterCallback(callbackName, callbackFunction)
-	-- for i, callback in ipairs(callbacks[callbackName]) do
-	if callbacks[callbackName] and #callbacks[callbackName] > 0 then
-		for i = #callbacks[callbackName], 1, -1 do
-			if callbacks[callbackName][i] == callbackFunction then
-				table.remove(callbacks[callbackName], i)
-			end
+local isDeregisterQueued
+local callbacks_toDeregister = {}
+function menu.deregisterCallback(callbackName, callbackFunction, id)
+	if not callbacks_toDeregister[callbackName] then
+		callbacks_toDeregister[callbackName] = {}
+	end
+    if id then
+    	table.insert(callbacks_toDeregister[callbackName], id)
+    else
+        if callbacks[callbackName] then
+            for id, func in pairs(callbacks[callbackName]) do
+                if func == callbackFunction then
+                	table.insert(callbacks[callbackName], id)
+                end
+            end
+        end
+    end
+	if not isDeregisterQueued then
+		isDeregisterQueued = true
+		Helper.addDelayedOneTimeCallbackOnUpdate(function ()
+			isDeregisterQueued = nil
+			menu.deregisterCallbacksNow()
+		end, true, getElapsedTime() + 1)
+	end
+end
+
+function menu.deregisterCallbacksNow()
+	for callbackName, ids in pairs(callbacks_toDeregister) do
+		if callbacks[callbackName] and callback[callbackName][id] then
+			callbacks[callbackName][id] = nil
+		else
+			DebugError("uix deregisterCallback: callback at " .. callbackName .. " with id " .. tostring(id) .. " doesn't exist")
+		end
+	end
+	callbacks_toDeregister = {}
+end
+
+function menu.updateCallback(callbackName, id, callbackFunction)
+	if callbacks[callbackName] then
+		if callbacks[callbackName][id] then
+	        callback[callbackName][id] = callbackFunction
+		else
+			DebugError("uix updateCallback: callback at " .. callbackName .. " with id " .. tostring(id) .. " doesn't exist")
 		end
 	end
 end

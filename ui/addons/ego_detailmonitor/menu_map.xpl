@@ -2279,7 +2279,7 @@ end
 function menu.buttonToggleObjectList(objectlistparam, confirmed, override)
 	-- kuertee start: callback
 	if callbacks ["buttonToggleObjectList_on_start"] then
-		for _, callback in ipairs (callbacks ["buttonToggleObjectList_on_start"]) do
+		for id, callback in pairs (callbacks ["buttonToggleObjectList_on_start"]) do
 			callback (objectlistparam, config)
 		end
 	end
@@ -3516,7 +3516,7 @@ function menu.buttonMissionActivate()
 					activeMissionId = entry.ID
 				end
 			end
-			for _, callback in ipairs (callbacks ["buttonMissionActivate_on_activate"]) do
+			for id, callback in pairs (callbacks ["buttonMissionActivate_on_activate"]) do
 				-- callback (menu.contextMenuData.missionid)
 				callback (activeMissionId)
 			end
@@ -6579,7 +6579,7 @@ function menu.createInfoFrame()
 			-- menu.infoFrame:addTable(0)
 			local isCreated = false
 			if callbacks ["createInfoFrame_on_menu_infoTableMode"] then
-				for _, callback in ipairs (callbacks ["createInfoFrame_on_menu_infoTableMode"]) do
+				for id, callback in pairs (callbacks ["createInfoFrame_on_menu_infoTableMode"]) do
 					if callback (menu.infoFrame) then
 						isCreated = true
 					end
@@ -6595,7 +6595,7 @@ function menu.createInfoFrame()
 			-- start Forleyor_infoCenter callback:
 			local isCreated = false
 			if callbacks ["ic_createInfoFrame"] then
-				for _, callback in ipairs (callbacks ["ic_createInfoFrame"]) do
+				for id, callback in pairs (callbacks ["ic_createInfoFrame"]) do
 					if callback (menu.infoFrame) then
 						isCreated = true
 					end
@@ -6982,7 +6982,7 @@ function menu.refreshInfoFrame2(setrow, setcol)
 	-- kuertee start: callback
 	local isCreated = false
 	if callbacks ["refreshInfoFrame2_on_start"] then
-		for _, callback in ipairs (callbacks ["refreshInfoFrame2_on_start"]) do
+		for id, callback in pairs (callbacks ["refreshInfoFrame2_on_start"]) do
 			if callback () then
 				isCreated = true
 			end
@@ -7066,7 +7066,7 @@ function menu.getContainerNameAndColors(container, iteration, issquadleader, sho
 
     -- mycu start: callback
     if callbacks ["getContainerNameAndColors_on_name_construct"] then
-        for _, callback in ipairs (callbacks ["getContainerNameAndColors_on_name_construct"]) do
+        for id, callback in pairs (callbacks ["getContainerNameAndColors_on_name_construct"]) do
             local result = callback (container, name)
             if result then
                 name = result.name
@@ -7840,7 +7840,7 @@ end
 function menu.createPropertyOwned(frame, instance)
 	-- kuertee start: callback
 	if callbacks ["createPropertyOwned_on_start"] then
-		for _, callback in ipairs (callbacks ["createPropertyOwned_on_start"]) do
+		for id, callback in pairs (callbacks ["createPropertyOwned_on_start"]) do
 			callback (config)
 		end
 	end
@@ -7887,7 +7887,7 @@ function menu.createPropertyOwned(frame, instance)
 
 	-- kuertee start: callback
 	if callbacks ["createPropertyOwned_on_init_infoTableData"] then
-		for _, callback in ipairs (callbacks ["createPropertyOwned_on_init_infoTableData"]) do
+		for id, callback in pairs (callbacks ["createPropertyOwned_on_init_infoTableData"]) do
 			callback (infoTableData)
 		end
 	end
@@ -8025,7 +8025,7 @@ function menu.createPropertyOwned(frame, instance)
 
 			-- kuertee start: callback
 			if callbacks ["createPropertyOwned_on_add_ship_infoTableData"] then
-				for _, callback in ipairs (callbacks ["createPropertyOwned_on_add_ship_infoTableData"]) do
+				for id, callback in pairs (callbacks ["createPropertyOwned_on_add_ship_infoTableData"]) do
 					callback (infoTableData, object)
 				end
 			end
@@ -8036,7 +8036,7 @@ function menu.createPropertyOwned(frame, instance)
 
 	-- kuertee start: callback
 	if callbacks ["createPropertyOwned_on_add_other_objects_infoTableData"] then
-		for _, callback in ipairs (callbacks ["createPropertyOwned_on_add_other_objects_infoTableData"]) do
+		for id, callback in pairs (callbacks ["createPropertyOwned_on_add_other_objects_infoTableData"]) do
 			result = callback (infoTableData)
 			if result then
 				infoTableData = result.infoTableData
@@ -8109,7 +8109,7 @@ function menu.createPropertyOwned(frame, instance)
 	-- kuertee start: callback
 	if callbacks ["createPropertyOwned_on_createPropertySection_unassignedships"] then
 		local result
-		for _, callback in ipairs (callbacks ["createPropertyOwned_on_createPropertySection_unassignedships"]) do
+		for id, callback in pairs (callbacks ["createPropertyOwned_on_createPropertySection_unassignedships"]) do
 			result = callback (numdisplayed, instance, ftable, infoTableData)
 			if result and result.numdisplayed > numdisplayed then
 				numdisplayed = result.numdisplayed
@@ -8193,7 +8193,7 @@ function menu.createPropertyOwned(frame, instance)
 					active = entry.category == "propertyall"
                     -- start: mycu callback
                     if callbacks ["onSetActiveStateForCVMode_on_createPropertyOwned"] then
-                        for _, callback in ipairs (callbacks ["onSetActiveStateForCVMode_on_createPropertyOwned"]) do
+                        for id, callback in pairs (callbacks ["onSetActiveStateForCVMode_on_createPropertyOwned"]) do
                             active = callback (entry)
                         end
                     end
@@ -8639,7 +8639,7 @@ function menu.createPropertyRow(instance, ftable, component, iteration, commande
 	-- kuertee start: callback
 	if callbacks ["createPropertyRow_on_init_vars"] then
 		local result
-		for _, callback in ipairs (callbacks ["createPropertyRow_on_init_vars"]) do
+		for id, callback in pairs (callbacks ["createPropertyRow_on_init_vars"]) do
 			result = callback (maxicons, subordinates, dockedships, constructions, convertedComponent, iteration)
 			if result then
 				maxicons = result.maxicons
@@ -8936,7 +8936,7 @@ function menu.createPropertyRow(instance, ftable, component, iteration, commande
 				row[2]:createText(shipname, { font = font, color = color, mouseOverText = mouseover })
 			else
 				local result
-				for _, callback in ipairs (callbacks ["createPropertyRow_override_row_shipname_createText"]) do
+				for id, callback in pairs (callbacks ["createPropertyRow_override_row_shipname_createText"]) do
 					result = callback (shipname, { font = font, color = color, mouseOverText = mouseover }, component)
 					if result then
 						row[2]:createText(result.shipname, result.properties)
@@ -8966,7 +8966,7 @@ function menu.createPropertyRow(instance, ftable, component, iteration, commande
 					row[3 + namecolspan]:setColSpan(colspan):createText(locationtext, { halign = "right", font = font, x = 0 })
 				else
 					local result
-					for _, callback in ipairs (callbacks ["createPropertyRow_override_row_location_createText"]) do
+					for id, callback in pairs (callbacks ["createPropertyRow_override_row_location_createText"]) do
 						result = callback (locationtext, {halign = "right", font = font, mouseOverText = mouseovertext, x = 0}, component)
 						if result then
 							row[3 + namecolspan]:createText(result.locationtext, result.properties)
@@ -9751,7 +9751,7 @@ function menu.getPropertyOwnedFleetDataInternal(instance, component, shiptyperan
 
 	-- kuertee start: callback
 	if callbacks ["getPropertyOwnedFleetDataInternal_addToFleetIcons"] then
-		for _, callback in ipairs (callbacks ["getPropertyOwnedFleetDataInternal_addToFleetIcons"]) do
+		for id, callback in pairs (callbacks ["getPropertyOwnedFleetDataInternal_addToFleetIcons"]) do
 			callback (component, shiptyperanks, shiptypedata)
 		end
 	end
@@ -11477,7 +11477,7 @@ function menu.createOrderQueue(frame, mode, instance)
 				-- start: aegs call-back
 				if callbacks ["map_ship_assignments_insert"] then
 					local data_o
-					for _, callback in ipairs (callbacks ["map_ship_assignments_insert"]) do
+					for id, callback in pairs (callbacks ["map_ship_assignments_insert"]) do
 						data_o = callback (GetComponentData(infoTableData.commander, "macro"),primarypurpose)
 						if data_o then
 							table.insert(asssignmentOptions, data_o)
@@ -12108,7 +12108,7 @@ function menu.displayDefaultBehaviour(ftable, mode, titlerow, instance)
 
 						-- kuertee start: callback
 						if callbacks ["displayDefaultBehaviour_change_param_behaviouractive"] then
-							for _, callback in ipairs (callbacks ["displayDefaultBehaviour_change_param_behaviouractive"]) do
+							for id, callback in pairs (callbacks ["displayDefaultBehaviour_change_param_behaviouractive"]) do
 								result = callback (behaviouractive)
 								if result then
 									behaviouractive = result.behaviouractive
@@ -13369,7 +13369,7 @@ function menu.setupInfoSubmenuRows(mode, inputtable, inputobject, instance)
 		-- start: aegs call-back
 		if callbacks ["map_shipInformation_shiptypename_override"] then
 			local shiptypename_override
-			for _, callback in ipairs (callbacks ["map_shipInformation_shiptypename_override"]) do
+			for id, callback in pairs (callbacks ["map_shipInformation_shiptypename_override"]) do
 				shiptypename_override = callback (GetComponentData(object64, "macro"))
 				if shiptypename_override then
 					locrowdata = { false, ReadText(1001, 9051) .. ReadText(1001, 120), Helper.unlockInfo(nameinfo, (function() return tostring(shiptypename_override or 0, true, 0, true) end)) }
@@ -14538,7 +14538,7 @@ function menu.setupInfoSubmenuRows(mode, inputtable, inputobject, instance)
 
 	-- [UniTrader's Advanced Renaming] Forleyor start: callback
 	if callbacks ["utRenaming_setupInfoSubmenuRows_on_end"] then
-		for _, callback in ipairs (callbacks ["utRenaming_setupInfoSubmenuRows_on_end"]) do
+		for id, callback in pairs (callbacks ["utRenaming_setupInfoSubmenuRows_on_end"]) do
 			callback(mode, inputtable, inputobject, instance)
 		end
 	end
@@ -15582,7 +15582,7 @@ function menu.setupLoadoutInfoSubmenuRows(mode, inputtable, inputobject, instanc
 					-- Start Subsystem Targeting Orders callback
 					local sto_callbackVal
 					if callbacks ["sto_addTurretBehavioursMapMenu"] then
-						for _, callback in ipairs (callbacks ["sto_addTurretBehavioursMapMenu"]) do
+						for id, callback in pairs (callbacks ["sto_addTurretBehavioursMapMenu"]) do
 							sto_callbackVal = callback (row, inputobject)
 						end
 					end
@@ -15836,7 +15836,7 @@ function menu.setupLoadoutInfoSubmenuRows(mode, inputtable, inputobject, instanc
 								-- start: aegs call-back
 								if callbacks ["map_ship_subordinateassignments_insert"] then
 									local ship_assignment
-									for _, callback in ipairs (callbacks ["map_ship_subordinateassignments_insert"]) do
+									for id, callback in pairs (callbacks ["map_ship_subordinateassignments_insert"]) do
 										ship_assignment = callback (GetComponentData(inputobject, "macro"),(groups[i].numassignableminingships == #groups[i].subordinates) and ((not usedassignments["mining"]) or (usedassignments["mining"] == i)),(groups[i].numassignabletugships == #groups[i].subordinates) and ((not usedassignments["salvage"]) or (usedassignments["salvage"] == i)))
 										if ship_assignment then
 											table.insert(subordinateassignments, ship_assignment)
@@ -15887,7 +15887,7 @@ function menu.setupLoadoutInfoSubmenuRows(mode, inputtable, inputobject, instanc
 							-- Start Reactive Docking callback
 							local rd_callbackVal
 							if callbacks ["rd_addReactiveDockingMapMenu"] then
-								for _, callback in ipairs (callbacks ["rd_addReactiveDockingMapMenu"]) do
+								for id, callback in pairs (callbacks ["rd_addReactiveDockingMapMenu"]) do
 									rd_callbackVal = callback (row, inputobject, i, mode, active, mouseovertext)
 								end
 							end
@@ -15937,7 +15937,7 @@ function menu.setupLoadoutInfoSubmenuRows(mode, inputtable, inputobject, instanc
 	-- start: aegs call-back
 		if callbacks ["map_loadoutinfo_double_insert"] then
 			local state,title_text,label_text_1,label_text_2,subsystems
-			for _, callback in ipairs (callbacks ["map_loadoutinfo_double_insert"]) do
+			for id, callback in pairs (callbacks ["map_loadoutinfo_double_insert"]) do
 				state,title_text,label_text_1,label_text_2,subsystems = callback (GetComponentData(inputobject, "macro"))
 				if state then
 					local row = inputtable:addRow(false, { bgColor = Color["row_title_background"] })
@@ -17459,7 +17459,7 @@ function menu.createMissionMode(frame)
 
 			-- kuertee start: callback
 			if callbacks ["createMissionMode_on_missionoffer_guild_start"] then
-				for _, callback in ipairs (callbacks ["createMissionMode_on_missionoffer_guild_start"]) do
+				for id, callback in pairs (callbacks ["createMissionMode_on_missionoffer_guild_start"]) do
 					callback (ftable)
 				end
 			end
@@ -17532,7 +17532,7 @@ function menu.createMissionMode(frame)
 		-- kuertee start: callback
 		if callbacks ["createMissionMode_replaceMissionModeCurrent"] then
 			local oldMissionModeCurrent = menu.missionModeCurrent
-			for _, callback in ipairs (callbacks ["createMissionMode_replaceMissionModeCurrent"]) do
+			for id, callback in pairs (callbacks ["createMissionMode_replaceMissionModeCurrent"]) do
 				menu.missionModeCurrent = callback (menu.missionModeCurrent)
 				if menu.missionModeCurrent ~= oldMissionModeCurrent then
 					-- break immediately if changed
@@ -18987,7 +18987,7 @@ function menu.createInfoFrame2()
 
 		local isCreated = false
 		if callbacks ["createInfoFrame2_on_menu_infoModeRight"] then
-			for _, callback in ipairs (callbacks ["createInfoFrame2_on_menu_infoModeRight"]) do
+			for id, callback in pairs (callbacks ["createInfoFrame2_on_menu_infoModeRight"]) do
 				if callback (menu.infoFrame2) then
 					isCreated = true
 				end
@@ -19020,7 +19020,7 @@ end
 function menu.createSideBar(firsttime, frame, width, height, offsetx, offsety)
 	-- kuertee start: callback
 	if callbacks ["createSideBar_on_start"] then
-		for _, callback in ipairs (callbacks ["createSideBar_on_start"]) do
+		for id, callback in pairs (callbacks ["createSideBar_on_start"]) do
 			callback (config)
 		end
 	end
@@ -19028,7 +19028,7 @@ function menu.createSideBar(firsttime, frame, width, height, offsetx, offsety)
 
 	-- start Forleyor_infoCenter Callback:
 	if callbacks ["ic_createSideBar"] then
-		for _, callback in ipairs (callbacks ["ic_createSideBar"]) do
+		for id, callback in pairs (callbacks ["ic_createSideBar"]) do
 			callback (config)
 		end
 	end
@@ -19184,7 +19184,7 @@ end
 function menu.createRightBar(frame, width, height, offsetx, offsety)
 	-- kuertee start: callback
 	if callbacks ["createRightBar_on_start"] then
-		for _, callback in ipairs (callbacks ["createRightBar_on_start"]) do
+		for id, callback in pairs (callbacks ["createRightBar_on_start"]) do
 			callback (config)
 		end
 	end
@@ -23475,7 +23475,7 @@ function menu.createRenameContext(frame)
 
 	-- [UniTrader's Advanced Renaming] Forleyor start: callback
 	if callbacks ["utRenaming_createRenameContext_get_startname"] then
-		for _, callback in ipairs (callbacks ["utRenaming_createRenameContext_get_startname"]) do
+		for id, callback in pairs (callbacks ["utRenaming_createRenameContext_get_startname"]) do
 			uix_startname = callback (frame)
 			if uix_startname then
 				startname = uix_startname
@@ -23504,7 +23504,7 @@ function menu.createRenameContext(frame)
 
 	-- [UniTrader's Advanced Renaming] Forleyor start: callback
 	if callbacks ["utRenaming_createRenameContext_on_after_confirm_button"] then
-		for _, callback in ipairs (callbacks ["utRenaming_createRenameContext_on_after_confirm_button"]) do
+		for id, callback in pairs (callbacks ["utRenaming_createRenameContext_on_after_confirm_button"]) do
 			startname = callback (frame, shiptable)
 		end
 	end
@@ -24196,7 +24196,7 @@ function menu.buttonRenameConfirm(isconfirmed)
 				newtext = GetComponentData(menu.contextMenuData.uix_multiRename_objects[1], "name")
 			end
 			if callbacks ["buttonRenameConfirm_onMultiRename_on_before_rename"] then
-				for _, callback in ipairs (callbacks ["buttonRenameConfirm_onMultiRename_on_before_rename"]) do
+				for id, callback in pairs (callbacks ["buttonRenameConfirm_onMultiRename_on_before_rename"]) do
 					callback ()
 				end
 			end
@@ -24217,14 +24217,14 @@ function menu.buttonRenameConfirm(isconfirmed)
 				end
 			end
 			if callbacks ["buttonRenameConfirm_onMultiRename_on_after_rename"] then
-				for _, callback in ipairs (callbacks ["buttonRenameConfirm_onMultiRename_on_after_rename"]) do
+				for id, callback in pairs (callbacks ["buttonRenameConfirm_onMultiRename_on_after_rename"]) do
 					callback ()
 				end
 			end
 
 			-- [UniTrader's Advanced Renaming] Forleyor start: callback
 			if callbacks ["utRenaming_buttonRenameConfirm"] then
-				for _, callback in ipairs (callbacks ["utRenaming_buttonRenameConfirm"]) do
+				for id, callback in pairs (callbacks ["utRenaming_buttonRenameConfirm"]) do
 					callback ()
 				end
 			end
@@ -24250,7 +24250,7 @@ function menu.buttonRenameConfirm(isconfirmed)
 
 				-- [UniTrader's Advanced Renaming] Forleyor start: callback
 				if callbacks ["utRenaming_buttonRenameConfirm"] then
-					for _, callback in ipairs (callbacks ["utRenaming_buttonRenameConfirm"]) do
+					for id, callback in pairs (callbacks ["utRenaming_buttonRenameConfirm"]) do
 						callback ()
 					end
 				end
@@ -24997,7 +24997,7 @@ function menu.createMissionContext(frame)
 
 	-- kuertee start: callback
 	if callbacks ["createMissionContext_startDescriptionTable"] then
-		for _, callback in ipairs (callbacks ["createMissionContext_startDescriptionTable"]) do
+		for id, callback in pairs (callbacks ["createMissionContext_startDescriptionTable"]) do
 			callback (desctable)
 		end
 	end
@@ -25219,7 +25219,7 @@ function menu.createMissionContext(frame)
 		-- kuertee start: callback
 		if active then
 			if callbacks ["createMissionContext_getIsMissionAcceptable"] then
-				for _, callback in ipairs (callbacks ["createMissionContext_getIsMissionAcceptable"]) do
+				for id, callback in pairs (callbacks ["createMissionContext_getIsMissionAcceptable"]) do
 					active = callback (menu.contextMenuData.missionid)
 					if active == 0 or active == false then
 						break
@@ -25236,7 +25236,7 @@ function menu.createMissionContext(frame)
 		-- kuertee start: callback
 		local kEM_isBriefingAvailable = nil
 		if callbacks ["createMissionContext_getIsMissionBriefingAvailable"] then
-			for _, callback in ipairs (callbacks ["createMissionContext_getIsMissionBriefingAvailable"]) do
+			for id, callback in pairs (callbacks ["createMissionContext_getIsMissionBriefingAvailable"]) do
 				kEM_isBriefingAvailable = callback (menu.contextMenuData.missionid)
 				if kEM_isBriefingAvailable == 0 or kEM_isBriefingAvailable == false then
 					break
@@ -25267,7 +25267,7 @@ function menu.createMissionContext(frame)
 
 		-- kuertee start: callback
 		if callbacks ["createMissionContext_addMissionOfferButtons"] then
-			for _, callback in ipairs (callbacks ["createMissionContext_addMissionOfferButtons"]) do
+			for id, callback in pairs (callbacks ["createMissionContext_addMissionOfferButtons"]) do
 				active = callback (bottomtable, menu.contextMenuData.missionid)
 			end
 		end
@@ -25337,7 +25337,7 @@ function menu.createMissionContext(frame)
 
 		-- kuertee start: callback
 		if callbacks ["createMissionContext_addMissionAcceptedButtons"] then
-			for _, callback in ipairs (callbacks ["createMissionContext_addMissionAcceptedButtons"]) do
+			for id, callback in pairs (callbacks ["createMissionContext_addMissionAcceptedButtons"]) do
 				active = callback (bottomtable, menu.contextMenuData.missionid)
 			end
 		end
@@ -25357,7 +25357,7 @@ function menu.createMissionContext(frame)
 
 	-- kuertee start: callback
 	if callbacks ["createMissionContext_on_end"] then
-		for _, callback in ipairs (callbacks ["createMissionContext_on_end"]) do
+		for id, callback in pairs (callbacks ["createMissionContext_on_end"]) do
 			callback (frame)
 		end
 	end
@@ -26307,7 +26307,7 @@ function menu.onRowChanged(row, rowdata, uitable, modified, input, source)
 		
 		-- start Forleyor_infoCenter Callback:
 		if callbacks ["ic_onRowChanged"] then
-			for _, callback in ipairs (callbacks ["ic_onRowChanged"]) do
+			for id, callback in pairs (callbacks ["ic_onRowChanged"]) do
 				callback (row, rowdata, uitable, modified, input, source)
 			end
 		end
@@ -26522,7 +26522,7 @@ function menu.onSelectElement(uitable, modified, row, isdblclick, input)
 
 		-- start Forleyor_infoCenter Callback:
 		if callbacks ["ic_onSelectElement"] then
-			for _, callback in ipairs (callbacks ["ic_onSelectElement"]) do
+			for id, callback in pairs (callbacks ["ic_onSelectElement"]) do
 				callback (uitable, modified, row, isdblclick, input)
 			end
 		end
@@ -26877,7 +26877,7 @@ function menu.onRenderTargetSelect(modified)
 
 									-- start: mycu call-back
 									if callbacks ["onRenderTargetSelect_on_propertyowned_newmode"] then
-										for _, callback in ipairs (callbacks ["onRenderTargetSelect_on_propertyowned_newmode"]) do
+										for id, callback in pairs (callbacks ["onRenderTargetSelect_on_propertyowned_newmode"]) do
 											result = callback (pickedcomponent64, newmode)
 											if result then
 												newmode = result.newmode
@@ -27757,7 +27757,7 @@ end
 function menu.onTableRightMouseClick(uitable, row, posx, posy)
 	-- start Forleyor_infoCenter Callback:
 	if callbacks ["ic_onTableRightMouseClick"] then
-		for _, callback in ipairs (callbacks ["ic_onTableRightMouseClick"]) do
+		for id, callback in pairs (callbacks ["ic_onTableRightMouseClick"]) do
 			callback (uitable, row, posx, posy)
 		end
 	end
@@ -28180,7 +28180,7 @@ function menu.infoChangeObjectName(objectid, text, textchanged)
 
 	-- [UniTrader's Advanced Renaming] Forleyor start: callback
 	if callbacks ["utRenaming_infoChangeObjectName"] then
-		for _, callback in ipairs (callbacks ["utRenaming_infoChangeObjectName"]) do
+		for id, callback in pairs (callbacks ["utRenaming_infoChangeObjectName"]) do
 			callback (objectid, text, textchanged)
 		end
 	end
@@ -30273,29 +30273,70 @@ function menu.setInfoSubmenuObjectAndRefresh(component)
 end
 
 -- kuertee start:
-function menu.registerCallback (callbackName, callbackFunction)
-	-- note 1: format is generally [function name]_[action]. e.g.: in kuertee_menu_transporter, "display_on_set_room_active" overrides the room's active property with the return of the callback.
-	-- note 2: events have the word "_on_" followed by a PRESENT TENSE verb. e.g.: in kuertee_menu_transporter, "display_on_set_buttontable" is called after all of the rows of buttontable are set.
-	-- note 3: new callbacks can be added or existing callbacks can be edited. but commit your additions/changes to the mod's GIT repository.
-	-- note 4: search for the callback names to see where they are executed.
-	-- note 5: if a callback requires a return value, return it in an object var. e.g. "display_on_set_room_active" requires a return of {active = true | false}.
-
-	-- to find callbacks available for this menu,
-	-- reg-ex search for callbacks\[\".*\]
-
-	if callbacks [callbackName] == nil then
-		callbacks [callbackName] = {}
+local uix_callbackCount = 0
+function menu.registerCallback(callbackName, callbackFunction, id)
+    -- note 1: format is generally [function name]_[action]. e.g.: in kuertee_menu_transporter, "display_on_set_room_active" overrides the room's active property with the return of the callback.
+    -- note 2: events have the word "_on_" followed by a PRESENT TENSE verb. e.g.: in kuertee_menu_transporter, "display_on_set_buttontable" is called after all of the rows of buttontable are set.
+    -- note 3: new callbacks can be added or existing callbacks can be edited. but commit your additions/changes to the mod's GIT repository.
+    -- note 4: search for the callback names to see where they are executed.
+    -- note 5: if a callback requires a return value, return it in an object var. e.g. "display_on_set_room_active" requires a return of {active = true | false}.
+    if callbacks [callbackName] == nil then
+        callbacks [callbackName] = {}
+    end
+    if not callbacks[callbackName][id] then
+	    if not id then
+	    	uix_callbackCount = uix_callbackCount + 1
+	    	id = "_" .. tostring(uix_callbackCount)
+	    end
+	    callbacks[callbackName][id] = callbackFunction
+	else
+		DebugError("uix registerCallback: callback at " .. callbackName .. " with id " .. tostring(id) .. " was already previously registered")
 	end
-	table.insert (callbacks [callbackName], callbackFunction)
 end
 
-function menu.deregisterCallback(callbackName, callbackFunction)
-	-- for i, callback in ipairs(callbacks[callbackName]) do
-	if callbacks[callbackName] and #callbacks[callbackName] > 0 then
-		for i = #callbacks[callbackName], 1, -1 do
-			if callbacks[callbackName][i] == callbackFunction then
-				table.remove(callbacks[callbackName], i)
-			end
+local isDeregisterQueued
+local callbacks_toDeregister = {}
+function menu.deregisterCallback(callbackName, callbackFunction, id)
+	if not callbacks_toDeregister[callbackName] then
+		callbacks_toDeregister[callbackName] = {}
+	end
+    if id then
+    	table.insert(callbacks_toDeregister[callbackName], id)
+    else
+        if callbacks[callbackName] then
+            for id, func in pairs(callbacks[callbackName]) do
+                if func == callbackFunction then
+                	table.insert(callbacks[callbackName], id)
+                end
+            end
+        end
+    end
+	if not isDeregisterQueued then
+		isDeregisterQueued = true
+		Helper.addDelayedOneTimeCallbackOnUpdate(function ()
+			isDeregisterQueued = nil
+			menu.deregisterCallbacksNow()
+		end, true, getElapsedTime() + 1)
+	end
+end
+
+function menu.deregisterCallbacksNow()
+	for callbackName, ids in pairs(callbacks_toDeregister) do
+		if callbacks[callbackName] and callback[callbackName][id] then
+			callbacks[callbackName][id] = nil
+		else
+			DebugError("uix deregisterCallback: callback at " .. callbackName .. " with id " .. tostring(id) .. " doesn't exist")
+		end
+	end
+	callbacks_toDeregister = {}
+end
+
+function menu.updateCallback(callbackName, id, callbackFunction)
+	if callbacks[callbackName] then
+		if callbacks[callbackName][id] then
+	        callback[callbackName][id] = callbackFunction
+		else
+			DebugError("uix updateCallback: callback at " .. callbackName .. " with id " .. tostring(id) .. " doesn't exist")
 		end
 	end
 end

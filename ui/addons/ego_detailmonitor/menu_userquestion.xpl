@@ -88,7 +88,7 @@ function menu.cleanup()
 
 	-- kuertee start:
 	if callbacks ["cleanup_end"] then
-		for _, callback in ipairs (callbacks ["cleanup_end"]) do
+		for id, callback in pairs (callbacks ["cleanup_end"]) do
 			callback ()
 		end
 	end
@@ -206,7 +206,7 @@ function menu.createInfoFrame()
 	-- kuertee start: callback
 	local frameProperties, isUseFrameHeight
 	if callbacks ["createInfoFrame_custom_frame_properties"] then
-		for _, callback in ipairs (callbacks ["createInfoFrame_custom_frame_properties"]) do
+		for id, callback in pairs (callbacks ["createInfoFrame_custom_frame_properties"]) do
 			frameProperties, isUseFrameHeight = callback (config)
 			if frameProperties then break end
 		end
@@ -443,29 +443,70 @@ end
 -- menu helpers
 
 -- kuertee start:
-function menu.registerCallback (callbackName, callbackFunction)
-	-- note 1: format is generally [function name]_[action]. e.g.: in kuertee_menu_transporter, "display_on_set_room_active" overrides the room's active property with the return of the callback.
-	-- note 2: events have the word "_on_" followed by a PRESENT TENSE verb. e.g.: in kuertee_menu_transporter, "display_on_set_buttontable" is called after all of the rows of buttontable are set.
-	-- note 3: new callbacks can be added or existing callbacks can be edited. but commit your additions/changes to the mod's GIT repository.
-	-- note 4: search for the callback names to see where they are executed.
-	-- note 5: if a callback requires a return value, return it in an object var. e.g. "display_on_set_room_active" requires a return of {active = true | false}.
-
-	-- to find callbacks available for this menu,
-	-- reg-ex search for callbacks.*\[\".*\]
-
-	if callbacks [callbackName] == nil then
-		callbacks [callbackName] = {}
+local uix_callbackCount = 0
+function menu.registerCallback(callbackName, callbackFunction, id)
+    -- note 1: format is generally [function name]_[action]. e.g.: in kuertee_menu_transporter, "display_on_set_room_active" overrides the room's active property with the return of the callback.
+    -- note 2: events have the word "_on_" followed by a PRESENT TENSE verb. e.g.: in kuertee_menu_transporter, "display_on_set_buttontable" is called after all of the rows of buttontable are set.
+    -- note 3: new callbacks can be added or existing callbacks can be edited. but commit your additions/changes to the mod's GIT repository.
+    -- note 4: search for the callback names to see where they are executed.
+    -- note 5: if a callback requires a return value, return it in an object var. e.g. "display_on_set_room_active" requires a return of {active = true | false}.
+    if callbacks [callbackName] == nil then
+        callbacks [callbackName] = {}
+    end
+    if not callbacks[callbackName][id] then
+	    if not id then
+	    	uix_callbackCount = uix_callbackCount + 1
+	    	id = "_" .. tostring(uix_callbackCount)
+	    end
+	    callbacks[callbackName][id] = callbackFunction
+	else
+		DebugError("uix registerCallback: callback at " .. callbackName .. " with id " .. tostring(id) .. " was already previously registered")
 	end
-	table.insert (callbacks [callbackName], callbackFunction)
 end
 
-function menu.deregisterCallback(callbackName, callbackFunction)
-	-- for i, callback in ipairs(callbacks[callbackName]) do
-	if callbacks[callbackName] and #callbacks[callbackName] > 0 then
-		for i = #callbacks[callbackName], 1, -1 do
-			if callbacks[callbackName][i] == callbackFunction then
-				table.remove(callbacks[callbackName], i)
-			end
+local isDeregisterQueued
+local callbacks_toDeregister = {}
+function menu.deregisterCallback(callbackName, callbackFunction, id)
+	if not callbacks_toDeregister[callbackName] then
+		callbacks_toDeregister[callbackName] = {}
+	end
+    if id then
+    	table.insert(callbacks_toDeregister[callbackName], id)
+    else
+        if callbacks[callbackName] then
+            for id, func in pairs(callbacks[callbackName]) do
+                if func == callbackFunction then
+                	table.insert(callbacks[callbackName], id)
+                end
+            end
+        end
+    end
+	if not isDeregisterQueued then
+		isDeregisterQueued = true
+		Helper.addDelayedOneTimeCallbackOnUpdate(function ()
+			isDeregisterQueued = nil
+			menu.deregisterCallbacksNow()
+		end, true, getElapsedTime() + 1)
+	end
+end
+
+function menu.deregisterCallbacksNow()
+	for callbackName, ids in pairs(callbacks_toDeregister) do
+		if callbacks[callbackName] and callback[callbackName][id] then
+			callbacks[callbackName][id] = nil
+		else
+			DebugError("uix deregisterCallback: callback at " .. callbackName .. " with id " .. tostring(id) .. " doesn't exist")
+		end
+	end
+	callbacks_toDeregister = {}
+end
+
+function menu.updateCallback(callbackName, id, callbackFunction)
+	if callbacks[callbackName] then
+		if callbacks[callbackName][id] then
+	        callback[callbackName][id] = callbackFunction
+		else
+			DebugError("uix updateCallback: callback at " .. callbackName .. " with id " .. tostring(id) .. " doesn't exist")
 		end
 	end
 end
@@ -518,7 +559,7 @@ function menu.createTable_kuertee(frame, tableProperties)
 		-- <open_menu menu="UserQuestionMenu" param="[0, 0, 'custom', [$title, $text, null, ['kATD_on_death_notice_read', {111204, 903}], null, 'right']]" />
 		-- local ftable = frame:addTable (numCols, { tabOrder = 1, borderEnabled = true, width = tableProperties.width, x = tableProperties.x, y = tableProperties.y, defaultInteractiveObject = true })
 		if callbacks ["createTable_new_custom_table"] then
-			for _, callback in ipairs (callbacks ["createTable_new_custom_table"]) do
+			for id, callback in pairs (callbacks ["createTable_new_custom_table"]) do
 				ftable = callback (frame, tableProperties, config)
 				if ftable then break end
 			end

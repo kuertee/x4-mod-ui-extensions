@@ -1237,7 +1237,7 @@ function menu.cleanup()
 
 	-- kuertee start: callback
 	if callbacks ["cleanup"] then
-		for _, callback in ipairs (callbacks ["cleanup"]) do
+		for id, callback in pairs (callbacks ["cleanup"]) do
 			callback ()
 		end
 	end
@@ -1573,7 +1573,7 @@ function menu.display()
 
 		-- start: kuertee call-back
 		if callbacks ["display_on_after_main_interactions"] then
-  			for _, callback in ipairs (callbacks ["display_on_after_main_interactions"]) do
+  			for id, callback in pairs (callbacks ["display_on_after_main_interactions"]) do
   				callback (table_header)
   			end
   		end
@@ -1788,7 +1788,7 @@ function menu.display()
 				-- Start Subsystem Targeting Orders callback
 				local sto_callbackVal
 				if callbacks ["sto_addTurretBehavioursDockMenu"] then
-				  for _, callback in ipairs (callbacks ["sto_addTurretBehavioursDockMenu"]) do
+				  for id, callback in pairs (callbacks ["sto_addTurretBehavioursDockMenu"]) do
 				    sto_callbackVal = callback (row)
 				  end
 				end
@@ -2000,7 +2000,7 @@ function menu.display()
 						-- Start Reactive Docking callback
 						local rd_callbackVal
 						if callbacks ["rd_addReactiveDockingDockMenu"] then
-				  			for _, callback in ipairs (callbacks ["rd_addReactiveDockingDockMenu"]) do
+				  			for id, callback in pairs (callbacks ["rd_addReactiveDockingDockMenu"]) do
 				    				rd_callbackVal = callback (row, menu.currentplayership, i, active, mouseovertext)
 				  			end
 						end
@@ -2148,7 +2148,7 @@ function menu.display()
 
 		-- start: kuertee call-back
 		if callbacks ["display_on_after_main_interactions"] then
-  			for _, callback in ipairs (callbacks ["display_on_after_main_interactions"]) do
+  			for id, callback in pairs (callbacks ["display_on_after_main_interactions"]) do
   				callback (table_header)
   			end
   		end
@@ -2576,29 +2576,51 @@ function menu.onCloseElement(dueToClose)
 end
 
 -- kuetee start:
-function menu.registerCallback (callbackName, callbackFunction)
-	-- note 1: format is generally [function name]_[action]. e.g.: in kuertee_menu_transporter, "display_on_set_room_active" overrides the room's active property with the return of the callback.
-	-- note 2: events have the word "_on_" followed by a PRESENT TENSE verb. e.g.: in kuertee_menu_transporter, "display_on_set_buttontable" is called after all of the rows of buttontable are set.
-	-- note 3: new callbacks can be added or existing callbacks can be edited. but commit your additions/changes to the mod's GIT repository.
-	-- note 4: search for the callback names to see where they are executed.
-	-- note 5: if a callback requires a return value, return it in an object var. e.g. "display_on_set_room_active" requires a return of {active = true | false}.
-
-	-- to find callbacks available for this menu,
-	-- reg-ex search for callbacks\[\".*\]
-
-	if callbacks [callbackName] == nil then
-		callbacks [callbackName] = {}
+local uix_callbackCount = 0
+function menu.registerCallback(callbackName, callbackFunction, id)
+    -- note 1: format is generally [function name]_[action]. e.g.: in kuertee_menu_transporter, "display_on_set_room_active" overrides the room's active property with the return of the callback.
+    -- note 2: events have the word "_on_" followed by a PRESENT TENSE verb. e.g.: in kuertee_menu_transporter, "display_on_set_buttontable" is called after all of the rows of buttontable are set.
+    -- note 3: new callbacks can be added or existing callbacks can be edited. but commit your additions/changes to the mod's GIT repository.
+    -- note 4: search for the callback names to see where they are executed.
+    -- note 5: if a callback requires a return value, return it in an object var. e.g. "display_on_set_room_active" requires a return of {active = true | false}.
+    if callbacks [callbackName] == nil then
+        callbacks [callbackName] = {}
+    end
+    if not callbacks[callbackName][id] then
+	    if not id then
+	    	uix_callbackCount = uix_callbackCount + 1
+	    	id = "_" .. tostring(uix_callbackCount)
+	    end
+	    callbacks[callbackName][id] = callbackFunction
+	else
+		DebugError("uix registerCallback: callback at " .. callbackName .. " with id " .. tostring(id) .. " was already previously registered")
 	end
-	table.insert (callbacks [callbackName], callbackFunction)
 end
 
-function menu.deregisterCallback(callbackName, callbackFunction)
-	-- for i, callback in ipairs(callbacks[callbackName]) do
-	if callbacks[callbackName] and #callbacks[callbackName] > 0 then
-		for i = #callbacks[callbackName], 1, -1 do
-			if callbacks[callbackName][i] == callbackFunction then
-				table.remove(callbacks[callbackName], i)
-			end
+function menu.deregisterCallback(callbackName, callbackFunction, id)
+    if id then
+    	if callbacks[callbackName][id] then
+            callbacks[callbackName][id] = nil
+        else
+			DebugError("uix deregisterCallback: callback at " .. callbackName .. " with id " .. tostring(id) .. " doesn't exist")
+        end
+    else
+        if callbacks[callbackName] then
+            for id, func in pairs(callbacks[callbackName]) do
+                if func == callbackFunction then
+                    callbacks[callbackName][id] = nil
+                end
+            end
+        end
+    end
+end
+
+function menu.updateCallback(callbackName, callbackFunction, id)
+	if callbacks[callbackName] then
+		if callbacks[callbackName][id] then
+	        callback[callbackName][id] = callbackFunction
+		else
+			DebugError("uix updateCallback: callback at " .. callbackName .. " with id " .. tostring(id) .. " doesn't exist")
 		end
 	end
 end
@@ -2880,7 +2902,7 @@ function menu.cleanup()
 
 	-- start: alexandretk call-back
 	if callbacks ["cleanup"] then		
-			for _, callback in ipairs (callbacks ["cleanup"]) do
+			for id, callback in pairs (callbacks ["cleanup"]) do
 			callback ()
 	    end		
 	end
@@ -2910,7 +2932,7 @@ function menu.cleanup()
 
 	-- kuertee start: callback
 	if callbacks ["cleanup"] then
-		for _, callback in ipairs (callbacks ["cleanup"]) do
+		for id, callback in pairs (callbacks ["cleanup"]) do
 			callback ()
 		end
 	end
@@ -3000,7 +3022,7 @@ function menu.onShowMenu(state)
 		local printedshipsizes_override = {}
 		local printedmilxlcapshiptype_override = {}
 		local printedmillcapshiptypes_override = {}
-		for _, callback in ipairs (callbacks ["onShowMenu_override_menu_printed_variables"]) do
+		for id, callback in pairs (callbacks ["onShowMenu_override_menu_printed_variables"]) do
 			printedshipsizes_override,printedshipdata_override,printedmilxlcapshiptype_override,printedmillcapshiptypes_override = callback()
 			menu.printedshipdata = printedshipdata_override
 			menu.printedshipsizes = printedshipsizes_override
@@ -3394,7 +3416,7 @@ function menu.onShowMenu(state)
 			if callbacks ["onShowMenu_override_sizecategory"] then
 				local purpose, shiptypename, shipicon = GetMacroData(shipdata.id, "primarypurpose", "shiptypename", "icon")
 				local sizecategory = "noncapital"
-				for _, callback in ipairs (callbacks ["onShowMenu_override_sizecategory"]) do
+				for id, callback in pairs (callbacks ["onShowMenu_override_sizecategory"]) do
 					callback(menu,shipdata,size,purpose,typecategory,sizecategory,shiptypename,shipicon)
 				end
 			else
@@ -3539,7 +3561,7 @@ function menu.onShowMenu(state)
 					if sizecategory == "capital" and callbacks ["onShowMenu_override_capitalsizecategory"] then
 						local purpose, shiptypename, shipicon = GetMacroData(shipdata.id, "primarypurpose", "shiptypename", "icon")
 						local sizecategory = "noncapital"
-						for _, callback in ipairs (callbacks ["onShowMenu_override_capitalsizecategory"]) do
+						for id, callback in pairs (callbacks ["onShowMenu_override_capitalsizecategory"]) do
 							callback(menu,size,purpose,typecategory,sizecategory,shiptypename,shipicon)
 						end
 					else
@@ -3694,7 +3716,7 @@ function menu.addIndexEntry(array, item, name, rowdata, indent, numentries, expa
 				-- start: alexandretk call-back
 				if callbacks ["onShowMenu_addingTypeIndexEntries"] then
 					local addthis
-					for _, callback in ipairs (callbacks["onShowMenu_addingTypeIndexEntries"]) do
+					for id, callback in pairs (callbacks["onShowMenu_addingTypeIndexEntries"]) do
 						addthis = callback(menu,rowdata, numunread,C)
 						numunread = numunread + addthis
 					end
@@ -3718,7 +3740,7 @@ function menu.addIndexEntry(array, item, name, rowdata, indent, numentries, expa
 				-- start: alexandretk call-back
 				if callbacks ["onShowMenu_addingIndexEntries"] then
 					local addthis
-					for _, callback in ipairs (callbacks["onShowMenu_addingIndexEntries"]) do
+					for id, callback in pairs (callbacks["onShowMenu_addingIndexEntries"]) do
 						addthis = callback(menu, numunread,rowdata,C)
 						numunread = numunread + addthis
 					end
@@ -3860,7 +3882,7 @@ function menu.createIndex()
 
 		-- start: alexandretk call-back
 		if callbacks ["onShowMenu_addingIndexNumEntries"] then
-			for _, callback in ipairs (callbacks ["onShowMenu_addingIndexNumEntries"]) do
+			for id, callback in pairs (callbacks ["onShowMenu_addingIndexNumEntries"]) do
 				callback(C,ship_index,purpose, menu)
 			end
 		else
@@ -4070,7 +4092,7 @@ end
 function menu.display()
 	-- kuertee start: callback
 	if callbacks ["display_on_start"] then
-		for _, callback in ipairs (callbacks ["display_on_start"]) do
+		for id, callback in pairs (callbacks ["display_on_start"]) do
 			callback (menu.infoFrame, tableProperties)
 		end
 	end
@@ -5155,7 +5177,7 @@ function menu.addDetailRows(ftable)
 
 				-- start: kuertee call-back
 				if callbacks ["addDetailRow_known_cluster_production_module_entries"] then		
-						for _, callback in ipairs (callbacks ["addDetailRow_known_cluster_production_module_entries"]) do
+						for id, callback in pairs (callbacks ["addDetailRow_known_cluster_production_module_entries"]) do
 						callback(ftable, clusters)
 				    end		
 				end
@@ -5248,7 +5270,7 @@ function menu.addDetailRows(ftable)
 
 				-- start: kuertee call-back
 				if callbacks ["addDetailRow_known_sector_production_module_entries"] then		
-						for _, callback in ipairs (callbacks ["addDetailRow_known_sector_production_module_entries"]) do
+						for id, callback in pairs (callbacks ["addDetailRow_known_sector_production_module_entries"]) do
 						callback(ftable, menu.object)
 				    end		
 				end
@@ -5493,7 +5515,7 @@ function menu.addDetailRows(ftable)
 
 			-- start: alexandretk call-back
 			if callbacks ["onShowMenu_addOtherShipTypes"] then
-				for _, callback in ipairs (callbacks ["onShowMenu_addOtherShipTypes"]) do
+				for id, callback in pairs (callbacks ["onShowMenu_addOtherShipTypes"]) do
 					callback(menu, ftable)
 				end
 			else
@@ -5713,7 +5735,7 @@ function menu.addDetailRows(ftable)
 
 			-- start: kuertee call-back
 			if callbacks ["addDetailRow_post_missile_entry"] then		
-					for _, callback in ipairs (callbacks ["addDetailRow_post_missile_entry"]) do
+					for id, callback in pairs (callbacks ["addDetailRow_post_missile_entry"]) do
 					callback(ftable, col1, col2, col3, offsetx, iswordwrap, properties1, properties2, properties3, entry)
 			    end		
 			end
@@ -6689,25 +6711,51 @@ function menu.formatRange(range)
 end
 
 -- kuertee start:
-function menu.registerCallback (callbackName, callbackFunction)
-	-- note 1: format is generally [function name]_[action]. e.g.: in kuertee_menu_transporter, "display_on_set_room_active" overrides the room's active property with the return of the callback.
-	-- note 2: events have the word "_on_" followed by a PRESENT TENSE verb. e.g.: in kuertee_menu_transporter, "display_on_set_buttontable" is called after all of the rows of buttontable are set.
-	-- note 3: new callbacks can be added or existing callbacks can be edited. but commit your additions/changes to the mod's GIT repository.
-	-- note 4: search for the callback names to see where they are executed.
-	-- note 5: if a callback requires a return value, return it in an object var. e.g. "display_on_set_room_active" requires a return of {active = true | false}.
-	if callbacks [callbackName] == nil then
-		callbacks [callbackName] = {}
+local uix_callbackCount = 0
+function menu.registerCallback(callbackName, callbackFunction, id)
+    -- note 1: format is generally [function name]_[action]. e.g.: in kuertee_menu_transporter, "display_on_set_room_active" overrides the room's active property with the return of the callback.
+    -- note 2: events have the word "_on_" followed by a PRESENT TENSE verb. e.g.: in kuertee_menu_transporter, "display_on_set_buttontable" is called after all of the rows of buttontable are set.
+    -- note 3: new callbacks can be added or existing callbacks can be edited. but commit your additions/changes to the mod's GIT repository.
+    -- note 4: search for the callback names to see where they are executed.
+    -- note 5: if a callback requires a return value, return it in an object var. e.g. "display_on_set_room_active" requires a return of {active = true | false}.
+    if callbacks [callbackName] == nil then
+        callbacks [callbackName] = {}
+    end
+    if not callbacks[callbackName][id] then
+	    if not id then
+	    	uix_callbackCount = uix_callbackCount + 1
+	    	id = "_" .. tostring(uix_callbackCount)
+	    end
+	    callbacks[callbackName][id] = callbackFunction
+	else
+		DebugError("uix registerCallback: callback at " .. callbackName .. " with id " .. tostring(id) .. " was already previously registered")
 	end
-	table.insert (callbacks [callbackName], callbackFunction)
 end
 
-function menu.deregisterCallback(callbackName, callbackFunction)
-	-- for i, callback in ipairs(callbacks[callbackName]) do
-	if callbacks[callbackName] and #callbacks[callbackName] > 0 then
-		for i = #callbacks[callbackName], 1, -1 do
-			if callbacks[callbackName][i] == callbackFunction then
-				table.remove(callbacks[callbackName], i)
-			end
+function menu.deregisterCallback(callbackName, callbackFunction, id)
+    if id then
+    	if callbacks[callbackName][id] then
+            callbacks[callbackName][id] = nil
+        else
+			DebugError("uix deregisterCallback: callback at " .. callbackName .. " with id " .. tostring(id) .. " doesn't exist")
+        end
+    else
+        if callbacks[callbackName] then
+            for id, func in pairs(callbacks[callbackName]) do
+                if func == callbackFunction then
+                    callbacks[callbackName][id] = nil
+                end
+            end
+        end
+    end
+end
+
+function menu.updateCallback(callbackName, callbackFunction, id)
+	if callbacks[callbackName] then
+		if callbacks[callbackName][id] then
+	        callback[callbackName][id] = callbackFunction
+		else
+			DebugError("uix updateCallback: callback at " .. callbackName .. " with id " .. tostring(id) .. " doesn't exist")
 		end
 	end
 end
@@ -8995,7 +9043,7 @@ end
 function menu.buttonToggleObjectList(objectlistparam, confirmed, override)
 	-- kuertee start: callback
 	if callbacks ["buttonToggleObjectList_on_start"] then
-		for _, callback in ipairs (callbacks ["buttonToggleObjectList_on_start"]) do
+		for id, callback in pairs (callbacks ["buttonToggleObjectList_on_start"]) do
 			callback (objectlistparam, config)
 		end
 	end
@@ -10232,7 +10280,7 @@ function menu.buttonMissionActivate()
 					activeMissionId = entry.ID
 				end
 			end
-			for _, callback in ipairs (callbacks ["buttonMissionActivate_on_activate"]) do
+			for id, callback in pairs (callbacks ["buttonMissionActivate_on_activate"]) do
 				-- callback (menu.contextMenuData.missionid)
 				callback (activeMissionId)
 			end
@@ -13295,7 +13343,7 @@ function menu.createInfoFrame()
 			-- menu.infoFrame:addTable(0)
 			local isCreated = false
 			if callbacks ["createInfoFrame_on_menu_infoTableMode"] then
-				for _, callback in ipairs (callbacks ["createInfoFrame_on_menu_infoTableMode"]) do
+				for id, callback in pairs (callbacks ["createInfoFrame_on_menu_infoTableMode"]) do
 					if callback (menu.infoFrame) then
 						isCreated = true
 					end
@@ -13311,7 +13359,7 @@ function menu.createInfoFrame()
 			-- start Forleyor_infoCenter callback:
 			local isCreated = false
 			if callbacks ["ic_createInfoFrame"] then
-				for _, callback in ipairs (callbacks ["ic_createInfoFrame"]) do
+				for id, callback in pairs (callbacks ["ic_createInfoFrame"]) do
 					if callback (menu.infoFrame) then
 						isCreated = true
 					end
@@ -13698,7 +13746,7 @@ function menu.refreshInfoFrame2(setrow, setcol)
 	-- kuertee start: callback
 	local isCreated = false
 	if callbacks ["refreshInfoFrame2_on_start"] then
-		for _, callback in ipairs (callbacks ["refreshInfoFrame2_on_start"]) do
+		for id, callback in pairs (callbacks ["refreshInfoFrame2_on_start"]) do
 			if callback () then
 				isCreated = true
 			end
@@ -13782,7 +13830,7 @@ function menu.getContainerNameAndColors(container, iteration, issquadleader, sho
 
     -- mycu start: callback
     if callbacks ["getContainerNameAndColors_on_name_construct"] then
-        for _, callback in ipairs (callbacks ["getContainerNameAndColors_on_name_construct"]) do
+        for id, callback in pairs (callbacks ["getContainerNameAndColors_on_name_construct"]) do
             local result = callback (container, name)
             if result then
                 name = result.name
@@ -14556,7 +14604,7 @@ end
 function menu.createPropertyOwned(frame, instance)
 	-- kuertee start: callback
 	if callbacks ["createPropertyOwned_on_start"] then
-		for _, callback in ipairs (callbacks ["createPropertyOwned_on_start"]) do
+		for id, callback in pairs (callbacks ["createPropertyOwned_on_start"]) do
 			callback (config)
 		end
 	end
@@ -14603,7 +14651,7 @@ function menu.createPropertyOwned(frame, instance)
 
 	-- kuertee start: callback
 	if callbacks ["createPropertyOwned_on_init_infoTableData"] then
-		for _, callback in ipairs (callbacks ["createPropertyOwned_on_init_infoTableData"]) do
+		for id, callback in pairs (callbacks ["createPropertyOwned_on_init_infoTableData"]) do
 			callback (infoTableData)
 		end
 	end
@@ -14741,7 +14789,7 @@ function menu.createPropertyOwned(frame, instance)
 
 			-- kuertee start: callback
 			if callbacks ["createPropertyOwned_on_add_ship_infoTableData"] then
-				for _, callback in ipairs (callbacks ["createPropertyOwned_on_add_ship_infoTableData"]) do
+				for id, callback in pairs (callbacks ["createPropertyOwned_on_add_ship_infoTableData"]) do
 					callback (infoTableData, object)
 				end
 			end
@@ -14752,7 +14800,7 @@ function menu.createPropertyOwned(frame, instance)
 
 	-- kuertee start: callback
 	if callbacks ["createPropertyOwned_on_add_other_objects_infoTableData"] then
-		for _, callback in ipairs (callbacks ["createPropertyOwned_on_add_other_objects_infoTableData"]) do
+		for id, callback in pairs (callbacks ["createPropertyOwned_on_add_other_objects_infoTableData"]) do
 			result = callback (infoTableData)
 			if result then
 				infoTableData = result.infoTableData
@@ -14825,7 +14873,7 @@ function menu.createPropertyOwned(frame, instance)
 	-- kuertee start: callback
 	if callbacks ["createPropertyOwned_on_createPropertySection_unassignedships"] then
 		local result
-		for _, callback in ipairs (callbacks ["createPropertyOwned_on_createPropertySection_unassignedships"]) do
+		for id, callback in pairs (callbacks ["createPropertyOwned_on_createPropertySection_unassignedships"]) do
 			result = callback (numdisplayed, instance, ftable, infoTableData)
 			if result and result.numdisplayed > numdisplayed then
 				numdisplayed = result.numdisplayed
@@ -14909,7 +14957,7 @@ function menu.createPropertyOwned(frame, instance)
 					active = entry.category == "propertyall"
                     -- start: mycu callback
                     if callbacks ["onSetActiveStateForCVMode_on_createPropertyOwned"] then
-                        for _, callback in ipairs (callbacks ["onSetActiveStateForCVMode_on_createPropertyOwned"]) do
+                        for id, callback in pairs (callbacks ["onSetActiveStateForCVMode_on_createPropertyOwned"]) do
                             active = callback (entry)
                         end
                     end
@@ -15355,7 +15403,7 @@ function menu.createPropertyRow(instance, ftable, component, iteration, commande
 	-- kuertee start: callback
 	if callbacks ["createPropertyRow_on_init_vars"] then
 		local result
-		for _, callback in ipairs (callbacks ["createPropertyRow_on_init_vars"]) do
+		for id, callback in pairs (callbacks ["createPropertyRow_on_init_vars"]) do
 			result = callback (maxicons, subordinates, dockedships, constructions, convertedComponent, iteration)
 			if result then
 				maxicons = result.maxicons
@@ -15652,7 +15700,7 @@ function menu.createPropertyRow(instance, ftable, component, iteration, commande
 				row[2]:createText(shipname, { font = font, color = color, mouseOverText = mouseover })
 			else
 				local result
-				for _, callback in ipairs (callbacks ["createPropertyRow_override_row_shipname_createText"]) do
+				for id, callback in pairs (callbacks ["createPropertyRow_override_row_shipname_createText"]) do
 					result = callback (shipname, { font = font, color = color, mouseOverText = mouseover }, component)
 					if result then
 						row[2]:createText(result.shipname, result.properties)
@@ -15682,7 +15730,7 @@ function menu.createPropertyRow(instance, ftable, component, iteration, commande
 					row[3 + namecolspan]:setColSpan(colspan):createText(locationtext, { halign = "right", font = font, x = 0 })
 				else
 					local result
-					for _, callback in ipairs (callbacks ["createPropertyRow_override_row_location_createText"]) do
+					for id, callback in pairs (callbacks ["createPropertyRow_override_row_location_createText"]) do
 						result = callback (locationtext, {halign = "right", font = font, mouseOverText = mouseovertext, x = 0}, component)
 						if result then
 							row[3 + namecolspan]:createText(result.locationtext, result.properties)
@@ -16467,7 +16515,7 @@ function menu.getPropertyOwnedFleetDataInternal(instance, component, shiptyperan
 
 	-- kuertee start: callback
 	if callbacks ["getPropertyOwnedFleetDataInternal_addToFleetIcons"] then
-		for _, callback in ipairs (callbacks ["getPropertyOwnedFleetDataInternal_addToFleetIcons"]) do
+		for id, callback in pairs (callbacks ["getPropertyOwnedFleetDataInternal_addToFleetIcons"]) do
 			callback (component, shiptyperanks, shiptypedata)
 		end
 	end
@@ -18193,7 +18241,7 @@ function menu.createOrderQueue(frame, mode, instance)
 				-- start: aegs call-back
 				if callbacks ["map_ship_assignments_insert"] then
 					local data_o
-					for _, callback in ipairs (callbacks ["map_ship_assignments_insert"]) do
+					for id, callback in pairs (callbacks ["map_ship_assignments_insert"]) do
 						data_o = callback (GetComponentData(infoTableData.commander, "macro"),primarypurpose)
 						if data_o then
 							table.insert(asssignmentOptions, data_o)
@@ -18824,7 +18872,7 @@ function menu.displayDefaultBehaviour(ftable, mode, titlerow, instance)
 
 						-- kuertee start: callback
 						if callbacks ["displayDefaultBehaviour_change_param_behaviouractive"] then
-							for _, callback in ipairs (callbacks ["displayDefaultBehaviour_change_param_behaviouractive"]) do
+							for id, callback in pairs (callbacks ["displayDefaultBehaviour_change_param_behaviouractive"]) do
 								result = callback (behaviouractive)
 								if result then
 									behaviouractive = result.behaviouractive
@@ -20085,7 +20133,7 @@ function menu.setupInfoSubmenuRows(mode, inputtable, inputobject, instance)
 		-- start: aegs call-back
 		if callbacks ["map_shipInformation_shiptypename_override"] then
 			local shiptypename_override
-			for _, callback in ipairs (callbacks ["map_shipInformation_shiptypename_override"]) do
+			for id, callback in pairs (callbacks ["map_shipInformation_shiptypename_override"]) do
 				shiptypename_override = callback (GetComponentData(object64, "macro"))
 				if shiptypename_override then
 					locrowdata = { false, ReadText(1001, 9051) .. ReadText(1001, 120), Helper.unlockInfo(nameinfo, (function() return tostring(shiptypename_override or 0, true, 0, true) end)) }
@@ -21254,7 +21302,7 @@ function menu.setupInfoSubmenuRows(mode, inputtable, inputobject, instance)
 
 	-- [UniTrader's Advanced Renaming] Forleyor start: callback
 	if callbacks ["utRenaming_setupInfoSubmenuRows_on_end"] then
-		for _, callback in ipairs (callbacks ["utRenaming_setupInfoSubmenuRows_on_end"]) do
+		for id, callback in pairs (callbacks ["utRenaming_setupInfoSubmenuRows_on_end"]) do
 			callback(mode, inputtable, inputobject, instance)
 		end
 	end
@@ -22298,7 +22346,7 @@ function menu.setupLoadoutInfoSubmenuRows(mode, inputtable, inputobject, instanc
 					-- Start Subsystem Targeting Orders callback
 					local sto_callbackVal
 					if callbacks ["sto_addTurretBehavioursMapMenu"] then
-						for _, callback in ipairs (callbacks ["sto_addTurretBehavioursMapMenu"]) do
+						for id, callback in pairs (callbacks ["sto_addTurretBehavioursMapMenu"]) do
 							sto_callbackVal = callback (row, inputobject)
 						end
 					end
@@ -22552,7 +22600,7 @@ function menu.setupLoadoutInfoSubmenuRows(mode, inputtable, inputobject, instanc
 								-- start: aegs call-back
 								if callbacks ["map_ship_subordinateassignments_insert"] then
 									local ship_assignment
-									for _, callback in ipairs (callbacks ["map_ship_subordinateassignments_insert"]) do
+									for id, callback in pairs (callbacks ["map_ship_subordinateassignments_insert"]) do
 										ship_assignment = callback (GetComponentData(inputobject, "macro"),(groups[i].numassignableminingships == #groups[i].subordinates) and ((not usedassignments["mining"]) or (usedassignments["mining"] == i)),(groups[i].numassignabletugships == #groups[i].subordinates) and ((not usedassignments["salvage"]) or (usedassignments["salvage"] == i)))
 										if ship_assignment then
 											table.insert(subordinateassignments, ship_assignment)
@@ -22603,7 +22651,7 @@ function menu.setupLoadoutInfoSubmenuRows(mode, inputtable, inputobject, instanc
 							-- Start Reactive Docking callback
 							local rd_callbackVal
 							if callbacks ["rd_addReactiveDockingMapMenu"] then
-								for _, callback in ipairs (callbacks ["rd_addReactiveDockingMapMenu"]) do
+								for id, callback in pairs (callbacks ["rd_addReactiveDockingMapMenu"]) do
 									rd_callbackVal = callback (row, inputobject, i, mode, active, mouseovertext)
 								end
 							end
@@ -22653,7 +22701,7 @@ function menu.setupLoadoutInfoSubmenuRows(mode, inputtable, inputobject, instanc
 	-- start: aegs call-back
 		if callbacks ["map_loadoutinfo_double_insert"] then
 			local state,title_text,label_text_1,label_text_2,subsystems
-			for _, callback in ipairs (callbacks ["map_loadoutinfo_double_insert"]) do
+			for id, callback in pairs (callbacks ["map_loadoutinfo_double_insert"]) do
 				state,title_text,label_text_1,label_text_2,subsystems = callback (GetComponentData(inputobject, "macro"))
 				if state then
 					local row = inputtable:addRow(false, { bgColor = Color["row_title_background"] })
@@ -24175,7 +24223,7 @@ function menu.createMissionMode(frame)
 
 			-- kuertee start: callback
 			if callbacks ["createMissionMode_on_missionoffer_guild_start"] then
-				for _, callback in ipairs (callbacks ["createMissionMode_on_missionoffer_guild_start"]) do
+				for id, callback in pairs (callbacks ["createMissionMode_on_missionoffer_guild_start"]) do
 					callback (ftable)
 				end
 			end
@@ -24248,7 +24296,7 @@ function menu.createMissionMode(frame)
 		-- kuertee start: callback
 		if callbacks ["createMissionMode_replaceMissionModeCurrent"] then
 			local oldMissionModeCurrent = menu.missionModeCurrent
-			for _, callback in ipairs (callbacks ["createMissionMode_replaceMissionModeCurrent"]) do
+			for id, callback in pairs (callbacks ["createMissionMode_replaceMissionModeCurrent"]) do
 				menu.missionModeCurrent = callback (menu.missionModeCurrent)
 				if menu.missionModeCurrent ~= oldMissionModeCurrent then
 					-- break immediately if changed
@@ -25703,7 +25751,7 @@ function menu.createInfoFrame2()
 
 		local isCreated = false
 		if callbacks ["createInfoFrame2_on_menu_infoModeRight"] then
-			for _, callback in ipairs (callbacks ["createInfoFrame2_on_menu_infoModeRight"]) do
+			for id, callback in pairs (callbacks ["createInfoFrame2_on_menu_infoModeRight"]) do
 				if callback (menu.infoFrame2) then
 					isCreated = true
 				end
@@ -25736,7 +25784,7 @@ end
 function menu.createSideBar(firsttime, frame, width, height, offsetx, offsety)
 	-- kuertee start: callback
 	if callbacks ["createSideBar_on_start"] then
-		for _, callback in ipairs (callbacks ["createSideBar_on_start"]) do
+		for id, callback in pairs (callbacks ["createSideBar_on_start"]) do
 			callback (config)
 		end
 	end
@@ -25744,7 +25792,7 @@ function menu.createSideBar(firsttime, frame, width, height, offsetx, offsety)
 
 	-- start Forleyor_infoCenter Callback:
 	if callbacks ["ic_createSideBar"] then
-		for _, callback in ipairs (callbacks ["ic_createSideBar"]) do
+		for id, callback in pairs (callbacks ["ic_createSideBar"]) do
 			callback (config)
 		end
 	end
@@ -25900,7 +25948,7 @@ end
 function menu.createRightBar(frame, width, height, offsetx, offsety)
 	-- kuertee start: callback
 	if callbacks ["createRightBar_on_start"] then
-		for _, callback in ipairs (callbacks ["createRightBar_on_start"]) do
+		for id, callback in pairs (callbacks ["createRightBar_on_start"]) do
 			callback (config)
 		end
 	end
@@ -30191,7 +30239,7 @@ function menu.createRenameContext(frame)
 
 	-- [UniTrader's Advanced Renaming] Forleyor start: callback
 	if callbacks ["utRenaming_createRenameContext_get_startname"] then
-		for _, callback in ipairs (callbacks ["utRenaming_createRenameContext_get_startname"]) do
+		for id, callback in pairs (callbacks ["utRenaming_createRenameContext_get_startname"]) do
 			uix_startname = callback (frame)
 			if uix_startname then
 				startname = uix_startname
@@ -30220,7 +30268,7 @@ function menu.createRenameContext(frame)
 
 	-- [UniTrader's Advanced Renaming] Forleyor start: callback
 	if callbacks ["utRenaming_createRenameContext_on_after_confirm_button"] then
-		for _, callback in ipairs (callbacks ["utRenaming_createRenameContext_on_after_confirm_button"]) do
+		for id, callback in pairs (callbacks ["utRenaming_createRenameContext_on_after_confirm_button"]) do
 			startname = callback (frame, shiptable)
 		end
 	end
@@ -30912,7 +30960,7 @@ function menu.buttonRenameConfirm(isconfirmed)
 				newtext = GetComponentData(menu.contextMenuData.uix_multiRename_objects[1], "name")
 			end
 			if callbacks ["buttonRenameConfirm_onMultiRename_on_before_rename"] then
-				for _, callback in ipairs (callbacks ["buttonRenameConfirm_onMultiRename_on_before_rename"]) do
+				for id, callback in pairs (callbacks ["buttonRenameConfirm_onMultiRename_on_before_rename"]) do
 					callback ()
 				end
 			end
@@ -30933,14 +30981,14 @@ function menu.buttonRenameConfirm(isconfirmed)
 				end
 			end
 			if callbacks ["buttonRenameConfirm_onMultiRename_on_after_rename"] then
-				for _, callback in ipairs (callbacks ["buttonRenameConfirm_onMultiRename_on_after_rename"]) do
+				for id, callback in pairs (callbacks ["buttonRenameConfirm_onMultiRename_on_after_rename"]) do
 					callback ()
 				end
 			end
 
 			-- [UniTrader's Advanced Renaming] Forleyor start: callback
 			if callbacks ["utRenaming_buttonRenameConfirm"] then
-				for _, callback in ipairs (callbacks ["utRenaming_buttonRenameConfirm"]) do
+				for id, callback in pairs (callbacks ["utRenaming_buttonRenameConfirm"]) do
 					callback ()
 				end
 			end
@@ -30966,7 +31014,7 @@ function menu.buttonRenameConfirm(isconfirmed)
 
 				-- [UniTrader's Advanced Renaming] Forleyor start: callback
 				if callbacks ["utRenaming_buttonRenameConfirm"] then
-					for _, callback in ipairs (callbacks ["utRenaming_buttonRenameConfirm"]) do
+					for id, callback in pairs (callbacks ["utRenaming_buttonRenameConfirm"]) do
 						callback ()
 					end
 				end
@@ -31713,7 +31761,7 @@ function menu.createMissionContext(frame)
 
 	-- kuertee start: callback
 	if callbacks ["createMissionContext_startDescriptionTable"] then
-		for _, callback in ipairs (callbacks ["createMissionContext_startDescriptionTable"]) do
+		for id, callback in pairs (callbacks ["createMissionContext_startDescriptionTable"]) do
 			callback (desctable)
 		end
 	end
@@ -31935,7 +31983,7 @@ function menu.createMissionContext(frame)
 		-- kuertee start: callback
 		if active then
 			if callbacks ["createMissionContext_getIsMissionAcceptable"] then
-				for _, callback in ipairs (callbacks ["createMissionContext_getIsMissionAcceptable"]) do
+				for id, callback in pairs (callbacks ["createMissionContext_getIsMissionAcceptable"]) do
 					active = callback (menu.contextMenuData.missionid)
 					if active == 0 or active == false then
 						break
@@ -31952,7 +32000,7 @@ function menu.createMissionContext(frame)
 		-- kuertee start: callback
 		local kEM_isBriefingAvailable = nil
 		if callbacks ["createMissionContext_getIsMissionBriefingAvailable"] then
-			for _, callback in ipairs (callbacks ["createMissionContext_getIsMissionBriefingAvailable"]) do
+			for id, callback in pairs (callbacks ["createMissionContext_getIsMissionBriefingAvailable"]) do
 				kEM_isBriefingAvailable = callback (menu.contextMenuData.missionid)
 				if kEM_isBriefingAvailable == 0 or kEM_isBriefingAvailable == false then
 					break
@@ -31983,7 +32031,7 @@ function menu.createMissionContext(frame)
 
 		-- kuertee start: callback
 		if callbacks ["createMissionContext_addMissionOfferButtons"] then
-			for _, callback in ipairs (callbacks ["createMissionContext_addMissionOfferButtons"]) do
+			for id, callback in pairs (callbacks ["createMissionContext_addMissionOfferButtons"]) do
 				active = callback (bottomtable, menu.contextMenuData.missionid)
 			end
 		end
@@ -32053,7 +32101,7 @@ function menu.createMissionContext(frame)
 
 		-- kuertee start: callback
 		if callbacks ["createMissionContext_addMissionAcceptedButtons"] then
-			for _, callback in ipairs (callbacks ["createMissionContext_addMissionAcceptedButtons"]) do
+			for id, callback in pairs (callbacks ["createMissionContext_addMissionAcceptedButtons"]) do
 				active = callback (bottomtable, menu.contextMenuData.missionid)
 			end
 		end
@@ -32073,7 +32121,7 @@ function menu.createMissionContext(frame)
 
 	-- kuertee start: callback
 	if callbacks ["createMissionContext_on_end"] then
-		for _, callback in ipairs (callbacks ["createMissionContext_on_end"]) do
+		for id, callback in pairs (callbacks ["createMissionContext_on_end"]) do
 			callback (frame)
 		end
 	end
@@ -33023,7 +33071,7 @@ function menu.onRowChanged(row, rowdata, uitable, modified, input, source)
 		
 		-- start Forleyor_infoCenter Callback:
 		if callbacks ["ic_onRowChanged"] then
-			for _, callback in ipairs (callbacks ["ic_onRowChanged"]) do
+			for id, callback in pairs (callbacks ["ic_onRowChanged"]) do
 				callback (row, rowdata, uitable, modified, input, source)
 			end
 		end
@@ -33238,7 +33286,7 @@ function menu.onSelectElement(uitable, modified, row, isdblclick, input)
 
 		-- start Forleyor_infoCenter Callback:
 		if callbacks ["ic_onSelectElement"] then
-			for _, callback in ipairs (callbacks ["ic_onSelectElement"]) do
+			for id, callback in pairs (callbacks ["ic_onSelectElement"]) do
 				callback (uitable, modified, row, isdblclick, input)
 			end
 		end
@@ -33593,7 +33641,7 @@ function menu.onRenderTargetSelect(modified)
 
 									-- start: mycu call-back
 									if callbacks ["onRenderTargetSelect_on_propertyowned_newmode"] then
-										for _, callback in ipairs (callbacks ["onRenderTargetSelect_on_propertyowned_newmode"]) do
+										for id, callback in pairs (callbacks ["onRenderTargetSelect_on_propertyowned_newmode"]) do
 											result = callback (pickedcomponent64, newmode)
 											if result then
 												newmode = result.newmode
@@ -34473,7 +34521,7 @@ end
 function menu.onTableRightMouseClick(uitable, row, posx, posy)
 	-- start Forleyor_infoCenter Callback:
 	if callbacks ["ic_onTableRightMouseClick"] then
-		for _, callback in ipairs (callbacks ["ic_onTableRightMouseClick"]) do
+		for id, callback in pairs (callbacks ["ic_onTableRightMouseClick"]) do
 			callback (uitable, row, posx, posy)
 		end
 	end
@@ -34896,7 +34944,7 @@ function menu.infoChangeObjectName(objectid, text, textchanged)
 
 	-- [UniTrader's Advanced Renaming] Forleyor start: callback
 	if callbacks ["utRenaming_infoChangeObjectName"] then
-		for _, callback in ipairs (callbacks ["utRenaming_infoChangeObjectName"]) do
+		for id, callback in pairs (callbacks ["utRenaming_infoChangeObjectName"]) do
 			callback (objectid, text, textchanged)
 		end
 	end
@@ -36989,29 +37037,51 @@ function menu.setInfoSubmenuObjectAndRefresh(component)
 end
 
 -- kuertee start:
-function menu.registerCallback (callbackName, callbackFunction)
-	-- note 1: format is generally [function name]_[action]. e.g.: in kuertee_menu_transporter, "display_on_set_room_active" overrides the room's active property with the return of the callback.
-	-- note 2: events have the word "_on_" followed by a PRESENT TENSE verb. e.g.: in kuertee_menu_transporter, "display_on_set_buttontable" is called after all of the rows of buttontable are set.
-	-- note 3: new callbacks can be added or existing callbacks can be edited. but commit your additions/changes to the mod's GIT repository.
-	-- note 4: search for the callback names to see where they are executed.
-	-- note 5: if a callback requires a return value, return it in an object var. e.g. "display_on_set_room_active" requires a return of {active = true | false}.
-
-	-- to find callbacks available for this menu,
-	-- reg-ex search for callbacks\[\".*\]
-
-	if callbacks [callbackName] == nil then
-		callbacks [callbackName] = {}
+local uix_callbackCount = 0
+function menu.registerCallback(callbackName, callbackFunction, id)
+    -- note 1: format is generally [function name]_[action]. e.g.: in kuertee_menu_transporter, "display_on_set_room_active" overrides the room's active property with the return of the callback.
+    -- note 2: events have the word "_on_" followed by a PRESENT TENSE verb. e.g.: in kuertee_menu_transporter, "display_on_set_buttontable" is called after all of the rows of buttontable are set.
+    -- note 3: new callbacks can be added or existing callbacks can be edited. but commit your additions/changes to the mod's GIT repository.
+    -- note 4: search for the callback names to see where they are executed.
+    -- note 5: if a callback requires a return value, return it in an object var. e.g. "display_on_set_room_active" requires a return of {active = true | false}.
+    if callbacks [callbackName] == nil then
+        callbacks [callbackName] = {}
+    end
+    if not callbacks[callbackName][id] then
+	    if not id then
+	    	uix_callbackCount = uix_callbackCount + 1
+	    	id = "_" .. tostring(uix_callbackCount)
+	    end
+	    callbacks[callbackName][id] = callbackFunction
+	else
+		DebugError("uix registerCallback: callback at " .. callbackName .. " with id " .. tostring(id) .. " was already previously registered")
 	end
-	table.insert (callbacks [callbackName], callbackFunction)
 end
 
-function menu.deregisterCallback(callbackName, callbackFunction)
-	-- for i, callback in ipairs(callbacks[callbackName]) do
-	if callbacks[callbackName] and #callbacks[callbackName] > 0 then
-		for i = #callbacks[callbackName], 1, -1 do
-			if callbacks[callbackName][i] == callbackFunction then
-				table.remove(callbacks[callbackName], i)
-			end
+function menu.deregisterCallback(callbackName, callbackFunction, id)
+    if id then
+    	if callbacks[callbackName][id] then
+            callbacks[callbackName][id] = nil
+        else
+			DebugError("uix deregisterCallback: callback at " .. callbackName .. " with id " .. tostring(id) .. " doesn't exist")
+        end
+    else
+        if callbacks[callbackName] then
+            for id, func in pairs(callbacks[callbackName]) do
+                if func == callbackFunction then
+                    callbacks[callbackName][id] = nil
+                end
+            end
+        end
+    end
+end
+
+function menu.updateCallback(callbackName, callbackFunction, id)
+	if callbacks[callbackName] then
+		if callbacks[callbackName][id] then
+	        callback[callbackName][id] = callbackFunction
+		else
+			DebugError("uix updateCallback: callback at " .. callbackName .. " with id " .. tostring(id) .. " doesn't exist")
 		end
 	end
 end
@@ -37668,7 +37738,7 @@ function menu.cleanup()
 
 	-- kuertee start: callback
 	if callbacks ["cleanup"] then
-		for _, callback in ipairs (callbacks ["cleanup"]) do
+		for id, callback in pairs (callbacks ["cleanup"]) do
 			callback ()
 		end
 	end
@@ -37720,7 +37790,7 @@ end
 function menu.buttonTogglePlayerInfo(mode)
 	-- kuertee start: callback
 	if callbacks ["buttonTogglePlayerInfo_on_start"] then
-		for _, callback in ipairs (callbacks ["buttonTogglePlayerInfo_on_start"]) do
+		for id, callback in pairs (callbacks ["buttonTogglePlayerInfo_on_start"]) do
 			callback (mode, config)
 		end
 	end
@@ -38532,7 +38602,7 @@ end
 function menu.createPlayerInfo(frame, width, height, offsetx, offsety)
 	-- kuertee start: callback
 	if callbacks ["createPlayerInfo_on_start"] then
-		for _, callback in ipairs (callbacks ["createPlayerInfo_on_start"]) do
+		for id, callback in pairs (callbacks ["createPlayerInfo_on_start"]) do
 			callback (config)
 		end
 	end
@@ -38602,7 +38672,7 @@ end
 function menu.createInfoFrame()
 	-- kuertee start: callback
 	if callbacks ["createInfoFrame_on_start"] then
-		for _, callback in ipairs (callbacks ["createInfoFrame_on_start"]) do
+		for id, callback in pairs (callbacks ["createInfoFrame_on_start"]) do
 			callback (menu.infoFrame, tableProperties)
 		end
 	end
@@ -38682,7 +38752,7 @@ function menu.createInfoFrame()
 
 	-- kuertee start: callback
 	if callbacks ["createInfoFrame_on_info_frame_mode"] then
-		for _, callback in ipairs (callbacks ["createInfoFrame_on_info_frame_mode"]) do
+		for id, callback in pairs (callbacks ["createInfoFrame_on_info_frame_mode"]) do
 			callback (menu.infoFrame, tableProperties)
 		end
 	end
@@ -39491,7 +39561,7 @@ function menu.createFactions(frame, tableProperties)
 
 		-- kuertee start: callback
 		if callbacks ["createFactions_on_before_render_licences"] then
-			for _, callback in ipairs (callbacks ["createFactions_on_before_render_licences"]) do
+			for id, callback in pairs (callbacks ["createFactions_on_before_render_licences"]) do
 				callback (frame, tableProperties, relation.id, detailtable)
 			end
 		end
@@ -39562,7 +39632,7 @@ function menu.createFactions(frame, tableProperties)
 
 		-- kuertee start: callback
 		if callbacks ["createFactions_on_after_declare_war_button"] then
-			for _, callback in ipairs (callbacks ["createFactions_on_after_declare_war_button"]) do
+			for id, callback in pairs (callbacks ["createFactions_on_after_declare_war_button"]) do
 				callback (frame, tableProperties, relation.id, detailtable)
 			end
 		end
@@ -44271,7 +44341,7 @@ function menu.onRowChanged(row, rowdata, uitable, modified, input)
 
 	-- kuertee start: callback
 	if callbacks ["onRowChanged"] then
-		for _, callback in ipairs (callbacks ["onRowChanged"]) do
+		for id, callback in pairs (callbacks ["onRowChanged"]) do
 			callback (row, rowdata, uitable, modified, input)
 		end
 	end
@@ -44561,29 +44631,51 @@ function menu.createCraftableEntry(ware)
 end
 
 -- kuertee start:
-function menu.registerCallback (callbackName, callbackFunction)
-	-- note 1: format is generally [function name]_[action]. e.g.: in kuertee_menu_transporter, "display_on_set_room_active" overrides the room's active property with the return of the callback.
-	-- note 2: events have the word "_on_" followed by a PRESENT TENSE verb. e.g.: in kuertee_menu_transporter, "display_on_set_buttontable" is called after all of the rows of buttontable are set.
-	-- note 3: new callbacks can be added or existing callbacks can be edited. but commit your additions/changes to the mod's GIT repository.
-	-- note 4: search for the callback names to see where they are executed.
-	-- note 5: if a callback requires a return value, return it in an object var. e.g. "display_on_set_room_active" requires a return of {active = true | false}.
-
-	-- to find callbacks available for this menu,
-	-- reg-ex search for callbacks.*\[\".*\]
-
-	if callbacks [callbackName] == nil then
-		callbacks [callbackName] = {}
+local uix_callbackCount = 0
+function menu.registerCallback(callbackName, callbackFunction, id)
+    -- note 1: format is generally [function name]_[action]. e.g.: in kuertee_menu_transporter, "display_on_set_room_active" overrides the room's active property with the return of the callback.
+    -- note 2: events have the word "_on_" followed by a PRESENT TENSE verb. e.g.: in kuertee_menu_transporter, "display_on_set_buttontable" is called after all of the rows of buttontable are set.
+    -- note 3: new callbacks can be added or existing callbacks can be edited. but commit your additions/changes to the mod's GIT repository.
+    -- note 4: search for the callback names to see where they are executed.
+    -- note 5: if a callback requires a return value, return it in an object var. e.g. "display_on_set_room_active" requires a return of {active = true | false}.
+    if callbacks [callbackName] == nil then
+        callbacks [callbackName] = {}
+    end
+    if not callbacks[callbackName][id] then
+	    if not id then
+	    	uix_callbackCount = uix_callbackCount + 1
+	    	id = "_" .. tostring(uix_callbackCount)
+	    end
+	    callbacks[callbackName][id] = callbackFunction
+	else
+		DebugError("uix registerCallback: callback at " .. callbackName .. " with id " .. tostring(id) .. " was already previously registered")
 	end
-	table.insert (callbacks [callbackName], callbackFunction)
 end
 
-function menu.deregisterCallback(callbackName, callbackFunction)
-	-- for i, callback in ipairs(callbacks[callbackName]) do
-	if callbacks[callbackName] and #callbacks[callbackName] > 0 then
-		for i = #callbacks[callbackName], 1, -1 do
-			if callbacks[callbackName][i] == callbackFunction then
-				table.remove(callbacks[callbackName], i)
-			end
+function menu.deregisterCallback(callbackName, callbackFunction, id)
+    if id then
+    	if callbacks[callbackName][id] then
+            callbacks[callbackName][id] = nil
+        else
+			DebugError("uix deregisterCallback: callback at " .. callbackName .. " with id " .. tostring(id) .. " doesn't exist")
+        end
+    else
+        if callbacks[callbackName] then
+            for id, func in pairs(callbacks[callbackName]) do
+                if func == callbackFunction then
+                    callbacks[callbackName][id] = nil
+                end
+            end
+        end
+    end
+end
+
+function menu.updateCallback(callbackName, callbackFunction, id)
+	if callbacks[callbackName] then
+		if callbacks[callbackName][id] then
+	        callback[callbackName][id] = callbackFunction
+		else
+			DebugError("uix updateCallback: callback at " .. callbackName .. " with id " .. tostring(id) .. " doesn't exist")
 		end
 	end
 end
@@ -45561,7 +45653,7 @@ function menu.cleanup()
 
 	-- kuertee start: callback
 	if callbacks ["cleanup"] then
-		for _, callback in ipairs (callbacks ["cleanup"]) do
+		for id, callback in pairs (callbacks ["cleanup"]) do
 			callback ()
 		end
 	end
@@ -50032,7 +50124,7 @@ function menu.displaySlots(frame, firsttime)
 
 											-- start: mycu call-back
 											if callbacks ["displaySlots_on_before_create_button_mouseovertext"] then
-												for _, callback in ipairs (callbacks ["displaySlots_on_before_create_button_mouseovertext"]) do
+												for id, callback in pairs (callbacks ["displaySlots_on_before_create_button_mouseovertext"]) do
 													result = callback (group[i].macro, plandata.macro, mouseovertext)
 													if result then
 														mouseovertext = result.mouseovertext
@@ -50312,7 +50404,7 @@ function menu.displaySlots(frame, firsttime)
 
 							-- start: mycu call-back
 							if callbacks ["displaySlots_on_before_create_button_mouseovertext"] then
-								for _, callback in ipairs (callbacks ["displaySlots_on_before_create_button_mouseovertext"]) do
+								for id, callback in pairs (callbacks ["displaySlots_on_before_create_button_mouseovertext"]) do
 									result = callback (group[i].macro, plandata.macro, mouseovertext)
 									if result then
 										mouseovertext = result.mouseovertext
@@ -53471,7 +53563,7 @@ function menu.evaluateShipOptions()
 				-- start: alexandretk call-back
 				if callbacks ["evaluateShipOptions_override_shiptypename"] then
 					local shiptypename_override
-					for _, callback in ipairs (callbacks ["evaluateShipOptions_override_shiptypename"]) do
+					for id, callback in pairs (callbacks ["evaluateShipOptions_override_shiptypename"]) do
 						shiptypename_override = callback (shiptypename, shipicon, menu.class)
 						if shiptypename_override then
 							shiptypename = shiptypename_override
@@ -53666,7 +53758,7 @@ function menu.createTitleBar(frame)
 
 		-- mycu start: callback
 		if callbacks ["displaySlots_on_before_create_store_loadout_button"] then
-			for _, callback in ipairs (callbacks ["displaySlots_on_before_create_store_loadout_button"]) do
+			for id, callback in pairs (callbacks ["displaySlots_on_before_create_store_loadout_button"]) do
 				callback ()
 			end
 		end
@@ -53677,7 +53769,7 @@ function menu.createTitleBar(frame)
 
 		-- mycu start: callback
 		if callbacks ["displaySlots_on_after_create_store_loadout_button"] then
-			for _, callback in ipairs (callbacks ["displaySlots_on_after_create_store_loadout_button"]) do
+			for id, callback in pairs (callbacks ["displaySlots_on_after_create_store_loadout_button"]) do
 				callback ()
 			end
 		end
@@ -55669,7 +55761,7 @@ function menu.repairandupgrade(shoppinglistentry, object, macro, hasupgrades, ha
 
             		-- kuertee start: callback
 			if callbacks["repairandupgrade_after_build_order_created"] then
-                		for _, callback in ipairs(callbacks["repairandupgrade_after_build_order_created"]) do
+                		for id, callback in pairs(callbacks["repairandupgrade_after_build_order_created"]) do
                     		callback(shoppinglistentry, object, buildtaskid)
                 		end
             		end
@@ -55706,29 +55798,51 @@ end
 
 
 -- kuertee start:
-function menu.registerCallback (callbackName, callbackFunction)
-	-- note 1: format is generally [function name]_[action]. e.g.: in kuertee_menu_transporter, "display_on_set_room_active" overrides the room's active property with the return of the callback.
-	-- note 2: events have the word "_on_" followed by a PRESET TENSE verb. e.g.: in kuertee_menu_transporter, "display_on_set_buttontable" is called after all of the rows of buttontable are set.
-	-- note 3: new callbacks can be added or existing callbacks can be edited. but commit your additions/changes to the mod's GIT repository.
-	-- note 4: search for the callback names to see where they are executed.
-	-- note 5: if a callback requires a return value, return it in an object var. e.g. "display_on_set_room_active" requires a return of {active = true | false}.
-
-	-- to find callbacks available for this menu,
-	-- reg-ex search for callbacks.*\[\".*\]
-
-	if callbacks [callbackName] == nil then
-		callbacks [callbackName] = {}
+local uix_callbackCount = 0
+function menu.registerCallback(callbackName, callbackFunction, id)
+    -- note 1: format is generally [function name]_[action]. e.g.: in kuertee_menu_transporter, "display_on_set_room_active" overrides the room's active property with the return of the callback.
+    -- note 2: events have the word "_on_" followed by a PRESENT TENSE verb. e.g.: in kuertee_menu_transporter, "display_on_set_buttontable" is called after all of the rows of buttontable are set.
+    -- note 3: new callbacks can be added or existing callbacks can be edited. but commit your additions/changes to the mod's GIT repository.
+    -- note 4: search for the callback names to see where they are executed.
+    -- note 5: if a callback requires a return value, return it in an object var. e.g. "display_on_set_room_active" requires a return of {active = true | false}.
+    if callbacks [callbackName] == nil then
+        callbacks [callbackName] = {}
+    end
+    if not callbacks[callbackName][id] then
+	    if not id then
+	    	uix_callbackCount = uix_callbackCount + 1
+	    	id = "_" .. tostring(uix_callbackCount)
+	    end
+	    callbacks[callbackName][id] = callbackFunction
+	else
+		DebugError("uix registerCallback: callback at " .. callbackName .. " with id " .. tostring(id) .. " was already previously registered")
 	end
-	table.insert (callbacks [callbackName], callbackFunction)
 end
 
-function menu.deregisterCallback(callbackName, callbackFunction)
-	-- for i, callback in ipairs(callbacks[callbackName]) do
-	if callbacks[callbackName] and #callbacks[callbackName] > 0 then
-		for i = #callbacks[callbackName], 1, -1 do
-			if callbacks[callbackName][i] == callbackFunction then
-				table.remove(callbacks[callbackName], i)
-			end
+function menu.deregisterCallback(callbackName, callbackFunction, id)
+    if id then
+    	if callbacks[callbackName][id] then
+            callbacks[callbackName][id] = nil
+        else
+			DebugError("uix deregisterCallback: callback at " .. callbackName .. " with id " .. tostring(id) .. " doesn't exist")
+        end
+    else
+        if callbacks[callbackName] then
+            for id, func in pairs(callbacks[callbackName]) do
+                if func == callbackFunction then
+                    callbacks[callbackName][id] = nil
+                end
+            end
+        end
+    end
+end
+
+function menu.updateCallback(callbackName, callbackFunction, id)
+	if callbacks[callbackName] then
+		if callbacks[callbackName][id] then
+	        callback[callbackName][id] = callbackFunction
+		else
+			DebugError("uix updateCallback: callback at " .. callbackName .. " with id " .. tostring(id) .. " doesn't exist")
 		end
 	end
 end
@@ -56237,7 +56351,7 @@ function menu.cleanup()
 
 	-- kuertee start: callback
 	if callbacks ["cleanup"] then
-		for _, callback in ipairs (callbacks ["cleanup"]) do
+		for id, callback in pairs (callbacks ["cleanup"]) do
 			callback ()
 		end
 	end
@@ -58523,7 +58637,7 @@ function menu.displayModules(frame, firsttime)
 
 											-- start: mycu callback
 											if callbacks ["displayModules_on_before_create_button_mouseovertext"] then
-												for _, callback in ipairs (callbacks ["displayModules_on_before_create_button_mouseovertext"]) do
+												for id, callback in pairs (callbacks ["displayModules_on_before_create_button_mouseovertext"]) do
 													result = callback (group[i].macro, plandata.macro, untruncatedExtraText)
 													if result then
 														untruncatedExtraText = result.mouseovertext
@@ -59227,7 +59341,7 @@ function menu.displayPlan(frame)
 									-- kuertee start: callback
 									-- row[2]:setColSpan(3):createText(function () return Helper.getETAString(colorprefix .. name, reservation.eta) end, { font = Helper.standardFontMono })
 									if callbacks ["displayPlan_render_incoming_ware"] then
-										for _, callback in ipairs (callbacks ["displayPlan_render_incoming_ware"]) do
+										for id, callback in pairs (callbacks ["displayPlan_render_incoming_ware"]) do
 											isbreak = callback (row, colorprefix, name, reservation)
 											if isbreak then
 												break
@@ -59321,7 +59435,7 @@ function menu.displayPlan(frame)
 					-- row[3]:setColSpan(2):createText(GetWareData(ware.ware, "name"))
 					if callbacks ["displayPlan_getWareName"] then
 						local name
-						for _, callback in ipairs (callbacks ["displayPlan_getWareName"]) do
+						for id, callback in pairs (callbacks ["displayPlan_getWareName"]) do
 							name = callback (ware.ware, name)
 						end
 						if name then
@@ -61754,29 +61868,51 @@ function menu.applySettings()
 end
 
 -- kuertee start:
-function menu.registerCallback (callbackName, callbackFunction)
-	-- note 1: format is generally [function name]_[action]. e.g.: in kuertee_menu_transporter, "display_on_set_room_active" overrides the room's active property with the return of the callback.
-	-- note 2: events have the word "_on_" followed by a PRESET TENSE verb. e.g.: in kuertee_menu_transporter, "display_on_set_buttontable" is called after all of the rows of buttontable are set.
-	-- note 3: new callbacks can be added or existing callbacks can be edited. but commit your additions/changes to the mod's GIT repository.
-	-- note 4: search for the callback names to see where they are executed.
-	-- note 5: if a callback requires a return value, return it in an object var. e.g. "display_on_set_room_active" requires a return of {active = true | false}.
-
-	-- to find callbacks available for this menu,
-	-- reg-ex search for callbacks.*\[\".*\]
-
-	if callbacks [callbackName] == nil then
-		callbacks [callbackName] = {}
+local uix_callbackCount = 0
+function menu.registerCallback(callbackName, callbackFunction, id)
+    -- note 1: format is generally [function name]_[action]. e.g.: in kuertee_menu_transporter, "display_on_set_room_active" overrides the room's active property with the return of the callback.
+    -- note 2: events have the word "_on_" followed by a PRESENT TENSE verb. e.g.: in kuertee_menu_transporter, "display_on_set_buttontable" is called after all of the rows of buttontable are set.
+    -- note 3: new callbacks can be added or existing callbacks can be edited. but commit your additions/changes to the mod's GIT repository.
+    -- note 4: search for the callback names to see where they are executed.
+    -- note 5: if a callback requires a return value, return it in an object var. e.g. "display_on_set_room_active" requires a return of {active = true | false}.
+    if callbacks [callbackName] == nil then
+        callbacks [callbackName] = {}
+    end
+    if not callbacks[callbackName][id] then
+	    if not id then
+	    	uix_callbackCount = uix_callbackCount + 1
+	    	id = "_" .. tostring(uix_callbackCount)
+	    end
+	    callbacks[callbackName][id] = callbackFunction
+	else
+		DebugError("uix registerCallback: callback at " .. callbackName .. " with id " .. tostring(id) .. " was already previously registered")
 	end
-	table.insert (callbacks [callbackName], callbackFunction)
 end
 
-function menu.deregisterCallback(callbackName, callbackFunction)
-	-- for i, callback in ipairs(callbacks[callbackName]) do
-	if callbacks[callbackName] and #callbacks[callbackName] > 0 then
-		for i = #callbacks[callbackName], 1, -1 do
-			if callbacks[callbackName][i] == callbackFunction then
-				table.remove(callbacks[callbackName], i)
-			end
+function menu.deregisterCallback(callbackName, callbackFunction, id)
+    if id then
+    	if callbacks[callbackName][id] then
+            callbacks[callbackName][id] = nil
+        else
+			DebugError("uix deregisterCallback: callback at " .. callbackName .. " with id " .. tostring(id) .. " doesn't exist")
+        end
+    else
+        if callbacks[callbackName] then
+            for id, func in pairs(callbacks[callbackName]) do
+                if func == callbackFunction then
+                    callbacks[callbackName][id] = nil
+                end
+            end
+        end
+    end
+end
+
+function menu.updateCallback(callbackName, callbackFunction, id)
+	if callbacks[callbackName] then
+		if callbacks[callbackName][id] then
+	        callback[callbackName][id] = callbackFunction
+		else
+			DebugError("uix updateCallback: callback at " .. callbackName .. " with id " .. tostring(id) .. " doesn't exist")
 		end
 	end
 end
@@ -62139,7 +62275,7 @@ function menu.cleanup()
 
 	-- kuertee start: callback
 	if callbacks ["cleanup"] then
-		for _, callback in ipairs (callbacks ["cleanup"]) do
+		for id, callback in pairs (callbacks ["cleanup"]) do
 			callback ()
 		end
 	end
@@ -62191,7 +62327,7 @@ function menu.onShowMenu(state)
 
 	-- kuertee start: callback
 	if callbacks ["onShowMenu_start"] then
-		for _, callback in ipairs (callbacks ["onShowMenu_start"]) do
+		for id, callback in pairs (callbacks ["onShowMenu_start"]) do
 			callback (menu.container)
 		end
 	end
@@ -62911,7 +63047,7 @@ end
 function menu.setupFlowchartData()
 	-- kuertee start: callback
 	if callbacks ["setupFlowchartData_on_start"] then
-		for _, callback in ipairs (callbacks ["setupFlowchartData_on_start"]) do
+		for id, callback in pairs (callbacks ["setupFlowchartData_on_start"]) do
 			callback ()
 		end
 	end
@@ -63370,7 +63506,7 @@ function menu.setupFlowchartData()
 	if isplayerowned and C.IsComponentClass(menu.container, "container") then
 		-- kuertee start: callback
 		if callbacks ["setupFlowchartData_pre_trade_wares_button"] then
-			for _, callback in ipairs (callbacks ["setupFlowchartData_pre_trade_wares_button"]) do
+			for id, callback in pairs (callbacks ["setupFlowchartData_pre_trade_wares_button"]) do
 				callback (remainingcargonodes)
 			end
 		end
@@ -63564,7 +63700,7 @@ function menu.display()
 		local stationName = menu.container and GetComponentData(menu.containerid, "name") or "Flowchart Test"
 		local extraNames = {}
 		if menu.container then
-			for _, callback in ipairs (callbacks ["display_get_station_name_extras"]) do
+			for id, callback in pairs (callbacks ["display_get_station_name_extras"]) do
 				table.insert(extraNames, callback(menu.container))
 			end
 			if #extraNames > 0 then
@@ -64090,7 +64226,7 @@ function menu.onExpandTradeWares(frame, ftable, ftable2, nodedata)
 
 	-- kuertee start: callback
 	if callbacks ["onExpandTradeWares_on_start"] then
-		for _, callback in ipairs (callbacks ["onExpandTradeWares_on_start"]) do
+		for id, callback in pairs (callbacks ["onExpandTradeWares_on_start"]) do
 			callback ()
 		end
 	end
@@ -64125,7 +64261,7 @@ function menu.onExpandTradeWares(frame, ftable, ftable2, nodedata)
 			if (not callbacks ["onExpandTradeWares_insert_ware_to_allwares"]) or (not #callbacks ["onExpandTradeWares_insert_ware_to_allwares"]) then
 				table.insert(allwares, { ware = ware, name = GetWareData(ware, "name") })
 			elseif callbacks ["onExpandTradeWares_insert_ware_to_allwares"] then
-				for _, callback in ipairs (callbacks ["onExpandTradeWares_insert_ware_to_allwares"]) do
+				for id, callback in pairs (callbacks ["onExpandTradeWares_insert_ware_to_allwares"]) do
 					callback (allwares, ware)
 				end
 			end
@@ -66187,7 +66323,7 @@ function menu.updateExpandedNode(row, col)
 	if menu.expandedNode then
 		-- kuertee start: callback
 		if callbacks ["updateExpandedNode_at_start"] then
-			for _, callback in ipairs (callbacks ["updateExpandedNode_at_start"]) do
+			for id, callback in pairs (callbacks ["updateExpandedNode_at_start"]) do
 				callback(row, col)
 			end
 		end
@@ -66201,7 +66337,7 @@ function menu.updateExpandedNode(row, col)
 
 		-- kuertee start: callback
 		if callbacks ["updateExpandedNode_at_end"] then
-			for _, callback in ipairs (callbacks ["updateExpandedNode_at_end"]) do
+			for id, callback in pairs (callbacks ["updateExpandedNode_at_end"]) do
 				callback(row, col)
 			end
 		end
@@ -67093,29 +67229,51 @@ function menu.onCloseElement(dueToClose, layer)
 end
 
 -- kuertee start:
-function menu.registerCallback (callbackName, callbackFunction)
-	-- note 1: format is generally [function name]_[action]. e.g.: in kuertee_menu_transporter, "display_on_set_room_active" overrides the room's active property with the return of the callback.
-	-- note 2: events have the word "_on_" followed by a PRESET TENSE verb. e.g.: in kuertee_menu_transporter, "display_on_set_buttontable" is called after all of the rows of buttontable are set.
-	-- note 3: new callbacks can be added or existing callbacks can be edited. but commit your additions/changes to the mod's GIT repository.
-	-- note 4: search for the callback names to see where they are executed.
-	-- note 5: if a callback requires a return value, return it in an object var. e.g. "display_on_set_room_active" requires a return of {active = true | false}.
-
-	-- to find callbacks available for this menu,
-	-- reg-ex search for callbacks.*\[\".*\]
-
-	if callbacks [callbackName] == nil then
-		callbacks [callbackName] = {}
+local uix_callbackCount = 0
+function menu.registerCallback(callbackName, callbackFunction, id)
+    -- note 1: format is generally [function name]_[action]. e.g.: in kuertee_menu_transporter, "display_on_set_room_active" overrides the room's active property with the return of the callback.
+    -- note 2: events have the word "_on_" followed by a PRESENT TENSE verb. e.g.: in kuertee_menu_transporter, "display_on_set_buttontable" is called after all of the rows of buttontable are set.
+    -- note 3: new callbacks can be added or existing callbacks can be edited. but commit your additions/changes to the mod's GIT repository.
+    -- note 4: search for the callback names to see where they are executed.
+    -- note 5: if a callback requires a return value, return it in an object var. e.g. "display_on_set_room_active" requires a return of {active = true | false}.
+    if callbacks [callbackName] == nil then
+        callbacks [callbackName] = {}
+    end
+    if not callbacks[callbackName][id] then
+	    if not id then
+	    	uix_callbackCount = uix_callbackCount + 1
+	    	id = "_" .. tostring(uix_callbackCount)
+	    end
+	    callbacks[callbackName][id] = callbackFunction
+	else
+		DebugError("uix registerCallback: callback at " .. callbackName .. " with id " .. tostring(id) .. " was already previously registered")
 	end
-	table.insert (callbacks [callbackName], callbackFunction)
 end
 
-function menu.deregisterCallback(callbackName, callbackFunction)
-	-- for i, callback in ipairs(callbacks[callbackName]) do
-	if callbacks[callbackName] and #callbacks[callbackName] > 0 then
-		for i = #callbacks[callbackName], 1, -1 do
-			if callbacks[callbackName][i] == callbackFunction then
-				table.remove(callbacks[callbackName], i)
-			end
+function menu.deregisterCallback(callbackName, callbackFunction, id)
+    if id then
+    	if callbacks[callbackName][id] then
+            callbacks[callbackName][id] = nil
+        else
+			DebugError("uix deregisterCallback: callback at " .. callbackName .. " with id " .. tostring(id) .. " doesn't exist")
+        end
+    else
+        if callbacks[callbackName] then
+            for id, func in pairs(callbacks[callbackName]) do
+                if func == callbackFunction then
+                    callbacks[callbackName][id] = nil
+                end
+            end
+        end
+    end
+end
+
+function menu.updateCallback(callbackName, callbackFunction, id)
+	if callbacks[callbackName] then
+		if callbacks[callbackName][id] then
+	        callback[callbackName][id] = callbackFunction
+		else
+			DebugError("uix updateCallback: callback at " .. callbackName .. " with id " .. tostring(id) .. " doesn't exist")
 		end
 	end
 end
@@ -67209,7 +67367,7 @@ function menu.cleanup()
 
 	-- kuertee start: callback
 	if menu.callbacks ["cleanup"] then
-		for _, callback in ipairs (menu.callbacks ["cleanup"]) do
+		for id, callback in pairs (menu.callbacks ["cleanup"]) do
 			callback()
 		end
 	end
@@ -67299,7 +67457,7 @@ function menu.createInfoFrame()
 
 		-- kuertee start: callback
 		if menu.callbacks ["createInfoFrame_on_add_table"] then
-			for _, callback in ipairs (menu.callbacks ["createInfoFrame_on_add_table"]) do
+			for id, callback in pairs (menu.callbacks ["createInfoFrame_on_add_table"]) do
 				callback (menu.infoFrame, ftable)
 			end
 		end
@@ -67307,7 +67465,7 @@ function menu.createInfoFrame()
 
 		-- kuertee start: callback
 		if menu.callbacks ["createInfoFrame_on_before_frame_display"] then
-			for _, callback in ipairs (menu.callbacks ["createInfoFrame_on_before_frame_display"]) do
+			for id, callback in pairs (menu.callbacks ["createInfoFrame_on_before_frame_display"]) do
 				callback (menu.infoFrame)
 			end
 		end
@@ -67362,7 +67520,7 @@ function menu.onUpdate()
 
 	-- kuertee start: callback
 	if menu.callbacks ["onUpdate_start"] then
-		for _, callback in ipairs (menu.callbacks ["onUpdate_start"]) do
+		for id, callback in pairs (menu.callbacks ["onUpdate_start"]) do
 			callback(curtime)
 		end
 	end
@@ -67404,7 +67562,7 @@ function menu.onUpdate()
 
 	-- kuertee start: callback
 	if menu.callbacks ["onUpdate_before_frame_update"] then
-		for _, callback in ipairs (menu.callbacks ["onUpdate_before_frame_update"]) do
+		for id, callback in pairs (menu.callbacks ["onUpdate_before_frame_update"]) do
 			callback (menu.infoFrame)
 		end
 	end
@@ -67636,29 +67794,51 @@ function menu.requestUpdate (adj)
 	end
 end
 
-function menu.registerCallback (callbackName, callbackFunction)
-	-- note 1: format is generally [function name]_[action]. e.g.: in kuertee_menu_transporter, "display_on_set_room_active" overrides the room's active property with the return of the callback.
-	-- note 2: events have the word "_on_" followed by a PRESET TENSE verb. e.g.: in kuertee_menu_transporter, "display_on_set_buttontable" is called after all of the rows of buttontable are set.
-	-- note 3: new callbacks can be added or existing callbacks can be edited. but commit your additions/changes to the mod's GIT repository.
-	-- note 4: search for the callback names to see where they are executed.
-	-- note 5: if a callback requires a return value, return it in an object var. e.g. "display_on_set_room_active" requires a return of {active = true | false}.
-
-	-- to find callbacks available for this menu,
-	-- reg-ex search for callbacks.*\[\".*\]
-
-	if menu.callbacks [callbackName] == nil then
-		menu.callbacks [callbackName] = {}
+local uix_callbackCount = 0
+function menu.registerCallback(callbackName, callbackFunction, id)
+    -- note 1: format is generally [function name]_[action]. e.g.: in kuertee_menu_transporter, "display_on_set_room_active" overrides the room's active property with the return of the callback.
+    -- note 2: events have the word "_on_" followed by a PRESENT TENSE verb. e.g.: in kuertee_menu_transporter, "display_on_set_buttontable" is called after all of the rows of buttontable are set.
+    -- note 3: new callbacks can be added or existing callbacks can be edited. but commit your additions/changes to the mod's GIT repository.
+    -- note 4: search for the callback names to see where they are executed.
+    -- note 5: if a callback requires a return value, return it in an object var. e.g. "display_on_set_room_active" requires a return of {active = true | false}.
+    if callbacks [callbackName] == nil then
+        callbacks [callbackName] = {}
+    end
+    if not callbacks[callbackName][id] then
+	    if not id then
+	    	uix_callbackCount = uix_callbackCount + 1
+	    	id = "_" .. tostring(uix_callbackCount)
+	    end
+	    callbacks[callbackName][id] = callbackFunction
+	else
+		DebugError("uix registerCallback: callback at " .. callbackName .. " with id " .. tostring(id) .. " was already previously registered")
 	end
-	table.insert (menu.callbacks [callbackName], callbackFunction)
 end
 
-function menu.deregisterCallback(callbackName, callbackFunction)
-	-- for i, callback in ipairs(callbacks[callbackName]) do
-	if callbacks[callbackName] and #callbacks[callbackName] > 0 then
-		for i = #callbacks[callbackName], 1, -1 do
-			if callbacks[callbackName][i] == callbackFunction then
-				table.remove(callbacks[callbackName], i)
-			end
+function menu.deregisterCallback(callbackName, callbackFunction, id)
+    if id then
+    	if callbacks[callbackName][id] then
+            callbacks[callbackName][id] = nil
+        else
+			DebugError("uix deregisterCallback: callback at " .. callbackName .. " with id " .. tostring(id) .. " doesn't exist")
+        end
+    else
+        if callbacks[callbackName] then
+            for id, func in pairs(callbacks[callbackName]) do
+                if func == callbackFunction then
+                    callbacks[callbackName][id] = nil
+                end
+            end
+        end
+    end
+end
+
+function menu.updateCallback(callbackName, callbackFunction, id)
+	if callbacks[callbackName] then
+		if callbacks[callbackName][id] then
+	        callback[callbackName][id] = callbackFunction
+		else
+			DebugError("uix updateCallback: callback at " .. callbackName .. " with id " .. tostring(id) .. " doesn't exist")
 		end
 	end
 end
@@ -69300,7 +69480,7 @@ function menu.addEntry(ftable, target, indent, parentcomponent)
 	-- kuertee start: callback
 	if callbacks ["addEntry_on_set_room_name"] then
 		local result
-		for _, callback in ipairs (callbacks ["addEntry_on_set_room_name"]) do
+		for id, callback in pairs (callbacks ["addEntry_on_set_room_name"]) do
 			result = callback (name, target)
 			if result then
 				-- DebugError ("kuertee_menu_transporter.addEntry_on_set_room_name name pre " .. tostring (name))
@@ -69439,7 +69619,7 @@ function menu.display()
 		local activeCount = 0
 		local callbacksCount = 0
 		local result
-		for _, callback in ipairs (callbacks ["display_on_set_room_active"]) do
+		for id, callback in pairs (callbacks ["display_on_set_room_active"]) do
 			callbacksCount = callbacksCount + 1
 			result = callback (active)
 			if result and result.active then
@@ -69455,7 +69635,7 @@ function menu.display()
 
 	-- kuertee start: callback
 	if callbacks ["display_on_set_buttontable"] then
-		for _, callback in ipairs (callbacks ["display_on_set_buttontable"]) do
+		for id, callback in pairs (callbacks ["display_on_set_buttontable"]) do
 			callback (buttontable)
 		end
 	end
@@ -69671,29 +69851,51 @@ function menu.checkPlayerProperty(transporter)
 end
 
 -- kuertee start:
-function menu.registerCallback (callbackName, callbackFunction)
-	-- note 1: format is generally [function name]_[action]. e.g.: in kuertee_menu_transporter, "display_on_set_room_active" overrides the room's active property with the return of the callback.
-	-- note 2: events have the word "_on_" followed by a PRESET TENSE verb. e.g.: in kuertee_menu_transporter, "display_on_set_buttontable" is called after all of the rows of buttontable are set.
-	-- note 3: new callbacks can be added or existing callbacks can be edited. but commit your additions/changes to the mod's GIT repository.
-	-- note 4: search for the callback names to see where they are executed.
-	-- note 5: if a callback requires a return value, return it in an object var. e.g. "display_on_set_room_active" requires a return of {active = true | false}.
-
-	-- to find callbacks available for this menu,
-	-- reg-ex search for callbacks.*\[\".*\]
-
-	if callbacks [callbackName] == nil then
-		callbacks [callbackName] = {}
+local uix_callbackCount = 0
+function menu.registerCallback(callbackName, callbackFunction, id)
+    -- note 1: format is generally [function name]_[action]. e.g.: in kuertee_menu_transporter, "display_on_set_room_active" overrides the room's active property with the return of the callback.
+    -- note 2: events have the word "_on_" followed by a PRESENT TENSE verb. e.g.: in kuertee_menu_transporter, "display_on_set_buttontable" is called after all of the rows of buttontable are set.
+    -- note 3: new callbacks can be added or existing callbacks can be edited. but commit your additions/changes to the mod's GIT repository.
+    -- note 4: search for the callback names to see where they are executed.
+    -- note 5: if a callback requires a return value, return it in an object var. e.g. "display_on_set_room_active" requires a return of {active = true | false}.
+    if callbacks [callbackName] == nil then
+        callbacks [callbackName] = {}
+    end
+    if not callbacks[callbackName][id] then
+	    if not id then
+	    	uix_callbackCount = uix_callbackCount + 1
+	    	id = "_" .. tostring(uix_callbackCount)
+	    end
+	    callbacks[callbackName][id] = callbackFunction
+	else
+		DebugError("uix registerCallback: callback at " .. callbackName .. " with id " .. tostring(id) .. " was already previously registered")
 	end
-	table.insert (callbacks [callbackName], callbackFunction)
 end
 
-function menu.deregisterCallback(callbackName, callbackFunction)
-	-- for i, callback in ipairs(callbacks[callbackName]) do
-	if callbacks[callbackName] and #callbacks[callbackName] > 0 then
-		for i = #callbacks[callbackName], 1, -1 do
-			if callbacks[callbackName][i] == callbackFunction then
-				table.remove(callbacks[callbackName], i)
-			end
+function menu.deregisterCallback(callbackName, callbackFunction, id)
+    if id then
+    	if callbacks[callbackName][id] then
+            callbacks[callbackName][id] = nil
+        else
+			DebugError("uix deregisterCallback: callback at " .. callbackName .. " with id " .. tostring(id) .. " doesn't exist")
+        end
+    else
+        if callbacks[callbackName] then
+            for id, func in pairs(callbacks[callbackName]) do
+                if func == callbackFunction then
+                    callbacks[callbackName][id] = nil
+                end
+            end
+        end
+    end
+end
+
+function menu.updateCallback(callbackName, callbackFunction, id)
+	if callbacks[callbackName] then
+		if callbacks[callbackName][id] then
+	        callback[callbackName][id] = callbackFunction
+		else
+			DebugError("uix updateCallback: callback at " .. callbackName .. " with id " .. tostring(id) .. " doesn't exist")
 		end
 	end
 end
@@ -69790,7 +69992,7 @@ function menu.cleanup()
 
 	-- kuertee start:
 	if callbacks ["cleanup_end"] then
-		for _, callback in ipairs (callbacks ["cleanup_end"]) do
+		for id, callback in pairs (callbacks ["cleanup_end"]) do
 			callback ()
 		end
 	end
@@ -69908,7 +70110,7 @@ function menu.createInfoFrame()
 	-- kuertee start: callback
 	local frameProperties, isUseFrameHeight
 	if callbacks ["createInfoFrame_custom_frame_properties"] then
-		for _, callback in ipairs (callbacks ["createInfoFrame_custom_frame_properties"]) do
+		for id, callback in pairs (callbacks ["createInfoFrame_custom_frame_properties"]) do
 			frameProperties, isUseFrameHeight = callback (config)
 			if frameProperties then break end
 		end
@@ -70145,29 +70347,51 @@ end
 -- menu helpers
 
 -- kuertee start:
-function menu.registerCallback (callbackName, callbackFunction)
-	-- note 1: format is generally [function name]_[action]. e.g.: in kuertee_menu_transporter, "display_on_set_room_active" overrides the room's active property with the return of the callback.
-	-- note 2: events have the word "_on_" followed by a PRESENT TENSE verb. e.g.: in kuertee_menu_transporter, "display_on_set_buttontable" is called after all of the rows of buttontable are set.
-	-- note 3: new callbacks can be added or existing callbacks can be edited. but commit your additions/changes to the mod's GIT repository.
-	-- note 4: search for the callback names to see where they are executed.
-	-- note 5: if a callback requires a return value, return it in an object var. e.g. "display_on_set_room_active" requires a return of {active = true | false}.
-
-	-- to find callbacks available for this menu,
-	-- reg-ex search for callbacks.*\[\".*\]
-
-	if callbacks [callbackName] == nil then
-		callbacks [callbackName] = {}
+local uix_callbackCount = 0
+function menu.registerCallback(callbackName, callbackFunction, id)
+    -- note 1: format is generally [function name]_[action]. e.g.: in kuertee_menu_transporter, "display_on_set_room_active" overrides the room's active property with the return of the callback.
+    -- note 2: events have the word "_on_" followed by a PRESENT TENSE verb. e.g.: in kuertee_menu_transporter, "display_on_set_buttontable" is called after all of the rows of buttontable are set.
+    -- note 3: new callbacks can be added or existing callbacks can be edited. but commit your additions/changes to the mod's GIT repository.
+    -- note 4: search for the callback names to see where they are executed.
+    -- note 5: if a callback requires a return value, return it in an object var. e.g. "display_on_set_room_active" requires a return of {active = true | false}.
+    if callbacks [callbackName] == nil then
+        callbacks [callbackName] = {}
+    end
+    if not callbacks[callbackName][id] then
+	    if not id then
+	    	uix_callbackCount = uix_callbackCount + 1
+	    	id = "_" .. tostring(uix_callbackCount)
+	    end
+	    callbacks[callbackName][id] = callbackFunction
+	else
+		DebugError("uix registerCallback: callback at " .. callbackName .. " with id " .. tostring(id) .. " was already previously registered")
 	end
-	table.insert (callbacks [callbackName], callbackFunction)
 end
 
-function menu.deregisterCallback(callbackName, callbackFunction)
-	-- for i, callback in ipairs(callbacks[callbackName]) do
-	if callbacks[callbackName] and #callbacks[callbackName] > 0 then
-		for i = #callbacks[callbackName], 1, -1 do
-			if callbacks[callbackName][i] == callbackFunction then
-				table.remove(callbacks[callbackName], i)
-			end
+function menu.deregisterCallback(callbackName, callbackFunction, id)
+    if id then
+    	if callbacks[callbackName][id] then
+            callbacks[callbackName][id] = nil
+        else
+			DebugError("uix deregisterCallback: callback at " .. callbackName .. " with id " .. tostring(id) .. " doesn't exist")
+        end
+    else
+        if callbacks[callbackName] then
+            for id, func in pairs(callbacks[callbackName]) do
+                if func == callbackFunction then
+                    callbacks[callbackName][id] = nil
+                end
+            end
+        end
+    end
+end
+
+function menu.updateCallback(callbackName, callbackFunction, id)
+	if callbacks[callbackName] then
+		if callbacks[callbackName][id] then
+	        callback[callbackName][id] = callbackFunction
+		else
+			DebugError("uix updateCallback: callback at " .. callbackName .. " with id " .. tostring(id) .. " doesn't exist")
 		end
 	end
 end
@@ -70220,7 +70444,7 @@ function menu.createTable_kuertee(frame, tableProperties)
 		-- <open_menu menu="UserQuestionMenu" param="[0, 0, 'custom', [$title, $text, null, ['kATD_on_death_notice_read', {111204, 903}], null, 'right']]" />
 		-- local ftable = frame:addTable (numCols, { tabOrder = 1, borderEnabled = true, width = tableProperties.width, x = tableProperties.x, y = tableProperties.y, defaultInteractiveObject = true })
 		if callbacks ["createTable_new_custom_table"] then
-			for _, callback in ipairs (callbacks ["createTable_new_custom_table"]) do
+			for id, callback in pairs (callbacks ["createTable_new_custom_table"]) do
 				ftable = callback (frame, tableProperties, config)
 				if ftable then break end
 			end
@@ -71022,7 +71246,7 @@ function menu.cleanup()
 
 	-- kuertee start: callback
 	if callbacks ["cleanup"] then
-		for _, callback in ipairs (callbacks ["cleanup"]) do
+		for id, callback in pairs (callbacks ["cleanup"]) do
 			callback(menu.customgamestart)
 		end
 	end
@@ -71042,7 +71266,7 @@ function menu.buttonNewGame()
 			function ()
 				-- kuertee start: callback
 				if callbacks ["buttonNewGame_preNewGame"] then
-					for _, callback in ipairs (callbacks ["buttonNewGame_preNewGame"]) do
+					for id, callback in pairs (callbacks ["buttonNewGame_preNewGame"]) do
 						callback(menu.customgamestart)
 					end
 				end
@@ -71095,7 +71319,7 @@ function menu.buttonReset()
 
 	-- kuertee start: callback
 	if callbacks ["buttonReset_on_end"] then
-		for _, callback in ipairs (callbacks ["buttonReset_on_end"]) do
+		for id, callback in pairs (callbacks ["buttonReset_on_end"]) do
 			callback ()
 		end
 	end
@@ -71481,7 +71705,7 @@ end
 function menu.dropdownProperty(property, row, option)
 	-- kuertee start: callback
 	if callbacks ["dropdownProperty_on_start"] then
-		for _, callback in ipairs (callbacks ["dropdownProperty_on_start"]) do
+		for id, callback in pairs (callbacks ["dropdownProperty_on_start"]) do
 			callback (property, row, option)
 		end
 	end
@@ -71921,7 +72145,7 @@ function menu.editboxProperty(property, text)
 
 	-- kuertee start: callback
 	if callbacks ["editboxProperty_on_end"] then
-		for _, callback in ipairs (callbacks ["editboxProperty_on_end"]) do
+		for id, callback in pairs (callbacks ["editboxProperty_on_end"]) do
 			callback (property, text)
 		end
 	end
@@ -71963,7 +72187,7 @@ function menu.slidercellFaction(faction, value)
 
 	-- kuertee start: callback
 	if callbacks ["slidercellFaction_on_end"] then
-		for _, callback in ipairs (callbacks ["slidercellFaction_on_end"]) do
+		for id, callback in pairs (callbacks ["slidercellFaction_on_end"]) do
 			callback (faction, value)
 		end
 	end
@@ -72008,7 +72232,7 @@ function menu.removeFactionRelationHelper(faction)
 
 	-- kuertee start: callback
 	if callbacks ["removeFactionRelationHelper_on_end"] then
-		for _, callback in ipairs (callbacks ["removeFactionRelationHelper_on_end"]) do
+		for id, callback in pairs (callbacks ["removeFactionRelationHelper_on_end"]) do
 			callback (faction)
 		end
 	end
@@ -72156,7 +72380,7 @@ function menu.playerMacro(current, customoptions)
 
 	-- kuertee start: callback
 	if callbacks ["playerMacro_on_end"] then
-		for _, callback in ipairs (callbacks ["playerMacro_on_end"]) do
+		for id, callback in pairs (callbacks ["playerMacro_on_end"]) do
 			callback (current, customoptions, options, currentOption)
 		end
 	end
@@ -72273,7 +72497,7 @@ function menu.universeSector(current)
 
 	-- kuertee start: callback
 	if callbacks ["universeSector_on_end"] then
-		for _, callback in ipairs (callbacks ["universeSector_on_end"]) do
+		for id, callback in pairs (callbacks ["universeSector_on_end"]) do
 			callback (current, options, currentOption)
 		end
 	end
@@ -72340,7 +72564,7 @@ end
 function menu.openShipConfig()
 	-- kuertee start: callback
 	if callbacks ["openShipConfig_on_start"] then
-		for _, callback in ipairs (callbacks ["openShipConfig_on_start"]) do
+		for id, callback in pairs (callbacks ["openShipConfig_on_start"]) do
 			callback ()
 		end
 	end
@@ -72352,7 +72576,7 @@ function menu.openShipConfig()
 
 	-- kuertee start: callback
 	if callbacks ["openShipConfig_on_end"] then
-		for _, callback in ipairs (callbacks ["openShipConfig_on_end"]) do
+		for id, callback in pairs (callbacks ["openShipConfig_on_end"]) do
 			callback ()
 		end
 	end
@@ -72368,7 +72592,7 @@ function menu.openPlayerPropertyShipConfig(row, entryid, macro, commanderid, peo
 
 	-- kuertee start: callback
 	if callbacks ["openPlayerPropertyShipConfig_on_end"] then
-		for _, callback in ipairs (callbacks ["openPlayerPropertyShipConfig_on_end"]) do
+		for id, callback in pairs (callbacks ["openPlayerPropertyShipConfig_on_end"]) do
 			callback (row, entryid, macro, commanderid, peopledef, peoplefillpercentage, count)
 		end
 	end
@@ -72393,7 +72617,7 @@ function menu.setPlayerMacro(customgamestart, propertyid, option)
 
 	-- kuertee start: callback
 	if callbacks ["setPlayerMacro_on_end"] then
-		for _, callback in ipairs (callbacks ["setPlayerMacro_on_end"]) do
+		for id, callback in pairs (callbacks ["setPlayerMacro_on_end"]) do
 			callback (customgamestart, propertyid, option)
 		end
 	end
@@ -72419,7 +72643,7 @@ function menu.setPlayerSector(gamestartid, propertyid, sector, noreset)
 
 	-- kuertee start: callback
 	if callbacks ["setPlayerSector_on_end"] then
-		for _, callback in ipairs (callbacks ["setPlayerSector_on_end"]) do
+		for id, callback in pairs (callbacks ["setPlayerSector_on_end"]) do
 			callback (gamestartid, propertyid, sector, noreset)
 		end
 	end
@@ -73070,7 +73294,7 @@ end
 function menu.display()
 	-- kuertee start: callback
 	if callbacks ["display_on_start"] then
-		for _, callback in ipairs (callbacks ["display_on_start"]) do
+		for id, callback in pairs (callbacks ["display_on_start"]) do
 			callback (config)
 		end
 	end
@@ -73310,7 +73534,7 @@ function menu.display()
 
 	-- kuertee start: callback
 	if callbacks ["display_on_after_main_options"] then
-		for _, callback in ipairs (callbacks ["display_on_after_main_options"]) do
+		for id, callback in pairs (callbacks ["display_on_after_main_options"]) do
 			callback ()
 		end
 	end
@@ -73427,7 +73651,7 @@ function menu.display()
 
 		-- kuertee start: callback
 		if callbacks ["display_on_after_category_name"] then
-			for _, callback in ipairs (callbacks ["display_on_after_category_name"]) do
+			for id, callback in pairs (callbacks ["display_on_after_category_name"]) do
 				callback (numCols)
 			end
 		end
@@ -73466,7 +73690,7 @@ function menu.display()
 
 					-- kuertee start: callback
 					if callbacks ["display_on_after_property_name"] then
-						for _, callback in ipairs (callbacks ["display_on_after_property_name"]) do
+						for id, callback in pairs (callbacks ["display_on_after_property_name"]) do
 							callback (numCols, property)
 						end
 					end
@@ -74134,7 +74358,7 @@ function menu.display()
 
 		-- kuertee start: callback
 		if callbacks ["display_on_after_category_options"] then
-			for _, callback in ipairs (callbacks ["display_on_after_category_options"]) do
+			for id, callback in pairs (callbacks ["display_on_after_category_options"]) do
 				callback (numCols)
 			end
 		end
@@ -75874,25 +76098,51 @@ function menu.checkConstructionPlan(source, id, limitedmodulesused, onlineitems,
 end
 
 -- kuertee start:
-function menu.registerCallback (callbackName, callbackFunction)
-	-- note 1: format is generally [function name]_[action]. e.g.: in kuertee_menu_transporter, "display_on_set_room_active" overrides the room's active property with the return of the callback.
-	-- note 2: events have the word "_on_" followed by a PRESENT TENSE verb. e.g.: in kuertee_menu_transporter, "display_on_set_buttontable" is called after all of the rows of buttontable are set.
-	-- note 3: new callbacks can be added or existing callbacks can be edited. but commit your additions/changes to the mod's GIT repository.
-	-- note 4: search for the callback names to see where they are executed.
-	-- note 5: if a callback requires a return value, return it in an object var. e.g. "display_on_set_room_active" requires a return of {active = true | false}.
-	if callbacks [callbackName] == nil then
-		callbacks [callbackName] = {}
+local uix_callbackCount = 0
+function menu.registerCallback(callbackName, callbackFunction, id)
+    -- note 1: format is generally [function name]_[action]. e.g.: in kuertee_menu_transporter, "display_on_set_room_active" overrides the room's active property with the return of the callback.
+    -- note 2: events have the word "_on_" followed by a PRESENT TENSE verb. e.g.: in kuertee_menu_transporter, "display_on_set_buttontable" is called after all of the rows of buttontable are set.
+    -- note 3: new callbacks can be added or existing callbacks can be edited. but commit your additions/changes to the mod's GIT repository.
+    -- note 4: search for the callback names to see where they are executed.
+    -- note 5: if a callback requires a return value, return it in an object var. e.g. "display_on_set_room_active" requires a return of {active = true | false}.
+    if callbacks [callbackName] == nil then
+        callbacks [callbackName] = {}
+    end
+    if not callbacks[callbackName][id] then
+	    if not id then
+	    	uix_callbackCount = uix_callbackCount + 1
+	    	id = "_" .. tostring(uix_callbackCount)
+	    end
+	    callbacks[callbackName][id] = callbackFunction
+	else
+		DebugError("uix registerCallback: callback at " .. callbackName .. " with id " .. tostring(id) .. " was already previously registered")
 	end
-	table.insert (callbacks [callbackName], callbackFunction)
 end
 
-function menu.deregisterCallback(callbackName, callbackFunction)
-	-- for i, callback in ipairs(callbacks[callbackName]) do
-	if callbacks[callbackName] and #callbacks[callbackName] > 0 then
-		for i = #callbacks[callbackName], 1, -1 do
-			if callbacks[callbackName][i] == callbackFunction then
-				table.remove(callbacks[callbackName], i)
-			end
+function menu.deregisterCallback(callbackName, callbackFunction, id)
+    if id then
+    	if callbacks[callbackName][id] then
+            callbacks[callbackName][id] = nil
+        else
+			DebugError("uix deregisterCallback: callback at " .. callbackName .. " with id " .. tostring(id) .. " doesn't exist")
+        end
+    else
+        if callbacks[callbackName] then
+            for id, func in pairs(callbacks[callbackName]) do
+                if func == callbackFunction then
+                    callbacks[callbackName][id] = nil
+                end
+            end
+        end
+    end
+end
+
+function menu.updateCallback(callbackName, callbackFunction, id)
+	if callbacks[callbackName] then
+		if callbacks[callbackName][id] then
+	        callback[callbackName][id] = callbackFunction
+		else
+			DebugError("uix updateCallback: callback at " .. callbackName .. " with id " .. tostring(id) .. " doesn't exist")
 		end
 	end
 end
@@ -83469,29 +83719,51 @@ function menu.viewCreated(layer, ...)
 end
 
 -- kuetee start:
-function menu.registerCallback (callbackName, callbackFunction)
-	-- note 1: format is generally [function name]_[action]. e.g.: in kuertee_menu_transporter, "display_on_set_room_active" overrides the room's active property with the return of the callback.
-	-- note 2: events have the word "_on_" followed by a PRESENT TENSE verb. e.g.: in kuertee_menu_transporter, "display_on_set_buttontable" is called after all of the rows of buttontable are set.
-	-- note 3: new callbacks can be added or existing callbacks can be edited. but commit your additions/changes to the mod's GIT repository.
-	-- note 4: search for the callback names to see where they are executed.
-	-- note 5: if a callback requires a return value, return it in an object var. e.g. "display_on_set_room_active" requires a return of {active = true | false}.
-
-	-- to find callbacks available for this menu,
-	-- reg-ex search for callbacks.*\[\".*\]
-
-	if callbacks [callbackName] == nil then
-		callbacks [callbackName] = {}
+local uix_callbackCount = 0
+function menu.registerCallback(callbackName, callbackFunction, id)
+    -- note 1: format is generally [function name]_[action]. e.g.: in kuertee_menu_transporter, "display_on_set_room_active" overrides the room's active property with the return of the callback.
+    -- note 2: events have the word "_on_" followed by a PRESENT TENSE verb. e.g.: in kuertee_menu_transporter, "display_on_set_buttontable" is called after all of the rows of buttontable are set.
+    -- note 3: new callbacks can be added or existing callbacks can be edited. but commit your additions/changes to the mod's GIT repository.
+    -- note 4: search for the callback names to see where they are executed.
+    -- note 5: if a callback requires a return value, return it in an object var. e.g. "display_on_set_room_active" requires a return of {active = true | false}.
+    if callbacks [callbackName] == nil then
+        callbacks [callbackName] = {}
+    end
+    if not callbacks[callbackName][id] then
+	    if not id then
+	    	uix_callbackCount = uix_callbackCount + 1
+	    	id = "_" .. tostring(uix_callbackCount)
+	    end
+	    callbacks[callbackName][id] = callbackFunction
+	else
+		DebugError("uix registerCallback: callback at " .. callbackName .. " with id " .. tostring(id) .. " was already previously registered")
 	end
-	table.insert (callbacks [callbackName], callbackFunction)
 end
 
-function menu.deregisterCallback(callbackName, callbackFunction)
-	-- for i, callback in ipairs(callbacks[callbackName]) do
-	if callbacks[callbackName] and #callbacks[callbackName] > 0 then
-		for i = #callbacks[callbackName], 1, -1 do
-			if callbacks[callbackName][i] == callbackFunction then
-				table.remove(callbacks[callbackName], i)
-			end
+function menu.deregisterCallback(callbackName, callbackFunction, id)
+    if id then
+    	if callbacks[callbackName][id] then
+            callbacks[callbackName][id] = nil
+        else
+			DebugError("uix deregisterCallback: callback at " .. callbackName .. " with id " .. tostring(id) .. " doesn't exist")
+        end
+    else
+        if callbacks[callbackName] then
+            for id, func in pairs(callbacks[callbackName]) do
+                if func == callbackFunction then
+                    callbacks[callbackName][id] = nil
+                end
+            end
+        end
+    end
+end
+
+function menu.updateCallback(callbackName, callbackFunction, id)
+	if callbacks[callbackName] then
+		if callbacks[callbackName][id] then
+	        callback[callbackName][id] = callbackFunction
+		else
+			DebugError("uix updateCallback: callback at " .. callbackName .. " with id " .. tostring(id) .. " doesn't exist")
 		end
 	end
 end
@@ -86033,6 +86305,8 @@ function ModLua.rewriteFunctions()
     menu.cleanup = ModLua.cleanup
     OldFuncs.submenuHandler = menu.submenuHandler
     menu.submenuHandler = ModLua.submenuHandler
+    OldFuncs.loadGameCallback = menu.loadGameCallback
+    menu.loadGameCallback = ModLua.loadGameCallback
     OldFuncs.callbackDeleteSave = menu.callbackDeleteSave
     menu.callbackDeleteSave = ModLua.callbackDeleteSave
     OldFuncs.displayOptions = menu.displayOptions
@@ -86053,7 +86327,7 @@ function ModLua.addSavegameRow(ftable, savegame, name, slot)
     -- kuertee start: callback
     local isSaveFileOk = true
     if callbacks ["addSavegameRow_isListSaveGame"] then
-        for _, callback in ipairs (callbacks ["addSavegameRow_isListSaveGame"]) do
+        for id, callback in pairs (callbacks ["addSavegameRow_isListSaveGame"]) do
             isSaveFileOk = callback(ftable, savegame, name, slot)
             if not isSaveFileOk then
                 break
@@ -86069,7 +86343,7 @@ function ModLua.addSavegameRow(ftable, savegame, name, slot)
 
     -- kuertee start: callback
     if callbacks ["addSavegameRow_changeSaveGameDisplayName"] then
-        for _, callback in ipairs (callbacks ["addSavegameRow_changeSaveGameDisplayName"]) do
+        for id, callback in pairs (callbacks ["addSavegameRow_changeSaveGameDisplayName"]) do
             name = callback(ftable, savegame, name, slot, name)
         end
     end
@@ -86093,6 +86367,7 @@ function ModLua.addSavegameRow(ftable, savegame, name, slot)
         row[2]:createText(slot, (not invalid) and config.standardTextProperties or config.disabledTextProperties)
         row[2].properties.halign = "right"
     end
+
     local nametruncated = TruncateText(name, config.fontBold, Helper.scaleFont(config.font, config.standardFontSize), row[3]:getWidth() - Helper.scaleX(config.standardTextOffsetX))
     local mouseovertext = ""
     if nametruncated ~= name then
@@ -86102,9 +86377,24 @@ function ModLua.addSavegameRow(ftable, savegame, name, slot)
     local isonlinesaveinofflineslot = IsCheatVersion() and savegame.isonline and not savegame.isonlinesavefilename
 
     local height = Helper.scaleY(config.standardTextHeight) + Helper.borderSize
-    if invalid or savegame.modified or isonlinesaveinofflineslot then
-        height = 2 * Helper.scaleY(config.standardTextHeight) + Helper.borderSize
+
+    -- kuertee start: callback
+    local uix_isAddRowHeightForExtraInfo = nil
+    if callbacks ["addSavegameRow_getRowHeightForExtraInfo"] then
+        for id, callback in pairs (callbacks ["addSavegameRow_getRowHeightForExtraInfo"]) do
+            uix_isAddRowHeightForExtraInfo = uix_isAddRowHeightForExtraInfo or callback(ftable, savegame, name, slot, name)
+        end
     end
+    if uix_isAddRowHeightForExtraInfo ~= false then
+    -- kuertee end: callback
+
+        if invalid or savegame.modified or isonlinesaveinofflineslot then
+            height = 2 * Helper.scaleY(config.standardTextHeight) + Helper.borderSize
+        end
+
+    -- kuertee start: callback
+    end
+    -- kuertee end: callback
 
     local warningicon = ""
     if savegame.isonline then
@@ -86114,21 +86404,47 @@ function ModLua.addSavegameRow(ftable, savegame, name, slot)
     end
 
     local icon = row[3]:createIcon("solid", { width = row[3]:getWidth(), height = height, color = Color["icon_transparent"], scaling = false, mouseOverText = mouseovertext }):setText(warningicon .. nametruncated, (not invalid) and config.standardTextProperties or config.disabledTextProperties)
-    row[3].properties.text.font = config.fontBold
-    row[3].properties.text.scaling = true
-    if invalid then
-        icon:setText2(function () return menu.errorSavegame(savegame) end, (not invalid) and config.standardTextProperties or config.disabledTextProperties)
-        row[3].properties.text2.y = config.standardTextHeight
-        row[3].properties.text2.scaling = true
-    elseif savegame.modified then
-        icon:setText2(ColorText["text_warning"] .. ReadText(1001, 8901) .. "\27X", (not invalid) and config.standardTextProperties or config.disabledTextProperties)
-        row[3].properties.text2.y = config.standardTextHeight
-        row[3].properties.text2.scaling = true
-    elseif isonlinesaveinofflineslot then
-        icon:setText2(ColorText["text_online_save"] .. ReadText(1001, 11570) .. "\27X", (not invalid) and config.standardTextProperties or config.disabledTextProperties)
-        row[3].properties.text2.y = config.standardTextHeight
-        row[3].properties.text2.scaling = true
+
+    -- kuertee start: callback
+    local uix_isBoldFileName = nil
+    if callbacks ["addSavegameRow_getIsBoldFilename"] then
+        for id, callback in pairs (callbacks ["addSavegameRow_getIsBoldFilename"]) do
+            uix_isBoldFileName = uix_isBoldFileName or callback(ftable, savegame, name, slot, name)
+        end
     end
+    if uix_isBoldFileName ~= false then
+    -- kuertee end: callback
+
+        row[3].properties.text.font = config.fontBold
+
+    -- kuertee start: callback
+    end
+    -- kuertee end: callback
+
+    row[3].properties.text.scaling = true
+
+    -- kuertee start:
+    if uix_isAddRowHeightForExtraInfo ~= false then
+    -- kuertee end
+
+        if invalid then
+            icon:setText2(function () return menu.errorSavegame(savegame) end, (not invalid) and config.standardTextProperties or config.disabledTextProperties)
+            row[3].properties.text2.y = config.standardTextHeight
+            row[3].properties.text2.scaling = true
+        elseif savegame.modified then
+            icon:setText2(ColorText["text_warning"] .. ReadText(1001, 8901) .. "\27X", (not invalid) and config.standardTextProperties or config.disabledTextProperties)
+            row[3].properties.text2.y = config.standardTextHeight
+            row[3].properties.text2.scaling = true
+        elseif isonlinesaveinofflineslot then
+            icon:setText2(ColorText["text_online_save"] .. ReadText(1001, 11570) .. "\27X", (not invalid) and config.standardTextProperties or config.disabledTextProperties)
+            row[3].properties.text2.y = config.standardTextHeight
+            row[3].properties.text2.scaling = true
+        end
+
+    -- kuertee start:
+    end
+    -- kuertee end
+
     row[4]:setColSpan(2):createText(savegame.error and "" or savegame.time, (not invalid) and config.standardTextProperties or config.disabledTextProperties)
     row[4].properties.halign = "right"
 
@@ -86195,7 +86511,7 @@ function ModLua.cleanup()
 
     -- kuertee start: callback
     if callbacks ["cleanup"] then
-        for _, callback in ipairs (callbacks ["cleanup"]) do
+        for id, callback in pairs (callbacks ["cleanup"]) do
             callback()
         end
     end
@@ -86219,7 +86535,7 @@ function ModLua.submenuHandler(optionParameter)
 
     -- kuertee start: callback
     if callbacks ["submenuHandler_preDisplayOptions"] then
-        for _, callback in ipairs (callbacks ["submenuHandler_preDisplayOptions"]) do
+        for id, callback in pairs (callbacks ["submenuHandler_preDisplayOptions"]) do
             callback(optionParameter)
         end
     end
@@ -86311,6 +86627,47 @@ function ModLua.submenuHandler(optionParameter)
     end
 end
 
+function ModLua.loadGameCallback(filename, checked)
+    local playerinventory = GetPlayerInventory()
+    local onlineitems = OnlineGetUserItems()
+
+    local hasnotuploadeditems = false
+    for ware, waredata in Helper.orderedPairs(playerinventory) do
+        local isbraneitem, isoperationvolatile, isseasonvolatile, isventureuploadallowed = GetWareData(ware, "isbraneitem", "isoperationvolatile", "isseasonvolatile", "isventureuploadallowed")
+        if isbraneitem then
+            local serveramount = 0
+            if onlineitems[ware] then
+                serveramount = onlineitems[ware].amount
+            end
+            if isventureuploadallowed and (waredata.amount > serveramount) then
+                hasnotuploadeditems = true
+                break
+            end
+        end
+    end
+
+    if (not checked) and (not menu.isStartmenu) and Helper.isOnlineGame() and hasnotuploadeditems then
+        table.insert(menu.history, 1, { optionParameter = menu.currentOption, topRow = GetTopRow(menu.optionTable), selectedOption = filename })
+        menu.displayUserQuestion(ReadText(1001, 2604) .. " - " .. ReadText(1001, 7720), function () return menu.loadGameCallback(filename, true) end, nil, nil, nil, nil, nil, ReadText(1001, 11707))
+    else
+        -- kuertee start: callback
+        -- Helper.addDelayedOneTimeCallbackOnUpdate(function () LoadGame(filename) end, true, getElapsedTime() + 0.1)
+        Helper.addDelayedOneTimeCallbackOnUpdate(
+            function ()
+                if callbacks ["loadGameCallback_preLoadGame"] then
+                    for id, callback in pairs (callbacks ["loadGameCallback_preLoadGame"]) do
+                        callback(filename)
+                    end
+                end
+                LoadGame(filename)
+            end
+        , true, getElapsedTime() + 0.1)
+        -- kuertee end: callback
+
+        menu.displayInit()
+    end
+end
+
 function ModLua.callbackDeleteSave(filename)
     C.DeleteSavegame(filename)
 
@@ -86321,7 +86678,7 @@ function ModLua.callbackDeleteSave(filename)
 
     -- kuertee start: callback
     if callbacks ["callbackDeleteSave_onDeleteSave"] then
-        for _, callback in ipairs (callbacks ["callbackDeleteSave_onDeleteSave"]) do
+        for id, callback in pairs (callbacks ["callbackDeleteSave_onDeleteSave"]) do
             callback(filename)
         end
     end
@@ -86338,7 +86695,7 @@ function ModLua.displayOptions(optionParameter)
 
     -- kuertee start: callback
     if callbacks ["displayOptions_modifyOptions"] then
-        for _, callback in ipairs (callbacks ["displayOptions_modifyOptions"]) do
+        for id, callback in pairs (callbacks ["displayOptions_modifyOptions"]) do
             options = callback(options)
         end
     end
@@ -86584,7 +86941,7 @@ function ModLua.displaySavegameOptions(optionParameter)
 
     -- kuertee start: callback
     if callbacks ["displaySavegameOptions_onGetSaveGames"] then
-        for _, callback in ipairs (callbacks ["displaySavegameOptions_onGetSaveGames"]) do
+        for id, callback in pairs (callbacks ["displaySavegameOptions_onGetSaveGames"]) do
             callback(optionParameter)
         end
     end
@@ -86602,7 +86959,7 @@ function ModLua.displaySavegameOptions(optionParameter)
         -- table.sort(menu.savegames, function (a, b) return a.rawtime > b.rawtime end)
         -- kuertee start: callback
         if callbacks ["displaySaveGameOptions_sortSaveGames"] then
-            for _, callback in ipairs (callbacks ["displaySaveGameOptions_sortSaveGames"]) do
+            for id, callback in pairs (callbacks ["displaySaveGameOptions_sortSaveGames"]) do
                 callback(menu.savegames, "rawtime", true)
             end
         else
@@ -86738,7 +87095,7 @@ function ModLua.displaySavegameOptions(optionParameter)
                     -- kuertee start: callback
                     local isShowUnusedSaveFile = true
                     if callbacks ["displaySavegameOptions_isShowUnusedSaveGame"] then
-                        for _, callback in ipairs (callbacks ["displaySavegameOptions_isShowUnusedSaveGame"]) do
+                        for id, callback in pairs (callbacks ["displaySavegameOptions_isShowUnusedSaveGame"]) do
                             isShowUnusedSaveFile = callback(i)
                             if not isShowUnusedSaveFile then
                                 goto continue
@@ -86768,7 +87125,7 @@ function ModLua.displaySavegameOptions(optionParameter)
                 -- table.sort(sortablesaves, function (a, b) return a.rawtime > b.rawtime end)
                 -- kuertee start: callback
                 if callbacks ["displaySaveGameOptions_sortSaveGames"] then
-                    for _, callback in ipairs (callbacks ["displaySaveGameOptions_sortSaveGames"]) do
+                    for id, callback in pairs (callbacks ["displaySaveGameOptions_sortSaveGames"]) do
                         callback(sortablesaves, "rawtime", true)
                     end
                 else
@@ -86781,7 +87138,7 @@ function ModLua.displaySavegameOptions(optionParameter)
                 -- table.sort(sortablesaves, function (a, b) return a.rawtime < b.rawtime end)
                 -- kuertee start: callback
                 if callbacks ["displaySaveGameOptions_sortSaveGames"] then
-                    for _, callback in ipairs (callbacks ["displaySaveGameOptions_sortSaveGames"]) do
+                    for id, callback in pairs (callbacks ["displaySaveGameOptions_sortSaveGames"]) do
                         callback(sortablesaves, "rawtime", false)
                     end
                 else
@@ -86794,7 +87151,7 @@ function ModLua.displaySavegameOptions(optionParameter)
                 -- table.sort(sortablesaves, function (a, b) return a.displayedname < b.displayedname end)
                 -- kuertee start: callback
                 if callbacks ["displaySaveGameOptions_sortSaveGames"] then
-                    for _, callback in ipairs (callbacks ["displaySaveGameOptions_sortSaveGames"]) do
+                    for id, callback in pairs (callbacks ["displaySaveGameOptions_sortSaveGames"]) do
                         callback(sortablesaves, "displayedname", true)
                     end
                 else
@@ -86807,7 +87164,7 @@ function ModLua.displaySavegameOptions(optionParameter)
                 -- table.sort(sortablesaves, function (a, b) return a.displayedname > b.displayedname end)
                 -- kuertee start: callback
                 if callbacks ["displaySaveGameOptions_sortSaveGames"] then
-                    for _, callback in ipairs (callbacks ["displaySaveGameOptions_sortSaveGames"]) do
+                    for id, callback in pairs (callbacks ["displaySaveGameOptions_sortSaveGames"]) do
                         callback(sortablesaves, "displayedname", false)
                     end
                 else
@@ -86818,8 +87175,8 @@ function ModLua.displaySavegameOptions(optionParameter)
             for i, savegame in ipairs(sortablesaves) do
                 -- kuertee start: callback
                 if callbacks ["displaySaveGameOptions_preSaveGameRowAdd"] then
-                    for _, callback in ipairs (callbacks ["displaySaveGameOptions_preSaveGameRowAdd"]) do
-                        maxRowHeight = math.max(maxRowHeight, callback(ftable, savegame, savegame.displayedname, i, #sortablesaves))
+                    for id, callback in pairs (callbacks ["displaySaveGameOptions_preSaveGameRowAdd"]) do
+                        maxRowHeight = math.max(maxRowHeight, callback(ftable, savegame, savegame.displayedname, i, #sortablesaves, config))
                     end
                 end
                 -- kuertee end: callback
@@ -86829,7 +87186,7 @@ function ModLua.displaySavegameOptions(optionParameter)
 
                 -- kuertee start: callback
                 if callbacks ["displaySaveGameOptions_postSaveGameRowAdd"] then
-                    for _, callback in ipairs (callbacks ["displaySaveGameOptions_postSaveGameRowAdd"]) do
+                    for id, callback in pairs (callbacks ["displaySaveGameOptions_postSaveGameRowAdd"]) do
                         maxRowHeight = math.max(maxRowHeight, callback(ftable, savegame, savegame.displayedname, i, #sortablesaves))
                     end
                 end
@@ -86847,7 +87204,7 @@ function ModLua.displaySavegameOptions(optionParameter)
                     -- kuertee start: callback
                     local isShowUnusedSaveFile = true
                     if callbacks ["displaySavegameOptions_isShowUnusedSaveGame"] then
-                        for _, callback in ipairs (callbacks ["displaySavegameOptions_isShowUnusedSaveGame"]) do
+                        for id, callback in pairs (callbacks ["displaySavegameOptions_isShowUnusedSaveGame"]) do
                             isShowUnusedSaveFile = callback(i)
                             if not isShowUnusedSaveFile then
                                 goto continue
@@ -87009,7 +87366,7 @@ function ModLua.onUpdate()
     -- kuertee start: callback
     local isSaveFileOk = true
     if callbacks ["onUpdate_start"] then
-        for _, callback in ipairs (callbacks ["onUpdate_start"]) do
+        for id, callback in pairs (callbacks ["onUpdate_start"]) do
             callback(curtime)
         end
     end
@@ -87031,7 +87388,7 @@ function ModLua.onUpdate()
 
                 -- kuertee start: callback
                 if callbacks ["newGameCallback_preNewGame"] then
-                    for _, callback in ipairs (callbacks ["newGameCallback_preNewGame"]) do
+                    for id, callback in pairs (callbacks ["newGameCallback_preNewGame"]) do
                         callback(menu.animationDelay[2].id)
                     end
                 end
@@ -87090,7 +87447,7 @@ function ModLua.onUpdate()
                     -- table.sort(menu.savegames, function (a, b) return a.rawtime > b.rawtime end)
                     -- kuertee start: callback
                     if callbacks ["displaySaveGameOptions_sortSaveGames"] then
-                        for _, callback in ipairs (callbacks ["displaySaveGameOptions_sortSaveGames"]) do
+                        for id, callback in pairs (callbacks ["displaySaveGameOptions_sortSaveGames"]) do
                             callback(menu.savegames, "rawtime", true)
                         end
                     else
@@ -87275,7 +87632,7 @@ function ModLua.newGameCallback(option, checked)
                             function ()
                                 C.SetUserData("tutorial_started_from", tostring(value));
                                 if callbacks ["newGameCallback_preNewGame"] then
-                                    for _, callback in ipairs (callbacks ["newGameCallback_preNewGame"]) do
+                                    for id, callback in pairs (callbacks ["newGameCallback_preNewGame"]) do
                                         callback(option.id)
                                     end
                                 end
@@ -87289,7 +87646,7 @@ function ModLua.newGameCallback(option, checked)
                     Helper.addDelayedOneTimeCallbackOnUpdate(
                         function ()
                             if callbacks ["newGameCallback_preNewGame"] then
-                                for _, callback in ipairs (callbacks ["newGameCallback_preNewGame"]) do
+                                for id, callback in pairs (callbacks ["newGameCallback_preNewGame"]) do
                                     callback(option.id)
                                 end
                             end
@@ -87314,9 +87671,11 @@ ModLua.rewriteFunctions()
 function ModLua.addNewFunctions()
     menu.registerCallback = ModLua.registerCallback
     menu.deregisterCallback = ModLua.deregisterCallback
+    menu.updateCallback = ModLua.updateCallback
 end
 
-function ModLua.registerCallback(callbackName, callbackFunction)
+local uix_callbackCount = 0
+function ModLua.registerCallback(callbackName, callbackFunction, id)
     -- note 1: format is generally [function name]_[action]. e.g.: in kuertee_menu_transporter, "display_on_set_room_active" overrides the room's active property with the return of the callback.
     -- note 2: events have the word "_on_" followed by a PRESENT TENSE verb. e.g.: in kuertee_menu_transporter, "display_on_set_buttontable" is called after all of the rows of buttontable are set.
     -- note 3: new callbacks can be added or existing callbacks can be edited. but commit your additions/changes to the mod's GIT repository.
@@ -87325,16 +87684,45 @@ function ModLua.registerCallback(callbackName, callbackFunction)
     if callbacks [callbackName] == nil then
         callbacks [callbackName] = {}
     end
-    table.insert (callbacks [callbackName], callbackFunction)
+    if not callbacks[callbackName][id] then
+        if not id then
+            uix_callbackCount = uix_callbackCount + 1
+            id = "_" .. tostring(uix_callbackCount)
+        end
+        Helper.debugText_forced("registerCallback for " .. callbackName .. " with id " .. id)
+        callbacks[callbackName][id] = callbackFunction
+    else
+        DebugError("uix registerCallback: callback at " .. callbackName .. " with id " .. tostring(id) .. " was already previously registered")
+    end
 end
 
-function ModLua.deregisterCallback(callbackName, callbackFunction)
-    -- for i, callback in ipairs(callbacks[callbackName]) do
-    if callbacks[callbackName] and #callbacks[callbackName] > 0 then
-        for i = #callbacks[callbackName], 1, -1 do
-            if callbacks[callbackName][1] == callbackFunction then
-                table.remove(callbacks[callbackName], i)
+function ModLua.deregisterCallback(callbackName, callbackFunction, id)
+    if id then
+        if callbacks[callbackName][id] then
+            Helper.debugText_forced("deregisterCallback in " .. callbackName .. " with id " .. id)
+            callbacks[callbackName][id] = nil
+        else
+            DebugError("uix deregisterCallback: callback at " .. callbackName .. " with id " .. tostring(id) .. " doesn't exist")
+        end
+    else
+        if callbacks[callbackName] then
+            for id, func in pairs(callbacks[callbackName]) do
+                if func == callbackFunction then
+                    Helper.debugText_forced("deregisterCallback in " .. callbackName .. " with id " .. id)
+                    callbacks[callbackName][id] = nil
+                end
             end
+        end
+    end
+end
+
+function ModLua.updateCallback(callbackName, callbackFunction, id)
+    if callbacks[callbackName] then
+        if callbacks[callbackName][id] then
+            Helper.debugText_forced("updateCallback in " .. callbackName .. " with id " .. id)
+            callback[callbackName][id] = callbackFunction
+        else
+            DebugError("uix updateCallback: callback at " .. callbackName .. " with id " .. tostring(id) .. " doesn't exist")
         end
     end
 end
@@ -87501,7 +87889,7 @@ function ModLua.onUpdate()
 
 	-- kuertee start: callback
 	if callbacks ["onUpdate"] then
-		for _, callback in ipairs (callbacks ["onUpdate"]) do
+		for id, callback in pairs (callbacks ["onUpdate"]) do
 			name = callback ()
 		end
 	end
@@ -87577,7 +87965,7 @@ function ModLua.checkTopLevelConditions(entry)
 	-- kuertee start: callback
 	if callbacks ["checkTopLevelConditions_get_is_entry_available"] then
 		local isAvailable = true
-		for _, callback in ipairs (callbacks ["checkTopLevelConditions_get_is_entry_available"]) do
+		for id, callback in pairs (callbacks ["checkTopLevelConditions_get_is_entry_available"]) do
 			isAvailable = callback (entry)
 			if isAvailable ~= true then
 				return false
@@ -87598,7 +87986,7 @@ function ModLua.createLSOStorageNode(menu, container, ware, planned, hasstorage,
 
 	-- kuertee start: callback
 	if callbacks ["createLSOStorageNode_get_ware_name"] then
-		for _, callback in ipairs (callbacks ["createLSOStorageNode_get_ware_name"]) do
+		for id, callback in pairs (callbacks ["createLSOStorageNode_get_ware_name"]) do
 			name = callback (ware)
 		end
 	end
@@ -87746,7 +88134,7 @@ function ModLua.updateLSOStorageNode(menu, node, container, ware)
 		local status_bgicon = nil
 		local status_color = statuscolor
 		local status_mouseovertext = statusiconmouseovertext
-		for _, callback in ipairs (callbacks ["updateLSOStorageNode_pre_update_expanded_node"]) do
+		for id, callback in pairs (callbacks ["updateLSOStorageNode_pre_update_expanded_node"]) do
 			status_text, status_icon, status_bgicon, status_color, status_mouseovertext = callback(menu, node, container, ware, status_text, status_icon, status_bgicon, status_color, status_mouseovertext)
 		end
 		node:updateStatus(status_text, status_icon, status_bgicon, status_color, status_mouseovertext)
@@ -87948,7 +88336,7 @@ function ModLua.onExpandLSOStorageNode(menu, container, _, ftable, _, nodedata)
 		if (waretype == "resource") or (waretype == "intermediate") or (waretype == "product") or (waretype == "trade") then
 			-- kuertee start: callback
 			if callbacks ["onExpandLSOStorageNode_pre_buy_offer_title"] then
-				for _, callback in ipairs (callbacks ["onExpandLSOStorageNode_pre_buy_offer_title"]) do
+				for id, callback in pairs (callbacks ["onExpandLSOStorageNode_pre_buy_offer_title"]) do
 					callback(menu, container, ftable, nodedata)
 				end
 			end
@@ -88093,7 +88481,7 @@ function ModLua.onExpandLSOStorageNode(menu, container, _, ftable, _, nodedata)
 					-- kuertee start: callback
 					-- row[1]:createText(function () return Helper.getETAString(name, reservation.eta) end, { font = Helper.standardFontMono })
 					if callbacks ["onExpandLSOStorageNode_list_incoming_trade"] then
-						for _, callback in ipairs (callbacks ["onExpandLSOStorageNode_list_incoming_trade"]) do
+						for id, callback in pairs (callbacks ["onExpandLSOStorageNode_list_incoming_trade"]) do
 							callback (row, name, reservation, isplayerowned)
 						end
 					else
@@ -88112,7 +88500,7 @@ function ModLua.onExpandLSOStorageNode(menu, container, _, ftable, _, nodedata)
 		if (not isprocessed) and ((waretype == "resource") or (waretype == "product") or (waretype == "intermediate") or (waretype == "trade")) then
 			-- kuertee start: callback
 			if callbacks ["onExpandLSOStorageNode_pre_sell_offer_title"] then
-				for _, callback in ipairs (callbacks ["onExpandLSOStorageNode_pre_sell_offer_title"]) do
+				for id, callback in pairs (callbacks ["onExpandLSOStorageNode_pre_sell_offer_title"]) do
 					callback(menu, container, ftable, nodedata)
 				end
 			end
@@ -88256,7 +88644,7 @@ function ModLua.onExpandLSOStorageNode(menu, container, _, ftable, _, nodedata)
 					-- kuertee start: callback
 					-- row[1]:createText(function () return Helper.getETAString(name, reservation.eta) end, { font = Helper.standardFontMono })
 					if callbacks ["onExpandLSOStorageNode_list_incoming_trade"] then
-						for _, callback in ipairs (callbacks ["onExpandLSOStorageNode_list_incoming_trade"]) do
+						for id, callback in pairs (callbacks ["onExpandLSOStorageNode_list_incoming_trade"]) do
 							callback (row, name, reservation, isplayerowned)
 						end
 					else
@@ -88296,7 +88684,7 @@ function ModLua.onExpandLSOStorageNode(menu, container, _, ftable, _, nodedata)
 
 	-- kuertee start: callback
 	if callbacks ["onExpandLSOStorageNode"] then
-		for _, callback in ipairs (callbacks ["onExpandLSOStorageNode"]) do
+		for id, callback in pairs (callbacks ["onExpandLSOStorageNode"]) do
 			callback(menu, container, ftable, nodedata)
 		end
 	end
@@ -88321,7 +88709,7 @@ function ModLua.checkboxSetTradeRuleOverride(menu, container, type, ware, checke
 			local status_bgicon = nil
 			local status_color = Color["icon_warning"]
 			local status_mouseovertext
-			for _, callback in ipairs (callbacks ["checkboxSetTradeRuleOverride_pre_update_expanded_node"]) do
+			for id, callback in pairs (callbacks ["checkboxSetTradeRuleOverride_pre_update_expanded_node"]) do
 				status_text, status_icon, status_bgicon, status_color, status_mouseovertext = callback(menu, container, type, ware, checked, status_text, status_icon, status_bgicon, status_color, status_mouseovertext)
 			end
 			menu.expandedNode:updateStatus(status_text, status_icon, status_bgicon, status_color, status_mouseovertext)
@@ -88348,7 +88736,7 @@ function  Helper.dropdownTradeRule(menu, container, type, ware, id)
 			local status_bgicon = nil
 			local status_color = Color["icon_warning"]
 			local status_mouseovertext = nil
-			for _, callback in ipairs (callbacks ["dropdownTradeRule_pre_update_expanded_node"]) do
+			for id, callback in pairs (callbacks ["dropdownTradeRule_pre_update_expanded_node"]) do
 				status_text, status_icon, status_bgicon, status_color, status_mouseovertext = callback(menu, container, type, ware, id, status_text, status_icon, status_bgicon, status_color, status_mouseovertext)
 			end
 			menu.expandedNode:updateStatus(status_text, status_icon, status_bgicon, status_color, mouseOverText)
@@ -88370,7 +88758,7 @@ function ModLua.onCollapseLSOStorageNode(menu, nodedata)
 
 	-- kuertee start: callback
 	if callbacks ["onCollapseLSOStorageNode"] then
-		for _, callback in ipairs (callbacks ["onCollapseLSOStorageNode"]) do
+		for id, callback in pairs (callbacks ["onCollapseLSOStorageNode"]) do
 			callback (menu, nodedata)
 		end
 	end
@@ -88397,32 +88785,56 @@ ModLua.rewriteFunctions()
 function ModLua.addNewFunctions()
 	Helper.registerCallback = ModLua.registerCallback
 	Helper.deregisterCallback = ModLua.deregisterCallback
+	Helper.updateCallback = ModLua.updateCallback
 	Helper.debugText = ModLua.debugText
 	Helper.debugText_forced = ModLua.debugText_forced
 end
 
-function ModLua.registerCallback(callbackName, callbackFunction)
-	-- note 1: format is generally [function name]_[action]. e.g.: in kuertee_menu_transporter, "display_on_set_room_active" overrides the room's active property with the return of the callback.
-	-- note 2: events have the word "_on_" followed by a PRESET TENSE verb. e.g.: in kuertee_menu_transporter, "display_on_set_buttontable" is called after all of the rows of buttontable are set.
-	-- note 3: new callbacks can be added or existing callbacks can be edited. but commit your additions/changes to the mod's GIT repository.
-	-- note 4: search for the callback names to see where they are executed.
-	-- note 5: if a callback requires a return value, return it in an object var. e.g. "display_on_set_room_active" requires a return of {active = true | false}.
-
-	-- to find callbacks available for this menu,
-	-- reg-ex search for callbacks.*\[\".*\]
-
-	if callbacks [callbackName] == nil then
-		callbacks [callbackName] = {}
+local uix_callbackCount = 0
+function ModLua.registerCallback(callbackName, callbackFunction, id)
+    -- note 1: format is generally [function name]_[action]. e.g.: in kuertee_menu_transporter, "display_on_set_room_active" overrides the room's active property with the return of the callback.
+    -- note 2: events have the word "_on_" followed by a PRESENT TENSE verb. e.g.: in kuertee_menu_transporter, "display_on_set_buttontable" is called after all of the rows of buttontable are set.
+    -- note 3: new callbacks can be added or existing callbacks can be edited. but commit your additions/changes to the mod's GIT repository.
+    -- note 4: search for the callback names to see where they are executed.
+    -- note 5: if a callback requires a return value, return it in an object var. e.g. "display_on_set_room_active" requires a return of {active = true | false}.
+    if callbacks [callbackName] == nil then
+        callbacks [callbackName] = {}
+    end
+    if not callbacks[callbackName][id] then
+	    if not id then
+	    	uix_callbackCount = uix_callbackCount + 1
+	    	id = "_" .. tostring(uix_callbackCount)
+	    end
+	    callbacks[callbackName][id] = callbackFunction
+	else
+		DebugError("uix registerCallback: callback at " .. callbackName .. " with id " .. tostring(id) .. " was already previously registered")
 	end
-	table.insert (callbacks [callbackName], callbackFunction)
 end
 
-function ModLua.deregisterCallback(callbackName, callbackFunction)
-	if callbacks[callbackName] and #callbacks[callbackName] > 0 then
-		for i = #callbacks[callbackName], 1, -1 do
-			if callbacks[callbackName][i] == callbackFunction then
-				table.remove(callbacks[callbackName], i)
-			end
+function ModLua.deregisterCallback(callbackName, callbackFunction, id)
+    if id then
+    	if callbacks[callbackName][id] then
+            callbacks[callbackName][id] = nil
+        else
+			DebugError("uix deregisterCallback: callback at " .. callbackName .. " with id " .. tostring(id) .. " doesn't exist")
+        end
+    else
+        if callbacks[callbackName] then
+            for id, func in pairs(callbacks[callbackName]) do
+                if func == callbackFunction then
+                    callbacks[callbackName][id] = nil
+                end
+            end
+        end
+    end
+end
+
+function ModLua.updateCallback(callbackName, callbackFunction, id)
+	if callbacks[callbackName] then
+		if callbacks[callbackName][id] then
+	        callback[callbackName][id] = callbackFunction
+		else
+			DebugError("uix updateCallback: callback at " .. callbackName .. " with id " .. tostring(id) .. " doesn't exist")
 		end
 	end
 end
