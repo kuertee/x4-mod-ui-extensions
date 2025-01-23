@@ -2459,9 +2459,11 @@ config.DLSSmodes = {
 -- kuertee start: rewrites
 
 local OldFuncs = {}
-local callbacks = {}
+local uix_callbacks = {}
 
 function ModLua.rewriteFunctions()
+    OldFuncs.loadSaveCallback = menu.loadSaveCallback
+    menu.loadSaveCallback = ModLua.loadSaveCallback
     OldFuncs.addSavegameRow = menu.addSavegameRow
     menu.addSavegameRow = ModLua.addSavegameRow
     OldFuncs.cleanup = menu.cleanup
@@ -2486,12 +2488,37 @@ function ModLua.rewriteFunctions()
     menu.newGameCallback = ModLua.newGameCallback
 end
 
+function ModLua.loadSaveCallback(_, filename)
+    if (type(filename) ~= "string") or (not C.IsSaveValid(filename)) then
+        DebugError("Lua Event 'loadSave' got an invalid filename '" .. tostring(filename) .. "'.")
+        return
+    end
+    C.SkipNextStartAnimation()
+    menu.delayedLoadGame = filename
+
+    -- kuertee start: callback
+    -- Helper.addDelayedOneTimeCallbackOnUpdate(function () LoadGame(filename) end, true, getElapsedTime() + 0.1)
+    Helper.addDelayedOneTimeCallbackOnUpdate(
+        function ()
+            if uix_callbacks ["loadGameCallback_preLoadGame"] then
+                for uix_id, uix_callback in pairs (uix_callbacks ["loadGameCallback_preLoadGame"]) do
+                    uix_callback(filename)
+                end
+            end
+            LoadGame(filename)
+        end
+        , true, getElapsedTime() + 0.1)
+    -- kuertee end: callback
+
+    menu.displayInit()
+end
+
 function ModLua.addSavegameRow(ftable, savegame, name, slot)
     -- kuertee start: callback
     local isSaveFileOk = true
-    if callbacks ["addSavegameRow_isListSaveGame"] then
-        for id, callback in pairs (callbacks ["addSavegameRow_isListSaveGame"]) do
-            isSaveFileOk = callback(ftable, savegame, name, slot)
+    if uix_callbacks ["addSavegameRow_isListSaveGame"] then
+        for uix_id, uix_callback in pairs (uix_callbacks ["addSavegameRow_isListSaveGame"]) do
+            isSaveFileOk = uix_callback(ftable, savegame, name, slot)
             if not isSaveFileOk then
                 break
             end
@@ -2505,9 +2532,9 @@ function ModLua.addSavegameRow(ftable, savegame, name, slot)
     -- kuertee end: callback
 
     -- kuertee start: callback
-    if callbacks ["addSavegameRow_changeSaveGameDisplayName"] then
-        for id, callback in pairs (callbacks ["addSavegameRow_changeSaveGameDisplayName"]) do
-            name = callback(ftable, savegame, name, slot, name)
+    if uix_callbacks ["addSavegameRow_changeSaveGameDisplayName"] then
+        for uix_id, uix_callback in pairs (uix_callbacks ["addSavegameRow_changeSaveGameDisplayName"]) do
+            name = uix_callback(ftable, savegame, name, slot, name)
         end
     end
     -- kuertee end: callback
@@ -2543,9 +2570,9 @@ function ModLua.addSavegameRow(ftable, savegame, name, slot)
 
     -- kuertee start: callback
     local uix_isAddRowHeightForExtraInfo = nil
-    if callbacks ["addSavegameRow_getRowHeightForExtraInfo"] then
-        for id, callback in pairs (callbacks ["addSavegameRow_getRowHeightForExtraInfo"]) do
-            uix_isAddRowHeightForExtraInfo = uix_isAddRowHeightForExtraInfo or callback(ftable, savegame, name, slot, name)
+    if uix_callbacks ["addSavegameRow_getRowHeightForExtraInfo"] then
+        for uix_id, uix_callback in pairs (uix_callbacks ["addSavegameRow_getRowHeightForExtraInfo"]) do
+            uix_isAddRowHeightForExtraInfo = uix_isAddRowHeightForExtraInfo or uix_callback(ftable, savegame, name, slot, name)
         end
     end
     if uix_isAddRowHeightForExtraInfo ~= false then
@@ -2570,9 +2597,9 @@ function ModLua.addSavegameRow(ftable, savegame, name, slot)
 
     -- kuertee start: callback
     local uix_isBoldFileName = nil
-    if callbacks ["addSavegameRow_getIsBoldFilename"] then
-        for id, callback in pairs (callbacks ["addSavegameRow_getIsBoldFilename"]) do
-            uix_isBoldFileName = uix_isBoldFileName or callback(ftable, savegame, name, slot, name)
+    if uix_callbacks ["addSavegameRow_getIsBoldFilename"] then
+        for uix_id, uix_callback in pairs (uix_callbacks ["addSavegameRow_getIsBoldFilename"]) do
+            uix_isBoldFileName = uix_isBoldFileName or uix_callback(ftable, savegame, name, slot, name)
         end
     end
     if uix_isBoldFileName ~= false then
@@ -2673,9 +2700,9 @@ function ModLua.cleanup()
     menu.table = {}
 
     -- kuertee start: callback
-    if callbacks ["cleanup"] then
-        for id, callback in pairs (callbacks ["cleanup"]) do
-            callback()
+    if uix_callbacks ["cleanup"] then
+        for uix_id, uix_callback in pairs (uix_callbacks ["cleanup"]) do
+            uix_callback()
         end
     end
     -- kuertee end: callback
@@ -2697,9 +2724,9 @@ function ModLua.submenuHandler(optionParameter)
     end
 
     -- kuertee start: callback
-    if callbacks ["submenuHandler_preDisplayOptions"] then
-        for id, callback in pairs (callbacks ["submenuHandler_preDisplayOptions"]) do
-            callback(optionParameter)
+    if uix_callbacks ["submenuHandler_preDisplayOptions"] then
+        for uix_id, uix_callback in pairs (uix_callbacks ["submenuHandler_preDisplayOptions"]) do
+            uix_callback(optionParameter)
         end
     end
     -- kuertee end: callback
@@ -2817,9 +2844,9 @@ function ModLua.loadGameCallback(filename, checked)
         -- Helper.addDelayedOneTimeCallbackOnUpdate(function () LoadGame(filename) end, true, getElapsedTime() + 0.1)
         Helper.addDelayedOneTimeCallbackOnUpdate(
             function ()
-                if callbacks ["loadGameCallback_preLoadGame"] then
-                    for id, callback in pairs (callbacks ["loadGameCallback_preLoadGame"]) do
-                        callback(filename)
+                if uix_callbacks ["loadGameCallback_preLoadGame"] then
+                    for uix_id, uix_callback in pairs (uix_callbacks ["loadGameCallback_preLoadGame"]) do
+                        uix_callback(filename)
                     end
                 end
                 LoadGame(filename)
@@ -2840,9 +2867,9 @@ function ModLua.callbackDeleteSave(filename)
     menu.onCloseElement("back")
 
     -- kuertee start: callback
-    if callbacks ["callbackDeleteSave_onDeleteSave"] then
-        for id, callback in pairs (callbacks ["callbackDeleteSave_onDeleteSave"]) do
-            callback(filename)
+    if uix_callbacks ["callbackDeleteSave_onDeleteSave"] then
+        for uix_id, uix_callback in pairs (uix_callbacks ["callbackDeleteSave_onDeleteSave"]) do
+            uix_callback(filename)
         end
     end
     -- kuertee end: callback
@@ -2857,9 +2884,9 @@ function ModLua.displayOptions(optionParameter)
     local options = config.optionDefinitions[optionParameter]
 
     -- kuertee start: callback
-    if callbacks ["displayOptions_modifyOptions"] then
-        for id, callback in pairs (callbacks ["displayOptions_modifyOptions"]) do
-            options = callback(options)
+    if uix_callbacks ["displayOptions_modifyOptions"] then
+        for uix_id, uix_callback in pairs (uix_callbacks ["displayOptions_modifyOptions"]) do
+            options = uix_callback(options)
         end
     end
     -- kuertee end: callback
@@ -3103,9 +3130,9 @@ function ModLua.displaySavegameOptions(optionParameter)
     menu.savegames = GetSaveList(Helper.validSaveFilenames)
 
     -- kuertee start: callback
-    if callbacks ["displaySavegameOptions_onGetSaveGames"] then
-        for id, callback in pairs (callbacks ["displaySavegameOptions_onGetSaveGames"]) do
-            callback(optionParameter)
+    if uix_callbacks ["displaySavegameOptions_onGetSaveGames"] then
+        for uix_id, uix_callback in pairs (uix_callbacks ["displaySavegameOptions_onGetSaveGames"]) do
+            uix_callback(optionParameter)
         end
     end
     -- kuertee end: callback
@@ -3121,9 +3148,9 @@ function ModLua.displaySavegameOptions(optionParameter)
 
         -- table.sort(menu.savegames, function (a, b) return a.rawtime > b.rawtime end)
         -- kuertee start: callback
-        if callbacks ["displaySaveGameOptions_sortSaveGames"] then
-            for id, callback in pairs (callbacks ["displaySaveGameOptions_sortSaveGames"]) do
-                callback(menu.savegames, "rawtime", true)
+        if uix_callbacks ["displaySaveGameOptions_sortSaveGames"] then
+            for uix_id, uix_callback in pairs (uix_callbacks ["displaySaveGameOptions_sortSaveGames"]) do
+                uix_callback(menu.savegames, "rawtime", true)
             end
         else
             table.sort(menu.savegames, function (a, b) return a.rawtime > b.rawtime end)
@@ -3257,9 +3284,9 @@ function ModLua.displaySavegameOptions(optionParameter)
 
                     -- kuertee start: callback
                     local isShowUnusedSaveFile = true
-                    if callbacks ["displaySavegameOptions_isShowUnusedSaveGame"] then
-                        for id, callback in pairs (callbacks ["displaySavegameOptions_isShowUnusedSaveGame"]) do
-                            isShowUnusedSaveFile = callback(i)
+                    if uix_callbacks ["displaySavegameOptions_isShowUnusedSaveGame"] then
+                        for uix_id, uix_callback in pairs (uix_callbacks ["displaySavegameOptions_isShowUnusedSaveGame"]) do
+                            isShowUnusedSaveFile = uix_callback(i)
                             if not isShowUnusedSaveFile then
                                 goto continue
                             end
@@ -3287,9 +3314,9 @@ function ModLua.displaySavegameOptions(optionParameter)
 
                 -- table.sort(sortablesaves, function (a, b) return a.rawtime > b.rawtime end)
                 -- kuertee start: callback
-                if callbacks ["displaySaveGameOptions_sortSaveGames"] then
-                    for id, callback in pairs (callbacks ["displaySaveGameOptions_sortSaveGames"]) do
-                        callback(sortablesaves, "rawtime", true)
+                if uix_callbacks ["displaySaveGameOptions_sortSaveGames"] then
+                    for uix_id, uix_callback in pairs (uix_callbacks ["displaySaveGameOptions_sortSaveGames"]) do
+                        uix_callback(sortablesaves, "rawtime", true)
                     end
                 else
                     table.sort(sortablesaves, function (a, b) return a.rawtime > b.rawtime end)
@@ -3300,9 +3327,9 @@ function ModLua.displaySavegameOptions(optionParameter)
 
                 -- table.sort(sortablesaves, function (a, b) return a.rawtime < b.rawtime end)
                 -- kuertee start: callback
-                if callbacks ["displaySaveGameOptions_sortSaveGames"] then
-                    for id, callback in pairs (callbacks ["displaySaveGameOptions_sortSaveGames"]) do
-                        callback(sortablesaves, "rawtime", false)
+                if uix_callbacks ["displaySaveGameOptions_sortSaveGames"] then
+                    for uix_id, uix_callback in pairs (uix_callbacks ["displaySaveGameOptions_sortSaveGames"]) do
+                        uix_callback(sortablesaves, "rawtime", false)
                     end
                 else
                     table.sort(sortablesaves, function (a, b) return a.rawtime < b.rawtime end)
@@ -3313,9 +3340,9 @@ function ModLua.displaySavegameOptions(optionParameter)
 
                 -- table.sort(sortablesaves, function (a, b) return a.displayedname < b.displayedname end)
                 -- kuertee start: callback
-                if callbacks ["displaySaveGameOptions_sortSaveGames"] then
-                    for id, callback in pairs (callbacks ["displaySaveGameOptions_sortSaveGames"]) do
-                        callback(sortablesaves, "displayedname", true)
+                if uix_callbacks ["displaySaveGameOptions_sortSaveGames"] then
+                    for uix_id, uix_callback in pairs (uix_callbacks ["displaySaveGameOptions_sortSaveGames"]) do
+                        uix_callback(sortablesaves, "displayedname", true)
                     end
                 else
                     table.sort(sortablesaves, function (a, b) return a.displayedname < b.displayedname end)
@@ -3326,9 +3353,9 @@ function ModLua.displaySavegameOptions(optionParameter)
 
                 -- table.sort(sortablesaves, function (a, b) return a.displayedname > b.displayedname end)
                 -- kuertee start: callback
-                if callbacks ["displaySaveGameOptions_sortSaveGames"] then
-                    for id, callback in pairs (callbacks ["displaySaveGameOptions_sortSaveGames"]) do
-                        callback(sortablesaves, "displayedname", false)
+                if uix_callbacks ["displaySaveGameOptions_sortSaveGames"] then
+                    for uix_id, uix_callback in pairs (uix_callbacks ["displaySaveGameOptions_sortSaveGames"]) do
+                        uix_callback(sortablesaves, "displayedname", false)
                     end
                 else
                     table.sort(sortablesaves, function (a, b) return a.displayedname < b.displayedname end)
@@ -3337,9 +3364,9 @@ function ModLua.displaySavegameOptions(optionParameter)
             end
             for i, savegame in ipairs(sortablesaves) do
                 -- kuertee start: callback
-                if callbacks ["displaySaveGameOptions_preSaveGameRowAdd"] then
-                    for id, callback in pairs (callbacks ["displaySaveGameOptions_preSaveGameRowAdd"]) do
-                        maxRowHeight = math.max(maxRowHeight, callback(ftable, savegame, savegame.displayedname, i, #sortablesaves, config))
+                if uix_callbacks ["displaySaveGameOptions_preSaveGameRowAdd"] then
+                    for uix_id, uix_callback in pairs (uix_callbacks ["displaySaveGameOptions_preSaveGameRowAdd"]) do
+                        maxRowHeight = math.max(maxRowHeight, uix_callback(ftable, savegame, savegame.displayedname, i, #sortablesaves, config))
                     end
                 end
                 -- kuertee end: callback
@@ -3348,9 +3375,9 @@ function ModLua.displaySavegameOptions(optionParameter)
                 maxRowHeight = math.max(maxRowHeight, menu.addSavegameRow(ftable, savegame, savegame.displayedname, idx))
 
                 -- kuertee start: callback
-                if callbacks ["displaySaveGameOptions_postSaveGameRowAdd"] then
-                    for id, callback in pairs (callbacks ["displaySaveGameOptions_postSaveGameRowAdd"]) do
-                        maxRowHeight = math.max(maxRowHeight, callback(ftable, savegame, savegame.displayedname, i, #sortablesaves))
+                if uix_callbacks ["displaySaveGameOptions_postSaveGameRowAdd"] then
+                    for uix_id, uix_callback in pairs (uix_callbacks ["displaySaveGameOptions_postSaveGameRowAdd"]) do
+                        maxRowHeight = math.max(maxRowHeight, uix_callback(ftable, savegame, savegame.displayedname, i, #sortablesaves))
                     end
                 end
                 -- kuertee end: callback
@@ -3366,9 +3393,9 @@ function ModLua.displaySavegameOptions(optionParameter)
 
                     -- kuertee start: callback
                     local isShowUnusedSaveFile = true
-                    if callbacks ["displaySavegameOptions_isShowUnusedSaveGame"] then
-                        for id, callback in pairs (callbacks ["displaySavegameOptions_isShowUnusedSaveGame"]) do
-                            isShowUnusedSaveFile = callback(i)
+                    if uix_callbacks ["displaySavegameOptions_isShowUnusedSaveGame"] then
+                        for uix_id, uix_callback in pairs (uix_callbacks ["displaySavegameOptions_isShowUnusedSaveGame"]) do
+                            isShowUnusedSaveFile = uix_callback(i)
                             if not isShowUnusedSaveFile then
                                 goto continue
                             end
@@ -3528,9 +3555,9 @@ function ModLua.onUpdate()
 
     -- kuertee start: callback
     local isSaveFileOk = true
-    if callbacks ["onUpdate_start"] then
-        for id, callback in pairs (callbacks ["onUpdate_start"]) do
-            callback(curtime)
+    if uix_callbacks ["onUpdate_start"] then
+        for uix_id, uix_callback in pairs (uix_callbacks ["onUpdate_start"]) do
+            uix_callback(curtime)
         end
     end
     -- kuertee end: callback
@@ -3550,9 +3577,9 @@ function ModLua.onUpdate()
             else
 
                 -- kuertee start: callback
-                if callbacks ["newGameCallback_preNewGame"] then
-                    for id, callback in pairs (callbacks ["newGameCallback_preNewGame"]) do
-                        callback(menu.animationDelay[2].id)
+                if uix_callbacks ["newGameCallback_preNewGame"] then
+                    for uix_id, uix_callback in pairs (uix_callbacks ["newGameCallback_preNewGame"]) do
+                        uix_callback(menu.animationDelay[2].id)
                     end
                 end
                 -- kuertee end: callback
@@ -3609,9 +3636,9 @@ function ModLua.onUpdate()
 
                     -- table.sort(menu.savegames, function (a, b) return a.rawtime > b.rawtime end)
                     -- kuertee start: callback
-                    if callbacks ["displaySaveGameOptions_sortSaveGames"] then
-                        for id, callback in pairs (callbacks ["displaySaveGameOptions_sortSaveGames"]) do
-                            callback(menu.savegames, "rawtime", true)
+                    if uix_callbacks ["displaySaveGameOptions_sortSaveGames"] then
+                        for uix_id, uix_callback in pairs (uix_callbacks ["displaySaveGameOptions_sortSaveGames"]) do
+                            uix_callback(menu.savegames, "rawtime", true)
                         end
                     else
                         table.sort(menu.savegames, function (a, b) return a.rawtime > b.rawtime end)
@@ -3794,9 +3821,9 @@ function ModLua.newGameCallback(option, checked)
                         Helper.addDelayedOneTimeCallbackOnUpdate(
                             function ()
                                 C.SetUserData("tutorial_started_from", tostring(value));
-                                if callbacks ["newGameCallback_preNewGame"] then
-                                    for id, callback in pairs (callbacks ["newGameCallback_preNewGame"]) do
-                                        callback(option.id)
+                                if uix_callbacks ["newGameCallback_preNewGame"] then
+                                    for uix_id, uix_callback in pairs (uix_callbacks ["newGameCallback_preNewGame"]) do
+                                        uix_callback(option.id)
                                     end
                                 end
                                 NewGame(option.id)
@@ -3808,9 +3835,9 @@ function ModLua.newGameCallback(option, checked)
                     -- kuertee start: callback
                     Helper.addDelayedOneTimeCallbackOnUpdate(
                         function ()
-                            if callbacks ["newGameCallback_preNewGame"] then
-                                for id, callback in pairs (callbacks ["newGameCallback_preNewGame"]) do
-                                    callback(option.id)
+                            if uix_callbacks ["newGameCallback_preNewGame"] then
+                                for uix_id, uix_callback in pairs (uix_callbacks ["newGameCallback_preNewGame"]) do
+                                    uix_callback(option.id)
                                 end
                             end
                             NewGame(option.id) 
@@ -3844,15 +3871,18 @@ function ModLua.registerCallback(callbackName, callbackFunction, id)
     -- note 3: new callbacks can be added or existing callbacks can be edited. but commit your additions/changes to the mod's GIT repository.
     -- note 4: search for the callback names to see where they are executed.
     -- note 5: if a callback requires a return value, return it in an object var. e.g. "display_on_set_room_active" requires a return of {active = true | false}.
-    if callbacks [callbackName] == nil then
-        callbacks [callbackName] = {}
+    if uix_callbacks [callbackName] == nil then
+        uix_callbacks [callbackName] = {}
     end
-    if not callbacks[callbackName][id] then
+    if not uix_callbacks[callbackName][id] then
         if not id then
             uix_callbackCount = uix_callbackCount + 1
             id = "_" .. tostring(uix_callbackCount)
         end
-        callbacks[callbackName][id] = callbackFunction
+        uix_callbacks[callbackName][id] = callbackFunction
+        if Helper.isDebugCallbacks then
+            DebugError("uix registerCallback: uix_callbacks[" .. tostring(callbackName) .. "][" .. tostring(id) .. "]: " .. tostring(uix_callbacks[callbackName][id]))
+        end
     else
         DebugError("uix registerCallback: callback at " .. callbackName .. " with id " .. tostring(id) .. " was already previously registered")
     end
@@ -3867,8 +3897,8 @@ function ModLua.deregisterCallback(callbackName, callbackFunction, id)
     if id then
         table.insert(uix_callbacks_toDeregister[callbackName], id)
     else
-        if callbacks[callbackName] then
-            for id, func in pairs(callbacks[callbackName]) do
+        if uix_callbacks[callbackName] then
+            for id, func in pairs(uix_callbacks[callbackName]) do
                 if func == callbackFunction then
                     table.insert(uix_callbacks_toDeregister[callbackName], id)
                 end
@@ -3877,17 +3907,23 @@ function ModLua.deregisterCallback(callbackName, callbackFunction, id)
     end
     if not uix_isDeregisterQueued then
         uix_isDeregisterQueued = true
-        Helper.addDelayedOneTimeCallbackOnUpdate(menu.deregisterCallbacksNow, true, getElapsedTime() + 1)
+        Helper.addDelayedOneTimeCallbackOnUpdate(ModLua.deregisterCallbacksNow, true, getElapsedTime() + 1)
     end
 end
 
 function ModLua.deregisterCallbacksNow()
     uix_isDeregisterQueued = nil
     for callbackName, ids in pairs(uix_callbacks_toDeregister) do
-        if callbacks[callbackName] then
+        if uix_callbacks[callbackName] then
             for _, id in ipairs(ids) do
-                if callbacks[callbackName][id] then
-                    callbacks[callbackName][id] = nil
+                if uix_callbacks[callbackName][id] then
+                    if Helper.isDebugCallbacks then
+                        DebugError("uix registerCallback (pre): uix_callbacks[" .. tostring(callbackName) .. "][" .. tostring(id) .. "]: " .. tostring(uix_callbacks[callbackName][id]))
+                    end
+                    uix_callbacks[callbackName][id] = nil
+                    if Helper.isDebugCallbacks then
+                        DebugError("uix registerCallback (post): uix_callbacks[" .. tostring(callbackName) .. "][" .. tostring(id) .. "]: " .. tostring(uix_callbacks[callbackName][id]))
+                    end
                 else
                     DebugError("uix updateCallback: callback at " .. callbackName .. " with id " .. tostring(id) .. " doesn't exist")
                 end
@@ -3908,17 +3944,23 @@ function ModLua.updateCallback(callbackName, id, callbackFunction)
     end
     if not uix_isUpdateQueued then
         uix_isUpdateQueued = true
-        Helper.addDelayedOneTimeCallbackOnUpdate(menu.updateCallbacksNow, true, getElapsedTime() + 1)
+        Helper.addDelayedOneTimeCallbackOnUpdate(ModLua.updateCallbacksNow, true, getElapsedTime() + 1)
     end
 end
 
 function ModLua.updateCallbacksNow()
     uix_isUpdateQueued = nil
     for callbackName, updateDatas in pairs(uix_callbacks_toUpdate) do
-        if callbacks[callbackName] then
+        if uix_callbacks[callbackName] then
             for _, updateData in ipairs(updateDatas) do
-                if callbacks[callbackName][updateData.id] then
-                    callbacks[callbackName][updateData.id] = updateData.callbackFunction
+                if uix_callbacks[callbackName][updateData.id] then
+                    if Helper.isDebugCallbacks then
+                        DebugError("uix updateCallbacksNow (pre): uix_callbacks[" .. tostring(callbackName) .. "][" .. tostring(updateData.id) .. "]: " .. tostring(uix_callbacks[callbackName][updateData.id]))
+                    end
+                    uix_callbacks[callbackName][updateData.id] = updateData.callbackFunction
+                    if Helper.isDebugCallbacks then
+                        DebugError("uix updateCallbacksNow (post): uix_callbacks[" .. tostring(callbackName) .. "][" .. tostring(updateData.id) .. "]: " .. tostring(uix_callbacks[callbackName][updateData.id]))
+                    end
                 else
                     DebugError("uix updateCallback: callback at " .. callbackName .. " with id " .. tostring(id) .. " doesn't exist")
                 end
