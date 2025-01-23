@@ -6573,26 +6573,11 @@ function menu.createInfoFrame()
 			menu.createCheats(menu.infoFrame)
 		else
 			-- empty
-			-- kuertee start: callback
+
+			-- start Forleyor_infoCenter callback:
 			-- menu.infoFrame.properties.background.icon = ""
 			-- menu.infoFrame.properties.autoFrameHeight = false
 			-- menu.infoFrame:addTable(0)
-			local isCreated = false
-			if uix_callbacks ["createInfoFrame_on_menu_infoTableMode"] then
-				for uix_id, uix_callback in pairs (uix_callbacks ["createInfoFrame_on_menu_infoTableMode"]) do
-					if uix_callback (menu.infoFrame) then
-						isCreated = true
-					end
-				end
-			end
-			if isCreated ~= true then
-				menu.infoFrame.properties.background.icon = ""
-				menu.infoFrame.properties.autoFrameHeight = false
-				menu.infoFrame:addTable(0)
-			end
-			-- kuertee end: callback
-
-			-- start Forleyor_infoCenter callback:
 			local isCreated = false
 			if uix_callbacks ["ic_createInfoFrame"] then
 				for uix_id, uix_callback in pairs (uix_callbacks ["ic_createInfoFrame"]) do
@@ -6601,10 +6586,23 @@ function menu.createInfoFrame()
 					end
 				end
 			end
+			-- end Forleyor_infoCenter callback:
+
+			-- kuertee start: callback
+			if uix_callbacks ["createInfoFrame_on_menu_infoTableMode"] then
+				for uix_id, uix_callback in pairs (uix_callbacks ["createInfoFrame_on_menu_infoTableMode"]) do
+					if uix_callback (menu.infoFrame) then
+						isCreated = true
+					end
+				end
+			end
+
 			if isCreated ~= true then
+				menu.infoFrame.properties.background.icon = ""
+				menu.infoFrame.properties.autoFrameHeight = false
 				menu.infoFrame:addTable(0)
 			end
-			-- end Forleyor_infoCenter callback:
+			-- kuertee end: callback
 
 		end
 
