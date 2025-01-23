@@ -225,7 +225,7 @@ local config = {
 }
 
 -- kuertee start:
-local callbacks = {}
+local uix_callbacks = {}
 -- kuertee end
 
 -- init menu and register with Helper
@@ -272,9 +272,9 @@ function menu.cleanup()
 	menu.printedshipsizes = {}
 
 	-- start: alexandretk call-back
-	if callbacks ["cleanup"] then		
-			for id, callback in pairs (callbacks ["cleanup"]) do
-			callback ()
+	if uix_callbacks ["cleanup"] then		
+			for uix_id, uix_callback in pairs (uix_callbacks ["cleanup"]) do
+			uix_callback ()
 	    end		
 	end
 	-- end: alexandretk call-back
@@ -302,9 +302,9 @@ function menu.cleanup()
 	menu.frame = nil
 
 	-- kuertee start: callback
-	if callbacks ["cleanup"] then
-		for id, callback in pairs (callbacks ["cleanup"]) do
-			callback ()
+	if uix_callbacks ["cleanup"] then
+		for uix_id, uix_callback in pairs (uix_callbacks ["cleanup"]) do
+			uix_callback ()
 		end
 	end
 	-- kuertee end: callback
@@ -388,13 +388,13 @@ function menu.onShowMenu(state)
 	menu.sortedpurposelist = { "fight", "trade", "mine", "build", "misc" }
 
 	-- start: alexandretk call-back
-	if callbacks ["onShowMenu_override_menu_printed_variables"] then		
+	if uix_callbacks ["onShowMenu_override_menu_printed_variables"] then		
 		local printedshipdata_override = {}
 		local printedshipsizes_override = {}
 		local printedmilxlcapshiptype_override = {}
 		local printedmillcapshiptypes_override = {}
-		for id, callback in pairs (callbacks ["onShowMenu_override_menu_printed_variables"]) do
-			printedshipsizes_override,printedshipdata_override,printedmilxlcapshiptype_override,printedmillcapshiptypes_override = callback()
+		for uix_id, uix_callback in pairs (uix_callbacks ["onShowMenu_override_menu_printed_variables"]) do
+			printedshipsizes_override,printedshipdata_override,printedmilxlcapshiptype_override,printedmillcapshiptypes_override = uix_callback()
 			menu.printedshipdata = printedshipdata_override
 			menu.printedshipsizes = printedshipsizes_override
 			menu.printedmilitaryxlcapitalshiptypes =  printedmilxlcapshiptype_override
@@ -784,11 +784,11 @@ function menu.onShowMenu(state)
 		for _, shipdata in ipairs(menu.data.Ships[size]) do
 
 			-- start: alexandretk call-back
-			if callbacks ["onShowMenu_override_sizecategory"] then
+			if uix_callbacks ["onShowMenu_override_sizecategory"] then
 				local purpose, shiptypename, shipicon = GetMacroData(shipdata.id, "primarypurpose", "shiptypename", "icon")
 				local sizecategory = "noncapital"
-				for id, callback in pairs (callbacks ["onShowMenu_override_sizecategory"]) do
-					callback(menu,shipdata,size,purpose,typecategory,sizecategory,shiptypename,shipicon)
+				for uix_id, uix_callback in pairs (uix_callbacks ["onShowMenu_override_sizecategory"]) do
+					uix_callback(menu,shipdata,size,purpose,typecategory,sizecategory,shiptypename,shipicon)
 				end
 			else
 			-- end: alexandretk call-back
@@ -929,11 +929,11 @@ function menu.onShowMenu(state)
 					end
 
 					-- start: alexandretk call-backs
-					if sizecategory == "capital" and callbacks ["onShowMenu_override_capitalsizecategory"] then
+					if sizecategory == "capital" and uix_callbacks ["onShowMenu_override_capitalsizecategory"] then
 						local purpose, shiptypename, shipicon = GetMacroData(shipdata.id, "primarypurpose", "shiptypename", "icon")
 						local sizecategory = "noncapital"
-						for id, callback in pairs (callbacks ["onShowMenu_override_capitalsizecategory"]) do
-							callback(menu,size,purpose,typecategory,sizecategory,shiptypename,shipicon)
+						for uix_id, uix_callback in pairs (uix_callbacks ["onShowMenu_override_capitalsizecategory"]) do
+							uix_callback(menu,size,purpose,typecategory,sizecategory,shiptypename,shipicon)
 						end
 					else
 					-- end: alexandretk call-backs
@@ -1085,10 +1085,10 @@ function menu.addIndexEntry(array, item, name, rowdata, indent, numentries, expa
 			if type(rowdata[2]) == "table" and not menu.printedshipdata[rowdata[2]] then
 
 				-- start: alexandretk call-back
-				if callbacks ["onShowMenu_addingTypeIndexEntries"] then
+				if uix_callbacks ["onShowMenu_addingTypeIndexEntries"] then
 					local addthis
-					for id, callback in pairs (callbacks["onShowMenu_addingTypeIndexEntries"]) do
-						addthis = callback(menu,rowdata, numunread,C)
+					for uix_id, uix_callback in pairs (uix_callbacks["onShowMenu_addingTypeIndexEntries"]) do
+						addthis = uix_callback(menu,rowdata, numunread,C)
 						numunread = numunread + addthis
 					end
 				else
@@ -1109,10 +1109,10 @@ function menu.addIndexEntry(array, item, name, rowdata, indent, numentries, expa
 			else
 
 				-- start: alexandretk call-back
-				if callbacks ["onShowMenu_addingIndexEntries"] then
+				if uix_callbacks ["onShowMenu_addingIndexEntries"] then
 					local addthis
-					for id, callback in pairs (callbacks["onShowMenu_addingIndexEntries"]) do
-						addthis = callback(menu, numunread,rowdata,C)
+					for uix_id, uix_callback in pairs (uix_callbacks["onShowMenu_addingIndexEntries"]) do
+						addthis = uix_callback(menu, numunread,rowdata,C)
 						numunread = numunread + addthis
 					end
 				else
@@ -1252,9 +1252,9 @@ function menu.createIndex()
 		numentries = 0
 
 		-- start: alexandretk call-back
-		if callbacks ["onShowMenu_addingIndexNumEntries"] then
-			for id, callback in pairs (callbacks ["onShowMenu_addingIndexNumEntries"]) do
-				callback(C,ship_index,purpose, menu)
+		if uix_callbacks ["onShowMenu_addingIndexNumEntries"] then
+			for uix_id, uix_callback in pairs (uix_callbacks ["onShowMenu_addingIndexNumEntries"]) do
+				uix_callback(C,ship_index,purpose, menu)
 			end
 		else
 		-- end: alexandretk call-back
@@ -1462,9 +1462,9 @@ end
 -- assemble the menu
 function menu.display()
 	-- kuertee start: callback
-	if callbacks ["display_on_start"] then
-		for id, callback in pairs (callbacks ["display_on_start"]) do
-			callback (menu.infoFrame, tableProperties)
+	if uix_callbacks ["display_on_start"] then
+		for uix_id, uix_callback in pairs (uix_callbacks ["display_on_start"]) do
+			uix_callback (menu.infoFrame, tableProperties)
 		end
 	end
 	-- kuertee end: callback
@@ -2547,9 +2547,9 @@ function menu.addDetailRows(ftable)
 				end
 
 				-- start: kuertee call-back
-				if callbacks ["addDetailRow_known_cluster_production_module_entries"] then		
-						for id, callback in pairs (callbacks ["addDetailRow_known_cluster_production_module_entries"]) do
-						callback(ftable, clusters)
+				if uix_callbacks ["addDetailRow_known_cluster_production_module_entries"] then		
+						for uix_id, uix_callback in pairs (uix_callbacks ["addDetailRow_known_cluster_production_module_entries"]) do
+						uix_callback(ftable, clusters)
 				    end		
 				end
 				-- end: kuertee call-back
@@ -2640,9 +2640,9 @@ function menu.addDetailRows(ftable)
 				end
 
 				-- start: kuertee call-back
-				if callbacks ["addDetailRow_known_sector_production_module_entries"] then		
-						for id, callback in pairs (callbacks ["addDetailRow_known_sector_production_module_entries"]) do
-						callback(ftable, menu.object)
+				if uix_callbacks ["addDetailRow_known_sector_production_module_entries"] then		
+						for uix_id, uix_callback in pairs (uix_callbacks ["addDetailRow_known_sector_production_module_entries"]) do
+						uix_callback(ftable, menu.object)
 				    end		
 				end
 				-- end: kuertee call-back
@@ -2885,9 +2885,9 @@ function menu.addDetailRows(ftable)
 			-- ship type
 
 			-- start: alexandretk call-back
-			if callbacks ["onShowMenu_addOtherShipTypes"] then
-				for id, callback in pairs (callbacks ["onShowMenu_addOtherShipTypes"]) do
-					callback(menu, ftable)
+			if uix_callbacks ["onShowMenu_addOtherShipTypes"] then
+				for uix_id, uix_callback in pairs (uix_callbacks ["onShowMenu_addOtherShipTypes"]) do
+					uix_callback(menu, ftable)
 				end
 			else
 			-- end: alexandretk call-back
@@ -3105,9 +3105,9 @@ function menu.addDetailRows(ftable)
 			menu.addDetailRow(ftable, ReadText(1001, 9061), ConvertIntegerString(C.GetDefaultMissileStorageCapacity(menu.id), true, 0, true))
 
 			-- start: kuertee call-back
-			if callbacks ["addDetailRow_post_missile_entry"] then		
-					for id, callback in pairs (callbacks ["addDetailRow_post_missile_entry"]) do
-					callback(ftable, col1, col2, col3, offsetx, iswordwrap, properties1, properties2, properties3, entry)
+			if uix_callbacks ["addDetailRow_post_missile_entry"] then		
+					for uix_id, uix_callback in pairs (uix_callbacks ["addDetailRow_post_missile_entry"]) do
+					uix_callback(ftable, col1, col2, col3, offsetx, iswordwrap, properties1, properties2, properties3, entry)
 			    end		
 			end
 			-- end: kuertee call-back
@@ -4089,15 +4089,15 @@ function menu.registerCallback(callbackName, callbackFunction, id)
 	-- note 3: new callbacks can be added or existing callbacks can be edited. but commit your additions/changes to the mod's GIT repository.
 	-- note 4: search for the callback names to see where they are executed.
 	-- note 5: if a callback requires a return value, return it in an object var. e.g. "display_on_set_room_active" requires a return of {active = true | false}.
-	if callbacks [callbackName] == nil then
-		callbacks [callbackName] = {}
+	if uix_callbacks [callbackName] == nil then
+		uix_callbacks [callbackName] = {}
 	end
-	if not callbacks[callbackName][id] then
+	if not uix_callbacks[callbackName][id] then
 		if not id then
 			uix_callbackCount = uix_callbackCount + 1
 			id = "_" .. tostring(uix_callbackCount)
 		end
-		callbacks[callbackName][id] = callbackFunction
+		uix_callbacks[callbackName][id] = callbackFunction
 	else
 		DebugError("uix registerCallback: callback at " .. callbackName .. " with id " .. tostring(id) .. " was already previously registered")
 	end
@@ -4112,8 +4112,8 @@ function menu.deregisterCallback(callbackName, callbackFunction, id)
 	if id then
 		table.insert(uix_callbacks_toDeregister[callbackName], id)
 	else
-		if callbacks[callbackName] then
-			for id, func in pairs(callbacks[callbackName]) do
+		if uix_callbacks[callbackName] then
+			for id, func in pairs(uix_callbacks[callbackName]) do
 				if func == callbackFunction then
 					table.insert(uix_callbacks_toDeregister[callbackName], id)
 				end
@@ -4129,12 +4129,12 @@ end
 function menu.deregisterCallbacksNow()
 	uix_isDeregisterQueued = nil
 	for callbackName, ids in pairs(uix_callbacks_toDeregister) do
-		if callbacks[callbackName] then
+		if uix_callbacks[callbackName] then
 			for _, id in ipairs(ids) do
-				if callbacks[callbackName][id] then
-					callbacks[callbackName][id] = nil
+				if uix_callbacks[callbackName][id] then
+					uix_callbacks[callbackName][id] = nil
 				else
-					DebugError("uix updateCallback: callback at " .. callbackName .. " with id " .. tostring(id) .. " doesn't exist")
+					DebugError("uix deregisterCallbacksNow: callback at " .. callbackName .. " with id " .. tostring(id) .. " doesn't exist")
 				end
 			end
 		end
@@ -4160,12 +4160,12 @@ end
 function menu.updateCallbacksNow()
 	uix_isUpdateQueued = nil
 	for callbackName, updateDatas in pairs(uix_callbacks_toUpdate) do
-		if callbacks[callbackName] then
+		if uix_callbacks[callbackName] then
 			for _, updateData in ipairs(updateDatas) do
-				if callbacks[callbackName][updateData.id] then
-					callbacks[callbackName][updateData.id] = updateData.callbackFunction
+				if uix_callbacks[callbackName][updateData.id] then
+					uix_callbacks[callbackName][updateData.id] = updateData.callbackFunction
 				else
-					DebugError("uix updateCallback: callback at " .. callbackName .. " with id " .. tostring(id) .. " doesn't exist")
+					DebugError("uix updateCallbacksNow: callback at " .. callbackName .. " with id " .. tostring(id) .. " doesn't exist")
 				end
 			end
 		end

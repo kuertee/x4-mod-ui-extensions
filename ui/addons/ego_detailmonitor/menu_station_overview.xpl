@@ -288,7 +288,7 @@ local config = {
 }
 
 -- kuertee start:
-local callbacks = {}
+local uix_callbacks = {}
 -- kuertee end
 
 -- init menu and register with Helper
@@ -353,9 +353,9 @@ function menu.cleanup()
 	menu.selectedCols = {}
 
 	-- kuertee start: callback
-	if callbacks ["cleanup"] then
-		for id, callback in pairs (callbacks ["cleanup"]) do
-			callback ()
+	if uix_callbacks ["cleanup"] then
+		for uix_id, uix_callback in pairs (uix_callbacks ["cleanup"]) do
+			uix_callback ()
 		end
 	end
 	-- kuertee end: callback
@@ -405,9 +405,9 @@ function menu.onShowMenu(state)
 	menu.displayedgraphwares = {}
 
 	-- kuertee start: callback
-	if callbacks ["onShowMenu_start"] then
-		for id, callback in pairs (callbacks ["onShowMenu_start"]) do
-			callback (menu.container)
+	if uix_callbacks ["onShowMenu_start"] then
+		for uix_id, uix_callback in pairs (uix_callbacks ["onShowMenu_start"]) do
+			uix_callback (menu.container)
 		end
 	end
 	-- kuertee end: callback
@@ -1125,9 +1125,9 @@ end
 
 function menu.setupFlowchartData()
 	-- kuertee start: callback
-	if callbacks ["setupFlowchartData_on_start"] then
-		for id, callback in pairs (callbacks ["setupFlowchartData_on_start"]) do
-			callback ()
+	if uix_callbacks ["setupFlowchartData_on_start"] then
+		for uix_id, uix_callback in pairs (uix_callbacks ["setupFlowchartData_on_start"]) do
+			uix_callback ()
 		end
 	end
 	-- kuertee end: callback
@@ -1584,9 +1584,9 @@ function menu.setupFlowchartData()
 	table.sort(remainingcargonodes, function (a, b) return a.text < b.text end)
 	if isplayerowned and C.IsComponentClass(menu.container, "container") then
 		-- kuertee start: callback
-		if callbacks ["setupFlowchartData_pre_trade_wares_button"] then
-			for id, callback in pairs (callbacks ["setupFlowchartData_pre_trade_wares_button"]) do
-				callback (remainingcargonodes)
+		if uix_callbacks ["setupFlowchartData_pre_trade_wares_button"] then
+			for uix_id, uix_callback in pairs (uix_callbacks ["setupFlowchartData_pre_trade_wares_button"]) do
+				uix_callback (remainingcargonodes)
 			end
 		end
 		-- kuertee end: callback
@@ -1775,12 +1775,12 @@ function menu.display()
 
 	-- row[1]:createText(menu.container and GetComponentData(menu.containerid, "name") or "Flowchart Test")
 	-- kuertee start: callback
-	if callbacks ["display_get_station_name_extras"] then
+	if uix_callbacks ["display_get_station_name_extras"] then
 		local stationName = menu.container and GetComponentData(menu.containerid, "name") or "Flowchart Test"
 		local extraNames = {}
 		if menu.container then
-			for id, callback in pairs (callbacks ["display_get_station_name_extras"]) do
-				table.insert(extraNames, callback(menu.container))
+			for uix_id, uix_callback in pairs (uix_callbacks ["display_get_station_name_extras"]) do
+				table.insert(extraNames, uix_callback(menu.container))
 			end
 			if #extraNames > 0 then
 				for i, extraName in ipairs(extraNames) do
@@ -2304,9 +2304,9 @@ function menu.onExpandTradeWares(frame, ftable, ftable2, nodedata)
 	ftable2:setColWidthPercent(3, 50)
 
 	-- kuertee start: callback
-	if callbacks ["onExpandTradeWares_on_start"] then
-		for id, callback in pairs (callbacks ["onExpandTradeWares_on_start"]) do
-			callback ()
+	if uix_callbacks ["onExpandTradeWares_on_start"] then
+		for uix_id, uix_callback in pairs (uix_callbacks ["onExpandTradeWares_on_start"]) do
+			uix_callback ()
 		end
 	end
 	-- kuertee end: callback
@@ -2337,11 +2337,11 @@ function menu.onExpandTradeWares(frame, ftable, ftable2, nodedata)
 		if not excludedwares[ware] then
 
 			-- kuertee start: callback
-			if (not callbacks ["onExpandTradeWares_insert_ware_to_allwares"]) or (not #callbacks ["onExpandTradeWares_insert_ware_to_allwares"]) then
+			if (not uix_callbacks ["onExpandTradeWares_insert_ware_to_allwares"]) or (not #uix_callbacks ["onExpandTradeWares_insert_ware_to_allwares"]) then
 				table.insert(allwares, { ware = ware, name = GetWareData(ware, "name") })
-			elseif callbacks ["onExpandTradeWares_insert_ware_to_allwares"] then
-				for id, callback in pairs (callbacks ["onExpandTradeWares_insert_ware_to_allwares"]) do
-					callback (allwares, ware)
+			elseif uix_callbacks ["onExpandTradeWares_insert_ware_to_allwares"] then
+				for uix_id, uix_callback in pairs (uix_callbacks ["onExpandTradeWares_insert_ware_to_allwares"]) do
+					uix_callback (allwares, ware)
 				end
 			end
 			-- kuertee end: callback
@@ -4401,9 +4401,9 @@ end
 function menu.updateExpandedNode(row, col)
 	if menu.expandedNode then
 		-- kuertee start: callback
-		if callbacks ["updateExpandedNode_at_start"] then
-			for id, callback in pairs (callbacks ["updateExpandedNode_at_start"]) do
-				callback(row, col)
+		if uix_callbacks ["updateExpandedNode_at_start"] then
+			for uix_id, uix_callback in pairs (uix_callbacks ["updateExpandedNode_at_start"]) do
+				uix_callback(row, col)
 			end
 		end
 		-- kuertee end: callback
@@ -4415,9 +4415,9 @@ function menu.updateExpandedNode(row, col)
 		node:expand()
 
 		-- kuertee start: callback
-		if callbacks ["updateExpandedNode_at_end"] then
-			for id, callback in pairs (callbacks ["updateExpandedNode_at_end"]) do
-				callback(row, col)
+		if uix_callbacks ["updateExpandedNode_at_end"] then
+			for uix_id, uix_callback in pairs (uix_callbacks ["updateExpandedNode_at_end"]) do
+				uix_callback(row, col)
 			end
 		end
 		-- kuertee end: callback
@@ -5315,15 +5315,15 @@ function menu.registerCallback(callbackName, callbackFunction, id)
 	-- note 3: new callbacks can be added or existing callbacks can be edited. but commit your additions/changes to the mod's GIT repository.
 	-- note 4: search for the callback names to see where they are executed.
 	-- note 5: if a callback requires a return value, return it in an object var. e.g. "display_on_set_room_active" requires a return of {active = true | false}.
-	if callbacks [callbackName] == nil then
-		callbacks [callbackName] = {}
+	if uix_callbacks [callbackName] == nil then
+		uix_callbacks [callbackName] = {}
 	end
-	if not callbacks[callbackName][id] then
+	if not uix_callbacks[callbackName][id] then
 		if not id then
 			uix_callbackCount = uix_callbackCount + 1
 			id = "_" .. tostring(uix_callbackCount)
 		end
-		callbacks[callbackName][id] = callbackFunction
+		uix_callbacks[callbackName][id] = callbackFunction
 	else
 		DebugError("uix registerCallback: callback at " .. callbackName .. " with id " .. tostring(id) .. " was already previously registered")
 	end
@@ -5338,8 +5338,8 @@ function menu.deregisterCallback(callbackName, callbackFunction, id)
 	if id then
 		table.insert(uix_callbacks_toDeregister[callbackName], id)
 	else
-		if menu.callbacks[callbackName] then
-			for id, func in pairs(menu.callbacks[callbackName]) do
+		if uix_callbacks[callbackName] then
+			for id, func in pairs(uix_callbacks[callbackName]) do
 				if func == callbackFunction then
 					table.insert(uix_callbacks_toDeregister[callbackName], id)
 				end
@@ -5355,12 +5355,12 @@ end
 function menu.deregisterCallbacksNow()
 	uix_isDeregisterQueued = nil
 	for callbackName, ids in pairs(uix_callbacks_toDeregister) do
-		if menu.callbacks[callbackName] then
+		if uix_callbacks[callbackName] then
 			for _, id in ipairs(ids) do
-				if menu.callbacks[callbackName][id] then
-					menu.callbacks[callbackName][id] = nil
+				if uix_callbacks[callbackName][id] then
+					uix_callbacks[callbackName][id] = nil
 				else
-					DebugError("uix updateCallback: callback at " .. callbackName .. " with id " .. tostring(id) .. " doesn't exist")
+					DebugError("uix deregisterCallbacksNow: callback at " .. callbackName .. " with id " .. tostring(id) .. " doesn't exist")
 				end
 			end
 		end
@@ -5386,12 +5386,12 @@ end
 function menu.updateCallbacksNow()
 	uix_isUpdateQueued = nil
 	for callbackName, updateDatas in pairs(uix_callbacks_toUpdate) do
-		if menu.callbacks[callbackName] then
+		if uix_callbacks[callbackName] then
 			for _, updateData in ipairs(updateDatas) do
-				if menu.callbacks[callbackName][updateData.id] then
-					menu.callbacks[callbackName][updateData.id] = updateData.callbackFunction
+				if uix_callbacks[callbackName][updateData.id] then
+					uix_callbacks[callbackName][updateData.id] = updateData.callbackFunction
 				else
-					DebugError("uix updateCallback: callback at " .. callbackName .. " with id " .. tostring(id) .. " doesn't exist")
+					DebugError("uix updateCallbacksNow: callback at " .. callbackName .. " with id " .. tostring(id) .. " doesn't exist")
 				end
 			end
 		end

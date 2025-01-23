@@ -48,7 +48,7 @@ local config = {
 }
 
 -- kuertee start:
-local callbacks = {}
+local uix_callbacks = {}
 -- kuertee end
 
 local function init()
@@ -87,9 +87,9 @@ function menu.cleanup()
 	menu.saveOption = false
 
 	-- kuertee start:
-	if callbacks ["cleanup_end"] then
-		for id, callback in pairs (callbacks ["cleanup_end"]) do
-			callback ()
+	if uix_callbacks ["cleanup_end"] then
+		for uix_id, uix_callback in pairs (uix_callbacks ["cleanup_end"]) do
+			uix_callback ()
 		end
 	end
 	-- kuertee end
@@ -205,9 +205,9 @@ function menu.createInfoFrame()
 
 	-- kuertee start: callback
 	local frameProperties, isUseFrameHeight
-	if callbacks ["createInfoFrame_custom_frame_properties"] then
-		for id, callback in pairs (callbacks ["createInfoFrame_custom_frame_properties"]) do
-			frameProperties, isUseFrameHeight = callback (config)
+	if uix_callbacks ["createInfoFrame_custom_frame_properties"] then
+		for uix_id, uix_callback in pairs (uix_callbacks ["createInfoFrame_custom_frame_properties"]) do
+			frameProperties, isUseFrameHeight = uix_callback (config)
 			if frameProperties then break end
 		end
 		-- Lib.Print_Table (frameProperties)
@@ -450,15 +450,15 @@ function menu.registerCallback(callbackName, callbackFunction, id)
 	-- note 3: new callbacks can be added or existing callbacks can be edited. but commit your additions/changes to the mod's GIT repository.
 	-- note 4: search for the callback names to see where they are executed.
 	-- note 5: if a callback requires a return value, return it in an object var. e.g. "display_on_set_room_active" requires a return of {active = true | false}.
-	if callbacks [callbackName] == nil then
-		callbacks [callbackName] = {}
+	if uix_callbacks [callbackName] == nil then
+		uix_callbacks [callbackName] = {}
 	end
-	if not callbacks[callbackName][id] then
+	if not uix_callbacks[callbackName][id] then
 		if not id then
 			uix_callbackCount = uix_callbackCount + 1
 			id = "_" .. tostring(uix_callbackCount)
 		end
-		callbacks[callbackName][id] = callbackFunction
+		uix_callbacks[callbackName][id] = callbackFunction
 	else
 		DebugError("uix registerCallback: callback at " .. callbackName .. " with id " .. tostring(id) .. " was already previously registered")
 	end
@@ -473,8 +473,8 @@ function menu.deregisterCallback(callbackName, callbackFunction, id)
 	if id then
 		table.insert(uix_callbacks_toDeregister[callbackName], id)
 	else
-		if callbacks[callbackName] then
-			for id, func in pairs(callbacks[callbackName]) do
+		if uix_callbacks[callbackName] then
+			for id, func in pairs(uix_callbacks[callbackName]) do
 				if func == callbackFunction then
 					table.insert(uix_callbacks_toDeregister[callbackName], id)
 				end
@@ -490,12 +490,12 @@ end
 function menu.deregisterCallbacksNow()
 	uix_isDeregisterQueued = nil
 	for callbackName, ids in pairs(uix_callbacks_toDeregister) do
-		if callbacks[callbackName] then
+		if uix_callbacks[callbackName] then
 			for _, id in ipairs(ids) do
-				if callbacks[callbackName][id] then
-					callbacks[callbackName][id] = nil
+				if uix_callbacks[callbackName][id] then
+					uix_callbacks[callbackName][id] = nil
 				else
-					DebugError("uix updateCallback: callback at " .. callbackName .. " with id " .. tostring(id) .. " doesn't exist")
+					DebugError("uix deregisterCallbacksNow: callback at " .. callbackName .. " with id " .. tostring(id) .. " doesn't exist")
 				end
 			end
 		end
@@ -521,12 +521,12 @@ end
 function menu.updateCallbacksNow()
 	uix_isUpdateQueued = nil
 	for callbackName, updateDatas in pairs(uix_callbacks_toUpdate) do
-		if callbacks[callbackName] then
+		if uix_callbacks[callbackName] then
 			for _, updateData in ipairs(updateDatas) do
-				if callbacks[callbackName][updateData.id] then
-					callbacks[callbackName][updateData.id] = updateData.callbackFunction
+				if uix_callbacks[callbackName][updateData.id] then
+					uix_callbacks[callbackName][updateData.id] = updateData.callbackFunction
 				else
-					DebugError("uix updateCallback: callback at " .. callbackName .. " with id " .. tostring(id) .. " doesn't exist")
+					DebugError("uix updateCallbacksNow: callback at " .. callbackName .. " with id " .. tostring(id) .. " doesn't exist")
 				end
 			end
 		end

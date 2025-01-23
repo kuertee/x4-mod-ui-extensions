@@ -448,7 +448,7 @@ if C.AreVenturesCompatible() then
 end
 
 -- kuertee start:
-local callbacks = {}
+local uix_callbacks = {}
 -- kuertee end
 
 local function init()
@@ -536,9 +536,9 @@ function menu.cleanup()
 	C.SetUICoverOverride(false)
 
 	-- kuertee start: callback
-	if callbacks ["cleanup"] then
-		for id, callback in pairs (callbacks ["cleanup"]) do
-			callback ()
+	if uix_callbacks ["cleanup"] then
+		for uix_id, uix_callback in pairs (uix_callbacks ["cleanup"]) do
+			uix_callback ()
 		end
 	end
 	-- kuertee end: callback
@@ -588,9 +588,9 @@ end
 
 function menu.buttonTogglePlayerInfo(mode)
 	-- kuertee start: callback
-	if callbacks ["buttonTogglePlayerInfo_on_start"] then
-		for id, callback in pairs (callbacks ["buttonTogglePlayerInfo_on_start"]) do
-			callback (mode, config)
+	if uix_callbacks ["buttonTogglePlayerInfo_on_start"] then
+		for uix_id, uix_callback in pairs (uix_callbacks ["buttonTogglePlayerInfo_on_start"]) do
+			uix_callback (mode, config)
 		end
 	end
 	-- kuertee end: callback
@@ -1400,9 +1400,9 @@ end
 
 function menu.createPlayerInfo(frame, width, height, offsetx, offsety)
 	-- kuertee start: callback
-	if callbacks ["createPlayerInfo_on_start"] then
-		for id, callback in pairs (callbacks ["createPlayerInfo_on_start"]) do
-			callback (config)
+	if uix_callbacks ["createPlayerInfo_on_start"] then
+		for uix_id, uix_callback in pairs (uix_callbacks ["createPlayerInfo_on_start"]) do
+			uix_callback (config)
 		end
 	end
 	-- kuertee end: callback
@@ -1470,9 +1470,9 @@ end
 
 function menu.createInfoFrame()
 	-- kuertee start: callback
-	if callbacks ["createInfoFrame_on_start"] then
-		for id, callback in pairs (callbacks ["createInfoFrame_on_start"]) do
-			callback (menu.infoFrame, tableProperties)
+	if uix_callbacks ["createInfoFrame_on_start"] then
+		for uix_id, uix_callback in pairs (uix_callbacks ["createInfoFrame_on_start"]) do
+			uix_callback (menu.infoFrame, tableProperties)
 		end
 	end
 	-- kuertee end: callback
@@ -1550,9 +1550,9 @@ function menu.createInfoFrame()
 	end
 
 	-- kuertee start: callback
-	if callbacks ["createInfoFrame_on_info_frame_mode"] then
-		for id, callback in pairs (callbacks ["createInfoFrame_on_info_frame_mode"]) do
-			callback (menu.infoFrame, tableProperties)
+	if uix_callbacks ["createInfoFrame_on_info_frame_mode"] then
+		for uix_id, uix_callback in pairs (uix_callbacks ["createInfoFrame_on_info_frame_mode"]) do
+			uix_callback (menu.infoFrame, tableProperties)
 		end
 	end
 	-- kuertee end: callback
@@ -1620,8 +1620,8 @@ function menu.createInventory(frame, tableProperties, mode, tabOrderOffset)
 		menu.onlineitems = OnlineGetUserItems()
 
 		-- kuertee start:
-		if not onlineitems then
-			onlineitems = {}
+		if not menu.onlineitems then
+			menu.onlineitems = {}
 		end
 		-- kuertee end
 
@@ -2359,9 +2359,9 @@ function menu.createFactions(frame, tableProperties)
 		end
 
 		-- kuertee start: callback
-		if callbacks ["createFactions_on_before_render_licences"] then
-			for id, callback in pairs (callbacks ["createFactions_on_before_render_licences"]) do
-				callback (frame, tableProperties, relation.id, detailtable)
+		if uix_callbacks ["createFactions_on_before_render_licences"] then
+			for uix_id, uix_callback in pairs (uix_callbacks ["createFactions_on_before_render_licences"]) do
+				uix_callback (frame, tableProperties, relation.id, detailtable)
 			end
 		end
 		-- kuertee end: callback
@@ -2430,9 +2430,9 @@ function menu.createFactions(frame, tableProperties)
 		row[3].handlers.onClick = function () return menu.buttonWarDeclarationConfirm(relation.id) end
 
 		-- kuertee start: callback
-		if callbacks ["createFactions_on_after_declare_war_button"] then
-			for id, callback in pairs (callbacks ["createFactions_on_after_declare_war_button"]) do
-				callback (frame, tableProperties, relation.id, detailtable)
+		if uix_callbacks ["createFactions_on_after_declare_war_button"] then
+			for uix_id, uix_callback in pairs (uix_callbacks ["createFactions_on_after_declare_war_button"]) do
+				uix_callback (frame, tableProperties, relation.id, detailtable)
 			end
 		end
 		-- kuertee end: callback
@@ -7139,9 +7139,9 @@ function menu.onRowChanged(row, rowdata, uitable, modified, input)
 	end
 
 	-- kuertee start: callback
-	if callbacks ["onRowChanged"] then
-		for id, callback in pairs (callbacks ["onRowChanged"]) do
-			callback (row, rowdata, uitable, modified, input)
+	if uix_callbacks ["onRowChanged"] then
+		for uix_id, uix_callback in pairs (uix_callbacks ["onRowChanged"]) do
+			uix_callback (row, rowdata, uitable, modified, input)
 		end
 	end
 	-- kuertee end: callback
@@ -7437,15 +7437,15 @@ function menu.registerCallback(callbackName, callbackFunction, id)
 	-- note 3: new callbacks can be added or existing callbacks can be edited. but commit your additions/changes to the mod's GIT repository.
 	-- note 4: search for the callback names to see where they are executed.
 	-- note 5: if a callback requires a return value, return it in an object var. e.g. "display_on_set_room_active" requires a return of {active = true | false}.
-	if callbacks [callbackName] == nil then
-		callbacks [callbackName] = {}
+	if uix_callbacks [callbackName] == nil then
+		uix_callbacks [callbackName] = {}
 	end
-	if not callbacks[callbackName][id] then
+	if not uix_callbacks[callbackName][id] then
 		if not id then
 			uix_callbackCount = uix_callbackCount + 1
 			id = "_" .. tostring(uix_callbackCount)
 		end
-		callbacks[callbackName][id] = callbackFunction
+		uix_callbacks[callbackName][id] = callbackFunction
 	else
 		DebugError("uix registerCallback: callback at " .. callbackName .. " with id " .. tostring(id) .. " was already previously registered")
 	end
@@ -7460,8 +7460,8 @@ function menu.deregisterCallback(callbackName, callbackFunction, id)
 	if id then
 		table.insert(uix_callbacks_toDeregister[callbackName], id)
 	else
-		if callbacks[callbackName] then
-			for id, func in pairs(callbacks[callbackName]) do
+		if uix_callbacks[callbackName] then
+			for id, func in pairs(uix_callbacks[callbackName]) do
 				if func == callbackFunction then
 					table.insert(uix_callbacks_toDeregister[callbackName], id)
 				end
@@ -7477,12 +7477,12 @@ end
 function menu.deregisterCallbacksNow()
 	uix_isDeregisterQueued = nil
 	for callbackName, ids in pairs(uix_callbacks_toDeregister) do
-		if callbacks[callbackName] then
+		if uix_callbacks[callbackName] then
 			for _, id in ipairs(ids) do
-				if callbacks[callbackName][id] then
-					callbacks[callbackName][id] = nil
+				if uix_callbacks[callbackName][id] then
+					uix_callbacks[callbackName][id] = nil
 				else
-					DebugError("uix updateCallback: callback at " .. callbackName .. " with id " .. tostring(id) .. " doesn't exist")
+					DebugError("uix deregisterCallbacksNow: callback at " .. callbackName .. " with id " .. tostring(id) .. " doesn't exist")
 				end
 			end
 		end
@@ -7508,12 +7508,12 @@ end
 function menu.updateCallbacksNow()
 	uix_isUpdateQueued = nil
 	for callbackName, updateDatas in pairs(uix_callbacks_toUpdate) do
-		if callbacks[callbackName] then
+		if uix_callbacks[callbackName] then
 			for _, updateData in ipairs(updateDatas) do
-				if callbacks[callbackName][updateData.id] then
-					callbacks[callbackName][updateData.id] = updateData.callbackFunction
+				if uix_callbacks[callbackName][updateData.id] then
+					uix_callbacks[callbackName][updateData.id] = updateData.callbackFunction
 				else
-					DebugError("uix updateCallback: callback at " .. callbackName .. " with id " .. tostring(id) .. " doesn't exist")
+					DebugError("uix updateCallbacksNow: callback at " .. callbackName .. " with id " .. tostring(id) .. " doesn't exist")
 				end
 			end
 		end

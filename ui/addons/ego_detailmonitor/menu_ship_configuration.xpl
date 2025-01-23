@@ -850,7 +850,7 @@ __CORE_DETAILMONITOR_SHIPBUILD = __CORE_DETAILMONITOR_SHIPBUILD or {
 }
 
 -- kuertee start:
-local callbacks = {}
+local uix_callbacks = {}
 -- kuertee end
 
 local function init()
@@ -968,9 +968,9 @@ function menu.cleanup()
 	end
 
 	-- kuertee start: callback
-	if callbacks ["cleanup"] then
-		for id, callback in pairs (callbacks ["cleanup"]) do
-			callback ()
+	if uix_callbacks ["cleanup"] then
+		for uix_id, uix_callback in pairs (uix_callbacks ["cleanup"]) do
+			uix_callback ()
 		end
 	end
 	-- kuertee end: callback
@@ -5439,9 +5439,9 @@ function menu.displaySlots(frame, firsttime)
 											end
 
 											-- start: mycu call-back
-											if callbacks ["displaySlots_on_before_create_button_mouseovertext"] then
-												for id, callback in pairs (callbacks ["displaySlots_on_before_create_button_mouseovertext"]) do
-													result = callback (group[i].macro, plandata.macro, mouseovertext)
+											if uix_callbacks ["displaySlots_on_before_create_button_mouseovertext"] then
+												for uix_id, uix_callback in pairs (uix_callbacks ["displaySlots_on_before_create_button_mouseovertext"]) do
+													result = uix_callback (group[i].macro, plandata.macro, mouseovertext)
 													if result then
 														mouseovertext = result.mouseovertext
 													end
@@ -5719,9 +5719,9 @@ function menu.displaySlots(frame, firsttime)
 							end
 
 							-- start: mycu call-back
-							if callbacks ["displaySlots_on_before_create_button_mouseovertext"] then
-								for id, callback in pairs (callbacks ["displaySlots_on_before_create_button_mouseovertext"]) do
-									result = callback (group[i].macro, plandata.macro, mouseovertext)
+							if uix_callbacks ["displaySlots_on_before_create_button_mouseovertext"] then
+								for uix_id, uix_callback in pairs (uix_callbacks ["displaySlots_on_before_create_button_mouseovertext"]) do
+									result = uix_callback (group[i].macro, plandata.macro, mouseovertext)
 									if result then
 										mouseovertext = result.mouseovertext
 									end
@@ -8877,10 +8877,10 @@ function menu.evaluateShipOptions()
 				local name, infolibrary, shiptypename, primarypurpose, shipicon, ware = GetMacroData(macro, "name", "infolibrary", "shiptypename", "primarypurpose", "icon", "ware")
 
 				-- start: alexandretk call-back
-				if callbacks ["evaluateShipOptions_override_shiptypename"] then
+				if uix_callbacks ["evaluateShipOptions_override_shiptypename"] then
 					local shiptypename_override
-					for id, callback in pairs (callbacks ["evaluateShipOptions_override_shiptypename"]) do
-						shiptypename_override = callback (shiptypename, shipicon, menu.class)
+					for uix_id, uix_callback in pairs (uix_callbacks ["evaluateShipOptions_override_shiptypename"]) do
+						shiptypename_override = uix_callback (shiptypename, shipicon, menu.class)
 						if shiptypename_override then
 							shiptypename = shiptypename_override
 							break
@@ -9073,9 +9073,9 @@ function menu.createTitleBar(frame)
 		-- save
 
 		-- mycu start: callback
-		if callbacks ["displaySlots_on_before_create_store_loadout_button"] then
-			for id, callback in pairs (callbacks ["displaySlots_on_before_create_store_loadout_button"]) do
-				callback ()
+		if uix_callbacks ["displaySlots_on_before_create_store_loadout_button"] then
+			for uix_id, uix_callback in pairs (uix_callbacks ["displaySlots_on_before_create_store_loadout_button"]) do
+				uix_callback ()
 			end
 		end
 		-- mycu end: callback
@@ -9084,9 +9084,9 @@ function menu.createTitleBar(frame)
 		row[4].handlers.onClick = menu.buttonTitleSave
 
 		-- mycu start: callback
-		if callbacks ["displaySlots_on_after_create_store_loadout_button"] then
-			for id, callback in pairs (callbacks ["displaySlots_on_after_create_store_loadout_button"]) do
-				callback ()
+		if uix_callbacks ["displaySlots_on_after_create_store_loadout_button"] then
+			for uix_id, uix_callback in pairs (uix_callbacks ["displaySlots_on_after_create_store_loadout_button"]) do
+				uix_callback ()
 			end
 		end
 		-- mycu end: callback
@@ -11075,12 +11075,12 @@ function menu.repairandupgrade(shoppinglistentry, object, macro, hasupgrades, ha
 				C.SetBuildTaskTransferredMoney(buildtaskid, objectprice and (objectprice + objectcrewprice) or haspaid)
 			end
 
-            		-- kuertee start: callback
-			if callbacks["repairandupgrade_after_build_order_created"] then
-                		for id, callback in pairs(callbacks["repairandupgrade_after_build_order_created"]) do
-                    		callback(shoppinglistentry, object, buildtaskid)
-                		end
-            		end
+            -- kuertee start: callback
+			if uix_callbacks["repairandupgrade_after_build_order_created"] then
+				for uix_id, uix_callback in pairs(uix_callbacks["repairandupgrade_after_build_order_created"]) do
+					uix_callback(shoppinglistentry, object, buildtaskid)
+				end
+			end
 			-- kuertee end: callback
 
 		end
@@ -11121,15 +11121,15 @@ function menu.registerCallback(callbackName, callbackFunction, id)
 	-- note 3: new callbacks can be added or existing callbacks can be edited. but commit your additions/changes to the mod's GIT repository.
 	-- note 4: search for the callback names to see where they are executed.
 	-- note 5: if a callback requires a return value, return it in an object var. e.g. "display_on_set_room_active" requires a return of {active = true | false}.
-	if callbacks [callbackName] == nil then
-		callbacks [callbackName] = {}
+	if uix_callbacks [callbackName] == nil then
+		uix_callbacks [callbackName] = {}
 	end
-	if not callbacks[callbackName][id] then
+	if not uix_callbacks[callbackName][id] then
 		if not id then
 			uix_callbackCount = uix_callbackCount + 1
 			id = "_" .. tostring(uix_callbackCount)
 		end
-		callbacks[callbackName][id] = callbackFunction
+		uix_callbacks[callbackName][id] = callbackFunction
 	else
 		DebugError("uix registerCallback: callback at " .. callbackName .. " with id " .. tostring(id) .. " was already previously registered")
 	end
@@ -11144,8 +11144,8 @@ function menu.deregisterCallback(callbackName, callbackFunction, id)
 	if id then
 		table.insert(uix_callbacks_toDeregister[callbackName], id)
 	else
-		if callbacks[callbackName] then
-			for id, func in pairs(callbacks[callbackName]) do
+		if uix_callbacks[callbackName] then
+			for id, func in pairs(uix_callbacks[callbackName]) do
 				if func == callbackFunction then
 					table.insert(uix_callbacks_toDeregister[callbackName], id)
 				end
@@ -11161,12 +11161,12 @@ end
 function menu.deregisterCallbacksNow()
 	uix_isDeregisterQueued = nil
 	for callbackName, ids in pairs(uix_callbacks_toDeregister) do
-		if callbacks[callbackName] then
+		if uix_callbacks[callbackName] then
 			for _, id in ipairs(ids) do
-				if callbacks[callbackName][id] then
-					callbacks[callbackName][id] = nil
+				if uix_callbacks[callbackName][id] then
+					uix_callbacks[callbackName][id] = nil
 				else
-					DebugError("uix updateCallback: callback at " .. callbackName .. " with id " .. tostring(id) .. " doesn't exist")
+					DebugError("uix deregisterCallbacksNow: callback at " .. callbackName .. " with id " .. tostring(id) .. " doesn't exist")
 				end
 			end
 		end
@@ -11192,12 +11192,12 @@ end
 function menu.updateCallbacksNow()
 	uix_isUpdateQueued = nil
 	for callbackName, updateDatas in pairs(uix_callbacks_toUpdate) do
-		if callbacks[callbackName] then
+		if uix_callbacks[callbackName] then
 			for _, updateData in ipairs(updateDatas) do
-				if callbacks[callbackName][updateData.id] then
-					callbacks[callbackName][updateData.id] = updateData.callbackFunction
+				if uix_callbacks[callbackName][updateData.id] then
+					uix_callbacks[callbackName][updateData.id] = updateData.callbackFunction
 				else
-					DebugError("uix updateCallback: callback at " .. callbackName .. " with id " .. tostring(id) .. " doesn't exist")
+					DebugError("uix updateCallbacksNow: callback at " .. callbackName .. " with id " .. tostring(id) .. " doesn't exist")
 				end
 			end
 		end

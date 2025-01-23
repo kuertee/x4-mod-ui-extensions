@@ -174,7 +174,7 @@ local config = {
 }
 
 -- kuertee start:
-local callbacks = {}
+local uix_callbacks = {}
 -- kuertee end
 
 -- init menu and register with Helper
@@ -254,9 +254,9 @@ function menu.cleanup()
 	menu.table_header = nil
 
 	-- kuertee start: callback
-	if callbacks ["cleanup"] then
-		for id, callback in pairs (callbacks ["cleanup"]) do
-			callback ()
+	if uix_callbacks ["cleanup"] then
+		for uix_id, uix_callback in pairs (uix_callbacks ["cleanup"]) do
+			uix_callback ()
 		end
 	end
 	-- kuertee end: callback
@@ -590,9 +590,9 @@ function menu.display()
 		end
 
 		-- start: kuertee call-back
-		if callbacks ["display_on_after_main_interactions"] then
-  			for id, callback in pairs (callbacks ["display_on_after_main_interactions"]) do
-  				callback (table_header)
+		if uix_callbacks ["display_on_after_main_interactions"] then
+  			for uix_id, uix_callback in pairs (uix_callbacks ["display_on_after_main_interactions"]) do
+  				uix_callback (table_header)
   			end
   		end
 		-- end: kuertee call-back
@@ -805,9 +805,9 @@ function menu.display()
 
 				-- Start Subsystem Targeting Orders callback
 				local sto_callbackVal
-				if callbacks ["sto_addTurretBehavioursDockMenu"] then
-				  for id, callback in pairs (callbacks ["sto_addTurretBehavioursDockMenu"]) do
-				    sto_callbackVal = callback (row)
+				if uix_callbacks ["sto_addTurretBehavioursDockMenu"] then
+				  for uix_id, uix_callback in pairs (uix_callbacks ["sto_addTurretBehavioursDockMenu"]) do
+				    sto_callbackVal = uix_callback (row)
 				  end
 				end
 				if not sto_callbackVal then
@@ -1017,9 +1017,9 @@ function menu.display()
 						
 						-- Start Reactive Docking callback
 						local rd_callbackVal
-						if callbacks ["rd_addReactiveDockingDockMenu"] then
-				  			for id, callback in pairs (callbacks ["rd_addReactiveDockingDockMenu"]) do
-				    				rd_callbackVal = callback (row, menu.currentplayership, i, active, mouseovertext)
+						if uix_callbacks ["rd_addReactiveDockingDockMenu"] then
+				  			for uix_id, uix_callback in pairs (uix_callbacks ["rd_addReactiveDockingDockMenu"]) do
+				    				rd_callbackVal = uix_callback (row, menu.currentplayership, i, active, mouseovertext)
 				  			end
 						end
 						if not rd_callbackVal then
@@ -1165,9 +1165,9 @@ function menu.display()
 		row[7]:createButton(config.inactiveButtonProperties):setText("", config.inactiveButtonTextProperties)	-- dummy
 
 		-- start: kuertee call-back
-		if callbacks ["display_on_after_main_interactions"] then
-  			for id, callback in pairs (callbacks ["display_on_after_main_interactions"]) do
-  				callback (table_header)
+		if uix_callbacks ["display_on_after_main_interactions"] then
+  			for uix_id, uix_callback in pairs (uix_callbacks ["display_on_after_main_interactions"]) do
+  				uix_callback (table_header)
   			end
   		end
 		-- end: kuertee call-back
@@ -1601,15 +1601,15 @@ function menu.registerCallback(callbackName, callbackFunction, id)
 	-- note 3: new callbacks can be added or existing callbacks can be edited. but commit your additions/changes to the mod's GIT repository.
 	-- note 4: search for the callback names to see where they are executed.
 	-- note 5: if a callback requires a return value, return it in an object var. e.g. "display_on_set_room_active" requires a return of {active = true | false}.
-	if callbacks [callbackName] == nil then
-		callbacks [callbackName] = {}
+	if uix_callbacks [callbackName] == nil then
+		uix_callbacks [callbackName] = {}
 	end
-	if not callbacks[callbackName][id] then
+	if not uix_callbacks[callbackName][id] then
 		if not id then
 			uix_callbackCount = uix_callbackCount + 1
 			id = "_" .. tostring(uix_callbackCount)
 		end
-		callbacks[callbackName][id] = callbackFunction
+		uix_callbacks[callbackName][id] = callbackFunction
 	else
 		DebugError("uix registerCallback: callback at " .. callbackName .. " with id " .. tostring(id) .. " was already previously registered")
 	end
@@ -1624,8 +1624,8 @@ function menu.deregisterCallback(callbackName, callbackFunction, id)
 	if id then
 		table.insert(uix_callbacks_toDeregister[callbackName], id)
 	else
-		if callbacks[callbackName] then
-			for id, func in pairs(callbacks[callbackName]) do
+		if uix_callbacks[callbackName] then
+			for id, func in pairs(uix_callbacks[callbackName]) do
 				if func == callbackFunction then
 					table.insert(uix_callbacks_toDeregister[callbackName], id)
 				end
@@ -1641,12 +1641,12 @@ end
 function menu.deregisterCallbacksNow()
 	uix_isDeregisterQueued = nil
 	for callbackName, ids in pairs(uix_callbacks_toDeregister) do
-		if callbacks[callbackName] then
+		if uix_callbacks[callbackName] then
 			for _, id in ipairs(ids) do
-				if callbacks[callbackName][id] then
-					callbacks[callbackName][id] = nil
+				if uix_callbacks[callbackName][id] then
+					uix_callbacks[callbackName][id] = nil
 				else
-					DebugError("uix updateCallback: callback at " .. callbackName .. " with id " .. tostring(id) .. " doesn't exist")
+					DebugError("uix deregisterCallbacksNow: callback at " .. callbackName .. " with id " .. tostring(id) .. " doesn't exist")
 				end
 			end
 		end
@@ -1672,12 +1672,12 @@ end
 function menu.updateCallbacksNow()
 	uix_isUpdateQueued = nil
 	for callbackName, updateDatas in pairs(uix_callbacks_toUpdate) do
-		if callbacks[callbackName] then
+		if uix_callbacks[callbackName] then
 			for _, updateData in ipairs(updateDatas) do
-				if callbacks[callbackName][updateData.id] then
-					callbacks[callbackName][updateData.id] = updateData.callbackFunction
+				if uix_callbacks[callbackName][updateData.id] then
+					uix_callbacks[callbackName][updateData.id] = updateData.callbackFunction
 				else
-					DebugError("uix updateCallback: callback at " .. callbackName .. " with id " .. tostring(id) .. " doesn't exist")
+					DebugError("uix updateCallbacksNow: callback at " .. callbackName .. " with id " .. tostring(id) .. " doesn't exist")
 				end
 			end
 		end

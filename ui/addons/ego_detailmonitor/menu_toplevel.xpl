@@ -19,7 +19,7 @@ local config = {
 }
 
 -- kuertee start:
-menu.callbacks = {}
+menu.uix_callbacks = {}
 -- end
 
 local function init()
@@ -84,9 +84,9 @@ function menu.cleanup()
 	end
 
 	-- kuertee start: callback
-	if menu.callbacks ["cleanup"] then
-		for id, callback in pairs (menu.callbacks ["cleanup"]) do
-			callback()
+	if menu.uix_callbacks ["cleanup"] then
+		for uix_id, uix_callback in pairs (menu.uix_callbacks ["cleanup"]) do
+			uix_callback()
 		end
 	end
 	-- kuertee end: callback
@@ -174,17 +174,17 @@ function menu.createInfoFrame()
 		-- kuertee custom HUD end
 
 		-- kuertee start: callback
-		if menu.callbacks ["createInfoFrame_on_add_table"] then
-			for id, callback in pairs (menu.callbacks ["createInfoFrame_on_add_table"]) do
-				callback (menu.infoFrame, ftable)
+		if menu.uix_callbacks ["createInfoFrame_on_add_table"] then
+			for uix_id, uix_callback in pairs (menu.uix_callbacks ["createInfoFrame_on_add_table"]) do
+				uix_callback (menu.infoFrame, ftable)
 			end
 		end
 		-- kuertee end: callback
 
 		-- kuertee start: callback
-		if menu.callbacks ["createInfoFrame_on_before_frame_display"] then
-			for id, callback in pairs (menu.callbacks ["createInfoFrame_on_before_frame_display"]) do
-				callback (menu.infoFrame)
+		if menu.uix_callbacks ["createInfoFrame_on_before_frame_display"] then
+			for uix_id, uix_callback in pairs (menu.uix_callbacks ["createInfoFrame_on_before_frame_display"]) do
+				uix_callback (menu.infoFrame)
 			end
 		end
 		-- kuertee end: callback
@@ -237,9 +237,9 @@ function menu.onUpdate()
 	local curtime = getElapsedTime()
 
 	-- kuertee start: callback
-	if menu.callbacks ["onUpdate_start"] then
-		for id, callback in pairs (menu.callbacks ["onUpdate_start"]) do
-			callback(curtime)
+	if menu.uix_callbacks ["onUpdate_start"] then
+		for uix_id, uix_callback in pairs (menu.uix_callbacks ["onUpdate_start"]) do
+			uix_callback(curtime)
 		end
 	end
 	-- kuertee end: callback
@@ -279,9 +279,9 @@ function menu.onUpdate()
 	end
 
 	-- kuertee start: callback
-	if menu.callbacks ["onUpdate_before_frame_update"] then
-		for id, callback in pairs (menu.callbacks ["onUpdate_before_frame_update"]) do
-			callback (menu.infoFrame)
+	if menu.uix_callbacks ["onUpdate_before_frame_update"] then
+		for uix_id, uix_callback in pairs (menu.uix_callbacks ["onUpdate_before_frame_update"]) do
+			uix_callback (menu.infoFrame)
 		end
 	end
 	-- kuertee end: callback
@@ -378,9 +378,9 @@ end
 function kHUD.getIsOpenOrClose()
 	local isCreateHUDFrame
 	if isCreateHUDFrame ~= true then
-		if menu.callbacks["kHUD_get_is_show_custom_hud"] and #menu.callbacks["kHUD_get_is_show_custom_hud"] > 0 then
-			for i, callback in ipairs (menu.callbacks ["kHUD_get_is_show_custom_hud"]) do
-				isCreateHUDFrame = callback ()
+		if menu.uix_callbacks["kHUD_get_is_show_custom_hud"] and next(menu.uix_callbacks["kHUD_get_is_show_custom_hud"]) then
+			for uix_id, uix_callback in pairs (menu.uix_callbacks ["kHUD_get_is_show_custom_hud"]) do
+				isCreateHUDFrame = uix_callback ()
 				if isCreateHUDFrame == true then
 					break
 				end
@@ -426,9 +426,9 @@ end
 function kHUD.createTables()
 	if kHUD.frame then
 		local ftables_created = {}
-		if menu.callbacks["kHUD_add_tables"] and #menu.callbacks["kHUD_add_tables"] > 0 then
-			for i, callback in ipairs (menu.callbacks ["kHUD_add_tables"]) do
-				local ftables = callback (kHUD.frame)
+		if menu.uix_callbacks["kHUD_add_tables"] and next(menu.uix_callbacks["kHUD_add_tables"]) then
+			for uix_id, uix_callback in pairs (menu.uix_callbacks ["kHUD_add_tables"]) do
+				local ftables = uix_callback (kHUD.frame)
 				if ftables and type(ftables) == "table" and #ftables > 0 then
 					for j, ftable in ipairs(ftables) do
 						table.insert(ftables_created, ftable)
@@ -436,10 +436,10 @@ function kHUD.createTables()
 				end
 			end
 		end
-		if menu.callbacks["kHUD_add_HUD_tables"] and #menu.callbacks["kHUD_add_HUD_tables"] > 0 then
+		if menu.uix_callbacks["kHUD_add_HUD_tables"] and next(menu.uix_callbacks["kHUD_add_HUD_tables"]) then
 			-- kHUD_add_HUD_tables is for backward compatibility
-			for i, callback in ipairs (menu.callbacks ["kHUD_add_HUD_tables"]) do
-				local ftables = callback (kHUD.frame)
+			for uix_id, uix_callback in pairs (menu.uix_callbacks ["kHUD_add_HUD_tables"]) do
+				local ftables = uix_callback (kHUD.frame)
 				if ftables and type(ftables) == "table" and #ftables > 0 then
 					for j, ftable in ipairs(ftables) do
 						table.insert(ftables_created, ftable)
@@ -519,15 +519,15 @@ function menu.registerCallback(callbackName, callbackFunction, id)
 	-- note 3: new callbacks can be added or existing callbacks can be edited. but commit your additions/changes to the mod's GIT repository.
 	-- note 4: search for the callback names to see where they are executed.
 	-- note 5: if a callback requires a return value, return it in an object var. e.g. "display_on_set_room_active" requires a return of {active = true | false}.
-	if menu.callbacks [callbackName] == nil then
-		menu.callbacks [callbackName] = {}
+	if menu.uix_callbacks [callbackName] == nil then
+		menu.uix_callbacks [callbackName] = {}
 	end
-	if not menu.callbacks[callbackName][id] then
+	if not menu.uix_callbacks[callbackName][id] then
 		if not id then
 			uix_callbackCount = uix_callbackCount + 1
 			id = "_" .. tostring(uix_callbackCount)
 		end
-		menu.callbacks[callbackName][id] = callbackFunction
+		menu.uix_callbacks[callbackName][id] = callbackFunction
 	else
 		DebugError("uix registerCallback: callback at " .. callbackName .. " with id " .. tostring(id) .. " was already previously registered")
 	end
@@ -542,8 +542,8 @@ function menu.deregisterCallback(callbackName, callbackFunction, id)
 	if id then
 		table.insert(uix_callbacks_toDeregister[callbackName], id)
 	else
-		if callbacks[callbackName] then
-			for id, func in pairs(callbacks[callbackName]) do
+		if menu.uix_callbacks[callbackName] then
+			for id, func in pairs(menu.uix_callbacks[callbackName]) do
 				if func == callbackFunction then
 					table.insert(uix_callbacks_toDeregister[callbackName], id)
 				end
@@ -559,12 +559,12 @@ end
 function menu.deregisterCallbacksNow()
 	uix_isDeregisterQueued = nil
 	for callbackName, ids in pairs(uix_callbacks_toDeregister) do
-		if callbacks[callbackName] then
+		if menu.uix_callbacks[callbackName] then
 			for _, id in ipairs(ids) do
-				if callbacks[callbackName][id] then
-					callbacks[callbackName][id] = nil
+				if menu.uix_callbacks[callbackName][id] then
+					menu.uix_callbacks[callbackName][id] = nil
 				else
-					DebugError("uix updateCallback: callback at " .. callbackName .. " with id " .. tostring(id) .. " doesn't exist")
+					DebugError("uix deregisterCallbacksNow: callback at " .. callbackName .. " with id " .. tostring(id) .. " doesn't exist")
 				end
 			end
 		end
@@ -590,12 +590,12 @@ end
 function menu.updateCallbacksNow()
 	uix_isUpdateQueued = nil
 	for callbackName, updateDatas in pairs(uix_callbacks_toUpdate) do
-		if callbacks[callbackName] then
+		if menu.uix_callbacks[callbackName] then
 			for _, updateData in ipairs(updateDatas) do
-				if callbacks[callbackName][updateData.id] then
-					callbacks[callbackName][updateData.id] = updateData.callbackFunction
+				if menu.uix_callbacks[callbackName][updateData.id] then
+					menu.uix_callbacks[callbackName][updateData.id] = updateData.callbackFunction
 				else
-					DebugError("uix updateCallback: callback at " .. callbackName .. " with id " .. tostring(id) .. " doesn't exist")
+					DebugError("uix updateCallbacksNow: callback at " .. callbackName .. " with id " .. tostring(id) .. " doesn't exist")
 				end
 			end
 		end
