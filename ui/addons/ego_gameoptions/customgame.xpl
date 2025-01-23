@@ -1678,7 +1678,9 @@ end
 
 function menu.dropdownPlayerPropertySetCount(entryid, count, macro, oldcount)
 	C.SetCustomGameStartPlayerPropertyCount(menu.customgamestart, menu.category.id, entryid, count)
-	menu.usedlimitedships[macro] = menu.usedlimitedships[macro] - oldcount + count
+	if menu.usedlimitedships[macro] then
+		menu.usedlimitedships[macro] = menu.usedlimitedships[macro] - oldcount + count
+	end
 	menu.refresh = getElapsedTime()
 end
 

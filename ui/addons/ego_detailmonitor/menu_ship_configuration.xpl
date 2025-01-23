@@ -4382,11 +4382,7 @@ function menu.getDataAndDisplay(upgradeplan, crew, newedit, firsttime, noundo, s
 			local upgradetype = Helper.findUpgradeType(type)
 			for key, upgrade in pairs(upgradelist) do
 				if (upgradetype.supertype == "ammo") then
-					if menu.isAmmoCompatible(type, key) then
-						newvalue = upgradeplan[type][key] or 0
-					else
-						newvalue = 0
-					end
+					newvalue = upgradeplan[type][key] or 0
 					menu.upgradeplan[type][key] = newvalue
 				end
 			end
@@ -4494,7 +4490,7 @@ function menu.checkCompatibility(macro, objectmakerraces)
 end
 
 function menu.displayAmmoSlot(ftable, type, macro, total, capacity, first)
-	if (menu.upgradeplan[type][macro] and (menu.upgradeplan[type][macro] > 0)) or menu.isAmmoCompatible(type, macro) then
+	if menu.upgradeplan[type][macro] or menu.isAmmoCompatible(type, macro) then
 		local planned = menu.upgradeplan[type][macro] or 0
 		local name, infolibrary = GetMacroData(macro, "name", "infolibrary")
 		AddKnownItem(infolibrary, macro)
@@ -5774,6 +5770,9 @@ function menu.displaySlots(frame, firsttime)
 						if next(menu.ammo[upgradetype.type]) then
 							local total, capacity = menu.getAmmoUsage(upgradetype.type)
 							local display = false
+							if menu.mode == "upgrade" then
+								display = C.GetNumAllMissiles(menu.object) > 0
+							end
 							for macro, _ in pairs(menu.ammo[upgradetype.type]) do
 								if (total > 0) or menu.isAmmoCompatible(upgradetype.type, macro) then
 									display = true
@@ -8143,11 +8142,11 @@ function menu.displayPlan(frame)
 			end
 
 			local row = ftable:addRow(true, {  })
-			row[1]:setColSpan(colspan + 1):createButton({ height = Helper.standardTextHeight, active = function () return not utf8.find(menu.customshipname, name) end }):setText(ReadText(1001, 8588), { halign = "center" })
+			row[1]:setColSpan(colspan + 1):createButton({ height = Helper.standardTextHeight, active = function () return not utf8.find(menu.customshipname, name, nil, true) end }):setText(ReadText(1001, 8588), { halign = "center" })
 			row[1].handlers.onClick = function () return menu.buttonCustomShipNameAppendShip(name) end
 
 			local row = ftable:addRow(true, {  })
-			row[1]:setColSpan(colspan + 1):createButton({ height = Helper.standardTextHeight, active = function () return not utf8.find(menu.customshipname, menu.loadoutName) end }):setText(ReadText(1001, 8589), { halign = "center" })
+			row[1]:setColSpan(colspan + 1):createButton({ height = Helper.standardTextHeight, active = function () return not utf8.find(menu.customshipname, menu.loadoutName, nil, true) end }):setText(ReadText(1001, 8589), { halign = "center" })
 			row[1].handlers.onClick = menu.buttonCustomShipNameAppendLoadout
 
 			local row = ftable:addRow(false, { bgColor = Color["row_background_unselectable"] })

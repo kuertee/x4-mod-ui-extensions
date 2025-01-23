@@ -2417,13 +2417,16 @@ function menu.buttonToggleObjectList(objectlistparam, confirmed, override)
 		end
 
 		if menu.infoTableMode == "plots" then
+			menu.behaviourInspectionComponent = nil
+			C.SetMapBehaviourInspectionComponent(menu.holomap, 0)
+
 			menu.updatePlotData("plots_new", true)
 			menu.storeCurrentPlots()
 			--menu.plotDoNotUpdate = true
 			menu.mode = "selectbuildlocation"
 			menu.clearSelectedComponents()
 			C.ShowBuildPlotPlacementMap(menu.holomap, menu.currentsector)
-		elseif (menu.mode ~= "selectCV") and (menu.mode ~= "hire") and (menu.mode ~= "orderparam_object") and (menu.mode ~= "selectComponent") then
+		elseif (menu.mode ~= "selectCV") and (menu.mode ~= "hire") and (menu.mode ~= "orderparam_object") and (menu.mode ~= "selectComponent") and (menu.mode ~= "behaviourinspection") then
 			menu.plots_initialized = nil
 			menu.plotData = {}
 			menu.mode = nil
@@ -26262,6 +26265,19 @@ function menu.onUpdate()
 		menu.selectedRows.contextshiptable = Helper.currentTableRow[menu.contextshiptable]
 		menu.createContextFrame()
 		menu.queuetradecontextrefresh = nil
+	end
+
+	if menu.behaviourInspectionComponent then
+		local isplayerowned = GetComponentData(menu.behaviourInspectionComponent, "isplayerowned")
+		if (not isplayerowned) or (not C.IsComponentOperational(menu.behaviourInspectionComponent)) then
+			menu.behaviourInspectionComponent = nil
+			C.SetMapBehaviourInspectionComponent(menu.holomap, 0)
+
+			menu.mode = nil
+			menu.refreshMainFrame = true
+			menu.setTextFilter()
+			menu.applyFilterSettings()
+		end
 	end
 end
 

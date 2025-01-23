@@ -163,6 +163,7 @@ ffi.cdef[[
 	uint32_t CreateDeployToStationOrder(UniverseID controllableid);
 	uint32_t CreateOrder(UniverseID controllableid, const char* orderid, bool defaultorder);
 	uint32_t CreateOrder3(UniverseID controllableid, const char* orderid, bool defaultorder, bool isoverride, bool istemp);
+	void DeactivateMouseEmulation(void);
 	bool DoesConstructionSequenceRequireBuilder(UniverseID containerid);
 	uint32_t GetAllFleetUnitSubordinates(UniverseID* result, uint32_t resultlen, FleetUnitID fleetunitid);
 	uint32_t GetAllLaserTowers(AmmoData* result, uint32_t resultlen, UniverseID defensibleid);
@@ -288,6 +289,7 @@ ffi.cdef[[
 	UIFormationInfo SetFormationShape(UniverseID objectid, const char* formationshape);
 	void SetGroupAndAssignment(UniverseID controllableid, int group, const char* assignment);
 	void SetGuidance(UniverseID componentid, UIPosRot offset);
+	void SetMouseCursorPosition(const int32_t posx, const int32_t posy);
 	void SetPlayerCameraCinematicView(UniverseID componentid);
 	void SetRelationBoostToFaction(UniverseID componentid, const char* factionid, const char* reasonid, float boostvalue, float decayrate, double decaydelay);
 	bool SetSofttarget(UniverseID componentid, const char*const connectionname);
