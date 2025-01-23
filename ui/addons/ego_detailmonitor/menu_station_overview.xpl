@@ -2337,7 +2337,7 @@ function menu.onExpandTradeWares(frame, ftable, ftable2, nodedata)
 		if not excludedwares[ware] then
 
 			-- kuertee start: callback
-			if (not uix_callbacks ["onExpandTradeWares_insert_ware_to_allwares"]) or (not #callbacks ["onExpandTradeWares_insert_ware_to_allwares"]) then
+			if (not uix_callbacks ["onExpandTradeWares_insert_ware_to_allwares"]) or (not next(uix_callbacks ["onExpandTradeWares_insert_ware_to_allwares"])) then
 				table.insert(allwares, { ware = ware, name = GetWareData(ware, "name") })
 			elseif uix_callbacks ["onExpandTradeWares_insert_ware_to_allwares"] then
 				for uix_id, uix_callback in pairs (uix_callbacks ["onExpandTradeWares_insert_ware_to_allwares"]) do
@@ -5369,7 +5369,7 @@ function menu.deregisterCallbacksNow()
                         DebugError("uix registerCallback (post): uix_callbacks[" .. tostring(callbackName) .. "][" .. tostring(id) .. "]: " .. tostring(uix_callbacks[callbackName][id]))
                     end
                 else
-                    DebugError("uix updateCallback: callback at " .. callbackName .. " with id " .. tostring(id) .. " doesn't exist")
+                    DebugError("uix deregisterCallbacksNow: callback at " .. callbackName .. " with id " .. tostring(id) .. " doesn't exist")
                 end
             end
         end
@@ -5406,7 +5406,7 @@ function menu.updateCallbacksNow()
                         DebugError("uix updateCallbacksNow (post): uix_callbacks[" .. tostring(callbackName) .. "][" .. tostring(updateData.id) .. "]: " .. tostring(uix_callbacks[callbackName][updateData.id]))
                     end
                 else
-                    DebugError("uix updateCallback: callback at " .. callbackName .. " with id " .. tostring(id) .. " doesn't exist")
+                    DebugError("uix updateCallbacksNow: callback at " .. callbackName .. " with id " .. tostring(id) .. " doesn't exist")
                 end
             end
         end

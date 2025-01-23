@@ -8762,7 +8762,7 @@ function menu.createPropertyRow(instance, ftable, component, iteration, commande
 		-- kuertee start: callback
 		if uix_callbacks ["createPropertyRow_on_set_locationtext"] then
 			local result
-			for i, uix_callback in ipairs (uix_callbacks ["createPropertyRow_on_set_locationtext"]) do
+			for uix_id, uix_callback in pairs (uix_callbacks ["createPropertyRow_on_set_locationtext"]) do
 				result = uix_callback (locationtext, component)
 				if result.locationtext then
 					locationtext = result.locationtext
@@ -30334,7 +30334,7 @@ function menu.deregisterCallbacksNow()
                         DebugError("uix registerCallback (post): uix_callbacks[" .. tostring(callbackName) .. "][" .. tostring(id) .. "]: " .. tostring(uix_callbacks[callbackName][id]))
                     end
                 else
-                    DebugError("uix updateCallback: callback at " .. callbackName .. " with id " .. tostring(id) .. " doesn't exist")
+                    DebugError("uix deregisterCallbacksNow: callback at " .. callbackName .. " with id " .. tostring(id) .. " doesn't exist")
                 end
             end
         end
@@ -30371,7 +30371,7 @@ function menu.updateCallbacksNow()
                         DebugError("uix updateCallbacksNow (post): uix_callbacks[" .. tostring(callbackName) .. "][" .. tostring(updateData.id) .. "]: " .. tostring(uix_callbacks[callbackName][updateData.id]))
                     end
                 else
-                    DebugError("uix updateCallback: callback at " .. callbackName .. " with id " .. tostring(id) .. " doesn't exist")
+                    DebugError("uix updateCallbacksNow: callback at " .. callbackName .. " with id " .. tostring(id) .. " doesn't exist")
                 end
             end
         end

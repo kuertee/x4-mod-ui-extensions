@@ -3965,9 +3965,9 @@ function menu.createContentTable(frame, position)
 		if ((not skipped) or (section.skippable == false)) and ((not skiporders) or section.allowmultiloop) then
 			-- kuertee start: callback
 			local kUIX_isSectionValid = true
-			if callbacks ["createContentTable_getIsSectionValid"] then
-				for _, callback in ipairs (callbacks ["createContentTable_getIsSectionValid"]) do
-					kUIX_isSectionValid = callback (section)
+			if uix_callbacks ["createContentTable_getIsSectionValid"] then
+				for uix_id, uix_callback in pairs (uix_callbacks ["createContentTable_getIsSectionValid"]) do
+					kUIX_isSectionValid = uix_callback (section)
 					if kUIX_isSectionValid ~= true then
 						break
 					end
@@ -4016,9 +4016,9 @@ function menu.createContentTable(frame, position)
 					for _, subsection in ipairs(section.subsections) do
 						-- kuertee start: callback
 						local kUIX_isSubsectionValid = true
-						if callbacks ["createContentTable_getIsSubsectionValid"] then
-							for _, callback in ipairs (callbacks ["createContentTable_getIsSubsectionValid"]) do
-								kUIX_isSubsectionValid = callback (subsection)
+						if uix_callbacks ["createContentTable_getIsSubsectionValid"] then
+							for uix_id, uix_callback in pairs (uix_callbacks ["createContentTable_getIsSubsectionValid"]) do
+								kUIX_isSubsectionValid = uix_callback (subsection)
 								if kUIX_isSubsectionValid ~= true then
 									break
 								end
@@ -4072,9 +4072,9 @@ function menu.createContentTable(frame, position)
 
 						-- kuertee start: callback
 						local kUIX_isActionValid = true
-						if callbacks ["createContentTable_getIsActionValid"] then
-							for _, callback in ipairs (callbacks ["createContentTable_getIsActionValid"]) do
-								kUIX_isActionValid = callback (entry)
+						if uix_callbacks ["createContentTable_getIsActionValid"] then
+							for uix_id, uix_callback in pairs (uix_callbacks ["createContentTable_getIsActionValid"]) do
+								kUIX_isActionValid = uix_callback (entry)
 								if kUIX_isActionValid ~= true then
 									break
 								end
@@ -4872,10 +4872,10 @@ function menu.insertLuaAction(actiontype, istobedisplayed)
 				end
 
 				-- start: aegs call-back
-				if callbacks ["map_rightMenu_shipassignments_insert_01"] then
+				if uix_callbacks ["map_rightMenu_shipassignments_insert_01"] then
 					local state,main_o,assignment_o
-					for _, callback in ipairs (callbacks ["map_rightMenu_shipassignments_insert_01"]) do
-						state,main_o,assignment_o = callback (GetComponentData(convertedComponent, "macro"),menu.numassignableminingships,menu.numassignabletugs)
+					for uix_id, uix_callback in pairs (uix_callbacks ["map_rightMenu_shipassignments_insert_01"]) do
+						state,main_o,assignment_o = uix_callback (GetComponentData(convertedComponent, "macro"),menu.numassignableminingships,menu.numassignabletugs)
 						if state then
 							menu.insertAssignSubActions(main_o, assignment_o, menu.buttonAssignCommander, groups, isstation, true)
 						end
@@ -4894,10 +4894,10 @@ function menu.insertLuaAction(actiontype, istobedisplayed)
 		end
 
 		-- start: aegs call-back
-		if callbacks ["map_rightMenu_shipOverview_insert"] then
+		if uix_callbacks ["map_rightMenu_shipOverview_insert"] then
 			local category_o,text_o
-			for _, callback in ipairs (callbacks ["map_rightMenu_shipOverview_insert"]) do
-				category_o,text_o = callback (GetComponentData(convertedComponent, "macro"))
+			for uix_id, uix_callback in pairs (uix_callbacks ["map_rightMenu_shipOverview_insert"]) do
+				category_o,text_o = uix_callback (GetComponentData(convertedComponent, "macro"))
 				if category_o then
 					menu.insertInteractionContent("main", { type = "logicalstationoverview", text = text_o, helpOverlayID = "interactmenu_logicalstationoverview", helpOverlayText = " ", helpOverlayHighlightOnly = true, script = menu.buttonStationOverview })
 				end
@@ -5761,10 +5761,10 @@ function menu.insertLuaAction(actiontype, istobedisplayed)
 					end
 
 					-- start: aegs call-back
-					if callbacks ["map_rightMenu_shipassignments_insert_02"] then
+					if uix_callbacks ["map_rightMenu_shipassignments_insert_02"] then
 						local state,main_o,assignment_o,purpose_o
-						for _, callback in ipairs (callbacks ["map_rightMenu_shipassignments_insert_02"]) do
-							state,main_o,assignment_o,purpose_o = callback (GetComponentData(commander, "macro"))
+						for uix_id, uix_callback in pairs (uix_callbacks ["map_rightMenu_shipassignments_insert_02"]) do
+							state,main_o,assignment_o,purpose_o = uix_callback (GetComponentData(commander, "macro"))
 							if state and purpose == purpose_o then
 								menu.insertAssignSubActions(main_o, assignment_o, menu.buttonChangeAssignment, groups, isstation, true, currentgroup)
 							end
@@ -5847,10 +5847,10 @@ function menu.insertLuaAction(actiontype, istobedisplayed)
 					end
 
 					-- start: aegs call-back
-					if callbacks ["map_rightMenu_shipassignments_insert_03"] then
+					if uix_callbacks ["map_rightMenu_shipassignments_insert_03"] then
 						local state,main_o,assignment_o
-						for _, callback in ipairs (callbacks ["map_rightMenu_shipassignments_insert_03"]) do
-							state,main_o,assignment_o = callback (GetComponentData(convertedComponent, "macro"),allmining,alltugs)
+						for uix_id, uix_callback in pairs (uix_callbacks ["map_rightMenu_shipassignments_insert_03"]) do
+							state,main_o,assignment_o = uix_callback (GetComponentData(convertedComponent, "macro"),allmining,alltugs)
 							if state then
 								menu.insertAssignSubActions(main_o, assignment_o, menu.buttonChangeAssignment, groups, isstation, true)
 							end
@@ -6360,10 +6360,10 @@ function menu.insertLuaAction(actiontype, istobedisplayed)
 		end
 
 		-- start: aegs call-back
-		if callbacks ["map_rightMenu_shipBuilding_insert"] then
+		if uix_callbacks ["map_rightMenu_shipBuilding_insert"] then
 			local state,activate_o,text_o,mouseovertext_o
-			for _, callback in ipairs (callbacks ["map_rightMenu_shipBuilding_insert"]) do
-				state,activate_o,text_o,mouseovertext_o = callback (shiptrader,isdock,GetComponentData(convertedComponent, "macro"),doessellshipstoplayer,isplayerownedtarget)
+			for uix_id, uix_callback in pairs (uix_callbacks ["map_rightMenu_shipBuilding_insert"]) do
+				state,activate_o,text_o,mouseovertext_o = uix_callback (shiptrader,isdock,GetComponentData(convertedComponent, "macro"),doessellshipstoplayer,isplayerownedtarget)
 				if state then
 					menu.insertInteractionContent("main", { type = actiontype, text = text_o, helpOverlayID = "interactmenu_buildship", helpOverlayText = " ", helpOverlayHighlightOnly = true, script = function () return menu.buttonShipConfig("purchase") end, active = activate_o, mouseOverText = mouseovertext_o })
 				end
@@ -7595,82 +7595,82 @@ end
 local uix_isDeregisterQueued
 local uix_callbacks_toDeregister = {}
 function menu.deregisterCallback(callbackName, callbackFunction, id)
-    if not uix_callbacks_toDeregister[callbackName] then
-        uix_callbacks_toDeregister[callbackName] = {}
-    end
-    if id then
-        table.insert(uix_callbacks_toDeregister[callbackName], id)
-    else
-        if uix_callbacks[callbackName] then
-            for id, func in pairs(uix_callbacks[callbackName]) do
-                if func == callbackFunction then
-                    table.insert(uix_callbacks_toDeregister[callbackName], id)
-                end
-            end
-        end
-    end
-    if not uix_isDeregisterQueued then
-        uix_isDeregisterQueued = true
-        Helper.addDelayedOneTimeCallbackOnUpdate(menu.deregisterCallbacksNow, true, getElapsedTime() + 1)
-    end
+	if not uix_callbacks_toDeregister[callbackName] then
+		uix_callbacks_toDeregister[callbackName] = {}
+	end
+	if id then
+		table.insert(uix_callbacks_toDeregister[callbackName], id)
+	else
+		if uix_callbacks[callbackName] then
+			for id, func in pairs(uix_callbacks[callbackName]) do
+				if func == callbackFunction then
+					table.insert(uix_callbacks_toDeregister[callbackName], id)
+				end
+			end
+		end
+	end
+	if not uix_isDeregisterQueued then
+		uix_isDeregisterQueued = true
+		Helper.addDelayedOneTimeCallbackOnUpdate(menu.deregisterCallbacksNow, true, getElapsedTime() + 1)
+	end
 end
 
 function menu.deregisterCallbacksNow()
-    uix_isDeregisterQueued = nil
-    for callbackName, ids in pairs(uix_callbacks_toDeregister) do
-        if uix_callbacks[callbackName] then
-            for _, id in ipairs(ids) do
-                if uix_callbacks[callbackName][id] then
-                    if Helper.isDebugCallbacks then
-                        DebugError("uix registerCallback (pre): uix_callbacks[" .. tostring(callbackName) .. "][" .. tostring(id) .. "]: " .. tostring(uix_callbacks[callbackName][id]))
-                    end
-                    uix_callbacks[callbackName][id] = nil
-                    if Helper.isDebugCallbacks then
-                        DebugError("uix registerCallback (post): uix_callbacks[" .. tostring(callbackName) .. "][" .. tostring(id) .. "]: " .. tostring(uix_callbacks[callbackName][id]))
-                    end
-                else
-                    DebugError("uix updateCallback: callback at " .. callbackName .. " with id " .. tostring(id) .. " doesn't exist")
-                end
-            end
-        end
-    end
-    uix_callbacks_toDeregister = {}
+	uix_isDeregisterQueued = nil
+	for callbackName, ids in pairs(uix_callbacks_toDeregister) do
+		if uix_callbacks[callbackName] then
+			for _, id in ipairs(ids) do
+				if uix_callbacks[callbackName][id] then
+					if Helper.isDebugCallbacks then
+						DebugError("uix registerCallback (pre): uix_callbacks[" .. tostring(callbackName) .. "][" .. tostring(id) .. "]: " .. tostring(uix_callbacks[callbackName][id]))
+					end
+					uix_callbacks[callbackName][id] = nil
+					if Helper.isDebugCallbacks then
+						DebugError("uix registerCallback (post): uix_callbacks[" .. tostring(callbackName) .. "][" .. tostring(id) .. "]: " .. tostring(uix_callbacks[callbackName][id]))
+					end
+				else
+					DebugError("uix deregisterCallbacksNow: callback at " .. callbackName .. " with id " .. tostring(id) .. " doesn't exist")
+				end
+			end
+		end
+	end
+	uix_callbacks_toDeregister = {}
 end
 
 local uix_isUpdateQueued
 local uix_callbacks_toUpdate
 function menu.updateCallback(callbackName, id, callbackFunction)
-    if not uix_callbacks_toUpdate[callbackName] then
-        uix_callbacks_toUpdate[callbackName] = {}
-    end
-    if id then
-        table.insert(uix_callbacks_toUpdate[callbackName], {id = id, callbackFunction = callbackFunction})
-    end
-    if not uix_isUpdateQueued then
-        uix_isUpdateQueued = true
-        Helper.addDelayedOneTimeCallbackOnUpdate(menu.updateCallbacksNow, true, getElapsedTime() + 1)
-    end
+	if not uix_callbacks_toUpdate[callbackName] then
+		uix_callbacks_toUpdate[callbackName] = {}
+	end
+	if id then
+		table.insert(uix_callbacks_toUpdate[callbackName], {id = id, callbackFunction = callbackFunction})
+	end
+	if not uix_isUpdateQueued then
+		uix_isUpdateQueued = true
+		Helper.addDelayedOneTimeCallbackOnUpdate(menu.updateCallbacksNow, true, getElapsedTime() + 1)
+	end
 end
 
 function menu.updateCallbacksNow()
-    uix_isUpdateQueued = nil
-    for callbackName, updateDatas in pairs(uix_callbacks_toUpdate) do
-        if uix_callbacks[callbackName] then
-            for _, updateData in ipairs(updateDatas) do
-                if uix_callbacks[callbackName][updateData.id] then
-                    if Helper.isDebugCallbacks then
-                        DebugError("uix updateCallbacksNow (pre): uix_callbacks[" .. tostring(callbackName) .. "][" .. tostring(updateData.id) .. "]: " .. tostring(uix_callbacks[callbackName][updateData.id]))
-                    end
-                    uix_callbacks[callbackName][updateData.id] = updateData.callbackFunction
-                    if Helper.isDebugCallbacks then
-                        DebugError("uix updateCallbacksNow (post): uix_callbacks[" .. tostring(callbackName) .. "][" .. tostring(updateData.id) .. "]: " .. tostring(uix_callbacks[callbackName][updateData.id]))
-                    end
-                else
-                    DebugError("uix updateCallback: callback at " .. callbackName .. " with id " .. tostring(id) .. " doesn't exist")
-                end
-            end
-        end
-    end
+	uix_isUpdateQueued = nil
+	for callbackName, updateDatas in pairs(uix_callbacks_toUpdate) do
+		if uix_callbacks[callbackName] then
+			for _, updateData in ipairs(updateDatas) do
+				if uix_callbacks[callbackName][updateData.id] then
+					if Helper.isDebugCallbacks then
+						DebugError("uix updateCallbacksNow (pre): uix_callbacks[" .. tostring(callbackName) .. "][" .. tostring(updateData.id) .. "]: " .. tostring(uix_callbacks[callbackName][updateData.id]))
+					end
+					uix_callbacks[callbackName][updateData.id] = updateData.callbackFunction
+					if Helper.isDebugCallbacks then
+						DebugError("uix updateCallbacksNow (post): uix_callbacks[" .. tostring(callbackName) .. "][" .. tostring(updateData.id) .. "]: " .. tostring(uix_callbacks[callbackName][updateData.id]))
+					end
+				else
+					DebugError("uix updateCallbacksNow: callback at " .. callbackName .. " with id " .. tostring(id) .. " doesn't exist")
+				end
+			end
+		end
+	end
 end
 
 local newCustomGroupId

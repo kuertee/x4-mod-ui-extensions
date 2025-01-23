@@ -8879,7 +8879,7 @@ function menu.evaluateShipOptions()
 				-- start: alexandretk call-back
 				if uix_callbacks ["evaluateShipOptions_override_shiptypename"] then
 					local shiptypename_override
-					for uix_id, uix_callback in pairs (uix_callback ["evaluateShipOptions_override_shiptypename"]) do
+					for uix_id, uix_callback in pairs (uix_callbacks ["evaluateShipOptions_override_shiptypename"]) do
 						shiptypename_override = uix_callback (shiptypename, shipicon, menu.class)
 						if shiptypename_override then
 							shiptypename = shiptypename_override
@@ -11075,12 +11075,12 @@ function menu.repairandupgrade(shoppinglistentry, object, macro, hasupgrades, ha
 				C.SetBuildTaskTransferredMoney(buildtaskid, objectprice and (objectprice + objectcrewprice) or haspaid)
 			end
 
-            		-- kuertee start: callback
+            -- kuertee start: callback
 			if uix_callbacks["repairandupgrade_after_build_order_created"] then
-                		for uix_id, uix_callback in pairs(uix_callbacks["repairandupgrade_after_build_order_created"]) do
-                    		uix_callback(shoppinglistentry, object, buildtaskid)
-                		end
-            		end
+				for uix_id, uix_callback in pairs(uix_callbacks["repairandupgrade_after_build_order_created"]) do
+					uix_callback(shoppinglistentry, object, buildtaskid)
+				end
+			end
 			-- kuertee end: callback
 
 		end
@@ -11175,7 +11175,7 @@ function menu.deregisterCallbacksNow()
                         DebugError("uix registerCallback (post): uix_callbacks[" .. tostring(callbackName) .. "][" .. tostring(id) .. "]: " .. tostring(uix_callbacks[callbackName][id]))
                     end
                 else
-                    DebugError("uix updateCallback: callback at " .. callbackName .. " with id " .. tostring(id) .. " doesn't exist")
+                    DebugError("uix deregisterCallbacksNow: callback at " .. callbackName .. " with id " .. tostring(id) .. " doesn't exist")
                 end
             end
         end
@@ -11212,7 +11212,7 @@ function menu.updateCallbacksNow()
                         DebugError("uix updateCallbacksNow (post): uix_callbacks[" .. tostring(callbackName) .. "][" .. tostring(updateData.id) .. "]: " .. tostring(uix_callbacks[callbackName][updateData.id]))
                     end
                 else
-                    DebugError("uix updateCallback: callback at " .. callbackName .. " with id " .. tostring(id) .. " doesn't exist")
+                    DebugError("uix updateCallbacksNow: callback at " .. callbackName .. " with id " .. tostring(id) .. " doesn't exist")
                 end
             end
         end

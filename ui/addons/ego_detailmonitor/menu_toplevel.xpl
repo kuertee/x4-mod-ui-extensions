@@ -378,8 +378,8 @@ end
 function kHUD.getIsOpenOrClose()
 	local isCreateHUDFrame
 	if isCreateHUDFrame ~= true then
-		if menu.uix_callbacks["kHUD_get_is_show_custom_hud"] and #menu.uix_callbacks["kHUD_get_is_show_custom_hud"] > 0 then
-			for i, uix_callback in ipairs (menu.uix_callbacks ["kHUD_get_is_show_custom_hud"]) do
+		if menu.uix_callbacks["kHUD_get_is_show_custom_hud"] and next(menu.uix_callbacks["kHUD_get_is_show_custom_hud"]) then
+			for uix_id, uix_callback in pairs (menu.uix_callbacks ["kHUD_get_is_show_custom_hud"]) do
 				isCreateHUDFrame = uix_callback ()
 				if isCreateHUDFrame == true then
 					break
@@ -426,9 +426,9 @@ end
 function kHUD.createTables()
 	if kHUD.frame then
 		local ftables_created = {}
-		if menu.callbacks["kHUD_add_tables"] and #menu.callbacks["kHUD_add_tables"] > 0 then
-			for i, callback in ipairs (menu.callbacks ["kHUD_add_tables"]) do
-				local ftables = callback (kHUD.frame)
+		if menu.uix_callbacks["kHUD_add_tables"] and next(menu.uix_callbacks["kHUD_add_tables"]) then
+			for uix_id, uix_callback in pairs (menu.uix_callbacks ["kHUD_add_tables"]) do
+				local ftables = uix_callback (kHUD.frame)
 				if ftables and type(ftables) == "table" and #ftables > 0 then
 					for j, ftable in ipairs(ftables) do
 						table.insert(ftables_created, ftable)
@@ -436,10 +436,10 @@ function kHUD.createTables()
 				end
 			end
 		end
-		if menu.callbacks["kHUD_add_HUD_tables"] and #menu.callbacks["kHUD_add_HUD_tables"] > 0 then
+		if menu.uix_callbacks["kHUD_add_HUD_tables"] and next(menu.uix_callbacks["kHUD_add_HUD_tables"]) then
 			-- kHUD_add_HUD_tables is for backward compatibility
-			for i, callback in ipairs (menu.callbacks ["kHUD_add_HUD_tables"]) do
-				local ftables = callback (kHUD.frame)
+			for uix_id, uix_callback in pairs (menu.uix_callbacks ["kHUD_add_HUD_tables"]) do
+				local ftables = uix_callback (kHUD.frame)
 				if ftables and type(ftables) == "table" and #ftables > 0 then
 					for j, ftable in ipairs(ftables) do
 						table.insert(ftables_created, ftable)
@@ -563,7 +563,7 @@ function menu.deregisterCallbacksNow()
                         DebugError("uix registerCallback (post): menu.uix_callbacks[" .. tostring(callbackName) .. "][" .. tostring(id) .. "]: " .. tostring(menu.uix_callbacks[callbackName][id]))
                     end
                 else
-                    DebugError("uix updateCallback: callback at " .. callbackName .. " with id " .. tostring(id) .. " doesn't exist")
+                    DebugError("uix deregisterCallbacksNow: callback at " .. callbackName .. " with id " .. tostring(id) .. " doesn't exist")
                 end
             end
         end
@@ -600,7 +600,7 @@ function menu.updateCallbacksNow()
                         DebugError("uix updateCallbacksNow (post): menu.uix_callbacks[" .. tostring(callbackName) .. "][" .. tostring(updateData.id) .. "]: " .. tostring(menu.uix_callbacks[callbackName][updateData.id]))
                     end
                 else
-                    DebugError("uix updateCallback: callback at " .. callbackName .. " with id " .. tostring(id) .. " doesn't exist")
+                    DebugError("uix updateCallbacksNow: callback at " .. callbackName .. " with id " .. tostring(id) .. " doesn't exist")
                 end
             end
         end
