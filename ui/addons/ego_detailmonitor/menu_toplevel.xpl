@@ -509,17 +509,17 @@ function menu.registerCallback(callbackName, callbackFunction, id)
     -- note 3: new callbacks can be added or existing callbacks can be edited. but commit your additions/changes to the mod's GIT repository.
     -- note 4: search for the callback names to see where they are executed.
     -- note 5: if a callback requires a return value, return it in an object var. e.g. "display_on_set_room_active" requires a return of {active = true | false}.
-    if menu.uix_callbacks [callbackName] == nil then
-        menu.uix_callbacks [callbackName] = {}
+    if uix_callbacks [callbackName] == nil then
+        uix_callbacks [callbackName] = {}
     end
-    if not menu.uix_callbacks[callbackName][id] then
+    if not uix_callbacks[callbackName][id] then
         if not id then
             uix_callbackCount = uix_callbackCount + 1
             id = "_" .. tostring(uix_callbackCount)
         end
-        menu.uix_callbacks[callbackName][id] = callbackFunction
+        uix_callbacks[callbackName][id] = callbackFunction
         if Helper.isDebugCallbacks then
-            DebugError("uix registerCallback: menu.uix_callbacks[" .. tostring(callbackName) .. "][" .. tostring(id) .. "]: " .. tostring(menu.uix_callbacks[callbackName][id]))
+            DebugError("uix registerCallback: uix_callbacks[" .. tostring(callbackName) .. "][" .. tostring(id) .. "]: " .. tostring(uix_callbacks[callbackName][id]))
         end
     else
         DebugError("uix registerCallback: callback at " .. callbackName .. " with id " .. tostring(id) .. " was already previously registered")
@@ -535,8 +535,8 @@ function menu.deregisterCallback(callbackName, callbackFunction, id)
     if id then
         table.insert(uix_callbacks_toDeregister[callbackName], id)
     else
-        if menu.uix_callbacks[callbackName] then
-            for id, func in pairs(menu.uix_callbacks[callbackName]) do
+        if uix_callbacks[callbackName] then
+            for id, func in pairs(uix_callbacks[callbackName]) do
                 if func == callbackFunction then
                     table.insert(uix_callbacks_toDeregister[callbackName], id)
                 end
@@ -552,15 +552,15 @@ end
 function menu.deregisterCallbacksNow()
     uix_isDeregisterQueued = nil
     for callbackName, ids in pairs(uix_callbacks_toDeregister) do
-        if menu.uix_callbacks[callbackName] then
+        if uix_callbacks[callbackName] then
             for _, id in ipairs(ids) do
-                if menu.uix_callbacks[callbackName][id] then
+                if uix_callbacks[callbackName][id] then
                     if Helper.isDebugCallbacks then
-                        DebugError("uix registerCallback (pre): menu.uix_callbacks[" .. tostring(callbackName) .. "][" .. tostring(id) .. "]: " .. tostring(menu.uix_callbacks[callbackName][id]))
+                        DebugError("uix deregisterCallbacksNow (pre): uix_callbacks[" .. tostring(callbackName) .. "][" .. tostring(id) .. "]: " .. tostring(uix_callbacks[callbackName][id]))
                     end
-                    menu.uix_callbacks[callbackName][id] = nil
+                    uix_callbacks[callbackName][id] = nil
                     if Helper.isDebugCallbacks then
-                        DebugError("uix registerCallback (post): menu.uix_callbacks[" .. tostring(callbackName) .. "][" .. tostring(id) .. "]: " .. tostring(menu.uix_callbacks[callbackName][id]))
+                        DebugError("uix deregisterCallbacksNow (post): uix_callbacks[" .. tostring(callbackName) .. "][" .. tostring(id) .. "]: " .. tostring(uix_callbacks[callbackName][id]))
                     end
                 else
                     DebugError("uix deregisterCallbacksNow: callback at " .. callbackName .. " with id " .. tostring(id) .. " doesn't exist")
@@ -572,7 +572,7 @@ function menu.deregisterCallbacksNow()
 end
 
 local uix_isUpdateQueued
-local uix_callbacks_toUpdate
+local uix_callbacks_toUpdate = {}
 function menu.updateCallback(callbackName, id, callbackFunction)
     if not uix_callbacks_toUpdate[callbackName] then
         uix_callbacks_toUpdate[callbackName] = {}
@@ -589,15 +589,15 @@ end
 function menu.updateCallbacksNow()
     uix_isUpdateQueued = nil
     for callbackName, updateDatas in pairs(uix_callbacks_toUpdate) do
-        if menu.uix_callbacks[callbackName] then
+        if uix_callbacks[callbackName] then
             for _, updateData in ipairs(updateDatas) do
-                if menu.uix_callbacks[callbackName][updateData.id] then
+                if uix_callbacks[callbackName][updateData.id] then
                     if Helper.isDebugCallbacks then
-                        DebugError("uix updateCallbacksNow (pre): menu.uix_callbacks[" .. tostring(callbackName) .. "][" .. tostring(updateData.id) .. "]: " .. tostring(menu.uix_callbacks[callbackName][updateData.id]))
+                        DebugError("uix updateCallbacksNow (pre): uix_callbacks[" .. tostring(callbackName) .. "][" .. tostring(updateData.id) .. "]: " .. tostring(uix_callbacks[callbackName][updateData.id]))
                     end
-                    menu.uix_callbacks[callbackName][updateData.id] = updateData.callbackFunction
+                    uix_callbacks[callbackName][updateData.id] = updateData.callbackFunction
                     if Helper.isDebugCallbacks then
-                        DebugError("uix updateCallbacksNow (post): menu.uix_callbacks[" .. tostring(callbackName) .. "][" .. tostring(updateData.id) .. "]: " .. tostring(menu.uix_callbacks[callbackName][updateData.id]))
+                        DebugError("uix updateCallbacksNow (post): uix_callbacks[" .. tostring(callbackName) .. "][" .. tostring(updateData.id) .. "]: " .. tostring(uix_callbacks[callbackName][updateData.id]))
                     end
                 else
                     DebugError("uix updateCallbacksNow: callback at " .. callbackName .. " with id " .. tostring(id) .. " doesn't exist")

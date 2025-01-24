@@ -1113,11 +1113,11 @@ function ModLua.deregisterCallbacksNow()
             for _, id in ipairs(ids) do
                 if uix_callbacks[callbackName][id] then
                     if Helper.isDebugCallbacks then
-                        DebugError("uix registerCallback (pre): uix_callbacks[" .. tostring(callbackName) .. "][" .. tostring(id) .. "]: " .. tostring(uix_callbacks[callbackName][id]))
+                        DebugError("uix deregisterCallbacksNow (pre): uix_callbacks[" .. tostring(callbackName) .. "][" .. tostring(id) .. "]: " .. tostring(uix_callbacks[callbackName][id]))
                     end
                     uix_callbacks[callbackName][id] = nil
                     if Helper.isDebugCallbacks then
-                        DebugError("uix registerCallback (post): uix_callbacks[" .. tostring(callbackName) .. "][" .. tostring(id) .. "]: " .. tostring(uix_callbacks[callbackName][id]))
+                        DebugError("uix deregisterCallbacksNow (post): uix_callbacks[" .. tostring(callbackName) .. "][" .. tostring(id) .. "]: " .. tostring(uix_callbacks[callbackName][id]))
                     end
                 else
                     DebugError("uix deregisterCallbacksNow: callback at " .. callbackName .. " with id " .. tostring(id) .. " doesn't exist")
@@ -1129,7 +1129,7 @@ function ModLua.deregisterCallbacksNow()
 end
 
 local uix_isUpdateQueued
-local uix_callbacks_toUpdate
+local uix_callbacks_toUpdate = {}
 function ModLua.updateCallback(callbackName, id, callbackFunction)
     if not uix_callbacks_toUpdate[callbackName] then
         uix_callbacks_toUpdate[callbackName] = {}

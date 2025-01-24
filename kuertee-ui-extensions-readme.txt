@@ -5,6 +5,10 @@ by kuertee. Contributors: Erixon, Forleyor, Mycu, Runekn, AlexandreTK.
 
 Updates
 =======
+v7.5.0061 beta, 24 Jan 2025:
+-New feature: 7.5 beta 6 compatibility.
+-Bug-fix: The player's Inventory window wasn't opening.
+
 v7.5.0052 beta, 22 Jan 2025:
 -Tweak: callbacks can now be assigned an id so that they can be deregistered by other mods with "menu.registerCallback(callbackName, myCallbackFunc, myId)".
 				E.g.
