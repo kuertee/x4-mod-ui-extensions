@@ -1025,7 +1025,12 @@ config.optionDefinitions = {
             id = "online",
             name = function () return menu.nameOnline() end,
             submenu = "online",
-            selectable = C.IsOnlineEnabled,
+
+            -- kuertee start:
+            -- selectable = C.IsOnlineEnabled,
+            selectable = function () return false end,
+            -- kuertee end
+
             mouseOverText = function () return C.IsOnlineEnabled() and (ReadText(1026, 4806) .. "\n\n" .. ReadText(1026, 4807)) or ReadText(1001, 11592) end,
         },
         [2] = {

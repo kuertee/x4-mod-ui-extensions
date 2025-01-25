@@ -87375,7 +87375,7 @@ function ModLua.submenuHandler(optionParameter)
         menu.displayLobby()
     elseif optionParameter == "online" then
         __CORE_GAMEOPTIONS_PRIVACYPOLICY = false
-        menu.displayOnlineLogin()
+        -- menu.displayOnlineLogin()
     elseif optionParameter == "extensions" then
         menu.displayExtensions()
     elseif optionParameter == "bonus" then
