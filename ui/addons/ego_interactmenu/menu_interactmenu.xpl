@@ -476,6 +476,11 @@ end
 function menu.init_kuertee ()
 	RegisterEvent ("Interact_Menu_API.Add_Custom_Actions_Group_Id", menu.Add_Custom_Actions_Group_Id)
 	RegisterEvent ("Interact_Menu_API.Add_Custom_Actions_Group_Text", menu.Add_Custom_Actions_Group_Text)
+	RegisterEvent ("Interact_Menu_API.Existence_Query", menu.Existence_Query)
+end
+
+function menu.Existence_Query()
+	AddUITriggeredEvent("UIX_Interact_Menu_Present", "")
 end
 -- kuertee end
 
