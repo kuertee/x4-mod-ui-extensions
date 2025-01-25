@@ -1,3 +1,9 @@
+if Helper.uix_callbacks then
+    -- OptionsMenu already UIX initialised by stand-alone UIX mod, do not continue with this file.
+    Helper.debugText_forced("helper_uix.lua already loaded by stand-alone UIX mod.")
+    return
+end
+
 local ModLua = {}
 
 local ffi = require("ffi")
@@ -111,7 +117,7 @@ end
 -- kuertee start: rewrites
 
 local OldFuncs = {}
-local uix_callbacks = {}
+Helper.uix_callbacks = {}
 
 function ModLua.rewriteFunctions()
 	OldFuncs.onUpdate = Helper.onUpdate
@@ -156,8 +162,8 @@ function ModLua.onUpdate()
 	end
 
 	-- kuertee start: callback
-	if uix_callbacks ["onUpdate"] then
-		for uix_id, uix_callback in pairs (uix_callbacks ["onUpdate"]) do
+	if Helper.uix_callbacks ["onUpdate"] then
+		for uix_id, uix_callback in pairs (Helper.uix_callbacks ["onUpdate"]) do
 			name = uix_callback ()
 		end
 	end
@@ -231,9 +237,9 @@ function ModLua.checkTopLevelConditions(entry)
 	end
 
 	-- kuertee start: callback
-	if uix_callbacks ["checkTopLevelConditions_get_is_entry_available"] then
+	if Helper.uix_callbacks ["checkTopLevelConditions_get_is_entry_available"] then
 		local isAvailable = true
-		for uix_id, uix_callback in pairs (uix_callbacks ["checkTopLevelConditions_get_is_entry_available"]) do
+		for uix_id, uix_callback in pairs (Helper.uix_callbacks ["checkTopLevelConditions_get_is_entry_available"]) do
 			isAvailable = uix_callback (entry)
 			if isAvailable ~= true then
 				return false
@@ -253,8 +259,8 @@ function ModLua.createLSOStorageNode(menu, container, ware, planned, hasstorage,
 	local name, transporttype = GetWareData(ware, "name", "transport")
 
 	-- kuertee start: callback
-	if uix_callbacks ["createLSOStorageNode_get_ware_name"] then
-		for uix_id, uix_callback in pairs (uix_callbacks ["createLSOStorageNode_get_ware_name"]) do
+	if Helper.uix_callbacks ["createLSOStorageNode_get_ware_name"] then
+		for uix_id, uix_callback in pairs (Helper.uix_callbacks ["createLSOStorageNode_get_ware_name"]) do
 			name = uix_callback (ware)
 		end
 	end
@@ -395,14 +401,14 @@ function ModLua.updateLSOStorageNode(menu, node, container, ware)
 	node:updateValue(amount)
 
 	-- kuertee start: callback
-	if uix_callbacks ["updateLSOStorageNode_pre_update_expanded_node"] then
+	if Helper.uix_callbacks ["updateLSOStorageNode_pre_update_expanded_node"] then
 		-- function widgetPrototypes.flowchartnode:updateStatus(text, icon, bgicon, color, mouseovertext)
 		local status_text = nil
 		local status_icon = statusicon
 		local status_bgicon = nil
 		local status_color = statuscolor
 		local status_mouseovertext = statusiconmouseovertext
-		for uix_id, uix_callback in pairs (uix_callbacks ["updateLSOStorageNode_pre_update_expanded_node"]) do
+		for uix_id, uix_callback in pairs (Helper.uix_callbacks ["updateLSOStorageNode_pre_update_expanded_node"]) do
 			status_text, status_icon, status_bgicon, status_color, status_mouseovertext = uix_callback(menu, node, container, ware, status_text, status_icon, status_bgicon, status_color, status_mouseovertext)
 		end
 		node:updateStatus(status_text, status_icon, status_bgicon, status_color, status_mouseovertext)
@@ -603,8 +609,8 @@ function ModLua.onExpandLSOStorageNode(menu, container, _, ftable, _, nodedata)
 		-- buy offer
 		if (waretype == "resource") or (waretype == "intermediate") or (waretype == "product") or (waretype == "trade") then
 			-- kuertee start: callback
-			if uix_callbacks ["onExpandLSOStorageNode_pre_buy_offer_title"] then
-				for uix_id, uix_callback in pairs (uix_callbacks ["onExpandLSOStorageNode_pre_buy_offer_title"]) do
+			if Helper.uix_callbacks ["onExpandLSOStorageNode_pre_buy_offer_title"] then
+				for uix_id, uix_callback in pairs (Helper.uix_callbacks ["onExpandLSOStorageNode_pre_buy_offer_title"]) do
 					uix_callback(menu, container, ftable, nodedata)
 				end
 			end
@@ -748,8 +754,8 @@ function ModLua.onExpandLSOStorageNode(menu, container, _, ftable, _, nodedata)
 
 					-- kuertee start: callback
 					-- row[1]:createText(function () return Helper.getETAString(name, reservation.eta) end, { font = Helper.standardFontMono })
-					if uix_callbacks ["onExpandLSOStorageNode_list_incoming_trade"] then
-						for uix_id, uix_callback in pairs (uix_callbacks ["onExpandLSOStorageNode_list_incoming_trade"]) do
+					if Helper.uix_callbacks ["onExpandLSOStorageNode_list_incoming_trade"] then
+						for uix_id, uix_callback in pairs (Helper.uix_callbacks ["onExpandLSOStorageNode_list_incoming_trade"]) do
 							uix_callback (row, name, reservation, isplayerowned)
 						end
 					else
@@ -767,8 +773,8 @@ function ModLua.onExpandLSOStorageNode(menu, container, _, ftable, _, nodedata)
 		-- sell offer
 		if (not isprocessed) and ((waretype == "resource") or (waretype == "product") or (waretype == "intermediate") or (waretype == "trade")) then
 			-- kuertee start: callback
-			if uix_callbacks ["onExpandLSOStorageNode_pre_sell_offer_title"] then
-				for uix_id, uix_callback in pairs (uix_callbacks ["onExpandLSOStorageNode_pre_sell_offer_title"]) do
+			if Helper.uix_callbacks ["onExpandLSOStorageNode_pre_sell_offer_title"] then
+				for uix_id, uix_callback in pairs (Helper.uix_callbacks ["onExpandLSOStorageNode_pre_sell_offer_title"]) do
 					uix_callback(menu, container, ftable, nodedata)
 				end
 			end
@@ -911,8 +917,8 @@ function ModLua.onExpandLSOStorageNode(menu, container, _, ftable, _, nodedata)
 
 					-- kuertee start: callback
 					-- row[1]:createText(function () return Helper.getETAString(name, reservation.eta) end, { font = Helper.standardFontMono })
-					if uix_callbacks ["onExpandLSOStorageNode_list_incoming_trade"] then
-						for uix_id, uix_callback in pairs (uix_callbacks ["onExpandLSOStorageNode_list_incoming_trade"]) do
+					if Helper.uix_callbacks ["onExpandLSOStorageNode_list_incoming_trade"] then
+						for uix_id, uix_callback in pairs (Helper.uix_callbacks ["onExpandLSOStorageNode_list_incoming_trade"]) do
 							uix_callback (row, name, reservation, isplayerowned)
 						end
 					else
@@ -951,8 +957,8 @@ function ModLua.onExpandLSOStorageNode(menu, container, _, ftable, _, nodedata)
 	menu.restoreTableState("nodeTable", ftable)
 
 	-- kuertee start: callback
-	if uix_callbacks ["onExpandLSOStorageNode"] then
-		for uix_id, uix_callback in pairs (uix_callbacks ["onExpandLSOStorageNode"]) do
+	if Helper.uix_callbacks ["onExpandLSOStorageNode"] then
+		for uix_id, uix_callback in pairs (Helper.uix_callbacks ["onExpandLSOStorageNode"]) do
 			uix_callback(menu, container, ftable, nodedata)
 		end
 	end
@@ -970,14 +976,14 @@ function ModLua.checkboxSetTradeRuleOverride(menu, container, type, ware, checke
 	if (type == "buy") or (type == "sell") then
 
 		-- kuertee start: callback
-		if uix_callbacks ["checkboxSetTradeRuleOverride_pre_update_expanded_node"] then
+		if Helper.uix_callbacks ["checkboxSetTradeRuleOverride_pre_update_expanded_node"] then
 			-- function widgetPrototypes.flowchartnode:updateStatus(text, icon, bgicon, color, mouseovertext)
 			local status_text = nil
 			local status_icon = Helper.isTradeRestricted(container, ware) and "lso_error" or nil
 			local status_bgicon = nil
 			local status_color = Color["icon_warning"]
 			local status_mouseovertext
-			for uix_id, uix_callback in pairs (uix_callbacks ["checkboxSetTradeRuleOverride_pre_update_expanded_node"]) do
+			for uix_id, uix_callback in pairs (Helper.uix_callbacks ["checkboxSetTradeRuleOverride_pre_update_expanded_node"]) do
 				status_text, status_icon, status_bgicon, status_color, status_mouseovertext = uix_callback(menu, container, type, ware, checked, status_text, status_icon, status_bgicon, status_color, status_mouseovertext)
 			end
 			menu.expandedNode:updateStatus(status_text, status_icon, status_bgicon, status_color, status_mouseovertext)
@@ -997,14 +1003,14 @@ function  Helper.dropdownTradeRule(menu, container, type, ware, id)
 	if (type == "buy") or (type == "sell") then
 
 		-- kuertee start: callback
-		if uix_callbacks ["dropdownTradeRule_pre_update_expanded_node"] then
+		if Helper.uix_callbacks ["dropdownTradeRule_pre_update_expanded_node"] then
 			-- function widgetPrototypes.flowchartnode:updateStatus(text, icon, bgicon, color, mouseovertext)
 			local status_text = nil
 			local status_icon = Helper.isTradeRestricted(container, ware) and "lso_error" or nil
 			local status_bgicon = nil
 			local status_color = Color["icon_warning"]
 			local status_mouseovertext = nil
-			for uix_id, uix_callback in pairs (uix_callbacks ["dropdownTradeRule_pre_update_expanded_node"]) do
+			for uix_id, uix_callback in pairs (Helper.uix_callbacks ["dropdownTradeRule_pre_update_expanded_node"]) do
 				status_text, status_icon, status_bgicon, status_color, status_mouseovertext = uix_callback(menu, container, type, ware, id, status_text, status_icon, status_bgicon, status_color, status_mouseovertext)
 			end
 			menu.expandedNode:updateStatus(status_text, status_icon, status_bgicon, status_color, mouseOverText)
@@ -1025,8 +1031,8 @@ function ModLua.onCollapseLSOStorageNode(menu, nodedata)
 	Helper.LSOStorageNodeSellSlider = nil
 
 	-- kuertee start: callback
-	if uix_callbacks ["onCollapseLSOStorageNode"] then
-		for uix_id, uix_callback in pairs (uix_callbacks ["onCollapseLSOStorageNode"]) do
+	if Helper.uix_callbacks ["onCollapseLSOStorageNode"] then
+		for uix_id, uix_callback in pairs (Helper.uix_callbacks ["onCollapseLSOStorageNode"]) do
 			uix_callback (menu, nodedata)
 		end
 	end
@@ -1059,105 +1065,105 @@ function ModLua.addNewFunctions()
 	Helper.setDebugCallbacks = ModLua.setDebugCallbacks
 end
 
-local uix_callbackCount = 0
+Helper.uix_callbackCount = 0
 function ModLua.registerCallback(callbackName, callbackFunction, id)
     -- note 1: format is generally [function name]_[action]. e.g.: in kuertee_menu_transporter, "display_on_set_room_active" overrides the room's active property with the return of the callback.
     -- note 2: events have the word "_on_" followed by a PRESENT TENSE verb. e.g.: in kuertee_menu_transporter, "display_on_set_buttontable" is called after all of the rows of buttontable are set.
     -- note 3: new callbacks can be added or existing callbacks can be edited. but commit your additions/changes to the mod's GIT repository.
     -- note 4: search for the callback names to see where they are executed.
     -- note 5: if a callback requires a return value, return it in an object var. e.g. "display_on_set_room_active" requires a return of {active = true | false}.
-    if uix_callbacks [callbackName] == nil then
-        uix_callbacks [callbackName] = {}
+    if Helper.uix_callbacks [callbackName] == nil then
+        Helper.uix_callbacks [callbackName] = {}
     end
-    if not uix_callbacks[callbackName][id] then
+    if not Helper.uix_callbacks[callbackName][id] then
         if not id then
-            uix_callbackCount = uix_callbackCount + 1
-            id = "_" .. tostring(uix_callbackCount)
+            Helper.uix_callbackCount = Helper.uix_callbackCount + 1
+            id = "_" .. tostring(Helper.uix_callbackCount)
         end
-        uix_callbacks[callbackName][id] = callbackFunction
+        Helper.uix_callbacks[callbackName][id] = callbackFunction
         if Helper.isDebugCallbacks then
-            DebugError("uix registerCallback: uix_callbacks[" .. tostring(callbackName) .. "][" .. tostring(id) .. "]: " .. tostring(uix_callbacks[callbackName][id]))
+            Helper.debugText_forced("Helper uix registerCallback: Helper.uix_callbacks[" .. tostring(callbackName) .. "][" .. tostring(id) .. "]: " .. tostring(Helper.uix_callbacks[callbackName][id]))
         end
     else
-        DebugError("uix registerCallback: callback at " .. callbackName .. " with id " .. tostring(id) .. " was already previously registered")
+        Helper.debugText_forced("Helper uix registerCallback: callback at " .. callbackName .. " with id " .. tostring(id) .. " was already previously registered")
     end
 end
 
-local uix_isDeregisterQueued
-local uix_callbacks_toDeregister = {}
+Helper.uix_isDeregisterQueued = nil
+Helper.uix_callbacks_toDeregister = {}
 function ModLua.deregisterCallback(callbackName, callbackFunction, id)
-    if not uix_callbacks_toDeregister[callbackName] then
-        uix_callbacks_toDeregister[callbackName] = {}
+    if not Helper.uix_callbacks_toDeregister[callbackName] then
+        Helper.uix_callbacks_toDeregister[callbackName] = {}
     end
     if id then
-        table.insert(uix_callbacks_toDeregister[callbackName], id)
+        table.insert(Helper.uix_callbacks_toDeregister[callbackName], id)
     else
-        if uix_callbacks[callbackName] then
-            for id, func in pairs(uix_callbacks[callbackName]) do
+        if Helper.uix_callbacks[callbackName] then
+            for id, func in pairs(Helper.uix_callbacks[callbackName]) do
                 if func == callbackFunction then
-                    table.insert(uix_callbacks_toDeregister[callbackName], id)
+                    table.insert(Helper.uix_callbacks_toDeregister[callbackName], id)
                 end
             end
         end
     end
-    if not uix_isDeregisterQueued then
-        uix_isDeregisterQueued = true
+    if not Helper.uix_isDeregisterQueued then
+        Helper.uix_isDeregisterQueued = true
         Helper.addDelayedOneTimeCallbackOnUpdate(ModLua.deregisterCallbacksNow, true, getElapsedTime() + 1)
     end
 end
 
 function ModLua.deregisterCallbacksNow()
-    uix_isDeregisterQueued = nil
-    for callbackName, ids in pairs(uix_callbacks_toDeregister) do
-        if uix_callbacks[callbackName] then
+    Helper.uix_isDeregisterQueued = nil
+    for callbackName, ids in pairs(Helper.uix_callbacks_toDeregister) do
+        if Helper.uix_callbacks[callbackName] then
             for _, id in ipairs(ids) do
-                if uix_callbacks[callbackName][id] then
+                if Helper.uix_callbacks[callbackName][id] then
                     if Helper.isDebugCallbacks then
-                        DebugError("uix deregisterCallbacksNow (pre): uix_callbacks[" .. tostring(callbackName) .. "][" .. tostring(id) .. "]: " .. tostring(uix_callbacks[callbackName][id]))
+                        Helper.debugText_forced("Helper uix deregisterCallbacksNow (pre): Helper.uix_callbacks[" .. tostring(callbackName) .. "][" .. tostring(id) .. "]: " .. tostring(Helper.uix_callbacks[callbackName][id]))
                     end
-                    uix_callbacks[callbackName][id] = nil
+                    Helper.uix_callbacks[callbackName][id] = nil
                     if Helper.isDebugCallbacks then
-                        DebugError("uix deregisterCallbacksNow (post): uix_callbacks[" .. tostring(callbackName) .. "][" .. tostring(id) .. "]: " .. tostring(uix_callbacks[callbackName][id]))
+                        Helper.debugText_forced("Helper uix deregisterCallbacksNow (post): Helper.uix_callbacks[" .. tostring(callbackName) .. "][" .. tostring(id) .. "]: " .. tostring(Helper.uix_callbacks[callbackName][id]))
                     end
                 else
-                    DebugError("uix deregisterCallbacksNow: callback at " .. callbackName .. " with id " .. tostring(id) .. " doesn't exist")
+                    Helper.debugText_forced("Helper uix deregisterCallbacksNow: callback at " .. callbackName .. " with id " .. tostring(id) .. " doesn't exist")
                 end
             end
         end
     end
-    uix_callbacks_toDeregister = {}
+    Helper.uix_callbacks_toDeregister = {}
 end
 
-local uix_isUpdateQueued
-local uix_callbacks_toUpdate = {}
+Helper.uix_isUpdateQueued = nil
+Helper.uix_callbacks_toUpdate = {}
 function ModLua.updateCallback(callbackName, id, callbackFunction)
-    if not uix_callbacks_toUpdate[callbackName] then
-        uix_callbacks_toUpdate[callbackName] = {}
+    if not Helper.uix_callbacks_toUpdate[callbackName] then
+        Helper.uix_callbacks_toUpdate[callbackName] = {}
     end
     if id then
-        table.insert(uix_callbacks_toUpdate[callbackName], {id = id, callbackFunction = callbackFunction})
+        table.insert(Helper.uix_callbacks_toUpdate[callbackName], {id = id, callbackFunction = callbackFunction})
     end
-    if not uix_isUpdateQueued then
-        uix_isUpdateQueued = true
+    if not Helper.uix_isUpdateQueued then
+        Helper.uix_isUpdateQueued = true
         Helper.addDelayedOneTimeCallbackOnUpdate(ModLua.updateCallbacksNow, true, getElapsedTime() + 1)
     end
 end
 
 function ModLua.updateCallbacksNow()
-    uix_isUpdateQueued = nil
-    for callbackName, updateDatas in pairs(uix_callbacks_toUpdate) do
-        if uix_callbacks[callbackName] then
+    Helper.uix_isUpdateQueued = nil
+    for callbackName, updateDatas in pairs(Helper.uix_callbacks_toUpdate) do
+        if Helper.uix_callbacks[callbackName] then
             for _, updateData in ipairs(updateDatas) do
-                if uix_callbacks[callbackName][updateData.id] then
+                if Helper.uix_callbacks[callbackName][updateData.id] then
                     if Helper.isDebugCallbacks then
-                        DebugError("uix updateCallbacksNow (pre): uix_callbacks[" .. tostring(callbackName) .. "][" .. tostring(updateData.id) .. "]: " .. tostring(uix_callbacks[callbackName][updateData.id]))
+                        Helper.debugText_forced("Helper uix updateCallbacksNow (pre): Helper.uix_callbacks[" .. tostring(callbackName) .. "][" .. tostring(updateData.id) .. "]: " .. tostring(Helper.uix_callbacks[callbackName][updateData.id]))
                     end
-                    uix_callbacks[callbackName][updateData.id] = updateData.callbackFunction
+                    Helper.uix_callbacks[callbackName][updateData.id] = updateData.callbackFunction
                     if Helper.isDebugCallbacks then
-                        DebugError("uix updateCallbacksNow (post): uix_callbacks[" .. tostring(callbackName) .. "][" .. tostring(updateData.id) .. "]: " .. tostring(uix_callbacks[callbackName][updateData.id]))
+                        Helper.debugText_forced("Helper uix updateCallbacksNow (post): Helper.uix_callbacks[" .. tostring(callbackName) .. "][" .. tostring(updateData.id) .. "]: " .. tostring(Helper.uix_callbacks[callbackName][updateData.id]))
                     end
                 else
-                    DebugError("uix updateCallbacksNow: callback at " .. callbackName .. " with id " .. tostring(id) .. " doesn't exist")
+                    Helper.debugText_forced("Helper uix updateCallbacksNow: callback at " .. callbackName .. " with id " .. tostring(id) .. " doesn't exist")
                 end
             end
         end

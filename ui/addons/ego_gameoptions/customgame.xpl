@@ -358,7 +358,7 @@ local menu = {
 }
 
 -- kuertee start:
-local uix_callbacks = {}
+menu.uix_callbacks = {}
 -- kuertee end
 
 local function init()
@@ -788,8 +788,8 @@ function menu.cleanup()
 	menu.rightdown = nil
 
 	-- kuertee start: callback
-	if uix_callbacks ["cleanup"] then
-		for uix_id, uix_callback in pairs (uix_callbacks ["cleanup"]) do
+	if menu.uix_callbacks ["cleanup"] then
+		for uix_id, uix_callback in pairs (menu.uix_callbacks ["cleanup"]) do
 			uix_callback(menu.customgamestart)
 		end
 	end
@@ -808,8 +808,8 @@ function menu.buttonNewGame()
 		Helper.addDelayedOneTimeCallbackOnUpdate(
 			function ()
 				-- kuertee start: callback
-				if uix_callbacks ["buttonNewGame_preNewGame"] then
-					for uix_id, uix_callback in pairs (uix_callbacks ["buttonNewGame_preNewGame"]) do
+				if menu.uix_callbacks ["buttonNewGame_preNewGame"] then
+					for uix_id, uix_callback in pairs (menu.uix_callbacks ["buttonNewGame_preNewGame"]) do
 						uix_callback(menu.customgamestart)
 					end
 				end
@@ -861,8 +861,8 @@ function menu.buttonReset()
 	menu.refresh = getElapsedTime()
 
 	-- kuertee start: callback
-	if uix_callbacks ["buttonReset_on_end"] then
-		for uix_id, uix_callback in pairs (uix_callbacks ["buttonReset_on_end"]) do
+	if menu.uix_callbacks ["buttonReset_on_end"] then
+		for uix_id, uix_callback in pairs (menu.uix_callbacks ["buttonReset_on_end"]) do
 			uix_callback ()
 		end
 	end
@@ -1247,8 +1247,8 @@ end
 
 function menu.dropdownProperty(property, row, option)
 	-- kuertee start: callback
-	if uix_callbacks ["dropdownProperty_on_start"] then
-		for uix_id, uix_callback in pairs (uix_callbacks ["dropdownProperty_on_start"]) do
+	if menu.uix_callbacks ["dropdownProperty_on_start"] then
+		for uix_id, uix_callback in pairs (menu.uix_callbacks ["dropdownProperty_on_start"]) do
 			uix_callback (property, row, option)
 		end
 	end
@@ -1689,8 +1689,8 @@ function menu.editboxProperty(property, text)
 	property.set(menu.customgamestart, property.id, text)
 
 	-- kuertee start: callback
-	if uix_callbacks ["editboxProperty_on_end"] then
-		for uix_id, uix_callback in pairs (uix_callbacks ["editboxProperty_on_end"]) do
+	if menu.uix_callbacks ["editboxProperty_on_end"] then
+		for uix_id, uix_callback in pairs (menu.uix_callbacks ["editboxProperty_on_end"]) do
 			uix_callback (property, text)
 		end
 	end
@@ -1731,8 +1731,8 @@ function menu.slidercellFaction(faction, value)
 	Helper.ffiClearNewHelper()
 
 	-- kuertee start: callback
-	if uix_callbacks ["slidercellFaction_on_end"] then
-		for uix_id, uix_callback in pairs (uix_callbacks ["slidercellFaction_on_end"]) do
+	if menu.uix_callbacks ["slidercellFaction_on_end"] then
+		for uix_id, uix_callback in pairs (menu.uix_callbacks ["slidercellFaction_on_end"]) do
 			uix_callback (faction, value)
 		end
 	end
@@ -1776,8 +1776,8 @@ function menu.removeFactionRelationHelper(faction)
 	Helper.ffiClearNewHelper()
 
 	-- kuertee start: callback
-	if uix_callbacks ["removeFactionRelationHelper_on_end"] then
-		for uix_id, uix_callback in pairs (uix_callbacks ["removeFactionRelationHelper_on_end"]) do
+	if menu.uix_callbacks ["removeFactionRelationHelper_on_end"] then
+		for uix_id, uix_callback in pairs (menu.uix_callbacks ["removeFactionRelationHelper_on_end"]) do
 			uix_callback (faction)
 		end
 	end
@@ -1924,8 +1924,8 @@ function menu.playerMacro(current, customoptions)
 	end
 
 	-- kuertee start: callback
-	if uix_callbacks ["playerMacro_on_end"] then
-		for uix_id, uix_callback in pairs (uix_callbacks ["playerMacro_on_end"]) do
+	if menu.uix_callbacks ["playerMacro_on_end"] then
+		for uix_id, uix_callback in pairs (menu.uix_callbacks ["playerMacro_on_end"]) do
 			uix_callback (current, customoptions, options, currentOption)
 		end
 	end
@@ -2041,8 +2041,8 @@ function menu.universeSector(current)
 	end
 
 	-- kuertee start: callback
-	if uix_callbacks ["universeSector_on_end"] then
-		for uix_id, uix_callback in pairs (uix_callbacks ["universeSector_on_end"]) do
+	if menu.uix_callbacks ["universeSector_on_end"] then
+		for uix_id, uix_callback in pairs (menu.uix_callbacks ["universeSector_on_end"]) do
 			uix_callback (current, options, currentOption)
 		end
 	end
@@ -2108,8 +2108,8 @@ end
 
 function menu.openShipConfig()
 	-- kuertee start: callback
-	if uix_callbacks ["openShipConfig_on_start"] then
-		for uix_id, uix_callback in pairs (uix_callbacks ["openShipConfig_on_start"]) do
+	if menu.uix_callbacks ["openShipConfig_on_start"] then
+		for uix_id, uix_callback in pairs (menu.uix_callbacks ["openShipConfig_on_start"]) do
 			uix_callback ()
 		end
 	end
@@ -2120,8 +2120,8 @@ function menu.openShipConfig()
 	menu.cleanup()
 
 	-- kuertee start: callback
-	if uix_callbacks ["openShipConfig_on_end"] then
-		for uix_id, uix_callback in pairs (uix_callbacks ["openShipConfig_on_end"]) do
+	if menu.uix_callbacks ["openShipConfig_on_end"] then
+		for uix_id, uix_callback in pairs (menu.uix_callbacks ["openShipConfig_on_end"]) do
 			uix_callback ()
 		end
 	end
@@ -2136,8 +2136,8 @@ function menu.openPlayerPropertyShipConfig(row, entryid, macro, commanderid, peo
 	menu.cleanup()
 
 	-- kuertee start: callback
-	if uix_callbacks ["openPlayerPropertyShipConfig_on_end"] then
-		for uix_id, uix_callback in pairs (uix_callbacks ["openPlayerPropertyShipConfig_on_end"]) do
+	if menu.uix_callbacks ["openPlayerPropertyShipConfig_on_end"] then
+		for uix_id, uix_callback in pairs (menu.uix_callbacks ["openPlayerPropertyShipConfig_on_end"]) do
 			uix_callback (row, entryid, macro, commanderid, peopledef, peoplefillpercentage, count)
 		end
 	end
@@ -2161,8 +2161,8 @@ function menu.setPlayerMacro(customgamestart, propertyid, option)
 	end
 
 	-- kuertee start: callback
-	if uix_callbacks ["setPlayerMacro_on_end"] then
-		for uix_id, uix_callback in pairs (uix_callbacks ["setPlayerMacro_on_end"]) do
+	if menu.uix_callbacks ["setPlayerMacro_on_end"] then
+		for uix_id, uix_callback in pairs (menu.uix_callbacks ["setPlayerMacro_on_end"]) do
 			uix_callback (customgamestart, propertyid, option)
 		end
 	end
@@ -2187,8 +2187,8 @@ function menu.setPlayerSector(gamestartid, propertyid, sector, noreset)
 	C.SetCustomGameStartStringProperty(gamestartid, propertyid, sector)
 
 	-- kuertee start: callback
-	if uix_callbacks ["setPlayerSector_on_end"] then
-		for uix_id, uix_callback in pairs (uix_callbacks ["setPlayerSector_on_end"]) do
+	if menu.uix_callbacks ["setPlayerSector_on_end"] then
+		for uix_id, uix_callback in pairs (menu.uix_callbacks ["setPlayerSector_on_end"]) do
 			uix_callback (gamestartid, propertyid, sector, noreset)
 		end
 	end
@@ -2838,8 +2838,8 @@ end
 
 function menu.display()
 	-- kuertee start: callback
-	if uix_callbacks ["display_on_start"] then
-		for uix_id, uix_callback in pairs (uix_callbacks ["display_on_start"]) do
+	if menu.uix_callbacks ["display_on_start"] then
+		for uix_id, uix_callback in pairs (menu.uix_callbacks ["display_on_start"]) do
 			uix_callback (config)
 		end
 	end
@@ -3078,8 +3078,8 @@ function menu.display()
 	row[3].handlers.onClick = menu.buttonReset
 
 	-- kuertee start: callback
-	if uix_callbacks ["display_on_after_main_options"] then
-		for uix_id, uix_callback in pairs (uix_callbacks ["display_on_after_main_options"]) do
+	if menu.uix_callbacks ["display_on_after_main_options"] then
+		for uix_id, uix_callback in pairs (menu.uix_callbacks ["display_on_after_main_options"]) do
 			uix_callback ()
 		end
 	end
@@ -3195,8 +3195,8 @@ function menu.display()
 		row[1]:setColSpan(numCols):createText(menu.category.name, config.headerTextProperties)
 
 		-- kuertee start: callback
-		if uix_callbacks ["display_on_after_category_name"] then
-			for uix_id, uix_callback in pairs (uix_callbacks ["display_on_after_category_name"]) do
+		if menu.uix_callbacks ["display_on_after_category_name"] then
+			for uix_id, uix_callback in pairs (menu.uix_callbacks ["display_on_after_category_name"]) do
 				uix_callback (numCols)
 			end
 		end
@@ -3234,8 +3234,8 @@ function menu.display()
 					row[1].properties.color = function () return menu.propertyColor(property) end
 
 					-- kuertee start: callback
-					if uix_callbacks ["display_on_after_property_name"] then
-						for uix_id, uix_callback in pairs (uix_callbacks ["display_on_after_property_name"]) do
+					if menu.uix_callbacks ["display_on_after_property_name"] then
+						for uix_id, uix_callback in pairs (menu.uix_callbacks ["display_on_after_property_name"]) do
 							uix_callback (numCols, property)
 						end
 					end
@@ -3902,8 +3902,8 @@ function menu.display()
 		end
 
 		-- kuertee start: callback
-		if uix_callbacks ["display_on_after_category_options"] then
-			for uix_id, uix_callback in pairs (uix_callbacks ["display_on_after_category_options"]) do
+		if menu.uix_callbacks ["display_on_after_category_options"] then
+			for uix_id, uix_callback in pairs (menu.uix_callbacks ["display_on_after_category_options"]) do
 				uix_callback (numCols)
 			end
 		end
@@ -5643,105 +5643,105 @@ function menu.checkConstructionPlan(source, id, limitedmodulesused, onlineitems,
 end
 
 -- kuertee start:
-local uix_callbackCount = 0
+menu.uix_callbackCount = 0
 function menu.registerCallback(callbackName, callbackFunction, id)
     -- note 1: format is generally [function name]_[action]. e.g.: in kuertee_menu_transporter, "display_on_set_room_active" overrides the room's active property with the return of the callback.
     -- note 2: events have the word "_on_" followed by a PRESENT TENSE verb. e.g.: in kuertee_menu_transporter, "display_on_set_buttontable" is called after all of the rows of buttontable are set.
     -- note 3: new callbacks can be added or existing callbacks can be edited. but commit your additions/changes to the mod's GIT repository.
     -- note 4: search for the callback names to see where they are executed.
     -- note 5: if a callback requires a return value, return it in an object var. e.g. "display_on_set_room_active" requires a return of {active = true | false}.
-    if uix_callbacks [callbackName] == nil then
-        uix_callbacks [callbackName] = {}
+    if menu.uix_callbacks [callbackName] == nil then
+        menu.uix_callbacks [callbackName] = {}
     end
-    if not uix_callbacks[callbackName][id] then
+    if not menu.uix_callbacks[callbackName][id] then
         if not id then
-            uix_callbackCount = uix_callbackCount + 1
-            id = "_" .. tostring(uix_callbackCount)
+            menu.uix_callbackCount = menu.uix_callbackCount + 1
+            id = "_" .. tostring(menu.uix_callbackCount)
         end
-        uix_callbacks[callbackName][id] = callbackFunction
+        menu.uix_callbacks[callbackName][id] = callbackFunction
         if Helper.isDebugCallbacks then
-            DebugError("uix registerCallback: uix_callbacks[" .. tostring(callbackName) .. "][" .. tostring(id) .. "]: " .. tostring(uix_callbacks[callbackName][id]))
+            Helper.debugText_forced(menu.name .. " uix registerCallback: menu.uix_callbacks[" .. tostring(callbackName) .. "][" .. tostring(id) .. "]: " .. tostring(menu.uix_callbacks[callbackName][id]))
         end
     else
-        DebugError("uix registerCallback: callback at " .. callbackName .. " with id " .. tostring(id) .. " was already previously registered")
+        Helper.debugText_forced(menu.name .. " uix registerCallback: callback at " .. callbackName .. " with id " .. tostring(id) .. " was already previously registered")
     end
 end
 
-local uix_isDeregisterQueued
-local uix_callbacks_toDeregister = {}
+menu.uix_isDeregisterQueued = nil
+menu.uix_callbacks_toDeregister = {}
 function menu.deregisterCallback(callbackName, callbackFunction, id)
-    if not uix_callbacks_toDeregister[callbackName] then
-        uix_callbacks_toDeregister[callbackName] = {}
+    if not menu.uix_callbacks_toDeregister[callbackName] then
+        menu.uix_callbacks_toDeregister[callbackName] = {}
     end
     if id then
-        table.insert(uix_callbacks_toDeregister[callbackName], id)
+        table.insert(menu.uix_callbacks_toDeregister[callbackName], id)
     else
-        if uix_callbacks[callbackName] then
-            for id, func in pairs(uix_callbacks[callbackName]) do
+        if menu.uix_callbacks[callbackName] then
+            for id, func in pairs(menu.uix_callbacks[callbackName]) do
                 if func == callbackFunction then
-                    table.insert(uix_callbacks_toDeregister[callbackName], id)
+                    table.insert(menu.uix_callbacks_toDeregister[callbackName], id)
                 end
             end
         end
     end
-    if not uix_isDeregisterQueued then
-        uix_isDeregisterQueued = true
+    if not menu.uix_isDeregisterQueued then
+        menu.uix_isDeregisterQueued = true
         Helper.addDelayedOneTimeCallbackOnUpdate(menu.deregisterCallbacksNow, true, getElapsedTime() + 1)
     end
 end
 
 function menu.deregisterCallbacksNow()
-    uix_isDeregisterQueued = nil
-    for callbackName, ids in pairs(uix_callbacks_toDeregister) do
-        if uix_callbacks[callbackName] then
+    menu.uix_isDeregisterQueued = nil
+    for callbackName, ids in pairs(menu.uix_callbacks_toDeregister) do
+        if menu.uix_callbacks[callbackName] then
             for _, id in ipairs(ids) do
-                if uix_callbacks[callbackName][id] then
+                if menu.uix_callbacks[callbackName][id] then
                     if Helper.isDebugCallbacks then
-                        DebugError("uix registerCallback (pre): uix_callbacks[" .. tostring(callbackName) .. "][" .. tostring(id) .. "]: " .. tostring(uix_callbacks[callbackName][id]))
+                        Helper.debugText_forced(menu.name .. " uix registerCallback (pre): menu.uix_callbacks[" .. tostring(callbackName) .. "][" .. tostring(id) .. "]: " .. tostring(menu.uix_callbacks[callbackName][id]))
                     end
-                    uix_callbacks[callbackName][id] = nil
+                    menu.uix_callbacks[callbackName][id] = nil
                     if Helper.isDebugCallbacks then
-                        DebugError("uix registerCallback (post): uix_callbacks[" .. tostring(callbackName) .. "][" .. tostring(id) .. "]: " .. tostring(uix_callbacks[callbackName][id]))
+                        Helper.debugText_forced(menu.name .. " uix registerCallback (post): menu.uix_callbacks[" .. tostring(callbackName) .. "][" .. tostring(id) .. "]: " .. tostring(menu.uix_callbacks[callbackName][id]))
                     end
                 else
-                    DebugError("uix deregisterCallbacksNow: callback at " .. callbackName .. " with id " .. tostring(id) .. " doesn't exist")
+                    Helper.debugText_forced(menu.name .. " uix deregisterCallbacksNow: callback at " .. callbackName .. " with id " .. tostring(id) .. " doesn't exist")
                 end
             end
         end
     end
-    uix_callbacks_toDeregister = {}
+    menu.uix_callbacks_toDeregister = {}
 end
 
-local uix_isUpdateQueued
-local uix_callbacks_toUpdate
+menu.uix_isUpdateQueued = nil
+menu.uix_callbacks_toUpdate = {}
 function menu.updateCallback(callbackName, id, callbackFunction)
-    if not uix_callbacks_toUpdate[callbackName] then
-        uix_callbacks_toUpdate[callbackName] = {}
+    if not menu.uix_callbacks_toUpdate[callbackName] then
+        menu.uix_callbacks_toUpdate[callbackName] = {}
     end
     if id then
-        table.insert(uix_callbacks_toUpdate[callbackName], {id = id, callbackFunction = callbackFunction})
+        table.insert(menu.uix_callbacks_toUpdate[callbackName], {id = id, callbackFunction = callbackFunction})
     end
-    if not uix_isUpdateQueued then
-        uix_isUpdateQueued = true
+    if not menu.uix_isUpdateQueued then
+        menu.uix_isUpdateQueued = true
         Helper.addDelayedOneTimeCallbackOnUpdate(menu.updateCallbacksNow, true, getElapsedTime() + 1)
     end
 end
 
 function menu.updateCallbacksNow()
-    uix_isUpdateQueued = nil
-    for callbackName, updateDatas in pairs(uix_callbacks_toUpdate) do
-        if uix_callbacks[callbackName] then
+    menu.uix_isUpdateQueued = nil
+    for callbackName, updateDatas in pairs(menu.uix_callbacks_toUpdate) do
+        if menu.uix_callbacks[callbackName] then
             for _, updateData in ipairs(updateDatas) do
-                if uix_callbacks[callbackName][updateData.id] then
+                if menu.uix_callbacks[callbackName][updateData.id] then
                     if Helper.isDebugCallbacks then
-                        DebugError("uix updateCallbacksNow (pre): uix_callbacks[" .. tostring(callbackName) .. "][" .. tostring(updateData.id) .. "]: " .. tostring(uix_callbacks[callbackName][updateData.id]))
+                        Helper.debugText_forced(menu.name .. " uix updateCallbacksNow (pre): menu.uix_callbacks[" .. tostring(callbackName) .. "][" .. tostring(updateData.id) .. "]: " .. tostring(menu.uix_callbacks[callbackName][updateData.id]))
                     end
-                    uix_callbacks[callbackName][updateData.id] = updateData.callbackFunction
+                    menu.uix_callbacks[callbackName][updateData.id] = updateData.callbackFunction
                     if Helper.isDebugCallbacks then
-                        DebugError("uix updateCallbacksNow (post): uix_callbacks[" .. tostring(callbackName) .. "][" .. tostring(updateData.id) .. "]: " .. tostring(uix_callbacks[callbackName][updateData.id]))
+                        Helper.debugText_forced(menu.name .. " uix updateCallbacksNow (post): menu.uix_callbacks[" .. tostring(callbackName) .. "][" .. tostring(updateData.id) .. "]: " .. tostring(menu.uix_callbacks[callbackName][updateData.id]))
                     end
                 else
-                    DebugError("uix updateCallbacksNow: callback at " .. callbackName .. " with id " .. tostring(id) .. " doesn't exist")
+                    Helper.debugText_forced(menu.name .. " uix updateCallbacksNow: callback at " .. callbackName .. " with id " .. tostring(id) .. " doesn't exist")
                 end
             end
         end
