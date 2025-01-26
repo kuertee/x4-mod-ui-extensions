@@ -5076,6 +5076,19 @@ function menu.updatePlotSize(dimension, axis, valchange)
 			DebugError("menu.updatePlotSize: dimension passed in: " .. tostring(dimension) .. " indicates neither positive nor negative.")
 			return
 		end
+		-- kuertee start: callback
+		local canExtend = true
+		if callbacks["updatePlotSize_on_before_extend"] then
+			for _, callback in ipairs(callbacks["updatePlotSize_on_before_extend"]) do
+				local result = callback(menu.plotData.component, posSizeChange, negSizeChange)
+				if result == false then
+					canExtend = false
+					break
+				end
+			end
+		end
+		if not canExtend then return end
+		-- kuertee end: callback
 		if C.ExtendBuildPlot(menu.plotData.component, posSizeChange, negSizeChange, true) then
 			--print("menu.updatePlotSize: successfully extended build plot of station: " .. ffi.string(C.GetComponentName(menu.plotData.component)) .. ". posSizeChange.x: " .. tostring(posSizeChange.x) .. ", posSizeChange.y: " .. tostring(posSizeChange.y) .. ", posSizeChange.z: " .. tostring(posSizeChange.z) .. ", negSizeChange.x: " .. tostring(negSizeChange.x) .. ", negSizeChange.y: " .. tostring(negSizeChange.y) .. ", negSizeChange.z: " .. tostring(negSizeChange.z) .. ".")
 			C.UpdateMapBuildPlot(menu.holomap)
