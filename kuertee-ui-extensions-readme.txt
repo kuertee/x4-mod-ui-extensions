@@ -1,10 +1,13 @@
 UI Extensions and HUD
 https://www.nexusmods.com/x4foundations/mods/552
 Code: https://github.com/kuertee/x4-mod-ui-extensions
-by kuertee. Contributors: Erixon, Forleyor, Mycu, Runekn, AlexandreTK, IALuir.
+by kuertee. Contributors: Erixon, Forleyor, Mycu, Runekn, AlexandreTK, IALuir, sticeIO.
 
 Updates
 =======
+v7.1.19, 25 Jan 2025:
+-New feature: UI callback, updatePlotSize_on_before_extend, in Map Menu for sticeIO's mod.
+
 v7.1.18, 12 Jan 2025:
 -New: UI Call-backs for the AEGS Faction mod by IALuir.
 
