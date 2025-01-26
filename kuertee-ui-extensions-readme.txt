@@ -1,10 +1,14 @@
 UI Extensions and HUD
 https://www.nexusmods.com/x4foundations/mods/552
 Code: https://github.com/kuertee/x4-mod-ui-extensions
-by kuertee. Contributors: Erixon, Forleyor, Mycu, Runekn, AlexandreTK.
+by kuertee. Contributors: Erixon, Forleyor, Mycu, Runekn, AlexandreTK, IALuir, sticeIO, DrWhoKnows.
 
 Updates
 =======
+v7.5.0062 beta, 26 Jan 2025:
+-New feature: <raise_lua_event name="'Interact_Menu_API.Existence_Query'" /> to identify existence of UIX by DrWhoKnows.
+-New feature (merged from 7.1.19): UI callback, updatePlotSize_on_before_extend, in Map Menu for sticeIO's mod.
+
 v7.5.0061 beta, 25 Jan 2025:
 -New feature: 7.5 beta 6 compatibility.
 -Bug-fix: The player's Inventory window wasn't opening.

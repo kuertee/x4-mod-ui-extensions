@@ -12122,6 +12122,21 @@ function menu.updatePlotSize(dimension, axis, valchange)
 			DebugError("menu.updatePlotSize: dimension passed in: " .. tostring(dimension) .. " indicates neither positive nor negative.")
 			return
 		end
+
+		-- kuertee start: callback
+		local canExtend = true
+		if callbacks["updatePlotSize_on_before_extend"] then
+			for _, callback in ipairs(callbacks["updatePlotSize_on_before_extend"]) do
+				local result = callback(menu.plotData.component, posSizeChange, negSizeChange)
+				if result == false then
+					canExtend = false
+					break
+				end
+			end
+		end
+		if not canExtend then return end
+		-- kuertee end: callback
+
 		if C.ExtendBuildPlot(menu.plotData.component, posSizeChange, negSizeChange, true) then
 			--print("menu.updatePlotSize: successfully extended build plot of station: " .. ffi.string(C.GetComponentName(menu.plotData.component)) .. ". posSizeChange.x: " .. tostring(posSizeChange.x) .. ", posSizeChange.y: " .. tostring(posSizeChange.y) .. ", posSizeChange.z: " .. tostring(posSizeChange.z) .. ", negSizeChange.x: " .. tostring(negSizeChange.x) .. ", negSizeChange.y: " .. tostring(negSizeChange.y) .. ", negSizeChange.z: " .. tostring(negSizeChange.z) .. ".")
 			C.UpdateMapBuildPlot(menu.holomap)
@@ -77348,6 +77363,11 @@ end
 function menu.init_kuertee ()
 	RegisterEvent ("Interact_Menu_API.Add_Custom_Actions_Group_Id", menu.Add_Custom_Actions_Group_Id)
 	RegisterEvent ("Interact_Menu_API.Add_Custom_Actions_Group_Text", menu.Add_Custom_Actions_Group_Text)
+	RegisterEvent ("Interact_Menu_API.Existence_Query", menu.Existence_Query)
+end
+
+function menu.Existence_Query()
+	AddUITriggeredEvent("UIX_Interact_Menu_Present", "")
 end
 -- kuertee end
 
@@ -85641,7 +85661,12 @@ config.optionDefinitions = {
             id = "online",
             name = function () return menu.nameOnline() end,
             submenu = "online",
-            selectable = C.IsOnlineEnabled,
+
+            -- kuertee start:
+            -- selectable = C.IsOnlineEnabled,
+            selectable = function () return false end,
+            -- kuertee end
+
             mouseOverText = function () return C.IsOnlineEnabled() and (ReadText(1026, 4806) .. "\n\n" .. ReadText(1026, 4807)) or ReadText(1001, 11592) end,
         },
         [2] = {
@@ -87375,7 +87400,7 @@ function ModLua.submenuHandler(optionParameter)
         menu.displayLobby()
     elseif optionParameter == "online" then
         __CORE_GAMEOPTIONS_PRIVACYPOLICY = false
-        -- menu.displayOnlineLogin()
+        menu.displayOnlineLogin()
     elseif optionParameter == "extensions" then
         menu.displayExtensions()
     elseif optionParameter == "bonus" then

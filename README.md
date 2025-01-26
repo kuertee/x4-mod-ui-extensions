@@ -1,16 +1,18 @@
 UI Extensions and HUD
 https://www.nexusmods.com/x4foundations/mods/552
 Code: https://github.com/kuertee/x4-mod-ui-extensions
-by kuertee. Contributors: Erixon, Forleyor, Mycu, Runekn, AlexandreTK.
+by kuertee. Contributors: Erixon, Forleyor, Mycu, Runekn, AlexandreTK, IALuir, sticeIO, DrWhoKnows.
 
 Updates
 =======
+v7.5.0062 beta, 26 Jan 2025:
+-New feature: <raise_lua_event name="'Interact_Menu_API.Existence_Query'" /> to identify existence of UIX by DrWhoKnows.
+-New feature (merged from 7.1.19): UI callback, updatePlotSize_on_before_extend, in Map Menu for sticeIO's mod.
+
 v7.5.0061 beta, 25 Jan 2025:
 -New feature: 7.5 beta 6 compatibility.
 -Bug-fix: The player's Inventory window wasn't opening.
 -Tweak: The Online Features button is disabled. Because its functionality is natively disabled with how UI Extensions rewrites several menu files, the button might as well be disabled.
-
-v7.5.0052 beta, 22 Jan 2025:
 -Tweak: callbacks can now be assigned an id so that they can be deregistered by other mods with "menu.registerCallback(callbackName, myCallbackFunc, myId)".
 				E.g.
 				MapMenu.registerCallback("buttonToggleObjectList_on_start", myCallbackFunc, "mod_a").
