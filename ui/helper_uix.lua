@@ -997,7 +997,7 @@ function ModLua.checkboxSetTradeRuleOverride(menu, container, type, ware, checke
 	menu.updateExpandedNode()
 end
 
-function  Helper.dropdownTradeRule(menu, container, type, ware, id)
+function  ModLua.dropdownTradeRule(menu, container, type, ware, id)
 	C.SetContainerTradeRule(container, tonumber(id), type, ware, true)
 
 	if (type == "buy") or (type == "sell") then

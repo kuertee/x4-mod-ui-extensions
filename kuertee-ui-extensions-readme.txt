@@ -5,6 +5,10 @@ by kuertee. Contributors: Erixon, Forleyor, Mycu, Runekn, AlexandreTK, IALuir, s
 
 Updates
 =======
+v7.5.0063 beta, 29 Jan 2025:
+-Bug-fix: Trade Rule Restrictions were not sticking.
+-Bug-fix: Resizing Plot of stations were not sticking.
+
 v7.5.0062 beta, 26 Jan 2025:
 -New feature: <raise_lua_event name="'Interact_Menu_API.Existence_Query'" /> to identify existence of UIX by DrWhoKnows.
 -New feature (merged from 7.1.19): UI callback, updatePlotSize_on_before_extend, in Map Menu for sticeIO's mod.

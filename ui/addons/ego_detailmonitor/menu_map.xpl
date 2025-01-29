@@ -5249,9 +5249,9 @@ function menu.updatePlotSize(dimension, axis, valchange)
 
 		-- kuertee start: callback
 		local canExtend = true
-		if callbacks["updatePlotSize_on_before_extend"] then
-			for _, callback in ipairs(callbacks["updatePlotSize_on_before_extend"]) do
-				local result = callback(menu.plotData.component, posSizeChange, negSizeChange)
+		if menu.uix_callbacks["updatePlotSize_on_before_extend"] then
+			for uix_id, uix_callback in pairs(menu.uix_callbacks["updatePlotSize_on_before_extend"]) do
+				local result = uix_callback(menu.plotData.component, posSizeChange, negSizeChange)
 				if result == false then
 					canExtend = false
 					break
