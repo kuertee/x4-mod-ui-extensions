@@ -5,27 +5,26 @@ by kuertee. Contributors: Erixon, Forleyor, Mycu, Runekn, AlexandreTK, IALuir, s
 
 v7.5 beta  NOTES FOR MOD DEVELOPERS:
 ====================================
-PROTECTED UI MODE:
--1. Mods that use UI Extensions will need the new Protected UI Mode setting in the Extensions menu disabled.
+1. PROTECTED UI MODE: Mods that use UI Extensions will need the new Protected UI Mode setting in the Extensions menu disabled.
 
-LOADING CUSTOM LUAS:
--2. ModSupportAPIs' Lua_Loader (and in extension its <raise_lua_event name="'Lua_Loader.Load'" param="'X'"/>) no longer function.
+2. LOADING CUSTOM LUAS:ModSupportAPIs' Lua_Loader (and in extension its <raise_lua_event name="'Lua_Loader.Load'" param="'X'"/>) no longer function.
 
-UI.XML FILE:
--3. To load custom lua files, use ui.xml as described here: https://wiki.egosoft.com:1337/X%20Rebirth%20Wiki/Modding%20support/UI%20Modding%20support/Getting%20started%20guide/
--3a. Note that guideline is for X Rebirth. But its use in X4 is similar.
--3b. Here is the extensions\kuertee_alternatives_to_death\ui.xml file for my mod Alternatives To Death:
-[code]<?xml version="1.0" encoding="UTF-8"?>
-<addon name="kuertee_alternatives_to_death" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../ui/core/addon.xsd">
-  <environment type="menus">
-    <file name="ui/gameoptions_uix.lua" />
-    <file name="ui/menu_toplevel_uix.lua" />
-    <dependency name="ego_detailmonitor" />
-  </environment>
-</addon>[/code]
--3c. With the game now loading custom lua files (instead of UIX loading them), make sure that any init() functions are called after they are loaded.
--3c note: Pre 7.5 UIX loaded and, if set-up a particularly way like my mods are, UIX also called their init() functions.
--3d. E.g. instead of "return ModLua" at the bottom of my mods' custom lua files, I now call "ModLua.init()". E.g.: kuertee_uix_mod_sample from UIX's Nexus Mods page (https://www.nexusmods.com/x4foundations/mods/552?tab=files)/.
+3. UI.XML FILE:
+    1. To load custom lua files, use ui.xml as described here: https://wiki.egosoft.com:1337/X%20Rebirth%20Wiki/Modding%20support/UI%20Modding%20support/Getting%20started%20guide/
+    2. Note that guideline is for X Rebirth. But its use in X4 is similar.
+    3. Here is the extensions\kuertee_alternatives_to_death\ui.xml file for my mod Alternatives To Death:
+        `
+        <addon name="kuertee_alternatives_to_death" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../ui/core/addon.xsd">
+            <environment type="menus">
+                <file name="ui/gameoptions_uix.lua" />
+                <file name="ui/menu_toplevel_uix.lua" />
+                <dependency name="ego_detailmonitor" />
+            </environment>
+        </addon>
+        `
+    4. With the game now loading custom lua files (instead of UIX loading them), make sure that any init() functions are called after they are loaded.
+        1. note: Pre 7.5 UIX loaded and, if set-up a particularly way like my mods are, UIX also called their init() functions.
+    5. E.g. instead of "return ModLua" at the bottom of my mods' custom lua files, I now call "ModLua.init()". E.g.: kuertee_uix_mod_sample from UIX's Nexus Mods page (https://www.nexusmods.com/x4foundations/mods/552?tab=files)/.
 
 Updates
 =======
