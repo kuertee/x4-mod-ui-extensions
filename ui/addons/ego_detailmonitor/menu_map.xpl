@@ -7302,7 +7302,7 @@ end
 function menu.isObjectValid(object)
 	local isdeployable, isradarvisible, isorphaned, isattachedaslimpet = GetComponentData(object, "isdeployable", "isradarvisible", "isorphaned", "isattachedaslimpet")
 	local isship = C.IsComponentClass(object, "ship")
-	if not isship and not (C.IsRealComponentClass(object, "station") and (not C.IsComponentWrecked(object))) and not isdeployable and not C.IsComponentClass(object, "lockbox") and not (C.IsComponentClass(object, "buildstorage") and isorphaned) then
+	if not isship and not (C.IsRealComponentClass(object, "station") and (not C.IsComponentWrecked(object))) and not isdeployable and not C.IsComponentClass(object, "lockbox") and not C.IsComponentClass(object, "collectablewares") and not (C.IsComponentClass(object, "buildstorage") and isorphaned) then
 		return false
 	elseif C.IsComponentClass(object, "controllable") and C.IsUnit(object) then
 		return false
@@ -7595,7 +7595,7 @@ function menu.createObjectList(frame, instance)
 					end
 				else
 
-					if isdeployable or C.IsComponentClass(id, "lockbox") then
+					if isdeployable or C.IsComponentClass(id, "lockbox") or (C.IsComponentClass(id, "collectablewares") and ((id == menu.softtarget) or menu.isSelectedComponent(id))) then
 						table.insert(infoTableData.deployables, convertedID)
 					elseif C.IsComponentClass(id, "ship") or C.IsRealComponentClass(id, "station") then
 						if isfleetlead then
@@ -7979,7 +7979,7 @@ function menu.createPropertyOwned(frame, instance)
 				if not basestation then
 					table.insert(infoTableData.stations, object)
 				end
-			elseif isdeployable or C.IsComponentClass(object64, "lockbox") then
+			elseif isdeployable or C.IsComponentClass(object64, "lockbox") or (C.IsComponentClass(object64, "collectablewares") and ((object64 == menu.softtarget) or menu.isSelectedComponent(object64))) then
 				table.insert(infoTableData.deployables, object)
 			elseif #subordinates > 0 then
 				table.insert(infoTableData.fleetLeaderShips, object)
@@ -14758,7 +14758,6 @@ function menu.setupCrewInfoSubmenuRows(mode, inputtable, inputobject, instance)
 		-- inventory
 		if isplayerowned and pilot and IsValidComponent(pilot) then
 			local inventory = GetInventory(pilot)
-
 			local onlineitems = OnlineGetUserItems()
 
 			-- kuertee start:
@@ -18346,7 +18345,6 @@ function menu.createVentureSeasonHeader(frame, instance)
 
 	local isonline = Helper.isOnlineGame()
 	local invitations = {}
-
 	if not OnlineGetCurrentTeam().isvalid then
 		invitations = Helper.callExtensionFunction("multiverse", "getTeamInvites") or {}
 	end
@@ -19459,23 +19457,24 @@ function menu.createSelectedShips(frame)
 		row[3]:setColSpan(3):createText(objecttitle, { color = color, halign = "center", font = Helper.headerRow1Font, fontsize = Helper.headerRow1FontSize, minRowHeight = Helper.headerRow1Height })
 		row[6]:createObjectShieldHullBar(selectedcomponent)
 
-		if isplayerowned then
-			if C.IsComponentClass(selectedcomponent, "ship") then
-				local row = ftable:addRow(nil, { fixed = true, borderBelow = false })
-				row[1]:setColSpan(3):createText(ReadText(1001, 16), { halign = "center" })
-				row[4]:createText("", { x = 0 })
-				row[5]:setColSpan(3):createText(ReadText(1001, 8355), { halign = "center" })
-				-- line
-				local row = ftable:addRow(false, { fixed = true, bgColor = Color["row_separator_white"] })
-				row[1]:setColSpan(3):createText("", { height = 2 })
-				row[4]:createText("", { height = 2, cellBGColor = Color["row_background"], x = 0 })
-				row[5]:setColSpan(3):createText("", { height = 2 })
+		local isship = C.IsComponentClass(selectedcomponent, "ship")
+		if (isship and isplayerowned) or C.IsComponentClass(selectedcomponent, "collectablewares") then
+			local row = ftable:addRow(nil, { fixed = true, borderBelow = false })
+			row[1]:setColSpan(3):createText(ReadText(1001, 16), { halign = "center" })
+			row[4]:createText("", { x = 0 })
+			row[5]:setColSpan(3):createText(ReadText(1001, 8355), { halign = "center" })
+			-- line
+			local row = ftable:addRow(false, { fixed = true, bgColor = Color["row_separator_white"] })
+			row[1]:setColSpan(3):createText("", { height = 2 })
+			row[4]:createText("", { height = 2, cellBGColor = Color["row_background"], x = 0 })
+			row[5]:setColSpan(3):createText("", { height = 2 })
 
-				local sideorder = { "left", "right" }
-				local rows = {
-					left = {},
-					right = {},
-				}
+			local sideorder = { "left", "right" }
+			local rows = {
+				left = {},
+				right = {},
+			}
+			if isship then
 				-- order
 				local _, _, _, name, _, _, _, targetname = menu.getOrderInfo(selectedcomponent, true)
 				table.insert(rows.left, { entrytype = "text", text = name .. ((targetname ~= "") and (ReadText(1001, 120) .. " " .. targetname) or ""), properties = { halign = "center", color = menu.holomapcolor.playercolor } })
@@ -19535,7 +19534,9 @@ function menu.createSelectedShips(frame)
 						table.insert(rows.left, { entrytype = "text", text = ffi.string(failure.message), properties = { halign = "center", color = Color["text_warning"] } })
 					end
 				end
+			end
 
+			if isship then
 				-- capacity
 				local numtransporttypes = C.GetNumCargoTransportTypes(selectedcomponent, true)
 				local currenttransporttypes = ffi.new("StorageInfo[?]", numtransporttypes)
@@ -19545,10 +19546,12 @@ function menu.createSelectedShips(frame)
 				for i = 0, numtransporttypes - 1 do
 					table.insert(rows.right, { entrytype = "capacity", text = ReadText(1001, 1402) .. " (" .. ffi.string(futuretransporttypes[i].name) .. ")" .. ReadText(1001, 120), currentused = currenttransporttypes[i].spaceused, futureused = futuretransporttypes[i].spaceused, capacity = futuretransporttypes[i].capacity })
 				end
-				-- cargo
+			end
+			-- cargo
+			local wares = {}
+			if isship then
 				local cargo = GetComponentData(selectedcomponent, "cargo")
-				local futurecargo = GetCargoAfterTradeOrders(selectedcomponent, true)
-				local wares = {}
+				local futurecargo = isship and GetCargoAfterTradeOrders(selectedcomponent, true) or {}
 				for ware, amount in pairs(cargo) do
 					table.insert(wares, { ware = ware, name = GetWareData(ware, "name"), current = amount, future = futurecargo[ware] or 0 })
 				end
@@ -19557,201 +19560,206 @@ function menu.createSelectedShips(frame)
 						table.insert(wares, { ware = ware, name = GetWareData(ware, "name"), current = 0, future = amount })
 					end
 				end
-				table.sort(wares, function (a, b) return a.future > b.future end)
-				local setting, list = menu.getTradeWareFilter(true)
-				for i, entry in ipairs(wares) do
-					local color, script = menu.getWareButtonColorAndScript(list, setting, entry.ware)
-					table.insert(rows.right, { entrytype = "ware", text = entry.name, current = entry.current, future = entry.future, max = GetWareCapacity(selectedcomponent, entry.ware), color = color, script = script })
+			else
+				local collectable = GetCollectableData(component)
+				for _, ware in ipairs(collectable.wares) do
+					table.insert(wares, { ware = ware.ware, name = GetWareData(ware.ware, "name"), current = ware.amount, future = ware.amount })
 				end
-				-- display rows
-				for i = 1, 5 do
-					local row
-					for _, side in ipairs(sideorder) do
-						if rows[side][i] then
-							local entry = rows[side][i]
-							if not row then
-								row = ftable:addRow(true, { fixed = true })
+			end
+			table.sort(wares, function (a, b) return a.future > b.future end)
+			local setting, list = menu.getTradeWareFilter(true)
+			for i, entry in ipairs(wares) do
+				local color, script = menu.getWareButtonColorAndScript(list, setting, entry.ware)
+				table.insert(rows.right, { entrytype = "ware", text = entry.name, current = entry.current, future = entry.future, max = isship and GetWareCapacity(selectedcomponent, entry.ware) or 0, color = color, script = script })
+			end
+			-- display rows
+			for i = 1, 5 do
+				local row
+				for _, side in ipairs(sideorder) do
+					if rows[side][i] then
+						local entry = rows[side][i]
+						if not row then
+							row = ftable:addRow(true, { fixed = true })
+						end
+						if entry.entrytype == "text" then
+							row[(side == "left") and 1 or 5]:setColSpan(3):createText(entry.text, entry.properties)
+							if (side == "right") or (not rows["right"][i]) then
+								row[4]:createText("", { height = 2, cellBGColor = Color["row_background"], x = 0 })
 							end
-							if entry.entrytype == "text" then
-								row[(side == "left") and 1 or 5]:setColSpan(3):createText(entry.text, entry.properties)
-								if (side == "right") or (not rows["right"][i]) then
-									row[4]:createText("", { height = 2, cellBGColor = Color["row_background"], x = 0 })
-								end
-							elseif entry.entrytype == "capacity" then
-								if side == "right" then
-									row[5]:setColSpan(3)
+						elseif entry.entrytype == "capacity" then
+							if side == "right" then
+								row[5]:setColSpan(3)
 
-									local mouseovertext
-									local amounttext = menu.formatWareAmount(entry.currentused, entry.futureused, entry.capacity)
-									local text = TruncateText(entry.text, Helper.standardFont, menu.selectedShipsTableData.fontsize, row[5]:getWidth() - menu.getAmountTextWidth(amounttext))
-									if text ~= entry.text then
-										mouseovertext = entry.text .. " " .. amounttext
-									end
-
-									local xoffset = 1 + Helper.borderSize
-									local width = row[5]:getColSpanWidth()
-									row[4]:createStatusBar({ current = entry.futureused, start = entry.currentused, max = entry.capacity, cellBGColor = Color["row_background"], valueColor = Color["slider_value"], posChangeColor = Color["flowchart_slider_diff2"], negChangeColor = Color["flowchart_slider_diff1"], markerColor = Color["statusbar_marker_hidden"], width = width, x = xoffset, scaling = false })
-									row[5]:createIcon("solid", { color = Color["icon_transparent"], height = menu.selectedShipsTableData.textHeight, mouseOverText = mouseovertext })
-									row[5]:setText(text)
-									row[5]:setText2(amounttext, { halign = "right", x = Helper.standardTextOffsetx })
+								local mouseovertext
+								local amounttext = menu.formatWareAmount(entry.currentused, entry.futureused, entry.capacity)
+								local text = TruncateText(entry.text, Helper.standardFont, menu.selectedShipsTableData.fontsize, row[5]:getWidth() - menu.getAmountTextWidth(amounttext))
+								if text ~= entry.text then
+									mouseovertext = entry.text .. " " .. amounttext
 								end
-							elseif entry.entrytype == "ware" then
-								if side == "right" then
-									row[5]:setColSpan(3)
-									local xoffset = 1 + Helper.borderSize
-									local width = row[5]:getColSpanWidth()
-									row[4]:createStatusBar({ current = entry.future, start = entry.current, max = entry.max, cellBGColor = Color["row_background"], valueColor = Color["slider_value"], posChangeColor = Color["flowchart_slider_diff2"], negChangeColor = Color["flowchart_slider_diff1"], markerColor = Color["statusbar_marker_hidden"], width = width, x = xoffset, scaling = false })
-									row[5]:createButton({ bgColor = Color["button_background_hidden"], highlightColor = (menu.mode == "behaviourinspection") and Color["button_highlight_hidden"] or nil, height = menu.selectedShipsTableData.textHeight })
-									row[5]:setText(entry.text, { color = entry.color })
-									row[5]:setText2(menu.formatWareAmount(entry.current, entry.future), { halign = "right", color = entry.color })
-									if menu.mode ~= "behaviourinspection" then
-										row[5].handlers.onClick = entry.script
-									end
+
+								local xoffset = 1 + Helper.borderSize
+								local width = row[5]:getColSpanWidth()
+								row[4]:createStatusBar({ current = entry.futureused, start = entry.currentused, max = entry.capacity, cellBGColor = Color["row_background"], valueColor = Color["slider_value"], posChangeColor = Color["flowchart_slider_diff2"], negChangeColor = Color["flowchart_slider_diff1"], markerColor = Color["statusbar_marker_hidden"], width = width, x = xoffset, scaling = false })
+								row[5]:createIcon("solid", { color = Color["icon_transparent"], height = menu.selectedShipsTableData.textHeight, mouseOverText = mouseovertext })
+								row[5]:setText(text)
+								row[5]:setText2(amounttext, { halign = "right", x = Helper.standardTextOffsetx })
+							end
+						elseif entry.entrytype == "ware" then
+							if side == "right" then
+								row[5]:setColSpan(3)
+								local xoffset = 1 + Helper.borderSize
+								local width = row[5]:getColSpanWidth()
+								row[4]:createStatusBar({ current = entry.future, start = entry.current, max = entry.max, cellBGColor = Color["row_background"], valueColor = Color["slider_value"], posChangeColor = Color["flowchart_slider_diff2"], negChangeColor = Color["flowchart_slider_diff1"], markerColor = Color["statusbar_marker_hidden"], width = width, x = xoffset, scaling = false })
+								row[5]:createButton({ bgColor = Color["button_background_hidden"], highlightColor = (menu.mode == "behaviourinspection") and Color["button_highlight_hidden"] or nil, height = menu.selectedShipsTableData.textHeight })
+								row[5]:setText(entry.text, { color = entry.color })
+								row[5]:setText2(menu.formatWareAmount(entry.current, entry.future), { halign = "right", color = entry.color })
+								if menu.mode ~= "behaviourinspection" then
+									row[5].handlers.onClick = entry.script
 								end
 							end
 						end
 					end
+				end
+			end
+			if #rows.right > 5 then
+				local row = ftable:addRow(nil, { fixed = true })
+				row[4]:createText("", { height = 2, cellBGColor = Color["row_background"], x = 0 })
+				row[5]:setColSpan(3):createText(string.format("%+d %s", #rows.right - 5, ((#rows.right - 5) > 1) and ReadText(1001, 46) or ReadText(1001, 45)))
+			end
+		elseif C.IsComponentClass(selectedcomponent, "station") then
+			local row = ftable:addRow(nil, { fixed = true, borderBelow = false })
+			row[1]:setColSpan(3):createText(ReadText(1001, 3305), { halign = "center" })
+			row[4]:createText("", { x = 0 })
+			row[5]:setColSpan(3):createText(ReadText(1001, 63), { halign = "center" })
+			-- line
+			local row = ftable:addRow(false, { fixed = true, bgColor = Color["row_separator_white"] })
+			row[1]:setColSpan(3):createText("", { height = 2 })
+			row[4]:createText("", { height = 2, cellBGColor = Color["row_background"], x = 0 })
+			row[5]:setColSpan(3):createText("", { height = 2 })
+
+			local sideorder = { "left", "right" }
+			local rows = {
+				left = {},
+				right = {},
+			}
+			-- upkeep missions
+			local upkeepMissions = {}
+			if menu.upkeepMissionData[tostring(selectedcomponent)] then
+				for _, entry in ipairs(menu.upkeepMissionData[tostring(selectedcomponent)]) do
+					table.insert(upkeepMissions, { alertLevel = entry.alertLevel, name = entry.name })
+				end
+			end
+			table.sort(upkeepMissions, function (a, b) return a.alertLevel > b.alertLevel end)
+
+			for i, entry in ipairs(upkeepMissions) do
+				local color = Color["text_normal"]
+				if entry.alertLevel == 1 then
+					color = menu.holomapcolor.lowalertcolor
+				elseif entry.alertLevel == 2 then
+					color = menu.holomapcolor.mediumalertcolor
+				else
+					color = menu.holomapcolor.highalertcolor
+				end
+				table.insert(rows.left, { entrytype = "text", text = entry.name, properties = { halign = "center", color = color } })
+			end
+
+			-- ware reservations
+			local reservationscapacity = menu.getReservationsVolumeByTransportType(selectedcomponent)
+			local reservationscargo = menu.getReservationsAmountByWareType(selectedcomponent)
+
+			-- capacity
+			local numtransporttypes = C.GetNumCargoTransportTypes(selectedcomponent, true)
+			local currenttransporttypes = ffi.new("StorageInfo[?]", numtransporttypes)
+			numtransporttypes = C.GetCargoTransportTypes(currenttransporttypes, numtransporttypes, selectedcomponent, true, false)
+
+			for i = 0, numtransporttypes - 1 do
+				local storagename = ffi.string(currenttransporttypes[i].name)
+				local futureamount = currenttransporttypes[i].spaceused
+				if reservationscapacity[string.lower(storagename)] then
+					futureamount = futureamount + reservationscapacity[string.lower(storagename)]
+				end
+
+				table.insert(rows.right, { entrytype = "capacity", text = ReadText(1001, 1402) .. " (" .. storagename .. ")" .. ReadText(1001, 120), currentused = currenttransporttypes[i].spaceused, futureused = futureamount, capacity = currenttransporttypes[i].capacity })
+			end
+			-- cargo
+			local cargo = GetComponentData(selectedcomponent, "cargo")
+			local wares = {}
+			for ware, amount in pairs(cargo) do
+				local futureamount = amount
+				if reservationscargo[ware] then
+					futureamount = futureamount + reservationscargo[ware]
+				end
+
+				table.insert(wares, { ware = ware, name = GetWareData(ware, "name"), current = amount, future = futureamount })
+			end
+			table.sort(wares, function (a, b) return a.future > b.future end)
+			local setting, list = menu.getTradeWareFilter(true)
+			for i, entry in ipairs(wares) do
+				local color, script = menu.getWareButtonColorAndScript(list, setting, entry.ware)
+				local productionlimit = GetWareProductionLimit(selectedcomponent, entry.ware)
+				table.insert(rows.right, { entrytype = "ware", text = entry.name, current = entry.current, future = entry.future, max = math.max(entry.current, productionlimit), color = color, script = script })
+			end
+			-- display rows
+			for i = 1, 5 do
+				local row
+				for _, side in ipairs(sideorder) do
+					if rows[side][i] then
+						local entry = rows[side][i]
+						if not row then
+							row = ftable:addRow(true, { fixed = true })
+						end
+						if entry.entrytype == "text" then
+							row[(side == "left") and 1 or 5]:setColSpan(3):createText(entry.text, entry.properties)
+							if (side == "right") or (not rows["right"][i]) then
+								row[4]:createText("", { height = 2, cellBGColor = Color["row_background"], x = 0 })
+							end
+						elseif entry.entrytype == "capacity" then
+							if side == "right" then
+								row[5]:setColSpan(3)
+
+								local mouseovertext
+								local amounttext = menu.formatWareAmount(entry.currentused, entry.futureused, entry.capacity)
+								local widthdelta = row[5]:getWidth() - menu.getAmountTextWidth(amounttext)
+								local text = ""
+								if widthdelta > 0 then
+									text = TruncateText(entry.text, Helper.standardFont, menu.selectedShipsTableData.fontsize, widthdelta)
+								end
+								if text ~= entry.text then
+									mouseovertext = entry.text .. " " .. amounttext
+								end
+
+								local xoffset = 1 + Helper.borderSize
+								local width = row[5]:getColSpanWidth()
+								row[4]:createStatusBar({ current = entry.futureused, start = entry.currentused, max = entry.capacity, cellBGColor = Color["row_background"], valueColor = Color["slider_value"], posChangeColor = Color["flowchart_slider_diff2"], negChangeColor = Color["flowchart_slider_diff1"], markerColor = Color["statusbar_marker_hidden"], width = width, x = xoffset, scaling = false })
+								row[5]:createIcon("solid", { color = Color["icon_transparent"], height = menu.selectedShipsTableData.textHeight, mouseOverText = mouseovertext })
+								row[5]:setText(text)
+								row[5]:setText2(amounttext, { halign = "right", x = Helper.standardTextOffsetx })
+							end
+						elseif entry.entrytype == "ware" then
+							if side == "right" then
+								row[5]:setColSpan(3)
+								local barxoffset = 1 + Helper.borderSize
+								local width = row[5]:getColSpanWidth()
+								row[4]:createStatusBar({ current = entry.future, start = entry.current, max = entry.max, cellBGColor = Color["row_background"], valueColor = Color["slider_value"], posChangeColor = Color["flowchart_slider_diff2"], negChangeColor = Color["flowchart_slider_diff1"], markerColor = Color["statusbar_marker_hidden"], width = width, x = barxoffset, scaling = false })
+								row[5]:createButton({ bgColor = Color["button_background_hidden"], highlightColor = (menu.mode == "behaviourinspection") and Color["button_highlight_hidden"] or nil, height = menu.selectedShipsTableData.textHeight })
+								row[5]:setText(entry.text, { color = entry.color, x = Helper.standardIndentStep })
+								row[5]:setText2(menu.formatWareAmount(entry.current, entry.future), { halign = "right", color = entry.color })
+								if menu.mode ~= "behaviourinspection" then
+									row[5].handlers.onClick = entry.script
+								end
+							end
+						end
+					end
+				end
+			end
+			if (#rows.left > 5) or (#rows.right > 5) then
+				local row = ftable:addRow(nil, { fixed = true })
+				row[4]:createText("", { height = 2, cellBGColor = Color["row_background"], x = 0 })
+				if #rows.left > 5 then
+					row[1]:setColSpan(3):createText(string.format("%+d %s", #rows.left - 5, ((#rows.left - 5) > 1) and ReadText(1001, 5702) or ReadText(1001, 5702)))
 				end
 				if #rows.right > 5 then
-					local row = ftable:addRow(nil, { fixed = true })
-					row[4]:createText("", { height = 2, cellBGColor = Color["row_background"], x = 0 })
 					row[5]:setColSpan(3):createText(string.format("%+d %s", #rows.right - 5, ((#rows.right - 5) > 1) and ReadText(1001, 46) or ReadText(1001, 45)))
-				end
-			elseif C.IsComponentClass(selectedcomponent, "station") then
-				local row = ftable:addRow(nil, { fixed = true, borderBelow = false })
-				row[1]:setColSpan(3):createText(ReadText(1001, 3305), { halign = "center" })
-				row[4]:createText("", { x = 0 })
-				row[5]:setColSpan(3):createText(ReadText(1001, 63), { halign = "center" })
-				-- line
-				local row = ftable:addRow(false, { fixed = true, bgColor = Color["row_separator_white"] })
-				row[1]:setColSpan(3):createText("", { height = 2 })
-				row[4]:createText("", { height = 2, cellBGColor = Color["row_background"], x = 0 })
-				row[5]:setColSpan(3):createText("", { height = 2 })
-
-				local sideorder = { "left", "right" }
-				local rows = {
-					left = {},
-					right = {},
-				}
-				-- upkeep missions
-				local upkeepMissions = {}
-				if menu.upkeepMissionData[tostring(selectedcomponent)] then
-					for _, entry in ipairs(menu.upkeepMissionData[tostring(selectedcomponent)]) do
-						table.insert(upkeepMissions, { alertLevel = entry.alertLevel, name = entry.name })
-					end
-				end
-				table.sort(upkeepMissions, function (a, b) return a.alertLevel > b.alertLevel end)
-
-				for i, entry in ipairs(upkeepMissions) do
-					local color = Color["text_normal"]
-					if entry.alertLevel == 1 then
-						color = menu.holomapcolor.lowalertcolor
-					elseif entry.alertLevel == 2 then
-						color = menu.holomapcolor.mediumalertcolor
-					else
-						color = menu.holomapcolor.highalertcolor
-					end
-					table.insert(rows.left, { entrytype = "text", text = entry.name, properties = { halign = "center", color = color } })
-				end
-
-				-- ware reservations
-				local reservationscapacity = menu.getReservationsVolumeByTransportType(selectedcomponent)
-				local reservationscargo = menu.getReservationsAmountByWareType(selectedcomponent)
-
-				-- capacity
-				local numtransporttypes = C.GetNumCargoTransportTypes(selectedcomponent, true)
-				local currenttransporttypes = ffi.new("StorageInfo[?]", numtransporttypes)
-				numtransporttypes = C.GetCargoTransportTypes(currenttransporttypes, numtransporttypes, selectedcomponent, true, false)
-
-				for i = 0, numtransporttypes - 1 do
-					local storagename = ffi.string(currenttransporttypes[i].name)
-					local futureamount = currenttransporttypes[i].spaceused
-					if reservationscapacity[string.lower(storagename)] then
-						futureamount = futureamount + reservationscapacity[string.lower(storagename)]
-					end
-
-					table.insert(rows.right, { entrytype = "capacity", text = ReadText(1001, 1402) .. " (" .. storagename .. ")" .. ReadText(1001, 120), currentused = currenttransporttypes[i].spaceused, futureused = futureamount, capacity = currenttransporttypes[i].capacity })
-				end
-				-- cargo
-				local cargo = GetComponentData(selectedcomponent, "cargo")
-				local wares = {}
-				for ware, amount in pairs(cargo) do
-					local futureamount = amount
-					if reservationscargo[ware] then
-						futureamount = futureamount + reservationscargo[ware]
-					end
-
-					table.insert(wares, { ware = ware, name = GetWareData(ware, "name"), current = amount, future = futureamount })
-				end
-				table.sort(wares, function (a, b) return a.future > b.future end)
-				local setting, list = menu.getTradeWareFilter(true)
-				for i, entry in ipairs(wares) do
-					local color, script = menu.getWareButtonColorAndScript(list, setting, entry.ware)
-					local productionlimit = GetWareProductionLimit(selectedcomponent, entry.ware)
-					table.insert(rows.right, { entrytype = "ware", text = entry.name, current = entry.current, future = entry.future, max = math.max(entry.current, productionlimit), color = color, script = script })
-				end
-				-- display rows
-				for i = 1, 5 do
-					local row
-					for _, side in ipairs(sideorder) do
-						if rows[side][i] then
-							local entry = rows[side][i]
-							if not row then
-								row = ftable:addRow(true, { fixed = true })
-							end
-							if entry.entrytype == "text" then
-								row[(side == "left") and 1 or 5]:setColSpan(3):createText(entry.text, entry.properties)
-								if (side == "right") or (not rows["right"][i]) then
-									row[4]:createText("", { height = 2, cellBGColor = Color["row_background"], x = 0 })
-								end
-							elseif entry.entrytype == "capacity" then
-								if side == "right" then
-									row[5]:setColSpan(3)
-
-									local mouseovertext
-									local amounttext = menu.formatWareAmount(entry.currentused, entry.futureused, entry.capacity)
-									local widthdelta = row[5]:getWidth() - menu.getAmountTextWidth(amounttext)
-									local text = ""
-									if widthdelta > 0 then
-										text = TruncateText(entry.text, Helper.standardFont, menu.selectedShipsTableData.fontsize, widthdelta)
-									end
-									if text ~= entry.text then
-										mouseovertext = entry.text .. " " .. amounttext
-									end
-
-									local xoffset = 1 + Helper.borderSize
-									local width = row[5]:getColSpanWidth()
-									row[4]:createStatusBar({ current = entry.futureused, start = entry.currentused, max = entry.capacity, cellBGColor = Color["row_background"], valueColor = Color["slider_value"], posChangeColor = Color["flowchart_slider_diff2"], negChangeColor = Color["flowchart_slider_diff1"], markerColor = Color["statusbar_marker_hidden"], width = width, x = xoffset, scaling = false })
-									row[5]:createIcon("solid", { color = Color["icon_transparent"], height = menu.selectedShipsTableData.textHeight, mouseOverText = mouseovertext })
-									row[5]:setText(text)
-									row[5]:setText2(amounttext, { halign = "right", x = Helper.standardTextOffsetx })
-								end
-							elseif entry.entrytype == "ware" then
-								if side == "right" then
-									row[5]:setColSpan(3)
-									local barxoffset = 1 + Helper.borderSize
-									local width = row[5]:getColSpanWidth()
-									row[4]:createStatusBar({ current = entry.future, start = entry.current, max = entry.max, cellBGColor = Color["row_background"], valueColor = Color["slider_value"], posChangeColor = Color["flowchart_slider_diff2"], negChangeColor = Color["flowchart_slider_diff1"], markerColor = Color["statusbar_marker_hidden"], width = width, x = barxoffset, scaling = false })
-									row[5]:createButton({ bgColor = Color["button_background_hidden"], highlightColor = (menu.mode == "behaviourinspection") and Color["button_highlight_hidden"] or nil, height = menu.selectedShipsTableData.textHeight })
-									row[5]:setText(entry.text, { color = entry.color, x = Helper.standardIndentStep })
-									row[5]:setText2(menu.formatWareAmount(entry.current, entry.future), { halign = "right", color = entry.color })
-									if menu.mode ~= "behaviourinspection" then
-										row[5].handlers.onClick = entry.script
-									end
-								end
-							end
-						end
-					end
-				end
-				if (#rows.left > 5) or (#rows.right > 5) then
-					local row = ftable:addRow(nil, { fixed = true })
-					row[4]:createText("", { height = 2, cellBGColor = Color["row_background"], x = 0 })
-					if #rows.left > 5 then
-						row[1]:setColSpan(3):createText(string.format("%+d %s", #rows.left - 5, ((#rows.left - 5) > 1) and ReadText(1001, 5702) or ReadText(1001, 5702)))
-					end
-					if #rows.right > 5 then
-						row[5]:setColSpan(3):createText(string.format("%+d %s", #rows.right - 5, ((#rows.right - 5) > 1) and ReadText(1001, 46) or ReadText(1001, 45)))
-					end
 				end
 			end
 		end
@@ -24078,8 +24086,8 @@ function menu.createOnlineModeContext(frame)
 	ftable:setDefaultColSpan(1, 2)
 
 	local counter = 1
-	local hassession = OnlineHasSession()
 
+	local hassession = OnlineHasSession()
 	local hasdocks = false
 	local hasmultipledocksperplatform = false
 	for _, entry in ipairs(Helper.ventureplatforms) do
@@ -26817,7 +26825,7 @@ function menu.onRenderTargetSelect(modified)
 					end
 				elseif (#menu.searchtext == 0) or Helper.textArrayHelper(menu.searchtext, function (numtexts, texts) return C.FilterComponentByText(pickedcomponent, numtexts, texts, true) end, "text") then
 					local isconstruction = IsComponentConstruction(pickedcomponent64)
-					if (C.IsComponentOperational(pickedcomponent) and (pickedcomponentclass ~= "player") and (pickedcomponentclass ~= "collectablewares") and (not menu.createInfoFrameRunning)) or
+					if (C.IsComponentOperational(pickedcomponent) and (pickedcomponentclass ~= "player") and (not menu.createInfoFrameRunning)) or
 						(pickedcomponentclass == "gate") or (pickedcomponentclass == "asteroid") or isconstruction
 					then
 						local sectorcontext = C.GetContextByClass(pickedcomponent, "sector", false)
@@ -26847,7 +26855,7 @@ function menu.onRenderTargetSelect(modified)
 									-- kuertee end:
 
 									local isdeployable = GetComponentData(pickedcomponent64, "isdeployable")
-									if isdeployable or (pickedcomponentclass == "lockbox") then
+									if isdeployable or (pickedcomponentclass == "lockbox") or (pickedcomponentclass == "collectablewares") then
 										newmode = "deployables"
 									elseif menu.objectMode ~= "objectall" then
 										if C.IsRealComponentClass(pickedcomponent, "station") then
@@ -26876,7 +26884,7 @@ function menu.onRenderTargetSelect(modified)
 
 									local isplayerowned, isdeployable = GetComponentData(pickedcomponent64, "isplayerowned", "isdeployable")
 									if isplayerowned then
-										if isdeployable or (pickedcomponentclass == "lockbox") then
+										if isdeployable or (pickedcomponentclass == "lockbox") or (pickedcomponentclass == "collectablewares") then
 											newmode = "deployables"
 										elseif menu.propertyMode ~= "propertyall" then
 											if C.IsRealComponentClass(pickedcomponent, "station") then
@@ -29314,7 +29322,7 @@ function menu.updateSelectedComponents(modified, keepselection, changedComponent
 						end
 					end
 				end
-				if (menu.propertyMode ~= "deployables") and (isdeployable or C.IsComponentClass(component, "lockbox")) then
+				if (menu.propertyMode ~= "deployables") and (isdeployable or C.IsComponentClass(component, "lockbox") or C.IsComponentClass(component, "collectablewares")) then
 					table.insert(components, component)
 				end
 
@@ -29335,7 +29343,7 @@ function menu.updateSelectedComponents(modified, keepselection, changedComponent
 						end
 					end
 				end
-				if (menu.objectMode ~= "deployables") and (isdeployable or C.IsComponentClass(component, "lockbox")) then
+				if (menu.objectMode ~= "deployables") and (isdeployable or C.IsComponentClass(component, "lockbox") or C.IsComponentClass(component, "collectablewares")) then
 					table.insert(components, component)
 				end
 			end

@@ -14178,7 +14178,7 @@ end
 function menu.isObjectValid(object)
 	local isdeployable, isradarvisible, isorphaned, isattachedaslimpet = GetComponentData(object, "isdeployable", "isradarvisible", "isorphaned", "isattachedaslimpet")
 	local isship = C.IsComponentClass(object, "ship")
-	if not isship and not (C.IsRealComponentClass(object, "station") and (not C.IsComponentWrecked(object))) and not isdeployable and not C.IsComponentClass(object, "lockbox") and not (C.IsComponentClass(object, "buildstorage") and isorphaned) then
+	if not isship and not (C.IsRealComponentClass(object, "station") and (not C.IsComponentWrecked(object))) and not isdeployable and not C.IsComponentClass(object, "lockbox") and not C.IsComponentClass(object, "collectablewares") and not (C.IsComponentClass(object, "buildstorage") and isorphaned) then
 		return false
 	elseif C.IsComponentClass(object, "controllable") and C.IsUnit(object) then
 		return false
@@ -14471,7 +14471,7 @@ function menu.createObjectList(frame, instance)
 					end
 				else
 
-					if isdeployable or C.IsComponentClass(id, "lockbox") then
+					if isdeployable or C.IsComponentClass(id, "lockbox") or (C.IsComponentClass(id, "collectablewares") and ((id == menu.softtarget) or menu.isSelectedComponent(id))) then
 						table.insert(infoTableData.deployables, convertedID)
 					elseif C.IsComponentClass(id, "ship") or C.IsRealComponentClass(id, "station") then
 						if isfleetlead then
@@ -14855,7 +14855,7 @@ function menu.createPropertyOwned(frame, instance)
 				if not basestation then
 					table.insert(infoTableData.stations, object)
 				end
-			elseif isdeployable or C.IsComponentClass(object64, "lockbox") then
+			elseif isdeployable or C.IsComponentClass(object64, "lockbox") or (C.IsComponentClass(object64, "collectablewares") and ((object64 == menu.softtarget) or menu.isSelectedComponent(object64))) then
 				table.insert(infoTableData.deployables, object)
 			elseif #subordinates > 0 then
 				table.insert(infoTableData.fleetLeaderShips, object)
@@ -21634,7 +21634,6 @@ function menu.setupCrewInfoSubmenuRows(mode, inputtable, inputobject, instance)
 		-- inventory
 		if isplayerowned and pilot and IsValidComponent(pilot) then
 			local inventory = GetInventory(pilot)
-
 			local onlineitems = OnlineGetUserItems()
 
 			-- kuertee start:
@@ -25222,7 +25221,6 @@ function menu.createVentureSeasonHeader(frame, instance)
 
 	local isonline = Helper.isOnlineGame()
 	local invitations = {}
-
 	if not OnlineGetCurrentTeam().isvalid then
 		invitations = Helper.callExtensionFunction("multiverse", "getTeamInvites") or {}
 	end
@@ -26335,23 +26333,24 @@ function menu.createSelectedShips(frame)
 		row[3]:setColSpan(3):createText(objecttitle, { color = color, halign = "center", font = Helper.headerRow1Font, fontsize = Helper.headerRow1FontSize, minRowHeight = Helper.headerRow1Height })
 		row[6]:createObjectShieldHullBar(selectedcomponent)
 
-		if isplayerowned then
-			if C.IsComponentClass(selectedcomponent, "ship") then
-				local row = ftable:addRow(nil, { fixed = true, borderBelow = false })
-				row[1]:setColSpan(3):createText(ReadText(1001, 16), { halign = "center" })
-				row[4]:createText("", { x = 0 })
-				row[5]:setColSpan(3):createText(ReadText(1001, 8355), { halign = "center" })
-				-- line
-				local row = ftable:addRow(false, { fixed = true, bgColor = Color["row_separator_white"] })
-				row[1]:setColSpan(3):createText("", { height = 2 })
-				row[4]:createText("", { height = 2, cellBGColor = Color["row_background"], x = 0 })
-				row[5]:setColSpan(3):createText("", { height = 2 })
+		local isship = C.IsComponentClass(selectedcomponent, "ship")
+		if (isship and isplayerowned) or C.IsComponentClass(selectedcomponent, "collectablewares") then
+			local row = ftable:addRow(nil, { fixed = true, borderBelow = false })
+			row[1]:setColSpan(3):createText(ReadText(1001, 16), { halign = "center" })
+			row[4]:createText("", { x = 0 })
+			row[5]:setColSpan(3):createText(ReadText(1001, 8355), { halign = "center" })
+			-- line
+			local row = ftable:addRow(false, { fixed = true, bgColor = Color["row_separator_white"] })
+			row[1]:setColSpan(3):createText("", { height = 2 })
+			row[4]:createText("", { height = 2, cellBGColor = Color["row_background"], x = 0 })
+			row[5]:setColSpan(3):createText("", { height = 2 })
 
-				local sideorder = { "left", "right" }
-				local rows = {
-					left = {},
-					right = {},
-				}
+			local sideorder = { "left", "right" }
+			local rows = {
+				left = {},
+				right = {},
+			}
+			if isship then
 				-- order
 				local _, _, _, name, _, _, _, targetname = menu.getOrderInfo(selectedcomponent, true)
 				table.insert(rows.left, { entrytype = "text", text = name .. ((targetname ~= "") and (ReadText(1001, 120) .. " " .. targetname) or ""), properties = { halign = "center", color = menu.holomapcolor.playercolor } })
@@ -26411,7 +26410,9 @@ function menu.createSelectedShips(frame)
 						table.insert(rows.left, { entrytype = "text", text = ffi.string(failure.message), properties = { halign = "center", color = Color["text_warning"] } })
 					end
 				end
+			end
 
+			if isship then
 				-- capacity
 				local numtransporttypes = C.GetNumCargoTransportTypes(selectedcomponent, true)
 				local currenttransporttypes = ffi.new("StorageInfo[?]", numtransporttypes)
@@ -26421,10 +26422,12 @@ function menu.createSelectedShips(frame)
 				for i = 0, numtransporttypes - 1 do
 					table.insert(rows.right, { entrytype = "capacity", text = ReadText(1001, 1402) .. " (" .. ffi.string(futuretransporttypes[i].name) .. ")" .. ReadText(1001, 120), currentused = currenttransporttypes[i].spaceused, futureused = futuretransporttypes[i].spaceused, capacity = futuretransporttypes[i].capacity })
 				end
-				-- cargo
+			end
+			-- cargo
+			local wares = {}
+			if isship then
 				local cargo = GetComponentData(selectedcomponent, "cargo")
-				local futurecargo = GetCargoAfterTradeOrders(selectedcomponent, true)
-				local wares = {}
+				local futurecargo = isship and GetCargoAfterTradeOrders(selectedcomponent, true) or {}
 				for ware, amount in pairs(cargo) do
 					table.insert(wares, { ware = ware, name = GetWareData(ware, "name"), current = amount, future = futurecargo[ware] or 0 })
 				end
@@ -26433,201 +26436,206 @@ function menu.createSelectedShips(frame)
 						table.insert(wares, { ware = ware, name = GetWareData(ware, "name"), current = 0, future = amount })
 					end
 				end
-				table.sort(wares, function (a, b) return a.future > b.future end)
-				local setting, list = menu.getTradeWareFilter(true)
-				for i, entry in ipairs(wares) do
-					local color, script = menu.getWareButtonColorAndScript(list, setting, entry.ware)
-					table.insert(rows.right, { entrytype = "ware", text = entry.name, current = entry.current, future = entry.future, max = GetWareCapacity(selectedcomponent, entry.ware), color = color, script = script })
+			else
+				local collectable = GetCollectableData(component)
+				for _, ware in ipairs(collectable.wares) do
+					table.insert(wares, { ware = ware.ware, name = GetWareData(ware.ware, "name"), current = ware.amount, future = ware.amount })
 				end
-				-- display rows
-				for i = 1, 5 do
-					local row
-					for _, side in ipairs(sideorder) do
-						if rows[side][i] then
-							local entry = rows[side][i]
-							if not row then
-								row = ftable:addRow(true, { fixed = true })
+			end
+			table.sort(wares, function (a, b) return a.future > b.future end)
+			local setting, list = menu.getTradeWareFilter(true)
+			for i, entry in ipairs(wares) do
+				local color, script = menu.getWareButtonColorAndScript(list, setting, entry.ware)
+				table.insert(rows.right, { entrytype = "ware", text = entry.name, current = entry.current, future = entry.future, max = isship and GetWareCapacity(selectedcomponent, entry.ware) or 0, color = color, script = script })
+			end
+			-- display rows
+			for i = 1, 5 do
+				local row
+				for _, side in ipairs(sideorder) do
+					if rows[side][i] then
+						local entry = rows[side][i]
+						if not row then
+							row = ftable:addRow(true, { fixed = true })
+						end
+						if entry.entrytype == "text" then
+							row[(side == "left") and 1 or 5]:setColSpan(3):createText(entry.text, entry.properties)
+							if (side == "right") or (not rows["right"][i]) then
+								row[4]:createText("", { height = 2, cellBGColor = Color["row_background"], x = 0 })
 							end
-							if entry.entrytype == "text" then
-								row[(side == "left") and 1 or 5]:setColSpan(3):createText(entry.text, entry.properties)
-								if (side == "right") or (not rows["right"][i]) then
-									row[4]:createText("", { height = 2, cellBGColor = Color["row_background"], x = 0 })
-								end
-							elseif entry.entrytype == "capacity" then
-								if side == "right" then
-									row[5]:setColSpan(3)
+						elseif entry.entrytype == "capacity" then
+							if side == "right" then
+								row[5]:setColSpan(3)
 
-									local mouseovertext
-									local amounttext = menu.formatWareAmount(entry.currentused, entry.futureused, entry.capacity)
-									local text = TruncateText(entry.text, Helper.standardFont, menu.selectedShipsTableData.fontsize, row[5]:getWidth() - menu.getAmountTextWidth(amounttext))
-									if text ~= entry.text then
-										mouseovertext = entry.text .. " " .. amounttext
-									end
-
-									local xoffset = 1 + Helper.borderSize
-									local width = row[5]:getColSpanWidth()
-									row[4]:createStatusBar({ current = entry.futureused, start = entry.currentused, max = entry.capacity, cellBGColor = Color["row_background"], valueColor = Color["slider_value"], posChangeColor = Color["flowchart_slider_diff2"], negChangeColor = Color["flowchart_slider_diff1"], markerColor = Color["statusbar_marker_hidden"], width = width, x = xoffset, scaling = false })
-									row[5]:createIcon("solid", { color = Color["icon_transparent"], height = menu.selectedShipsTableData.textHeight, mouseOverText = mouseovertext })
-									row[5]:setText(text)
-									row[5]:setText2(amounttext, { halign = "right", x = Helper.standardTextOffsetx })
+								local mouseovertext
+								local amounttext = menu.formatWareAmount(entry.currentused, entry.futureused, entry.capacity)
+								local text = TruncateText(entry.text, Helper.standardFont, menu.selectedShipsTableData.fontsize, row[5]:getWidth() - menu.getAmountTextWidth(amounttext))
+								if text ~= entry.text then
+									mouseovertext = entry.text .. " " .. amounttext
 								end
-							elseif entry.entrytype == "ware" then
-								if side == "right" then
-									row[5]:setColSpan(3)
-									local xoffset = 1 + Helper.borderSize
-									local width = row[5]:getColSpanWidth()
-									row[4]:createStatusBar({ current = entry.future, start = entry.current, max = entry.max, cellBGColor = Color["row_background"], valueColor = Color["slider_value"], posChangeColor = Color["flowchart_slider_diff2"], negChangeColor = Color["flowchart_slider_diff1"], markerColor = Color["statusbar_marker_hidden"], width = width, x = xoffset, scaling = false })
-									row[5]:createButton({ bgColor = Color["button_background_hidden"], highlightColor = (menu.mode == "behaviourinspection") and Color["button_highlight_hidden"] or nil, height = menu.selectedShipsTableData.textHeight })
-									row[5]:setText(entry.text, { color = entry.color })
-									row[5]:setText2(menu.formatWareAmount(entry.current, entry.future), { halign = "right", color = entry.color })
-									if menu.mode ~= "behaviourinspection" then
-										row[5].handlers.onClick = entry.script
-									end
+
+								local xoffset = 1 + Helper.borderSize
+								local width = row[5]:getColSpanWidth()
+								row[4]:createStatusBar({ current = entry.futureused, start = entry.currentused, max = entry.capacity, cellBGColor = Color["row_background"], valueColor = Color["slider_value"], posChangeColor = Color["flowchart_slider_diff2"], negChangeColor = Color["flowchart_slider_diff1"], markerColor = Color["statusbar_marker_hidden"], width = width, x = xoffset, scaling = false })
+								row[5]:createIcon("solid", { color = Color["icon_transparent"], height = menu.selectedShipsTableData.textHeight, mouseOverText = mouseovertext })
+								row[5]:setText(text)
+								row[5]:setText2(amounttext, { halign = "right", x = Helper.standardTextOffsetx })
+							end
+						elseif entry.entrytype == "ware" then
+							if side == "right" then
+								row[5]:setColSpan(3)
+								local xoffset = 1 + Helper.borderSize
+								local width = row[5]:getColSpanWidth()
+								row[4]:createStatusBar({ current = entry.future, start = entry.current, max = entry.max, cellBGColor = Color["row_background"], valueColor = Color["slider_value"], posChangeColor = Color["flowchart_slider_diff2"], negChangeColor = Color["flowchart_slider_diff1"], markerColor = Color["statusbar_marker_hidden"], width = width, x = xoffset, scaling = false })
+								row[5]:createButton({ bgColor = Color["button_background_hidden"], highlightColor = (menu.mode == "behaviourinspection") and Color["button_highlight_hidden"] or nil, height = menu.selectedShipsTableData.textHeight })
+								row[5]:setText(entry.text, { color = entry.color })
+								row[5]:setText2(menu.formatWareAmount(entry.current, entry.future), { halign = "right", color = entry.color })
+								if menu.mode ~= "behaviourinspection" then
+									row[5].handlers.onClick = entry.script
 								end
 							end
 						end
 					end
+				end
+			end
+			if #rows.right > 5 then
+				local row = ftable:addRow(nil, { fixed = true })
+				row[4]:createText("", { height = 2, cellBGColor = Color["row_background"], x = 0 })
+				row[5]:setColSpan(3):createText(string.format("%+d %s", #rows.right - 5, ((#rows.right - 5) > 1) and ReadText(1001, 46) or ReadText(1001, 45)))
+			end
+		elseif C.IsComponentClass(selectedcomponent, "station") then
+			local row = ftable:addRow(nil, { fixed = true, borderBelow = false })
+			row[1]:setColSpan(3):createText(ReadText(1001, 3305), { halign = "center" })
+			row[4]:createText("", { x = 0 })
+			row[5]:setColSpan(3):createText(ReadText(1001, 63), { halign = "center" })
+			-- line
+			local row = ftable:addRow(false, { fixed = true, bgColor = Color["row_separator_white"] })
+			row[1]:setColSpan(3):createText("", { height = 2 })
+			row[4]:createText("", { height = 2, cellBGColor = Color["row_background"], x = 0 })
+			row[5]:setColSpan(3):createText("", { height = 2 })
+
+			local sideorder = { "left", "right" }
+			local rows = {
+				left = {},
+				right = {},
+			}
+			-- upkeep missions
+			local upkeepMissions = {}
+			if menu.upkeepMissionData[tostring(selectedcomponent)] then
+				for _, entry in ipairs(menu.upkeepMissionData[tostring(selectedcomponent)]) do
+					table.insert(upkeepMissions, { alertLevel = entry.alertLevel, name = entry.name })
+				end
+			end
+			table.sort(upkeepMissions, function (a, b) return a.alertLevel > b.alertLevel end)
+
+			for i, entry in ipairs(upkeepMissions) do
+				local color = Color["text_normal"]
+				if entry.alertLevel == 1 then
+					color = menu.holomapcolor.lowalertcolor
+				elseif entry.alertLevel == 2 then
+					color = menu.holomapcolor.mediumalertcolor
+				else
+					color = menu.holomapcolor.highalertcolor
+				end
+				table.insert(rows.left, { entrytype = "text", text = entry.name, properties = { halign = "center", color = color } })
+			end
+
+			-- ware reservations
+			local reservationscapacity = menu.getReservationsVolumeByTransportType(selectedcomponent)
+			local reservationscargo = menu.getReservationsAmountByWareType(selectedcomponent)
+
+			-- capacity
+			local numtransporttypes = C.GetNumCargoTransportTypes(selectedcomponent, true)
+			local currenttransporttypes = ffi.new("StorageInfo[?]", numtransporttypes)
+			numtransporttypes = C.GetCargoTransportTypes(currenttransporttypes, numtransporttypes, selectedcomponent, true, false)
+
+			for i = 0, numtransporttypes - 1 do
+				local storagename = ffi.string(currenttransporttypes[i].name)
+				local futureamount = currenttransporttypes[i].spaceused
+				if reservationscapacity[string.lower(storagename)] then
+					futureamount = futureamount + reservationscapacity[string.lower(storagename)]
+				end
+
+				table.insert(rows.right, { entrytype = "capacity", text = ReadText(1001, 1402) .. " (" .. storagename .. ")" .. ReadText(1001, 120), currentused = currenttransporttypes[i].spaceused, futureused = futureamount, capacity = currenttransporttypes[i].capacity })
+			end
+			-- cargo
+			local cargo = GetComponentData(selectedcomponent, "cargo")
+			local wares = {}
+			for ware, amount in pairs(cargo) do
+				local futureamount = amount
+				if reservationscargo[ware] then
+					futureamount = futureamount + reservationscargo[ware]
+				end
+
+				table.insert(wares, { ware = ware, name = GetWareData(ware, "name"), current = amount, future = futureamount })
+			end
+			table.sort(wares, function (a, b) return a.future > b.future end)
+			local setting, list = menu.getTradeWareFilter(true)
+			for i, entry in ipairs(wares) do
+				local color, script = menu.getWareButtonColorAndScript(list, setting, entry.ware)
+				local productionlimit = GetWareProductionLimit(selectedcomponent, entry.ware)
+				table.insert(rows.right, { entrytype = "ware", text = entry.name, current = entry.current, future = entry.future, max = math.max(entry.current, productionlimit), color = color, script = script })
+			end
+			-- display rows
+			for i = 1, 5 do
+				local row
+				for _, side in ipairs(sideorder) do
+					if rows[side][i] then
+						local entry = rows[side][i]
+						if not row then
+							row = ftable:addRow(true, { fixed = true })
+						end
+						if entry.entrytype == "text" then
+							row[(side == "left") and 1 or 5]:setColSpan(3):createText(entry.text, entry.properties)
+							if (side == "right") or (not rows["right"][i]) then
+								row[4]:createText("", { height = 2, cellBGColor = Color["row_background"], x = 0 })
+							end
+						elseif entry.entrytype == "capacity" then
+							if side == "right" then
+								row[5]:setColSpan(3)
+
+								local mouseovertext
+								local amounttext = menu.formatWareAmount(entry.currentused, entry.futureused, entry.capacity)
+								local widthdelta = row[5]:getWidth() - menu.getAmountTextWidth(amounttext)
+								local text = ""
+								if widthdelta > 0 then
+									text = TruncateText(entry.text, Helper.standardFont, menu.selectedShipsTableData.fontsize, widthdelta)
+								end
+								if text ~= entry.text then
+									mouseovertext = entry.text .. " " .. amounttext
+								end
+
+								local xoffset = 1 + Helper.borderSize
+								local width = row[5]:getColSpanWidth()
+								row[4]:createStatusBar({ current = entry.futureused, start = entry.currentused, max = entry.capacity, cellBGColor = Color["row_background"], valueColor = Color["slider_value"], posChangeColor = Color["flowchart_slider_diff2"], negChangeColor = Color["flowchart_slider_diff1"], markerColor = Color["statusbar_marker_hidden"], width = width, x = xoffset, scaling = false })
+								row[5]:createIcon("solid", { color = Color["icon_transparent"], height = menu.selectedShipsTableData.textHeight, mouseOverText = mouseovertext })
+								row[5]:setText(text)
+								row[5]:setText2(amounttext, { halign = "right", x = Helper.standardTextOffsetx })
+							end
+						elseif entry.entrytype == "ware" then
+							if side == "right" then
+								row[5]:setColSpan(3)
+								local barxoffset = 1 + Helper.borderSize
+								local width = row[5]:getColSpanWidth()
+								row[4]:createStatusBar({ current = entry.future, start = entry.current, max = entry.max, cellBGColor = Color["row_background"], valueColor = Color["slider_value"], posChangeColor = Color["flowchart_slider_diff2"], negChangeColor = Color["flowchart_slider_diff1"], markerColor = Color["statusbar_marker_hidden"], width = width, x = barxoffset, scaling = false })
+								row[5]:createButton({ bgColor = Color["button_background_hidden"], highlightColor = (menu.mode == "behaviourinspection") and Color["button_highlight_hidden"] or nil, height = menu.selectedShipsTableData.textHeight })
+								row[5]:setText(entry.text, { color = entry.color, x = Helper.standardIndentStep })
+								row[5]:setText2(menu.formatWareAmount(entry.current, entry.future), { halign = "right", color = entry.color })
+								if menu.mode ~= "behaviourinspection" then
+									row[5].handlers.onClick = entry.script
+								end
+							end
+						end
+					end
+				end
+			end
+			if (#rows.left > 5) or (#rows.right > 5) then
+				local row = ftable:addRow(nil, { fixed = true })
+				row[4]:createText("", { height = 2, cellBGColor = Color["row_background"], x = 0 })
+				if #rows.left > 5 then
+					row[1]:setColSpan(3):createText(string.format("%+d %s", #rows.left - 5, ((#rows.left - 5) > 1) and ReadText(1001, 5702) or ReadText(1001, 5702)))
 				end
 				if #rows.right > 5 then
-					local row = ftable:addRow(nil, { fixed = true })
-					row[4]:createText("", { height = 2, cellBGColor = Color["row_background"], x = 0 })
 					row[5]:setColSpan(3):createText(string.format("%+d %s", #rows.right - 5, ((#rows.right - 5) > 1) and ReadText(1001, 46) or ReadText(1001, 45)))
-				end
-			elseif C.IsComponentClass(selectedcomponent, "station") then
-				local row = ftable:addRow(nil, { fixed = true, borderBelow = false })
-				row[1]:setColSpan(3):createText(ReadText(1001, 3305), { halign = "center" })
-				row[4]:createText("", { x = 0 })
-				row[5]:setColSpan(3):createText(ReadText(1001, 63), { halign = "center" })
-				-- line
-				local row = ftable:addRow(false, { fixed = true, bgColor = Color["row_separator_white"] })
-				row[1]:setColSpan(3):createText("", { height = 2 })
-				row[4]:createText("", { height = 2, cellBGColor = Color["row_background"], x = 0 })
-				row[5]:setColSpan(3):createText("", { height = 2 })
-
-				local sideorder = { "left", "right" }
-				local rows = {
-					left = {},
-					right = {},
-				}
-				-- upkeep missions
-				local upkeepMissions = {}
-				if menu.upkeepMissionData[tostring(selectedcomponent)] then
-					for _, entry in ipairs(menu.upkeepMissionData[tostring(selectedcomponent)]) do
-						table.insert(upkeepMissions, { alertLevel = entry.alertLevel, name = entry.name })
-					end
-				end
-				table.sort(upkeepMissions, function (a, b) return a.alertLevel > b.alertLevel end)
-
-				for i, entry in ipairs(upkeepMissions) do
-					local color = Color["text_normal"]
-					if entry.alertLevel == 1 then
-						color = menu.holomapcolor.lowalertcolor
-					elseif entry.alertLevel == 2 then
-						color = menu.holomapcolor.mediumalertcolor
-					else
-						color = menu.holomapcolor.highalertcolor
-					end
-					table.insert(rows.left, { entrytype = "text", text = entry.name, properties = { halign = "center", color = color } })
-				end
-
-				-- ware reservations
-				local reservationscapacity = menu.getReservationsVolumeByTransportType(selectedcomponent)
-				local reservationscargo = menu.getReservationsAmountByWareType(selectedcomponent)
-
-				-- capacity
-				local numtransporttypes = C.GetNumCargoTransportTypes(selectedcomponent, true)
-				local currenttransporttypes = ffi.new("StorageInfo[?]", numtransporttypes)
-				numtransporttypes = C.GetCargoTransportTypes(currenttransporttypes, numtransporttypes, selectedcomponent, true, false)
-
-				for i = 0, numtransporttypes - 1 do
-					local storagename = ffi.string(currenttransporttypes[i].name)
-					local futureamount = currenttransporttypes[i].spaceused
-					if reservationscapacity[string.lower(storagename)] then
-						futureamount = futureamount + reservationscapacity[string.lower(storagename)]
-					end
-
-					table.insert(rows.right, { entrytype = "capacity", text = ReadText(1001, 1402) .. " (" .. storagename .. ")" .. ReadText(1001, 120), currentused = currenttransporttypes[i].spaceused, futureused = futureamount, capacity = currenttransporttypes[i].capacity })
-				end
-				-- cargo
-				local cargo = GetComponentData(selectedcomponent, "cargo")
-				local wares = {}
-				for ware, amount in pairs(cargo) do
-					local futureamount = amount
-					if reservationscargo[ware] then
-						futureamount = futureamount + reservationscargo[ware]
-					end
-
-					table.insert(wares, { ware = ware, name = GetWareData(ware, "name"), current = amount, future = futureamount })
-				end
-				table.sort(wares, function (a, b) return a.future > b.future end)
-				local setting, list = menu.getTradeWareFilter(true)
-				for i, entry in ipairs(wares) do
-					local color, script = menu.getWareButtonColorAndScript(list, setting, entry.ware)
-					local productionlimit = GetWareProductionLimit(selectedcomponent, entry.ware)
-					table.insert(rows.right, { entrytype = "ware", text = entry.name, current = entry.current, future = entry.future, max = math.max(entry.current, productionlimit), color = color, script = script })
-				end
-				-- display rows
-				for i = 1, 5 do
-					local row
-					for _, side in ipairs(sideorder) do
-						if rows[side][i] then
-							local entry = rows[side][i]
-							if not row then
-								row = ftable:addRow(true, { fixed = true })
-							end
-							if entry.entrytype == "text" then
-								row[(side == "left") and 1 or 5]:setColSpan(3):createText(entry.text, entry.properties)
-								if (side == "right") or (not rows["right"][i]) then
-									row[4]:createText("", { height = 2, cellBGColor = Color["row_background"], x = 0 })
-								end
-							elseif entry.entrytype == "capacity" then
-								if side == "right" then
-									row[5]:setColSpan(3)
-
-									local mouseovertext
-									local amounttext = menu.formatWareAmount(entry.currentused, entry.futureused, entry.capacity)
-									local widthdelta = row[5]:getWidth() - menu.getAmountTextWidth(amounttext)
-									local text = ""
-									if widthdelta > 0 then
-										text = TruncateText(entry.text, Helper.standardFont, menu.selectedShipsTableData.fontsize, widthdelta)
-									end
-									if text ~= entry.text then
-										mouseovertext = entry.text .. " " .. amounttext
-									end
-
-									local xoffset = 1 + Helper.borderSize
-									local width = row[5]:getColSpanWidth()
-									row[4]:createStatusBar({ current = entry.futureused, start = entry.currentused, max = entry.capacity, cellBGColor = Color["row_background"], valueColor = Color["slider_value"], posChangeColor = Color["flowchart_slider_diff2"], negChangeColor = Color["flowchart_slider_diff1"], markerColor = Color["statusbar_marker_hidden"], width = width, x = xoffset, scaling = false })
-									row[5]:createIcon("solid", { color = Color["icon_transparent"], height = menu.selectedShipsTableData.textHeight, mouseOverText = mouseovertext })
-									row[5]:setText(text)
-									row[5]:setText2(amounttext, { halign = "right", x = Helper.standardTextOffsetx })
-								end
-							elseif entry.entrytype == "ware" then
-								if side == "right" then
-									row[5]:setColSpan(3)
-									local barxoffset = 1 + Helper.borderSize
-									local width = row[5]:getColSpanWidth()
-									row[4]:createStatusBar({ current = entry.future, start = entry.current, max = entry.max, cellBGColor = Color["row_background"], valueColor = Color["slider_value"], posChangeColor = Color["flowchart_slider_diff2"], negChangeColor = Color["flowchart_slider_diff1"], markerColor = Color["statusbar_marker_hidden"], width = width, x = barxoffset, scaling = false })
-									row[5]:createButton({ bgColor = Color["button_background_hidden"], highlightColor = (menu.mode == "behaviourinspection") and Color["button_highlight_hidden"] or nil, height = menu.selectedShipsTableData.textHeight })
-									row[5]:setText(entry.text, { color = entry.color, x = Helper.standardIndentStep })
-									row[5]:setText2(menu.formatWareAmount(entry.current, entry.future), { halign = "right", color = entry.color })
-									if menu.mode ~= "behaviourinspection" then
-										row[5].handlers.onClick = entry.script
-									end
-								end
-							end
-						end
-					end
-				end
-				if (#rows.left > 5) or (#rows.right > 5) then
-					local row = ftable:addRow(nil, { fixed = true })
-					row[4]:createText("", { height = 2, cellBGColor = Color["row_background"], x = 0 })
-					if #rows.left > 5 then
-						row[1]:setColSpan(3):createText(string.format("%+d %s", #rows.left - 5, ((#rows.left - 5) > 1) and ReadText(1001, 5702) or ReadText(1001, 5702)))
-					end
-					if #rows.right > 5 then
-						row[5]:setColSpan(3):createText(string.format("%+d %s", #rows.right - 5, ((#rows.right - 5) > 1) and ReadText(1001, 46) or ReadText(1001, 45)))
-					end
 				end
 			end
 		end
@@ -30954,8 +30962,8 @@ function menu.createOnlineModeContext(frame)
 	ftable:setDefaultColSpan(1, 2)
 
 	local counter = 1
-	local hassession = OnlineHasSession()
 
+	local hassession = OnlineHasSession()
 	local hasdocks = false
 	local hasmultipledocksperplatform = false
 	for _, entry in ipairs(Helper.ventureplatforms) do
@@ -33693,7 +33701,7 @@ function menu.onRenderTargetSelect(modified)
 					end
 				elseif (#menu.searchtext == 0) or Helper.textArrayHelper(menu.searchtext, function (numtexts, texts) return C.FilterComponentByText(pickedcomponent, numtexts, texts, true) end, "text") then
 					local isconstruction = IsComponentConstruction(pickedcomponent64)
-					if (C.IsComponentOperational(pickedcomponent) and (pickedcomponentclass ~= "player") and (pickedcomponentclass ~= "collectablewares") and (not menu.createInfoFrameRunning)) or
+					if (C.IsComponentOperational(pickedcomponent) and (pickedcomponentclass ~= "player") and (not menu.createInfoFrameRunning)) or
 						(pickedcomponentclass == "gate") or (pickedcomponentclass == "asteroid") or isconstruction
 					then
 						local sectorcontext = C.GetContextByClass(pickedcomponent, "sector", false)
@@ -33723,7 +33731,7 @@ function menu.onRenderTargetSelect(modified)
 									-- kuertee end:
 
 									local isdeployable = GetComponentData(pickedcomponent64, "isdeployable")
-									if isdeployable or (pickedcomponentclass == "lockbox") then
+									if isdeployable or (pickedcomponentclass == "lockbox") or (pickedcomponentclass == "collectablewares") then
 										newmode = "deployables"
 									elseif menu.objectMode ~= "objectall" then
 										if C.IsRealComponentClass(pickedcomponent, "station") then
@@ -33752,7 +33760,7 @@ function menu.onRenderTargetSelect(modified)
 
 									local isplayerowned, isdeployable = GetComponentData(pickedcomponent64, "isplayerowned", "isdeployable")
 									if isplayerowned then
-										if isdeployable or (pickedcomponentclass == "lockbox") then
+										if isdeployable or (pickedcomponentclass == "lockbox") or (pickedcomponentclass == "collectablewares") then
 											newmode = "deployables"
 										elseif menu.propertyMode ~= "propertyall" then
 											if C.IsRealComponentClass(pickedcomponent, "station") then
@@ -36190,7 +36198,7 @@ function menu.updateSelectedComponents(modified, keepselection, changedComponent
 						end
 					end
 				end
-				if (menu.propertyMode ~= "deployables") and (isdeployable or C.IsComponentClass(component, "lockbox")) then
+				if (menu.propertyMode ~= "deployables") and (isdeployable or C.IsComponentClass(component, "lockbox") or C.IsComponentClass(component, "collectablewares")) then
 					table.insert(components, component)
 				end
 
@@ -36211,7 +36219,7 @@ function menu.updateSelectedComponents(modified, keepselection, changedComponent
 						end
 					end
 				end
-				if (menu.objectMode ~= "deployables") and (isdeployable or C.IsComponentClass(component, "lockbox")) then
+				if (menu.objectMode ~= "deployables") and (isdeployable or C.IsComponentClass(component, "lockbox") or C.IsComponentClass(component, "collectablewares")) then
 					table.insert(components, component)
 				end
 			end
@@ -46840,7 +46848,7 @@ function menu.buttonInstallPaintMod()
 	menu.mapstate = ffi.new("HoloMapState")
 	C.GetMapState(menu.holomap, menu.mapstate)
 	menu.prepareModWares()
-	menu.getDataAndDisplay(nil, nil, nil, nil, true)
+	menu.getDataAndDisplay(menu.upgradeplan, menu.crew, nil, nil, true)
 end
 
 function menu.dropdownShipClass(_, class)
@@ -49427,7 +49435,7 @@ function menu.checkCompatibility(macro, objectmakerraces)
 end
 
 function menu.displayAmmoSlot(ftable, type, macro, total, capacity, first)
-	if menu.upgradeplan[type][macro] or menu.isAmmoCompatible(type, macro) then
+	if (menu.upgradeplan[type][macro] and ((type == "missile") or (menu.upgradeplan[type][macro] > 0))) or menu.isAmmoCompatible(type, macro) then
 		local planned = menu.upgradeplan[type][macro] or 0
 		local name, infolibrary = GetMacroData(macro, "name", "infolibrary")
 		AddKnownItem(infolibrary, macro)
@@ -50707,7 +50715,7 @@ function menu.displaySlots(frame, firsttime)
 						if next(menu.ammo[upgradetype.type]) then
 							local total, capacity = menu.getAmmoUsage(upgradetype.type)
 							local display = false
-							if menu.mode == "upgrade" then
+							if (upgradetype.type == "missile") and (menu.mode == "upgrade") then
 								display = C.GetNumAllMissiles(menu.object) > 0
 							end
 							for macro, _ in pairs(menu.ammo[upgradetype.type]) do
@@ -53713,7 +53721,7 @@ function menu.displayStats(frame)
 					if entry.type == "UINT" then
 						value = ConvertIntegerString(Helper.round(loadoutstats[id], 0), true, 0, true, false)
 					elseif (entry.type == "float") or (entry.type == "double") then
-						local int, frac = math.modf(Helper.round(loadoutstats[id], entry.accuracy))
+						local int, frac = math.modf(Helper.floor(loadoutstats[id], entry.accuracy))
 						value = ConvertIntegerString(int, true, 0, true, false)
 						if entry.accuracy > 0 then
 							frac = Helper.round(math.abs(frac or 0) * (10 ^ entry.accuracy))
@@ -53754,7 +53762,7 @@ function menu.displayStats(frame)
 						if entry2.type == "UINT" then
 							value = ConvertIntegerString(Helper.round(loadoutstats[id2], 0), true, 0, true, false)
 						elseif (entry2.type == "float") or (entry2.type == "double") then
-							local int, frac = math.modf(Helper.round(loadoutstats[id2], entry2.accuracy))
+							local int, frac = math.modf(Helper.floor(loadoutstats[id2], entry2.accuracy))
 							value = ConvertIntegerString(int, true, 0, true, false)
 							if entry2.accuracy > 0 then
 								frac = Helper.round(math.abs(frac or 0) * (10 ^ entry2.accuracy))
@@ -81244,8 +81252,8 @@ function menu.getSubordinatesInFleetUnitGroups(commanderfleetunit, assignment, s
 				local buf_fleetunits = ffi.new("FleetUnitID[?]", num_fleetunits)
 				num_fleetunits = C.GetFleetUnitSubordinateFleetUnits(buf_fleetunits, num_fleetunits, commanderfleetunit, group)
 				local fleetunits = {}
-				for j = 0, num_fleetunits - 1 do
-					table.insert(fleetunits, buf[i])
+				for i = 0, num_fleetunits - 1 do
+					table.insert(fleetunits, buf_fleetunits[i])
 				end
 
 				for _, fleetunitsubordinate in ipairs(fleetunits) do
@@ -85056,6 +85064,7 @@ config.input.controlsorder = {
             { "actions", 7, { 1, 2 }, ReadText(1026, 2600) },
             { "actions", 324, { 1, 2 }, ReadText(1026, 2692) },
             { "actions", 221, { 1, 2 }, ReadText(1026, 2601) },
+            { "states", 133, { 1, 2 } },
             { "actions", 261, { 1, 2 } },
             { "actions", 330, { 1, 2 } },
         },
@@ -85686,53 +85695,58 @@ config.optionDefinitions = {
             id = "line",
         },
         [5] = {
+            id = "display",
+            name = function () return menu.nameDisplay() end,
+            submenu = "display",
+        },
+        [6] = {
             id = "gfx",
             name = function () return menu.nameGfx() end,
             submenu = "gfx",
         },
-        [6] = {
+        [7] = {
             id = "sfx",
             name = ReadText(1001, 2611),
             submenu = "sfx",
         },
-        [7] = {
+        [8] = {
             id = "game",
             name = ReadText(1001, 2613),
             submenu = "game",
         },
-        [8] = {
+        [9] = {
             id = "accessibility",
             name = function () return menu.nameAccessibility() end,
             submenu = "accessibility",
         },
-        [9] = {
+        [10] = {
             id = "input",
             name = function () return menu.nameInput() end,
             submenu = "input",
         },
-        [10] = {
+        [11] = {
             id = "privacy",
             name = ReadText(1001, 4870),
             submenu = "privacy",
         },
-        [11] = {
+        [12] = {
             id = "language",
             name = function () return menu.nameLanguage() end,
             submenu = "language",
             display = function () return menu.isStartmenu and C.IsLanguageSettingEnabled() end
         },
-        [12] = {
+        [13] = {
             id = "line",
         },
-        [13] = {
+        [14] = {
             id = "defaults",
             name = ReadText(1001, 8981),
             submenu = "defaults",
         },
     },
-    ["gfx"] = {
-        name = ReadText(1001, 2606),
-        warning = function () return menu.warningGfx() end,
+    ["display"] = {
+        name = ReadText(1001, 12771),
+        warning = function () return menu.warningDisplay() end,
         [1] = {
             id = "hmd_resolution",
             name = ReadText(1001, 2619),
@@ -85743,6 +85757,7 @@ config.optionDefinitions = {
             -- non-VR case
             id = "resolution",
             name = ReadText(1001, 2619),
+            mouseOverText = ReadText(1026, 4821),
             valuetype = "dropdown",
             value = function () return menu.valueGfxResolution() end,
             callback = function (id, option) return menu.callbackGfxResolution(id, option) end,
@@ -85752,7 +85767,7 @@ config.optionDefinitions = {
         [3] = {
             id = "antialias",
             name = ReadText(1001, 2620),
-            mouseOverText = function () return (not C.GetDLSSOption(false)) and "" or (ColorText["text_error"] ..  ReadText(1026, 4813)) end,
+            mouseOverText = function () return (not C.GetDLSSOption(false)) and ReadText(1026, 4822) or (ColorText["text_error"] ..  ReadText(1026, 4813)) end,
             valuetype = "dropdown",
             value = function () return menu.valueGfxAA() end,
             callback = function (id, option) return menu.callbackGfxAA(id, option) end,
@@ -85770,6 +85785,7 @@ config.optionDefinitions = {
         [5] = {
             id = "dlss",
             name = ReadText(1001, 12735),
+            mouseOverText = ReadText(1026, 4824),
             valuetype = "dropdown",
             value = function () return menu.valueGfxDLSS() end,
             callback = function (id, option) return menu.callbackGfxDLSS(id, option) end,
@@ -85778,6 +85794,7 @@ config.optionDefinitions = {
         [6] = {
             id = "dlssmode",
             name = "    " .. ReadText(1001, 12736),
+            mouseOverText = ReadText(1026, 4825),
             valuetype = "dropdown",
             value = function () return menu.valueGfxDLSSMode() end,
             callback = function (id, option) return menu.callbackGfxDLSSMode(id, option) end,
@@ -85818,7 +85835,7 @@ config.optionDefinitions = {
             id = "screendisplay",
             name = ReadText(1001, 7210),
             valuetype = "button",
-            value = function () return C.GetScreenDisplayOption() and ReadText(1001, 2649) or ReadText(1001, 2648) end,
+            value = function () return C.GetScreenDisplayOption() and ReadText(1001, 12641) or ReadText(1001, 12642) end,
             callback = function () return menu.callbackGfxScreenDisplay() end,
             display = C.IsVRVersion,
         },
@@ -85835,6 +85852,7 @@ config.optionDefinitions = {
         [14] = {
             id = "fullscreen",
             name = function () return C.IsVRVersion() and ReadText(1001, 7213) or ReadText(1001, 4817) end,
+            mouseOverText = ReadText(1026, 4826),
             valuetype = "dropdown",
             value = function () return menu.valueGfxFullscreen() end,
             callback = function (id, option) return menu.callbackGfxFullscreen(id, option) end,
@@ -85843,13 +85861,15 @@ config.optionDefinitions = {
         [15] = {
             id = "autogpu",
             name = ReadText(1001, 11709),
+            mouseOverText = ReadText(1026, 4827),
             valuetype = "button",
-            value = function () return C.IsGPUAutomaticallySelected() and ReadText(1001, 2648) or ReadText(1001, 2649) end,
+            value = function () return C.IsGPUAutomaticallySelected() and ReadText(1001, 12642) or ReadText(1001, 12641) end,
             callback = function () return menu.callbackGfxAutoGPU() end,
         },
         [16] = {
             id = "gpu",
             name = ReadText(1001, 8920),
+            mouseOverText = ReadText(1026, 4828),
             valuetype = "dropdown",
             value = function () return menu.valueGfxGPU() end,
             callback = function (id, option) return menu.callbackGfxGPU(id, option) end,
@@ -85858,6 +85878,7 @@ config.optionDefinitions = {
         [17] = {
             id = "adapter",
             name = ReadText(1001, 8921),
+            mouseOverText = ReadText(1026, 4829),
             valuetype = "dropdown",
             value = function () return menu.valueGfxAdapter() end,
             callback = function (id, option) return menu.callbackGfxAdapter(id, option) end,
@@ -85865,7 +85886,8 @@ config.optionDefinitions = {
         },
         [18] = {
             id = "presentmode",
-            name = ReadText(1001, 7265),
+            name = ReadText(1001, 7268),
+            mouseOverText = ReadText(1026, 4830),
             valuetype = "dropdown",
             value = function () return menu.valueGfxPresentMode() end,
             callback = function (id, option) return menu.callbackGfxPresentMode(id, option) end,
@@ -85873,6 +85895,7 @@ config.optionDefinitions = {
         [19] = {
             id = "lut",
             name = ReadText(1001, 7238),
+            mouseOverText = ReadText(1026, 4831),
             valuetype = "dropdown",
             value = function () return menu.valueGfxLUT(false) end,
             callback = function (id, option) return menu.callbackGfxLUT(id, option) end,
@@ -85880,6 +85903,7 @@ config.optionDefinitions = {
         [20] = {
             id = "gamma",
             name = ReadText(1001, 2629),
+            mouseOverText = ReadText(1026, 4832),
             valuetype = "slidercell",
             value = function () return menu.valueGfxGamma() end,
             callback = function (value) return menu.callbackGfxGamma(value) end,
@@ -85887,6 +85911,7 @@ config.optionDefinitions = {
         [21] = {
             id = "fov",
             name = ReadText(1001, 4814),
+            mouseOverText = ReadText(1026, 4833),
             valuetype = "slidercell",
             value = function () return menu.valueGfxFOV() end,
             callback = function (value) return menu.callbackGfxFOV(value) end,
@@ -85895,170 +85920,181 @@ config.optionDefinitions = {
             id = "line",
         },
         [23] = {
+            id = "display_defaults",
+            name = ReadText(1001, 12772),
+            submenu = "display_defaults",
+        },
+    },
+    ["gfx"] = {
+        name = ReadText(1001, 2606),
+        warning = function () return menu.warningGfx() end,
+        [1] = {
             id = "gfx_preset",
             name = ReadText(1001, 4840),
+            mouseOverText = ReadText(1026, 4834),
             valuetype = "dropdown",
             value = function () return menu.valueGfxPreset() end,
             callback = function (id, option) return menu.callbackGfxPreset(id, option) end,
         },
-        [24] = {
+        [2] = {
             id = "texturequality",
             name = ReadText(1001, 8900),
+            mouseOverText = ReadText(1026, 4835),
             valuetype = "dropdown",
             value = function () return menu.valueGfxTexture() end,
             callback = function (id, option) return menu.callbackGfxTexture(id, option) end,
-            selectable = function () return menu.selectableGfxPreset() end,
         },
-        [25] = {
+        [3] = {
             id = "shadows",
             name = ReadText(1001, 2625),
+            mouseOverText = ReadText(1026, 4836),
             valuetype = "dropdown",
             value = function () return menu.valueGfxShadows() end,
             callback = function (id, option) return menu.callbackGfxShadows(id, option) end,
-            selectable = function () return menu.selectableGfxPreset() end,
         },
-        [26] = {
+        [4] = {
             id = "softshadows",
             name = ReadText(1001, 4841),
+            mouseOverText = ReadText(1026, 4837),
             valuetype = "button",
-            value = function () return GetSoftShadowsOption() and ReadText(1001, 2648) or ReadText(1001, 2649) end,
+            value = function () return GetSoftShadowsOption() and ReadText(1001, 12642) or ReadText(1001, 12641) end,
             callback = function () return menu.callbackGfxSoftShadows() end,
-            selectable = function () return menu.selectableGfxPreset() end,
         },
-        [27] = {
+        [5] = {
             id = "ssao",
             name = ReadText(1001, 2626),
+            mouseOverText = ReadText(1026, 4838),
             valuetype = "dropdown",
             value = function () return menu.valueGfxSSAO() end,
             callback = function (id, option) return menu.callbackGfxSSAO(id, option) end,
-            selectable = function () return menu.selectableGfxPreset() end,
         },
-        [28] = {
+        [6] = {
             id = "glow",
             name = ReadText(1001, 11752),
+            mouseOverText = ReadText(1026, 4839),
             valuetype = "dropdown",
             value = function () return menu.valueGfxGlow() end,
             callback = function (id, option) return menu.callbackGfxGlow(id, option) end,
-            selectable = function () return menu.selectableGfxPreset() end,
         },
-        [29] = {
+        [7] = {
             id = "uiglow",
             name = ReadText(1001, 11779),
+            mouseOverText = ReadText(1026, 4840),
             valuetype = "dropdown",
             value = function () return menu.valueGfxUIGlow() end,
             callback = function (id, option) return menu.callbackGfxUIGlow(id, option) end,
-            selectable = function () return menu.selectableGfxPreset() end,
         },
-        [30] = {
+        [8] = {
             id = "uiglowintensity",
             name = ReadText(1001, 12701),
+            mouseOverText = ReadText(1026, 4841),
             valuetype = "slidercell",
             value = function () return menu.valueGfxUIGlowIntensity() end,
             callback = function (value) return menu.callbackGfxUIGlowIntensity(value) end,
-            selectable = function () return menu.selectableGfxPreset() end,
         },
-        [31] = {
+        [9] = {
             id = "chromaticaberration",
             name = ReadText(1001, 8987),
+            mouseOverText = ReadText(1026, 4842),
             valuetype = "button",
-            value = function () return C.GetChromaticAberrationOption() and ReadText(1001, 2648) or ReadText(1001, 2649) end,
+            value = function () return C.GetChromaticAberrationOption() and ReadText(1001, 12642) or ReadText(1001, 12641) end,
             callback = function () return menu.callbackGfxChromaticAberration() end,
-            selectable = function () return menu.selectableGfxPreset() end,
         },
-        [32] = {
+        [10] = {
             id = "distortion",
             name = ReadText(1001, 4822),
+            mouseOverText = ReadText(1026, 4843),
             valuetype = "button",
-            value = function () return GetDistortionOption() and ReadText(1001, 2648) or ReadText(1001, 2649) end,
+            value = function () return GetDistortionOption() and ReadText(1001, 12642) or ReadText(1001, 12641) end,
             callback = function () return menu.callbackGfxDistortion() end,
-            selectable = function () return menu.selectableGfxPreset() end,
         },
-        [33] = {
+        [11] = {
             id = "pom",
             name = ReadText(1001, 11731),
+            mouseOverText = ReadText(1026, 4844),
             valuetype = "dropdown",
             value = function () return menu.valueGfxPOM() end,
             callback = function (id, option) return menu.callbackGfxPOM(id, option) end,
-            selectable = function () return menu.selectableGfxPreset() end,
         },
-        [34] = {
+        [12] = {
             id = "lod",
             name = ReadText(1001, 2628),
+            mouseOverText = ReadText(1026, 4845),
             valuetype = "slidercell",
             value = function () return menu.valueGfxLOD() end,
             callback = function (value) return menu.callbackGfxLOD(value) end,
-            selectable = function () return menu.selectableGfxPreset() end,
         },
-        [35] = {
+        [13] = {
             id = "effectdist",
             name = ReadText(1001, 2699),
+            mouseOverText = ReadText(1026, 4846),
             valuetype = "slidercell",
             value = function () return menu.valueGfxEffectDistance() end,
             callback = function (value) return menu.callbackGfxEffectDistance(value) end,
-            selectable = function () return menu.selectableGfxPreset() end,
         },
-        [36] = {
+        [14] = {
             id = "shaderquality",
             name = ReadText(1001, 2680),
             valuetype = "dropdown",
             value = function () return menu.valueGfxShaderQuality() end,
             callback = function (id, option) return menu.callbackGfxShaderQuality(id, option) end,
-            selectable = function () return menu.selectableGfxPreset() end,
             display = function () return false end, -- TEMP hidden until we get shaders with different quality
         },
-        [37] = {
+        [15] = {
             id = "radar",
             name = ReadText(1001, 1706),
+            mouseOverText = ReadText(1026, 4847),
             valuetype = "dropdown",
             value = function () return menu.valueGfxRadar() end,
             callback = function (id, option) return menu.callbackGfxRadar(id, option) end,
-            selectable = function () return menu.selectableGfxPreset() end,
         },
-        [38] = {
+        [16] = {
             id = "ssr",
             name = ReadText(1001, 7288),
+            mouseOverText = ReadText(1026, 4848),
             valuetype = "dropdown",
             value = function () return menu.valueGfxSSR() end,
             callback = function (id, option) return menu.callbackGfxSSR(id, option) end,
-            selectable = function () return menu.selectableGfxPreset() end,
         },
-        [39] = {
+        [17] = {
             id = "envmapprobes",
             name = ReadText(1001, 11733),
+            mouseOverText = ReadText(1026, 4849),
             valuetype = "dropdown",
             value = function () return menu.valueGfxEnvMapProbes() end,
             callback = function (id, option) return menu.callbackGfxEnvMapProbes(id, option) end,
-            selectable = function () return menu.selectableGfxPreset() end,
         },
-        [40] = {
+        [18] = {
             id = "volumetric",
             name = ReadText(1001, 8990),
+            mouseOverText = ReadText(1026, 4850),
             valuetype = "dropdown",
             value = function () return menu.valueGfxVolumetric() end,
             callback = function (id, option) return menu.callbackGfxVolumetric(id, option) end,
-            selectable = function () return menu.selectableGfxPreset() end,
         },
-        [41] = {
+        [19] = {
             id = "line",
         },
-        [42] = {
+        [20] = {
             id = "envmapprobesinsideglassfade",
             name = ReadText(1001, 11754),
+            mouseOverText = ReadText(1026, 4851),
             valuetype = "slidercell",
             value = function () return menu.valueGfxEnvMapProbesInsideGlassFade() end,
             callback = function (value) return menu.callbackGfxEnvMapProbesInsideGlassFade(value) end,
         },
-        [43] = {
+        [21] = {
             id = "capturehq",
             name = ReadText(1001, 4816),
+            mouseOverText = ReadText(1026, 4852),
             valuetype = "button",
-            value = function () return GetCaptureHQOption() and ReadText(1001, 2648) or ReadText(1001, 2649) end,
+            value = function () return GetCaptureHQOption() and ReadText(1001, 12642) or ReadText(1001, 12641) end,
             callback = function () return menu.callbackGfxCaptureHQ() end,
         },
-        [44] = {
+        [22] = {
             id = "line",
         },
-        [45] = {
+        [23] = {
             id = "gfx_defaults",
             name = ReadText(1001, 8982),
             submenu = "gfx_defaults",
@@ -86077,7 +86113,7 @@ config.optionDefinitions = {
             id = "sound",
             name = ReadText(1001, 2630),
             valuetype = "button",
-            value = function () return GetSoundOption() and ReadText(1001, 2648) or ReadText(1001, 2649) end,
+            value = function () return GetSoundOption() and ReadText(1001, 12642) or ReadText(1001, 12641) end,
             callback = function () return menu.callbackSfxSound() end,
         },
         [3] = {
@@ -86141,7 +86177,7 @@ config.optionDefinitions = {
             id = "autosave",
             name = ReadText(1001, 407),
             valuetype = "button",
-            value = function () return GetAutosaveOption() and ReadText(1001, 2648) or ReadText(1001, 2649) end,
+            value = function () return GetAutosaveOption() and ReadText(1001, 12642) or ReadText(1001, 12641) end,
             callback = function () return menu.callbackGameAutosave() end,
         },
         [3] = {
@@ -86162,7 +86198,7 @@ config.optionDefinitions = {
             name = ReadText(1001, 11705),
             mouseOverText = ReadText(1026, 3267),
             valuetype = "button",
-            value = function () return C.GetEmergencyEjectOption() and ReadText(1001, 2648) or ReadText(1001, 2649) end,
+            value = function () return C.GetEmergencyEjectOption() and ReadText(1001, 12642) or ReadText(1001, 12641) end,
             callback = function () return menu.callbackGameEmergencyEject() end,
         },
         [6] = {
@@ -86173,21 +86209,21 @@ config.optionDefinitions = {
             id = "autoroll",
             name = ReadText(1001, 2644),
             valuetype = "button",
-            value = function () return GetAutorollOption() and ReadText(1001, 2648) or ReadText(1001, 2649) end,
+            value = function () return GetAutorollOption() and ReadText(1001, 12642) or ReadText(1001, 12641) end,
             callback = function () return menu.callbackGameAutoroll() end,
         },
         [8] = {
             id = "collision",
             name = ReadText(1001, 2698),
             valuetype = "button",
-            value = function () return GetCollisionAvoidanceAssistOption() and ReadText(1001, 2648) or ReadText(1001, 2649) end,
+            value = function () return GetCollisionAvoidanceAssistOption() and ReadText(1001, 12642) or ReadText(1001, 12641) end,
             callback = function () return menu.callbackGameCollision() end,
         },
         [9] = {
             id = "boost",
             name = ReadText(1001, 2646),
             valuetype = "button",
-            value = function () return GetBoostToggleOption() and ReadText(1001, 2648) or ReadText(1001, 2649) end,
+            value = function () return GetBoostToggleOption() and ReadText(1001, 12642) or ReadText(1001, 12641) end,
             callback = function () return menu.callbackGameBoost() end,
         },
         [10] = {
@@ -86201,7 +86237,7 @@ config.optionDefinitions = {
             id = "stopshipinmenu",
             name = ReadText(1001, 4884),
             valuetype = "button",
-            value = function () return GetStopShipInMenuOption() and ReadText(1001, 2649) or ReadText(1001, 2648) end,
+            value = function () return GetStopShipInMenuOption() and ReadText(1001, 12641) or ReadText(1001, 12642) end,
             callback = function () return menu.callbackGameStopInMenu() end,
         },
         [12] = {
@@ -86219,7 +86255,7 @@ config.optionDefinitions = {
             id = "speaktargetname",
             name = ReadText(1001, 8924),
             valuetype = "button",
-            value = function () return C.GetSpeakTargetNameOption() and ReadText(1001, 2648) or ReadText(1001, 2649) end,
+            value = function () return C.GetSpeakTargetNameOption() and ReadText(1001, 12642) or ReadText(1001, 12641) end,
             callback = function () return menu.callbackGameSpeakTargetName() end,
         },
         [15] = {
@@ -86233,7 +86269,7 @@ config.optionDefinitions = {
             id = "mouselook",
             name = ReadText(1001, 4895),
             valuetype = "button",
-            value = function () return GetMouseLookToggleOption() and ReadText(1001, 2648) or ReadText(1001, 2649) end,
+            value = function () return GetMouseLookToggleOption() and ReadText(1001, 12642) or ReadText(1001, 12641) end,
             callback = function () return menu.callbackGameMouselook() end,
         },
         [17] = {
@@ -86247,7 +86283,7 @@ config.optionDefinitions = {
             id = "forceshoottocursor",
             name = ReadText(1001, 7218),
             valuetype = "button",
-            value = function () return C.GetForceShootingAtCursorOption() and ReadText(1001, 2648) or ReadText(1001, 2649) end,
+            value = function () return C.GetForceShootingAtCursorOption() and ReadText(1001, 12642) or ReadText(1001, 12641) end,
             callback = function () return menu.callbackGameShootAtCursor() end,
             display = C.IsVRVersion,
         },
@@ -86255,7 +86291,7 @@ config.optionDefinitions = {
             id = "mouseover",
             name = ReadText(1001, 4882),
             valuetype = "button",
-            value = function () return C.GetMouseOverTextOption() and ReadText(1001, 2648) or ReadText(1001, 2649) end,
+            value = function () return C.GetMouseOverTextOption() and ReadText(1001, 12642) or ReadText(1001, 12641) end,
             callback = function () return menu.callbackGameMouseOver() end,
         },
         [20] = {
@@ -86324,7 +86360,7 @@ config.optionDefinitions = {
             id = "controlmodemessages",
             name = ReadText(1001, 4861),
             valuetype = "button",
-            value = function () return GetSteeringNoteOption() and ReadText(1001, 2648) or ReadText(1001, 2649) end,
+            value = function () return GetSteeringNoteOption() and ReadText(1001, 12642) or ReadText(1001, 12641) end,
             callback = function () return menu.callbackGameControlModeMessages() end,
         },
         [28] = {
@@ -86363,10 +86399,11 @@ config.optionDefinitions = {
             id = "velocityindicator",
             name = ReadText(1001, 12773),
             valuetype = "button",
-            value = function () return C.GetVelocityIndicatorOption() and ReadText(1001, 2648) or ReadText(1001, 2649) end,
+            value = function () return C.GetVelocityIndicatorOption() and ReadText(1001, 12642) or ReadText(1001, 12641) end,
             callback = function () return menu.callbackGameVelocityIndicator() end,
         },
         [33] = {
+            id = "header",
             name = ReadText(1001, 4860),
         },
         [34] = {
@@ -86388,7 +86425,7 @@ config.optionDefinitions = {
             id = "autozoomreset",
             name = ReadText(1001, 12702),
             valuetype = "button",
-            value = function () return C.GetAutoZoomResetOption() and ReadText(1001, 2648) or ReadText(1001, 2649) end,
+            value = function () return C.GetAutoZoomResetOption() and ReadText(1001, 12642) or ReadText(1001, 12641) end,
             callback = function () return menu.callbackGameAutoZoomReset() end,
         },
         [37] = {
@@ -86407,14 +86444,14 @@ config.optionDefinitions = {
             id = "signalleakindicator",
             name = ReadText(1001, 8995),
             valuetype = "button",
-            value = function () return C.GetSignalLeakIndicatorOption() and ReadText(1001, 2648) or ReadText(1001, 2649) end,
+            value = function () return C.GetSignalLeakIndicatorOption() and ReadText(1001, 12642) or ReadText(1001, 12641) end,
             callback = function () return menu.callbackAccessibilitySignalLeak() end,
         },
         [2] = {
             id = "longrangescanindicator",
             name = ReadText(1001, 8996),
             valuetype = "button",
-            value = function () return C.GetLongRangeScanIndicatorOption() and ReadText(1001, 2648) or ReadText(1001, 2649) end,
+            value = function () return C.GetLongRangeScanIndicatorOption() and ReadText(1001, 12642) or ReadText(1001, 12641) end,
             callback = function () return menu.callbackAccessibilityLongRangeScan() end,
         },
         [3] = {
@@ -86612,7 +86649,7 @@ config.optionDefinitions = {
             name = ReadText(1001, 7261),
             mouseOverText = ReadText(1026, 2683),
             valuetype = "button",
-            value = function () return C.IsThrottleBidirectional() and ReadText(1001, 2648) or ReadText(1001, 2649) end,
+            value = function () return C.IsThrottleBidirectional() and ReadText(1001, 12642) or ReadText(1001, 12641) end,
             callback = function () return menu.callbackInputJoystickBidirectionalThrottle() end,
         },
         [27] = {
@@ -86628,7 +86665,7 @@ config.optionDefinitions = {
             name = ReadText(1001, 12682),
             mouseOverText = ReadText(1026, 2682),
             valuetype = "button",
-            value = function () return C.IsJoystickSteeringAdapative() and ReadText(1001, 2648) or ReadText(1001, 2649) end,
+            value = function () return C.IsJoystickSteeringAdapative() and ReadText(1001, 12642) or ReadText(1001, 12641) end,
             callback = function () return menu.callbackInputJoystickSteeringAdaptive() end,
         },
         [29] = {
@@ -86654,7 +86691,7 @@ config.optionDefinitions = {
             id = "mouse_capture",
             name = ReadText(1001, 4820),
             valuetype = "button",
-            value = function () return GetConfineMouseOption() and ReadText(1001, 2648) or ReadText(1001, 2649) end,
+            value = function () return GetConfineMouseOption() and ReadText(1001, 12642) or ReadText(1001, 12641) end,
             callback = function () return menu.callbackInputMouseCapture() end,
         },
         [34] = {
@@ -86662,7 +86699,7 @@ config.optionDefinitions = {
             name = ReadText(1001, 12683),
             mouseOverText = ReadText(1026, 2682),
             valuetype = "button",
-            value = function () return C.IsMouseSteeringAdapative() and ReadText(1001, 2648) or ReadText(1001, 2649) end,
+            value = function () return C.IsMouseSteeringAdapative() and ReadText(1001, 12642) or ReadText(1001, 12641) end,
             callback = function () return menu.callbackInputMouseSteeringAdaptive() end,
         },
         [35] = {
@@ -86670,7 +86707,7 @@ config.optionDefinitions = {
             name = ReadText(1001, 11768),
             mouseOverText = ReadText(1026, 2685),
             valuetype = "button",
-            value = function () return C.IsMouseSteeringPersistent() and ReadText(1001, 2648) or ReadText(1001, 2649) end,
+            value = function () return C.IsMouseSteeringPersistent() and ReadText(1001, 12642) or ReadText(1001, 12641) end,
             callback = function () return menu.callbackInputMouseSteeringPersistent() end,
         },
         [36] = {
@@ -86678,7 +86715,7 @@ config.optionDefinitions = {
             name = ReadText(1001, 11769),
             mouseOverText = ReadText(1026, 2686),
             valuetype = "button",
-            value = function () return C.IsMouseSteeringLineEnabled() and ReadText(1001, 2648) or ReadText(1001, 2649) end,
+            value = function () return C.IsMouseSteeringLineEnabled() and ReadText(1001, 12642) or ReadText(1001, 12641) end,
             callback = function () return menu.callbackInputMouseSteeringLine() end,
         },
         [37] = {
@@ -89796,7 +89833,7 @@ function ModLua.updateCallbacksNow()
     end
 end
 
-function ModLua.debugText(data1, data2, indent, isForced, getinfodata)
+function ModLua.debugText(data1, data2, indent, isForced)
 	local isDebug = false
 	if isDebug == true or isForced == true then
 		if indent == nil then
@@ -89812,33 +89849,21 @@ function ModLua.debugText(data1, data2, indent, isForced, getinfodata)
 		elseif not data2 then
 			data2 = "(nil)"
 		end
-		if not getinfodata then
-			getinfodata = debug.getinfo(3)
-		end
-		local noteFuncName = ""
-		local noteLocation = ""
-		if (not noteFuncName) or tostring(getinfodata.name) == "callback" or tostring(getinfodata.name) == "nil" then
-			noteFuncName = " (approx)"
-			noteLocation = " (location of approx funcName)"
-		end
-		-- DebugError ("uix funcName" .. tostring(noteFuncName) .. ": " .. tostring(getinfodata.name) .. " data1: " .. indent .. tostring (data1) .. " (" .. tostring(type(data1)) .. ") data2: " .. tostring(data2) .. " (" .. tostring(type(data2)) .. ") at" .. tostring(noteLocation) .. ": line: " .. tostring(getinfodata.linedefined) .. " of: " .. tostring(getinfodata.short_src))
-		DebugError ("uix funcName" .. tostring(noteFuncName) .. ": " .. tostring(getinfodata.name) .. ": " .. indent .. tostring (data1) .. " = " .. tostring(data2) .. " at" .. tostring(noteLocation) .. ": line: " .. tostring(getinfodata.linedefined) .. " of: " .. tostring(getinfodata.short_src))
+		DebugError ("uix: " .. indent .. tostring (data1) .. " = " .. tostring(data2))
 		indent = indent .. "  "
 		if type(data1) == "table" then
 			for key, value in pairs(data1) do
-				Helper.debugText(key, value, indent, isForced, getinfodata)
+				Helper.debugText(key, value, indent, isForced)
 			end
 		end
 		if type(data2) == "table" then
-			Helper.debugText(data2, nil, indent, isForced, getinfodata)
+			Helper.debugText(data2, nil, indent, isForced)
 		end
 	end
 end
 
 function ModLua.debugText_forced(data1, data2, indent)
-	local getinfodata = debug.getinfo(2)
-	-- DebugError("func: " .. tostring(debug.getinfo(getinfodata.func).name) .. ", " .. tostring(debug.getinfo(getinfodata.func).linedefined) .. ", " .. tostring(debug.getinfo(getinfodata.func).short_src))
-	return Helper.debugText(data1, data2, indent, true, getinfodata)
+	return Helper.debugText(data1, data2, indent, true)
 end
 
 Helper.isDebugCallbacks = nil

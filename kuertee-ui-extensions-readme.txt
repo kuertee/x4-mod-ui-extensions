@@ -5,6 +5,9 @@ by kuertee. Contributors: Erixon, Forleyor, Mycu, Runekn, AlexandreTK, IALuir, s
 
 Updates
 =======
+v7.5.007 beta, 30 Jan 2025:
+-Bug-fix: compatibility with the 7.5 beta 7 version of the base game.
+
 v7.5.0063 beta, 29 Jan 2025:
 -Bug-fix: Trade Rule Restrictions were not sticking.
 -Bug-fix: Resizing Plot of stations were not sticking.

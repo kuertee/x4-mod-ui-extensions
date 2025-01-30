@@ -1170,7 +1170,7 @@ function ModLua.updateCallbacksNow()
     end
 end
 
-function ModLua.debugText(data1, data2, indent, isForced, getinfodata)
+function ModLua.debugText(data1, data2, indent, isForced)
 	local isDebug = false
 	if isDebug == true or isForced == true then
 		if indent == nil then
@@ -1186,33 +1186,21 @@ function ModLua.debugText(data1, data2, indent, isForced, getinfodata)
 		elseif not data2 then
 			data2 = "(nil)"
 		end
-		if not getinfodata then
-			getinfodata = debug.getinfo(3)
-		end
-		local noteFuncName = ""
-		local noteLocation = ""
-		if (not noteFuncName) or tostring(getinfodata.name) == "callback" or tostring(getinfodata.name) == "nil" then
-			noteFuncName = " (approx)"
-			noteLocation = " (location of approx funcName)"
-		end
-		-- DebugError ("uix funcName" .. tostring(noteFuncName) .. ": " .. tostring(getinfodata.name) .. " data1: " .. indent .. tostring (data1) .. " (" .. tostring(type(data1)) .. ") data2: " .. tostring(data2) .. " (" .. tostring(type(data2)) .. ") at" .. tostring(noteLocation) .. ": line: " .. tostring(getinfodata.linedefined) .. " of: " .. tostring(getinfodata.short_src))
-		DebugError ("uix funcName" .. tostring(noteFuncName) .. ": " .. tostring(getinfodata.name) .. ": " .. indent .. tostring (data1) .. " = " .. tostring(data2) .. " at" .. tostring(noteLocation) .. ": line: " .. tostring(getinfodata.linedefined) .. " of: " .. tostring(getinfodata.short_src))
+		DebugError ("uix: " .. indent .. tostring (data1) .. " = " .. tostring(data2))
 		indent = indent .. "  "
 		if type(data1) == "table" then
 			for key, value in pairs(data1) do
-				Helper.debugText(key, value, indent, isForced, getinfodata)
+				Helper.debugText(key, value, indent, isForced)
 			end
 		end
 		if type(data2) == "table" then
-			Helper.debugText(data2, nil, indent, isForced, getinfodata)
+			Helper.debugText(data2, nil, indent, isForced)
 		end
 	end
 end
 
 function ModLua.debugText_forced(data1, data2, indent)
-	local getinfodata = debug.getinfo(2)
-	-- DebugError("func: " .. tostring(debug.getinfo(getinfodata.func).name) .. ", " .. tostring(debug.getinfo(getinfodata.func).linedefined) .. ", " .. tostring(debug.getinfo(getinfodata.func).short_src))
-	return Helper.debugText(data1, data2, indent, true, getinfodata)
+	return Helper.debugText(data1, data2, indent, true)
 end
 
 Helper.isDebugCallbacks = nil

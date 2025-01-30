@@ -4357,8 +4357,8 @@ function menu.getSubordinatesInFleetUnitGroups(commanderfleetunit, assignment, s
 				local buf_fleetunits = ffi.new("FleetUnitID[?]", num_fleetunits)
 				num_fleetunits = C.GetFleetUnitSubordinateFleetUnits(buf_fleetunits, num_fleetunits, commanderfleetunit, group)
 				local fleetunits = {}
-				for j = 0, num_fleetunits - 1 do
-					table.insert(fleetunits, buf[i])
+				for i = 0, num_fleetunits - 1 do
+					table.insert(fleetunits, buf_fleetunits[i])
 				end
 
 				for _, fleetunitsubordinate in ipairs(fleetunits) do

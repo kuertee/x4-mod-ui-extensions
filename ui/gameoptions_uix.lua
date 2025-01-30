@@ -420,6 +420,7 @@ config.input.controlsorder = {
             { "actions", 7, { 1, 2 }, ReadText(1026, 2600) },
             { "actions", 324, { 1, 2 }, ReadText(1026, 2692) },
             { "actions", 221, { 1, 2 }, ReadText(1026, 2601) },
+            { "states", 133, { 1, 2 } },
             { "actions", 261, { 1, 2 } },
             { "actions", 330, { 1, 2 } },
         },
@@ -1050,53 +1051,58 @@ config.optionDefinitions = {
             id = "line",
         },
         [5] = {
+            id = "display",
+            name = function () return menu.nameDisplay() end,
+            submenu = "display",
+        },
+        [6] = {
             id = "gfx",
             name = function () return menu.nameGfx() end,
             submenu = "gfx",
         },
-        [6] = {
+        [7] = {
             id = "sfx",
             name = ReadText(1001, 2611),
             submenu = "sfx",
         },
-        [7] = {
+        [8] = {
             id = "game",
             name = ReadText(1001, 2613),
             submenu = "game",
         },
-        [8] = {
+        [9] = {
             id = "accessibility",
             name = function () return menu.nameAccessibility() end,
             submenu = "accessibility",
         },
-        [9] = {
+        [10] = {
             id = "input",
             name = function () return menu.nameInput() end,
             submenu = "input",
         },
-        [10] = {
+        [11] = {
             id = "privacy",
             name = ReadText(1001, 4870),
             submenu = "privacy",
         },
-        [11] = {
+        [12] = {
             id = "language",
             name = function () return menu.nameLanguage() end,
             submenu = "language",
             display = function () return menu.isStartmenu and C.IsLanguageSettingEnabled() end
         },
-        [12] = {
+        [13] = {
             id = "line",
         },
-        [13] = {
+        [14] = {
             id = "defaults",
             name = ReadText(1001, 8981),
             submenu = "defaults",
         },
     },
-    ["gfx"] = {
-        name = ReadText(1001, 2606),
-        warning = function () return menu.warningGfx() end,
+    ["display"] = {
+        name = ReadText(1001, 12771),
+        warning = function () return menu.warningDisplay() end,
         [1] = {
             id = "hmd_resolution",
             name = ReadText(1001, 2619),
@@ -1107,6 +1113,7 @@ config.optionDefinitions = {
             -- non-VR case
             id = "resolution",
             name = ReadText(1001, 2619),
+            mouseOverText = ReadText(1026, 4821),
             valuetype = "dropdown",
             value = function () return menu.valueGfxResolution() end,
             callback = function (id, option) return menu.callbackGfxResolution(id, option) end,
@@ -1116,7 +1123,7 @@ config.optionDefinitions = {
         [3] = {
             id = "antialias",
             name = ReadText(1001, 2620),
-            mouseOverText = function () return (not C.GetDLSSOption(false)) and "" or (ColorText["text_error"] ..  ReadText(1026, 4813)) end,
+            mouseOverText = function () return (not C.GetDLSSOption(false)) and ReadText(1026, 4822) or (ColorText["text_error"] ..  ReadText(1026, 4813)) end,
             valuetype = "dropdown",
             value = function () return menu.valueGfxAA() end,
             callback = function (id, option) return menu.callbackGfxAA(id, option) end,
@@ -1134,6 +1141,7 @@ config.optionDefinitions = {
         [5] = {
             id = "dlss",
             name = ReadText(1001, 12735),
+            mouseOverText = ReadText(1026, 4824),
             valuetype = "dropdown",
             value = function () return menu.valueGfxDLSS() end,
             callback = function (id, option) return menu.callbackGfxDLSS(id, option) end,
@@ -1142,6 +1150,7 @@ config.optionDefinitions = {
         [6] = {
             id = "dlssmode",
             name = "    " .. ReadText(1001, 12736),
+            mouseOverText = ReadText(1026, 4825),
             valuetype = "dropdown",
             value = function () return menu.valueGfxDLSSMode() end,
             callback = function (id, option) return menu.callbackGfxDLSSMode(id, option) end,
@@ -1182,7 +1191,7 @@ config.optionDefinitions = {
             id = "screendisplay",
             name = ReadText(1001, 7210),
             valuetype = "button",
-            value = function () return C.GetScreenDisplayOption() and ReadText(1001, 2649) or ReadText(1001, 2648) end,
+            value = function () return C.GetScreenDisplayOption() and ReadText(1001, 12641) or ReadText(1001, 12642) end,
             callback = function () return menu.callbackGfxScreenDisplay() end,
             display = C.IsVRVersion,
         },
@@ -1199,6 +1208,7 @@ config.optionDefinitions = {
         [14] = {
             id = "fullscreen",
             name = function () return C.IsVRVersion() and ReadText(1001, 7213) or ReadText(1001, 4817) end,
+            mouseOverText = ReadText(1026, 4826),
             valuetype = "dropdown",
             value = function () return menu.valueGfxFullscreen() end,
             callback = function (id, option) return menu.callbackGfxFullscreen(id, option) end,
@@ -1207,13 +1217,15 @@ config.optionDefinitions = {
         [15] = {
             id = "autogpu",
             name = ReadText(1001, 11709),
+            mouseOverText = ReadText(1026, 4827),
             valuetype = "button",
-            value = function () return C.IsGPUAutomaticallySelected() and ReadText(1001, 2648) or ReadText(1001, 2649) end,
+            value = function () return C.IsGPUAutomaticallySelected() and ReadText(1001, 12642) or ReadText(1001, 12641) end,
             callback = function () return menu.callbackGfxAutoGPU() end,
         },
         [16] = {
             id = "gpu",
             name = ReadText(1001, 8920),
+            mouseOverText = ReadText(1026, 4828),
             valuetype = "dropdown",
             value = function () return menu.valueGfxGPU() end,
             callback = function (id, option) return menu.callbackGfxGPU(id, option) end,
@@ -1222,6 +1234,7 @@ config.optionDefinitions = {
         [17] = {
             id = "adapter",
             name = ReadText(1001, 8921),
+            mouseOverText = ReadText(1026, 4829),
             valuetype = "dropdown",
             value = function () return menu.valueGfxAdapter() end,
             callback = function (id, option) return menu.callbackGfxAdapter(id, option) end,
@@ -1229,7 +1242,8 @@ config.optionDefinitions = {
         },
         [18] = {
             id = "presentmode",
-            name = ReadText(1001, 7265),
+            name = ReadText(1001, 7268),
+            mouseOverText = ReadText(1026, 4830),
             valuetype = "dropdown",
             value = function () return menu.valueGfxPresentMode() end,
             callback = function (id, option) return menu.callbackGfxPresentMode(id, option) end,
@@ -1237,6 +1251,7 @@ config.optionDefinitions = {
         [19] = {
             id = "lut",
             name = ReadText(1001, 7238),
+            mouseOverText = ReadText(1026, 4831),
             valuetype = "dropdown",
             value = function () return menu.valueGfxLUT(false) end,
             callback = function (id, option) return menu.callbackGfxLUT(id, option) end,
@@ -1244,6 +1259,7 @@ config.optionDefinitions = {
         [20] = {
             id = "gamma",
             name = ReadText(1001, 2629),
+            mouseOverText = ReadText(1026, 4832),
             valuetype = "slidercell",
             value = function () return menu.valueGfxGamma() end,
             callback = function (value) return menu.callbackGfxGamma(value) end,
@@ -1251,6 +1267,7 @@ config.optionDefinitions = {
         [21] = {
             id = "fov",
             name = ReadText(1001, 4814),
+            mouseOverText = ReadText(1026, 4833),
             valuetype = "slidercell",
             value = function () return menu.valueGfxFOV() end,
             callback = function (value) return menu.callbackGfxFOV(value) end,
@@ -1259,170 +1276,181 @@ config.optionDefinitions = {
             id = "line",
         },
         [23] = {
+            id = "display_defaults",
+            name = ReadText(1001, 12772),
+            submenu = "display_defaults",
+        },
+    },
+    ["gfx"] = {
+        name = ReadText(1001, 2606),
+        warning = function () return menu.warningGfx() end,
+        [1] = {
             id = "gfx_preset",
             name = ReadText(1001, 4840),
+            mouseOverText = ReadText(1026, 4834),
             valuetype = "dropdown",
             value = function () return menu.valueGfxPreset() end,
             callback = function (id, option) return menu.callbackGfxPreset(id, option) end,
         },
-        [24] = {
+        [2] = {
             id = "texturequality",
             name = ReadText(1001, 8900),
+            mouseOverText = ReadText(1026, 4835),
             valuetype = "dropdown",
             value = function () return menu.valueGfxTexture() end,
             callback = function (id, option) return menu.callbackGfxTexture(id, option) end,
-            selectable = function () return menu.selectableGfxPreset() end,
         },
-        [25] = {
+        [3] = {
             id = "shadows",
             name = ReadText(1001, 2625),
+            mouseOverText = ReadText(1026, 4836),
             valuetype = "dropdown",
             value = function () return menu.valueGfxShadows() end,
             callback = function (id, option) return menu.callbackGfxShadows(id, option) end,
-            selectable = function () return menu.selectableGfxPreset() end,
         },
-        [26] = {
+        [4] = {
             id = "softshadows",
             name = ReadText(1001, 4841),
+            mouseOverText = ReadText(1026, 4837),
             valuetype = "button",
-            value = function () return GetSoftShadowsOption() and ReadText(1001, 2648) or ReadText(1001, 2649) end,
+            value = function () return GetSoftShadowsOption() and ReadText(1001, 12642) or ReadText(1001, 12641) end,
             callback = function () return menu.callbackGfxSoftShadows() end,
-            selectable = function () return menu.selectableGfxPreset() end,
         },
-        [27] = {
+        [5] = {
             id = "ssao",
             name = ReadText(1001, 2626),
+            mouseOverText = ReadText(1026, 4838),
             valuetype = "dropdown",
             value = function () return menu.valueGfxSSAO() end,
             callback = function (id, option) return menu.callbackGfxSSAO(id, option) end,
-            selectable = function () return menu.selectableGfxPreset() end,
         },
-        [28] = {
+        [6] = {
             id = "glow",
             name = ReadText(1001, 11752),
+            mouseOverText = ReadText(1026, 4839),
             valuetype = "dropdown",
             value = function () return menu.valueGfxGlow() end,
             callback = function (id, option) return menu.callbackGfxGlow(id, option) end,
-            selectable = function () return menu.selectableGfxPreset() end,
         },
-        [29] = {
+        [7] = {
             id = "uiglow",
             name = ReadText(1001, 11779),
+            mouseOverText = ReadText(1026, 4840),
             valuetype = "dropdown",
             value = function () return menu.valueGfxUIGlow() end,
             callback = function (id, option) return menu.callbackGfxUIGlow(id, option) end,
-            selectable = function () return menu.selectableGfxPreset() end,
         },
-        [30] = {
+        [8] = {
             id = "uiglowintensity",
             name = ReadText(1001, 12701),
+            mouseOverText = ReadText(1026, 4841),
             valuetype = "slidercell",
             value = function () return menu.valueGfxUIGlowIntensity() end,
             callback = function (value) return menu.callbackGfxUIGlowIntensity(value) end,
-            selectable = function () return menu.selectableGfxPreset() end,
         },
-        [31] = {
+        [9] = {
             id = "chromaticaberration",
             name = ReadText(1001, 8987),
+            mouseOverText = ReadText(1026, 4842),
             valuetype = "button",
-            value = function () return C.GetChromaticAberrationOption() and ReadText(1001, 2648) or ReadText(1001, 2649) end,
+            value = function () return C.GetChromaticAberrationOption() and ReadText(1001, 12642) or ReadText(1001, 12641) end,
             callback = function () return menu.callbackGfxChromaticAberration() end,
-            selectable = function () return menu.selectableGfxPreset() end,
         },
-        [32] = {
+        [10] = {
             id = "distortion",
             name = ReadText(1001, 4822),
+            mouseOverText = ReadText(1026, 4843),
             valuetype = "button",
-            value = function () return GetDistortionOption() and ReadText(1001, 2648) or ReadText(1001, 2649) end,
+            value = function () return GetDistortionOption() and ReadText(1001, 12642) or ReadText(1001, 12641) end,
             callback = function () return menu.callbackGfxDistortion() end,
-            selectable = function () return menu.selectableGfxPreset() end,
         },
-        [33] = {
+        [11] = {
             id = "pom",
             name = ReadText(1001, 11731),
+            mouseOverText = ReadText(1026, 4844),
             valuetype = "dropdown",
             value = function () return menu.valueGfxPOM() end,
             callback = function (id, option) return menu.callbackGfxPOM(id, option) end,
-            selectable = function () return menu.selectableGfxPreset() end,
         },
-        [34] = {
+        [12] = {
             id = "lod",
             name = ReadText(1001, 2628),
+            mouseOverText = ReadText(1026, 4845),
             valuetype = "slidercell",
             value = function () return menu.valueGfxLOD() end,
             callback = function (value) return menu.callbackGfxLOD(value) end,
-            selectable = function () return menu.selectableGfxPreset() end,
         },
-        [35] = {
+        [13] = {
             id = "effectdist",
             name = ReadText(1001, 2699),
+            mouseOverText = ReadText(1026, 4846),
             valuetype = "slidercell",
             value = function () return menu.valueGfxEffectDistance() end,
             callback = function (value) return menu.callbackGfxEffectDistance(value) end,
-            selectable = function () return menu.selectableGfxPreset() end,
         },
-        [36] = {
+        [14] = {
             id = "shaderquality",
             name = ReadText(1001, 2680),
             valuetype = "dropdown",
             value = function () return menu.valueGfxShaderQuality() end,
             callback = function (id, option) return menu.callbackGfxShaderQuality(id, option) end,
-            selectable = function () return menu.selectableGfxPreset() end,
             display = function () return false end, -- TEMP hidden until we get shaders with different quality
         },
-        [37] = {
+        [15] = {
             id = "radar",
             name = ReadText(1001, 1706),
+            mouseOverText = ReadText(1026, 4847),
             valuetype = "dropdown",
             value = function () return menu.valueGfxRadar() end,
             callback = function (id, option) return menu.callbackGfxRadar(id, option) end,
-            selectable = function () return menu.selectableGfxPreset() end,
         },
-        [38] = {
+        [16] = {
             id = "ssr",
             name = ReadText(1001, 7288),
+            mouseOverText = ReadText(1026, 4848),
             valuetype = "dropdown",
             value = function () return menu.valueGfxSSR() end,
             callback = function (id, option) return menu.callbackGfxSSR(id, option) end,
-            selectable = function () return menu.selectableGfxPreset() end,
         },
-        [39] = {
+        [17] = {
             id = "envmapprobes",
             name = ReadText(1001, 11733),
+            mouseOverText = ReadText(1026, 4849),
             valuetype = "dropdown",
             value = function () return menu.valueGfxEnvMapProbes() end,
             callback = function (id, option) return menu.callbackGfxEnvMapProbes(id, option) end,
-            selectable = function () return menu.selectableGfxPreset() end,
         },
-        [40] = {
+        [18] = {
             id = "volumetric",
             name = ReadText(1001, 8990),
+            mouseOverText = ReadText(1026, 4850),
             valuetype = "dropdown",
             value = function () return menu.valueGfxVolumetric() end,
             callback = function (id, option) return menu.callbackGfxVolumetric(id, option) end,
-            selectable = function () return menu.selectableGfxPreset() end,
         },
-        [41] = {
+        [19] = {
             id = "line",
         },
-        [42] = {
+        [20] = {
             id = "envmapprobesinsideglassfade",
             name = ReadText(1001, 11754),
+            mouseOverText = ReadText(1026, 4851),
             valuetype = "slidercell",
             value = function () return menu.valueGfxEnvMapProbesInsideGlassFade() end,
             callback = function (value) return menu.callbackGfxEnvMapProbesInsideGlassFade(value) end,
         },
-        [43] = {
+        [21] = {
             id = "capturehq",
             name = ReadText(1001, 4816),
+            mouseOverText = ReadText(1026, 4852),
             valuetype = "button",
-            value = function () return GetCaptureHQOption() and ReadText(1001, 2648) or ReadText(1001, 2649) end,
+            value = function () return GetCaptureHQOption() and ReadText(1001, 12642) or ReadText(1001, 12641) end,
             callback = function () return menu.callbackGfxCaptureHQ() end,
         },
-        [44] = {
+        [22] = {
             id = "line",
         },
-        [45] = {
+        [23] = {
             id = "gfx_defaults",
             name = ReadText(1001, 8982),
             submenu = "gfx_defaults",
@@ -1441,7 +1469,7 @@ config.optionDefinitions = {
             id = "sound",
             name = ReadText(1001, 2630),
             valuetype = "button",
-            value = function () return GetSoundOption() and ReadText(1001, 2648) or ReadText(1001, 2649) end,
+            value = function () return GetSoundOption() and ReadText(1001, 12642) or ReadText(1001, 12641) end,
             callback = function () return menu.callbackSfxSound() end,
         },
         [3] = {
@@ -1505,7 +1533,7 @@ config.optionDefinitions = {
             id = "autosave",
             name = ReadText(1001, 407),
             valuetype = "button",
-            value = function () return GetAutosaveOption() and ReadText(1001, 2648) or ReadText(1001, 2649) end,
+            value = function () return GetAutosaveOption() and ReadText(1001, 12642) or ReadText(1001, 12641) end,
             callback = function () return menu.callbackGameAutosave() end,
         },
         [3] = {
@@ -1526,7 +1554,7 @@ config.optionDefinitions = {
             name = ReadText(1001, 11705),
             mouseOverText = ReadText(1026, 3267),
             valuetype = "button",
-            value = function () return C.GetEmergencyEjectOption() and ReadText(1001, 2648) or ReadText(1001, 2649) end,
+            value = function () return C.GetEmergencyEjectOption() and ReadText(1001, 12642) or ReadText(1001, 12641) end,
             callback = function () return menu.callbackGameEmergencyEject() end,
         },
         [6] = {
@@ -1537,21 +1565,21 @@ config.optionDefinitions = {
             id = "autoroll",
             name = ReadText(1001, 2644),
             valuetype = "button",
-            value = function () return GetAutorollOption() and ReadText(1001, 2648) or ReadText(1001, 2649) end,
+            value = function () return GetAutorollOption() and ReadText(1001, 12642) or ReadText(1001, 12641) end,
             callback = function () return menu.callbackGameAutoroll() end,
         },
         [8] = {
             id = "collision",
             name = ReadText(1001, 2698),
             valuetype = "button",
-            value = function () return GetCollisionAvoidanceAssistOption() and ReadText(1001, 2648) or ReadText(1001, 2649) end,
+            value = function () return GetCollisionAvoidanceAssistOption() and ReadText(1001, 12642) or ReadText(1001, 12641) end,
             callback = function () return menu.callbackGameCollision() end,
         },
         [9] = {
             id = "boost",
             name = ReadText(1001, 2646),
             valuetype = "button",
-            value = function () return GetBoostToggleOption() and ReadText(1001, 2648) or ReadText(1001, 2649) end,
+            value = function () return GetBoostToggleOption() and ReadText(1001, 12642) or ReadText(1001, 12641) end,
             callback = function () return menu.callbackGameBoost() end,
         },
         [10] = {
@@ -1565,7 +1593,7 @@ config.optionDefinitions = {
             id = "stopshipinmenu",
             name = ReadText(1001, 4884),
             valuetype = "button",
-            value = function () return GetStopShipInMenuOption() and ReadText(1001, 2649) or ReadText(1001, 2648) end,
+            value = function () return GetStopShipInMenuOption() and ReadText(1001, 12641) or ReadText(1001, 12642) end,
             callback = function () return menu.callbackGameStopInMenu() end,
         },
         [12] = {
@@ -1583,7 +1611,7 @@ config.optionDefinitions = {
             id = "speaktargetname",
             name = ReadText(1001, 8924),
             valuetype = "button",
-            value = function () return C.GetSpeakTargetNameOption() and ReadText(1001, 2648) or ReadText(1001, 2649) end,
+            value = function () return C.GetSpeakTargetNameOption() and ReadText(1001, 12642) or ReadText(1001, 12641) end,
             callback = function () return menu.callbackGameSpeakTargetName() end,
         },
         [15] = {
@@ -1597,7 +1625,7 @@ config.optionDefinitions = {
             id = "mouselook",
             name = ReadText(1001, 4895),
             valuetype = "button",
-            value = function () return GetMouseLookToggleOption() and ReadText(1001, 2648) or ReadText(1001, 2649) end,
+            value = function () return GetMouseLookToggleOption() and ReadText(1001, 12642) or ReadText(1001, 12641) end,
             callback = function () return menu.callbackGameMouselook() end,
         },
         [17] = {
@@ -1611,7 +1639,7 @@ config.optionDefinitions = {
             id = "forceshoottocursor",
             name = ReadText(1001, 7218),
             valuetype = "button",
-            value = function () return C.GetForceShootingAtCursorOption() and ReadText(1001, 2648) or ReadText(1001, 2649) end,
+            value = function () return C.GetForceShootingAtCursorOption() and ReadText(1001, 12642) or ReadText(1001, 12641) end,
             callback = function () return menu.callbackGameShootAtCursor() end,
             display = C.IsVRVersion,
         },
@@ -1619,7 +1647,7 @@ config.optionDefinitions = {
             id = "mouseover",
             name = ReadText(1001, 4882),
             valuetype = "button",
-            value = function () return C.GetMouseOverTextOption() and ReadText(1001, 2648) or ReadText(1001, 2649) end,
+            value = function () return C.GetMouseOverTextOption() and ReadText(1001, 12642) or ReadText(1001, 12641) end,
             callback = function () return menu.callbackGameMouseOver() end,
         },
         [20] = {
@@ -1688,7 +1716,7 @@ config.optionDefinitions = {
             id = "controlmodemessages",
             name = ReadText(1001, 4861),
             valuetype = "button",
-            value = function () return GetSteeringNoteOption() and ReadText(1001, 2648) or ReadText(1001, 2649) end,
+            value = function () return GetSteeringNoteOption() and ReadText(1001, 12642) or ReadText(1001, 12641) end,
             callback = function () return menu.callbackGameControlModeMessages() end,
         },
         [28] = {
@@ -1727,10 +1755,11 @@ config.optionDefinitions = {
             id = "velocityindicator",
             name = ReadText(1001, 12773),
             valuetype = "button",
-            value = function () return C.GetVelocityIndicatorOption() and ReadText(1001, 2648) or ReadText(1001, 2649) end,
+            value = function () return C.GetVelocityIndicatorOption() and ReadText(1001, 12642) or ReadText(1001, 12641) end,
             callback = function () return menu.callbackGameVelocityIndicator() end,
         },
         [33] = {
+            id = "header",
             name = ReadText(1001, 4860),
         },
         [34] = {
@@ -1752,7 +1781,7 @@ config.optionDefinitions = {
             id = "autozoomreset",
             name = ReadText(1001, 12702),
             valuetype = "button",
-            value = function () return C.GetAutoZoomResetOption() and ReadText(1001, 2648) or ReadText(1001, 2649) end,
+            value = function () return C.GetAutoZoomResetOption() and ReadText(1001, 12642) or ReadText(1001, 12641) end,
             callback = function () return menu.callbackGameAutoZoomReset() end,
         },
         [37] = {
@@ -1771,14 +1800,14 @@ config.optionDefinitions = {
             id = "signalleakindicator",
             name = ReadText(1001, 8995),
             valuetype = "button",
-            value = function () return C.GetSignalLeakIndicatorOption() and ReadText(1001, 2648) or ReadText(1001, 2649) end,
+            value = function () return C.GetSignalLeakIndicatorOption() and ReadText(1001, 12642) or ReadText(1001, 12641) end,
             callback = function () return menu.callbackAccessibilitySignalLeak() end,
         },
         [2] = {
             id = "longrangescanindicator",
             name = ReadText(1001, 8996),
             valuetype = "button",
-            value = function () return C.GetLongRangeScanIndicatorOption() and ReadText(1001, 2648) or ReadText(1001, 2649) end,
+            value = function () return C.GetLongRangeScanIndicatorOption() and ReadText(1001, 12642) or ReadText(1001, 12641) end,
             callback = function () return menu.callbackAccessibilityLongRangeScan() end,
         },
         [3] = {
@@ -1976,7 +2005,7 @@ config.optionDefinitions = {
             name = ReadText(1001, 7261),
             mouseOverText = ReadText(1026, 2683),
             valuetype = "button",
-            value = function () return C.IsThrottleBidirectional() and ReadText(1001, 2648) or ReadText(1001, 2649) end,
+            value = function () return C.IsThrottleBidirectional() and ReadText(1001, 12642) or ReadText(1001, 12641) end,
             callback = function () return menu.callbackInputJoystickBidirectionalThrottle() end,
         },
         [27] = {
@@ -1992,7 +2021,7 @@ config.optionDefinitions = {
             name = ReadText(1001, 12682),
             mouseOverText = ReadText(1026, 2682),
             valuetype = "button",
-            value = function () return C.IsJoystickSteeringAdapative() and ReadText(1001, 2648) or ReadText(1001, 2649) end,
+            value = function () return C.IsJoystickSteeringAdapative() and ReadText(1001, 12642) or ReadText(1001, 12641) end,
             callback = function () return menu.callbackInputJoystickSteeringAdaptive() end,
         },
         [29] = {
@@ -2018,7 +2047,7 @@ config.optionDefinitions = {
             id = "mouse_capture",
             name = ReadText(1001, 4820),
             valuetype = "button",
-            value = function () return GetConfineMouseOption() and ReadText(1001, 2648) or ReadText(1001, 2649) end,
+            value = function () return GetConfineMouseOption() and ReadText(1001, 12642) or ReadText(1001, 12641) end,
             callback = function () return menu.callbackInputMouseCapture() end,
         },
         [34] = {
@@ -2026,7 +2055,7 @@ config.optionDefinitions = {
             name = ReadText(1001, 12683),
             mouseOverText = ReadText(1026, 2682),
             valuetype = "button",
-            value = function () return C.IsMouseSteeringAdapative() and ReadText(1001, 2648) or ReadText(1001, 2649) end,
+            value = function () return C.IsMouseSteeringAdapative() and ReadText(1001, 12642) or ReadText(1001, 12641) end,
             callback = function () return menu.callbackInputMouseSteeringAdaptive() end,
         },
         [35] = {
@@ -2034,7 +2063,7 @@ config.optionDefinitions = {
             name = ReadText(1001, 11768),
             mouseOverText = ReadText(1026, 2685),
             valuetype = "button",
-            value = function () return C.IsMouseSteeringPersistent() and ReadText(1001, 2648) or ReadText(1001, 2649) end,
+            value = function () return C.IsMouseSteeringPersistent() and ReadText(1001, 12642) or ReadText(1001, 12641) end,
             callback = function () return menu.callbackInputMouseSteeringPersistent() end,
         },
         [36] = {
@@ -2042,7 +2071,7 @@ config.optionDefinitions = {
             name = ReadText(1001, 11769),
             mouseOverText = ReadText(1026, 2686),
             valuetype = "button",
-            value = function () return C.IsMouseSteeringLineEnabled() and ReadText(1001, 2648) or ReadText(1001, 2649) end,
+            value = function () return C.IsMouseSteeringLineEnabled() and ReadText(1001, 12642) or ReadText(1001, 12641) end,
             callback = function () return menu.callbackInputMouseSteeringLine() end,
         },
         [37] = {

@@ -1903,7 +1903,7 @@ function menu.buttonInstallPaintMod()
 	menu.mapstate = ffi.new("HoloMapState")
 	C.GetMapState(menu.holomap, menu.mapstate)
 	menu.prepareModWares()
-	menu.getDataAndDisplay(nil, nil, nil, nil, true)
+	menu.getDataAndDisplay(menu.upgradeplan, menu.crew, nil, nil, true)
 end
 
 function menu.dropdownShipClass(_, class)
@@ -4490,7 +4490,7 @@ function menu.checkCompatibility(macro, objectmakerraces)
 end
 
 function menu.displayAmmoSlot(ftable, type, macro, total, capacity, first)
-	if menu.upgradeplan[type][macro] or menu.isAmmoCompatible(type, macro) then
+	if (menu.upgradeplan[type][macro] and ((type == "missile") or (menu.upgradeplan[type][macro] > 0))) or menu.isAmmoCompatible(type, macro) then
 		local planned = menu.upgradeplan[type][macro] or 0
 		local name, infolibrary = GetMacroData(macro, "name", "infolibrary")
 		AddKnownItem(infolibrary, macro)
@@ -5770,7 +5770,7 @@ function menu.displaySlots(frame, firsttime)
 						if next(menu.ammo[upgradetype.type]) then
 							local total, capacity = menu.getAmmoUsage(upgradetype.type)
 							local display = false
-							if menu.mode == "upgrade" then
+							if (upgradetype.type == "missile") and (menu.mode == "upgrade") then
 								display = C.GetNumAllMissiles(menu.object) > 0
 							end
 							for macro, _ in pairs(menu.ammo[upgradetype.type]) do
@@ -8776,7 +8776,7 @@ function menu.displayStats(frame)
 					if entry.type == "UINT" then
 						value = ConvertIntegerString(Helper.round(loadoutstats[id], 0), true, 0, true, false)
 					elseif (entry.type == "float") or (entry.type == "double") then
-						local int, frac = math.modf(Helper.round(loadoutstats[id], entry.accuracy))
+						local int, frac = math.modf(Helper.floor(loadoutstats[id], entry.accuracy))
 						value = ConvertIntegerString(int, true, 0, true, false)
 						if entry.accuracy > 0 then
 							frac = Helper.round(math.abs(frac or 0) * (10 ^ entry.accuracy))
@@ -8817,7 +8817,7 @@ function menu.displayStats(frame)
 						if entry2.type == "UINT" then
 							value = ConvertIntegerString(Helper.round(loadoutstats[id2], 0), true, 0, true, false)
 						elseif (entry2.type == "float") or (entry2.type == "double") then
-							local int, frac = math.modf(Helper.round(loadoutstats[id2], entry2.accuracy))
+							local int, frac = math.modf(Helper.floor(loadoutstats[id2], entry2.accuracy))
 							value = ConvertIntegerString(int, true, 0, true, false)
 							if entry2.accuracy > 0 then
 								frac = Helper.round(math.abs(frac or 0) * (10 ^ entry2.accuracy))
