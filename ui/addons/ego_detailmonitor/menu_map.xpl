@@ -6589,39 +6589,19 @@ function menu.createInfoFrame()
 			menu.createMissionMode(menu.infoFrame)
 		elseif menu.infoTableMode == "cheats" then
 			menu.createCheats(menu.infoFrame)
-		else
-			-- empty
-
-			-- start Forleyor_infoCenter callback:
-			-- menu.infoFrame.properties.background.icon = ""
-			-- menu.infoFrame.properties.autoFrameHeight = false
-			-- menu.infoFrame:addTable(0)
-			local isCreated = false
-			if menu.uix_callbacks ["ic_createInfoFrame"] then
-				for uix_id, uix_callback in pairs (menu.uix_callbacks ["ic_createInfoFrame"]) do
-					if uix_callback (menu.infoFrame) then
-						isCreated = true
-					end
-				end
-			end
-			-- end Forleyor_infoCenter callback:
-
+		elseif menu.uix_callbacks then
 			-- kuertee start: callback
 			if menu.uix_callbacks ["createInfoFrame_on_menu_infoTableMode"] then
 				for uix_id, uix_callback in pairs (menu.uix_callbacks ["createInfoFrame_on_menu_infoTableMode"]) do
-					if uix_callback (menu.infoFrame) then
-						isCreated = true
-					end
+					uix_callback (menu.infoFrame)
 				end
 			end
-
-			if isCreated ~= true then
-				menu.infoFrame.properties.background.icon = ""
-				menu.infoFrame.properties.autoFrameHeight = false
-				menu.infoFrame:addTable(0)
-			end
 			-- kuertee end: callback
-
+		else
+			-- empty
+			menu.infoFrame.properties.background.icon = ""
+			menu.infoFrame.properties.autoFrameHeight = false
+			menu.infoFrame:addTable(0)
 		end
 
 	end
@@ -19039,14 +19019,6 @@ function menu.createSideBar(firsttime, frame, width, height, offsetx, offsety)
 		end
 	end
 	-- kuertee end: callback
-
-	-- start Forleyor_infoCenter Callback:
-	if menu.uix_callbacks ["ic_createSideBar"] then
-		for uix_id, uix_callback in pairs (menu.uix_callbacks ["ic_createSideBar"]) do
-			uix_callback (config)
-		end
-	end
-	-- end Forleyor_infoCenter:
 
 	local spacingHeight = menu.sideBarWidth / 4
 	local defaultInteractiveObject = false
