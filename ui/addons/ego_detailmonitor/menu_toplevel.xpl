@@ -502,6 +502,16 @@ end
 -- kuertee custom HUD end
 
 -- kuertee start:
+function menu.requestUpdate (adj)
+	Helper.debugText("menu.requestUpdate")
+	if adj == nil then
+		adj = 0
+	end
+	if menu.refresh == nil then
+		menu.refresh = getElapsedTime () + adj
+	end
+end
+
 menu.uix_callbackCount = 0
 function menu.registerCallback(callbackName, callbackFunction, id)
     -- note 1: format is generally [function name]_[action]. e.g.: in kuertee_menu_transporter, "display_on_set_room_active" overrides the room's active property with the return of the callback.

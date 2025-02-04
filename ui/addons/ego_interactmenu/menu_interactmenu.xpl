@@ -478,10 +478,6 @@ function menu.init_kuertee ()
 	RegisterEvent ("Interact_Menu_API.Add_Custom_Actions_Group_Text", menu.Add_Custom_Actions_Group_Text)
 	RegisterEvent ("Interact_Menu_API.Existence_Query", menu.Existence_Query)
 end
-
-function menu.Existence_Query()
-	AddUITriggeredEvent("UIX_Interact_Menu_Present", "")
-end
 -- kuertee end
 
 function menu.cleanup()
@@ -7575,6 +7571,75 @@ function menu.viewCreated(layer, ...)
 end
 
 -- kuetee start:
+function menu.Existence_Query()
+	AddUITriggeredEvent("UIX_Interact_Menu_Present", "")
+end
+
+local newCustomGroupId
+local newCustomGroupText
+function menu.Add_Custom_Actions_Group_Id(_, id)
+	newCustomGroupId = id
+	if newCustomGroupId and newCustomGroupText then
+		menu.Add_Custom_Actions_Group(newCustomGroupId, newCustomGroupText)
+		newCustomGroupId = nil
+		newCustomGroupText = nil
+	end
+end
+
+function menu.Add_Custom_Actions_Group_Text(_, text)
+	newCustomGroupText = text
+	if newCustomGroupId and newCustomGroupText then
+		menu.Add_Custom_Actions_Group(newCustomGroupId, newCustomGroupText)
+		newCustomGroupId = nil
+		newCustomGroupText = nil
+	end
+end
+
+function menu.Add_Custom_Actions_Group(id, text)
+	local customActionsSection
+	local customActionsSection_isFound = false
+	local customActionsSection_isAddTo = string.find(id, "actions_")
+	local customOrdersSection
+	local customOrdersSection_isFound = false
+	local customOrdersSection_isAddTo = string.find(id, "orders_")
+	if (not customActionsSection_isAddTo) and (not customOrdersSection_isAddTo) then
+		customActionsSection_isAddTo = true
+		customOrdersSection_isAddTo = true
+	end
+	Helper.debugText("Add_Custom_Actions_Group id: " .. tostring(id) .. " text: " .. tostring(text))
+	for _, section in ipairs(config.sections) do
+		if section.id == "custom_actions" or section.id == "custom_orders" then
+			Helper.debugText("Add_Custom_Actions_Group    section.id: ", section.id)
+			if section.id == "custom_actions" then
+				customActionsSection = section
+			else
+				customOrdersSection = section
+			end
+			for _, subsection in ipairs(section.subsections) do
+				Helper.debugText("Add_Custom_Actions_Group        subsection.id: ", subsection.id)
+				if subsection.id == id then
+					if section.id == "custom_actions" then
+						customActionsSection_isFound = true
+					else
+						customOrdersSection_isFound = true
+					end
+					Helper.debugText("Add_Custom_Actions_Group customActionsSection.subsections", customActionsSection.subsections)
+				end
+			end
+		end
+	end
+	Helper.debugText("Add_Custom_Actions_GroupcustomActionsSection_isFound: ", customActionsSection_isFound)
+	Helper.debugText("Add_Custom_Actions_GroupcustomOrdersSection_isFound: ", customOrdersSection_isFound)
+	if customActionsSection and customActionsSection_isAddTo and (not customActionsSection_isFound) then
+		table.insert (customActionsSection.subsections, {id = id, text = text})
+		Helper.debugText("Add_Custom_Actions_Group customActionsSection.subsections", customActionsSection.subsections)
+	end
+	if customOrdersSection and customOrdersSection_isAddTo and (not customOrdersSection_isFound) then
+		table.insert (customOrdersSection.subsections, {id = id, text = text})
+		Helper.debugText("Add_Custom_Actions_Group customOrdersSection.subsections", customOrdersSection.subsections)
+	end
+end
+
 menu.uix_callbackCount = 0
 function menu.registerCallback(callbackName, callbackFunction, id)
     -- note 1: format is generally [function name]_[action]. e.g.: in kuertee_menu_transporter, "display_on_set_room_active" overrides the room's active property with the return of the callback.
@@ -7677,71 +7742,6 @@ function menu.updateCallbacksNow()
 				end
 			end
 		end
-	end
-end
-
-local newCustomGroupId
-local newCustomGroupText
-function menu.Add_Custom_Actions_Group_Id(_, id)
-	newCustomGroupId = id
-	if newCustomGroupId and newCustomGroupText then
-		menu.Add_Custom_Actions_Group(newCustomGroupId, newCustomGroupText)
-		newCustomGroupId = nil
-		newCustomGroupText = nil
-	end
-end
-
-function menu.Add_Custom_Actions_Group_Text(_, text)
-	newCustomGroupText = text
-	if newCustomGroupId and newCustomGroupText then
-		menu.Add_Custom_Actions_Group(newCustomGroupId, newCustomGroupText)
-		newCustomGroupId = nil
-		newCustomGroupText = nil
-	end
-end
-
-function menu.Add_Custom_Actions_Group(id, text)
-	local customActionsSection
-	local customActionsSection_isFound = false
-	local customActionsSection_isAddTo = string.find(id, "actions_")
-	local customOrdersSection
-	local customOrdersSection_isFound = false
-	local customOrdersSection_isAddTo = string.find(id, "orders_")
-	if (not customActionsSection_isAddTo) and (not customOrdersSection_isAddTo) then
-		customActionsSection_isAddTo = true
-		customOrdersSection_isAddTo = true
-	end
-	Helper.debugText("Add_Custom_Actions_Group id: " .. tostring(id) .. " text: " .. tostring(text))
-	for _, section in ipairs(config.sections) do
-		if section.id == "custom_actions" or section.id == "custom_orders" then
-			Helper.debugText("Add_Custom_Actions_Group    section.id: ", section.id)
-			if section.id == "custom_actions" then
-				customActionsSection = section
-			else
-				customOrdersSection = section
-			end
-			for _, subsection in ipairs(section.subsections) do
-				Helper.debugText("Add_Custom_Actions_Group        subsection.id: ", subsection.id)
-				if subsection.id == id then
-					if section.id == "custom_actions" then
-						customActionsSection_isFound = true
-					else
-						customOrdersSection_isFound = true
-					end
-					Helper.debugText("Add_Custom_Actions_Group customActionsSection.subsections", customActionsSection.subsections)
-				end
-			end
-		end
-	end
-	Helper.debugText("Add_Custom_Actions_GroupcustomActionsSection_isFound: ", customActionsSection_isFound)
-	Helper.debugText("Add_Custom_Actions_GroupcustomOrdersSection_isFound: ", customOrdersSection_isFound)
-	if customActionsSection and customActionsSection_isAddTo and (not customActionsSection_isFound) then
-		table.insert (customActionsSection.subsections, {id = id, text = text})
-		Helper.debugText("Add_Custom_Actions_Group customActionsSection.subsections", customActionsSection.subsections)
-	end
-	if customOrdersSection and customOrdersSection_isAddTo and (not customOrdersSection_isFound) then
-		table.insert (customOrdersSection.subsections, {id = id, text = text})
-		Helper.debugText("Add_Custom_Actions_Group customOrdersSection.subsections", customOrdersSection.subsections)
 	end
 end
 -- kuertee end

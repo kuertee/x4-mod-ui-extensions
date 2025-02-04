@@ -1176,25 +1176,23 @@ function ModLua.debugText(data1, data2, indent, isForced)
 		if indent == nil then
 			indent = ""
 		end
-		if data1 == "" then
-			data1 = "(empty string)"
-		elseif not data1 then
-			data1 = "(nil)"
+		if data1 then
+			if not data2 then
+				DebugError ("uix: " .. indent .. tostring (data1))
+			else
+				DebugError ("uix: " .. indent .. tostring (data1) .. " = " .. tostring(data2))
+			end
 		end
-		if data2 == "" then
-			data2 = "(empty string)"
-		elseif not data2 then
-			data2 = "(nil)"
-		end
-		DebugError ("uix: " .. indent .. tostring (data1) .. " = " .. tostring(data2))
 		indent = indent .. "  "
 		if type(data1) == "table" then
 			for key, value in pairs(data1) do
 				Helper.debugText(key, value, indent, isForced)
 			end
 		end
-		if type(data2) == "table" then
-			Helper.debugText(data2, nil, indent, isForced)
+		if data2 then
+			if type(data2) == "table" then
+				Helper.debugText(data2, nil, indent, isForced)
+			end
 		end
 	end
 end
