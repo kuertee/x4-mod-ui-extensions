@@ -5,20 +5,18 @@ by kuertee. Contributors: Erixon, Forleyor, Mycu, Runekn, AlexandreTK, IALuir, s
 
 v7.5 beta  NOTES FOR MOD DEVELOPERS:
 ====================================
-[ol]
-[li] PROTECTED UI MODE:
-Mods that use UI Extensions will need the new Protected UI Mode setting in the Extensions menu disabled.[/li]
+1. PROTECTED UI MODE:
+Mods that use UI Extensions will need the new Protected UI Mode setting in the Extensions menu disabled.
 
-[li] LOADING CUSTOM LUAS:
-ModSupportAPIs' Lua_Loader (and in extension its <raise_lua_event name="'Lua_Loader.Load'" param="'X'"/>) no longer function.[/li]
+2. LOADING CUSTOM LUAS:
+ModSupportAPIs' Lua_Loader (and in extension its <raise_lua_event name="'Lua_Loader.Load'" param="'X'"/>) no longer function.
 
-[li] UI.XML FILE:
+3. UI.XML FILE:
 To load custom lua files, use ui.xml as described here: https://wiki.egosoft.com:1337/X%20Rebirth%20Wiki/Modding%20support/UI%20Modding%20support/Getting%20started%20guide/
-	[ul]
-		[li] Note that guideline is for X Rebirth. But its use in X4 is similar.[/li]
-		[li] Here is the extensions\kuertee_alternatives_to_death\ui.xml file for my mod Alternatives To Death:[/li]
-		[li]
-```
+	1. Note that guideline is for X Rebirth. But its use in X4 is similar.
+	2. Here is the extensions\kuertee_alternatives_to_death\ui.xml file for my mod Alternatives To Death:
+	3.
+	```
 	<?xml version="1.0" encoding="UTF-8"?>
 	<addon name="kuertee_alternatives_to_death" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../ui/core/addon.xsd">
 		<environment type="menus">
@@ -27,14 +25,10 @@ To load custom lua files, use ui.xml as described here: https://wiki.egosoft.com
 			<dependency name="ego_detailmonitor" />
 		</environment>
 	</addon>
-```
-		[/li]
-		[li] With the game now loading custom lua files (instead of UIX loading them), make sure that any init() functions are called after they are loaded.[/li]
-		[li] note: Pre 7.5 UIX loaded and, if set-up a particularly way like my mods are, UIX also called their init() functions.[/li]
-		[li] E.g. instead of "return ModLua" at the bottom of my mods' custom lua files, I now call "ModLua.init()". E.g.: kuertee_uix_mod_sample from UIX's Nexus Mods page (https://www.nexusmods.com/x4foundations/mods/552). [/li]
-	[/ul]
-[/li]
-[/ol]
+	```
+	4. With the game now loading custom lua files (instead of UIX loading them), make sure that any init() functions are called after they are loaded.
+	5. note: Pre 7.5 UIX loaded and, if set-up a particularly way like my mods are, UIX also called their init() functions.
+	6. E.g. instead of "return ModLua" at the bottom of my mods' custom lua files, I now call "ModLua.init()". E.g.: kuertee_uix_mod_sample from UIX's Nexus Mods page (https://www.nexusmods.com/x4foundations/mods/552).
 
 Updates
 =======
