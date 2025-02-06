@@ -3389,16 +3389,26 @@ function menu.buttonContextResearch()
 end
 
 function menu.buttonConfirmTrade()
-	-- Station buys first
+	if menu.contextMenuData.immediate then
+		-- Station sells / ship buys (if we're doing immediate orders the order that is added last will be at the front of the queue, so we queue the order to buy first as the order to sell (which needs to be _processed_ first!) will be pushed in front
+		for id, amount in pairs(menu.contextMenuData.orders) do
+			if amount < 0 then
+				AddTradeToShipQueue(ConvertStringToLuaID(tostring(id)), ConvertStringTo64Bit(tostring(menu.contextMenuData.currentShip)), -amount, menu.contextMenuData.immediate)
+			end
+		end
+	end
+	-- Station buys / ship sells
 	for id, amount in pairs(menu.contextMenuData.orders) do
 		if amount > 0 then
 			AddTradeToShipQueue(ConvertStringToLuaID(tostring(id)), ConvertStringTo64Bit(tostring(menu.contextMenuData.currentShip)), amount, menu.contextMenuData.immediate)
 		end
 	end
-	-- Station sells
-	for id, amount in pairs(menu.contextMenuData.orders) do
-		if amount < 0 then
-			AddTradeToShipQueue(ConvertStringToLuaID(tostring(id)), ConvertStringTo64Bit(tostring(menu.contextMenuData.currentShip)), -amount, menu.contextMenuData.immediate)
+	if not menu.contextMenuData.immediate then
+		-- Station sells / ship buys (not immediate so the order will be appended to the queue, meaning transferring to the ship must happen after space has been freed up by processing the transfers to the station first)
+		for id, amount in pairs(menu.contextMenuData.orders) do
+			if amount < 0 then
+				AddTradeToShipQueue(ConvertStringToLuaID(tostring(id)), ConvertStringTo64Bit(tostring(menu.contextMenuData.currentShip)), -amount, menu.contextMenuData.immediate)
+			end
 		end
 	end
 	if menu.contextMenuData.immediate then
@@ -7959,7 +7969,7 @@ function menu.createPropertyOwned(frame, instance)
 				if not basestation then
 					table.insert(infoTableData.stations, object)
 				end
-			elseif isdeployable or C.IsComponentClass(object64, "lockbox") or (C.IsComponentClass(object64, "collectablewares") and ((object64 == menu.softtarget) or menu.isSelectedComponent(object64))) then
+			elseif isdeployable or C.IsComponentClass(object64, "lockbox") or C.IsComponentClass(object64, "collectablewares") then
 				table.insert(infoTableData.deployables, object)
 			elseif #subordinates > 0 then
 				table.insert(infoTableData.fleetLeaderShips, object)

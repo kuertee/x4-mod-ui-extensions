@@ -32,6 +32,9 @@ To load custom lua files, use ui.xml as described here: https://wiki.egosoft.com
 
 Updates
 =======
+v7.5.008 beta, 6 Feb 2025:
+-Bug-fix: compatibility with the 7.5 beta 8 version of the base game.
+
 v7.5.0071 beta, 5 Feb 2025:
 -bug-fix: 7.5.007 update broke functions required by some mods (e.g. Alternatives to death, High-sec rooms are locked, Mod parts trader, et. al.)
 

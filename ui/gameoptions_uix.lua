@@ -353,6 +353,14 @@ config.input.controlFunctions = {
         ["ranges"] = {},
         ["contexts"]= { 1, 2, 10 },
     },
+    [22] = {
+        ["name"] = ReadText(1005, 320),
+        ["definingcontrol"] = {"actions", 320},
+        ["actions"] = { 320, 373 },
+        ["states"] = {},
+        ["ranges"] = {},
+        ["contexts"]= { 1, 2, 10 },
+    },
     [23] = {
         ["name"] = ReadText(1005, 210),
         ["definingcontrol"] = {"actions", 210},
@@ -361,13 +369,13 @@ config.input.controlFunctions = {
         ["ranges"] = {},
         ["contexts"]= { 1, 2, 10 },
     },
-    [22] = {
-        ["name"] = ReadText(1005, 320),
-        ["definingcontrol"] = {"actions", 320},
-        ["actions"] = { 320, 373 },
+    [24] = {
+        ["name"] = ReadText(1005, 368),
+        ["definingcontrol"] = {"actions", 368},
+        ["actions"] = { 368, 378 },
         ["states"] = {},
         ["ranges"] = {},
-        ["contexts"]= { 1, 2, 10 },
+        ["contexts"]= { 9 },
     },
 }
 
@@ -507,7 +515,7 @@ config.input.controlsorder = {
             { "states", 79, { 1, 2, 9 } },
             { "actions", 184, { 1, 2, 9 } },
             { "actions", 318, { 1, 2, 9 } },
-            { "actions", 368, 9 },
+            { "functions", 24, 9 },
             { "actions", 366, { 1, 2 } },
             { "actions", 367, { 1, 2 } },
         },
@@ -1104,12 +1112,21 @@ config.optionDefinitions = {
         name = ReadText(1001, 12771),
         warning = function () return menu.warningDisplay() end,
         [1] = {
+            id = "fullscreen",
+            name = function () return C.IsVRVersion() and ReadText(1001, 7213) or ReadText(1001, 4817) end,
+            mouseOverText = ReadText(1026, 4826),
+            valuetype = "dropdown",
+            value = function () return menu.valueGfxFullscreen() end,
+            callback = function (id, option) return menu.callbackGfxFullscreen(id, option) end,
+            selectable = function () return menu.selectableGfxFullscreen() end,
+        },
+        [2] = {
             id = "hmd_resolution",
             name = ReadText(1001, 2619),
             value = function () return menu.valueGfxHMDResolution() end,
             display = C.IsVRVersion,
         },
-        [2] = {
+        [3] = {
             -- non-VR case
             id = "resolution",
             name = ReadText(1001, 2619),
@@ -1120,7 +1137,7 @@ config.optionDefinitions = {
             display = function () return not C.IsVRVersion() end,
             selectable = function () return menu.selectableGfxResolution() end,
         },
-        [3] = {
+        [4] = {
             id = "antialias",
             name = ReadText(1001, 2620),
             mouseOverText = function () return (not C.GetDLSSOption(false)) and ReadText(1026, 4822) or (ColorText["text_error"] ..  ReadText(1026, 4813)) end,
@@ -1129,7 +1146,7 @@ config.optionDefinitions = {
             callback = function (id, option) return menu.callbackGfxAA(id, option) end,
             selectable = function () return not C.GetDLSSOption(false) end,
         },
-        [4] = {
+        [5] = {
             id = "fsr1",
             name = ReadText(1001, 11726),
             mouseOverText = function () return menu.mouseOverTextGfxUpscaling() end,
@@ -1138,7 +1155,7 @@ config.optionDefinitions = {
             callback = function (id, option) return menu.callbackGfxFSR1(id, option) end,
             selectable = function () return menu.selectableGfxUpscaling() == 0 end,
         },
-        [5] = {
+        [6] = {
             id = "dlss",
             name = ReadText(1001, 12735),
             mouseOverText = ReadText(1026, 4824),
@@ -1147,7 +1164,7 @@ config.optionDefinitions = {
             callback = function (id, option) return menu.callbackGfxDLSS(id, option) end,
             display = C.IsDLSSSupported,
         },
-        [6] = {
+        [7] = {
             id = "dlssmode",
             name = "    " .. ReadText(1001, 12736),
             mouseOverText = ReadText(1026, 4825),
@@ -1157,7 +1174,7 @@ config.optionDefinitions = {
             selectable = function () return C.GetDLSSOption(false) end,
             display = C.IsDLSSSupported,
         },
-        [7] = {
+        [8] = {
             id = "adaptivesampling",
             name = ReadText(1001, 7221),
             valuetype = "dropdown",
@@ -1165,29 +1182,29 @@ config.optionDefinitions = {
             callback = function (id, option) return menu.callbackGfxAdaptiveSampling(id, option) end,
             display = C.IsVRVersion,
         },
-        [8] = {
+        [9] = {
             id = "hmd_fullscreen",
             name = ReadText(1001, 4817),
             value = function () return ReadText(1001, 2622), Color["text_normal"] end,
             display = C.IsVRVersion,
         },
-        [9] = {
+        [10] = {
             id = "hmd_sdk",
             name = ReadText(1001, 7214),
             value = function () return ffi.string(C.GetTrackerSDKOption()), Color["text_normal"] end,
             display = C.IsVRVersion,
         },
-        [10] = {
+        [11] = {
             id = "line",
             display = C.IsVRVersion,
         },
-        [11] = {
+        [12] = {
             id = "hmd_adapter",
             name = ReadText(1001, 2623),
             value = function () return ffi.string(C.GetTrackerNameOption()), Color["text_normal"] end,
             display = C.IsVRVersion,
         },
-        [12] = {
+        [13] = {
             id = "screendisplay",
             name = ReadText(1001, 7210),
             valuetype = "button",
@@ -1195,7 +1212,7 @@ config.optionDefinitions = {
             callback = function () return menu.callbackGfxScreenDisplay() end,
             display = C.IsVRVersion,
         },
-        [13] = {
+        [14] = {
             -- VR case
             id = "resolution",
             name = ReadText(1001, 7211),
@@ -1204,15 +1221,6 @@ config.optionDefinitions = {
             callback = function (id, option) return menu.callbackGfxResolution(id, option) end,
             display = C.IsVRVersion,
             selectable = function () return menu.selectableGfxResolution() end,
-        },
-        [14] = {
-            id = "fullscreen",
-            name = function () return C.IsVRVersion() and ReadText(1001, 7213) or ReadText(1001, 4817) end,
-            mouseOverText = ReadText(1026, 4826),
-            valuetype = "dropdown",
-            value = function () return menu.valueGfxFullscreen() end,
-            callback = function (id, option) return menu.callbackGfxFullscreen(id, option) end,
-            selectable = function () return menu.selectableGfxFullscreen() end,
         },
         [15] = {
             id = "autogpu",
@@ -2515,6 +2523,8 @@ function ModLua.rewriteFunctions()
     menu.callbackDeleteSave = ModLua.callbackDeleteSave
     OldFuncs.displayOptions = menu.displayOptions
     menu.displayOptions = ModLua.displayOptions
+    OldFuncs.extensionSorter = menu.extensionSorter
+    menu.extensionSorter = ModLua.extensionSorter
     OldFuncs.displayExtensions = menu.displayExtensions
     menu.displayExtensions = ModLua.displayExtensions
     OldFuncs.displayExtensionRow = menu.displayExtensionRow
@@ -2989,6 +2999,35 @@ function ModLua.displayOptions(optionParameter)
     frame:display()
 end
 
+function ModLua.extensionSorter(a, b)
+    local agroup = menu.getExtensionGroup(a)
+    local bgroup = menu.getExtensionGroup(b)
+    if agroup ~= bgroup then
+        return agroup < bgroup
+    end
+    if agroup == 1 then
+        local aisminidlc = string.find(a.id, "^ego_dlc_mini_")
+        local bisminidlc = string.find(b.id, "^ego_dlc_mini_")
+        if aisminidlc ~= bisminidlc then
+            return not aisminidlc       -- non-mini DLC before mini DLC
+        end
+        return Helper.sortDate(a, b)    -- sort DLC of either type by date
+    end
+
+    -- kuertee start: sort by enabled then by name
+    -- return Helper.sortName(a, b)        -- sort other extensions by name
+    if a.enabled and b.enabled then
+        return a.name < b.name
+    elseif a.enabled then
+        return true
+    elseif b.enabled then
+        return false
+    else
+        return a.name < b.name
+    end
+    -- kuertee end: sort by enabled then by name
+end
+
 function ModLua.displayExtensions()
     -- remove old data
     Helper.clearDataForRefresh(menu, config.optionsLayer)
@@ -3070,43 +3109,17 @@ function ModLua.displayExtensions()
     row[4]:createText(ReadText(1001, 2655), config.subHeaderLeftTextProperties)
     row[5]:createText(ReadText(1001, 2691), config.subHeaderLeftTextProperties)
     if #extensions > 0 then
-        -- kuertee start: sort by enabled then by name
-        -- table.sort(extensions, Helper.sortName)
-        table.sort(extensions, function(a, b)
-            if a.enabled and b.enabled then
-                return a.name < b.name
-            elseif a.enabled then
-                return true
-            elseif b.enabled then
-                return false
-            else
-                return a.name < b.name
-            end
-        end)
-        -- kuertee end: sort by enabled then by name
-
+        table.sort(extensions, menu.extensionSorter)
+        local lastextensiongroup
         for _, extension in ipairs(extensions) do
-            if extension.egosoftextension and extension.enabledbydefault then
-                menu.displayExtensionRow(optiontable, extension, menu.extensionSettings[extension.index])
+            local extensiongroup = menu.getExtensionGroup(extension)
+            if lastextensiongroup and extensiongroup ~= lastextensiongroup then
+                -- add separators between extension groups
+                row = optiontable:addRow(false, {  })
+                row[2]:setColSpan(6):createText(" ", { fontsize = 1, height = Helper.borderSize, cellBGColor = Color["row_separator"] })
             end
-        end
-        row = optiontable:addRow(false, {  })
-        row[2]:setColSpan(6):createText(" ", { fontsize = 1, height = Helper.borderSize, cellBGColor = Color["row_separator"] })
-        local extraseparator = false
-        for _, extension in ipairs(extensions) do
-            if extension.egosoftextension and not extension.enabledbydefault then
-                menu.displayExtensionRow(optiontable, extension, menu.extensionSettings[extension.index])
-                extraseparator = true
-            end
-        end
-        if extraseparator then
-            row = optiontable:addRow(false, {  })
-            row[2]:setColSpan(6):createText(" ", { fontsize = 1, height = Helper.borderSize, cellBGColor = Color["row_separator"] })
-        end
-        for _, extension in ipairs(extensions) do
-            if not extension.egosoftextension then
-                menu.displayExtensionRow(optiontable, extension, menu.extensionSettings[extension.index])
-            end
+            menu.displayExtensionRow(optiontable, extension, menu.extensionSettings[extension.index])
+            lastextensiongroup = extensiongroup
         end
     else
         local row = optiontable:addRow(false, {  })

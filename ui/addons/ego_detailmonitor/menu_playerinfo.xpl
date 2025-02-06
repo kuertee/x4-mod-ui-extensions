@@ -308,6 +308,7 @@ local menu = {
 		selectedWares = {},
 		curEntry = {},
 		mode = "normal",
+		clearRendertarget = true,
 	},
 	logbookData = {
 		name = ReadText(1001, 2963),
@@ -653,6 +654,8 @@ function menu.buttonTogglePlayerInfo(mode)
 		menu.mode = mode
 		if mode == "personnel" then
 			menu.empireData.init = true
+		elseif mode == "inventory" then
+			menu.inventoryData.clearRendertarget = true
 		end
 		if newidx then
 			SelectRow(menu.mainTable, newidx + 2)
@@ -1818,7 +1821,8 @@ function menu.createInventory(frame, tableProperties, mode, tabOrderOffset)
 				height = Helper.viewHeight / 2
 				width = height
 			end
-			local mediaProperties = { width = width, x = Helper.viewWidth - width - Helper.frameBorder, height = height, y = tableProperties.y }
+			local mediaProperties = { width = width, x = Helper.viewWidth - width - Helper.frameBorder, height = height, y = tableProperties.y, clear = menu.inventoryData.clearRendertarget }
+			menu.inventoryData.clearRendertarget = false
 
 			menu.rendertarget = frame:addRenderTarget(mediaProperties)
 			menu.inventoryData.activatecutscene = true
@@ -4358,6 +4362,7 @@ function menu.cleanupCutsceneRenderTarget()
 	end
 	if menu.precluster then
 		--print("destroying cluster " .. tostring(menu.precluster))
+		menu.paintmodshowcaseobject = nil
 		DestroyPresentationCluster(menu.precluster)
 	end
 	menu.precluster = nil
@@ -4444,19 +4449,50 @@ function menu.setupMessageRenderTarget()
 end
 
 function menu.setupInventoryRenderTarget()
+	local ware = menu.inventoryData.curEntry[1]
+	local video, ispaintmod = GetWareData(ware, "video", "ispaintmod")
+	if ispaintmod and menu.paintmodshowcaseobject then
+		-- already showing a paintmod showcase -> just update the paintmod
+		C.InstallPaintMod(menu.paintmodshowcaseobject, ware, false)
+		return true
+	end
 	if menu.cutsceneid then
 		menu.cleanupCutsceneRenderTarget()
 		return false
 	end
 	local rendertargetTexture = GetRenderTargetTexture(menu.rendertarget.id)
 	if rendertargetTexture then
-		local renderobject = "encyclopedia_dummy_macro"
-		local video = GetWareData(menu.inventoryData.curEntry[1], "video")
-		if video and (video ~= "") then
-			renderobject = video
+
+		local renderobject
+		if ispaintmod then
+			local lastplayership = ConvertStringTo64Bit(tostring(C.GetLastPlayerControlledShipID()))
+			if lastplayership and (lastplayership ~= 0) and (not C.IsComponentClass(lastplayership, "spacesuit")) then
+				renderobject = GetComponentData(lastplayership, "macro")
+			else
+				local playerobjects = GetContainedObjectsByOwner("player")
+				for _, object in ipairs(playerobjects) do
+					if IsComponentClass(object, "ship") and (not IsComponentClass(object, "spacesuit")) then
+						renderobject = GetComponentData(object, "macro")
+						break
+					end
+				end
+			end
 		end
+		if renderobject == nil then
+			if video and (video ~= "") then
+				renderobject = video
+			end
+		end
+		if renderobject == nil then
+			renderobject = "encyclopedia_dummy_macro"
+		end
+
 		menu.precluster, menu.preobject = CreateObjectInPresentationCluster(renderobject, "cluster_black_wlight_bg_macro")
 		if menu.preobject then
+			if ispaintmod then
+				menu.paintmodshowcaseobject = ConvertIDTo64Bit(menu.preobject)
+				C.InstallPaintMod(menu.paintmodshowcaseobject, ware, false)
+			end
 			menu.cutscenedesc = CreateCutsceneDescriptor("OrbitIndefinitely", { targetobject = menu.preobject })
 			if menu.cutscenedesc then
 				menu.cutsceneid = StartCutscene(menu.cutscenedesc, rendertargetTexture)

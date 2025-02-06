@@ -4924,7 +4924,7 @@ function menu.insertLuaAction(actiontype, istobedisplayed)
 			menu.insertInteractionContent("playersquad_orders", { type = actiontype, text = ReadText(1001, 7869), helpOverlayID = "interactmenu_attackplayertarget", helpOverlayText = " ", helpOverlayHighlightOnly = true, script = function () return menu.buttonPlayerSquadAttackPlayerTarget(false) end, hidetarget = true })	-- Fleet: Attack my target
 		end
 	elseif actiontype == "behaviourinspection" then
-		if (not menu.shown) and istobedisplayed and (menu.componentSlot.component ~= C.GetPlayerControlledShipID()) then
+		if (not menu.shown) and istobedisplayed and (menu.componentSlot.component ~= C.GetPlayerControlledShipID()) and C.IsComponentOperational(menu.componentSlot.component) then
 			local active = true
 			local mouseovertext = ""
 			if menu.componentSlot.component == menu.behaviourInspectionComponent then
