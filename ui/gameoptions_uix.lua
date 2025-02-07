@@ -2562,28 +2562,37 @@ function ModLua.loadSaveCallback(_, filename)
     menu.displayInit()
 end
 
-function ModLua.addSavegameRow(ftable, savegame, name, slot)
+function ModLua.addSavegameRow(ftable, savegame, name, slot, maxSlot)
     -- kuertee start: callback
-    local isSaveFileOk = true
+    local isAddSaveGameToList = true
+    savegame.uix_isDisplayedInList = true
     if menu.uix_callbacks ["addSavegameRow_isListSaveGame"] then
         for uix_id, uix_callback in pairs (menu.uix_callbacks ["addSavegameRow_isListSaveGame"]) do
-            isSaveFileOk = uix_callback(ftable, savegame, name, slot)
-            if not isSaveFileOk then
+            isAddSaveGameToList = uix_callback(ftable, savegame, name, slot)
+            if not isAddSaveGameToList then
                 break
             end
         end
-        if not isSaveFileOk then
-            savegame.uix_isTakesSpace = nil
+        if not isAddSaveGameToList then
+            savegame.uix_isDisplayedInList = nil
             return 0
         end
     end
-    savegame.uix_isTakesSpace = true
     -- kuertee end: callback
+
 
     -- kuertee start: callback
     if menu.uix_callbacks ["addSavegameRow_changeSaveGameDisplayName"] then
         for uix_id, uix_callback in pairs (menu.uix_callbacks ["addSavegameRow_changeSaveGameDisplayName"]) do
-            name = uix_callback(ftable, savegame, name, slot, name)
+            name = uix_callback(ftable, savegame, name, slot) or name
+        end
+    end
+    -- kuertee end: callback
+
+    -- kuertee start: callback
+    if menu.uix_callbacks ["addSavegameRow_preSaveGameRowAdd"] then
+        for uix_id, uix_callback in pairs (menu.uix_callbacks ["addSavegameRow_preSaveGameRowAdd"]) do
+            uix_callback(ftable, savegame, name, slot, maxSlot, config)
         end
     end
     -- kuertee end: callback
@@ -2621,7 +2630,7 @@ function ModLua.addSavegameRow(ftable, savegame, name, slot)
     local uix_isAddRowHeightForExtraInfo = nil
     if menu.uix_callbacks ["addSavegameRow_getRowHeightForExtraInfo"] then
         for uix_id, uix_callback in pairs (menu.uix_callbacks ["addSavegameRow_getRowHeightForExtraInfo"]) do
-            uix_isAddRowHeightForExtraInfo = uix_isAddRowHeightForExtraInfo or uix_callback(ftable, savegame, name, slot, name)
+            uix_isAddRowHeightForExtraInfo = uix_isAddRowHeightForExtraInfo or uix_callback(ftable, savegame, name, slot)
         end
     end
     if uix_isAddRowHeightForExtraInfo ~= false then
@@ -2648,7 +2657,7 @@ function ModLua.addSavegameRow(ftable, savegame, name, slot)
     local uix_isBoldFileName = nil
     if menu.uix_callbacks ["addSavegameRow_getIsBoldFilename"] then
         for uix_id, uix_callback in pairs (menu.uix_callbacks ["addSavegameRow_getIsBoldFilename"]) do
-            uix_isBoldFileName = uix_isBoldFileName or uix_callback(ftable, savegame, name, slot, name)
+            uix_isBoldFileName = uix_isBoldFileName or uix_callback(ftable, savegame, name, slot)
         end
     end
     if uix_isBoldFileName ~= false then
@@ -2687,7 +2696,17 @@ function ModLua.addSavegameRow(ftable, savegame, name, slot)
     row[4]:setColSpan(2):createText(savegame.error and "" or savegame.time, (not invalid) and config.standardTextProperties or config.disabledTextProperties)
     row[4].properties.halign = "right"
 
-    return row:getHeight()
+    -- kuertee start: callback
+    -- return row:getHeight()
+    local maxRowHeight = row:getHeight()
+    if menu.uix_callbacks ["addSavegameRow_postSaveGameRowAdd"] then
+        for uix_id, uix_callback in pairs (menu.uix_callbacks ["addSavegameRow_postSaveGameRowAdd"]) do
+            maxRowHeight = math.max(maxRowHeight, uix_callback(ftable, savegame, name, slot, maxSlot, config))
+        end
+    end
+    -- kuertee end: callback
+
+    return maxRowHeight
 end
 
 function ModLua.cleanup()
@@ -3423,6 +3442,12 @@ function ModLua.displaySavegameOptions(optionParameter)
             for i, savegame in ipairs(sortablesaves) do
                 -- kuertee start: callback
                 if menu.uix_callbacks ["displaySaveGameOptions_preSaveGameRowAdd"] then
+                    if next(menu.uix_callbacks["displaySaveGameOptions_preSaveGameRowAdd"]) and (not menu.uix_isWarn_displaySaveGameOptions_preSaveGameRowAdd) then
+                        menu.uix_isWarn_displaySaveGameOptions_preSaveGameRowAdd = true
+                        Helper.debugText_forced("NOTE: gameoptions_uix displaySaveGameOptions_preSaveGameRowAdd call back is obsolete.")
+                        Helper.debugText_forced("Use addSavegameRow_preSaveGameRowAdd.")
+                        Helper.debugText_forced("displaySaveGameOptions_preSaveGameRowAdd exists only for backward-compatibility.")
+                    end
                     for uix_id, uix_callback in pairs (menu.uix_callbacks ["displaySaveGameOptions_preSaveGameRowAdd"]) do
                         maxRowHeight = math.max(maxRowHeight, uix_callback(ftable, savegame, savegame.displayedname, i, #sortablesaves, config))
                     end
@@ -3430,10 +3455,16 @@ function ModLua.displaySavegameOptions(optionParameter)
                 -- kuertee end: callback
 
                 local idx = tonumber(string.match(savegame.filename, "^save_(%d+)"))
-                maxRowHeight = math.max(maxRowHeight, menu.addSavegameRow(ftable, savegame, savegame.displayedname, idx))
+                maxRowHeight = math.max(maxRowHeight, menu.addSavegameRow(ftable, savegame, savegame.displayedname, i, #sortablesaves))
 
                 -- kuertee start: callback
                 if menu.uix_callbacks ["displaySaveGameOptions_postSaveGameRowAdd"] then
+                    if next(menu.uix_callbacks["displaySaveGameOptions_postSaveGameRowAdd"]) and (not menu.uix_isWarn_displaySaveGameOptions_postSaveGameRowAdd) then
+                        menu.uix_isWarn_displaySaveGameOptions_postSaveGameRowAdd = true
+                        Helper.debugText_forced("NOTE: gameoptions_uix displaySaveGameOptions_postSaveGameRowAdd call back is obsolete.")
+                        Helper.debugText_forced("Use addSavegameRow_postSaveGameRowAdd.")
+                        Helper.debugText_forced("displaySaveGameOptions_postSaveGameRowAdd exists only for backward-compatibility.")
+                    end
                     for uix_id, uix_callback in pairs (menu.uix_callbacks ["displaySaveGameOptions_postSaveGameRowAdd"]) do
                         maxRowHeight = math.max(maxRowHeight, uix_callback(ftable, savegame, savegame.displayedname, i, #sortablesaves))
                     end
@@ -3612,7 +3643,6 @@ function ModLua.onUpdate()
     local curtime = getElapsedTime()
 
     -- kuertee start: callback
-    local isSaveFileOk = true
     if menu.uix_callbacks ["onUpdate_start"] then
         for uix_id, uix_callback in pairs (menu.uix_callbacks ["onUpdate_start"]) do
             uix_callback(curtime)

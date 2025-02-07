@@ -4490,7 +4490,7 @@ function menu.checkCompatibility(macro, objectmakerraces)
 end
 
 function menu.displayAmmoSlot(ftable, type, macro, total, capacity, first)
-	if (menu.upgradeplan[type][macro] and ((type == "missile") or (menu.upgradeplan[type][macro] > 0))) or menu.isAmmoCompatible(type, macro) then
+	if (menu.upgradeplan[type][macro] and (menu.upgradeplan[type][macro] > 0)) or (menu.ammo[type][macro] and (menu.ammo[type][macro] > 0)) or menu.isAmmoCompatible(type, macro) then
 		local planned = menu.upgradeplan[type][macro] or 0
 		local name, infolibrary = GetMacroData(macro, "name", "infolibrary")
 		AddKnownItem(infolibrary, macro)

@@ -4049,7 +4049,25 @@ function menu.createContentTable(frame, position)
 								helpOverlayText = subsection.helpOverlayText,
 								helpOverlayHighlightOnly = subsection.helpOverlayHighlightOnly,
 							}):setText((subsection.orderid and menu.orderIconText(subsection.orderid) or "") .. subsection.text):setIcon("table_arrow_inv_right", { scaling = false, width = iconHeight, height = iconHeight, x = menu.width - iconHeight })
-							row[1].handlers.onClick = function () return menu.handleSubSectionOption(data, true) end
+
+							-- kuertee start: callback
+							-- row[1].handlers.onClick = function () return menu.handleSubSectionOption(data, true) end
+							row[1].handlers.onClick = function()
+								local uix_isOverrideClickEvent
+								if menu.uix_callbacks ["interactMenu_clickSubsection"] then
+									for uix_id, uix_callback in pairs (menu.uix_callbacks ["interactMenu_clickSubsection"]) do
+										uix_isOverrideClickEvent = uix_callback (data)
+										if uix_isOverrideClickEvent then
+											break
+										end
+									end
+								end
+								if not uix_isOverrideClickEvent then
+									return menu.handleSubSectionOption(data, true)
+								end
+							end
+							-- kuertee end: callback
+
 							height = height + row:getHeight() + Helper.borderSize
 						end
 
@@ -4139,7 +4157,25 @@ function menu.createContentTable(frame, position)
 							end
 						end
 						if entry.active then
-							row[1].handlers.onClick = entry.script
+
+							-- kuertee start: callback
+							-- row[1].handlers.onClick = entry.script
+							row[1].handlers.onClick = function()
+								local uix_isOverrideClickEvent
+								if menu.uix_callbacks ["interactMenu_clickAction"] then
+									for uix_id, uix_callback in pairs (menu.uix_callbacks ["interactMenu_clickAction"]) do
+										uix_isOverrideClickEvent = uix_callback (entry)
+										if uix_isOverrideClickEvent then
+											break
+										end
+									end
+								end
+								if not uix_isOverrideClickEvent then
+									entry.script()
+								end
+							end
+							-- kuertee end: callback
+
 						end
 						height = height + row:getHeight() + Helper.borderSize
 

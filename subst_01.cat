@@ -3,7 +3,7 @@ ui/addons/ego_detailmonitor/menu_docked.xpl 88585 1737877621 e1556f8c23b4c17b142
 ui/addons/ego_detailmonitor/menu_encyclopedia.xpl 186587 1737877621 ab573e03ab70bfe8f9a077133682a6dd
 ui/addons/ego_detailmonitor/menu_map.xpl 1475837 1738808845 37b34cd099a234c0403c06d3d62c65c4
 ui/addons/ego_detailmonitor/menu_playerinfo.xpl 339306 1738808973 3526216b4395f4132e127ab4ce9ccd95
-ui/addons/ego_detailmonitor/menu_ship_configuration.xpl 487363 1738198226 5d9dfdb0da5e28cce9cba93085a93e96
+ui/addons/ego_detailmonitor/menu_ship_configuration.xpl 487399 1738886394 ca665e2e4f4a584a44723fac4b07ad3b
 ui/addons/ego_detailmonitor/menu_station_configuration.xpl 271385 1737877621 22dfbe93ed4b922ae553dcb451c30dbe
 ui/addons/ego_detailmonitor/menu_station_overview.xpl 224555 1737877621 ca64a3c9bb341ecf9415bf7e4fb7609d
 ui/addons/ego_detailmonitor/menu_toplevel.xpl 21083 1738541339 f7aafe3c39479377b361f020a5a4e11c
@@ -12,6 +12,6 @@ ui/addons/ego_detailmonitor/menu_transactionlog.xpl 15174 1737877621 3dbeffa36e1
 ui/addons/ego_detailmonitor/menu_transporter.xpl 40836 1737877621 782d545b82e143e5e9970c50cc3bad45
 ui/addons/ego_detailmonitor/menu_userquestion.xpl 27116 1738629171 b545c139b48a97333729d81a4168d761
 ui/addons/ego_gameoptions/customgame.xpl 238791 1737877621 3f4710e01866a8caa5f58e810fb41984
-ui/addons/ego_interactmenu/menu_interactmenu.xpl 370045 1738809910 22329773307c6fe30c46cf7ad766a718
-ui/gameoptions_uix.lua 179218 1738809864 872fc85839521ee98ab0f16365f7f4b6
+ui/addons/ego_interactmenu/menu_interactmenu.xpl 371246 1738887264 30e1e32ff2c945131037362dc1c38467
+ui/gameoptions_uix.lua 181301 1738904165 3a1f3a550fb552d8769d74744af3459e
 ui/helper_uix.lua 59211 1738488079 2bca387b56bedc3902d7c580ae62f27d
