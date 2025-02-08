@@ -4056,7 +4056,7 @@ function menu.createContentTable(frame, position)
 								local uix_isOverrideClickEvent
 								if menu.uix_callbacks ["interactMenu_clickSubsection"] then
 									for uix_id, uix_callback in pairs (menu.uix_callbacks ["interactMenu_clickSubsection"]) do
-										uix_isOverrideClickEvent = uix_callback (data)
+										uix_isOverrideClickEvent = uix_callback (menu.actions[subsection.id])
 										if uix_isOverrideClickEvent then
 											break
 										end
@@ -4274,7 +4274,25 @@ function menu.createSubSectionTable(frame, position)
 			button.properties.mouseOverText = entry.text
 		end
 		button:setText(text, { color = entry.active and Color["text_normal"] or Color["text_inactive"] })
-		row[1].handlers.onClick = entry.script
+
+		-- kuertee start: callback
+		-- row[1].handlers.onClick = entry.script
+		row[1].handlers.onClick = function()
+			local uix_isOverrideClickEvent
+			if menu.uix_callbacks ["interactMenu_clickAction"] then
+				for uix_id, uix_callback in pairs (menu.uix_callbacks ["interactMenu_clickAction"]) do
+					uix_isOverrideClickEvent = uix_callback (entry)
+					if uix_isOverrideClickEvent then
+						break
+					end
+				end
+			end
+			if not uix_isOverrideClickEvent then
+				entry.script()
+			end
+		end
+		-- kuertee end: callback
+
 		if entry.text2 then
 			button:setText2(entry.text2, { halign = "right", color = entry.active and Color["text_normal"] or Color["text_inactive"], font = entry.text2font or Helper.standardFont })
 		end
