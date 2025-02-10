@@ -2446,7 +2446,7 @@ function menu.onExpandSupplyResource(_, ftable, _, nodedata)
 			row[1]:setColSpan(2):createDropDown(Helper.traderuleOptions, { startOption = (traderuleid ~= 0) and traderuleid or -1, active = hasownlist }):setTextProperties({ fontsize = config.mapFontSize })
 			row[1].handlers.onDropDownConfirmed = function (_, id) return menu.dropdownTradeRule(menu.container, "supply", nodedata.ware, id) end
 			row[3]:createButton({ mouseOverText = ReadText(1026, 8407) }):setIcon("menu_edit")
-			row[3].handlers.onClick = menu.buttonEditTradeRule
+			row[3].handlers.onClick = function () return menu.buttonEditTradeRule(C.GetContainerTradeRuleID(menu.container, "supply", nodedata.ware)) end
 			-- reservations
 			if reservations[nodedata.ware] and (#reservations[nodedata.ware].buyoffer > 0) then
 				-- title
@@ -2527,7 +2527,7 @@ function menu.onExpandProduction(_, ftable, _, nodedata, productionmodules)
 	local nostorage, noresources, hacked, nonfunctional, destroyed, plannedremoval, planned, producing, paused, realpaused, queued = 0, 0, 0, 0, #productionmodules.destroyedcomponents, 0, productionmodules.numplanned, 0, 0, 0, 0
 	local sunlight, workforce, hullefficiency
 	for _, module in ipairs(productionmodules.components) do
-		if not IsComponentConstruction(module) then
+		if IsValidComponent(module) and (not IsComponentConstruction(module)) then
 			productioninfo_products		= productioninfo_products	or C.IsInfoUnlockedForPlayer(module, "production_products")
 			productioninfo_rate			= productioninfo_rate		or C.IsInfoUnlockedForPlayer(module, "production_rate")
 			productioninfo_resources	= productioninfo_resources	or C.IsInfoUnlockedForPlayer(module, "production_resources")
@@ -2766,7 +2766,7 @@ function menu.onExpandProcessing(_, ftable, _, nodedata, processingmodules)
 	local nostorage, noresources, hacked, nonfunctional, destroyed, plannedremoval, planned, producing, realpaused = 0, 0, 0, 0, #processingmodules.destroyedcomponents, 0, processingmodules.numplanned, 0, 0
 	for _, module in ipairs(processingmodules.components) do
 		local data = GetProcessingModuleData(module)
-		if not IsComponentConstruction(module) then
+		if IsValidComponent(module) and (not IsComponentConstruction(module)) then
 			productioninfo_products		= productioninfo_products	or C.IsInfoUnlockedForPlayer(module, "production_products")
 			productioninfo_rate			= productioninfo_rate		or C.IsInfoUnlockedForPlayer(module, "production_rate")
 			productioninfo_resources	= productioninfo_resources	or C.IsInfoUnlockedForPlayer(module, "production_resources")
@@ -2940,7 +2940,7 @@ function menu.getProductionEfficiency(modules)
 	local efficiency, numproducing = 0, 0
 	for _, module in ipairs(modules) do
 		-- components that are already being recycled are in state construction
-		if not IsComponentConstruction(module) then
+		if IsValidComponent(module) and (not IsComponentConstruction(module)) then
 			local proddata = GetProductionModuleData(module)
 			local ishacked, isfunctional = GetComponentData(module, "ishacked", "isfunctional")
 			if (not ishacked) and isfunctional and (proddata.state == "producing") then
@@ -2991,7 +2991,7 @@ function menu.getProductionWorkforceEfficiency(modules)
 	local efficiency, numproducing, unlocked = 0, 0, false
 	for _, module in ipairs(modules) do
 		-- components that are already being recycled are in state construction
-		if not IsComponentConstruction(module) then
+		if IsValidComponent(module) and (not IsComponentConstruction(module)) then
 			local proddata = GetProductionModuleData(module)
 			local ishacked, isfunctional = GetComponentData(module, "ishacked", "isfunctional")
 			if (not ishacked) and isfunctional and (proddata.state == "producing") then
@@ -3017,7 +3017,7 @@ function menu.getProductionHullEfficiency(modules)
 	local efficiency, numproducing, unlocked = 0, 0, false
 	for _, module in ipairs(modules) do
 		-- components that are already being recycled are in state construction
-		if not IsComponentConstruction(module) then
+		if IsValidComponent(module) and (not IsComponentConstruction(module)) then
 			local proddata = GetProductionModuleData(module)
 			local ishacked, isfunctional = GetComponentData(module, "ishacked", "isfunctional")
 			if (not ishacked) and isfunctional and (proddata.state == "producing") then
@@ -3043,7 +3043,7 @@ function menu.getProductionCycleTime(modules)
 	local cycle, numproducing = nil, 0
 	for _, module in ipairs(modules) do
 		-- components that are already being recycled are in state construction
-		if not IsComponentConstruction(module) then
+		if IsValidComponent(module) and (not IsComponentConstruction(module)) then
 			local proddata = GetProductionModuleData(module)
 			local ishacked, isfunctional = GetComponentData(module, "ishacked", "isfunctional")
 			if (not ishacked) and isfunctional and (proddata.state == "producing") then
@@ -3073,7 +3073,7 @@ function menu.getProductionRemainingTime(ware, modules, macro)
 	local remainingtime, numproducing = nil, 0
 	for _, module in ipairs(modules) do
 		-- components that are already being recycled are in state construction
-		if not IsComponentConstruction(module) then
+		if IsValidComponent(module) and (not IsComponentConstruction(module)) then
 			local proddata = GetProductionModuleData(module)
 			if proddata.state ~= "empty" then
 				local ishacked, isfunctional = GetComponentData(module, "ishacked", "isfunctional")
@@ -3128,7 +3128,7 @@ function menu.getProcessingCycleTime(modules)
 	local cycle, numprocessing = nil, 0
 	for _, module in ipairs(modules) do
 		-- components that are already being recycled are in state construction
-		if not IsComponentConstruction(module) then
+		if IsValidComponent(module) and (not IsComponentConstruction(module)) then
 			local proddata = GetProcessingModuleData(module)
 			local ishacked, isfunctional = GetComponentData(module, "ishacked", "isfunctional")
 			if (not ishacked) and isfunctional and (proddata.state == "processing") then
@@ -3365,7 +3365,7 @@ function menu.onExpandBuildModule(_, ftable, _, nodedata, buildmodule)
 		row[1]:setColSpan(3):createDropDown(Helper.traderuleOptions, { startOption = (traderuleid ~= 0) and traderuleid or -1, active = hasownlist }):setTextProperties({ fontsize = config.mapFontSize })
 		row[1].handlers.onDropDownConfirmed = function (_, id) return menu.dropdownTradeRule(menu.container, "build", "", id) end
 		row[4]:createButton({ mouseOverText = ReadText(1026, 8407) }):setIcon("menu_edit")
-		row[4].handlers.onClick = menu.buttonEditTradeRule
+		row[4].handlers.onClick = function () return menu.buttonEditTradeRule(C.GetContainerTradeRuleID(menu.container, "build", "")) end
 
 		local row = ftable:addRow(false, {  })
 		row[1]:setColSpan(4):createText("")
@@ -3811,7 +3811,7 @@ function menu.onExpandSupply(_, ftable, _, nodedata)
 		row[1]:setColSpan(2):createDropDown(Helper.traderuleOptions, { startOption = (traderuleid ~= 0) and traderuleid or -1, active = hasownlist }):setTextProperties({ fontsize = config.mapFontSize })
 		row[1].handlers.onDropDownConfirmed = function (_, id) return menu.dropdownTradeRule(menu.container, "supply", "", id) end
 		row[3]:createButton({ mouseOverText = ReadText(1026, 8407) }):setIcon("menu_edit")
-		row[3].handlers.onClick = menu.buttonEditTradeRule
+		row[3].handlers.onClick = function () return menu.buttonEditTradeRule(C.GetContainerTradeRuleID(menu.container, "supply", "")) end
 	end
 
 	menu.restoreTableState("nodeTable", ftable)
@@ -4230,8 +4230,8 @@ function menu.buttonPauseProcessingModules(processingmodules, pause)
 end
 
 
-function menu.buttonEditTradeRule()
-	Helper.closeMenuAndOpenNewMenu(menu, "PlayerInfoMenu", { 0, 0, "globalorders" })
+function menu.buttonEditTradeRule(traderuleid)
+	Helper.closeMenuAndOpenNewMenu(menu, "PlayerInfoMenu", { 0, 0, "globalorders", { "traderule", (traderuleid ~= 0) and traderuleid or nil } })
 	menu.cleanup()
 end
 
@@ -4781,7 +4781,7 @@ function menu.updateProductionNode(node, productionmodules)
 	local isknown = false
 	for _, module in ipairs(productionmodules.components) do
 		-- components that are already being recycled are in state construction
-		if not IsComponentConstruction(module) then
+		if IsValidComponent(module) and (not IsComponentConstruction(module)) then
 			local proddata = GetProductionModuleData(module)
 			if proddata.state ~= "empty" then
 				local ishacked, isfunctional, ispausedmanually = GetComponentData(module, "ishacked", "isfunctional", "ispausedmanually")
@@ -4956,7 +4956,7 @@ function menu.updateProcessingNode(node, processingmodules)
 	local isknown = false
 	for _, module in ipairs(processingmodules.components) do
 		-- components that are already being recycled are in state construction
-		if not IsComponentConstruction(module) then
+		if IsValidComponent(module) and (not IsComponentConstruction(module)) then
 			local data = GetProcessingModuleData(module)
 			local ishacked, isfunctional, ispausedmanually = GetComponentData(module, "ishacked", "isfunctional", "ispausedmanually")
 			if ishacked then

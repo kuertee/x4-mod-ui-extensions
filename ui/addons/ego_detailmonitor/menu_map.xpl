@@ -1542,7 +1542,7 @@ local config = {
 		{ icon = "ship_xl_destroyer_01",			text = ReadText(1001, 9824),	color = "friendcolor" },	-- Destroyer
 		{ icon = "ship_xl_freighter_01",			text = ReadText(1001, 9819),	color = "friendcolor" },	-- Freighter
 		{ icon = "ship_xl_resupplier_01",			text = ReadText(1001, 9820),	color = "friendcolor" },	-- Auxiliary
-		{ icon = "ship_xl_miningrig_01",			text = ReadText(20221, 5081),	color = "friendcolor" },	-- Mining Rig
+		--{ icon = "ship_xl_miningrig_01",			text = ReadText(20221, 5081),	color = "friendcolor" },	-- Mining Rig
 		{ icon = "ship_xl_builder_01",				text = ReadText(1001, 9821),	color = "friendcolor" },	-- Builder
 		-- l ships
 		{ text = ReadText(1001, 6) .. ReadText(1001, 120) .. " " .. ReadText(20111, 5031) },					-- Ships: L
@@ -4164,18 +4164,18 @@ function menu.buttonInfoLogbookClear(instance)
 	end
 end
 
-function menu.buttonEditTradeRule()
-	Helper.closeMenuAndOpenNewMenu(menu, "PlayerInfoMenu", { 0, 0, "globalorders" })
+function menu.buttonEditTradeRule(traderuleid)
+	Helper.closeMenuAndOpenNewMenu(menu, "PlayerInfoMenu", { 0, 0, "globalorders", { "traderule", (traderuleid ~= 0) and traderuleid or nil } })
 	menu.cleanup()
 end
 
-function menu.buttonEditBlacklist()
-	Helper.closeMenuAndOpenNewMenu(menu, "PlayerInfoMenu", { 0, 0, "globalorders" })
+function menu.buttonEditBlacklist(blacklistid)
+	Helper.closeMenuAndOpenNewMenu(menu, "PlayerInfoMenu", { 0, 0, "globalorders", { "blacklist", (blacklistid ~= 0) and blacklistid or nil } })
 	menu.cleanup()
 end
 
-function menu.buttonEditFightRule()
-	Helper.closeMenuAndOpenNewMenu(menu, "PlayerInfoMenu", { 0, 0, "globalorders" })
+function menu.buttonEditFightRule(fightruleid)
+	Helper.closeMenuAndOpenNewMenu(menu, "PlayerInfoMenu", { 0, 0, "globalorders", { "fightrule", (fightruleid ~= 0) and fightruleid or nil } })
 	menu.cleanup()
 end
 
@@ -10483,7 +10483,7 @@ function menu.createResponsesForControllable(ftable, controllable, textpropertie
 			row[1].handlers.onDropDownConfirmed = function (_, id) return menu.dropdownOrdersBlacklist(controllable, entry.type, id) end
 			row[1].handlers.onDropDownActivated = function () menu.noupdate = true end
 			row[8]:createButton({ mouseOverText = ReadText(1026, 8413) }):setIcon("menu_edit")
-			row[8].handlers.onClick = menu.buttonEditBlacklist
+			row[8].handlers.onClick = function () return menu.buttonEditBlacklist(C.GetControllableBlacklistID(controllable, entry.type, group)) end
 
 			ftable:addEmptyRow()
 		end
@@ -10518,7 +10518,7 @@ function menu.createResponsesForControllable(ftable, controllable, textpropertie
 		row[1].handlers.onDropDownConfirmed = function (_, id) return menu.dropdownOrdersFightRule(controllable, "attack", id) end
 		row[1].handlers.onDropDownActivated = function () menu.noupdate = true end
 		row[8]:createButton({ mouseOverText = ReadText(1026, 8414) }):setIcon("menu_edit")
-		row[8].handlers.onClick = menu.buttonEditFightRule
+		row[8].handlers.onClick = function () return menu.buttonEditFightRule(C.GetControllableFightRuleID(controllable, "attack")) end
 	end
 
 	-- ship trade prices & restrictions
@@ -10615,7 +10615,7 @@ function menu.createResponsesForControllable(ftable, controllable, textpropertie
 			row[1].handlers.onDropDownConfirmed = function (_, id) return menu.dropdownTradeRule(controllable, "trade", id, "", true) end
 			row[1].handlers.onDropDownActivated = function () menu.noupdate = true end
 			row[8]:createButton({ mouseOverText = ReadText(1026, 8407) }):setIcon("menu_edit")
-			row[8].handlers.onClick = menu.buttonEditTradeRule
+			row[8].handlers.onClick = function () return menu.buttonEditTradeRule(C.GetContainerTradeRuleID(controllable, "buy", "")) end
 
 			local row = ftable:addRow(false, {})
 			row[1]:setColSpan(8):createText("")
@@ -10686,7 +10686,7 @@ function menu.createResponsesForControllable(ftable, controllable, textpropertie
 					row[2].handlers.onDropDownConfirmed = function (_, id) return menu.dropdownTradeRule(controllable, "trade", id, ware, true) end
 					row[2].handlers.onDropDownActivated = function () menu.noupdate = true end
 					row[8]:createButton({ mouseOverText = ReadText(1026, 8407) }):setIcon("menu_edit")
-					row[8].handlers.onClick = menu.buttonEditTradeRule
+					row[8].handlers.onClick = function () return menu.buttonEditTradeRule(C.GetContainerTradeRuleID(controllable, "buy", ware)) end
 
 					ftable:addEmptyRow(config.mapRowHeight / 2)
 
@@ -13949,7 +13949,7 @@ function menu.setupInfoSubmenuRows(mode, inputtable, inputobject, instance)
 						row[1].handlers.onDropDownConfirmed = function (_, id) return menu.dropdownTradeRule(object, entry.type, id, nil, true) end
 						row[1].handlers.onDropDownActivated = function () menu.noupdate = true end
 						row[8]:createButton({ mouseOverText = ReadText(1026, 8407) }):setIcon("menu_edit")
-						row[8].handlers.onClick = menu.buttonEditTradeRule
+						row[8].handlers.onClick = function () return menu.buttonEditTradeRule(C.GetContainerTradeRuleID(object, (entry.type == "trade") and "buy" or entry.type, "")) end
 					end
 				end
 				-- preferred build method

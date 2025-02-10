@@ -181,6 +181,7 @@ ffi.cdef[[
 	void GetConstructionMapItemLoadout2(UILoadout* result, UniverseID holomapid, size_t itemidx, UniverseID defensibleid, UniverseID moduleid);
 	void GetConstructionMapItemLoadoutCounts2(UILoadoutCounts* result, UniverseID holomapid, size_t itemidx, UniverseID defensibleid, UniverseID moduleid);
 	size_t GetConstructionMapVenturePlatform(UniverseID holomapid, size_t venturedockidx);
+	const char* GetContainerBuildMethod(UniverseID containerid);
 	float GetContainerGlobalPriceFactor(UniverseID containerid);
 	TradeRuleID GetContainerTradeRuleID(UniverseID containerid, const char* ruletype, const char* wareid);
 	uint32_t GetContainerWareReservations2(WareReservationInfo2* result, uint32_t resultlen, UniverseID containerid, bool includevirtual, bool includemission, bool includesupply);
@@ -189,6 +190,7 @@ ffi.cdef[[
 	void GetCurrentLoadout(UILoadout* result, UniverseID defensibleid, UniverseID moduleid);
 	void GetCurrentLoadoutCounts(UILoadoutCounts* result, UniverseID defensibleid, UniverseID moduleid);
 	float GetDefensibleLoadoutLevel(UniverseID defensibleid);
+	int64_t GetEstimatedBuildPrice(UniverseID containerid, const char* macroname);
 	const char* GetGameStartName();
 	uint32_t GetImportableConstructionPlans(UIConstructionPlanInfo* result, uint32_t resultlen);
 	void GetLoadout(UILoadout* result, UniverseID defensibleid, const char* macroname, const char* loadoutid);
@@ -940,8 +942,8 @@ function menu.buttonConstructionCommunity()
 	end
 end
 
-function menu.buttonEditTradeRule()
-	Helper.closeMenuAndOpenNewMenu(menu, "PlayerInfoMenu", { 0, 0, "globalorders" })
+function menu.buttonEditTradeRule(traderuleid)
+	Helper.closeMenuAndOpenNewMenu(menu, "PlayerInfoMenu", { 0, 0, "globalorders", { "traderule", (traderuleid ~= 0) and traderuleid or nil } })
 	menu.cleanup()
 end
 
@@ -2332,7 +2334,9 @@ function menu.displayModules(frame, firsttime)
 							AddKnownItem(infolibrary, group[i])
 							local icon = C.IsIconValid("module_" .. group[i]) and ("module_" .. group[i]) or "module_notfound"
 							local active = true
-							row[i]:createButton({ width = columnWidth, height = columnWidth, active = active, highlightColor = Color["button_highlight_bigbutton"], mouseOverText = name, helpOverlayID = "stationbuildst_" .. group[i], helpOverlayText = " ", helpOverlayHighlightOnly = true }):setIcon(icon)
+							local mouseovertext = name
+							mouseovertext = mouseovertext .. "\n\n" .. ReadText(1001, 3601) .. ReadText(1001, 120) .. " " .. ConvertMoneyString(tonumber(C.GetEstimatedBuildPrice(menu.buildstorage, group[i])), false, true, 0, true) .. " " .. ReadText(1001, 101)
+							row[i]:createButton({ width = columnWidth, height = columnWidth, active = active, highlightColor = Color["button_highlight_bigbutton"], mouseOverText = mouseovertext, helpOverlayID = "stationbuildst_" .. group[i], helpOverlayText = " ", helpOverlayHighlightOnly = true }):setIcon(icon)
 
 							-- Tutorial solar panels (shared)
 							if group[i] == "prod_gen_energycells_macro" then
@@ -3551,7 +3555,7 @@ function menu.displayPlan(frame)
 				row[2].handlers.onSliderCellActivated = function() menu.noupdate = true end
 				row[2].handlers.onSliderCellDeactivated = function() menu.noupdate = false end
 				row[6]:createButton({ mouseOverText = ReadText(1026, 8407) }):setIcon("menu_edit")
-				row[6].handlers.onClick = menu.buttonEditTradeRule
+				row[6].handlers.onClick = function () return menu.buttonEditTradeRule(C.GetContainerTradeRuleID(menu.buildstorage, "buy", "")) end
 
 				resourcetable:addEmptyRow()
 
@@ -3625,7 +3629,7 @@ function menu.displayPlan(frame)
 						row[3].handlers.onSliderCellActivated = function() menu.noupdate = true end
 						row[3].handlers.onSliderCellDeactivated = function() menu.noupdate = false end
 						row[6]:createButton({ mouseOverText = ReadText(1026, 8407) }):setIcon("menu_edit")
-						row[6].handlers.onClick = menu.buttonEditTradeRule
+						row[6].handlers.onClick = function () return menu.buttonEditTradeRule(C.GetContainerTradeRuleID(menu.buildstorage, "buy", ware.ware)) end
 
 						resourcetable:addEmptyRow(Helper.standardTextHeight / 2)
 
@@ -3956,6 +3960,16 @@ function menu.displayModuleInfo(frame)
 
 	local data = GetLibraryEntry(infolibrary, menu.selectedModule.macro)
 
+	ftable:addEmptyRow(Helper.standardTextHeight / 4)
+
+	if (menu.selectedModule.component == 0) or IsComponentConstruction(ConvertStringToLuaID(tostring(menu.selectedModule.component))) then
+		local row = ftable:addRow(false, {  })
+		row[1]:createText(ReadText(1001, 3601), { font = Helper.standardFontBold })
+		row[2]:createText(ConvertMoneyString(tonumber(C.GetEstimatedBuildPrice(menu.buildstorage, menu.selectedModule.macro)), false, true, 0, true) .. " " .. ReadText(1001, 101), { font = Helper.standardFontBold })
+
+		ftable:addEmptyRow(Helper.standardTextHeight / 4)
+	end
+
 	if ((infolibrary == "moduletypes_production") and data.allowproduction) or (infolibrary == "moduletypes_processing") then
 		local queueduration = 0
 		for i, proddata in ipairs(data.products) do
@@ -3987,7 +4001,7 @@ function menu.displayModuleInfo(frame)
 				row[1]:createText("   " .. ReadText(1001, 7403))
 				row[2]:createText("---")
 			end
-			ftable:addEmptyRow(Helper.standardTextHeight / 2)
+			ftable:addEmptyRow(Helper.standardTextHeight / 4)
 		end
 
 		if infolibrary == "moduletypes_production" then

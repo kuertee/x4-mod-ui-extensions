@@ -1,5 +1,6 @@
 ﻿
--- param == { 0, 0, mode }
+-- param == { 0, 0, mode, modeparam }
+-- modes: - "globalorders",		param: { "traderule|blacklist|fightrule", id }
 
 -- ffi setup
 local ffi = require("ffi")
@@ -1346,6 +1347,101 @@ function menu.onShowMenu(state)
 	menu.transactionSearchString = ""
 
 	menu.initEmpireData()
+	if menu.mode == "globalorders" then
+		if menu.param[4] then
+			if menu.param[4][1] == "traderule" then
+				local id = menu.param[4][2]
+
+				if id then
+					local counts = C.GetTradeRuleInfoCounts(id)
+					local buf = ffi.new("TradeRuleInfo")
+					buf.numfactions = counts.numfactions
+					buf.factions = Helper.ffiNewHelper("const char*[?]", counts.numfactions)
+					if C.GetTradeRuleInfo(buf, id) then
+						local factions = {}
+						for j = 0, buf.numfactions - 1 do
+							table.insert(factions, ffi.string(buf.factions[j]))
+						end
+
+						local defaults = {
+							["trade"] = C.IsPlayerTradeRuleDefault(id, "buy") and C.IsPlayerTradeRuleDefault(id, "sell"),
+							["supply"] = C.IsPlayerTradeRuleDefault(id, "supply"),
+							["build"] = C.IsPlayerTradeRuleDefault(id, "build"),
+						}
+
+						menu.empireData.mode = { "empire_list", "traderule", { id = id, name = ffi.string(buf.name), factions = factions, iswhitelist = buf.iswhitelist, defaults = defaults } }
+					end
+				else
+					menu.empireData.mode = { "empire_list", "traderule", {} }
+				end
+			elseif menu.param[4][1] == "blacklist" then
+				local id = menu.param[4][2]
+
+				if id then
+					local counts = C.GetBlacklistInfoCounts(id)
+					local buf = ffi.new("BlacklistInfo2")
+					buf.nummacros = counts.nummacros
+					buf.macros = Helper.ffiNewHelper("const char*[?]", counts.nummacros)
+					buf.numfactions = counts.numfactions
+					buf.factions = Helper.ffiNewHelper("const char*[?]", counts.numfactions)
+					if C.GetBlacklistInfo2(buf, id) then
+						local type = ffi.string(buf.type)
+
+						local spaces = {}
+						for j = 0, buf.nummacros - 1 do
+							table.insert(spaces, ConvertIDTo64Bit(GetMacroData(ffi.string(buf.macros[j]), "sectorcomponent")))
+						end
+
+						local factions = {}
+						for j = 0, buf.numfactions - 1 do
+							table.insert(factions, ffi.string(buf.factions[j]))
+						end
+
+						local defaults = {
+							["civilian"] = C.IsPlayerBlacklistDefault(id, type, "civilian"),
+							["military"] = C.IsPlayerBlacklistDefault(id, type, "military"),
+						}
+
+						menu.empireData.mode = { "empire_list", "blacklist", { id = id, type = type, name = ffi.string(buf.name), spaces = spaces, factions = factions, relation = ffi.string(buf.relation), hazardous = buf.hazardous, defaults = defaults, usemacrowhitelist = buf.usemacrowhitelist, usefactionwhitelist = buf.usefactionwhitelist } }
+					end
+				else
+					menu.empireData.mode = { "empire_list", "blacklist", {} }
+				end
+			elseif menu.param[4][1] == "fightrule" then
+				local id = menu.param[4][2]
+
+				if id then
+					local counts = C.GetFightRuleInfoCounts(id)
+					local buf = ffi.new("FightRuleInfo")
+					buf.numfactions = counts.numfactions
+					buf.factions = Helper.ffiNewHelper("UIFightRuleSetting[?]", counts.numfactions)
+					if C.GetFightRuleInfo(buf, id) then
+						local settings = {}
+						for j = 0, buf.numfactions - 1 do
+							local faction = ffi.string(buf.factions[j].factionid)
+							local civilian = ffi.string(buf.factions[j].civiliansetting)
+							if civilian == "" then
+								civilian = "default"
+							end
+							local military = ffi.string(buf.factions[j].militarysetting)
+							if military == "" then
+								military = "default"
+							end
+							settings[faction] = { civilian = civilian, military = military }
+						end
+
+						local defaults = {
+							["attack"] = C.IsPlayerFightRuleDefault(id, "attack"),
+						}
+
+						menu.empireData.mode = { "empire_list", "fightrule", { id = id, name = ffi.string(buf.name), settings = settings, defaults = defaults } }
+					end
+				else
+					menu.empireData.mode = { "empire_list", "fightrule", {} }
+				end
+			end
+		end
+	end
 
 	Helper.setTabScrollCallback(menu, menu.onTabScroll)
 	registerForEvent("inputModeChanged", getElement("Scene.UIContract"), menu.onInputModeChanged)
@@ -4105,6 +4201,10 @@ function menu.createEmpire(frame, tableProperties)
 
 		for _, entry in ipairs(menu.traderules) do
 			row = table_left:addRow({ "empire_list", "traderule", entry }, {  })
+			if (menu.empireData.mode[1] == "empire_list") and (menu.empireData.mode[2] == "traderule") and (menu.empireData.mode[3].id == entry.id) then
+				menu.setselectedrow = row.index
+			end
+
 			row[1]:createText(entry.name)
 			local defaulttext = ""
 			--print(entry.defaults.trade .. ", " .. entry.defaults.supply .. ", " .. entry.defaults.build)
@@ -4146,6 +4246,9 @@ function menu.createEmpire(frame, tableProperties)
 		row = table_left:addRow({ "empire_list", "traderule", {} }, {  })
 		row[1]:setColSpan(3):createText(ReadText(1001, 11011))
 		row[4]:createIcon("menu_edit", { height = config.rowHeight, width = config.rowHeight })
+		if (menu.empireData.mode[1] == "empire_list") and (menu.empireData.mode[2] == "traderule") and (not next(menu.empireData.mode[3])) then
+			menu.setselectedrow = row.index
+		end
 
 		-- blacklists
 		row = table_left:addRow(nil, { bgColor = Color["row_title_background"] })
@@ -4155,6 +4258,9 @@ function menu.createEmpire(frame, tableProperties)
 
 		for _, entry in ipairs(menu.blacklists) do
 			row = table_left:addRow({ "empire_list", "blacklist", entry }, {  })
+			if (menu.empireData.mode[1] == "empire_list") and (menu.empireData.mode[2] == "blacklist") and (menu.empireData.mode[3].id == entry.id) then
+				menu.setselectedrow = row.index
+			end
 			row[1]:createText(entry.name)
 			local text = ""
 			for _, option in ipairs(config.blacklistTypes) do
@@ -4176,6 +4282,9 @@ function menu.createEmpire(frame, tableProperties)
 			row[4]:createIcon("menu_edit", { height = config.rowHeight, width = config.rowHeight })
 		end
 		row = table_left:addRow({ "empire_list", "blacklist", {} }, {  })
+		if (menu.empireData.mode[1] == "empire_list") and (menu.empireData.mode[2] == "blacklist") and (not next(menu.empireData.mode[3])) then
+			menu.setselectedrow = row.index
+		end
 		row[1]:setColSpan(3):createText(ReadText(1001, 9144))
 		row[4]:createIcon("menu_edit", { height = config.rowHeight, width = config.rowHeight })
 
@@ -4187,6 +4296,9 @@ function menu.createEmpire(frame, tableProperties)
 
 		for _, entry in ipairs(menu.fightrules) do
 			row = table_left:addRow({ "empire_list", "fightrule", entry }, {  })
+			if (menu.empireData.mode[1] == "empire_list") and (menu.empireData.mode[2] == "fightrule") and (menu.empireData.mode[3].id == entry.id) then
+				menu.setselectedrow = row.index
+			end
 			row[1]:setColSpan(2):createText(entry.name)
 			local defaulttext = ""
 			if entry.defaults.attack then
@@ -4196,6 +4308,9 @@ function menu.createEmpire(frame, tableProperties)
 			row[4]:createIcon("menu_edit", { height = config.rowHeight, width = config.rowHeight })
 		end
 		row = table_left:addRow({ "empire_list", "fightrule", {} }, {  })
+		if (menu.empireData.mode[1] == "empire_list") and (menu.empireData.mode[2] == "fightrule") and (not next(menu.empireData.mode[3])) then
+			menu.setselectedrow = row.index
+		end
 		row[1]:setColSpan(3):createText(ReadText(1001, 7754))
 		row[4]:createIcon("menu_edit", { height = config.rowHeight, width = config.rowHeight })
 

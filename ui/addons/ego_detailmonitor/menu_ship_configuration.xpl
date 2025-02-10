@@ -1396,13 +1396,13 @@ function menu.buttonContextEncyclopedia(selectedUpgrade)
 	end
 end
 
-function menu.buttonEditBlacklist()
-	Helper.closeMenuAndOpenNewMenu(menu, "PlayerInfoMenu", { 0, 0, "globalorders" })
+function menu.buttonEditBlacklist(blacklistid)
+	Helper.closeMenuAndOpenNewMenu(menu, "PlayerInfoMenu", { 0, 0, "globalorders", { "blacklist", (blacklistid > 0) and blacklistid or nil } })
 	menu.cleanup()
 end
 
-function menu.buttonEditFightRule()
-	Helper.closeMenuAndOpenNewMenu(menu, "PlayerInfoMenu", { 0, 0, "globalorders" })
+function menu.buttonEditFightRule(fightruleid)
+	Helper.closeMenuAndOpenNewMenu(menu, "PlayerInfoMenu", { 0, 0, "globalorders", { "fightrule", (fightruleid > 0) and fightruleid or nil } })
 	menu.cleanup()
 end
 
@@ -6136,7 +6136,7 @@ function menu.displaySlots(frame, firsttime)
 					row[1]:setColSpan(10):createDropDown(locresponses, { startOption = (menu.settings.blacklists[entry.type] ~= 0) and menu.settings.blacklists[entry.type] or defaultblacklistid, active = menu.settings.blacklists[entry.type] ~= 0 })
 					row[1].handlers.onDropDownConfirmed = function (_, id) menu.settings.blacklists[entry.type] = tonumber(id) end
 					row[11]:createButton({ mouseOverText = ReadText(1026, 8413) }):setIcon("menu_edit")
-					row[11].handlers.onClick = menu.buttonEditBlacklist
+					row[11].handlers.onClick = function () return menu.buttonEditBlacklist((menu.settings.blacklists[entry.type] ~= 0) and menu.settings.blacklists[entry.type] or defaultblacklistid) end
 
 					ftable:addEmptyRow()
 				end
@@ -6176,7 +6176,7 @@ function menu.displaySlots(frame, firsttime)
 				row[1]:setColSpan(10):createDropDown(locresponses, { startOption = (menu.settings.fightrules["attack"] ~= 0) and menu.settings.fightrules["attack"] or defaultfightruleid, active = menu.settings.fightrules["attack"] ~= 0 })
 				row[1].handlers.onDropDownConfirmed = function (_, id) menu.settings.fightrules["attack"] = tonumber(id) end
 				row[11]:createButton({ mouseOverText = ReadText(1026, 8414) }):setIcon("menu_edit")
-				row[11].handlers.onClick = menu.buttonEditFightRule
+				row[11].handlers.onClick = function () return menu.buttonEditFightRule((menu.settings.fightrules["attack"] ~= 0) and menu.settings.fightrules["attack"] or defaultfightruleid) end
 
 				-- missile launchers
 				local hasmissilelauncher = false

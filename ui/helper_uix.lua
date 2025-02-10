@@ -721,7 +721,7 @@ function ModLua.onExpandLSOStorageNode(menu, container, _, ftable, _, nodedata)
 				row[1].handlers.onDropDownConfirmed = function (_, id) return Helper.dropdownTradeRule(menu, container, "buy", nodedata.ware, id) end
 				row[1].handlers.onDropDownActivated = function () menu.noupdate = true end
 				row[3]:createButton({ mouseOverText = ReadText(1026, 8407) }):setIcon("menu_edit")
-				row[3].handlers.onClick = function () return Helper.buttonEditTradeRule(menu) end
+				row[3].handlers.onClick = function () return Helper.buttonEditTradeRule(menu, C.GetContainerTradeRuleID(container, "buy", nodedata.ware)) end
 			end
 			-- create / remove offer
 			if (waretype == "trade") or (waretype == "product") then
@@ -884,7 +884,7 @@ function ModLua.onExpandLSOStorageNode(menu, container, _, ftable, _, nodedata)
 				row[1].handlers.onDropDownConfirmed = function (_, id) return Helper.dropdownTradeRule(menu, container, "sell", nodedata.ware, id) end
 				row[1].handlers.onDropDownActivated = function () menu.noupdate = true end
 				row[3]:createButton({ mouseOverText = ReadText(1026, 8407) }):setIcon("menu_edit")
-				row[3].handlers.onClick = function () return Helper.buttonEditTradeRule(menu) end
+				row[3].handlers.onClick = function () return Helper.buttonEditTradeRule(menu, C.GetContainerTradeRuleID(container, "sell", nodedata.ware)) end
 			end
 			-- create / remove offer
 			if (waretype == "trade") or (waretype == "resource") then
