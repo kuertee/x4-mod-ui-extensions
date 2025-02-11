@@ -8418,7 +8418,7 @@ local config = {
 		{ icon = "ship_xl_destroyer_01",			text = ReadText(1001, 9824),	color = "friendcolor" },	-- Destroyer
 		{ icon = "ship_xl_freighter_01",			text = ReadText(1001, 9819),	color = "friendcolor" },	-- Freighter
 		{ icon = "ship_xl_resupplier_01",			text = ReadText(1001, 9820),	color = "friendcolor" },	-- Auxiliary
-		{ icon = "ship_xl_miningrig_01",			text = ReadText(20221, 5081),	color = "friendcolor" },	-- Mining Rig
+		--{ icon = "ship_xl_miningrig_01",			text = ReadText(20221, 5081),	color = "friendcolor" },	-- Mining Rig
 		{ icon = "ship_xl_builder_01",				text = ReadText(1001, 9821),	color = "friendcolor" },	-- Builder
 		-- l ships
 		{ text = ReadText(1001, 6) .. ReadText(1001, 120) .. " " .. ReadText(20111, 5031) },					-- Ships: L
@@ -11040,18 +11040,18 @@ function menu.buttonInfoLogbookClear(instance)
 	end
 end
 
-function menu.buttonEditTradeRule()
-	Helper.closeMenuAndOpenNewMenu(menu, "PlayerInfoMenu", { 0, 0, "globalorders" })
+function menu.buttonEditTradeRule(traderuleid)
+	Helper.closeMenuAndOpenNewMenu(menu, "PlayerInfoMenu", { 0, 0, "globalorders", { "traderule", (traderuleid ~= 0) and traderuleid or nil } })
 	menu.cleanup()
 end
 
-function menu.buttonEditBlacklist()
-	Helper.closeMenuAndOpenNewMenu(menu, "PlayerInfoMenu", { 0, 0, "globalorders" })
+function menu.buttonEditBlacklist(blacklistid)
+	Helper.closeMenuAndOpenNewMenu(menu, "PlayerInfoMenu", { 0, 0, "globalorders", { "blacklist", (blacklistid ~= 0) and blacklistid or nil } })
 	menu.cleanup()
 end
 
-function menu.buttonEditFightRule()
-	Helper.closeMenuAndOpenNewMenu(menu, "PlayerInfoMenu", { 0, 0, "globalorders" })
+function menu.buttonEditFightRule(fightruleid)
+	Helper.closeMenuAndOpenNewMenu(menu, "PlayerInfoMenu", { 0, 0, "globalorders", { "fightrule", (fightruleid ~= 0) and fightruleid or nil } })
 	menu.cleanup()
 end
 
@@ -17359,7 +17359,7 @@ function menu.createResponsesForControllable(ftable, controllable, textpropertie
 			row[1].handlers.onDropDownConfirmed = function (_, id) return menu.dropdownOrdersBlacklist(controllable, entry.type, id) end
 			row[1].handlers.onDropDownActivated = function () menu.noupdate = true end
 			row[8]:createButton({ mouseOverText = ReadText(1026, 8413) }):setIcon("menu_edit")
-			row[8].handlers.onClick = menu.buttonEditBlacklist
+			row[8].handlers.onClick = function () return menu.buttonEditBlacklist(C.GetControllableBlacklistID(controllable, entry.type, group)) end
 
 			ftable:addEmptyRow()
 		end
@@ -17394,7 +17394,7 @@ function menu.createResponsesForControllable(ftable, controllable, textpropertie
 		row[1].handlers.onDropDownConfirmed = function (_, id) return menu.dropdownOrdersFightRule(controllable, "attack", id) end
 		row[1].handlers.onDropDownActivated = function () menu.noupdate = true end
 		row[8]:createButton({ mouseOverText = ReadText(1026, 8414) }):setIcon("menu_edit")
-		row[8].handlers.onClick = menu.buttonEditFightRule
+		row[8].handlers.onClick = function () return menu.buttonEditFightRule(C.GetControllableFightRuleID(controllable, "attack")) end
 	end
 
 	-- ship trade prices & restrictions
@@ -17491,7 +17491,7 @@ function menu.createResponsesForControllable(ftable, controllable, textpropertie
 			row[1].handlers.onDropDownConfirmed = function (_, id) return menu.dropdownTradeRule(controllable, "trade", id, "", true) end
 			row[1].handlers.onDropDownActivated = function () menu.noupdate = true end
 			row[8]:createButton({ mouseOverText = ReadText(1026, 8407) }):setIcon("menu_edit")
-			row[8].handlers.onClick = menu.buttonEditTradeRule
+			row[8].handlers.onClick = function () return menu.buttonEditTradeRule(C.GetContainerTradeRuleID(controllable, "buy", "")) end
 
 			local row = ftable:addRow(false, {})
 			row[1]:setColSpan(8):createText("")
@@ -17562,7 +17562,7 @@ function menu.createResponsesForControllable(ftable, controllable, textpropertie
 					row[2].handlers.onDropDownConfirmed = function (_, id) return menu.dropdownTradeRule(controllable, "trade", id, ware, true) end
 					row[2].handlers.onDropDownActivated = function () menu.noupdate = true end
 					row[8]:createButton({ mouseOverText = ReadText(1026, 8407) }):setIcon("menu_edit")
-					row[8].handlers.onClick = menu.buttonEditTradeRule
+					row[8].handlers.onClick = function () return menu.buttonEditTradeRule(C.GetContainerTradeRuleID(controllable, "buy", ware)) end
 
 					ftable:addEmptyRow(config.mapRowHeight / 2)
 
@@ -20825,7 +20825,7 @@ function menu.setupInfoSubmenuRows(mode, inputtable, inputobject, instance)
 						row[1].handlers.onDropDownConfirmed = function (_, id) return menu.dropdownTradeRule(object, entry.type, id, nil, true) end
 						row[1].handlers.onDropDownActivated = function () menu.noupdate = true end
 						row[8]:createButton({ mouseOverText = ReadText(1026, 8407) }):setIcon("menu_edit")
-						row[8].handlers.onClick = menu.buttonEditTradeRule
+						row[8].handlers.onClick = function () return menu.buttonEditTradeRule(C.GetContainerTradeRuleID(object, (entry.type == "trade") and "buy" or entry.type, "")) end
 					end
 				end
 				-- preferred build method
@@ -37387,7 +37387,8 @@ end
 
 init()
 ﻿
--- param == { 0, 0, mode }
+-- param == { 0, 0, mode, modeparam }
+-- modes: - "globalorders",		param: { "traderule|blacklist|fightrule", id }
 
 -- ffi setup
 local ffi = require("ffi")
@@ -38734,6 +38735,101 @@ function menu.onShowMenu(state)
 	menu.transactionSearchString = ""
 
 	menu.initEmpireData()
+	if menu.mode == "globalorders" then
+		if menu.param[4] then
+			if menu.param[4][1] == "traderule" then
+				local id = menu.param[4][2]
+
+				if id then
+					local counts = C.GetTradeRuleInfoCounts(id)
+					local buf = ffi.new("TradeRuleInfo")
+					buf.numfactions = counts.numfactions
+					buf.factions = Helper.ffiNewHelper("const char*[?]", counts.numfactions)
+					if C.GetTradeRuleInfo(buf, id) then
+						local factions = {}
+						for j = 0, buf.numfactions - 1 do
+							table.insert(factions, ffi.string(buf.factions[j]))
+						end
+
+						local defaults = {
+							["trade"] = C.IsPlayerTradeRuleDefault(id, "buy") and C.IsPlayerTradeRuleDefault(id, "sell"),
+							["supply"] = C.IsPlayerTradeRuleDefault(id, "supply"),
+							["build"] = C.IsPlayerTradeRuleDefault(id, "build"),
+						}
+
+						menu.empireData.mode = { "empire_list", "traderule", { id = id, name = ffi.string(buf.name), factions = factions, iswhitelist = buf.iswhitelist, defaults = defaults } }
+					end
+				else
+					menu.empireData.mode = { "empire_list", "traderule", {} }
+				end
+			elseif menu.param[4][1] == "blacklist" then
+				local id = menu.param[4][2]
+
+				if id then
+					local counts = C.GetBlacklistInfoCounts(id)
+					local buf = ffi.new("BlacklistInfo2")
+					buf.nummacros = counts.nummacros
+					buf.macros = Helper.ffiNewHelper("const char*[?]", counts.nummacros)
+					buf.numfactions = counts.numfactions
+					buf.factions = Helper.ffiNewHelper("const char*[?]", counts.numfactions)
+					if C.GetBlacklistInfo2(buf, id) then
+						local type = ffi.string(buf.type)
+
+						local spaces = {}
+						for j = 0, buf.nummacros - 1 do
+							table.insert(spaces, ConvertIDTo64Bit(GetMacroData(ffi.string(buf.macros[j]), "sectorcomponent")))
+						end
+
+						local factions = {}
+						for j = 0, buf.numfactions - 1 do
+							table.insert(factions, ffi.string(buf.factions[j]))
+						end
+
+						local defaults = {
+							["civilian"] = C.IsPlayerBlacklistDefault(id, type, "civilian"),
+							["military"] = C.IsPlayerBlacklistDefault(id, type, "military"),
+						}
+
+						menu.empireData.mode = { "empire_list", "blacklist", { id = id, type = type, name = ffi.string(buf.name), spaces = spaces, factions = factions, relation = ffi.string(buf.relation), hazardous = buf.hazardous, defaults = defaults, usemacrowhitelist = buf.usemacrowhitelist, usefactionwhitelist = buf.usefactionwhitelist } }
+					end
+				else
+					menu.empireData.mode = { "empire_list", "blacklist", {} }
+				end
+			elseif menu.param[4][1] == "fightrule" then
+				local id = menu.param[4][2]
+
+				if id then
+					local counts = C.GetFightRuleInfoCounts(id)
+					local buf = ffi.new("FightRuleInfo")
+					buf.numfactions = counts.numfactions
+					buf.factions = Helper.ffiNewHelper("UIFightRuleSetting[?]", counts.numfactions)
+					if C.GetFightRuleInfo(buf, id) then
+						local settings = {}
+						for j = 0, buf.numfactions - 1 do
+							local faction = ffi.string(buf.factions[j].factionid)
+							local civilian = ffi.string(buf.factions[j].civiliansetting)
+							if civilian == "" then
+								civilian = "default"
+							end
+							local military = ffi.string(buf.factions[j].militarysetting)
+							if military == "" then
+								military = "default"
+							end
+							settings[faction] = { civilian = civilian, military = military }
+						end
+
+						local defaults = {
+							["attack"] = C.IsPlayerFightRuleDefault(id, "attack"),
+						}
+
+						menu.empireData.mode = { "empire_list", "fightrule", { id = id, name = ffi.string(buf.name), settings = settings, defaults = defaults } }
+					end
+				else
+					menu.empireData.mode = { "empire_list", "fightrule", {} }
+				end
+			end
+		end
+	end
 
 	Helper.setTabScrollCallback(menu, menu.onTabScroll)
 	registerForEvent("inputModeChanged", getElement("Scene.UIContract"), menu.onInputModeChanged)
@@ -41493,6 +41589,10 @@ function menu.createEmpire(frame, tableProperties)
 
 		for _, entry in ipairs(menu.traderules) do
 			row = table_left:addRow({ "empire_list", "traderule", entry }, {  })
+			if (menu.empireData.mode[1] == "empire_list") and (menu.empireData.mode[2] == "traderule") and (menu.empireData.mode[3].id == entry.id) then
+				menu.setselectedrow = row.index
+			end
+
 			row[1]:createText(entry.name)
 			local defaulttext = ""
 			--print(entry.defaults.trade .. ", " .. entry.defaults.supply .. ", " .. entry.defaults.build)
@@ -41534,6 +41634,9 @@ function menu.createEmpire(frame, tableProperties)
 		row = table_left:addRow({ "empire_list", "traderule", {} }, {  })
 		row[1]:setColSpan(3):createText(ReadText(1001, 11011))
 		row[4]:createIcon("menu_edit", { height = config.rowHeight, width = config.rowHeight })
+		if (menu.empireData.mode[1] == "empire_list") and (menu.empireData.mode[2] == "traderule") and (not next(menu.empireData.mode[3])) then
+			menu.setselectedrow = row.index
+		end
 
 		-- blacklists
 		row = table_left:addRow(nil, { bgColor = Color["row_title_background"] })
@@ -41543,6 +41646,9 @@ function menu.createEmpire(frame, tableProperties)
 
 		for _, entry in ipairs(menu.blacklists) do
 			row = table_left:addRow({ "empire_list", "blacklist", entry }, {  })
+			if (menu.empireData.mode[1] == "empire_list") and (menu.empireData.mode[2] == "blacklist") and (menu.empireData.mode[3].id == entry.id) then
+				menu.setselectedrow = row.index
+			end
 			row[1]:createText(entry.name)
 			local text = ""
 			for _, option in ipairs(config.blacklistTypes) do
@@ -41564,6 +41670,9 @@ function menu.createEmpire(frame, tableProperties)
 			row[4]:createIcon("menu_edit", { height = config.rowHeight, width = config.rowHeight })
 		end
 		row = table_left:addRow({ "empire_list", "blacklist", {} }, {  })
+		if (menu.empireData.mode[1] == "empire_list") and (menu.empireData.mode[2] == "blacklist") and (not next(menu.empireData.mode[3])) then
+			menu.setselectedrow = row.index
+		end
 		row[1]:setColSpan(3):createText(ReadText(1001, 9144))
 		row[4]:createIcon("menu_edit", { height = config.rowHeight, width = config.rowHeight })
 
@@ -41575,6 +41684,9 @@ function menu.createEmpire(frame, tableProperties)
 
 		for _, entry in ipairs(menu.fightrules) do
 			row = table_left:addRow({ "empire_list", "fightrule", entry }, {  })
+			if (menu.empireData.mode[1] == "empire_list") and (menu.empireData.mode[2] == "fightrule") and (menu.empireData.mode[3].id == entry.id) then
+				menu.setselectedrow = row.index
+			end
 			row[1]:setColSpan(2):createText(entry.name)
 			local defaulttext = ""
 			if entry.defaults.attack then
@@ -41584,6 +41696,9 @@ function menu.createEmpire(frame, tableProperties)
 			row[4]:createIcon("menu_edit", { height = config.rowHeight, width = config.rowHeight })
 		end
 		row = table_left:addRow({ "empire_list", "fightrule", {} }, {  })
+		if (menu.empireData.mode[1] == "empire_list") and (menu.empireData.mode[2] == "fightrule") and (not next(menu.empireData.mode[3])) then
+			menu.setselectedrow = row.index
+		end
 		row[1]:setColSpan(3):createText(ReadText(1001, 7754))
 		row[4]:createIcon("menu_edit", { height = config.rowHeight, width = config.rowHeight })
 
@@ -46359,13 +46474,13 @@ function menu.buttonContextEncyclopedia(selectedUpgrade)
 	end
 end
 
-function menu.buttonEditBlacklist()
-	Helper.closeMenuAndOpenNewMenu(menu, "PlayerInfoMenu", { 0, 0, "globalorders" })
+function menu.buttonEditBlacklist(blacklistid)
+	Helper.closeMenuAndOpenNewMenu(menu, "PlayerInfoMenu", { 0, 0, "globalorders", { "blacklist", (blacklistid > 0) and blacklistid or nil } })
 	menu.cleanup()
 end
 
-function menu.buttonEditFightRule()
-	Helper.closeMenuAndOpenNewMenu(menu, "PlayerInfoMenu", { 0, 0, "globalorders" })
+function menu.buttonEditFightRule(fightruleid)
+	Helper.closeMenuAndOpenNewMenu(menu, "PlayerInfoMenu", { 0, 0, "globalorders", { "fightrule", (fightruleid > 0) and fightruleid or nil } })
 	menu.cleanup()
 end
 
@@ -51099,7 +51214,7 @@ function menu.displaySlots(frame, firsttime)
 					row[1]:setColSpan(10):createDropDown(locresponses, { startOption = (menu.settings.blacklists[entry.type] ~= 0) and menu.settings.blacklists[entry.type] or defaultblacklistid, active = menu.settings.blacklists[entry.type] ~= 0 })
 					row[1].handlers.onDropDownConfirmed = function (_, id) menu.settings.blacklists[entry.type] = tonumber(id) end
 					row[11]:createButton({ mouseOverText = ReadText(1026, 8413) }):setIcon("menu_edit")
-					row[11].handlers.onClick = menu.buttonEditBlacklist
+					row[11].handlers.onClick = function () return menu.buttonEditBlacklist((menu.settings.blacklists[entry.type] ~= 0) and menu.settings.blacklists[entry.type] or defaultblacklistid) end
 
 					ftable:addEmptyRow()
 				end
@@ -51139,7 +51254,7 @@ function menu.displaySlots(frame, firsttime)
 				row[1]:setColSpan(10):createDropDown(locresponses, { startOption = (menu.settings.fightrules["attack"] ~= 0) and menu.settings.fightrules["attack"] or defaultfightruleid, active = menu.settings.fightrules["attack"] ~= 0 })
 				row[1].handlers.onDropDownConfirmed = function (_, id) menu.settings.fightrules["attack"] = tonumber(id) end
 				row[11]:createButton({ mouseOverText = ReadText(1026, 8414) }):setIcon("menu_edit")
-				row[11].handlers.onClick = menu.buttonEditFightRule
+				row[11].handlers.onClick = function () return menu.buttonEditFightRule((menu.settings.fightrules["attack"] ~= 0) and menu.settings.fightrules["attack"] or defaultfightruleid) end
 
 				-- missile launchers
 				local hasmissilelauncher = false
@@ -56366,6 +56481,7 @@ ffi.cdef[[
 	void GetConstructionMapItemLoadout2(UILoadout* result, UniverseID holomapid, size_t itemidx, UniverseID defensibleid, UniverseID moduleid);
 	void GetConstructionMapItemLoadoutCounts2(UILoadoutCounts* result, UniverseID holomapid, size_t itemidx, UniverseID defensibleid, UniverseID moduleid);
 	size_t GetConstructionMapVenturePlatform(UniverseID holomapid, size_t venturedockidx);
+	const char* GetContainerBuildMethod(UniverseID containerid);
 	float GetContainerGlobalPriceFactor(UniverseID containerid);
 	TradeRuleID GetContainerTradeRuleID(UniverseID containerid, const char* ruletype, const char* wareid);
 	uint32_t GetContainerWareReservations2(WareReservationInfo2* result, uint32_t resultlen, UniverseID containerid, bool includevirtual, bool includemission, bool includesupply);
@@ -56374,6 +56490,7 @@ ffi.cdef[[
 	void GetCurrentLoadout(UILoadout* result, UniverseID defensibleid, UniverseID moduleid);
 	void GetCurrentLoadoutCounts(UILoadoutCounts* result, UniverseID defensibleid, UniverseID moduleid);
 	float GetDefensibleLoadoutLevel(UniverseID defensibleid);
+	int64_t GetEstimatedBuildPrice(UniverseID containerid, const char* macroname);
 	const char* GetGameStartName();
 	uint32_t GetImportableConstructionPlans(UIConstructionPlanInfo* result, uint32_t resultlen);
 	void GetLoadout(UILoadout* result, UniverseID defensibleid, const char* macroname, const char* loadoutid);
@@ -57125,8 +57242,8 @@ function menu.buttonConstructionCommunity()
 	end
 end
 
-function menu.buttonEditTradeRule()
-	Helper.closeMenuAndOpenNewMenu(menu, "PlayerInfoMenu", { 0, 0, "globalorders" })
+function menu.buttonEditTradeRule(traderuleid)
+	Helper.closeMenuAndOpenNewMenu(menu, "PlayerInfoMenu", { 0, 0, "globalorders", { "traderule", (traderuleid ~= 0) and traderuleid or nil } })
 	menu.cleanup()
 end
 
@@ -58517,7 +58634,9 @@ function menu.displayModules(frame, firsttime)
 							AddKnownItem(infolibrary, group[i])
 							local icon = C.IsIconValid("module_" .. group[i]) and ("module_" .. group[i]) or "module_notfound"
 							local active = true
-							row[i]:createButton({ width = columnWidth, height = columnWidth, active = active, highlightColor = Color["button_highlight_bigbutton"], mouseOverText = name, helpOverlayID = "stationbuildst_" .. group[i], helpOverlayText = " ", helpOverlayHighlightOnly = true }):setIcon(icon)
+							local mouseovertext = name
+							mouseovertext = mouseovertext .. "\n\n" .. ReadText(1001, 3601) .. ReadText(1001, 120) .. " " .. ConvertMoneyString(tonumber(C.GetEstimatedBuildPrice(menu.buildstorage, group[i])), false, true, 0, true) .. " " .. ReadText(1001, 101)
+							row[i]:createButton({ width = columnWidth, height = columnWidth, active = active, highlightColor = Color["button_highlight_bigbutton"], mouseOverText = mouseovertext, helpOverlayID = "stationbuildst_" .. group[i], helpOverlayText = " ", helpOverlayHighlightOnly = true }):setIcon(icon)
 
 							-- Tutorial solar panels (shared)
 							if group[i] == "prod_gen_energycells_macro" then
@@ -59736,7 +59855,7 @@ function menu.displayPlan(frame)
 				row[2].handlers.onSliderCellActivated = function() menu.noupdate = true end
 				row[2].handlers.onSliderCellDeactivated = function() menu.noupdate = false end
 				row[6]:createButton({ mouseOverText = ReadText(1026, 8407) }):setIcon("menu_edit")
-				row[6].handlers.onClick = menu.buttonEditTradeRule
+				row[6].handlers.onClick = function () return menu.buttonEditTradeRule(C.GetContainerTradeRuleID(menu.buildstorage, "buy", "")) end
 
 				resourcetable:addEmptyRow()
 
@@ -59810,7 +59929,7 @@ function menu.displayPlan(frame)
 						row[3].handlers.onSliderCellActivated = function() menu.noupdate = true end
 						row[3].handlers.onSliderCellDeactivated = function() menu.noupdate = false end
 						row[6]:createButton({ mouseOverText = ReadText(1026, 8407) }):setIcon("menu_edit")
-						row[6].handlers.onClick = menu.buttonEditTradeRule
+						row[6].handlers.onClick = function () return menu.buttonEditTradeRule(C.GetContainerTradeRuleID(menu.buildstorage, "buy", ware.ware)) end
 
 						resourcetable:addEmptyRow(Helper.standardTextHeight / 2)
 
@@ -60141,6 +60260,16 @@ function menu.displayModuleInfo(frame)
 
 	local data = GetLibraryEntry(infolibrary, menu.selectedModule.macro)
 
+	ftable:addEmptyRow(Helper.standardTextHeight / 4)
+
+	if (menu.selectedModule.component == 0) or IsComponentConstruction(ConvertStringToLuaID(tostring(menu.selectedModule.component))) then
+		local row = ftable:addRow(false, {  })
+		row[1]:createText(ReadText(1001, 3601), { font = Helper.standardFontBold })
+		row[2]:createText(ConvertMoneyString(tonumber(C.GetEstimatedBuildPrice(menu.buildstorage, menu.selectedModule.macro)), false, true, 0, true) .. " " .. ReadText(1001, 101), { font = Helper.standardFontBold })
+
+		ftable:addEmptyRow(Helper.standardTextHeight / 4)
+	end
+
 	if ((infolibrary == "moduletypes_production") and data.allowproduction) or (infolibrary == "moduletypes_processing") then
 		local queueduration = 0
 		for i, proddata in ipairs(data.products) do
@@ -60172,7 +60301,7 @@ function menu.displayModuleInfo(frame)
 				row[1]:createText("   " .. ReadText(1001, 7403))
 				row[2]:createText("---")
 			end
-			ftable:addEmptyRow(Helper.standardTextHeight / 2)
+			ftable:addEmptyRow(Helper.standardTextHeight / 4)
 		end
 
 		if infolibrary == "moduletypes_production" then
@@ -64757,7 +64886,7 @@ function menu.onExpandSupplyResource(_, ftable, _, nodedata)
 			row[1]:setColSpan(2):createDropDown(Helper.traderuleOptions, { startOption = (traderuleid ~= 0) and traderuleid or -1, active = hasownlist }):setTextProperties({ fontsize = config.mapFontSize })
 			row[1].handlers.onDropDownConfirmed = function (_, id) return menu.dropdownTradeRule(menu.container, "supply", nodedata.ware, id) end
 			row[3]:createButton({ mouseOverText = ReadText(1026, 8407) }):setIcon("menu_edit")
-			row[3].handlers.onClick = menu.buttonEditTradeRule
+			row[3].handlers.onClick = function () return menu.buttonEditTradeRule(C.GetContainerTradeRuleID(menu.container, "supply", nodedata.ware)) end
 			-- reservations
 			if reservations[nodedata.ware] and (#reservations[nodedata.ware].buyoffer > 0) then
 				-- title
@@ -64838,7 +64967,7 @@ function menu.onExpandProduction(_, ftable, _, nodedata, productionmodules)
 	local nostorage, noresources, hacked, nonfunctional, destroyed, plannedremoval, planned, producing, paused, realpaused, queued = 0, 0, 0, 0, #productionmodules.destroyedcomponents, 0, productionmodules.numplanned, 0, 0, 0, 0
 	local sunlight, workforce, hullefficiency
 	for _, module in ipairs(productionmodules.components) do
-		if not IsComponentConstruction(module) then
+		if IsValidComponent(module) and (not IsComponentConstruction(module)) then
 			productioninfo_products		= productioninfo_products	or C.IsInfoUnlockedForPlayer(module, "production_products")
 			productioninfo_rate			= productioninfo_rate		or C.IsInfoUnlockedForPlayer(module, "production_rate")
 			productioninfo_resources	= productioninfo_resources	or C.IsInfoUnlockedForPlayer(module, "production_resources")
@@ -65077,7 +65206,7 @@ function menu.onExpandProcessing(_, ftable, _, nodedata, processingmodules)
 	local nostorage, noresources, hacked, nonfunctional, destroyed, plannedremoval, planned, producing, realpaused = 0, 0, 0, 0, #processingmodules.destroyedcomponents, 0, processingmodules.numplanned, 0, 0
 	for _, module in ipairs(processingmodules.components) do
 		local data = GetProcessingModuleData(module)
-		if not IsComponentConstruction(module) then
+		if IsValidComponent(module) and (not IsComponentConstruction(module)) then
 			productioninfo_products		= productioninfo_products	or C.IsInfoUnlockedForPlayer(module, "production_products")
 			productioninfo_rate			= productioninfo_rate		or C.IsInfoUnlockedForPlayer(module, "production_rate")
 			productioninfo_resources	= productioninfo_resources	or C.IsInfoUnlockedForPlayer(module, "production_resources")
@@ -65251,7 +65380,7 @@ function menu.getProductionEfficiency(modules)
 	local efficiency, numproducing = 0, 0
 	for _, module in ipairs(modules) do
 		-- components that are already being recycled are in state construction
-		if not IsComponentConstruction(module) then
+		if IsValidComponent(module) and (not IsComponentConstruction(module)) then
 			local proddata = GetProductionModuleData(module)
 			local ishacked, isfunctional = GetComponentData(module, "ishacked", "isfunctional")
 			if (not ishacked) and isfunctional and (proddata.state == "producing") then
@@ -65302,7 +65431,7 @@ function menu.getProductionWorkforceEfficiency(modules)
 	local efficiency, numproducing, unlocked = 0, 0, false
 	for _, module in ipairs(modules) do
 		-- components that are already being recycled are in state construction
-		if not IsComponentConstruction(module) then
+		if IsValidComponent(module) and (not IsComponentConstruction(module)) then
 			local proddata = GetProductionModuleData(module)
 			local ishacked, isfunctional = GetComponentData(module, "ishacked", "isfunctional")
 			if (not ishacked) and isfunctional and (proddata.state == "producing") then
@@ -65328,7 +65457,7 @@ function menu.getProductionHullEfficiency(modules)
 	local efficiency, numproducing, unlocked = 0, 0, false
 	for _, module in ipairs(modules) do
 		-- components that are already being recycled are in state construction
-		if not IsComponentConstruction(module) then
+		if IsValidComponent(module) and (not IsComponentConstruction(module)) then
 			local proddata = GetProductionModuleData(module)
 			local ishacked, isfunctional = GetComponentData(module, "ishacked", "isfunctional")
 			if (not ishacked) and isfunctional and (proddata.state == "producing") then
@@ -65354,7 +65483,7 @@ function menu.getProductionCycleTime(modules)
 	local cycle, numproducing = nil, 0
 	for _, module in ipairs(modules) do
 		-- components that are already being recycled are in state construction
-		if not IsComponentConstruction(module) then
+		if IsValidComponent(module) and (not IsComponentConstruction(module)) then
 			local proddata = GetProductionModuleData(module)
 			local ishacked, isfunctional = GetComponentData(module, "ishacked", "isfunctional")
 			if (not ishacked) and isfunctional and (proddata.state == "producing") then
@@ -65384,7 +65513,7 @@ function menu.getProductionRemainingTime(ware, modules, macro)
 	local remainingtime, numproducing = nil, 0
 	for _, module in ipairs(modules) do
 		-- components that are already being recycled are in state construction
-		if not IsComponentConstruction(module) then
+		if IsValidComponent(module) and (not IsComponentConstruction(module)) then
 			local proddata = GetProductionModuleData(module)
 			if proddata.state ~= "empty" then
 				local ishacked, isfunctional = GetComponentData(module, "ishacked", "isfunctional")
@@ -65439,7 +65568,7 @@ function menu.getProcessingCycleTime(modules)
 	local cycle, numprocessing = nil, 0
 	for _, module in ipairs(modules) do
 		-- components that are already being recycled are in state construction
-		if not IsComponentConstruction(module) then
+		if IsValidComponent(module) and (not IsComponentConstruction(module)) then
 			local proddata = GetProcessingModuleData(module)
 			local ishacked, isfunctional = GetComponentData(module, "ishacked", "isfunctional")
 			if (not ishacked) and isfunctional and (proddata.state == "processing") then
@@ -65676,7 +65805,7 @@ function menu.onExpandBuildModule(_, ftable, _, nodedata, buildmodule)
 		row[1]:setColSpan(3):createDropDown(Helper.traderuleOptions, { startOption = (traderuleid ~= 0) and traderuleid or -1, active = hasownlist }):setTextProperties({ fontsize = config.mapFontSize })
 		row[1].handlers.onDropDownConfirmed = function (_, id) return menu.dropdownTradeRule(menu.container, "build", "", id) end
 		row[4]:createButton({ mouseOverText = ReadText(1026, 8407) }):setIcon("menu_edit")
-		row[4].handlers.onClick = menu.buttonEditTradeRule
+		row[4].handlers.onClick = function () return menu.buttonEditTradeRule(C.GetContainerTradeRuleID(menu.container, "build", "")) end
 
 		local row = ftable:addRow(false, {  })
 		row[1]:setColSpan(4):createText("")
@@ -66122,7 +66251,7 @@ function menu.onExpandSupply(_, ftable, _, nodedata)
 		row[1]:setColSpan(2):createDropDown(Helper.traderuleOptions, { startOption = (traderuleid ~= 0) and traderuleid or -1, active = hasownlist }):setTextProperties({ fontsize = config.mapFontSize })
 		row[1].handlers.onDropDownConfirmed = function (_, id) return menu.dropdownTradeRule(menu.container, "supply", "", id) end
 		row[3]:createButton({ mouseOverText = ReadText(1026, 8407) }):setIcon("menu_edit")
-		row[3].handlers.onClick = menu.buttonEditTradeRule
+		row[3].handlers.onClick = function () return menu.buttonEditTradeRule(C.GetContainerTradeRuleID(menu.container, "supply", "")) end
 	end
 
 	menu.restoreTableState("nodeTable", ftable)
@@ -66541,8 +66670,8 @@ function menu.buttonPauseProcessingModules(processingmodules, pause)
 end
 
 
-function menu.buttonEditTradeRule()
-	Helper.closeMenuAndOpenNewMenu(menu, "PlayerInfoMenu", { 0, 0, "globalorders" })
+function menu.buttonEditTradeRule(traderuleid)
+	Helper.closeMenuAndOpenNewMenu(menu, "PlayerInfoMenu", { 0, 0, "globalorders", { "traderule", (traderuleid ~= 0) and traderuleid or nil } })
 	menu.cleanup()
 end
 
@@ -67092,7 +67221,7 @@ function menu.updateProductionNode(node, productionmodules)
 	local isknown = false
 	for _, module in ipairs(productionmodules.components) do
 		-- components that are already being recycled are in state construction
-		if not IsComponentConstruction(module) then
+		if IsValidComponent(module) and (not IsComponentConstruction(module)) then
 			local proddata = GetProductionModuleData(module)
 			if proddata.state ~= "empty" then
 				local ishacked, isfunctional, ispausedmanually = GetComponentData(module, "ishacked", "isfunctional", "ispausedmanually")
@@ -67267,7 +67396,7 @@ function menu.updateProcessingNode(node, processingmodules)
 	local isknown = false
 	for _, module in ipairs(processingmodules.components) do
 		-- components that are already being recycled are in state construction
-		if not IsComponentConstruction(module) then
+		if IsValidComponent(module) and (not IsComponentConstruction(module)) then
 			local data = GetProcessingModuleData(module)
 			local ishacked, isfunctional, ispausedmanually = GetComponentData(module, "ishacked", "isfunctional", "ispausedmanually")
 			if ishacked then
@@ -81036,7 +81165,7 @@ function menu.createContentTable(frame, position)
 								local uix_isOverrideClickEvent
 								if menu.uix_callbacks ["interactMenu_clickSubsection"] then
 									for uix_id, uix_callback in pairs (menu.uix_callbacks ["interactMenu_clickSubsection"]) do
-										uix_isOverrideClickEvent = uix_callback (data)
+										uix_isOverrideClickEvent = uix_callback (menu.actions[subsection.id])
 										if uix_isOverrideClickEvent then
 											break
 										end
@@ -81254,7 +81383,25 @@ function menu.createSubSectionTable(frame, position)
 			button.properties.mouseOverText = entry.text
 		end
 		button:setText(text, { color = entry.active and Color["text_normal"] or Color["text_inactive"] })
-		row[1].handlers.onClick = entry.script
+
+		-- kuertee start: callback
+		-- row[1].handlers.onClick = entry.script
+		row[1].handlers.onClick = function()
+			local uix_isOverrideClickEvent
+			if menu.uix_callbacks ["interactMenu_clickAction"] then
+				for uix_id, uix_callback in pairs (menu.uix_callbacks ["interactMenu_clickAction"]) do
+					uix_isOverrideClickEvent = uix_callback (entry)
+					if uix_isOverrideClickEvent then
+						break
+					end
+				end
+			end
+			if not uix_isOverrideClickEvent then
+				entry.script()
+			end
+		end
+		-- kuertee end: callback
+
 		if entry.text2 then
 			button:setText2(entry.text2, { halign = "right", color = entry.active and Color["text_normal"] or Color["text_inactive"], font = entry.text2font or Helper.standardFont })
 		end
@@ -87327,7 +87474,10 @@ function ModLua.loadSaveCallback(_, filename)
     menu.displayInit()
 end
 
-function ModLua.addSavegameRow(ftable, savegame, name, slot, maxSlot)
+-- kuertee start:
+-- function ModLua.addSavegameRow(ftable, savegame, name, slot)
+-- kuertee end
+function ModLua.addSavegameRow(ftable, savegame, name, slot, idx, maxIdx)
     -- kuertee start: callback
     local isAddSaveGameToList = true
     savegame.uix_isDisplayedInList = true
@@ -87345,7 +87495,6 @@ function ModLua.addSavegameRow(ftable, savegame, name, slot, maxSlot)
     end
     -- kuertee end: callback
 
-
     -- kuertee start: callback
     if menu.uix_callbacks ["addSavegameRow_changeSaveGameDisplayName"] then
     	for uix_id, uix_callback in pairs (menu.uix_callbacks ["addSavegameRow_changeSaveGameDisplayName"]) do
@@ -87357,7 +87506,7 @@ function ModLua.addSavegameRow(ftable, savegame, name, slot, maxSlot)
     -- kuertee start: callback
     if menu.uix_callbacks ["addSavegameRow_preSaveGameRowAdd"] then
     	for uix_id, uix_callback in pairs (menu.uix_callbacks ["addSavegameRow_preSaveGameRowAdd"]) do
-    		uix_callback(ftable, savegame, name, slot, maxSlot, config)
+    		uix_callback(ftable, savegame, name, slot, idx, maxIdx, config)
     	end
     end
     -- kuertee end: callback
@@ -87401,12 +87550,12 @@ function ModLua.addSavegameRow(ftable, savegame, name, slot, maxSlot)
     if uix_isAddRowHeightForExtraInfo ~= false then
     -- kuertee end: callback
 
-    if invalid or savegame.modified or isonlinesaveinofflineslot then
-    	height = 2 * Helper.scaleY(config.standardTextHeight) + Helper.borderSize
-    end
+	    if invalid or savegame.modified or isonlinesaveinofflineslot then
+	    	height = 2 * Helper.scaleY(config.standardTextHeight) + Helper.borderSize
+	    end
 
     -- kuertee start: callback
-end
+	end
     -- kuertee end: callback
 
     local warningicon = ""
@@ -87428,10 +87577,10 @@ end
     if uix_isBoldFileName ~= false then
     -- kuertee end: callback
 
-    row[3].properties.text.font = config.fontBold
+    	row[3].properties.text.font = config.fontBold
 
     -- kuertee start: callback
-end
+	end
     -- kuertee end: callback
 
     row[3].properties.text.scaling = true
@@ -87440,22 +87589,22 @@ end
     if uix_isAddRowHeightForExtraInfo ~= false then
     -- kuertee end
 
-    if invalid then
-    	icon:setText2(function () return menu.errorSavegame(savegame) end, (not invalid) and config.standardTextProperties or config.disabledTextProperties)
-    	row[3].properties.text2.y = config.standardTextHeight
-    	row[3].properties.text2.scaling = true
-    elseif savegame.modified then
-    	icon:setText2(ColorText["text_warning"] .. ReadText(1001, 8901) .. "\27X", (not invalid) and config.standardTextProperties or config.disabledTextProperties)
-    	row[3].properties.text2.y = config.standardTextHeight
-    	row[3].properties.text2.scaling = true
-    elseif isonlinesaveinofflineslot then
-    	icon:setText2(ColorText["text_online_save"] .. ReadText(1001, 11570) .. "\27X", (not invalid) and config.standardTextProperties or config.disabledTextProperties)
-    	row[3].properties.text2.y = config.standardTextHeight
-    	row[3].properties.text2.scaling = true
-    end
+	    if invalid then
+	    	icon:setText2(function () return menu.errorSavegame(savegame) end, (not invalid) and config.standardTextProperties or config.disabledTextProperties)
+	    	row[3].properties.text2.y = config.standardTextHeight
+	    	row[3].properties.text2.scaling = true
+	    elseif savegame.modified then
+	    	icon:setText2(ColorText["text_warning"] .. ReadText(1001, 8901) .. "\27X", (not invalid) and config.standardTextProperties or config.disabledTextProperties)
+	    	row[3].properties.text2.y = config.standardTextHeight
+	    	row[3].properties.text2.scaling = true
+	    elseif isonlinesaveinofflineslot then
+	    	icon:setText2(ColorText["text_online_save"] .. ReadText(1001, 11570) .. "\27X", (not invalid) and config.standardTextProperties or config.disabledTextProperties)
+	    	row[3].properties.text2.y = config.standardTextHeight
+	    	row[3].properties.text2.scaling = true
+	    end
 
     -- kuertee start:
-end
+	end
     -- kuertee end
 
     row[4]:setColSpan(2):createText(savegame.error and "" or savegame.time, (not invalid) and config.standardTextProperties or config.disabledTextProperties)
@@ -87466,7 +87615,7 @@ end
     local maxRowHeight = row:getHeight()
     if menu.uix_callbacks ["addSavegameRow_postSaveGameRowAdd"] then
     	for uix_id, uix_callback in pairs (menu.uix_callbacks ["addSavegameRow_postSaveGameRowAdd"]) do
-    		maxRowHeight = math.max(maxRowHeight, uix_callback(ftable, savegame, name, slot, maxSlot, config))
+    		maxRowHeight = math.max(maxRowHeight, uix_callback(ftable, savegame, name, slot, idx, maxIdx, config))
     	end
     end
     -- kuertee end: callback
@@ -88220,7 +88369,11 @@ function ModLua.displaySavegameOptions(optionParameter)
                 -- kuertee end: callback
 
                 local idx = tonumber(string.match(savegame.filename, "^save_(%d+)"))
-                maxRowHeight = math.max(maxRowHeight, menu.addSavegameRow(ftable, savegame, savegame.displayedname, i, #sortablesaves))
+
+                -- kuertee start:
+                -- maxRowHeight = math.max(maxRowHeight, menu.addSavegameRow(ftable, savegame, savegame.displayedname, idx))
+                maxRowHeight = math.max(maxRowHeight, menu.addSavegameRow(ftable, savegame, savegame.displayedname, idx, i, #sortablesaves))
+                -- kuertee end
 
                 -- kuertee start: callback
                 if menu.uix_callbacks ["displaySaveGameOptions_postSaveGameRowAdd"] then
@@ -89548,7 +89701,7 @@ function ModLua.onExpandLSOStorageNode(menu, container, _, ftable, _, nodedata)
 				row[1].handlers.onDropDownConfirmed = function (_, id) return Helper.dropdownTradeRule(menu, container, "buy", nodedata.ware, id) end
 				row[1].handlers.onDropDownActivated = function () menu.noupdate = true end
 				row[3]:createButton({ mouseOverText = ReadText(1026, 8407) }):setIcon("menu_edit")
-				row[3].handlers.onClick = function () return Helper.buttonEditTradeRule(menu) end
+				row[3].handlers.onClick = function () return Helper.buttonEditTradeRule(menu, C.GetContainerTradeRuleID(container, "buy", nodedata.ware)) end
 			end
 			-- create / remove offer
 			if (waretype == "trade") or (waretype == "product") then
@@ -89711,7 +89864,7 @@ function ModLua.onExpandLSOStorageNode(menu, container, _, ftable, _, nodedata)
 				row[1].handlers.onDropDownConfirmed = function (_, id) return Helper.dropdownTradeRule(menu, container, "sell", nodedata.ware, id) end
 				row[1].handlers.onDropDownActivated = function () menu.noupdate = true end
 				row[3]:createButton({ mouseOverText = ReadText(1026, 8407) }):setIcon("menu_edit")
-				row[3].handlers.onClick = function () return Helper.buttonEditTradeRule(menu) end
+				row[3].handlers.onClick = function () return Helper.buttonEditTradeRule(menu, C.GetContainerTradeRuleID(container, "sell", nodedata.ware)) end
 			end
 			-- create / remove offer
 			if (waretype == "trade") or (waretype == "resource") then
