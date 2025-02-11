@@ -490,9 +490,9 @@ function menu.createTable_kuertee(frame, tableProperties)
 	elseif string.find ("" .. tostring (menu.mode), "custom_") then
 		-- <open_menu menu="UserQuestionMenu" param="[0, 0, 'custom', [$title, $text, null, ['kATD_on_death_notice_read', {111204, 903}], null, 'right']]" />
 		-- local ftable = frame:addTable (numCols, { tabOrder = 1, borderEnabled = true, width = tableProperties.width, x = tableProperties.x, y = tableProperties.y, defaultInteractiveObject = true })
-		if callbacks ["createTable_new_custom_table"] then
-			for _, callback in ipairs (callbacks ["createTable_new_custom_table"]) do
-				ftable = callback (frame, tableProperties, config)
+		if menu.uix_callbacks ["createTable_new_custom_table"] then
+			for uix_id, uix_callback in pairs (menu.uix_callbacks ["createTable_new_custom_table"]) do
+				ftable = uix_callback (frame, tableProperties, config)
 				if ftable then break end
 			end
 		end
