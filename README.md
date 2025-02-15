@@ -32,6 +32,9 @@ To load custom lua files, use ui.xml as described here: https://wiki.egosoft.com
 
 Updates
 =======
+v7.5.0092 beta, 15 Feb 2025:
+-Tweak: compatibility with 7.5 rc 1 of the base game.
+
 v7.5.0091 beta, 12 Feb 2025:
 -Bug-fix: UserQuestion menu bugs that prevented "custom_" menus (e.g. menu used by Modifications Part Trader mod) from displaying.
 
