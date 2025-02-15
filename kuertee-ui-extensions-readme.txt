@@ -5,6 +5,9 @@ by kuertee. Contributors: Erixon, Forleyor, Mycu, Runekn, AlexandreTK, IALuir, s
 
 Updates
 =======
+v7.1.20, 15 Feb 2025:
+-Bug-fix: French language file was breaking French localisation within the game.
+
 v7.1.19, 25 Jan 2025:
 -New feature: UI callback, updatePlotSize_on_before_extend, in Map Menu for sticeIO's mod.
 
