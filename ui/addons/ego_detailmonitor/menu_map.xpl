@@ -7144,6 +7144,24 @@ function menu.getFleetName(object64)
 	end
 end
 
+function menu.addInternallyStoredShips(id)
+	if C.IsComponentClass(id, "container") then
+		local dockedships = {}
+		Helper.ffiVLA(dockedships, "UniverseID", C.GetNumDockedShips, C.GetDockedShips, id, nil)
+
+		for i = 1, #dockedships do
+			local dockedID = ConvertStringTo64Bit(tostring(dockedships[i]))
+			local hull, purpose, ismodule, uirelation, isinternallystored = GetComponentData(dockedID, "hullpercent", "primarypurpose", "ismodule", "uirelation", "isinternallystored")
+			if isinternallystored then
+				table.insert(menu.renderedComponents, { id = dockedID, name = ffi.string(C.GetComponentName(dockedID)), fleetname = menu.getFleetName(dockedID), objectid = ismodule and "" or ffi.string(C.GetObjectIDCode(dockedID)), class = ffi.string(C.GetComponentClass(dockedID)), hull = hull, purpose = purpose, relation = uirelation })
+				menu.renderedComponentsRef[dockedID] = true
+
+				menu.addInternallyStoredShips(dockedID)
+			end
+		end
+	end
+end
+
 function menu.updateRenderedComponents()
 	menu.renderedComponents = {}
 	menu.renderedComponentsRef = {}
@@ -7158,6 +7176,8 @@ function menu.updateRenderedComponents()
 				else
 					menu.renderedComponents[i] = { id = id, name = ffi.string(C.GetComponentName(id)), fleetname = menu.getFleetName(id), objectid = ismodule and "" or ffi.string(C.GetObjectIDCode(id)), class = ffi.string(C.GetComponentClass(id)), hull = hull, purpose = purpose, relation = uirelation }
 					menu.renderedComponentsRef[ConvertStringTo64Bit(tostring(id))] = true
+
+					menu.addInternallyStoredShips(id)
 				end
 			else
 				table.remove(menu.renderedComponents, i)
