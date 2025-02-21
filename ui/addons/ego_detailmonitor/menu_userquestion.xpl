@@ -1,15 +1,16 @@
 ﻿
 -- param == { 0, 0, mode, modeparam }
--- modes: - "hackpanel",		param: { panelcomponent, panelconnection, paneltype }
---		  - "abortupgrade",		param: { container, task, price }
---		  - "transporter",		param: { transportercomponent, transporterconnection }
---		  - "markashostile",	param: { component }
+-- modes: - "hackpanel",			param: { panelcomponent, panelconnection, paneltype }
+--		  - "abortupgrade",			param: { container, task, price }
+--		  - "transporter",			param: { transportercomponent, transporterconnection }
+--		  - "markashostile",		param: { component }
 --		  - "discardstationeditor"
---		  - "custom",			param: { title, question, { leftoptionid, leftoptionname[, uicallbackparam, ...] }, { rightoptionid, rightoptionname[, uicallbackparam, ...] }[, uicallbackmode][, preselectoption ("left"|"right")] }
---			uicallbackmodes:	- "invertinput",				param: { rangeid, configname, value }
---								- "autoroll",					param: { value }
---								- "mouse_steering_adaptive",	param: { value }
---								- "stick_steering_adaptive",	param: { value }
+--		  - "removebuildstorage",	param: { buildstorage }
+--		  - "custom",				param: { title, question, { leftoptionid, leftoptionname[, uicallbackparam, ...] }, { rightoptionid, rightoptionname[, uicallbackparam, ...] }[, uicallbackmode][, preselectoption ("left"|"right")] }
+--			uicallbackmodes:		- "invertinput",				param: { rangeid, configname, value }
+--									- "autoroll",					param: { value }
+--									- "mouse_steering_adaptive",	param: { value }
+--									- "stick_steering_adaptive",	param: { value }
 
 -- ffi setup
 local ffi = require("ffi")
@@ -23,6 +24,8 @@ ffi.cdef[[
 	} UIComponentSlot;
 	bool CancelConstruction(UniverseID containerid, BuildTaskID id);
 	const char* GetControlPanelName(UIComponentSlot controlpanel);
+	void ReloadSaveList(void);
+	bool RemoveBuildStorage(UniverseID buildstorageid);
 	void SetAutoRoll(bool value);
 	void SetInversionSetting(uint32_t uirangeid, const char* parametername, bool value);
 	void SetJoystickSteeringAdapative(bool value);
@@ -46,7 +49,7 @@ local config = {
 }
 
 -- kuertee start:
-local callbacks = {}
+menu.uix_callbacks = {}
 -- kuertee end
 
 local function init()
@@ -68,8 +71,6 @@ end
 
 -- kuertee start:
 function menu.init_kuertee ()
-	menu.loadModLuas()
-	-- DebugError("uix load success: " .. tostring(debug.getinfo(1).source))
 end
 -- kuertee end
 
@@ -83,12 +84,13 @@ function menu.cleanup()
 	menu.upgradecontainer = nil
 	menu.upgradetask = nil
 	menu.upgradeprice = nil
+	menu.buildstorage = nil
 	menu.saveOption = false
 
 	-- kuertee start:
-	if callbacks ["cleanup_end"] then
-		for _, callback in ipairs (callbacks ["cleanup_end"]) do
-			callback ()
+	if menu.uix_callbacks ["cleanup_end"] then
+		for uix_id, uix_callback in pairs (menu.uix_callbacks ["cleanup_end"]) do
+			uix_callback ()
 		end
 	end
 	-- kuertee end
@@ -127,6 +129,8 @@ function menu.confirm()
 			C.SetUserData("tutorial_started_from", tostring(menu.modeparam[2]))
 			NewGame(menu.modeparam[1])
 		end
+	elseif menu.mode == "removebuildstorage" then
+		C.RemoveBuildStorage(menu.buildstorage)
 	end
 	if menu.saveOption then
 		__CORE_DETAILMONITOR_USERQUESTION[menu.mode] = true
@@ -183,6 +187,8 @@ function menu.onShowMenu()
 		menu.hostilecomponent = ConvertIDTo64Bit(menu.modeparam[1])
 	elseif menu.mode == "discardstationeditor" then
 		Helper.unregisterStationEditorChanges()
+	elseif menu.mode == "removebuildstorage" then
+		menu.buildstorage = ConvertIDTo64Bit(menu.modeparam[1])
 	end
 
 	if __CORE_DETAILMONITOR_USERQUESTION[menu.mode] then
@@ -200,9 +206,9 @@ function menu.createInfoFrame()
 
 	-- kuertee start: callback
 	local frameProperties, isUseFrameHeight
-	if callbacks ["createInfoFrame_custom_frame_properties"] then
-		for _, callback in ipairs (callbacks ["createInfoFrame_custom_frame_properties"]) do
-			frameProperties, isUseFrameHeight = callback (config)
+	if menu.uix_callbacks ["createInfoFrame_custom_frame_properties"] then
+		for uix_id, uix_callback in pairs (menu.uix_callbacks ["createInfoFrame_custom_frame_properties"]) do
+			frameProperties, isUseFrameHeight = uix_callback (config)
 			if frameProperties then break end
 		end
 		-- Lib.Print_Table (frameProperties)
@@ -258,10 +264,15 @@ function menu.createTable(frame, tableProperties)
 	end
 	-- kuertee end: custom mode
 
+	local hasSaveOption = true
+	if (menu.mode == "custom") or (menu.mode == "starttutorial") or (menu.mode == "removebuildstorage") then
+		hasSaveOption = false
+	end
 	local numCols = 6
-	if (menu.mode == "custom") or (menu.mode == "starttutorial") then
+	if not hasSaveOption then
 		numCols = 5
 	end
+
 	local ftable = frame:addTable(numCols, { tabOrder = 1, borderEnabled = true, width = tableProperties.width, x = tableProperties.x, y = tableProperties.y, defaultInteractiveObject = true })
 	if menu.mode == "custom" then
 		local leftwith = math.ceil(C.GetTextWidth(menu.modeparam[3][2] or "", Helper.standardFont, Helper.scaleFont(Helper.standardFont, Helper.standardFontSize)))
@@ -272,7 +283,7 @@ function menu.createTable(frame, tableProperties)
 		local buttonwidth = math.max(minbuttonwidth, math.min(maxbuttonwidth, math.max(leftwith, rightwidth) + 2 * Helper.standardTextOffsetx))
 		ftable:setColWidth(2, buttonwidth, false)
 		ftable:setColWidth(4, buttonwidth, false)
-	elseif menu.mode == "starttutorial" then
+	elseif not hasSaveOption then
 		ftable:setColWidth(2, 0.4 * tableProperties.width - Helper.borderSize, false)
 		ftable:setColWidth(4, 0.4 * tableProperties.width - Helper.borderSize, false)
 	else
@@ -287,7 +298,7 @@ function menu.createTable(frame, tableProperties)
 
 		local row = ftable:addRow(false, { fixed = true })
 		row[1]:setColSpan(numCols):createText(ReadText(1001, 9702) .. ReadText(1001, 120))
-		
+
 		local row = ftable:addRow(false, { fixed = true })
 		row[1]:setColSpan(numCols):createText(ffi.string(C.GetControlPanelName(menu.hacktarget)))
 	elseif menu.mode == "abortupgrade" then
@@ -320,6 +331,12 @@ function menu.createTable(frame, tableProperties)
 
 		local row = ftable:addRow(false, { fixed = true })
 		row[1]:setColSpan(numCols):createText(ReadText(1001, 9727), { wordwrap = true })
+	elseif menu.mode == "removebuildstorage" then
+		local row = ftable:addRow(false, { fixed = true })
+		row[1]:setColSpan(numCols):createText(ReadText(1001, 11667), Helper.headerRowCenteredProperties)
+
+		local row = ftable:addRow(false, { fixed = true })
+		row[1]:setColSpan(numCols):createText(ReadText(1001, 11668), { wordwrap = true })
 	elseif menu.mode == "custom" then
 		local row = ftable:addRow(false, { fixed = true })
 		row[1]:setColSpan(numCols):createText(menu.modeparam[1] or "", Helper.headerRowCenteredProperties)
@@ -349,6 +366,13 @@ function menu.createTable(frame, tableProperties)
 		row[2].handlers.onClick = menu.confirm
 		row[4]:createButton({ helpOverlayID = "custom_" .. menu.mode .. "_cancel", helpOverlayText = " ", helpOverlayHighlightOnly = true }):setText(ReadText(1001, 64), { halign = "center" })
 		row[4].handlers.onClick = function () return menu.onCloseElement("back", true) end
+	elseif not hasSaveOption then
+		local row = ftable:addRow(true, { fixed = true })
+		row[2]:createButton({ helpOverlayID = "custom_" .. menu.mode .. "_confirm", helpOverlayText = " ", helpOverlayHighlightOnly = true }):setText(ReadText(1001, 2821), { halign = "center" })
+		row[2].handlers.onClick = menu.confirm
+		row[4]:createButton({ helpOverlayID = "custom_" .. menu.mode .. "_cancel", helpOverlayText = " ", helpOverlayHighlightOnly = true }):setText(ReadText(1001, 64), { halign = "center" })
+		row[4].handlers.onClick = function () return menu.onCloseElement("back", true) end
+		ftable:setSelectedCol(4)
 	else
 		local row = ftable:addRow(true, { fixed = true })
 		row[1]:createCheckBox(function () return menu.saveOption end, { height = Helper.standardButtonHeight })
@@ -395,6 +419,7 @@ function menu.onGameSaved(_, success)
 	if menu.saveTriggered then
 		menu.saveTriggered = nil
 		if menu.mode == "starttutorial" then
+			C.ReloadSaveList()
 			C.SetUserData("tutorial_started_from", tostring(menu.modeparam[2]))
 			if success then
 				NewGame(menu.modeparam[1])
@@ -420,33 +445,6 @@ end
 -- menu helpers
 
 -- kuertee start:
-function menu.registerCallback (callbackName, callbackFunction)
-	-- note 1: format is generally [function name]_[action]. e.g.: in kuertee_menu_transporter, "display_on_set_room_active" overrides the room's active property with the return of the callback.
-	-- note 2: events have the word "_on_" followed by a PRESENT TENSE verb. e.g.: in kuertee_menu_transporter, "display_on_set_buttontable" is called after all of the rows of buttontable are set.
-	-- note 3: new callbacks can be added or existing callbacks can be edited. but commit your additions/changes to the mod's GIT repository.
-	-- note 4: search for the callback names to see where they are executed.
-	-- note 5: if a callback requires a return value, return it in an object var. e.g. "display_on_set_room_active" requires a return of {active = true | false}.
-
-	-- to find callbacks available for this menu,
-	-- reg-ex search for callbacks.*\[\".*\]
-
-	if callbacks [callbackName] == nil then
-		callbacks [callbackName] = {}
-	end
-	table.insert (callbacks [callbackName], callbackFunction)
-end
-
-function menu.deregisterCallback(callbackName, callbackFunction)
-	-- for i, callback in ipairs(callbacks[callbackName]) do
-	if callbacks[callbackName] and #callbacks[callbackName] > 0 then
-		for i = #callbacks[callbackName], 1, -1 do
-			if callbacks[callbackName][i] == callbackFunction then
-				table.remove(callbacks[callbackName], i)
-			end
-		end
-	end
-end
-
 function menu.createTable_kuertee(frame, tableProperties)
 	-- DebugError ("kuertee_menu_userquestion createTable menu.mode " .. tostring (menu.mode))
 	-- DebugError ("kuertee_menu_userquestion createTable #callbacks ['createTable_new_custom_table'] " .. tostring (#callbacks ["createTable_new_custom_table"]))
@@ -494,9 +492,9 @@ function menu.createTable_kuertee(frame, tableProperties)
 	elseif string.find ("" .. tostring (menu.mode), "custom_") then
 		-- <open_menu menu="UserQuestionMenu" param="[0, 0, 'custom', [$title, $text, null, ['kATD_on_death_notice_read', {111204, 903}], null, 'right']]" />
 		-- local ftable = frame:addTable (numCols, { tabOrder = 1, borderEnabled = true, width = tableProperties.width, x = tableProperties.x, y = tableProperties.y, defaultInteractiveObject = true })
-		if callbacks ["createTable_new_custom_table"] then
-			for _, callback in ipairs (callbacks ["createTable_new_custom_table"]) do
-				ftable = callback (frame, tableProperties, config)
+		if menu.uix_callbacks ["createTable_new_custom_table"] then
+			for uix_id, uix_callback in pairs (menu.uix_callbacks ["createTable_new_custom_table"]) do
+				ftable = uix_callback (frame, tableProperties, config)
 				if ftable then break end
 			end
 		end
@@ -504,10 +502,109 @@ function menu.createTable_kuertee(frame, tableProperties)
 	return ftable
 end
 
-function menu.loadModLuas()
-	if Helper then
-		Helper.loadModLuas(menu.name, "menu_userquestion_uix")
-	end
+menu.uix_callbackCount = 0
+function menu.registerCallback(callbackName, callbackFunction, id)
+    -- note 1: format is generally [function name]_[action]. e.g.: in kuertee_menu_transporter, "display_on_set_room_active" overrides the room's active property with the return of the callback.
+    -- note 2: events have the word "_on_" followed by a PRESENT TENSE verb. e.g.: in kuertee_menu_transporter, "display_on_set_buttontable" is called after all of the rows of buttontable are set.
+    -- note 3: new callbacks can be added or existing callbacks can be edited. but commit your additions/changes to the mod's GIT repository.
+    -- note 4: search for the callback names to see where they are executed.
+    -- note 5: if a callback requires a return value, return it in an object var. e.g. "display_on_set_room_active" requires a return of {active = true | false}.
+    if menu.uix_callbacks [callbackName] == nil then
+        menu.uix_callbacks [callbackName] = {}
+    end
+    if not menu.uix_callbacks[callbackName][id] then
+        if not id then
+            menu.uix_callbackCount = menu.uix_callbackCount + 1
+            id = "_" .. tostring(menu.uix_callbackCount)
+        end
+        menu.uix_callbacks[callbackName][id] = callbackFunction
+        if Helper.isDebugCallbacks then
+            Helper.debugText_forced(menu.name .. " uix registerCallback: menu.uix_callbacks[" .. tostring(callbackName) .. "][" .. tostring(id) .. "]: " .. tostring(menu.uix_callbacks[callbackName][id]))
+        end
+    else
+        Helper.debugText_forced(menu.name .. " uix registerCallback: callback at " .. callbackName .. " with id " .. tostring(id) .. " was already previously registered")
+    end
+end
+
+menu.uix_isDeregisterQueued = nil
+menu.uix_callbacks_toDeregister = {}
+function menu.deregisterCallback(callbackName, callbackFunction, id)
+    if not menu.uix_callbacks_toDeregister[callbackName] then
+        menu.uix_callbacks_toDeregister[callbackName] = {}
+    end
+    if id then
+        table.insert(menu.uix_callbacks_toDeregister[callbackName], id)
+    else
+        if menu.uix_callbacks[callbackName] then
+            for id, func in pairs(menu.uix_callbacks[callbackName]) do
+                if func == callbackFunction then
+                    table.insert(menu.uix_callbacks_toDeregister[callbackName], id)
+                end
+            end
+        end
+    end
+    if not menu.uix_isDeregisterQueued then
+        menu.uix_isDeregisterQueued = true
+        Helper.addDelayedOneTimeCallbackOnUpdate(menu.deregisterCallbacksNow, true, getElapsedTime() + 1)
+    end
+end
+
+function menu.deregisterCallbacksNow()
+    menu.uix_isDeregisterQueued = nil
+    for callbackName, ids in pairs(menu.uix_callbacks_toDeregister) do
+        if menu.uix_callbacks[callbackName] then
+            for _, id in ipairs(ids) do
+                if menu.uix_callbacks[callbackName][id] then
+                    if Helper.isDebugCallbacks then
+                        Helper.debugText_forced(menu.name .. " uix deregisterCallbacksNow (pre): menu.uix_callbacks[" .. tostring(callbackName) .. "][" .. tostring(id) .. "]: " .. tostring(menu.uix_callbacks[callbackName][id]))
+                    end
+                    menu.uix_callbacks[callbackName][id] = nil
+                    if Helper.isDebugCallbacks then
+                        Helper.debugText_forced(menu.name .. " uix deregisterCallbacksNow (post): menu.uix_callbacks[" .. tostring(callbackName) .. "][" .. tostring(id) .. "]: " .. tostring(menu.uix_callbacks[callbackName][id]))
+                    end
+                else
+                    Helper.debugText_forced(menu.name .. " uix deregisterCallbacksNow: callback at " .. callbackName .. " with id " .. tostring(id) .. " doesn't exist")
+                end
+            end
+        end
+    end
+    menu.uix_callbacks_toDeregister = {}
+end
+
+menu.uix_isUpdateQueued = nil
+menu.uix_callbacks_toUpdate = {}
+function menu.updateCallback(callbackName, id, callbackFunction)
+    if not menu.uix_callbacks_toUpdate[callbackName] then
+        menu.uix_callbacks_toUpdate[callbackName] = {}
+    end
+    if id then
+        table.insert(menu.uix_callbacks_toUpdate[callbackName], {id = id, callbackFunction = callbackFunction})
+    end
+    if not menu.uix_isUpdateQueued then
+        menu.uix_isUpdateQueued = true
+        Helper.addDelayedOneTimeCallbackOnUpdate(menu.updateCallbacksNow, true, getElapsedTime() + 1)
+    end
+end
+
+function menu.updateCallbacksNow()
+    menu.uix_isUpdateQueued = nil
+    for callbackName, updateDatas in pairs(menu.uix_callbacks_toUpdate) do
+        if menu.uix_callbacks[callbackName] then
+            for _, updateData in ipairs(updateDatas) do
+                if menu.uix_callbacks[callbackName][updateData.id] then
+                    if Helper.isDebugCallbacks then
+                        Helper.debugText_forced(menu.name .. " uix updateCallbacksNow (pre): menu.uix_callbacks[" .. tostring(callbackName) .. "][" .. tostring(updateData.id) .. "]: " .. tostring(menu.uix_callbacks[callbackName][updateData.id]))
+                    end
+                    menu.uix_callbacks[callbackName][updateData.id] = updateData.callbackFunction
+                    if Helper.isDebugCallbacks then
+                        Helper.debugText_forced(menu.name .. " uix updateCallbacksNow (post): menu.uix_callbacks[" .. tostring(callbackName) .. "][" .. tostring(updateData.id) .. "]: " .. tostring(menu.uix_callbacks[callbackName][updateData.id]))
+                    end
+                else
+                    Helper.debugText_forced(menu.name .. " uix updateCallbacksNow: callback at " .. callbackName .. " with id " .. tostring(id) .. " doesn't exist")
+                end
+            end
+        end
+    end
 end
 -- kuertee end
 

@@ -255,7 +255,7 @@ local config = {
 	contextFrameLayer = 2,
 	nodeoffsetx = 30,
 	nodewidth = 270,
-	dronetypes = { 
+	dronetypes = {
 		{ type = "transport",	name = ReadText(1001, 7104),	autoname = ReadText(1001, 4207) },
 		{ type = "defence",		name = ReadText(1001, 1310),	autoname = ReadText(1001, 4216) },
 		{ type = "repair",		name = ReadText(1001, 3000),	autoname = ReadText(1001, 4232) },
@@ -288,7 +288,7 @@ local config = {
 }
 
 -- kuertee start:
-local callbacks = {}
+menu.uix_callbacks = {}
 -- kuertee end
 
 -- init menu and register with Helper
@@ -306,8 +306,6 @@ end
 
 -- kuertee start:
 function menu.init_kuertee ()
-	menu.loadModLuas()
-	-- DebugError("uix load success: " .. tostring(debug.getinfo(1).source))
 end
 -- kuertee end
 
@@ -355,9 +353,9 @@ function menu.cleanup()
 	menu.selectedCols = {}
 
 	-- kuertee start: callback
-	if callbacks ["cleanup"] then
-		for _, callback in ipairs (callbacks ["cleanup"]) do
-			callback ()
+	if menu.uix_callbacks ["cleanup"] then
+		for uix_id, uix_callback in pairs (menu.uix_callbacks ["cleanup"]) do
+			uix_callback ()
 		end
 	end
 	-- kuertee end: callback
@@ -407,9 +405,9 @@ function menu.onShowMenu(state)
 	menu.displayedgraphwares = {}
 
 	-- kuertee start: callback
-	if callbacks ["onShowMenu_start"] then
-		for _, callback in ipairs (callbacks ["onShowMenu_start"]) do
-			callback (menu.container)
+	if menu.uix_callbacks ["onShowMenu_start"] then
+		for uix_id, uix_callback in pairs (menu.uix_callbacks ["onShowMenu_start"]) do
+			uix_callback (menu.container)
 		end
 	end
 	-- kuertee end: callback
@@ -1117,7 +1115,7 @@ function menu.getSupplyResourceMax(ware, raw)
 			menu.supplyResources[ware] = { value = current, max = total }
 		end
 	end
-	
+
 	if raw then
 		return menu.supplyResources[ware] and menu.supplyResources[ware].max or 0
 	else
@@ -1127,9 +1125,9 @@ end
 
 function menu.setupFlowchartData()
 	-- kuertee start: callback
-	if callbacks ["setupFlowchartData_on_start"] then
-		for _, callback in ipairs (callbacks ["setupFlowchartData_on_start"]) do
-			callback ()
+	if menu.uix_callbacks ["setupFlowchartData_on_start"] then
+		for uix_id, uix_callback in pairs (menu.uix_callbacks ["setupFlowchartData_on_start"]) do
+			uix_callback ()
 		end
 	end
 	-- kuertee end: callback
@@ -1321,65 +1319,67 @@ function menu.setupFlowchartData()
 	end
 
 	-- protectyon section
-	local condensateware = "condensate"
-	local transporttype = GetWareData(condensateware, "transport")
-	local sector, haswaveprotectionmodule = GetComponentData(menu.containerid, "sectorid", "haswaveprotectionmodule")
-	local sectorcontainsthewave = GetComponentData(sector, "containsthewave")
-	local hascondensatestorage = false
-	if C.IsComponentClass(menu.container, "container") then
-		hascondensatestorage = CheckSuitableTransportType(menu.containerid, condensateware)
-	end
-	if #menu.constructionplan > 0 then
-		local found = false
-		for i = 1, #menu.constructionplan do
-			local entry = menu.constructionplan[i]
-			if IsMacroClass(entry.macro, "storage") then
-				local data = GetLibraryEntry("moduletypes_storage", entry.macro)
-				if data.storagetags[transporttype] then
-					found = true
-					break
+	if not menu.isdummy then
+		local condensateware = "condensate"
+		local transporttype = GetWareData(condensateware, "transport")
+		local sector, haswaveprotectionmodule = GetComponentData(menu.containerid, "sectorid", "haswaveprotectionmodule")
+		local sectorcontainsthewave = GetComponentData(sector, "containsthewave")
+		local hascondensatestorage = false
+		if C.IsComponentClass(menu.container, "container") then
+			hascondensatestorage = CheckSuitableTransportType(menu.containerid, condensateware)
+		end
+		if #menu.constructionplan > 0 then
+			local found = false
+			for i = 1, #menu.constructionplan do
+				local entry = menu.constructionplan[i]
+				if IsMacroClass(entry.macro, "storage") then
+					local data = GetLibraryEntry("moduletypes_storage", entry.macro)
+					if data.storagetags[transporttype] then
+						found = true
+						break
+					end
 				end
 			end
+			if not found then
+				hascondensatestorage = false
+			end
 		end
-		if not found then
-			hascondensatestorage = false
-		end
-	end
 
-	if sectorcontainsthewave and hascondensatestorage then
-		local condensatenodes = {}
+		if sectorcontainsthewave and hascondensatestorage then
+			local condensatenodes = {}
 
-		local condensateshieldnode
-		if haswaveprotectionmodule then
-			local production_products =	C.IsInfoUnlockedForPlayer(menu.container, "production_products")
-			-- add condensate shield node
-			condensateshieldnode = {
-				condensateshield = condensateware,
-				text = Helper.unlockInfo(production_products, ReadText(20104, 92501)),
-				type = transporttype,
-				row = 1, col = 2, numrows = 1, numcols = 1,
-				{
-					properties = {
-						value = 0,
-						max = 0,
-						shape = "hexagon",
-					},
-					expandedTableNumColumns = 2,
-					expandHandler = menu.onExpandCondensateShield,
+			local condensateshieldnode
+			if haswaveprotectionmodule then
+				local production_products =	C.IsInfoUnlockedForPlayer(menu.container, "production_products")
+				-- add condensate shield node
+				condensateshieldnode = {
+					condensateshield = condensateware,
+					text = Helper.unlockInfo(production_products, ReadText(20104, 92501)),
+					type = transporttype,
+					row = 1, col = 2, numrows = 1, numcols = 1,
+					{
+						properties = {
+							value = 0,
+							max = 0,
+							shape = "hexagon",
+						},
+						expandedTableNumColumns = 2,
+						expandHandler = menu.onExpandCondensateShield,
+					}
 				}
-			}
-			table.insert(condensatenodes, condensateshieldnode)
-		end
+				table.insert(condensatenodes, condensateshieldnode)
+			end
 
-		-- add condensate storage node
-		local node = Helper.createLSOStorageNode(menu, menu.container, condensateware, false, true, true)
-		table.insert(condensatenodes, node)
-		warenodes[condensateware] = node
-		if condensateshieldnode then
-			addFlowchartEdge(node, condensateshieldnode)
-		end
+			-- add condensate storage node
+			local node = Helper.createLSOStorageNode(menu, menu.container, condensateware, false, true, true)
+			table.insert(condensatenodes, node)
+			warenodes[condensateware] = node
+			if condensateshieldnode then
+				addFlowchartEdge(node, condensateshieldnode)
+			end
 
-		table.insert(flowchartsections, { nodes = condensatenodes, junctions = { }, numrows = 1, numcols = 2 })
+			table.insert(flowchartsections, { nodes = condensatenodes, junctions = { }, numrows = 1, numcols = 2 })
+		end
 	end
 
 	-- supply section
@@ -1468,10 +1468,11 @@ function menu.setupFlowchartData()
 		table.insert(supplyresources, { ware = ware, name = GetWareData(ware, "name"), max = total, value = current, supplytypes = ffi.string(buf[i].supplytypes) })
 	end
 	table.sort(supplyresources, Helper.sortName)
-	
+
 	local storageinfo_warelist =	C.IsInfoUnlockedForPlayer(menu.container, "storage_warelist")
 	for i, entry in ipairs(supplyresources) do
 		local hasrestrictions = C.GetContainerTradeRuleID(menu.container, "supply", entry.ware) > 0
+		local transporttype = GetWareData(entry.ware, "transport")
 
 		local warenode = {
 			ware = entry.ware,
@@ -1583,9 +1584,9 @@ function menu.setupFlowchartData()
 	table.sort(remainingcargonodes, function (a, b) return a.text < b.text end)
 	if isplayerowned and C.IsComponentClass(menu.container, "container") then
 		-- kuertee start: callback
-		if callbacks ["setupFlowchartData_pre_trade_wares_button"] then
-			for _, callback in ipairs (callbacks ["setupFlowchartData_pre_trade_wares_button"]) do
-				callback (remainingcargonodes)
+		if menu.uix_callbacks ["setupFlowchartData_pre_trade_wares_button"] then
+			for uix_id, uix_callback in pairs (menu.uix_callbacks ["setupFlowchartData_pre_trade_wares_button"]) do
+				uix_callback (remainingcargonodes)
 			end
 		end
 		-- kuertee end: callback
@@ -1774,12 +1775,12 @@ function menu.display()
 
 	-- row[1]:createText(menu.container and GetComponentData(menu.containerid, "name") or "Flowchart Test")
 	-- kuertee start: callback
-	if callbacks ["display_get_station_name_extras"] then
+	if menu.uix_callbacks ["display_get_station_name_extras"] then
 		local stationName = menu.container and GetComponentData(menu.containerid, "name") or "Flowchart Test"
 		local extraNames = {}
 		if menu.container then
-			for _, callback in ipairs (callbacks ["display_get_station_name_extras"]) do
-				table.insert(extraNames, callback(menu.container))
+			for uix_id, uix_callback in pairs (menu.uix_callbacks ["display_get_station_name_extras"]) do
+				table.insert(extraNames, uix_callback(menu.container))
 			end
 			if #extraNames > 0 then
 				for i, extraName in ipairs(extraNames) do
@@ -1801,7 +1802,7 @@ function menu.display()
 	--row = ftable:addRow(false)
 	--row[1]:createText("Antigone Memorial")
 
-	usablewidth = menu.rightBarX - Helper.borderSize - Helper.frameBorder 
+	usablewidth = menu.rightBarX - Helper.borderSize - Helper.frameBorder
 
 	menu.flowchart = menu.frame:addFlowchart(menu.flowchartNumRows, menu.flowchartNumCols, { borderHeight = 3, borderColor = Color["row_background_blue"], minRowHeight = 45, minColWidth = 80, x = Helper.frameBorder, y = ftable:getVisibleHeight() + Helper.borderSize, width = usablewidth })
 	menu.flowchart:setDefaultNodeProperties({
@@ -2258,7 +2259,7 @@ function menu.display()
 			local row = menu.keyTable:addRow(dataIdx, {  })
 			row[1]:setColSpan(5):createText(ReadText(1001, 6526))
 		end
-		
+
 		menu.restoreTableState("keyTable", menu.keyTable)
 	end
 
@@ -2303,9 +2304,9 @@ function menu.onExpandTradeWares(frame, ftable, ftable2, nodedata)
 	ftable2:setColWidthPercent(3, 50)
 
 	-- kuertee start: callback
-	if callbacks ["onExpandTradeWares_on_start"] then
-		for _, callback in ipairs (callbacks ["onExpandTradeWares_on_start"]) do
-			callback ()
+	if menu.uix_callbacks ["onExpandTradeWares_on_start"] then
+		for uix_id, uix_callback in pairs (menu.uix_callbacks ["onExpandTradeWares_on_start"]) do
+			uix_callback ()
 		end
 	end
 	-- kuertee end: callback
@@ -2336,11 +2337,11 @@ function menu.onExpandTradeWares(frame, ftable, ftable2, nodedata)
 		if not excludedwares[ware] then
 
 			-- kuertee start: callback
-			if (not callbacks ["onExpandTradeWares_insert_ware_to_allwares"]) or (not #callbacks ["onExpandTradeWares_insert_ware_to_allwares"]) then
+			if (not menu.uix_callbacks ["onExpandTradeWares_insert_ware_to_allwares"]) or (not next(menu.uix_callbacks ["onExpandTradeWares_insert_ware_to_allwares"])) then
 				table.insert(allwares, { ware = ware, name = GetWareData(ware, "name") })
-			elseif callbacks ["onExpandTradeWares_insert_ware_to_allwares"] then
-				for _, callback in ipairs (callbacks ["onExpandTradeWares_insert_ware_to_allwares"]) do
-					callback (allwares, ware)
+			elseif menu.uix_callbacks ["onExpandTradeWares_insert_ware_to_allwares"] then
+				for uix_id, uix_callback in pairs (menu.uix_callbacks ["onExpandTradeWares_insert_ware_to_allwares"]) do
+					uix_callback (allwares, ware)
 				end
 			end
 			-- kuertee end: callback
@@ -2373,7 +2374,7 @@ end
 function menu.onExpandSupplyResource(_, ftable, _, nodedata)
 	local storageinfo_capacity =	C.IsInfoUnlockedForPlayer(menu.container, "storage_capacity")
 	local storageinfo_amounts =		C.IsInfoUnlockedForPlayer(menu.container, "storage_amounts")
-	
+
 	local reservations = {}
 	local n = C.GetNumContainerWareReservations2(menu.container, false, false, true)
 	local buf = ffi.new("WareReservationInfo2[?]", n)
@@ -2445,7 +2446,7 @@ function menu.onExpandSupplyResource(_, ftable, _, nodedata)
 			row[1]:setColSpan(2):createDropDown(Helper.traderuleOptions, { startOption = (traderuleid ~= 0) and traderuleid or -1, active = hasownlist }):setTextProperties({ fontsize = config.mapFontSize })
 			row[1].handlers.onDropDownConfirmed = function (_, id) return menu.dropdownTradeRule(menu.container, "supply", nodedata.ware, id) end
 			row[3]:createButton({ mouseOverText = ReadText(1026, 8407) }):setIcon("menu_edit")
-			row[3].handlers.onClick = menu.buttonEditTradeRule
+			row[3].handlers.onClick = function () return menu.buttonEditTradeRule(C.GetContainerTradeRuleID(menu.container, "supply", nodedata.ware)) end
 			-- reservations
 			if reservations[nodedata.ware] and (#reservations[nodedata.ware].buyoffer > 0) then
 				-- title
@@ -2486,7 +2487,7 @@ function menu.compareTradeWareSelection()
 	return next(tradewares) == nil
 end
 
-function menu.setTradeWares()	
+function menu.setTradeWares()
 	local tradewares = Helper.tableCopy(menu.origSelectedWares)
 	for ware in pairs(menu.selectedWares) do
 		if not tradewares[ware] then
@@ -2526,7 +2527,7 @@ function menu.onExpandProduction(_, ftable, _, nodedata, productionmodules)
 	local nostorage, noresources, hacked, nonfunctional, destroyed, plannedremoval, planned, producing, paused, realpaused, queued = 0, 0, 0, 0, #productionmodules.destroyedcomponents, 0, productionmodules.numplanned, 0, 0, 0, 0
 	local sunlight, workforce, hullefficiency
 	for _, module in ipairs(productionmodules.components) do
-		if not IsComponentConstruction(module) then
+		if IsValidComponent(module) and (not IsComponentConstruction(module)) then
 			productioninfo_products		= productioninfo_products	or C.IsInfoUnlockedForPlayer(module, "production_products")
 			productioninfo_rate			= productioninfo_rate		or C.IsInfoUnlockedForPlayer(module, "production_rate")
 			productioninfo_resources	= productioninfo_resources	or C.IsInfoUnlockedForPlayer(module, "production_resources")
@@ -2765,7 +2766,7 @@ function menu.onExpandProcessing(_, ftable, _, nodedata, processingmodules)
 	local nostorage, noresources, hacked, nonfunctional, destroyed, plannedremoval, planned, producing, realpaused = 0, 0, 0, 0, #processingmodules.destroyedcomponents, 0, processingmodules.numplanned, 0, 0
 	for _, module in ipairs(processingmodules.components) do
 		local data = GetProcessingModuleData(module)
-		if not IsComponentConstruction(module) then
+		if IsValidComponent(module) and (not IsComponentConstruction(module)) then
 			productioninfo_products		= productioninfo_products	or C.IsInfoUnlockedForPlayer(module, "production_products")
 			productioninfo_rate			= productioninfo_rate		or C.IsInfoUnlockedForPlayer(module, "production_rate")
 			productioninfo_resources	= productioninfo_resources	or C.IsInfoUnlockedForPlayer(module, "production_resources")
@@ -2939,7 +2940,7 @@ function menu.getProductionEfficiency(modules)
 	local efficiency, numproducing = 0, 0
 	for _, module in ipairs(modules) do
 		-- components that are already being recycled are in state construction
-		if not IsComponentConstruction(module) then
+		if IsValidComponent(module) and (not IsComponentConstruction(module)) then
 			local proddata = GetProductionModuleData(module)
 			local ishacked, isfunctional = GetComponentData(module, "ishacked", "isfunctional")
 			if (not ishacked) and isfunctional and (proddata.state == "producing") then
@@ -2990,7 +2991,7 @@ function menu.getProductionWorkforceEfficiency(modules)
 	local efficiency, numproducing, unlocked = 0, 0, false
 	for _, module in ipairs(modules) do
 		-- components that are already being recycled are in state construction
-		if not IsComponentConstruction(module) then
+		if IsValidComponent(module) and (not IsComponentConstruction(module)) then
 			local proddata = GetProductionModuleData(module)
 			local ishacked, isfunctional = GetComponentData(module, "ishacked", "isfunctional")
 			if (not ishacked) and isfunctional and (proddata.state == "producing") then
@@ -3016,7 +3017,7 @@ function menu.getProductionHullEfficiency(modules)
 	local efficiency, numproducing, unlocked = 0, 0, false
 	for _, module in ipairs(modules) do
 		-- components that are already being recycled are in state construction
-		if not IsComponentConstruction(module) then
+		if IsValidComponent(module) and (not IsComponentConstruction(module)) then
 			local proddata = GetProductionModuleData(module)
 			local ishacked, isfunctional = GetComponentData(module, "ishacked", "isfunctional")
 			if (not ishacked) and isfunctional and (proddata.state == "producing") then
@@ -3042,7 +3043,7 @@ function menu.getProductionCycleTime(modules)
 	local cycle, numproducing = nil, 0
 	for _, module in ipairs(modules) do
 		-- components that are already being recycled are in state construction
-		if not IsComponentConstruction(module) then
+		if IsValidComponent(module) and (not IsComponentConstruction(module)) then
 			local proddata = GetProductionModuleData(module)
 			local ishacked, isfunctional = GetComponentData(module, "ishacked", "isfunctional")
 			if (not ishacked) and isfunctional and (proddata.state == "producing") then
@@ -3072,7 +3073,7 @@ function menu.getProductionRemainingTime(ware, modules, macro)
 	local remainingtime, numproducing = nil, 0
 	for _, module in ipairs(modules) do
 		-- components that are already being recycled are in state construction
-		if not IsComponentConstruction(module) then
+		if IsValidComponent(module) and (not IsComponentConstruction(module)) then
 			local proddata = GetProductionModuleData(module)
 			if proddata.state ~= "empty" then
 				local ishacked, isfunctional = GetComponentData(module, "ishacked", "isfunctional")
@@ -3127,7 +3128,7 @@ function menu.getProcessingCycleTime(modules)
 	local cycle, numprocessing = nil, 0
 	for _, module in ipairs(modules) do
 		-- components that are already being recycled are in state construction
-		if not IsComponentConstruction(module) then
+		if IsValidComponent(module) and (not IsComponentConstruction(module)) then
 			local proddata = GetProcessingModuleData(module)
 			local ishacked, isfunctional = GetComponentData(module, "ishacked", "isfunctional")
 			if (not ishacked) and isfunctional and (proddata.state == "processing") then
@@ -3337,7 +3338,7 @@ function menu.onExpandBuildModule(_, ftable, _, nodedata, buildmodule)
 				local row = ftable:addRow(nil, {  })
 				row[1]:setColSpan(4):createText(Helper.unlockInfo(productioninfo_products, name .. " (" .. ffi.string(C.GetObjectIDCode(construction.component)) .. ")"), { color = color, mouseOverText = construction.ismissingresources and ReadText(1026, 3223) or "" })
 				local row = ftable:addRow(nil, {  })
-				row[1]:createText(Helper.unlockInfo(productioninfo_time, function () return menu.getShipBuildProgress(construction.component, "") end), { color = color, mouseOverText = construction.ismissingresources and ReadText(1026, 3223) or "" }) 
+				row[1]:createText(Helper.unlockInfo(productioninfo_time, function () return menu.getShipBuildProgress(construction.component, "") end), { color = color, mouseOverText = construction.ismissingresources and ReadText(1026, 3223) or "" })
 				row[2]:setColSpan(3):createText(Helper.unlockInfo(productioninfo_time, function () return (construction.ismissingresources and (ColorText["text_warning"] .. "\27[warning] ") or "") .. ConvertTimeString(C.GetBuildProcessorEstimatedTimeLeft(construction.buildercomponent), "%h:%M:%S") end), { halign = "right", color = color, mouseOverText = construction.ismissingresources and ReadText(1026, 3223) or "" })
 			end
 		end
@@ -3364,7 +3365,7 @@ function menu.onExpandBuildModule(_, ftable, _, nodedata, buildmodule)
 		row[1]:setColSpan(3):createDropDown(Helper.traderuleOptions, { startOption = (traderuleid ~= 0) and traderuleid or -1, active = hasownlist }):setTextProperties({ fontsize = config.mapFontSize })
 		row[1].handlers.onDropDownConfirmed = function (_, id) return menu.dropdownTradeRule(menu.container, "build", "", id) end
 		row[4]:createButton({ mouseOverText = ReadText(1026, 8407) }):setIcon("menu_edit")
-		row[4].handlers.onClick = menu.buttonEditTradeRule
+		row[4].handlers.onClick = function () return menu.buttonEditTradeRule(C.GetContainerTradeRuleID(menu.container, "build", "")) end
 
 		local row = ftable:addRow(false, {  })
 		row[1]:setColSpan(4):createText("")
@@ -3591,7 +3592,7 @@ function menu.onExpandWorkforce(_, ftable, _, nodedata)
 						resourcedata = resourceinfo
 					end
 				end
-			
+
 				row = ftable:addRow(nil, {  })
 				row[1]:setColSpan(4):createText(ReadText(1001, 8451) .. " / " .. ReadText(1001, 102) .. ReadText(1001, 120))
 				for i, resource in ipairs(resourcedata.resources) do
@@ -3744,7 +3745,7 @@ function menu.onExpandSupply(_, ftable, _, nodedata)
 				-- available macros
 				if #menu.supplies[supplytypeentry.type] > 0 then
 					for i, entry in ipairs(menu.supplies[supplytypeentry.type]) do
-						
+
 						local limit = 0
 						if auto then
 							if menu.supplyoverride[entry.macro] then
@@ -3789,7 +3790,7 @@ function menu.onExpandSupply(_, ftable, _, nodedata)
 			end
 		end
 	end
-	
+
 	if isplayerowned then
 		-- trade rule
 		local hasownlist = C.HasContainerOwnTradeRule(menu.container, "supply", "")
@@ -3810,7 +3811,7 @@ function menu.onExpandSupply(_, ftable, _, nodedata)
 		row[1]:setColSpan(2):createDropDown(Helper.traderuleOptions, { startOption = (traderuleid ~= 0) and traderuleid or -1, active = hasownlist }):setTextProperties({ fontsize = config.mapFontSize })
 		row[1].handlers.onDropDownConfirmed = function (_, id) return menu.dropdownTradeRule(menu.container, "supply", "", id) end
 		row[3]:createButton({ mouseOverText = ReadText(1026, 8407) }):setIcon("menu_edit")
-		row[3].handlers.onClick = menu.buttonEditTradeRule
+		row[3].handlers.onClick = function () return menu.buttonEditTradeRule(C.GetContainerTradeRuleID(menu.container, "supply", "")) end
 	end
 
 	menu.restoreTableState("nodeTable", ftable)
@@ -4094,7 +4095,7 @@ function menu.buttonAccountConfirm()
 
 		SetMaxBudget(menu.containerid, (menu.newAccountValue * 3) / 2)
 		SetMinBudget(menu.containerid, menu.newAccountValue)
-		
+
 		if amount > 0 then
 			TransferPlayerMoneyTo(amount, menu.containerid)
 		else
@@ -4174,7 +4175,7 @@ function menu.buttonTimeFrame(type)
 			menu.xGranularity = menu.xGranularity / 2
 		end
 	end
-	
+
 	menu.getData(config.graph.numdatapoints)
 	menu.saveFlowchartState("flowchart", menu.flowchart)
 	menu.saveTableState("keyTable", menu.keyTable)
@@ -4229,8 +4230,8 @@ function menu.buttonPauseProcessingModules(processingmodules, pause)
 end
 
 
-function menu.buttonEditTradeRule()
-	Helper.closeMenuAndOpenNewMenu(menu, "PlayerInfoMenu", { 0, 0, "globalorders" })
+function menu.buttonEditTradeRule(traderuleid)
+	Helper.closeMenuAndOpenNewMenu(menu, "PlayerInfoMenu", { 0, 0, "globalorders", { "traderule", (traderuleid ~= 0) and traderuleid or nil } })
 	menu.cleanup()
 end
 
@@ -4256,7 +4257,7 @@ function menu.checkboxSelected(idx, row, col)
 				end
 			end
 		end
-		
+
 		menu.saveFlowchartState("flowchart", menu.flowchart)
 		menu.saveTableState("keyTable", menu.keyTable, row, col)
 		if menu.expandedNode then
@@ -4320,9 +4321,9 @@ function menu.checkboxToggleMultiSelect(checked)
 		menu.contextMenuData.selectedOptions[entry.id] = checked or nil
 	end
 end
-	 
+
 function menu.checkboxSetTradeRuleOverride(container, type, ware, checked)
-	if checked then 
+	if checked then
 		C.SetContainerTradeRule(container, -1, type, ware, false)
 	else
 		local currentid = C.GetContainerTradeRuleID(container, type, ware or "")
@@ -4343,7 +4344,7 @@ end
 
 function  menu.dropdownTradeRule(container, type, ware, id)
 	C.SetContainerTradeRule(container, tonumber(id), type, ware, true)
-	
+
 	if (type == "buy") or (type == "sell") then
 		menu.expandedNode:updateStatus(nil, Helper.isTradeRestricted(menu.container, ware) and "lso_error" or nil, nil, Color["icon_warning"])
 	end
@@ -4400,9 +4401,9 @@ end
 function menu.updateExpandedNode(row, col)
 	if menu.expandedNode then
 		-- kuertee start: callback
-		if callbacks ["updateExpandedNode_at_start"] then
-			for _, callback in ipairs (callbacks ["updateExpandedNode_at_start"]) do
-				callback(row, col)
+		if menu.uix_callbacks ["updateExpandedNode_at_start"] then
+			for uix_id, uix_callback in pairs (menu.uix_callbacks ["updateExpandedNode_at_start"]) do
+				uix_callback(row, col)
 			end
 		end
 		-- kuertee end: callback
@@ -4414,9 +4415,9 @@ function menu.updateExpandedNode(row, col)
 		node:expand()
 
 		-- kuertee start: callback
-		if callbacks ["updateExpandedNode_at_end"] then
-			for _, callback in ipairs (callbacks ["updateExpandedNode_at_end"]) do
-				callback(row, col)
+		if menu.uix_callbacks ["updateExpandedNode_at_end"] then
+			for uix_id, uix_callback in pairs (menu.uix_callbacks ["updateExpandedNode_at_end"]) do
+				uix_callback(row, col)
 			end
 		end
 		-- kuertee end: callback
@@ -4780,7 +4781,7 @@ function menu.updateProductionNode(node, productionmodules)
 	local isknown = false
 	for _, module in ipairs(productionmodules.components) do
 		-- components that are already being recycled are in state construction
-		if not IsComponentConstruction(module) then
+		if IsValidComponent(module) and (not IsComponentConstruction(module)) then
 			local proddata = GetProductionModuleData(module)
 			if proddata.state ~= "empty" then
 				local ishacked, isfunctional, ispausedmanually = GetComponentData(module, "ishacked", "isfunctional", "ispausedmanually")
@@ -4860,7 +4861,7 @@ function menu.updateProductionNode(node, productionmodules)
 	else
 		text = "(" .. producing .. "/" .. total .. ") " .. text
 	end
-	
+
 	if not statusicon then
 		if producing > 0 then
 			statusicon = string.format("lso_pie_%02d", progress)
@@ -4955,7 +4956,7 @@ function menu.updateProcessingNode(node, processingmodules)
 	local isknown = false
 	for _, module in ipairs(processingmodules.components) do
 		-- components that are already being recycled are in state construction
-		if not IsComponentConstruction(module) then
+		if IsValidComponent(module) and (not IsComponentConstruction(module)) then
 			local data = GetProcessingModuleData(module)
 			local ishacked, isfunctional, ispausedmanually = GetComponentData(module, "ishacked", "isfunctional", "ispausedmanually")
 			if ishacked then
@@ -5014,7 +5015,7 @@ function menu.updateProcessingNode(node, processingmodules)
 	else
 		text = "(" .. producing .. "/" .. total .. ") " .. text
 	end
-	
+
 	if not statusicon then
 		if producing > 0 then
 			statusicon = string.format("lso_pie_%02d", progress)
@@ -5066,7 +5067,7 @@ function menu.updateResearchNode(node, researchmodule)
 	local proddata = GetProductionModuleData(researchmodule)
 	if (proddata.state == "producing") or (proddata.state == "waitingforresources") then
 		local progress = math.floor((proddata.cycleprogress * 12 / 100) + 0.5)
-	
+
 		if proddata.state == "waitingforresources" then
 			statusicon = "lso_warning"
 			statuscolor = Color["icon_warning"]
@@ -5154,7 +5155,7 @@ function menu.updateAccountNode(node)
 	end
 	node:updateMaxValue(shownmax)
 	node:updateValue(shownamount)
-	
+
 	local statustext = string.format("%s/%s %s", ConvertMoneyString(money, false, true, 3, true, false), ConvertMoneyString(productionmoney + supplymoney + tradewaremoney, false, true, 3, true, false), ReadText(1001, 101))
 	local statuscolor = (money < budget) and ((money == 0) and Color["lso_node_error"] or Color["lso_node_warning"]) or Color["flowchart_node_default"]
 	node:updateStatus(statustext)
@@ -5307,37 +5308,109 @@ function menu.onCloseElement(dueToClose, layer)
 end
 
 -- kuertee start:
-function menu.registerCallback (callbackName, callbackFunction)
-	-- note 1: format is generally [function name]_[action]. e.g.: in kuertee_menu_transporter, "display_on_set_room_active" overrides the room's active property with the return of the callback.
-	-- note 2: events have the word "_on_" followed by a PRESET TENSE verb. e.g.: in kuertee_menu_transporter, "display_on_set_buttontable" is called after all of the rows of buttontable are set.
-	-- note 3: new callbacks can be added or existing callbacks can be edited. but commit your additions/changes to the mod's GIT repository.
-	-- note 4: search for the callback names to see where they are executed.
-	-- note 5: if a callback requires a return value, return it in an object var. e.g. "display_on_set_room_active" requires a return of {active = true | false}.
-
-	-- to find callbacks available for this menu,
-	-- reg-ex search for callbacks.*\[\".*\]
-
-	if callbacks [callbackName] == nil then
-		callbacks [callbackName] = {}
-	end
-	table.insert (callbacks [callbackName], callbackFunction)
+menu.uix_callbackCount = 0
+function menu.registerCallback(callbackName, callbackFunction, id)
+    -- note 1: format is generally [function name]_[action]. e.g.: in kuertee_menu_transporter, "display_on_set_room_active" overrides the room's active property with the return of the callback.
+    -- note 2: events have the word "_on_" followed by a PRESENT TENSE verb. e.g.: in kuertee_menu_transporter, "display_on_set_buttontable" is called after all of the rows of buttontable are set.
+    -- note 3: new callbacks can be added or existing callbacks can be edited. but commit your additions/changes to the mod's GIT repository.
+    -- note 4: search for the callback names to see where they are executed.
+    -- note 5: if a callback requires a return value, return it in an object var. e.g. "display_on_set_room_active" requires a return of {active = true | false}.
+    if menu.uix_callbacks [callbackName] == nil then
+        menu.uix_callbacks [callbackName] = {}
+    end
+    if not menu.uix_callbacks[callbackName][id] then
+        if not id then
+            menu.uix_callbackCount = menu.uix_callbackCount + 1
+            id = "_" .. tostring(menu.uix_callbackCount)
+        end
+        menu.uix_callbacks[callbackName][id] = callbackFunction
+        if Helper.isDebugCallbacks then
+            Helper.debugText_forced(menu.name .. " uix registerCallback: menu.uix_callbacks[" .. tostring(callbackName) .. "][" .. tostring(id) .. "]: " .. tostring(menu.uix_callbacks[callbackName][id]))
+        end
+    else
+        Helper.debugText_forced(menu.name .. " uix registerCallback: callback at " .. callbackName .. " with id " .. tostring(id) .. " was already previously registered")
+    end
 end
 
-function menu.deregisterCallback(callbackName, callbackFunction)
-	-- for i, callback in ipairs(callbacks[callbackName]) do
-	if callbacks[callbackName] and #callbacks[callbackName] > 0 then
-		for i = #callbacks[callbackName], 1, -1 do
-			if callbacks[callbackName][i] == callbackFunction then
-				table.remove(callbacks[callbackName], i)
-			end
-		end
-	end
+menu.uix_isDeregisterQueued = nil
+menu.uix_callbacks_toDeregister = {}
+function menu.deregisterCallback(callbackName, callbackFunction, id)
+    if not menu.uix_callbacks_toDeregister[callbackName] then
+        menu.uix_callbacks_toDeregister[callbackName] = {}
+    end
+    if id then
+        table.insert(menu.uix_callbacks_toDeregister[callbackName], id)
+    else
+        if menu.uix_callbacks[callbackName] then
+            for id, func in pairs(menu.uix_callbacks[callbackName]) do
+                if func == callbackFunction then
+                    table.insert(menu.uix_callbacks_toDeregister[callbackName], id)
+                end
+            end
+        end
+    end
+    if not menu.uix_isDeregisterQueued then
+        menu.uix_isDeregisterQueued = true
+        Helper.addDelayedOneTimeCallbackOnUpdate(menu.deregisterCallbacksNow, true, getElapsedTime() + 1)
+    end
 end
 
-function menu.loadModLuas()
-	if Helper then
-		Helper.loadModLuas(menu.name, "menu_station_overview_uix")
-	end
+function menu.deregisterCallbacksNow()
+    menu.uix_isDeregisterQueued = nil
+    for callbackName, ids in pairs(menu.uix_callbacks_toDeregister) do
+        if menu.uix_callbacks[callbackName] then
+            for _, id in ipairs(ids) do
+                if menu.uix_callbacks[callbackName][id] then
+                    if Helper.isDebugCallbacks then
+                        Helper.debugText_forced(menu.name .. " uix deregisterCallbacksNow (pre): menu.uix_callbacks[" .. tostring(callbackName) .. "][" .. tostring(id) .. "]: " .. tostring(menu.uix_callbacks[callbackName][id]))
+                    end
+                    menu.uix_callbacks[callbackName][id] = nil
+                    if Helper.isDebugCallbacks then
+                        Helper.debugText_forced(menu.name .. " uix deregisterCallbacksNow (post): menu.uix_callbacks[" .. tostring(callbackName) .. "][" .. tostring(id) .. "]: " .. tostring(menu.uix_callbacks[callbackName][id]))
+                    end
+                else
+                    Helper.debugText_forced(menu.name .. " uix deregisterCallbacksNow: callback at " .. callbackName .. " with id " .. tostring(id) .. " doesn't exist")
+                end
+            end
+        end
+    end
+    menu.uix_callbacks_toDeregister = {}
+end
+
+menu.uix_isUpdateQueued = nil
+menu.uix_callbacks_toUpdate = {}
+function menu.updateCallback(callbackName, id, callbackFunction)
+    if not menu.uix_callbacks_toUpdate[callbackName] then
+        menu.uix_callbacks_toUpdate[callbackName] = {}
+    end
+    if id then
+        table.insert(menu.uix_callbacks_toUpdate[callbackName], {id = id, callbackFunction = callbackFunction})
+    end
+    if not menu.uix_isUpdateQueued then
+        menu.uix_isUpdateQueued = true
+        Helper.addDelayedOneTimeCallbackOnUpdate(menu.updateCallbacksNow, true, getElapsedTime() + 1)
+    end
+end
+
+function menu.updateCallbacksNow()
+    menu.uix_isUpdateQueued = nil
+    for callbackName, updateDatas in pairs(menu.uix_callbacks_toUpdate) do
+        if menu.uix_callbacks[callbackName] then
+            for _, updateData in ipairs(updateDatas) do
+                if menu.uix_callbacks[callbackName][updateData.id] then
+                    if Helper.isDebugCallbacks then
+                        Helper.debugText_forced(menu.name .. " uix updateCallbacksNow (pre): menu.uix_callbacks[" .. tostring(callbackName) .. "][" .. tostring(updateData.id) .. "]: " .. tostring(menu.uix_callbacks[callbackName][updateData.id]))
+                    end
+                    menu.uix_callbacks[callbackName][updateData.id] = updateData.callbackFunction
+                    if Helper.isDebugCallbacks then
+                        Helper.debugText_forced(menu.name .. " uix updateCallbacksNow (post): menu.uix_callbacks[" .. tostring(callbackName) .. "][" .. tostring(updateData.id) .. "]: " .. tostring(menu.uix_callbacks[callbackName][updateData.id]))
+                    end
+                else
+                    Helper.debugText_forced(menu.name .. " uix updateCallbacksNow: callback at " .. callbackName .. " with id " .. tostring(id) .. " doesn't exist")
+                end
+            end
+        end
+    end
 end
 -- kuertee end
 

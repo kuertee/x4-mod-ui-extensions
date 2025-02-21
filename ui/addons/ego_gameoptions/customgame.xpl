@@ -327,6 +327,7 @@ ffi.cdef[[
 	void SetMacroMapLocalRingHighways(UniverseID holomapid, bool value);
 	void SetMacroMapSelection(UniverseID holomapid, bool selectplayer, const char* propertyentryid);
 	void SetMapRelativeMousePosition(UniverseID holomapid, bool valid, float x, float y);
+	void ShowInfoLine(const char* text, uint32_t timeout);
 	void ShowUniverseMacroMap2(UniverseID holomapid, const char* macroname, const char* startsectormacroname, UIPosRot sectoroffset, bool setoffset, bool showzone, const char* gamestartid);
 	void StartPanMap(UniverseID holomapid);
 	bool StopPanMap(UniverseID holomapid);
@@ -357,7 +358,7 @@ local menu = {
 }
 
 -- kuertee start:
-local callbacks = {}
+menu.uix_callbacks = {}
 -- kuertee end
 
 local function init()
@@ -383,8 +384,6 @@ end
 
 -- kuertee start:
 function menu.init_kuertee ()
-	menu.loadModLuas()
-	-- DebugError("uix load success: " .. tostring(debug.getinfo(1).source))
 end
 -- kuertee end
 
@@ -452,7 +451,7 @@ local config = {
 		{ name = ReadText(1001, 2424),	classes = { ["defencemodule"] = true } },
 		{ name = ReadText(1001, 2452),	classes = { ["pier"] = true, ["dockarea"] = true } },
 		{ name = ReadText(1001, 9621),	classes = { ["processingmodule"] = true } },
-		{ name = ReadText(1001, 2453),	classes = { ["connectionmodule"] = true } },
+		{ name = ReadText(1001, 2453),	classes = { ["connectionmodule"] = true, ["radar"] = true } },
 
 		{ name = ReadText(1001, 11003),	classes = { ["ship_xl"] = true } },
 		{ name = ReadText(1001, 11002),	classes = { ["ship_l"] = true } },
@@ -789,9 +788,9 @@ function menu.cleanup()
 	menu.rightdown = nil
 
 	-- kuertee start: callback
-	if callbacks ["cleanup"] then
-		for _, callback in ipairs (callbacks ["cleanup"]) do
-			callback(menu.customgamestart)
+	if menu.uix_callbacks ["cleanup"] then
+		for uix_id, uix_callback in pairs (menu.uix_callbacks ["cleanup"]) do
+			uix_callback(menu.customgamestart)
 		end
 	end
 	-- kuertee end: callback
@@ -799,19 +798,28 @@ end
 
 function menu.buttonNewGame()
 	menu.closeContextMenu()
+	local customgamestart = menu.customgamestart
 	if menu.multiplayer then
-		C.NewMultiplayerGame(menu.customgamestart)
+		Helper.addDelayedOneTimeCallbackOnUpdate(function () C.NewMultiplayerGame(customgamestart) end, true, getElapsedTime() + 0.1)
 	else
 
 		-- kuertee start: callback
-		if callbacks ["buttonNewGame_preNewGame"] then
-			for _, callback in ipairs (callbacks ["buttonNewGame_preNewGame"]) do
-				callback(menu.customgamestart)
-			end
-		end
+		-- Helper.addDelayedOneTimeCallbackOnUpdate(function () NewGame(customgamestart) end, true, getElapsedTime() + 0.1)
+		Helper.addDelayedOneTimeCallbackOnUpdate(
+			function ()
+				-- kuertee start: callback
+				if menu.uix_callbacks ["buttonNewGame_preNewGame"] then
+					for uix_id, uix_callback in pairs (menu.uix_callbacks ["buttonNewGame_preNewGame"]) do
+						uix_callback(menu.customgamestart)
+					end
+				end
+				-- kuertee end: callback
+
+				NewGame(customgamestart)
+			end,
+		true, getElapsedTime() + 0.1)
 		-- kuertee end: callback
 
-		NewGame(menu.customgamestart)
 	end
 	menu.displayInit()
 end
@@ -853,9 +861,9 @@ function menu.buttonReset()
 	menu.refresh = getElapsedTime()
 
 	-- kuertee start: callback
-	if callbacks ["buttonReset_on_end"] then
-		for _, callback in ipairs (callbacks ["buttonReset_on_end"]) do
-			callback ()
+	if menu.uix_callbacks ["buttonReset_on_end"] then
+		for uix_id, uix_callback in pairs (menu.uix_callbacks ["buttonReset_on_end"]) do
+			uix_callback ()
 		end
 	end
 	-- kuertee end: callback
@@ -1239,9 +1247,9 @@ end
 
 function menu.dropdownProperty(property, row, option)
 	-- kuertee start: callback
-	if callbacks ["dropdownProperty_on_start"] then
-		for _, callback in ipairs (callbacks ["dropdownProperty_on_start"]) do
-			callback (property, row, option)
+	if menu.uix_callbacks ["dropdownProperty_on_start"] then
+		for uix_id, uix_callback in pairs (menu.uix_callbacks ["dropdownProperty_on_start"]) do
+			uix_callback (property, row, option)
 		end
 	end
 	-- kuertee end: callback
@@ -1670,7 +1678,9 @@ end
 
 function menu.dropdownPlayerPropertySetCount(entryid, count, macro, oldcount)
 	C.SetCustomGameStartPlayerPropertyCount(menu.customgamestart, menu.category.id, entryid, count)
-	menu.usedlimitedships[macro] = menu.usedlimitedships[macro] - oldcount + count
+	if menu.usedlimitedships[macro] then
+		menu.usedlimitedships[macro] = menu.usedlimitedships[macro] - oldcount + count
+	end
 	menu.refresh = getElapsedTime()
 end
 
@@ -1679,9 +1689,9 @@ function menu.editboxProperty(property, text)
 	property.set(menu.customgamestart, property.id, text)
 
 	-- kuertee start: callback
-	if callbacks ["editboxProperty_on_end"] then
-		for _, callback in ipairs (callbacks ["editboxProperty_on_end"]) do
-			callback (property, text)
+	if menu.uix_callbacks ["editboxProperty_on_end"] then
+		for uix_id, uix_callback in pairs (menu.uix_callbacks ["editboxProperty_on_end"]) do
+			uix_callback (property, text)
 		end
 	end
 	-- kuertee end: callback
@@ -1721,9 +1731,9 @@ function menu.slidercellFaction(faction, value)
 	Helper.ffiClearNewHelper()
 
 	-- kuertee start: callback
-	if callbacks ["slidercellFaction_on_end"] then
-		for _, callback in ipairs (callbacks ["slidercellFaction_on_end"]) do
-			callback (faction, value)
+	if menu.uix_callbacks ["slidercellFaction_on_end"] then
+		for uix_id, uix_callback in pairs (menu.uix_callbacks ["slidercellFaction_on_end"]) do
+			uix_callback (faction, value)
 		end
 	end
 	-- kuertee end: callback
@@ -1766,9 +1776,9 @@ function menu.removeFactionRelationHelper(faction)
 	Helper.ffiClearNewHelper()
 
 	-- kuertee start: callback
-	if callbacks ["removeFactionRelationHelper_on_end"] then
-		for _, callback in ipairs (callbacks ["removeFactionRelationHelper_on_end"]) do
-			callback (faction)
+	if menu.uix_callbacks ["removeFactionRelationHelper_on_end"] then
+		for uix_id, uix_callback in pairs (menu.uix_callbacks ["removeFactionRelationHelper_on_end"]) do
+			uix_callback (faction)
 		end
 	end
 	-- kuertee end: callback
@@ -1914,9 +1924,9 @@ function menu.playerMacro(current, customoptions)
 	end
 
 	-- kuertee start: callback
-	if callbacks ["playerMacro_on_end"] then
-		for _, callback in ipairs (callbacks ["playerMacro_on_end"]) do
-			callback (current, customoptions, options, currentOption)
+	if menu.uix_callbacks ["playerMacro_on_end"] then
+		for uix_id, uix_callback in pairs (menu.uix_callbacks ["playerMacro_on_end"]) do
+			uix_callback (current, customoptions, options, currentOption)
 		end
 	end
 	-- kuertee end: callback
@@ -2031,9 +2041,9 @@ function menu.universeSector(current)
 	end
 
 	-- kuertee start: callback
-	if callbacks ["universeSector_on_end"] then
-		for _, callback in ipairs (callbacks ["universeSector_on_end"]) do
-			callback (current, options, currentOption)
+	if menu.uix_callbacks ["universeSector_on_end"] then
+		for uix_id, uix_callback in pairs (menu.uix_callbacks ["universeSector_on_end"]) do
+			uix_callback (current, options, currentOption)
 		end
 	end
 	-- kuertee end: callback
@@ -2098,21 +2108,21 @@ end
 
 function menu.openShipConfig()
 	-- kuertee start: callback
-	if callbacks ["openShipConfig_on_start"] then
-		for _, callback in ipairs (callbacks ["openShipConfig_on_start"]) do
-			callback ()
+	if menu.uix_callbacks ["openShipConfig_on_start"] then
+		for uix_id, uix_callback in pairs (menu.uix_callbacks ["openShipConfig_on_start"]) do
+			uix_callback ()
 		end
 	end
 	-- kuertee end: callback
 
 	menu.usespacesuit = nil
-	Helper.closeMenuAndOpenNewMenu(menu, "ShipConfigurationMenu", { 0, 0, nil, "customgamestart", { menu.customgamestart, menu.creative, "ship", "shiploadout", "shippeople", "shippeoplefillpercent", nil, "playerpainttheme" } })
+	Helper.closeMenuAndOpenNewMenu(menu, "ShipConfigurationMenu", { 0, 0, nil, "customgamestart", { menu.customgamestart, menu.creative, "ship", "shiploadout", "shippeople", "shippeoplefillpercent", nil, "playerpainttheme", nil, nil, nil, nil, nil, nil, menu.paused ~= nil } })
 	menu.cleanup()
 
 	-- kuertee start: callback
-	if callbacks ["openShipConfig_on_end"] then
-		for _, callback in ipairs (callbacks ["openShipConfig_on_end"]) do
-			callback ()
+	if menu.uix_callbacks ["openShipConfig_on_end"] then
+		for uix_id, uix_callback in pairs (menu.uix_callbacks ["openShipConfig_on_end"]) do
+			uix_callback ()
 		end
 	end
 	-- kuertee end: callback
@@ -2122,13 +2132,13 @@ function menu.openPlayerPropertyShipConfig(row, entryid, macro, commanderid, peo
 	menu.addingFleet = true
 	menu.selectedRows.propertyTable = row
 	menu.selectedCols.propertyTable = 2
-	Helper.closeMenuAndOpenNewMenu(menu, "ShipConfigurationMenu", { 0, 0, nil, "customgamestart", { menu.customgamestart, menu.creative, "playerproperty", nil, nil, nil, nil, "playerpainttheme", entryid, macro, commanderid, peopledef, peoplefillpercentage, count } })
+	Helper.closeMenuAndOpenNewMenu(menu, "ShipConfigurationMenu", { 0, 0, nil, "customgamestart", { menu.customgamestart, menu.creative, "playerproperty", nil, nil, nil, nil, "playerpainttheme", entryid, macro, commanderid, peopledef, peoplefillpercentage, count, menu.paused ~= nil } })
 	menu.cleanup()
 
 	-- kuertee start: callback
-	if callbacks ["openPlayerPropertyShipConfig_on_end"] then
-		for _, callback in ipairs (callbacks ["openPlayerPropertyShipConfig_on_end"]) do
-			callback (row, entryid, macro, commanderid, peopledef, peoplefillpercentage, count)
+	if menu.uix_callbacks ["openPlayerPropertyShipConfig_on_end"] then
+		for uix_id, uix_callback in pairs (menu.uix_callbacks ["openPlayerPropertyShipConfig_on_end"]) do
+			uix_callback (row, entryid, macro, commanderid, peopledef, peoplefillpercentage, count)
 		end
 	end
 	-- kuertee end: callback
@@ -2151,9 +2161,9 @@ function menu.setPlayerMacro(customgamestart, propertyid, option)
 	end
 
 	-- kuertee start: callback
-	if callbacks ["setPlayerMacro_on_end"] then
-		for _, callback in ipairs (callbacks ["setPlayerMacro_on_end"]) do
-			callback (customgamestart, propertyid, option)
+	if menu.uix_callbacks ["setPlayerMacro_on_end"] then
+		for uix_id, uix_callback in pairs (menu.uix_callbacks ["setPlayerMacro_on_end"]) do
+			uix_callback (customgamestart, propertyid, option)
 		end
 	end
 	-- kuertee end: callback
@@ -2177,9 +2187,9 @@ function menu.setPlayerSector(gamestartid, propertyid, sector, noreset)
 	C.SetCustomGameStartStringProperty(gamestartid, propertyid, sector)
 
 	-- kuertee start: callback
-	if callbacks ["setPlayerSector_on_end"] then
-		for _, callback in ipairs (callbacks ["setPlayerSector_on_end"]) do
-			callback (gamestartid, propertyid, sector, noreset)
+	if menu.uix_callbacks ["setPlayerSector_on_end"] then
+		for uix_id, uix_callback in pairs (menu.uix_callbacks ["setPlayerSector_on_end"]) do
+			uix_callback (gamestartid, propertyid, sector, noreset)
 		end
 	end
 	-- kuertee end: callback
@@ -2828,9 +2838,9 @@ end
 
 function menu.display()
 	-- kuertee start: callback
-	if callbacks ["display_on_start"] then
-		for _, callback in ipairs (callbacks ["display_on_start"]) do
-			callback (config)
+	if menu.uix_callbacks ["display_on_start"] then
+		for uix_id, uix_callback in pairs (menu.uix_callbacks ["display_on_start"]) do
+			uix_callback (config)
 		end
 	end
 	-- kuertee end: callback
@@ -3025,7 +3035,15 @@ function menu.display()
 				end
 				-- cps
 				if active then
+
 					local onlineitems = OnlineGetUserItems()
+
+					-- kuertee start:
+					if not onlineitems then
+						onlineitems = {}
+					end
+					-- kuertee end
+
 					local limitedmodulesused = {}
 					for j = 0, buf_content.numconstructionplans - 1 do
 						local source, constructionplanid, isHQ = string.match(constructionplanids[j], "(.*):(.*):(%d)")
@@ -3060,9 +3078,9 @@ function menu.display()
 	row[3].handlers.onClick = menu.buttonReset
 
 	-- kuertee start: callback
-	if callbacks ["display_on_after_main_options"] then
-		for _, callback in ipairs (callbacks ["display_on_after_main_options"]) do
-			callback ()
+	if menu.uix_callbacks ["display_on_after_main_options"] then
+		for uix_id, uix_callback in pairs (menu.uix_callbacks ["display_on_after_main_options"]) do
+			uix_callback ()
 		end
 	end
 	-- kuertee end: callback
@@ -3177,9 +3195,9 @@ function menu.display()
 		row[1]:setColSpan(numCols):createText(menu.category.name, config.headerTextProperties)
 
 		-- kuertee start: callback
-		if callbacks ["display_on_after_category_name"] then
-			for _, callback in ipairs (callbacks ["display_on_after_category_name"]) do
-				callback (numCols)
+		if menu.uix_callbacks ["display_on_after_category_name"] then
+			for uix_id, uix_callback in pairs (menu.uix_callbacks ["display_on_after_category_name"]) do
+				uix_callback (numCols)
 			end
 		end
 		-- kuertee end: callback
@@ -3216,9 +3234,9 @@ function menu.display()
 					row[1].properties.color = function () return menu.propertyColor(property) end
 
 					-- kuertee start: callback
-					if callbacks ["display_on_after_property_name"] then
-						for _, callback in ipairs (callbacks ["display_on_after_property_name"]) do
-							callback (numCols, property)
+					if menu.uix_callbacks ["display_on_after_property_name"] then
+						for uix_id, uix_callback in pairs (menu.uix_callbacks ["display_on_after_property_name"]) do
+							uix_callback (numCols, property)
 						end
 					end
 					-- kuertee end: callback
@@ -3401,7 +3419,7 @@ function menu.display()
 			local yoffset = menu.propertyTable.properties.y + menu.propertyTable:getFullHeight() + 2 * Helper.borderSize
 			local width = 3 * menu.width / 4 - 4 * Helper.borderSize
 			local height = menu.budgetTable.properties.y - Helper.borderSize - yoffset
-			menu.flowchart = menu.mainFrame:addFlowchart(menu.flowchartRows, menu.flowchartCols, { minRowHeight = 45, minColWidth = config.nodewidth, x = xoffset, y = yoffset, width = width, maxVisibleHeight = height, edgeWidth = 1 })
+			menu.flowchart = menu.mainFrame:addFlowchart(menu.flowchartRows, menu.flowchartCols, { minRowHeight = 45, minColWidth = config.nodewidth, x = xoffset, y = yoffset, width = width, maxVisibleHeight = height })
 			menu.flowchart:setDefaultNodeProperties({
 				expandedFrameLayer = config.expandedMenuFrameLayer,
 				expandedTableNumColumns = 2,
@@ -3598,6 +3616,12 @@ function menu.display()
 
 				local onlineitems = OnlineGetUserItems()
 
+				-- kuertee start:
+				if not onlineitems then
+					onlineitems = {}
+				end
+				-- kuertee end
+
 				-- stations
 				menu.constructionplans = {}
 				menu.hqconstructionplans = {}
@@ -3638,15 +3662,24 @@ function menu.display()
 						end
 
 						local limitedmodulestext = ""
+						local limitedventuremodulestext = ""
 						local num_modules = C.GetNumPlannedLimitedModules(id)
 						local buf_modules = ffi.new("UIMacroCount[?]", num_modules)
 						num_modules = C.GetPlannedLimitedModules(buf_modules, num_modules, id)
 						for j = 0, num_modules - 1 do
 							local macro = ffi.string(buf_modules[j].macro)
 							local ware = GetMacroData(macro, "ware")
-							if (limitedmodulesused[macro] or 0) + buf_modules[j].amount > (onlineitems[ware] and onlineitems[ware].amount or 0) then
-								exceedslimitedmodules = true
-								limitedmodulestext = limitedmodulestext .. "\n- " .. GetMacroData(macro, "name")
+							local islimited = GetWareData(ware, "islimited")
+							if islimited then
+								if (limitedmodulesused[macro] or 0) + buf_modules[j].amount > Helper.getLimitedWareAmount(ware) then
+									exceedslimitedmodules = true
+									limitedmodulestext = limitedmodulestext .. "\n- " .. GetMacroData(macro, "name")
+								end
+							else
+								if (limitedmodulesused[macro] or 0) + buf_modules[j].amount > (onlineitems[ware] and onlineitems[ware].amount or 0) then
+									exceedslimitedmodules = true
+									limitedventuremodulestext = limitedventuremodulestext .. "\n- " .. GetMacroData(macro, "name")
+								end
 							end
 						end
 						if limitedmodulestext ~= "" then
@@ -3655,7 +3688,15 @@ function menu.display()
 							else
 								mouseovertext = ""
 							end
-							mouseovertext = mouseovertext .. ReadText(1026, 7915) .. limitedmodulestext
+							mouseovertext = mouseovertext .. ReadText(1026, 7934) .. limitedmodulestext
+						end
+						if limitedventuremodulestext ~= "" then
+							if mouseovertext then
+								mouseovertext = mouseovertext .. "\n"
+							else
+								mouseovertext = ""
+							end
+							mouseovertext = mouseovertext .. ReadText(1026, 7915) .. limitedventuremodulestext
 						end
 
 						local excludedmacrosmouseovertext = ""
@@ -3861,9 +3902,9 @@ function menu.display()
 		end
 
 		-- kuertee start: callback
-		if callbacks ["display_on_after_category_options"] then
-			for _, callback in ipairs (callbacks ["display_on_after_category_options"]) do
-				callback (numCols)
+		if menu.uix_callbacks ["display_on_after_category_options"] then
+			for uix_id, uix_callback in pairs (menu.uix_callbacks ["display_on_after_category_options"]) do
+				uix_callback (numCols)
 			end
 		end
 		-- kuertee end: callback
@@ -5114,13 +5155,15 @@ function menu.displayInit()
 	local ftable = menu.mainFrame:addTable(1, { tabOrder = 0, width = math.floor(Helper.viewWidth / 2), x = math.floor(Helper.viewWidth / 4), y = math.floor(Helper.viewHeight / 2) })
 
 	local row = ftable:addRow(false, { fixed = true })
-	row[1]:createText(ReadText(1001, 7230), { halign = "center", font = config.fontBold, fontsize = config.headerFontSize, x = 0, y = 0 })
+	row[1]:createText(" ", { halign = "center", font = config.fontBold, fontsize = config.headerFontSize, x = 0, y = 0 })
 
 	ftable.properties.y = math.floor((Helper.viewHeight - ftable:getVisibleHeight()) / 2)
 
 	menu.mainFrame:display()
 
 	menu.cleanup()
+
+	C.ShowInfoLine(ReadText(1001, 7230), 10)
 end
 
 function menu.refreshMenu()
@@ -5558,7 +5601,7 @@ function menu.checkConstructionPlan(source, id, limitedmodulesused, onlineitems,
 			return false
 		end
 
-		local limitedmodulestext = ""
+		local limitedmodulesexceeded = false
 		local num_modules = C.GetNumPlannedLimitedModules(id)
 		local buf_modules = ffi.new("UIMacroCount[?]", num_modules)
 		num_modules = C.GetPlannedLimitedModules(buf_modules, num_modules, id)
@@ -5566,12 +5609,19 @@ function menu.checkConstructionPlan(source, id, limitedmodulesused, onlineitems,
 			local macro = ffi.string(buf_modules[j].macro)
 			local ware = GetMacroData(macro, "ware")
 			local usedamount = limitedmodulesused[macro] or 0
-			if usedamount + buf_modules[j].amount > (onlineitems[ware] and onlineitems[ware].amount or 0) then
-				limitedmodulestext = limitedmodulestext .. "\n- " .. GetMacroData(macro, "name")
+			local islimited = GetWareData(ware, "islimited")
+			if islimited then
+				if usedamount + buf_modules[j].amount > Helper.getLimitedWareAmount(ware) then
+					limitedmodulesexceeded = true
+				end
+			else
+				if usedamount + buf_modules[j].amount > (onlineitems[ware] and onlineitems[ware].amount or 0) then
+					limitedmodulesexceeded = true
+				end
 			end
 			limitedmodulesused[macro] = usedamount + buf_modules[j].amount
 		end
-		if limitedmodulestext ~= "" then
+		if limitedmodulesexceeded then
 			return false
 		end
 
@@ -5593,33 +5643,109 @@ function menu.checkConstructionPlan(source, id, limitedmodulesused, onlineitems,
 end
 
 -- kuertee start:
-function menu.registerCallback (callbackName, callbackFunction)
-	-- note 1: format is generally [function name]_[action]. e.g.: in kuertee_menu_transporter, "display_on_set_room_active" overrides the room's active property with the return of the callback.
-	-- note 2: events have the word "_on_" followed by a PRESENT TENSE verb. e.g.: in kuertee_menu_transporter, "display_on_set_buttontable" is called after all of the rows of buttontable are set.
-	-- note 3: new callbacks can be added or existing callbacks can be edited. but commit your additions/changes to the mod's GIT repository.
-	-- note 4: search for the callback names to see where they are executed.
-	-- note 5: if a callback requires a return value, return it in an object var. e.g. "display_on_set_room_active" requires a return of {active = true | false}.
-	if callbacks [callbackName] == nil then
-		callbacks [callbackName] = {}
-	end
-	table.insert (callbacks [callbackName], callbackFunction)
+menu.uix_callbackCount = 0
+function menu.registerCallback(callbackName, callbackFunction, id)
+    -- note 1: format is generally [function name]_[action]. e.g.: in kuertee_menu_transporter, "display_on_set_room_active" overrides the room's active property with the return of the callback.
+    -- note 2: events have the word "_on_" followed by a PRESENT TENSE verb. e.g.: in kuertee_menu_transporter, "display_on_set_buttontable" is called after all of the rows of buttontable are set.
+    -- note 3: new callbacks can be added or existing callbacks can be edited. but commit your additions/changes to the mod's GIT repository.
+    -- note 4: search for the callback names to see where they are executed.
+    -- note 5: if a callback requires a return value, return it in an object var. e.g. "display_on_set_room_active" requires a return of {active = true | false}.
+    if menu.uix_callbacks [callbackName] == nil then
+        menu.uix_callbacks [callbackName] = {}
+    end
+    if not menu.uix_callbacks[callbackName][id] then
+        if not id then
+            menu.uix_callbackCount = menu.uix_callbackCount + 1
+            id = "_" .. tostring(menu.uix_callbackCount)
+        end
+        menu.uix_callbacks[callbackName][id] = callbackFunction
+        if Helper.isDebugCallbacks then
+            Helper.debugText_forced(menu.name .. " uix registerCallback: menu.uix_callbacks[" .. tostring(callbackName) .. "][" .. tostring(id) .. "]: " .. tostring(menu.uix_callbacks[callbackName][id]))
+        end
+    else
+        Helper.debugText_forced(menu.name .. " uix registerCallback: callback at " .. callbackName .. " with id " .. tostring(id) .. " was already previously registered")
+    end
 end
 
-function menu.deregisterCallback(callbackName, callbackFunction)
-	-- for i, callback in ipairs(callbacks[callbackName]) do
-	if callbacks[callbackName] and #callbacks[callbackName] > 0 then
-		for i = #callbacks[callbackName], 1, -1 do
-			if callbacks[callbackName][i] == callbackFunction then
-				table.remove(callbacks[callbackName], i)
-			end
-		end
-	end
+menu.uix_isDeregisterQueued = nil
+menu.uix_callbacks_toDeregister = {}
+function menu.deregisterCallback(callbackName, callbackFunction, id)
+    if not menu.uix_callbacks_toDeregister[callbackName] then
+        menu.uix_callbacks_toDeregister[callbackName] = {}
+    end
+    if id then
+        table.insert(menu.uix_callbacks_toDeregister[callbackName], id)
+    else
+        if menu.uix_callbacks[callbackName] then
+            for id, func in pairs(menu.uix_callbacks[callbackName]) do
+                if func == callbackFunction then
+                    table.insert(menu.uix_callbacks_toDeregister[callbackName], id)
+                end
+            end
+        end
+    end
+    if not menu.uix_isDeregisterQueued then
+        menu.uix_isDeregisterQueued = true
+        Helper.addDelayedOneTimeCallbackOnUpdate(menu.deregisterCallbacksNow, true, getElapsedTime() + 1)
+    end
 end
 
-function menu.loadModLuas()
-	if Helper then
-		Helper.loadModLuas(menu.name, "customgame_uix")
-	end
+function menu.deregisterCallbacksNow()
+    menu.uix_isDeregisterQueued = nil
+    for callbackName, ids in pairs(menu.uix_callbacks_toDeregister) do
+        if menu.uix_callbacks[callbackName] then
+            for _, id in ipairs(ids) do
+                if menu.uix_callbacks[callbackName][id] then
+                    if Helper.isDebugCallbacks then
+                        Helper.debugText_forced(menu.name .. " uix registerCallback (pre): menu.uix_callbacks[" .. tostring(callbackName) .. "][" .. tostring(id) .. "]: " .. tostring(menu.uix_callbacks[callbackName][id]))
+                    end
+                    menu.uix_callbacks[callbackName][id] = nil
+                    if Helper.isDebugCallbacks then
+                        Helper.debugText_forced(menu.name .. " uix registerCallback (post): menu.uix_callbacks[" .. tostring(callbackName) .. "][" .. tostring(id) .. "]: " .. tostring(menu.uix_callbacks[callbackName][id]))
+                    end
+                else
+                    Helper.debugText_forced(menu.name .. " uix deregisterCallbacksNow: callback at " .. callbackName .. " with id " .. tostring(id) .. " doesn't exist")
+                end
+            end
+        end
+    end
+    menu.uix_callbacks_toDeregister = {}
+end
+
+menu.uix_isUpdateQueued = nil
+menu.uix_callbacks_toUpdate = {}
+function menu.updateCallback(callbackName, id, callbackFunction)
+    if not menu.uix_callbacks_toUpdate[callbackName] then
+        menu.uix_callbacks_toUpdate[callbackName] = {}
+    end
+    if id then
+        table.insert(menu.uix_callbacks_toUpdate[callbackName], {id = id, callbackFunction = callbackFunction})
+    end
+    if not menu.uix_isUpdateQueued then
+        menu.uix_isUpdateQueued = true
+        Helper.addDelayedOneTimeCallbackOnUpdate(menu.updateCallbacksNow, true, getElapsedTime() + 1)
+    end
+end
+
+function menu.updateCallbacksNow()
+    menu.uix_isUpdateQueued = nil
+    for callbackName, updateDatas in pairs(menu.uix_callbacks_toUpdate) do
+        if menu.uix_callbacks[callbackName] then
+            for _, updateData in ipairs(updateDatas) do
+                if menu.uix_callbacks[callbackName][updateData.id] then
+                    if Helper.isDebugCallbacks then
+                        Helper.debugText_forced(menu.name .. " uix updateCallbacksNow (pre): menu.uix_callbacks[" .. tostring(callbackName) .. "][" .. tostring(updateData.id) .. "]: " .. tostring(menu.uix_callbacks[callbackName][updateData.id]))
+                    end
+                    menu.uix_callbacks[callbackName][updateData.id] = updateData.callbackFunction
+                    if Helper.isDebugCallbacks then
+                        Helper.debugText_forced(menu.name .. " uix updateCallbacksNow (post): menu.uix_callbacks[" .. tostring(callbackName) .. "][" .. tostring(updateData.id) .. "]: " .. tostring(menu.uix_callbacks[callbackName][updateData.id]))
+                    end
+                else
+                    Helper.debugText_forced(menu.name .. " uix updateCallbacksNow: callback at " .. callbackName .. " with id " .. tostring(id) .. " doesn't exist")
+                end
+            end
+        end
+    end
 end
 -- kuertee end
 

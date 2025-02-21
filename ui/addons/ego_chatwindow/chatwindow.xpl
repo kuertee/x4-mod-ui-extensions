@@ -243,6 +243,13 @@ function menu.getChatMessages()
 
 		local prevdate = ""
 		local messages = OnlineGetChatMessages()
+
+		-- kuertee start:
+		if not messages then
+			messages = {}
+		end
+		-- kuertee end
+
 		for i, message in ipairs(messages) do
 			local color = menu.getChatColor(message.author, message.authorid, userid)
 

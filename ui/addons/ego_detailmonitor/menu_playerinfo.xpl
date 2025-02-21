@@ -1,5 +1,6 @@
 ﻿
--- param == { 0, 0, mode }
+-- param == { 0, 0, mode, modeparam }
+-- modes: - "globalorders",		param: { "traderule|blacklist|fightrule", id }
 
 -- ffi setup
 local ffi = require("ffi")
@@ -223,7 +224,7 @@ ffi.cdef[[
 	int32_t GetPersonCombinedSkill(UniverseID controllableid, NPCSeed person, const char* role, const char* postid);
 	const char* GetPersonName(NPCSeed person, UniverseID controllableid);
 	const char* GetPersonRoleName(NPCSeed person, UniverseID controllableid);
-	uint32_t GetPersonSkills3(SkillInfo* result, uint32_t resultlen, NPCSeed person, UniverseID controllableid);
+	uint32_t GetPersonSkillsForAssignment(Skill2* result, NPCSeed person, UniverseID controllableid, const char* role, const char* postid);
 	uint32_t GetPeople2(PeopleInfo* result, uint32_t resultlen, UniverseID controllableid, bool includearriving);
 	uint32_t GetPlayerAlertCounts(PlayerAlertCounts* result, uint32_t resultlen);
 	uint32_t GetPlayerAlerts2(PlayerAlertInfo2* result, uint32_t resultlen);
@@ -308,6 +309,7 @@ local menu = {
 		selectedWares = {},
 		curEntry = {},
 		mode = "normal",
+		clearRendertarget = true,
 	},
 	logbookData = {
 		name = ReadText(1001, 2963),
@@ -448,7 +450,7 @@ if C.AreVenturesCompatible() then
 end
 
 -- kuertee start:
-local callbacks = {}
+menu.uix_callbacks = {}
 -- kuertee end
 
 local function init()
@@ -471,8 +473,6 @@ end
 
 -- kuertee start:
 function menu.init_kuertee ()
-	menu.loadModLuas()
-	-- DebugError("uix load success: " .. tostring(debug.getinfo(1).source))
 end
 -- kuertee end
 
@@ -538,9 +538,9 @@ function menu.cleanup()
 	C.SetUICoverOverride(false)
 
 	-- kuertee start: callback
-	if callbacks ["cleanup"] then
-		for _, callback in ipairs (callbacks ["cleanup"]) do
-			callback ()
+	if menu.uix_callbacks ["cleanup"] then
+		for uix_id, uix_callback in pairs (menu.uix_callbacks ["cleanup"]) do
+			uix_callback ()
 		end
 	end
 	-- kuertee end: callback
@@ -590,9 +590,9 @@ end
 
 function menu.buttonTogglePlayerInfo(mode)
 	-- kuertee start: callback
-	if callbacks ["buttonTogglePlayerInfo_on_start"] then
-		for _, callback in ipairs (callbacks ["buttonTogglePlayerInfo_on_start"]) do
-			callback (mode, config)
+	if menu.uix_callbacks ["buttonTogglePlayerInfo_on_start"] then
+		for uix_id, uix_callback in pairs (menu.uix_callbacks ["buttonTogglePlayerInfo_on_start"]) do
+			uix_callback (mode, config)
 		end
 	end
 	-- kuertee end: callback
@@ -655,6 +655,8 @@ function menu.buttonTogglePlayerInfo(mode)
 		menu.mode = mode
 		if mode == "personnel" then
 			menu.empireData.init = true
+		elseif mode == "inventory" then
+			menu.inventoryData.clearRendertarget = true
 		end
 		if newidx then
 			SelectRow(menu.mainTable, newidx + 2)
@@ -960,6 +962,9 @@ end
 
 function menu.buttonMessagesToggleCutsceneFullscreen()
 	menu.messageData.showFullscreen = not menu.messageData.showFullscreen
+	if not menu.messageData.cutsceneStopped then
+		menu.messageData.fullscreenToggled = true
+	end
 	menu.refreshInfoFrame()
 end
 
@@ -1035,8 +1040,13 @@ end
 
 function menu.buttonAccountAllEstimates()
 	for i, station in ipairs(menu.accountData.stations) do
-		menu.accountSetEstimate(station)
-		local buildstorage = GetComponentData(station, "buildstorage")
+		local productionmoney, buildstorage = GetComponentData(station, "money", "buildstorage")
+		if productionmoney then
+			menu.accountSetEstimate(station)
+		end
+		menu.accountSetEstimate(buildstorage, true)
+	end
+	for i, buildstorage in ipairs(menu.accountData.buildstorages) do
 		menu.accountSetEstimate(buildstorage, true)
 	end
 
@@ -1114,14 +1124,56 @@ function menu.slidercellAccountChanged(station, row, value, functable)
 
 	if changed then
 		local playermoney = ConvertMoneyString(menu.getAccountPlayerMoney(), false, true, nil, true) .. " " .. ReadText(1001, 101)
-		for i in ipairs(menu.accountData.stations) do
-			Helper.updateCellText(functable, i * 7 - 3, 5, playermoney)
-			Helper.updateCellText(functable, i * 7, 5, playermoney)
-			if (i * 7 - 3) == row then
-				Helper.updateCellText(functable, i * 7 - 3, 2, ConvertMoneyString(GetComponentData(station, "money") - value, false, true, nil, true) .. " " .. ReadText(1001, 101))
-			elseif (i * 7) == row then
-				Helper.updateCellText(functable, i * 7, 2, ConvertMoneyString(GetComponentData(station, "money") - value, false, true, nil, true) .. " " .. ReadText(1001, 101))
+
+		local offset = 2
+		for i, otherstation in ipairs(menu.accountData.stations) do
+			if i ~= 1 then
+				-- empty row
+				offset = offset + 1
 			end
+			-- title
+			offset = offset + 1
+
+			local stationmoney, buildstorage = GetComponentData(otherstation, "money", "buildstorage")
+
+			if stationmoney then
+				local stationsliderrow = offset + 1
+
+				Helper.updateCellText(functable, stationsliderrow, 5, playermoney)
+				if stationsliderrow == row then
+					Helper.updateCellText(functable, stationsliderrow, 2, ConvertMoneyString(GetComponentData(station, "money") - value, false, true, nil, true) .. " " .. ReadText(1001, 101))
+				end
+
+				offset = offset + 3
+			end
+
+			if buildstorage then
+				local buildstoragesliderrow = offset + 1
+
+				Helper.updateCellText(functable, buildstoragesliderrow, 5, playermoney)
+				if buildstoragesliderrow == row then
+					Helper.updateCellText(functable, buildstoragesliderrow, 2, ConvertMoneyString(GetComponentData(station, "money") - value, false, true, nil, true) .. " " .. ReadText(1001, 101))
+				end
+
+				offset = offset + 2
+			end
+		end
+		for i in ipairs(menu.accountData.buildstorages) do
+			if (i ~= 1) or (#menu.accountData.stations > 0) then
+				-- empty row
+				offset = offset + 1
+			end
+			-- title
+			offset = offset + 1
+
+			local sliderrow = offset + 1
+
+			Helper.updateCellText(functable, sliderrow, 5, playermoney)
+			if sliderrow == row then
+				Helper.updateCellText(functable, sliderrow, 2, ConvertMoneyString(GetComponentData(station, "money") - value, false, true, nil, true) .. " " .. ReadText(1001, 101))
+			end
+
+			offset = offset + 2
 		end
 	end
 end
@@ -1295,9 +1347,105 @@ function menu.onShowMenu(state)
 	menu.transactionSearchString = ""
 
 	menu.initEmpireData()
+	if menu.mode == "globalorders" then
+		if menu.param[4] then
+			if menu.param[4][1] == "traderule" then
+				local id = menu.param[4][2]
+
+				if id then
+					local counts = C.GetTradeRuleInfoCounts(id)
+					local buf = ffi.new("TradeRuleInfo")
+					buf.numfactions = counts.numfactions
+					buf.factions = Helper.ffiNewHelper("const char*[?]", counts.numfactions)
+					if C.GetTradeRuleInfo(buf, id) then
+						local factions = {}
+						for j = 0, buf.numfactions - 1 do
+							table.insert(factions, ffi.string(buf.factions[j]))
+						end
+
+						local defaults = {
+							["trade"] = C.IsPlayerTradeRuleDefault(id, "buy") and C.IsPlayerTradeRuleDefault(id, "sell"),
+							["supply"] = C.IsPlayerTradeRuleDefault(id, "supply"),
+							["build"] = C.IsPlayerTradeRuleDefault(id, "build"),
+						}
+
+						menu.empireData.mode = { "empire_list", "traderule", { id = id, name = ffi.string(buf.name), factions = factions, iswhitelist = buf.iswhitelist, defaults = defaults } }
+					end
+				else
+					menu.empireData.mode = { "empire_list", "traderule", {} }
+				end
+			elseif menu.param[4][1] == "blacklist" then
+				local id = menu.param[4][2]
+
+				if id then
+					local counts = C.GetBlacklistInfoCounts(id)
+					local buf = ffi.new("BlacklistInfo2")
+					buf.nummacros = counts.nummacros
+					buf.macros = Helper.ffiNewHelper("const char*[?]", counts.nummacros)
+					buf.numfactions = counts.numfactions
+					buf.factions = Helper.ffiNewHelper("const char*[?]", counts.numfactions)
+					if C.GetBlacklistInfo2(buf, id) then
+						local type = ffi.string(buf.type)
+
+						local spaces = {}
+						for j = 0, buf.nummacros - 1 do
+							table.insert(spaces, ConvertIDTo64Bit(GetMacroData(ffi.string(buf.macros[j]), "sectorcomponent")))
+						end
+
+						local factions = {}
+						for j = 0, buf.numfactions - 1 do
+							table.insert(factions, ffi.string(buf.factions[j]))
+						end
+
+						local defaults = {
+							["civilian"] = C.IsPlayerBlacklistDefault(id, type, "civilian"),
+							["military"] = C.IsPlayerBlacklistDefault(id, type, "military"),
+						}
+
+						menu.empireData.mode = { "empire_list", "blacklist", { id = id, type = type, name = ffi.string(buf.name), spaces = spaces, factions = factions, relation = ffi.string(buf.relation), hazardous = buf.hazardous, defaults = defaults, usemacrowhitelist = buf.usemacrowhitelist, usefactionwhitelist = buf.usefactionwhitelist } }
+					end
+				else
+					menu.empireData.mode = { "empire_list", "blacklist", {} }
+				end
+			elseif menu.param[4][1] == "fightrule" then
+				local id = menu.param[4][2]
+
+				if id then
+					local counts = C.GetFightRuleInfoCounts(id)
+					local buf = ffi.new("FightRuleInfo")
+					buf.numfactions = counts.numfactions
+					buf.factions = Helper.ffiNewHelper("UIFightRuleSetting[?]", counts.numfactions)
+					if C.GetFightRuleInfo(buf, id) then
+						local settings = {}
+						for j = 0, buf.numfactions - 1 do
+							local faction = ffi.string(buf.factions[j].factionid)
+							local civilian = ffi.string(buf.factions[j].civiliansetting)
+							if civilian == "" then
+								civilian = "default"
+							end
+							local military = ffi.string(buf.factions[j].militarysetting)
+							if military == "" then
+								military = "default"
+							end
+							settings[faction] = { civilian = civilian, military = military }
+						end
+
+						local defaults = {
+							["attack"] = C.IsPlayerFightRuleDefault(id, "attack"),
+						}
+
+						menu.empireData.mode = { "empire_list", "fightrule", { id = id, name = ffi.string(buf.name), settings = settings, defaults = defaults } }
+					end
+				else
+					menu.empireData.mode = { "empire_list", "fightrule", {} }
+				end
+			end
+		end
+	end
 
 	Helper.setTabScrollCallback(menu, menu.onTabScroll)
 	registerForEvent("inputModeChanged", getElement("Scene.UIContract"), menu.onInputModeChanged)
+	registerForEvent("cutsceneStopped", getElement("Scene.UIContract"), menu.onCutsceneStopped)
 
 	if state then
 		menu.onRestoreState(state)
@@ -1351,9 +1499,9 @@ end
 
 function menu.createPlayerInfo(frame, width, height, offsetx, offsety)
 	-- kuertee start: callback
-	if callbacks ["createPlayerInfo_on_start"] then
-		for _, callback in ipairs (callbacks ["createPlayerInfo_on_start"]) do
-			callback (config)
+	if menu.uix_callbacks ["createPlayerInfo_on_start"] then
+		for uix_id, uix_callback in pairs (menu.uix_callbacks ["createPlayerInfo_on_start"]) do
+			uix_callback (config)
 		end
 	end
 	-- kuertee end: callback
@@ -1408,11 +1556,22 @@ function menu.onInputModeChanged(_, mode)
 	end
 end
 
+function menu.onCutsceneStopped(_, cutsceneID)
+	if cutsceneID == menu.cutsceneid then
+		if next(menu.messageData.curEntry) then
+			if menu.messageData.showFullscreen then
+				menu.buttonMessagesToggleCutsceneFullscreen()
+			end
+			menu.messageData.cutsceneStopped = true
+		end
+	end
+end
+
 function menu.createInfoFrame()
 	-- kuertee start: callback
-	if callbacks ["createInfoFrame_on_start"] then
-		for _, callback in ipairs (callbacks ["createInfoFrame_on_start"]) do
-			callback (menu.infoFrame, tableProperties)
+	if menu.uix_callbacks ["createInfoFrame_on_start"] then
+		for uix_id, uix_callback in pairs (menu.uix_callbacks ["createInfoFrame_on_start"]) do
+			uix_callback (menu.infoFrame, tableProperties)
 		end
 	end
 	-- kuertee end: callback
@@ -1490,9 +1649,9 @@ function menu.createInfoFrame()
 	end
 
 	-- kuertee start: callback
-	if callbacks ["createInfoFrame_on_info_frame_mode"] then
-		for _, callback in ipairs (callbacks ["createInfoFrame_on_info_frame_mode"]) do
-			callback (menu.infoFrame, tableProperties)
+	if menu.uix_callbacks ["createInfoFrame_on_info_frame_mode"] then
+		for uix_id, uix_callback in pairs (menu.uix_callbacks ["createInfoFrame_on_info_frame_mode"]) do
+			uix_callback (menu.infoFrame, tableProperties)
 		end
 	end
 	-- kuertee end: callback
@@ -1510,7 +1669,15 @@ function menu.createInventory(frame, tableProperties, mode, tabOrderOffset)
 
 	local isonline = Helper.isOnlineGame()
 	-- show venture inventory partially if we have permanent online items
+
 	local onlineitems = OnlineGetUserItems()
+
+	-- kuertee start:
+	if not onlineitems then
+		onlineitems = {}
+	end
+	-- kuertee end
+
 	for ware, waredata in pairs(onlineitems) do
 		local isoperationvolatile, isseasonvolatile = GetWareData(ware, "isoperationvolatile", "isseasonvolatile")
 		if (not isoperationvolatile) and (not isseasonvolatile) then
@@ -1550,6 +1717,13 @@ function menu.createInventory(frame, tableProperties, mode, tabOrderOffset)
 
 		menu.inventory = GetPlayerInventory()
 		menu.onlineitems = OnlineGetUserItems()
+
+		-- kuertee start:
+		if not menu.onlineitems then
+			menu.onlineitems = {}
+		end
+		-- kuertee end
+
 		for ware, waredata in Helper.orderedPairs(menu.inventory) do
 			local iscraftingresource, ismodpart, isprimarymodpart, ispersonalupgrade, tradeonly, ispaintmod, isbraneitem = GetWareData(ware, "iscraftingresource", "ismodpart", "isprimarymodpart", "ispersonalupgrade", "tradeonly", "ispaintmod", "isbraneitem")
 			if iscraftingresource or ismodpart or isprimarymodpart then
@@ -1743,7 +1917,8 @@ function menu.createInventory(frame, tableProperties, mode, tabOrderOffset)
 				height = Helper.viewHeight / 2
 				width = height
 			end
-			local mediaProperties = { width = width, x = Helper.viewWidth - width - Helper.frameBorder, height = height, y = tableProperties.y }
+			local mediaProperties = { width = width, x = Helper.viewWidth - width - Helper.frameBorder, height = height, y = tableProperties.y, clear = menu.inventoryData.clearRendertarget }
+			menu.inventoryData.clearRendertarget = false
 
 			menu.rendertarget = frame:addRenderTarget(mediaProperties)
 			menu.inventoryData.activatecutscene = true
@@ -2284,9 +2459,9 @@ function menu.createFactions(frame, tableProperties)
 		end
 
 		-- kuertee start: callback
-		if callbacks ["createFactions_on_before_render_licences"] then
-			for _, callback in ipairs (callbacks ["createFactions_on_before_render_licences"]) do
-				callback (frame, tableProperties, relation.id, detailtable)
+		if menu.uix_callbacks ["createFactions_on_before_render_licences"] then
+			for uix_id, uix_callback in pairs (menu.uix_callbacks ["createFactions_on_before_render_licences"]) do
+				uix_callback (frame, tableProperties, relation.id, detailtable)
 			end
 		end
 		-- kuertee end: callback
@@ -2355,9 +2530,9 @@ function menu.createFactions(frame, tableProperties)
 		row[3].handlers.onClick = function () return menu.buttonWarDeclarationConfirm(relation.id) end
 
 		-- kuertee start: callback
-		if callbacks ["createFactions_on_after_declare_war_button"] then
-			for _, callback in ipairs (callbacks ["createFactions_on_after_declare_war_button"]) do
-				callback (frame, tableProperties, relation.id, detailtable)
+		if menu.uix_callbacks ["createFactions_on_after_declare_war_button"] then
+			for uix_id, uix_callback in pairs (menu.uix_callbacks ["createFactions_on_after_declare_war_button"]) do
+				uix_callback (frame, tableProperties, relation.id, detailtable)
 			end
 		end
 		-- kuertee end: callback
@@ -2459,10 +2634,23 @@ function menu.createAccounts(frame, tableProperties, tabOrderOffset)
 
 	local playermoney = menu.getAccountPlayerMoney()
 
-	menu.accountData.stations = GetContainedStationsByOwner("player")
+	menu.accountData.stations = GetContainedStationsByOwner("player", nil, true)
 	table.sort(menu.accountData.stations, Helper.sortComponentName)
-	if #menu.accountData.stations > 0 then
+
+	menu.accountData.buildstorages = GetContainedBuildStoragesByOwner("player")
+	for i = #menu.accountData.buildstorages, 1, -1 do
+		if GetComponentData(menu.accountData.buildstorages[i], "basestation") then
+			table.remove(menu.accountData.buildstorages, i)
+		end
+	end
+	table.sort(menu.accountData.buildstorages, Helper.sortComponentName)
+
+	if (#menu.accountData.stations > 0) or (#menu.accountData.buildstorages > 0) then
 		for i, station in ipairs(menu.accountData.stations) do
+			if i ~= 1 then
+				infotable:addEmptyRow()
+			end
+
 			local name, sector, stationmoney, productionmoney, buildstorage = GetComponentData(station, "name", "sector", "money", "productionmoney", "buildstorage")
 			local station64 = ConvertIDTo64Bit(station)
 			-- station name
@@ -2472,29 +2660,31 @@ function menu.createAccounts(frame, tableProperties, tabOrderOffset)
 			row[1].properties.color = menu.holomapcolor.playercolor
 			row[1].properties.mouseOverText = mouseovertext
 
-			-- station account
-			local transaction = menu.findAccountTransaction(station)
-			local row = infotable:addRow(true, {  })
-			row[1]:createText(ReadText(1001, 7710) .. ReadText(1001, 120), { x = Helper.standardTextHeight })
-			row[2]:createText(ConvertMoneyString(stationmoney - transaction, false, true, nil, true) .. " " .. ReadText(1001, 101), { halign = "right" })
-			row[3]:setColSpan(2):createSliderCell({ min = math.min((-playermoney + transaction), transaction), max = math.max(stationmoney, transaction), start = transaction, fromCenter = true, suffix = ReadText(1001, 101), height = config.rowHeight })
-			row[3].handlers.onSliderCellChanged = function (_, value) return menu.slidercellAccountChanged(station, row.index, value, infotable.id) end
-			row[3].handlers.onSliderCellConfirm = function () menu.refreshdata = { nil, nil, "accounts", row.index } menu.refresh = getElapsedTime() + 0.1 end
-			row[5]:createText(ConvertMoneyString(playermoney, false, true, nil, true) .. " " .. ReadText(1001, 101), { halign = "left" })
+			if stationmoney then
+				-- station account
+				local transaction = menu.findAccountTransaction(station)
+				local row = infotable:addRow(true, {  })
+				row[1]:createText(ReadText(1001, 7710) .. ReadText(1001, 120), { x = Helper.standardTextHeight })
+				row[2]:createText(ConvertMoneyString(stationmoney - transaction, false, true, nil, true) .. " " .. ReadText(1001, 101), { halign = "right" })
+				row[3]:setColSpan(2):createSliderCell({ min = math.min((-playermoney + transaction), transaction), max = math.max(stationmoney, transaction), start = transaction, fromCenter = true, suffix = ReadText(1001, 101), height = config.rowHeight })
+				row[3].handlers.onSliderCellChanged = function (_, value) return menu.slidercellAccountChanged(station, row.index, value, infotable.id) end
+				row[3].handlers.onSliderCellConfirm = function () menu.refreshdata = { nil, nil, "accounts", row.index } menu.refresh = getElapsedTime() + 0.1 end
+				row[5]:createText(ConvertMoneyString(playermoney, false, true, nil, true) .. " " .. ReadText(1001, 101), { halign = "left" })
 
-			-- station estimated budget
-			local supplymoney = tonumber(C.GetSupplyBudget(station64)) / 100
-			local tradewaremoney = tonumber(C.GetTradeWareBudget(station64)) / 100
-			local row = infotable:addRow(true, {  })
-			row[1]:createText(ReadText(1001, 9434) .. ReadText(1001, 120), { x = Helper.standardTextHeight })
-			local mouseovertext =	ReadText(1001, 8420) .. ReadText(1001, 120) .. " " .. ConvertMoneyString(productionmoney, false, true, 0, true)	.. " " .. ReadText(1001, 101) .. "\n" ..
-									ReadText(1001, 8423) .. ReadText(1001, 120) .. " " .. ConvertMoneyString(supplymoney, false, true, 0, true)		.. " " .. ReadText(1001, 101) .. "\n" ..
-									ReadText(1001, 8447) .. ReadText(1001, 120) .. " " .. ConvertMoneyString(tradewaremoney, false, true, 0, true)	.. " " .. ReadText(1001, 101)
-			row[2]:createText(ConvertMoneyString(productionmoney + supplymoney + tradewaremoney, false, true, 0, true) .. " " .. ReadText(1001, 101), { halign = "right", mouseOverText = mouseovertext })
-			row[5]:createButton({ active = function () local money, estimate = GetComponentData(station64, "money", "productionmoney"); estimate = estimate + tonumber(C.GetSupplyBudget(station64)) / 100 + tonumber(C.GetTradeWareBudget(station64)) / 100; return (money + GetPlayerMoney()) > estimate end }):setText(ReadText(1001, 7965), { halign = "center", fontsize = config.mapFontSize })
-			row[5].handlers.onClick = function () return menu.buttonAccountToEstimate(station) end
+				-- station estimated budget
+				local supplymoney = tonumber(C.GetSupplyBudget(station64)) / 100
+				local tradewaremoney = tonumber(C.GetTradeWareBudget(station64)) / 100
+				local row = infotable:addRow(true, {  })
+				row[1]:createText(ReadText(1001, 9434) .. ReadText(1001, 120), { x = Helper.standardTextHeight })
+				local mouseovertext =	ReadText(1001, 8420) .. ReadText(1001, 120) .. " " .. ConvertMoneyString(productionmoney, false, true, 0, true)	.. " " .. ReadText(1001, 101) .. "\n" ..
+										ReadText(1001, 8423) .. ReadText(1001, 120) .. " " .. ConvertMoneyString(supplymoney, false, true, 0, true)		.. " " .. ReadText(1001, 101) .. "\n" ..
+										ReadText(1001, 8447) .. ReadText(1001, 120) .. " " .. ConvertMoneyString(tradewaremoney, false, true, 0, true)	.. " " .. ReadText(1001, 101)
+				row[2]:createText(ConvertMoneyString(productionmoney + supplymoney + tradewaremoney, false, true, 0, true) .. " " .. ReadText(1001, 101), { halign = "right", mouseOverText = mouseovertext })
+				row[5]:createButton({ active = function () local money, estimate = GetComponentData(station64, "money", "productionmoney"); estimate = estimate + tonumber(C.GetSupplyBudget(station64)) / 100 + tonumber(C.GetTradeWareBudget(station64)) / 100; return (money + GetPlayerMoney()) > estimate end }):setText(ReadText(1001, 7965), { halign = "center", fontsize = config.mapFontSize })
+				row[5].handlers.onClick = function () return menu.buttonAccountToEstimate(station) end
 
-			infotable:addEmptyRow(Helper.standardTextHeight / 2)
+				infotable:addEmptyRow(Helper.standardTextHeight / 2)
+			end
 
 			-- buildstorage account
 			if buildstorage then
@@ -2517,10 +2707,36 @@ function menu.createAccounts(frame, tableProperties, tabOrderOffset)
 				row[5]:createButton({ active = function () local money, estimate = GetComponentData(buildstorage64, "money", "wantedmoney"); return (money + GetPlayerMoney()) > estimate end }):setText(ReadText(1001, 7965), { halign = "center", fontsize = config.mapFontSize })
 				row[5].handlers.onClick = function () return menu.buttonAccountToEstimate(buildstorage, true) end
 			end
-
-			if i ~= #menu.accountData.stations then
+		end
+		for i, buildstorage in ipairs(menu.accountData.buildstorages) do
+			if (i ~= 1) or (#menu.accountData.stations > 0) then
 				infotable:addEmptyRow()
 			end
+
+			local name, sector, buildstoragemoney, wantedmoney = GetComponentData(buildstorage, "name", "sector", "money", "wantedmoney")
+
+			-- station name
+			local mouseovertext = ReadText(20001, 201) .. ReadText(1001, 120) .. " " .. sector
+			local row = infotable:addRow(false, { bgColor = Color["row_background_blue"] })
+			row[1]:setColSpan(5):createText(name .. " (" .. ffi.string(C.GetObjectIDCode(ConvertIDTo64Bit(buildstorage))) .. ")", Helper.subHeaderTextProperties)
+			row[1].properties.color = menu.holomapcolor.playercolor
+			row[1].properties.mouseOverText = mouseovertext
+
+			local transaction = menu.findAccountTransaction(buildstorage)
+			local row = infotable:addRow(true, {  })
+			row[1]:createText(ReadText(1001, 9429) .. ReadText(1001, 120), { x = Helper.standardTextHeight })
+			row[2]:createText(ConvertMoneyString(buildstoragemoney - transaction, false, true, nil, true) .. " " .. ReadText(1001, 101), { halign = "right" })
+			row[3]:setColSpan(2):createSliderCell({ min = math.min((-playermoney + transaction), transaction), max = math.max(buildstoragemoney, transaction), start = transaction, fromCenter = true, suffix = ReadText(1001, 101), height = config.rowHeight })
+			row[3].handlers.onSliderCellChanged = function (_, value) return menu.slidercellAccountChanged(buildstorage, row.index, value, infotable.id) end
+			row[3].handlers.onSliderCellConfirm = function () menu.refreshdata = { nil, nil, "accounts", row.index } menu.refresh = getElapsedTime() + 0.1 end
+			row[5]:createText(ConvertMoneyString(playermoney, false, true, nil, true) .. " " .. ReadText(1001, 101), { halign = "left" })
+
+			-- buildstorage estimated budget
+			local row = infotable:addRow(true, {  })
+			row[1]:createText(ReadText(1001, 9436) .. ReadText(1001, 120), { x = Helper.standardTextHeight })
+			row[2]:createText(ConvertMoneyString(wantedmoney, false, true, 0, true) .. " " .. ReadText(1001, 101), { halign = "right" })
+			row[5]:createButton({ active = function () local money, estimate = GetComponentData(buildstorage, "money", "wantedmoney"); return (money + GetPlayerMoney()) > estimate end }):setText(ReadText(1001, 7965), { halign = "center", fontsize = config.mapFontSize })
+			row[5].handlers.onClick = function () return menu.buttonAccountToEstimate(buildstorage, true) end
 		end
 	else
 		local row = infotable:addRow(true, {  })
@@ -3182,7 +3398,16 @@ function menu.createMessages(frame, tableProperties)
 			end
 
 			menu.rendertarget = frame:addRenderTarget(mediaProperties)
-			menu.messageData.activatecutscene = true
+			if not menu.messageData.fullscreenToggled then
+				menu.messageData.activatecutscene = true
+				menu.messageData.cutsceneStopped = nil
+
+				if not menu.cutsceneStoppedNotification then
+					menu.cutsceneStoppedNotification = true
+					NotifyOnCutsceneStopped(getElement("Scene.UIContract"))
+				end
+			end
+			menu.messageData.fullscreenToggled = nil
 
 			local buttonsize = 2 * config.rowHeight
 			local rendertargetbuttontable = frame:addTable(2, { tabOrder = 4, width = mediaProperties.width, x = mediaProperties.x, y = mediaProperties.y + mediaProperties.height - Helper.scaleX(buttonsize) })
@@ -3735,6 +3960,12 @@ function menu.initEmpireData()
 
 	local onlineitems = OnlineGetUserItems()
 
+	-- kuertee start:
+	if not onlineitems then
+		onlineitems = {}
+	end
+	-- kuertee end
+
 	local numinventoryitems = 0
 	-- { [ware1] = { name = "", amount = 0, price = 0 }, [ware2] = {} }
 	local playerinventory = GetPlayerInventory()
@@ -3970,6 +4201,10 @@ function menu.createEmpire(frame, tableProperties)
 
 		for _, entry in ipairs(menu.traderules) do
 			row = table_left:addRow({ "empire_list", "traderule", entry }, {  })
+			if (menu.empireData.mode[1] == "empire_list") and (menu.empireData.mode[2] == "traderule") and (menu.empireData.mode[3].id == entry.id) then
+				menu.setselectedrow = row.index
+			end
+
 			row[1]:createText(entry.name)
 			local defaulttext = ""
 			--print(entry.defaults.trade .. ", " .. entry.defaults.supply .. ", " .. entry.defaults.build)
@@ -4011,6 +4246,9 @@ function menu.createEmpire(frame, tableProperties)
 		row = table_left:addRow({ "empire_list", "traderule", {} }, {  })
 		row[1]:setColSpan(3):createText(ReadText(1001, 11011))
 		row[4]:createIcon("menu_edit", { height = config.rowHeight, width = config.rowHeight })
+		if (menu.empireData.mode[1] == "empire_list") and (menu.empireData.mode[2] == "traderule") and (not next(menu.empireData.mode[3])) then
+			menu.setselectedrow = row.index
+		end
 
 		-- blacklists
 		row = table_left:addRow(nil, { bgColor = Color["row_title_background"] })
@@ -4020,6 +4258,9 @@ function menu.createEmpire(frame, tableProperties)
 
 		for _, entry in ipairs(menu.blacklists) do
 			row = table_left:addRow({ "empire_list", "blacklist", entry }, {  })
+			if (menu.empireData.mode[1] == "empire_list") and (menu.empireData.mode[2] == "blacklist") and (menu.empireData.mode[3].id == entry.id) then
+				menu.setselectedrow = row.index
+			end
 			row[1]:createText(entry.name)
 			local text = ""
 			for _, option in ipairs(config.blacklistTypes) do
@@ -4041,6 +4282,9 @@ function menu.createEmpire(frame, tableProperties)
 			row[4]:createIcon("menu_edit", { height = config.rowHeight, width = config.rowHeight })
 		end
 		row = table_left:addRow({ "empire_list", "blacklist", {} }, {  })
+		if (menu.empireData.mode[1] == "empire_list") and (menu.empireData.mode[2] == "blacklist") and (not next(menu.empireData.mode[3])) then
+			menu.setselectedrow = row.index
+		end
 		row[1]:setColSpan(3):createText(ReadText(1001, 9144))
 		row[4]:createIcon("menu_edit", { height = config.rowHeight, width = config.rowHeight })
 
@@ -4052,6 +4296,9 @@ function menu.createEmpire(frame, tableProperties)
 
 		for _, entry in ipairs(menu.fightrules) do
 			row = table_left:addRow({ "empire_list", "fightrule", entry }, {  })
+			if (menu.empireData.mode[1] == "empire_list") and (menu.empireData.mode[2] == "fightrule") and (menu.empireData.mode[3].id == entry.id) then
+				menu.setselectedrow = row.index
+			end
 			row[1]:setColSpan(2):createText(entry.name)
 			local defaulttext = ""
 			if entry.defaults.attack then
@@ -4061,6 +4308,9 @@ function menu.createEmpire(frame, tableProperties)
 			row[4]:createIcon("menu_edit", { height = config.rowHeight, width = config.rowHeight })
 		end
 		row = table_left:addRow({ "empire_list", "fightrule", {} }, {  })
+		if (menu.empireData.mode[1] == "empire_list") and (menu.empireData.mode[2] == "fightrule") and (not next(menu.empireData.mode[3])) then
+			menu.setselectedrow = row.index
+		end
 		row[1]:setColSpan(3):createText(ReadText(1001, 7754))
 		row[4]:createIcon("menu_edit", { height = config.rowHeight, width = config.rowHeight })
 
@@ -4227,6 +4477,7 @@ function menu.cleanupCutsceneRenderTarget()
 	end
 	if menu.precluster then
 		--print("destroying cluster " .. tostring(menu.precluster))
+		menu.paintmodshowcaseobject = nil
 		DestroyPresentationCluster(menu.precluster)
 	end
 	menu.precluster = nil
@@ -4313,19 +4564,50 @@ function menu.setupMessageRenderTarget()
 end
 
 function menu.setupInventoryRenderTarget()
+	local ware = menu.inventoryData.curEntry[1]
+	local video, ispaintmod = GetWareData(ware, "video", "ispaintmod")
+	if ispaintmod and menu.paintmodshowcaseobject then
+		-- already showing a paintmod showcase -> just update the paintmod
+		C.InstallPaintMod(menu.paintmodshowcaseobject, ware, false)
+		return true
+	end
 	if menu.cutsceneid then
 		menu.cleanupCutsceneRenderTarget()
 		return false
 	end
 	local rendertargetTexture = GetRenderTargetTexture(menu.rendertarget.id)
 	if rendertargetTexture then
-		local renderobject = "encyclopedia_dummy_macro"
-		local video = GetWareData(menu.inventoryData.curEntry[1], "video")
-		if video and (video ~= "") then
-			renderobject = video
+
+		local renderobject
+		if ispaintmod then
+			local lastplayership = ConvertStringTo64Bit(tostring(C.GetLastPlayerControlledShipID()))
+			if lastplayership and (lastplayership ~= 0) and (not C.IsComponentClass(lastplayership, "spacesuit")) then
+				renderobject = GetComponentData(lastplayership, "macro")
+			else
+				local playerobjects = GetContainedObjectsByOwner("player")
+				for _, object in ipairs(playerobjects) do
+					if IsComponentClass(object, "ship") and (not IsComponentClass(object, "spacesuit")) then
+						renderobject = GetComponentData(object, "macro")
+						break
+					end
+				end
+			end
 		end
+		if renderobject == nil then
+			if video and (video ~= "") then
+				renderobject = video
+			end
+		end
+		if renderobject == nil then
+			renderobject = "encyclopedia_dummy_macro"
+		end
+
 		menu.precluster, menu.preobject = CreateObjectInPresentationCluster(renderobject, "cluster_black_wlight_bg_macro")
 		if menu.preobject then
+			if ispaintmod then
+				menu.paintmodshowcaseobject = ConvertIDTo64Bit(menu.preobject)
+				C.InstallPaintMod(menu.paintmodshowcaseobject, ware, false)
+			end
 			menu.cutscenedesc = CreateCutsceneDescriptor("OrbitIndefinitely", { targetobject = menu.preobject })
 			if menu.cutscenedesc then
 				menu.cutsceneid = StartCutscene(menu.cutscenedesc, rendertargetTexture)
@@ -7008,9 +7290,9 @@ function menu.onRowChanged(row, rowdata, uitable, modified, input)
 	end
 
 	-- kuertee start: callback
-	if callbacks ["onRowChanged"] then
-		for _, callback in ipairs (callbacks ["onRowChanged"]) do
-			callback (row, rowdata, uitable, modified, input)
+	if menu.uix_callbacks ["onRowChanged"] then
+		for uix_id, uix_callback in pairs (menu.uix_callbacks ["onRowChanged"]) do
+			uix_callback (row, rowdata, uitable, modified, input)
 		end
 	end
 	-- kuertee end: callback
@@ -7180,6 +7462,7 @@ function menu.onCloseElement(dueToClose)
 		menu.closeContextMenu()
 	elseif menu.messageData.showFullscreen and (dueToClose == "back") then
 		menu.messageData.showFullscreen = nil
+		menu.messageData.fullscreenToggled = true
 		menu.refreshInfoFrame()
 	elseif menu.mode and (dueToClose == "back") then
 		menu.deactivatePlayerInfo()
@@ -7298,37 +7581,109 @@ function menu.createCraftableEntry(ware)
 end
 
 -- kuertee start:
-function menu.registerCallback (callbackName, callbackFunction)
-	-- note 1: format is generally [function name]_[action]. e.g.: in kuertee_menu_transporter, "display_on_set_room_active" overrides the room's active property with the return of the callback.
-	-- note 2: events have the word "_on_" followed by a PRESENT TENSE verb. e.g.: in kuertee_menu_transporter, "display_on_set_buttontable" is called after all of the rows of buttontable are set.
-	-- note 3: new callbacks can be added or existing callbacks can be edited. but commit your additions/changes to the mod's GIT repository.
-	-- note 4: search for the callback names to see where they are executed.
-	-- note 5: if a callback requires a return value, return it in an object var. e.g. "display_on_set_room_active" requires a return of {active = true | false}.
-
-	-- to find callbacks available for this menu,
-	-- reg-ex search for callbacks.*\[\".*\]
-
-	if callbacks [callbackName] == nil then
-		callbacks [callbackName] = {}
-	end
-	table.insert (callbacks [callbackName], callbackFunction)
+menu.uix_callbackCount = 0
+function menu.registerCallback(callbackName, callbackFunction, id)
+    -- note 1: format is generally [function name]_[action]. e.g.: in kuertee_menu_transporter, "display_on_set_room_active" overrides the room's active property with the return of the callback.
+    -- note 2: events have the word "_on_" followed by a PRESENT TENSE verb. e.g.: in kuertee_menu_transporter, "display_on_set_buttontable" is called after all of the rows of buttontable are set.
+    -- note 3: new callbacks can be added or existing callbacks can be edited. but commit your additions/changes to the mod's GIT repository.
+    -- note 4: search for the callback names to see where they are executed.
+    -- note 5: if a callback requires a return value, return it in an object var. e.g. "display_on_set_room_active" requires a return of {active = true | false}.
+    if menu.uix_callbacks [callbackName] == nil then
+        menu.uix_callbacks [callbackName] = {}
+    end
+    if not menu.uix_callbacks[callbackName][id] then
+        if not id then
+            menu.uix_callbackCount = menu.uix_callbackCount + 1
+            id = "_" .. tostring(menu.uix_callbackCount)
+        end
+        menu.uix_callbacks[callbackName][id] = callbackFunction
+        if Helper.isDebugCallbacks then
+            Helper.debugText_forced(menu.name .. " uix registerCallback: menu.uix_callbacks[" .. tostring(callbackName) .. "][" .. tostring(id) .. "]: " .. tostring(menu.uix_callbacks[callbackName][id]))
+        end
+    else
+        Helper.debugText_forced(menu.name .. " uix registerCallback: callback at " .. callbackName .. " with id " .. tostring(id) .. " was already previously registered")
+    end
 end
 
-function menu.deregisterCallback(callbackName, callbackFunction)
-	-- for i, callback in ipairs(callbacks[callbackName]) do
-	if callbacks[callbackName] and #callbacks[callbackName] > 0 then
-		for i = #callbacks[callbackName], 1, -1 do
-			if callbacks[callbackName][i] == callbackFunction then
-				table.remove(callbacks[callbackName], i)
-			end
-		end
-	end
+menu.uix_isDeregisterQueued = nil
+menu.uix_callbacks_toDeregister = {}
+function menu.deregisterCallback(callbackName, callbackFunction, id)
+    if not menu.uix_callbacks_toDeregister[callbackName] then
+        menu.uix_callbacks_toDeregister[callbackName] = {}
+    end
+    if id then
+        table.insert(menu.uix_callbacks_toDeregister[callbackName], id)
+    else
+        if menu.uix_callbacks[callbackName] then
+            for id, func in pairs(menu.uix_callbacks[callbackName]) do
+                if func == callbackFunction then
+                    table.insert(menu.uix_callbacks_toDeregister[callbackName], id)
+                end
+            end
+        end
+    end
+    if not menu.uix_isDeregisterQueued then
+        menu.uix_isDeregisterQueued = true
+        Helper.addDelayedOneTimeCallbackOnUpdate(menu.deregisterCallbacksNow, true, getElapsedTime() + 1)
+    end
 end
 
-function menu.loadModLuas()
-	if Helper then
-		Helper.loadModLuas(menu.name, "menu_playerinfo_uix")
-	end
+function menu.deregisterCallbacksNow()
+    menu.uix_isDeregisterQueued = nil
+    for callbackName, ids in pairs(menu.uix_callbacks_toDeregister) do
+        if menu.uix_callbacks[callbackName] then
+            for _, id in ipairs(ids) do
+                if menu.uix_callbacks[callbackName][id] then
+                    if Helper.isDebugCallbacks then
+                        Helper.debugText_forced(menu.name .. " uix deregisterCallbacksNow (pre): menu.uix_callbacks[" .. tostring(callbackName) .. "][" .. tostring(id) .. "]: " .. tostring(menu.uix_callbacks[callbackName][id]))
+                    end
+                    menu.uix_callbacks[callbackName][id] = nil
+                    if Helper.isDebugCallbacks then
+                        Helper.debugText_forced(menu.name .. " uix deregisterCallbacksNow (post): menu.uix_callbacks[" .. tostring(callbackName) .. "][" .. tostring(id) .. "]: " .. tostring(menu.uix_callbacks[callbackName][id]))
+                    end
+                else
+                    Helper.debugText_forced(menu.name .. " uix deregisterCallbacksNow: callback at " .. callbackName .. " with id " .. tostring(id) .. " doesn't exist")
+                end
+            end
+        end
+    end
+    menu.uix_callbacks_toDeregister = {}
+end
+
+menu.uix_isUpdateQueued = nil
+menu.uix_callbacks_toUpdate = {}
+function menu.updateCallback(callbackName, id, callbackFunction)
+    if not menu.uix_callbacks_toUpdate[callbackName] then
+        menu.uix_callbacks_toUpdate[callbackName] = {}
+    end
+    if id then
+        table.insert(menu.uix_callbacks_toUpdate[callbackName], {id = id, callbackFunction = callbackFunction})
+    end
+    if not menu.uix_isUpdateQueued then
+        menu.uix_isUpdateQueued = true
+        Helper.addDelayedOneTimeCallbackOnUpdate(menu.updateCallbacksNow, true, getElapsedTime() + 1)
+    end
+end
+
+function menu.updateCallbacksNow()
+    menu.uix_isUpdateQueued = nil
+    for callbackName, updateDatas in pairs(menu.uix_callbacks_toUpdate) do
+        if menu.uix_callbacks[callbackName] then
+            for _, updateData in ipairs(updateDatas) do
+                if menu.uix_callbacks[callbackName][updateData.id] then
+                    if Helper.isDebugCallbacks then
+                        Helper.debugText_forced(menu.name .. " uix updateCallbacksNow (pre): menu.uix_callbacks[" .. tostring(callbackName) .. "][" .. tostring(updateData.id) .. "]: " .. tostring(menu.uix_callbacks[callbackName][updateData.id]))
+                    end
+                    menu.uix_callbacks[callbackName][updateData.id] = updateData.callbackFunction
+                    if Helper.isDebugCallbacks then
+                        Helper.debugText_forced(menu.name .. " uix updateCallbacksNow (post): menu.uix_callbacks[" .. tostring(callbackName) .. "][" .. tostring(updateData.id) .. "]: " .. tostring(menu.uix_callbacks[callbackName][updateData.id]))
+                    end
+                else
+                    Helper.debugText_forced(menu.name .. " uix updateCallbacksNow: callback at " .. callbackName .. " with id " .. tostring(id) .. " doesn't exist")
+                end
+            end
+        end
+    end
 end
 -- kuertee end
 

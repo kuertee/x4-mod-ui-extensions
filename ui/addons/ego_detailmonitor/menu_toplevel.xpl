@@ -19,7 +19,7 @@ local config = {
 }
 
 -- kuertee start:
-menu.callbacks = {}
+menu.uix_callbacks = {}
 -- end
 
 local function init()
@@ -41,8 +41,6 @@ end
 
 -- kuertee start:
 function menu.init_kuertee ()
-	menu.loadModLuas()
-	-- DebugError("uix load success: " .. tostring(debug.getinfo(1).source))
 end
 -- kuertee end
 
@@ -86,9 +84,9 @@ function menu.cleanup()
 	end
 
 	-- kuertee start: callback
-	if menu.callbacks ["cleanup"] then
-		for _, callback in ipairs (menu.callbacks ["cleanup"]) do
-			callback()
+	if menu.uix_callbacks ["cleanup"] then
+		for uix_id, uix_callback in pairs (menu.uix_callbacks ["cleanup"]) do
+			uix_callback()
 		end
 	end
 	-- kuertee end: callback
@@ -176,17 +174,17 @@ function menu.createInfoFrame()
 		-- kuertee custom HUD end
 
 		-- kuertee start: callback
-		if menu.callbacks ["createInfoFrame_on_add_table"] then
-			for _, callback in ipairs (menu.callbacks ["createInfoFrame_on_add_table"]) do
-				callback (menu.infoFrame, ftable)
+		if menu.uix_callbacks ["createInfoFrame_on_add_table"] then
+			for uix_id, uix_callback in pairs (menu.uix_callbacks ["createInfoFrame_on_add_table"]) do
+				uix_callback (menu.infoFrame, ftable)
 			end
 		end
 		-- kuertee end: callback
 
 		-- kuertee start: callback
-		if menu.callbacks ["createInfoFrame_on_before_frame_display"] then
-			for _, callback in ipairs (menu.callbacks ["createInfoFrame_on_before_frame_display"]) do
-				callback (menu.infoFrame)
+		if menu.uix_callbacks ["createInfoFrame_on_before_frame_display"] then
+			for uix_id, uix_callback in pairs (menu.uix_callbacks ["createInfoFrame_on_before_frame_display"]) do
+				uix_callback (menu.infoFrame)
 			end
 		end
 		-- kuertee end: callback
@@ -239,9 +237,9 @@ function menu.onUpdate()
 	local curtime = getElapsedTime()
 
 	-- kuertee start: callback
-	if menu.callbacks ["onUpdate_start"] then
-		for _, callback in ipairs (menu.callbacks ["onUpdate_start"]) do
-			callback(curtime)
+	if menu.uix_callbacks ["onUpdate_start"] then
+		for uix_id, uix_callback in pairs (menu.uix_callbacks ["onUpdate_start"]) do
+			uix_callback(curtime)
 		end
 	end
 	-- kuertee end: callback
@@ -281,9 +279,9 @@ function menu.onUpdate()
 	end
 
 	-- kuertee start: callback
-	if menu.callbacks ["onUpdate_before_frame_update"] then
-		for _, callback in ipairs (menu.callbacks ["onUpdate_before_frame_update"]) do
-			callback (menu.infoFrame)
+	if menu.uix_callbacks ["onUpdate_before_frame_update"] then
+		for uix_id, uix_callback in pairs (menu.uix_callbacks ["onUpdate_before_frame_update"]) do
+			uix_callback (menu.infoFrame)
 		end
 	end
 	-- kuertee end: callback
@@ -380,9 +378,9 @@ end
 function kHUD.getIsOpenOrClose()
 	local isCreateHUDFrame
 	if isCreateHUDFrame ~= true then
-		if menu.callbacks["kHUD_get_is_show_custom_hud"] and #menu.callbacks["kHUD_get_is_show_custom_hud"] > 0 then
-			for i, callback in ipairs (menu.callbacks ["kHUD_get_is_show_custom_hud"]) do
-				isCreateHUDFrame = callback ()
+		if menu.uix_callbacks["kHUD_get_is_show_custom_hud"] and next(menu.uix_callbacks["kHUD_get_is_show_custom_hud"]) then
+			for uix_id, uix_callback in pairs (menu.uix_callbacks ["kHUD_get_is_show_custom_hud"]) do
+				isCreateHUDFrame = uix_callback ()
 				if isCreateHUDFrame == true then
 					break
 				end
@@ -428,9 +426,9 @@ end
 function kHUD.createTables()
 	if kHUD.frame then
 		local ftables_created = {}
-		if menu.callbacks["kHUD_add_tables"] and #menu.callbacks["kHUD_add_tables"] > 0 then
-			for i, callback in ipairs (menu.callbacks ["kHUD_add_tables"]) do
-				local ftables = callback (kHUD.frame)
+		if menu.uix_callbacks["kHUD_add_tables"] and next(menu.uix_callbacks["kHUD_add_tables"]) then
+			for uix_id, uix_callback in pairs (menu.uix_callbacks ["kHUD_add_tables"]) do
+				local ftables = uix_callback (kHUD.frame)
 				if ftables and type(ftables) == "table" and #ftables > 0 then
 					for j, ftable in ipairs(ftables) do
 						table.insert(ftables_created, ftable)
@@ -438,10 +436,10 @@ function kHUD.createTables()
 				end
 			end
 		end
-		if menu.callbacks["kHUD_add_HUD_tables"] and #menu.callbacks["kHUD_add_HUD_tables"] > 0 then
+		if menu.uix_callbacks["kHUD_add_HUD_tables"] and next(menu.uix_callbacks["kHUD_add_HUD_tables"]) then
 			-- kHUD_add_HUD_tables is for backward compatibility
-			for i, callback in ipairs (menu.callbacks ["kHUD_add_HUD_tables"]) do
-				local ftables = callback (kHUD.frame)
+			for uix_id, uix_callback in pairs (menu.uix_callbacks ["kHUD_add_HUD_tables"]) do
+				local ftables = uix_callback (kHUD.frame)
 				if ftables and type(ftables) == "table" and #ftables > 0 then
 					for j, ftable in ipairs(ftables) do
 						table.insert(ftables_created, ftable)
@@ -514,37 +512,109 @@ function menu.requestUpdate (adj)
 	end
 end
 
-function menu.registerCallback (callbackName, callbackFunction)
-	-- note 1: format is generally [function name]_[action]. e.g.: in kuertee_menu_transporter, "display_on_set_room_active" overrides the room's active property with the return of the callback.
-	-- note 2: events have the word "_on_" followed by a PRESET TENSE verb. e.g.: in kuertee_menu_transporter, "display_on_set_buttontable" is called after all of the rows of buttontable are set.
-	-- note 3: new callbacks can be added or existing callbacks can be edited. but commit your additions/changes to the mod's GIT repository.
-	-- note 4: search for the callback names to see where they are executed.
-	-- note 5: if a callback requires a return value, return it in an object var. e.g. "display_on_set_room_active" requires a return of {active = true | false}.
-
-	-- to find callbacks available for this menu,
-	-- reg-ex search for callbacks.*\[\".*\]
-
-	if menu.callbacks [callbackName] == nil then
-		menu.callbacks [callbackName] = {}
-	end
-	table.insert (menu.callbacks [callbackName], callbackFunction)
+menu.uix_callbackCount = 0
+function menu.registerCallback(callbackName, callbackFunction, id)
+    -- note 1: format is generally [function name]_[action]. e.g.: in kuertee_menu_transporter, "display_on_set_room_active" overrides the room's active property with the return of the callback.
+    -- note 2: events have the word "_on_" followed by a PRESENT TENSE verb. e.g.: in kuertee_menu_transporter, "display_on_set_buttontable" is called after all of the rows of buttontable are set.
+    -- note 3: new callbacks can be added or existing callbacks can be edited. but commit your additions/changes to the mod's GIT repository.
+    -- note 4: search for the callback names to see where they are executed.
+    -- note 5: if a callback requires a return value, return it in an object var. e.g. "display_on_set_room_active" requires a return of {active = true | false}.
+    if menu.uix_callbacks [callbackName] == nil then
+        menu.uix_callbacks [callbackName] = {}
+    end
+    if not menu.uix_callbacks[callbackName][id] then
+        if not id then
+            menu.uix_callbackCount = menu.uix_callbackCount + 1
+            id = "_" .. tostring(menu.uix_callbackCount)
+        end
+        menu.uix_callbacks[callbackName][id] = callbackFunction
+        if Helper.isDebugCallbacks then
+            Helper.debugText_forced(menu.name .. " uix registerCallback: menu.uix_callbacks[" .. tostring(callbackName) .. "][" .. tostring(id) .. "]: " .. tostring(menu.uix_callbacks[callbackName][id]))
+        end
+    else
+        Helper.debugText_forced(menu.name .. " uix registerCallback: callback at " .. callbackName .. " with id " .. tostring(id) .. " was already previously registered")
+    end
 end
 
-function menu.deregisterCallback(callbackName, callbackFunction)
-	-- for i, callback in ipairs(callbacks[callbackName]) do
-	if callbacks[callbackName] and #callbacks[callbackName] > 0 then
-		for i = #callbacks[callbackName], 1, -1 do
-			if callbacks[callbackName][i] == callbackFunction then
-				table.remove(callbacks[callbackName], i)
-			end
-		end
-	end
+menu.uix_isDeregisterQueued = nil
+menu.uix_callbacks_toDeregister = {}
+function menu.deregisterCallback(callbackName, callbackFunction, id)
+    if not menu.uix_callbacks_toDeregister[callbackName] then
+        menu.uix_callbacks_toDeregister[callbackName] = {}
+    end
+    if id then
+        table.insert(menu.uix_callbacks_toDeregister[callbackName], id)
+    else
+        if menu.uix_callbacks[callbackName] then
+            for id, func in pairs(menu.uix_callbacks[callbackName]) do
+                if func == callbackFunction then
+                    table.insert(menu.uix_callbacks_toDeregister[callbackName], id)
+                end
+            end
+        end
+    end
+    if not menu.uix_isDeregisterQueued then
+        menu.uix_isDeregisterQueued = true
+        Helper.addDelayedOneTimeCallbackOnUpdate(menu.deregisterCallbacksNow, true, getElapsedTime() + 1)
+    end
 end
 
-function menu.loadModLuas()
-	if Helper then
-		Helper.loadModLuas(menu.name, "menu_toplevel_uix")
-	end
+function menu.deregisterCallbacksNow()
+    menu.uix_isDeregisterQueued = nil
+    for callbackName, ids in pairs(menu.uix_callbacks_toDeregister) do
+        if menu.uix_callbacks[callbackName] then
+            for _, id in ipairs(ids) do
+                if menu.uix_callbacks[callbackName][id] then
+                    if Helper.isDebugCallbacks then
+                        Helper.debugText_forced(menu.name .. " uix deregisterCallbacksNow (pre): menu.uix_callbacks[" .. tostring(callbackName) .. "][" .. tostring(id) .. "]: " .. tostring(menu.uix_callbacks[callbackName][id]))
+                    end
+                    menu.uix_callbacks[callbackName][id] = nil
+                    if Helper.isDebugCallbacks then
+                        Helper.debugText_forced(menu.name .. " uix deregisterCallbacksNow (post): menu.uix_callbacks[" .. tostring(callbackName) .. "][" .. tostring(id) .. "]: " .. tostring(menu.uix_callbacks[callbackName][id]))
+                    end
+                else
+                    Helper.debugText_forced(menu.name .. " uix deregisterCallbacksNow: callback at " .. callbackName .. " with id " .. tostring(id) .. " doesn't exist")
+                end
+            end
+        end
+    end
+    menu.uix_callbacks_toDeregister = {}
+end
+
+menu.uix_isUpdateQueued = nil
+menu.uix_callbacks_toUpdate = {}
+function menu.updateCallback(callbackName, id, callbackFunction)
+    if not menu.uix_callbacks_toUpdate[callbackName] then
+        menu.uix_callbacks_toUpdate[callbackName] = {}
+    end
+    if id then
+        table.insert(menu.uix_callbacks_toUpdate[callbackName], {id = id, callbackFunction = callbackFunction})
+    end
+    if not menu.uix_isUpdateQueued then
+        menu.uix_isUpdateQueued = true
+        Helper.addDelayedOneTimeCallbackOnUpdate(menu.updateCallbacksNow, true, getElapsedTime() + 1)
+    end
+end
+
+function menu.updateCallbacksNow()
+    menu.uix_isUpdateQueued = nil
+    for callbackName, updateDatas in pairs(menu.uix_callbacks_toUpdate) do
+        if menu.uix_callbacks[callbackName] then
+            for _, updateData in ipairs(updateDatas) do
+                if menu.uix_callbacks[callbackName][updateData.id] then
+                    if Helper.isDebugCallbacks then
+                        Helper.debugText_forced(menu.name .. " uix updateCallbacksNow (pre): menu.uix_callbacks[" .. tostring(callbackName) .. "][" .. tostring(updateData.id) .. "]: " .. tostring(menu.uix_callbacks[callbackName][updateData.id]))
+                    end
+                    menu.uix_callbacks[callbackName][updateData.id] = updateData.callbackFunction
+                    if Helper.isDebugCallbacks then
+                        Helper.debugText_forced(menu.name .. " uix updateCallbacksNow (post): menu.uix_callbacks[" .. tostring(callbackName) .. "][" .. tostring(updateData.id) .. "]: " .. tostring(menu.uix_callbacks[callbackName][updateData.id]))
+                    end
+                else
+                    Helper.debugText_forced(menu.name .. " uix updateCallbacksNow: callback at " .. callbackName .. " with id " .. tostring(id) .. " doesn't exist")
+                end
+            end
+        end
+    end
 end
 -- kuertee end
 

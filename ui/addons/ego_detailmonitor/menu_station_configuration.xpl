@@ -181,6 +181,7 @@ ffi.cdef[[
 	void GetConstructionMapItemLoadout2(UILoadout* result, UniverseID holomapid, size_t itemidx, UniverseID defensibleid, UniverseID moduleid);
 	void GetConstructionMapItemLoadoutCounts2(UILoadoutCounts* result, UniverseID holomapid, size_t itemidx, UniverseID defensibleid, UniverseID moduleid);
 	size_t GetConstructionMapVenturePlatform(UniverseID holomapid, size_t venturedockidx);
+	const char* GetContainerBuildMethod(UniverseID containerid);
 	float GetContainerGlobalPriceFactor(UniverseID containerid);
 	TradeRuleID GetContainerTradeRuleID(UniverseID containerid, const char* ruletype, const char* wareid);
 	uint32_t GetContainerWareReservations2(WareReservationInfo2* result, uint32_t resultlen, UniverseID containerid, bool includevirtual, bool includemission, bool includesupply);
@@ -189,6 +190,7 @@ ffi.cdef[[
 	void GetCurrentLoadout(UILoadout* result, UniverseID defensibleid, UniverseID moduleid);
 	void GetCurrentLoadoutCounts(UILoadoutCounts* result, UniverseID defensibleid, UniverseID moduleid);
 	float GetDefensibleLoadoutLevel(UniverseID defensibleid);
+	int64_t GetEstimatedBuildPrice(UniverseID containerid, const char* macroname);
 	const char* GetGameStartName();
 	uint32_t GetImportableConstructionPlans(UIConstructionPlanInfo* result, uint32_t resultlen);
 	void GetLoadout(UILoadout* result, UniverseID defensibleid, const char* macroname, const char* loadoutid);
@@ -196,6 +198,7 @@ ffi.cdef[[
 	uint32_t GetLoadoutInvalidPatches(InvalidPatchInfo* result, uint32_t resultlen, UniverseID defensibleid, const char* macroname, const char* loadoutid);
 	uint32_t GetLoadoutsInfo(UILoadoutInfo* result, uint32_t resultlen, UniverseID componentid, const char* macroname);
 	const char* GetMissingConstructionPlanBlueprints3(UniverseID containerid, UniverseID holomapid, const char* constructionplanid, bool useplanned);
+	const char* GetMissingLoadoutBlueprints(UniverseID containerid, UniverseID defensibleid, const char* macroname, const char* loadoutid);
 	uint32_t GetNumAssignedConstructionVessels(UniverseID containerid);
 	uint32_t GetNumBlueprints(const char* set, const char* category, const char* macroname);
 	size_t GetNumBuildMapConstructionPlan(UniverseID holomapid, bool usestoredplan);
@@ -230,6 +233,7 @@ ffi.cdef[[
 	uint32_t GetWares(const char** result, uint32_t resultlen, const char* tags, bool research, const char* licenceownerid, const char* exclusiontags);
 	WorkForceInfo GetWorkForceInfo(UniverseID containerid, const char* raceid);
 	bool HasContainerOwnTradeRule(UniverseID containerid, const char* ruletype, const char* wareid);
+	bool HasProductionModuleIllegalProducts(const char* macroname, const char* licencefactionid, const char* policefactionid);
 	void ImportMapConstructionPlan(const char* filename, const char* id);
 	bool IsBuildWaitingForSecondaryComponentResources(UniverseID containerid);
 	bool IsConstructionPlanValid(const char* constructionplanid, uint32_t* numinvalidpatches);
@@ -317,7 +321,7 @@ local config = {
 		{ name = ReadText(1001, 2452),	icon = "stationbuildst_dock",			mode = "moduletypes_dock",			helpOverlayID = "stationbuildst_dock",			helpOverlayText = ReadText(1028, 3254)  },
 		{ name = ReadText(1001, 2424),	icon = "stationbuildst_defense",		mode = "moduletypes_defence",		helpOverlayID = "stationbuildst_defense",		helpOverlayText = ReadText(1028, 3255)  },
 		{ name = ReadText(1001, 9621),	icon = "stationbuildst_processing",		mode = "moduletypes_processing",	helpOverlayID = "stationbuildst_processing",	helpOverlayText = ReadText(1028, 3259)  },
-		{ name = ReadText(1001, 2453),	icon = "stationbuildst_other",			mode = "moduletypes_other",			helpOverlayID = "stationbuildst_other",			helpOverlayText = ReadText(1028, 3256)  },
+		{ name = ReadText(1001, 2453),	icon = "stationbuildst_other",			mode = "moduletypes_other",			helpOverlayID = "stationbuildst_other",			helpOverlayText = ReadText(1028, 3256),		additionaltypes = { "moduletypes_radar" }  },
 		{ name = ReadText(1001, 2454),	icon = "stationbuildst_venture",		mode = "moduletypes_venture",		helpOverlayID = "stationbuildst_venture",		helpOverlayText = ReadText(1028, 3257),		condition = C.IsVentureSeasonSupported },
 	},
 	leftBarLoadout = {
@@ -379,7 +383,7 @@ __CORE_DETAILMONITOR_STATIONBUILD = __CORE_DETAILMONITOR_STATIONBUILD or {
 }
 
 -- kuertee start:
-local callbacks = {}
+menu.uix_callbacks = {}
 -- kuertee end
 
 local function init()
@@ -404,8 +408,6 @@ end
 
 -- kuertee start:
 function menu.init_kuertee ()
-	menu.loadModLuas()
-	-- DebugError("uix load success: " .. tostring(debug.getinfo(1).source))
 end
 -- kuertee end
 
@@ -499,9 +501,9 @@ function menu.cleanup()
 	UnregisterAddonBindings("ego_detailmonitor", "undo")
 
 	-- kuertee start: callback
-	if callbacks ["cleanup"] then
-		for _, callback in ipairs (callbacks ["cleanup"]) do
-			callback ()
+	if menu.uix_callbacks ["cleanup"] then
+		for uix_id, uix_callback in pairs (menu.uix_callbacks ["cleanup"]) do
+			uix_callback ()
 		end
 	end
 	-- kuertee end: callback
@@ -940,14 +942,14 @@ function menu.buttonConstructionCommunity()
 	end
 end
 
-function menu.buttonEditTradeRule()
-	Helper.closeMenuAndOpenNewMenu(menu, "PlayerInfoMenu", { 0, 0, "globalorders" })
+function menu.buttonEditTradeRule(traderuleid)
+	Helper.closeMenuAndOpenNewMenu(menu, "PlayerInfoMenu", { 0, 0, "globalorders", { "traderule", (traderuleid ~= 0) and traderuleid or nil } })
 	menu.cleanup()
 end
 
 function menu.buttonCancelTradeActive(tradeid)
 	if not C.IsValidTrade(tradeid) then
-		menu.refresh = getElapsedTime()
+		menu.refresh = menu.refresh or getElapsedTime()
 		return
 	end
 	return C.CancelPlayerInvolvedTradeDeal(menu.container, tradeid, true)
@@ -970,6 +972,7 @@ function menu.dropdownLoad(_, id)
 		C.ShowConstructionMap(menu.holomap, menu.container, id, false)
 		menu.applySettings()
 		menu.currentCPID = id
+		menu.defaultLoadout = -1
 		menu.closeContextMenu()
 
 		menu.topRows.modules = GetTopRow(menu.moduletable)
@@ -981,6 +984,7 @@ function menu.dropdownLoad(_, id)
 		menu.refreshPlan()
 		menu.displayMenu()
 	end
+	menu.noupdate = false
 end
 
 function menu.dropdownRemovedCP(_, id)
@@ -1461,6 +1465,27 @@ function menu.newWareReservationCallback(_, data)
 	end
 end
 
+function menu.getModules(uitype, moduletype, races, connectionmoduleraces)
+	local n = C.GetNumBlueprints(menu.set, moduletype, "")
+	if n > 0 then
+		local buf = ffi.new("UIBlueprint[?]", n)
+		n = C.GetBlueprints(buf, n, menu.set, moduletype, "")
+		for i = 0, n - 1 do
+			local macro = ffi.string(buf[i].macro)
+			local makerrace, makerracename = GetMacroData(macro, "makerraceid", "makerracename")
+			for i, race in ipairs(makerrace) do
+				races[race] = makerracename[i]
+				if IsMacroClass(macro, "connectionmodule") then
+					connectionmoduleraces[race] = makerracename[i]
+				end
+			end
+			table.insert(menu.modules[uitype], macro)
+		end
+	end
+
+	return n
+end
+
 function menu.onShowMenu(state)
 	-- layout
 	menu.scaleSize = Helper.scaleX(config.scaleSize)
@@ -1562,20 +1587,14 @@ function menu.onShowMenu(state)
 	local connectionmoduleraces = {}
 	for _, entry in ipairs(config.leftBar) do
 		menu.modules[entry.mode] = {}
-		local n = C.GetNumBlueprints(menu.set, entry.mode, "")
-		local buf = ffi.new("UIBlueprint[?]", n)
-		n = C.GetBlueprints(buf, n, menu.set, entry.mode, "")
-		for i = 0, n - 1 do
-			local macro = ffi.string(buf[i].macro)
-			local makerrace, makerracename = GetMacroData(macro, "makerraceid", "makerracename")
-			for i, race in ipairs(makerrace) do
-				races[race] = makerracename[i]
-				if IsMacroClass(macro, "connectionmodule") then
-					connectionmoduleraces[race] = makerracename[i]
-				end
+		local n = menu.getModules(entry.mode, entry.mode, races, connectionmoduleraces)
+
+		if entry.additionaltypes then
+			for _, moduletype in ipairs(entry.additionaltypes) do
+				n = n + menu.getModules(entry.mode, moduletype, races, connectionmoduleraces)
 			end
-			table.insert(menu.modules[entry.mode], macro)
 		end
+
 		table.sort(menu.modules[entry.mode], function (a, b) return menu.sorterModules(entry.mode, a, b) end)
 		entry.active = n > 0
 	end
@@ -1789,22 +1808,33 @@ function menu.updateConstructionPlans()
 				end
 
 				local hasmissinglimitedmodules = false
+				local hasmissinglimitedventuremodules = false
 				local limitedmoduletext = ""
+				local limitedventuremoduletext = ""
 				local n = C.GetNumPlannedLimitedModules(id)
 				local macrocounts = ffi.new("UIMacroCount[?]", n)
 				n = C.GetPlannedLimitedModules(macrocounts, n, id)
 				for j = 0, n - 1 do
 					local macro = ffi.string(macrocounts[j].macro)
 					local ware = GetMacroData(macro, "ware")
-					if macrocounts[j].amount > OnlineGetUserItemAmount(ware) - (menu.externalUsedLimitedModules[macro] or 0) then
-						active = false
-						hasmissinglimitedmodules = true
-						limitedmoduletext = limitedmoduletext .. "\n· " .. GetMacroData(macro, "name")
+					local islimited = GetWareData(ware, "islimited")
+					if islimited then
+						if macrocounts[j].amount > Helper.getLimitedWareAmount(ware) - (menu.externalUsedLimitedModules[macro] or 0) then
+							active = false
+							hasmissinglimitedmodules = true
+							limitedmoduletext = limitedmoduletext .. "\n· " .. GetMacroData(macro, "name")
+						end
+					else
+						if macrocounts[j].amount > OnlineGetUserItemAmount(ware) - (menu.externalUsedLimitedModules[macro] or 0) then
+							active = false
+							hasmissinglimitedventuremodules = true
+							limitedventuremoduletext = limitedventuremoduletext .. "\n· " .. GetMacroData(macro, "name")
+						end
 					end
 				end
 
 				if (not active) and (mouseovertext == nil) then
-					mouseovertext = ReadText(1026, 7912) .. blueprinttext .. (hasmissinglimitedmodules and ("\n" .. ReadText(1026, 7915) .. limitedmoduletext) or "")
+					mouseovertext = ReadText(1026, 7912) .. blueprinttext .. (hasmissinglimitedmodules and ("\n" .. ReadText(1026, 7934) .. limitedmoduletext) or "") .. (hasmissinglimitedventuremodules and ("\n" .. ReadText(1026, 7915) .. limitedventuremoduletext) or "")
 				end
 			end
 
@@ -1858,6 +1888,7 @@ function menu.createTitleBar(frame)
 		end
 		table.sort(loadOptions, function (a, b) return a.text < b.text end)
 		row[2]:createDropDown(loadOptions, { textOverride = ReadText(1001, 7904), optionWidth = menu.titleData.dropdownWidth + menu.titleData.height + Helper.borderSize }):setTextProperties(config.dropDownTextProperties)
+		row[2].handlers.onDropDownActivated = function () menu.noupdate = true end
 		row[2].handlers.onDropDownConfirmed = menu.dropdownLoad
 		row[2].handlers.onDropDownRemoved = menu.dropdownRemovedCP
 		-- save
@@ -1938,7 +1969,7 @@ function menu.refreshTitleBar()
 		Helper.setCellContent(menu, menu.titlebartable, desc, 1, 1, nil, "editbox", nil, menu.editboxNameUpdateText)
 		-- dropdown
 		local desc = Helper.createDropDown(loadOptions, "", text, nil, true, true, 0, 0, 0, 0, nil, nil, "", menu.titleData.dropdownWidth + menu.titleData.height + Helper.borderSize)
-		Helper.setCellContent(menu, menu.titlebartable, desc, 1, 2, nil, "dropdown", nil, nil, menu.dropdownLoad, menu.dropdownRemovedCP)
+		Helper.setCellContent(menu, menu.titlebartable, desc, 1, 2, nil, "dropdown", nil, function () menu.noupdate = true end, menu.dropdownLoad, menu.dropdownRemovedCP)
 		-- save
 		local desc = Helper.createButton(nil, Helper.createButtonIcon("menu_save", nil, 255, 255, 255, 100), true, true, 0, 0, 0, menu.titleData.height, nil, nil, nil, ReadText(1026, 7901))
 		Helper.setCellContent(menu, menu.titlebartable, desc, 1, 3, nil, "button", nil, menu.buttonTitleSave)
@@ -1998,9 +2029,25 @@ function menu.getPresetLoadouts()
 		elseif not C.IsLoadoutCompatible(currentmacro, id) then
 			mouseovertext = ReadText(1026, 8024)
 		else
-			active = C.CanBuildLoadout(menu.buildstorage, 0, menu.loadoutModule.macro, id)
+			local result = ffi.string(C.GetMissingLoadoutBlueprints(menu.buildstorage, 0, menu.loadoutModule.macro, id))
+			active = result == ""
 			if not active then
 				mouseovertext = ReadText(1026, 8011)
+
+				local missingmacros = {}
+				if string.find(result, "error") ~= 1 then
+					for macro in string.gmatch(result, "([^;]+);") do
+						missingmacros[macro] = true
+					end
+				end
+				local missingmacronames = {}
+				for macro, v in pairs(missingmacros) do
+					table.insert(missingmacronames, GetMacroData(macro, "name"))
+				end
+				table.sort(missingmacronames)
+				for _, name in ipairs(missingmacronames) do
+					mouseovertext = mouseovertext .. "\n· " .. name
+				end
 			end
 		end
 
@@ -2287,7 +2334,9 @@ function menu.displayModules(frame, firsttime)
 							AddKnownItem(infolibrary, group[i])
 							local icon = C.IsIconValid("module_" .. group[i]) and ("module_" .. group[i]) or "module_notfound"
 							local active = true
-							row[i]:createButton({ width = columnWidth, height = columnWidth, active = active, highlightColor = Color["button_highlight_bigbutton"], mouseOverText = name, helpOverlayID = "stationbuildst_" .. group[i], helpOverlayText = " ", helpOverlayHighlightOnly = true }):setIcon(icon)
+							local mouseovertext = name
+							mouseovertext = mouseovertext .. "\n\n" .. ReadText(1001, 3601) .. ReadText(1001, 120) .. " " .. ConvertMoneyString(tonumber(C.GetEstimatedBuildPrice(menu.buildstorage, group[i])), false, true, 0, true) .. " " .. ReadText(1001, 101)
+							row[i]:createButton({ width = columnWidth, height = columnWidth, active = active, highlightColor = Color["button_highlight_bigbutton"], mouseOverText = mouseovertext, helpOverlayID = "stationbuildst_" .. group[i], helpOverlayText = " ", helpOverlayHighlightOnly = true }):setIcon(icon)
 
 							-- Tutorial solar panels (shared)
 							if group[i] == "prod_gen_energycells_macro" then
@@ -2403,11 +2452,21 @@ function menu.displayModules(frame, firsttime)
 								local y = columnWidth / 2 - Helper.scaleY(Helper.largeIconTextHeight) / 2 - Helper.configButtonBorderSize
 								row[i]:setText(makertext, { y = y, halign = "right", color = Color["slider_value"], fontsize = fontsize })
 							end
+							local ware = GetMacroData(group[i], "ware")
+							local islimited = GetWareData(ware, "islimited")
+							if islimited then
+								local amount = math.max(0, Helper.getLimitedWareAmount(ware) - (menu.externalUsedLimitedModules[group[i]] or 0) - (menu.usedLimitedModules[group[i]] or 0))
+								row[i]:setText2(amount and (ReadText(1001, 42) .. " " .. amount) or "", { x = Helper.scaleX(Helper.configButtonBorderSize), y = - maxColumnWidth / 2 + Helper.standardTextHeight / 2 + Helper.configButtonBorderSize, halign = "right", fontsize = Helper.scaleFont(Helper.standardFont, Helper.headerRow1FontSize) })
+								active = (not amount) or (amount > 0)
+								row[i].properties.active = active
+								if not active then
+									row[i].properties.mouseOverText = name .. "\n\n" .. ReadText(1026, 7933)
+								end
+							end
 							if menu.modulesMode == "moduletypes_venture" then
 								local amount
 								local isventureplatform = IsMacroClass(group[i], "ventureplatform")
 								if isventureplatform or IsMacroClass(group[i], "dockarea") then
-									local ware = GetMacroData(group[i], "ware")
 									amount = math.max(0, OnlineGetUserItemAmount(ware) - (menu.externalUsedLimitedModules[group[i]] or 0) - (menu.usedLimitedModules[group[i]] or 0))
 								end
 								row[i]:setText2(amount and (ReadText(1001, 42) .. " " .. amount) or "", { x = Helper.scaleX(Helper.configButtonBorderSize), y = - maxColumnWidth / 2 + Helper.standardTextHeight / 2 + Helper.configButtonBorderSize, halign = "right", fontsize = Helper.scaleFont(Helper.standardFont, Helper.headerRow1FontSize) })
@@ -2730,9 +2789,9 @@ function menu.displayModules(frame, firsttime)
 											end
 
 											-- start: mycu callback
-											if callbacks ["displayModules_on_before_create_button_mouseovertext"] then
-												for _, callback in ipairs (callbacks ["displayModules_on_before_create_button_mouseovertext"]) do
-													result = callback (group[i].macro, plandata.macro, untruncatedExtraText)
+											if menu.uix_callbacks ["displayModules_on_before_create_button_mouseovertext"] then
+												for uix_id, uix_callback in pairs (menu.uix_callbacks ["displayModules_on_before_create_button_mouseovertext"]) do
+													result = uix_callback (group[i].macro, plandata.macro, untruncatedExtraText)
 													if result then
 														untruncatedExtraText = result.mouseovertext
 													end
@@ -2858,7 +2917,10 @@ function menu.refreshPlan()
 			-- limited module check
 			menu.usedLimitedModules = {}
 			for _, entry in ipairs(menu.constructionplan) do
-				if IsMacroClass(entry.macro, "ventureplatform") or (IsMacroClass(entry.macro, "dockarea") and GetMacroData(entry.macro, "isventuremodule")) then
+				local isventuremodule = IsMacroClass(entry.macro, "ventureplatform") or (IsMacroClass(entry.macro, "dockarea") and GetMacroData(entry.macro, "isventuremodule"))
+				local ware = GetMacroData(entry.macro, "ware")
+				local islimited = GetWareData(ware, "islimited")
+				if isventuremodule or islimited then
 					if menu.usedLimitedModules[entry.macro] then
 						menu.usedLimitedModules[entry.macro] = menu.usedLimitedModules[entry.macro] + 1
 					else
@@ -2927,7 +2989,10 @@ function menu.refreshPlan()
 				end
 			end
 
-			local haspier, hasdock, ismissingventureplatform, ismissingventuredocks, haswaveprotection = false, false, false, false, false
+			local haspier, hasdock, ismissingventureplatform, ismissingventuredocks, haswaveprotection, hasillegalproductions = false, false, false, false, false, false
+			
+			local sector, sectorid = GetComponentData(menu.container, "sector", "sectorid")
+			local policefaction, containsthewave = GetComponentData(sectorid, "policefaction", "containsthewave")
 			for idx, entry in ipairs(menu.constructionplan) do
 				local data = GetLibraryEntry(GetMacroData(entry.macro, "infolibrary"), entry.macro)
 				if IsMacroClass(entry.macro, "pier") then
@@ -2942,6 +3007,10 @@ function menu.refreshPlan()
 				elseif IsMacroClass(entry.macro, "buildmodule") then
 					if (data.docks_m > 0) or (data.docks_s > 0) then
 						hasdock = true
+					end
+				elseif IsMacroClass(entry.macro, "production") then
+					if policefaction then
+						hasillegalproductions = C.HasProductionModuleIllegalProducts(entry.macro, "player", policefaction)
 					end
 				end
 				haswaveprotection = haswaveprotection or GetMacroData(entry.macro, "haswaveprotection")
@@ -2980,13 +3049,15 @@ function menu.refreshPlan()
 				menu.modulewarnings[5] = ReadText(1001, 7959)
 			end
 			if not haswaveprotection then
-				local sector = GetComponentData(menu.container, "sectorid")
-				if GetComponentData(sector, "containsthewave") then
+				if containsthewave then
 					menu.modulewarnings[6] = ReadText(1001, 11917)
 				end
 			end
 			if missingblueprintmodulemismatch ~= "" then
 				menu.modulewarnings[7] = ReadText(1001, 11921) .. missingblueprintmodulemismatch
+			end
+			if hasillegalproductions then
+				menu.modulewarnings[8] = ReadText(1001, 11926) .. ReadText(1001, 120) .. " " .. sector
 			end
 		end
 	end
@@ -3312,9 +3383,9 @@ function menu.displayPlan(frame)
 					local tradedeal = buf[i].tradedealid
 					if not menu.dirtyreservations[tostring(tradedeal)] then
 						if reservations[ware] then
-							table.insert(reservations[ware], { reserver = buf[i].reserverid, amount = buf[i].amount, eta = buf[i].eta, tradedeal = tradedeal })
+							table.insert(reservations[ware], { reserver = buf[i].reserverid, amount = buf[i].isbuyreservation and -buf[i].amount or buf[i].amount, eta = buf[i].eta, tradedeal = tradedeal })
 						else
-							reservations[ware] = { { reserver = buf[i].reserverid, amount = buf[i].amount, eta = buf[i].eta, tradedeal = tradedeal } }
+							reservations[ware] = { { reserver = buf[i].reserverid, amount = buf[i].isbuyreservation and -buf[i].amount or buf[i].amount, eta = buf[i].eta, tradedeal = tradedeal } }
 						end
 					end
 				end
@@ -3422,9 +3493,9 @@ function menu.displayPlan(frame)
 
 									-- kuertee start: callback
 									-- row[2]:setColSpan(3):createText(function () return Helper.getETAString(colorprefix .. name, reservation.eta) end, { font = Helper.standardFontMono })
-									if callbacks ["displayPlan_render_incoming_ware"] then
-										for _, callback in ipairs (callbacks ["displayPlan_render_incoming_ware"]) do
-											isbreak = callback (row, colorprefix, name, reservation)
+									if menu.uix_callbacks ["displayPlan_render_incoming_ware"] then
+										for uix_id, uix_callback in pairs (menu.uix_callbacks ["displayPlan_render_incoming_ware"]) do
+											isbreak = uix_callback (row, colorprefix, name, reservation)
 											if isbreak then
 												break
 											end
@@ -3484,7 +3555,7 @@ function menu.displayPlan(frame)
 				row[2].handlers.onSliderCellActivated = function() menu.noupdate = true end
 				row[2].handlers.onSliderCellDeactivated = function() menu.noupdate = false end
 				row[6]:createButton({ mouseOverText = ReadText(1026, 8407) }):setIcon("menu_edit")
-				row[6].handlers.onClick = menu.buttonEditTradeRule
+				row[6].handlers.onClick = function () return menu.buttonEditTradeRule(C.GetContainerTradeRuleID(menu.buildstorage, "buy", "")) end
 
 				resourcetable:addEmptyRow()
 
@@ -3515,10 +3586,10 @@ function menu.displayPlan(frame)
 					
 					-- kuertee start: callback
 					-- row[3]:setColSpan(2):createText(GetWareData(ware.ware, "name"))
-					if callbacks ["displayPlan_getWareName"] then
+					if menu.uix_callbacks ["displayPlan_getWareName"] then
 						local name
-						for _, callback in ipairs (callbacks ["displayPlan_getWareName"]) do
-							name = callback (ware.ware, name)
+						for uix_id, uix_callback in pairs (menu.uix_callbacks ["displayPlan_getWareName"]) do
+							name = uix_callback (ware.ware, name)
 						end
 						if name then
 							row[3]:setColSpan(2):createText(name)
@@ -3558,7 +3629,7 @@ function menu.displayPlan(frame)
 						row[3].handlers.onSliderCellActivated = function() menu.noupdate = true end
 						row[3].handlers.onSliderCellDeactivated = function() menu.noupdate = false end
 						row[6]:createButton({ mouseOverText = ReadText(1026, 8407) }):setIcon("menu_edit")
-						row[6].handlers.onClick = menu.buttonEditTradeRule
+						row[6].handlers.onClick = function () return menu.buttonEditTradeRule(C.GetContainerTradeRuleID(menu.buildstorage, "buy", ware.ware)) end
 
 						resourcetable:addEmptyRow(Helper.standardTextHeight / 2)
 
@@ -3678,7 +3749,7 @@ function menu.displayPlan(frame)
 
 		local row = statustable:addRow(true, {  })
 		row[1]:setColSpan(1)
-		row[2]:createButton({ helpOverlayID = "stationconfig_closemenu", helpOverlayText = " ",  helpOverlayHighlightOnly = true }):setText(ReadText(1001, 8035), { halign = "center" })
+		row[2]:createButton({ helpOverlayID = "menu_close", helpOverlayText = " ",  helpOverlayHighlightOnly = true }):setText(ReadText(1001, 8035), { halign = "center" })
 		row[2].handlers.onClick = function () menu.modulesMode = nil; return menu.onCloseElement("back") end
 
 		statustable.properties.y = Helper.viewHeight - statustable:getFullHeight() - Helper.frameBorder
@@ -3889,6 +3960,16 @@ function menu.displayModuleInfo(frame)
 
 	local data = GetLibraryEntry(infolibrary, menu.selectedModule.macro)
 
+	ftable:addEmptyRow(Helper.standardTextHeight / 4)
+
+	if (menu.selectedModule.component == 0) or IsComponentConstruction(ConvertStringToLuaID(tostring(menu.selectedModule.component))) then
+		local row = ftable:addRow(false, {  })
+		row[1]:createText(ReadText(1001, 3601), { font = Helper.standardFontBold })
+		row[2]:createText(ConvertMoneyString(tonumber(C.GetEstimatedBuildPrice(menu.buildstorage, menu.selectedModule.macro)), false, true, 0, true) .. " " .. ReadText(1001, 101), { font = Helper.standardFontBold })
+
+		ftable:addEmptyRow(Helper.standardTextHeight / 4)
+	end
+
 	if ((infolibrary == "moduletypes_production") and data.allowproduction) or (infolibrary == "moduletypes_processing") then
 		local queueduration = 0
 		for i, proddata in ipairs(data.products) do
@@ -3920,7 +4001,7 @@ function menu.displayModuleInfo(frame)
 				row[1]:createText("   " .. ReadText(1001, 7403))
 				row[2]:createText("---")
 			end
-			ftable:addEmptyRow(Helper.standardTextHeight / 2)
+			ftable:addEmptyRow(Helper.standardTextHeight / 4)
 		end
 
 		if infolibrary == "moduletypes_production" then
@@ -4507,12 +4588,19 @@ function menu.createModuleContext()
 	local active = not menu.contextData.item.isfixed
 	local mouseovertext = ""
 	if active then
+		local ware = GetMacroData(macro, "ware")
+		local islimited = GetWareData(ware, "islimited")
 		if IsMacroClass(macro, "ventureplatform") or (IsMacroClass(macro, "dockarea") and GetMacroData(macro, "isventuremodule")) then
-			local ware = GetMacroData(macro, "ware")
 			local availableamount = math.max(0, OnlineGetUserItemAmount(ware) - (menu.externalUsedLimitedModules[macro] or 0) - (menu.usedLimitedModules[macro] or 0))
 			if availableamount < 1 then
 				active = false
 				mouseovertext = menu.ventureModuleUnavailableMouseOverText()
+			end
+		elseif islimited then
+			local availableamount = math.max(0, Helper.getLimitedWareAmount(ware) - (menu.externalUsedLimitedModules[macro] or 0) - (menu.usedLimitedModules[macro] or 0))
+			if availableamount < 1 then
+				active = false
+				mouseovertext = ReadText(1026, 7933)
 			end
 		end
 	end
@@ -4536,7 +4624,13 @@ function menu.createModuleContext()
 
 		for macro, amount in pairs(usedLimitedModulesInSequence) do
 			local ware = GetMacroData(macro, "ware")
-			local availableamount = math.max(0, OnlineGetUserItemAmount(ware) - (menu.externalUsedLimitedModules[macro] or 0) - (menu.usedLimitedModules[macro] or 0))
+			local islimited = GetWareData(ware, "islimited")
+			local availableamount = 0
+			if islimited then
+				availableamount = math.max(0, Helper.getLimitedWareAmount(ware) - (menu.externalUsedLimitedModules[macro] or 0) - (menu.usedLimitedModules[macro] or 0))
+			else
+				availableamount = math.max(0, OnlineGetUserItemAmount(ware) - (menu.externalUsedLimitedModules[macro] or 0) - (menu.usedLimitedModules[macro] or 0))
+			end
 			if amount > availableamount then
 				active = false
 				mouseovertext = menu.ventureModuleUnavailableMouseOverText()
@@ -5937,37 +6031,109 @@ function menu.applySettings()
 end
 
 -- kuertee start:
-function menu.registerCallback (callbackName, callbackFunction)
-	-- note 1: format is generally [function name]_[action]. e.g.: in kuertee_menu_transporter, "display_on_set_room_active" overrides the room's active property with the return of the callback.
-	-- note 2: events have the word "_on_" followed by a PRESET TENSE verb. e.g.: in kuertee_menu_transporter, "display_on_set_buttontable" is called after all of the rows of buttontable are set.
-	-- note 3: new callbacks can be added or existing callbacks can be edited. but commit your additions/changes to the mod's GIT repository.
-	-- note 4: search for the callback names to see where they are executed.
-	-- note 5: if a callback requires a return value, return it in an object var. e.g. "display_on_set_room_active" requires a return of {active = true | false}.
-
-	-- to find callbacks available for this menu,
-	-- reg-ex search for callbacks.*\[\".*\]
-
-	if callbacks [callbackName] == nil then
-		callbacks [callbackName] = {}
-	end
-	table.insert (callbacks [callbackName], callbackFunction)
+menu.uix_callbackCount = 0
+function menu.registerCallback(callbackName, callbackFunction, id)
+    -- note 1: format is generally [function name]_[action]. e.g.: in kuertee_menu_transporter, "display_on_set_room_active" overrides the room's active property with the return of the callback.
+    -- note 2: events have the word "_on_" followed by a PRESENT TENSE verb. e.g.: in kuertee_menu_transporter, "display_on_set_buttontable" is called after all of the rows of buttontable are set.
+    -- note 3: new callbacks can be added or existing callbacks can be edited. but commit your additions/changes to the mod's GIT repository.
+    -- note 4: search for the callback names to see where they are executed.
+    -- note 5: if a callback requires a return value, return it in an object var. e.g. "display_on_set_room_active" requires a return of {active = true | false}.
+    if menu.uix_callbacks [callbackName] == nil then
+        menu.uix_callbacks [callbackName] = {}
+    end
+    if not menu.uix_callbacks[callbackName][id] then
+        if not id then
+            menu.uix_callbackCount = menu.uix_callbackCount + 1
+            id = "_" .. tostring(menu.uix_callbackCount)
+        end
+        menu.uix_callbacks[callbackName][id] = callbackFunction
+        if Helper.isDebugCallbacks then
+            Helper.debugText_forced(menu.name .. " uix registerCallback: menu.uix_callbacks[" .. tostring(callbackName) .. "][" .. tostring(id) .. "]: " .. tostring(menu.uix_callbacks[callbackName][id]))
+        end
+    else
+        Helper.debugText_forced(menu.name .. " uix registerCallback: callback at " .. callbackName .. " with id " .. tostring(id) .. " was already previously registered")
+    end
 end
 
-function menu.deregisterCallback(callbackName, callbackFunction)
-	-- for i, callback in ipairs(callbacks[callbackName]) do
-	if callbacks[callbackName] and #callbacks[callbackName] > 0 then
-		for i = #callbacks[callbackName], 1, -1 do
-			if callbacks[callbackName][i] == callbackFunction then
-				table.remove(callbacks[callbackName], i)
-			end
-		end
-	end
+menu.uix_isDeregisterQueued = nil
+menu.uix_callbacks_toDeregister = {}
+function menu.deregisterCallback(callbackName, callbackFunction, id)
+    if not menu.uix_callbacks_toDeregister[callbackName] then
+        menu.uix_callbacks_toDeregister[callbackName] = {}
+    end
+    if id then
+        table.insert(menu.uix_callbacks_toDeregister[callbackName], id)
+    else
+        if menu.uix_callbacks[callbackName] then
+            for id, func in pairs(menu.uix_callbacks[callbackName]) do
+                if func == callbackFunction then
+                    table.insert(menu.uix_callbacks_toDeregister[callbackName], id)
+                end
+            end
+        end
+    end
+    if not menu.uix_isDeregisterQueued then
+        menu.uix_isDeregisterQueued = true
+        Helper.addDelayedOneTimeCallbackOnUpdate(menu.deregisterCallbacksNow, true, getElapsedTime() + 1)
+    end
 end
 
-function menu.loadModLuas()
-	if Helper then
-		Helper.loadModLuas(menu.name, "menu_station_configuration_uix")
-	end
+function menu.deregisterCallbacksNow()
+    menu.uix_isDeregisterQueued = nil
+    for callbackName, ids in pairs(menu.uix_callbacks_toDeregister) do
+        if menu.uix_callbacks[callbackName] then
+            for _, id in ipairs(ids) do
+                if menu.uix_callbacks[callbackName][id] then
+                    if Helper.isDebugCallbacks then
+                        Helper.debugText_forced(menu.name .. " uix deregisterCallbacksNow (pre): menu.uix_callbacks[" .. tostring(callbackName) .. "][" .. tostring(id) .. "]: " .. tostring(menu.uix_callbacks[callbackName][id]))
+                    end
+                    menu.uix_callbacks[callbackName][id] = nil
+                    if Helper.isDebugCallbacks then
+                        Helper.debugText_forced(menu.name .. " uix deregisterCallbacksNow (post): menu.uix_callbacks[" .. tostring(callbackName) .. "][" .. tostring(id) .. "]: " .. tostring(menu.uix_callbacks[callbackName][id]))
+                    end
+                else
+                    Helper.debugText_forced(menu.name .. " uix deregisterCallbacksNow: callback at " .. callbackName .. " with id " .. tostring(id) .. " doesn't exist")
+                end
+            end
+        end
+    end
+    menu.uix_callbacks_toDeregister = {}
+end
+
+menu.uix_isUpdateQueued = nil
+menu.uix_callbacks_toUpdate = {}
+function menu.updateCallback(callbackName, id, callbackFunction)
+    if not menu.uix_callbacks_toUpdate[callbackName] then
+        menu.uix_callbacks_toUpdate[callbackName] = {}
+    end
+    if id then
+        table.insert(menu.uix_callbacks_toUpdate[callbackName], {id = id, callbackFunction = callbackFunction})
+    end
+    if not menu.uix_isUpdateQueued then
+        menu.uix_isUpdateQueued = true
+        Helper.addDelayedOneTimeCallbackOnUpdate(menu.updateCallbacksNow, true, getElapsedTime() + 1)
+    end
+end
+
+function menu.updateCallbacksNow()
+    menu.uix_isUpdateQueued = nil
+    for callbackName, updateDatas in pairs(menu.uix_callbacks_toUpdate) do
+        if menu.uix_callbacks[callbackName] then
+            for _, updateData in ipairs(updateDatas) do
+                if menu.uix_callbacks[callbackName][updateData.id] then
+                    if Helper.isDebugCallbacks then
+                        Helper.debugText_forced(menu.name .. " uix updateCallbacksNow (pre): menu.uix_callbacks[" .. tostring(callbackName) .. "][" .. tostring(updateData.id) .. "]: " .. tostring(menu.uix_callbacks[callbackName][updateData.id]))
+                    end
+                    menu.uix_callbacks[callbackName][updateData.id] = updateData.callbackFunction
+                    if Helper.isDebugCallbacks then
+                        Helper.debugText_forced(menu.name .. " uix updateCallbacksNow (post): menu.uix_callbacks[" .. tostring(callbackName) .. "][" .. tostring(updateData.id) .. "]: " .. tostring(menu.uix_callbacks[callbackName][updateData.id]))
+                    end
+                else
+                    Helper.debugText_forced(menu.name .. " uix updateCallbacksNow: callback at " .. callbackName .. " with id " .. tostring(id) .. " doesn't exist")
+                end
+            end
+        end
+    end
 end
 -- kuertee end
 

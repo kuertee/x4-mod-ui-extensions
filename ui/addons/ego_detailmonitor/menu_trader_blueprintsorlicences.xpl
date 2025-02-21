@@ -52,7 +52,7 @@ local config = {
 			{ key = "moduletypes_defence" },
 			{ key = "moduletypes_dock" },
 			{ key = "moduletypes_processing" },
-			{ key = "moduletypes_other" },
+			{ key = "moduletypes_other", additionalcategories = { "moduletypes_radar" } },
 			{ key = "moduletypes_venture" },
 		},
 		["ship"] = {
@@ -81,7 +81,7 @@ local config = {
 }
 
 -- kuertee start:
-local callbacks = {}
+menu.uix_callbacks = {}
 -- kuertee end
 
 -- init menu and register with Helper
@@ -99,8 +99,6 @@ end
 
 -- kuertee start:
 function menu.init_kuertee ()
-	menu.loadModLuas()
-	-- DebugError("uix load success: " .. tostring(debug.getinfo(1).source))
 end
 -- kuertee end
 
@@ -382,45 +380,46 @@ function menu.display(firsttime)
 							for i = 1, #sortedwares do
 								local ware = sortedwares[i]
 								local price = menu.table_wares[tag][equipmenttag][ware]
-								local tradelicence = GetWareData(ware, "tradelicence")
+								local tradelicence, ishiddenwithoutlicence = GetWareData(ware, "tradelicence", "ishiddenwithoutlicence")
 								local licenced = HasLicence("player", tradelicence, menu.traderfaction)
-								local licencename, precursorname = "", ""
 
-								local licencedata = GetLibraryEntry("licences", menu.traderfaction .. "." .. tradelicence)
-								licencename = licencedata.name
-								if licencedata.precursor ~= nil then
-									local licenceinfo = ffi.new("LicenceInfo")
-									C.GetLicenceInfo(licenceinfo, menu.traderfaction, licencedata.precursor)
-									precursorname = ffi.string(licenceinfo.name)
-								end
-								row = menu.table_top:addRow({ "entry", ware }, {  })
+								if (not ishiddenwithoutlicence) or licenced then
+									local licencename, precursorname = "", ""
+									local licencedata = GetLibraryEntry("licences", menu.traderfaction .. "." .. tradelicence)
+									licencename = licencedata.name
+									if licencedata.precursor ~= nil then
+										local licenceinfo = ffi.new("LicenceInfo")
+										C.GetLicenceInfo(licenceinfo, menu.traderfaction, licencedata.precursor)
+										precursorname = ffi.string(licenceinfo.name)
+									end
+									row = menu.table_top:addRow({ "entry", ware }, {  })
 
-								row[3]:createText(GetWareData(ware, "name"), {color = function() return menu.blueprintstopurchase[ware] and Color["text_positive"] or Color["text_normal"] end, x = Helper.standardTextOffsetx + Helper.standardIndentStep * 2})
+									row[3]:createText(GetWareData(ware, "name"), {color = function() return menu.blueprintstopurchase[ware] and Color["text_positive"] or Color["text_normal"] end, x = Helper.standardTextOffsetx + Helper.standardIndentStep * 2})
 
-								-- start: mycu callback
-								if callbacks ["display_on_after_create_equipment_text"] then
-									for _, callback in ipairs (callbacks ["display_on_after_create_equipment_text"]) do
-										local name, macro = GetWareData(ware, "name", "component")
-										result = callback (macro, macro, name)
-										if result then
-											row[3].properties.mouseOverText = result.mouseovertext
+									-- start: mycu callback
+									if menu.uix_callbacks ["display_on_after_create_equipment_text"] then
+										for uix_id, uix_callback in pairs (menu.uix_callbacks ["display_on_after_create_equipment_text"]) do
+											local name, macro = GetWareData(ware, "name", "component")
+											result = uix_callback (macro, macro, name)
+											if result then
+												row[3].properties.mouseOverText = result.mouseovertext
+											end
 										end
 									end
-								end
-								-- end: mycu callback
+									-- end: mycu callback
+									if not menu.blueprintlist[ware] then
+										row[4]:createText((ConvertMoneyString(tostring(price), false, true, nil, true) .. " " .. ReadText(1001, 101)), {halign = "right", color = function() return menu.blueprintstopurchase[ware] and Color["text_positive"] or Color["text_normal"] end})
+									end
 
-								if not menu.blueprintlist[ware] then
-									row[4]:createText((ConvertMoneyString(tostring(price), false, true, nil, true) .. " " .. ReadText(1001, 101)), {halign = "right", color = function() return menu.blueprintstopurchase[ware] and Color["text_positive"] or Color["text_normal"] end})
-								end
-
-								if menu.blueprintlist[ware] then
-									row[5]:createText(ReadText(1001, 84), { halign = "center", color = Color["text_player"], x = 0 })
-								else
-									row[5]:createButton({ active = menu.blueprintstopurchase[ware] and true or (licenced and (menu.playermoney - menu.totalprice) > price) })
-									row[5]:setText(function() return menu.blueprintstopurchase[ware] and ReadText(1001, 17) or ReadText(1001, 3102) end, {halign = "center"})		-- Selected, Select
-									row[5].handlers.onClick = function() return menu.buttonSelectBlueprint(ware, price) end
-									row[5].properties.bgColor = function() return menu.blueprintstopurchase[ware] and Color["row_background_selected"] or Color["button_background_default"] end
-									row[5].properties.mouseOverText = row[5].properties.active and "" or (licenced and ReadText(1026, 8111) or string.format(ReadText(1026, 8104), ColorText["licence"] .. licencename .. "\27X", ColorText["licence"] .. precursorname .. "\27X", licencedata.minrelation))		-- "You cannot afford this blueprint.", "Requires the %s($LICENCE_NAME$) awarded in the %s($OTHER_LICENCE_NAME$) ceremony \(Relation: %s\)."
+									if menu.blueprintlist[ware] then
+										row[5]:createText(ReadText(1001, 84), { halign = "center", color = Color["text_player"], x = 0 })
+									else
+										row[5]:createButton({ active = menu.blueprintstopurchase[ware] and true or (licenced and (menu.playermoney - menu.totalprice) > price) })
+										row[5]:setText(function() return menu.blueprintstopurchase[ware] and ReadText(1001, 17) or ReadText(1001, 3102) end, {halign = "center"})		-- Selected, Select
+										row[5].handlers.onClick = function() return menu.buttonSelectBlueprint(ware, price) end
+										row[5].properties.bgColor = function() return menu.blueprintstopurchase[ware] and Color["row_background_selected"] or Color["button_background_default"] end
+										row[5].properties.mouseOverText = row[5].properties.active and "" or (licenced and ReadText(1026, 8111) or string.format(ReadText(1026, 8104), ColorText["licence"] .. licencename .. "\27X", ColorText["licence"] .. precursorname .. "\27X", licencedata.minrelation))		-- "You cannot afford this blueprint.", "Requires the %s($LICENCE_NAME$) awarded in the %s($OTHER_LICENCE_NAME$) ceremony \(Relation: %s\)."
+									end
 								end
 							end
 						end
@@ -475,6 +474,13 @@ function menu.display(firsttime)
 								if menu.expanded[key.key] then
 									for _, entry in ipairs(wares[key.key]) do
 										menu.showEntry(entry, tag, 2)
+									end
+									if key.additionalcategories then
+										for _, additionalcategory in ipairs(key.additionalcategories) do
+											for _, entry in ipairs(wares[additionalcategory]) do
+												menu.showEntry(entry, tag, 2)
+											end
+										end
 									end
 								end
 							end
@@ -544,11 +550,15 @@ end
 function menu.showEntry(entry, tag, indent)
 	local ware = entry.ware
 	local price = menu.table_wares[tag][ware]
-	local tradelicence = GetWareData(ware, "tradelicence")
+	local tradelicence, ishiddenwithoutlicence = GetWareData(ware, "tradelicence", "ishiddenwithoutlicence")
 	local licenced = HasLicence("player", tradelicence, menu.traderfaction)
+	if ishiddenwithoutlicence and (not licenced) then
+		-- don't show hidden 
+		return
+	end
+
 	local licenceinfo = ffi.new("LicenceInfo")
 	local licencename, precursorname, minrelation = "", ""
-
 	local licencedata = GetLibraryEntry("licences", menu.traderfaction .. "." .. tradelicence)
 	licencename = licencedata.name or ""
 	if licencedata.precursor ~= nil then
@@ -748,37 +758,110 @@ function menu.onCloseElement(dueToClose)
 end
 
 -- kuertee start:
-function menu.registerCallback (callbackName, callbackFunction)
-	-- note 1: format is generally [function name]_[action]. e.g.: in kuertee_menu_transporter, "display_on_set_room_active" overrides the room's active property with the return of the callback.
-	-- note 2: events have the word "_on_" followed by a PRESET TENSE verb. e.g.: in kuertee_menu_transporter, "display_on_set_buttontable" is called after all of the rows of buttontable are set.
-	-- note 3: new callbacks can be added or existing callbacks can be edited. but commit your additions/changes to the mod's GIT repository.
-	-- note 4: search for the callback names to see where they are executed.
-	-- note 5: if a callback requires a return value, return it in an object var. e.g. "display_on_set_room_active" requires a return of {active = true | false}.
-
-	-- to find callbacks available for this menu,
-	-- reg-ex search for callbacks.*\[\".*\]
-
-	if callbacks [callbackName] == nil then
-		callbacks [callbackName] = {}
-	end
-	table.insert (callbacks [callbackName], callbackFunction)
+menu.uix_callbackCount = 0
+function menu.registerCallback(callbackName, callbackFunction, id)
+    -- note 1: format is generally [function name]_[action]. e.g.: in kuertee_menu_transporter, "display_on_set_room_active" overrides the room's active property with the return of the callback.
+    -- note 2: events have the word "_on_" followed by a PRESENT TENSE verb. e.g.: in kuertee_menu_transporter, "display_on_set_buttontable" is called after all of the rows of buttontable are set.
+    -- note 3: new callbacks can be added or existing callbacks can be edited. but commit your additions/changes to the mod's GIT repository.
+    -- note 4: search for the callback names to see where they are executed.
+    -- note 5: if a callback requires a return value, return it in an object var. e.g. "display_on_set_room_active" requires a return of {active = true | false}.
+    if menu.uix_callbacks [callbackName] == nil then
+        menu.uix_callbacks [callbackName] = {}
+    end
+    if not menu.uix_callbacks[callbackName][id] then
+        if not id then
+            menu.uix_callbackCount = menu.uix_callbackCount + 1
+            id = "_" .. tostring(menu.uix_callbackCount)
+        end
+        menu.uix_callbacks[callbackName][id] = callbackFunction
+        if Helper.isDebugCallbacks then
+            Helper.debugText_forced(menu.name .. " uix registerCallback: menu.uix_callbacks[" .. tostring(callbackName) .. "][" .. tostring(id) .. "]: " .. tostring(menu.uix_callbacks[callbackName][id]))
+        end
+    else
+        Helper.debugText_forced(menu.name .. " uix registerCallback: callback at " .. callbackName .. " with id " .. tostring(id) .. " was already previously registered")
+    end
 end
 
-function menu.deregisterCallback(callbackName, callbackFunction)
-	-- for i, callback in ipairs(callbacks[callbackName]) do
-	if callbacks[callbackName] and #callbacks[callbackName] > 0 then
-		for i = #callbacks[callbackName], 1, -1 do
-			if callbacks[callbackName][i] == callbackFunction then
-				table.remove(callbacks[callbackName], i)
-			end
-		end
-	end
+menu.uix_isDeregisterQueued = nil
+menu.uix_callbacks_toDeregister = {}
+function menu.deregisterCallback(callbackName, callbackFunction, id)
+    if not menu.uix_callbacks_toDeregister[callbackName] then
+        menu.uix_callbacks_toDeregister[callbackName] = {}
+    end
+    if id then
+        table.insert(menu.uix_callbacks_toDeregister[callbackName], id)
+    else
+        if menu.uix_callbacks[callbackName] then
+            for id, func in pairs(menu.uix_callbacks[callbackName]) do
+                if func == callbackFunction then
+                    table.insert(menu.uix_callbacks_toDeregister[callbackName], id)
+                end
+            end
+        end
+    end
+    if not menu.uix_isDeregisterQueued then
+        menu.uix_isDeregisterQueued = true
+        Helper.addDelayedOneTimeCallbackOnUpdate(menu.deregisterCallbacksNow, true, getElapsedTime() + 1)
+    end
 end
 
-function menu.loadModLuas()
-	if Helper then
-		Helper.loadModLuas(menu.name, "menu_trader_blueprintsorlicences_uix")
-	end
+function menu.deregisterCallbacksNow()
+    menu.uix_isDeregisterQueued = nil
+    for callbackName, ids in pairs(menu.uix_callbacks_toDeregister) do
+        if menu.uix_callbacks[callbackName] then
+            for _, id in ipairs(ids) do
+                if menu.uix_callbacks[callbackName][id] then
+                    if Helper.isDebugCallbacks then
+                        Helper.debugText_forced(menu.name .. " uix deregisterCallbacksNow (pre): menu.uix_callbacks[" .. tostring(callbackName) .. "][" .. tostring(id) .. "]: " .. tostring(menu.uix_callbacks[callbackName][id]))
+                    end
+                    menu.uix_callbacks[callbackName][id] = nil
+                    if Helper.isDebugCallbacks then
+                        Helper.debugText_forced(menu.name .. " uix deregisterCallbacksNow (post): menu.uix_callbacks[" .. tostring(callbackName) .. "][" .. tostring(id) .. "]: " .. tostring(menu.uix_callbacks[callbackName][id]))
+                    end
+                else
+                    Helper.debugText_forced(menu.name .. " uix deregisterCallbacksNow: callback at " .. callbackName .. " with id " .. tostring(id) .. " doesn't exist")
+                end
+            end
+        end
+    end
+    menu.uix_callbacks_toDeregister = {}
+end
+
+menu.uix_isUpdateQueued = nil
+menu.uix_callbacks_toUpdate = {}
+function menu.updateCallback(callbackName, id, callbackFunction)
+    if not menu.uix_callbacks_toUpdate[callbackName] then
+        menu.uix_callbacks_toUpdate[callbackName] = {}
+    end
+    if id then
+        table.insert(menu.uix_callbacks_toUpdate[callbackName], {id = id, callbackFunction = callbackFunction})
+    end
+    if not menu.uix_isUpdateQueued then
+        menu.uix_isUpdateQueued = true
+        Helper.addDelayedOneTimeCallbackOnUpdate(menu.updateCallbacksNow, true, getElapsedTime() + 1)
+    end
+end
+
+function menu.updateCallbacksNow()
+    menu.uix_isUpdateQueued = nil
+    for callbackName, updateDatas in pairs(menu.uix_callbacks_toUpdate) do
+        if menu.uix_callbacks[callbackName] then
+            for _, updateData in ipairs(updateDatas) do
+                if menu.uix_callbacks[callbackName][updateData.id] then
+                    if Helper.isDebugCallbacks then
+                        Helper.debugText_forced(menu.name .. " uix updateCallbacksNow (pre): menu.uix_callbacks[" .. tostring(callbackName) .. "][" .. tostring(updateData.id) .. "]: " .. tostring(menu.uix_callbacks[callbackName][updateData.id]))
+                    end
+                    menu.uix_callbacks[callbackName][updateData.id] = updateData.callbackFunction
+                    if Helper.isDebugCallbacks then
+                        Helper.debugText_forced(menu.name .. " uix updateCallbacksNow (post): menu.uix_callbacks[" .. tostring(callbackName) .. "][" .. tostring(updateData.id) .. "]: " .. tostring(menu.uix_callbacks[callbackName][updateData.id]))
+                    end
+                else
+                    Helper.debugText_forced(menu.name .. " uix updateCallbacksNow: callback at " .. callbackName .. " with id " .. tostring(id) .. " doesn't exist")
+                end
+            end
+        end
+    end
 end
 -- kuertee end
+
 init()
