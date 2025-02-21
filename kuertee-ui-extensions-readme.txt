@@ -3,8 +3,8 @@ https://www.nexusmods.com/x4foundations/mods/552
 Code: https://github.com/kuertee/x4-mod-ui-extensions
 by kuertee. Contributors: Erixon, Forleyor, Mycu, Runekn, AlexandreTK, IALuir, sticeIO, DrWhoKnows.
 
-v7.5 beta  NOTES FOR MOD DEVELOPERS:
-====================================
+v7.5 NOTES FOR MOD DEVELOPERS:
+==============================
 [ol]
 [li] PROTECTED UI MODE:
 Mods that use UI Extensions will need the new Protected UI Mode setting in the Extensions menu disabled.[/li]
@@ -36,51 +36,8 @@ To load custom lua files, use ui.xml as described here: https://wiki.egosoft.com
 
 Updates
 =======
-v7.5.0092 beta, 15 Feb 2025:
--Tweak: compatibility with 7.5 rc 1 of the base game.
-
-v7.5.0091 beta, 12 Feb 2025:
--Bug-fix: UserQuestion menu bugs that prevented "custom_" menus (e.g. menu used by Modifications Part Trader mod) from displaying.
-
-v7.5.009 beta, 11 Feb 2025:
--Bug-fix: compatibility with the 7.5 beta 9 version of the base game.
-
-v7.5.008 beta, 6 Feb 2025:
--Bug-fix: compatibility with the 7.5 beta 8 version of the base game.
-
-v7.5.0071 beta, 5 Feb 2025:
--bug-fix: 7.5.007 update broke functions required by some mods (e.g. Alternatives to death, High-sec rooms are locked, Mod parts trader, et. al.)
-
-v7.5.007 beta, 30 Jan 2025:
--Bug-fix: compatibility with the 7.5 beta 7 version of the base game.
-
-v7.5.0063 beta, 29 Jan 2025:
--Bug-fix: Trade Rule Restrictions were not sticking.
--Bug-fix: Resizing Plot of stations were not sticking.
-
-v7.5.0062 beta, 26 Jan 2025:
--New feature: <raise_lua_event name="'Interact_Menu_API.Existence_Query'" /> to identify existence of UIX by DrWhoKnows.
--New feature (merged from 7.1.19): UI callback, updatePlotSize_on_before_extend, in Map Menu for sticeIO's mod.
-
-v7.5.0061 beta, 25 Jan 2025:
--New feature: 7.5 beta 6 compatibility.
--Bug-fix: The player's Inventory window wasn't opening.
--Tweak: The Online Features button is disabled. Because its functionality is natively disabled with how UI Extensions rewrites several menu files, the button might as well be disabled.
--Tweak: callbacks can now be assigned an id so that they can be deregistered by other mods with "menu.registerCallback(callbackName, myCallbackFunc, myId)".
-				E.g.
-				MapMenu.registerCallback("buttonToggleObjectList_on_start", myCallbackFunc, "mod_a").
-				Then another lua file can do this:
-				MapMenu.deregisterCallback("buttonToggleObjectList_on_start", nil, "mod_a").
-				This is useful when you want to override another mod's custom changes to different menus with your own mod.
-				Note that deregistering callbacks are delayed by 1 second because there is no method to ensure that the callback of another mod that is to be deregistered has been registered.
--New feature: callbacks of other mods can be updated (i.e. rerouted) to your own callbacks with "updateCallback(callbackName, id, myCallbackFunc)".
-				E.g. Mod_a registered a callback for "buttonToggleObjectList_on_start" with the id "mod_a".
-				And Mod_b wants to reroute that callback for its own function.
-				That callback can be rerouted like this:
-				MapMenu.updateCallback("buttonToggleObjectList_on_start", "mod_a", modb_CallbackFunc).
-				Note that rerouted callbacks will keep their original ids.
-				It might be better to deregister the callback THEN register the new callback instead.
-				Also note that updating callbacks are delayed by 1 second because there is no method to ensure that the callback of another mod that is to be updated has been registered.
+v7.5.01, 21 Feb 2025:
+-Bug-fixes: 7.5 compatibility updates.
 
 Instructions for players
 ========================
@@ -270,6 +227,52 @@ French localisation by Calvitix.
 
 History
 =======
+v7.5.0092 beta, 15 Feb 2025:
+-Tweak: compatibility with 7.5 rc 1 of the base game.
+
+v7.5.0091 beta, 12 Feb 2025:
+-Bug-fix: UserQuestion menu bugs that prevented "custom_" menus (e.g. menu used by Modifications Part Trader mod) from displaying.
+
+v7.5.009 beta, 11 Feb 2025:
+-Bug-fix: compatibility with the 7.5 beta 9 version of the base game.
+
+v7.5.008 beta, 6 Feb 2025:
+-Bug-fix: compatibility with the 7.5 beta 8 version of the base game.
+
+v7.5.0071 beta, 5 Feb 2025:
+-bug-fix: 7.5.007 update broke functions required by some mods (e.g. Alternatives to death, High-sec rooms are locked, Mod parts trader, et. al.)
+
+v7.5.007 beta, 30 Jan 2025:
+-Bug-fix: compatibility with the 7.5 beta 7 version of the base game.
+
+v7.5.0063 beta, 29 Jan 2025:
+-Bug-fix: Trade Rule Restrictions were not sticking.
+-Bug-fix: Resizing Plot of stations were not sticking.
+
+v7.5.0062 beta, 26 Jan 2025:
+-New feature: <raise_lua_event name="'Interact_Menu_API.Existence_Query'" /> to identify existence of UIX by DrWhoKnows.
+-New feature (merged from 7.1.19): UI callback, updatePlotSize_on_before_extend, in Map Menu for sticeIO's mod.
+
+v7.5.0061 beta, 25 Jan 2025:
+-New feature: 7.5 beta 6 compatibility.
+-Bug-fix: The player's Inventory window wasn't opening.
+-Tweak: The Online Features button is disabled. Because its functionality is natively disabled with how UI Extensions rewrites several menu files, the button might as well be disabled.
+-Tweak: callbacks can now be assigned an id so that they can be deregistered by other mods with "menu.registerCallback(callbackName, myCallbackFunc, myId)".
+				E.g.
+				MapMenu.registerCallback("buttonToggleObjectList_on_start", myCallbackFunc, "mod_a").
+				Then another lua file can do this:
+				MapMenu.deregisterCallback("buttonToggleObjectList_on_start", nil, "mod_a").
+				This is useful when you want to override another mod's custom changes to different menus with your own mod.
+				Note that deregistering callbacks are delayed by 1 second because there is no method to ensure that the callback of another mod that is to be deregistered has been registered.
+-New feature: callbacks of other mods can be updated (i.e. rerouted) to your own callbacks with "updateCallback(callbackName, id, myCallbackFunc)".
+				E.g. Mod_a registered a callback for "buttonToggleObjectList_on_start" with the id "mod_a".
+				And Mod_b wants to reroute that callback for its own function.
+				That callback can be rerouted like this:
+				MapMenu.updateCallback("buttonToggleObjectList_on_start", "mod_a", modb_CallbackFunc).
+				Note that rerouted callbacks will keep their original ids.
+				It might be better to deregister the callback THEN register the new callback instead.
+				Also note that updating callbacks are delayed by 1 second because there is no method to ensure that the callback of another mod that is to be updated has been registered.
+
 v7.1.18, 12 Jan 2025:
 -New: UI Call-backs for the AEGS Faction mod by IALuir.
 
