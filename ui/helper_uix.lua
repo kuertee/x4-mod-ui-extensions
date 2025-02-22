@@ -110,9 +110,9 @@ end
 -- for i = 1, 10 do
 Helper.maxSaveFiles = 20
 for i = 1, Helper.maxSaveFiles do
--- kuertee end: more save games
 	Helper.validSaveFilenames[string.format("save_%03d", i)] = true
 end
+-- kuertee end: more save games
 
 -- kuertee start: rewrites
 
@@ -1040,13 +1040,6 @@ function ModLua.onCollapseLSOStorageNode(menu, nodedata)
 end
 
 function ModLua.getLimitedWareAmount(ware)
-
-	-- kuertee start: do not fail when modified
-	-- if C.IsGameModified() then
-	-- 	return tonumber(ffi.string(C.GetUserData("limited_blueprint_" .. ware))) or 0
-	-- end
-	-- kuertee end: do not fail when modified
-
 	return tonumber(ffi.string(C.GetUserDataSigned("limited_blueprint_" .. ware))) or 0
 end
 

@@ -147,10 +147,10 @@ config.input = {
 		["ranges"]  = 1007,
 	},
 	modifiers = {
-		[1] = { id = "shift",		   name = ReadText(1001, 12644),   offset = 256 },
-		[2] = { id = "ctrl",			name = ReadText(1001, 12645),   offset = 512 },
-		[3] = { id = "joystickmod1",	name = ReadText(1001, 12745),   offset = 1024,  controller = true },
-		[4] = { id = "joystickmod2",	name = ReadText(1001, 12746),   offset = 2048,  controller = true },
+		[1] = { id = "shift",			name = ReadText(1001, 12644),	offset = 256 },
+		[2] = { id = "ctrl",			name = ReadText(1001, 12645),	offset = 512 },
+		[3] = { id = "joystickmod1",	name = ReadText(1001, 12745),	offset = 1024,	controller = true },
+		[4] = { id = "joystickmod2",	name = ReadText(1001, 12746),	offset = 2048,	controller = true },
 	},
 	iscontrollermodifier = {
 		["joystickmod1"] = true,
@@ -176,17 +176,17 @@ config.input = {
 	},
 	cheatControls = {
 		["actions"]   = { [120] = true, [121] = true },
-		["states"]	= {},
-		["ranges"]	= {},
+		["states"]    = {},
+		["ranges"]    = {},
 		["functions"] = {},
 	},
 }
 	-- Define input functions here (serveral actions, states or ranges which can only be changed at the same time)
 	-- entry: [keycode] = { ["actions"] = { action1, action2, ... }, ["states"] = {}, ["name"] = name for display }
-	config.input.controlFunctions = {
-		[1] = {
-		["name"] = ReadText(1005, 16),  -- "Menu back"
-		--["name"] = ReadText(1001, 2669),  -- "Back"
+config.input.controlFunctions = {
+	[1] = {
+		["name"] = ReadText(1005, 16),	-- "Menu back"
+		--["name"] = ReadText(1001, 2669),	-- "Back"
 		["definingcontrol"] = {"actions", 16},
 		["actions"] = { 16, 103, 375 },
 		["states"] = {},
@@ -382,7 +382,7 @@ config.input = {
 config.input.controlsorder = {
 	["space"] = {
 		[1] = {
-			["title"] = ReadText(1001, 4865),   -- "Steering: Analog"
+			["title"] = ReadText(1001, 4865),	-- "Steering: Analog"
 			["mappable"] = true,
 			{ "ranges", 21, nil, ReadText(1026, 2629) },
 			{ "ranges", 22, nil, ReadText(1026, 2630) },
@@ -397,7 +397,7 @@ config.input.controlsorder = {
 			{ "ranges", 30, 2, nil, true },
 		},
 		[2] = {
-			["title"] = ReadText(1001, 4866),   -- "Steering: Digital"
+			["title"] = ReadText(1001, 4866),	-- "Steering: Digital"
 			["mappable"] = true,
 			{ "states", 4, { 1, 2 } },
 			{ "states", 5, { 1, 2 } },
@@ -433,17 +433,17 @@ config.input.controlsorder = {
 			{ "actions", 330, { 1, 2 } },
 		},
 		[3] = {
-			["title"] = ReadText(1001, 2663),   -- "Weapons"
+			["title"] = ReadText(1001, 2663),	-- "Weapons"
 			["mappable"] = true,
 			{ "states", 24, { 1, 2 } },
 			{ "states", 48, { 1, 2 } },
 			{ "states", 25, { 1, 2 } },
 			{ "actions", 8, { 1, 2 } },
-			{ "actions", 9, { 1, 2 } }, -- "Previous weapon"
+			{ "actions", 9, { 1, 2 } },	-- "Previous weapon"
 			{ "actions", 10, { 1, 2 } },
 			{ "actions", 11, { 1, 2 } },	-- "Previous missile"
 			{ "actions", 331, { 1, 2 } },
-			{ "actions", 321, { 1, 2 } },   -- "Next ammo"
+			{ "actions", 321, { 1, 2 } },	-- "Next ammo"
 			{ "actions", 307, { 1, 2 } },
 			{ "actions", 139, { 1, 2 } },
 			{ "actions", 140, { 1, 2 } },
@@ -455,7 +455,7 @@ config.input.controlsorder = {
 			{ "actions", 152, { 1, 2 } },
 		},
 		[4] = {
-			["title"] = ReadText(1002, 1001),   -- "Modes"
+			["title"] = ReadText(1002, 1001),	-- "Modes"
 			["mappable"] = true,
 			{ "states", 84, display = function () return C.IsVROculusTouchActive() or C.IsVRViveControllerActive() end },
 			{ "functions", 16 },
@@ -464,7 +464,7 @@ config.input.controlsorder = {
 			{ "functions", 17, nil, ReadText(1026, 2610) },
 		},
 		[5] = {
-			["title"] = ReadText(1001, 7245),   -- "Menu Access"
+			["title"] = ReadText(1001, 7245),	-- "Menu Access"
 			["mappable"] = true,
 			{ "states", 126, { 1, 2 } },
 			{ "states", 127, { 1, 2 } },
@@ -485,7 +485,7 @@ config.input.controlsorder = {
 			{ "actions", 371, 10 },
 		},
 		[6] = {
-			["title"] = ReadText(1001, 2600),   -- "Options Menu"
+			["title"] = ReadText(1001, 2600),	-- "Options Menu"
 			["mappable"] = true,
 			{ "actions", 132, { 1, 2 } },
 			{ "actions", 160, { 1, 2 } },
@@ -495,7 +495,7 @@ config.input.controlsorder = {
 			{ "actions", 131, { 1, 2 } },
 		},
 		[7] = {
-			["title"] = ReadText(1001, 4860),   -- "Camera"
+			["title"] = ReadText(1001, 4860),	-- "Camera"
 			["mappable"] = true,
 			{ "states", 81, { 1, 2, 9 } },
 			{ "functions", 11, { 1, 2, 9 }, ReadText(1026, 2605) },
@@ -520,7 +520,7 @@ config.input.controlsorder = {
 			{ "actions", 367, { 1, 2 } },
 		},
 		[8] = {
-			["title"] = ReadText(1001, 12696),  --"Target Management (Mouse)"
+			["title"] = ReadText(1001, 12696),	--"Target Management (Mouse)"
 			["mappable"] = true,
 			["mouseonly"] = true,
 			["filter"] = { [""] = true, ["keyboard"] = true },
@@ -529,10 +529,10 @@ config.input.controlsorder = {
 			{ "states", 131, 8 },
 		},
 		[9] = {
-			["title"] = ReadText(1001, 7282),   --"Target Management"
+			["title"] = ReadText(1001, 7282),	--"Target Management"
 			["mappable"] = true,
 			{ "actions", 167, { 1, 2 } },
-			{ "actions", 168, { 1, 2 }, ReadText(1026, 2604) }, -- "Target Object" (near crosshair)
+			{ "actions", 168, { 1, 2 }, ReadText(1026, 2604) },	-- "Target Object" (near crosshair)
 			{ "functions", 3 },
 			{ "actions", 289, { 1, 2 } },
 			{ "actions", 169, { 1, 2 } },
@@ -542,12 +542,12 @@ config.input.controlsorder = {
 			{ "actions", 275, { 1, 2 } },
 		},
 		[10] = {
-			["title"] = ReadText(1001, 12655),  --"Accessibility"
+			["title"] = ReadText(1001, 12655),	--"Accessibility"
 			["mappable"] = true,
 			{ "actions", 374, { 1, 2 }, ReadText(1026, 2675) },
 		},
 		[11] = {
-			["title"] = ReadText(1001, 2664),   --"Misc"
+			["title"] = ReadText(1001, 2664),	--"Misc"
 			["mappable"] = true,
 			{ "functions", 10 },
 			{ "actions", 277, { 1, 2 } },
@@ -575,7 +575,7 @@ config.input.controlsorder = {
 			{ "actions", 377, { 1, 2 }, ReadText(1026, 4809) },
 		},
 		[12] = {
-			["title"] = ReadText(1001, 4815),   -- "Expert Settings - Use with Caution!"
+			["title"] = ReadText(1001, 4815),	-- "Expert Settings - Use with Caution!"
 			["mappable"] = true,
 			{ "actions", 310, { 1, 2 } },
 			{ "states", 96, { 1, 2 } },
@@ -589,7 +589,7 @@ config.input.controlsorder = {
 	},
 	["menus"] = {
 		[1] = {
-			["title"] = ReadText(1001, 7296),   -- "Menus - Analog"
+			["title"] = ReadText(1001, 7296),	-- "Menus - Analog"
 			["mappable"] = true,
 			{ "ranges", 23, { 2, 6 } },
 			{ "ranges", 24, { 2, 6 } },
@@ -599,7 +599,7 @@ config.input.controlsorder = {
 			{ "ranges", 28, 2 },
 		},
 		[2] = {
-			["title"] = ReadText(1001, 2665),   -- "Menus - Digital"
+			["title"] = ReadText(1001, 2665),	-- "Menus - Digital"
 			["mappable"] = false,
 			{ "actions", 21, 2 },
 			{ "actions", 20, 2 },
@@ -664,9 +664,9 @@ config.input.controlsorder = {
 			{ "ranges", 12, { 3 } },
 		},
 		[4] = {
-			["title"] = ReadText(1001, 3245),   -- "Map"
+			["title"] = ReadText(1001, 3245),	-- "Map"
 			["mappable"] = true,
-			{ "actions", 216, 2 },  -- "Target Object" (in map)
+			{ "actions", 216, 2 },	-- "Target Object" (in map)
 			{ "actions", 264, 2 },
 			{ "actions", 265, 2 },
 			{ "actions", 222, 2 },
@@ -754,15 +754,15 @@ end
 
 config.input.filters = {
 	{ id = "", sources = {} },
-	{ id = "keyboard",	  sources = { [1] = true, [18] = true, [19] = true } },
-	{ id = "controller_1",  sources = { [2] = true, [10] = true } },
-	{ id = "controller_2",  sources = { [3] = true, [11] = true } },
-	{ id = "controller_3",  sources = { [4] = true, [12] = true } },
-	{ id = "controller_4",  sources = { [5] = true, [13] = true } },
-	{ id = "controller_5",  sources = { [6] = true, [14] = true } },
-	{ id = "controller_6",  sources = { [7] = true, [15] = true } },
-	{ id = "controller_7",  sources = { [8] = true, [16] = true } },
-	{ id = "controller_8",  sources = { [9] = true, [17] = true } },
+	{ id = "keyboard",		sources = { [1] = true, [18] = true, [19] = true } },
+	{ id = "controller_1",	sources = { [2] = true, [10] = true } },
+	{ id = "controller_2",	sources = { [3] = true, [11] = true } },
+	{ id = "controller_3",	sources = { [4] = true, [12] = true } },
+	{ id = "controller_4",	sources = { [5] = true, [13] = true } },
+	{ id = "controller_5",	sources = { [6] = true, [14] = true } },
+	{ id = "controller_6",	sources = { [7] = true, [15] = true } },
+	{ id = "controller_7",	sources = { [8] = true, [16] = true } },
+	{ id = "controller_8",	sources = { [9] = true, [17] = true } },
 }
 
 config.ventureDLCStates = {
@@ -779,19 +779,19 @@ config.ventureDLCStates = {
 
 config.inputfeedback = {
 	options = {
-		{ id = "off",			   text = ReadText(1001, 12641),   icon = "", displayremoveoption = false },
-		{ id = "text",			  text = ReadText(1001, 12633),   icon = "", displayremoveoption = false },
-		{ id = "voice",			 text = ReadText(1001, 12634),   icon = "", displayremoveoption = false },
-		{ id = "textandvoice",	  text = ReadText(1001, 12635),   icon = "", displayremoveoption = false },
+		{ id = "off",				text = ReadText(1001, 12641),	icon = "", displayremoveoption = false },
+		{ id = "text",				text = ReadText(1001, 12633),	icon = "", displayremoveoption = false },
+		{ id = "voice",				text = ReadText(1001, 12634),	icon = "", displayremoveoption = false },
+		{ id = "textandvoice",		text = ReadText(1001, 12635),	icon = "", displayremoveoption = false },
 	},
 	textoptions = {
-		{ id = "off",			   text = ReadText(1001, 12641),   icon = "", displayremoveoption = false },
-		{ id = "ticker",			text = ReadText(1001, 12629),   icon = "", displayremoveoption = false },
-		{ id = "controlmessage",	text = ReadText(1001, 12630),   icon = "", displayremoveoption = false },
+		{ id = "off",				text = ReadText(1001, 12641),	icon = "", displayremoveoption = false },
+		{ id = "ticker",			text = ReadText(1001, 12629),	icon = "", displayremoveoption = false },
+		{ id = "controlmessage",	text = ReadText(1001, 12630),	icon = "", displayremoveoption = false },
 	},
 	voiceoptions = {
-		{ id = "off",			   text = ReadText(1001, 12641),   icon = "", displayremoveoption = false },
-		{ id = "on",				text = ReadText(1001, 12642),   icon = "", displayremoveoption = false },
+		{ id = "off",				text = ReadText(1001, 12641),	icon = "", displayremoveoption = false },
+		{ id = "on",				text = ReadText(1001, 12642),	icon = "", displayremoveoption = false },
 	},
 }
 
@@ -1166,7 +1166,7 @@ config.optionDefinitions = {
 		},
 		[7] = {
 			id = "dlssmode",
-			name = "	" .. ReadText(1001, 12736),
+			name = "    " .. ReadText(1001, 12736),
 			mouseOverText = ReadText(1026, 4825),
 			valuetype = "dropdown",
 			value = function () return menu.valueGfxDLSSMode() end,
@@ -2617,7 +2617,6 @@ function ModLua.addSavegameRow(ftable, savegame, name, slot, idx, maxIdx)
 		row[2]:createText(slot, (not invalid) and config.standardTextProperties or config.disabledTextProperties)
 		row[2].properties.halign = "right"
 	end
-
 	local nametruncated = TruncateText(name, config.fontBold, Helper.scaleFont(config.font, config.standardFontSize), row[3]:getWidth() - Helper.scaleX(config.standardTextOffsetX))
 	local mouseovertext = ""
 	if nametruncated ~= name then
@@ -2638,12 +2637,12 @@ function ModLua.addSavegameRow(ftable, savegame, name, slot, idx, maxIdx)
 	if uix_isAddRowHeightForExtraInfo ~= false then
 	-- kuertee end: callback
 
-	if invalid or savegame.modified or isonlinesaveinofflineslot then
-		height = 2 * Helper.scaleY(config.standardTextHeight) + Helper.borderSize
-	end
+		if invalid or savegame.modified or isonlinesaveinofflineslot then
+			height = 2 * Helper.scaleY(config.standardTextHeight) + Helper.borderSize
+		end
 
 	-- kuertee start: callback
-end
+	end
 	-- kuertee end: callback
 
 	local warningicon = ""
@@ -2665,10 +2664,10 @@ end
 	if uix_isBoldFileName ~= false then
 	-- kuertee end: callback
 
-	row[3].properties.text.font = config.fontBold
+		row[3].properties.text.font = config.fontBold
 
 	-- kuertee start: callback
-end
+	end
 	-- kuertee end: callback
 
 	row[3].properties.text.scaling = true
@@ -2677,22 +2676,22 @@ end
 	if uix_isAddRowHeightForExtraInfo ~= false then
 	-- kuertee end
 
-	if invalid then
-		icon:setText2(function () return menu.errorSavegame(savegame) end, (not invalid) and config.standardTextProperties or config.disabledTextProperties)
-		row[3].properties.text2.y = config.standardTextHeight
-		row[3].properties.text2.scaling = true
-	elseif savegame.modified then
-		icon:setText2(ColorText["text_warning"] .. ReadText(1001, 8901) .. "\27X", (not invalid) and config.standardTextProperties or config.disabledTextProperties)
-		row[3].properties.text2.y = config.standardTextHeight
-		row[3].properties.text2.scaling = true
-	elseif isonlinesaveinofflineslot then
-		icon:setText2(ColorText["text_online_save"] .. ReadText(1001, 11570) .. "\27X", (not invalid) and config.standardTextProperties or config.disabledTextProperties)
-		row[3].properties.text2.y = config.standardTextHeight
-		row[3].properties.text2.scaling = true
-	end
+		if invalid then
+			icon:setText2(function () return menu.errorSavegame(savegame) end, (not invalid) and config.standardTextProperties or config.disabledTextProperties)
+			row[3].properties.text2.y = config.standardTextHeight
+			row[3].properties.text2.scaling = true
+		elseif savegame.modified then
+			icon:setText2(ColorText["text_warning"] .. ReadText(1001, 8901) .. "\27X", (not invalid) and config.standardTextProperties or config.disabledTextProperties)
+			row[3].properties.text2.y = config.standardTextHeight
+			row[3].properties.text2.scaling = true
+		elseif isonlinesaveinofflineslot then
+			icon:setText2(ColorText["text_online_save"] .. ReadText(1001, 11570) .. "\27X", (not invalid) and config.standardTextProperties or config.disabledTextProperties)
+			row[3].properties.text2.y = config.standardTextHeight
+			row[3].properties.text2.scaling = true
+		end
 
 	-- kuertee start:
-end
+	end
 	-- kuertee end
 
 	row[4]:setColSpan(2):createText(savegame.error and "" or savegame.time, (not invalid) and config.standardTextProperties or config.disabledTextProperties)
@@ -2831,6 +2830,8 @@ function ModLua.submenuHandler(optionParameter)
 		menu.displayBonusContent()
 	elseif optionParameter == "defaults" then
 		menu.displayUserQuestion(ReadText(1001, 2653), function () return menu.callbackDefaults() end)
+	elseif optionParameter == "display_defaults" then
+		menu.displayUserQuestion(ReadText(1001, 2653), function () return menu.callbackDisplayDefaults() end)
 	elseif optionParameter == "gfx_defaults" then
 		menu.displayUserQuestion(ReadText(1001, 2653), function () return menu.callbackGfxDefaults() end)
 	elseif optionParameter == "sfx_defaults" then
@@ -2841,55 +2842,55 @@ function ModLua.submenuHandler(optionParameter)
 		menu.displayUserQuestion(ReadText(1001, 2653), function () return menu.callbackAccessibilityDefaults() end)
 	elseif optionParameter == "timelines_reset" then
 		menu.displayUserQuestion(ReadText(1001, 12622), function () return menu.callbackResetTimelines() end, nil, nil, nil, nil, nil, ReadText(1001, 12623))
-	elseif  (optionParameter == "vrtouch_space") or
-		(optionParameter == "vrtouch_firstperson") or
-		(optionParameter == "vrtouch_menus") or
-		(optionParameter == "vrvive_space") or
-		(optionParameter == "vrvive_firstperson") or
-		(optionParameter == "vrvive_menus") or
-		(optionParameter == "keyboard_space") or
-		(optionParameter == "keyboard_firstperson") or
-		(optionParameter == "keyboard_menus")
-		then
-			menu.displayControls(optionParameter)
-		elseif optionParameter == "joysticks" then
-			menu.displayJoysticks()
-		elseif optionParameter == "profile_load" then
-			menu.displayInputProfiles(optionParameter)
-		elseif optionParameter == "profile_save" then
-			menu.displayInputProfiles(optionParameter)
-		elseif optionParameter == "language" then
-			menu.displayLanguageOptions()
-		elseif optionParameter == "onlineseason" then
-			menu.displayOnlineSeason(optionParameter)
-		elseif optionParameter == "credits" then
-			menu.displayCredits(optionParameter)
-		elseif optionParameter == "idle" then
-			menu.displayCredits(optionParameter)
-		elseif optionParameter == "exit" then
-			menu.displayUserQuestion(ReadText(1001, 2645), function () return menu.callbackExit(false) end, nil, nil, nil, nil, nil, Helper.isOnlineGame() and ReadText(1001, 11710) or nil)
-		elseif optionParameter == "quit" then
-			menu.displayUserQuestion(ReadText(1001, 4876), function () return menu.callbackExit(true) end)
-		elseif optionParameter == "privacy" then
-			menu.displayOptionsInfo(optionParameter)
-		elseif optionParameter == "mapeditor" then
-			menu.displayMapEditor()
-		elseif optionParameter == "colorlibrary" then
-			menu.displayColorLibrary()
-		elseif optionParameter == "inputfeedback" then
-			menu.displayInputFeedback()
-		elseif optionParameter == "input_modifiers" then
-			menu.displayInputModifiers()
-		elseif optionParameter == "timelines" then
-			menu.displayTimelines()
-		elseif config.optionDefinitions[optionParameter] then
-			menu.displayOptions(optionParameter)
-		end
+	elseif	(optionParameter == "vrtouch_space") or
+			(optionParameter == "vrtouch_firstperson") or
+			(optionParameter == "vrtouch_menus") or
+			(optionParameter == "vrvive_space") or
+			(optionParameter == "vrvive_firstperson") or
+			(optionParameter == "vrvive_menus") or
+			(optionParameter == "keyboard_space") or
+			(optionParameter == "keyboard_firstperson") or
+			(optionParameter == "keyboard_menus")
+	then
+		menu.displayControls(optionParameter)
+	elseif optionParameter == "joysticks" then
+		menu.displayJoysticks()
+	elseif optionParameter == "profile_load" then
+		menu.displayInputProfiles(optionParameter)
+	elseif optionParameter == "profile_save" then
+		menu.displayInputProfiles(optionParameter)
+	elseif optionParameter == "language" then
+		menu.displayLanguageOptions()
+	elseif optionParameter == "onlineseason" then
+		menu.displayOnlineSeason(optionParameter)
+	elseif optionParameter == "credits" then
+		menu.displayCredits(optionParameter)
+	elseif optionParameter == "idle" then
+		menu.displayCredits(optionParameter)
+	elseif optionParameter == "exit" then
+		menu.displayUserQuestion(ReadText(1001, 2645), function () return menu.callbackExit(false) end, nil, nil, nil, nil, nil, Helper.isOnlineGame() and ReadText(1001, 11710) or nil)
+	elseif optionParameter == "quit" then
+		menu.displayUserQuestion(ReadText(1001, 4876), function () return menu.callbackExit(true) end)
+	elseif optionParameter == "privacy" then
+		menu.displayOptionsInfo(optionParameter)
+	elseif optionParameter == "mapeditor" then
+		menu.displayMapEditor()
+	elseif optionParameter == "colorlibrary" then
+		menu.displayColorLibrary()
+	elseif optionParameter == "inputfeedback" then
+		menu.displayInputFeedback()
+	elseif optionParameter == "input_modifiers" then
+		menu.displayInputModifiers()
+	elseif optionParameter == "timelines" then
+		menu.displayTimelines()
+	elseif config.optionDefinitions[optionParameter] then
+		menu.displayOptions(optionParameter)
 	end
+end
 
-	function ModLua.loadGameCallback(filename, checked)
-		local playerinventory = GetPlayerInventory()
-		local onlineitems = OnlineGetUserItems()
+function ModLua.loadGameCallback(filename, checked)
+	local playerinventory = GetPlayerInventory()
+	local onlineitems = OnlineGetUserItems()
 
 	-- kuertee start:
 	if not onlineitems then
@@ -3030,7 +3031,7 @@ function ModLua.extensionSorter(a, b)
 		local aisminidlc = string.find(a.id, "^ego_dlc_mini_")
 		local bisminidlc = string.find(b.id, "^ego_dlc_mini_")
 		if aisminidlc ~= bisminidlc then
-			return not aisminidlc	   -- non-mini DLC before mini DLC
+			return not aisminidlc		-- non-mini DLC before mini DLC
 		end
 		return Helper.sortDate(a, b)	-- sort DLC of either type by date
 	end
@@ -3118,7 +3119,7 @@ function ModLua.displayExtensions()
 	local row = optiontable:addRow("uisecurity", {  })
 	row[2]:createText(ReadText(1001, 12723), config.standardTextProperties)
 	row[2].properties.mouseOverText = ReadText(1001, 12725)
-	row[6]:createButton({ mouseOverText = ReadText(1001, 12725) }):setText(function () return GetUISafeModeOption() and ReadText(1001, 2648) or ReadText(1001, 2649) end, { fontsize = config.standardFontSize, halign = "center" })
+	row[6]:createButton({ mouseOverText = ReadText(1001, 12725) }):setText(function () return GetUISafeModeOption() and ReadText(1001, 12642) or ReadText(1001, 12641) end, { fontsize = config.standardFontSize, halign = "center" })
 	row[6].handlers.onClick = menu.buttonExtensionUISecurityMode
 
 	local row = optiontable:addRow(false, {  })
@@ -3176,23 +3177,23 @@ function ModLua.displayExtensionRow(ftable, extension, extensionSetting)
 		textcolor = Color["text_warning"]
 
 	-- kuertee start: gray disabled extensions
-elseif not extension.enabled then
-	textcolor = Helper.color.grey
+	elseif not extension.enabled then
+		textcolor = Helper.color.grey
 	-- kuertee end
 
-end
+	end
 
-row[2]:createText(extension.name, config.standardTextProperties)
-row[2].properties.color = textcolor
-row[3]:createText(extension.id, config.standardTextProperties)
-row[4]:createText(extension.version, config.standardTextProperties)
-row[4].properties.halign = "right"
-row[5]:createText(extension.date, config.standardTextProperties)
-row[5].properties.halign = "right"
-row[6]:createButton({ }):setText(function() return menu.valueExtensionStatus(extension) end, { fontsize = config.standardFontSize, halign = "center", color = function () local _, color = menu.valueExtensionStatus(extension); return color end })
-row[6].handlers.onClick = function () return menu.callbackExtensionSettingEnabled(extension) end
-row[7]:createButton({ }):setText("...", { fontsize = config.standardFontSize, halign = "center" })
-row[7].handlers.onClick = function () menu.selectedExtension = extension; menu.openSubmenu("extensionsettings", extension.id) end
+	row[2]:createText(extension.name, config.standardTextProperties)
+	row[2].properties.color = textcolor
+	row[3]:createText(extension.id, config.standardTextProperties)
+	row[4]:createText(extension.version, config.standardTextProperties)
+	row[4].properties.halign = "right"
+	row[5]:createText(extension.date, config.standardTextProperties)
+	row[5].properties.halign = "right"
+	row[6]:createButton({ }):setText(function() return menu.valueExtensionStatus(extension) end, { fontsize = config.standardFontSize, halign = "center", color = function () local _, color = menu.valueExtensionStatus(extension); return color end })
+	row[6].handlers.onClick = function () return menu.callbackExtensionSettingEnabled(extension) end
+	row[7]:createButton({ }):setText("...", { fontsize = config.standardFontSize, halign = "center" })
+	row[7].handlers.onClick = function () menu.selectedExtension = extension; menu.openSubmenu("extensionsettings", extension.id) end
 end
 
 function ModLua.displaySavegameOptions(optionParameter)
@@ -3477,14 +3478,12 @@ function ModLua.displaySavegameOptions(optionParameter)
 				end
 				-- kuertee end: callback
 			end
-
 			-- kuertee start: more save games
 			-- for i = 1, 10 do
 			for i = 1, Helper.maxSaveFiles do
 			-- kuertee end: more save games
-
-			local savegamestring = string.format("%03d", i)
-			if not usedsavegamenames["save_" .. savegamestring] then
+				local savegamestring = string.format("%03d", i)
+				if not usedsavegamenames["save_" .. savegamestring] then
 
 					-- kuertee start: callback
 					local isShowUnusedSaveFile = true

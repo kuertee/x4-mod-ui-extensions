@@ -3986,7 +3986,7 @@ function menu.createContentTable(frame, position)
 				if section.isplayerinteraction or (menu.shown and (not section.isorder)) then
 					pass = true
 				end
-			elseif (section.isorder == nil) or (section.isorder == (#menu.selectedplayerships > 0)) then
+			elseif (section.isorder == nil) or (section.isorder == ((#menu.selectedplayerships > 0) or (menu.selectedfleetunit ~= nil))) then
 				-- kuertee start: forceShowMenus: show main, interaction, custom_actions menu when no actions to show
 				if not uix_forceShowSections_skipped_orig then
 					pass = true
@@ -5498,7 +5498,6 @@ function menu.insertLuaAction(actiontype, istobedisplayed)
 			if pilot and (pilot ~= 0) then
 				local inventory = GetInventory(pilot)
 				if next(inventory) then
-
 					local onlineitems = OnlineGetUserItems()
 
 					-- kuertee start:

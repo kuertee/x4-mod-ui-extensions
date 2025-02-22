@@ -3035,7 +3035,6 @@ function menu.display()
 				end
 				-- cps
 				if active then
-
 					local onlineitems = OnlineGetUserItems()
 
 					-- kuertee start:

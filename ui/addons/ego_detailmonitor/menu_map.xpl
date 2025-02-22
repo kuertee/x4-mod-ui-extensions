@@ -6599,6 +6599,7 @@ function menu.createInfoFrame()
 			menu.createMissionMode(menu.infoFrame)
 		elseif menu.infoTableMode == "cheats" then
 			menu.createCheats(menu.infoFrame)
+
 		elseif menu.uix_callbacks then
 			-- kuertee start: callback
 			if menu.uix_callbacks ["createInfoFrame_on_menu_infoTableMode"] then
@@ -6607,14 +6608,15 @@ function menu.createInfoFrame()
 				end
 			end
 			-- kuertee end: callback
+
 		else
 			-- empty
 			menu.infoFrame.properties.background.icon = ""
 			menu.infoFrame.properties.autoFrameHeight = false
 			menu.infoFrame:addTable(0)
 		end
-
 	end
+
 	menu.infoFrame.properties.helpOverlayText = helpOverlayText
 	menu.infoFrame:display()
 
@@ -8217,13 +8219,15 @@ function menu.createPropertyOwned(frame, instance)
 					active = entry.category ~= "deployables"
 				elseif menu.mode == "selectCV" then
 					active = entry.category == "propertyall"
-                    -- start: mycu callback
-                    if menu.uix_callbacks ["onSetActiveStateForCVMode_on_createPropertyOwned"] then
-                        for uix_id, uix_callback in pairs (menu.uix_callbacks ["onSetActiveStateForCVMode_on_createPropertyOwned"]) do
-                            active = uix_callback (entry)
-                        end
-                    end
-                    -- end: mycu callback
+
+					-- start: mycu callback
+					if menu.uix_callbacks ["onSetActiveStateForCVMode_on_createPropertyOwned"] then
+						for uix_id, uix_callback in pairs (menu.uix_callbacks ["onSetActiveStateForCVMode_on_createPropertyOwned"]) do
+						        active = uix_callback (entry)
+					        end
+					end
+					-- end: mycu callback
+
 				elseif (menu.mode == "selectComponent") and (menu.modeparam[3] == "deployables") then
 					active = entry.category == "deployables"
 					if active and (menu.selectedCols.propertytabs == nil) then
@@ -8986,6 +8990,7 @@ function menu.createPropertyRow(instance, ftable, component, iteration, commande
 				if behaviouricon ~= "" then
 					colspan = colspan - 1
 				end
+
 				-- kuertee start: callback
 				-- row[3 + namecolspan]:setColSpan(colspan):createText(locationtext, { halign = "right", font = font, x = 0 })
 				if not menu.uix_callbacks ["createPropertyRow_override_row_location_createText"] then

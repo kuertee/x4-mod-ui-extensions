@@ -407,6 +407,7 @@ function menu.display(firsttime)
 										end
 									end
 									-- end: mycu callback
+
 									if not menu.blueprintlist[ware] then
 										row[4]:createText((ConvertMoneyString(tostring(price), false, true, nil, true) .. " " .. ReadText(1001, 101)), {halign = "right", color = function() return menu.blueprintstopurchase[ware] and Color["text_positive"] or Color["text_normal"] end})
 									end

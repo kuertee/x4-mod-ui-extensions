@@ -1669,7 +1669,6 @@ function menu.createInventory(frame, tableProperties, mode, tabOrderOffset)
 
 	local isonline = Helper.isOnlineGame()
 	-- show venture inventory partially if we have permanent online items
-
 	local onlineitems = OnlineGetUserItems()
 
 	-- kuertee start:
