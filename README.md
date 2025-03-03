@@ -7,7 +7,7 @@ v7.5 NOTES FOR MOD DEVELOPERS:
 ==============================
 [ol]
 [li] PROTECTED UI MODE:
-Mods that use UI Extensions will need the new Protected UI Mode setting in the Extensions menu disabled.[/li]
+Mods that use UI Extensions will need the Protected UI Mode setting in the Extensions menu disabled.[/li]
 
 [li] LOADING CUSTOM LUAS:
 ModSupportAPIs' Lua_Loader (and in extension its <raise_lua_event name="'Lua_Loader.Load'" param="'X'"/>) no longer function.[/li]
@@ -36,6 +36,9 @@ To load custom lua files, use ui.xml as described here: https://wiki.egosoft.com
 
 Updates
 =======
+v7.5.02, 3 Mar 2025:
+-Tweaks: Final merge of base-game 7.5 lua files into UI Extensions. The previous 7.5.01 version had the base-game 7.5 RC 4 lua files merged. They are very similar and no gameplay aspects would have been lost with the 7.5.01 version installed.
+
 v7.5.01, 21 Feb 2025:
 -Bug-fixes: 7.5 compatibility updates.
 
