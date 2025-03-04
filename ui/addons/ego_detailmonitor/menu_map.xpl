@@ -26968,7 +26968,7 @@ function menu.onRenderTargetSelect(modified)
 		end
 	end
 
-    -- start Forleyor_infoCenter Callback:
+	-- start Forleyor_infoCenter Callback:
 	if menu.uix_callbacks ["onRenderTargetSelect_on_leave"] then
 		for uix_id, uix_callback in pairs (menu.uix_callbacks ["onRenderTargetSelect_on_leave"]) do
 			uix_callback (modified)
