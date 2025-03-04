@@ -26967,6 +26967,15 @@ function menu.onRenderTargetSelect(modified)
 			end
 		end
 	end
+
+	-- start Forleyor_infoCenter Callback:
+	if menu.uix_callbacks ["onRenderTargetSelect_on_leave"] then
+		for uix_id, uix_callback in pairs (menu.uix_callbacks ["onRenderTargetSelect_on_leave"]) do
+			uix_callback (modified)
+		end
+	end
+	-- end Forleyor_infoCenter:
+
 	menu.leftdown = nil
 end
 
