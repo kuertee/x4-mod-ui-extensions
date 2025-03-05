@@ -36,11 +36,9 @@ To load custom lua files, use ui.xml as described here: https://wiki.egosoft.com
 
 Updates
 =======
-v7.5.02, 3 Mar 2025:
--Tweaks: Final merge of base-game 7.5 lua files into UI Extensions. The previous 7.5.01 version had the base-game 7.5 RC 4 lua files merged. They are very similar and no gameplay aspects would have been lost with the 7.5.01 version installed.
-
-v7.5.01, 21 Feb 2025:
--Bug-fixes: 7.5 compatibility updates.
+v7.5.03, 05 Mar 2025:
+-New feature: new callback in menu map by Forleyor.
+-New feature: new callback to prevent problems with Trade Analytics mod on ultra-wide monitors.
 
 Instructions for players
 ========================
@@ -230,6 +228,12 @@ French localisation by Calvitix.
 
 History
 =======
+v7.5.02, 03 Mar 2025:
+-Tweaks: Final merge of base-game 7.5 lua files into UI Extensions. The previous 7.5.01 version had the base-game 7.5 RC 4 lua files merged. They are very similar and no gameplay aspects would have been lost with the 7.5.01 version installed.
+
+v7.5.01, 21 Feb 2025:
+-Bug-fixes: 7.5 compatibility updates.
+
 v7.5.0092 beta, 15 Feb 2025:
 -Tweak: compatibility with 7.5 rc 1 of the base game.
 
