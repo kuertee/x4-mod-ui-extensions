@@ -653,7 +653,16 @@ local function init()
 
 	Helper.createTopLevelConfig()
 	Helper.createPlayerInfoConfig()
+
+	-- kuertee start:
+	Helper.init_kuertee()
+	-- kuertee end
 end
+
+-- kuertee start:
+function Helper.init_kuertee ()
+end
+-- kuertee end
 
 ---------------------------------------------------------------------------------
 -- Wrapper
@@ -3530,6 +3539,14 @@ end
 --   local frame = Helper.createFrameHandle()
 --   local frame = Helper.createFrameHandle(nil, { layer = 4, standardButtons = Helper.standardButtons_Close })
 function Helper.createFrameHandle(menu, properties)
+	-- kuertee start: callback
+	if Helper.uix_callbacks and Helper.uix_callbacks ["createFrameHandle_on_start"] then
+		for uix_id, uix_callback in pairs (Helper.uix_callbacks ["createFrameHandle_on_start"]) do
+			uix_callback (defaultWidgetProperties)
+		end
+	end
+	-- kuertee end: callback
+
 	local frame = {
 		menu = menu,
 		type = "frame",						-- widget type
@@ -5002,6 +5019,12 @@ end
 
 -- text
 function widgetPrototypes.cell:createText(text, properties)
+	-- kuertee start
+	if text == "" then
+		return self
+	end
+	-- kuertee end
+
 	if initTableCell(self, "text", properties) then
 		self.properties.text = text
 	end
