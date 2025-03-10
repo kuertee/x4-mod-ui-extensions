@@ -1194,6 +1194,14 @@ function Helper.registerMenu(menu)
 
 	-- Create and register a closure that will be called when the menu should be started
 	menu.showMenuCallback = function(...)
+		-- kuertee start: callback
+		if Helper.uix_callbacks and Helper.uix_callbacks ["registerMenu_onShow"] then
+			for uix_id, uix_callback in pairs (Helper.uix_callbacks ["registerMenu_onShow"]) do
+				uix_callback (menu)
+			end
+		end
+		-- kuertee end: callback
+
 		if C.IsGameOver() and (menu.name ~= "OptionsMenu") and (menu.name ~= "ScenarioDebriefingMenu") then
 			return
 		end
