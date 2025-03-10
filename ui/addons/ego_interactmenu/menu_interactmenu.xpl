@@ -3310,6 +3310,12 @@ function menu.display()
 end
 
 function menu.draw()
+	if menu.uix_callbacks ["draw_on_start"] then
+		for uix_id, uix_callback in pairs (menu.uix_callbacks ["draw_on_start"]) do
+			uix_callback (config)
+		end
+	end
+
 	local width = menu.width
 	if menu.subsection then
 		width = 2 * width + Helper.borderSize

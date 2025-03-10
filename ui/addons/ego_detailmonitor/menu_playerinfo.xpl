@@ -1571,7 +1571,7 @@ function menu.createInfoFrame()
 	-- kuertee start: callback
 	if menu.uix_callbacks ["createInfoFrame_on_start"] then
 		for uix_id, uix_callback in pairs (menu.uix_callbacks ["createInfoFrame_on_start"]) do
-			uix_callback (menu.infoFrame, tableProperties)
+			uix_callback (menu.infoFrame, tableProperties, config)
 		end
 	end
 	-- kuertee end: callback

@@ -9010,6 +9010,15 @@ function menu.createPropertyRow(instance, ftable, component, iteration, commande
 				-- kuertee end: callback
 
 			end
+
+            -- kuertee start: callback
+            if menu.uix_callbacks ["createPropertyRow_before_config_change"] then
+                for uix_id, uix_callback in pairs (menu.uix_callbacks ["createPropertyRow_before_config_change"]) do
+                    uix_callback (config)
+                end
+            end
+            -- kuertee end: callback
+
 			if (currentordericon ~= "") or isdocked then
 				local col = 4 + maxicons
 				if isdocked then
@@ -9025,7 +9034,16 @@ function menu.createPropertyRow(instance, ftable, component, iteration, commande
 					col = col - 1
 				end
 			end
-			-- shieldhullbar
+
+            -- kuertee start: callback
+            if menu.uix_callbacks ["createPropertyRow_after_config_change"] then
+                for uix_id, uix_callback in pairs (menu.uix_callbacks ["createPropertyRow_after_config_change"]) do
+                    uix_callback (config)
+                end
+            end
+            -- kuertee end: callback
+
+            -- shieldhullbar
 			row[5 + maxicons]:createObjectShieldHullBar(component)
 		end
 
