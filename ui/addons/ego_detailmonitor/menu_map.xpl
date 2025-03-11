@@ -15936,7 +15936,7 @@ function menu.setupLoadoutInfoSubmenuRows(mode, inputtable, inputobject, instanc
 							local rd_callbackVal
 							if menu.uix_callbacks ["rd_addReactiveDockingMapMenu"] then
 								for uix_id, uix_callback in pairs (menu.uix_callbacks ["rd_addReactiveDockingMapMenu"]) do
-									rd_callbackVal = uix_callback (row, inputobject, i, mode, active, mouseovertext)
+									rd_callbackVal = uix_callback (row, inputobject, i, mode, active, mouseovertext, isdockingpossible)
 								end
 							end
 							if not rd_callbackVal then
