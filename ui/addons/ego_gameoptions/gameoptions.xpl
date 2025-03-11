@@ -10196,18 +10196,28 @@ function menu.extensionSorter(a, b)
 		return Helper.sortDate(a, b)	-- sort DLC of either type by date
 	end
 
-	-- kuertee start: sort by enabled then by name
+	-- kuertee start: sort by enabled, then by author, then by name
 	-- return Helper.sortName(a, b)		-- sort other extensions by name
 	if a.enabled and b.enabled then
-		return a.name < b.name
+		-- sort by author then by name
+		if string.lower(a.author) == string.lower(b.author) then
+			return string.lower(a.name) < string.lower(b.name)
+		else
+			return string.lower(a.author) < string.lower(b.author)
+		end
 	elseif a.enabled then
 		return true
 	elseif b.enabled then
 		return false
 	else
-		return a.name < b.name
+		-- sort by author then by name
+		if string.lower(a.author) == string.lower(b.author) then
+			return string.lower(a.name) < string.lower(b.name)
+		else
+			return string.lower(a.author) < string.lower(b.author)
+		end
 	end
-	-- kuertee end: sort by enabled then by name
+	-- kuertee end: sort by enabled, then by author, then by name
 end
 
 function menu.displayExtensions()
@@ -10298,6 +10308,11 @@ function menu.displayExtensions()
 	if #extensions > 0 then
 		table.sort(extensions, menu.extensionSorter)
 		local lastextensiongroup
+
+		-- kuertee start: sort by enabled, then by author, then by name
+		local uix_lastExtensionListed
+		-- kuertee end: sort by enabled, then by author, then by name
+
 		for _, extension in ipairs(extensions) do
 			local extensiongroup = menu.getExtensionGroup(extension)
 			if lastextensiongroup and extensiongroup ~= lastextensiongroup then
@@ -10305,8 +10320,24 @@ function menu.displayExtensions()
 				row = optiontable:addRow(false, {  })
 				row[2]:setColSpan(6):createText(" ", { fontsize = 1, height = Helper.borderSize, cellBGColor = Color["row_separator"] })
 			end
+
+			-- kuertee start: sort by enabled, then by author, then by name
+			if extensiongroup ~= 1 and ((not uix_lastExtensionListed) or uix_lastExtensionListed.author ~= extension.author) then
+				local row = optiontable:addRow(false, {})
+				row[2]:createText(extension.author, config.standardTextProperties)
+				row[2].properties.fontsize = row[2].properties.fontsize * 2
+				if not extension.enabled then
+					row[2].properties.color = Helper.color.grey
+				end
+			end
+			-- kuertee end: sort by enabled, then by author, then by name
+
 			menu.displayExtensionRow(optiontable, extension, menu.extensionSettings[extension.index])
 			lastextensiongroup = extensiongroup
+
+			-- kuertee start: sort by enabled, then by author, then by name
+			uix_lastExtensionListed = extension
+			-- kuertee end: sort by enabled, then by author, then by name
 		end
 	else
 		local row = optiontable:addRow(false, {  })
