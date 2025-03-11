@@ -5127,9 +5127,9 @@ end
 -- text
 function widgetPrototypes.cell:createText(text, properties)
 	-- kuertee start
-	-- if text == "" then
-	-- 	return self
-	-- end
+		if (text == "" or text == nil) and properties ~=nil then
+			properties.y = 0
+		end
 	-- kuertee end
 
 	if initTableCell(self, "text", properties) then

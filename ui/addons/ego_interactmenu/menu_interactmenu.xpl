@@ -3310,11 +3310,13 @@ function menu.display()
 end
 
 function menu.draw()
+	-- kuertee start: callback
 	if menu.uix_callbacks ["draw_on_start"] then
 		for uix_id, uix_callback in pairs (menu.uix_callbacks ["draw_on_start"]) do
 			uix_callback (config)
 		end
 	end
+	-- kuertee end: callback
 
 	local width = menu.width
 	if menu.subsection then
