@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <addon name="kuertee_ui_extensions" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../core/addon.xsd">
   <environment type="menus">
-    <file name="ui/helper_uix.lua" />
     <file name="ui/gameoptions_uix.lua" />
     <dependency name="ego_detailmonitorhelper" />
     <dependency name="ego_gameoptions" />

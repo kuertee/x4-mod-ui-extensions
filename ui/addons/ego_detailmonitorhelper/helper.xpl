@@ -618,6 +618,83 @@ Helper.slotTypeOrder = {
 	["turrets"]		= 3
 }
 
+-- kuertee start: colour backward compatibility
+Helper.standardColor = { r = 255, g = 255, b = 255, a = 100 }
+Helper.defaultHeaderBackgroundColor = { r = 0, g = 0, b = 0, a = 60 }
+Helper.defaultSimpleBackgroundColor = { r = 66, g = 92, b = 111, a = 60 }
+Helper.defaultTitleBackgroundColor = { r = 49, g = 69, b = 83, a = 60 }
+Helper.defaultArrowRowBackgroundColor = { r = 83, g = 116, b = 139, a = 60 }
+Helper.defaultUnselectableBackgroundColor = { r = 35, g = 53, b = 71, a = 60 }
+Helper.defaultUnselectableFontColor = { r = 163, g = 193, b = 227, a = 100 }
+Helper.defaultButtonBackgroundColor = { r = 49, g = 69, b = 83, a = 60 }
+Helper.defaultUnselectableButtonBackgroundColor = { r = 31, g = 31, b = 31, a = 100 }
+Helper.defaultButtonHighlightColor = { r = 71, g = 136, b = 184, a = 100 }
+Helper.defaultUnselectableButtonHighlightColor = { r = 80, g = 80, b = 80, a = 100 }
+Helper.defaultCheckBoxBackgroundColor = { r = 66, g = 92, b = 111, a = 100 }
+Helper.defaultEditBoxBackgroundColor = { r = 49, g = 69, b = 83, a = 60 }
+Helper.defaultSliderCellBackgroundColor = { r = 22, g = 34, b = 41, a = 60 }
+Helper.defaultSliderCellInactiveBackgroundColor = { r = 40, g = 40, b = 40, a = 60 }
+Helper.defaultSliderCellValueColor = { r = 99, g = 138, b = 166, a = 100 }
+Helper.defaultSliderCellPositiveValueColor = { r = 29, g = 216, b = 35, a = 30 }
+Helper.defaultSliderCellNegativeValueColor = { r = 216, g = 68, b = 29, a = 30 }
+Helper.defaultStatusBarValueColor = { r = 71, g = 136, b = 184, a = 100 }
+Helper.defaultStatusBarPosChangeColor = { r = 20, g = 222, b = 20, a = 30 }
+Helper.defaultStatusBarNegChangeColor = { r = 236, g = 53, b = 0, a = 30 }
+Helper.defaultStatusBarMarkerColor = { r = 151, g = 192, b = 223, a = 100 }
+Helper.defaultBoxTextBoxColor = { r = 49, g = 69, b = 83, a = 60 }
+Helper.defaultFlowchartOutlineColor = { r = 90, g = 146, b = 186, a = 100 }			-- light cyan
+Helper.defaultFlowchartBackgroundColor = { r = 25, g = 25, b = 25, a = 100 }			-- dark grey
+Helper.defaultFlowchartValueColor = { r = 0, g = 116, b = 153, a = 100 }				-- cyan
+Helper.defaultFlowchartSlider1Color = { r = 225, g = 149, b = 0, a = 100 }			-- orange
+Helper.defaultFlowchartDiff1Color = { r = 89, g = 52, b = 0, a = 100 }				-- brown
+Helper.defaultFlowchartSlider2Color = { r = 66, g = 171, b = 61, a = 100 }			-- green
+Helper.defaultFlowchartDiff2Color = { r = 4, g = 89, b = 0, a = 100 }					-- dark green
+Helper.defaultFlowchartConnector1Color = { r = 255, g = 220, b = 0, a = 100 }			-- yellow
+Helper.defaultFlowchartConnector2Color = { r = 0, g = 154, b = 204, a = 100 }			-- light cyan
+Helper.defaultFlowchartConnector3Color = { r = 224, g = 79, b = 0, a = 100 }			-- dark orange
+Helper.defaultFlowchartConnector4Color = { r = 255, g = 153, b = 255, a = 100 }		-- pink
+Helper.defaultTitleTrapezoidBackgroundColor = { r = 66, g = 92, b = 111, a = 100 }
+Helper.statusRed = {r = 255, g = 0, b = 0, a = 100}
+Helper.statusOrange = {r = 255, g = 64, b = 0, a = 100}
+Helper.statusYellow = {r = 255, g = 255, b = 0, a = 100}
+Helper.statusGreen = {r = 0, g = 255, b = 0, a = 100}
+
+Helper.color = {
+	black = { r = 0, g = 0, b = 0, a = 100 },
+	slidervalue = { r = 71, g = 136, b = 184, a = 100 },
+	green = { r = 0, g = 255, b = 0, a = 100 },
+	playergreen = { r = 170, g = 255, b = 139, a = 100 },
+	grey = { r = 128, g = 128, b = 128, a = 100 },
+	lightgreen = { r = 100, g = 225, b = 0, a = 100 },
+	lightgrey = { r = 192, g = 192, b = 192, a = 100 },
+	orange = { r = 255, g = 192, b = 0, a = 100 },
+	darkorange = { r = 128, g = 95, b = 0, a = 100 },
+	red = { r = 255, g = 0, b = 0, a = 100 },
+	semitransparent = { r = 0, g = 0, b = 0, a = 95 },
+	transparent60 = { r = 0, g = 0, b = 0, a = 60 },
+	transparent = { r = 0, g = 0, b = 0, a = 0 },
+	white = { r = 255, g = 255, b = 255, a = 100 },
+	yellow = { r = 144, g = 144, b = 0, a = 100 },
+	brightyellow = { r = 255, g = 255, b = 0, a = 100 },
+	warning = { r = 192, g = 192, b = 0, a = 100 },
+	done = { r = 38, g = 61, b = 78, a = 100 },
+	available = { r = 7, g = 29, b = 46, a = 100 },
+	darkgrey = { r = 32, g = 32, b = 32, a = 100 },
+	mission = { r = 255, g = 190, b = 0, a = 100 },
+	warningorange = { r = 255, g = 138, b = 0, a = 100 },
+	blue = { r = 90, g = 146, b = 186, a = 100 },
+	changedvalue = { r = 255, g = 236, b = 81, a = 100 },
+	cyan = { r = 46, g = 209, b = 255, a = 100 },
+	checkboxgroup = { r = 0, g = 102, b = 238, a = 60 },
+	unselectable = { r = 32, g = 32, b = 32, a = 100 },
+	cover = { r = 231, g = 244, b = 70, a = 100 },
+	textred = { r = 255, g = 80, b = 80, a = 100 },
+	grey64 = { r = 64, g = 64, b = 64, a = 100 },
+	illegal = { r = 255, g = 64, b = 0, a = 100 },
+	illegaldark = { r = 128, g = 32, b = 0, a = 100 },
+}
+-- kuertee end: colour backward compatibility
+
 -- forward declarations of local functions
 local onUpdate								-- global function calling the callbacks below
 
@@ -628,6 +705,10 @@ local onUpdateOneTimeCallbacks = {}			-- list of callbacks to be called a single
 local getSectionBaseParam
 
 local closeMenu
+
+-- kuertee start:
+Helper.uix_callbacks = {}
+-- kuertee end
 
 local function init()
 	SetScript("onUpdate", onUpdate)
@@ -671,13 +752,19 @@ end
 Helper.texts  = {}
 local origreadtext = ReadText
 ReadText = function(page, line)
-	local refstr = page .. "-" .. line
-	local text = Helper.texts[refstr]
-	if not text then
-		text = origreadtext(page, line)
-		Helper.texts[refstr] = text
+	-- kuertee start:
+	if page and line then
+		local refstr = page .. "-" .. line
+		local text = Helper.texts[refstr]
+		if not text then
+			text = origreadtext(page, line)
+			Helper.texts[refstr] = text
+		end
+		return text
+	else
+		return ""
 	end
-	return text
+	-- kuertee end
 end
 
 ---------------------------------------------------------------------------------
@@ -765,7 +852,11 @@ Helper.validSaveFilenames["quicksave"] = true
 for i = 1, 3 do
 	Helper.validSaveFilenames[string.format("autosave_%02d", i)] = true
 end
-for i = 1, 10 do
+-- kuertee start: more save games
+-- for i = 1, 10 do
+Helper.maxSaveFiles = 20
+for i = 1, Helper.maxSaveFiles do
+-- kuertee end: more save games
 	Helper.validSaveFilenames[string.format("save_%03d", i)] = true
 end
 
@@ -816,6 +907,14 @@ function onUpdate()
 	if onChatUpdateHandler then
 		onChatUpdateHandler()
 	end
+
+	-- kuertee start: callback
+	if Helper.uix_callbacks ["onUpdate"] then
+		for uix_id, uix_callback in pairs (Helper.uix_callbacks ["onUpdate"]) do
+			name = uix_callback ()
+		end
+	end
+	-- kuertee end: callback
 end
 
 function Helper.addDelayedOneTimeCallbackOnUpdate(callback, blockinput, delaytime)
@@ -5028,9 +5127,9 @@ end
 -- text
 function widgetPrototypes.cell:createText(text, properties)
 	-- kuertee start
-	if text == "" then
-		return self
-	end
+	-- if text == "" then
+	-- 	return self
+	-- end
 	-- kuertee end
 
 	if initTableCell(self, "text", properties) then
@@ -8205,6 +8304,13 @@ function Helper.getPassedTime(time)
 		return ""
 	end
 
+	-- kuertee start:
+	if passedtime < 60 * 60 then
+		local timeformat = ReadText(1001, 209)
+		return ConvertTimeString(passedtime, timeformat)
+	end
+	-- kuertee end
+
 	local timeformat = ReadText(1001, 211)
 	if passedtime < 3600 then
 		timeformat = ReadText(1001, 213)
@@ -9228,12 +9334,26 @@ function Helper.checkTopLevelConditions(entry)
 		local hqcluster = C.GetContextByClass(hq, "cluster", false)
 		return GetComponentData(ConvertStringTo64Bit(tostring(hqcluster)), "hasterraforming") and (C.GetNumTerraformingProjects(hqcluster, false) > 0)
 	end
+
 	if (entry.isonline ~= nil) and (entry.isonline ~= (C.AreVenturesCompatible() and (C.IsVentureSeasonSupported() or C.WasSessionOnline()))) then
 		return false
 	end
 	if (entry.istimelinescenario ~= nil) and (entry.istimelinescenario ~= (C.IsTimelinesScenario() or (ffi.string(C.GetGameStartName()) == "x4ep1_gamestart_hub"))) then
 		return false
 	end
+
+	-- kuertee start: callback
+	if Helper.uix_callbacks ["checkTopLevelConditions_get_is_entry_available"] then
+		local isAvailable = true
+		for uix_id, uix_callback in pairs (Helper.uix_callbacks ["checkTopLevelConditions_get_is_entry_available"]) do
+			isAvailable = uix_callback (entry)
+			if isAvailable ~= true then
+				return false
+			end
+		end
+	end
+	-- kuertee end: callback
+
 	return true
 end
 
@@ -9469,6 +9589,7 @@ function Helper.playerInfoConfigTextLeft(_, width, ismultiverse)
 	end
 
 	local connectionStatus = ""
+
 	if C.IsOnlineEnabled() then
 		connectionStatus = (Helper.isOnlineGame() and OnlineHasSession()) and (ReadText(1001, 11624) .. " \27[vt_connected]") or (ReadText(1001, 11625) .. " \27[vt_disconnected]")
 	end
@@ -9487,6 +9608,7 @@ end
 
 function Helper.playerInfoConfigTextRight(_, ismultiverse)
 	local connectionStatus = ""
+
 	if C.AreVenturesEnabled() then
 		if OnlineIsCurrentTeamValid() then
 			connectionStatus = (Helper.isOnlineGame() and OnlineHasSession()) and "\27[vt_connected]" or (ColorText["text_warning"] .. "\27[vt_disconnected]\27X")
@@ -10006,6 +10128,14 @@ function Helper.createTransactionLog(frame, container, tableProperties, refreshC
 	table_graph:setColWidthPercent(2, 15)
 	table_graph:setColWidthPercent(3, 15)
 
+	-- kuertee start: callback
+	if Helper.uix_callbacks ["createTransactionLog_set_graph_height"] then
+		for uix_id, uix_callback in pairs (Helper.uix_callbacks ["createTransactionLog_set_graph_height"]) do
+			height = math.min(height, uix_callback (tableProperties, width))
+		end
+	end
+	-- kuertee end: callback
+
 	-- graph cell
 	local row = table_graph:addRow(false, { fixed = true })
 
@@ -10118,6 +10248,7 @@ end
 function Helper.updateVenturePlatforms()
 	Helper.ventureplatforms = {}
 	Helper.dockedventureships = {}
+
 	local playerstations = GetContainedStationsByOwner("player")
 	for _, station in ipairs(playerstations) do
 		local station64 = ConvertIDTo64Bit(station)
@@ -10313,6 +10444,7 @@ function Helper.ventureOperationTimeLeftText()
 		local timeleft = operation.remainingtime
 		operationtimestring = Helper.ventureTimeLeft((timeleft > 0) and timeleft or 0)
 	end
+
 	return operationtimestring
 end
 
@@ -10328,6 +10460,7 @@ function Helper.ventureSeasonTimeLeftText()
 			seasontimestring = ReadText(1001, 11579)
 		end
 	end
+
 	return seasontimestring
 end
 
@@ -10534,6 +10667,15 @@ function Helper.createLSOStorageNode(menu, container, ware, planned, hasstorage,
 	local storageinfo_capacity = C.IsInfoUnlockedForPlayer(container, "storage_capacity")
 
 	local name, transporttype = GetWareData(ware, "name", "transport")
+
+	-- kuertee start: callback
+	if Helper.uix_callbacks ["createLSOStorageNode_get_ware_name"] then
+		for uix_id, uix_callback in pairs (Helper.uix_callbacks ["createLSOStorageNode_get_ware_name"]) do
+			name = uix_callback (ware)
+		end
+	end
+	-- kuertee end: callback
+
 	local cargo, isplayerowned = GetComponentData(container, "cargo", "isplayerowned")
 	local productionlimit = 0
 	if C.IsComponentClass(container, "container") then
@@ -10668,6 +10810,24 @@ function Helper.updateLSOStorageNode(menu, node, container, ware)
 	end
 	node:updateValue(amount)
 	node:updateStatus(nil, statusicon, nil, statuscolor, statusiconmouseovertext)
+
+	-- kuertee start: callback
+	if Helper.uix_callbacks ["updateLSOStorageNode_pre_update_expanded_node"] then
+		-- function widgetPrototypes.flowchartnode:updateStatus(text, icon, bgicon, color, mouseovertext)
+		local status_text = nil
+		local status_icon = statusicon
+		local status_bgicon = nil
+		local status_color = statuscolor
+		local status_mouseovertext = statusiconmouseovertext
+		for uix_id, uix_callback in pairs (Helper.uix_callbacks ["updateLSOStorageNode_pre_update_expanded_node"]) do
+			status_text, status_icon, status_bgicon, status_color, status_mouseovertext = uix_callback(menu, node, container, ware, status_text, status_icon, status_bgicon, status_color, status_mouseovertext)
+		end
+		node:updateStatus(status_text, status_icon, status_bgicon, status_color, status_mouseovertext)
+	else
+
+		node:updateStatus(nil, statusicon, nil, statuscolor, statusiconmouseovertext)
+	end
+	-- kuertee end: callback
 
 	for _, edge in ipairs(node.incomingEdges) do
 		menu.updateEdgeColorRecursively(edge, edgecolor)
@@ -10916,6 +11076,14 @@ function Helper.onExpandLSOStorageNode(menu, container, _, ftable, _, nodedata)
 		Helper.LSOStorageNodeSellSlider = nil
 		-- buy offer
 		if (waretype == "resource") or (waretype == "intermediate") or (waretype == "product") or (waretype == "trade") then
+			-- kuertee start: callback
+			if Helper.uix_callbacks ["onExpandLSOStorageNode_pre_buy_offer_title"] then
+				for uix_id, uix_callback in pairs (Helper.uix_callbacks ["onExpandLSOStorageNode_pre_buy_offer_title"]) do
+					uix_callback(menu, container, ftable, nodedata)
+				end
+			end
+			-- kuertee end: callback
+
 			local currentprice = math.max(minprice, math.min(maxprice, RoundTotalTradePrice(GetContainerWarePrice(container, nodedata.ware, true))))
 			local haspriceoverride = HasContainerWarePriceOverride(container, nodedata.ware, true)
 			local istradewarebought = C.GetContainerWareIsBuyable(container, nodedata.ware)
@@ -11061,6 +11229,14 @@ function Helper.onExpandLSOStorageNode(menu, container, _, ftable, _, nodedata)
 
 		-- sell offer
 		if (not isprocessed) and ((waretype == "resource") or (waretype == "product") or (waretype == "intermediate") or (waretype == "trade")) then
+			-- kuertee start: callback
+			if Helper.uix_callbacks ["onExpandLSOStorageNode_pre_sell_offer_title"] then
+				for uix_id, uix_callback in pairs (Helper.uix_callbacks ["onExpandLSOStorageNode_pre_sell_offer_title"]) do
+					uix_callback(menu, container, ftable, nodedata)
+				end
+			end
+			-- kuertee end: callback
+
 			local currentprice = math.max(minprice, math.min(maxprice, RoundTotalTradePrice(GetContainerWarePrice(container, nodedata.ware, false))))
 			local haspriceoverride = HasContainerWarePriceOverride(container, nodedata.ware, false)
 			local istradewaresold = C.GetContainerWareIsSellable(container, nodedata.ware)
@@ -11195,7 +11371,18 @@ function Helper.onExpandLSOStorageNode(menu, container, _, ftable, _, nodedata)
 					end
 					local isplayerowned = GetComponentData(ConvertStringTo64Bit(tostring(reservation.reserver)), "isplayerowned")
 					local name = (isplayerowned and ColorText["text_player"] or "") .. ffi.string(C.GetComponentName(reservation.reserver)) .. " (" .. ffi.string(C.GetObjectIDCode(reservation.reserver)) .. ")\27X"
-					row[1]:createText(function () return Helper.getETAString(name, reservation.eta) end, { font = Helper.standardFontMono })
+
+					-- kuertee start: callback
+					-- row[1]:createText(function () return Helper.getETAString(name, reservation.eta) end, { font = Helper.standardFontMono })
+					if Helper.uix_callbacks ["onExpandLSOStorageNode_list_incoming_trade"] then
+						for uix_id, uix_callback in pairs (Helper.uix_callbacks ["onExpandLSOStorageNode_list_incoming_trade"]) do
+							uix_callback (row, name, reservation, isplayerowned)
+						end
+					else
+						row[1]:createText(function () return Helper.getETAString(name, reservation.eta) end, { font = Helper.standardFontMono })
+					end
+					-- kuertee end: callback
+
 					row[2]:createText(ConvertIntegerString(reservation.amount, true, 3, false), { halign = "right" })
 					row[3]:createButton({ active = function () return Helper.buttonCancelTradeActive(menu, container, reservation.tradedeal) end, mouseOverText = ReadText(1026, 7924) }):setText("X", { halign = "center" })
 					row[3].handlers.onClick = function () return Helper.buttonCancelTrade(menu, container, reservation.tradedeal) end
@@ -11225,6 +11412,14 @@ function Helper.onExpandLSOStorageNode(menu, container, _, ftable, _, nodedata)
 		menu.selectedCols["nodeTable"] = nil
 	end
 	menu.restoreTableState("nodeTable", ftable)
+
+	-- kuertee start: callback
+	if Helper.uix_callbacks ["onExpandLSOStorageNode"] then
+		for uix_id, uix_callback in pairs (Helper.uix_callbacks ["onExpandLSOStorageNode"]) do
+			uix_callback(menu, container, ftable, nodedata)
+		end
+	end
+	-- kuertee end: callback
 end
 
 function Helper.getStorageAmount(container, nodedata, storageinfo_amounts, storageinfo_capacity, accuracy, showvolume)
@@ -11473,7 +11668,25 @@ function Helper.checkboxSetTradeRuleOverride(menu, container, type, ware, checke
 	end
 
 	if (type == "buy") or (type == "sell") then
-		menu.expandedNode:updateStatus(nil, Helper.isTradeRestricted(container, ware) and "lso_error" or nil, nil, Color["icon_warning"])
+
+		-- kuertee start: callback
+		if Helper.uix_callbacks ["checkboxSetTradeRuleOverride_pre_update_expanded_node"] then
+			-- function widgetPrototypes.flowchartnode:updateStatus(text, icon, bgicon, color, mouseovertext)
+			local status_text = nil
+			local status_icon = Helper.isTradeRestricted(container, ware) and "lso_error" or nil
+			local status_bgicon = nil
+			local status_color = Color["icon_warning"]
+			local status_mouseovertext
+			for uix_id, uix_callback in pairs (Helper.uix_callbacks ["checkboxSetTradeRuleOverride_pre_update_expanded_node"]) do
+				status_text, status_icon, status_bgicon, status_color, status_mouseovertext = uix_callback(menu, container, type, ware, checked, status_text, status_icon, status_bgicon, status_color, status_mouseovertext)
+			end
+			menu.expandedNode:updateStatus(status_text, status_icon, status_bgicon, status_color, status_mouseovertext)
+		else
+
+			menu.expandedNode:updateStatus(nil, Helper.isTradeRestricted(container, ware) and "lso_error" or nil, nil, Color["icon_warning"])
+		end
+		-- kuertee end: callback
+
 	end
 	menu.updateExpandedNode()
 end
@@ -11547,7 +11760,25 @@ function  Helper.dropdownTradeRule(menu, container, type, ware, id)
 	C.SetContainerTradeRule(container, tonumber(id), type, ware, true)
 
 	if (type == "buy") or (type == "sell") then
-		menu.expandedNode:updateStatus(nil, Helper.isTradeRestricted(container, ware) and "lso_error" or nil, nil, Color["icon_warning"])
+
+		-- kuertee start: callback
+		if Helper.uix_callbacks ["dropdownTradeRule_pre_update_expanded_node"] then
+			-- function widgetPrototypes.flowchartnode:updateStatus(text, icon, bgicon, color, mouseovertext)
+			local status_text = nil
+			local status_icon = Helper.isTradeRestricted(container, ware) and "lso_error" or nil
+			local status_bgicon = nil
+			local status_color = Color["icon_warning"]
+			local status_mouseovertext = nil
+			for uix_id, uix_callback in pairs (Helper.uix_callbacks ["dropdownTradeRule_pre_update_expanded_node"]) do
+				status_text, status_icon, status_bgicon, status_color, status_mouseovertext = uix_callback(menu, container, type, ware, id, status_text, status_icon, status_bgicon, status_color, status_mouseovertext)
+			end
+			menu.expandedNode:updateStatus(status_text, status_icon, status_bgicon, status_color, mouseOverText)
+		else
+
+			menu.expandedNode:updateStatus(nil, Helper.isTradeRestricted(container, ware) and "lso_error" or nil, nil, Color["icon_warning"])
+		end
+		-- kuertee end: callback
+
 	end
 	menu.noupdate = false
 end
@@ -11588,6 +11819,14 @@ function Helper.onCollapseLSOStorageNode(menu, nodedata)
 	menu.wareReservationRegistered = nil
 	Helper.LSOStorageNodeBuySlider = nil
 	Helper.LSOStorageNodeSellSlider = nil
+
+	-- kuertee start: callback
+	if Helper.uix_callbacks ["onCollapseLSOStorageNode"] then
+		for uix_id, uix_callback in pairs (Helper.uix_callbacks ["onCollapseLSOStorageNode"]) do
+			uix_callback (menu, nodedata)
+		end
+	end
+	-- kuertee end: callback
 end
 
 function Helper.onSliderChangedLSOStorageNode(container, node, nodedata, slideridx, value)
@@ -12051,9 +12290,12 @@ function Helper.createVentureContactsTab(menu, frame, instance, mode, width, x, 
 	row[1]:setColSpan(numCols):createText((mode == "friends") and ReadText(1001, 11386) or ReadText(1001, 11366), Helper.titleTextProperties)
 
 	infoTablePersistentData.numEntries = OnlineGetNumContacts(mode == "blocked")
+
 	Helper.ventureContacts = {}
 	if infoTablePersistentData.searchtext ~= "" then
+
 		local contacts = OnlineGetContacts(0, 0, mode == "blocked")
+
 		for _, entry in ipairs(contacts) do
 			if Helper.contactSearchHelper(entry, infoTablePersistentData.searchtext) then
 				table.insert(Helper.ventureContacts, entry)
@@ -12081,6 +12323,7 @@ function Helper.createVentureContactsTab(menu, frame, instance, mode, width, x, 
 				startIndex = 1
 			end
 		end
+
 		Helper.ventureContacts = OnlineGetContacts(Helper.ventureContactsConfig.pageSize, startIndex, mode == "blocked")
 	end
 	infoTablePersistentData.numPages = math.max(1, math.ceil(infoTablePersistentData.numEntries / Helper.ventureContactsConfig.pageSize))
@@ -12232,6 +12475,7 @@ function Helper.createVentureContactsHeader(menu, frame, instance, x, y)
 			end
 
 			local hassession = OnlineHasSession()
+
 			local loccount = count
 			row[loccount]:createButton({ active = hassession, height = sidebarwidth, bgColor = bgcolor, mouseOverText = entry.name, scaling = false, helpOverlayID = entry.helpOverlayID, helpOverlayText = entry.helpOverlayText }):setIcon(entry.icon, { color = color})
 			row[loccount].handlers.onClick = function () return Helper.buttonVentureContactsSubMode(menu, entry.category, loccount, instance) end
@@ -12305,6 +12549,7 @@ function Helper.editboxVentureFindForumUser(menu, instance, text, textchanged)
 		infoTablePersistentData.forumuserid = nil
 		infoTablePersistentData.forumsearch = text
 		Helper.usernameRequest = instance
+
 		OnlineCheckUsername(text)
 	end
 end
@@ -12312,7 +12557,9 @@ end
 function Helper.buttonAddForumUser(menu, instance, userid, block)
 	local infoTablePersistentData = menu.infoTablePersistentData[instance].venturecontacts
 	infoTablePersistentData.forumuserid = nil
+
 	OnlineAddContact(userid, block)
+
 	menu.refreshInfoFrame()
 end
 
@@ -12333,7 +12580,9 @@ function Helper.onCheckUsername(menu, result)
 
 	local success, userid, name = utf8.match(result, "([01]);([0-9]+);(.*)")
 	if success == "1" then
+
 		local contact = OnlineFindContact(userid)
+
 		if contact == nil then
 			data.forumsearch = name
 			data.forumuserid = tonumber(userid)
@@ -12558,6 +12807,7 @@ function Helper.buttonImportFriendList(menu)
 			end
 		end
 	end
+
 	OnlineImportPlatformFriends(friends)
 	menu.closeContextMenu()
 end
@@ -12594,6 +12844,153 @@ end
 function Helper.getLimitedWareAmount(ware)
 	return tonumber(ffi.string(C.GetUserDataSigned("limited_blueprint_" .. ware))) or 0
 end
+
+-- kuertee start:
+Helper.uix_callbackCount = 0
+function Helper.registerCallback(callbackName, callbackFunction, id)
+    -- note 1: format is generally [function name]_[action]. e.g.: in kuertee_menu_transporter, "display_on_set_room_active" overrides the room's active property with the return of the callback.
+    -- note 2: events have the word "_on_" followed by a PRESENT TENSE verb. e.g.: in kuertee_menu_transporter, "display_on_set_buttontable" is called after all of the rows of buttontable are set.
+    -- note 3: new callbacks can be added or existing callbacks can be edited. but commit your additions/changes to the mod's GIT repository.
+    -- note 4: search for the callback names to see where they are executed.
+    -- note 5: if a callback requires a return value, return it in an object var. e.g. "display_on_set_room_active" requires a return of {active = true | false}.
+    if Helper.uix_callbacks [callbackName] == nil then
+        Helper.uix_callbacks [callbackName] = {}
+    end
+    if not Helper.uix_callbacks[callbackName][id] then
+        if not id then
+            Helper.uix_callbackCount = Helper.uix_callbackCount + 1
+            id = "_" .. tostring(Helper.uix_callbackCount)
+        end
+        Helper.uix_callbacks[callbackName][id] = callbackFunction
+        if Helper.isDebugCallbacks then
+            Helper.debugText_forced("Helper uix registerCallback: Helper.uix_callbacks[" .. tostring(callbackName) .. "][" .. tostring(id) .. "]: " .. tostring(Helper.uix_callbacks[callbackName][id]))
+        end
+    else
+        Helper.debugText_forced("Helper uix registerCallback: callback at " .. callbackName .. " with id " .. tostring(id) .. " was already previously registered")
+    end
+end
+
+Helper.uix_isDeregisterQueued = nil
+Helper.uix_callbacks_toDeregister = {}
+function Helper.deregisterCallback(callbackName, callbackFunction, id)
+    if not Helper.uix_callbacks_toDeregister[callbackName] then
+        Helper.uix_callbacks_toDeregister[callbackName] = {}
+    end
+    if id then
+        table.insert(Helper.uix_callbacks_toDeregister[callbackName], id)
+    else
+        if Helper.uix_callbacks[callbackName] then
+            for id, func in pairs(Helper.uix_callbacks[callbackName]) do
+                if func == callbackFunction then
+                    table.insert(Helper.uix_callbacks_toDeregister[callbackName], id)
+                end
+            end
+        end
+    end
+    if not Helper.uix_isDeregisterQueued then
+        Helper.uix_isDeregisterQueued = true
+        Helper.addDelayedOneTimeCallbackOnUpdate(ModLua.deregisterCallbacksNow, true, getElapsedTime() + 1)
+    end
+end
+
+function Helper.deregisterCallbacksNow()
+    Helper.uix_isDeregisterQueued = nil
+    for callbackName, ids in pairs(Helper.uix_callbacks_toDeregister) do
+        if Helper.uix_callbacks[callbackName] then
+            for _, id in ipairs(ids) do
+                if Helper.uix_callbacks[callbackName][id] then
+                    if Helper.isDebugCallbacks then
+                        Helper.debugText_forced("Helper uix deregisterCallbacksNow (pre): Helper.uix_callbacks[" .. tostring(callbackName) .. "][" .. tostring(id) .. "]: " .. tostring(Helper.uix_callbacks[callbackName][id]))
+                    end
+                    Helper.uix_callbacks[callbackName][id] = nil
+                    if Helper.isDebugCallbacks then
+                        Helper.debugText_forced("Helper uix deregisterCallbacksNow (post): Helper.uix_callbacks[" .. tostring(callbackName) .. "][" .. tostring(id) .. "]: " .. tostring(Helper.uix_callbacks[callbackName][id]))
+                    end
+                else
+                    Helper.debugText_forced("Helper uix deregisterCallbacksNow: callback at " .. callbackName .. " with id " .. tostring(id) .. " doesn't exist")
+                end
+            end
+        end
+    end
+    Helper.uix_callbacks_toDeregister = {}
+end
+
+Helper.uix_isUpdateQueued = nil
+Helper.uix_callbacks_toUpdate = {}
+function Helper.updateCallback(callbackName, id, callbackFunction)
+    if not Helper.uix_callbacks_toUpdate[callbackName] then
+        Helper.uix_callbacks_toUpdate[callbackName] = {}
+    end
+    if id then
+        table.insert(Helper.uix_callbacks_toUpdate[callbackName], {id = id, callbackFunction = callbackFunction})
+    end
+    if not Helper.uix_isUpdateQueued then
+        Helper.uix_isUpdateQueued = true
+        Helper.addDelayedOneTimeCallbackOnUpdate(ModLua.updateCallbacksNow, true, getElapsedTime() + 1)
+    end
+end
+
+function Helper.updateCallbacksNow()
+    Helper.uix_isUpdateQueued = nil
+    for callbackName, updateDatas in pairs(Helper.uix_callbacks_toUpdate) do
+        if Helper.uix_callbacks[callbackName] then
+            for _, updateData in ipairs(updateDatas) do
+                if Helper.uix_callbacks[callbackName][updateData.id] then
+                    if Helper.isDebugCallbacks then
+                        Helper.debugText_forced("Helper uix updateCallbacksNow (pre): Helper.uix_callbacks[" .. tostring(callbackName) .. "][" .. tostring(updateData.id) .. "]: " .. tostring(Helper.uix_callbacks[callbackName][updateData.id]))
+                    end
+                    Helper.uix_callbacks[callbackName][updateData.id] = updateData.callbackFunction
+                    if Helper.isDebugCallbacks then
+                        Helper.debugText_forced("Helper uix updateCallbacksNow (post): Helper.uix_callbacks[" .. tostring(callbackName) .. "][" .. tostring(updateData.id) .. "]: " .. tostring(Helper.uix_callbacks[callbackName][updateData.id]))
+                    end
+                else
+                    Helper.debugText_forced("Helper uix updateCallbacksNow: callback at " .. callbackName .. " with id " .. tostring(id) .. " doesn't exist")
+                end
+            end
+        end
+    end
+end
+
+function Helper.debugText(data1, data2, indent, isForced)
+	local isDebug = false
+	if isDebug == true or isForced == true then
+		if indent == nil then
+			indent = ""
+		end
+		if data1 then
+			if not data2 then
+				DebugError ("uix: " .. indent .. tostring (data1))
+			else
+				DebugError ("uix: " .. indent .. tostring (data1) .. " = " .. tostring(data2))
+			end
+		end
+		indent = indent .. "  "
+		if type(data1) == "table" then
+			for key, value in pairs(data1) do
+				Helper.debugText(key, value, indent, isForced)
+			end
+		end
+		if data2 then
+			if type(data2) == "table" then
+				Helper.debugText(data2, nil, indent, isForced)
+			end
+		end
+	end
+end
+
+function Helper.debugText_forced(data1, data2, indent)
+	return Helper.debugText(data1, data2, indent, true)
+end
+
+Helper.isDebugCallbacks = nil
+function Helper.setDebugCallbacks(isOn)
+	if isOn == true then
+		Helper.isDebugCallbacks = true
+	else
+		Helper.isDebugCallbacks = nil
+	end
+end
+-- kuertee end
 
 ---------------------------------------------------------------------------------
 -- Init
