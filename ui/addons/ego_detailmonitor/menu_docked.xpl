@@ -1019,7 +1019,7 @@ function menu.display()
 						local rd_callbackVal
 						if menu.uix_callbacks ["rd_addReactiveDockingDockMenu"] then
 				  			for uix_id, uix_callback in pairs (menu.uix_callbacks ["rd_addReactiveDockingDockMenu"]) do
-				    				rd_callbackVal = uix_callback (row, menu.currentplayership, i, active, mouseovertext)
+				    				rd_callbackVal = uix_callback (row, menu.currentplayership, i, active, mouseovertext, isdockingpossible)
 				  			end
 						end
 						if not rd_callbackVal then
