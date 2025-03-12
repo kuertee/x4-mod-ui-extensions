@@ -10323,6 +10323,10 @@ function menu.displayExtensions()
 
 			-- kuertee start: sort by enabled, then by author, then by name
 			if extensiongroup ~= 1 and ((not uix_lastExtensionListed) or uix_lastExtensionListed.author ~= extension.author) then
+				if lastextensiongroup ~= 1 and uix_lastExtensionListed then
+					local row = optiontable:addRow(false, {})
+					row[2]:createText("", config.standardTextProperties)
+				end
 				local row = optiontable:addRow(false, {})
 				row[2]:createText(extension.author, config.standardTextProperties)
 				row[2].properties.fontsize = row[2].properties.fontsize * 2
