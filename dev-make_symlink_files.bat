@@ -15,6 +15,7 @@ del menu_docked.xpl
 del menu_encyclopedia.xpl
 del menu_map.xpl
 del menu_playerinfo.xpl
+del menu_scenario_debriefing.xpl
 del menu_scenario_selection.xpl
 del menu_ship_configuration.xpl
 del menu_station_configuration.xpl
@@ -28,6 +29,7 @@ mklink /h menu_docked.xpl "..\..\..\extensions\kuertee_ui_extensions\ui\addons\e
 mklink /h menu_encyclopedia.xpl "..\..\..\extensions\kuertee_ui_extensions\ui\addons\ego_detailmonitor\menu_encyclopedia.xpl"
 mklink /h menu_map.xpl "..\..\..\extensions\kuertee_ui_extensions\ui\addons\ego_detailmonitor\menu_map.xpl"
 mklink /h menu_playerinfo.xpl "..\..\..\extensions\kuertee_ui_extensions\ui\addons\ego_detailmonitor\menu_playerinfo.xpl"
+mklink /h menu_scenario_debriefing.xpl "..\..\..\extensions\kuertee_ui_extensions\ui\addons\ego_detailmonitor\menu_scenario_debriefing.xpl"
 mklink /h menu_scenario_selection.xpl "..\..\..\extensions\kuertee_ui_extensions\ui\addons\ego_detailmonitor\menu_scenario_selection.xpl"
 mklink /h menu_ship_configuration.xpl "..\..\..\extensions\kuertee_ui_extensions\ui\addons\ego_detailmonitor\menu_ship_configuration.xpl"
 mklink /h menu_station_configuration.xpl "..\..\..\extensions\kuertee_ui_extensions\ui\addons\ego_detailmonitor\menu_station_configuration.xpl"
