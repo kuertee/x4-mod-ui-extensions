@@ -9228,7 +9228,7 @@ function menu.displayOptions(optionParameter)
 	-- kuertee start: callback
 	if menu.uix_callbacks ["displayOptions_modifyOptions"] then
 		for uix_id, uix_callback in pairs (menu.uix_callbacks ["displayOptions_modifyOptions"]) do
-			options = uix_callback(options)
+			options = uix_callback(options, config)
 		end
 	end
 	-- kuertee end: callback
