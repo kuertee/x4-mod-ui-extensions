@@ -24278,7 +24278,9 @@ function menu.buttonRenameConfirm(isconfirmed)
 				end
 			end
 			-- [UniTrader's Advanced Renaming] Forleyor end: callback
-		-- kuertee end: multi-rename
+
+			menu.contextMenuData.uix_multiRename_objects = nil
+			-- kuertee end: multi-rename
 
 		-- kuertee start: multi-rename
 		-- if menu.contextMenuData.newtext then
@@ -24291,8 +24293,8 @@ function menu.buttonRenameConfirm(isconfirmed)
 				-- kuertee start: debug
 				local uix_name_old = GetComponentData(menu.contextMenuData.component, "name")
 				local uix_idcode = C.GetObjectIDCode(menu.contextMenuData.component)
-				Helper.debugText_forced(menu.contextMenuData.component, uix_name_old .. tostring(uix_idcode))
-				Helper.debugText_forced("newtext", menu.contextMenuData.newtext)
+				-- Helper.debugText_forced(menu.contextMenuData.component, uix_name_old .. tostring(uix_idcode))
+				-- Helper.debugText_forced("newtext", menu.contextMenuData.newtext)
 				-- kuertee end: debug
 
 				SetComponentName(menu.contextMenuData.component, menu.contextMenuData.newtext)
@@ -29171,6 +29173,7 @@ function menu.onInteractMenuCallback(type, param)
 			xoffset = mousepos.x + Helper.viewWidth / 2,
 			yoffset = mousepos.y + Helper.viewHeight / 2
 		}
+		param[3] = nil
 		-- kuertee end: multi-rename
 
 		local width = Helper.scaleX(config.renameWidth)

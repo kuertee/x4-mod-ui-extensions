@@ -10291,8 +10291,8 @@ function menu.displayExtensions()
 	row[2].properties.mouseOverText = ReadText(1001, 12725)
 
 	-- kuertee start:
-	-- row[6]:createButton({ mouseOverText = ReadText(1001, 12725) }):setText(function () return GetUISafeModeOption() and ReadText(1001, 12642) or ReadText(1001, 12641) end, { fontsize = config.standardFontSize, halign = "center" })
-	row[6]:createButton({active = false, mouseOverText = ReadText(1001, 12725) }):setText(function () return GetUISafeModeOption() and ReadText(1001, 12642) or ReadText(1001, 12641) end, { fontsize = config.standardFontSize, halign = "center" })
+	row[6]:createButton({ mouseOverText = ReadText(1001, 12725) }):setText(function () return GetUISafeModeOption() and ReadText(1001, 12642) or ReadText(1001, 12641) end, { fontsize = config.standardFontSize, halign = "center" })
+	-- row[6]:createButton({active = false, mouseOverText = ReadText(1001, 12725) }):setText(function () return GetUISafeModeOption() and ReadText(1001, 12642) or ReadText(1001, 12641) end, { fontsize = config.standardFontSize, halign = "center" })
 	-- kuertee end
 
 	row[6].handlers.onClick = menu.buttonExtensionUISecurityMode

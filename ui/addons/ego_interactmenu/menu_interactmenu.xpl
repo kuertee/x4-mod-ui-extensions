@@ -4168,7 +4168,7 @@ function menu.createContentTable(frame, position)
 
 							-- kuertee start: callback
 							-- row[1].handlers.onClick = entry.script
-							row[1].handlers.onClick = function()
+							row[1].handlers.onClick = function(...)
 								local uix_isOverrideClickEvent
 								if menu.uix_callbacks ["interactMenu_clickAction"] then
 									for uix_id, uix_callback in pairs (menu.uix_callbacks ["interactMenu_clickAction"]) do
@@ -4179,7 +4179,7 @@ function menu.createContentTable(frame, position)
 									end
 								end
 								if not uix_isOverrideClickEvent then
-									entry.script()
+									entry.script(...)
 								end
 							end
 							-- kuertee end: callback
@@ -4285,7 +4285,7 @@ function menu.createSubSectionTable(frame, position)
 
 		-- kuertee start: callback
 		-- row[1].handlers.onClick = entry.script
-		row[1].handlers.onClick = function()
+		row[1].handlers.onClick = function(...)
 			local uix_isOverrideClickEvent
 			if menu.uix_callbacks ["interactMenu_clickAction"] then
 				for uix_id, uix_callback in pairs (menu.uix_callbacks ["interactMenu_clickAction"]) do
@@ -4296,7 +4296,7 @@ function menu.createSubSectionTable(frame, position)
 				end
 			end
 			if not uix_isOverrideClickEvent then
-				entry.script()
+				entry.script(...)
 			end
 		end
 		-- kuertee end: callback
@@ -4718,7 +4718,9 @@ function menu.prepareSections()
 		if section.subsections then
 
 			-- kuertee start: add section initializer
-			menu.actions[section.id] = {}
+			if not menu.actions[section.id] then
+				menu.actions[section.id] = {}
+			end
 			-- kuertee end: add section initializer
 
 			for _, subsection in ipairs(section.subsections) do

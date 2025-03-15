@@ -9334,7 +9334,6 @@ function Helper.checkTopLevelConditions(entry)
 		local hqcluster = C.GetContextByClass(hq, "cluster", false)
 		return GetComponentData(ConvertStringTo64Bit(tostring(hqcluster)), "hasterraforming") and (C.GetNumTerraformingProjects(hqcluster, false) > 0)
 	end
-
 	if (entry.isonline ~= nil) and (entry.isonline ~= (C.AreVenturesCompatible() and (C.IsVentureSeasonSupported() or C.WasSessionOnline()))) then
 		return false
 	end
@@ -9589,7 +9588,6 @@ function Helper.playerInfoConfigTextLeft(_, width, ismultiverse)
 	end
 
 	local connectionStatus = ""
-
 	if C.IsOnlineEnabled() then
 		connectionStatus = (Helper.isOnlineGame() and OnlineHasSession()) and (ReadText(1001, 11624) .. " \27[vt_connected]") or (ReadText(1001, 11625) .. " \27[vt_disconnected]")
 	end
@@ -9608,7 +9606,6 @@ end
 
 function Helper.playerInfoConfigTextRight(_, ismultiverse)
 	local connectionStatus = ""
-
 	if C.AreVenturesEnabled() then
 		if OnlineIsCurrentTeamValid() then
 			connectionStatus = (Helper.isOnlineGame() and OnlineHasSession()) and "\27[vt_connected]" or (ColorText["text_warning"] .. "\27[vt_disconnected]\27X")
@@ -10248,7 +10245,6 @@ end
 function Helper.updateVenturePlatforms()
 	Helper.ventureplatforms = {}
 	Helper.dockedventureships = {}
-
 	local playerstations = GetContainedStationsByOwner("player")
 	for _, station in ipairs(playerstations) do
 		local station64 = ConvertIDTo64Bit(station)
@@ -10444,7 +10440,6 @@ function Helper.ventureOperationTimeLeftText()
 		local timeleft = operation.remainingtime
 		operationtimestring = Helper.ventureTimeLeft((timeleft > 0) and timeleft or 0)
 	end
-
 	return operationtimestring
 end
 
@@ -10460,7 +10455,6 @@ function Helper.ventureSeasonTimeLeftText()
 			seasontimestring = ReadText(1001, 11579)
 		end
 	end
-
 	return seasontimestring
 end
 
@@ -12290,12 +12284,9 @@ function Helper.createVentureContactsTab(menu, frame, instance, mode, width, x, 
 	row[1]:setColSpan(numCols):createText((mode == "friends") and ReadText(1001, 11386) or ReadText(1001, 11366), Helper.titleTextProperties)
 
 	infoTablePersistentData.numEntries = OnlineGetNumContacts(mode == "blocked")
-
 	Helper.ventureContacts = {}
 	if infoTablePersistentData.searchtext ~= "" then
-
 		local contacts = OnlineGetContacts(0, 0, mode == "blocked")
-
 		for _, entry in ipairs(contacts) do
 			if Helper.contactSearchHelper(entry, infoTablePersistentData.searchtext) then
 				table.insert(Helper.ventureContacts, entry)
@@ -12323,7 +12314,6 @@ function Helper.createVentureContactsTab(menu, frame, instance, mode, width, x, 
 				startIndex = 1
 			end
 		end
-
 		Helper.ventureContacts = OnlineGetContacts(Helper.ventureContactsConfig.pageSize, startIndex, mode == "blocked")
 	end
 	infoTablePersistentData.numPages = math.max(1, math.ceil(infoTablePersistentData.numEntries / Helper.ventureContactsConfig.pageSize))
@@ -12475,7 +12465,6 @@ function Helper.createVentureContactsHeader(menu, frame, instance, x, y)
 			end
 
 			local hassession = OnlineHasSession()
-
 			local loccount = count
 			row[loccount]:createButton({ active = hassession, height = sidebarwidth, bgColor = bgcolor, mouseOverText = entry.name, scaling = false, helpOverlayID = entry.helpOverlayID, helpOverlayText = entry.helpOverlayText }):setIcon(entry.icon, { color = color})
 			row[loccount].handlers.onClick = function () return Helper.buttonVentureContactsSubMode(menu, entry.category, loccount, instance) end
@@ -12549,7 +12538,6 @@ function Helper.editboxVentureFindForumUser(menu, instance, text, textchanged)
 		infoTablePersistentData.forumuserid = nil
 		infoTablePersistentData.forumsearch = text
 		Helper.usernameRequest = instance
-
 		OnlineCheckUsername(text)
 	end
 end
@@ -12557,9 +12545,7 @@ end
 function Helper.buttonAddForumUser(menu, instance, userid, block)
 	local infoTablePersistentData = menu.infoTablePersistentData[instance].venturecontacts
 	infoTablePersistentData.forumuserid = nil
-
 	OnlineAddContact(userid, block)
-
 	menu.refreshInfoFrame()
 end
 
@@ -12580,9 +12566,7 @@ function Helper.onCheckUsername(menu, result)
 
 	local success, userid, name = utf8.match(result, "([01]);([0-9]+);(.*)")
 	if success == "1" then
-
 		local contact = OnlineFindContact(userid)
-
 		if contact == nil then
 			data.forumsearch = name
 			data.forumuserid = tonumber(userid)
@@ -12807,7 +12791,6 @@ function Helper.buttonImportFriendList(menu)
 			end
 		end
 	end
-
 	OnlineImportPlatformFriends(friends)
 	menu.closeContextMenu()
 end
