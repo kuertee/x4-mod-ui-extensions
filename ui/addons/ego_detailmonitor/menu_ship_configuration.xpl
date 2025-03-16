@@ -6675,6 +6675,14 @@ function menu.displayModifyPaintSlots(frame)
 						installcolor = Color["text_negative"]
 					end
 
+					-- kuertee start: callback
+					if menu.uix_callbacks ["displayModifyPaintSlots_onShowingButton"] then
+						for uix_id, uix_callback in pairs (menu.uix_callbacks ["displayModifyPaintSlots_onShowingButton"]) do
+							amount = uix_callback (amount)
+						end
+					end
+					-- kuertee end: callback
+
 					row[col]:setColSpan(3):createButton({
 						width = columnWidths[i],
 						height = maxColumnWidth,
