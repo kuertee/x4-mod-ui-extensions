@@ -1849,6 +1849,14 @@ function menu.buttonConfirm()
 end
 
 function menu.buttonSelectPaintMod(entry, row, col)
+	-- kuertee start: callback
+	if menu.uix_callbacks ["buttonSelectPaintMod_onStart"] then
+		for uix_id, uix_callback in pairs (menu.uix_callbacks ["buttonSelectPaintMod_onStart"]) do
+			uix_callback (entry)
+		end
+	end
+	-- kuertee end: callback
+
 	menu.selectedPaintMod = entry
 	C.SetMapPaintMod(menu.holomap, entry.ware)
 
@@ -4433,6 +4441,14 @@ function menu.getDataAndDisplay(upgradeplan, crew, newedit, firsttime, noundo, s
 		end
 	end
 
+	-- kuertee start: callback
+	if menu.uix_callbacks ["getDataAndDisplay_beforeDisplay"] then
+		for uix_id, uix_callback in pairs (menu.uix_callbacks ["getDataAndDisplay_beforeDisplay"]) do
+			uix_callback ()
+		end
+	end
+	-- kuertee end: callback
+
 	menu.displayMenu(firsttime)
 end
 
@@ -6659,6 +6675,14 @@ function menu.displayModifyPaintSlots(frame)
 						installcolor = Color["text_negative"]
 					end
 
+					-- kuertee start: callback
+					if menu.uix_callbacks ["displayModifyPaintSlots_onShowingButton"] then
+						for uix_id, uix_callback in pairs (menu.uix_callbacks ["displayModifyPaintSlots_onShowingButton"]) do
+							amount = uix_callback (amount)
+						end
+					end
+					-- kuertee end: callback
+
 					row[col]:setColSpan(3):createButton({
 						width = columnWidths[i],
 						height = maxColumnWidth,
@@ -7366,6 +7390,14 @@ function menu.checkEquipment(removedEquipment, currentEquipment, newEquipment, r
 						menu.insertWare(currentEquipment, objectEquipment.current, upgradetype.supertype, newware, 1)
 					end
 				end
+
+				-- kuertee start: callback
+				if menu.uix_callbacks ["checkEquipment_onUpgradeSlots"] then
+					for uix_id, uix_callback in pairs (menu.uix_callbacks ["checkEquipment_onUpgradeSlots"]) do
+						uix_callback (upgradetype, newEquipment, objectEquipment, macro)
+					end
+				end
+				-- kuertee end: callback
 			end
 		end
 	end
@@ -8657,6 +8689,14 @@ function menu.displayModifyPlan(frame)
 			if C.GetInstalledPaintMod(ship, paintmod) then
 				row[2]:createText(ffi.string(paintmod.Name), { color = Helper.modQualities[paintmod.Quality].color, halign = "right" })
 			end
+
+			-- kuertee start: callback
+			if menu.uix_callbacks ["displayModifyPlan_onSelectedShips"] then
+				for uix_id, uix_callback in pairs (menu.uix_callbacks ["displayModifyPlan_onSelectedShips"]) do
+					uix_callback (ftable)
+				end
+			end
+			-- kuertee end: callback
 		end
 	end
 
@@ -10720,6 +10760,14 @@ function menu.prepareModWares()
 		end
 		menu.modwaresByWare[entry.ware] = entry
 	end
+
+	-- kuertee start: callback
+	if menu.uix_callbacks ["prepareModWares_onEnd"] then
+		for uix_id, uix_callback in pairs (menu.uix_callbacks ["prepareModWares_onEnd"]) do
+			uix_callback (config)
+		end
+	end
+	-- kuertee end: callback
 end
 
 function menu.determineNeededRepairs(ship)
@@ -10771,6 +10819,13 @@ function menu.insertWare(array, objectarray, category, ware, count, pricetype)
 			elseif pricetype == "crew" then
 				price = menu.crew.price
 			end
+			-- kuertee start: callback
+			if menu.uix_callbacks ["insertWare_onPriceCalculation"] then
+				for uix_id, uix_callback in pairs (menu.uix_callbacks ["insertWare_onPriceCalculation"]) do
+					price = uix_callback (price, pricetype, ware)
+				end
+			end
+			-- kuertee end: callback
 		end
 		table.insert(array2, { ware = ware, amount = count, price = price })
 	end
