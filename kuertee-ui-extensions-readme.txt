@@ -5,9 +5,11 @@ by kuertee. Contributors: AlexandreTK, DrWhoKnows, Erixon, Forleyor, IALuir, Myc
 
 Updates
 =======
+v7.5.05, 18 Mar 2025:
+- New feature: support for Mycu's upcoming mods.
+
 v7.5.04, 15 Mar 2025:
 - New feature: support for RuneKn's upcoming update/mod.
-- New feature: support for Mycu's upcoming update/mod.
 - Bug-fix: Carrier Position Defence options weren't working.
 - Bug-fix: Possible bug-fix to the occasional object(s) getting renamed due to mod's multi-Rename function.
 - New feature: The mod list in the Extension menu is listed by author.
@@ -225,11 +227,10 @@ Uninstall
 
 Troubleshooting
 ===============
-(1) Do not change the file structure of the mod. If you do, you'll need to troubleshoot problems you encounter yourself.
-(2) Allow the game to log events to a text file by adding "-debug all -logfile debug.log" to its launch parameters.
-(3) Enable the mod-specific Debug Log in the mod's Extension Options.
-(4) Play for long enough for the mod to log its events.
-(5) Send me (at kuertee@gmail.com) the log found in My Documents\Egosoft\X4\(your player-specific number)\debug.log.
+1. Allow the game to log events to a text file by adding "-debug all -logfile debug.log" to its launch parameters.
+2. If an Extension Options entry exists for the mod, enable the mod-specific Debug Log.
+3. Play for long enough for the mod to log its events. Or force the error that you are experiencing.
+4. Send me (at kuertee@gmail.com) the log found in My Documents\Egosoft\X4\(your player-specific number)\debug.log.
 
 Credits
 =======
