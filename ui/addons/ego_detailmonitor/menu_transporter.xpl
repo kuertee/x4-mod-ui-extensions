@@ -648,6 +648,15 @@ function menu.display()
 	local buttonrow = buttontable:addRow(true, { fixed = true, bgColor = Color["row_background_blue"] })
 	buttonrow[1]:setColSpan(2):createText(menu.infotext, { minRowHeight = 2 * Helper.standardTextHeight, wordwrap = true })
 	local textheight = buttonrow[1]:getMinTextHeight(true)
+
+	-- kuertee start: callback
+	if menu.uix_callbacks ["display_onButtonCreate"] then
+		for uix_id, uix_callback in pairs (menu.uix_callbacks ["display_onButtonCreate"]) do
+			textheight = uix_callback (iconsize, textheight)
+		end
+	end
+	-- kuertee end: callback
+
 	buttonrow[3]:createButton({ height = textheight, scaling = false }):setIcon(menu.extendInfo and "widget_arrow_left_01" or "widget_arrow_right_01", { width = iconsize, height = iconsize, y = (textheight - iconsize) / 2 })
 	buttonrow[3].handlers.onClick = menu.buttonExpand
 
