@@ -1,4 +1,4 @@
-﻿-- Ingame Options Main Menu
+-- Ingame Options Main Menu
 
 -- ffi setup
 local ffi = require("ffi")
@@ -388,6 +388,7 @@ local menu = {
 
 -- kuertee start:
 menu.uix_callbacks = {}
+local uix_modsortertype = "name"
 -- kuertee end
 
 local function init()
@@ -10220,6 +10221,7 @@ function menu.extensionSorter(a, b)
 	-- kuertee end: sort by enabled, then by author, then by name
 end
 
+-- Forleyor: UIX EXTENSIONS SORTING START
 function menu.displayExtensions()
 	-- remove old data
 	Helper.clearDataForRefresh(menu, config.optionsLayer)
@@ -10248,12 +10250,16 @@ function menu.displayExtensions()
 	local offsety = titletable.properties.y + titletable:getVisibleHeight() + Helper.borderSize
 	local height = menu.table.height - offsety
 
-	local optiontable = frame:addTable(7, { tabOrder = 1, x = menu.table.x, y = offsety, width = menu.table.widthExtraWide - infowidth - Helper.borderSize, maxVisibleHeight = height })
+	local optiontable = frame:addTable(9, { tabOrder = 1, x = menu.table.x, y = offsety, width = menu.table.widthExtraWide - infowidth - Helper.borderSize, maxVisibleHeight = height })
 	optiontable:setColWidth(1, menu.table.arrowColumnWidth, false)
-	optiontable:setColWidthPercent(2, 40)
-	optiontable:setColWidthPercent(4, 13)
+	optiontable:setColWidthPercent(2, 30)
+	optiontable:setColWidthPercent(3, 20)
+	optiontable:setColWidthPercent(4, 18)
+	optiontable:setColWidthPercent(5, 8)
 	optiontable:setColWidthPercent(6, 10)
-	optiontable:setColWidth(7, menu.table.arrowColumnWidth, false)
+	optiontable:setColWidthPercent(7, 12)
+	optiontable:setColWidthPercent(8, 3)
+	optiontable:setColWidthPercent(9, 2)
 
 	local extensions = GetExtensionList()
 	menu.extensionSettings = GetAllExtensionSettings()
@@ -10264,18 +10270,18 @@ function menu.displayExtensions()
 
 		local row = optiontable:addRow("globalsync", {  })
 		row[2]:createText(ReadText(1001, 4830), config.standardTextProperties)
-		row[6]:createButton({  }):setText(function () local text = menu.valueExtensionGlobalSync() return text end, { fontsize = config.standardFontSize, halign = "center", color = function () local _, color = menu.valueExtensionGlobalSync() return color end })
-		row[6].handlers.onClick = menu.buttonExtensionGlobalSync
+		row[9]:createButton({  }):setText(function () local text = menu.valueExtensionGlobalSync() return text end, { fontsize = config.standardFontSize, halign = "center", color = function () local _, color = menu.valueExtensionGlobalSync() return color end })
+		row[9].handlers.onClick = menu.buttonExtensionGlobalSync
 
 		local row = optiontable:addRow("workshop", {  })
-		row[2]:setColSpan(5):createText(ReadText(1001, 4831), config.standardTextProperties)
+		row[2]:setColSpan(8):createText(ReadText(1001, 4831), config.standardTextProperties)
 	end
 
 	if #extensions > 0 then
 		addline = true
 
 		local row = optiontable:addRow( "defaults", {  })
-		row[2]:setColSpan(6):createText(ReadText(1001, 2647), config.standardTextProperties)
+		row[2]:setColSpan(8):createText(ReadText(1001, 2647), config.standardTextProperties)
 		if menu.preselectOption == "defaults" then
 			optiontable:setSelectedRow(row.index)
 		end
@@ -10283,7 +10289,7 @@ function menu.displayExtensions()
 
 	if addline then
 		local row = optiontable:addRow(false, {  })
-		row[2]:setColSpan(6):createText(" ", { fontsize = 1, height = Helper.borderSize, cellBGColor = Color["row_separator"] })
+		row[2]:setColSpan(8):createText(" ", { fontsize = 1, height = Helper.borderSize, cellBGColor = Color["row_separator"] })
 	end
 
 	local row = optiontable:addRow("uisecurity", {  })
@@ -10291,58 +10297,48 @@ function menu.displayExtensions()
 	row[2].properties.mouseOverText = ReadText(1001, 12725)
 
 	-- kuertee start:
-	row[6]:createButton({ mouseOverText = ReadText(1001, 12725) }):setText(function () return GetUISafeModeOption() and ReadText(1001, 12642) or ReadText(1001, 12641) end, { fontsize = config.standardFontSize, halign = "center" })
+	row[8]:setColSpan(2):createButton({ mouseOverText = ReadText(1001, 12725) }):setText(function () return GetUISafeModeOption() and ReadText(1001, 12642) or ReadText(1001, 12641) end, { fontsize = config.standardFontSize, halign = "center" })
 	-- row[6]:createButton({active = false, mouseOverText = ReadText(1001, 12725) }):setText(function () return GetUISafeModeOption() and ReadText(1001, 12642) or ReadText(1001, 12641) end, { fontsize = config.standardFontSize, halign = "center" })
 	-- kuertee end
 
-	row[6].handlers.onClick = menu.buttonExtensionUISecurityMode
+	row[9].handlers.onClick = menu.buttonExtensionUISecurityMode
 
 	local row = optiontable:addRow(false, {  })
-	row[2]:setColSpan(6):createText(" ", { fontsize = 1, height = Helper.borderSize, cellBGColor = Color["row_separator"] })
+	row[2]:setColSpan(8):createText(" ", { fontsize = 1, height = Helper.borderSize, cellBGColor = Color["row_separator"] })
 
-	row = optiontable:addRow(false, {  })
-	row[2]:createText(ReadText(1001, 8999), config.subHeaderLeftTextProperties)
-	row[3]:createText(ReadText(1001, 4823), config.subHeaderLeftTextProperties)
-	row[4]:createText(ReadText(1001, 2655), config.subHeaderLeftTextProperties)
-	row[5]:createText(ReadText(1001, 2691), config.subHeaderLeftTextProperties)
+	-- row = optiontable:addRow(false, {  })
+	-- row[2]:createText(ReadText(1001, 8999), config.subHeaderLeftTextProperties)
+	-- row[3]:createText(ReadText(1001, 4823), config.subHeaderLeftTextProperties)
+	-- row[4]:createText(ReadText(1001, 2655), config.subHeaderLeftTextProperties)
+	-- row[5]:createText(ReadText(1001, 2691), config.subHeaderLeftTextProperties)
 	if #extensions > 0 then
-		table.sort(extensions, menu.extensionSorter)
-		local lastextensiongroup
-
-		-- kuertee start: sort by enabled, then by author, then by name
-		local uix_lastExtensionListed
-		-- kuertee end: sort by enabled, then by author, then by name
+		-- table.sort(extensions, menu.extensionSorter)
+		local egosoftextensions = {}
+		local modextensions = {}
 
 		for _, extension in ipairs(extensions) do
-			local extensiongroup = menu.getExtensionGroup(extension)
-			if lastextensiongroup and extensiongroup ~= lastextensiongroup then
-				-- add separators between extension groups
-				row = optiontable:addRow(false, {  })
-				row[2]:setColSpan(6):createText(" ", { fontsize = 1, height = Helper.borderSize, cellBGColor = Color["row_separator"] })
+			if extension.egosoftextension then
+				table.insert(egosoftextensions, extension)
+			else
+				table.insert(modextensions, extension)
 			end
-
-			-- kuertee start: sort by enabled, then by author, then by name
-			if extensiongroup ~= 1 and ((not uix_lastExtensionListed) or uix_lastExtensionListed.author ~= extension.author) then
-				if lastextensiongroup ~= 1 and uix_lastExtensionListed then
-					local row = optiontable:addRow(false, {})
-					row[2]:createText("")
-				end
-				local row = optiontable:addRow(false, {})
-				row[2]:createText(extension.author, config.standardTextProperties)
-				row[2].properties.fontsize = row[2].properties.fontsize * 2
-				if not extension.enabled then
-					row[2].properties.color = Helper.color.grey
-				end
-			end
-			-- kuertee end: sort by enabled, then by author, then by name
-
-			menu.displayExtensionRow(optiontable, extension, menu.extensionSettings[extension.index])
-			lastextensiongroup = extensiongroup
-
-			-- kuertee start: sort by enabled, then by author, then by name
-			uix_lastExtensionListed = extension
-			-- kuertee end: sort by enabled, then by author, then by name
 		end
+		table.sort(egosoftextensions, menu.extensionSorter)
+
+		menu.addDLCTitle(optiontable, false)
+		for _, extension in ipairs(egosoftextensions) do
+			menu.displayExtensionRow(optiontable, extension, menu.extensionSettings[extension.index])
+		end
+		
+		row = optiontable:addRow(false, {  })
+		row[2]:setColSpan(8):createText(" ", { fontsize = 1, height = Helper.borderSize, cellBGColor = Color["row_separator"] })
+		
+		menu.createSorters(optiontable, uix_modsortertype)
+		for _, extension in ipairs(modextensions) do
+			menu.displayModRow(optiontable, extension, menu.extensionSettings[extension.index])
+		end
+
+		table.sort(modextensions, menu.sortModExtensions(uix_modsortertype))
 	else
 		local row = optiontable:addRow(false, {  })
 		row[2]:setColSpan(2):createText(ReadText(1001, 2693), config.disabledTextProperties)
@@ -10364,6 +10360,148 @@ function menu.displayExtensions()
 	frame:display()
 end
 
+-- UIX Mod sorter row
+function menu.createSorters(ftable, sortertype)
+	local row = ftable:addRow(true, { })
+	local buttonheight = Helper.scaleY(config.standardTextHeight)
+
+	local button = row[2]:setColSpan(1):createButton({ scaling = false, height = buttonheight }):setText(ReadText(1001, 8999), { halign = "left", scaling = true })
+	if uix_modsortertype == "name" then
+		button:setIcon("table_arrow_inv_down", { width = buttonheight, height = buttonheight, x = button:getColSpanWidth() - buttonheight })
+	elseif uix_modsortertype == "nameinverse" then
+		button:setIcon("table_arrow_inv_up", { width = buttonheight, height = buttonheight, x = button:getColSpanWidth() - buttonheight })
+	end
+	row[2].handlers.onClick = function (a,b) return menu.modSorterClick("name") end
+
+	local button = row[3]:setColSpan(1):createButton({ scaling = false, height = buttonheight }):setText(ReadText(1001, 4823), { halign = "left", scaling = true })
+	if uix_modsortertype == "id" then
+		button:setIcon("table_arrow_inv_down", { width = buttonheight, height = buttonheight, x = button:getColSpanWidth() - buttonheight })
+	elseif uix_modsortertype == "idinverse" then
+		button:setIcon("table_arrow_inv_up", { width = buttonheight, height = buttonheight, x = button:getColSpanWidth() - buttonheight })
+	end
+	row[3].handlers.onClick = function (a,b) return menu.modSorterClick("id") end
+
+	local button = row[4]:setColSpan(1):createButton({ scaling = false, height = buttonheight }):setText(ReadText(1001, 2690), { halign = "left", scaling = true })
+	if uix_modsortertype == "author" then
+		button:setIcon("table_arrow_inv_down", { width = buttonheight, height = buttonheight, x = button:getColSpanWidth() - buttonheight })
+	elseif uix_modsortertype == "authorinverse" then
+		button:setIcon("table_arrow_inv_up", { width = buttonheight, height = buttonheight, x = button:getColSpanWidth() - buttonheight })
+	end
+	row[4].handlers.onClick = function (a,b) return menu.modSorterClick("author") end
+
+	local button = row[5]:setColSpan(1):createButton({ scaling = false, height = buttonheight }):setText(ReadText(1001, 2655), { halign = "left", scaling = true })
+	if uix_modsortertype == "version" then
+		button:setIcon("table_arrow_inv_down", { width = buttonheight, height = buttonheight, x = button:getColSpanWidth() - buttonheight })
+	elseif uix_modsortertype == "versioninverse" then
+		button:setIcon("table_arrow_inv_up", { width = buttonheight, height = buttonheight, x = button:getColSpanWidth() - buttonheight })
+	end
+	row[5].handlers.onClick = function (a,b) return menu.modSorterClick("version") end
+
+	local button = row[6]:setColSpan(1):createButton({ scaling = false, height = buttonheight }):setText(ReadText(20007, 1221), { halign = "left", scaling = true })
+	if uix_modsortertype == "workshop" then
+		button:setIcon("table_arrow_inv_down", { width = buttonheight, height = buttonheight, x = button:getColSpanWidth() - buttonheight })
+	elseif uix_modsortertype == "workshopinverse" then
+		button:setIcon("table_arrow_inv_up", { width = buttonheight, height = buttonheight, x = button:getColSpanWidth() - buttonheight })
+	end
+	row[6].handlers.onClick = function (a,b) return menu.modSorterClick("workshop") end
+
+	local button = row[7]:setColSpan(1):createButton({ scaling = false, height = buttonheight }):setText(ReadText(1001, 2691), { halign = "left", scaling = true })
+	if uix_modsortertype == "date" then
+		button:setIcon("table_arrow_inv_down", { width = buttonheight, height = buttonheight, x = button:getColSpanWidth() - buttonheight })
+	elseif uix_modsortertype == "dateinverse" then
+		button:setIcon("table_arrow_inv_up", { width = buttonheight, height = buttonheight, x = button:getColSpanWidth() - buttonheight })
+	end
+	row[7].handlers.onClick = function (a,b) return menu.modSorterClick("date") end
+end
+
+-- UIX Mod Sorter
+function menu.sortModsByName(a, b, invert)
+	if invert then
+		return a.name > b.name
+    end
+
+	return a.name < b.name
+end
+
+function menu.sortModsByID(a, b, invert)
+	if invert then
+        return a.id > b.id
+    end
+	
+	return a.id < b.id
+end
+
+function menu.sortModsByAuthor(a, b, invert)
+	if invert then
+        return a.author > b.author
+    end
+	
+	return a.author < b.author
+end
+
+function menu.sortModsByVersion(a, b, invert)
+	if invert then
+        return a.version > b.version
+    end
+	
+	return a.version < b.version
+end
+
+function menu.sortModsByWorkshop(a, b, invert)
+	if invert then
+        return a.isworkshop > b.isworkshop
+    end
+	
+	return a.isworkshop < b.isworkshop
+end
+
+function menu.sortModsByDate(a, b, invert)
+	if invert then
+        return a.date > b.date
+    end
+	
+	return a.date < b.date
+end
+
+function menu.modSorterClick(sorttype)
+    if uix_modsortertype == sorttype then
+        uix_modsortertype = sorttype .. "inverse"
+    else
+        uix_modsortertype = sorttype
+    end
+
+	menu.displayExtensions()
+end
+
+function menu.sortModExtensions(sorttype)
+    local sorter
+	local invert = string.find(uix_modsortertype, "inverse") ~= nil
+
+	if sorttype == "name" then
+		sorter = function(a, b) return menu.sortModsByName(a, b, invert) end
+	elseif sorttype == "id" then
+		sorter = function(a, b) return menu.sortModsByID(a, b, invert) end
+	elseif sorttype == "author" then
+		sorter = function(a, b) return menu.sortModsByAuthor(a, b, invert) end
+	elseif sorttype == "version" then
+		sorter = function(a, b) return menu.sortModsByVersion(a, b, invert) end
+	elseif sorttype == "workshop" then
+		sorter = function(a, b) return menu.sortModsByWorkshop(a, b, invert) end
+	elseif sorttype == "date" then
+		sorter = function(a, b) return menu.sortModsByDate(a, b, invert) end
+	end
+    return sorter
+end
+
+
+function menu.addDLCTitle(ftable, ismods)
+	local row = ftable:addRow(false, {  })
+	row[2]:createText(ReadText(1001, 8999), config.subHeaderLeftTextProperties)
+	row[3]:setColSpan(2):createText(ReadText(1001, 4823), config.subHeaderLeftTextProperties)
+	row[5]:setColSpan(2):createText(ReadText(1001, 2655), config.subHeaderLeftTextProperties)
+	row[7]:setColSpan(3):createText(ReadText(1001, 2691), config.subHeaderLeftTextProperties)
+end
+
 function menu.displayExtensionRow(ftable, extension, extensionSetting)
 	local row = ftable:addRow(extension, {  })
 	if extension.id == menu.preselectOption then
@@ -10375,26 +10513,53 @@ function menu.displayExtensionRow(ftable, extension, extensionSetting)
 		textcolor = Color["text_error"]
 	elseif extension.warning then
 		textcolor = Color["text_warning"]
-
 	-- kuertee start: gray disabled extensions
 	elseif not extension.enabled then
 		textcolor = Helper.color.grey
 	-- kuertee end
-
 	end
 
 	row[2]:createText(extension.name, config.standardTextProperties)
 	row[2].properties.color = textcolor
 	row[3]:createText(extension.id, config.standardTextProperties)
-	row[4]:createText(extension.version, config.standardTextProperties)
-	row[4].properties.halign = "right"
-	row[5]:createText(extension.date, config.standardTextProperties)
-	row[5].properties.halign = "right"
-	row[6]:createButton({ }):setText(function() return menu.valueExtensionStatus(extension) end, { fontsize = config.standardFontSize, halign = "center", color = function () local _, color = menu.valueExtensionStatus(extension); return color end })
-	row[6].handlers.onClick = function () return menu.callbackExtensionSettingEnabled(extension) end
-	row[7]:createButton({ }):setText("...", { fontsize = config.standardFontSize, halign = "center" })
-	row[7].handlers.onClick = function () menu.selectedExtension = extension; menu.openSubmenu("extensionsettings", extension.id) end
+	row[5]:createText(extension.version, config.standardTextProperties)
+	row[7]:createText(extension.date, config.standardTextProperties)
+	row[8]:createButton({ }):setText(function() return menu.valueExtensionStatus(extension) end, { fontsize = config.standardFontSize, halign = "center", color = function () local _, color = menu.valueExtensionStatus(extension); return color end })
+	row[8].handlers.onClick = function () return menu.callbackExtensionSettingEnabled(extension) end
+	row[9]:createButton({ }):setText("...", { fontsize = config.standardFontSize, halign = "center" })
+	row[9].handlers.onClick = function () menu.selectedExtension = extension; menu.openSubmenu("extensionsettings", extension.id) end
 end
+
+function menu.displayModRow(ftable, extension, extensionSetting)
+	local row = ftable:addRow(extension, {  })
+	if extension.id == menu.preselectOption then
+		ftable:setSelectedRow(row.index)
+	end
+
+	local textcolor = Color["text_normal"]
+	if extension.error and extension.enabled then
+		textcolor = Color["text_error"]
+	elseif extension.warning then
+		textcolor = Color["text_warning"]
+	-- kuertee start: gray disabled extensions
+	elseif not extension.enabled then
+		textcolor = Helper.color.grey
+	-- kuertee end
+	end
+
+	row[2]:createText(extension.name, config.standardTextProperties)
+	row[2].properties.color = textcolor
+	row[3]:createText(extension.id, config.standardTextProperties)
+	row[4]:createText(extension.author, config.standardTextProperties)
+	row[5]:createText(extension.version, config.standardTextProperties)
+	row[6]:createText(tostring(extension.isworkshop), config.standardTextProperties)
+	row[7]:createText(extension.date, config.standardTextProperties)
+	row[8]:createButton({ }):setText(function() return menu.valueExtensionStatus(extension) end, { fontsize = config.standardFontSize, halign = "center", color = function () local _, color = menu.valueExtensionStatus(extension); return color end })
+	row[8].handlers.onClick = function () return menu.callbackExtensionSettingEnabled(extension) end
+	row[9]:createButton({ }):setText("...", { fontsize = config.standardFontSize, halign = "center" })
+	row[9].handlers.onClick = function () menu.selectedExtension = extension; menu.openSubmenu("extensionsettings", extension.id) end
+end
+-- Forleyor: UIX EXTENSIONS SORTING END
 
 function menu.displayBonusContent()
 	local owned = false
