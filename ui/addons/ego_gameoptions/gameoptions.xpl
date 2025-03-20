@@ -389,6 +389,7 @@ local menu = {
 -- kuertee start:
 menu.uix_callbacks = {}
 local uix_modsortertype = "name"
+local uix_modsorter_isshowauthor = true
 -- kuertee end
 
 local function init()
@@ -10339,7 +10340,6 @@ function menu.displayExtensions()
 		end
 		table.sort(egosoftextensions, menu.extensionSorter)
 
-		-- menu.addDLCTitle(optiontable, false)
 		for _, extension in ipairs(egosoftextensions) do
 			menu.displayExtensionRow(optiontable, extension, menu.extensionSettings[extension.index])
 		end
@@ -10377,66 +10377,98 @@ end
 
 -- Forleyor: UIX EXTENSIONS SORTING START
 function menu.createSorters(ftable, sortertype)
-	-- cols: 2 name, 3 id, 4 version, 5 date
+	-- cols: 2 name, 3 author/id, 4 version, 5 date
 	local row = ftable:addRow(true, { })
 	local buttonheight = Helper.scaleY(config.standardTextHeight)
 
-	local button = row[2]:createButton({ scaling = false, height = buttonheight }):setText(ReadText(1001, 8999), { halign = "left", scaling = true })
+	local icon_normalSort, icon_inverseSort = "\27[widget_arrow_down_01]\27X", "\27[widget_arrow_up_01]\27X"
+	local icon_current = ""
+
 	if uix_modsortertype == "name" then
-		button:setIcon("table_arrow_inv_down", { width = buttonheight, height = buttonheight, x = button:getColSpanWidth() - buttonheight })
+		icon_current = " " .. icon_normalSort
 	elseif uix_modsortertype == "nameinverse" then
-		button:setIcon("table_arrow_inv_up", { width = buttonheight, height = buttonheight, x = button:getColSpanWidth() - buttonheight })
+		icon_current = " " .. icon_inverseSort
 	end
+	local button = row[2]:createButton({ scaling = false, height = buttonheight }):setText(ReadText(1001, 8999) .. icon_current, { halign = "left", scaling = true })
 	row[2].handlers.onClick = function ()
-		if uix_modsortertype ~= "name" then
-			uix_modsortertype = "name"
-		else
+		if uix_modsortertype == "name" then
 			uix_modsortertype = "nameinverse"
+		else
+			uix_modsortertype = "name"
 		end
 		menu.refresh()
 	end
 
-	local button = row[3]:createButton({ scaling = false, height = buttonheight }):setText(ReadText(1001, 4823), { halign = "left", scaling = true })
-	if uix_modsortertype == "id" then
-		button:setIcon("table_arrow_inv_down", { width = buttonheight, height = buttonheight, x = button:getColSpanWidth() - buttonheight })
-	elseif uix_modsortertype == "idinverse" then
-		button:setIcon("table_arrow_inv_up", { width = buttonheight, height = buttonheight, x = button:getColSpanWidth() - buttonheight })
+	-- <t id="2690">Author</t>
+	-- <t id="4823">ID</t>
+	icon_current = ""
+	if uix_modsortertype == "author" or uix_modsortertype == "id" then
+		icon_current = " " .. icon_normalSort
+	elseif uix_modsortertype == "authorinverse" or uix_modsortertype == "idinverse" then
+		icon_current = " " .. icon_inverseSort
+	end
+	local button
+	if uix_modsorter_isshowauthor then
+		button = row[3]:createButton({ scaling = false, height = buttonheight }):setText(ReadText(1001, 2690) .. icon_current .. " / " .. ReadText(1001, 4823), { halign = "left", scaling = true })
+	else
+		button = row[3]:createButton({ scaling = false, height = buttonheight }):setText(ReadText(1001, 2690) .. " / " .. ReadText(1001, 4823) .. icon_current, { halign = "left", scaling = true })
 	end
 	row[3].handlers.onClick = function ()
-		if uix_modsortertype ~= "id" then
+		-- if uix_modsortertype ~= "author" and uix_modsortertype ~= "id" and uix_modsortertype ~= "authorinverse" and uix_modsortertype ~= "idinverse" then
+		-- 	if uix_modsorter_isshowauthor then
+		-- 		uix_modsortertype = "id"
+		-- 	else
+		-- 		uix_modsortertype = "author"
+		-- 	end
+		-- elseif uix_modsortertype == "author" then
+		if uix_modsortertype == "author" then
+			uix_modsortertype = "authorinverse"
+			uix_modsorter_isshowauthor = true
+		elseif uix_modsortertype == "authorinverse" then
 			uix_modsortertype = "id"
-		else
+			uix_modsorter_isshowauthor = nil
+		elseif uix_modsortertype == "id" then
 			uix_modsortertype = "idinverse"
+			uix_modsorter_isshowauthor = nil
+		elseif uix_modsortertype == "idinverse" then
+			uix_modsortertype = "author"
+			uix_modsorter_isshowauthor = true
+		elseif uix_modsorter_isshowauthor then
+			uix_modsortertype = "author"
+		else
+			uix_modsortertype = "id"
 		end
 		menu.refresh()
 	end
 
-	local button = row[4]:createButton({ scaling = false, height = buttonheight }):setText(ReadText(1001, 2655), { halign = "left", scaling = true })
+	icon_current = ""
 	if uix_modsortertype == "version" then
-		button:setIcon("table_arrow_inv_down", { width = buttonheight, height = buttonheight, x = button:getColSpanWidth() - buttonheight })
+		icon_current = " " .. icon_normalSort
 	elseif uix_modsortertype == "versioninverse" then
-		button:setIcon("table_arrow_inv_up", { width = buttonheight, height = buttonheight, x = button:getColSpanWidth() - buttonheight })
+		icon_current = " " .. icon_inverseSort
 	end
+	local button = row[4]:createButton({ scaling = false, height = buttonheight }):setText(ReadText(1001, 2655) .. icon_current, { halign = "left", scaling = true })
 	row[4].handlers.onClick = function ()
-		if uix_modsortertype ~= "version" then
-			uix_modsortertype = "version"
-		else
+		if uix_modsortertype == "version" then
 			uix_modsortertype = "versioninverse"
+		else
+			uix_modsortertype = "version"
 		end
 		menu.refresh()
 	end
 
-	local button = row[5]:createButton({ scaling = false, height = buttonheight }):setText(ReadText(1001, 2691), { halign = "left", scaling = true })
+	icon_current = ""
 	if uix_modsortertype == "date" then
-		button:setIcon("table_arrow_inv_down", { width = buttonheight, height = buttonheight, x = button:getColSpanWidth() - buttonheight })
+		icon_current = " " .. icon_normalSort
 	elseif uix_modsortertype == "dateinverse" then
-		button:setIcon("table_arrow_inv_up", { width = buttonheight, height = buttonheight, x = button:getColSpanWidth() - buttonheight })
+		icon_current = " " .. icon_inverseSort
 	end
+	local button = row[5]:createButton({ scaling = false, height = buttonheight }):setText(ReadText(1001, 2691) .. icon_current, { halign = "left", scaling = true })
 	row[5].handlers.onClick = function ()
-		if uix_modsortertype ~= "date" then
-			uix_modsortertype = "date"
-		else
+		if uix_modsortertype == "date" then
 			uix_modsortertype = "dateinverse"
+		else
+			uix_modsortertype = "date"
 		end
 		menu.refresh()
 	end
@@ -10524,15 +10556,6 @@ function menu.sortModExtensions(sorttype)
 	end
     return sorter
 end
-
-function menu.addDLCTitle(ftable, ismods)
-	-- cols: 2 name, 3 id, 4 version, 5 date
-	local row = ftable:addRow(false, {  })
-	row[2]:createText(ReadText(1001, 8999), config.subHeaderLeftTextProperties)
-	row[3]:createText(ReadText(1001, 4823), config.subHeaderLeftTextProperties)
-	row[4]:createText(ReadText(1001, 2655), config.subHeaderLeftTextProperties)
-	row[7]:createText(ReadText(1001, 2691), config.subHeaderLeftTextProperties)
-end
 -- forleyor end
 
 function menu.displayExtensionRow(ftable, extension, extensionSetting)
@@ -10555,6 +10578,7 @@ function menu.displayExtensionRow(ftable, extension, extensionSetting)
 
 	row[2]:createText(extension.name, config.standardTextProperties)
 	row[2].properties.color = textcolor
+
 	row[3]:createText(extension.id, config.standardTextProperties)
 	row[4]:createText(extension.version, config.standardTextProperties)
 	row[4].properties.halign = "right"
@@ -10586,7 +10610,16 @@ function menu.displayModRow(ftable, extension, extensionSetting)
 
 	row[2]:createText(extension.name, config.standardTextProperties)
 	row[2].properties.color = textcolor
-	row[3]:createText(extension.id, config.standardTextProperties)
+
+	-- kuertee start: sort by author / id
+	-- row[3]:createText(extension.id, config.standardTextProperties)
+	if uix_modsorter_isshowauthor then
+		row[3]:createText(extension.author, config.standardTextProperties)
+	else
+		row[3]:createText(extension.id, config.standardTextProperties)
+	end
+	-- kuertee end
+
 	row[4]:createText(extension.version, config.standardTextProperties)
 	row[4].properties.halign = "right"
 	row[5]:createText(extension.date, config.standardTextProperties)
