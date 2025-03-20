@@ -5,16 +5,9 @@ by kuertee. Contributors: AlexandreTK, DrWhoKnows, Erixon, Forleyor, IALuir, Myc
 
 Updates
 =======
-v7.5.05, 18 Mar 2025:
-- New feature: support for Mycu's upcoming mods.
-
-v7.5.04, 15 Mar 2025:
-- New feature: support for RuneKn's upcoming update/mod.
-- Bug-fix: Carrier Position Defence options weren't working.
-- Bug-fix: Possible bug-fix to the occasional object(s) getting renamed due to mod's multi-Rename function.
-- New feature: The mod list in the Extension menu is listed by author.
-- Bug-fix: Some of the Timelines menu were broken.
-- Tweak: French localisation is returned. Hopefully, this doesn't kill all other French text entries. I tested it by changing my language to French in Steam.
+v7.5.06, 20 Mar 2025:
+- New feature: Forleyor's Extensions sorter buttons in the Extensions menu.
+- Tweaks: callbacks for some of Mycu's mods.
 
 v7.5 NOTES FOR PLAYERS:
 =======================
@@ -248,6 +241,17 @@ French localisation by Calvitix.
 
 History
 =======
+v7.5.05, 18 Mar 2025:
+- New feature: support for Mycu's upcoming mods.
+
+v7.5.04, 15 Mar 2025:
+- New feature: support for RuneKn's upcoming update/mod.
+- Bug-fix: Carrier Position Defence options weren't working.
+- Bug-fix: Possible bug-fix to the occasional object(s) getting renamed due to mod's multi-Rename function.
+- New feature: The mod list in the Extension menu is listed by author.
+- Bug-fix: Some of the Timelines menu were broken.
+- Tweak: French localisation is returned. Hopefully, this doesn't kill all other French text entries. I tested it by changing my language to French in Steam.
+
 v7.5.03, 05 Mar 2025:
 - New feature: new callback in menu map by Forleyor.
 - New feature: new callback to prevent problems with Trade Analytics mod on ultra-wide monitors.

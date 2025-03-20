@@ -5,5 +5,6 @@
     <dependency name="ego_gameoptions" />
     <dependency name="ego_detailmonitor" />
     <dependency name="ego_interactmenu" />
+    <savedvariable name="__userdata_uix_gameoptions" storage="userdata" />
   </environment>
 </addon>

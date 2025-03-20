@@ -388,9 +388,11 @@ local menu = {
 
 -- kuertee start:
 menu.uix_callbacks = {}
-local uix_modsortertype = "name"
-local uix_modsorter_isShowAuthor = true
-local uix_modsorter_isShowActiveFirst = true
+__userdata_uix_gameoptions = __userdata_uix_gameoptions or {	
+	modsortertype               = "author",
+	modsorter_isShowAuthor      = true,
+	modsorter_isShowActiveFirst = true,
+}
 -- kuertee end
 
 local function init()
@@ -10317,19 +10319,39 @@ function menu.displayExtensions()
 				table.insert(modextensions, extension)
 			end
 		end
-		table.sort(egosoftextensions, menu.extensionSorter)
 
+		-- list ego extensions first
+		table.sort(egosoftextensions, menu.extensionSorter)
 		for _, extension in ipairs(egosoftextensions) do
 			menu.displayExtensionRow(optiontable, extension, menu.extensionSettings[extension.index])
 		end
-		
+
+		-- list mods next		
 		row = optiontable:addRow(false, {  })
-		row[2]:setColSpan(8):createText(" ", { fontsize = 1, height = Helper.borderSize, cellBGColor = Color["row_separator"] })
+		row[2]:setColSpan(6):createText(" ", { fontsize = 1, height = Helper.borderSize, cellBGColor = Color["row_separator"] })
 		
-		menu.createSorters(optiontable, uix_modsortertype)
-		table.sort(modextensions, menu.sortModExtensions(uix_modsortertype))
+		menu.createSorters(optiontable, __userdata_uix_gameoptions.modsortertype)
+		table.sort(modextensions, menu.sortModExtensions(__userdata_uix_gameoptions.modsortertype))
+		local uix_lastExtensionListed
 		for _, extension in ipairs(modextensions) do
+			-- kuertee start: show author name when sorted by author
+			if (__userdata_uix_gameoptions.modsortertype =="author" or __userdata_uix_gameoptions.modsortertype == "authorinverse") and ((not uix_lastExtensionListed) or uix_lastExtensionListed.author ~= extension.author) then
+				if uix_lastExtensionListed then
+					-- add separator from last entry
+					local row = optiontable:addRow(false, {})
+					row[2]:createText("")
+				end
+				-- add name of author
+				local row = optiontable:addRow(false, {})
+				row[2]:createText(extension.author, config.standardTextProperties)
+				row[2].properties.fontsize = row[2].properties.fontsize * 2
+				if not extension.enabled then
+					row[2].properties.color = Helper.color.grey
+				end
+			end
+			-- kuertee end: show author name when sorted by author
 			menu.displayModRow(optiontable, extension, menu.extensionSettings[extension.index])
+			uix_lastExtensionListed = extension
 		end
 		-- forleyor end
 
@@ -10363,17 +10385,17 @@ function menu.createSorters(ftable, sortertype)
 	local icon_normalSort, icon_inverseSort, icon_cross = "\27[widget_arrow_down_01]\27X", "\27[widget_arrow_up_01]\27X", "\27[widget_cross_01]\27X"
 	local icon_current = ""
 
-	if uix_modsortertype == "name" then
+	if __userdata_uix_gameoptions.modsortertype == "name" then
 		icon_current = " " .. icon_normalSort
-	elseif uix_modsortertype == "nameinverse" then
+	elseif __userdata_uix_gameoptions.modsortertype == "nameinverse" then
 		icon_current = " " .. icon_inverseSort
 	end
 	local button = row[2]:createButton({ scaling = false, height = buttonheight }):setText(ReadText(1001, 8999) .. icon_current, { halign = "center", scaling = true })
 	row[2].handlers.onClick = function ()
-		if uix_modsortertype == "name" then
-			uix_modsortertype = "nameinverse"
+		if __userdata_uix_gameoptions.modsortertype == "name" then
+			__userdata_uix_gameoptions.modsortertype = "nameinverse"
 		else
-			uix_modsortertype = "name"
+			__userdata_uix_gameoptions.modsortertype = "name"
 		end
 		menu.refresh()
 	end
@@ -10381,73 +10403,73 @@ function menu.createSorters(ftable, sortertype)
 	-- <t id="2690">Author</t>
 	-- <t id="4823">ID</t>
 	icon_current = ""
-	if uix_modsortertype == "author" or uix_modsortertype == "id" then
+	if __userdata_uix_gameoptions.modsortertype == "author" or __userdata_uix_gameoptions.modsortertype == "id" then
 		icon_current = " " .. icon_normalSort
-	elseif uix_modsortertype == "authorinverse" or uix_modsortertype == "idinverse" then
+	elseif __userdata_uix_gameoptions.modsortertype == "authorinverse" or __userdata_uix_gameoptions.modsortertype == "idinverse" then
 		icon_current = " " .. icon_inverseSort
 	end
 	local button
-	if uix_modsorter_isShowAuthor then
+	if __userdata_uix_gameoptions.modsorter_isShowAuthor then
 		button = row[3]:createButton({ scaling = false, height = buttonheight }):setText(ReadText(1001, 2690) .. icon_current .. " / " .. ReadText(1001, 4823), { halign = "center", scaling = true })
 	else
 		button = row[3]:createButton({ scaling = false, height = buttonheight }):setText(ReadText(1001, 2690) .. " / " .. ReadText(1001, 4823) .. icon_current, { halign = "center", scaling = true })
 	end
 	row[3].handlers.onClick = function ()
-		-- if uix_modsortertype ~= "author" and uix_modsortertype ~= "id" and uix_modsortertype ~= "authorinverse" and uix_modsortertype ~= "idinverse" then
-		-- 	if uix_modsorter_isShowAuthor then
-		-- 		uix_modsortertype = "id"
+		-- if __userdata_uix_gameoptions.modsortertype ~= "author" and __userdata_uix_gameoptions.modsortertype ~= "id" and __userdata_uix_gameoptions.modsortertype ~= "authorinverse" and __userdata_uix_gameoptions.modsortertype ~= "idinverse" then
+		-- 	if __userdata_uix_gameoptions.modsorter_isShowAuthor then
+		-- 		__userdata_uix_gameoptions.modsortertype = "id"
 		-- 	else
-		-- 		uix_modsortertype = "author"
+		-- 		__userdata_uix_gameoptions.modsortertype = "author"
 		-- 	end
-		-- elseif uix_modsortertype == "author" then
-		if uix_modsortertype == "author" then
-			uix_modsortertype = "authorinverse"
-			uix_modsorter_isShowAuthor = true
-		elseif uix_modsortertype == "authorinverse" then
-			uix_modsortertype = "id"
-			uix_modsorter_isShowAuthor = nil
-		elseif uix_modsortertype == "id" then
-			uix_modsortertype = "idinverse"
-			uix_modsorter_isShowAuthor = nil
-		elseif uix_modsortertype == "idinverse" then
-			uix_modsortertype = "author"
-			uix_modsorter_isShowAuthor = true
-		elseif uix_modsorter_isShowAuthor then
-			uix_modsortertype = "author"
+		-- elseif __userdata_uix_gameoptions.modsortertype == "author" then
+		if __userdata_uix_gameoptions.modsortertype == "author" then
+			__userdata_uix_gameoptions.modsortertype = "authorinverse"
+			__userdata_uix_gameoptions.modsorter_isShowAuthor = true
+		elseif __userdata_uix_gameoptions.modsortertype == "authorinverse" then
+			__userdata_uix_gameoptions.modsortertype = "id"
+			__userdata_uix_gameoptions.modsorter_isShowAuthor = nil
+		elseif __userdata_uix_gameoptions.modsortertype == "id" then
+			__userdata_uix_gameoptions.modsortertype = "idinverse"
+			__userdata_uix_gameoptions.modsorter_isShowAuthor = nil
+		elseif __userdata_uix_gameoptions.modsortertype == "idinverse" then
+			__userdata_uix_gameoptions.modsortertype = "author"
+			__userdata_uix_gameoptions.modsorter_isShowAuthor = true
+		elseif __userdata_uix_gameoptions.modsorter_isShowAuthor then
+			__userdata_uix_gameoptions.modsortertype = "author"
 		else
-			uix_modsortertype = "id"
+			__userdata_uix_gameoptions.modsortertype = "id"
 		end
 		menu.refresh()
 	end
 
 	icon_current = ""
-	if uix_modsortertype == "version" then
+	if __userdata_uix_gameoptions.modsortertype == "version" then
 		icon_current = " " .. icon_normalSort
-	elseif uix_modsortertype == "versioninverse" then
+	elseif __userdata_uix_gameoptions.modsortertype == "versioninverse" then
 		icon_current = " " .. icon_inverseSort
 	end
 	local button = row[4]:createButton({ scaling = false, height = buttonheight }):setText(ReadText(1001, 2655) .. icon_current, { halign = "center", scaling = true })
 	row[4].handlers.onClick = function ()
-		if uix_modsortertype == "version" then
-			uix_modsortertype = "versioninverse"
+		if __userdata_uix_gameoptions.modsortertype == "version" then
+			__userdata_uix_gameoptions.modsortertype = "versioninverse"
 		else
-			uix_modsortertype = "version"
+			__userdata_uix_gameoptions.modsortertype = "version"
 		end
 		menu.refresh()
 	end
 
 	icon_current = ""
-	if uix_modsortertype == "date" then
+	if __userdata_uix_gameoptions.modsortertype == "date" then
 		icon_current = " " .. icon_normalSort
-	elseif uix_modsortertype == "dateinverse" then
+	elseif __userdata_uix_gameoptions.modsortertype == "dateinverse" then
 		icon_current = " " .. icon_inverseSort
 	end
 	local button = row[5]:createButton({ scaling = false, height = buttonheight }):setText(ReadText(1001, 2691) .. icon_current, { halign = "center", scaling = true })
 	row[5].handlers.onClick = function ()
-		if uix_modsortertype == "date" then
-			uix_modsortertype = "dateinverse"
+		if __userdata_uix_gameoptions.modsortertype == "date" then
+			__userdata_uix_gameoptions.modsortertype = "dateinverse"
 		else
-			uix_modsortertype = "date"
+			__userdata_uix_gameoptions.modsortertype = "date"
 		end
 		menu.refresh()
 	end
@@ -10456,21 +10478,21 @@ function menu.createSorters(ftable, sortertype)
 	-- <t id="8942">Disabled</t>
     -- <t id="12207">Active</t>
     -- <t id="12208">Inactive</t>
-	if uix_modsorter_isShowActiveFirst == true then
+	if __userdata_uix_gameoptions.modsorter_isShowActiveFirst == true then
 		icon_current = " " .. icon_normalSort
-	elseif uix_modsorter_isShowActiveFirst == false then
+	elseif __userdata_uix_gameoptions.modsorter_isShowActiveFirst == false then
 		icon_current = " " .. icon_inverseSort
 	else
 		icon_current = " " .. icon_cross
 	end
 	local button = row[6]:setColSpan(2):createButton({ scaling = false, height = buttonheight }):setText(ReadText(1001, 12207) .. icon_current, { halign = "center", scaling = true })
 	row[6].handlers.onClick = function ()
-		if uix_modsorter_isShowActiveFirst == true then
-			uix_modsorter_isShowActiveFirst = false
-		elseif uix_modsorter_isShowActiveFirst == false then
-			uix_modsorter_isShowActiveFirst = nil
+		if __userdata_uix_gameoptions.modsorter_isShowActiveFirst == true then
+			__userdata_uix_gameoptions.modsorter_isShowActiveFirst = false
+		elseif __userdata_uix_gameoptions.modsorter_isShowActiveFirst == false then
+			__userdata_uix_gameoptions.modsorter_isShowActiveFirst = nil
 		else
-			uix_modsorter_isShowActiveFirst = true
+			__userdata_uix_gameoptions.modsorter_isShowActiveFirst = true
 		end
 		menu.refresh()
 	end
@@ -10478,7 +10500,7 @@ end
 
 -- UIX Mod Sorter
 function menu.uix_sortByActive(a, b)
-	if uix_modsorter_isShowActiveFirst == true then
+	if __userdata_uix_gameoptions.modsorter_isShowActiveFirst == true then
 		if a.enabled then
 			return true
 		else
@@ -10493,7 +10515,7 @@ function menu.uix_sortByActive(a, b)
 end
 
 function menu.uix_sortModsByName(a, b, invert)
-	if uix_modsorter_isShowActiveFirst ~= nil and a.enabled ~= b.enabled then
+	if __userdata_uix_gameoptions.modsorter_isShowActiveFirst ~= nil and a.enabled ~= b.enabled then
 		return menu.uix_sortByActive(a, b)
 	end
 	if invert then
@@ -10503,7 +10525,7 @@ function menu.uix_sortModsByName(a, b, invert)
 end
 
 function menu.uix_sortModsByID(a, b, invert)
-	if uix_modsorter_isShowActiveFirst ~= nil and a.enabled ~= b.enabled then
+	if __userdata_uix_gameoptions.modsorter_isShowActiveFirst ~= nil and a.enabled ~= b.enabled then
 		return menu.uix_sortByActive(a, b)
 	end
 	if invert then
@@ -10513,7 +10535,7 @@ function menu.uix_sortModsByID(a, b, invert)
 end
 
 function menu.uix_sortModsByAuthor(a, b, invert)
-	if uix_modsorter_isShowActiveFirst ~= nil and a.enabled ~= b.enabled then
+	if __userdata_uix_gameoptions.modsorter_isShowActiveFirst ~= nil and a.enabled ~= b.enabled then
 		return menu.uix_sortByActive(a, b)
 	end
 	if string.lower(a.author) == string.lower(b.author) then
@@ -10526,7 +10548,7 @@ function menu.uix_sortModsByAuthor(a, b, invert)
 end
 
 function menu.uix_sortModsByVersion(a, b, invert)
-	if uix_modsorter_isShowActiveFirst ~= nil and a.enabled ~= b.enabled then
+	if __userdata_uix_gameoptions.modsorter_isShowActiveFirst ~= nil and a.enabled ~= b.enabled then
 		return menu.uix_sortByActive(a, b)
 	end
 	if a.version == b.version then
@@ -10539,7 +10561,7 @@ function menu.uix_sortModsByVersion(a, b, invert)
 end
 
 function menu.uix_sortModsByDate(a, b, invert)
-	if uix_modsorter_isShowActiveFirst ~= nil and a.enabled ~= b.enabled then
+	if __userdata_uix_gameoptions.modsorter_isShowActiveFirst ~= nil and a.enabled ~= b.enabled then
 		return menu.uix_sortByActive(a, b)
 	end
 	return Helper.sortDate(a, b, invert)
@@ -10547,7 +10569,10 @@ end
 
 function menu.sortModExtensions(sorttype)
     local sorter
-	local invert = string.find(uix_modsortertype, "inverse") ~= nil
+    local invert
+    if __userdata_uix_gameoptions.modsortertype then
+		invert = string.find(__userdata_uix_gameoptions.modsortertype, "inverse") ~= nil
+	end
 
 	if sorttype == "name" or sorttype == "nameinverse" then
 		sorter = function(a, b) return menu.uix_sortModsByName(a, b, invert) end
@@ -10561,7 +10586,7 @@ function menu.sortModExtensions(sorttype)
 		sorter = function(a, b) return menu.uix_sortModsByDate(a, b, invert) end
 	else
 		-- sort by name by default
-		uix_modsortertype = "name"
+		__userdata_uix_gameoptions.modsortertype = "name"
 		sorter = function(a, b) return menu.uix_sortModsByName(a, b) end
 	end
     return sorter
@@ -10623,7 +10648,7 @@ function menu.displayModRow(ftable, extension, extensionSetting)
 
 	-- kuertee start: sort by author / id
 	-- row[3]:createText(extension.id, config.standardTextProperties)
-	if uix_modsorter_isShowAuthor then
+	if __userdata_uix_gameoptions.modsorter_isShowAuthor then
 		row[3]:createText(extension.author, config.standardTextProperties)
 	else
 		row[3]:createText(extension.id, config.standardTextProperties)
