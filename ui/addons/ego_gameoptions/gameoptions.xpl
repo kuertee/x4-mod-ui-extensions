@@ -3952,7 +3952,7 @@ function menu.createContextMenuRemap(frame)
 
 	for _, conflict in ipairs(menu.contextMenuData.conflicts) do
 		local row = ftable:addRow(true, {  })
-		row[1]:setColSpan(5):createText("Â· " .. menu.getControlName(conflict.control[1], conflict.control[2]), { color = (not conflict.mappable) and Color["text_error"] or nil })
+		row[1]:setColSpan(5):createText("· " .. menu.getControlName(conflict.control[1], conflict.control[2]), { color = (not conflict.mappable) and Color["text_error"] or nil })
 	end
 
 	local buttontable = frame:addTable(5, { tabOrder = 1, x = Helper.borderSize, y = Helper.borderSize, width = menu.contextMenuData.width, highlightMode = "off", defaultInteractiveObject = true })
@@ -4209,7 +4209,7 @@ function menu.createContextMenuUISecurity(frame)
 	local extensions = ffi.string(C.GetModifiedBasegameUIFilesExtensions())
 	local extensiontext = ReadText(1001, 12726) .. ReadText(1001, 120)
 	for extension in utf8.gmatch(extensions, "([^;]+)") do
-		extensiontext = extensiontext .. "\nÂ· " .. extension
+		extensiontext = extensiontext .. "\n· " .. extension
 	end
 	local row = ftable:addRow(false, { fixed = true })
 	row[1]:setColSpan(6):createText(extensiontext, { wordwrap = true })
@@ -4575,20 +4575,20 @@ function menu.displayControlRow(ftable, controlsgroup, controltype, code, contex
 						local showboth = false
 						if code == 130 then
 							if menu.mappedmousebuttons.targetinteract[buttons[i].input2] then
-								mouseovertext = mouseovertext .. "\nÂ· " .. text .. " (" .. ReadText(1026, 2688) .. ")" .. ReadText(1001, 120) .. " " .. menu.getControlName("states", 132)
+								mouseovertext = mouseovertext .. "\n· " .. text .. " (" .. ReadText(1026, 2688) .. ")" .. ReadText(1001, 120) .. " " .. menu.getControlName("states", 132)
 								showboth = true
 							end
 						elseif code == 131 then
 							if menu.mappedmousebuttons.targetselect[buttons[i].input2] then
-								mouseovertext = mouseovertext .. "\nÂ· " .. text .. " (" .. ReadText(1026, 2688) .. ")" .. ReadText(1001, 120) .. " " .. menu.getControlName("states", 132)
+								mouseovertext = mouseovertext .. "\n· " .. text .. " (" .. ReadText(1026, 2688) .. ")" .. ReadText(1001, 120) .. " " .. menu.getControlName("states", 132)
 								showboth = true
 							end
 						end
 						if not showboth then
-							mouseovertext = mouseovertext .. "\nÂ· " .. text .. " (" .. ReadText(1026, 2688) .. ")" .. ReadText(1001, 120) .. " " .. name
+							mouseovertext = mouseovertext .. "\n· " .. text .. " (" .. ReadText(1026, 2688) .. ")" .. ReadText(1001, 120) .. " " .. name
 						end
 						for _, control in ipairs(menu.mappedmousebuttons[buttons[i].input2]) do
-							mouseovertext = mouseovertext .. "\nÂ· " .. text .. " (" .. ReadText(1026, 2689) .. ")" .. ReadText(1001, 120) .. " " .. menu.getControlName(control[1], control[2])
+							mouseovertext = mouseovertext .. "\n· " .. text .. " (" .. ReadText(1026, 2689) .. ")" .. ReadText(1001, 120) .. " " .. menu.getControlName(control[1], control[2])
 						end
 					end
 				else
@@ -4624,8 +4624,8 @@ function menu.displayControlRow(ftable, controlsgroup, controltype, code, contex
 							hasextramousebuttoninfo = true
 
 							mouseovertext = mouseovertext .. ReadText(1026, 2687) .. ReadText(1001, 120)
-							mouseovertext = mouseovertext .. "\nÂ· " .. text .. " (" .. ReadText(1026, 2688) .. ")" .. ReadText(1001, 120) .. " " .. menu.getControlName("states", 132)
-							mouseovertext = mouseovertext .. "\nÂ· " .. text .. " (" .. ReadText(1026, 2689) .. ")" .. ReadText(1001, 120) .. " " .. name
+							mouseovertext = mouseovertext .. "\n· " .. text .. " (" .. ReadText(1026, 2688) .. ")" .. ReadText(1001, 120) .. " " .. menu.getControlName("states", 132)
+							mouseovertext = mouseovertext .. "\n· " .. text .. " (" .. ReadText(1026, 2689) .. ")" .. ReadText(1001, 120) .. " " .. name
 						elseif menu.mappedmousebuttons.targetselect[buttons[i].input2] then
 							if mouseovertext then
 								mouseovertext = mouseovertext .. "\n\n"
@@ -4638,8 +4638,8 @@ function menu.displayControlRow(ftable, controlsgroup, controltype, code, contex
 							hasextramousebuttoninfo = true
 
 							mouseovertext = mouseovertext .. ReadText(1026, 2687) .. ReadText(1001, 120)
-							mouseovertext = mouseovertext .. "\nÂ· " .. text .. " (" .. ReadText(1026, 2688) .. ")" .. ReadText(1001, 120) .. " " .. menu.getControlName("states", 130)
-							mouseovertext = mouseovertext .. "\nÂ· " .. text .. " (" .. ReadText(1026, 2689) .. ")" .. ReadText(1001, 120) .. " " .. name
+							mouseovertext = mouseovertext .. "\n· " .. text .. " (" .. ReadText(1026, 2688) .. ")" .. ReadText(1001, 120) .. " " .. menu.getControlName("states", 130)
+							mouseovertext = mouseovertext .. "\n· " .. text .. " (" .. ReadText(1026, 2689) .. ")" .. ReadText(1001, 120) .. " " .. name
 						elseif menu.mappedmousebuttons.targetinteract[buttons[i].input2] then
 							if mouseovertext then
 								mouseovertext = mouseovertext .. "\n\n"
@@ -4652,8 +4652,8 @@ function menu.displayControlRow(ftable, controlsgroup, controltype, code, contex
 							hasextramousebuttoninfo = true
 
 							mouseovertext = mouseovertext .. ReadText(1026, 2687) .. ReadText(1001, 120)
-							mouseovertext = mouseovertext .. "\nÂ· " .. text .. " (" .. ReadText(1026, 2688) .. ")" .. ReadText(1001, 120) .. " " .. menu.getControlName("states", 131)
-							mouseovertext = mouseovertext .. "\nÂ· " .. text .. " (" .. ReadText(1026, 2689) .. ")" .. ReadText(1001, 120) .. " " .. name
+							mouseovertext = mouseovertext .. "\n· " .. text .. " (" .. ReadText(1026, 2688) .. ")" .. ReadText(1001, 120) .. " " .. menu.getControlName("states", 131)
+							mouseovertext = mouseovertext .. "\n· " .. text .. " (" .. ReadText(1026, 2689) .. ")" .. ReadText(1001, 120) .. " " .. name
 						end
 					end
 				end
@@ -10250,6 +10250,13 @@ function menu.displayExtensions()
 	local offsety = titletable.properties.y + titletable:getVisibleHeight() + Helper.borderSize
 	local height = menu.table.height - offsety
 
+	-- forleyor start:
+	-- local optiontable = frame:addTable(7, { tabOrder = 1, x = menu.table.x, y = offsety, width = menu.table.widthExtraWide - infowidth - Helper.borderSize, maxVisibleHeight = height })
+	-- optiontable:setColWidth(1, menu.table.arrowColumnWidth, false)
+	-- optiontable:setColWidthPercent(2, 40)
+	-- optiontable:setColWidthPercent(4, 13)
+	-- optiontable:setColWidthPercent(6, 10)
+	-- optiontable:setColWidth(7, menu.table.arrowColumnWidth, false)
 	local optiontable = frame:addTable(9, { tabOrder = 1, x = menu.table.x, y = offsety, width = menu.table.widthExtraWide - infowidth - Helper.borderSize, maxVisibleHeight = height })
 	optiontable:setColWidth(1, menu.table.arrowColumnWidth, false)
 	optiontable:setColWidthPercent(2, 30)
@@ -10260,6 +10267,7 @@ function menu.displayExtensions()
 	optiontable:setColWidthPercent(7, 12)
 	optiontable:setColWidthPercent(8, 3)
 	optiontable:setColWidthPercent(9, 2)
+	-- forleyor end
 
 	local extensions = GetExtensionList()
 	menu.extensionSettings = GetAllExtensionSettings()
@@ -10270,18 +10278,33 @@ function menu.displayExtensions()
 
 		local row = optiontable:addRow("globalsync", {  })
 		row[2]:createText(ReadText(1001, 4830), config.standardTextProperties)
+
+		-- forleyor start:
+		-- row[6]:createButton({  }):setText(function () local text = menu.valueExtensionGlobalSync() return text end, { fontsize = config.standardFontSize, halign = "center", color = function () local _, color = menu.valueExtensionGlobalSync() return color end })
+		-- row[6].handlers.onClick = menu.buttonExtensionGlobalSync
 		row[9]:createButton({  }):setText(function () local text = menu.valueExtensionGlobalSync() return text end, { fontsize = config.standardFontSize, halign = "center", color = function () local _, color = menu.valueExtensionGlobalSync() return color end })
 		row[9].handlers.onClick = menu.buttonExtensionGlobalSync
+		-- forleyor end
 
 		local row = optiontable:addRow("workshop", {  })
+
+		-- forleyor start:
+		-- row[2]:setColSpan(5):createText(ReadText(1001, 4831), config.standardTextProperties)
 		row[2]:setColSpan(8):createText(ReadText(1001, 4831), config.standardTextProperties)
+		-- forleyor end
+
 	end
 
 	if #extensions > 0 then
 		addline = true
 
 		local row = optiontable:addRow( "defaults", {  })
+
+		-- forleyor start:
+		-- row[2]:setColSpan(6):createText(ReadText(1001, 2647), config.standardTextProperties)
 		row[2]:setColSpan(8):createText(ReadText(1001, 2647), config.standardTextProperties)
+		-- forleyor end
+
 		if menu.preselectOption == "defaults" then
 			optiontable:setSelectedRow(row.index)
 		end
@@ -10289,30 +10312,57 @@ function menu.displayExtensions()
 
 	if addline then
 		local row = optiontable:addRow(false, {  })
+
+		-- forleyor start:
+		-- row[2]:setColSpan(6):createText(" ", { fontsize = 1, height = Helper.borderSize, cellBGColor = Color["row_separator"] })
 		row[2]:setColSpan(8):createText(" ", { fontsize = 1, height = Helper.borderSize, cellBGColor = Color["row_separator"] })
+		-- forleyor end
+
 	end
 
 	local row = optiontable:addRow("uisecurity", {  })
 	row[2]:createText(ReadText(1001, 12723), config.standardTextProperties)
 	row[2].properties.mouseOverText = ReadText(1001, 12725)
 
-	-- kuertee start:
+	-- forleyor start:
+	-- row[6]:createButton({ mouseOverText = ReadText(1001, 12725) }):setText(function () return GetUISafeModeOption() and ReadText(1001, 12642) or ReadText(1001, 12641) end, { fontsize = config.standardFontSize, halign = "center" })
 	row[8]:setColSpan(2):createButton({ mouseOverText = ReadText(1001, 12725) }):setText(function () return GetUISafeModeOption() and ReadText(1001, 12642) or ReadText(1001, 12641) end, { fontsize = config.standardFontSize, halign = "center" })
-	-- row[6]:createButton({active = false, mouseOverText = ReadText(1001, 12725) }):setText(function () return GetUISafeModeOption() and ReadText(1001, 12642) or ReadText(1001, 12641) end, { fontsize = config.standardFontSize, halign = "center" })
-	-- kuertee end
+	-- forleyor end
 
+	-- forleyor start:
+	-- row[6].handlers.onClick = menu.buttonExtensionUISecurityMode
 	row[9].handlers.onClick = menu.buttonExtensionUISecurityMode
+	-- forleyor end
 
 	local row = optiontable:addRow(false, {  })
-	row[2]:setColSpan(8):createText(" ", { fontsize = 1, height = Helper.borderSize, cellBGColor = Color["row_separator"] })
 
+	-- forleyor start:
+	-- row[2]:setColSpan(8):createText(" ", { fontsize = 1, height = Helper.borderSize, cellBGColor = Color["row_separator"] })
+	row[2]:setColSpan(6):createText(" ", { fontsize = 1, height = Helper.borderSize, cellBGColor = Color["row_separator"] })
+	-- forleyor end
+
+	-- forleyor start:
 	-- row = optiontable:addRow(false, {  })
 	-- row[2]:createText(ReadText(1001, 8999), config.subHeaderLeftTextProperties)
 	-- row[3]:createText(ReadText(1001, 4823), config.subHeaderLeftTextProperties)
 	-- row[4]:createText(ReadText(1001, 2655), config.subHeaderLeftTextProperties)
 	-- row[5]:createText(ReadText(1001, 2691), config.subHeaderLeftTextProperties)
+	-- forleyor end
+
 	if #extensions > 0 then
+		-- forleyor start:
 		-- table.sort(extensions, menu.extensionSorter)
+		-- local lastextensiongroup
+		-- for _, extension in ipairs(extensions) do
+		--	local extensiongroup = menu.getExtensionGroup(extension)
+		--	if lastextensiongroup and extensiongroup ~= lastextensiongroup then
+		--		-- add separators between extension groups
+		--		row = optiontable:addRow(false, {  })
+		--		row[2]:setColSpan(6):createText(" ", { fontsize = 1, height = Helper.borderSize, cellBGColor = Color["row_separator"] })
+		--	end
+		--	menu.displayExtensionRow(optiontable, extension, menu.extensionSettings[extension.index])
+		--	lastextensiongroup = extensiongroup
+		-- end
 		local egosoftextensions = {}
 		local modextensions = {}
 
@@ -10339,6 +10389,8 @@ function menu.displayExtensions()
 		end
 
 		table.sort(modextensions, menu.sortModExtensions(uix_modsortertype))
+		-- forleyor end
+
 	else
 		local row = optiontable:addRow(false, {  })
 		row[2]:setColSpan(2):createText(ReadText(1001, 2693), config.disabledTextProperties)
@@ -10360,7 +10412,7 @@ function menu.displayExtensions()
 	frame:display()
 end
 
--- UIX Mod sorter row
+-- Forleyor: UIX EXTENSIONS SORTING START
 function menu.createSorters(ftable, sortertype)
 	local row = ftable:addRow(true, { })
 	local buttonheight = Helper.scaleY(config.standardTextHeight)
@@ -10493,7 +10545,6 @@ function menu.sortModExtensions(sorttype)
     return sorter
 end
 
-
 function menu.addDLCTitle(ftable, ismods)
 	local row = ftable:addRow(false, {  })
 	row[2]:createText(ReadText(1001, 8999), config.subHeaderLeftTextProperties)
@@ -10501,6 +10552,7 @@ function menu.addDLCTitle(ftable, ismods)
 	row[5]:setColSpan(2):createText(ReadText(1001, 2655), config.subHeaderLeftTextProperties)
 	row[7]:setColSpan(3):createText(ReadText(1001, 2691), config.subHeaderLeftTextProperties)
 end
+-- forleyor end
 
 function menu.displayExtensionRow(ftable, extension, extensionSetting)
 	local row = ftable:addRow(extension, {  })
@@ -10513,6 +10565,7 @@ function menu.displayExtensionRow(ftable, extension, extensionSetting)
 		textcolor = Color["text_error"]
 	elseif extension.warning then
 		textcolor = Color["text_warning"]
+
 	-- kuertee start: gray disabled extensions
 	elseif not extension.enabled then
 		textcolor = Helper.color.grey
@@ -10522,12 +10575,23 @@ function menu.displayExtensionRow(ftable, extension, extensionSetting)
 	row[2]:createText(extension.name, config.standardTextProperties)
 	row[2].properties.color = textcolor
 	row[3]:createText(extension.id, config.standardTextProperties)
+
+	-- forleyor start:
+	-- row[4]:createText(extension.version, config.standardTextProperties)
+	-- row[4].properties.halign = "right"
+	-- row[5]:createText(extension.date, config.standardTextProperties)
+	-- row[5].properties.halign = "right"
+	-- row[6]:createButton({ }):setText(function() return menu.valueExtensionStatus(extension) end, { fontsize = config.standardFontSize, halign = "center", color = function () local _, color = menu.valueExtensionStatus(extension); return color end })
+	-- row[6].handlers.onClick = function () return menu.callbackExtensionSettingEnabled(extension) end
+	-- row[7]:createButton({ }):setText("...", { fontsize = config.standardFontSize, halign = "center" })
+	-- row[7].handlers.onClick = function () menu.selectedExtension = extension; menu.openSubmenu("extensionsettings", extension.id) end
 	row[5]:createText(extension.version, config.standardTextProperties)
 	row[7]:createText(extension.date, config.standardTextProperties)
 	row[8]:createButton({ }):setText(function() return menu.valueExtensionStatus(extension) end, { fontsize = config.standardFontSize, halign = "center", color = function () local _, color = menu.valueExtensionStatus(extension); return color end })
 	row[8].handlers.onClick = function () return menu.callbackExtensionSettingEnabled(extension) end
 	row[9]:createButton({ }):setText("...", { fontsize = config.standardFontSize, halign = "center" })
 	row[9].handlers.onClick = function () menu.selectedExtension = extension; menu.openSubmenu("extensionsettings", extension.id) end
+	-- forleyor end
 end
 
 function menu.displayModRow(ftable, extension, extensionSetting)
