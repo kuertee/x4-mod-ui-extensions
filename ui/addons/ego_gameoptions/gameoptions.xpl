@@ -389,7 +389,8 @@ local menu = {
 -- kuertee start:
 menu.uix_callbacks = {}
 local uix_modsortertype = "name"
-local uix_modsorter_isshowauthor = true
+local uix_modsorter_isShowAuthor = true
+local uix_modsorter_isShowActiveFirst = true
 -- kuertee end
 
 local function init()
@@ -10197,29 +10198,7 @@ function menu.extensionSorter(a, b)
 		end
 		return Helper.sortDate(a, b)	-- sort DLC of either type by date
 	end
-
-	-- kuertee start: sort by enabled, then by author, then by name
-	-- return Helper.sortName(a, b)		-- sort other extensions by name
-	if a.enabled and b.enabled then
-		-- sort by author then by name
-		if string.lower(a.author) == string.lower(b.author) then
-			return string.lower(a.name) < string.lower(b.name)
-		else
-			return string.lower(a.author) < string.lower(b.author)
-		end
-	elseif a.enabled then
-		return true
-	elseif b.enabled then
-		return false
-	else
-		-- sort by author then by name
-		if string.lower(a.author) == string.lower(b.author) then
-			return string.lower(a.name) < string.lower(b.name)
-		else
-			return string.lower(a.author) < string.lower(b.author)
-		end
-	end
-	-- kuertee end: sort by enabled, then by author, then by name
+	return Helper.sortName(a, b)		-- sort other extensions by name
 end
 
 -- Forleyor: UIX EXTENSIONS SORTING START
@@ -10381,7 +10360,7 @@ function menu.createSorters(ftable, sortertype)
 	local row = ftable:addRow(true, { })
 	local buttonheight = Helper.scaleY(config.standardTextHeight)
 
-	local icon_normalSort, icon_inverseSort = "\27[widget_arrow_down_01]\27X", "\27[widget_arrow_up_01]\27X"
+	local icon_normalSort, icon_inverseSort, icon_cross = "\27[widget_arrow_down_01]\27X", "\27[widget_arrow_up_01]\27X", "\27[widget_cross_01]\27X"
 	local icon_current = ""
 
 	if uix_modsortertype == "name" then
@@ -10389,7 +10368,7 @@ function menu.createSorters(ftable, sortertype)
 	elseif uix_modsortertype == "nameinverse" then
 		icon_current = " " .. icon_inverseSort
 	end
-	local button = row[2]:createButton({ scaling = false, height = buttonheight }):setText(ReadText(1001, 8999) .. icon_current, { halign = "left", scaling = true })
+	local button = row[2]:createButton({ scaling = false, height = buttonheight }):setText(ReadText(1001, 8999) .. icon_current, { halign = "center", scaling = true })
 	row[2].handlers.onClick = function ()
 		if uix_modsortertype == "name" then
 			uix_modsortertype = "nameinverse"
@@ -10408,14 +10387,14 @@ function menu.createSorters(ftable, sortertype)
 		icon_current = " " .. icon_inverseSort
 	end
 	local button
-	if uix_modsorter_isshowauthor then
-		button = row[3]:createButton({ scaling = false, height = buttonheight }):setText(ReadText(1001, 2690) .. icon_current .. " / " .. ReadText(1001, 4823), { halign = "left", scaling = true })
+	if uix_modsorter_isShowAuthor then
+		button = row[3]:createButton({ scaling = false, height = buttonheight }):setText(ReadText(1001, 2690) .. icon_current .. " / " .. ReadText(1001, 4823), { halign = "center", scaling = true })
 	else
-		button = row[3]:createButton({ scaling = false, height = buttonheight }):setText(ReadText(1001, 2690) .. " / " .. ReadText(1001, 4823) .. icon_current, { halign = "left", scaling = true })
+		button = row[3]:createButton({ scaling = false, height = buttonheight }):setText(ReadText(1001, 2690) .. " / " .. ReadText(1001, 4823) .. icon_current, { halign = "center", scaling = true })
 	end
 	row[3].handlers.onClick = function ()
 		-- if uix_modsortertype ~= "author" and uix_modsortertype ~= "id" and uix_modsortertype ~= "authorinverse" and uix_modsortertype ~= "idinverse" then
-		-- 	if uix_modsorter_isshowauthor then
+		-- 	if uix_modsorter_isShowAuthor then
 		-- 		uix_modsortertype = "id"
 		-- 	else
 		-- 		uix_modsortertype = "author"
@@ -10423,17 +10402,17 @@ function menu.createSorters(ftable, sortertype)
 		-- elseif uix_modsortertype == "author" then
 		if uix_modsortertype == "author" then
 			uix_modsortertype = "authorinverse"
-			uix_modsorter_isshowauthor = true
+			uix_modsorter_isShowAuthor = true
 		elseif uix_modsortertype == "authorinverse" then
 			uix_modsortertype = "id"
-			uix_modsorter_isshowauthor = nil
+			uix_modsorter_isShowAuthor = nil
 		elseif uix_modsortertype == "id" then
 			uix_modsortertype = "idinverse"
-			uix_modsorter_isshowauthor = nil
+			uix_modsorter_isShowAuthor = nil
 		elseif uix_modsortertype == "idinverse" then
 			uix_modsortertype = "author"
-			uix_modsorter_isshowauthor = true
-		elseif uix_modsorter_isshowauthor then
+			uix_modsorter_isShowAuthor = true
+		elseif uix_modsorter_isShowAuthor then
 			uix_modsortertype = "author"
 		else
 			uix_modsortertype = "id"
@@ -10447,7 +10426,7 @@ function menu.createSorters(ftable, sortertype)
 	elseif uix_modsortertype == "versioninverse" then
 		icon_current = " " .. icon_inverseSort
 	end
-	local button = row[4]:createButton({ scaling = false, height = buttonheight }):setText(ReadText(1001, 2655) .. icon_current, { halign = "left", scaling = true })
+	local button = row[4]:createButton({ scaling = false, height = buttonheight }):setText(ReadText(1001, 2655) .. icon_current, { halign = "center", scaling = true })
 	row[4].handlers.onClick = function ()
 		if uix_modsortertype == "version" then
 			uix_modsortertype = "versioninverse"
@@ -10463,7 +10442,7 @@ function menu.createSorters(ftable, sortertype)
 	elseif uix_modsortertype == "dateinverse" then
 		icon_current = " " .. icon_inverseSort
 	end
-	local button = row[5]:createButton({ scaling = false, height = buttonheight }):setText(ReadText(1001, 2691) .. icon_current, { halign = "left", scaling = true })
+	local button = row[5]:createButton({ scaling = false, height = buttonheight }):setText(ReadText(1001, 2691) .. icon_current, { halign = "center", scaling = true })
 	row[5].handlers.onClick = function ()
 		if uix_modsortertype == "date" then
 			uix_modsortertype = "dateinverse"
@@ -10472,65 +10451,98 @@ function menu.createSorters(ftable, sortertype)
 		end
 		menu.refresh()
 	end
+
+	-- <t id="4825">Enabled</t>
+	-- <t id="8942">Disabled</t>
+    -- <t id="12207">Active</t>
+    -- <t id="12208">Inactive</t>
+	if uix_modsorter_isShowActiveFirst == true then
+		icon_current = " " .. icon_normalSort
+	elseif uix_modsorter_isShowActiveFirst == false then
+		icon_current = " " .. icon_inverseSort
+	else
+		icon_current = " " .. icon_cross
+	end
+	local button = row[6]:setColSpan(2):createButton({ scaling = false, height = buttonheight }):setText(ReadText(1001, 12207) .. icon_current, { halign = "center", scaling = true })
+	row[6].handlers.onClick = function ()
+		if uix_modsorter_isShowActiveFirst == true then
+			uix_modsorter_isShowActiveFirst = false
+		elseif uix_modsorter_isShowActiveFirst == false then
+			uix_modsorter_isShowActiveFirst = nil
+		else
+			uix_modsorter_isShowActiveFirst = true
+		end
+		menu.refresh()
+	end
 end
 
 -- UIX Mod Sorter
-function menu.sortModsByName(a, b, invert)
+function menu.uix_sortByActive(a, b)
+	if uix_modsorter_isShowActiveFirst == true then
+		if a.enabled then
+			return true
+		else
+			return false
+		end
+    end
+    if a.enabled then
+    	return false
+    else
+    	return true
+    end
+end
+
+function menu.uix_sortModsByName(a, b, invert)
+	if uix_modsorter_isShowActiveFirst ~= nil and a.enabled ~= b.enabled then
+		return menu.uix_sortByActive(a, b)
+	end
 	if invert then
 		return string.lower(a.name) > string.lower(b.name)
     end
-
 	return string.lower(a.name) < string.lower(b.name)
 end
 
-function menu.sortModsByID(a, b, invert)
+function menu.uix_sortModsByID(a, b, invert)
+	if uix_modsorter_isShowActiveFirst ~= nil and a.enabled ~= b.enabled then
+		return menu.uix_sortByActive(a, b)
+	end
 	if invert then
         return string.lower(a.id) > string.lower(b.id)
     end
-	
 	return string.lower(a.id) < string.lower(b.id)
 end
 
-function menu.sortModsByAuthor(a, b, invert)
+function menu.uix_sortModsByAuthor(a, b, invert)
+	if uix_modsorter_isShowActiveFirst ~= nil and a.enabled ~= b.enabled then
+		return menu.uix_sortByActive(a, b)
+	end
+	if string.lower(a.author) == string.lower(b.author) then
+		return menu.uix_sortModsByName(a, b)
+	end
 	if invert then
         return string.lower(a.author) > string.lower(b.author)
     end
-	
 	return string.lower(a.author) < string.lower(b.author)
 end
 
-function menu.sortModsByVersion(a, b, invert)
+function menu.uix_sortModsByVersion(a, b, invert)
+	if uix_modsorter_isShowActiveFirst ~= nil and a.enabled ~= b.enabled then
+		return menu.uix_sortByActive(a, b)
+	end
+	if a.version == b.version then
+		return menu.uix_sortModsByName(a, b)
+	end
 	if invert then
         return a.version > b.version
     end
-	
 	return a.version < b.version
 end
 
-function menu.sortModsByWorkshop(a, b, invert)
-	if invert then
-        return a.isworkshop > b.isworkshop
-    end
-	
-	return a.isworkshop < b.isworkshop
-end
-
-function menu.sortModsByDate(a, b, invert)
-	if invert then
-        return a.date > b.date
-    end
-	
-	return a.date < b.date
-end
-
-function menu.modSorterClick(sorttype)
-    if uix_modsortertype == sorttype then
-        uix_modsortertype = sorttype .. "inverse"
-    else
-        uix_modsortertype = sorttype
-    end
-
-	menu.displayExtensions()
+function menu.uix_sortModsByDate(a, b, invert)
+	if uix_modsorter_isShowActiveFirst ~= nil and a.enabled ~= b.enabled then
+		return menu.uix_sortByActive(a, b)
+	end
+	return Helper.sortDate(a, b, invert)
 end
 
 function menu.sortModExtensions(sorttype)
@@ -10538,21 +10550,19 @@ function menu.sortModExtensions(sorttype)
 	local invert = string.find(uix_modsortertype, "inverse") ~= nil
 
 	if sorttype == "name" or sorttype == "nameinverse" then
-		sorter = function(a, b) return menu.sortModsByName(a, b, invert) end
+		sorter = function(a, b) return menu.uix_sortModsByName(a, b, invert) end
 	elseif sorttype == "id" or sorttype == "idinverse" then
-		sorter = function(a, b) return menu.sortModsByID(a, b, invert) end
+		sorter = function(a, b) return menu.uix_sortModsByID(a, b, invert) end
 	elseif sorttype == "author" or sorttype == "authorinverse" then
-		sorter = function(a, b) return menu.sortModsByAuthor(a, b, invert) end
+		sorter = function(a, b) return menu.uix_sortModsByAuthor(a, b, invert) end
 	elseif sorttype == "version" or sorttype == "versioninverse" then
-		sorter = function(a, b) return menu.sortModsByVersion(a, b, invert) end
-	elseif sorttype == "workshop" or sorttype == "workshopinverse" then
-		sorter = function(a, b) return menu.sortModsByWorkshop(a, b, invert) end
+		sorter = function(a, b) return menu.uix_sortModsByVersion(a, b, invert) end
 	elseif sorttype == "date" or sorttype == "dateinverse" then
-		sorter = function(a, b) return menu.sortModsByDate(a, b, invert) end
+		sorter = function(a, b) return menu.uix_sortModsByDate(a, b, invert) end
 	else
 		-- sort by name by default
 		uix_modsortertype = "name"
-		sorter = function(a, b) return menu.sortModsByName(a, b) end
+		sorter = function(a, b) return menu.uix_sortModsByName(a, b) end
 	end
     return sorter
 end
@@ -10613,7 +10623,7 @@ function menu.displayModRow(ftable, extension, extensionSetting)
 
 	-- kuertee start: sort by author / id
 	-- row[3]:createText(extension.id, config.standardTextProperties)
-	if uix_modsorter_isshowauthor then
+	if uix_modsorter_isShowAuthor then
 		row[3]:createText(extension.author, config.standardTextProperties)
 	else
 		row[3]:createText(extension.id, config.standardTextProperties)

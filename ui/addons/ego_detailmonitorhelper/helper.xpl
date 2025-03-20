@@ -12941,7 +12941,7 @@ function Helper.debugText(data1, data2, indent, isForced)
 			indent = ""
 		end
 		if data1 then
-			if not data2 then
+			if data2 == nil then
 				DebugError ("uix: " .. indent .. tostring (data1))
 			else
 				DebugError ("uix: " .. indent .. tostring (data1) .. " = " .. tostring(data2))
