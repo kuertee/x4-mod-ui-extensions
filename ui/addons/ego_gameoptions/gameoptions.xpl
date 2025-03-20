@@ -10250,24 +10250,12 @@ function menu.displayExtensions()
 	local offsety = titletable.properties.y + titletable:getVisibleHeight() + Helper.borderSize
 	local height = menu.table.height - offsety
 
-	-- forleyor start:
-	-- local optiontable = frame:addTable(7, { tabOrder = 1, x = menu.table.x, y = offsety, width = menu.table.widthExtraWide - infowidth - Helper.borderSize, maxVisibleHeight = height })
-	-- optiontable:setColWidth(1, menu.table.arrowColumnWidth, false)
-	-- optiontable:setColWidthPercent(2, 40)
-	-- optiontable:setColWidthPercent(4, 13)
-	-- optiontable:setColWidthPercent(6, 10)
-	-- optiontable:setColWidth(7, menu.table.arrowColumnWidth, false)
-	local optiontable = frame:addTable(9, { tabOrder = 1, x = menu.table.x, y = offsety, width = menu.table.widthExtraWide - infowidth - Helper.borderSize, maxVisibleHeight = height })
+	local optiontable = frame:addTable(7, { tabOrder = 1, x = menu.table.x, y = offsety, width = menu.table.widthExtraWide - infowidth - Helper.borderSize, maxVisibleHeight = height })
 	optiontable:setColWidth(1, menu.table.arrowColumnWidth, false)
-	optiontable:setColWidthPercent(2, 30)
-	optiontable:setColWidthPercent(3, 20)
-	optiontable:setColWidthPercent(4, 18)
-	optiontable:setColWidthPercent(5, 8)
+	optiontable:setColWidthPercent(2, 40)
+	optiontable:setColWidthPercent(4, 13)
 	optiontable:setColWidthPercent(6, 10)
-	optiontable:setColWidthPercent(7, 12)
-	optiontable:setColWidthPercent(8, 3)
-	optiontable:setColWidthPercent(9, 2)
-	-- forleyor end
+	optiontable:setColWidth(7, menu.table.arrowColumnWidth, false)
 
 	local extensions = GetExtensionList()
 	menu.extensionSettings = GetAllExtensionSettings()
@@ -10278,33 +10266,18 @@ function menu.displayExtensions()
 
 		local row = optiontable:addRow("globalsync", {  })
 		row[2]:createText(ReadText(1001, 4830), config.standardTextProperties)
-
-		-- forleyor start:
-		-- row[6]:createButton({  }):setText(function () local text = menu.valueExtensionGlobalSync() return text end, { fontsize = config.standardFontSize, halign = "center", color = function () local _, color = menu.valueExtensionGlobalSync() return color end })
-		-- row[6].handlers.onClick = menu.buttonExtensionGlobalSync
-		row[9]:createButton({  }):setText(function () local text = menu.valueExtensionGlobalSync() return text end, { fontsize = config.standardFontSize, halign = "center", color = function () local _, color = menu.valueExtensionGlobalSync() return color end })
-		row[9].handlers.onClick = menu.buttonExtensionGlobalSync
-		-- forleyor end
+		row[6]:createButton({  }):setText(function () local text = menu.valueExtensionGlobalSync() return text end, { fontsize = config.standardFontSize, halign = "center", color = function () local _, color = menu.valueExtensionGlobalSync() return color end })
+		row[6].handlers.onClick = menu.buttonExtensionGlobalSync
 
 		local row = optiontable:addRow("workshop", {  })
-
-		-- forleyor start:
-		-- row[2]:setColSpan(5):createText(ReadText(1001, 4831), config.standardTextProperties)
-		row[2]:setColSpan(8):createText(ReadText(1001, 4831), config.standardTextProperties)
-		-- forleyor end
-
+		row[2]:setColSpan(5):createText(ReadText(1001, 4831), config.standardTextProperties)
 	end
 
 	if #extensions > 0 then
 		addline = true
 
 		local row = optiontable:addRow( "defaults", {  })
-
-		-- forleyor start:
-		-- row[2]:setColSpan(6):createText(ReadText(1001, 2647), config.standardTextProperties)
-		row[2]:setColSpan(8):createText(ReadText(1001, 2647), config.standardTextProperties)
-		-- forleyor end
-
+		row[2]:setColSpan(6):createText(ReadText(1001, 2647), config.standardTextProperties)
 		if menu.preselectOption == "defaults" then
 			optiontable:setSelectedRow(row.index)
 		end
@@ -10312,43 +10285,28 @@ function menu.displayExtensions()
 
 	if addline then
 		local row = optiontable:addRow(false, {  })
-
-		-- forleyor start:
-		-- row[2]:setColSpan(6):createText(" ", { fontsize = 1, height = Helper.borderSize, cellBGColor = Color["row_separator"] })
-		row[2]:setColSpan(8):createText(" ", { fontsize = 1, height = Helper.borderSize, cellBGColor = Color["row_separator"] })
-		-- forleyor end
-
+		row[2]:setColSpan(6):createText(" ", { fontsize = 1, height = Helper.borderSize, cellBGColor = Color["row_separator"] })
 	end
 
 	local row = optiontable:addRow("uisecurity", {  })
 	row[2]:createText(ReadText(1001, 12723), config.standardTextProperties)
 	row[2].properties.mouseOverText = ReadText(1001, 12725)
 
-	-- forleyor start:
-	-- row[6]:createButton({ mouseOverText = ReadText(1001, 12725) }):setText(function () return GetUISafeModeOption() and ReadText(1001, 12642) or ReadText(1001, 12641) end, { fontsize = config.standardFontSize, halign = "center" })
-	row[8]:setColSpan(2):createButton({ mouseOverText = ReadText(1001, 12725) }):setText(function () return GetUISafeModeOption() and ReadText(1001, 12642) or ReadText(1001, 12641) end, { fontsize = config.standardFontSize, halign = "center" })
-	-- forleyor end
+	-- kuertee start:
+	row[6]:createButton({ mouseOverText = ReadText(1001, 12725) }):setText(function () return GetUISafeModeOption() and ReadText(1001, 12642) or ReadText(1001, 12641) end, { fontsize = config.standardFontSize, halign = "center" })
+	-- row[6]:createButton({active = false, mouseOverText = ReadText(1001, 12725) }):setText(function () return GetUISafeModeOption() and ReadText(1001, 12642) or ReadText(1001, 12641) end, { fontsize = config.standardFontSize, halign = "center" })
+	-- kuertee end
 
-	-- forleyor start:
-	-- row[6].handlers.onClick = menu.buttonExtensionUISecurityMode
-	row[9].handlers.onClick = menu.buttonExtensionUISecurityMode
-	-- forleyor end
+	row[6].handlers.onClick = menu.buttonExtensionUISecurityMode
 
 	local row = optiontable:addRow(false, {  })
-
-	-- forleyor start:
-	-- row[2]:setColSpan(8):createText(" ", { fontsize = 1, height = Helper.borderSize, cellBGColor = Color["row_separator"] })
 	row[2]:setColSpan(6):createText(" ", { fontsize = 1, height = Helper.borderSize, cellBGColor = Color["row_separator"] })
-	-- forleyor end
 
-	-- forleyor start:
-	-- row = optiontable:addRow(false, {  })
-	-- row[2]:createText(ReadText(1001, 8999), config.subHeaderLeftTextProperties)
-	-- row[3]:createText(ReadText(1001, 4823), config.subHeaderLeftTextProperties)
-	-- row[4]:createText(ReadText(1001, 2655), config.subHeaderLeftTextProperties)
-	-- row[5]:createText(ReadText(1001, 2691), config.subHeaderLeftTextProperties)
-	-- forleyor end
-
+	row = optiontable:addRow(false, {  })
+	row[2]:createText(ReadText(1001, 8999), config.subHeaderLeftTextProperties)
+	row[3]:createText(ReadText(1001, 4823), config.subHeaderLeftTextProperties)
+	row[4]:createText(ReadText(1001, 2655), config.subHeaderLeftTextProperties)
+	row[5]:createText(ReadText(1001, 2691), config.subHeaderLeftTextProperties)
 	if #extensions > 0 then
 		-- forleyor start:
 		-- table.sort(extensions, menu.extensionSorter)
@@ -10575,23 +10533,14 @@ function menu.displayExtensionRow(ftable, extension, extensionSetting)
 	row[2]:createText(extension.name, config.standardTextProperties)
 	row[2].properties.color = textcolor
 	row[3]:createText(extension.id, config.standardTextProperties)
-
-	-- forleyor start:
-	-- row[4]:createText(extension.version, config.standardTextProperties)
-	-- row[4].properties.halign = "right"
-	-- row[5]:createText(extension.date, config.standardTextProperties)
-	-- row[5].properties.halign = "right"
-	-- row[6]:createButton({ }):setText(function() return menu.valueExtensionStatus(extension) end, { fontsize = config.standardFontSize, halign = "center", color = function () local _, color = menu.valueExtensionStatus(extension); return color end })
-	-- row[6].handlers.onClick = function () return menu.callbackExtensionSettingEnabled(extension) end
-	-- row[7]:createButton({ }):setText("...", { fontsize = config.standardFontSize, halign = "center" })
-	-- row[7].handlers.onClick = function () menu.selectedExtension = extension; menu.openSubmenu("extensionsettings", extension.id) end
-	row[5]:createText(extension.version, config.standardTextProperties)
-	row[7]:createText(extension.date, config.standardTextProperties)
-	row[8]:createButton({ }):setText(function() return menu.valueExtensionStatus(extension) end, { fontsize = config.standardFontSize, halign = "center", color = function () local _, color = menu.valueExtensionStatus(extension); return color end })
-	row[8].handlers.onClick = function () return menu.callbackExtensionSettingEnabled(extension) end
-	row[9]:createButton({ }):setText("...", { fontsize = config.standardFontSize, halign = "center" })
-	row[9].handlers.onClick = function () menu.selectedExtension = extension; menu.openSubmenu("extensionsettings", extension.id) end
-	-- forleyor end
+	row[4]:createText(extension.version, config.standardTextProperties)
+	row[4].properties.halign = "right"
+	row[5]:createText(extension.date, config.standardTextProperties)
+	row[5].properties.halign = "right"
+	row[6]:createButton({ }):setText(function() return menu.valueExtensionStatus(extension) end, { fontsize = config.standardFontSize, halign = "center", color = function () local _, color = menu.valueExtensionStatus(extension); return color end })
+	row[6].handlers.onClick = function () return menu.callbackExtensionSettingEnabled(extension) end
+	row[7]:createButton({ }):setText("...", { fontsize = config.standardFontSize, halign = "center" })
+	row[7].handlers.onClick = function () menu.selectedExtension = extension; menu.openSubmenu("extensionsettings", extension.id) end
 end
 
 function menu.displayModRow(ftable, extension, extensionSetting)
