@@ -6333,6 +6333,10 @@ function menu.warningIconOnline()
 	local iconcolor = Color["icon_warning"]
 
 	local state = OnlineGetVersionIncompatibilityState()
+	-- kuertee start:
+	state = 0
+	-- kuertee end
+
 	local dlcstate = config.ventureDLCStates[C.GetVentureDLCStatus()] or "unknownerror"
 	if state ~= 0 then
 		iconcolor = Color["icon_error"]
