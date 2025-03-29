@@ -16,42 +16,31 @@ Unfortunately, due to how this mod is built, disabling or enabling Protected UI 
 
 v7.5 NOTES FOR MOD DEVELOPERS:
 ==============================
-[ol]
-[li] PROTECTED UI MODE:
-Mods that use UI Extensions will need the Protected UI Mode setting in the Extensions menu disabled.[/li]
-
-[li] LOADING CUSTOM LUAS:
-ModSupportAPIs' Lua_Loader (and in extension its <raise_lua_event name="'Lua_Loader.Load'" param="'X'"/>) no longer function.[/li]
-
-[li] UI.XML FILE:
-To load custom lua files, use ui.xml as described here: https://wiki.egosoft.com:1337/X%20Rebirth%20Wiki/Modding%20support/UI%20Modding%20support/Getting%20started%20guide/
-	[ul]
-		[li] Note that guideline is for X Rebirth. But its use in X4 is similar.[/li]
-		[li] Here is the extensions\kuertee_alternatives_to_death\ui.xml file for my mod Alternatives To Death:[/li]
-		[li]
-		[code]<?xml version="1.0" encoding="UTF-8"?>
-		<addon name="kuertee_alternatives_to_death" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../ui/core/addon.xsd">
-		  <environment type="menus">
-		    <file name="ui/gameoptions_uix.lua" />
-		    <file name="ui/menu_toplevel_uix.lua" />
-		    <dependency name="ego_detailmonitor" />
-		  </environment>
-		</addon>[/code]
-		[/li]
-		[li] With the game now loading custom lua files (instead of UIX loading them), make sure that any init() functions are called after they are loaded.[/li]
-		[li] note: Pre 7.5 UIX loaded and, if set-up a particularly way like my mods are, UIX also called their init() functions.[/li]
-		[li] E.g. instead of "return ModLua" at the bottom of my mods' custom lua files, I now call "ModLua.init()". E.g.: kuertee_uix_mod_sample from UIX's Nexus Mods page (https://www.nexusmods.com/x4foundations/mods/552). [/li]
-	[/ul]
-[/li]
-[/ol]
+1. PROTECTED UI MODE: Mods that use UI Extensions will need the Protected UI Mode setting in the Extensions menu disabled.
+2. LOADING CUSTOM LUAS: ModSupportAPIs' `Lua_Loader` (and in extension its `<raise_lua_event name="'Lua_Loader.Load'" param="'X'"/>)` no longer function.
+3. UI.XML FILE: To load custom lua files, use ui.xml as described here: https://wiki.egosoft.com:1337/X%20Rebirth%20Wiki/Modding%20support/UI%20Modding%20support/Getting%20started%20guide/
+   - Note that guideline is for X Rebirth. But its use in X4 is similar.[/li]
+   - Here is the extensions\kuertee_alternatives_to_death\ui.xml file for my mod Alternatives To Death:
+   ```xml
+   <?xml version="1.0" encoding="UTF-8"?>
+   <addon name="kuertee_alternatives_to_death" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../ui/core/addon.xsd">
+     <environment type="menus">
+       <file name="ui/gameoptions_uix.lua" />
+       <file name="ui/menu_toplevel_uix.lua" />
+       <dependency name="ego_detailmonitor" />
+     </environment>
+   </addon>
+   ```
+   - With the game now loading custom lua files (instead of UIX loading them), make sure that any init() functions are called after they are loaded.
+   - note: Pre 7.5 UIX loaded and, if set-up a particular way like my mods are, UIX also called their init() functions.
+   - E.g. instead of "return ModLua" at the bottom of my mods' custom lua files, I now call "ModLua.init()". E.g.: kuertee_uix_mod_sample from UIX's Nexus Mods page (https://www.nexusmods.com/x4foundations/mods/552).
 
 Instructions for players
 ========================
-Disable Protected UI Mode in the Settings > Extensions menu.
-Install UI Extensions as normal.
-When extracting the package from github, ensure that the folder you install the mod to is: "(X4 game)/extensions/kuertee_ui_extensions/".
-Extracting the package from Nexus Mods will extract it to "(X4 game)/extensions/kuertee_ui_extensions/". But be sure it does anyway.
-Read the CHANGES BUILT INTO THIS MOD (for players) section.
+- Disable Protected UI Mode in the Settings > Extensions menu.
+- Install UI Extensions as normal.
+- When extracting the package from github, ensure that the folder you install the mod to is: "(X4 game)/extensions/kuertee_ui_extensions/". Extracting the package from Nexus Mods will extract it to "(X4 game)/extensions/kuertee_ui_extensions/". But be sure it does anyway.
+- Read the CHANGES BUILT INTO THIS MOD (for players) section.
 
 Instructions for developers
 ===========================
@@ -59,15 +48,15 @@ An overview on how to mod for UIX:
 1. Install the mod as a player.
 2. Copy the "(X4 game)/extensions/kuertee_ui_extensions/ui" folder into the "(X4 game)/ui" folder. This will overwrite UIX's XPL files into the game.
 3. Launch the game with the "-prefersinglefiles" option. This will make the game use UIX XPL files instead of the base game's corresponding files that are in its cat/dat files.
-4. Examine one of the callbacks in any of those XPL files. Search for "callback". Add any callback you need in any of the XPL files IN THE GAME FOLDER. If you need a add callbacks to a menu file that UIX doesn't have let me know (on Discord, Nexus or kuertee@gmail.com).
+4. Examine one of the callbacks in any of those XPL files. Search for "callback". Add any callback you need in any of the XPL files IN THE GAME FOLDER. If you need any callbacks added to a menu file that UIX doesn't have let me know (on Discord, Nexus or kuertee@gmail.com).
 5. When done adding your callbacks, send me the changed XPL files.
 6. I'll merge them with the master UIX files.
 7. We'll coordinate release dates so that the new UIX mod with your callbacks is released near the time you release your mod.
 
-An an alternative installation instructions for advanced developers:
+Alternative installation instructions for advanced developers:
 1. Pull the github files into the "(X4 game)/extensions/kuertee_ui_extensions" folder.
 2. To copy the UIX XPL files that are in "(X4 game)/extensions/kuertee_ui_extensions/ui" to the "game/ui" folder, run the "dev-make_symlink_files.bat". This will copy-linked files from UIX's folder into the game folder. Any changes you make in the UIX folder will be automatically mirrored in the files in the game folder.
-3. Examine one of the callbacks in any of those XPL files. Search for "callback". Add any callback you need in any of the XPL files IN THE MOD FOLDER. If you need a add callbacks to a menu file that UIX doesn't have let me know (on Discord, Nexus or kuertee@gmail.com).
+3. Examine one of the callbacks in any of those XPL files. Search for "callback". Add any callback you need in any of the XPL files IN THE MOD FOLDER. If you need any add callbacks to a menu file that UIX doesn't have let me know (on Discord, Nexus or kuertee@gmail.com).
 4. When done adding your callbacks, commit your changes to github.
 5. We'll coordinate release dates so that the new UIX mod with your callbacks is released near the time you release your mod.
 
@@ -77,11 +66,11 @@ Read the CHANGES BUILT INTO THIS MOD sections.
 
 Mod-specific lua files
 ======================
-The actual lua that modifies the UI need to exist in the mod's lua file in the mod's folder.
-The file needs to be named the lua file it will be modding.
-Extract and examine "kuertee_uix_mod_sample.ZIP".
-It adds a "Hello world" menu item in both the left and right side bars of the Map Menu.
-In this example, the lua file is named: "menu_map_uix.lua" because it will be modding the base-game's "menu_map.lua" file.
+- The actual lua that modifies the UI needs to exist in the mod's lua file in the mod's folder.
+- The file needs to be named the same as the lua file it will be modding.
+- Extract and examine "kuertee_uix_mod_sample.ZIP".
+  - It adds a "Hello world" menu item in both the left and right side bars of the Map Menu.
+  - In this example, the lua file is named: "menu_map_uix.lua" because it will be modding the base-game's "menu_map.lua" file.
 
 Features
 ========
@@ -89,15 +78,20 @@ Modded Lua files with callbacks that allow more than one mod to change the same 
 
 Functionality that adds HUD elements to the Top Level Menu.
 
-Allows other mods to create guidance missions (i.e. missiontype.guidance) that will be listed in the Guidance Missions tab. Also enables the Set Active and Set Inactive buttons in missions listed in the Guidance Missions tab. Examples of these are my mods: Loot mining, Ship scanner, Signal leak hunter - increasing range, Station scanner, and Waypoint fields for deployments.
+Allows other mods to create guidance missions (i.e. missiontype.guidance) that will be listed in the Guidance Missions tab. Also enables the Set Active and Set Inactive buttons in missions listed in the Guidance Missions tab. Examples of these are my mods:
+- Loot mining.
+- Ship scanner.
+- Signal leak hunter - increasing range.
+- Station scanner.
+- Waypoint fields for deployments.
 
 Mod effects
 ===========
 This is a modder's resource/API. By itself, this mod does not affect the game.
 
-Modders can use this API to mod the game's Lua files that helps compatibility with other mods that also use this API.
+Modders can use this API to mod the game's Lua files that and helps compatibility with other mods that also use this API.
 
-Without this API, some Lua elements can be modified by only one mod. For example, my mods, "NPC reactions: NPC taxis" and "Teleport from transporter room" add buttons to the bottom of the Transporter Room panel. Because its Lua's display () function constructs its frame, table, rows, and content AND THEN immediately calls the frame:display () function, it is impossible for both mods to "rewrite" the display () function and expect both "rewrites" to work.
+Without this API, some Lua elements can only be modified by one mod. For example, my mods, "NPC reactions: NPC taxis" and "Teleport from transporter room" add buttons to the bottom of the Transporter Room panel. Because its Lua's display () function constructs its frame, table, rows, and content AND THEN immediately calls the frame:display () function, it is impossible for both mods to "rewrite" the display () function and expect both "rewrites" to work.
 
 With this API, specifically its callbacks, it is possible.
 
@@ -111,16 +105,21 @@ In the mod's Lua file:
 2. Register a callback.
 3. Write your changes in the callback.
 4. Return what the callback expects - if it expects any.
-
 5. If a new callback is required in a function that already exists in the UIXs, simply insert a new callback where it's needed.
-
 6. If a new callback is required in a function that DOESN'T yet exists in the UIX, copy the function from the base game's menu.
 7. Paste that function in the relevant UIX.
 8. Insert the callback where it's needed.
 9. Push your changes to Git.
 
-In the mod's MD file:
+Load the UIX and the mod's lua file:
 - --------------------
+**v7.5 and upwards:**
+
+Specify the UI file to be loaded in the mod's ui/ui.xml file (See **v7.5 NOTES FOR PLAYERS** section above).
+
+**Pre v7.5:**
+
+In the mod's MD file:
 1. Load the UIX required with SirNukes Mod Support APIs. For example: <raise_lua_event name="'Lua_Loader.Load'" param="'extensions.kuertee_ui_extensions.ui.kuertee_menu_transporter'" />
 2. Load the mod's Lua with SirNukes Mod Support APIs. For example: <raise_lua_event name="'Lua_Loader.Load'" param="'extensions.kuertee_npc_reactions.ui.kuertee_npc_reactions'"/>
 
@@ -141,19 +140,20 @@ CHANGES BUILT INTO THIS MOD (for players)
 
 Map Menu: Distance tool
 =======================
-Click on an object or a position on the map.
-Right-click on another object or another position on the map.
-The distance between the two points will be listed.
+- Click on an object or a position on the map.
+- Right-click on another object or another position on the map.
+- The distance between the two points will be listed.
 
 Map Menu: Multi-rename
 ======================
 When renaming multiple objects, these special texts in the name will be replaced with the listed value.
-	$name: The object's current name.
-	$name_AR: The object's internal name used with UniTrader's Advanced Renaming.
-	$i: The object's position in the list based on descending DPS value.
+- $name: The object's current name.
+- $name_AR: The object's internal name used with UniTrader's Advanced Renaming.
+- $i: The object's position in the list based on descending DPS value.
+
 Examples:
-	"Red $i" will name all the objects "Red X" in which X is the object's order in the list.
-	"$name $i" will add the object's order in the list to the object's current name.
+- "Red $i" will name all the objects "Red X" in which X is the object's order in the list.
+- "$name $i" will add the object's order in the list to the object's current name.
 
 Map Menu: Sort by distance
 ==========================
@@ -174,7 +174,7 @@ CHANGES BUILT INTO THIS MOD (for developers)
 
 Map Menu: selectComponent mode
 ==============================
-The selectComponent mode is now available to use from directly within the Map Menu. In the base game, the use of this mode is limited to conversations triggered from the Mission Director (md). E.g. &lt;open_conversation_menu menu="MapMenu" param="[0, 0, true, player.entity, null, 'selectComponent', ['kTFTR_set_destination', [class.ship_s, class.ship_m, class.ship_l, class.ship_xl, class.station]]]" /&gt;. Which then triggers an "event_conversation_next_section" with the menu.modeparam[1] as the section of the conversation. In this version, this mode can be called directly from the Map Menu.
+The selectComponent mode is now available to use from directly within the Map Menu. In the base game, the use of this mode is limited to conversations triggered from the Mission Director (md). E.g. `<open_conversation_menu menu="MapMenu" param="[0, 0, true, player.entity, null, 'selectComponent', ['kTFTR_set_destination', [class.ship_s, class.ship_m, class.ship_l, class.ship_xl, class.station]]]" />`. Which then triggers an "event_conversation_next_section" with the menu.modeparam[1] as the section of the conversation. In this version, this mode can be called directly from the Map Menu.
 
 To use:
 1. Call "mapMenu.setSelectComponentMode (returnsection, classlist, category, playerowned, customheading, screenname)"
@@ -184,24 +184,28 @@ To use:
 
 Add Custom Actions/Orders Group to the Interact Menu (via MD)
 =============================================================
-1. At <event_ui_triggered screen="'Interact_Menu_API'" control="'reloaded'" />, add the Custom Actions/Orders below.
-2. Add the new Custom Actions/Orders Group Id <raise_lua_event name="'Interact_Menu_API.Add_Custom_Actions_Group_Id'" param="'my_custom_actions_group_id'" />
-3. Add the new Custom Actions/Orders Group Name <raise_lua_event name="'Interact_Menu_API.Add_Custom_Actions_Group_Text'" param="'My Custom Actions/Orders Group'" />
+1. At `<event_ui_triggered screen="'Interact_Menu_API'" control="'reloaded'" />`, add the Custom Actions/Orders below.
+2. Add the new Custom Actions/Orders Group Id `<raise_lua_event name="'Interact_Menu_API.Add_Custom_Actions_Group_Id'" param="'my_custom_actions_group_id'" />`
+3. Add the new Custom Actions/Orders Group Name `<raise_lua_event name="'Interact_Menu_API.Add_Custom_Actions_Group_Text'" param="'My Custom Actions/Orders Group'" />`
 4. Use the new id in Mod Support API's Add_Action function like this:
-					<signal_cue_instantly cue="md.Interact_Menu_API.Add_Action" param = "table[
-						$id = 'my_custom_action_1,
-						$section = 'my_custom_actions_group_id',
-						$text = 'My Custom Action 1',
-						$mouseover = 'My Custom Action 1 mouse over',
-						$callback = My_Custom_Action_1_Cue
-					]" />
-					<signal_cue_instantly cue="md.Interact_Menu_API.Add_Action" param = "table[
-						$id = 'my_custom_action_2,
-						$section = 'my_custom_actions_group_id',
-						$text = 'My Custom Action 1',
-						$mouseover = 'My Custom Action 2 mouse over',
-						$callback = My_Custom_Action_2_Cue
-					]" />
+    ```xml
+    ...
+    	<signal_cue_instantly cue="md.Interact_Menu_API.Add_Action" param = "table[
+    		$id = 'my_custom_action_1,
+    		$section = 'my_custom_actions_group_id',
+    		$text = 'My Custom Action 1',
+    		$mouseover = 'My Custom Action 1 mouse over',
+    		$callback = My_Custom_Action_1_Cue
+    	]" />
+    	<signal_cue_instantly cue="md.Interact_Menu_API.Add_Action" param = "table[
+    		$id = 'my_custom_action_2,
+    		$section = 'my_custom_actions_group_id',
+    		$text = 'My Custom Action 1',
+    		$mouseover = 'My Custom Action 2 mouse over',
+    		$callback = My_Custom_Action_2_Cue
+    	]" />
+    ...
+    ```
 5. The custom commands will be added to both the Custom Actions and Custom Orders sub-menus.
 6. To add only to one sub-menu and not the other, start the section name with either "actions_" or "orders_". E.g. "actions_my_custom_actions" will add the custom action to only the Custom Actions sub-menu. And "orders_my_custom_orders" will add the custom order to only the Custom Orders sub-menu.
 
