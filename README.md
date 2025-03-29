@@ -5,13 +5,12 @@ by kuertee. Contributors: AlexandreTK, DrWhoKnows, Erixon, Forleyor, IALuir, Myc
 
 Updates
 =======
-v7.5.06, 20 Mar 2025:
-- New feature: Forleyor's Extensions sorter buttons in the Extensions menu.
-- Tweaks: callbacks for some of Mycu's mods.
+v7.5.07, 29 Mar 2025:
+- Tweak: Remove the exclamation marks that noted disabled online functionality. Thanks, Mycu!
 
 v7.5 NOTES FOR PLAYERS:
 =======================
-Disable Protected UI Mode BEFORE this mod is activated.
+Disable Protected UI Mode BEFORE activating this mod.
 Unfortunately, due to how this mod is built, disabling or enabling Protected UI Mode WHILE the mod is active will prevent the menus from loading.
 
 v7.5 NOTES FOR MOD DEVELOPERS:
@@ -205,14 +204,9 @@ Add Custom Actions/Orders Group to the Interact Menu (via MD)
 5. The custom commands will be added to both the Custom Actions and Custom Orders sub-menus.
 6. To add only to one sub-menu and not the other, start the section name with either "actions_" or "orders_". E.g. "actions_my_custom_actions" will add the custom action to only the Custom Actions sub-menu. And "orders_my_custom_orders" will add the custom order to only the Custom Orders sub-menu.
 
-Requirements
-============
-SirNukes Mod Support APIs mod (https://www.nexusmods.com/x4foundations/mods/503) - to load the custom Lua files
-
 Install
 =======
 - Unzip to 'X4 Foundations/extensions/kuertee_ui_extensions/'.
-- Make sure the sub-folders and files are in 'X4 Foundations/extensions/kuertee_ui_extensions/' and not in 'X4 Foundations/extensions/kuertee_ui_extensions/kuertee_ui_extensions/'.
 
 Uninstall
 =========
@@ -223,7 +217,7 @@ Troubleshooting
 1. Allow the game to log events to a text file by adding "-debug all -logfile debug.log" to its launch parameters.
 2. If an Extension Options entry exists for the mod, enable the mod-specific Debug Log.
 3. Play for long enough for the mod to log its events. Or force the error that you are experiencing.
-4. Send me (at kuertee@gmail.com) the log found in My Documents\Egosoft\X4\(your player-specific number)\debug.log.
+4. Send the log found in My Documents\Egosoft\X4\(your player-specific number)\debug.log to my e-mail (kuertee@gmail.com) with the mod name in the subject line.
 
 Credits
 =======
@@ -241,6 +235,10 @@ French localisation by Calvitix.
 
 History
 =======
+v7.5.06, 20 Mar 2025:
+- New feature: Forleyor's Extensions sorter buttons in the Extensions menu.
+- Tweaks: callbacks for some of Mycu's mods.
+
 v7.5.05, 18 Mar 2025:
 - New feature: support for Mycu's upcoming mods.
 
