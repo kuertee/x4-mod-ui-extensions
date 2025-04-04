@@ -9055,6 +9055,14 @@ function menu.createPropertyRow(instance, ftable, component, iteration, commande
 			end
 		end
 
+        -- kuertee start: callback
+        if menu.uix_callbacks ["createPropertyRow_after_row_height"] then
+            for uix_id, uix_callback in pairs (menu.uix_callbacks ["createPropertyRow_after_row_height"]) do
+                uix_callback (row)
+            end
+        end
+        -- kuertee end: callback
+
 		if isstation then
 			AddKnownItem("stationtypes", macro)
 		elseif IsComponentClass(component, "ship_xl") then
