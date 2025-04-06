@@ -1825,7 +1825,16 @@ function menu.updateConstructionPlans()
 							limitedmoduletext = limitedmoduletext .. "\n· " .. GetMacroData(macro, "name")
 						end
 					else
-						if macrocounts[j].amount > OnlineGetUserItemAmount(ware) - (menu.externalUsedLimitedModules[macro] or 0) then
+
+						-- kuertee start:
+						-- if macrocounts[j].amount > OnlineGetUserItemAmount(ware) - (menu.externalUsedLimitedModules[macro] or 0) then
+						local uix_onlineGetUserItemAmount = OnlineGetUserItemAmount(ware)
+						if not uix_onlineGetUserItemAmount then
+							uix_onlineGetUserItemAmount = 0
+						end
+						if macrocounts[j].amount > uix_onlineGetUserItemAmount - (menu.externalUsedLimitedModules[macro] or 0) then
+						-- kuertee end
+
 							active = false
 							hasmissinglimitedventuremodules = true
 							limitedventuremoduletext = limitedventuremoduletext .. "\n· " .. GetMacroData(macro, "name")
@@ -2467,7 +2476,16 @@ function menu.displayModules(frame, firsttime)
 								local amount
 								local isventureplatform = IsMacroClass(group[i], "ventureplatform")
 								if isventureplatform or IsMacroClass(group[i], "dockarea") then
-									amount = math.max(0, OnlineGetUserItemAmount(ware) - (menu.externalUsedLimitedModules[group[i]] or 0) - (menu.usedLimitedModules[group[i]] or 0))
+
+									-- kuertee start:
+									-- amount = math.max(0, OnlineGetUserItemAmount(ware) - (menu.externalUsedLimitedModules[group[i]] or 0) - (menu.usedLimitedModules[group[i]] or 0))
+									local uix_onlineGetUserItemAmount = OnlineGetUserItemAmount(ware)
+									if not uix_onlineGetUserItemAmount then
+										uix_onlineGetUserItemAmount = 0
+									end
+									amount = math.max(0, uix_onlineGetUserItemAmount - (menu.externalUsedLimitedModules[group[i]] or 0) - (menu.usedLimitedModules[group[i]] or 0))
+									-- kuertee end
+
 								end
 								row[i]:setText2(amount and (ReadText(1001, 42) .. " " .. amount) or "", { x = Helper.scaleX(Helper.configButtonBorderSize), y = - maxColumnWidth / 2 + Helper.standardTextHeight / 2 + Helper.configButtonBorderSize, halign = "right", fontsize = Helper.scaleFont(Helper.standardFont, Helper.headerRow1FontSize) })
 								active = ((not amount) or (amount > 0)) and (isventureplatform or hasventureplatform)
@@ -4591,7 +4609,16 @@ function menu.createModuleContext()
 		local ware = GetMacroData(macro, "ware")
 		local islimited = GetWareData(ware, "islimited")
 		if IsMacroClass(macro, "ventureplatform") or (IsMacroClass(macro, "dockarea") and GetMacroData(macro, "isventuremodule")) then
-			local availableamount = math.max(0, OnlineGetUserItemAmount(ware) - (menu.externalUsedLimitedModules[macro] or 0) - (menu.usedLimitedModules[macro] or 0))
+
+			-- kuertee start:
+			-- local availableamount = math.max(0, OnlineGetUserItemAmount(ware) - (menu.externalUsedLimitedModules[macro] or 0) - (menu.usedLimitedModules[macro] or 0))
+			local uix_onlineGetUserItemAmount = OnlineGetUserItemAmount(ware)
+			if not uix_onlineGetUserItemAmount then
+				uix_onlineGetUserItemAmount = 0
+			end
+			local availableamount = math.max(0, uix_onlineGetUserItemAmount - (menu.externalUsedLimitedModules[macro] or 0) - (menu.usedLimitedModules[macro] or 0))
+			-- kuertee end
+
 			if availableamount < 1 then
 				active = false
 				mouseovertext = menu.ventureModuleUnavailableMouseOverText()
@@ -4629,7 +4656,16 @@ function menu.createModuleContext()
 			if islimited then
 				availableamount = math.max(0, Helper.getLimitedWareAmount(ware) - (menu.externalUsedLimitedModules[macro] or 0) - (menu.usedLimitedModules[macro] or 0))
 			else
-				availableamount = math.max(0, OnlineGetUserItemAmount(ware) - (menu.externalUsedLimitedModules[macro] or 0) - (menu.usedLimitedModules[macro] or 0))
+
+				-- kuertee start:
+				-- availableamount = math.max(0, OnlineGetUserItemAmount(ware) - (menu.externalUsedLimitedModules[macro] or 0) - (menu.usedLimitedModules[macro] or 0))
+				local uix_onlineGetUserItemAmount = OnlineGetUserItemAmount(ware)
+				if not uix_onlineGetUserItemAmount then
+					uix_onlineGetUserItemAmount = 0
+				end
+				availableamount = math.max(0, uix_onlineGetUserItemAmount - (menu.externalUsedLimitedModules[macro] or 0) - (menu.usedLimitedModules[macro] or 0))
+				-- kuertee end
+
 			end
 			if amount > availableamount then
 				active = false
@@ -5279,7 +5315,15 @@ function menu.onUpdate()
 		menu.refresh = curtime - 1
 	end
 
-	for i, entry in ipairs(menu.removedModules) do
+	-- kuertee start:
+	-- for i, entry in ipairs(menu.removedModules) do
+	local uix_removedModules = menu.removedModules
+	if not uix_removedModules then
+		uix_removedModules = {}
+	end
+	for i, entry in ipairs(uix_removedModules) do
+	-- kuertee end
+
 		local component = tostring(entry.component)
 		if IsComponentConstruction(ConvertStringTo64Bit(component)) then
 			if not menu.currentConstructions[component] then
