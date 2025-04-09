@@ -4939,9 +4939,9 @@ function menu.insertLuaAction(actiontype, istobedisplayed)
 				end
 
 				-- start: aegs call-back
-				if menu.uix_callbacks ["map_rightMenu_shipassignments_insert_01"] then
+				if menu.uix_callbacks ["aegs_map_rightMenu_shipassignments_insert_01"] then
 					local state,main_o,assignment_o
-					for uix_id, uix_callback in pairs (menu.uix_callbacks ["map_rightMenu_shipassignments_insert_01"]) do
+					for uix_id, uix_callback in pairs (menu.uix_callbacks ["aegs_map_rightMenu_shipassignments_insert_01"]) do
 						state,main_o,assignment_o = uix_callback (GetComponentData(convertedComponent, "macro"),menu.numassignableminingships,menu.numassignabletugs)
 						if state then
 							menu.insertAssignSubActions(main_o, assignment_o, menu.buttonAssignCommander, groups, isstation, true)
@@ -4961,9 +4961,9 @@ function menu.insertLuaAction(actiontype, istobedisplayed)
 		end
 
 		-- start: aegs call-back
-		if menu.uix_callbacks ["map_rightMenu_shipOverview_insert"] then
+		if menu.uix_callbacks ["aegs_map_rightMenu_shipOverview_insert"] then
 			local category_o,text_o
-			for uix_id, uix_callback in pairs (menu.uix_callbacks ["map_rightMenu_shipOverview_insert"]) do
+			for uix_id, uix_callback in pairs (menu.uix_callbacks ["aegs_map_rightMenu_shipOverview_insert"]) do
 				category_o,text_o = uix_callback (GetComponentData(convertedComponent, "macro"))
 				if category_o then
 					menu.insertInteractionContent("main", { type = "logicalstationoverview", text = text_o, helpOverlayID = "interactmenu_logicalstationoverview", helpOverlayText = " ", helpOverlayHighlightOnly = true, script = menu.buttonStationOverview })
@@ -5827,9 +5827,9 @@ function menu.insertLuaAction(actiontype, istobedisplayed)
 					end
 
 					-- start: aegs call-back
-					if menu.uix_callbacks ["map_rightMenu_shipassignments_insert_02"] then
+					if menu.uix_callbacks ["aegs_map_rightMenu_shipassignments_insert_02"] then
 						local state,main_o,assignment_o,purpose_o
-						for uix_id, uix_callback in pairs (menu.uix_callbacks ["map_rightMenu_shipassignments_insert_02"]) do
+						for uix_id, uix_callback in pairs (menu.uix_callbacks ["aegs_map_rightMenu_shipassignments_insert_02"]) do
 							state,main_o,assignment_o,purpose_o = uix_callback (GetComponentData(commander, "macro"))
 							if state and purpose == purpose_o then
 								menu.insertAssignSubActions(main_o, assignment_o, menu.buttonChangeAssignment, groups, isstation, true, currentgroup)
@@ -5913,9 +5913,9 @@ function menu.insertLuaAction(actiontype, istobedisplayed)
 					end
 
 					-- start: aegs call-back
-					if menu.uix_callbacks ["map_rightMenu_shipassignments_insert_03"] then
+					if menu.uix_callbacks ["aegs_map_rightMenu_shipassignments_insert_03"] then
 						local state,main_o,assignment_o
-						for uix_id, uix_callback in pairs (menu.uix_callbacks ["map_rightMenu_shipassignments_insert_03"]) do
+						for uix_id, uix_callback in pairs (menu.uix_callbacks ["aegs_map_rightMenu_shipassignments_insert_03"]) do
 							state,main_o,assignment_o = uix_callback (GetComponentData(convertedComponent, "macro"),allmining,alltugs)
 							if state then
 								menu.insertAssignSubActions(main_o, assignment_o, menu.buttonChangeAssignment, groups, isstation, true)
@@ -6426,9 +6426,9 @@ function menu.insertLuaAction(actiontype, istobedisplayed)
 		end
 
 		-- start: aegs call-back
-		if menu.uix_callbacks ["map_rightMenu_shipBuilding_insert"] then
+		if menu.uix_callbacks ["aegs_map_rightMenu_shipBuilding_insert"] then
 			local state,activate_o,text_o,mouseovertext_o
-			for uix_id, uix_callback in pairs (menu.uix_callbacks ["map_rightMenu_shipBuilding_insert"]) do
+			for uix_id, uix_callback in pairs (menu.uix_callbacks ["aegs_map_rightMenu_shipBuilding_insert"]) do
 				state,activate_o,text_o,mouseovertext_o = uix_callback (shiptrader,isdock,GetComponentData(convertedComponent, "macro"),doessellshipstoplayer,isplayerownedtarget)
 				if state then
 					menu.insertInteractionContent("main", { type = actiontype, text = text_o, helpOverlayID = "interactmenu_buildship", helpOverlayText = " ", helpOverlayHighlightOnly = true, script = function () return menu.buttonShipConfig("purchase") end, active = activate_o, mouseOverText = mouseovertext_o })

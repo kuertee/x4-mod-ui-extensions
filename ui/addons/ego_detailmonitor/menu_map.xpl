@@ -11532,9 +11532,9 @@ function menu.createOrderQueue(frame, mode, instance)
 				table.insert(asssignmentOptions, { id = "assist", text = ReadText(20208, 41201), icon = "", displayremoveoption = false, active = active, mouseovertext = mouseovertext })
 				
 				-- start: aegs call-back
-				if menu.uix_callbacks ["map_ship_assignments_insert"] then
+				if menu.uix_callbacks ["aegs_map_ship_assignments_insert"] then
 					local data_o
-					for uix_id, uix_callback in pairs (menu.uix_callbacks ["map_ship_assignments_insert"]) do
+					for uix_id, uix_callback in pairs (menu.uix_callbacks ["aegs_map_ship_assignments_insert"]) do
 						data_o = uix_callback (GetComponentData(infoTableData.commander, "macro"),primarypurpose)
 						if data_o then
 							table.insert(asssignmentOptions, data_o)
@@ -13424,9 +13424,9 @@ function menu.setupInfoSubmenuRows(mode, inputtable, inputobject, instance)
 		locrowdata = { false, ReadText(1001, 9051) .. ReadText(1001, 120), Helper.unlockInfo(nameinfo, (function() return tostring(GetComponentData(object64, "shiptypename") or 0, true, 0, true) end)) }	-- Ship Type
 		
 		-- start: aegs call-back
-		if menu.uix_callbacks ["map_shipInformation_shiptypename_override"] then
+		if menu.uix_callbacks ["aegs_map_shipInformation_shiptypename_override"] then
 			local shiptypename_override
-			for uix_id, uix_callback in pairs (menu.uix_callbacks ["map_shipInformation_shiptypename_override"]) do
+			for uix_id, uix_callback in pairs (menu.uix_callbacks ["aegs_map_shipInformation_shiptypename_override"]) do
 				shiptypename_override = uix_callback (GetComponentData(object64, "macro"))
 				if shiptypename_override then
 					locrowdata = { false, ReadText(1001, 9051) .. ReadText(1001, 120), Helper.unlockInfo(nameinfo, (function() return tostring(shiptypename_override or 0, true, 0, true) end)) }
@@ -15890,9 +15890,9 @@ function menu.setupLoadoutInfoSubmenuRows(mode, inputtable, inputobject, instanc
 								end
 
 								-- start: aegs call-back
-								if menu.uix_callbacks ["map_ship_subordinateassignments_insert"] then
+								if menu.uix_callbacks ["aegs_map_ship_subordinateassignments_insert"] then
 									local ship_assignment
-									for uix_id, uix_callback in pairs (menu.uix_callbacks ["map_ship_subordinateassignments_insert"]) do
+									for uix_id, uix_callback in pairs (menu.uix_callbacks ["aegs_map_ship_subordinateassignments_insert"]) do
 										ship_assignment = uix_callback (GetComponentData(inputobject, "macro"),(groups[i].numassignableminingships == #groups[i].subordinates) and ((not usedassignments["mining"]) or (usedassignments["mining"] == i)),(groups[i].numassignabletugships == #groups[i].subordinates) and ((not usedassignments["salvage"]) or (usedassignments["salvage"] == i)))
 										if ship_assignment then
 											table.insert(subordinateassignments, ship_assignment)
@@ -15991,9 +15991,9 @@ function menu.setupLoadoutInfoSubmenuRows(mode, inputtable, inputobject, instanc
 	end
 
 	-- start: aegs call-back
-		if menu.uix_callbacks ["map_loadoutinfo_double_insert"] then
+		if menu.uix_callbacks ["aegs_map_loadoutinfo_double_insert"] then
 			local state,title_text,label_text_1,label_text_2,subsystems
-			for uix_id, uix_callback in pairs (menu.uix_callbacks ["map_loadoutinfo_double_insert"]) do
+			for uix_id, uix_callback in pairs (menu.uix_callbacks ["aegs_map_loadoutinfo_double_insert"]) do
 				state,title_text,label_text_1,label_text_2,subsystems = uix_callback (GetComponentData(inputobject, "macro"))
 				if state then
 					local row = inputtable:addRow(false, { bgColor = Color["row_title_background"] })
