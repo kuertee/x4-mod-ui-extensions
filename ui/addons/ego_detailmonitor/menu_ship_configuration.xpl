@@ -6473,6 +6473,15 @@ function menu.displayModifyPaintSlots(frame)
 
 		if menu.modwares[entry.modclass] then
 			for _, entry in ipairs(menu.modwares[entry.modclass]) do
+
+				-- kuertee start: callback
+				if menu.uix_callbacks ["displayModifyPaintSlots_assigningPaintsToGroups"] then
+					for uix_id, uix_callback in pairs (menu.uix_callbacks ["displayModifyPaintSlots_assigningPaintsToGroups"]) do
+						count = uix_callback (entry, categoryQuality, count)
+					end
+				end
+				-- kuertee end: callback
+
 				if (entry.quality == categoryQuality) and ((menu.defaultpaintmod == nil) or (entry.ware ~= menu.defaultpaintmod.ware)) then
 					count = count + 1
 					local group = math.ceil(count / 3)
@@ -6678,7 +6687,11 @@ function menu.displayModifyPaintSlots(frame)
 					-- kuertee start: callback
 					if menu.uix_callbacks ["displayModifyPaintSlots_onShowingButton"] then
 						for uix_id, uix_callback in pairs (menu.uix_callbacks ["displayModifyPaintSlots_onShowingButton"]) do
-							amount = uix_callback (amount)
+							result = uix_callback (amount, active, installicon, config, row, col, entry)
+							if result then
+								amount = result.amount
+								installicon = result.installicon
+							end
 						end
 					end
 					-- kuertee end: callback
