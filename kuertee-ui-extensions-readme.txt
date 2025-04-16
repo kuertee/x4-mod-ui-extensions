@@ -5,8 +5,9 @@ by kuertee. Contributors: AlexandreTK, DrWhoKnows, Erixon, Forleyor, IALuir, Myc
 
 Updates
 =======
-v7.5.09, 07 Apr 2025:
-- Bug-fix: Station Configuration menu was breaking when there are invalid modules in the player's saved construction plans. E.g. Venture modules are invalid when UI Extensions is installed because online functionality is limited.
+v7.5.10, 16 Apr 2025:
+- Tweak: callback by Mycu for Purchasable paint modifications mod.
+- Tweak: renamed AEGS callbacks by IALuir.
 
 v7.5 NOTES FOR PLAYERS:
 =======================
@@ -239,6 +240,9 @@ French localisation by Calvitix.
 
 History
 =======
+v7.5.09, 07 Apr 2025:
+- Bug-fix: Station Configuration menu was breaking when there are invalid modules in the player's saved construction plans. E.g. Venture modules are invalid when UI Extensions is installed because online functionality is limited.
+
 v7.5.07, 29 Mar 2025:
 - Tweak: Remove the exclamation marks that noted disabled online functionality. Thanks, Mycu!
 
