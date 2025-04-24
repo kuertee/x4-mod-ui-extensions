@@ -1754,6 +1754,8 @@ __CORE_DETAILMONITOR_MAPFILTER = __CORE_DETAILMONITOR_MAPFILTER or {
 
 -- kuertee start:
 menu.uix_callbacks = {}
+__userdata_uix_menu_map = __userdata_uix_menu_map or {}
+
 local distanceTool_from_component
 local distanceTool_from_posRot
 local distanceTool_to_component
@@ -17495,7 +17497,13 @@ function menu.createMissionMode(frame)
 			-- important
 			if #menu.missionOfferList["plot"] > 0 then
 				local row = ftable:addRow(nil, { bgColor = Color["row_title_background"] })
-				row[1]:setColSpan(9):createText(ReadText(1001, 3340), Helper.headerRowCenteredProperties)
+
+				-- kuertee start: open/close mission lists
+				-- row[1]:setColSpan(9):createText(ReadText(1001, 3340), Helper.headerRowCenteredProperties)
+				row[1]:createText(" ", { cellBGColor = Color["row_background"] })
+				row[2]:setColSpan(8):createText(ReadText(1001, 3340), Helper.headerRowCenteredProperties)
+				-- kuertee end
+
 				for _, entry in ipairs(menu.missionOfferList["plot"]) do
 					found = true
 					menu.addMissionRow(ftable, entry)
@@ -17510,8 +17518,38 @@ function menu.createMissionMode(frame)
 			end
 			-- guild
 			found = false
-			local row = ftable:addRow(nil, { bgColor = Color["row_title_background"] })
-			row[1]:setColSpan(9):createText(ReadText(1001, 3331), Helper.headerRowCenteredProperties)
+
+			-- kuertee start: open/close mission lists
+			-- local row = ftable:addRow(nil, { bgColor = Color["row_title_background"] })
+			-- row[1]:setColSpan(9):createText(ReadText(1001, 3331), Helper.headerRowCenteredProperties)
+			local row = ftable:addRow(false, {})
+			row[2]:createText("")
+			if not __userdata_uix_menu_map.expandedMissionGroups then
+				__userdata_uix_menu_map.expandedMissionGroups = {}
+			end
+			local uix_isAnyGuildMissionOfferGroupOpen
+			for uix_missionGroupId, uix_isMissionGroupOpen in pairs(menu.expandedMissionGroups) do
+				if string.find(uix_missionGroupId, "offer") then
+					if uix_isMissionGroupOpen then
+						uix_isAnyGuildMissionOfferGroupOpen = true
+						break
+					end
+				end
+			end
+			local row = ftable:addRow(true, { bgColor = Color["row_title_background"] })
+			row[1]:createButton():setText(uix_isAnyGuildMissionOfferGroupOpen and "-" or "+", { halign = "center" })
+			row[1].handlers.onClick = function ()
+				uix_isAnyGuildMissionOfferGroupOpen = not uix_isAnyGuildMissionOfferGroupOpen
+				for uix_missionGroupId, _ in pairs(menu.expandedMissionGroups) do
+					if string.find(uix_missionGroupId, "offer") then
+						menu.expandedMissionGroups[uix_missionGroupId] = uix_isAnyGuildMissionOfferGroupOpen
+					end
+				end
+				menu.refreshInfoFrame()
+				return
+			end
+			row[2]:setColSpan(8):createText(ReadText(1001, 3331), Helper.headerRowCenteredProperties)
+			-- kuertee end
 
 			-- kuertee start: callback
 			if menu.uix_callbacks ["createMissionMode_on_missionoffer_guild_start"] then
@@ -17533,9 +17571,21 @@ function menu.createMissionMode(frame)
 					end
 
 					if menu.expandedMissionGroups[data.id .. "offer"] == nil then
-						menu.expandedMissionGroups[data.id .. "offer"] = true
+						-- kuertee start: open/close mission lists
+						-- menu.expandedMissionGroups[data.id .. "offer"] = true
+						if __userdata_uix_menu_map.expandedMissionGroups[data.id .. "offer"] ~= nil then
+							menu.expandedMissionGroups[data.id .. "offer"] = __userdata_uix_menu_map.expandedMissionGroups[data.id .. "offer"]
+						else
+							menu.expandedMissionGroups[data.id .. "offer"] = true
+						end
+						-- kuertee end
 					end
 					local isexpanded = menu.expandedMissionGroups[data.id .. "offer"]
+
+					-- kuertee start: open/close mission lists
+					__userdata_uix_menu_map.expandedMissionGroups[data.id .. "offer"] = isexpanded
+					-- kuertee end
+
 					local row = ftable:addRow(data.id, {  })
 					if data.id == menu.missionModeCurrent then
 						menu.setrow = row.index
@@ -17561,19 +17611,48 @@ function menu.createMissionMode(frame)
 			end
 			-- other
 			found = false
-			local row = ftable:addRow(nil, { bgColor = Color["row_title_background"] })
-			row[1]:setColSpan(9):createText(ReadText(1001, 3332), Helper.headerRowCenteredProperties)
-			for _, entry in ipairs(menu.missionOfferList["other"]) do
-				found = true
-				menu.addMissionRow(ftable, entry)
+
+			-- kuertee start: open/close mission lists
+			-- local row = ftable:addRow(nil, { bgColor = Color["row_title_background"] })
+			-- row[1]:setColSpan(9):createText(ReadText(1001, 3332), Helper.headerRowCenteredProperties)
+			local row = ftable:addRow(false, {})
+			row[2]:createText("")
+			if __userdata_uix_menu_map.missionOffers_other_isOpen == nil then
+				__userdata_uix_menu_map.missionOffers_other_isOpen = true
 			end
-			if not found then
-				local row = ftable:addRow("othernone", { interactive = false })
-				if menu.missionModeCurrent == "othernone" then
-					menu.setrow = row.index
+			local row = ftable:addRow(true, { bgColor = Color["row_title_background"] })
+			row[1]:createButton():setText(__userdata_uix_menu_map.missionOffers_other_isOpen and "-" or "+", { halign = "center" })
+			row[1].handlers.onClick = function ()
+				__userdata_uix_menu_map.missionOffers_other_isOpen = not __userdata_uix_menu_map.missionOffers_other_isOpen
+				menu.refreshInfoFrame()
+				return
+			end
+			row[2]:setColSpan(8):createText(ReadText(1001, 3332), Helper.headerRowCenteredProperties)
+			-- kuertee end
+
+			-- kuertee start: open/close mission lists
+			if __userdata_uix_menu_map.missionOffers_other_isOpen == true then
+			-- kuertee end
+
+				for _, entry in ipairs(menu.missionOfferList["other"]) do
+					found = true
+					menu.addMissionRow(ftable, entry)
 				end
-				row[1]:setColSpan(9):createText("--- " .. ReadText(1001, 3302) .. " ---", { halign = "center" })
+				if not found then
+					local row = ftable:addRow("othernone", { interactive = false })
+					if menu.missionModeCurrent == "othernone" then
+						menu.setrow = row.index
+					end
+					row[1]:setColSpan(9):createText("--- " .. ReadText(1001, 3302) .. " ---", { halign = "center" })
+				end
+
+			-- kuertee start: open/close mission lists
+			else
+				-- set to true to prevent the no mission text from getting displayed
+				found = true
 			end
+			-- kuertee end
+
 		elseif menu.missionOfferMode == "operation" then
 			if Helper.hasExtension("multiverse") then
 				Helper.callExtensionFunction("multiverse", "registerOnlineEvents", menu)
@@ -17601,7 +17680,22 @@ function menu.createMissionMode(frame)
 		if menu.missionMode == "plot" then
 			-- important
 			local row = ftable:addRow(nil, { bgColor = Color["row_title_background"] })
-			row[1]:setColSpan(9):createText(ReadText(1001, 3341), Helper.headerRowCenteredProperties)
+
+			-- kuertee start: open/close mission lists
+			-- row[1]:setColSpan(9):createText(ReadText(1001, 3341), Helper.headerRowCenteredProperties)
+			row[1]:createText(" ", { cellBGColor = Color["row_background"] })
+			row[2]:setColSpan(8):createText(ReadText(1001, 3341), Helper.headerRowCenteredProperties)
+			local uix_isGroupHaveActiveMission
+			for _, data in ipairs(menu.missionList["plot"]) do
+				if data.active then
+					uix_isGroupHaveActiveMission = true
+				end
+			end
+			if uix_isGroupHaveActiveMission then
+				row[2].properties.color = Color["text_mission"]
+			end
+			-- kuertee end
+
 			local hadThreadMission = false
 			for _, entry in ipairs(menu.missionList["plot"]) do
 				found = true
@@ -17611,8 +17705,11 @@ function menu.createMissionMode(frame)
 				if hadThreadMission and (entry.threadtype == "") then
 					-- first non thread mission after threads
 					hadThreadMission = false
-					local row = ftable:addRow(false, {  })
-					row[1]:setColSpan(9):createText("")
+
+					-- kuertee start: remove blank line between threaded and non-threaded missions
+					-- local row = ftable:addRow(false, {  })
+					-- row[1]:setColSpan(9):createText("")
+					-- kuertee end
 				end
 				menu.addMissionRow(ftable, entry)
 			end
@@ -17624,8 +17721,48 @@ function menu.createMissionMode(frame)
 				row[1]:setColSpan(9):createText("--- " .. ReadText(1001, 3302) .. " ---", { halign = "center" })
 			end
 			-- guild
-			local row = ftable:addRow(nil, { bgColor = Color["row_title_background"] })
-			row[1]:setColSpan(9):createText(ReadText(1001, 3333), Helper.headerRowCenteredProperties)
+
+			-- kuertee start: open/close mission lists
+			-- local row = ftable:addRow(nil, { bgColor = Color["row_title_background"] })
+			-- row[1]:setColSpan(9):createText(ReadText(1001, 3333), Helper.headerRowCenteredProperties)
+			local row = ftable:addRow(false, {})
+			row[2]:createText("")
+			if not __userdata_uix_menu_map.expandedMissionGroups then
+				__userdata_uix_menu_map.expandedMissionGroups = {}
+			end
+			local uix_isAnyGuildMissionGroupOpen
+			for uix_missionGroupId, uix_isMissionGroupOpen in pairs(menu.expandedMissionGroups) do
+				if not string.find(uix_missionGroupId, "offer") then
+					if uix_isMissionGroupOpen then
+						uix_isAnyGuildMissionGroupOpen = true
+						break
+					end
+				end
+			end
+			local row = ftable:addRow(true, { bgColor = Color["row_title_background"] })
+			row[1]:createButton():setText(uix_isAnyGuildMissionGroupOpen and "-" or "+", { halign = "center" })
+			row[1].handlers.onClick = function ()
+				uix_isAnyGuildMissionGroupOpen = not uix_isAnyGuildMissionGroupOpen
+				for uix_missionGroupId, _ in pairs(menu.expandedMissionGroups) do
+					if not string.find(uix_missionGroupId, "offer") then
+						menu.expandedMissionGroups[uix_missionGroupId] = uix_isAnyGuildMissionGroupOpen
+					end
+				end
+				menu.refreshInfoFrame()
+				return
+			end
+			row[2]:setColSpan(8):createText(ReadText(1001, 3333), Helper.headerRowCenteredProperties)
+			local uix_isGroupHaveActiveMission
+			for _, data in ipairs(menu.missionList["guild"]) do
+				if data.active then
+					uix_isGroupHaveActiveMission = true
+				end
+			end
+			if uix_isGroupHaveActiveMission then
+				row[2].properties.color = Color["text_mission"]
+			end
+			-- kuertee end
+
 			found = false
 			for _, data in ipairs(menu.missionList["guild"]) do
 				found = true
@@ -17643,7 +17780,23 @@ function menu.createMissionMode(frame)
 					end
 				end
 
+				-- kuertee start: open/close mission lists
+				if menu.expandedMissionGroups[data.id] == nil then
+					-- menu.expandedMissionGroups[data.id] = true
+					if __userdata_uix_menu_map.expandedMissionGroups[data.id] ~= nil then
+						menu.expandedMissionGroups[data.id] = __userdata_uix_menu_map.expandedMissionGroups[data.id]
+					else
+						menu.expandedMissionGroups[data.id] = true
+					end
+				end
+				-- kuertee end
+
 				local isexpanded = menu.expandedMissionGroups[data.id]
+
+				-- kuertee start: open/close mission lists
+				__userdata_uix_menu_map.expandedMissionGroups[data.id] = isexpanded
+				-- kuertee end
+
 				local row = ftable:addRow(data.id, {  })
 				if data.id == menu.missionModeCurrent then
 					menu.setrow = row.index
@@ -17668,8 +17821,11 @@ function menu.createMissionMode(frame)
 						if hadThreadMission and (entry.threadtype == "") then
 							-- first non thread mission after threads
 							hadThreadMission = false
-							local row = ftable:addRow(false, {  })
-							row[1]:setColSpan(9):createText("")
+
+							-- kuertee start: remove blank line between threaded and non-threaded missions
+							-- local row = ftable:addRow(false, {  })
+							-- row[1]:setColSpan(9):createText("")
+							-- kuertee end
 						end
 						menu.addMissionRow(ftable, entry, 1)
 					end
@@ -17683,39 +17839,80 @@ function menu.createMissionMode(frame)
 				row[1]:setColSpan(9):createText("--- " .. ReadText(1001, 3302) .. " ---", { halign = "center" })
 			end
 			-- other
-			local row = ftable:addRow(nil, { bgColor = Color["row_title_background"] })
-			row[1]:setColSpan(9):createText(ReadText(1001, 3334), Helper.headerRowCenteredProperties)
 			found = false
-			local hadThreadMission = false
-			for _, entry in ipairs(menu.missionList["other"]) do
-				found = true
-				if entry.threadtype ~= "" then
-					hadThreadMission = true
-				end
-				if hadThreadMission and (entry.threadtype == "") then
-					-- first non thread mission after threads
-					hadThreadMission = false
-					local row = ftable:addRow(false, {  })
-					row[1]:setColSpan(9):createText("")
-				end
-				menu.addMissionRow(ftable, entry)
+
+			-- kuertee start: open/close mission lists
+			-- local row = ftable:addRow(nil, { bgColor = Color["row_title_background"] })
+			-- row[1]:setColSpan(9):createText(ReadText(1001, 3334), Helper.headerRowCenteredProperties)
+			local row = ftable:addRow(false, {})
+			row[2]:createText("")
+			if __userdata_uix_menu_map.missions_other_isOpen == nil then
+				__userdata_uix_menu_map.missions_other_isOpen = true
 			end
-			if not found then
-				local row = ftable:addRow("othernone", { interactive = false })
-				if menu.missionModeCurrent == "othernone" then
-					menu.setrow = row.index
-				end
-				row[1]:setColSpan(9):createText("--- " .. ReadText(1001, 3302) .. " ---", { halign = "center" })
+			local row = ftable:addRow(true, { bgColor = Color["row_title_background"] })
+			row[1]:createButton():setText(__userdata_uix_menu_map.missions_other_isOpen and "-" or "+", { halign = "center" })
+			row[1].handlers.onClick = function ()
+				__userdata_uix_menu_map.missions_other_isOpen = not __userdata_uix_menu_map.missions_other_isOpen
+				menu.refreshInfoFrame()
+				return
 			end
-			found = true
-			-- online
-			if #menu.missionList["coalition"] > 0 then
-				local row = ftable:addRow(nil, { bgColor = Color["row_title_background"] })
-				row[1]:setColSpan(9):createText(ReadText(1001, 11609), Helper.headerRowCenteredProperties)
-				for _, entry in ipairs(menu.missionList["coalition"]) do
+			row[2]:setColSpan(8):createText(ReadText(1001, 3334), Helper.headerRowCenteredProperties)
+			local uix_isGroupHaveActiveMission
+			for _, data in ipairs(menu.missionList["other"]) do
+				if data.active then
+					uix_isGroupHaveActiveMission = true
+				end
+			end
+			if uix_isGroupHaveActiveMission then
+				row[2].properties.color = Color["text_mission"]
+			end
+			-- kuertee end
+
+			-- kuertee start: open/close mission lists
+			if __userdata_uix_menu_map.missions_other_isOpen == true then
+			-- kuertee end
+
+				local hadThreadMission = false
+				for _, entry in ipairs(menu.missionList["other"]) do
+					found = true
+					if entry.threadtype ~= "" then
+						hadThreadMission = true
+					end
+					if hadThreadMission and (entry.threadtype == "") then
+						-- first non thread mission after threads
+						hadThreadMission = false
+
+						-- kuertee start: remove blank line between threaded and non-threaded missions
+						-- local row = ftable:addRow(false, {  })
+						-- row[1]:setColSpan(9):createText("")
+						-- kuertee end
+					end
 					menu.addMissionRow(ftable, entry)
 				end
+				if not found then
+					local row = ftable:addRow("othernone", { interactive = false })
+					if menu.missionModeCurrent == "othernone" then
+						menu.setrow = row.index
+					end
+					row[1]:setColSpan(9):createText("--- " .. ReadText(1001, 3302) .. " ---", { halign = "center" })
+				end
+				found = true
+				-- online
+				if #menu.missionList["coalition"] > 0 then
+					local row = ftable:addRow(nil, { bgColor = Color["row_title_background"] })
+					row[1]:setColSpan(9):createText(ReadText(1001, 11609), Helper.headerRowCenteredProperties)
+					for _, entry in ipairs(menu.missionList["coalition"]) do
+						menu.addMissionRow(ftable, entry)
+					end
+				end
+
+			-- kuertee start: open/close mission lists
+			else
+				-- set to true to prevent the no mission text from getting displayed
+				found = true
 			end
+			-- kuertee end
+
 		elseif menu.missionMode == "upkeep" then
 			-- title
 			local row = ftable:addRow(false, { fixed = true, bgColor = Color["row_title_background"] })
@@ -17762,8 +17959,11 @@ function menu.createMissionMode(frame)
 						if hadThreadMission and (entry.threadtype == "") then
 							-- first non thread mission after threads
 							hadThreadMission = false
-							local row = ftable:addRow(false, {  })
-							row[1]:setColSpan(9):createText("")
+
+							-- kuertee start: remove blank line between threaded and non-threaded missions
+							-- local row = ftable:addRow(false, {  })
+							-- row[1]:setColSpan(9):createText("")
+							-- kuertee end
 						end
 						menu.addMissionRow(ftable, entry, 1)
 					end
@@ -17789,8 +17989,11 @@ function menu.createMissionMode(frame)
 				if hadThreadMission and (entry.threadtype == "") then
 					-- first non thread mission after threads
 					hadThreadMission = false
-					local row = ftable:addRow(false, {  })
-					row[1]:setColSpan(9):createText("")
+
+					-- kuertee start: remove blank line between threaded and non-threaded missions
+					-- local row = ftable:addRow(false, {  })
+					-- row[1]:setColSpan(9):createText("")
+					-- kuertee end
 				end
 				menu.addMissionRow(ftable, entry)
 			end
