@@ -8478,6 +8478,13 @@ function menu.getOrderInfo(ship, gettargetname)
 				for i, entry in ipairs(params) do
 					if entry.name == "warebasket_override" then
 						local sortedwares = {}
+
+						-- kuertee start:
+						if not entry.value then
+							entry.value = {}
+						end
+						-- kuertee end
+
 						for _, ware in ipairs(entry.value) do
 							table.insert(sortedwares, ware)
 						end
@@ -29518,6 +29525,16 @@ function menu.updateSelectedComponents(modified, keepselection, changedComponent
 
 	menu.prevselectedfleetunit = nil
 	for _, row in ipairs(rows) do
+
+		-- kuertee start:
+		if not menu.rowDataMap then
+			menu.rowDataMap = {}
+		end
+		if not menu.rowDataMap[menu.infoTable] then
+			menu.rowDataMap[menu.infoTable] = {}
+		end
+		-- kuertee end
+
 		local rowdata = menu.rowDataMap[menu.infoTable][row]
 		if type(rowdata) == "table" then
 			if (rowdata[1] ~= "moduletype") and (not string.find(rowdata[1], "subordinates")) and (rowdata[1] ~= "dockedships") and (rowdata[1] ~= "constructions") then

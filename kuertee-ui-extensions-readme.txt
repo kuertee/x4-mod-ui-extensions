@@ -5,9 +5,10 @@ by kuertee. Contributors: AlexandreTK, DrWhoKnows, Erixon, Forleyor, IALuir, Myc
 
 Updates
 =======
-v7.5.10, 16 Apr 2025:
-- Tweak: callback by Mycu for Purchasable paint modifications mod.
-- Tweak: renamed AEGS callbacks by IALuir.
+v7.5.11, 26 Apr 2025:
+- New feature: Mission lists in the Map Menu now has an "open all/close all" button.
+- Tweak: (Again as this wasn't actually in 7.5.10. Sorry Mycu!) Callback by Mycu for Purchasable paint modifications mod.
+- Tweak: (Again as this also wasn't actually in 7.5.10. Sorry IALuir!) Renamed AEGS callbacks by IALuir.
 
 v7.5 NOTES FOR PLAYERS:
 =======================
@@ -143,6 +144,10 @@ Map Menu: Distance tool
 - Click on an object or a position on the map.
 - Right-click on another object or another position on the map.
 - The distance between the two points will be listed.
+
+Map Menu: Mission lists
+=======================
+Mission lists has an "open all/close all" button.
 
 Map Menu: Multi-rename
 ======================
