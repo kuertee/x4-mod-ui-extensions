@@ -8522,6 +8522,13 @@ function menu.getOrderInfo(ship, gettargetname)
 			for i, entry in ipairs(params) do
 				if entry.name == "warebasket_override" then
 					local sortedwares = {}
+
+					-- kuertee start:
+					if not entry.value then
+						entry.value = {}
+					end
+					-- kuertee end
+
 					for _, ware in ipairs(entry.value) do
 						table.insert(sortedwares, ware)
 					end
@@ -17507,7 +17514,7 @@ function menu.createMissionMode(frame)
 
 				-- kuertee start: open/close mission lists
 				-- row[1]:setColSpan(9):createText(ReadText(1001, 3340), Helper.headerRowCenteredProperties)
-				row[1]:createText(" ", { cellBGColor = Color["row_background"] })
+				row[1]:createText(" ", Helper.headerRowCenteredProperties)
 				row[2]:setColSpan(8):createText(ReadText(1001, 3340), Helper.headerRowCenteredProperties)
 				-- kuertee end
 
@@ -17529,8 +17536,10 @@ function menu.createMissionMode(frame)
 			-- kuertee start: open/close mission lists
 			-- local row = ftable:addRow(nil, { bgColor = Color["row_title_background"] })
 			-- row[1]:setColSpan(9):createText(ReadText(1001, 3331), Helper.headerRowCenteredProperties)
-			local row = ftable:addRow(false, {})
-			row[2]:createText("")
+			if next(menu.missionOfferList["plot"]) then
+				local row = ftable:addRow(false, {})
+				row[2]:createText("")
+			end
 			if not __userdata_uix_menu_map.expandedMissionGroups then
 				__userdata_uix_menu_map.expandedMissionGroups = {}
 			end
@@ -17544,7 +17553,7 @@ function menu.createMissionMode(frame)
 				end
 			end
 			local row = ftable:addRow(true, { bgColor = Color["row_title_background"] })
-			row[1]:createButton():setText(uix_isAnyGuildMissionOfferGroupOpen and "-" or "+", { halign = "center" })
+			row[1]:createButton({active = menu.missionOfferList["guild"] and next(menu.missionOfferList["guild"]) and true or false}):setText(uix_isAnyGuildMissionOfferGroupOpen and "-" or "+", { halign = "center" })
 			row[1].handlers.onClick = function ()
 				uix_isAnyGuildMissionOfferGroupOpen = not uix_isAnyGuildMissionOfferGroupOpen
 				for uix_missionGroupId, _ in pairs(menu.expandedMissionGroups) do
@@ -17628,7 +17637,7 @@ function menu.createMissionMode(frame)
 				__userdata_uix_menu_map.missionOffers_other_isOpen = true
 			end
 			local row = ftable:addRow(true, { bgColor = Color["row_title_background"] })
-			row[1]:createButton():setText(__userdata_uix_menu_map.missionOffers_other_isOpen and "-" or "+", { halign = "center" })
+			row[1]:createButton({active = menu.missionOfferList["other"] and next(menu.missionOfferList["other"]) and true or false}):setText(__userdata_uix_menu_map.missionOffers_other_isOpen and "-" or "+", { halign = "center" })
 			row[1].handlers.onClick = function ()
 				__userdata_uix_menu_map.missionOffers_other_isOpen = not __userdata_uix_menu_map.missionOffers_other_isOpen
 				menu.refreshInfoFrame()
@@ -17690,7 +17699,7 @@ function menu.createMissionMode(frame)
 
 			-- kuertee start: open/close mission lists
 			-- row[1]:setColSpan(9):createText(ReadText(1001, 3341), Helper.headerRowCenteredProperties)
-			row[1]:createText(" ", { cellBGColor = Color["row_background"] })
+			row[1]:createText(" ", Helper.headerRowCenteredProperties)
 			row[2]:setColSpan(8):createText(ReadText(1001, 3341), Helper.headerRowCenteredProperties)
 			local uix_isGroupHaveActiveMission
 			for _, data in ipairs(menu.missionList["plot"]) do
@@ -17747,7 +17756,7 @@ function menu.createMissionMode(frame)
 				end
 			end
 			local row = ftable:addRow(true, { bgColor = Color["row_title_background"] })
-			row[1]:createButton():setText(uix_isAnyGuildMissionGroupOpen and "-" or "+", { halign = "center" })
+			row[1]:createButton({active = menu.missionList["guild"] and next(menu.missionList["guild"]) and true or false}):setText(uix_isAnyGuildMissionGroupOpen and "-" or "+", { halign = "center" })
 			row[1].handlers.onClick = function ()
 				uix_isAnyGuildMissionGroupOpen = not uix_isAnyGuildMissionGroupOpen
 				for uix_missionGroupId, _ in pairs(menu.expandedMissionGroups) do
@@ -17857,7 +17866,7 @@ function menu.createMissionMode(frame)
 				__userdata_uix_menu_map.missions_other_isOpen = true
 			end
 			local row = ftable:addRow(true, { bgColor = Color["row_title_background"] })
-			row[1]:createButton():setText(__userdata_uix_menu_map.missions_other_isOpen and "-" or "+", { halign = "center" })
+			row[1]:createButton({active = menu.missionOfferList["other"] and next(menu.missionOfferList["other"]) and true or false}):setText(__userdata_uix_menu_map.missions_other_isOpen and "-" or "+", { halign = "center" })
 			row[1].handlers.onClick = function ()
 				__userdata_uix_menu_map.missions_other_isOpen = not __userdata_uix_menu_map.missions_other_isOpen
 				menu.refreshInfoFrame()
