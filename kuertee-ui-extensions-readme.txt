@@ -5,10 +5,9 @@ by kuertee. Contributors: AlexandreTK, DrWhoKnows, Erixon, Forleyor, IALuir, Myc
 
 Updates
 =======
-v7.5.11, 26 Apr 2025:
-- New feature: Mission lists in the Map Menu now has an "open all/close all" button.
-- Tweak: (Again as this wasn't actually in 7.5.10. Sorry Mycu!) Callback by Mycu for Purchasable paint modifications mod.
-- Tweak: (Again as this also wasn't actually in 7.5.10. Sorry IALuir!) Renamed AEGS callbacks by IALuir.
+v7.5.12, 5 May 2025:
+- Tweak: Disable the open/close mission lists button if there's no mission entries in the list.
+- Bug-fix: A couple of trading data bugs (caused by other mods) were sometimes causing the Map Menu to fail. This tweak is a fail-safe IN-CASE the bug (from those other mods) is triggered.
 
 v7.5 NOTES FOR PLAYERS:
 =======================
@@ -245,6 +244,11 @@ French localisation by Calvitix.
 
 History
 =======
+v7.5.11, 26 Apr 2025:
+- New feature: Mission lists in the Map Menu now has an "open all/close all" button.
+- Tweak: (Again as this wasn't actually in 7.5.10. Sorry Mycu!) Callback by Mycu for Purchasable paint modifications mod.
+- Tweak: (Again as this also wasn't actually in 7.5.10. Sorry IALuir!) Renamed AEGS callbacks by IALuir.
+
 v7.5.09, 07 Apr 2025:
 - Bug-fix: Station Configuration menu was breaking when there are invalid modules in the player's saved construction plans. E.g. Venture modules are invalid when UI Extensions is installed because online functionality is limited.
 

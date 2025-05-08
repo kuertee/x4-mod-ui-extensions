@@ -5,8 +5,9 @@ by kuertee. Contributors: AlexandreTK, DrWhoKnows, Erixon, Forleyor, IALuir, Myc
 
 Updates
 =======
-v7.5.09, 07 Apr 2025:
-- Bug-fix: Station Configuration menu was breaking when there are invalid modules in the player's saved construction plans. E.g. Venture modules are invalid when UI Extensions is installed because online functionality is limited.
+v7.5.12, 5 May 2025:
+- Tweak: Disable the open/close mission lists button if there's no mission entries in the list.
+- Bug-fix: A couple of trading data bugs (caused by other mods) were sometimes causing the Map Menu to fail. This tweak is a fail-safe IN-CASE the bug (from those other mods) is triggered.
 
 v7.5 NOTES FOR PLAYERS:
 =======================
@@ -143,6 +144,10 @@ Map Menu: Distance tool
 - Right-click on another object or another position on the map.
 - The distance between the two points will be listed.
 
+Map Menu: Mission lists
+=======================
+Mission lists has an "open all/close all" button.
+
 Map Menu: Multi-rename
 ======================
 When renaming multiple objects, these special texts in the name will be replaced with the listed value.
@@ -189,20 +194,20 @@ Add Custom Actions/Orders Group to the Interact Menu (via MD)
 4. Use the new id in Mod Support API's Add_Action function like this:
     ```xml
     ...
-    	<signal_cue_instantly cue="md.Interact_Menu_API.Add_Action" param = "table[
-    		$id = 'my_custom_action_1,
-    		$section = 'my_custom_actions_group_id',
-    		$text = 'My Custom Action 1',
-    		$mouseover = 'My Custom Action 1 mouse over',
-    		$callback = My_Custom_Action_1_Cue
-    	]" />
-    	<signal_cue_instantly cue="md.Interact_Menu_API.Add_Action" param = "table[
-    		$id = 'my_custom_action_2,
-    		$section = 'my_custom_actions_group_id',
-    		$text = 'My Custom Action 1',
-    		$mouseover = 'My Custom Action 2 mouse over',
-    		$callback = My_Custom_Action_2_Cue
-    	]" />
+      <signal_cue_instantly cue="md.Interact_Menu_API.Add_Action" param = "table[
+        $id = 'my_custom_action_1,
+        $section = 'my_custom_actions_group_id',
+        $text = 'My Custom Action 1',
+        $mouseover = 'My Custom Action 1 mouse over',
+        $callback = My_Custom_Action_1_Cue
+      ]" />
+      <signal_cue_instantly cue="md.Interact_Menu_API.Add_Action" param = "table[
+        $id = 'my_custom_action_2,
+        $section = 'my_custom_actions_group_id',
+        $text = 'My Custom Action 1',
+        $mouseover = 'My Custom Action 2 mouse over',
+        $callback = My_Custom_Action_2_Cue
+      ]" />
     ...
     ```
 5. The custom commands will be added to both the Custom Actions and Custom Orders sub-menus.
@@ -227,18 +232,26 @@ Credits
 =======
 kuertee
 Contributors:
-	AlexandreTK
-	DrWhoKnows
-	Erixon
-	Forleyor
-	IALuir
-	Mycu
-	Runekn
-	sticeIO
+  AlexandreTK
+  DrWhoKnows
+  Erixon
+  Forleyor
+  IALuir
+  Mycu
+  Runekn
+  sticeIO
 French localisation by Calvitix.
 
 History
 =======
+v7.5.11, 26 Apr 2025:
+- New feature: Mission lists in the Map Menu now has an "open all/close all" button.
+- Tweak: (Again as this wasn't actually in 7.5.10. Sorry Mycu!) Callback by Mycu for Purchasable paint modifications mod.
+- Tweak: (Again as this also wasn't actually in 7.5.10. Sorry IALuir!) Renamed AEGS callbacks by IALuir.
+
+v7.5.09, 07 Apr 2025:
+- Bug-fix: Station Configuration menu was breaking when there are invalid modules in the player's saved construction plans. E.g. Venture modules are invalid when UI Extensions is installed because online functionality is limited.
+
 v7.5.07, 29 Mar 2025:
 - Tweak: Remove the exclamation marks that noted disabled online functionality. Thanks, Mycu!
 
@@ -298,20 +311,20 @@ v7.5.0061 beta, 25 Jan 2025:
 - Bug-fix: The player's Inventory window wasn't opening.
 - Tweak: The Online Features button is disabled. Because its functionality is natively disabled with how UI Extensions rewrites several menu files, the button might as well be disabled.
 - Tweak: callbacks can now be assigned an id so that they can be deregistered by other mods with "menu.registerCallback(callbackName, myCallbackFunc, myId)".
-				E.g.
-				MapMenu.registerCallback("buttonToggleObjectList_on_start", myCallbackFunc, "mod_a").
-				Then another lua file can do this:
-				MapMenu.deregisterCallback("buttonToggleObjectList_on_start", nil, "mod_a").
-				This is useful when you want to override another mod's custom changes to different menus with your own mod.
-				Note that deregistering callbacks are delayed by 1 second because there is no method to ensure that the callback of another mod that is to be deregistered has been registered.
+        E.g.
+        MapMenu.registerCallback("buttonToggleObjectList_on_start", myCallbackFunc, "mod_a").
+        Then another lua file can do this:
+        MapMenu.deregisterCallback("buttonToggleObjectList_on_start", nil, "mod_a").
+        This is useful when you want to override another mod's custom changes to different menus with your own mod.
+        Note that deregistering callbacks are delayed by 1 second because there is no method to ensure that the callback of another mod that is to be deregistered has been registered.
 - New feature: callbacks of other mods can be updated (i.e. rerouted) to your own callbacks with "updateCallback(callbackName, id, myCallbackFunc)".
-				E.g. Mod_a registered a callback for "buttonToggleObjectList_on_start" with the id "mod_a".
-				And Mod_b wants to reroute that callback for its own function.
-				That callback can be rerouted like this:
-				MapMenu.updateCallback("buttonToggleObjectList_on_start", "mod_a", modb_CallbackFunc).
-				Note that rerouted callbacks will keep their original ids.
-				It might be better to deregister the callback THEN register the new callback instead.
-				Also note that updating callbacks are delayed by 1 second because there is no method to ensure that the callback of another mod that is to be updated has been registered.
+        E.g. Mod_a registered a callback for "buttonToggleObjectList_on_start" with the id "mod_a".
+        And Mod_b wants to reroute that callback for its own function.
+        That callback can be rerouted like this:
+        MapMenu.updateCallback("buttonToggleObjectList_on_start", "mod_a", modb_CallbackFunc).
+        Note that rerouted callbacks will keep their original ids.
+        It might be better to deregister the callback THEN register the new callback instead.
+        Also note that updating callbacks are delayed by 1 second because there is no method to ensure that the callback of another mod that is to be updated has been registered.
 
 v7.1.18, 12 Jan 2025:
 - New: UI Call-backs for the AEGS Faction mod by IALuir.
@@ -442,20 +455,20 @@ v6.1.001, 27 Jun 2023:
 2. Add the new Custom Actions/Orders Group Id <raise_lua_event name="'Interact_Menu_API.Add_Custom_Actions_Group_Id'" param="'my_custom_actions_group_id'" />
 3. Add the new Custom Actions/Orders Group Name <raise_lua_event name="'Interact_Menu_API.Add_Custom_Actions_Group_Text'" param="'My Custom Actions/Orders Group'" />
 4. Use the new id in Mod Support API's Add_Action function like this:
-					<signal_cue_instantly cue="md.Interact_Menu_API.Add_Action" param = "table[
-						$id = 'my_custom_action_1,
-						$section = 'my_custom_actions_group_id',
-						$text = 'My Custom Action 1',
-						$mouseover = 'My Custom Action 1 mouse over',
-						$callback = My_Custom_Action_1_Cue
-					]" />
-					<signal_cue_instantly cue="md.Interact_Menu_API.Add_Action" param = "table[
-						$id = 'my_custom_action_2,
-						$section = 'my_custom_actions_group_id',
-						$text = 'My Custom Action 1',
-						$mouseover = 'My Custom Action 2 mouse over',
-						$callback = My_Custom_Action_2_Cue
-					]" />
+          <signal_cue_instantly cue="md.Interact_Menu_API.Add_Action" param = "table[
+            $id = 'my_custom_action_1,
+            $section = 'my_custom_actions_group_id',
+            $text = 'My Custom Action 1',
+            $mouseover = 'My Custom Action 1 mouse over',
+            $callback = My_Custom_Action_1_Cue
+          ]" />
+          <signal_cue_instantly cue="md.Interact_Menu_API.Add_Action" param = "table[
+            $id = 'my_custom_action_2,
+            $section = 'my_custom_actions_group_id',
+            $text = 'My Custom Action 1',
+            $mouseover = 'My Custom Action 2 mouse over',
+            $callback = My_Custom_Action_2_Cue
+          ]" />
 
 v6.0.004, 10 May 2023:
 - Mycu's contribution: custom nested Interact Menu actions.
