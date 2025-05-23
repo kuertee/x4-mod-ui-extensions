@@ -333,11 +333,10 @@ local config = {
 		{ type = "shield", library = "shieldgentypes" },
 	},
 	dropDownTextProperties = {
-		halign = "center",
 		font = Helper.standardFont,
 		fontsize = Helper.scaleFont(Helper.standardFont, Helper.standardFontSize),
 		color = Color["text_normal"],
-		x = 0,
+		x = Helper.standardTextOffsetx,
 		y = 0
 	},
 	scaleSize = 2,
@@ -904,6 +903,9 @@ end
 function menu.buttonContextEncyclopedia(selectedUpgrade)
 	if selectedUpgrade.type == "module" then
 		local library = GetMacroData(selectedUpgrade.macro, "infolibrary")
+		if library == "moduletypes_radar" then
+			library = "moduletypes_other"
+		end
 		Helper.closeMenuAndOpenNewMenu(menu, "EncyclopediaMenu", { 0, 0, "Stations", library, selectedUpgrade.macro })
 		menu.cleanup()
 	else
@@ -1896,7 +1898,7 @@ function menu.createTitleBar(frame)
 			table.insert(loadOptions, { id = plan.id, text = plan.name, icon = "", displayremoveoption = plan.deleteable, active = plan.active, mouseovertext = plan.mouseovertext })
 		end
 		table.sort(loadOptions, function (a, b) return a.text < b.text end)
-		row[2]:createDropDown(loadOptions, { textOverride = ReadText(1001, 7904), optionWidth = menu.titleData.dropdownWidth + menu.titleData.height + Helper.borderSize }):setTextProperties(config.dropDownTextProperties)
+		row[2]:createDropDown(loadOptions, { textOverride = ReadText(1001, 7904), optionWidth = menu.titleData.dropdownWidth + 7 * (menu.titleData.height + Helper.borderSize) }):setTextProperties(config.dropDownTextProperties)
 		row[2].handlers.onDropDownActivated = function () menu.noupdate = true end
 		row[2].handlers.onDropDownConfirmed = menu.dropdownLoad
 		row[2].handlers.onDropDownRemoved = menu.dropdownRemovedCP
@@ -3146,6 +3148,17 @@ function menu.displayPlan(frame)
 				end
 			end
 			for _, entry in ipairs(config.leftBar) do
+				if entry.additionaltypes then
+					for _, moduletype in ipairs(entry.additionaltypes) do
+						if sortedModules[moduletype] then
+							sortedModules[entry.mode] = sortedModules[entry.mode] or {}
+							for _, module in ipairs(sortedModules[moduletype]) do
+								table.insert(sortedModules[entry.mode], module)
+							end
+						end
+					end
+				end
+
 				if sortedModules[entry.mode] then
 					local isextended = menu.isEntryExtended(menu.container, entry.mode)
 
@@ -5909,7 +5922,7 @@ function menu.filterModuleByText(module, texts)
 	for _, textentry in ipairs(texts) do
 		if not textentry.race then
 			hasadditionalfilter = true
-			text = utf8.lower(textentry.text)
+			local text = utf8.lower(textentry.text)
 
 			local name, shortname, makerracenames = GetMacroData(module, "name", "shortname", "makerracename")
 			if string.find(utf8.lower(name), text, 1, true) then

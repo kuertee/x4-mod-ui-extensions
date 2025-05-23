@@ -1688,6 +1688,7 @@ local config = {
 		["MiningPlayer"]			= 1,
 		["Explore"]					= 2,
 		["ExploreUpdate"]			= 2,
+		["SupplyFleet"]				= 2,
 	},
 
 	assignments = {
@@ -4968,13 +4969,15 @@ function menu.updatePlotData(station, donotrefresh)
 			posZ = math.ceil((rawsize.z / 2 + plotcenter.z) / 1000),
 			negZ = math.floor((rawsize.z / 2 - plotcenter.z) / 1000),
 		}
+		-- Using high precision in GetMinimumBuildPlot*() functions we can calculate the extends relative to the station's origin in high precision and just then round up to whole kilometers.
+		-- Now we require the smallest kilometer-precision box that can contain the current station.
 		menu.plotData.minimumdimensions = {
 			posX = math.ceil((minimumrawsize.x / 2 + minimumcenter.x) / 1000),
-			negX = math.floor((minimumrawsize.x / 2 - minimumcenter.x) / 1000),
+			negX = math.ceil((minimumrawsize.x / 2 - minimumcenter.x) / 1000),
 			posY = math.ceil((minimumrawsize.y / 2 + minimumcenter.y) / 1000),
-			negY = math.floor((minimumrawsize.y / 2 - minimumcenter.y) / 1000),
+			negY = math.ceil((minimumrawsize.y / 2 - minimumcenter.y) / 1000),
 			posZ = math.ceil((minimumrawsize.z / 2 + minimumcenter.z) / 1000),
-			negZ = math.floor((minimumrawsize.z / 2 - minimumcenter.z) / 1000),
+			negZ = math.ceil((minimumrawsize.z / 2 - minimumcenter.z) / 1000),
 		}
 
 		if ((not menu.plotData.isinownedspace) and (rawsize.x > boughtrawsize.x or rawsize.y > boughtrawsize.y or rawsize.z > boughtrawsize.z)) or GetComponentData(sector, "isplayerowned") then
@@ -5072,11 +5075,11 @@ function menu.updatePlotWidgets()
 				suffix = ReadText(1001, 108)
 			}
 			if sliderproperties.minselect > sliderproperties.maxselect then
-				print("menu.updatePlotWidgets(): minselect > maxselect [Florian]")
+				print("menu.updatePlotWidgets(): for dimension '" .. slider.dimension .. "': minselect (" .. minselect .. ") > maxselect (" .. sliderproperties.maxselect .. "). Ignore if the station is visually bigger than its plot (How did that happen?). [Florian]")
 				sliderproperties.minselect = sliderproperties.maxselect
 			end
 			if sliderproperties.start < sliderproperties.minselect then
-				print("menu.updatePlotWidgets(): start < minselect [Florian]")
+				print("menu.updatePlotWidgets(): for dimension '" .. slider.dimension .. "': start (" .. locdimension .. ") < minselect (" .. minselect .. "). Ignore if the station is visually bigger than its plot (How did that happen?). [Florian]")
 				sliderproperties.start = sliderproperties.minselect
 			end
 		end
@@ -12531,11 +12534,11 @@ function menu.createPlotMode(inputframe)
 			print("maxselect > max. axis: " .. tostring(dimension.dimension) .. " maxselect: " .. tostring(maxselect) .. ", max: " .. tostring(max) .. ", paired value: " .. tostring(menu.plotData.dimensions[config.plotPairedDimension[dimension.dimension]]))
 		end
 		if minselect > maxselect then
-			print("menu.createPlotMode(): minselect > maxselect [Florian]")
+			print("menu.createPlotMode(): for dimension '" .. dimension.dimension .. "': minselect (" .. minselect .. ") > maxselect (" .. maxselect .. "). Ignore if the station is visually bigger than its plot (How did that happen?). [Florian]")
 			minselect = maxselect
 		end
 		if locdimension < minselect then
-			print("menu.createPlotMode(): start < minselect [Florian]")
+			print("menu.createPlotMode(): for dimension '" .. dimension.dimension .. "': start (" .. locdimension .. ") < minselect (" .. minselect .. "). Ignore if the station is visually bigger than its plot (How did that happen?). [Florian]")
 			locdimension = minselect
 		end
 
@@ -13461,7 +13464,7 @@ function menu.setupInfoSubmenuRows(mode, inputtable, inputobject, instance)
 		locrowdata = { false, ReadText(1001, 2) .. ReadText(1001, 120), (defenceinfo_high and (function() return (ConvertIntegerString(Helper.round(GetComponentData(object64, "shield") or 0), true, 4, true, true, true) .. " / " .. shield_max .. " " .. ReadText(1001, 118) .. " (" .. (GetComponentData(object64, "shieldpercent") or 0) .. "%)") end) or (unknowntext .. " / " .. shield_max .. " " .. ReadText(1001, 118) .. " (" ..  (GetComponentData(object64, "shieldpercent") or 0) .. "%)")) }	-- Shield, MJ
 		row = menu.addInfoSubmenuRow(instance, inputtable, row, locrowdata, false, false, false, 1, indentsize)
 
-		locrowdata = { true, ReadText(1001, 9076) .. ReadText(1001, 120), defenceinfo_low and (function() return (ConvertIntegerString(Helper.round(GetComponentData(object64, "maxunboostedforwardspeed") or 0), true, 0, true) .. " " .. ReadText(1001, 113)) end) or (unknowntext .. " " .. ReadText(1001, 113)) }	-- Cruising Speed, m/s
+		locrowdata = { true, ReadText(1001, 8051) .. ReadText(1001, 120), defenceinfo_low and (function() return (ConvertIntegerString(Helper.round(GetComponentData(object64, "maxunboostedforwardspeed") or 0), true, 0, true) .. " " .. ReadText(1001, 113)) end) or (unknowntext .. " " .. ReadText(1001, 113)) }	-- Cruising Speed, m/s
 		row = menu.addInfoSubmenuRow(instance, inputtable, row, locrowdata, false, false, false, 1, indentsize, nil, nil, false)
 
 		local dpstable = ffi.new("DPSData[?]", 6)
@@ -19710,14 +19713,16 @@ function menu.createSelectedShips(frame)
 		row[6]:createObjectShieldHullBar(selectedcomponent)
 
 		local isship = C.IsComponentClass(selectedcomponent, "ship")
-		if (isship and isplayerowned) or C.IsComponentClass(selectedcomponent, "collectablewares") then
+		if isship or C.IsComponentClass(selectedcomponent, "collectablewares") then
 			local row = ftable:addRow(nil, { fixed = true, borderBelow = false })
-			row[1]:setColSpan(3):createText(ReadText(1001, 16), { halign = "center" })
+			if isplayerowned then
+				row[1]:setColSpan(3):createText(ReadText(1001, 16), { halign = "center" })
+			end
 			row[4]:createText("", { x = 0 })
 			row[5]:setColSpan(3):createText(ReadText(1001, 8355), { halign = "center" })
 			-- line
 			local row = ftable:addRow(false, { fixed = true, bgColor = Color["row_separator_white"] })
-			row[1]:setColSpan(3):createText("", { height = 2 })
+			row[1]:setColSpan(3):createText("", { height = 2, cellBGColor = (not isplayerowned) and Color["row_background"] or nil })
 			row[4]:createText("", { height = 2, cellBGColor = Color["row_background"], x = 0 })
 			row[5]:setColSpan(3):createText("", { height = 2 })
 
@@ -19726,7 +19731,7 @@ function menu.createSelectedShips(frame)
 				left = {},
 				right = {},
 			}
-			if isship then
+			if isship and isplayerowned then
 				-- order
 				local _, _, _, name, _, _, _, targetname = menu.getOrderInfo(selectedcomponent, true)
 				table.insert(rows.left, { entrytype = "text", text = name .. ((targetname ~= "") and (ReadText(1001, 120) .. " " .. targetname) or ""), properties = { halign = "center", color = menu.holomapcolor.playercolor } })
@@ -19788,6 +19793,10 @@ function menu.createSelectedShips(frame)
 				end
 			end
 
+			local storageinfo_capacity	= C.IsInfoUnlockedForPlayer(selectedcomponent, "storage_capacity")
+			local storageinfo_amounts	= C.IsInfoUnlockedForPlayer(selectedcomponent, "storage_amounts")
+			local storageinfo_warelist	= C.IsInfoUnlockedForPlayer(selectedcomponent, "storage_warelist")
+
 			if isship then
 				-- capacity
 				local numtransporttypes = C.GetNumCargoTransportTypes(selectedcomponent, true)
@@ -19796,7 +19805,7 @@ function menu.createSelectedShips(frame)
 				local futuretransporttypes = ffi.new("StorageInfo[?]", numtransporttypes)
 				numtransporttypes = C.GetCargoTransportTypes(futuretransporttypes, numtransporttypes, selectedcomponent, true, true)
 				for i = 0, numtransporttypes - 1 do
-					table.insert(rows.right, { entrytype = "capacity", text = ReadText(1001, 1402) .. " (" .. ffi.string(futuretransporttypes[i].name) .. ")" .. ReadText(1001, 120), currentused = currenttransporttypes[i].spaceused, futureused = futuretransporttypes[i].spaceused, capacity = futuretransporttypes[i].capacity })
+					table.insert(rows.right, { entrytype = "capacity", text = ReadText(1001, 1402) .. " (" .. Helper.unlockInfo(storageinfo_capacity, ffi.string(futuretransporttypes[i].name)) .. ")" .. ReadText(1001, 120), currentused = currenttransporttypes[i].spaceused, futureused = futuretransporttypes[i].spaceused, capacity = futuretransporttypes[i].capacity })
 				end
 			end
 			-- cargo
@@ -19843,7 +19852,7 @@ function menu.createSelectedShips(frame)
 								row[5]:setColSpan(3)
 
 								local mouseovertext
-								local amounttext = menu.formatWareAmount(entry.currentused, entry.futureused, entry.capacity)
+								local amounttext = Helper.unlockInfo(storageinfo_capacity, menu.formatWareAmount(entry.currentused, entry.futureused, entry.capacity))
 								local text = TruncateText(entry.text, Helper.standardFont, menu.selectedShipsTableData.fontsize, row[5]:getWidth() - menu.getAmountTextWidth(amounttext))
 								if text ~= entry.text then
 									mouseovertext = entry.text .. " " .. amounttext
@@ -19863,9 +19872,9 @@ function menu.createSelectedShips(frame)
 								local width = row[5]:getColSpanWidth()
 								row[4]:createStatusBar({ current = entry.future, start = entry.current, max = entry.max, cellBGColor = Color["row_background"], valueColor = Color["slider_value"], posChangeColor = Color["flowchart_slider_diff2"], negChangeColor = Color["flowchart_slider_diff1"], markerColor = Color["statusbar_marker_hidden"], width = width, x = xoffset, scaling = false })
 								row[5]:createButton({ bgColor = Color["button_background_hidden"], highlightColor = (menu.mode == "behaviourinspection") and Color["button_highlight_hidden"] or nil, height = menu.selectedShipsTableData.textHeight })
-								row[5]:setText(entry.text, { color = entry.color })
-								row[5]:setText2(menu.formatWareAmount(entry.current, entry.future), { halign = "right", color = entry.color })
-								if menu.mode ~= "behaviourinspection" then
+								row[5]:setText(Helper.unlockInfo(storageinfo_warelist, entry.text), { color = entry.color })
+								row[5]:setText2(Helper.unlockInfo(storageinfo_amounts, menu.formatWareAmount(entry.current, entry.future)), { halign = "right", color = entry.color })
+								if storageinfo_warelist and (menu.mode ~= "behaviourinspection") then
 									row[5].handlers.onClick = entry.script
 								end
 							end
@@ -19880,12 +19889,14 @@ function menu.createSelectedShips(frame)
 			end
 		elseif C.IsComponentClass(selectedcomponent, "station") then
 			local row = ftable:addRow(nil, { fixed = true, borderBelow = false })
-			row[1]:setColSpan(3):createText(ReadText(1001, 3305), { halign = "center" })
+			if isplayerowned then
+				row[1]:setColSpan(3):createText(ReadText(1001, 3305), { halign = "center" })
+			end
 			row[4]:createText("", { x = 0 })
 			row[5]:setColSpan(3):createText(ReadText(1001, 63), { halign = "center" })
 			-- line
 			local row = ftable:addRow(false, { fixed = true, bgColor = Color["row_separator_white"] })
-			row[1]:setColSpan(3):createText("", { height = 2 })
+			row[1]:setColSpan(3):createText("", { height = 2, cellBGColor = (not isplayerowned) and Color["row_background"] or nil })
 			row[4]:createText("", { height = 2, cellBGColor = Color["row_background"], x = 0 })
 			row[5]:setColSpan(3):createText("", { height = 2 })
 
@@ -19894,25 +19905,27 @@ function menu.createSelectedShips(frame)
 				left = {},
 				right = {},
 			}
-			-- upkeep missions
-			local upkeepMissions = {}
-			if menu.upkeepMissionData[tostring(selectedcomponent)] then
-				for _, entry in ipairs(menu.upkeepMissionData[tostring(selectedcomponent)]) do
-					table.insert(upkeepMissions, { alertLevel = entry.alertLevel, name = entry.name })
+			if isplayerowned then
+				-- upkeep missions
+				local upkeepMissions = {}
+				if menu.upkeepMissionData[tostring(selectedcomponent)] then
+					for _, entry in ipairs(menu.upkeepMissionData[tostring(selectedcomponent)]) do
+						table.insert(upkeepMissions, { alertLevel = entry.alertLevel, name = entry.name })
+					end
 				end
-			end
-			table.sort(upkeepMissions, function (a, b) return a.alertLevel > b.alertLevel end)
+				table.sort(upkeepMissions, function (a, b) return a.alertLevel > b.alertLevel end)
 
-			for i, entry in ipairs(upkeepMissions) do
-				local color = Color["text_normal"]
-				if entry.alertLevel == 1 then
-					color = menu.holomapcolor.lowalertcolor
-				elseif entry.alertLevel == 2 then
-					color = menu.holomapcolor.mediumalertcolor
-				else
-					color = menu.holomapcolor.highalertcolor
+				for i, entry in ipairs(upkeepMissions) do
+					local color = Color["text_normal"]
+					if entry.alertLevel == 1 then
+						color = menu.holomapcolor.lowalertcolor
+					elseif entry.alertLevel == 2 then
+						color = menu.holomapcolor.mediumalertcolor
+					else
+						color = menu.holomapcolor.highalertcolor
+					end
+					table.insert(rows.left, { entrytype = "text", text = entry.name, properties = { halign = "center", color = color } })
 				end
-				table.insert(rows.left, { entrytype = "text", text = entry.name, properties = { halign = "center", color = color } })
 			end
 
 			-- ware reservations
@@ -19920,6 +19933,10 @@ function menu.createSelectedShips(frame)
 			local reservationscargo = menu.getReservationsAmountByWareType(selectedcomponent)
 
 			-- capacity
+			local storageinfo_capacity	= C.IsInfoUnlockedForPlayer(selectedcomponent, "storage_capacity")
+			local storageinfo_amounts	= C.IsInfoUnlockedForPlayer(selectedcomponent, "storage_amounts")
+			local storageinfo_warelist	= C.IsInfoUnlockedForPlayer(selectedcomponent, "storage_warelist")
+
 			local numtransporttypes = C.GetNumCargoTransportTypes(selectedcomponent, true)
 			local currenttransporttypes = ffi.new("StorageInfo[?]", numtransporttypes)
 			numtransporttypes = C.GetCargoTransportTypes(currenttransporttypes, numtransporttypes, selectedcomponent, true, false)
@@ -19931,7 +19948,7 @@ function menu.createSelectedShips(frame)
 					futureamount = futureamount + reservationscapacity[string.lower(storagename)]
 				end
 
-				table.insert(rows.right, { entrytype = "capacity", text = ReadText(1001, 1402) .. " (" .. storagename .. ")" .. ReadText(1001, 120), currentused = currenttransporttypes[i].spaceused, futureused = futureamount, capacity = currenttransporttypes[i].capacity })
+				table.insert(rows.right, { entrytype = "capacity", text = ReadText(1001, 1402) .. " (" .. Helper.unlockInfo(storageinfo_capacity, storagename) .. ")" .. ReadText(1001, 120), currentused = currenttransporttypes[i].spaceused, futureused = futureamount, capacity = currenttransporttypes[i].capacity })
 			end
 			-- cargo
 			local cargo = GetComponentData(selectedcomponent, "cargo")
@@ -19970,7 +19987,7 @@ function menu.createSelectedShips(frame)
 								row[5]:setColSpan(3)
 
 								local mouseovertext
-								local amounttext = menu.formatWareAmount(entry.currentused, entry.futureused, entry.capacity)
+								local amounttext = Helper.unlockInfo(storageinfo_capacity, menu.formatWareAmount(entry.currentused, entry.futureused, entry.capacity))
 								local widthdelta = row[5]:getWidth() - menu.getAmountTextWidth(amounttext)
 								local text = ""
 								if widthdelta > 0 then
@@ -19994,9 +20011,9 @@ function menu.createSelectedShips(frame)
 								local width = row[5]:getColSpanWidth()
 								row[4]:createStatusBar({ current = entry.future, start = entry.current, max = entry.max, cellBGColor = Color["row_background"], valueColor = Color["slider_value"], posChangeColor = Color["flowchart_slider_diff2"], negChangeColor = Color["flowchart_slider_diff1"], markerColor = Color["statusbar_marker_hidden"], width = width, x = barxoffset, scaling = false })
 								row[5]:createButton({ bgColor = Color["button_background_hidden"], highlightColor = (menu.mode == "behaviourinspection") and Color["button_highlight_hidden"] or nil, height = menu.selectedShipsTableData.textHeight })
-								row[5]:setText(entry.text, { color = entry.color, x = Helper.standardIndentStep })
-								row[5]:setText2(menu.formatWareAmount(entry.current, entry.future), { halign = "right", color = entry.color })
-								if menu.mode ~= "behaviourinspection" then
+								row[5]:setText(Helper.unlockInfo(storageinfo_warelist, entry.text), { color = entry.color, x = Helper.standardIndentStep })
+								row[5]:setText2(Helper.unlockInfo(storageinfo_amounts, menu.formatWareAmount(entry.current, entry.future)), { halign = "right", color = entry.color })
+								if storageinfo_warelist and (menu.mode ~= "behaviourinspection") then
 									row[5].handlers.onClick = entry.script
 								end
 							end
@@ -20809,11 +20826,13 @@ function menu.initTradeContextData()
 
 	local tradeoffers, nontradeoffers = {}, {}
 	if menu.contextMenuData.wareexchange then
-		tradeoffers = GetWareExchangeTradeList(convertedCurrentShip, convertedTradeOfferContainer)
-		-- Mark any equipment wares as such (only relevant for ware exchange)
-		for _, tradedata in pairs(tradeoffers) do
-			if tradedata.ware then
-				tradedata.ammotypename = menu.getAmmoTypeNameByWare(tradedata.ware)
+		if convertedCurrentShip then
+			tradeoffers = GetWareExchangeTradeList(convertedCurrentShip, convertedTradeOfferContainer)
+			-- Mark any equipment wares as such (only relevant for ware exchange)
+			for _, tradedata in pairs(tradeoffers) do
+				if tradedata.ware then
+					tradedata.ammotypename = menu.getAmmoTypeNameByWare(tradedata.ware)
+				end
 			end
 		end
 	else
@@ -20932,9 +20951,12 @@ function menu.initTradeContextData()
 	menu.contextMenuData.ammotypes = { }
 	if menu.contextMenuData.wareexchange and menu.contextMenuData.component ~= 0 then
 		-- ammo is only relevant and visible in ware exchange case
-		local missilecapacity1, countermeasurecapacity1, deployablecapacity1 = GetComponentData(convertedCurrentShip, "missilecapacity", "countermeasurecapacity", "deployablecapacity")
+		local missilecapacity1, countermeasurecapacity1, deployablecapacity1 = 0, 0, 0
+		if convertedCurrentShip then
+			missilecapacity1, countermeasurecapacity1, deployablecapacity1 = GetComponentData(convertedCurrentShip, "missilecapacity", "countermeasurecapacity", "deployablecapacity")
+		end
 		local missilecapacity2, countermeasurecapacity2, deployablecapacity2 = GetComponentData(convertedTradeOfferContainer, "missilecapacity", "countermeasurecapacity", "deployablecapacity")
-		local unitcapacity1 = GetUnitStorageData(convertedCurrentShip).capacity
+		local unitcapacity1 = convertedCurrentShip and GetUnitStorageData(convertedCurrentShip).capacity or 0
 		local unitcapacity2 = GetUnitStorageData(convertedTradeOfferContainer).capacity
 		-- missiles
 		if missilecapacity1 > 0 or missilecapacity2 > 0 then
@@ -26320,7 +26342,7 @@ function menu.onUpdate()
 				local orderidx = (tonumber(menu.orderdrag.order.queueidx) == 0) and "default" or tonumber(menu.orderdrag.order.queueidx)
 				local orderparams = GetOrderParams(ConvertStringToLuaID(tostring(menu.orderdrag.component)), orderidx)
 				if next(orderparams) then
-					if (orderparams[paramidx].type == "position") and (type(orderparams[paramidx].value[2]) == "table") then
+					if (orderparams[paramidx].type == "position") and orderparams[paramidx].value and (type(orderparams[paramidx].value[2]) == "table") then
 						local eclipticoffset = ffi.new("UIPosRot", orderparams[paramidx].value[2])
 
 						local posrotcomponent = C.GetMapPositionOnEcliptic2(menu.holomap, posrot, true, ConvertIDTo64Bit(orderparams[paramidx].value[1]), eclipticoffset)
@@ -27082,9 +27104,10 @@ function menu.onRenderTargetSelect(modified)
 					if (C.IsComponentOperational(pickedcomponent) and (pickedcomponentclass ~= "player") and (not menu.createInfoFrameRunning)) or
 						(pickedcomponentclass == "gate") or (pickedcomponentclass == "asteroid") or isconstruction
 					then
-						local sectorcontext = C.GetContextByClass(pickedcomponent, "sector", false)
-						if sectorcontext ~= menu.currentsector then
-							menu.currentsector = sectorcontext
+						if C.IsComponentClass(pickedcomponent, "highway") then
+							menu.currentsector = C.ConvertStringTo64Bit(tostring(GetComponentData(ConvertStringToLuaID(tostring(pickedcomponent)), "sourcesector") or 0))
+						else
+							menu.currentsector = C.GetContextByClass(pickedcomponent, "sector", false)
 						end
 
 						if modified == "ctrl" then
@@ -27273,7 +27296,21 @@ function menu.onRenderTargetMouseDown(modified)
 				local orderdef = ffi.new("OrderDefinition")
 				if C.GetOrderDefinition(orderdef, pickedorder.orderdef) then
 					local orderdefid = ffi.string(orderdef.id)
-					if isintermediate or config.orderDragSupport[orderdefid] then
+					local paramidx = config.orderDragSupport[orderdefid]
+					local startorderdrag = false
+					if isintermediate then
+						startorderdrag = true
+					elseif paramidx then
+						local orderidx = (tonumber(pickedorder.queueidx) == 0) and "default" or tonumber(pickedorder.queueidx)
+						local orderparams = GetOrderParams(ConvertStringToLuaID(tostring(pickedordercomponent)), orderidx)
+						if next(orderparams) then
+							if (orderparams[paramidx].type == "position") and orderparams[paramidx].value then
+								startorderdrag = true
+							end
+						end
+					end
+
+					if startorderdrag then
 						menu.orderdrag = { component = pickedordercomponent, order = pickedorder, orderdefid = isintermediate and "MoveWait" or orderdefid, isintermediate = isintermediate, isclick = true }
 					end
 				end
@@ -27312,7 +27349,7 @@ function menu.onRenderTargetMouseUp(modified)
 				local orderidx = (tonumber(menu.orderdrag.order.queueidx) == 0) and "default" or tonumber(menu.orderdrag.order.queueidx)
 				local orderparams = GetOrderParams(ConvertStringToLuaID(tostring(menu.orderdrag.component)), orderidx)
 				if next(orderparams) then
-					if (orderparams[paramidx].type == "position") and (type(orderparams[paramidx].value[2]) == "table") then
+					if (orderparams[paramidx].type == "position") and orderparams[paramidx].value and (type(orderparams[paramidx].value[2]) == "table") then
 						local eclipticoffset = ffi.new("UIPosRot", orderparams[paramidx].value[2])
 
 						local posrotcomponent = C.GetMapPositionOnEcliptic2(menu.holomap, posrot, true, ConvertIDTo64Bit(orderparams[paramidx].value[1]), eclipticoffset)
@@ -30199,10 +30236,21 @@ function menu.updateMouseCursor()
 			if GetComponentData(ConvertStringTo64Bit(tostring(pickedordercomponent)), "isplayerowned") then
 				-- orders
 				if pickedordercomponent ~= occupiedship then
-					if isintermediate then
-						cursor = "cursorplus"
-					else
-						cursor = "cursormove"
+					local orderdef = ffi.new("OrderDefinition")
+					if C.GetOrderDefinition(orderdef, pickedorder.orderdef) then
+						local orderdefid = ffi.string(orderdef.id)
+						local paramidx = config.orderDragSupport[orderdefid]
+						if isintermediate then
+							cursor = "cursorplus"
+						elseif paramidx then
+							local orderidx = (tonumber(pickedorder.queueidx) == 0) and "default" or tonumber(pickedorder.queueidx)
+							local orderparams = GetOrderParams(ConvertStringToLuaID(tostring(pickedordercomponent)), orderidx)
+							if next(orderparams) then
+								if (orderparams[paramidx].type == "position") and orderparams[paramidx].value then
+									cursor = "cursormove"
+								end
+							end
+						end
 					end
 				else
 					cursor = "cursor"

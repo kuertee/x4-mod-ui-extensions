@@ -1141,15 +1141,19 @@ function menu.checkboxSelectSoftware(type, slot, software, row, keepcontext)
 	end
 end
 
+function menu.getDefaultShipName()
+	local name = ""
+	if menu.object ~= 0 then
+		name = ffi.string(C.GetComponentName(menu.object))
+	else
+		name = GetMacroData(menu.macro, "name")
+	end
+	return name
+end
+
 function menu.setCustomShipName()
 	if menu.customshipname == nil then
-		local name = ""
-		if menu.object ~= 0 then
-			name = ffi.string(C.GetComponentName(menu.object))
-		else
-			name = GetMacroData(menu.macro, "name")
-		end
-		menu.customshipname = name
+		menu.customshipname = menu.getDefaultShipName()
 	end
 
 	if menu.customShipNameEditBox then
@@ -1165,17 +1169,6 @@ function menu.getUpgradeTypeText(upgradetype)
 	end
 
 	return ""
-end
-
-function menu.getCustomShipName()
-	local macroname = ""
-	if menu.object ~= 0 then
-		macroname = GetMacroData(GetComponentData(ConvertStringTo64Bit(tostring(menu.object)), "macro"), "basename")
-	else
-		macroname = GetMacroData(menu.macro, "basename")
-	end
-
-	return macroname .. " (" .. menu.loadoutName .. ")"
 end
 
 function menu.buttonSelectRepair(row, col, objectstring, keepcontext)
@@ -1784,7 +1777,7 @@ function menu.buttonConfirm()
 					if entry.objectgroup then
 						local groupentry = menu.shipgroups[entry.objectgroup]
 						for i, ship in ipairs(groupentry.ships) do
-							menu.repairandupgrade(entry, ship.ship, "", entry.groupstates[i].hasupgrades, haspaid, entry.groupstates[i].price, entry.groupstates[i].crewprice)
+							menu.repairandupgrade(entry, ship.ship, "", entry.groupstates[i].hasupgrades, haspaid, entry.groupstates[i].price, entry.groupstates[i].crewprice, "")
 						end
 					else
 						menu.repairandupgrade(entry, entry.object, entry.macro, entry.hasupgrades, haspaid)
@@ -2218,7 +2211,24 @@ function menu.buttonAddPurchase(hasupgrades, hasrepairs)
 		paintmodware = menu.selectedPaintMod and menu.selectedPaintMod.ware or nil
 	end
 
-	table.insert(menu.shoppinglist, { objectgroup = objectgroup, groupstates = groupstates, object = object, macro = menu.macro, hasupgrades = hasupgrades, upgradeplan = menu.upgradeplan, crew = menu.crew, settings = menu.settings, amount = 1, price = menu.total, crewprice = menu.crewtotal, duration = menu.duration, warnings = menu.warnings, customshipname = menu.customshipname, loadoutName = menu.loadoutName, paintmodware = paintmodware })
+	table.insert(menu.shoppinglist, {
+		objectgroup = objectgroup,
+		groupstates = groupstates,
+		object = object,
+		macro = menu.macro,
+		hasupgrades = hasupgrades,
+		upgradeplan = menu.upgradeplan,
+		crew = menu.crew,
+		settings = menu.settings,
+		amount = 1,
+		price = menu.total,
+		crewprice = menu.crewtotal,
+		duration = menu.duration,
+		warnings = menu.warnings,
+		customshipname = (menu.customshipname ~= menu.getDefaultShipName()) and menu.customshipname or "",
+		loadoutName = menu.loadoutName,
+		paintmodware = paintmodware
+	})
 	menu.object = 0
 	menu.objectgroup = nil
 	menu.damagedcomponents = {}
@@ -2251,7 +2261,7 @@ function menu.buttonConfirmPurchaseEdit(hasupgrades, hasrepairs)
 		menu.shoppinglist[menu.editingshoppinglist].crewprice = menu.crewtotal
 		menu.shoppinglist[menu.editingshoppinglist].duration = menu.duration
 		menu.shoppinglist[menu.editingshoppinglist].warnings = menu.warnings
-		menu.shoppinglist[menu.editingshoppinglist].customshipname = menu.customshipname
+		menu.shoppinglist[menu.editingshoppinglist].customshipname = (menu.customshipname ~= menu.getDefaultShipName()) and menu.customshipname or ""
 		menu.shoppinglist[menu.editingshoppinglist].loadoutName = menu.loadoutName
 		menu.shoppinglist[menu.editingshoppinglist].paintmodware = menu.selectedPaintMod and menu.selectedPaintMod.ware or nil
 	end
@@ -2289,7 +2299,7 @@ function menu.buttonEditPurchase(idx)
 	elseif menu.macro ~= "" then
 		menu.class = ffi.string(C.GetMacroClass(menu.macro))
 	end
-	menu.customshipname = entry.customshipname
+	menu.customshipname = (entry.customshipname ~= "") and entry.customshipname or menu.getDefaultShipName()
 	menu.loadoutName = entry.loadoutName
 	if entry.paintmodware then
 		local found = false
@@ -11071,7 +11081,7 @@ function menu.setMissingUpgrade(ware, amount, allownewentry)
 	end
 end
 
-function menu.repairandupgrade(shoppinglistentry, object, macro, hasupgrades, haspaid, objectprice, objectcrewprice)
+function menu.repairandupgrade(shoppinglistentry, object, macro, hasupgrades, haspaid, objectprice, objectcrewprice, objectcustomname)
 	local objectstring = tostring(object)
 	if (object ~= 0) and menu.repairplan[objectstring] and next(menu.repairplan[objectstring]) and (not menu.repairplan[objectstring]["processed"]) then
 		local skip = menu.checkCommanderRepairOrders(objectstring)
@@ -11137,7 +11147,7 @@ function menu.repairandupgrade(shoppinglistentry, object, macro, hasupgrades, ha
 				paintmodwareid = shoppinglistentry.paintmodware
 			})
 
-			local buildtaskid = Helper.callLoadoutFunction(shoppinglistentry.upgradeplan, shoppinglistentry.crew, function (loadout, crewtransfer) return C.AddBuildTask6(menu.container, object, macro, loadout, menu.isplayerowned and 0 or (objectprice or shoppinglistentry.price), crewtransfer, menu.immediate, shoppinglistentry.customshipname, additionalinfo) end, nil, "UILoadout2")
+			local buildtaskid = Helper.callLoadoutFunction(shoppinglistentry.upgradeplan, shoppinglistentry.crew, function (loadout, crewtransfer) return C.AddBuildTask6(menu.container, object, macro, loadout, menu.isplayerowned and 0 or (objectprice or shoppinglistentry.price), crewtransfer, menu.immediate, objectcustomname or shoppinglistentry.customshipname, additionalinfo) end, nil, "UILoadout2")
 			if (buildtaskid ~= 0) and haspaid then
 				C.SetBuildTaskTransferredMoney(buildtaskid, objectprice and (objectprice + objectcrewprice) or haspaid)
 			end

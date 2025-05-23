@@ -2248,6 +2248,7 @@ function menu.setupRenderTarget(renderobject, isicon, paintmod, iscomponent)
 			local rendertargetTexture = GetRenderTargetTexture(menu.rendertarget.id)
 			--print("rendertarget id: " .. tostring(menu.rendertarget.id) .. ", rendertarget texture: " .. tostring(rendertargetTexture))
 			if rendertargetTexture then
+				menu.cleanupRenderTarget()
 				if iscomponent then
 					menu.currentrenderobject = ConvertStringTo64Bit(tostring(renderobject))
 					menu.cutscenedesc = CreateCutsceneDescriptor("OrbitIndefinitelySlow", { targetobject = menu.currentrenderobject })

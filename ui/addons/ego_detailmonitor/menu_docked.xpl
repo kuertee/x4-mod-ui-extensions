@@ -349,7 +349,7 @@ function menu.display()
 			end
 		end
 	end
-	local canwareexchange = isplayerowned and ((not C.IsComponentClass(menu.currentcontainer, "ship")) or aipilot) and (not isbuilderbusy)
+	local canwareexchange = isplayerowned and ((not C.IsComponentClass(menu.currentcontainer, "ship")) or aipilot) and (not isbuilderbusy) and (menu.currentplayership ~= 0)
 
 	--NB: equipment docks currently do not have ship traders
 	local dockedplayerships = {}

@@ -180,6 +180,7 @@ ffi.cdef[[
 	float GetDistanceBetween(UniverseID component1id, UniverseID component2id);
 	uint32_t GetDockedShips(UniverseID* result, uint32_t resultlen, UniverseID dockingbayorcontainerid, const char* factionid);
 	UniverseID GetFleetLead(UniverseID controllableid, FleetUnitID fleetunitid);
+	FleetUnitID GetFleetUnit(UniverseID controllableid);
 	FleetUnitInfo GetFleetUnitInfo(FleetUnitID fleetunitid);
 	uint32_t GetFleetUnitSubordinateFleetUnits(FleetUnitID* result, uint32_t resultlen, FleetUnitID fleetunitid, int subordinategroupid);
 	int32_t GetFleetUnitSubordinateGroup(FleetUnitID fleetunitid);
@@ -3375,7 +3376,6 @@ function menu.draw()
 	end
 
 	local height = contentTable:getFullHeight()
-	local subsectionHeight = 0
 	if menu.frameY + height > Helper.viewHeight then
 		menu.frameY = math.max(0, Helper.viewHeight - height - config.border)
 	else
@@ -3385,8 +3385,15 @@ function menu.draw()
 	end
 	frame.properties.y = menu.frameY
 	if menu.subsection then
-		subsectionHeight = subsectionTable:getFullHeight()
-		subsectionTable.properties.y = menu.subsection.y - subsectionHeight + Helper.scaleY(config.rowHeight)
+		local subsectionHeight = subsectionTable:getFullHeight()
+		local toprowoffset = GetTopRow(menu.contentTable) - 1
+		local scrolloffset = 0
+		if toprowoffset > 1 then
+			scrolloffset = Helper.scaleX(Helper.headerRow1Height) + Helper.borderSize
+			toprowoffset = toprowoffset - 1
+		end
+		scrolloffset = scrolloffset + toprowoffset * (Helper.scaleY(config.rowHeight) + Helper.borderSize)
+		subsectionTable.properties.y = menu.subsection.y - scrolloffset - subsectionHeight + Helper.scaleY(config.rowHeight)
 		if subsectionTable.properties.y < 0 then
 			local diff = -subsectionTable.properties.y
 			menu.frameY = frame.properties.y - diff
@@ -3753,7 +3760,7 @@ function menu.createContentTable(frame, position)
 	end
 	-- kuertee end: forceShowMenus: show main, interaction, custom_actions menu when no actions to show
 
-	local ftable = frame:addTable(5, { tabOrder = menu.subsection and 2 or 1, x = x, width = menu.width, backgroundID = "solid", backgroundColor = Color["frame_background_semitransparent"], highlightMode = "off" })
+	local ftable = frame:addTable(5, { tabOrder = menu.subsection and 2 or 1, x = x, width = menu.width, backgroundID = "solid", backgroundColor = Color["frame_background_semitransparent"], highlightMode = "offnormalscroll" })
 	ftable:setDefaultCellProperties("text",   { minRowHeight = config.rowHeight, fontsize = config.entryFontSize, x = config.entryX })
 	ftable:setDefaultCellProperties("button", { height = config.rowHeight })
 	ftable:setDefaultCellProperties("checkbox", { height = config.rowHeight, width = config.rowHeight })
@@ -4248,7 +4255,7 @@ function menu.createSubSectionTable(frame, position)
 		x = menu.width + Helper.borderSize
 	end
 
-	local ftable = frame:addTable(2, { tabOrder = 1, x = x, width = menu.width, backgroundID = "solid", backgroundColor = Color["frame_background_semitransparent"], highlightMode = "off" })
+	local ftable = frame:addTable(2, { tabOrder = 1, x = x, width = menu.width, backgroundID = "solid", backgroundColor = Color["frame_background_semitransparent"], highlightMode = "offnormalscroll" })
 	ftable:setDefaultCellProperties("text",   { minRowHeight = config.rowHeight, fontsize = config.entryFontSize, x = config.entryX })
 	ftable:setDefaultCellProperties("button", { height = config.rowHeight })
 	ftable:setDefaultComplexCellProperties("button", "text", { fontsize = config.entryFontSize, x = config.entryX })
@@ -4606,6 +4613,8 @@ function menu.processSelectedPlayerShips()
 			menu.uix_multiRename_removedActionTarget = ship
 			-- kuertee end: multi-rename
 
+		elseif C.GetFleetUnit(ship) == menu.fleetunit then
+			table.remove(menu.selectedplayerships, i)
 		elseif C.IsUnit(ship) then
 			table.remove(menu.selectedplayerships, i)
 		elseif isonlineobject then

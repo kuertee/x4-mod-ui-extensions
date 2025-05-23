@@ -1,4 +1,4 @@
--- Ingame Options Main Menu
+ï»¿-- Ingame Options Main Menu
 
 -- ffi setup
 local ffi = require("ffi")
@@ -3017,8 +3017,8 @@ function menu.onExtensionSettingChanged()
 	menu.extensionSettings = GetAllExtensionSettings()
 end
 
-function menu.onCutsceneStopped()
-	if menu.cutsceneid then
+function menu.onCutsceneStopped(_, cutsceneID)
+	if cutsceneID == menu.cutsceneid then
 		if menu.currentOption == "idle" then
 			menu.cutsceneid = StartCutscene(menu.cutscenedesc, GetRenderTargetTexture(menu.rendertarget))
 		else
@@ -3035,7 +3035,7 @@ function menu.onCutsceneStopped()
 				C.StartStartMenuBGMusic()
 			end
 		end
-	elseif menu.playNewGameCutscene and menu.playNewGameCutscene.cutsceneid then
+	elseif menu.playNewGameCutscene and (cutsceneID == menu.playNewGameCutscene.cutsceneid) then
 		if menu.playNewGameCutscene.cutscenedesc then
 			ReleaseCutsceneDescriptor(menu.playNewGameCutscene.cutscenedesc)
 		end
@@ -3956,7 +3956,7 @@ function menu.createContextMenuRemap(frame)
 
 	for _, conflict in ipairs(menu.contextMenuData.conflicts) do
 		local row = ftable:addRow(true, {  })
-		row[1]:setColSpan(5):createText("· " .. menu.getControlName(conflict.control[1], conflict.control[2]), { color = (not conflict.mappable) and Color["text_error"] or nil })
+		row[1]:setColSpan(5):createText("Â· " .. menu.getControlName(conflict.control[1], conflict.control[2]), { color = (not conflict.mappable) and Color["text_error"] or nil })
 	end
 
 	local buttontable = frame:addTable(5, { tabOrder = 1, x = Helper.borderSize, y = Helper.borderSize, width = menu.contextMenuData.width, highlightMode = "off", defaultInteractiveObject = true })
@@ -4213,7 +4213,7 @@ function menu.createContextMenuUISecurity(frame)
 	local extensions = ffi.string(C.GetModifiedBasegameUIFilesExtensions())
 	local extensiontext = ReadText(1001, 12726) .. ReadText(1001, 120)
 	for extension in utf8.gmatch(extensions, "([^;]+)") do
-		extensiontext = extensiontext .. "\n· " .. extension
+		extensiontext = extensiontext .. "\nÂ· " .. extension
 	end
 	local row = ftable:addRow(false, { fixed = true })
 	row[1]:setColSpan(6):createText(extensiontext, { wordwrap = true })
@@ -4579,20 +4579,20 @@ function menu.displayControlRow(ftable, controlsgroup, controltype, code, contex
 						local showboth = false
 						if code == 130 then
 							if menu.mappedmousebuttons.targetinteract[buttons[i].input2] then
-								mouseovertext = mouseovertext .. "\n· " .. text .. " (" .. ReadText(1026, 2688) .. ")" .. ReadText(1001, 120) .. " " .. menu.getControlName("states", 132)
+								mouseovertext = mouseovertext .. "\nÂ· " .. text .. " (" .. ReadText(1026, 2688) .. ")" .. ReadText(1001, 120) .. " " .. menu.getControlName("states", 132)
 								showboth = true
 							end
 						elseif code == 131 then
 							if menu.mappedmousebuttons.targetselect[buttons[i].input2] then
-								mouseovertext = mouseovertext .. "\n· " .. text .. " (" .. ReadText(1026, 2688) .. ")" .. ReadText(1001, 120) .. " " .. menu.getControlName("states", 132)
+								mouseovertext = mouseovertext .. "\nÂ· " .. text .. " (" .. ReadText(1026, 2688) .. ")" .. ReadText(1001, 120) .. " " .. menu.getControlName("states", 132)
 								showboth = true
 							end
 						end
 						if not showboth then
-							mouseovertext = mouseovertext .. "\n· " .. text .. " (" .. ReadText(1026, 2688) .. ")" .. ReadText(1001, 120) .. " " .. name
+							mouseovertext = mouseovertext .. "\nÂ· " .. text .. " (" .. ReadText(1026, 2688) .. ")" .. ReadText(1001, 120) .. " " .. name
 						end
 						for _, control in ipairs(menu.mappedmousebuttons[buttons[i].input2]) do
-							mouseovertext = mouseovertext .. "\n· " .. text .. " (" .. ReadText(1026, 2689) .. ")" .. ReadText(1001, 120) .. " " .. menu.getControlName(control[1], control[2])
+							mouseovertext = mouseovertext .. "\nÂ· " .. text .. " (" .. ReadText(1026, 2689) .. ")" .. ReadText(1001, 120) .. " " .. menu.getControlName(control[1], control[2])
 						end
 					end
 				else
@@ -4628,8 +4628,8 @@ function menu.displayControlRow(ftable, controlsgroup, controltype, code, contex
 							hasextramousebuttoninfo = true
 
 							mouseovertext = mouseovertext .. ReadText(1026, 2687) .. ReadText(1001, 120)
-							mouseovertext = mouseovertext .. "\n· " .. text .. " (" .. ReadText(1026, 2688) .. ")" .. ReadText(1001, 120) .. " " .. menu.getControlName("states", 132)
-							mouseovertext = mouseovertext .. "\n· " .. text .. " (" .. ReadText(1026, 2689) .. ")" .. ReadText(1001, 120) .. " " .. name
+							mouseovertext = mouseovertext .. "\nÂ· " .. text .. " (" .. ReadText(1026, 2688) .. ")" .. ReadText(1001, 120) .. " " .. menu.getControlName("states", 132)
+							mouseovertext = mouseovertext .. "\nÂ· " .. text .. " (" .. ReadText(1026, 2689) .. ")" .. ReadText(1001, 120) .. " " .. name
 						elseif menu.mappedmousebuttons.targetselect[buttons[i].input2] then
 							if mouseovertext then
 								mouseovertext = mouseovertext .. "\n\n"
@@ -4642,8 +4642,8 @@ function menu.displayControlRow(ftable, controlsgroup, controltype, code, contex
 							hasextramousebuttoninfo = true
 
 							mouseovertext = mouseovertext .. ReadText(1026, 2687) .. ReadText(1001, 120)
-							mouseovertext = mouseovertext .. "\n· " .. text .. " (" .. ReadText(1026, 2688) .. ")" .. ReadText(1001, 120) .. " " .. menu.getControlName("states", 130)
-							mouseovertext = mouseovertext .. "\n· " .. text .. " (" .. ReadText(1026, 2689) .. ")" .. ReadText(1001, 120) .. " " .. name
+							mouseovertext = mouseovertext .. "\nÂ· " .. text .. " (" .. ReadText(1026, 2688) .. ")" .. ReadText(1001, 120) .. " " .. menu.getControlName("states", 130)
+							mouseovertext = mouseovertext .. "\nÂ· " .. text .. " (" .. ReadText(1026, 2689) .. ")" .. ReadText(1001, 120) .. " " .. name
 						elseif menu.mappedmousebuttons.targetinteract[buttons[i].input2] then
 							if mouseovertext then
 								mouseovertext = mouseovertext .. "\n\n"
@@ -4656,8 +4656,8 @@ function menu.displayControlRow(ftable, controlsgroup, controltype, code, contex
 							hasextramousebuttoninfo = true
 
 							mouseovertext = mouseovertext .. ReadText(1026, 2687) .. ReadText(1001, 120)
-							mouseovertext = mouseovertext .. "\n· " .. text .. " (" .. ReadText(1026, 2688) .. ")" .. ReadText(1001, 120) .. " " .. menu.getControlName("states", 131)
-							mouseovertext = mouseovertext .. "\n· " .. text .. " (" .. ReadText(1026, 2689) .. ")" .. ReadText(1001, 120) .. " " .. name
+							mouseovertext = mouseovertext .. "\nÂ· " .. text .. " (" .. ReadText(1026, 2688) .. ")" .. ReadText(1001, 120) .. " " .. menu.getControlName("states", 131)
+							mouseovertext = mouseovertext .. "\nÂ· " .. text .. " (" .. ReadText(1026, 2689) .. ")" .. ReadText(1001, 120) .. " " .. name
 						end
 					end
 				end
@@ -4893,7 +4893,7 @@ function menu.displayOption(ftable, option, numCols)
 					row[numCols].handlers.onClick = function () return menu.buttonSoundTest(option.id) end
 				elseif option.valuetype == "slidercell" then
 					local scale = option.value()
-					row[nextCol]:createSliderCell({ valueColor = isselectable and Color["slider_value"] or Color["slider_value_inactive"], min = scale.min, minSelect = scale.minSelect, max = scale.max, maxSelect = scale.maxSelect, start = scale.start, step = scale.step, accuracyOverride = scale.accuracyOverride, suffix = scale.suffix, exceedMaxValue = scale.exceedMaxValue, hideMaxValue = scale.hideMaxValue, readOnly = scale.readOnly }):setText(text, { color = isselectable and Color["text_normal"] or Color["text_inactive"] })
+					row[nextCol]:createSliderCell({ valueColor = isselectable and Color["slider_value"] or Color["slider_value_inactive"], min = scale.min, minSelect = scale.minSelect, max = scale.max, maxSelect = scale.maxSelect, start = scale.start, step = scale.step, accuracyOverride = scale.accuracyOverride, suffix = scale.suffix, exceedMaxValue = scale.exceedMaxValue, hideMaxValue = scale.hideMaxValue, readOnly = scale.readOnly }):setText("", { color = isselectable and Color["text_normal"] or Color["text_inactive"] })
 					row[nextCol].handlers.onSliderCellChanged = function(_, value) return option.callback(value) end
 				else
 					row[nextCol]:createText(function () local text = option.value() return text end, isselectable and config.standardTextProperties or config.disabledTextProperties)
@@ -10617,7 +10617,6 @@ function menu.displayExtensionRow(ftable, extension, extensionSetting)
 
 	row[2]:createText(extension.name, config.standardTextProperties)
 	row[2].properties.color = textcolor
-
 	row[3]:createText(extension.id, config.standardTextProperties)
 	row[4]:createText(extension.version, config.standardTextProperties)
 	row[4].properties.halign = "right"
@@ -12221,7 +12220,7 @@ function menu.displaySavegameOptions(optionParameter)
 	-- errors
 	local row = buttontable:addRow(nil, {  })
 	table.insert(inforows, row)
-	row[1]:setColSpan(4):createText(menu.errorSavegameInfo(), { color = (menu.currentOption == "load") and Color["text_error"] or Color["text_warning"], wordwrap = true })
+	row[1]:setColSpan(4):createText(menu.errorSavegameInfo, { color = (menu.currentOption == "load") and Color["text_error"] or Color["text_warning"], wordwrap = true })
 	-- buttons
 	local row = buttontable:addRow(true, {  })
 	if menu.currentOption == "load" then
@@ -13782,7 +13781,7 @@ function menu.newGameCallback(option, checked)
 					Helper.addDelayedOneTimeCallbackOnUpdate(function () C.NewMultiplayerGame(option.id) end, true, getElapsedTime() + 0.1)
 				elseif option.tutorial then
 					local value = 1
-					if menu.isStartmenu or C.IsTutorial() then
+					if menu.isStartmenu or C.IsTutorial() or (not IsSavingPossible()) then
 						value = 0
 					elseif C.IsTimelinesScenario() or (ffi.string(C.GetGameStartName()) == "x4ep1_gamestart_hub") then
 						value = 2
@@ -13810,6 +13809,7 @@ function menu.newGameCallback(option, checked)
 					end
 				else
 
+					-- Helper.addDelayedOneTimeCallbackOnUpdate(function () NewGame(option.id) end, true, getElapsedTime() + 0.1)
 					-- kuertee start: callback
 					Helper.addDelayedOneTimeCallbackOnUpdate(
 						function ()

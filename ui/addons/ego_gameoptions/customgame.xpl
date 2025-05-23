@@ -1001,25 +1001,8 @@ function menu.buttonRemovePlayerProperty(id)
 end
 
 function menu.buttonMapContextSelectSector(macro, remove)
-	local knownspaceproperty = menu.findProperty("playerknownspace")
-	if knownspaceproperty then
-		menu.initPropertyValue(knownspaceproperty)
-
-		local found
-		for j, entry in ipairs(knownspaceproperty.value) do
-			if entry.id == macro then
-				found = j
-				break
-			end
-		end
-		if found and remove then
-			table.remove(knownspaceproperty.value, found)
-		end
-		if (not found) and (not remove) then
-			table.insert(knownspaceproperty.value, { id = macro, name = GetMacroData(macro, "name"), default = false })
-		end
-		menu.saveMultiSelect(knownspaceproperty)
-	end
+	menu.setKnownValue("playerknownspace", macro, not remove)
+	menu.saveKnownValue("playerknownspace")
 
 	menu.closeContextMenu()
 end
@@ -1828,9 +1811,9 @@ function menu.saveMultiSelect(property)
 		end
 	elseif property.propertyType == "KnownEntry2" then
 		for _, entry in ipairs(property.value) do
-				data[i].type = "sector"
-				data[i].item = Helper.ffiNewString(entry.id)
-				i = i + 1
+			data[i].type = "sector"
+			data[i].item = Helper.ffiNewString(entry.id)
+			i = i + 1
 		end
 		for _, id in ipairs(menu.excludedvalues[property.id]) do
 			local found = false
@@ -5492,7 +5475,9 @@ function menu.onRenderTargetRightMouseUp(modified)
 			local sectormacro = ffi.string(C.GetMacroMapPositionOnEcliptic(menu.holomap, sectorpos))
 		
 			if menu.category.id == "universe" then
-				menu.displayMapContext(offset, sectormacro, sectorpos)
+				if sectormacro ~= "" then
+					menu.displayMapContext(offset, sectormacro, sectorpos)
+				end
 			end
 		end
 	end
