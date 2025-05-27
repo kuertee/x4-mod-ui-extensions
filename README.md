@@ -5,17 +5,16 @@ by kuertee. Contributors: AlexandreTK, DrWhoKnows, Erixon, Forleyor, IALuir, Myc
 
 Updates
 =======
-v7.5.12, 5 May 2025:
-- Tweak: Disable the open/close mission lists button if there's no mission entries in the list.
-- Bug-fix: A couple of trading data bugs (caused by other mods) were sometimes causing the Map Menu to fail. This tweak is a fail-safe IN-CASE the bug (from those other mods) is triggered.
+v7.6, 28 May 2025:
+- Tweak: 7.6 compatibility.
 
-v7.5 NOTES FOR PLAYERS:
-=======================
+NOTES FOR PLAYERS:
+==================
 Disable Protected UI Mode BEFORE activating this mod.
 Unfortunately, due to how this mod is built, disabling or enabling Protected UI Mode WHILE the mod is active will prevent the menus from loading.
 
-v7.5 NOTES FOR MOD DEVELOPERS:
-==============================
+NOTES FOR MOD DEVELOPERS:
+=========================
 1. PROTECTED UI MODE: Mods that use UI Extensions will need the Protected UI Mode setting in the Extensions menu disabled.
 2. LOADING CUSTOM LUAS: ModSupportAPIs' `Lua_Loader` (and in extension its `<raise_lua_event name="'Lua_Loader.Load'" param="'X'"/>)` no longer function.
 3. UI.XML FILE: To load custom lua files, use ui.xml as described here: https://wiki.egosoft.com:1337/X%20Rebirth%20Wiki/Modding%20support/UI%20Modding%20support/Getting%20started%20guide/
@@ -244,6 +243,10 @@ French localisation by Calvitix.
 
 History
 =======
+v7.5.12, 5 May 2025:
+- Tweak: Disable the open/close mission lists button if there's no mission entries in the list.
+- Bug-fix: A couple of trading data bugs (caused by other mods) were sometimes causing the Map Menu to fail. This tweak is a fail-safe IN-CASE the bug (from those other mods) is triggered.
+
 v7.5.11, 26 Apr 2025:
 - New feature: Mission lists in the Map Menu now has an "open all/close all" button.
 - Tweak: (Again as this wasn't actually in 7.5.10. Sorry Mycu!) Callback by Mycu for Purchasable paint modifications mod.
