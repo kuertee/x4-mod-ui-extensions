@@ -4961,6 +4961,31 @@ function menu.updatePlotData(station, donotrefresh)
 		local haspositionchanged = buf[0]
 		menu.plotData.fullypaid = ((not menu.plotData.isinownedspace) or ((boughtrawsize.x >= rawsize.x) and (boughtrawsize.y >= rawsize.y) and (boughtrawsize.z >= rawsize.z))) and ((not haspositionchanged) or (plotpayment >= fullprice))
 		menu.plotData.size = { x = rawsize.x / 1000, y = rawsize.y / 1000, z = rawsize.z / 1000 }
+
+		-- kuertee start: swi stations max size is 31 for some reason
+		if menu.plotData.size.x > config.maxPlotSize or menu.plotData.size.y > config.maxPlotSize or menu.plotData.size.z > config.maxPlotSize then
+			if station ~= menu.uix_station_with_weird_plot_size then
+				menu.uix_station_with_weird_plot_size = station
+			end
+			if not config.uix_maxPlotSize_old then
+				config.uix_maxPlotSize_old = config.maxPlotSize
+			end
+			local uix_stationPlotSize = menu.plotData.size.x
+			if menu.plotData.size.y > uix_stationPlotSize then
+				uix_stationPlotSize = menu.plotData.size.y
+			end
+			if menu.plotData.size.z > uix_stationPlotSize then
+				uix_stationPlotSize = menu.plotData.size.z
+			end
+			config.maxPlotSize = uix_stationPlotSize
+		elseif station ~= menu.uix_station_with_weird_plot_size then
+			menu.uix_station_with_weird_plot_size = nil
+			if config.uix_maxPlotSize_old then
+				config.maxPlotSize = config.uix_maxPlotSize_old
+			end
+		end
+		-- kuertee end: swi stations max size is 31 for some reason
+
 		menu.plotData.dimensions = {
 			posX = math.ceil((rawsize.x / 2 + plotcenter.x) / 1000),
 			negX = math.floor((rawsize.x / 2 - plotcenter.x) / 1000),
@@ -5011,6 +5036,13 @@ function menu.updatePlotData(station, donotrefresh)
 			menu.plotData.fullypaid = true
 		end
 	else
+		-- kuertee start: swi stations max size is 31 for some reason
+		menu.uix_station_with_weird_plot_size = nil
+		if config.uix_maxPlotSize_old then
+			config.maxPlotSize = config.uix_maxPlotSize_old
+		end
+		-- kuertee end: swi stations max size is 31 for some reason
+
 		menu.plotData = {
 			name = ReadText(1001, 9200),	-- New Plot
 			set = "factory",
@@ -19061,6 +19093,13 @@ function menu.createSearchField(frame, width, height, offsetx, offsety, refresh)
 
 	-- search terms
 	local setting, warefilter = menu.getTradeWareFilter()
+
+	-- kuertee start: __CORE_DETAILMONITOR_MAPFILTER_SAVE is nil when the ui is reloaded due to crash or reloadui command
+	if not __CORE_DETAILMONITOR_MAPFILTER_SAVE then
+		menu.onLoadingDone()
+	end
+	-- kuertee end
+
 	__CORE_DETAILMONITOR_MAPFILTER_SAVE["searchsectors"] = __CORE_DETAILMONITOR_MAPFILTER_SAVE["searchsectors"] or {}
 	local sectorfilter = __CORE_DETAILMONITOR_MAPFILTER_SAVE["searchsectors"]
 	local maxsearchtermsdisplayed = 4

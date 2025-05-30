@@ -5,8 +5,8 @@ by kuertee. Contributors: AlexandreTK, DrWhoKnows, Erixon, Forleyor, IALuir, Myc
 
 Updates
 =======
-v7.6, 28 May 2025:
-- Tweak: 7.6 compatibility.
+7.6.1, 30 May 2025:
+- Tweak: SWI compatibility: allow for SWI's larger plot sizes.
 
 NOTES FOR PLAYERS:
 ==================
@@ -243,6 +243,9 @@ French localisation by Calvitix.
 
 History
 =======
+v7.6, 28 May 2025:
+- Tweak: 7.6 compatibility.
+
 v7.5.12, 5 May 2025:
 - Tweak: Disable the open/close mission lists button if there's no mission entries in the list.
 - Bug-fix: A couple of trading data bugs (caused by other mods) were sometimes causing the Map Menu to fail. This tweak is a fail-safe IN-CASE the bug (from those other mods) is triggered.
