@@ -5,7 +5,7 @@ by kuertee. Contributors: AlexandreTK, DrWhoKnows, Erixon, Forleyor, IALuir, Myc
 
 Updates
 =======
-7.6.1, 30 May 2025:
+7.6.1, 14 Jun 2025:
 - Tweak: SWI compatibility: allow for SWI's larger plot sizes.
 
 NOTES FOR PLAYERS:
