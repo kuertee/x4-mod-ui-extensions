@@ -5,8 +5,8 @@ by kuertee. Contributors: AlexandreTK, DrWhoKnows, Erixon, Forleyor, IALuir, Myc
 
 Updates
 =======
-7.6.1, 14 Jun 2025:
-- Tweak: SWI compatibility: allow for SWI's larger plot sizes.
+7.6.2, X Jun 2025:
+- New feature: Interact Menu action Center On Map / Destination: Right-click on an object and click on Center On Map to center the object on the map without changing your selected objects. This is usable on sectors. When used on a gate, the Center On Destination action centers the gate's destination. (Based on Brinnie's mod request: https://forum.egosoft.com/viewtopic.php?t=471439&sid=a3f501f4bd3cc9a74a01dd4eb5107998.)
 
 NOTES FOR PLAYERS:
 ==================
@@ -172,6 +172,10 @@ In the base game, the Mission Guidance tab lists only the Guidance created manua
 The "Set to inactive" and "Set to active" buttons are available on missions listed in the Mission Guidance tab.
 The base game makes these buttons unavailable for Guidance Missions.
 
+Map Menu: Center On Map / Destination
+=====================================
+Right-click on an object and click on Center On Map to center the object on the map without changing your selected objects. This is usable on sectors. When used on a gate, the Center On Destination action centers the gate's destination. (Based on Brinnie's mod request: https://forum.egosoft.com/viewtopic.php?t=471439&sid=a3f501f4bd3cc9a74a01dd4eb5107998.)
+
 CHANGES BUILT INTO THIS MOD (for developers)
 ============================================
 
@@ -243,6 +247,9 @@ French localisation by Calvitix.
 
 History
 =======
+7.6.1, 14 Jun 2025:
+- Tweak: SWI compatibility: allow for SWI's larger plot sizes.
+
 v7.6, 28 May 2025:
 - Tweak: 7.6 compatibility.
 

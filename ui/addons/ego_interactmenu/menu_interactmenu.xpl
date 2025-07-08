@@ -2781,6 +2781,26 @@ function menu.buttonRename(isfleet, isMultiRename)
 	end
 end
 
+-- kuertee start: center on map
+function menu.uix_centerOnMap(object)
+	if not object then
+		object = ConvertStringTo64Bit(tostring(menu.componentSlot.component))
+	end
+	if menu.shown then
+		if menu.interactMenuID then
+			C.NotifyInteractMenuHidden(menu.interactMenuID, true)
+		end
+		if IsValidComponent(object) then
+			Helper.closeMenuAndOpenNewMenu(menu, "MapMenu", { 0, 0, true, nil, nil, "uix_centeronmap", { object } })
+		end
+	else
+		Helper.resetUpdateHandler()
+		Helper.clearFrame(menu, config.layer)
+		Helper.returnFromInteractMenu(menu.currentOverTable, "uix_centeronmap", { object })
+	end
+end
+-- kuertee end: center on map
+
 function menu.buttonRequestShip()
 	if menu.shown then
 		if menu.interactMenuID then
@@ -3907,6 +3927,10 @@ function menu.createContentTable(frame, position)
 	end
 	-- kuertee end: multi-rename
 
+	-- kuertee start: center on map
+	height = height + menu.uix_centerOnMap_addButton(ftable)
+	-- kuertee end: center on map
+
 	-- entries
 	local convertedComponent = ConvertStringTo64Bit(tostring(menu.componentSlot.component))
 	local isonlinetarget, isplayerownedtarget
@@ -4237,7 +4261,7 @@ function menu.uix_multiRename_addButton(ftable)
 		local row = ftable:addRow(true, {  })
 		local button = row[1]:setColSpan(5):createButton({
 			active = true,
-			bgColor = Color["button_background_inactive"],
+			bgColor = Color["button_background_hidden"],
 			highlightColor = Color["button_highlight_default"],
 		}):setText((ReadText(1001, 1114)))
 		local text2 = string.format(ReadText(1001, 11105), #uix_multiRename_objects)
@@ -4248,6 +4272,54 @@ function menu.uix_multiRename_addButton(ftable)
 	return height
 end
 -- kuertee end: multi-rename
+
+-- kuertee start: center on map
+function menu.uix_centerOnMap_addButton(ftable)
+	local height = 0
+	local object = ConvertStringTo64Bit(tostring(menu.componentSlot.component))
+	if IsValidComponent(object) then
+		local row = ftable:addRow(true, {  })
+		local button = row[1]:setColSpan(5):createButton({
+			active = true,
+			bgColor = Color["button_background_hidden"],
+			highlightColor = Color["button_highlight_default"],
+		}):setText((ReadText(101475, 102))) -- <t id="102">Center On Map</t>
+		row[1].handlers.onClick = function () return menu.uix_centerOnMap(object, true) end
+		height = height + row:getHeight() + Helper.borderSize
+		local exitGate
+		if C.IsComponentClass(object, "gate") then
+			local isActive = GetComponentData(object, "isactive")
+			if isActive then
+				exitGate = ConvertStringTo64Bit(tostring(GetComponentData(object, "destination")))
+			end
+		elseif C.IsComponentClass(object, "highway") then
+			exitGate = ConvertStringTo64Bit(tostring(GetComponentData(object, "exitgate")))
+		end
+		if IsValidComponent(exitGate) then
+			local row = ftable:addRow(true, {  })
+			local button = row[1]:setColSpan(5):createButton({
+				active = true,
+				bgColor = Color["button_background_hidden"],
+				highlightColor = Color["button_highlight_default"],
+			}):setText((ReadText(101475, 103))) -- <t id="103">Center On Destination</t>
+			row[1].handlers.onClick = function () return menu.uix_centerOnMap(exitGate, true) end
+			height = height + row:getHeight() + Helper.borderSize
+			-- local nextSector = ConvertStringTo64Bit(tostring(GetContextByClass(connectingGate, "sector")))
+			-- if IsValidComponent(nextSector) then
+			-- 	local row = ftable:addRow(true, {  })
+			-- 	local button = row[1]:setColSpan(5):createButton({
+			-- 		active = true,
+			-- 		bgColor = Color["button_background_hidden"],
+			-- 		highlightColor = Color["button_highlight_default"],
+			-- 	}):setText((ReadText(1025, 34))) -- <t id="34">Follow</t>
+			-- 	row[1].handlers.onClick = function () return menu.uix_centerOnMap(nextSector, true) end
+			-- 	height = height + row:getHeight() + Helper.borderSize
+			-- end
+		end
+	end
+	return height
+end
+-- kuertee end: center on map
 
 function menu.createSubSectionTable(frame, position)
 	local x = 0

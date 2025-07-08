@@ -14,9 +14,13 @@
 --		  - "dropwarescontext",		param: { mode, entity }
 --		  - "renamecontext",		param: { component, renamefleet }
 
---        -- kuertee start: multi-rename: requires menu_interactmenu.uix_forcedShowMenu
+--        -- kuertee start: multi-rename
 --		  - "renamecontext",		param: { component, renamefleet, uix_multiRename_objects }
 --        -- kuertee end: multi-rename
+
+--        -- kuertee start: center on map
+--		  - "uix_centeronmap",		    param: { component }
+--        -- kuertee end: center on map
 
 --		  - "changelogocontext",	param: { component }
 --		  - "selectComponent",		param: { returnsection, classlist[, category][, playerowned][, customheading] }
@@ -6273,6 +6277,11 @@ function menu.displayMenu(firsttime)
 		end
 	elseif menu.mode == "behaviourinspection" then
 		menu.behaviourInspectionComponent = menu.modeparam[1]
+
+	-- kuertee start: center on map
+	elseif menu.mode == "uix_centeronmap" then
+		C.SetFocusMapComponent(menu.holomap, menu.modeparam[1], true)
+	-- kuertee end: center on map
 	end
 
 	if menu.mode == "tradecontext" then
@@ -29592,6 +29601,11 @@ function menu.onInteractMenuCallback(type, param)
 		menu.contextMenuData = { mode = "removebuildstorage", buildstorage = param[1], xoffset = (Helper.viewWidth - Helper.scaleX(400)) / 2, yoffset = Helper.viewHeight / 2 }
 
 		menu.createContextFrame(Helper.scaleX(400), nil, menu.contextMenuData.xoffset, menu.contextMenuData.yoffset)
+
+	-- kuertee start: center on map
+	elseif type == "uix_centeronmap" then
+		menu.uix_centerOnMap(param[1])
+	-- kuertee end: center on map
 	end
 end
 
@@ -30779,6 +30793,34 @@ function menu.sortCombinedSkill(a, b, invert)
 		else
 			return skill_a < skill_b
 		end
+	end
+end
+
+function menu.uix_centerOnMap(object)
+	if menu.holomap and (menu.holomap ~= 0) then
+		C.SetFocusMapComponent(menu.holomap, object, true)
+		-- Helper.addDelayedOneTimeCallbackOnUpdate(function ()
+			local sector
+			if C.IsComponentClass(object, "sector") then
+				sector = object
+			else
+				sector = GetComponentData(object, "sectorid")
+			end
+			if IsValidComponent(sector) then
+				if IsSameComponent(object, sector) then
+					local size = GetComponentData(sector, "size")
+					if (not size) or size == 0 then
+						size = 400000
+					end
+					C.ResetMapPlayerRotation(menu.holomap)
+					C.SetMapTargetDistance(menu.holomap, size * 1.5)
+				else
+					local position = C.GetObjectPositionInSector (object)
+					C.ResetMapPlayerRotation(menu.holomap)
+					C.SetMapTargetDistance(menu.holomap, position.y + 500000)
+				end
+			end
+		-- end, true, getElapsedTime() + 1)
 	end
 end
 

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!-- chinese -->
+<diff>
+	<add sel="/language">
+		<page id="101475" voice="no">
+			<t id="100">自定义操作</t>
+			<t id="101">自定义指令</t>
+			<t id="102">居中显示在地图上</t>
+			<t id="103">在地图上居中显示目的地</t>
+		</page>
+	</add>
+</diff>

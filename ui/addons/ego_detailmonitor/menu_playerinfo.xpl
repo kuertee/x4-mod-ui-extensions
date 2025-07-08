@@ -2178,7 +2178,14 @@ function menu.createEquipmentMods(frame, tableProperties)
 		row[1].handlers.onClick = function () return menu.expandWeaponMod(entry.modclass, "", row.index) end
 		row[2]:setColSpan(2):createText(entry.name)
 		for quality, entry2 in ipairs(Helper.modQualities) do
-			row[quality + 3]:createText(qualitycounts[quality] .. " \27[" .. entry2.icon2 .. "]", config.rightAlignTextProperties)
+
+			-- kuertee start:
+			if row[quality + 3] then
+			-- kuertee end
+				row[quality + 3]:createText(qualitycounts[quality] .. " \27[" .. entry2.icon2 .. "]", config.rightAlignTextProperties)
+			-- kuertee start:
+			end
+			-- kuertee end
 		end
 
 		if isclassexpanded then

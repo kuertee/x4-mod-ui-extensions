@@ -5,8 +5,8 @@ by kuertee. Contributors: AlexandreTK, DrWhoKnows, Erixon, Forleyor, IALuir, Myc
 
 Updates
 =======
-7.6.1, 14 Jun 2025:
-- Tweak: SWI compatibility: allow for SWI's larger plot sizes.
+7.6.2, X Jun 2025:
+- New feature: Interact Menu action Center On Map / Destination: Right-click on an object and click on Center On Map to center the object on the map without changing your selected objects. This is usable on sectors. When used on a gate, the Center On Destination action centers the gate's destination. (Based on Brinnie's mod request: https://forum.egosoft.com/viewtopic.php?t=471439&sid=a3f501f4bd3cc9a74a01dd4eb5107998.)
 
 NOTES FOR PLAYERS:
 ==================
@@ -172,6 +172,10 @@ In the base game, the Mission Guidance tab lists only the Guidance created manua
 The "Set to inactive" and "Set to active" buttons are available on missions listed in the Mission Guidance tab.
 The base game makes these buttons unavailable for Guidance Missions.
 
+Map Menu: Center On Map / Destination
+=====================================
+Right-click on an object and click on Center On Map to center the object on the map without changing your selected objects. This is usable on sectors. When used on a gate, the Center On Destination action centers the gate's destination. (Based on Brinnie's mod request: https://forum.egosoft.com/viewtopic.php?t=471439&sid=a3f501f4bd3cc9a74a01dd4eb5107998.)
+
 CHANGES BUILT INTO THIS MOD (for developers)
 ============================================
 
@@ -193,20 +197,20 @@ Add Custom Actions/Orders Group to the Interact Menu (via MD)
 4. Use the new id in Mod Support API's Add_Action function like this:
     ```xml
     ...
-    	<signal_cue_instantly cue="md.Interact_Menu_API.Add_Action" param = "table[
-    		$id = 'my_custom_action_1,
-    		$section = 'my_custom_actions_group_id',
-    		$text = 'My Custom Action 1',
-    		$mouseover = 'My Custom Action 1 mouse over',
-    		$callback = My_Custom_Action_1_Cue
-    	]" />
-    	<signal_cue_instantly cue="md.Interact_Menu_API.Add_Action" param = "table[
-    		$id = 'my_custom_action_2,
-    		$section = 'my_custom_actions_group_id',
-    		$text = 'My Custom Action 1',
-    		$mouseover = 'My Custom Action 2 mouse over',
-    		$callback = My_Custom_Action_2_Cue
-    	]" />
+      <signal_cue_instantly cue="md.Interact_Menu_API.Add_Action" param = "table[
+        $id = 'my_custom_action_1,
+        $section = 'my_custom_actions_group_id',
+        $text = 'My Custom Action 1',
+        $mouseover = 'My Custom Action 1 mouse over',
+        $callback = My_Custom_Action_1_Cue
+      ]" />
+      <signal_cue_instantly cue="md.Interact_Menu_API.Add_Action" param = "table[
+        $id = 'my_custom_action_2,
+        $section = 'my_custom_actions_group_id',
+        $text = 'My Custom Action 1',
+        $mouseover = 'My Custom Action 2 mouse over',
+        $callback = My_Custom_Action_2_Cue
+      ]" />
     ...
     ```
 5. The custom commands will be added to both the Custom Actions and Custom Orders sub-menus.
@@ -231,18 +235,21 @@ Credits
 =======
 kuertee
 Contributors:
-	AlexandreTK
-	DrWhoKnows
-	Erixon
-	Forleyor
-	IALuir
-	Mycu
-	Runekn
-	sticeIO
+  AlexandreTK
+  DrWhoKnows
+  Erixon
+  Forleyor
+  IALuir
+  Mycu
+  Runekn
+  sticeIO
 French localisation by Calvitix.
 
 History
 =======
+7.6.1, 14 Jun 2025:
+- Tweak: SWI compatibility: allow for SWI's larger plot sizes.
+
 v7.6, 28 May 2025:
 - Tweak: 7.6 compatibility.
 
@@ -317,20 +324,20 @@ v7.5.0061 beta, 25 Jan 2025:
 - Bug-fix: The player's Inventory window wasn't opening.
 - Tweak: The Online Features button is disabled. Because its functionality is natively disabled with how UI Extensions rewrites several menu files, the button might as well be disabled.
 - Tweak: callbacks can now be assigned an id so that they can be deregistered by other mods with "menu.registerCallback(callbackName, myCallbackFunc, myId)".
-				E.g.
-				MapMenu.registerCallback("buttonToggleObjectList_on_start", myCallbackFunc, "mod_a").
-				Then another lua file can do this:
-				MapMenu.deregisterCallback("buttonToggleObjectList_on_start", nil, "mod_a").
-				This is useful when you want to override another mod's custom changes to different menus with your own mod.
-				Note that deregistering callbacks are delayed by 1 second because there is no method to ensure that the callback of another mod that is to be deregistered has been registered.
+        E.g.
+        MapMenu.registerCallback("buttonToggleObjectList_on_start", myCallbackFunc, "mod_a").
+        Then another lua file can do this:
+        MapMenu.deregisterCallback("buttonToggleObjectList_on_start", nil, "mod_a").
+        This is useful when you want to override another mod's custom changes to different menus with your own mod.
+        Note that deregistering callbacks are delayed by 1 second because there is no method to ensure that the callback of another mod that is to be deregistered has been registered.
 - New feature: callbacks of other mods can be updated (i.e. rerouted) to your own callbacks with "updateCallback(callbackName, id, myCallbackFunc)".
-				E.g. Mod_a registered a callback for "buttonToggleObjectList_on_start" with the id "mod_a".
-				And Mod_b wants to reroute that callback for its own function.
-				That callback can be rerouted like this:
-				MapMenu.updateCallback("buttonToggleObjectList_on_start", "mod_a", modb_CallbackFunc).
-				Note that rerouted callbacks will keep their original ids.
-				It might be better to deregister the callback THEN register the new callback instead.
-				Also note that updating callbacks are delayed by 1 second because there is no method to ensure that the callback of another mod that is to be updated has been registered.
+        E.g. Mod_a registered a callback for "buttonToggleObjectList_on_start" with the id "mod_a".
+        And Mod_b wants to reroute that callback for its own function.
+        That callback can be rerouted like this:
+        MapMenu.updateCallback("buttonToggleObjectList_on_start", "mod_a", modb_CallbackFunc).
+        Note that rerouted callbacks will keep their original ids.
+        It might be better to deregister the callback THEN register the new callback instead.
+        Also note that updating callbacks are delayed by 1 second because there is no method to ensure that the callback of another mod that is to be updated has been registered.
 
 v7.1.18, 12 Jan 2025:
 - New: UI Call-backs for the AEGS Faction mod by IALuir.
@@ -461,20 +468,20 @@ v6.1.001, 27 Jun 2023:
 2. Add the new Custom Actions/Orders Group Id <raise_lua_event name="'Interact_Menu_API.Add_Custom_Actions_Group_Id'" param="'my_custom_actions_group_id'" />
 3. Add the new Custom Actions/Orders Group Name <raise_lua_event name="'Interact_Menu_API.Add_Custom_Actions_Group_Text'" param="'My Custom Actions/Orders Group'" />
 4. Use the new id in Mod Support API's Add_Action function like this:
-					<signal_cue_instantly cue="md.Interact_Menu_API.Add_Action" param = "table[
-						$id = 'my_custom_action_1,
-						$section = 'my_custom_actions_group_id',
-						$text = 'My Custom Action 1',
-						$mouseover = 'My Custom Action 1 mouse over',
-						$callback = My_Custom_Action_1_Cue
-					]" />
-					<signal_cue_instantly cue="md.Interact_Menu_API.Add_Action" param = "table[
-						$id = 'my_custom_action_2,
-						$section = 'my_custom_actions_group_id',
-						$text = 'My Custom Action 1',
-						$mouseover = 'My Custom Action 2 mouse over',
-						$callback = My_Custom_Action_2_Cue
-					]" />
+          <signal_cue_instantly cue="md.Interact_Menu_API.Add_Action" param = "table[
+            $id = 'my_custom_action_1,
+            $section = 'my_custom_actions_group_id',
+            $text = 'My Custom Action 1',
+            $mouseover = 'My Custom Action 1 mouse over',
+            $callback = My_Custom_Action_1_Cue
+          ]" />
+          <signal_cue_instantly cue="md.Interact_Menu_API.Add_Action" param = "table[
+            $id = 'my_custom_action_2,
+            $section = 'my_custom_actions_group_id',
+            $text = 'My Custom Action 1',
+            $mouseover = 'My Custom Action 2 mouse over',
+            $callback = My_Custom_Action_2_Cue
+          ]" />
 
 v6.0.004, 10 May 2023:
 - Mycu's contribution: custom nested Interact Menu actions.
