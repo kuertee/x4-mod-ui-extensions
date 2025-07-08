@@ -34,6 +34,13 @@ ffi.cdef[[
 		uint32_t alpha;
 	} Color;
 	typedef struct {
+		const char* class1name;
+		const char* class2name;
+		uint32_t class1id;
+		uint32_t class2id;
+		bool isclass;
+	} ComponentClassPair;
+	typedef struct {
 		const char* newroleid;
 		NPCSeed seed;
 		uint32_t amount;
@@ -285,6 +292,7 @@ ffi.cdef[[
 	BlacklistCounts GetBlacklistInfoCounts(BlacklistID id);
 	bool GetBlacklistInfo2(BlacklistInfo2* info, BlacklistID id);
 	uint32_t GetCargoTransportTypes(StorageInfo* result, uint32_t resultlen, UniverseID containerid, bool merge, bool aftertradeorders);
+	uint32_t GetComponentClassMatrix(ComponentClassPair* result, uint32_t resultlen);
 	const char* GetComponentName(UniverseID componentid);
 	int32_t GetContainerBuyLimit(UniverseID containerid, const char* wareid);
 	int32_t GetContainerSellLimit(UniverseID containerid, const char* wareid);
@@ -320,6 +328,7 @@ ffi.cdef[[
 	uint32_t GetNumAllFightRules(void);
 	uint32_t GetNumAllTradeRules(void);
 	uint32_t GetNumCargoTransportTypes(UniverseID containerid, bool merge);
+	uint32_t GetNumComponentClasses(void);
 	uint32_t GetNumContainerStockLimitOverrides(UniverseID containerid);
 	uint32_t GetNumContainerWareReservations2(UniverseID containerid, bool includevirtual, bool includemission, bool includesupply);
 	uint32_t GetNumDockedShips(UniverseID dockingbayorcontainerid, const char* factionid);
@@ -327,6 +336,7 @@ ffi.cdef[[
 	uint32_t GetNumTransactionLog(UniverseID componentid, double starttime, double endtime);
 	uint32_t GetNumVenturePlatformDocks(UniverseID ventureplatformid);
 	uint32_t GetNumVenturePlatforms(UniverseID defensibleid);
+	uint32_t GetNumWareBasketItems(const char* basketid);
 	const char* GetObjectIDCode(UniverseID objectid);
 	UIPosRot GetObjectPositionInSector(UniverseID objectid);
 	const char* GetPlayerCoverFaction(void);
@@ -353,6 +363,7 @@ ffi.cdef[[
 	const char* GetUserDataSigned(const char* name);
 	uint32_t GetVenturePlatformDocks(UniverseID* result, uint32_t resultlen, UniverseID ventureplatformid);
 	uint32_t GetVenturePlatforms(UniverseID* result, uint32_t resultlen, UniverseID defensibleid);
+	uint32_t GetWareBasketItems(const char** result, uint32_t resultlen, const char* basketid);
 	WorkForceInfo GetWorkForceInfo(UniverseID containerid, const char* raceid);
 	bool HasContainerBuyLimitOverride(UniverseID containerid, const char* wareid);
 	bool HasContainerOwnTradeRule(UniverseID containerid, const char* ruletype, const char* wareid);
@@ -370,6 +381,7 @@ ffi.cdef[[
 	bool IsPlayerFightRuleDefault(FightRuleID id, const char* listtype);
 	bool IsSetaActive();
 	bool IsStartmenu();
+	bool IsStoryFeatureUnlocked(const char* featureid);
 	bool IsTerraformingProjectOngoing(UniverseID clusterid, const char* projectid);
 	bool IsTimelinesScenario(void);
 	bool IsValidTrade(TradeID tradeid);
@@ -407,6 +419,7 @@ ffi.cdef[[
 	void SetContainerTradeRule(UniverseID containerid, TradeRuleID id, const char* ruletype, const char* wareid, bool value);
 	void SetContainerWareIsBuyable(UniverseID containerid, const char* wareid, bool allowed);
 	void SetContainerWareIsSellable(UniverseID containerid, const char* wareid, bool allowed);
+	void SetDropDownActive(const int dropdownid, bool active);
 	void SetDropDownCurOption(const int dropdownid, const char* id);
 	void SetDropDownOptionTexts(const int dropdownid, const char** texts, uint32_t numtexts);
 	void SetDropDownOptionTexts2(const int dropdownid, const char** texts, uint32_t numtexts);
@@ -505,6 +518,9 @@ Helper = {
 	headerRow1Width = 0,
 	-- subheader properties
 	subHeaderHeight = 18,
+	-- large row properties
+	largeRowHeight = 25,
+	largeRowOffsety = 4,
 	-- large icon text properties
 	largeIconFontSize = 16,
 	largeIconTextHeight = 32,
@@ -521,6 +537,7 @@ Helper = {
 	standardButtons_CloseBack = { close = true, back = true, minimize = false },
 	standardButtons_Close = { close = true, back = false, minimize = false },
 	standardIndentStep = 15,
+	standardContainerOffset = 5,
 	sidebarWidth = 40,
 	frameBorder = 25,
 	standardButtons_Size = 18,
@@ -575,15 +592,6 @@ Helper.excludeFromMouseEmulation = {
 	["TopLevelMenu"] = true,
 }
 
-Helper.classOrder = {
-	["station"]		= 1,
-	["ship_xl"]		= 2,
-	["ship_l"]		= 3,
-	["ship_m"]		= 4,
-	["ship_s"]		= 5,
-	["ship_xs"]		= 6,
-	["spacesuit"]	= 7,
-}
 Helper.purposeOrder = {
 	["fight"]		= 1,
 	["auxiliary"]	= 2,
@@ -732,9 +740,27 @@ local function init()
 	Helper.viewWidth, Helper.viewHeight = GetWidgetSystemSize()
 	Helper.uiScale = C.GetUIScale(C.IsVRMode())
 
+	Helper.createComponentClassLookup()
+
+	Helper.classOrder = {
+		["station"]		= 1,
+		["ship_xl"]		= 2,
+		["ship_l"]		= 3,
+		["ship_m"]		= 4,
+		["ship_s"]		= 5,
+		["ship_xs"]		= 6,
+		["spacesuit"]	= 7,
+		[Helper.classIDs["station"]]	= 1,
+		[Helper.classIDs["ship_xl"]]	= 2,
+		[Helper.classIDs["ship_l"]]		= 3,
+		[Helper.classIDs["ship_m"]]		= 4,
+		[Helper.classIDs["ship_s"]]		= 5,
+		[Helper.classIDs["ship_xs"]]	= 6,
+		[Helper.classIDs["spacesuit"]]	= 7,
+	}
+
 	Helper.createTopLevelConfig()
 	Helper.createPlayerInfoConfig()
-
 	-- kuertee start:
 	Helper.init_kuertee()
 	-- kuertee end
@@ -744,6 +770,27 @@ end
 function Helper.init_kuertee ()
 end
 -- kuertee end
+
+function Helper.createComponentClassLookup()
+	Helper.componentClassLookup = {}
+	Helper.classIDs = {}
+
+	local numclasses = C.GetNumComponentClasses()
+	local numclasspairs = numclasses * numclasses
+	local buf = ffi.new("ComponentClassPair[?]", numclasspairs)
+	numclasspairs = C.GetComponentClassMatrix(buf, numclasspairs)
+	for i = 0, numclasspairs - 1 do
+		Helper.classIDs[ffi.string(buf[i].class1name)] = buf[i].class1id
+		if buf[i].isclass then
+			local id = buf[i].class1id * 1000 + buf[i].class2id
+			Helper.componentClassLookup[id] = true
+		end
+	end
+end
+
+function Helper.isComponentClass(class1, class2)
+	return Helper.componentClassLookup[class1 * 1000 + Helper.classIDs[class2]] ~= nil
+end
 
 ---------------------------------------------------------------------------------
 -- Wrapper
@@ -3084,6 +3131,7 @@ local defaultWidgetProperties = {
 		multiSelect = false,									-- whether the the table allows multiselection
 		backgroundID = "",										-- the background texture (using an icon ID) to be used (empty = no background)
 		backgroundColor = Color["table_background_default"],	-- color of the background texture
+		backgroundPadding = 3,									-- padding around table background image
 		prevTable = 0,											-- point to the index of the previous connected table (aka pressing UP on the first row jumps the input to the last row of the prevTable)
 		nextTable = 0,											-- point to the index of the next connected table (aka pressing DOWN on the last row jumps the input to the first row of the nextTable)
 		prevHorizontalTable = 0,								-- point to the index of the previous horizontal connected table (aka pressing LEFT on the first selectable column jumps the input to the prevHorizontalTable)
@@ -3130,6 +3178,7 @@ local defaultWidgetProperties = {
 		bgColor = Color["button_background_default"],			-- button background color
 		highlightColor = Color["button_highlight_default"],		-- button highlight color
 		height = Helper.standardButtonHeight,					-- button height (overrides basetype height)
+		affectRowHeight = true,									-- whether the button height is allowed to affect the rowHeight
 		_basetype = "cell"
 	},
 	["editbox"] = {
@@ -4336,6 +4385,10 @@ function widgetPrototypes.frame:update()
 						C.SetIcon(cell.id, icon(cell))
 					end
 				elseif cell.type == "dropdown" then
+					local active = cell.properties.active
+					if type(active) == "function" then
+						C.SetDropDownActive(cell.id, active(cell))
+					end
 					local curOption = cell.properties.startOption
 					if type(curOption) == "function" then
 						C.SetDropDownCurOption(cell.id, tostring(curOption(cell)))
@@ -4730,9 +4783,9 @@ function widgetPrototypes.table:addRow(rowdata, properties)
 	return row
 end
 
-function widgetPrototypes.table:addEmptyRow(height)
-	local row = self:addRow(nil, {  })
-	row[1]:createText(" ", { fontsize = 1, minRowHeight = height })
+function widgetPrototypes.table:addEmptyRow(height, scaling, color, borderbelow)
+	local row = self:addRow(nil, { bgColor = color, borderBelow = borderbelow })
+	row[1]:setColSpan(self.numcolumns):createText(" ", { fontsize = 1, minRowHeight = height, scaling = scaling })
 	return row
 end
 
@@ -4789,6 +4842,7 @@ function widgetHelpers.table:createDescriptor()
 	local multiselect = self.properties.multiSelect
 	local backgroundid = self.properties.backgroundID
 	local backgroundcolor = self.properties.backgroundColor
+	local backgroundpadding = self.properties.backgroundPadding
 	local helpoverlay = createOverlayPropertyInfo(self)
 
 	-- init toprow / selectedrow
@@ -4921,7 +4975,7 @@ function widgetHelpers.table:createDescriptor()
 		shiftstart			= self.shiftstart,
 		shiftend			= self.shiftend
 	}
-	local desc = CreateTable(header, tablecontent, columnwidths, columnwidthpercent, borderenabled, taborder, skiptabchange, defaultinteractiveobject, numfixedrows, offsetx, offsety, maxheight, initialSelection, wraparound, highlightmode, multiselect, backgroundid, backgroundcolor, helpoverlay)
+	local desc = CreateTable(header, tablecontent, columnwidths, columnwidthpercent, borderenabled, taborder, skiptabchange, defaultinteractiveobject, numfixedrows, offsetx, offsety, maxheight, initialSelection, wraparound, highlightmode, multiselect, backgroundid, backgroundcolor, helpoverlay, backgroundpadding)
 	if desc == nil then
 		DebugError(TraceBack())
 		return
@@ -4943,6 +4997,8 @@ function widgetPrototypes.row:getHeight()
 		if cell.colspan ~= 0 then
 			local celloffsety = Helper.scaleY(cell.properties.y, cell.properties.scaling)		-- 0 for uninitialised cells
 			if (cell.type == "icon") and (cell.properties.affectRowHeight == false) then
+				celloffsety = 0
+			elseif (cell.type == "button") and (cell.properties.affectRowHeight == false) then
 				celloffsety = 0
 			end
 			local cellheight = cell:getHeight()
@@ -5443,7 +5499,7 @@ function widgetPrototypes.button:setHotkey(hotkey, properties)
 	return self
 end
 
-function widgetPrototypes.button:getHeight()
+function widgetPrototypes.button:getHeight(raw)
 	-- super call
 	local height = widgetPrototypes.cell.getHeight(self)
 	-- enforce min height if the button contains a hotkey icon
@@ -5451,7 +5507,10 @@ function widgetPrototypes.button:getHeight()
 	if hotkeyproperty.hotkey ~= "" and hotkeyproperty.displayIcon and height < Helper.buttonMinHeight then
 		return Helper.buttonMinHeight
 	end
-	return height
+	if raw or self.properties.affectRowHeight then
+		return height
+	end
+	return 1
 end
 
 function widgetHelpers.button:createDescriptor()
@@ -5462,7 +5521,8 @@ function widgetHelpers.button:createDescriptor()
 	local offsetx = Helper.scaleX(self.properties.x, scaling)
 	local offsety = Helper.scaleY(self.properties.y, scaling)
 	local width = self:getWidth()
-	local height = self:getHeight()
+	local height = self:getHeight(true)
+	local affectrowheight = self.properties.affectRowHeight
 	local mouseovertext = self.properties.mouseOverText
 	local helpoverlay = createOverlayPropertyInfo(self)
 
@@ -5505,15 +5565,16 @@ function widgetHelpers.button:createDescriptor()
 	buttonDescriptor.helpoverlay = helpoverlay
 
 	if buttonDescriptor.text.text ~= "" then
-		buttonDescriptor.text.text = TruncateText(buttonDescriptor.text.text, buttonDescriptor.text.fontname, buttonDescriptor.text.fontsize, width - 2 * buttonDescriptor.text.x)
+		buttonDescriptor.text.text = TruncateText(buttonDescriptor.text.text, buttonDescriptor.text.fontname, buttonDescriptor.text.fontsize, width - buttonDescriptor.text.x)
 	end
 	if buttonDescriptor.text2.text ~= "" then
-		buttonDescriptor.text2.text = TruncateText(buttonDescriptor.text2.text, buttonDescriptor.text2.fontname, buttonDescriptor.text2.fontsize, width - 2 * buttonDescriptor.text2.x)
+		buttonDescriptor.text2.text = TruncateText(buttonDescriptor.text2.text, buttonDescriptor.text2.fontname, buttonDescriptor.text2.fontsize, width - buttonDescriptor.text2.x)
 	end
 
 	buttonDescriptor.active = active
 	buttonDescriptor.offset = { x = offsetx, y = offsety }
 	buttonDescriptor.size = { width = width, height = height }
+	buttonDescriptor.affectrowheight = affectrowheight
 	return CreateButton(buttonDescriptor)
 end
 
@@ -5854,6 +5915,7 @@ function widgetHelpers.dropdown:createDescriptor()
 	local width = self:getWidth()
 	local height = self:getHeight()
 	local mouseovertext = self.properties.mouseOverText
+	local active = self.properties.active
 	local startOption = self.properties.startOption
 	local helpoverlay = createOverlayPropertyInfo(self)
 	local options = Helper.tableCopy(self.properties.options, 1)
@@ -5870,6 +5932,10 @@ function widgetHelpers.dropdown:createDescriptor()
 	end
 
 	local isfunctioncell = false
+	if type(active) == "function" then
+		active = active()
+		isfunctioncell = true
+	end
 	if type(startOption) == "function" then
 		startOption = startOption()
 		isfunctioncell = true
@@ -5911,7 +5977,7 @@ function widgetHelpers.dropdown:createDescriptor()
 	dropdownDescriptor.highlightglowfactor = highlightColor.glow
 	dropdownDescriptor.optioncolor = optionColor
 	dropdownDescriptor.optionglowfactor = optionColor.glow
-	dropdownDescriptor.active = self.properties.active
+	dropdownDescriptor.active = active
 	dropdownDescriptor.allowmouseoverinteraction = self.properties.allowMouseOverInteraction
 	dropdownDescriptor.helpoverlay = helpoverlay
 
@@ -8015,8 +8081,8 @@ function Helper.sortNameAndObjectID(a, b, invert)
 end
 
 function Helper.sortShipsByClassAndPurpose(a, b, invert)
-	local aclass = Helper.classOrder[a.class] or 0
-	local bclass = Helper.classOrder[b.class] or 0
+	local aclass = Helper.classOrder[a.classid or a.class] or 0
+	local bclass = Helper.classOrder[b.classid or b.class] or 0
 	if aclass == bclass then
 		local apurpose = (a.purpose ~= "") and Helper.purposeOrder[a.purpose] or 0
 		local bpurpose = (b.purpose ~= "") and Helper.purposeOrder[b.purpose] or 0
@@ -8042,8 +8108,8 @@ function Helper.sortShipsByClassAndPurpose(a, b, invert)
 end
 
 function Helper.sortClass(a, b, invert)
-	local aclass = Helper.classOrder[a.class] or 0
-	local bclass = Helper.classOrder[b.class] or 0
+	local aclass = Helper.classOrder[a.classid or a.class] or 0
+	local bclass = Helper.classOrder[b.classid or b.class] or 0
 	if invert then
 		return aclass > bclass
 	else
@@ -8271,7 +8337,7 @@ function Helper.orderedPairsByWareName(t)
 	return Helper.orderedNextByWareName, t, nil
 end
 
-function Helper.convertGameTimeToXTimeString(time)
+function Helper.convertGameTimeToXTimeString(time, dateonly)
 	if not Helper.xTimeOffset then
 		local date = C.GetGameStartDate()
 		if date.isvalid then
@@ -8289,6 +8355,10 @@ function Helper.convertGameTimeToXTimeString(time)
 	timestring = timestring .. string.format("%02d", math.floor(time / 2592000)) .. "-"
 	time = time % 2592000
 	timestring = timestring .. string.format("%02d", math.floor(time / 86400)) .. " "
+	if dateonly then
+		return timestring
+	end
+
 	time = time % 86400
 	timestring = timestring .. string.format("%02d", math.floor(time / 3600)) .. ":"
 	time = time % 3600
@@ -9271,13 +9341,12 @@ Helper.topLevelMenus = {
 	{ id = "options",		name = ReadText(1001, 8105),	icon = "tlt_optionsmenu",		shortcut = "INPUT_ACTION_OPTIONSMENU",					menu = "OptionsMenu",		helpOverlayID = "toplevel_options",			helpOverlayText = ReadText(1028, 8101), param = "toplevel", },
 	{ id = "terraforming",	name = ReadText(1001, 3800),	icon = "tlt_terraforming",		shortcut = "",											menu = "TerraformingMenu",	helpOverlayID = "toplevel_terraforming",	helpOverlayText = ReadText(1028, 8109), param = {0, 0, "$hqcluster$" },						canterraform = true },
 	{ id = "research",		name = ReadText(1001, 8103),	icon = "tlt_research",			shortcut = "",											menu = "ResearchMenu",		helpOverlayID = "toplevel_research",		helpOverlayText = ReadText(1028, 8102), param = {0, 0},										canresearch = true },
-	{ id = "playerinfo",	name = ReadText(1001, 8102),	icon = "tlt_playerinfo",		shortcut = "INPUT_ACTION_OPEN_PLAYER_INVENTORY_MENU",	menu = "PlayerInfoMenu",	helpOverlayID = "toplevel_playerinfo",		helpOverlayText = ReadText(1028, 8103), param = {0, 0} },
-	--{ id = "playerinfo",	name = ReadText(1001, 8102),	icon = "tlt_playerinfo",		shortcut = "INPUT_ACTION_OPEN_PLAYER_INVENTORY_MENU",	menu = "PlayerInfoMenu",	helpOverlayID = "toplevel_playerinfo",		helpOverlayText = ReadText(1028, 8112), param = {0, 0} },
-	--{ id = "diplomacy",		name = ReadText(1001, 11204),	icon = "tlt_diplomacy",			shortcut = "",											menu = "DiplomacyMenu",		helpOverlayID = "toplevel_diplomacy",		helpOverlayText = ReadText(1028, 8111), param = {0, 0} },
+	{ id = "playerinfo",	name = ReadText(1001, 8102),	icon = "tlt_playerinfo",		shortcut = "INPUT_ACTION_OPEN_PLAYER_INVENTORY_MENU",	menu = "PlayerInfoMenu",	helpOverlayID = "toplevel_playerinfo",		helpOverlayText = ReadText(1028, 8112), param = {0, 0} },
+	{ id = "diplomacy",		name = ReadText(1001, 11204),	icon = "tlt_diplomacy",			shortcut = "INPUT_ACTION_OPEN_DIPLOMACY_MENU",			menu = "DiplomacyMenu",		helpOverlayID = "toplevel_diplomacy",		helpOverlayText = ReadText(1028, 8111), param = {0, 0} },
 	{ id = "docked",		name = ReadText(1001, 8106),	icon = "tlt_docked",			shortcut = "INPUT_ACTION_OPEN_COCKPIT_MENU",			menu = "DockedMenu",		helpOverlayID = "toplevel_docked",			helpOverlayText = ReadText(1028, 8104), param = {0, 0},										needsdock = true },
 	{ id = "cockpit",		name = ReadText(1001, 8601),	icon = "tlt_shipinteractions",	shortcut = "INPUT_ACTION_OPEN_COCKPIT_MENU",			menu = "DockedMenu",		helpOverlayID = "toplevel_cockpit",			helpOverlayText = ReadText(1028, 8105), param = {0, 0},										needsdock = false },
-	{ id = "map",			name = ReadText(1001, 8101),	icon = "tlt_map",				shortcut = "INPUT_ACTION_OPEN_MAP",						menu = "MapMenu",			helpOverlayID = "toplevel_map",				helpOverlayText = ReadText(1028, 8106), param = {0, 0, true} },
-	{ id = "multiversemap",	name = ReadText(1001, 11623),	icon = "vt_season",				shortcut = "INPUT_ACTION_OPEN_MULTIVERSE",				menu = "MapMenu",			helpOverlayID = "toplevel_multiversemap",	helpOverlayText = ReadText(1028, 8110), param = {0, 0, true, nil, nil, nil, nil, true},		isonline = true,		istimelinescenario = false },
+	{ id = "map",			name = ReadText(1001, 8101),	icon = "tlt_map",				shortcut = "INPUT_ACTION_OPEN_MAP",						menu = "MapMenu",			helpOverlayID = "toplevel_map",				helpOverlayText = ReadText(1028, 8106), param = {0, 0, true},								canopenmap = true },
+	{ id = "multiversemap",	name = ReadText(1001, 11623),	icon = "vt_season",				shortcut = "INPUT_ACTION_OPEN_MULTIVERSE",				menu = "MapMenu",			helpOverlayID = "toplevel_multiversemap",	helpOverlayText = ReadText(1028, 8110), param = {0, 0, true, nil, nil, nil, nil, true},		canopenmap = true,	isonline = true,		istimelinescenario = false },
 	{ id = "encyclopedia",	name = ReadText(1001, 8104),	icon = "tlt_encyclopedia",		shortcut = "",											menu = "EncyclopediaMenu",	helpOverlayID = "toplevel_encyclopedia",	helpOverlayText = ReadText(1028, 8107), param = {0, 0} },
 	{ id = "help",			name = ReadText(1001, 8701),	icon = "tlt_help",				shortcut = "INPUT_ACTION_HELP",							menu = "HelpMenu",			helpOverlayID = "toplevel_help",			helpOverlayText = ReadText(1028, 8108), param = {0, 0},										demo = false },
 }
@@ -9320,6 +9389,9 @@ function Helper.checkTopLevelConditions(entry)
 		return false
 	end
 	if (entry.canresearch ~= nil) and (entry.canresearch ~= C.CanResearch()) then
+		return false
+	end
+	if (entry.canopenmap ~= nil) and (entry.canopenmap ~= C.IsStoryFeatureUnlocked("x4ep1_map")) then
 		return false
 	end
 	if (entry.canterraform ~= nil) then
@@ -9693,8 +9765,10 @@ Helper.equipmentCompatibilities = {
 	[2] = { tag = "missile",		color = Color["equipment_comp_missile"] },
 	[3] = { tag = "mining",			color = Color["equipment_comp_mining"] },
 	[4] = { tag = "highpower",		color = Color["equipment_comp_highpower"] },
-	[5] = { tag = "venture",		color = { r = 196, g = 147, b = 84,  a = 100 } },
-	[6] = { tag = "boron",			color = { r = 84,  g = 196, b = 188, a = 100 } },
+	[5] = { tag = "venture",		color = Color["equipment_comp_venture"] },
+	[6] = { tag = "boron",			color = Color["equipment_comp_boron"] },
+	[7] = { tag = "xenon",			color = Color["equipment_comp_xenon"] },
+	[8] = { tag = "advanced",		color = Color["equipment_comp_advanced"] },
 }
 
 Helper.transactionLogConfig = {
@@ -12826,6 +12900,86 @@ end
 
 function Helper.getLimitedWareAmount(ware)
 	return tonumber(ffi.string(C.GetUserDataSigned("limited_blueprint_" .. ware))) or 0
+end
+
+function Helper.getOrderParameterWares(inputparams)
+	local wares = {}
+
+	if inputparams.mining then
+		local sector = ConvertIDTo64Bit(inputparams.mining[1])
+		local pos = inputparams.mining[2]
+		local nummineables = C.GetNumMineablesAtSectorPos(sector, pos)
+		local mineables = ffi.new("YieldInfo[?]", nummineables)
+		nummineables = C.GetMineablesAtSectorPos(mineables, nummineables, sector, pos)
+		for i = 0, nummineables - 1 do
+			table.insert(wares, ffi.string(mineables[i].wareid))
+		end
+	elseif inputparams.cargoof then
+		local buf = GetComponentData(inputparams.cargoof, "cargo")
+		for ware in pairs(buf) do
+			table.insert(wares, ware)
+		end
+	elseif inputparams.soldby then
+		local buf = GetComponentData(inputparams.soldby, "products")
+		for _, ware in ipairs(buf) do
+			table.insert(wares, ware)
+		end
+	elseif inputparams.boughtby then
+		local buf = GetComponentData(inputparams.boughtby, "allresources")
+		for _, ware in ipairs(buf) do
+			table.insert(wares, ware)
+		end
+	elseif inputparams.warebasket then
+		local n = C.GetNumWareBasketItems(inputparams.warebasket)
+		if n > 0 then
+			local buf = ffi.new("const char*[?]", n)
+			n = C.GetWareBasketItems(buf, n, inputparams.warebasket)
+			for i = 0, n - 1 do
+				table.insert(wares, ffi.string(buf[i]))
+			end
+		end
+	else
+		local tags = "economy"
+		if inputparams.tags then
+			if type(inputparams.tags) == "table" then
+				for i, tag in ipairs(inputparams.tags) do
+					if i == 1 then
+						tags = ""
+					else
+						tags = tags .. " "
+					end
+					tags = tags .. tag
+				end
+			else
+				tags = inputparams.tags
+			end
+		end
+		local n = C.GetNumWares(tags, false, "", "")
+		local buf = ffi.new("const char*[?]", n)
+		n = C.GetWares(buf, n, tags, false, "", "")
+		for i = 0, n - 1 do
+			table.insert(wares, ffi.string(buf[i]))
+		end
+	end
+	if inputparams.cancarry then
+		for i = #wares, 1, -1 do
+			local ware = wares[i]
+			if GetWareCapacity(inputparams.cancarry, ware, true) == 0 then
+				table.remove(wares, i)
+			end
+		end
+	end
+	if inputparams.isminable then
+		for i = #wares, 1, -1 do
+			local ware = wares[i]
+			if GetWareData(ware, "isminable") ~= (inputparams.isminable == 1) then
+				table.remove(wares, i)
+			end
+		end
+	end
+
+	table.sort(wares, Helper.sortWareName)
+	return wares
 end
 
 -- kuertee start:

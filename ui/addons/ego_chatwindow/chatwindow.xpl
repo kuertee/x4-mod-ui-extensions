@@ -775,13 +775,15 @@ function menu.createReportContext(frame)
 	local row = ftable:addRow(nil, { fixed = true })
 	row[1]:createText(ReadText(1001, 12110), Helper.subHeaderTextProperties)
 
-	local row = ftable:addRow(true, { fixed = true })
-	row[1]:createButton({  }):setText(ReadText(1001, 12111))
-	row[1].handlers.onClick = function () return menu.buttonReportUser(data.authorid) end
+	if C.IsStoryFeatureUnlocked("x4ep1_map") then
+		local row = ftable:addRow(true, { fixed = true })
+		row[1]:createButton({  }):setText(ReadText(1001, 12111))
+		row[1].handlers.onClick = function () return menu.buttonReportUser(data.authorid) end
 	
-	local row = ftable:addRow(true, { fixed = true })
-	row[1]:createButton({ active = (not data.reported) and (not data.announcement) }):setText(ReadText(1001, 12112))
-	row[1].handlers.onClick = function () return menu.buttonReportMessage(data.timestamp, data.author) end
+		local row = ftable:addRow(true, { fixed = true })
+		row[1]:createButton({ active = (not data.reported) and (not data.announcement) }):setText(ReadText(1001, 12112))
+		row[1].handlers.onClick = function () return menu.buttonReportMessage(data.timestamp, data.author) end
+	end
 end
 
 --- Helper hooks ---

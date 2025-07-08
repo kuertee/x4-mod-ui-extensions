@@ -24,7 +24,6 @@ ffi.cdef[[
 	} UIComponentSlot;
 	bool CancelConstruction(UniverseID containerid, BuildTaskID id);
 	const char* GetControlPanelName(UIComponentSlot controlpanel);
-	void ReloadSaveList(void);
 	bool RemoveBuildStorage(UniverseID buildstorageid);
 	void SetAutoRoll(bool value);
 	void SetInversionSetting(uint32_t uirangeid, const char* parametername, bool value);
@@ -298,7 +297,7 @@ function menu.createTable(frame, tableProperties)
 
 		local row = ftable:addRow(false, { fixed = true })
 		row[1]:setColSpan(numCols):createText(ReadText(1001, 9702) .. ReadText(1001, 120))
-
+		
 		local row = ftable:addRow(false, { fixed = true })
 		row[1]:setColSpan(numCols):createText(ffi.string(C.GetControlPanelName(menu.hacktarget)))
 	elseif menu.mode == "abortupgrade" then
@@ -419,7 +418,6 @@ function menu.onGameSaved(_, success)
 	if menu.saveTriggered then
 		menu.saveTriggered = nil
 		if menu.mode == "starttutorial" then
-			C.ReloadSaveList()
 			C.SetUserData("tutorial_started_from", tostring(menu.modeparam[2]))
 			if success then
 				NewGame(menu.modeparam[1])

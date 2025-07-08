@@ -220,7 +220,7 @@ ffi.cdef[[
 	bool AreConstructionPlanLoadoutsCompatible(const char* constructionplanid);
 	bool CanPlayerUseRace(const char* raceid, const char* postid);
 	void ExportCustomGameStart(const char* filename, const char* id, const char* name);
-	const char* GenerateFactionRelationTextFromRelation(int32_t uirelation);
+	const char* GenerateFactionRelationTextFromRelation2(int32_t uirelation);
 	uint32_t GetAllFactions(const char** result, uint32_t resultlen, bool includehidden);
 	uint32_t GetAllRaces(RaceInfo* result, uint32_t resultlen);
 	uint32_t GetAvailableCustomGameStarts(CustomGameStartInfo* result, uint32_t resultlen, const char* id);
@@ -4574,7 +4574,7 @@ function menu.removeFactionRelation(relations, faction, otherfaction)
 end
 
 function menu.relationText(relation, width)
-	local text = ffi.string(C.GenerateFactionRelationTextFromRelation(relation))
+	local text = ffi.string(C.GenerateFactionRelationTextFromRelation2(relation))
 	local lines = GetTextLines(text, Helper.standardFont, Helper.scaleFont(Helper.standardFont, Helper.standardFontSize), width)
 	local maxlines = GetTextLines(ReadText(20218, 705) .. "\n" .. ReadText(20218, 805) .. "\n" .. ReadText(20218, 1005), Helper.standardFont, Helper.scaleFont(Helper.standardFont, Helper.standardFontSize), width)
 	for i = 1, #maxlines - #lines do

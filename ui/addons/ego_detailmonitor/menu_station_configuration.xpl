@@ -189,7 +189,6 @@ ffi.cdef[[
 	float GetCurrentBuildProgress(UniverseID containerid);
 	void GetCurrentLoadout(UILoadout* result, UniverseID defensibleid, UniverseID moduleid);
 	void GetCurrentLoadoutCounts(UILoadoutCounts* result, UniverseID defensibleid, UniverseID moduleid);
-	float GetDefensibleLoadoutLevel(UniverseID defensibleid);
 	int64_t GetEstimatedBuildPrice(UniverseID containerid, const char* macroname);
 	const char* GetGameStartName();
 	uint32_t GetImportableConstructionPlans(UIConstructionPlanInfo* result, uint32_t resultlen);
@@ -223,6 +222,7 @@ ffi.cdef[[
 	uint32_t GetPlannedLimitedModules(UIMacroCount* result, uint32_t resultlen, const char* constructionplanid);
 	uint32_t GetRemovedConstructionPlanModules2(UniverseID* result, uint32_t resultlen, uint32_t* changedIndices, uint32_t* numChangedIndices);
 	size_t GetSelectedBuildMapEntry(UniverseID holomapid);
+	float GetStationModuleLoadoutLevel(UniverseID stationid);
 	uint32_t GetUpgradeGroupCompatibilities(EquipmentCompatibilityInfo* result, uint32_t resultlen, UniverseID destructibleid, const char* macroname, UniverseID contextid, const char* path, const char* group, const char* upgradetypename);
 	UpgradeGroupInfo GetUpgradeGroupInfo(UniverseID destructibleid, const char* macroname, const char* path, const char* group, const char* upgradetypename);
 	uint32_t GetUpgradeGroups(UpgradeGroup* result, uint32_t resultlen, UniverseID destructibleid, const char* macroname);
@@ -270,6 +270,7 @@ ffi.cdef[[
 	void SetMapPicking(UniverseID holomapid, bool enable);
 	void SetSelectedMapGroup(UniverseID holomapid, UniverseID destructibleid, const char* macroname, const char* path, const char* group);
 	void SetSelectedMapMacroSlot(UniverseID holomapid, UniverseID defensibleid, UniverseID moduleid, const char* macroname, bool ismodule, const char* upgradetypename, size_t slot);
+	void SetStationModuleLoadoutLevel(UniverseID stationid, float value);
 	void SetupConstructionSequenceModulesCache(UniverseID holomapid, UniverseID defensibleid, bool enable);
 	void ShowConstructionMap(UniverseID holomapid, UniverseID stationid, const char* constructionplanid, bool restore);
 	void ShowObjectConfigurationMap2(UniverseID holomapid, UniverseID defensibleid, UniverseID moduleid, const char* macroname, bool ismodule, UILoadout uiloadout, size_t cp_idx);
@@ -835,7 +836,7 @@ end
 
 function menu.resetDefaultLoadout()
 	if menu.origDefaultLoadout ~= menu.defaultLoadout then
-		C.SetDefensibleLoadoutLevel(menu.container, menu.origDefaultLoadout)
+		C.SetStationModuleLoadoutLevel(menu.container, menu.origDefaultLoadout)
 		menu.defaultLoadout = menu.origDefaultLoadout
 	end
 end
@@ -1060,7 +1061,7 @@ end
 
 function menu.dropdownDefaultLoadout(_, level)
 	menu.defaultLoadout = tonumber(level)
-	C.SetDefensibleLoadoutLevel(menu.container, menu.defaultLoadout)
+	C.SetStationModuleLoadoutLevel(menu.container, menu.defaultLoadout)
 
 	if menu.defaultLoadout ~= -1 then
 		C.SetupConstructionSequenceModulesCache(menu.holomap, menu.container, true)
@@ -1573,7 +1574,7 @@ function menu.onShowMenu(state)
 	menu.container = ConvertIDTo64Bit(menu.param[3])
 	menu.buildstorage = ConvertIDTo64Bit(GetComponentData(menu.container, "buildstorage")) or 0
 
-	menu.defaultLoadout = Helper.round(C.GetDefensibleLoadoutLevel(menu.container), 1)
+	menu.defaultLoadout = Helper.round(C.GetStationModuleLoadoutLevel(menu.container), 1)
 	menu.origDefaultLoadout = menu.defaultLoadout
 
 	RegisterEvent("newWareReservation", menu.newWareReservationCallback)
@@ -3245,7 +3246,7 @@ function menu.displayPlan(frame)
 			if menu.selectedRows.plan == "first" then
 				menu.selectedRows.plan = 2
 			else
-				local numdisplayedlines = math.floor((ftable:getVisibleHeight() - menu.titleData.height) / (Helper.scaleY(Helper.subHeaderHeight) + Helper.borderSize))
+				local numdisplayedlines = math.floor((ftable:getVisibleHeight() - menu.titleData.height) / (Helper.scaleY(Helper.standardTextHeight) + Helper.borderSize))
 				if menu.topRows.plan and menu.selectedRows.plan then
 					if menu.topRows.plan + numdisplayedlines - 1 < menu.selectedRows.plan then
 						menu.topRows.plan = menu.selectedRows.plan - numdisplayedlines + 3
@@ -3728,7 +3729,7 @@ function menu.displayPlan(frame)
 			row = resourcetable:addRow(true, {  })
 			if #menu.constructionvessels == 0 then
 				local active = C.DoesConstructionSequenceRequireBuilder(menu.container)
-				row[1]:setColSpan(6):createButton({ active = active, helpOverlayID = "assign_hire_builder", helpOverlayText = " ",  helpOverlayHighlightOnly = true, mouseOverText = active and "" or ReadText(1026, 7923) }):setText(ReadText(1001, 7934), { halign = "center" })
+				row[1]:setColSpan(6):createButton({ active = active and C.IsStoryFeatureUnlocked("x4ep1_map"), helpOverlayID = "assign_hire_builder", helpOverlayText = " ",  helpOverlayHighlightOnly = true, mouseOverText = active and "" or ReadText(1026, 7923) }):setText(ReadText(1001, 7934), { halign = "center" })
 				row[1].handlers.onClick = menu.buttonAssignConstructionVessel
 				row[1].properties.uiTriggerID = "assignhirebuilder"
 			else

@@ -3167,27 +3167,35 @@ function menu.onShowMenu(state)
 	end
 
 	if menu.container then
-		menu.moddingdiscounts = GetComponentData(menu.container, "moddingdiscounts")
+		menu.moddingdiscounts, menu.repairdiscounts, menu.hiringdiscounts, menu.discounts = GetComponentData(menu.container, "moddingdiscounts", "repairdiscounts", "hiringdiscounts", "discounts")
 		menu.moddingdiscounts.totalfactor = 1
 		for _, entry in ipairs(menu.moddingdiscounts) do
 			menu.moddingdiscounts.totalfactor = menu.moddingdiscounts.totalfactor - entry.amount / 100
 		end
 
-		menu.repairdiscounts = GetComponentData(menu.container, "repairdiscounts")
 		menu.repairdiscounts.totalfactor = 1
 		for _, entry in ipairs(menu.repairdiscounts) do
 			menu.repairdiscounts.totalfactor = menu.repairdiscounts.totalfactor - entry.amount / 100
 		end
 
-		menu.hiringdiscounts = GetComponentData(menu.container, "hiringdiscounts")
 		menu.hiringdiscounts.totalfactor = 1
 		for _, entry in ipairs(menu.hiringdiscounts) do
 			menu.hiringdiscounts.totalfactor = menu.hiringdiscounts.totalfactor - entry.amount / 100
+		end
+
+		menu.discounts.totalfactor = 1
+		for i = #menu.discounts, 1, -1 do
+			if menu.discounts[i].applytoshipsales then
+				menu.discounts.totalfactor = menu.discounts.totalfactor - menu.discounts[i].amount / 100
+			else
+				table.remove(menu.discounts, i)
+			end
 		end
 	else
 		menu.moddingdiscounts = { totalfactor = 1 }
 		menu.repairdiscounts  = { totalfactor = 1 }
 		menu.hiringdiscounts  = { totalfactor = 1 }
+		menu.discounts        = { totalfactor = 1 }
 	end
 
 	menu.displayMainFrame()
@@ -4723,7 +4731,7 @@ function menu.displaySoftwareSlot(ftable, type, slot, slotdata)
 
 				local price
 				if (not menu.isReadOnly) and (not menu.isplayerowned) and (menu.mode ~= "customgamestart") and (menu.mode ~= "comparison") then
-					price = C.GetContainerBuildPriceFactor(menu.container) * GetContainerWarePrice(ConvertStringTo64Bit(tostring(menu.container)), software, false)
+					price = menu.discounts.totalfactor * C.GetContainerBuildPriceFactor(menu.container) * GetContainerWarePrice(ConvertStringTo64Bit(tostring(menu.container)), software, false)
 				end
 
 				local installcolor = Color["text_normal"]
@@ -7961,6 +7969,14 @@ function menu.displayPlan(frame)
 				row[2]:createText(ConvertIntegerString(value, true, 0, true)  .. " " .. ColorText["customgamestart_budget_people"] .. "\27[gamestart_custom_people]", { halign = "right" })
 			end
 		else
+			if menu.discounts.totalfactor < 1 then
+				buttontable:addEmptyRow(Helper.standardTextHeight)
+
+				local row = buttontable:addRow(false, { fixed = true })
+				row[1]:createText(ReadText(1001, 8596), { color = Color["text_price_good"] })
+				row[2]:createText("-" .. Helper.round((1 - menu.discounts.totalfactor) * 100) .. " %", { color = Color["text_price_good"], halign = "right" })
+			end
+
 			local row = buttontable:addRow(false, { fixed = true, bgColor = Color["row_title_background"] })
 			row[1]:setColSpan(2):createText(menu.container and string.format(ReadText(1001, 8531), (menu.isplayerowned and ColorText["text_player"] or "") .. ffi.string(C.GetComponentName(menu.container))) or ReadText(1001, 8012), menu.headerTextProperties)
 
@@ -8732,15 +8748,12 @@ end
 
 function menu.displayStats(frame)
 	-- title
-	local titletable = frame:addTable(7, { tabOrder = 19, width = menu.statsData.width, x = menu.statsData.offsetX, y = 0, reserveScrollBar = false })
+	local titletable = frame:addTable(3, { tabOrder = 19, width = menu.statsData.width, x = menu.statsData.offsetX, y = 0, reserveScrollBar = false, backgroundID = "solid", backgroundColor = Color["table_background_3d_editor"] })
 	local title = ReadText(1001, 8534)
 	local titlewidth = C.GetTextWidth(title, Helper.headerRow1Font, Helper.scaleFont(Helper.headerRow1Font, Helper.headerRow1FontSize)) + 2 * (Helper.headerRow1Offsetx + Helper.borderSize)
 	local checkboxwidth = Helper.scaleY(Helper.headerRow1Height) - Helper.borderSize
 	titletable:setColWidth(2, checkboxwidth, false)
 	titletable:setColWidth(3, checkboxwidth, false)
-	titletable:setColWidth(4, titlewidth, false)
-	titletable:setColWidth(5, checkboxwidth, false)
-	titletable:setColWidth(6, checkboxwidth, false)
 
 	local statskeyword = "showStats2"
 	if (menu.mode == "modify") and (menu.upgradetypeMode == "paintmods") then
@@ -8748,13 +8761,13 @@ function menu.displayStats(frame)
 	end
 
 	local row = titletable:addRow(true, { fixed = true, borderBelow = false })
+	row[1]:createText(title, { font = Helper.headerRow1Font, fontsize = Helper.headerRow1FontSize, x = Helper.headerRow1Offsetx, y = Helper.headerRow1Offsety, halign = "left", titleColor = Color["row_title"] })
 	local upactive = __CORE_DETAILMONITOR_SHIPBUILD[statskeyword] ~= "full"
 	row[2]:createButton({ height = checkboxwidth, scaling = false, active = upactive }):setIcon("widget_arrow_up_02")
 	row[2].handlers.onClick = menu.buttonExpandStats
 	local downactive = __CORE_DETAILMONITOR_SHIPBUILD[statskeyword] ~= "hidden"
 	row[3]:createButton({ height = checkboxwidth, scaling = false, active = downactive }):setIcon("widget_arrow_down_02")
 	row[3].handlers.onClick = menu.buttonCollapseStats
-	row[4]:createText(title, { font = Helper.headerRow1Font, fontsize = Helper.headerRow1FontSize, x = Helper.headerRow1Offsetx, y = Helper.headerRow1Offsety, halign = "left" })
 
 	if menu.selectedCols.stats then
 		if ((menu.selectedCols.stats ~= 2) or upactive) and ((menu.selectedCols.stats ~= 3) or downactive) then
@@ -8764,9 +8777,6 @@ function menu.displayStats(frame)
 	menu.selectedCols.stats = nil
 
 	if __CORE_DETAILMONITOR_SHIPBUILD[statskeyword] ~= "hidden" then
-		local row = titletable:addRow(false, { fixed = true, bgColor = Color["row_background_blue"] })
-		row[1]:setColSpan(7):createText(" ", { fontsize = 1, height = 2 })
-
 		local loadoutstats, currentloadoutstats
 		if menu.usemacro then
 			local ffiloadoutstats = Helper.callLoadoutFunction(menu.upgradeplan, nil, function (loadout, _) return C.GetLoadoutStatistics5(0, menu.macro, loadout) end)
@@ -8904,6 +8914,23 @@ function menu.displayStats(frame)
 				end
 			end
 		end
+
+		local row = ftable:addRow(nil, {  })
+		row[1]:setColSpan(6):createText(ReadText(1001, 8595), { font = Helper.headerRow1Font, fontsize = Helper.headerRow1FontSize, x = Helper.headerRow1Offsetx, y = Helper.headerRow1Offsety, halign = "left", titleColor = Color["row_title"] })
+
+		local row = ftable:addRow(nil, {  })
+		row[1]:createText(ReadText(1001, 9051))
+		local shiptype, prestigename = "", ""
+		if menu.object ~= 0 then
+			shiptype, prestigename = GetComponentData(ConvertStringToLuaID(tostring(menu.object)), "shiptypename", "prestigename")
+			shiptype = shiptype .. " - "
+		else
+			shiptype, prestigename = GetMacroData(menu.macro, "shiptypename", "prestigename")
+			shiptype = shiptype .. " - "
+		end
+		row[2]:setColSpan(2):createText(shiptype .. Helper.getClassText(menu.class), { halign = "right" })
+		row[4]:createText(ReadText(1001, 12920))
+		row[5]:setColSpan(2):createText(prestigename, { halign = "right" })
 
 		titletable.properties.y = Helper.viewHeight - titletable:getFullHeight() - Helper.borderSize - ftable:getVisibleHeight() - menu.statsData.offsetY
 		ftable.properties.y = titletable.properties.y + ftable.properties.y
@@ -10838,7 +10865,7 @@ function menu.insertWare(array, objectarray, category, ware, count, pricetype)
 				local isvolatile = GetWareData(ware, "volatile")
 				price = isvolatile and 0 or tonumber(C.GetBuildWarePrice(menu.container, ware))
 			elseif pricetype == "software" then
-				price = C.GetContainerBuildPriceFactor(menu.container) * GetContainerWarePrice(ConvertStringToLuaID(tostring(menu.container)), ware, false)
+				price = menu.discounts.totalfactor * C.GetContainerBuildPriceFactor(menu.container) * GetContainerWarePrice(ConvertStringToLuaID(tostring(menu.container)), ware, false)
 			elseif pricetype == "crew" then
 				price = menu.crew.price
 			end
@@ -10862,7 +10889,7 @@ function menu.insertWare(array, objectarray, category, ware, count, pricetype)
 					local isvolatile = GetWareData(ware, "volatile")
 					price = isvolatile and 0 or tonumber(C.GetBuildWarePrice(menu.container, ware))
 				elseif pricetype == "software" then
-					price = C.GetContainerBuildPriceFactor(menu.container) * GetContainerWarePrice(ConvertStringToLuaID(tostring(menu.container)), ware, false)
+					price = menu.discounts.totalfactor * C.GetContainerBuildPriceFactor(menu.container) * GetContainerWarePrice(ConvertStringToLuaID(tostring(menu.container)), ware, false)
 				elseif pricetype == "crew" then
 					price = menu.crew.price
 				end

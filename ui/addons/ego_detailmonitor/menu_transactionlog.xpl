@@ -164,7 +164,7 @@ function menu.createContextFrame(data, x, y, width, nomouseout)
 	row[1].properties.mouseOverText = entry.partnername
 
 	row = ftable:addRow(true, { fixed = true })
-	row[1]:createButton({ active = active, bgColor = active and Color["button_background_default"] or Color["button_background_inactive"] }):setText(ReadText(1001, 2427), { color = active and Color["text_normal"] or Color["text_inactive"] })
+	row[1]:createButton({ active = active and C.IsStoryFeatureUnlocked("x4ep1_map"), bgColor = active and Color["button_background_default"] or Color["button_background_inactive"] }):setText(ReadText(1001, 2427), { color = active and Color["text_normal"] or Color["text_inactive"] })
 	row[1].handlers.onClick = function () return menu.buttonContainerInfo(entry.partner) end
 
 	if active and GetComponentData(ConvertStringTo64Bit(tostring(entry.partner)), "isplayerowned") then

@@ -249,6 +249,7 @@ ffi.cdef[[
 	bool HasVenturerDock(UniverseID containerid, UniverseID shipid, UniverseID ventureplatformid);
 	bool IsBuilderBusy(UniverseID shipid);
 	bool IsComponentWrecked(const UniverseID componentid);
+	bool IsControlPressed(void);
 	bool IsDefensibleBeingBoardedBy(UniverseID defensibleid, const char* factionid);
 	bool IsExternalViewDisabled();
 	bool IsFleetManagerPlayerEnabled(void);
@@ -257,6 +258,7 @@ ffi.cdef[[
 	bool IsObjectKnown(const UniverseID componentid);
 	bool IsOrderLoopable(const char* orderdefid);
 	bool IsPlayerCameraTargetViewPossible(UniverseID targetid, bool force);
+	bool IsShiftPressed(void);
 	bool IsShipAtExternalDock(UniverseID shipid);
 	bool IsSurfaceElement(const UniverseID componentid);
 	bool IsUnit(UniverseID controllableid);
@@ -274,6 +276,7 @@ ffi.cdef[[
 	void ReassignControllableToFleetUnit(UniverseID controllableid, FleetUnitID commanderfleetunitid, int32_t subordinategroupid);
 	void ReleaseOrderSyncPoint(uint32_t syncid);
 	void ReleaseOrderSyncPointFromOrder(UniverseID controllableid, size_t idx);
+	bool RemoveAllOrders2(UniverseID controllableid, bool onlytrade, bool onlypriority);
 	bool RemoveCommander2(UniverseID controllableid);
 	void RemoveFleetUnit(FleetUnitID fleetunitid);
 	bool RemoveOrder(UniverseID controllableid, size_t idx, bool playercancelled, bool checkonly);
@@ -582,16 +585,13 @@ function menu.orderAttack(component, target, clear, immediate)
 	end
 
 	if clear then
-		C.RemoveAllOrders(component)
+		C.RemoveAllOrders2(component, false, false)
 	end
-	local orderidx = C.CreateOrder3(component, "Attack", false, immediate, immediate)
-	if orderidx > 0 then
-		SetOrderParam(component, orderidx, 1, nil, ConvertStringToLuaID(tostring(target)))
-		C.EnableOrder(component, orderidx)
-		if immediate then
-			menu.setOrderImmediate(component, orderidx)
-		end
-	end
+
+	local params = {
+		primarytarget = ConvertStringToLuaID(tostring(target)),
+	}
+	CreateOrder(component, "Attack", params, false, immediate, false);
 
 	return orderidx
 end
@@ -883,25 +883,19 @@ function menu.orderMoveWait(component, sector, offset, targetobject, playerpreci
 	end
 
 	if clear then
-		C.RemoveAllOrders(component)
+		C.RemoveAllOrders2(component, false, false)
 	end
-	local orderidx
+
 	if not C.IsComponentClass(targetobject, "sector") then
-		orderidx = C.CreateOrder(component, "MoveToObject", false)
-		if orderidx > 0 then
-			SetOrderParam(component, orderidx, 1, nil, ConvertStringToLuaID(tostring(targetobject)))
-		end
+		local params = {
+			destination = ConvertStringToLuaID(tostring(targetobject)),
+		}
+		CreateOrder(component, "MoveToObject", params, false, false, false);
 	else
-		orderidx = C.CreateOrder(component, "MoveWait", false)
-		if orderidx > 0 then
-			SetOrderParam(component, orderidx, 1, nil, { ConvertStringToLuaID(tostring(sector)), {offset.x, offset.y,offset.z} })
-			if playerprecise then
-				SetOrderParam(component, orderidx, 5, nil, true)
-			end
-		end
-	end
-	if orderidx > 0 then
-		C.EnableOrder(component, orderidx)
+		local params = {
+			destination = { ConvertStringToLuaID(tostring(sector)), { offset.x, offset.y, offset.z } },
+		}
+		CreateOrder(component, "MoveWait", params, false, false, false);
 	end
 
 	return orderidx
@@ -4997,7 +4991,7 @@ function menu.insertLuaAction(actiontype, istobedisplayed)
 			menu.insertInteractionContent("playersquad_orders", { type = actiontype, text = ReadText(1001, 7869), helpOverlayID = "interactmenu_attackplayertarget", helpOverlayText = " ", helpOverlayHighlightOnly = true, script = function () return menu.buttonPlayerSquadAttackPlayerTarget(false) end, hidetarget = true })	-- Fleet: Attack my target
 		end
 	elseif actiontype == "behaviourinspection" then
-		if (not menu.shown) and istobedisplayed and (menu.componentSlot.component ~= C.GetPlayerControlledShipID()) and C.IsComponentOperational(menu.componentSlot.component) then
+		if menu.data.ismapunlocked and (not menu.shown) and istobedisplayed and (menu.componentSlot.component ~= C.GetPlayerControlledShipID()) and C.IsComponentOperational(menu.componentSlot.component) then
 			local active = true
 			local mouseovertext = ""
 			if menu.componentSlot.component == menu.behaviourInspectionComponent then
@@ -5019,7 +5013,7 @@ function menu.insertLuaAction(actiontype, istobedisplayed)
 			end
 		end
 	elseif actiontype == "board" then
-		if (#menu.selectedplayerships > 0) and menu.possibleorders["Board"] and (not isplayerownedtarget) and (C.IsComponentClass(menu.componentSlot.component, "ship_l") or C.IsComponentClass(menu.componentSlot.component, "ship_xl")) and (GetComponentData(convertedComponent, "owner") ~= "ownerless") then
+		if menu.data.ismapunlocked and (#menu.selectedplayerships > 0) and menu.possibleorders["Board"] and (not isplayerownedtarget) and (C.IsComponentClass(menu.componentSlot.component, "ship_l") or C.IsComponentClass(menu.componentSlot.component, "ship_xl")) and (GetComponentData(convertedComponent, "owner") ~= "ownerless") then
 			menu.insertInteractionContent(menu.showPlayerInteractions and "player_interaction" or "selected_orders", { type = actiontype, text = menu.orderIconText("Board") .. ReadText(1001, 7842), helpOverlayID = "interactmenu_board", helpOverlayText = " ", helpOverlayHighlightOnly = true, script = function() return menu.buttonBoard() end, orderid = (not menu.showPlayerInteractions) and "Board" or nil })
 		end
 	elseif actiontype == "build" then
@@ -5183,7 +5177,7 @@ function menu.insertLuaAction(actiontype, istobedisplayed)
 			end
 		end
 	elseif actiontype == "crewtransfer" then
-		if (#menu.selectedplayerships == 1) and GetComponentData(convertedComponent, "isdock") and (not GetComponentData(convertedComponent, "isdeployable")) and (not C.IsUnit(convertedComponent)) and (not C.IsComponentClass(convertedComponent, "ship_xs")) and (C.GetPeopleCapacity(convertedComponent, "", true) > 0) then
+		if menu.data.ismapunlocked and (#menu.selectedplayerships == 1) and GetComponentData(convertedComponent, "isdock") and (not GetComponentData(convertedComponent, "isdeployable")) and (not C.IsUnit(convertedComponent)) and (not C.IsComponentClass(convertedComponent, "ship_xs")) and (C.GetPeopleCapacity(convertedComponent, "", true) > 0) then
 			if (not GetComponentData(menu.selectedplayerships[1], "isdeployable")) and (not C.IsComponentClass(menu.selectedplayerships[1], "spacesuit")) then
 				if C.IsComponentClass(menu.componentSlot.component, "container") then
 					if C.IsComponentClass(menu.componentSlot.component, "station") or isplayerownedtarget then
@@ -5512,7 +5506,7 @@ function menu.insertLuaAction(actiontype, istobedisplayed)
 			menu.insertInteractionContent((menu.showPlayerInteractions and (not menu.shown)) and "player_interaction" or "interaction", { type = actiontype, text = (menu.showPlayerInteractions and (not menu.shown)) and ReadText(1001, 7845) or ReadText(1001, 7888), helpOverlayID = "interactmenu_dockrequest", helpOverlayText = " ", helpOverlayHighlightOnly = true, script = menu.buttonDockRequest, active = C.RequestDockAt(dockcontainer, true), mouseOverText = mouseovertext })
 		end
 	elseif actiontype == "dropinventory" then
-		if istobedisplayed then
+		if istobedisplayed and menu.data.ismapunlocked then
 			local pilot = ConvertIDTo64Bit(GetComponentData(convertedComponent, "pilot"))
 			if pilot and (pilot ~= 0) then
 				local inventory = GetInventory(pilot)
@@ -5640,7 +5634,7 @@ function menu.insertLuaAction(actiontype, istobedisplayed)
 			end
 		end
 	elseif actiontype == "fleetlogo" then
-		if istobedisplayed then
+		if istobedisplayed and menu.data.ismapunlocked then
 			menu.insertInteractionContent("interaction", { type = actiontype, text = ReadText(1001, 11133), script = menu.buttonChangeLogo })
 		end
 	elseif actiontype == "fleetmanagement" then
@@ -5649,7 +5643,7 @@ function menu.insertLuaAction(actiontype, istobedisplayed)
 			menu.insertInteractionContent("main_orders", { type = actiontype, text = isfleetlead and ReadText(1001, 11147) or ReadText(1001, 11146), helpOverlayID = "interactmenu_fleetmanagement", helpOverlayText = " ", helpOverlayHighlightOnly = true, script = function () return menu.buttonFleetManagement(menu.componentSlot.component, not isfleetlead) end, active = active, mouseOverText = mouseovertext })
 		end
 	elseif actiontype == "fleetrename" then
-		if istobedisplayed then
+		if istobedisplayed and menu.data.ismapunlocked then
 			menu.insertInteractionContent("interaction", { type = actiontype, text = ReadText(1001, 7895), script = function () return menu.buttonRename(true) end })
 		end
 	elseif actiontype == "flyto" then
@@ -5674,7 +5668,7 @@ function menu.insertLuaAction(actiontype, istobedisplayed)
 			menu.insertInteractionContent("main_orders", { type = actiontype, text = menu.orderIconText("GetSupplies") .. ReadText(1041, 621), script = function () return menu.buttonGetSupplies() end, active = active, mouseOverText = mouseovertext, helpOverlayID = "interact_getsupplies", helpOverlayText = " ", helpOverlayHighlightOnly = true })
 		end
 	elseif actiontype == "guidance" then
-		if (not istargetplayeroccupiedship) and (menu.mode ~= "shipconsole") then
+		if (not istargetplayeroccupiedship) and (menu.mode ~= "shipconsole") and C.IsStoryFeatureUnlocked("x4ep1_guidance") then
 			local text = ReadText(1001, 3256)
 			local useoffset = false
 			if C.IsComponentClass(menu.componentSlot.component, "sector") then
@@ -6151,7 +6145,7 @@ function menu.insertLuaAction(actiontype, istobedisplayed)
 			menu.insertInteractionContent("interaction", { type = actiontype, text = ReadText(1001, 11149), script = function () return menu.buttonRemoveBuildStorage(false) end })
 		end
 	elseif actiontype == "rename" then
-		if istobedisplayed then
+		if istobedisplayed and menu.data.ismapunlocked then
 			menu.insertInteractionContent("interaction", { type = actiontype, text = ReadText(1001, 1114), script = function () return menu.buttonRename(false) end })
 		end
 	elseif actiontype == "rescueinrange" then
@@ -6222,7 +6216,7 @@ function menu.insertLuaAction(actiontype, istobedisplayed)
 			menu.insertInteractionContent("main", { type = actiontype, text = ReadText(1001, 11127), script = function () return menu.buttonSelfDestructDeployables(selecteddeployable) end })
 		end
 	elseif actiontype == "sellships" then
-		if #menu.selectedplayerships > 0 then
+		if #menu.selectedplayerships > 0 and menu.data.ismapunlocked then
 			if not isplayerownedtarget then
 				local shiptrader, isdock, iswharf, isshipyard, owner = GetComponentData(convertedComponent, "shiptrader", "isdock", "iswharf", "isshipyard", "owner")
 				local doesbuyshipsfromplayer = GetFactionData(owner, "doesbuyshipsfromplayer")
@@ -6241,7 +6235,7 @@ function menu.insertLuaAction(actiontype, istobedisplayed)
 			end
 		end
 	elseif actiontype == "showupkeep" then
-		if istobedisplayed then
+		if istobedisplayed and menu.data.ismapunlocked then
 			local found = false
 			local numMissions = GetNumMissions()
 			for i = 1, numMissions do
@@ -6266,7 +6260,7 @@ function menu.insertLuaAction(actiontype, istobedisplayed)
 			end
 		end
 	elseif actiontype == "singletrade" then
-		if (#menu.selectedplayerships > 0) and (menu.numorderloops > 0) then
+		if (#menu.selectedplayerships > 0) and (menu.numorderloops > 0) and menu.data.ismapunlocked then
 			local owner = GetComponentData(convertedComponent, "owner")
 			local hastradeoffers = GetFactionData(owner, "hastradeoffers")
 
@@ -6553,11 +6547,17 @@ function menu.insertLuaAction(actiontype, istobedisplayed)
 			end
 		end
 	elseif actiontype == "venturepatron" then
-		menu.insertInteractionContent("main", { type = actiontype, text = ReadText(1001, 11802), script = menu.buttonVenturePatron })
+		if menu.data.ismapunlocked then
+			menu.insertInteractionContent("main", { type = actiontype, text = ReadText(1001, 11802), script = menu.buttonVenturePatron })
+		end
 	elseif actiontype == "venturereportname" then
-		menu.insertInteractionContent("venturereport", { type = actiontype, text = ReadText(1001, 12114), script = menu.buttonVentureReportShip })
+		if menu.data.ismapunlocked then
+			menu.insertInteractionContent("venturereport", { type = actiontype, text = ReadText(1001, 12114), script = menu.buttonVentureReportShip })
+		end
 	elseif actiontype == "venturereportusername" then
-		menu.insertInteractionContent("venturereport", { type = actiontype, text = ReadText(1001, 12111), script = menu.buttonVentureReportUser })
+		if menu.data.ismapunlocked then
+			menu.insertInteractionContent("venturereport", { type = actiontype, text = ReadText(1001, 12111), script = menu.buttonVentureReportUser })
+		end
 	elseif actiontype == "wareexchange" then
 		if (#menu.selectedplayerships > 0) and isplayerownedtarget and (not GetComponentData(convertedComponent, "isdeployable")) and (not C.IsUnit(convertedComponent)) and (menu.numorderloops == 0) then
 			local hasrealship = false
@@ -6666,6 +6666,8 @@ function menu.prepareData()
 			menu.data.hastargetorderloop = hasloop[0]
 		end
 	end
+	menu.data.ismapunlocked = C.IsStoryFeatureUnlocked("x4ep1_map")
+	menu.data.ismissionmanagementunlocked = C.IsStoryFeatureUnlocked("x4ep1_missionmanagement")
 end
 
 function menu.prepareActions()
@@ -6717,6 +6719,7 @@ function menu.prepareActions()
 				entry.script = function () return menu.buttonTrade(false) end
 			elseif (not menu.shown) and (actiontype == "info") then
 				entry.script = menu.buttonInfo
+				entry.active = menu.data.ismapunlocked
 				entry.helpOverlayID = "interactmenu_info"
 				entry.helpOverlayText = " "
 				entry.helpOverlayHighlightOnly = true
@@ -6877,7 +6880,7 @@ function menu.prepareActions()
 			return false
 		end
 
-		if menu.componentMissions and (type(menu.componentMissions) == "table") then
+		if menu.componentMissions and (type(menu.componentMissions) == "table") and menu.data.ismapunlocked and menu.data.ismissionmanagementunlocked then
 			for _, missionid in ipairs(menu.componentMissions) do
 				local missiondetails = C.GetMissionIDDetails(missionid)
 				if ffi.string(missiondetails.mainType) ~= "guidance" then

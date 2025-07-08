@@ -354,7 +354,7 @@ local config = {
 	rowHeight = 17,
 	leftBar = {
 		{ name = ReadText(1001, 7717),		icon = "pi_empire",					mode = "empire",			active = true, helpOverlayID = "playerinfo_sidebar_empire",			helpOverlayText = ReadText(1028, 7701) },
-		{ name = ReadText(1001, 7703),		icon = "pi_diplomacy",				mode = "factions",			active = true, helpOverlayID = "playerinfo_sidebar_factions",		helpOverlayText = ReadText(1028, 7715) },
+		--{ name = ReadText(1001, 7703),		icon = "pi_diplomacy",				mode = "factions",			active = true, helpOverlayID = "playerinfo_sidebar_factions",		helpOverlayText = ReadText(1028, 7715) },
 		{ name = ReadText(1001, 2500),		icon = "pi_statistics",				mode = "stats",				active = true, helpOverlayID = "playerinfo_sidebar_stats",			helpOverlayText = ReadText(1028, 7717) },
 		{ spacing = true },
 		{ name = ReadText(1001, 2202),		icon = "pi_inventory",				mode = "inventory",			active = true, helpOverlayID = "playerinfo_sidebar_inventory",		helpOverlayText = ReadText(1028, 7703) },
@@ -385,6 +385,7 @@ local config = {
 		{ name = ReadText(1001, 5701),	icon = "logbook_general",		mode = "general" },
 		{ name = ReadText(1001, 5702),	icon = "logbook_missions",		mode = "missions" },
 		{ name = ReadText(1001, 5721),	icon = "logbook_news",			mode = "news" },
+		{ name = ReadText(1001, 11204),	icon = "logbook_diplomacy",		mode = "diplomacy" },
 		{ name = ReadText(1001, 5714),	icon = "logbook_alerts",		mode = "alerts" },
 		{ name = ReadText(1001, 5704),	icon = "logbook_upkeep",		mode = "upkeep" },
 		{ name = ReadText(1001, 5708),	icon = "logbook_tips",			mode = "tips" },
@@ -879,11 +880,15 @@ end
 function menu.buttonLogbookInteraction(entry)
 	if IsValidComponent(entry.interactioncomponent) then
 		if entry.interaction == "showonmap" then
-			Helper.closeMenuAndOpenNewMenu(menu, "MapMenu", { 0, 0, true, entry.interactioncomponent })
-			menu.cleanup()
+			if C.IsStoryFeatureUnlocked("x4ep1_map") then
+				Helper.closeMenuAndOpenNewMenu(menu, "MapMenu", { 0, 0, true, entry.interactioncomponent })
+				menu.cleanup()
+			end
 		elseif entry.interaction == "showlocationonmap" then
-			Helper.closeMenuAndOpenNewMenu(menu, "MapMenu", { 0, 0, true, entry.interactioncomponent, nil, nil, nil, nil, entry.interactionposition })
-			menu.cleanup()
+			if C.IsStoryFeatureUnlocked("x4ep1_map") then
+				Helper.closeMenuAndOpenNewMenu(menu, "MapMenu", { 0, 0, true, entry.interactioncomponent, nil, nil, nil, nil, entry.interactionposition })
+				menu.cleanup()
+			end
 		elseif entry.interaction == "guidance" then
 			local convertedInteractionComponent = ConvertIDTo64Bit(entry.interactioncomponent)
 			if convertedInteractionComponent ~= C.GetPlayerControlledShipID() then
@@ -944,11 +949,15 @@ end
 function menu.buttonMessagesInteraction(entry)
 	if (entry.interactioncomponent > 0) and C.IsComponentOperational(entry.interactioncomponent) then
 		if entry.interaction == "showonmap" then
-			Helper.closeMenuAndOpenNewMenu(menu, "MapMenu", { 0, 0, true, ConvertStringToLuaID(tostring(entry.interactioncomponent)) })
-			menu.cleanup()
+			if C.IsStoryFeatureUnlocked("x4ep1_map") then
+				Helper.closeMenuAndOpenNewMenu(menu, "MapMenu", { 0, 0, true, ConvertStringToLuaID(tostring(entry.interactioncomponent)) })
+				menu.cleanup()
+			end
 		elseif entry.interaction == "showlocationonmap" then
-			Helper.closeMenuAndOpenNewMenu(menu, "MapMenu", { 0, 0, true, ConvertStringToLuaID(tostring(entry.interactioncomponent)), nil, nil, nil, nil, entry.interactionposition })
-			menu.cleanup()
+			if C.IsStoryFeatureUnlocked("x4ep1_map") then
+				Helper.closeMenuAndOpenNewMenu(menu, "MapMenu", { 0, 0, true, ConvertStringToLuaID(tostring(entry.interactioncomponent)), nil, nil, nil, nil, entry.interactionposition })
+				menu.cleanup()
+			end
 		elseif entry.interaction == "guidance" then
 			if entry.interactioncomponent ~= C.GetPlayerControlledShipID() then
 				local offset = ffi.new("UIPosRot", 0)
@@ -1716,13 +1725,6 @@ function menu.createInventory(frame, tableProperties, mode, tabOrderOffset)
 
 		menu.inventory = GetPlayerInventory()
 		menu.onlineitems = OnlineGetUserItems()
-
-		-- kuertee start:
-		if not menu.onlineitems then
-			menu.onlineitems = {}
-		end
-		-- kuertee end
-
 		for ware, waredata in Helper.orderedPairs(menu.inventory) do
 			local iscraftingresource, ismodpart, isprimarymodpart, ispersonalupgrade, tradeonly, ispaintmod, isbraneitem = GetWareData(ware, "iscraftingresource", "ismodpart", "isprimarymodpart", "ispersonalupgrade", "tradeonly", "ispaintmod", "isbraneitem")
 			if iscraftingresource or ismodpart or isprimarymodpart then
@@ -3007,7 +3009,7 @@ function menu.createLogbook(frame, tableProperties)
 						mouseoverobject = GetContextByClass(mouseoverobject, "sector")
 					end
 					row[1]:setColSpan(9):createText(entry.title, { font = Helper.standardFontBold, color = textcolor, wordwrap = true })
-					row[10]:createButton({ scaling = false, bgColor = Color["button_background_hidden"], mouseOverText = string.format(entry.interactiontext, GetComponentData(mouseoverobject, "name")), height = buttonsize }):setIcon("widget_arrow_right_01", { width = buttonsize, height = buttonsize })
+					row[10]:createButton({ active = (entry.interaction ~= "guidance") or C.IsStoryFeatureUnlocked("x4ep1_guidance"), scaling = false, bgColor = Color["button_background_hidden"], mouseOverText = string.format(entry.interactiontext, GetComponentData(mouseoverobject, "name")), height = buttonsize }):setIcon("widget_arrow_right_01", { width = buttonsize, height = buttonsize })
 					row[10].handlers.onClick = function () return menu.buttonLogbookInteraction(entry) end
 				else
 					row[1]:setColSpan(10):createText(entry.title, { font = Helper.standardFontBold, color = textcolor, wordwrap = true })
@@ -3343,7 +3345,7 @@ function menu.createMessages(frame, tableProperties)
 				local row = interacttable:addRow(nil, { fixed = true })
 				row[1]:setColSpan(3):createText(name)
 				local row = interacttable:addRow(true, { fixed = true })
-				row[3]:createButton({ mouseOverText = string.format(menu.messageData.curEntry.interactiontext, name) }):setText(menu.messageData.curEntry.interactionshorttext, { halign = "center" })
+				row[3]:createButton({ active = (menu.messageData.curEntry.interaction ~= "guidance") or C.IsStoryFeatureUnlocked("x4ep1_guidance"), mouseOverText = string.format(menu.messageData.curEntry.interactiontext, name) }):setText(menu.messageData.curEntry.interactionshorttext, { halign = "center" })
 				row[3].handlers.onClick = function () return menu.buttonMessagesInteraction(menu.messageData.curEntry) end
 
 				interacttableheight = interacttable:getFullHeight() + Helper.frameBorder + Helper.borderSize
@@ -6638,7 +6640,7 @@ function menu.createContextFrame(data, x, y, width, nomouseout)
 			row[1]:createButton({ bgColor = Color["button_background_hidden"], active = false, height = Helper.standardTextHeight }):setText(ReadText(1026, 9118))
 		else
 			local row = ftable:addRow("info_person_containerinfo", { fixed = true })
-			row[1]:createButton({ bgColor = Color["button_background_hidden"], height = Helper.standardTextHeight }):setText(C.IsComponentClass(controllable, "station") and ReadText(1001, 8350) or ReadText(1001, 8602))
+			row[1]:createButton({ bgColor = Color["button_background_hidden"], height = Helper.standardTextHeight, active = C.IsStoryFeatureUnlocked("x4ep1_map") }):setText(C.IsComponentClass(controllable, "station") and ReadText(1001, 8350) or ReadText(1001, 8602))
 			row[1].handlers.onClick = function () return menu.buttonContainerInfo(controllable) end
 
 			if person then
@@ -6658,7 +6660,7 @@ function menu.createContextFrame(data, x, y, width, nomouseout)
 				if hasarrived then
 					-- work somewhere else
 					local row = ftable:addRow("info_person_worksomewhere", { fixed = true })
-					row[1]:createButton({ bgColor = Color["button_background_hidden"], height = Helper.standardTextHeight }):setText(ReadText(1002, 3008))
+					row[1]:createButton({ bgColor = Color["button_background_hidden"], height = Helper.standardTextHeight, active = C.IsStoryFeatureUnlocked("x4ep1_map") }):setText(ReadText(1002, 3008))
 					if entity then
 						row[1].handlers.onClick = function () Helper.closeMenuAndOpenNewMenu(menu, "MapMenu", { 0, 0, true, controllable, nil, "hire", { "signal", entity, 0 } }); menu.cleanup() end
 					else
@@ -7473,9 +7475,9 @@ end
 -- menu helpers
 
 function menu.getInventoryName(ware, waredata, showunread)
-	local volatile, gift, unread = GetWareData(ware, "volatile", "gift", "isunreadinventory")
+	local unread = GetWareData(ware, "isunreadinventory")
 
-	local name = waredata.name .. (volatile and " [" .. ReadText(1001, 3902) .. "]" or "") .. (gift and " [" .. ReadText(1001, 3903) .. "]" or "")
+	local name = waredata.name
 	local color = Color["text_normal"]
 	if menu.inventoryData.policefaction and IsWareIllegalTo(ware, "player", menu.inventoryData.policefaction) then
 		color = Color["text_illegal"]
