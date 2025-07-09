@@ -1,7 +1,7 @@
 UI Extensions and HUD
 https://www.nexusmods.com/x4foundations/mods/552
 Code: https://github.com/kuertee/x4-mod-ui-extensions
-by kuertee. Contributors: AlexandreTK, DrWhoKnows, Erixon, Forleyor, IALuir, Mycu, Runekn, sticeIO.
+by kuertee. Contributors: DmytroK, AlexandreTK, DrWhoKnows, Erixon, Forleyor, IALuir, Mycu, Runekn, sticeIO.
 
 Updates
 =======
