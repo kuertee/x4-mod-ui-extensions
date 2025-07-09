@@ -5,8 +5,8 @@ by kuertee. Contributors: AlexandreTK, DrWhoKnows, Erixon, Forleyor, IALuir, Myc
 
 Updates
 =======
-7.6.1, 14 Jun 2025:
-- Tweak: SWI compatibility: allow for SWI's larger plot sizes.
+8.0 beta, 10 Jul 2025:
+- Tweak: 8.0 beta compatibility
 
 NOTES FOR PLAYERS:
 ==================
@@ -243,6 +243,9 @@ French localisation by Calvitix.
 
 History
 =======
+7.6.1, 14 Jun 2025:
+- Tweak: SWI compatibility: allow for SWI's larger plot sizes.
+
 v7.6, 28 May 2025:
 - Tweak: 7.6 compatibility.
 
