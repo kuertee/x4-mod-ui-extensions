@@ -30796,6 +30796,8 @@ function menu.sortCombinedSkill(a, b, invert)
 	end
 end
 
+local uix_centerOnMap_lastMapFocus
+local uix_centerOnMap_isLastZoomFar
 function menu.uix_centerOnMap(object)
 	if menu.holomap and (menu.holomap ~= 0) then
 		C.SetFocusMapComponent(menu.holomap, object, true)
@@ -30807,18 +30809,31 @@ function menu.uix_centerOnMap(object)
 				sector = GetComponentData(object, "sectorid")
 			end
 			if IsValidComponent(sector) then
+				local mapTargetDistance = 0
 				if IsSameComponent(object, sector) then
 					local size = GetComponentData(sector, "size")
-					if (not size) or size == 0 then
-						size = 400000
+					if (not size) or size == 0 or size * 1.5 > 300000 then
+						size = 300000
 					end
-					C.ResetMapPlayerRotation(menu.holomap)
-					C.SetMapTargetDistance(menu.holomap, size * 1.5)
+					mapTargetDistance = size
 				else
 					local position = C.GetObjectPositionInSector (object)
-					C.ResetMapPlayerRotation(menu.holomap)
-					C.SetMapTargetDistance(menu.holomap, position.y + 500000)
+					mapTargetDistance = position.y + 300000
 				end
+				C.ResetMapPlayerRotation(menu.holomap)
+				if object == uix_centerOnMap_lastMapFocus then
+					-- toggle mapTargetDistance
+					if uix_centerOnMap_isLastZoomFar == true then
+						C.SetMapTargetDistance(menu.holomap, mapTargetDistance)
+					else
+						C.SetMapTargetDistance(menu.holomap, mapTargetDistance * 5)
+					end
+					uix_centerOnMap_isLastZoomFar = not uix_centerOnMap_isLastZoomFar
+				else
+					uix_centerOnMap_isLastZoomFar = false
+					C.SetMapTargetDistance(menu.holomap, mapTargetDistance)
+				end
+				uix_centerOnMap_lastMapFocus = object
 			end
 		-- end, true, getElapsedTime() + 1)
 	end

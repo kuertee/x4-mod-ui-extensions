@@ -2239,7 +2239,11 @@ function menu.createEquipmentPropertyEntry(ftable, modclass, property)
 	row[3]:setBackgroundColSpan(4):createText(property.text, { color = color })
 	local minusedcol = 7
 	for quality, entry2 in ipairs(Helper.modQualities) do
-		if modwares[quality].iscraftable then
+
+		-- kuertee start:
+		-- if modwares[quality].iscraftable then
+		if modwares and modwares[quality] and modwares[quality].iscraftable then
+		-- kuertee end
 			minusedcol = math.min(minusedcol, quality + 3)
 			row[quality + 3]:createText("\27[" .. entry2.icon2 .. "]", { halign = "right", color = color })
 		end
