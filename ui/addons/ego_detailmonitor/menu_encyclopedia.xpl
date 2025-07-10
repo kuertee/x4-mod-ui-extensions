@@ -1002,15 +1002,16 @@ function menu.onShowMenu(state)
 						end
 					else
 					-- end: alexandretk call-backs
-					if purpose == "auxiliary" then
-						-- sic! We want auxiliary ships to show up in the "support" category under combat
-						purpose = "fight"
-						sizecategory = "noncapital"
-					elseif not menu.printedshipdata[purpose] then
-						purpose = "misc"
+						if purpose == "auxiliary" then
+							-- sic! We want auxiliary ships to show up in the "support" category under combat
+							purpose = "fight"
+							sizecategory = "noncapital"
+						elseif not menu.printedshipdata[purpose] then
+							purpose = "misc"
+						end
+						menu.expanded[purpose] = true
+						menu.expanded[purpose .. sizecategory] = true
 					end
-					menu.expanded[purpose] = true
-					menu.expanded[purpose .. sizecategory] = true
 				elseif menu.mode == "Wares" then
 					menu.expanded[menu.library] = true
 					if menu.library == "inventory_wares" then
