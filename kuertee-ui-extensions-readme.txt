@@ -1,12 +1,12 @@
 UI Extensions and HUD
 https://www.nexusmods.com/x4foundations/mods/552
 Code: https://github.com/kuertee/x4-mod-ui-extensions
-by kuertee. Contributors: DmytroK, AlexandreTK, DrWhoKnows, Erixon, Forleyor, IALuir, Mycu, Runekn, sticeIO.
+by kuertee. Contributors: AlexandreTK, DrWhoKnows, DmytroK, Erixon, Forleyor, IALuir, Mycu, Runekn, sticeIO.
 
 Updates
 =======
-8.0 beta, 10 Jul 2025:
-- Tweak: 8.0 beta compatibility
+8.0 beta, 13 Jul 2025:
+- Tweak: 8.0 beta compatibility. Thanks to DmytroK for merging the 8.0 beta base lua files into UIX.
 
 NOTES FOR PLAYERS:
 ==================
@@ -233,6 +233,7 @@ kuertee
 Contributors:
 	AlexandreTK
 	DrWhoKnows
+  DmytroK
 	Erixon
 	Forleyor
 	IALuir
