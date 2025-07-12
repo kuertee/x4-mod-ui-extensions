@@ -1832,6 +1832,14 @@ end
 
 -- kuertee start:
 function menu.init_kuertee ()
+	-- start: center on map
+	menu.uix_centerOnMap_lastObject = nil
+	menu.uix_centerOnMap_lastZoomDistance = 0
+	menu.uix_centerOnMap_zoomVeryNear = 50000
+	menu.uix_centerOnMap_zoomNear = 300000
+	menu.uix_centerOnMap_zoomFar = 600000
+	menu.uix_centerOnMap_zoomVeryFar = 1200000
+	-- end
 end
 -- kuertee end
 
@@ -6280,7 +6288,7 @@ function menu.displayMenu(firsttime)
 
 	-- kuertee start: center on map
 	elseif menu.mode == "uix_centeronmap" then
-		C.SetFocusMapComponent(menu.holomap, menu.modeparam[1], true)
+		menu.uix_centerOnMap(menu.modeparam[1])
 	-- kuertee end: center on map
 	end
 
@@ -27305,7 +27313,11 @@ function menu.onRenderTargetDoubleClick(modified)
 			if modified == "shift" then
 				C.AddSimilarMapComponentsToSelection(menu.holomap, pickedcomponent)
 			elseif modified ~= "ctrl" then
-				C.SetFocusMapComponent(menu.holomap, pickedcomponent, true)
+
+				-- kuertee start: center on map
+				-- C.SetFocusMapComponent(menu.holomap, pickedcomponent, true)
+				menu.uix_centerOnMap(pickedcomponent)
+				-- kuertee end
 			end
 
 			local components = {}
@@ -27315,6 +27327,11 @@ function menu.onRenderTargetDoubleClick(modified)
 			else
 				menu.clearSelectedComponents()
 			end
+
+		-- kuertee start: center on map
+		else
+			menu.uix_centerOnMap(pickedcomponent)
+		-- kuertee end
 		end
 	end
 end
@@ -30796,44 +30813,46 @@ function menu.sortCombinedSkill(a, b, invert)
 	end
 end
 
-local uix_centerOnMap_lastMapFocus
-local uix_centerOnMap_isLastZoomFar
+-- center on map
 function menu.uix_centerOnMap(object)
+	object = ConvertStringTo64Bit(tostring(object))
 	if menu.holomap and (menu.holomap ~= 0) then
 		C.SetFocusMapComponent(menu.holomap, object, true)
 		-- Helper.addDelayedOneTimeCallbackOnUpdate(function ()
-			local sector
+			local sector, isObjectSector
 			if C.IsComponentClass(object, "sector") then
+				isObjectSector = true
 				sector = object
 			else
 				sector = GetComponentData(object, "sectorid")
 			end
 			if IsValidComponent(sector) then
-				local mapTargetDistance = 0
-				if IsSameComponent(object, sector) then
-					local size = GetComponentData(sector, "size")
-					if (not size) or size == 0 or size * 1.5 > 300000 then
-						size = 300000
-					end
-					mapTargetDistance = size
-				else
-					local position = C.GetObjectPositionInSector (object)
-					mapTargetDistance = position.y + 300000
-				end
 				C.ResetMapPlayerRotation(menu.holomap)
-				if object == uix_centerOnMap_lastMapFocus then
-					-- toggle mapTargetDistance
-					if uix_centerOnMap_isLastZoomFar == true then
-						C.SetMapTargetDistance(menu.holomap, mapTargetDistance)
-					else
-						C.SetMapTargetDistance(menu.holomap, mapTargetDistance * 5)
-					end
-					uix_centerOnMap_isLastZoomFar = not uix_centerOnMap_isLastZoomFar
+				local zoomDistance
+				if object ~= menu.uix_centerOnMap_lastObject then
+					zoomDistance = menu.uix_centerOnMap_zoomFar
 				else
-					uix_centerOnMap_isLastZoomFar = false
-					C.SetMapTargetDistance(menu.holomap, mapTargetDistance)
+					if isObjectSector then
+						if menu.uix_centerOnMap_lastZoomDistance == menu.uix_centerOnMap_zoomNear then
+							zoomDistance = menu.uix_centerOnMap_zoomFar
+						elseif menu.uix_centerOnMap_lastZoomDistance == menu.uix_centerOnMap_zoomFar then
+							zoomDistance = menu.uix_centerOnMap_zoomVeryFar
+						else
+							zoomDistance = menu.uix_centerOnMap_zoomNear
+						end
+					else
+						if menu.uix_centerOnMap_lastZoomDistance == menu.uix_centerOnMap_zoomNear then
+							zoomDistance = menu.uix_centerOnMap_zoomFar
+						elseif menu.uix_centerOnMap_lastZoomDistance == menu.uix_centerOnMap_zoomFar then
+							zoomDistance = menu.uix_centerOnMap_zoomVeryNear
+						else
+							zoomDistance = menu.uix_centerOnMap_zoomNear
+						end
+					end
 				end
-				uix_centerOnMap_lastMapFocus = object
+				C.SetMapTargetDistance(menu.holomap, zoomDistance)
+				menu.uix_centerOnMap_lastZoomDistance = zoomDistance
+				menu.uix_centerOnMap_lastObject = object
 			end
 		-- end, true, getElapsedTime() + 1)
 	end
