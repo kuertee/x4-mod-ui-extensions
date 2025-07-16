@@ -5,8 +5,8 @@ by kuertee. Contributors: AlexandreTK, DrWhoKnows, DmytroK, Erixon, Forleyor, IA
 
 Updates
 =======
-8.0 beta, 13 Jul 2025:
-- Tweak: 8.0 beta compatibility. Thanks to DmytroK for merging the 8.0 beta base lua files into UIX.
+8.0 beta 2, 17 Jul 2025:
+- Tweak: 8.0 beta 2 compatibility. Thanks to DmytroK for merging the 8.0 beta base lua files into UIX.
 
 NOTES FOR PLAYERS:
 ==================
@@ -244,6 +244,9 @@ French localisation by Calvitix.
 
 History
 =======
+8.0 beta, 13 Jul 2025:
+- Tweak: 8.0 beta compatibility. Thanks to DmytroK for merging the 8.0 beta base lua files into UIX.
+
 7.6.1, 14 Jun 2025:
 - Tweak: SWI compatibility: allow for SWI's larger plot sizes.
 

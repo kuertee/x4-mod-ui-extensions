@@ -17,6 +17,7 @@ ffi.cdef[[
 		const char* ware;
 		const char* productionmethodid;
 	} UIBlueprint;
+	void AddPlayerMoney(int64_t money);
 	uint32_t GetNumWares(const char* tags, bool research, const char* licenceownerid, const char* exclusiontags);
 	uint32_t GetBlueprints(UIBlueprint* result, uint32_t resultlen, const char* set, const char* category, const char* macroname);
 	bool GetLicenceInfo(LicenceInfo* result, const char* factionid, const char* licenceid);
@@ -616,7 +617,11 @@ function menu.buttonConfirm()
 				C.LearnBlueprint(ware)
 			end
 		end
-		TransferPlayerMoneyTo(menu.totalprice, menu.tradecontainer)
+		if GetComponentData(menu.tradecontainer, "isplayerowned") then
+			C.AddPlayerMoney(-menu.totalprice * 100)
+		else
+			TransferPlayerMoneyTo(menu.totalprice, menu.tradecontainer)
+		end
 	end
 	menu.initData()
 	menu.tallyTotalPrice()

@@ -601,6 +601,7 @@ function menu.display()
 
 		if menu.currentplayership ~= 0 then
 			table_header:addEmptyRow(yoffset / 2)
+
 			local numstances = C.GetNumShipStances(menu.currentplayership)
 			if numstances > 0 then
 				local stanceoptions = {}
