@@ -21,7 +21,7 @@ del menu_ship_configuration.xpl
 del menu_station_configuration.xpl
 del menu_station_overview.xpl
 del menu_toplevel.xpl
-del menu_trader_blueprintsorlicences.xpl.xpl
+del menu_trader_blueprintsorlicences.xpl
 del menu_transactionlog.xpl
 del menu_transporter.xpl
 del menu_userquestion.xpl
@@ -35,7 +35,7 @@ mklink /h menu_ship_configuration.xpl "..\..\..\extensions\kuertee_ui_extensions
 mklink /h menu_station_configuration.xpl "..\..\..\extensions\kuertee_ui_extensions\ui\addons\ego_detailmonitor\menu_station_configuration.xpl"
 mklink /h menu_station_overview.xpl "..\..\..\extensions\kuertee_ui_extensions\ui\addons\ego_detailmonitor\menu_station_overview.xpl"
 mklink /h menu_toplevel.xpl "..\..\..\extensions\kuertee_ui_extensions\ui\addons\ego_detailmonitor\menu_toplevel.xpl"
-mklink /h menu_trader_blueprintsorlicences.xpl.xpl "..\..\..\extensions\kuertee_ui_extensions\ui\addons\ego_detailmonitor\menu_trader_blueprintsorlicences.xpl.xpl"
+mklink /h menu_trader_blueprintsorlicences.xpl "..\..\..\extensions\kuertee_ui_extensions\ui\addons\ego_detailmonitor\menu_trader_blueprintsorlicences.xpl"
 mklink /h menu_transactionlog.xpl "..\..\..\extensions\kuertee_ui_extensions\ui\addons\ego_detailmonitor\menu_transactionlog.xpl"
 mklink /h menu_transporter.xpl "..\..\..\extensions\kuertee_ui_extensions\ui\addons\ego_detailmonitor\menu_transporter.xpl"
 mklink /h menu_userquestion.xpl "..\..\..\extensions\kuertee_ui_extensions\ui\addons\ego_detailmonitor\menu_userquestion.xpl"
