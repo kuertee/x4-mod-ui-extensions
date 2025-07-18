@@ -8207,12 +8207,6 @@ function menu.loadGameCallback(filename, checked)
 	local playerinventory = GetPlayerInventory()
 	local onlineitems = OnlineGetUserItems()
 
-	-- kuertee start:
-	if not onlineitems then
-		onlineitems = {}
-	end
-	-- kuertee end
-
 	local hasnotuploadeditems = false
 	for ware, waredata in Helper.orderedPairs(playerinventory) do
 		local isbraneitem, isoperationvolatile, isseasonvolatile, isventureuploadallowed = GetWareData(ware, "isbraneitem", "isoperationvolatile", "isseasonvolatile", "isventureuploadallowed")
@@ -13965,12 +13959,6 @@ function menu.newGameCallback(option, checked)
 		else
 			local playerinventory = GetPlayerInventory()
 			local onlineitems = OnlineGetUserItems()
-
-			-- kuertee start:
-			if not onlineitems then
-				onlineitems = {}
-			end
-			-- kuertee end
 
 			local hasnotuploadeditems = false
 			for ware, waredata in Helper.orderedPairs(playerinventory) do

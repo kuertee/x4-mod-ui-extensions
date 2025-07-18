@@ -25,6 +25,7 @@ del menu_trader_blueprintsorlicences.xpl
 del menu_transactionlog.xpl
 del menu_transporter.xpl
 del menu_userquestion.xpl
+mklink /h menu_diplomacy.xpl "..\..\..\extensions\kuertee_ui_extensions\ui\addons\ego_detailmonitor\menu_diplomacy.xpl"
 mklink /h menu_docked.xpl "..\..\..\extensions\kuertee_ui_extensions\ui\addons\ego_detailmonitor\menu_docked.xpl"
 mklink /h menu_encyclopedia.xpl "..\..\..\extensions\kuertee_ui_extensions\ui\addons\ego_detailmonitor\menu_encyclopedia.xpl"
 mklink /h menu_map.xpl "..\..\..\extensions\kuertee_ui_extensions\ui\addons\ego_detailmonitor\menu_map.xpl"

@@ -3020,12 +3020,6 @@ function menu.display()
 				if active then
 					local onlineitems = OnlineGetUserItems()
 
-					-- kuertee start:
-					if not onlineitems then
-						onlineitems = {}
-					end
-					-- kuertee end
-
 					local limitedmodulesused = {}
 					for j = 0, buf_content.numconstructionplans - 1 do
 						local source, constructionplanid, isHQ = string.match(constructionplanids[j], "(.*):(.*):(%d)")
@@ -3597,12 +3591,6 @@ function menu.display()
 				end
 
 				local onlineitems = OnlineGetUserItems()
-
-				-- kuertee start:
-				if not onlineitems then
-					onlineitems = {}
-				end
-				-- kuertee end
 
 				-- stations
 				menu.constructionplans = {}

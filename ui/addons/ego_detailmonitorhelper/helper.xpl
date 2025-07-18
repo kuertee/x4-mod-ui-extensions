@@ -12983,6 +12983,10 @@ function Helper.getOrderParameterWares(inputparams)
 end
 
 -- kuertee start:
+function OnlineGetUserItems()
+	return {}
+end
+
 Helper.uix_callbackCount = 0
 function Helper.registerCallback(callbackName, callbackFunction, id)
     -- note 1: format is generally [function name]_[action]. e.g.: in kuertee_menu_transporter, "display_on_set_room_active" overrides the room's active property with the return of the callback.

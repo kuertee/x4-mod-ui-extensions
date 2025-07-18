@@ -6430,12 +6430,6 @@ function menu.displayMenu(firsttime)
 			local inventory = GetInventory(menu.contextMenuData.entity)
 			local onlineitems = OnlineGetUserItems()
 
-			-- kuertee start:
-			if not onlineitems then
-				onlineitems = {}
-			end
-			-- kuertee end
-
 			for ware, entry in pairs(inventory) do
 				local ispersonalupgrade = GetWareData(ware, "ispersonalupgrade")
 				if (not ispersonalupgrade) and (not onlineitems[ware]) then
@@ -8045,13 +8039,6 @@ function menu.createPropertyOwned(frame, instance)
 	local onlineitems = {}
 	if menu.propertyMode == "inventoryships" then
 		onlineitems = OnlineGetUserItems()
-
-		-- kuertee start:
-		if not onlineitems then
-			onlineitems = {}
-		end
-		-- kuertee end
-
 	end
 
 	local playerobjects = {}
@@ -14969,12 +14956,6 @@ function menu.setupCrewInfoSubmenuRows(mode, inputtable, inputobject, instance)
 		if isplayerowned and pilot and IsValidComponent(pilot) then
 			local inventory = GetInventory(pilot)
 			local onlineitems = OnlineGetUserItems()
-
-			-- kuertee start:
-			if not onlineitems then
-				onlineitems = {}
-			end
-			-- kuertee end
 
 			local sortedWares = {}
 			local totalamount = 0

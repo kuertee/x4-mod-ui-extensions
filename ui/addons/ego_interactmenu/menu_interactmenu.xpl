@@ -5513,12 +5513,6 @@ function menu.insertLuaAction(actiontype, istobedisplayed)
 				if next(inventory) then
 					local onlineitems = OnlineGetUserItems()
 
-					-- kuertee start:
-					if not onlineitems then
-						onlineitems = {}
-					end
-					-- kuertee end
-
 					local sortedWares = {}
 					for ware, entry in pairs(inventory) do
 						local ispersonalupgrade = GetWareData(ware, "ispersonalupgrade")
