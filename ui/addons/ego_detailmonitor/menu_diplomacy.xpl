@@ -3684,6 +3684,14 @@ function menu.onRowChanged(row, rowdata, uitable, modified, input, source)
 			end
 		end
 	end
+
+	-- kuertee start: callback
+	if menu.uix_callbacks ["onRowChanged"] then
+		for uix_id, uix_callback in pairs (menu.uix_callbacks ["onRowChanged"]) do
+			uix_callback (row, rowdata, uitable, modified, input)
+		end
+	end
+	-- kuertee end: callback
 end
 
 function menu.onSelectElement(uitable, modified, row)
