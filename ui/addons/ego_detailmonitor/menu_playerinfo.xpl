@@ -473,6 +473,11 @@ end
 
 -- kuertee start:
 function menu.init_kuertee ()
+	if menu.uix_callbacks ["init"] then
+		for uix_id, uix_callback in pairs (menu.uix_callbacks ["init"]) do
+			uix_callback (config)
+		end
+	end
 end
 -- kuertee end
 

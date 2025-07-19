@@ -266,6 +266,11 @@ end
 
 -- kuertee start:
 function menu.init_kuertee ()
+	if menu.uix_callbacks ["init"] then
+		for uix_id, uix_callback in pairs (menu.uix_callbacks ["init"]) do
+			uix_callback (config)
+		end
+	end
 end
 -- kuertee end
 
@@ -325,6 +330,14 @@ function menu.cleanup()
 	menu.factionData.curEntry = {}
 
 	C.SetUICoverOverride(false)
+
+	-- kuertee start: callback
+	if menu.uix_callbacks ["cleanup"] then
+		for uix_id, uix_callback in pairs (menu.uix_callbacks ["cleanup"]) do
+			uix_callback ()
+		end
+	end
+	-- kuertee end: callback
 end
 
 -- Menu member functions
@@ -1132,6 +1145,7 @@ function menu.createFactions(frame, tableProperties)
 	local iconoffset = 2
 
 	local infotable = frame:addTable(4, { tabOrder = 1, width = menu.narrowtablewidth, x = tableProperties.x, y = tableProperties.y })
+
 	if menu.setdefaulttable then
 		infotable.properties.defaultInteractiveObject = true
 		menu.setdefaulttable = nil
@@ -1180,6 +1194,17 @@ function menu.createFactions(frame, tableProperties)
 		row[4]:setIcon((menu.factionData.sorter == "relation_inv") and "table_arrow_inv_up" or "table_arrow_inv_down", { scaling = false, width = arrowWidth, height = arrowWidth, x = row[4]:getColSpanWidth() - arrowWidth })
 	end
 	row[4].handlers.onClick = function () menu.factionData.sorter = (menu.factionData.sorter == "relation") and "relation_inv" or "relation"; menu.refreshInfoFrame() end
+
+	-- kuertee start: callback
+	if menu.uix_callbacks["createFactions_after_sorter"] then
+		local nextCol = 5
+		for uix_id, uix_callback in pairs (menu.uix_callbacks["createFactions_after_sorter"]) do
+			if uix_callback (frame, tableProperties, infotable, row, nextCol, arrowWidth) then
+				nextCol = nextCol + 1
+			end
+		end
+	end
+	-- kuertee end: callback
 
 	infotable.properties.y = titletable.properties.y + titletable:getFullHeight() + 2 * Helper.scaleY(Helper.standardContainerOffset)
 
@@ -1267,6 +1292,21 @@ function menu.createFactions(frame, tableProperties)
 					relationtext = (relation.relationlockshortreason ~= "") and relation.relationlockshortreason or ReadText(20229, 101)
 				end
 			end
+
+			-- kuertee start: callback
+			if menu.uix_callbacks["createFactions_after_relationtext"] then
+				if type(relationtext) == "function" then
+					relationtext = relationtext()
+				end
+				for uix_id, uix_callback in pairs (menu.uix_callbacks["createFactions_after_relationtext"]) do
+					local uix_text = uix_callback(frame, tableProperties, infotable, row, relation.id)
+					if uix_text then
+						relationtext = relationtext .. tostring(uix_text)
+					end
+				end
+			end
+			-- kuertee end: callback
+
 			row[4]:createIcon("solid", {
 				color = Color["icon_hidden"],
 				mouseOverText = function () local prioritizedrelationrangename = GetFactionData(relation.id, "prioritizedrelationrangename"); return prioritizedrelationrangename end
@@ -1278,6 +1318,21 @@ function menu.createFactions(frame, tableProperties)
 				x = Helper.standardTextOffsetx,
 				y = -iconheight / 2 + 2 * iconoffset,
 			})
+
+			-- kuertee start: callback
+			if menu.uix_callbacks["createFactions_relationtext_setText2"] then
+				local relationText2 = ""
+				for uix_id, uix_callback in pairs (menu.uix_callbacks["createFactions_relationtext_setText2"]) do
+					local uix_text = uix_callback(frame, tableProperties, infotable, row, relation.id)
+					if uix_text then
+						relationText2 = relationText2 .. tostring(uix_text)
+					end
+				end
+				if relationText2 ~= "" then
+					row[4]:setText2(relationText2, {y = 2 * iconoffset, halign = "right"})
+				end
+			end
+			-- kuertee end: callback
 		end
 	end
 	infotable:setTopRow(menu.settoprow)
@@ -1689,6 +1744,23 @@ function menu.createFactionDetailsContext(frame)
 
 		local heightafterfirstsection = math.max(descheight, datatable:getFullHeight())
 
+		-- kuertee start: callback
+		if menu.uix_callbacks ["createFactionDetailsContext_on_before_detailtable"] then
+			local tableProperties = {
+				width = menu.factionConfig.width - 4 * Helper.standardContainerOffset,
+				x = 2 * Helper.standardContainerOffset,
+				y = datatable.properties.y + heightafterfirstsection + 2 * Helper.standardContainerOffset,
+			}
+			for uix_id, uix_callback in pairs (menu.uix_callbacks ["createFactionDetailsContext_on_before_detailtable"]) do
+				local uix_table = uix_callback (frame, tableProperties, relation.id)
+				if uix_table then
+					tableProperties.y = tableProperties.y + uix_table:getVisibleHeight()
+				end
+			end
+			heightafterfirstsection = tableProperties.y - datatable.properties.y
+		end
+		-- kuertee end: callback
+
 		local detailtable = frame:addTable(7, { tabOrder = 6, width = menu.factionConfig.width - 4 * Helper.standardContainerOffset, x = 2 * Helper.standardContainerOffset, y = datatable.properties.y + heightafterfirstsection + 2 * Helper.standardContainerOffset })
 		detailtable:setColWidth(1, Helper.largeRowHeight)
 		detailtable:setColWidth(2, 0.25 * menu.factionConfig.width - Helper.scaleY(Helper.standardTextHeight), false)
@@ -1708,7 +1780,16 @@ function menu.createFactionDetailsContext(frame)
 
 		local bottomtableheight = bottomtable:getFullHeight()
 		bottomtable.properties.y = menu.factionConfig.height - bottomtableheight - Helper.standardContainerOffset
+
 		local maxalloweddetailheight = bottomtable.properties.y - detailtable.properties.y - 2 * Helper.standardContainerOffset
+
+		-- kuertee start: callback
+		if menu.uix_callbacks ["createFactionDetailsContext_on_before_detail_tabs"] then
+			for uix_id, uix_callback in pairs (menu.uix_callbacks ["createFactionDetailsContext_on_before_detail_tabs"]) do
+				uix_callback (frame, tableProperties, relation.id, detailtable)
+			end
+		end
+		-- kuertee end: callback
 
 		-- tabs
 		local row = detailtable:addRow(true, { fixed = true, borderBelow = false })
@@ -1728,6 +1809,14 @@ function menu.createFactionDetailsContext(frame)
 		row[1]:setColSpan(7):createText(" ", { scaling = false, fontsize = 1, height = Helper.standardContainerOffset })
 
 		if menu.factionData.curTab == "licence" then
+			-- kuertee start: callback for backward compatibility. obsolete do not create new callbacks with this id.
+			if menu.uix_callbacks ["createFactions_on_before_render_licences"] then
+				for uix_id, uix_callback in pairs (menu.uix_callbacks ["createFactions_on_before_render_licences"]) do
+					uix_callback (frame, tableProperties, relation.id, detailtable)
+				end
+			end
+			-- kuertee end: callback
+
 			-- licences
 			if menu.licences[relation.id] and #menu.licences[relation.id] > 0 then
 				local prevminrelation
@@ -1867,6 +1956,14 @@ function menu.createFactionDetailsContext(frame)
 					row[1]:setColSpan(7):createText("    " .. ReadText(1001, 38), { fontsize = Helper.headerRow1FontSize, y = Helper.largeRowOffsety, minRowHeight = Helper.largeRowHeight, color = Color["text_inactive"] })
 				end
 			end
+
+			-- kuertee start: callback for backward compatibility. obsolete do not create new callbacks with this id.
+			if menu.uix_callbacks ["createFactions_on_after_declare_war_button"] then
+				for uix_id, uix_callback in pairs (menu.uix_callbacks ["createFactions_on_after_declare_war_button"]) do
+					uix_callback (frame, tableProperties, relation.id, detailtable)
+				end
+			end
+			-- kuertee end: callback
 		elseif menu.factionData.curTab == "known" then
 			local iconheight = config.factionIconHeight
 			local iconoffset = 2
@@ -3358,6 +3455,17 @@ function menu.createUserQuestionContext(frame)
 end
 
 function menu.relationSorter(a, b)
+	-- kuertee start: callback
+	if menu.uix_callbacks ["relationSorter"] then
+		for uix_id, uix_callback in pairs (menu.uix_callbacks ["relationSorter"]) do
+			local sortResult = uix_callback (a, b)
+			if sortResult then
+				return sortResult
+			end
+		end
+	end
+	-- kuertee end: callback
+
 	if menu.factionData.sorter == "default" then
 		if a.isdiplomacyactive == b.isdiplomacyactive then
 			if a.isrelationlocked == b.isrelationlocked then
