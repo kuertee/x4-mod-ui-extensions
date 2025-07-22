@@ -1783,6 +1783,9 @@ function menu.createFactionDetailsContext(frame)
 
 		local maxalloweddetailheight = bottomtable.properties.y - detailtable.properties.y - 2 * Helper.standardContainerOffset
 
+		-- tabs
+		local row = detailtable:addRow(true, { fixed = true, borderBelow = false })
+
 		-- kuertee start: callback
 		if menu.uix_callbacks ["createFactionDetailsContext_on_before_detail_tabs"] then
 			for uix_id, uix_callback in pairs (menu.uix_callbacks ["createFactionDetailsContext_on_before_detail_tabs"]) do
@@ -1791,8 +1794,6 @@ function menu.createFactionDetailsContext(frame)
 		end
 		-- kuertee end: callback
 
-		-- tabs
-		local row = detailtable:addRow(true, { fixed = true, borderBelow = false })
 		row[1]:setColSpan(2):createButton({ bgColor = (menu.factionData.curTab == "licence") and Color["row_background_selected"] or Color["row_background_blue"] }):setText(ReadText(1001, 62), { halign = "center" })
 		row[1].handlers.onClick = function () menu.factionData.curTab = "licence"; menu.refreshContextFrame() end
 		row[3]:createButton({ bgColor = (menu.factionData.curTab == "relations") and Color["row_background_selected"] or Color["row_background_blue"] }):setText(ReadText(1001, 9928), { halign = "center" })
@@ -1801,6 +1802,42 @@ function menu.createFactionDetailsContext(frame)
 		row[4].handlers.onClick = function () menu.factionData.curTab = "known"; menu.refreshContextFrame() end
 		row[5]:setColSpan(3):createButton({ bgColor = (menu.factionData.curTab == "implications") and Color["row_background_selected"] or Color["row_background_blue"] }):setText(ReadText(1001, 12890), { halign = "center" })
 		row[5].handlers.onClick = function () menu.factionData.curTab = "implications"; menu.refreshContextFrame() end
+
+		-- kuertee start: callback
+		if menu.uix_callbacks ["createFactionDetailsContext_on_add_detail_tabs"] then
+			local uix_detailTabs = {}
+			for uix_id, uix_callback in pairs (menu.uix_callbacks ["createFactionDetailsContext_on_add_detail_tabs"]) do
+				local uix_detailTab = uix_callback (frame, tableProperties, relation.id, detailtable)
+				-- e.g. from crime has consequences
+				-- uix_detailTab = {
+				-- 	id = "criminal_record",
+				-- 	name = "Criminal Record"
+				-- }
+				if uix_detailTab then
+					table.insert(uix_detailTabs, uix_detailTab)
+				end
+			end
+			if #uix_detailTabs > 0 then
+				local uix_col = 1, uix_colSpan
+				for _, uix_detailTab in ipairs(uix_detailTabs) do
+					local row = detailtable:addRow(true, { fixed = true, borderBelow = false })
+					if uix_col == 1 then
+						uix_colSpan = 2
+					elseif uix_col == 5 then
+						uix_colSpan = 3
+					else
+						uix_colSpan = 1
+					end
+					row[uix_col]:setColSpan(uix_colSpan):createButton({ bgColor = (menu.factionData.curTab == uix_detailTab.id) and Color["row_background_selected"] or Color["row_background_blue"] }):setText(uix_detailTab.name, { halign = "center" })
+					row[uix_col].handlers.onClick = function () menu.factionData.curTab = uix_detailTab.id; menu.refreshContextFrame() end
+					uix_col = uix_col + uix_colSpan
+					if uix_col > detailtable.numcolumns then
+						uix_col = 1
+					end
+				end
+			end
+		end
+		-- kuertee end: callback
 
 		local row = detailtable:addRow(nil, { fixed = true, bgColor = Color["row_background_selected"] })
 		row[1]:setColSpan(7):createText(" ", { scaling = false, fontsize = 1, height = Helper.borderSize })
@@ -2123,6 +2160,14 @@ function menu.createFactionDetailsContext(frame)
 				end
 			end
 		end
+
+		-- kuertee start: callback
+		if menu.uix_callbacks ["createFactionDetailsContext_on_render_detail_tab"] then
+			for uix_id, uix_callback in pairs (menu.uix_callbacks ["createFactionDetailsContext_on_render_detail_tab"]) do
+				uix_callback (frame, tableProperties, relation.id, detailtable, menu.factionData.curTab)
+			end
+		end
+		-- kuertee end: callback
 
 		detailtable.properties.maxVisibleHeight = math.min(detailtable:getFullHeight(), maxalloweddetailheight)
 
