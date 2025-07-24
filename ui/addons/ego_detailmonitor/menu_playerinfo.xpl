@@ -1683,7 +1683,6 @@ function menu.createInventory(frame, tableProperties, mode, tabOrderOffset)
 	local isonline = Helper.isOnlineGame()
 	-- show venture inventory partially if we have permanent online items
 	local onlineitems = OnlineGetUserItems()
-
 	for ware, waredata in pairs(onlineitems) do
 		local isoperationvolatile, isseasonvolatile = GetWareData(ware, "isoperationvolatile", "isseasonvolatile")
 		if (not isoperationvolatile) and (not isseasonvolatile) then
@@ -1723,7 +1722,6 @@ function menu.createInventory(frame, tableProperties, mode, tabOrderOffset)
 
 		menu.inventory = GetPlayerInventory()
 		menu.onlineitems = OnlineGetUserItems()
-
 		for ware, waredata in Helper.orderedPairs(menu.inventory) do
 			local iscraftingresource, ismodpart, isprimarymodpart, ispersonalupgrade, tradeonly, ispaintmod, isbraneitem = GetWareData(ware, "iscraftingresource", "ismodpart", "isprimarymodpart", "ispersonalupgrade", "tradeonly", "ispaintmod", "isbraneitem")
 			if iscraftingresource or ismodpart or isprimarymodpart then
@@ -6708,7 +6706,6 @@ function menu.createContextFrame(data, x, y, width, nomouseout)
 	elseif menu.contextMenuMode == "venturefriendlist" then
 		Helper.showVentureFriendListContext(menu, menu.contextFrame)
 	elseif menu.contextMenuMode == "venturereport" then
-		print(nomouseout)
 		Helper.createUserQuestionContext(menu, menu.contextFrame)
 	end
 

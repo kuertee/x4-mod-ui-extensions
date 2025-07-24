@@ -5,9 +5,8 @@ by kuertee. Contributors: AlexandreTK, DrWhoKnows, DmytroK, Erixon, Forleyor, IA
 
 Updates
 =======
-8.0 beta 2, 22 Jul 2025:
-- Tweak: 8.0 beta 2 compatibility. Thanks to DmytroK for merging the 8.0 beta base lua files into UIX.
-- New features: callbacks in the Diplomacy Menu to better integrate menus from the Crime has consequences mod, the Reputations and professions mod, and the Social standings and citizenships mod.
+8.0.0.3, 24 Jul 2025:
+- Tweak: 8.0 beta hotfix 3 compatibility.
 
 NOTES FOR PLAYERS:
 ==================
@@ -245,6 +244,10 @@ French localisation by Calvitix.
 
 History
 =======
+8.0 beta 2, 22 Jul 2025:
+- Tweak: 8.0 beta 2 compatibility. Thanks to DmytroK for merging the 8.0 beta base lua files into UIX.
+- New features: callbacks in the Diplomacy Menu to better integrate menus from the Crime has consequences mod, the Reputations and professions mod, and the Social standings and citizenships mod.
+
 8.0 beta, 13 Jul 2025:
 - Tweak: 8.0 beta compatibility. Thanks to DmytroK for merging the 8.0 beta base lua files into UIX.
 

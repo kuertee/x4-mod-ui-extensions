@@ -100,6 +100,10 @@ ffi.cdef[[
 		uint32_t numwarerequirements;
 	} DiplomacyEventOptionInfo;
 	typedef struct {
+		float dps;
+		uint32_t quadranttextid;
+	} DPSData;
+	typedef struct {
 		bool excluded;
 		uint32_t numexclusionreasons;
 	} FactionDiplomacyExclusionInfo;
@@ -130,6 +134,7 @@ ffi.cdef[[
 	const char* GetAgentSlotResearchWare(size_t slotnumber);
 	double GetCurrentGameTime(void);
 	UILogo GetCurrentPlayerLogo(void);
+	uint32_t GetDefensibleDPS(DPSData* result, UniverseID defensibleid, bool primary, bool secondary, bool lasers, bool missiles, bool turrets, bool includeheat, bool includeinactive);
 	uint32_t GetDiplomacyActionOperations(DiplomacyActionOperation* result, uint32_t resultlen, bool active);
 	uint32_t GetDiplomacyEventOperations(DiplomacyEventOperation* result, uint32_t resultlen, bool active);
 	double GetDiplomacyActionCooldownEndTime(const char* actionid, const char* targetfactionid, bool checkalltargetfactions);
@@ -166,7 +171,7 @@ ffi.cdef[[
 	bool IsFactionInRelationRangeToFaction(const char* factionid, const char* otherfactionid, const char* range);
 	bool IsKnownToPlayer(UniverseID componentid);
 	bool IsMouseEmulationActive(void);
-	void SetAgentDiplomacyShip(UniverseID npcid, UniverseID shipid);
+	bool SetAgentDiplomacyShip(UniverseID npcid, UniverseID shipid, bool checkonly);
 	void SetArchivedDiplomacyActionOperationRead(OperationID operationid);
 	void SetArchivedDiplomacyEventOperationRead(OperationID operationid);
 	void SetDiplomacyEventOperationAgent(OperationID eventoperationid, UniverseID newentityid);
@@ -188,9 +193,10 @@ local menu = {
 
 local config = {
 	mode = "factions",
-	mainLayer = 5,
-	infoLayer = 4,
-	contextLayer = 2,
+	mainLayer = 6,
+	infoLayer = 5,
+	contextLayer = 4,
+	userquestionLayer = 2,
 	leftBar = {
 		{ name = ReadText(1001, 7703),		icon = "mapst_factionrelation",		mode = "factions",	active = true, helpOverlayID = "diplomacy_sidebar_factions",	helpOverlayText = ReadText(1028, 7715) },
 		{ name = ReadText(1001, 12817),		icon = "mapst_agent",				mode = "agents",	active = true, helpOverlayID = "diplomacy_embassy_agents",		helpOverlayText = ReadText(1028, 12801),																		condition = function () return C.IsStoryFeatureUnlocked("x4ep1_diplomacy_agent") end },
@@ -308,6 +314,7 @@ function menu.cleanup()
 	menu.mainFrame = nil
 	menu.infoFrame = nil
 	menu.contextFrame = nil
+	menu.userQuestionFrame = nil
 
 	menu.mainTable = nil
 	menu.topLevelTable = nil
@@ -456,48 +463,58 @@ function menu.buttonSelectObject(actionid, paramidx, paramdata)
 	menu.cleanup()
 end
 
-function menu.buttonStartAction()
-	local agent = menu.agents[menu.contextMenuData.selectedagentid]
-	local agentid = ConvertStringToLuaID(tostring(agent.id))
-	local parameters = {}
-	local targets = GetDiplomaticActionTargetParameters(menu.contextMenuData.id)
-	for i, target in ipairs(targets) do
-		if target.type == "object" then
-			parameters[target.name] = ConvertStringToLuaID(tostring(menu.contextMenuData.targets[i]))
-		else
-			parameters[target.name] = menu.contextMenuData.targets[i]
-		end
-	end
+function menu.buttonStartAction(checked)
 	local giftware = ""
 	if menu.contextMenuData.giftware and (menu.contextMenuData.giftware ~= "none") then
 		giftware = menu.contextMenuData.giftware
 	end
+	local action = menu.actionsByID[menu.contextMenuData.id]
+	local hasinventoryrequirement = #action.warerequirements > 0
 
-	if agent.isbusy and (agent.isbusy.eventoperation and (not agent.isbusy.optionselected)) then
-		C.SetDiplomacyEventOperationAgent(agent.isbusy.eventoperation, 0)
-	end
+	if (giftware == "") and (not hasinventoryrequirement) or checked or __CORE_DETAILMONITOR_USERQUESTION["startdiplomacyaction"] then
+		-- continue immediately
+		local agent = menu.agents[menu.contextMenuData.selectedagentid]
+		local agentid = ConvertStringToLuaID(tostring(agent.id))
+		local parameters = {}
+		local targets = GetDiplomaticActionTargetParameters(menu.contextMenuData.id)
+		for i, target in ipairs(targets) do
+			if target.type == "object" then
+				parameters[target.name] = ConvertStringToLuaID(tostring(menu.contextMenuData.targets[i]))
+			else
+				parameters[target.name] = menu.contextMenuData.targets[i]
+			end
+		end
 
-	local actionid = menu.contextMenuData.id
-	menu.laststartedactionoperation = StartDiplomacyActionOperation(actionid, agentid, parameters, giftware)
-	menu.closeContextMenu(true)
-	menu.getData()
+		if agent.isbusy and (agent.isbusy.eventoperation and (not agent.isbusy.optionselected)) then
+			C.SetDiplomacyEventOperationAgent(agent.isbusy.eventoperation, 0)
+		end
 
-	if menu.laststartedactionoperation then
-		if menu.actionoperations[actionid] then
-			for i, operation in ipairs(menu.actionoperations[actionid]) do
-				if operation.id == menu.laststartedactionoperation then
-					menu.contextMenuMode = "actionconfig"
-					menu.contextMenuData.id = actionid
-					menu.contextMenuData.operationindex = i
-					menu.contextMenuData.targets = {}
+		local actionid = menu.contextMenuData.id
+		menu.laststartedactionoperation = StartDiplomacyActionOperation(actionid, agentid, parameters, giftware)
+		menu.closeContextMenu(true)
+		menu.getData()
 
-					local y = math.max(Helper.playerInfoConfig.offsetY + Helper.playerInfoConfig.height + Helper.borderSize, menu.topLevelHeight)
-					menu.createContextFrame(Helper.playerInfoConfig.offsetX + menu.sideBarWidth + Helper.borderSize + menu.narrowtablewidth + Helper.borderSize, y, menu.actionConfig.width, true)
+		if menu.laststartedactionoperation then
+			if menu.actionoperations[actionid] then
+				for i, operation in ipairs(menu.actionoperations[actionid]) do
+					if operation.id == menu.laststartedactionoperation then
+						menu.contextMenuMode = "actionconfig"
+						menu.contextMenuData.id = actionid
+						menu.contextMenuData.operationindex = i
+						menu.contextMenuData.targets = {}
+
+						local y = math.max(Helper.playerInfoConfig.offsetY + Helper.playerInfoConfig.height + Helper.borderSize, menu.topLevelHeight)
+						menu.createContextFrame(Helper.playerInfoConfig.offsetX + menu.sideBarWidth + Helper.borderSize + menu.narrowtablewidth + Helper.borderSize, y, menu.actionConfig.width, true)
+					end
 				end
 			end
 		end
+		menu.refreshInfoFrame()
+	else
+		menu.userQuestionMode = "userquestion"
+		menu.userQuestionData = { mode = "startdiplomacyaction", saveOption = false }
+		menu.createUserQuestionFrame(0, 0, Helper.viewWidth)
 	end
-	menu.refreshInfoFrame()
 end
 
 function menu.buttonAbortAction(agentid, confirmed, unique, exclusivefactionidx, cooldown)
@@ -507,9 +524,32 @@ function menu.buttonAbortAction(agentid, confirmed, unique, exclusivefactionidx,
 		menu.closeContextMenu()
 		menu.refreshInfoFrame()
 	else
-		menu.contextMenuMode = "userquestion"
-		menu.contextMenuData = { mode = "abortaction", agentid = agentid, unique = unique, exclusivefactionidx = exclusivefactionidx, cooldown = cooldown }
-		menu.createContextFrame(0, 0, Helper.viewWidth, true)
+		menu.userQuestionMode = "userquestion"
+		menu.userQuestionData = { mode = "abortaction", agentid = agentid, unique = unique, exclusivefactionidx = exclusivefactionidx, cooldown = cooldown }
+		menu.createUserQuestionFrame(0, 0, Helper.viewWidth)
+	end
+end
+
+function menu.buttonSetEventOption(checked)
+	local eventoperation = menu.eventoperationsByID[tostring(menu.contextMenuData.id)]
+	local event = menu.eventsByID[eventoperation.eventid]
+	local hasinventoryrequirement = false
+	for i, option in ipairs(event.options) do
+		if option.id == menu.contextMenuData.selectedOption then
+			hasinventoryrequirement = #option.warerequirements > 0
+			break
+		end
+	end
+
+	if (not hasinventoryrequirement) or checked or __CORE_DETAILMONITOR_USERQUESTION["setdiplomacyeventoption"] then
+		-- continue immediately
+		C.SetDiplomacyEventOperationOption(eventoperation.agentid, menu.contextMenuData.selectedOption)
+		menu.getData()
+		menu.refreshContextFrame()
+	else
+		menu.userQuestionMode = "userquestion"
+		menu.userQuestionData = { mode = "setdiplomacyeventoption", saveOption = false }
+		menu.createUserQuestionFrame(0, 0, Helper.viewWidth)
 	end
 end
 
@@ -1145,7 +1185,6 @@ function menu.createFactions(frame, tableProperties)
 	local iconoffset = 2
 
 	local infotable = frame:addTable(4, { tabOrder = 1, width = menu.narrowtablewidth, x = tableProperties.x, y = tableProperties.y })
-
 	if menu.setdefaulttable then
 		infotable.properties.defaultInteractiveObject = true
 		menu.setdefaulttable = nil
@@ -1453,7 +1492,11 @@ function menu.createEmbassy(frame, tableProperties)
 							end
 
 							row[1]:setBackgroundColSpan(6):setColSpan(3):createText(operation.agentname, { x = Helper.standardIndentStep, color = color })
-							row[4]:createText(function () return menu.getAgentStatus(operation.agentindex) end, { halign = "right", color = color })
+							if operation.agentresultstate == "killed" then
+								row[4]:createText(ReadText(1001, 12947), { color = Color["text_negative"], y = 2, halign = "right" })
+							else
+								row[4]:createText(function () return menu.getAgentStatus(operation.agentindex) end, { halign = "right", color = color })
+							end
 							row[5]:createText(ispastoperation and ReadText(1001, 12840) or function () return menu.actionOperationTime(operation.endtime) end, { halign = "right", color = color })
 							row[6]:createIcon("widget_arrow_right_01", { height = Helper.standardTextHeight, color = color })
 						end
@@ -1780,7 +1823,6 @@ function menu.createFactionDetailsContext(frame)
 
 		local bottomtableheight = bottomtable:getFullHeight()
 		bottomtable.properties.y = menu.factionConfig.height - bottomtableheight - Helper.standardContainerOffset
-
 		local maxalloweddetailheight = bottomtable.properties.y - detailtable.properties.y - 2 * Helper.standardContainerOffset
 
 		-- tabs
@@ -1842,8 +1884,8 @@ function menu.createFactionDetailsContext(frame)
 		local row = detailtable:addRow(nil, { fixed = true, bgColor = Color["row_background_selected"] })
 		row[1]:setColSpan(7):createText(" ", { scaling = false, fontsize = 1, height = Helper.borderSize })
 
-		local row = detailtable:addRow(nil, { fixed = true, borderBelow = false })
-		row[1]:setColSpan(7):createText(" ", { scaling = false, fontsize = 1, height = Helper.standardContainerOffset })
+		local row = detailtable:addRow(nil, { fixed = true })
+		row[1]:setColSpan(7):createText(" ", { scaling = false, fontsize = 1, height = Helper.standardContainerOffset - Helper.borderSize })
 
 		if menu.factionData.curTab == "licence" then
 			-- kuertee start: callback for backward compatibility. obsolete do not create new callbacks with this id.
@@ -2235,7 +2277,7 @@ function menu.createAgentDetailsContext(frame)
 	Helper.ffiVLA(dockedships, "UniverseID", C.GetNumDockedShips, C.GetDockedShips, hq, "player")
 	local shiplist = {}
 	for _, dockedship in ipairs(dockedships) do
-		if (dockedship ~= playeroccupiedship) and (C.IsComponentClass(dockedship, "ship_m") or C.IsComponentClass(dockedship, "ship_s")) then
+		if (dockedship ~= playeroccupiedship) and (C.IsComponentClass(dockedship, "ship_m") or C.IsComponentClass(dockedship, "ship_s")) and C.SetAgentDiplomacyShip(agent.id, dockedship, true) then
 			local name, icon, idcode, prestigename = GetComponentData(ConvertStringToLuaID(tostring(dockedship)), "name", "icon", "idcode", "prestigename")
 			table.insert(shiplist, {
 				id = dockedship,
@@ -2252,7 +2294,7 @@ function menu.createAgentDetailsContext(frame)
 		local travelspeedtext = ConvertIntegerString(Helper.round(C.GetDefensibleSpeeds(entry.id).travelspeed), true, 0, true) .. " " .. ReadText(1001, 113)
 		local dpstext = "0" .. " " .. ReadText(1001, 119)
 		local sustainedfwddps = ffi.new("DPSData[?]", 1)
-		C.GetDefensibleDPS(sustainedfwddps, entry.id, true, true, true, true, false, true, false)
+		C.GetDefensibleDPS(sustainedfwddps, entry.id, true, true, true, true, false, true, true)
 		if sustainedfwddps[0].dps > 0 then
 			dpstext = ConvertIntegerString(sustainedfwddps[0].dps, true, 0, true) .. " " .. ReadText(1001, 119)
 		end
@@ -2276,7 +2318,7 @@ function menu.createAgentDetailsContext(frame)
 		local travelspeedtext = ConvertIntegerString(Helper.round(C.GetDefensibleSpeeds(agent.ship).travelspeed), true, 0, true) .. " " .. ReadText(1001, 113)
 		local dpstext = "0" .. " " .. ReadText(1001, 119)
 		local sustainedfwddps = ffi.new("DPSData[?]", 1)
-		C.GetDefensibleDPS(sustainedfwddps, agent.ship, true, true, true, true, false, true, false)
+		C.GetDefensibleDPS(sustainedfwddps, agent.ship, true, true, true, true, false, true, true)
 		if sustainedfwddps[0].dps > 0 then
 			dpstext = ConvertIntegerString(sustainedfwddps[0].dps, true, 0, true) .. " " .. ReadText(1001, 119)
 		end
@@ -2306,7 +2348,7 @@ function menu.createAgentDetailsContext(frame)
 		y = 1.5 * Helper.standardTextHeight,
 		halign = "right",
 	})
-	row[1].handlers.onDropDownConfirmed = function (_, id) local id64 = C.ConvertStringTo64Bit(id); C.SetAgentDiplomacyShip(agent.id, id64); menu.agents[menu.contextMenuData.id].ship = id64; menu.refreshContextFrame() end
+	row[1].handlers.onDropDownConfirmed = function (_, id) local id64 = C.ConvertStringTo64Bit(id); C.SetAgentDiplomacyShip(agent.id, id64, false); menu.agents[menu.contextMenuData.id].ship = id64; menu.refreshContextFrame() end
 end
 
 function menu.createActionConfigContext(frame)
@@ -2591,7 +2633,7 @@ function menu.createActionConfigContext(frame)
 		hasmissingrequirement = true
 	end
 	row[3]:createText(ConvertMoneyString(action.price, false, true, 0, true) .. " " .. ReadText(1001, 101) .. (requirement and (ColorText["text_positive"] .. " \27[widget_tick_01]\27X") or (ColorText["text_negative"] .. " \27[widget_cross_01]\27X")), { halign = "right" })
-	local inventory = GetPlayerInventory()
+	local inventory = menu.getDiplomacyInventory()
 	for i, ware in ipairs(action.warerequirements) do
 		local row = infotable2:addRow(nil)
 		if i == 1 then
@@ -2612,14 +2654,13 @@ function menu.createActionConfigContext(frame)
 
 		local giftwareoptions = {}
 
-		local playerinventory = GetPlayerInventory()
 		local num_wares = C.GetNumWares2(action.giftwaretags, false, "", "", true, false)
 		if num_wares > 0 then
 			local buf_wares = ffi.new("const char*[?]", num_wares)
 			num_wares = C.GetWares2(buf_wares, num_wares, action.giftwaretags, false, "", "", true, false)
 			for i = 0, num_wares - 1 do
 				local wareid = ffi.string(buf_wares[i])
-				table.insert(giftwareoptions, { id = wareid, text = GetWareData(wareid, "name"), icon = "", displayremoveoption = false, active = (playerinventory[wareid] and (playerinventory[wareid].amount > 0)) and true or false })
+				table.insert(giftwareoptions, { id = wareid, text = GetWareData(wareid, "name"), icon = "", displayremoveoption = false, active = (inventory[wareid] and (inventory[wareid].amount > 0)) and true or false })
 			end
 		end
 		table.sort(giftwareoptions, function (a, b) return a.text < b.text end)
@@ -2722,7 +2763,7 @@ function menu.createActionConfigContext(frame)
 		row[3].handlers.onClick = function () C.SetArchivedDiplomacyActionOperationRead(operation.id); menu.getData(); return menu.closeContextMenu() end
 	else
 		row[2]:createButton({ active = errorcount == 0 }):setText(active and ReadText(1001, 12831) or ReadText(1001, 12832), { halign = "center" })
-		row[2].handlers.onClick = active and menu.buttonStartAction or function () return menu.buttonAbortAction(operation.agentid, false, action.unique, action.exclusivefactionparamidx, action.cooldown) end
+		row[2].handlers.onClick = active and function () return menu.buttonStartAction() end or function () return menu.buttonAbortAction(operation.agentid, false, action.unique, action.exclusivefactionparamidx, action.cooldown) end
 		row[3]:createButton({  }):setText(ReadText(1001, 2670), { halign = "center" })
 		row[3].handlers.onClick = menu.closeContextMenu
 	end
@@ -3017,6 +3058,7 @@ function menu.createEventContext(frame)
 	middletable:setColWidth(3, 2 * Helper.standardContainerOffset)
 	middletable:setColWidth(6, 2 * Helper.standardContainerOffset)
 
+	local optionwidth = (menu.actionConfig.width - 4 * Helper.standardContainerOffset - 4 * Helper.borderSize) / 3
 	local optiontextwidth = math.floor((menu.actionConfig.width - 8 * Helper.standardContainerOffset - (numcols - 1) * Helper.borderSize) / (numcols - 2))
 
 	-- duration
@@ -3071,11 +3113,23 @@ function menu.createEventContext(frame)
 	local warerows = {}
 
 	local maxnumwares = 0
+	local maxresultlines = 0
 	for i, option in ipairs(event.options) do
 		maxnumwares = math.max(maxnumwares, #option.warerequirements)
+
+		local resulttextlines = GetTextLines(option.result, Helper.standardFont, Helper.scaleFont(Helper.standardFont, Helper.standardFontSize), optionwidth - Helper.scaleX(iconwidth) - Helper.scaleX(Helper.standardTextOffsetx))
+		option.numresultlines = #resulttextlines
+		maxresultlines = math.max(maxresultlines, option.numresultlines)
+		option.resulttext = ""
+		for i, line in ipairs(resulttextlines) do
+			if i > 1 then
+				option.resulttext = option.resulttext .. "\n"
+			end
+			option.resulttext = option.resulttext .. line
+		end
 	end
 
-	local inventory = GetPlayerInventory()
+	local inventory = menu.getDiplomacyInventory()
 	local playermoney = GetPlayerMoney()
 	local selectedoption
 	for i, option in ipairs(event.options) do
@@ -3098,22 +3152,27 @@ function menu.createEventContext(frame)
 			end
 		end
 
+		local textoffset = 0
+		if option.numresultlines > 1 then
+			textoffset = (option.numresultlines - 1) * Helper.standardTextHeight / 2
+		end
+
 		-- button
 		buttonrow[col]:setColSpan(2):createButton({
 			height = buttonheight,
-			active = active and (not hasmissingrequirement),
+			active = active and (not hasmissingrequirement) and (not eventoperation.isarchive),
 		}):setIcon(((option.id == eventoperation.option) or (option.id == menu.contextMenuData.selectedOption)) and "menu_radio_button_on" or "menu_radio_button_off", {
 			width = iconwidth,
 			height = iconwidth,
 			y = (buttonheight - iconwidth) / 2,
 		}):setText(option.name, {
 			x = iconwidth,
-			y = Helper.headerRow1Height / 2 - Helper.headerRow1Offsety,
+			y = Helper.headerRow1Height / 2 - Helper.headerRow1Offsety + textoffset,
 			font = Helper.standardFontBold,
 			fontsize = Helper.headerRow1FontSize,
-		}):setText2(option.result, {
+		}):setText2(option.resulttext, {
 			x = iconwidth,
-			y = -Helper.headerRow1Height / 2 + Helper.headerRow1Offsety,
+			y = -Helper.headerRow1Height / 2 + Helper.headerRow1Offsety + textoffset,
 		})
 		buttonrow[col].handlers.onClick = function () menu.contextMenuData.selectedOption = (option.id ~= menu.contextMenuData.selectedOption) and option.id or nil; menu.refreshContextFrame() end
 		emptyrow[col]:setColSpan(2):createText(" ", { scaling = false, fontsize = 1, minRowHeight = 2 * Helper.standardContainerOffset, cellBGColor = Color["row_background_container"] })
@@ -3130,7 +3189,6 @@ function menu.createEventContext(frame)
 		local text, mouseovertext = menu.getTruncatedOptionText(moneytext, indicator, optiontextwidth)
 		moneyrow[col + 1]:createText(text, { halign = "right", cellBGColor = Color["row_background_container"], mouseOverText = mouseovertext })
 		-- wares
-		local inventory = GetPlayerInventory()
 		for j, ware in ipairs(option.warerequirements) do
 			if not warerows[j] then
 				warerows[j] = middletable:addRow(nil, { fixed = true, borderBelow = false })
@@ -3250,7 +3308,7 @@ function menu.createEventContext(frame)
 	local row = bottomtable:addRow(true, { fixed = true })
 	if active and (not eventoperation.isarchive) then
 		row[4]:setColSpan(3):createButton({ active = (eventoperation.agentid ~= 0) and (menu.contextMenuData.selectedOption ~= nil), mouseOverText = (eventoperation.agentid == 0) and (ColorText["text_error"] .. ReadText(1001, 12848)) or "" }):setText(ReadText(1001, 12864), { halign = "center" })
-		row[4].handlers.onClick = function () C.SetDiplomacyEventOperationOption(eventoperation.agentid, menu.contextMenuData.selectedOption); menu.getData(); menu.refreshContextFrame() end
+		row[4].handlers.onClick = function () return menu.buttonSetEventOption() end
 	end
 	row[7]:setColSpan(2):createButton({  }):setText(ReadText(1001, 2670), { halign = "center" })
 	row[7].handlers.onClick = menu.closeContextMenu
@@ -3458,45 +3516,93 @@ function menu.createEventCompletedContext(frame)
 end
 
 function menu.createUserQuestionContext(frame)
+	local useSaveOption = false
+	if (menu.userQuestionData.mode == "startdiplomacyaction") or (menu.userQuestionData.mode == "setdiplomacyeventoption") then
+		useSaveOption = true
+	end
 	local popUpWidth = Helper.scaleX(600)
+	
+	local numCols = useSaveOption and 6 or 5
+	local ftable = frame:addTable(numCols, { tabOrder = 1, reserveScrollBar = false, highlightMode = "off", x = (Helper.viewWidth - popUpWidth) / 2, y = Helper.viewHeight / 2 - frame.properties.y, width = popUpWidth - Helper.borderSize, backgroundID = "solid", backgroundColor = Color["frame_background_notification"] })
+	if useSaveOption then
+		ftable:setColWidth(1, Helper.scaleY(Helper.standardButtonHeight), false)
+		ftable:setColWidthPercent(5, 25)
+		ftable:setColWidthPercent(6, 25)
+	else
+		ftable:setColWidthPercent(2, 37)
+		ftable:setColWidth(3, Helper.scaleX(2 * Helper.standardContainerOffset) - 2 * Helper.borderSize, false)
+		ftable:setColWidthPercent(4, 37)
+	end
 
-	local ftable = frame:addTable(5, { tabOrder = 1, reserveScrollBar = false, highlightMode = "off", x = (Helper.viewWidth - popUpWidth) / 2, y = Helper.viewHeight / 2 - frame.properties.y, width = popUpWidth - Helper.borderSize, backgroundID = "solid", backgroundColor = Color["frame_background_notification"] })
-	ftable:setColWidthPercent(2, 37)
-	ftable:setColWidth(3, Helper.scaleX(2 * Helper.standardContainerOffset) - 2 * Helper.borderSize, false)
-	ftable:setColWidthPercent(4, 37)
-
-	if menu.contextMenuData.mode == "abortaction" then
+	if menu.userQuestionData.mode == "abortaction" then
 		local row = ftable:addRow(false, { fixed = true })
-		row[1]:setColSpan(5):createText(ReadText(1001, 12832), Helper.headerRowCenteredProperties)
+		row[1]:setColSpan(numCols):createText(ReadText(1001, 12832), Helper.headerRowCenteredProperties)
 
 		local text = ReadText(1001, 12926)
-		if menu.contextMenuData.cooldown > 0 then
-			if menu.contextMenuData.unique then
+		if menu.userQuestionData.cooldown > 0 then
+			if menu.userQuestionData.unique then
 				text = text .. " " .. ReadText(1001, 12927)
-			elseif menu.contextMenuData.exclusivefactionidx > 0 then
+			elseif menu.userQuestionData.exclusivefactionidx > 0 then
 				text = text .. " " .. ReadText(1001, 12928)
 			end
 		end
 		local row = ftable:addRow(false, { fixed = true })
-		row[1]:setColSpan(5):createText(text, { wordwrap = true })
+		row[1]:setColSpan(numCols):createText(text, { wordwrap = true })
+	elseif menu.userQuestionData.mode == "startdiplomacyaction" then
+		local row = ftable:addRow(false, { fixed = true })
+		row[1]:setColSpan(numCols):createText(ReadText(1001, 12831), Helper.headerRowCenteredProperties)
+
+		local row = ftable:addRow(false, { fixed = true })
+		row[1]:setColSpan(numCols):createText(ReadText(1001, 12948), { wordwrap = true })
+	elseif menu.userQuestionData.mode == "setdiplomacyeventoption" then
+		local row = ftable:addRow(false, { fixed = true })
+		row[1]:setColSpan(numCols):createText(ReadText(1001, 12864), Helper.headerRowCenteredProperties)
+
+		local row = ftable:addRow(false, { fixed = true })
+		row[1]:setColSpan(numCols):createText(ReadText(1001, 12949), { wordwrap = true })
 	end
 
 	local row = ftable:addRow(false, { fixed = true })
-	row[1]:setColSpan(5):createText("")
+	row[1]:setColSpan(numCols):createText("")
 
 	local row = ftable:addRow(true, { fixed = true })
-	row[2]:createButton():setText(ReadText(1001, 12929), { halign = "center" })
-	if menu.contextMenuData.mode == "abortaction" then
-		row[2].handlers.onClick = function () return menu.buttonAbortAction(menu.contextMenuData.agentid, true) end
+	if useSaveOption then
+		row[1]:createCheckBox(function () return menu.userQuestionData.saveOption end, { height = Helper.standardButtonHeight })
+		row[1].handlers.onClick = function () menu.userQuestionData.saveOption = not menu.userQuestionData.saveOption end
+		row[2]:setColSpan(3):createButton({ bgColor = Color["button_background_hidden"] }):setText(ReadText(1001, 9711))
+		row[2].handlers.onClick = function () menu.userQuestionData.saveOption = not menu.userQuestionData.saveOption end
+		row[5]:createButton():setText(ReadText(1001, 2821), { halign = "center" })
+		row[5].handlers.onClick = menu.buttonConfirmUserQuestion
+		row[6]:createButton():setText(ReadText(1001, 64), { halign = "center" })
+		row[6].handlers.onClick = menu.closeUserQuestionMenu
+		ftable:setSelectedCol(6)
+	else
+		row[2]:createButton():setText(ReadText(1001, 12929), { halign = "center" })
+		row[2].handlers.onClick = menu.buttonConfirmUserQuestion
+		row[4]:createButton():setText(ReadText(1001, 12930), { halign = "center" })
+		row[4].handlers.onClick = menu.closeUserQuestionMenu
+		ftable:setSelectedCol(4)
 	end
-	row[4]:createButton():setText(ReadText(1001, 12930), { halign = "center" })
-	row[4].handlers.onClick = menu.closeContextMenu
-	ftable:setSelectedCol(4)
 
 	ftable.properties.y = ftable.properties.y - ftable:getFullHeight() / 2
 
 	frame:setBackground("solid", { color = Color["frame_background_semitransparent"] })
 	frame.properties.height = Helper.viewHeight
+end
+
+function menu.buttonConfirmUserQuestion()
+	if menu.userQuestionData.saveOption then
+		__CORE_DETAILMONITOR_USERQUESTION[menu.userQuestionData.mode] = true
+	end
+
+	if menu.userQuestionData.mode == "abortaction" then
+		menu.buttonAbortAction(menu.userQuestionData.agentid, true)
+	elseif menu.userQuestionData.mode == "startdiplomacyaction" then
+		menu.buttonStartAction(true)
+	elseif menu.userQuestionData.mode == "setdiplomacyeventoption" then
+		menu.buttonSetEventOption(true)
+	end
+	menu.closeUserQuestionMenu()
 end
 
 function menu.relationSorter(a, b)
@@ -3585,9 +3691,6 @@ function menu.createContextFrame(x, y, width, nomouseout)
 		autoFrameHeight = false
 	elseif menu.contextMenuMode == "eventcompleted" then
 		menu.createEventCompletedContext(menu.contextFrame)
-		autoFrameHeight = false
-	elseif menu.contextMenuMode == "userquestion" then
-		menu.createUserQuestionContext(menu.contextFrame)
 		autoFrameHeight = false
 	end
 
@@ -3684,6 +3787,48 @@ function menu.closeContextMenu(norefresh)
 	menu.mouseOutBox = nil
 end
 
+function menu.createUserQuestionFrame(x, y, width)
+	Helper.removeAllWidgetScripts(menu, config.userquestionLayer)
+	PlaySound("ui_positive_click")
+
+	local contextmenuwidth = width
+
+	local autoFrameHeight = true
+	menu.userQuestionFrame = Helper.createFrameHandle(menu, {
+		layer = config.userquestionLayer,
+		standardButtons = { close = true },
+		width = contextmenuwidth,
+		x = x,
+		y = 0,
+	})
+	menu.userQuestionFrame:setBackground("solid", { color = Color["frame_background_semitransparent"] })
+
+	if menu.userQuestionMode == "userquestion" then
+		menu.createUserQuestionContext(menu.userQuestionFrame)
+		autoFrameHeight = false
+	end
+
+	if menu.userQuestionFrame.properties.x + contextmenuwidth > Helper.viewWidth then
+		menu.userQuestionFrame.properties.x = Helper.viewWidth - contextmenuwidth - Helper.frameBorder
+	end
+	local height = menu.userQuestionFrame:getUsedHeight()
+	if autoFrameHeight and (y + height > Helper.viewHeight) then
+		menu.userQuestionFrame.properties.y = Helper.viewHeight - height - Helper.frameBorder
+	else
+		menu.userQuestionFrame.properties.y = y
+	end
+	menu.userQuestionFrame.properties.autoFrameHeight = autoFrameHeight
+
+	menu.userQuestionFrame:display()
+end
+
+function menu.closeUserQuestionMenu()
+	Helper.clearFrame(menu, config.userquestionLayer)
+
+	menu.userQuestionData = {}
+	menu.userQuestionMode = nil
+end
+
 function menu.viewCreated(layer, ...)
 	if layer == config.mainLayer then
 		menu.mainTable = ...
@@ -3704,6 +3849,9 @@ function menu.onUpdate()
 	menu.infoFrame:update()
 	if (menu.contextMenuMode == "actionconfig") or (menu.contextMenuMode == "event") or (menu.contextMenuMode == "agentdetails") then
 		menu.contextFrame:update()
+	end
+	if (menu.userQuestionMode == "userquestion") then
+		menu.userQuestionFrame:update()
 	end
 
 	if menu.mouseOutBox then
@@ -3934,7 +4082,9 @@ function menu.closeMenu(dueToClose)
 end
 
 function menu.onCloseElement(dueToClose)
-	if menu.contextMenuMode and (dueToClose == "back") then
+	if menu.userQuestionMode and (dueToClose == "back") then
+		menu.closeUserQuestionMenu()
+	elseif menu.contextMenuMode and (dueToClose == "back") then
 		menu.closeContextMenu()
 	elseif menu.mode and (dueToClose == "back") then
 		menu.deactivatePlayerInfo()
@@ -3944,6 +4094,26 @@ function menu.onCloseElement(dueToClose)
 end
 
 -- menu helpers
+
+function menu.getDiplomacyInventory()
+	local stationhqlist = {}
+	Helper.ffiVLA(stationhqlist, "UniverseID", C.GetNumHQs, C.GetHQs, "player")
+	local playerhq = stationhqlist[1] or 0
+
+	local inventory = GetPlayerInventory()
+	local hqdefencenpc = GetComponentData(ConvertStringToLuaID(tostring(playerhq)), "defencenpc")
+	local hqinventory = GetInventory(hqdefencenpc)
+	for ware, entry in pairs(hqinventory) do
+		if inventory[ware] then
+			inventory[ware].amount = inventory[ware].amount + entry.amount
+			inventory[ware].hqamount = entry.amount
+		else
+			inventory[ware] = entry
+			inventory[ware].hqamount = entry.amount
+		end
+	end
+	return inventory
+end
 
 -- kuertee start:
 menu.uix_callbackCount = 0

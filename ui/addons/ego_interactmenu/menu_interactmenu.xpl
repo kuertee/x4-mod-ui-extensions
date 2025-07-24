@@ -2343,13 +2343,15 @@ function menu.buttonMissionShow(missionid)
 		["maintype"] = ffi.string(missiondetails.mainType),
 	}
 	if missiondetails.threadMissionID ~= 0 then
-		local missionGroup = C.GetMissionGroupDetails(missiondetails.threadMissionID)
+		local missionGroup = C.GetMissionGroupDetails2(missiondetails.threadMissionID)
 		entry.missionGroup.id = ffi.string(missionGroup.id)
 		entry.missionGroup.name = ffi.string(missionGroup.name)
+		entry.missionGroup.isstory = missionGroup.isstory
 	else
-		local missionGroup = C.GetMissionGroupDetails(missionid)
+		local missionGroup = C.GetMissionGroupDetails2(missionid)
 		entry.missionGroup.id = ffi.string(missionGroup.id)
 		entry.missionGroup.name = ffi.string(missionGroup.name)
+		entry.missionGroup.isstory = missionGroup.isstory
 	end
 
 	local mode

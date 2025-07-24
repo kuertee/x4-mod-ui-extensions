@@ -177,7 +177,8 @@ ffi.cdef[[
 	typedef struct {
 		const char* id;
 		const char* name;
-	} MissionGroupDetails;
+		bool isstory;
+	} MissionGroupDetails2;
 	typedef struct {
 		MissionID missionid;
 		uint32_t amount;
@@ -667,7 +668,7 @@ ffi.cdef[[
 	uint32_t GetMissingBuildProcessorResources(UIWareInfo* result, uint32_t resultlen);
 	uint32_t GetMissingBuildResources(UIWareInfo* result, uint32_t resultlen);
 	void GetMissionDeliveryWares(MissionWareDeliveryInfo* result, MissionID missionid);
-	MissionGroupDetails GetMissionGroupDetails(MissionID missionid);
+	MissionGroupDetails2 GetMissionGroupDetails2(MissionID missionid);
 	const char* GetMissionHelpOverlayID(MissionID missionid);
 	MissionObjective2 GetMissionIDObjective2(uint64_t missionid);
 	MissionDetails GetMissionIDDetails(uint64_t missionid);
@@ -1350,7 +1351,7 @@ local config = {
 				},
 			},
 			[2] = {
-				caption = ReadText(1001, 11204),
+				caption = ReadText(1001, 7703),
 				type = "checkbox",
 				callback = function (...) return menu.filterThinkDiplomacy(...) end,
 				helpOverlayID = "otherfilters_diplomacy",
@@ -3599,7 +3600,17 @@ function menu.buttonMissionOfferAccept()
 	if menu.missionOfferList then
 		local found = false
 		for i, entry in ipairs(menu.missionOfferList["plot"] or {}) do
-			if ConvertStringTo64Bit(entry.ID) == offerid then
+			if entry.missions then
+				for _, missionentry in ipairs(entry.missions) do
+					if ConvertStringTo64Bit(missionentry.ID) == offerid then
+						found = true
+						missionentry.accepted = true
+						menu.highlightLeftBar["mission"] = true
+						menu.refreshMainFrame = true
+						break
+					end
+				end
+			elseif ConvertStringTo64Bit(entry.ID) == offerid then
 				found = true
 				entry.accepted = true
 				menu.highlightLeftBar["mission"] = true
@@ -9158,15 +9169,15 @@ function menu.createPropertyRow(instance, ftable, component, iteration, commande
 				end
 			end
 
-            -- kuertee start: callback
-            if menu.uix_callbacks ["createPropertyRow_after_config_change"] then
-                for uix_id, uix_callback in pairs (menu.uix_callbacks ["createPropertyRow_after_config_change"]) do
-                    uix_callback (config)
-                end
-            end
-            -- kuertee end: callback
+            	-- kuertee start: callback
+            	if menu.uix_callbacks ["createPropertyRow_after_config_change"] then
+                	for uix_id, uix_callback in pairs (menu.uix_callbacks ["createPropertyRow_after_config_change"]) do
+                	    uix_callback (config)
+                	end
+            	end
+            	-- kuertee end: callback
 
-            -- shieldhullbar
+            	-- shieldhullbar
 			row[5 + maxicons]:createObjectShieldHullBar(component)
 		end
 
@@ -13611,7 +13622,7 @@ function menu.setupInfoSubmenuRows(mode, inputtable, inputobject, instance)
 
 		local dpstable = ffi.new("DPSData[?]", 6)
 		local hasturrets = (defenceinfo_low and #loadout.component.turret > 0)
-		local numtotalquadrants = C.GetDefensibleDPS(dpstable, inputobject, true, true, true, true, hasturrets, false, false)
+		local numtotalquadrants = C.GetDefensibleDPS(dpstable, inputobject, true, true, true, true, hasturrets, false, true)
 		if not hasturrets then
 			locrowdata = { false, ReadText(1001, 9092) .. ReadText(1001, 120), defenceinfo_high and (function() return (ConvertIntegerString(Helper.round(dpstable[0].dps), true, 0, true) .. " " .. ReadText(1001, 119)) end) or (unknowntext .. " " .. ReadText(1001, 119)) }	-- Weapon Output, MW
 			row = menu.addInfoSubmenuRow(instance, inputtable, row, locrowdata, false, false, false, 1, indentsize)
@@ -13623,7 +13634,7 @@ function menu.setupInfoSubmenuRows(mode, inputtable, inputobject, instance)
 		end
 
 		local sustainedfwddps = ffi.new("DPSData[?]", 1)
-		C.GetDefensibleDPS(sustainedfwddps, inputobject, true, true, true, true, false, true, false)
+		C.GetDefensibleDPS(sustainedfwddps, inputobject, true, true, true, true, false, true, true)
 		if sustainedfwddps[0].dps > 0 then
 			locrowdata = { false, ReadText(1001, 9093) .. ReadText(1001, 120), defenceinfo_high and (function() return (ConvertIntegerString(Helper.round(sustainedfwddps[0].dps), true, 0, true) .. " " .. ReadText(1001, 119)) end) or (unknowntext .. " " .. ReadText(1001, 119)) }	-- MW
 			row = menu.addInfoSubmenuRow(instance, inputtable, row, locrowdata, false, false, false, 1, indentsize)
@@ -17641,6 +17652,9 @@ function menu.createMissionMode(frame)
 			-- important
 			if #menu.missionOfferList["plot"] > 0 then
 				local row = ftable:addRow(nil, { bgColor = Color["row_title_background"] })
+				row[1]:setColSpan(9):createText(ReadText(1001, 3340), Helper.headerRowCenteredProperties)
+
+				local hadStoryMission = false
 
 				-- kuertee start: open/close mission lists
 				-- row[1]:setColSpan(9):createText(ReadText(1001, 3340), Helper.headerRowCenteredProperties)
@@ -17650,7 +17664,27 @@ function menu.createMissionMode(frame)
 
 				for _, entry in ipairs(menu.missionOfferList["plot"]) do
 					found = true
-					menu.addMissionRow(ftable, entry)
+					if entry.missions then
+						hadStoryMission = true
+					end
+					if hadStoryMission and (not entry.missions) then
+						hadStoryMission = false
+						ftable:addEmptyRow()
+					end
+					if entry.missions then
+						-- story case
+						local row = ftable:addRow(entry.id, {  })
+						if entry.id == menu.missionModeCurrent then
+							menu.setrow = row.index
+						end
+						row[1]:setColSpan(9):createText((entry.isstory and "\27[menu_mission_plot] " or "") .. entry.name)
+
+						for _, missionentry in ipairs(entry.missions) do
+							menu.addMissionRow(ftable, missionentry)
+						end
+					else
+						menu.addMissionRow(ftable, entry)
+					end
 				end
 				if not found then
 					local row = ftable:addRow("plotnone", { interactive = false })
@@ -17842,22 +17876,39 @@ function menu.createMissionMode(frame)
 			end
 			-- kuertee end
 
-			local hadThreadMission = false
+			local hadStoryMission, hadThreadMission = false, false
 			for _, entry in ipairs(menu.missionList["plot"]) do
 				found = true
-				if entry.threadtype ~= "" then
+				if entry.missions then
+					hadStoryMission = true
+				elseif entry.threadtype ~= "" then
 					hadThreadMission = true
 				end
-				if hadThreadMission and (entry.threadtype == "") then
+				if hadStoryMission and (not entry.missions) then
+					hadStoryMission = false
+					ftable:addEmptyRow()
+				elseif hadThreadMission and (entry.threadtype == "") then
 					-- first non thread mission after threads
 					hadThreadMission = false
-
 					-- kuertee start: remove blank line between threaded and non-threaded missions
 					-- local row = ftable:addRow(false, {  })
 					-- row[1]:setColSpan(9):createText("")
 					-- kuertee end
 				end
-				menu.addMissionRow(ftable, entry)
+				if entry.missions then
+					-- story case
+					local row = ftable:addRow(entry.id, {  })
+					if entry.id == menu.missionModeCurrent then
+						menu.setrow = row.index
+					end
+					row[1]:setColSpan(9):createText((entry.isstory and "\27[menu_mission_plot] " or "") .. entry.name)
+
+					for _, missionentry in ipairs(entry.missions) do
+						menu.addMissionRow(ftable, missionentry)
+					end
+				else
+					menu.addMissionRow(ftable, entry)
+				end
 			end
 			if not found then
 				local row = ftable:addRow("plotnone", { interactive = false })
@@ -17985,15 +18036,14 @@ function menu.createMissionMode(frame)
 				row[1]:setColSpan(9):createText("--- " .. ReadText(1001, 3302) .. " ---", { halign = "center" })
 			end
 			-- other
-			local row = ftable:addRow(nil, { bgColor = Color["row_title_background"] })
-			row[1]:setColSpan(9):createText(ReadText(1001, 3334), Helper.headerRowCenteredProperties)
-			found = false
 
 			-- kuertee start: open/close mission lists
 			-- local row = ftable:addRow(nil, { bgColor = Color["row_title_background"] })
 			-- row[1]:setColSpan(9):createText(ReadText(1001, 3334), Helper.headerRowCenteredProperties)
+			-- found = false
 			local row = ftable:addRow(false, {})
 			row[2]:createText("")
+			found = false
 			if __userdata_uix_menu_map.missions_other_isOpen == nil then
 				__userdata_uix_menu_map.missions_other_isOpen = true
 			end
@@ -18425,25 +18475,24 @@ function menu.updateMissionOfferList(clear)
 	end
 
 	for _, entry in ipairs(config.missionOfferCategories) do
-		if entry.category == "guild" then
-			for i, data in ipairs(menu.missionOfferList[entry.category]) do
-				for j = #data.missions, 1, -1 do
-					if missionOfferIDs[data.missions[j].ID] then
-						missionOfferIDs[menu.missionOfferList[entry.category][i].missions[j].ID] = nil
-					else
-						if not menu.missionOfferList[entry.category][i].missions[j].accepted then
-							menu.missionOfferList[entry.category][i].missions[j].expired = true
-						end
+		for i = #menu.missionOfferList[entry.category], 1, -1 do
+			local data = menu.missionOfferList[entry.category][i]
+			if not data.missions then
+				if missionOfferIDs[data.ID] then
+					missionOfferIDs[data.ID] = nil
+				else
+					if not data.accepted then
+						menu.missionOfferList[entry.category][i].expired = true
 					end
 				end
-			end
-		else
-			for i = #menu.missionOfferList[entry.category], 1, -1 do
-				if missionOfferIDs[menu.missionOfferList[entry.category][i].ID] then
-					missionOfferIDs[menu.missionOfferList[entry.category][i].ID] = nil
-				else
-					if not menu.missionOfferList[entry.category][i].accepted then
-						menu.missionOfferList[entry.category][i].expired = true
+			else
+				for j = #data.missions, 1, -1 do
+					if missionOfferIDs[data.missions[j].ID] then
+						missionOfferIDs[data.missions[j].ID] = nil
+					else
+						if not data.missions[j].accepted then
+							menu.missionOfferList[entry.category][i].missions[j].expired = true
+						end
 					end
 				end
 			end
@@ -18453,8 +18502,8 @@ function menu.updateMissionOfferList(clear)
 	for id in pairs(missionOfferIDs) do
 		local missionofferid64 = ConvertStringTo64Bit(id)
 		local name, description, difficulty, threadtype, maintype, subtype, subtypename, faction, reward, rewardtext, briefingobjectives, activebriefingstep, briefingmissions, oppfaction, licence, missiontime, duration, _, _, _, _, actor = GetMissionOfferDetails(ConvertStringToLuaID(id))
-		local missionGroup = C.GetMissionGroupDetails(missionofferid64)
-		local groupID, groupName = ffi.string(missionGroup.id), ffi.string(missionGroup.name)
+		local missionGroup = C.GetMissionGroupDetails2(missionofferid64)
+		local groupID, groupName, isStoryGroup = ffi.string(missionGroup.id), ffi.string(missionGroup.name), missionGroup.isstory
 		local onlineinfo = C.GetMissionOnlineInfo(missionofferid64)
 		local onlinechapter, onlineid = ffi.string(onlineinfo.chapter), ffi.string(onlineinfo.onlineid)
 		local helpoverlayid = ffi.string(C.GetMissionHelpOverlayID(missionofferid64))
@@ -18463,7 +18512,7 @@ function menu.updateMissionOfferList(clear)
 				["name"] = name,
 				["description"] = description,
 				["difficulty"] = difficulty,
-				["missionGroup"] = { id = groupID, name = groupName },
+				["missionGroup"] = { id = groupID, name = groupName, isstory = isStoryGroup },
 				["threadtype"] = threadtype,
 				["type"] = subtype,
 				["faction"] = faction or "",
@@ -18483,25 +18532,43 @@ function menu.updateMissionOfferList(clear)
 				["subMissions"] = {},
 			}
 
-			if entry.missionGroup.id ~= "" then
-				local index = 0
-				for i, data in ipairs(menu.missionOfferList["guild"]) do
-					if data.id == entry.missionGroup.id then
-						index = i
-						break
+			if maintype == "plot" then
+				if entry.missionGroup.id ~= "" then
+					local index = 0
+					for i, data in ipairs(menu.missionOfferList["plot"]) do
+						if data.id == entry.missionGroup.id then
+							index = i
+							break
+						end
 					end
-				end
-				if index ~= 0 then
-					table.insert(menu.missionOfferList["guild"][index].missions, entry)
+					if index ~= 0 then
+						if entry.active then
+							menu.missionOfferList["plot"][index].active = true
+						end
+						table.insert(menu.missionOfferList["plot"][index].missions, entry)
+					else
+						table.insert(menu.missionOfferList["plot"], { id = entry.missionGroup.id, name = entry.missionGroup.name, isstory = entry.missionGroup.isstory, active = entry.active, missions = { entry } })
+					end
 				else
-					table.insert(menu.missionOfferList["guild"], { id = entry.missionGroup.id, name = entry.missionGroup.name, missions = { entry } })
-				end
-			else
-				if maintype == "plot" then
 					table.insert(menu.missionOfferList["plot"], entry)
-				elseif onlinechapter ~= "" then
-					table.insert(menu.missionOfferList["coalition"], entry)
-					menu.missionOfferByOnlineID[entry.onlineID] = entry
+				end
+			elseif onlinechapter ~= "" then
+				table.insert(menu.missionOfferList["coalition"], entry)
+				menu.missionOfferByOnlineID[entry.onlineID] = entry
+			else
+				if entry.missionGroup.id ~= "" then
+					local index = 0
+					for i, data in ipairs(menu.missionOfferList["guild"]) do
+						if data.id == entry.missionGroup.id then
+							index = i
+							break
+						end
+					end
+					if index ~= 0 then
+						table.insert(menu.missionOfferList["guild"][index].missions, entry)
+					else
+						table.insert(menu.missionOfferList["guild"], { id = entry.missionGroup.id, name = entry.missionGroup.name, missions = { entry } })
+					end
 				else
 					table.insert(menu.missionOfferList["other"], entry)
 				end
@@ -18514,22 +18581,33 @@ function menu.updateMissionOfferList(clear)
 		table.sort(entry.missions, menu.missionOfferSorter)
 	end
 	table.sort(menu.missionOfferList["plot"], menu.missionOfferSorter)
+	for _, entry in ipairs(menu.missionOfferList["plot"]) do
+		if entry.missions then
+			table.sort(entry.missions, menu.missionOfferSorter)
+		end
+	end
 	table.sort(menu.missionOfferList["coalition"], menu.missionOfferSorter)
 	table.sort(menu.missionOfferList["other"], menu.missionOfferSorter)
 end
 
 function menu.missionOfferSorter(a, b)
-	if a.name == b.name then
-		return a.ID > b.ID
+	local anotstoryentry = not a.missions
+	local bnotstoryentry = not b.missions
+
+	if anotstoryentry == bnotstoryentry then
+		if a.name == b.name then
+			return a.ID > b.ID
+		end
+		return a.name < b.name
 	end
-	return a.name < b.name
+	return not anotstoryentry
 end
 
 function menu.getMissionInfoHelper(mission)
 	local missionID, name, description, difficulty, threadtype, maintype, subtype, subtypename, faction, reward, rewardtext, _, _, _, _, _, missiontime, _, abortable, disableguidance, associatedcomponent, upkeepalertlevel, hasobjective, threadmissionid = GetMissionDetails(mission)
 	local missionid64 = ConvertIDTo64Bit(missionID)
-	local missionGroup = C.GetMissionGroupDetails(missionid64)
-	local groupID, groupName = ffi.string(missionGroup.id), ffi.string(missionGroup.name)
+	local missionGroup = C.GetMissionGroupDetails2(missionid64)
+	local groupID, groupName, isStoryGroup = ffi.string(missionGroup.id), ffi.string(missionGroup.name), missionGroup.isstory
 	local onlineinfo = C.GetMissionOnlineInfo(missionid64)
 	local onlinechapter, onlineid = ffi.string(onlineinfo.chapter), ffi.string(onlineinfo.onlineid)
 	local helpoverlayid = ffi.string(C.GetMissionHelpOverlayID(missionid64))
@@ -18549,7 +18627,7 @@ function menu.getMissionInfoHelper(mission)
 		["name"] = name,
 		["description"] = description,
 		["difficulty"] = difficulty,
-		["missionGroup"] = { id = groupID, name = groupName },
+		["missionGroup"] = { id = groupID, name = groupName, isstory = isStoryGroup },
 		["threadtype"] = threadtype,
 		["maintype"] = maintype,
 		["type"] = subtype,
@@ -18571,8 +18649,8 @@ function menu.getMissionInfoHelper(mission)
 end
 
 function menu.getMissionIDInfoHelper(missionID)
-	local missionGroup = C.GetMissionGroupDetails(missionID)
-	local groupID, groupName = ffi.string(missionGroup.id), ffi.string(missionGroup.name)
+	local missionGroup = C.GetMissionGroupDetails2(missionID)
+	local groupID, groupName, isStoryGroup = ffi.string(missionGroup.id), ffi.string(missionGroup.name), missionGroup.isstory
 	local onlineinfo = C.GetMissionOnlineInfo(missionID)
 	local onlinechapter, onlineid = ffi.string(onlineinfo.chapter), ffi.string(onlineinfo.onlineid)
 	local helpoverlayid = ffi.string(C.GetMissionHelpOverlayID(missionID))
@@ -18592,7 +18670,7 @@ function menu.getMissionIDInfoHelper(missionID)
 		["name"] = ffi.string(missiondetails.missionName),
 		["description"] = ffi.string(missiondetails.missionDescription),
 		["difficulty"] = missiondetails.difficulty,
-		["missionGroup"] = { id = groupID, name = groupName },
+		["missionGroup"] = { id = groupID, name = groupName, istory = isStoryGroup },
 		["threadtype"] = ffi.string(missiondetails.threadType),
 		["maintype"] = ffi.string(missiondetails.mainType),
 		["type"] = ffi.string(missiondetails.subType),
@@ -18640,7 +18718,25 @@ function menu.addMissionToList(entry)
 			menu.activeMissionMode = "guidance"
 		end
 	elseif entry.maintype == "plot" then
-		table.insert(menu.missionList["plot"], entry)
+		if entry.missionGroup.id ~= "" then
+			local index = 0
+			for i, data in ipairs(menu.missionList["plot"]) do
+				if data.id == entry.missionGroup.id then
+					index = i
+					break
+				end
+			end
+			if index ~= 0 then
+				if entry.active then
+					menu.missionList["plot"][index].active = true
+				end
+				table.insert(menu.missionList["plot"][index].missions, entry)
+			else
+				table.insert(menu.missionList["plot"], { id = entry.missionGroup.id, name = entry.missionGroup.name, isstory = entry.missionGroup.isstory, active = entry.active, missions = { entry } })
+			end
+		else
+			table.insert(menu.missionList["plot"], entry)
+		end
 		if entry.active then
 			menu.activeMissionMode = "plot"
 		end
@@ -18696,9 +18792,14 @@ function menu.updateMissions()
 	end
 
 	for _, entry in ipairs(config.missionCategories) do
-		if (entry.category == "guild") or (entry.category == "upkeep") then
+		if (entry.category == "plot") or (entry.category == "guild") or (entry.category == "upkeep") then
 			for _, data in pairs(menu.missionList[entry.category]) do
-				table.sort(data.missions, menu.missionListSorter)
+				if data.missions then
+					table.sort(data.missions, menu.missionListSorter)
+				end
+			end
+			if entry.category == "plot" then
+				table.sort(menu.missionList[entry.category], menu.missionListSorter)
 			end
 		else
 			table.sort(menu.missionList[entry.category], menu.missionListSorter)
@@ -18707,14 +18808,21 @@ function menu.updateMissions()
 end
 
 function menu.missionListSorter(a, b)
-	if ((a.threadtype ~= "") and (b.threadtype ~= "")) or ((a.threadtype == "") and (b.threadtype == "")) then
-		if config.missionMainTypeOrder[a.maintype] == config.missionMainTypeOrder[b.maintype] then
-			return a.name < b.name
+	local anotstoryentry = not a.missions
+	local bnotstoryentry = not b.missions
+
+	if anotstoryentry == bnotstoryentry then
+		if ((a.threadtype ~= "") and (b.threadtype ~= "")) or ((a.threadtype == "") and (b.threadtype == "")) then
+			if config.missionMainTypeOrder[a.maintype] == config.missionMainTypeOrder[b.maintype] then
+				return a.name < b.name
+			end
+			return config.missionMainTypeOrder[a.maintype] < config.missionMainTypeOrder[b.maintype]
 		end
-		return config.missionMainTypeOrder[a.maintype] < config.missionMainTypeOrder[b.maintype]
+
+		return a.threadtype ~= ""
 	end
 
-	return a.threadtype ~= ""
+	return not anotstoryentry
 end
 
 function menu.createVentureSeasonHeader(frame, instance)
@@ -21888,7 +21996,7 @@ function menu.createTradeContext(frame)
 		blacklistgroup = loc_blacklistgroup
 		name = "\27[" .. loc_icon .. "] " .. loc_name .. " (" .. loc_idcode .. ")"
 	end
-	local stationsector, name, idcode = GetComponentData(convertedTradeOfferContainer, "sectorid", "name", "idcode")
+	local stationsector, othername, idcode = GetComponentData(convertedTradeOfferContainer, "sectorid", "name", "idcode")
 	stationsector = ConvertIDTo64Bit(stationsector)
 
 	-- title
@@ -21898,7 +22006,7 @@ function menu.createTradeContext(frame)
 	row[1]:setText2Properties({ halign = "right", fontsize = Helper.headerRow1FontSize, x = Helper.standardTextOffsetx })
 	row[1].handlers.onDropDownConfirmed = menu.dropdownShip
 
-	local othername = Helper.unlockInfo(IsInfoUnlockedForPlayer(convertedTradeOfferContainer, "name"), name .. " (" .. idcode .. ")")
+	othername = Helper.unlockInfo(IsInfoUnlockedForPlayer(convertedTradeOfferContainer, "name"), othername .. " (" .. idcode .. ")")
 	local color = Color["text_normal"]
 	if isplayertradeoffercontainer then
 		color = Color["text_player"]
@@ -27835,7 +27943,7 @@ function menu.prepareMissionContextData(missionid, missionofferid, width)
 		local missiondetails = C.GetMissionIDDetails(missionid64)
 		local onlineinfo = C.GetMissionOnlineInfo(missionid64)
 		local onlinechapter, onlineid = ffi.string(onlineinfo.chapter), ffi.string(onlineinfo.onlineid)
-		local missionGroup = C.GetMissionGroupDetails(missionid64)
+		local missionGroup = C.GetMissionGroupDetails2(missionid64)
 		local groupID = ffi.string(missionGroup.id)
 		menu.contextMenuData = {
 			isoffer = false,
@@ -27931,7 +28039,7 @@ function menu.prepareMissionContextData(missionid, missionofferid, width)
 		local name, description, difficulty, threadtype, maintype, subtype, subtypename, faction, rewardmoney, rewardtext, briefingobjectives, activebriefingstep, briefingmissions, oppfaction, licence, missiontime, duration, abortable, guidancedisabled, associatedcomponent, alertLevel, offeractor, offercomponent = GetMissionOfferDetails(ConvertStringToLuaID(missionofferid))
 		local onlineinfo = C.GetMissionOnlineInfo(missionofferid64)
 		local onlinechapter, onlineid = ffi.string(onlineinfo.chapter), ffi.string(onlineinfo.onlineid)
-		local missionGroup = C.GetMissionGroupDetails(missionofferid64)
+		local missionGroup = C.GetMissionGroupDetails2(missionofferid64)
 		local groupID = ffi.string(missionGroup.id)
 		menu.contextMenuData = {
 			isoffer = true,
@@ -28551,7 +28659,7 @@ function menu.isInfoModeValidFor(object, mode)
 	if isplayerowned and isonlineobject then
 		return false
 	end
-	
+
 	local isship = Helper.isComponentClass(classid, "ship")
 	if (mode == "objectinfo") or (mode == "objectlogbook") then
 		if isship or
@@ -29746,9 +29854,8 @@ function menu.updateSelectedComponents(modified, keepselection, changedComponent
 			-- kuertee start:
 			-- if menu.infoTableMode == "propertyowned" then
 			if string.find ("" .. tostring (menu.infoTableMode), "propertyowned") then
-				-- kuertee end:
+			-- kuertee end:
 
-				local isplayerowned, isdeployable = GetComponentData(component, "isplayerowned", "isdeployable")
 				if not isplayerowned then
 					-- keep npc ships selected
 					table.insert(components, component)
@@ -29766,13 +29873,10 @@ function menu.updateSelectedComponents(modified, keepselection, changedComponent
 				if (menu.propertyMode ~= "deployables") and (isdeployable or Helper.isComponentClass(classid, "lockbox") or Helper.isComponentClass(classid, "collectablewares")) then
 					table.insert(components, component)
 				end
-
-				-- kuertee start:
-				-- elseif menu.infoTableMode == "objectlist" then
+			-- kuertee start:
+			-- elseif menu.infoTableMode == "objectlist" then
 			elseif string.find ("" .. tostring (menu.infoTableMode), "objectlist") then
-				-- kuertee end:
-
-				local isdeployable = GetComponentData(component, "isdeployable")
+			-- kuertee end:
 				if menu.objectMode ~= "objectall" then
 					-- keep other property selected that is currently not displayed
 					if (menu.objectMode ~= "stations") and Helper.isComponentClass(realclassid, "station") then
@@ -29870,7 +29974,7 @@ function menu.updateTableSelection(lastcomponent)
 	-- if (menu.infoTableMode == "objectlist") or (menu.infoTableMode == "propertyowned") then
 	-- kuertee start:
 	if (string.find ("" .. tostring (menu.infoTableMode), "objectlist")) or (string.find ("" .. tostring (menu.infoTableMode), "propertyowned")) then
-		-- kuertee end:
+	-- kuertee end:
 
 		-- check if sections need to be extended - if so we need a refresh
 		local refresh = false

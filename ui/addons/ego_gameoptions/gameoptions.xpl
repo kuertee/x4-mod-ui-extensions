@@ -1732,7 +1732,7 @@ config.optionDefinitions = {
 		[19] = {
 			id = "presentmode",
 			name = ReadText(1001, 7268),
-			mouseOverText = function () return (ffi.string(C.GetDLSSFrameGenOption(false)) == "off") and ReadText(1026, 4859) or (ColorText["text_error"] ..  ReadText(1026, 7217)) end,
+			mouseOverText = function () return C.IsPresentModeAvailable() and ReadText(1026, 4859) or (ColorText["text_error"] ..  ReadText(1026, 7217)) end,
 			valuetype = "dropdown",
 			value = function () return menu.valueGfxPresentMode() end,
 			callback = function (id, option) return menu.callbackGfxPresentMode(id, option) end,
@@ -13686,7 +13686,7 @@ function menu.onUpdate()
 			end
 			menu.closeMenu("close")
 		end
-	elseif C.IsTradeShowVersion() and (menu.currentOption ~= "idle") and (menu.idleTimer + config.idleTime < curtime) then
+	elseif C.IsTradeShowVersion() and (menu.currentOption ~= "idle") and menu.idleTimer and (menu.idleTimer + config.idleTime < curtime) then
 		if menu.isStartmenu then
 			menu.openSubmenu("idle", menu.selectedOption.id)
 		end
