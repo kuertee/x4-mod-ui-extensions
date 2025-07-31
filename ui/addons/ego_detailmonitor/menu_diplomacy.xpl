@@ -31,6 +31,7 @@ ffi.cdef[[
 		int32_t influencerequirement;
 		uint32_t exclusivefactionparamidx;
 		uint32_t warecostscaleparamidx;
+		uint32_t targetobjectparamidx;
 		uint32_t numwarerequirements;
 		bool unique;
 		bool hidden;
@@ -135,14 +136,15 @@ ffi.cdef[[
 	double GetCurrentGameTime(void);
 	UILogo GetCurrentPlayerLogo(void);
 	uint32_t GetDefensibleDPS(DPSData* result, UniverseID defensibleid, bool primary, bool secondary, bool lasers, bool missiles, bool turrets, bool includeheat, bool includeinactive);
-	uint32_t GetDiplomacyActionOperations(DiplomacyActionOperation* result, uint32_t resultlen, bool active);
-	uint32_t GetDiplomacyEventOperations(DiplomacyEventOperation* result, uint32_t resultlen, bool active);
 	double GetDiplomacyActionCooldownEndTime(const char* actionid, const char* targetfactionid, bool checkalltargetfactions);
+	const char* GetDiplomacyActionGiftEffect(const char* wareid, const char* factionid);
 	int64_t GetDiplomacyActionMoneyCost(const char* actionid, const char* wareid);
+	uint32_t GetDiplomacyActionOperations(DiplomacyActionOperation* result, uint32_t resultlen, bool active);
 	uint32_t GetDiplomacyActions(DiplomacyActionInfo* result, uint32_t resultlen);
 	uint32_t GetDiplomacyActionWares(UIWareAmount* result, uint32_t resultlen, const char* actionid);
 	DiplomacyAgentAttributeData GetDiplomacyAgentAttributeData(int32_t exp_negotiation, int32_t exp_espionage);
 	uint32_t GetDiplomacyAgents(UniverseID* result, uint32_t resultlen);
+	uint32_t GetDiplomacyEventOperations(DiplomacyEventOperation* result, uint32_t resultlen, bool active);
 	int32_t GetDiplomacyEventOptionChance(OperationID eventoperationid, const char* optionid, const char* selectedoptionid);
 	uint32_t GetDiplomacyEventOptions(DiplomacyEventOptionInfo* result, uint32_t resultlen, const char* eventid);
 	uint32_t GetDiplomacyEventOptionWares(UIWareAmount* result, uint32_t resultlen, const char* eventid, const char* optionid);
@@ -817,6 +819,7 @@ function menu.getData()
 				influencerequirement = buf[i].influencerequirement,
 				exclusivefactionparamidx = buf[i].exclusivefactionparamidx,
 				warecostscaleparamidx = buf[i].warecostscaleparamidx,
+				targetobjectparamidx = buf[i].targetobjectparamidx,
 				numwarerequirements = buf[i].numwarerequirements,
 				unique = buf[i].unique,
 				hidden = buf[i].hidden,
@@ -2652,6 +2655,17 @@ function menu.createActionConfigContext(frame)
 		local row = infotable2:addRow(active)
 		row[1]:setColSpan(2):createText(ReadText(1001, 12829))
 
+		local giftactive = true
+		local targetfaction
+		if action.targetobjectparamidx > 0 then
+			local target = targets[action.targetobjectparamidx]
+			if (target.type == "object") and menu.contextMenuData.targets[action.targetobjectparamidx] then
+				targetfaction = GetComponentData(ConvertStringToLuaID(tostring(menu.contextMenuData.targets[action.exclusivefactionparamidx])), "owner")
+			else
+				giftactive = false
+			end
+		end
+
 		local giftwareoptions = {}
 
 		local num_wares = C.GetNumWares2(action.giftwaretags, false, "", "", true, false)
@@ -2660,7 +2674,22 @@ function menu.createActionConfigContext(frame)
 			num_wares = C.GetWares2(buf_wares, num_wares, action.giftwaretags, false, "", "", true, false)
 			for i = 0, num_wares - 1 do
 				local wareid = ffi.string(buf_wares[i])
-				table.insert(giftwareoptions, { id = wareid, text = GetWareData(wareid, "name"), icon = "", displayremoveoption = false, active = (inventory[wareid] and (inventory[wareid].amount > 0)) and true or false })
+
+				local gifteffecttext = ""
+				if targetfaction then
+					local gifteffect = ffi.string(C.GetDiplomacyActionGiftEffect(wareid, targetfaction))
+					if gifteffect == "unknown" then
+						gifteffecttext = "\27[menu_questionmark]"
+					elseif gifteffect == "none" then
+						gifteffecttext = "\27[menu_chevron_null]"
+					elseif gifteffect == "positive" then
+						gifteffecttext = ColorText["text_positive"] .. "\27[menu_chevron_up_01]"
+					elseif gifteffect == "negative" then
+						gifteffecttext = ColorText["text_negative"] .. "\27[menu_chevron_down_01]"
+					end
+				end
+
+				table.insert(giftwareoptions, { id = wareid, text = GetWareData(wareid, "name"), text2 = gifteffecttext, icon = "", displayremoveoption = false, active = (inventory[wareid] and (inventory[wareid].amount > 0)) and true or false })
 			end
 		end
 		table.sort(giftwareoptions, function (a, b) return a.text < b.text end)
@@ -2670,7 +2699,7 @@ function menu.createActionConfigContext(frame)
 		if operation and (operation.giftwareid ~= "") then
 			startoption = operation.giftwareid
 		end
-		row[3]:createDropDown(giftwareoptions, { startOption = startoption, height = Helper.standardButtonHeight, active = active })
+		row[3]:createDropDown(giftwareoptions, { startOption = startoption, height = Helper.standardButtonHeight, active = active and giftactive, mouseOverText = (not giftactive) and ReadText(1026, 12810) or ReadText(1026, 12811) }):setText2Properties({ halign = "right", x = Helper.standardTextOffsetx })
 		row[3].handlers.onDropDownConfirmed = function (_, id) menu.contextMenuData.giftware = id end
 	else
 		local row = infotable2:addRow(nil)

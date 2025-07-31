@@ -130,6 +130,7 @@ ffi.cdef[[
 	int32_t GetCurrentLanguage(void);
 	const char* GetCurrentSoundDevice(void);
 	const char* GetDisplayedModifierKey(const char* uimodifier);
+	bool GetDLSSAutoFrameGenOption(void);
 	const char* GetDLSSAutoMode(void);
 	const char* GetDLSSFrameGenOption(bool useconfig);
 	const char* GetDLSSModeOption(bool useconfig);
@@ -313,6 +314,7 @@ ffi.cdef[[
 	void SetColorBlindOptionStrength(float value);
 	void SetColorMapDefinition(const char* colorid, Color color, float glowfactor);
 	void SetColorMapReference(const char* mappingid, const char* colorid);
+	void SetDLSSAutoFrameGenOption(bool value);
 	void SetDLSSFrameGenOption(const char* value);
 	void SetDLSSModeOption(const char* value);
 	void SetDLSSOption(bool value);
@@ -494,7 +496,7 @@ local config = {
 	standardTextOffsetX = 5,
 	infoTextOffsetX = 5,
 
-	idleTime = 10,
+	idleTime = 120,
 
 	saveReloadInterval = 60,
 
@@ -1646,6 +1648,16 @@ config.optionDefinitions = {
 			display = C.IsDLSSFrameGenSupported,
 		},
 		[8] = {
+			id = "dlssautoframegen",
+			name = "    " .. ReadText(1001, 12781),
+			mouseOverText = ReadText(1026, 7223),
+			valuetype = "button",
+			value = function () return C.GetDLSSAutoFrameGenOption() and ReadText(1001, 12642) or ReadText(1001, 12641) end,
+			callback = function () return menu.callbackGfxDLSSAutoFrameGen() end,
+			selectable = function () return C.GetDLSSOption(false) and (ffi.string(C.GetDLSSFrameGenOption(false)) ~= "off") end,
+			display = C.IsDLSSFrameGenSupported,
+		},
+		[9] = {
 			id = "dlssmode",
 			name = "    " .. ReadText(1001, 12736),
 			mouseOverText = ReadText(1026, 4825),
@@ -1655,7 +1667,7 @@ config.optionDefinitions = {
 			selectable = function () return C.GetDLSSOption(false) end,
 			display = C.IsDLSSSupported,
 		},
-		[9] = {
+		[10] = {
 			id = "adaptivesampling",
 			name = ReadText(1001, 7221),
 			valuetype = "dropdown",
@@ -1663,29 +1675,29 @@ config.optionDefinitions = {
 			callback = function (id, option) return menu.callbackGfxAdaptiveSampling(id, option) end,
 			display = C.IsVRVersion,
 		},
-		[10] = {
+		[11] = {
 			id = "hmd_fullscreen",
 			name = ReadText(1001, 4817),
 			value = function () return ReadText(1001, 2622), Color["text_normal"] end,
 			display = C.IsVRVersion,
 		},
-		[11] = {
+		[12] = {
 			id = "hmd_sdk",
 			name = ReadText(1001, 7214),
 			value = function () return ffi.string(C.GetTrackerSDKOption()), Color["text_normal"] end,
 			display = C.IsVRVersion,
 		},
-		[12] = {
+		[13] = {
 			id = "line",
 			display = C.IsVRVersion,
 		},
-		[13] = {
+		[14] = {
 			id = "hmd_adapter",
 			name = ReadText(1001, 2623),
 			value = function () return ffi.string(C.GetTrackerNameOption()), Color["text_normal"] end,
 			display = C.IsVRVersion,
 		},
-		[14] = {
+		[15] = {
 			id = "screendisplay",
 			name = ReadText(1001, 7210),
 			valuetype = "button",
@@ -1693,7 +1705,7 @@ config.optionDefinitions = {
 			callback = function () return menu.callbackGfxScreenDisplay() end,
 			display = C.IsVRVersion,
 		},
-		[15] = {
+		[16] = {
 			-- VR case
 			id = "resolution",
 			name = ReadText(1001, 7211),
@@ -1703,7 +1715,7 @@ config.optionDefinitions = {
 			display = C.IsVRVersion,
 			selectable = function () return menu.selectableGfxResolution() end,
 		},
-		[16] = {
+		[17] = {
 			id = "autogpu",
 			name = ReadText(1001, 11709),
 			mouseOverText = ReadText(1026, 4827),
@@ -1711,7 +1723,7 @@ config.optionDefinitions = {
 			value = function () return C.IsGPUAutomaticallySelected() and ReadText(1001, 12642) or ReadText(1001, 12641) end,
 			callback = function () return menu.callbackGfxAutoGPU() end,
 		},
-		[17] = {
+		[18] = {
 			id = "gpu",
 			name = ReadText(1001, 8920),
 			mouseOverText = ReadText(1026, 4828),
@@ -1720,7 +1732,7 @@ config.optionDefinitions = {
 			callback = function (id, option) return menu.callbackGfxGPU(id, option) end,
 			selectable = function () return menu.selectableGfxGPU() end,
 		},
-		[18] = {
+		[19] = {
 			id = "adapter",
 			name = ReadText(1001, 8921),
 			mouseOverText = ReadText(1026, 4829),
@@ -1729,7 +1741,7 @@ config.optionDefinitions = {
 			callback = function (id, option) return menu.callbackGfxAdapter(id, option) end,
 			selectable = function () return menu.selectableGfxAdapter() end,
 		},
-		[19] = {
+		[20] = {
 			id = "presentmode",
 			name = ReadText(1001, 7268),
 			mouseOverText = function () return C.IsPresentModeAvailable() and ReadText(1026, 4859) or (ColorText["text_error"] ..  ReadText(1026, 7217)) end,
@@ -1738,7 +1750,7 @@ config.optionDefinitions = {
 			callback = function (id, option) return menu.callbackGfxPresentMode(id, option) end,
 			selectable = function () return C.IsPresentModeAvailable() end,
 		},
-		[20] = {
+		[21] = {
 			id = "framerate",
 			name = ReadText(1001, 12778),
 			mouseOverText = ReadText(1026, 7221),
@@ -1746,7 +1758,7 @@ config.optionDefinitions = {
 			value = function () return menu.valueGfxFrameRate() end,
 			callback = function (value) return menu.callbackGfxFrameRate(value) end,
 		},
-		[21] = {
+		[22] = {
 			id = "lut",
 			name = ReadText(1001, 7238),
 			mouseOverText = ReadText(1026, 4831),
@@ -1754,7 +1766,7 @@ config.optionDefinitions = {
 			value = function () return menu.valueGfxLUT(false) end,
 			callback = function (id, option) return menu.callbackGfxLUT(id, option) end,
 		},
-		[22] = {
+		[23] = {
 			id = "gamma",
 			name = ReadText(1001, 2629),
 			mouseOverText = ReadText(1026, 4832),
@@ -1762,7 +1774,7 @@ config.optionDefinitions = {
 			value = function () return menu.valueGfxGamma() end,
 			callback = function (value) return menu.callbackGfxGamma(value) end,
 		},
-		[23] = {
+		[24] = {
 			id = "fov",
 			name = ReadText(1001, 4814),
 			mouseOverText = ReadText(1026, 4833),
@@ -1770,10 +1782,10 @@ config.optionDefinitions = {
 			value = function () return menu.valueGfxFOV() end,
 			callback = function (value) return menu.callbackGfxFOV(value) end,
 		},
-		[24] = {
+		[25] = {
 			id = "line",
 		},
-		[25] = {
+		[26] = {
 			id = "display_defaults",
 			name = ReadText(1001, 12772),
 			submenu = "display_defaults",
@@ -7167,6 +7179,10 @@ function menu.valueGfxDLSS()
 	end
 
 	return options, currentOption
+end
+
+function menu.callbackGfxDLSSAutoFrameGen()
+	C.SetDLSSAutoFrameGenOption(not C.GetDLSSAutoFrameGenOption())
 end
 
 function menu.valueGfxDLSSFrameGen()
