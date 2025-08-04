@@ -5,6 +5,11 @@ by kuertee. Contributors: AlexandreTK, DrWhoKnows, DmytroK, Erixon, Forleyor, IA
 
 Updates
 =======
+8.0.0.41, X:
+- New feature: Double-click pan and zoom: Double-clicking on an object on the map, including sectors, moves that map to that object. Double-clicking on the same object again cycles the zoom level of the map at 3 levels: near, far (sector objects are visible), and very far (sector objects are not visible, but neighbouring sectors come into view). (Note that in the base game, double-clicking on a sector yields no effect.)
+- New feature: Interact Menu > Center On Map: Move the map to the object without selecting it.
+- New feature: Interact Menu > Center Destination On Map: Move the map to the gate's destination.
+
 8.0.0.4, 31 Jul 2025:
 - Tweak: 8.0 beta hotfix 4 compatibility.
 
@@ -171,6 +176,10 @@ In the base game, the Mission Guidance tab lists only the Guidance created manua
 
 The "Set to inactive" and "Set to active" buttons are available on missions listed in the Mission Guidance tab.
 The base game makes these buttons unavailable for Guidance Missions.
+
+Map Menu: Center On Map / Destination
+=====================================
+Right-click on an object and click on Center On Map to center the object on the map without changing your selected objects. This is usable on sectors. When used on a gate, the Center On Destination action centers the gate's destination. (Based on Brinnie's mod request: https://forum.egosoft.com/viewtopic.php?t=471439&sid=a3f501f4bd3cc9a74a01dd4eb5107998.)
 
 CHANGES BUILT INTO THIS MOD (for developers)
 ============================================

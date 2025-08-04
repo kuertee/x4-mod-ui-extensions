@@ -13,9 +13,15 @@
 --		  - "sellships",						param: { shipyard, ships }
 --		  - "dropwarescontext",					param: { mode, entity }
 --		  - "renamecontext",					param: { component, renamefleet }
---        -- kuertee start: multi-rename: requires menu_interactmenu.uix_forcedShowMenu
+
+--		  -- kuertee start: multi-rename: requires menu_interactmenu.uix_forcedShowMenu
 --		  - "renamecontext",		param: { component, renamefleet, uix_multiRename_objects }
---        -- kuertee end: multi-rename
+--		  -- kuertee end: multi-rename
+
+--		  -- kuertee start: center on map
+--		  - "uix_centeronmap",		    param: { component }
+--		  -- kuertee end: center on map
+
 --		  - "changelogocontext",				param: { component }
 --		  - "selectComponent",					param: { returnsection, classlist[, category][, playerowned][, customheading] }
 --		  - "crewtransfercontext",				param: { othership, ship }
@@ -1846,6 +1852,14 @@ end
 
 -- kuertee start:
 function menu.init_kuertee ()
+	-- start: center on map
+	menu.uix_centerOnMap_lastObject = nil
+	menu.uix_centerOnMap_lastZoomDistance = 0
+	menu.uix_centerOnMap_zoomVeryNear = 50000
+	menu.uix_centerOnMap_zoomNear = 300000
+	menu.uix_centerOnMap_zoomFar = 600000
+	menu.uix_centerOnMap_zoomVeryFar = 1200000
+	-- end
 end
 -- kuertee end
 
@@ -6368,6 +6382,11 @@ function menu.displayMenu(firsttime)
 		end
 	elseif menu.mode == "behaviourinspection" then
 		menu.behaviourInspectionComponent = menu.modeparam[1]
+
+	-- kuertee start: center on map
+	elseif menu.mode == "uix_centeronmap" then
+		menu.uix_centerOnMap(menu.modeparam[1])
+	-- kuertee end: center on map
 	end
 
 	if menu.mode == "tradecontext" then
@@ -27469,11 +27488,36 @@ end
 function menu.onRenderTargetDoubleClick(modified)
 	local pickedcomponent = C.GetPickedMapComponent(menu.holomap)
 	if pickedcomponent ~= 0 then
+
+		-- kuertee start: callback
+		local uix_isCancelEgosoftDoubleClickFunc, uix_cancelReason
+		if menu.uix_callbacks ["onRenderTargetDoubleClick_at_start"] then
+			for uix_id, uix_callback in pairs(menu.uix_callbacks ["onRenderTargetDoubleClick_at_start"]) do
+				local uix_return1, uix_return2 = uix_callback(modified, pickedcomponent)
+				if uix_return1 then
+					uix_isCancelEgosoftDoubleClickFunc = true
+				end
+				uix_cancelReason = uix_return2
+				-- uix_cancelReason is for debug purposes.
+				-- if tracking down why double-click has been cancelled, uncomment these 2 lines:
+				-- Helper.debugText_forced("menu_map onRenderTargetDoubleClick uix_isCancelEgosoftDoubleClickFunc", uix_isCancelEgosoftDoubleClickFunc)
+				-- Helper.debugText_forced("menu_map onRenderTargetDoubleClick uix_cancelReason", uix_cancelReason)
+			end
+			if uix_isCancelEgosoftDoubleClickFunc then
+				return
+			end
+		end
+		-- kuertee end: callback
+
 		if not C.IsComponentClass(pickedcomponent, "sector") then
 			if modified == "shift" then
 				C.AddSimilarMapComponentsToSelection(menu.holomap, pickedcomponent)
 			elseif modified ~= "ctrl" then
-				C.SetFocusMapComponent(menu.holomap, pickedcomponent, true)
+
+				-- kuertee start: center on map
+				-- C.SetFocusMapComponent(menu.holomap, pickedcomponent, true)
+				menu.uix_centerOnMap(pickedcomponent)
+				-- kuertee end
 			end
 
 			local components = {}
@@ -27483,7 +27527,20 @@ function menu.onRenderTargetDoubleClick(modified)
 			else
 				menu.clearSelectedComponents()
 			end
+
+		-- kuertee start: center on map
+		else
+			menu.uix_centerOnMap(pickedcomponent)
+		-- kuertee end
 		end
+
+		-- kuertee start: callback
+		if menu.uix_callbacks ["onRenderTargetDoubleClick_at_end"] then
+			for uix_id, uix_callback in pairs (menu.uix_callbacks ["onRenderTargetDoubleClick_at_end"]) do
+				uix_callback (modified, pickedcomponent)
+			end
+		end
+		-- kuertee end: callback
 	end
 end
 
@@ -29790,6 +29847,11 @@ function menu.onInteractMenuCallback(type, param)
 		menu.contextMenuData = { mode = "removebuildstorage", buildstorage = param[1], xoffset = (Helper.viewWidth - Helper.scaleX(400)) / 2, yoffset = Helper.viewHeight / 2 }
 
 		menu.createContextFrame(Helper.scaleX(400), nil, menu.contextMenuData.xoffset, menu.contextMenuData.yoffset)
+
+	-- kuertee start: center on map
+	elseif type == "uix_centeronmap" then
+		menu.uix_centerOnMap(param[1])
+	-- kuertee end: center on map
 	end
 end
 
@@ -30980,6 +31042,61 @@ function menu.sortCombinedSkill(a, b, invert)
 		else
 			return skill_a < skill_b
 		end
+	end
+end
+
+-- center on map
+function menu.uix_centerOnMap(object)
+	object = ConvertStringTo64Bit(tostring(object))
+	if menu.holomap and (menu.holomap ~= 0) then
+		C.SetFocusMapComponent(menu.holomap, object, true)
+		-- Helper.addDelayedOneTimeCallbackOnUpdate(function ()
+			local sector, isObjectSector
+			if C.IsComponentClass(object, "sector") then
+				isObjectSector = true
+				sector = object
+			else
+				sector = GetComponentData(object, "sectorid")
+			end
+			if IsValidComponent(sector) then
+				C.ResetMapPlayerRotation(menu.holomap)
+				local zoomDistance = menu.uix_centerOnMap_lastZoomDistance
+				if object ~= menu.uix_centerOnMap_lastObject then
+					if isObjectSector then
+						-- for sectors, zoom cycle from near to far is:
+						-- zoomNear, zoomFar, zoomVeryFar - so default zoom is zoomFar
+						zoomDistance = menu.uix_centerOnMap_zoomFar
+					else
+						-- for other objects,
+						-- zoomVeryNear, zoomNear, zoomFar - so default zoom is zoomNear
+						zoomDistance = menu.uix_centerOnMap_zoomNear
+					end
+				else
+					if isObjectSector then
+						-- zoomFar - middle distance, so zoom "far" == zoomVeryFar
+						if zoomDistance == menu.uix_centerOnMap_zoomNear then
+							zoomDistance = menu.uix_centerOnMap_zoomFar
+						elseif zoomDistance == menu.uix_centerOnMap_zoomFar then
+							zoomDistance = menu.uix_centerOnMap_zoomVeryFar
+						else
+							zoomDistance = menu.uix_centerOnMap_zoomNear
+						end
+					else
+						-- zoomNear - middle distance, so zoom "far" == zoomFar
+						if zoomDistance == menu.uix_centerOnMap_zoomNear then
+							zoomDistance = menu.uix_centerOnMap_zoomFar
+						elseif zoomDistance == menu.uix_centerOnMap_zoomFar then
+							zoomDistance = menu.uix_centerOnMap_zoomVeryNear
+						else
+							zoomDistance = menu.uix_centerOnMap_zoomNear
+						end
+					end
+				end
+				C.SetMapTargetDistance(menu.holomap, zoomDistance)
+				menu.uix_centerOnMap_lastZoomDistance = zoomDistance
+				menu.uix_centerOnMap_lastObject = object
+			end
+		-- end, true, getElapsedTime() + 1)
 	end
 end
 
