@@ -17685,7 +17685,7 @@ function menu.createMissionMode(frame)
 				-- row[1]:setColSpan(9):createText(ReadText(1001, 3340), Helper.headerRowCenteredProperties)
 				local uix_isPlotListOpen = menu.uix_getIsMissionExpanded(menu.missionOfferList["plot"], true, "uix_plotListOffer")
 				local row = ftable:addRow(true, { bgColor = Color["row_title_background"] })
-				row[1]:createButton({active = menu.missionOfferList and menu.missionOfferList["plot"] and next(menu.missionOfferList["plot"]) and true or false}):setText(uix_isPlotListOpen and "-" or "+", { halign = "center" })
+				row[1]:createButton({active = menu.missionOfferList and menu.missionOfferList["plot"] and #menu.missionOfferList["plot"] > 0 and true or false}):setText(uix_isPlotListOpen and "-" or "+", { halign = "center" })
 				row[1].handlers.onClick = function () return menu.uix_expandMissionList(menu.missionOfferList["plot"], row.index, nil, true, "uix_plotListOffer") end
 				row[2]:setColSpan(8):createText(ReadText(1001, 3340), Helper.headerRowCenteredProperties)
 				-- kuertee end
@@ -17775,7 +17775,7 @@ function menu.createMissionMode(frame)
 			end
 			local uix_isGuildListOpen = menu.uix_getIsMissionExpanded(menu.missionOfferList["guild"], true, "uix_guildListOffer")
 			local row = ftable:addRow(true, { bgColor = Color["row_title_background"] })
-			row[1]:createButton({active = menu.missionOfferList and menu.missionOfferList["guild"] and next(menu.missionOfferList["guild"]) and true or false}):setText(uix_isGuildListOpen and "-" or "+", { halign = "center" })
+			row[1]:createButton({active = menu.missionOfferList and menu.missionOfferList["guild"] and #menu.missionOfferList["guild"] > 0 and true or false}):setText(uix_isGuildListOpen and "-" or "+", { halign = "center" })
 			row[1].handlers.onClick = function () return menu.uix_expandMissionList(menu.missionOfferList["guild"], row.index, nil, true, "uix_guildListOffer") end
 			row[2]:setColSpan(8):createText(ReadText(1001, 3331), Helper.headerRowCenteredProperties)
 			-- kuertee end
@@ -17849,7 +17849,7 @@ function menu.createMissionMode(frame)
 			row[2]:createText("")
 			local uix_isOtherListOpen = menu.uix_getIsMissionExpanded(menu.missionOfferList["other"], true, "uix_otherListOffer")
 			local row = ftable:addRow(true, { bgColor = Color["row_title_background"] })
-			row[1]:createButton({active = menu.missionOfferList and menu.missionOfferList["other"] and next(menu.missionOfferList["other"]) and true or false}):setText(uix_isOtherListOpen and "-" or "+", { halign = "center" })
+			row[1]:createButton({active = menu.missionOfferList and menu.missionOfferList["other"] and #menu.missionOfferList["other"] > 0 and true or false}):setText(uix_isOtherListOpen and "-" or "+", { halign = "center" })
 			row[1].handlers.onClick = function () return menu.uix_expandMissionList(menu.missionOfferList["other"], row.index, nil, true, "uix_otherListOffer") end
 			row[2]:setColSpan(8):createText(ReadText(1001, 3332), Helper.headerRowCenteredProperties)
 			-- kuertee end
@@ -17909,7 +17909,7 @@ function menu.createMissionMode(frame)
 			-- row[1]:setColSpan(9):createText(ReadText(1001, 3341), Helper.headerRowCenteredProperties)
 			local uix_isPlotListOpen, uix_isPlotListActive = menu.uix_getIsMissionExpanded(menu.missionList["plot"], nil, "uix_plotList")
 			local row = ftable:addRow(true, { bgColor = Color["row_title_background"] })
-			row[1]:createButton({active = menu.missionList and menu.missionList["plot"] and next(menu.missionList["plot"]) and true or false}):setText(uix_isPlotListOpen and "-" or "+", { halign = "center" })
+			row[1]:createButton({active = menu.missionList and menu.missionList["plot"] and #menu.missionList["plot"] > 0 and true or false}):setText(uix_isPlotListOpen and "-" or "+", { halign = "center" })
 			row[1].handlers.onClick = function () return menu.uix_expandMissionList(menu.missionList["plot"], row.index, nil, nil, "uix_plotList") end
 			row[2]:setColSpan(8):createText(ReadText(1001, 3341), Helper.headerRowCenteredProperties)
 			if uix_isPlotListActive then
@@ -18015,7 +18015,7 @@ function menu.createMissionMode(frame)
 			row[2]:createText("")
 			local uix_isGuildListOpen, uix_isGuildListActive = menu.uix_getIsMissionExpanded(menu.missionList["guild"], nil, "uix_guildList")
 			local row = ftable:addRow(true, { bgColor = Color["row_title_background"] })
-			row[1]:createButton({active = menu.missionList and menu.missionList["guild"] and next(menu.missionList["guild"]) and true or false}):setText(uix_isGuildListOpen and "-" or "+", { halign = "center" })
+			row[1]:createButton({active = menu.missionList and menu.missionList["guild"] and #menu.missionList["guild"] > 0 and true or false}):setText(uix_isGuildListOpen and "-" or "+", { halign = "center" })
 			row[1].handlers.onClick = function () return menu.uix_expandMissionList(menu.missionList["guild"], row.index, nil, nil, "uix_guildList") end
 			row[2]:setColSpan(8):createText(ReadText(1001, 3333), Helper.headerRowCenteredProperties)
 			if uix_isGuildListActive then
@@ -18110,7 +18110,7 @@ function menu.createMissionMode(frame)
 			found = false
 			local uix_isOtherListOpen, uix_isOtherListActive = menu.uix_getIsMissionExpanded(menu.missionList["other"], nil, "uix_otherList")
 			local row = ftable:addRow(true, { bgColor = Color["row_title_background"] })
-			row[1]:createButton({active = menu.missionList and menu.missionList["other"] and next(menu.missionList["other"]) and true or false}):setText(uix_isOtherListOpen and "-" or "+", { halign = "center" })
+			row[1]:createButton({active = menu.missionList and menu.missionList["other"] and #menu.missionList["other"] > 0 and true or false}):setText(uix_isOtherListOpen and "-" or "+", { halign = "center" })
 			row[1].handlers.onClick = function () return menu.uix_expandMissionList(menu.missionList["other"], row.index, nil, nil, "uix_otherList") end
 			row[2]:setColSpan(8):createText(ReadText(1001, 3334), Helper.headerRowCenteredProperties)
 			if uix_isOtherListActive then
@@ -18418,7 +18418,6 @@ function menu.uix_getIsMissionExpanded(missionEntry, isOffer, listId)
 					thisIsExpanded = savedExpandedMissionsTable["saved" .. tostring(uix_Id)]
 				else
 					-- default to true because base-game doesn't have this level of expansion, and so starts as true
-					sourceOfIsExpanded = "default"
 					thisIsExpanded = true
 				end
 			end
@@ -18434,15 +18433,15 @@ function menu.uix_getIsMissionExpanded(missionEntry, isOffer, listId)
 		-- otherwise, get expanded state of missionEntry itself
 		sourceOfIsExpanded = "previous value"
 		isExpanded = menu.expandedMissionGroups[uix_Id]
-	end
-	if isExpanded == nil then
-		if savedExpandedMissionsTable["saved" .. tostring(uix_Id)] ~= nil then
-			sourceOfIsExpanded = "uidata.xml"
-			isExpanded = savedExpandedMissionsTable["saved" .. tostring(uix_Id)]
-		else
-			-- default to true because base-game doesn't have this level of expansion, and so starts as true
-			sourceOfIsExpanded = "default"
-			isExpanded = true
+		if isExpanded == nil then
+			if savedExpandedMissionsTable["saved" .. tostring(uix_Id)] ~= nil then
+				sourceOfIsExpanded = "uidata.xml"
+				isExpanded = savedExpandedMissionsTable["saved" .. tostring(uix_Id)]
+			else
+				-- default to true because base-game doesn't have this level of expansion, and so starts as true
+				sourceOfIsExpanded = "default"
+				isExpanded = true
+			end
 		end
 	end
 	debugFunc("    isExpanded " .. tostring(isExpanded) .. " sourceOfIsExpanded " .. tostring(sourceOfIsExpanded) .. " isActive " .. tostring(isActive))
