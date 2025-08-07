@@ -11,6 +11,7 @@ cd ..\..
 
 mkdir addons\ego_detailmonitor
 cd addons\ego_detailmonitor
+del menu_diplomacy.xpl
 del menu_docked.xpl
 del menu_encyclopedia.xpl
 del menu_map.xpl

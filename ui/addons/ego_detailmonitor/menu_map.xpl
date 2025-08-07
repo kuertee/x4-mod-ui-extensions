@@ -12,10 +12,9 @@
 --		  - "hire",								param: { returnsection, npc_or_context, ishiring[, npctemplate] }
 --		  - "sellships",						param: { shipyard, ships }
 --		  - "dropwarescontext",					param: { mode, entity }
---		  - "renamecontext",					param: { component, renamefleet }
 
 --		  -- kuertee start: multi-rename: requires menu_interactmenu.uix_forcedShowMenu
---		  - "renamecontext",		param: { component, renamefleet, uix_multiRename_objects }
+--		  - "renamecontext",					param: { component, renamefleet, uix_multiRename_objects }
 --		  -- kuertee end: multi-rename
 
 --		  -- kuertee start: center on map
@@ -1860,6 +1859,10 @@ function menu.init_kuertee ()
 	menu.uix_centerOnMap_zoomFar = 600000
 	menu.uix_centerOnMap_zoomVeryFar = 1200000
 	-- end
+	-- start: open/close mission lists
+	__userdata_uix_menu_map.savedExpandedMissionOffers = __userdata_uix_menu_map.savedExpandedMissionOffers or {}
+	__userdata_uix_menu_map.savedExpandedMissions = __userdata_uix_menu_map.savedExpandedMissions or {}
+	-- end: open/close mission lists
 end
 -- kuertee end
 
@@ -1902,6 +1905,10 @@ function menu.sortWareGroupsByTier(a, b)
 end
 
 function menu.cleanup()
+	-- start: open/close mission lists
+	menu.uix_removeInvalidsFromSavedExpandedMissions()
+	-- end: open/close mission lists
+
 	if not menu.minimized then
 		if (menu.mode == nil) or (menu.mode == "selectbuildlocation") then
 			menu.state = menu.onSaveState()
@@ -3780,6 +3787,19 @@ function menu.buttonExpandMissionGroup(id, row, contextCallback)
 	else
 		menu.expandedMissionGroups[id] = true
 	end
+
+	-- kuertee start: open/close mission lists
+	Helper.debugText_forced("buttonExpandMissionGroup id", id)
+	-- save to uidata.xml
+	if string.find(tostring(id), "offer") then
+		__userdata_uix_menu_map.savedExpandedMissionOffers["saved" .. tostring(id)] = menu.expandedMissionGroups[id]
+		Helper.debugText_forced("savedExpandedMissionOffers saved" .. tostring(id), __userdata_uix_menu_map.savedExpandedMissionOffers["saved" .. tostring(id)])
+	else
+		__userdata_uix_menu_map.savedExpandedMissions["saved" .. tostring(id)] = menu.expandedMissionGroups[id]
+		Helper.debugText_forced("savedExpandedMissions saved" .. tostring(id), __userdata_uix_menu_map.savedExpandedMissions["saved" .. tostring(id)])
+	end
+	-- kuertee end: open/close mission lists
+
 	menu.setrow = row
 	menu.closeContextMenu()
 	if contextCallback then
@@ -17668,41 +17688,83 @@ function menu.createMissionMode(frame)
 	if menu.infoTableMode == "missionoffer" then
 		if (menu.missionOfferMode == "normal") or (not isonline) then
 			local found = false
+
 			-- important
 			if #menu.missionOfferList["plot"] > 0 then
-				local row = ftable:addRow(nil, { bgColor = Color["row_title_background"] })
-				row[1]:setColSpan(9):createText(ReadText(1001, 3340), Helper.headerRowCenteredProperties)
+
+				-- kuertee start: open/close mission lists
+				-- local row = ftable:addRow(nil, { bgColor = Color["row_title_background"] })
+				-- row[1]:setColSpan(9):createText(ReadText(1001, 3340), Helper.headerRowCenteredProperties)
+				local uix_isPlotListOpen = menu.uix_getIsMissionExpanded(menu.missionOfferList["plot"], true, "uix_plotListOffer")
+				local row = ftable:addRow(true, { bgColor = Color["row_title_background"] })
+				row[1]:createButton({active = menu.missionOfferList and menu.missionOfferList["plot"] and next(menu.missionOfferList["plot"]) and true or false}):setText(uix_isPlotListOpen and "-" or "+", { halign = "center" })
+				row[1].handlers.onClick = function () return menu.uix_expandMissionList(menu.missionOfferList["plot"], row.index, nil, true, "uix_plotListOffer") end
+				row[2]:setColSpan(8):createText(ReadText(1001, 3340) .. " uix_plotListOffer", Helper.headerRowCenteredProperties)
+				-- kuertee end
 
 				local hadStoryMission = false
 
-				-- kuertee start: open/close mission lists
-				-- row[1]:setColSpan(9):createText(ReadText(1001, 3340), Helper.headerRowCenteredProperties)
-				row[1]:createText(" ", Helper.headerRowCenteredProperties)
-				row[2]:setColSpan(8):createText(ReadText(1001, 3340), Helper.headerRowCenteredProperties)
-				-- kuertee end
-
 				for _, entry in ipairs(menu.missionOfferList["plot"]) do
+					-- kuertee start: open/close mission lists
+					local uix_isExpanded = menu.uix_getIsMissionExpanded(entry, true)
+					-- kuertee end: open/close mission lists
+
 					found = true
 					if entry.missions then
 						hadStoryMission = true
 					end
 					if hadStoryMission and (not entry.missions) then
 						hadStoryMission = false
-						ftable:addEmptyRow()
+
+						-- kuertee start: open/close mission lists
+						-- do not add spacer between story mission groups because the title of single story mission now exists.
+						-- see point TITLE OF SINGLE STORY MISSION below.
+						-- ftable:addEmptyRow()
+						-- kuertee end: open/close mission lists
 					end
 					if entry.missions then
 						-- story case
-						local row = ftable:addRow(entry.id, {  })
+						local row = ftable:addRow(true, {  })
 						if entry.id == menu.missionModeCurrent then
 							menu.setrow = row.index
 						end
-						row[1]:setColSpan(9):createText((entry.isstory and "\27[menu_mission_plot] " or "") .. entry.name)
 
-						for _, missionentry in ipairs(entry.missions) do
-							menu.addMissionRow(ftable, missionentry)
+						-- kuertee start: open/close mission lists
+						-- row[1]:setColSpan(9):createText((entry.isstory and "\27[menu_mission_plot] " or "") .. entry.name)
+						row[1]:createButton({active = true}):setText(uix_isExpanded and "-" or "+", { halign = "center" })
+						row[1].handlers.onClick = function () return menu.uix_expandMissionList(entry, row.index, nil, true) end
+						local uix_Id = menu.uix_getMissionId(entry)
+						row[2]:setColSpan(8):createText((entry.isstory and "\27[menu_mission_plot] " or "") .. entry.name .. " " .. uix_Id)
+						-- kuertee end: open/close mission lists
+
+						-- kuertee start: open/close mission lists
+						-- for _, missionentry in ipairs(entry.missions) do
+						-- 	menu.addMissionRow(ftable, missionentry)
+						-- end
+						if uix_isExpanded then
+							for _, missionentry in ipairs(entry.missions) do
+								menu.addMissionRow(ftable, missionentry, 1)
+							end
 						end
+						-- kuertee end: open/close mission lists
 					else
-						menu.addMissionRow(ftable, entry)
+
+						-- kuertee start: open/close mission lists
+						-- TITLE OF SINGLE STORY MISSION
+						-- add title of this one story mission
+						local row = ftable:addRow(true, {  })
+						row[1]:createButton({active = true}):setText(uix_isExpanded and "-" or "+", { halign = "center" })
+						row[1].handlers.onClick = function () return menu.uix_expandMissionList(entry, row.index, nil, true) end
+						local uix_Id = menu.uix_getMissionId(entry)
+						row[2]:setColSpan(8):createText((entry.isstory and "\27[menu_mission_plot] " or "") .. entry.name .. " " .. uix_Id)
+						-- kuertee end: open/close mission lists
+
+						-- kuertee start: open/close mission lists
+						-- menu.addMissionRow(ftable, entry)
+						if uix_isExpanded then
+							menu.addMissionRow(ftable, entry, 1)
+						end
+						-- kuertee end: open/close mission lists
 					end
 				end
 				if not found then
@@ -17720,34 +17782,15 @@ function menu.createMissionMode(frame)
 			-- local row = ftable:addRow(nil, { bgColor = Color["row_title_background"] })
 			-- row[1]:setColSpan(9):createText(ReadText(1001, 3331), Helper.headerRowCenteredProperties)
 			if next(menu.missionOfferList["plot"]) then
+				-- if there were plot entries, create a space between plot and guild
 				local row = ftable:addRow(false, {})
 				row[2]:createText("")
 			end
-			if not __userdata_uix_menu_map.expandedMissionGroups then
-				__userdata_uix_menu_map.expandedMissionGroups = {}
-			end
-			local uix_isAnyGuildMissionOfferGroupOpen
-			for uix_missionGroupId, uix_isMissionGroupOpen in pairs(menu.expandedMissionGroups) do
-				if string.find(uix_missionGroupId, "offer") then
-					if uix_isMissionGroupOpen then
-						uix_isAnyGuildMissionOfferGroupOpen = true
-						break
-					end
-				end
-			end
+			local uix_isGuildListOpen = menu.uix_getIsMissionExpanded(menu.missionOfferList["guild"], true, "uix_guildListOffer")
 			local row = ftable:addRow(true, { bgColor = Color["row_title_background"] })
-			row[1]:createButton({active = menu.missionOfferList and menu.missionOfferList["guild"] and next(menu.missionOfferList["guild"]) and true or false}):setText(uix_isAnyGuildMissionOfferGroupOpen and "-" or "+", { halign = "center" })
-			row[1].handlers.onClick = function ()
-				uix_isAnyGuildMissionOfferGroupOpen = not uix_isAnyGuildMissionOfferGroupOpen
-				for uix_missionGroupId, _ in pairs(menu.expandedMissionGroups) do
-					if string.find(uix_missionGroupId, "offer") then
-						menu.expandedMissionGroups[uix_missionGroupId] = uix_isAnyGuildMissionOfferGroupOpen
-					end
-				end
-				menu.refreshInfoFrame()
-				return
-			end
-			row[2]:setColSpan(8):createText(ReadText(1001, 3331), Helper.headerRowCenteredProperties)
+			row[1]:createButton({active = menu.missionOfferList and menu.missionOfferList["guild"] and next(menu.missionOfferList["guild"]) and true or false}):setText(uix_isGuildListOpen and "-" or "+", { halign = "center" })
+			row[1].handlers.onClick = function () return menu.uix_expandMissionList(menu.missionOfferList["guild"], row.index, nil, true, "uix_guildListOffer") end
+			row[2]:setColSpan(8):createText(ReadText(1001, 3331) .. " uix_guildListOffer", Helper.headerRowCenteredProperties)
 			-- kuertee end
 
 			-- kuertee start: callback
@@ -17770,20 +17813,9 @@ function menu.createMissionMode(frame)
 					end
 
 					if menu.expandedMissionGroups[data.id .. "offer"] == nil then
-						-- kuertee start: open/close mission lists
-						-- menu.expandedMissionGroups[data.id .. "offer"] = true
-						if __userdata_uix_menu_map.expandedMissionGroups[data.id .. "offer"] ~= nil then
-							menu.expandedMissionGroups[data.id .. "offer"] = __userdata_uix_menu_map.expandedMissionGroups[data.id .. "offer"]
-						else
-							menu.expandedMissionGroups[data.id .. "offer"] = true
-						end
-						-- kuertee end
+						menu.expandedMissionGroups[data.id .. "offer"] = true
 					end
 					local isexpanded = menu.expandedMissionGroups[data.id .. "offer"]
-
-					-- kuertee start: open/close mission lists
-					__userdata_uix_menu_map.expandedMissionGroups[data.id .. "offer"] = isexpanded
-					-- kuertee end
 
 					local row = ftable:addRow(data.id, {  })
 					if data.id == menu.missionModeCurrent then
@@ -17814,23 +17846,19 @@ function menu.createMissionMode(frame)
 			-- kuertee start: open/close mission lists
 			-- local row = ftable:addRow(nil, { bgColor = Color["row_title_background"] })
 			-- row[1]:setColSpan(9):createText(ReadText(1001, 3332), Helper.headerRowCenteredProperties)
+			-- because guild offers will list "no missions" when no missions are on offer, there'll always be a guild section.
+			-- create a space between guild and other offers.
 			local row = ftable:addRow(false, {})
 			row[2]:createText("")
-			if __userdata_uix_menu_map.missionOffers_other_isOpen == nil then
-				__userdata_uix_menu_map.missionOffers_other_isOpen = true
-			end
+			local uix_isOtherListOpen = menu.uix_getIsMissionExpanded(menu.missionOfferList["other"], true, "uix_otherListOffer")
 			local row = ftable:addRow(true, { bgColor = Color["row_title_background"] })
-			row[1]:createButton({active = menu.missionOfferList and menu.missionOfferList["other"] and next(menu.missionOfferList["other"]) and true or false}):setText(__userdata_uix_menu_map.missionOffers_other_isOpen and "-" or "+", { halign = "center" })
-			row[1].handlers.onClick = function ()
-				__userdata_uix_menu_map.missionOffers_other_isOpen = not __userdata_uix_menu_map.missionOffers_other_isOpen
-				menu.refreshInfoFrame()
-				return
-			end
-			row[2]:setColSpan(8):createText(ReadText(1001, 3332), Helper.headerRowCenteredProperties)
+			row[1]:createButton({active = menu.missionOfferList and menu.missionOfferList["other"] and next(menu.missionOfferList["other"]) and true or false}):setText(uix_isOtherListOpen and "-" or "+", { halign = "center" })
+			row[1].handlers.onClick = function () return menu.uix_expandMissionList(menu.missionOfferList["other"], row.index, nil, true, "uix_otherListOffer") end
+			row[2]:setColSpan(8):createText(ReadText(1001, 3332) .. " uix_otherListOffer", Helper.headerRowCenteredProperties)
 			-- kuertee end
 
 			-- kuertee start: open/close mission lists
-			if __userdata_uix_menu_map.missionOffers_other_isOpen == true then
+			if uix_isOtherListOpen == true then
 			-- kuertee end
 
 				for _, entry in ipairs(menu.missionOfferList["other"]) do
@@ -17878,25 +17906,27 @@ function menu.createMissionMode(frame)
 
 		if menu.missionMode == "plot" then
 			-- important
-			local row = ftable:addRow(nil, { bgColor = Color["row_title_background"] })
 
 			-- kuertee start: open/close mission lists
+			-- local row = ftable:addRow(nil, { bgColor = Color["row_title_background"] })
 			-- row[1]:setColSpan(9):createText(ReadText(1001, 3341), Helper.headerRowCenteredProperties)
-			row[1]:createText(" ", Helper.headerRowCenteredProperties)
-			row[2]:setColSpan(8):createText(ReadText(1001, 3341), Helper.headerRowCenteredProperties)
-			local uix_isGroupHaveActiveMission
-			for _, data in ipairs(menu.missionList["plot"]) do
-				if data.active then
-					uix_isGroupHaveActiveMission = true
-				end
-			end
-			if uix_isGroupHaveActiveMission then
+			local uix_isPlotListOpen, uix_isPlotListActive = menu.uix_getIsMissionExpanded(menu.missionList["plot"], nil, "uix_plotList")
+			local row = ftable:addRow(true, { bgColor = Color["row_title_background"] })
+			row[1]:createButton({active = menu.missionList and menu.missionList["plot"] and next(menu.missionList["plot"]) and true or false}):setText(uix_isPlotListOpen and "-" or "+", { halign = "center" })
+			row[1].handlers.onClick = function () return menu.uix_expandMissionList(menu.missionList["plot"], row.index, nil, nil, "uix_plotList") end
+			row[2]:setColSpan(8):createText(ReadText(1001, 3341) .. " uix_plotList", Helper.headerRowCenteredProperties)
+			if uix_isPlotListActive then
 				row[2].properties.color = Color["text_mission"]
 			end
 			-- kuertee end
 
 			local hadStoryMission, hadThreadMission = false, false
 			for _, entry in ipairs(menu.missionList["plot"]) do
+				-- kuertee start: open/close mission lists
+				local uix_Id = menu.uix_getMissionId(entry)
+				local uix_isExpanded, uix_isActive = menu.uix_getIsMissionExpanded(entry)
+				-- kuertee end: open/close mission lists
+
 				found = true
 				if entry.missions then
 					hadStoryMission = true
@@ -17905,28 +17935,71 @@ function menu.createMissionMode(frame)
 				end
 				if hadStoryMission and (not entry.missions) then
 					hadStoryMission = false
-					ftable:addEmptyRow()
+
+					-- kuertee start: open/close mission lists
+					-- do not render spacers between mission entries
+					-- ftable:addEmptyRow()
+					-- kuertee end: open/close mission lists
 				elseif hadThreadMission and (entry.threadtype == "") then
 					-- first non thread mission after threads
 					hadThreadMission = false
-					-- kuertee start: remove blank line between threaded and non-threaded missions
+
+					-- kuertee start: open/close mission lists
+					-- do not render spacers between mission entries
 					-- local row = ftable:addRow(false, {  })
 					-- row[1]:setColSpan(9):createText("")
-					-- kuertee end
+					-- kuertee end: open/close mission lists
 				end
 				if entry.missions then
 					-- story case
-					local row = ftable:addRow(entry.id, {  })
+
+					-- kuertee start: open/close mission lists
+					-- local row = ftable:addRow(entry.id, {  })
+					-- if entry.id == menu.missionModeCurrent then
+					-- 	menu.setrow = row.index
+					-- end
+					-- row[1]:setColSpan(9):createText((entry.isstory and "\27[menu_mission_plot] " or "") .. entry.name)
 					if entry.id == menu.missionModeCurrent then
 						menu.setrow = row.index
 					end
-					row[1]:setColSpan(9):createText((entry.isstory and "\27[menu_mission_plot] " or "") .. entry.name)
-
-					for _, missionentry in ipairs(entry.missions) do
-						menu.addMissionRow(ftable, missionentry)
+					local row = ftable:addRow(true, {  })
+					row[1]:createButton():setText(uix_isExpanded and "-" or "+", { halign = "center" })
+					row[1].handlers.onClick = function () return menu.uix_expandMissionList(entry, row.index) end
+					row[2]:setColSpan(8):createText((entry.isstory and "\27[menu_mission_plot] " or "") .. entry.name .. " " .. uix_Id)
+					if uix_isActive then
+						row[2].properties.color = Color["text_mission"]
 					end
+					-- kuertee end: open/close mission lists
+
+					-- kuertee start: open/close mission lists
+					-- for _, missionentry in ipairs(entry.missions) do
+					-- 	menu.addMissionRow(ftable, missionentry)
+					-- end
+					if uix_isExpanded then
+						for _, missionentry in ipairs(entry.missions) do
+							menu.addMissionRow(ftable, missionentry, (#entry.missions > 1 or #entry.missions[1].subMissions < 1) and 1 or nil)
+						end
+					end
+					-- kuertee end: open/close mission lists
 				else
-					menu.addMissionRow(ftable, entry)
+
+					-- kuertee start: open/close mission lists
+					-- always render a title for the plot missions even if it's only a single mission
+					local row = ftable:addRow(true, {  })
+					row[1]:createButton():setText(uix_isExpanded and "-" or "+", { halign = "center" })
+					row[1].handlers.onClick = function () return menu.uix_expandMissionList(entry, row.index) end
+					row[2]:setColSpan(8):createText((entry.isstory and "\27[menu_mission_plot] " or "") .. entry.name .. " " .. uix_Id)
+					if uix_isActive then
+						row[2].properties.color = Color["text_mission"]
+					end
+					-- kuertee end: open/close mission lists
+
+					-- kuertee start: open/close mission lists
+					-- menu.addMissionRow(ftable, entry)
+					if uix_isExpanded then
+						menu.addMissionRow(ftable, entry, 1)
+					end
+					-- kuertee end: open/close mission lists
 				end
 			end
 			if not found then
@@ -17943,38 +18016,12 @@ function menu.createMissionMode(frame)
 			-- row[1]:setColSpan(9):createText(ReadText(1001, 3333), Helper.headerRowCenteredProperties)
 			local row = ftable:addRow(false, {})
 			row[2]:createText("")
-			if not __userdata_uix_menu_map.expandedMissionGroups then
-				__userdata_uix_menu_map.expandedMissionGroups = {}
-			end
-			local uix_isAnyGuildMissionGroupOpen
-			for uix_missionGroupId, uix_isMissionGroupOpen in pairs(menu.expandedMissionGroups) do
-				if not string.find(uix_missionGroupId, "offer") then
-					if uix_isMissionGroupOpen then
-						uix_isAnyGuildMissionGroupOpen = true
-						break
-					end
-				end
-			end
+			local uix_isGuildListOpen, uix_isGuildListActive = menu.uix_getIsMissionExpanded(menu.missionList["guild"], nil, "uix_guildList")
 			local row = ftable:addRow(true, { bgColor = Color["row_title_background"] })
-			row[1]:createButton({active = menu.missionList and menu.missionList["guild"] and next(menu.missionList["guild"]) and true or false}):setText(uix_isAnyGuildMissionGroupOpen and "-" or "+", { halign = "center" })
-			row[1].handlers.onClick = function ()
-				uix_isAnyGuildMissionGroupOpen = not uix_isAnyGuildMissionGroupOpen
-				for uix_missionGroupId, _ in pairs(menu.expandedMissionGroups) do
-					if not string.find(uix_missionGroupId, "offer") then
-						menu.expandedMissionGroups[uix_missionGroupId] = uix_isAnyGuildMissionGroupOpen
-					end
-				end
-				menu.refreshInfoFrame()
-				return
-			end
-			row[2]:setColSpan(8):createText(ReadText(1001, 3333), Helper.headerRowCenteredProperties)
-			local uix_isGroupHaveActiveMission
-			for _, data in ipairs(menu.missionList["guild"]) do
-				if data.active then
-					uix_isGroupHaveActiveMission = true
-				end
-			end
-			if uix_isGroupHaveActiveMission then
+			row[1]:createButton({active = menu.missionList and menu.missionList["guild"] and next(menu.missionList["guild"]) and true or false}):setText(uix_isGuildListOpen and "-" or "+", { halign = "center" })
+			row[1].handlers.onClick = function () return menu.uix_expandMissionList(menu.missionList["guild"], row.index, nil, nil, "uix_guildList") end
+			row[2]:setColSpan(8):createText(ReadText(1001, 3333) .. " uix_guildList", Helper.headerRowCenteredProperties)
+			if uix_isGuildListActive then
 				row[2].properties.color = Color["text_mission"]
 			end
 			-- kuertee end
@@ -17996,22 +18043,14 @@ function menu.createMissionMode(frame)
 					end
 				end
 
-				-- kuertee start: open/close mission lists
 				if menu.expandedMissionGroups[data.id] == nil then
-					-- menu.expandedMissionGroups[data.id] = true
-					if __userdata_uix_menu_map.expandedMissionGroups[data.id] ~= nil then
-						menu.expandedMissionGroups[data.id] = __userdata_uix_menu_map.expandedMissionGroups[data.id]
-					else
-						menu.expandedMissionGroups[data.id] = true
-					end
+					menu.expandedMissionGroups[data.id] = true
 				end
-				-- kuertee end
-
-				local isexpanded = menu.expandedMissionGroups[data.id]
 
 				-- kuertee start: open/close mission lists
-				__userdata_uix_menu_map.expandedMissionGroups[data.id] = isexpanded
-				-- kuertee end
+				-- local isexpanded = menu.expandedMissionGroups[data.id]
+				local isexpanded, uix_isActive = menu.uix_getIsMissionExpanded(data)
+				-- kuertee end: open/close mission lists
 
 				local row = ftable:addRow(data.id, {  })
 				if data.id == menu.missionModeCurrent then
@@ -18026,6 +18065,9 @@ function menu.createMissionMode(frame)
 				row[1]:createButton():setText(isexpanded and "-" or "+", { halign = "center" })
 				row[1].handlers.onClick = function () return menu.buttonExpandMissionGroup(data.id, row.index) end
 				row[2]:setColSpan(7):createText(data.name, { color = color, font = font })
+				if uix_isActive then
+					row[2].properties.color = Color["text_mission"]
+				end
 				row[9]:createText((#data.missions == 1) and ReadText(1001, 3337) or string.format(ReadText(1001, 3338), #data.missions), { halign = "right", color = color })
 
 				if isexpanded then
@@ -18038,10 +18080,11 @@ function menu.createMissionMode(frame)
 							-- first non thread mission after threads
 							hadThreadMission = false
 
-							-- kuertee start: remove blank line between threaded and non-threaded missions
+							-- kuertee start: open/close mission lists
+							-- do not create spacer between mission entries
 							-- local row = ftable:addRow(false, {  })
 							-- row[1]:setColSpan(9):createText("")
-							-- kuertee end
+							-- kuertee end: open/close mission lists
 						end
 						menu.addMissionRow(ftable, entry, 1)
 					end
@@ -18063,30 +18106,18 @@ function menu.createMissionMode(frame)
 			local row = ftable:addRow(false, {})
 			row[2]:createText("")
 			found = false
-			if __userdata_uix_menu_map.missions_other_isOpen == nil then
-				__userdata_uix_menu_map.missions_other_isOpen = true
-			end
+			local uix_isOtherListOpen, uix_isOtherListActive = menu.uix_getIsMissionExpanded(menu.missionList["other"], nil, "uix_otherList")
 			local row = ftable:addRow(true, { bgColor = Color["row_title_background"] })
-			row[1]:createButton({active = menu.missionOfferList and menu.missionOfferList["other"] and next(menu.missionOfferList["other"]) and true or false}):setText(__userdata_uix_menu_map.missions_other_isOpen and "-" or "+", { halign = "center" })
-			row[1].handlers.onClick = function ()
-				__userdata_uix_menu_map.missions_other_isOpen = not __userdata_uix_menu_map.missions_other_isOpen
-				menu.refreshInfoFrame()
-				return
-			end
-			row[2]:setColSpan(8):createText(ReadText(1001, 3334), Helper.headerRowCenteredProperties)
-			local uix_isGroupHaveActiveMission
-			for _, data in ipairs(menu.missionList["other"]) do
-				if data.active then
-					uix_isGroupHaveActiveMission = true
-				end
-			end
-			if uix_isGroupHaveActiveMission then
+			row[1]:createButton({active = menu.missionList and menu.missionList["other"] and next(menu.missionList["other"]) and true or false}):setText(uix_isOtherListOpen and "-" or "+", { halign = "center" })
+			row[1].handlers.onClick = function () return menu.uix_expandMissionList(menu.missionList["other"], row.index, nil, nil, "uix_otherList") end
+			row[2]:setColSpan(8):createText(ReadText(1001, 3334) .. " uix_otherList", Helper.headerRowCenteredProperties)
+			if uix_isOtherListActive then
 				row[2].properties.color = Color["text_mission"]
 			end
 			-- kuertee end
 
 			-- kuertee start: open/close mission lists
-			if __userdata_uix_menu_map.missions_other_isOpen == true then
+			if uix_isOtherListOpen == true then
 			-- kuertee end
 
 				local hadThreadMission = false
@@ -18099,10 +18130,11 @@ function menu.createMissionMode(frame)
 						-- first non thread mission after threads
 						hadThreadMission = false
 
-						-- kuertee start: remove blank line between threaded and non-threaded missions
+						-- kuertee start: open/close mission lists
+						-- do not create spacer between mission entries
 						-- local row = ftable:addRow(false, {  })
 						-- row[1]:setColSpan(9):createText("")
-						-- kuertee end
+						-- kuertee end: open/close mission lists
 					end
 					menu.addMissionRow(ftable, entry)
 				end
@@ -18247,6 +18279,180 @@ function menu.createMissionMode(frame)
 	end
 end
 
+-- kuertee start: open/close mission lists
+function menu.uix_getMissionId(mission, isOffer)
+	local uix_Id = mission.ID
+	if not uix_Id then
+		uix_Id = mission.id
+	end
+	if isOffer then
+		uix_Id = tostring(uix_Id) .. "offer"
+	end
+	return uix_Id
+end
+function menu.uix_setValidIds(validIds, missionList, listId, isOffers)
+	for _, entry in ipairs(missionList) do
+		local uix_Id = menu.uix_getMissionId(entry, isOffers)
+		if uix_Id then
+			validIds["saved" .. tostring(uix_Id)] = true
+		end
+		if entry.missions and #entry.missions > 0 then
+			menu.uix_setValidIds(validIds, entry.missions, uix_Id, isOffers)
+		end
+		if entry.subMissions and #entry.subMissions > 0 then
+			menu.uix_setValidIds(validIds, entry.subMissions, uix_Id, isOffers)
+		end
+	end
+	validIds["saved" .. tostring(listId)] = true
+	Helper.debugText_forced("uix_setValidIds validIds[saved" .. tostring(listId) .. "]", validIds["saved" .. tostring(listId)])
+end
+function menu.uix_removeInvalidsFromSavedExpandedMissions()
+	local validIds = {}
+	-- check offers and missions separately because lists of one may not be populated even if the lists of the other are.
+	if menu.missionOfferList and menu.missionOfferList["plot"] and #menu.missionOfferList["plot"] > 0 then
+		-- only do the clean up if lists have been populated.
+		-- only need to check "plot" because if "plot" is populated, then "guild" and "other" would be.
+		menu.uix_setValidIds(validIds, menu.missionOfferList["plot"], "uix_plotListOffer", true)
+		menu.uix_setValidIds(validIds, menu.missionOfferList["guild"], "uix_guildListOffer", true)
+		menu.uix_setValidIds(validIds, menu.missionOfferList["other"], "uix_otherListOffer", true)
+		local invalidIds = {}
+		for uix_Id, data in pairs(__userdata_uix_menu_map.savedExpandedMissionOffers) do
+			if validIds[uix_Id] == nil then
+				table.insert(invalidIds, uix_Id)
+			end
+		end
+		for _, uix_Id in ipairs(invalidIds) do
+			__userdata_uix_menu_map.savedExpandedMissionOffers[uix_Id] = nil
+			Helper.debugText_forced("invalid savedExpandedMissionOffers uix_Id " .. tostring(uix_Id), tostring(__userdata_uix_menu_map.savedExpandedMissionOffers[uix_Id]))
+		end
+		Helper.debugText_forced("uix_removeInvalidsFromSavedExpandedMissions savedExpandedMissionOffers", __userdata_uix_menu_map.savedExpandedMissionOffers)
+	end
+	if menu.missionList and menu.missionList["plot"] and #menu.missionList["plot"] > 0 then
+		menu.uix_setValidIds(validIds, menu.missionList["plot"], "uix_plotList")
+		menu.uix_setValidIds(validIds, menu.missionList["guild"], "uix_guildList")
+		menu.uix_setValidIds(validIds, menu.missionList["other"], "uix_otherList")
+		local invalidIds = {}
+		for uix_Id, data in pairs(__userdata_uix_menu_map.savedExpandedMissions) do
+			if validIds[uix_Id] == nil then
+				table.insert(invalidIds, uix_Id)
+			end
+		end
+		for _, uix_Id in ipairs(invalidIds) do
+			__userdata_uix_menu_map.savedExpandedMissions[uix_Id] = nil
+			Helper.debugText_forced("savedExpandedMissions uix_Id " .. tostring(uix_Id), tostring(__userdata_uix_menu_map.savedExpandedMissions[uix_Id]))
+		end
+		Helper.debugText_forced("savedExpandedMissions", __userdata_uix_menu_map.savedExpandedMissions)
+	end
+end
+function menu.uix_getIsMissionExpanded(missionOrMissions, isOffer, listId)
+	local savedExpandedMissionsTable
+	if isOffer then
+		savedExpandedMissionsTable = __userdata_uix_menu_map.savedExpandedMissionOffers
+	else
+		savedExpandedMissionsTable = __userdata_uix_menu_map.savedExpandedMissions
+	end
+	local uix_isExpanded, uix_isActive
+	if type(missionOrMissions) == "table" then
+		if #missionOrMissions and #missionOrMissions > 0 then
+			local isAnyInListOpen, isAnyInListActive
+			for _, mission in ipairs(missionOrMissions) do
+				local isMissionOpen, isMissionActive = menu.uix_getIsMissionExpanded(mission, isOffer)
+				if isMissionOpen then
+					isAnyInListOpen = isMissionOpen
+				end
+				if isMissionActive then
+					isAnyInListActive = isMissionActive
+				end
+				if mission.subMissions and #mission.subMissions > 0 then
+					for _, subMission in ipairs(mission.subMissions) do
+						local isSubMissionOpen, isSubMissionActive = menu.uix_getIsMissionExpanded(subMission, isOffer)
+						if isSubMissionOpen then
+							isAnyInListOpen = isSubMissionOpen
+						end
+						if isSubMissionActive then
+							isAnyInListActive = isSubMissionActive
+						end
+					end
+				end
+			end
+			if isAnyInListOpen then
+				-- if any in list is open, set list as open
+				menu.expandedMissionGroups[listId] = isAnyInListOpen
+			elseif savedExpandedMissionsTable["saved" .. tostring(listId)] ~= nil then
+				-- restore from uidata.xml
+				menu.expandedMissionGroups[listId] = savedExpandedMissionsTable["saved" .. tostring(listId)]
+			else
+				-- default is open, so set to true
+				menu.expandedMissionGroups[listId] = true
+			end
+			uix_isExpanded = menu.expandedMissionGroups[listId]
+			savedExpandedMissionsTable["saved" .. tostring(listId) .. ""] = uix_isExpanded
+			uix_isActive = isAnyInListActive
+		else
+			local uix_Id = menu.uix_getMissionId(missionOrMissions, isOffer)
+			if menu.expandedMissionGroups[uix_Id] == nil then
+				if  savedExpandedMissionsTable["saved" .. tostring(uix_Id)] ~= nil then
+					-- restore from uidata.xml
+					menu.expandedMissionGroups[uix_Id] = savedExpandedMissionsTable["saved" .. tostring(uix_Id)]
+				else
+					-- default is open, so set to true
+					menu.expandedMissionGroups[uix_Id] = true
+				end
+			end
+			uix_isExpanded = menu.expandedMissionGroups[uix_Id]
+			savedExpandedMissionsTable["saved" .. tostring(uix_Id)] = uix_isExpanded
+			uix_isActive = missionOrMissions.active
+		end
+	end
+	return uix_isExpanded, uix_isActive
+end
+function menu.uix_expandMissionList(missionOrMissions, row, contextCallback, isOffer, listId)
+	local savedExpandedMissionsTable
+	if isOffer then
+		savedExpandedMissionsTable = __userdata_uix_menu_map.savedExpandedMissionOffers
+	else
+		savedExpandedMissionsTable = __userdata_uix_menu_map.savedExpandedMissions
+	end
+	if type(missionOrMissions) == "table" then
+		if #missionOrMissions and #missionOrMissions > 0 then
+			-- NOTE: copy what buttonExpandMissionGroup does for individual missions
+			-- e.g. look for "copied from buttonExpandMissionGroup" notes within uix_expandMissionList()
+			-- toggle saved value
+			menu.expandedMissionGroups[listId] = not menu.expandedMissionGroups[listId]
+			local firstId
+			for uix_i, mission in ipairs(missionOrMissions) do
+				-- set in list the same as saved value
+				local uix_Id = menu.uix_getMissionId(mission, isOffer)
+				menu.expandedMissionGroups[uix_Id] = menu.expandedMissionGroups[listId]
+				if uix_i == 1 then
+					firstId = uix_Id
+				end
+			end
+			-- save to uidata.xml
+			savedExpandedMissionsTable["saved" .. tostring(listId)] = menu.expandedMissionGroups[listId]
+			-- start: copied from buttonExpandMissionGroup.
+			-- i.e. setting missionModeCurrent, setrow, closeContextMenu(), etc.
+			if row then
+				menu.missionModeCurrent = firstId -- set highlighted mission to the first mission in the list. i.e. the first mission's id
+				menu.setrow = row + 1 -- set the highlighted mission to the first mission in the list. i.e. row + 1
+			else
+				menu.missionModeCurrent = listId
+				menu.setrow = row
+			end
+			menu.closeContextMenu()
+			if contextCallback then
+				contextCallback()
+			end
+			menu.refreshInfoFrame()
+			-- end: copied from buttonExpandMissionGroup
+		else
+			local uix_Id = menu.uix_getMissionId(missionOrMissions, isOffer)
+			menu.buttonExpandMissionGroup(uix_Id, row, contextCallback)
+		end
+	end
+end
+-- kuertee end: open/close mission lists
+
 function menu.createMissionModeHeader(frame, instance)
 	local categories = (menu.infoTableMode == "missionoffer") and config.missionOfferTabs or config.missionCategories
 
@@ -18388,17 +18594,23 @@ function menu.addMissionRow(ftable, missionentry, indented, seqidx)
 
 	local missioncol = 1
 	if #missionentry.subMissions > 0 then
-		local isexpanded = menu.expandedMissionGroups[missionentry.ID]
+
+		-- kuertee start: open/close mission lists
+		-- local isexpanded = menu.expandedMissionGroups[missionentry.ID]
+		local isexpanded = menu.uix_getIsMissionExpanded(missionentry)
+		-- kuertee end: open/close mission lists
 
 		if indented == 1 then
 			row[1]:setBackgroundColSpan(9)
 			row[2]:createButton():setText(isexpanded and "-" or "+", { halign = "center" })
 			row[2].handlers.onClick = function () return menu.buttonExpandMissionGroup(missionentry.ID, row.index, function() return menu.showMissionContext(missionentry.ID) end) end
 			row[3]:setColSpan(7):createText(name, { color = color, font = font })
+			Helper.debugText_forced("addMissionRow name " .. tostring(name) .. " ID", missionentry.ID)
 		else
 			row[1]:setBackgroundColSpan(9):createButton():setText(isexpanded and "-" or "+", { halign = "center" })
 			row[1].handlers.onClick = function () return menu.buttonExpandMissionGroup(missionentry.ID, row.index, function() return menu.showMissionContext(missionentry.ID) end) end
 			row[2]:setColSpan(8):createText(name, { color = color, font = font })
+			Helper.debugText_forced("addMissionRow name " .. tostring(name) .. " ID", missionentry.ID)
 		end
 
 		if isexpanded then
@@ -24717,12 +24929,12 @@ function menu.buttonRenameConfirm(isconfirmed)
 					SetComponentName(uix_object, uix_name)
 					-- local dpsTable = ffi.new("DPSData[?]", 6)
 					-- C.GetDefensibleDPS(dpsTable, uix_object, true, true, true, false, true, false, false)
-					-- Helper.debugText_forced(ffi.string(C.GetObjectIDCode(uix_object)), dpsTable[0].dps)
-					-- Helper.debugText_forced("    ", dpsTable[1].dps)
-					-- Helper.debugText_forced("    ", dpsTable[2].dps)
-					-- Helper.debugText_forced("    ", dpsTable[3].dps)
-					-- Helper.debugText_forced("    ", dpsTable[4].dps)
-					-- Helper.debugText_forced("    ", dpsTable[5].dps)
+					-- Helper.debugText(ffi.string(C.GetObjectIDCode(uix_object)), dpsTable[0].dps)
+					-- Helper.debugText("    ", dpsTable[1].dps)
+					-- Helper.debugText("    ", dpsTable[2].dps)
+					-- Helper.debugText("    ", dpsTable[3].dps)
+					-- Helper.debugText("    ", dpsTable[4].dps)
+					-- Helper.debugText("    ", dpsTable[5].dps)
 				end
 			end
 			if menu.uix_callbacks ["buttonRenameConfirm_onMultiRename_on_after_rename"] then
@@ -24751,10 +24963,10 @@ function menu.buttonRenameConfirm(isconfirmed)
 				C.SetFleetName(menu.contextMenuData.component, menu.contextMenuData.newtext)
 			else
 				-- kuertee start: debug
-				local uix_name_old = GetComponentData(menu.contextMenuData.component, "name")
-				local uix_idcode = C.GetObjectIDCode(menu.contextMenuData.component)
-				-- Helper.debugText_forced(menu.contextMenuData.component, uix_name_old .. tostring(uix_idcode))
-				-- Helper.debugText_forced("newtext", menu.contextMenuData.newtext)
+				-- local uix_name_old = GetComponentData(menu.contextMenuData.component, "name")
+				-- local uix_idcode = C.GetObjectIDCode(menu.contextMenuData.component)
+				-- Helper.debugText(menu.contextMenuData.component, uix_name_old .. tostring(uix_idcode))
+				-- Helper.debugText("newtext", menu.contextMenuData.newtext)
 				-- kuertee end: debug
 
 				SetComponentName(menu.contextMenuData.component, menu.contextMenuData.newtext)
@@ -27500,8 +27712,8 @@ function menu.onRenderTargetDoubleClick(modified)
 				uix_cancelReason = uix_return2
 				-- uix_cancelReason is for debug purposes.
 				-- if tracking down why double-click has been cancelled, uncomment these 2 lines:
-				-- Helper.debugText_forced("menu_map onRenderTargetDoubleClick uix_isCancelEgosoftDoubleClickFunc", uix_isCancelEgosoftDoubleClickFunc)
-				-- Helper.debugText_forced("menu_map onRenderTargetDoubleClick uix_cancelReason", uix_cancelReason)
+				-- Helper.debugText("menu_map onRenderTargetDoubleClick uix_isCancelEgosoftDoubleClickFunc", uix_isCancelEgosoftDoubleClickFunc)
+				-- Helper.debugText("menu_map onRenderTargetDoubleClick uix_cancelReason", uix_cancelReason)
 			end
 			if uix_isCancelEgosoftDoubleClickFunc then
 				return
