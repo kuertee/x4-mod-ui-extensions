@@ -18325,9 +18325,7 @@ function menu.uix_removeInvalidsFromSavedExpandedMissions()
 		end
 		for _, uix_Id in ipairs(invalidIds) do
 			__userdata_uix_menu_map.savedExpandedMissionOffers[uix_Id] = nil
-			Helper.debugText_forced("uix_removeInvalidsFromSavedExpandedMissions invalid savedExpandedMissionOffers uix_Id " .. tostring(uix_Id), tostring(__userdata_uix_menu_map.savedExpandedMissionOffers[uix_Id]))
 		end
-		Helper.debugText_forced("uix_removeInvalidsFromSavedExpandedMissions savedExpandedMissionOffers", __userdata_uix_menu_map.savedExpandedMissionOffers)
 	end
 	if menu.missionList and menu.missionList["plot"] and #menu.missionList["plot"] > 0 then
 		menu.uix_setValidIds(validIds, menu.missionList["plot"], "uix_plotList")
@@ -18341,9 +18339,7 @@ function menu.uix_removeInvalidsFromSavedExpandedMissions()
 		end
 		for _, uix_Id in ipairs(invalidIds) do
 			__userdata_uix_menu_map.savedExpandedMissions[uix_Id] = nil
-			Helper.debugText_forced("uix_removeInvalidsFromSavedExpandedMissions invalid savedExpandedMissions uix_Id " .. tostring(uix_Id), tostring(__userdata_uix_menu_map.savedExpandedMissions[uix_Id]))
 		end
-		Helper.debugText_forced("uix_removeInvalidsFromSavedExpandedMissions savedExpandedMissions", __userdata_uix_menu_map.savedExpandedMissions)
 	end
 end
 
@@ -18378,7 +18374,7 @@ function menu.uix_getExpandableChildren(missionEntry, isOffer, isDescendant)
 	if isActive == nil then
 		isActive = missionEntry.active
 	end
-	return expandableChildIds, hasActiveChild
+	return expandableChildIds, isActive
 end
 
 function menu.uix_getIsMissionExpanded(missionEntry, isOffer, listId)
