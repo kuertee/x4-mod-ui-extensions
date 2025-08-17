@@ -3787,7 +3787,6 @@ function menu.buttonExpandMissionGroup(id, row, contextCallback)
 	else
 		menu.expandedMissionGroups[id] = true
 	end
-
 	menu.setrow = row
 	menu.closeContextMenu()
 	if contextCallback then
@@ -7196,6 +7195,11 @@ end
 function menu.getContainerNameAndColors(container, iteration, issquadleader, showScanLevel, showbehaviourinspection)
 	local convertedContainer = ConvertIDTo64Bit(container)
 	local isplayer, revealpercent, name, faction, icon, ismissiontarget, isonlineobject, isenemy, ishostile, idcode, classid, realclassid = GetComponentData(container, "isplayerowned", "revealpercent", "name", "owner", "icon", "ismissiontarget", "isonlineobject", "isenemy", "ishostile", "idcode", "classid", "realclassid")
+	if name == nil then
+		-- component does not exist anymore -> early out
+		return "", Color["text_normal"], Color["row_background"], Helper.standardFont, "", ""
+	end
+
 	local unlocked = IsInfoUnlockedForPlayer(container, "name")
 	local usefactioncolor = false
 	local highlightvisitors = false
@@ -7435,10 +7439,12 @@ function menu.sortComponentListHelper(components, sorter)
 			local sector = ""
 			if info.replacementid ~= 0 then
 				local name, hull, sector, idcode = GetComponentData(ConvertStringToLuaID(tostring(info.replacementid)), "name", "hullpercent", "sector", "idcode")
-				name = name
-				objectid = idcode
-				hull = hull
-				sector = sector
+				if name then
+					name = name
+					objectid = idcode
+					hull = hull
+					sector = sector
+				end
 			end
 			local class = ffi.string(C.GetMacroClass(macro))
 
@@ -9416,9 +9422,8 @@ function menu.createFleetUnitRow(instance, ftable, fleetunit, iteration, command
 					duration = (displaylocation and ((locationname .. " ") or "") or "")
 					shieldhullbar = true
 				else
-					name = name .. " " .. ColorText["text_player"] .. "(" .. math.floor(C.GetCurrentBuildProgress(info.replacementid)) .. " %)\27X"
-
 					if info.buildtaskid ~= 0 then
+						name = name .. " " .. ColorText["text_player"] .. "(" .. math.floor(C.GetCurrentBuildProgress(info.replacementid)) .. " %)\27X"
 						local buildtaskinfo = C.GetBuildTaskInfo(info.buildtaskid)
 						if buildtaskinfo.buildercomponent ~= 0 then
 							if menu.infoTableMode == "objectlist" then
@@ -17676,7 +17681,6 @@ function menu.createMissionMode(frame)
 	if menu.infoTableMode == "missionoffer" then
 		if (menu.missionOfferMode == "normal") or (not isonline) then
 			local found = false
-
 			-- important
 			if #menu.missionOfferList["plot"] > 0 then
 
@@ -17691,7 +17695,6 @@ function menu.createMissionMode(frame)
 				-- kuertee end
 
 				local hadStoryMission = false
-
 				for _, entry in ipairs(menu.missionOfferList["plot"]) do
 					-- kuertee start: open/close mission lists
 					local uix_Id = menu.uix_getMissionId(entry, true)
@@ -17713,7 +17716,7 @@ function menu.createMissionMode(frame)
 					end
 					if entry.missions then
 						-- story case
-						local row = ftable:addRow(true, {  })
+						local row = ftable:addRow(entry.id, {  })
 						if entry.id == menu.missionModeCurrent then
 							menu.setrow = row.index
 						end
@@ -18067,9 +18070,13 @@ function menu.createMissionMode(frame)
 				-- kuertee end: open/close mission lists
 
 				row[2]:setColSpan(7):createText(data.name, { color = color, font = font })
+
+				-- kuertee start: open/close mission lists
 				if uix_isActive then
 					row[2].properties.color = Color["text_mission"]
 				end
+				-- kuertee end: open/close mission lists
+
 				row[9]:createText((#data.missions == 1) and ReadText(1001, 3337) or string.format(ReadText(1001, 3338), #data.missions), { halign = "right", color = color })
 
 				if isexpanded then

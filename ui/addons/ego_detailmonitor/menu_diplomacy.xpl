@@ -191,6 +191,7 @@ local menu = {
 	agentData = {},
 	expanded = {},
 	state = {},
+	nextInfluenceUpdateTime = 0,
 }
 
 local config = {
@@ -502,7 +503,7 @@ function menu.buttonStartAction(checked)
 					if operation.id == menu.laststartedactionoperation then
 						menu.contextMenuMode = "actionconfig"
 						menu.contextMenuData.id = actionid
-						menu.contextMenuData.operationindex = i
+						menu.contextMenuData.operationid = operation.id
 						menu.contextMenuData.targets = {}
 
 						local y = math.max(Helper.playerInfoConfig.offsetY + Helper.playerInfoConfig.height + Helper.borderSize, menu.topLevelHeight)
@@ -713,7 +714,7 @@ function menu.onShowMenu(state)
 	elseif menu.param[4] then
 		menu.contextMenuMode = "actionconfig"
 		menu.contextMenuData.id = menu.param[4]
-		menu.contextMenuData.operationindex = nil
+		menu.contextMenuData.operationid = nil
 		menu.contextMenuData.targets[menu.param[5] + 1] = C.ConvertStringTo64Bit(tostring(menu.param[6]))
 
 		local y = math.max(Helper.playerInfoConfig.offsetY + Helper.playerInfoConfig.height + Helper.borderSize, menu.topLevelHeight)
@@ -751,9 +752,6 @@ function menu.onShowMenu(state)
 end
 
 function menu.getData()
-	-- influence
-	menu.playerinfluence = C.GetPlayerInfluence()
-
 	-- agents
 	menu.agents = {}
 	local n = C.GetNumDiplomacyAgents()
@@ -1409,7 +1407,7 @@ function menu.createEmbassy(frame, tableProperties)
 	-- influence
 	local row = menu.actiontable:addRow(nil, { fixed = true })
 	row[1]:setColSpan(4):createText(ReadText(1001, 12847), { font = Helper.standardFontBold, fontsize = Helper.headerRow1FontSize })
-	row[5]:setColSpan(2):createText("\27[diplomacy_influence] " .. ffi.string(C.GetInfluenceLevelName(menu.playerinfluence)), { halign = "right", fontsize = Helper.headerRow1FontSize })
+	row[5]:setColSpan(2):createText(function () return "\27[diplomacy_influence] " .. ffi.string(C.GetInfluenceLevelName(menu.playerinfluence)) end, { halign = "right", fontsize = Helper.headerRow1FontSize })
 
 	menu.actiontable:addEmptyRow(Helper.standardTextHeight / 2)
 
@@ -1435,7 +1433,7 @@ function menu.createEmbassy(frame, tableProperties)
 					end
 
 					local isselected = false
-					if (menu.contextMenuMode == "actionconfig") and (action.id == menu.contextMenuData.id) and (menu.contextMenuData.operationindex == nil) then
+					if (menu.contextMenuMode == "actionconfig") and (action.id == menu.contextMenuData.id) and (menu.contextMenuData.operationid == nil) then
 						isselected = true
 					end
 
@@ -1484,11 +1482,11 @@ function menu.createEmbassy(frame, tableProperties)
 							end
 
 							local isselected = false
-							if (menu.contextMenuMode == "actionconfig") and (action.id == menu.contextMenuData.id) and (menu.contextMenuData.operationindex == i) then
+							if (menu.contextMenuMode == "actionconfig") and (action.id == menu.contextMenuData.id) and (menu.contextMenuData.operationid == operation.id) then
 								isselected = true
 							end
 
-							local row = menu.actiontable:addRow({ type = "action", id = action.id, operationindex = i }, { bgColor = isselected and Color["row_background_selected"] or nil })
+							local row = menu.actiontable:addRow({ type = "action", id = action.id, operationid = operation.id }, { bgColor = isselected and Color["row_background_selected"] or nil })
 							if operation.id == menu.laststartedactionoperation then
 								menu.selectedRows.actiontable = row.index
 								menu.laststartedactionoperation = nil
@@ -1632,6 +1630,7 @@ function menu.actionOperationTime(endtime)
 	if remainingtime <= 0 then
 		menu.getData()
 		menu.refresh = menu.refresh or getElapsedTime()
+		menu.updateData = getElapsedTime() + 0.2
 		if menu.contextMenuMode == "actionconfig" then
 			menu.refreshContextFrame()
 		end
@@ -2358,11 +2357,16 @@ function menu.createActionConfigContext(frame)
 	local curgametime = C.GetCurrentGameTime()
 
 	local action = menu.actionsByID[menu.contextMenuData.id]
-	local active = menu.contextMenuData.operationindex == nil
+	local active = menu.contextMenuData.operationid == nil
 	local uniqueandlocked = action.hidden
 	local operation, operationparameters, ispastoperation
-	if menu.contextMenuData.operationindex then
-		operation = menu.actionoperations[menu.contextMenuData.id][menu.contextMenuData.operationindex]
+	if menu.contextMenuData.operationid then
+		for _, op in ipairs(menu.actionoperations[menu.contextMenuData.id]) do
+			if op.id == menu.contextMenuData.operationid then
+				operation = op
+				break
+			end
+		end
 		operationparameters = GetDiplomaticActionOperationParamValues(tonumber(operation.id))
 		ispastoperation = operation.endtime <= curgametime
 	else
@@ -2515,7 +2519,15 @@ function menu.createActionConfigContext(frame)
 		row[1]:setColSpan(2):createText(target.text)
 
 		if ispastoperation then
-			row[3]:createText(selectedtarget)
+			if target.type == "ware" then
+				row[3]:createText(GetWareData(selectedtarget, "name"))
+			else
+				if type(selectedtarget) ~= "string" then
+					row[3]:createText(ffi.string(C.GetComponentName(C.ConvertStringTo64Bit(tostring(selectedtarget)))))
+				else
+					row[3]:createText(selectedtarget)
+				end
+			end
 		else
 			if action.paramtype == "factionpair" then
 				local factions = GetLibrary("factions")
@@ -2622,7 +2634,10 @@ function menu.createActionConfigContext(frame)
 	if not requirement then
 		hasmissingrequirement = true
 	end
-	row[3]:createText(ffi.string(C.GetInfluenceLevelName(action.influencerequirement)) .. (requirement and (ColorText["text_positive"] .. " \27[widget_tick_01]\27X") or (ColorText["text_negative"] .. " \27[widget_cross_01]\27X")), { halign = "right" })
+	local influencetext = ffi.string(C.GetInfluenceLevelName(action.influencerequirement))
+	local indicator = requirement and (ColorText["text_positive"] .. " \27[widget_tick_01]\27X") or (ColorText["text_negative"] .. " \27[widget_cross_01]\27X")
+	local text, mouseovertext = menu.getTruncatedOptionText(influencetext, indicator, 0.5 * descwidth - Helper.borderSize)
+	row[3]:createText(text, { halign = "right", mouseOverText = mouseovertext })
 	if (action.warecostscaleparamidx > 0) and menu.contextMenuData.targets[action.warecostscaleparamidx] and (menu.contextMenuData.targets[action.warecostscaleparamidx] ~= "none") then
 		local target = targets[action.warecostscaleparamidx]
 		if target.type == "ware" then
@@ -2635,7 +2650,10 @@ function menu.createActionConfigContext(frame)
 	if not requirement then
 		hasmissingrequirement = true
 	end
-	row[3]:createText(ConvertMoneyString(action.price, false, true, 0, true) .. " " .. ReadText(1001, 101) .. (requirement and (ColorText["text_positive"] .. " \27[widget_tick_01]\27X") or (ColorText["text_negative"] .. " \27[widget_cross_01]\27X")), { halign = "right" })
+	local moneytext = ConvertMoneyString(action.price, false, true, 0, true) .. " " .. ReadText(1001, 101)
+	local indicator = requirement and (ColorText["text_positive"] .. " \27[widget_tick_01]\27X") or (ColorText["text_negative"] .. " \27[widget_cross_01]\27X")
+	local text, mouseovertext = menu.getTruncatedOptionText(moneytext, indicator, 0.5 * descwidth - Helper.borderSize)
+	row[3]:createText(text, { halign = "right", mouseOverText = mouseovertext })
 	local inventory = menu.getDiplomacyInventory()
 	for i, ware in ipairs(action.warerequirements) do
 		local row = infotable2:addRow(nil)
@@ -2647,7 +2665,10 @@ function menu.createActionConfigContext(frame)
 		if not requirement then
 			hasmissingrequirement = true
 		end
-		row[3]:createText(ConvertIntegerString(ware.amount, true, 0, true) .. ReadText(1001, 42) .. " " .. GetWareData(ware.ware, "name") .. (requirement and (ColorText["text_positive"] .. " \27[widget_tick_01]\27X") or (ColorText["text_negative"] .. " \27[widget_cross_01]\27X")), { halign = "right" })
+		local waretext = ConvertIntegerString(ware.amount, true, 0, true) .. ReadText(1001, 42) .. " " .. GetWareData(ware.ware, "name")
+		local indicator = requirement and (ColorText["text_positive"] .. " \27[widget_tick_01]\27X") or (ColorText["text_negative"] .. " \27[widget_cross_01]\27X")
+		local text, mouseovertext = menu.getTruncatedOptionText(waretext, indicator, 0.5 * descwidth - Helper.borderSize)
+		row[3]:createText(text, { halign = "right", mouseOverText = mouseovertext })
 	end
 
 	infotable2:addEmptyRow()
@@ -2660,7 +2681,7 @@ function menu.createActionConfigContext(frame)
 		if action.targetobjectparamidx > 0 then
 			local target = targets[action.targetobjectparamidx]
 			if (target.type == "object") and menu.contextMenuData.targets[action.targetobjectparamidx] then
-				targetfaction = GetComponentData(ConvertStringToLuaID(tostring(menu.contextMenuData.targets[action.exclusivefactionparamidx])), "owner")
+				targetfaction = GetComponentData(ConvertStringToLuaID(tostring(menu.contextMenuData.targets[action.targetobjectparamidx])), "owner")
 			else
 				giftactive = false
 			end
@@ -2688,8 +2709,12 @@ function menu.createActionConfigContext(frame)
 						gifteffecttext = ColorText["text_negative"] .. "\27[menu_chevron_down_01]"
 					end
 				end
+				local gifteffecttextwidth = math.floor(C.GetTextWidth(gifteffecttext, Helper.standardFont, Helper.scaleFont(Helper.standardFont, Helper.standardFontSize)))
 
-				table.insert(giftwareoptions, { id = wareid, text = GetWareData(wareid, "name"), text2 = gifteffecttext, icon = "", displayremoveoption = false, active = (inventory[wareid] and (inventory[wareid].amount > 0)) and true or false })
+				local warename = GetWareData(wareid, "name")
+				local gifttext = TruncateText(warename, Helper.standardFont, Helper.scaleFont(Helper.standardFont, Helper.standardFontSize), 0.5 * descwidth - 2 * Helper.scaleX(Helper.standardTextOffsetx) - Helper.scaleY(Helper.standardButtonHeight) - gifteffecttextwidth)
+
+				table.insert(giftwareoptions, { id = wareid, text = gifttext, text2 = gifteffecttext, icon = "", displayremoveoption = false, active = (inventory[wareid] and (inventory[wareid].amount > 0)) and true or false, mouseovertext = (warename ~= gifttext) and (warename .. "\n\n" .. ReadText(1026, 12811)) or "" })
 			end
 		end
 		table.sort(giftwareoptions, function (a, b) return a.text < b.text end)
@@ -2822,7 +2847,7 @@ function menu.createEvents(frame, tableProperties)
 	-- influence
 	local row = menu.eventtable:addRow(nil, { fixed = true })
 	row[1]:createText(ReadText(1001, 12847), { font = Helper.standardFontBold, fontsize = Helper.headerRow1FontSize })
-	row[2]:createText("\27[diplomacy_influence] " .. ffi.string(C.GetInfluenceLevelName(menu.playerinfluence)), { halign = "right", fontsize = Helper.headerRow1FontSize })
+	row[2]:createText(function () return "\27[diplomacy_influence] " .. ffi.string(C.GetInfluenceLevelName(menu.playerinfluence)) end, { halign = "right", fontsize = Helper.headerRow1FontSize })
 
 	menu.eventtable:addEmptyRow(Helper.standardTextHeight / 2)
 
@@ -3907,6 +3932,21 @@ function menu.onUpdate()
 		end
 	end
 
+	if menu.nextInfluenceUpdateTime < curtime then
+		menu.nextInfluenceUpdateTime = curtime + 1
+		menu.playerinfluence = C.GetPlayerInfluence()
+	end
+
+	if menu.updateData and (menu.updateData < curtime) then
+		menu.updateData = nil
+
+		menu.getData()
+		menu.refresh = menu.refresh or (curtime - 1)
+		if menu.contextMenuMode == "actionconfig" then
+			menu.refreshContextFrame()
+		end
+	end
+
 	if menu.refresh and (menu.refresh < curtime) then
 		if menu.refreshdata then
 			menu.refreshInfoFrame(table.unpack(menu.refreshdata))
@@ -3940,9 +3980,9 @@ function menu.onRowChanged(row, rowdata, uitable, modified, input, source)
 				if menu.lastactivetable == menu.actiontable.id then
 					if type(rowdata) == "table" then
 						if rowdata.type == "action" then
-							if (menu.contextMenuMode ~= "actionconfig") or (rowdata.id ~= menu.contextMenuData.id) or (rowdata.operationindex ~= menu.contextMenuData.operationindex) then
+							if (menu.contextMenuMode ~= "actionconfig") or (rowdata.id ~= menu.contextMenuData.id) or (rowdata.operationid ~= menu.contextMenuData.operationid) then
 								menu.contextMenuMode = "actionconfig"
-								menu.contextMenuData = { id = rowdata.id, operationindex = rowdata.operationindex, targets = {} }
+								menu.contextMenuData = { id = rowdata.id, operationid = rowdata.operationid, targets = {} }
 								local y = math.max(Helper.playerInfoConfig.offsetY + Helper.playerInfoConfig.height + Helper.borderSize, menu.topLevelHeight)
 								menu.createContextFrame(Helper.playerInfoConfig.offsetX + menu.sideBarWidth + Helper.borderSize + menu.narrowtablewidth + Helper.borderSize, y, menu.actionConfig.width, true)
 								menu.refreshInfoFrame()
@@ -4044,9 +4084,9 @@ function menu.onSelectElement(uitable, modified, row)
 			if menu.lastactivetable == menu.actiontable.id then
 				if type(rowdata) == "table" then
 					if rowdata.type == "action" then
-						if (menu.contextMenuMode ~= "actionconfig") or (rowdata.id ~= menu.contextMenuData.id) or (rowdata.operationindex ~= menu.contextMenuData.operationindex) then
+						if (menu.contextMenuMode ~= "actionconfig") or (rowdata.id ~= menu.contextMenuData.id) or (rowdata.operationid ~= menu.contextMenuData.operationid) then
 							menu.contextMenuMode = "actionconfig"
-							menu.contextMenuData = { id = rowdata.id, operationindex = rowdata.operationindex, targets = {} }
+							menu.contextMenuData = { id = rowdata.id, operationid = rowdata.operationid, targets = {} }
 							local y = math.max(Helper.playerInfoConfig.offsetY + Helper.playerInfoConfig.height + Helper.borderSize, menu.topLevelHeight)
 							menu.createContextFrame(Helper.playerInfoConfig.offsetX + menu.sideBarWidth + Helper.borderSize + menu.narrowtablewidth + Helper.borderSize, y, menu.actionConfig.width, true)
 							menu.refreshInfoFrame()
@@ -4088,7 +4128,7 @@ function menu.onSelectElement(uitable, modified, row)
 					if rowdata.type == "event" then
 						if (menu.contextMenuMode ~= "event") or (rowdata.id ~= menu.contextMenuData.id) then
 							menu.contextMenuMode = "event"
-							menu.contextMenuData = { id = rowdata.id, operationindex = rowdata.operationindex }
+							menu.contextMenuData = { id = rowdata.id }
 							local y = math.max(Helper.playerInfoConfig.offsetY + Helper.playerInfoConfig.height + Helper.borderSize, menu.topLevelHeight)
 							menu.createContextFrame(Helper.playerInfoConfig.offsetX + menu.sideBarWidth + Helper.borderSize + menu.narrowtablewidth + Helper.borderSize, y, menu.eventConfig.width, true)
 							menu.refreshInfoFrame()

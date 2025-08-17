@@ -5,13 +5,10 @@ by kuertee. Contributors: AlexandreTK, DrWhoKnows, DmytroK, Erixon, Forleyor, IA
 
 Updates
 =======
-8.0.0.41, X:
-- New feature: Double-click pan and zoom: Double-clicking on an object on the map, including sectors, moves that map to that object. Double-clicking on the same object again cycles the zoom level of the map at 3 levels: near, far (sector objects are visible), and very far (sector objects are not visible, but neighbouring sectors come into view). (Note that in the base game, double-clicking on a sector yields no effect.)
+v8.0.0.6, 17 Aug 2025:
 - New feature: Interact Menu > Center On Map: Move the map to the object without selecting it.
 - New feature: Interact Menu > Center Destination On Map: Move the map to the gate's destination.
-
-8.0.0.4, 31 Jul 2025:
-- Tweak: 8.0 beta hotfix 4 compatibility.
+- Tweak: Compatibilith with the 8.0 beta hotfix 6 version of the base game.
 
 NOTES FOR PLAYERS:
 ==================
@@ -253,6 +250,9 @@ French localisation by Calvitix.
 
 History
 =======
+8.0.0.4, 31 Jul 2025:
+- Tweak: 8.0 beta hotfix 4 compatibility.
+
 8.0.0.3, 24 Jul 2025:
 - Tweak: 8.0 beta hotfix 3 compatibility.
 

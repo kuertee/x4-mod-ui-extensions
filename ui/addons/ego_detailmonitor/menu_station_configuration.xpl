@@ -307,6 +307,7 @@ local menu = {
 	currentConstructions = {},
 	dirtyreservations = {},
 	shuffleconnectionrace = "all",
+	picking = true,
 }
 
 local config = {
@@ -5450,6 +5451,8 @@ function menu.onUpdate()
 					SetMouseCursorOverride("default")
 				end
 			end
+		else
+			SetMouseOverOverride(menu.map, nil)
 		end
 
 		if not menu.loadoutMode then
