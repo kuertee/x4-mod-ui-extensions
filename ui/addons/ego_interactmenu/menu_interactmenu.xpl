@@ -4280,7 +4280,7 @@ function menu.uix_centerOnMap_addButton(ftable)
 			bgColor = Color["button_background_hidden"],
 			highlightColor = Color["button_highlight_default"],
 		}):setText((ReadText(101475, 102))) -- <t id="102">Center On Map</t>
-		row[1].handlers.onClick = function () return menu.uix_centerOnMap(object, true) end
+		row[1].handlers.onClick = function () return menu.uix_centerOnMap(object) end
 		height = height + row:getHeight() + Helper.borderSize
 		local exitGate
 		if C.IsComponentClass(object, "gate") then
@@ -4298,7 +4298,7 @@ function menu.uix_centerOnMap_addButton(ftable)
 				bgColor = Color["button_background_hidden"],
 				highlightColor = Color["button_highlight_default"],
 			}):setText((ReadText(101475, 103))) -- <t id="103">Center On Destination</t>
-			row[1].handlers.onClick = function () return menu.uix_centerOnMap(exitGate, true) end
+			row[1].handlers.onClick = function () return menu.uix_centerOnMap(exitGate) end
 			height = height + row:getHeight() + Helper.borderSize
 			-- local nextSector = ConvertStringTo64Bit(tostring(GetContextByClass(connectingGate, "sector")))
 			-- if IsValidComponent(nextSector) then
@@ -4308,7 +4308,7 @@ function menu.uix_centerOnMap_addButton(ftable)
 			-- 		bgColor = Color["button_background_hidden"],
 			-- 		highlightColor = Color["button_highlight_default"],
 			-- 	}):setText((ReadText(1025, 34))) -- <t id="34">Follow</t>
-			-- 	row[1].handlers.onClick = function () return menu.uix_centerOnMap(nextSector, true) end
+			-- 	row[1].handlers.onClick = function () return menu.uix_centerOnMap(nextSector) end
 			-- 	height = height + row:getHeight() + Helper.borderSize
 			-- end
 		end

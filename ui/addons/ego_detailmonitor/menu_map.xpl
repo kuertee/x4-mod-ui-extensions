@@ -18,7 +18,7 @@
 --		  -- kuertee end: multi-rename
 
 --		  -- kuertee start: center on map
---		  - "uix_centeronmap",		    param: { component }
+--		  - "uix_centeronmap",					param: { component }
 --		  -- kuertee end: center on map
 
 --		  - "changelogocontext",				param: { component }
@@ -1851,18 +1851,20 @@ end
 
 -- kuertee start:
 function menu.init_kuertee ()
-	-- start: center on map
+	-- kuertee start: center on map
 	menu.uix_centerOnMap_lastObject = nil
-	menu.uix_centerOnMap_lastZoomDistance = 0
 	menu.uix_centerOnMap_zoomVeryNear = 50000
 	menu.uix_centerOnMap_zoomNear = 300000
 	menu.uix_centerOnMap_zoomFar = 600000
 	menu.uix_centerOnMap_zoomVeryFar = 1200000
-	-- end
-	-- start: open/close mission lists
+	menu.uix_centerOnMap_objectZooms = {menu.uix_centerOnMap_zoomVeryNear, menu.uix_centerOnMap_zoomNear, menu.uix_centerOnMap_zoomFar}
+	menu.uix_centerOnMap_spaceZooms = {menu.uix_centerOnMap_zoomNear, menu.uix_centerOnMap_zoomFar, menu.uix_centerOnMap_zoomVeryFar}
+	menu.uix_centerOnMap_currentZoomIdx = 2
+	-- kuertee end: center on map
+	-- kuertee start: open/close mission lists
 	__userdata_uix_menu_map.savedExpandedMissionOffers = __userdata_uix_menu_map.savedExpandedMissionOffers or {}
 	__userdata_uix_menu_map.savedExpandedMissions = __userdata_uix_menu_map.savedExpandedMissions or {}
-	-- end: open/close mission lists
+	-- kuertee end: open/close mission lists
 end
 -- kuertee end
 
@@ -1905,9 +1907,9 @@ function menu.sortWareGroupsByTier(a, b)
 end
 
 function menu.cleanup()
-	-- start: open/close mission lists
+	-- kuertee start: open/close mission lists
 	menu.uix_removeInvalidsFromSavedExpandedMissions()
-	-- end: open/close mission lists
+	-- kuertee end: open/close mission lists
 
 	if not menu.minimized then
 		if (menu.mode == nil) or (menu.mode == "selectbuildlocation") then
@@ -18392,21 +18394,32 @@ function menu.uix_getIsMissionExpanded(missionEntry, isOffer, listId)
 	if not uix_Id then
 		uix_Id = listId
 	end
-	if debugFunc == Helper.debugText_forced then
-		if missionEntry and (not missionEntry.uix_Id) then
-			missionEntry.uix_Id = uix_Id
-			missionEntry.name = tostring(missionEntry.name) .. " " .. tostring(uix_Id)
-		end
-	end
 	local savedExpandedMissionsTable
 	if isOffer then
 		savedExpandedMissionsTable = __userdata_uix_menu_map.savedExpandedMissionOffers
 	else
 		savedExpandedMissionsTable = __userdata_uix_menu_map.savedExpandedMissions
 	end
+	if debugFunc == Helper.debugText_forced then
+		if missionEntry and (not missionEntry.uix_Id) then
+			missionEntry.uix_Id = uix_Id
+			missionEntry.name = tostring(missionEntry.name) .. " " .. tostring(uix_Id)
+		end
+	end
 	local isExpanded, sourceOfIsExpanded
 	local expandableChildIds, isActive = menu.uix_getExpandableChildren(missionEntry, isOffer)
-	debugFunc(tostring(missionEntry.name) .. " uix_Id " .. tostring(uix_Id) .. " #expandableChildIds", #expandableChildIds)
+	debugFunc("missionEntry.name" .. tostring(missionEntry.name) .. " uix_Id " .. tostring(uix_Id) .. " #expandableChildIds", #expandableChildIds)
+	local isBaseOpenCloseStatusOnOpenChildren = (#expandableChildIds > 0) and ((not isOffer) or (listId == "uix_plotListOffer"))
+	-- base open/close status on actual individual active missions or on actual individual important mission offers.
+	-- other mission offers and missions lists will be based on their open/close status on their list itself.
+	-- e.g. when a new important mission is offered or is accepted, the main important mission offer will be auto-opened.
+	-- e.g. when a new guild mission is offered, the main guild mission offer list will stay open or close depending on the player's last interaction with its +/- buttons.
+	-- i.e. for guild mission offers and other mission offers, the list will stay open or close REGARDLESS of whether a new mission was offered.
+	-- without isBaseOpenCloseStatusOnOpenChildren, the lists will be auto-opened AT EVERY new mission entry because their open/close vars wouldn't have been set and defaults to "open".
+	-- with isBaseOpenCloseStatusOnOpenChildren, the lists will stay open or close depending on the player's last interaction.
+	-- with isBaseOpenCloseStatusOnOpenChildren, all new important mission offers will AND all new accepted missions will auto-open.
+	debugFunc("    isBaseOpenCloseStatusOnOpenChildren", isBaseOpenCloseStatusOnOpenChildren)
+	-- if isBaseOpenCloseStatusOnOpenChildren == false then
 	if #expandableChildIds > 0 then
 		-- if missionEntry has expandable children, then get expanded states of missionEntry from them
 		sourceOfIsExpanded = "children"
@@ -18432,6 +18445,11 @@ function menu.uix_getIsMissionExpanded(missionEntry, isOffer, listId)
 				break
 			end
 		end
+		if debugFunc == Helper.debugText_forced then
+			for _, uix_Id in ipairs(expandableChildIds) do
+				debugFunc("    " .. tostring(uix_Id) .. " current " .. tostring(menu.expandedMissionGroups[uix_Id]) .. " saved " .. tostring(savedExpandedMissionsTable["saved" .. tostring(uix_Id)]))
+			end
+		end
 	else
 		-- otherwise, get expanded state of missionEntry itself
 		sourceOfIsExpanded = "previous value"
@@ -18446,13 +18464,17 @@ function menu.uix_getIsMissionExpanded(missionEntry, isOffer, listId)
 				isExpanded = true
 			end
 		end
+		-- ensure that children's expanded state is the same
+		-- if #expandableChildIds > 0 then
+		-- 	for _, uix_Id_child in ipairs(expandableChildIds) do
+		-- 		menu.expandedMissionGroups[uix_Id_child] = isExpanded
+		-- 		savedExpandedMissionsTable["saved" .. tostring(uix_Id_child)] = menu.expandedMissionGroups[uix_Id_child]
+		-- 		debugFunc("    uix_Id_child " .. tostring(uix_Id_child) .. " confirmed", menu.expandedMissionGroups[uix_Id_child])
+		-- 		debugFunc("    uix_Id_child " .. tostring(uix_Id_child) .. " confirmed2", savedExpandedMissionsTable["saved" .. tostring(uix_Id_child)])
+		-- 	end
+		-- end
 	end
 	debugFunc("    isExpanded " .. tostring(isExpanded) .. " sourceOfIsExpanded " .. tostring(sourceOfIsExpanded) .. " isActive " .. tostring(isActive))
-	if debugFunc == Helper.debugText_forced then
-		for _, uix_Id in ipairs(expandableChildIds) do
-			debugFunc("    " .. tostring(uix_Id) .. " current " .. tostring(menu.expandedMissionGroups[uix_Id]) .. " saved " .. tostring(savedExpandedMissionsTable["saved" .. tostring(uix_Id)]))
-		end
-	end
 	return isExpanded, isActive, expandableChildIds
 end
 
@@ -18460,18 +18482,32 @@ function menu.uix_expandMissionList(missionEntry, row, contextCallback, isOffer,
 	-- set this to Helper.debugText to hide debugging in this function
 	-- set this to Helper.debugText_forced to show debugging in this function
 	local debugFunc = Helper.debugText
-	local isExpanded, _, expandableChildIds = menu.uix_getIsMissionExpanded(missionEntry, isOffer, listId)
-	-- toggle isExpanded
-	isExpanded = not isExpanded
-	debugFunc("uix_expandMissionList isExpanded (toggled)", isExpanded)
+	local uix_Id = menu.uix_getMissionId(missionEntry, isOffer)
+	if not uix_Id then
+		uix_Id = listId
+	end
 	local savedExpandedMissionsTable
 	if isOffer then
 		savedExpandedMissionsTable = __userdata_uix_menu_map.savedExpandedMissionOffers
 	else
 		savedExpandedMissionsTable = __userdata_uix_menu_map.savedExpandedMissions
 	end
+	local isExpanded, _, expandableChildIds = menu.uix_getIsMissionExpanded(missionEntry, isOffer, listId)
+	isExpanded = not isExpanded
+	debugFunc("uix_expandMissionList " .. tostring(uix_Id) .. " isExpanded (toggled already)", isExpanded)
 	local firstMissionId
-	if #expandableChildIds > 0 then
+	local isBaseOpenCloseStatusOnOpenChildren = (#expandableChildIds > 0) and ((not isOffer) or (listId == "uix_plotListOffer"))
+	-- base open/close status on actual individual active missions or on actual individual important mission offers.
+	-- other mission offers and missions lists will be based on their open/close status on their list itself.
+	-- e.g. when a new important mission is offered or is accepted, the main important mission offer will be auto-opened.
+	-- e.g. when a new guild mission is offered, the main guild mission offer list will stay open or close depending on the player's last interaction with its +/- buttons.
+	-- i.e. for guild mission offers and other mission offers, the list will stay open or close REGARDLESS of whether a new mission was offered.
+	-- without isBaseOpenCloseStatusOnOpenChildren, the lists will be auto-opened AT EVERY new mission entry because their open/close vars wouldn't have been set and defaults to "open".
+	-- with isBaseOpenCloseStatusOnOpenChildren, the lists will stay open or close depending on the player's last interaction.
+	-- with isBaseOpenCloseStatusOnOpenChildren, all new important mission offers will AND all new accepted missions will auto-open.
+	debugFunc("    isBaseOpenCloseStatusOnOpenChildren", isBaseOpenCloseStatusOnOpenChildren)
+	if isBaseOpenCloseStatusOnOpenChildren == false then
+	-- if #expandableChildIds > 0 then
 		-- if missionEntry has expandable children, then the expanded status of missionEntry is based on their expanded states
 		for _, uix_Id in ipairs(expandableChildIds) do
 			debugFunc("toggling uix_Id", uix_Id)
@@ -18485,11 +18521,21 @@ function menu.uix_expandMissionList(missionEntry, row, contextCallback, isOffer,
 		end
 	else
 		-- otherwise, get expanded state of missionEntry itself
-		local uix_Id = menu.uix_getMissionId(missionEntry, isOffer)
 		if uix_Id then
 			firstMissionId = uix_Id
 			menu.expandedMissionGroups[uix_Id] = not menu.expandedMissionGroups[uix_Id]
 			savedExpandedMissionsTable["saved" .. tostring(uix_Id)] = menu.expandedMissionGroups[uix_Id]
+		end
+		debugFunc("    confirmed", menu.expandedMissionGroups[uix_Id])
+		debugFunc("    confirmed2", savedExpandedMissionsTable["saved" .. tostring(uix_Id)])
+		-- ensure that children's expanded state is the same
+		if #expandableChildIds > 0 then
+			for _, uix_Id_child in ipairs(expandableChildIds) do
+				menu.expandedMissionGroups[uix_Id_child] = isExpanded
+				savedExpandedMissionsTable["saved" .. tostring(uix_Id_child)] = menu.expandedMissionGroups[uix_Id_child]
+				debugFunc("    uix_Id_child " .. tostring(uix_Id_child) .. " confirmed", menu.expandedMissionGroups[uix_Id_child])
+				debugFunc("    uix_Id_child " .. tostring(uix_Id_child) .. " confirmed2", savedExpandedMissionsTable["saved" .. tostring(uix_Id_child)])
+			end
 		end
 	end
 	-- NOTE: copy what buttonExpandMissionGroup does for individual missions
@@ -31329,53 +31375,45 @@ function menu.uix_centerOnMap(object)
 	object = ConvertStringTo64Bit(tostring(object))
 	if menu.holomap and (menu.holomap ~= 0) then
 		C.SetFocusMapComponent(menu.holomap, object, true)
-		-- Helper.addDelayedOneTimeCallbackOnUpdate(function ()
-			local sector, isObjectSector
-			if C.IsComponentClass(object, "sector") then
-				isObjectSector = true
-				sector = object
-			else
-				sector = GetComponentData(object, "sectorid")
-			end
-			if IsValidComponent(sector) then
+		local sector, isObjectSector
+		local isLastObjectSector = menu.uix_centerOnMap_lastObject and C.IsComponentClass(menu.uix_centerOnMap_lastObject, "sector")
+		if C.IsComponentClass(object, "sector") then
+			isObjectSector = true
+			sector = object
+		else
+			sector = GetComponentData(object, "sectorid")
+		end
+		local isNewObject = isObjectSector and (not isLastObjectSector)
+		if IsValidComponent(sector) then
+			if object == menu.uix_centerOnMap_lastObject or isNewObject then
 				C.ResetMapPlayerRotation(menu.holomap)
-				local zoomDistance = menu.uix_centerOnMap_lastZoomDistance
-				if object ~= menu.uix_centerOnMap_lastObject then
-					if isObjectSector then
-						-- for sectors, zoom cycle from near to far is:
-						-- zoomNear, zoomFar, zoomVeryFar - so default zoom is zoomFar
-						zoomDistance = menu.uix_centerOnMap_zoomFar
-					else
-						-- for other objects,
-						-- zoomVeryNear, zoomNear, zoomFar - so default zoom is zoomNear
-						zoomDistance = menu.uix_centerOnMap_zoomNear
-					end
+				local zooms
+				if isObjectSector then
+					zooms = menu.uix_centerOnMap_spaceZooms
 				else
-					if isObjectSector then
-						-- zoomFar - middle distance, so zoom "far" == zoomVeryFar
-						if zoomDistance == menu.uix_centerOnMap_zoomNear then
-							zoomDistance = menu.uix_centerOnMap_zoomFar
-						elseif zoomDistance == menu.uix_centerOnMap_zoomFar then
-							zoomDistance = menu.uix_centerOnMap_zoomVeryFar
-						else
-							zoomDistance = menu.uix_centerOnMap_zoomNear
-						end
-					else
-						-- zoomNear - middle distance, so zoom "far" == zoomFar
-						if zoomDistance == menu.uix_centerOnMap_zoomNear then
-							zoomDistance = menu.uix_centerOnMap_zoomFar
-						elseif zoomDistance == menu.uix_centerOnMap_zoomFar then
-							zoomDistance = menu.uix_centerOnMap_zoomVeryNear
-						else
-							zoomDistance = menu.uix_centerOnMap_zoomNear
-						end
+					zooms = menu.uix_centerOnMap_objectZooms
+				end
+				if isNewObject and isObjectSector then
+					menu.uix_centerOnMap_currentZoomIdx = 1
+				else
+					menu.uix_centerOnMap_currentZoomIdx = menu.uix_centerOnMap_currentZoomIdx + 1
+					if menu.uix_centerOnMap_currentZoomIdx > #zooms then
+						menu.uix_centerOnMap_currentZoomIdx = 1
 					end
 				end
+				local zoomDistance
+				-- if isObjectSector then
+					zoomDistance = zooms[menu.uix_centerOnMap_currentZoomIdx]
+				-- else
+				-- 	local posrot = ffi.new("UIPosRot")
+				-- 	local eclipticoffset = ffi.new("UIPosRot")
+				-- 	local posrotcomponent = C.GetMapPositionOnEcliptic2(menu.holomap, posrot, false, object, eclipticoffset)
+				-- 	zoomDistance = zooms[menu.uix_centerOnMap_currentZoomIdx] + posrot.y
+				-- end
 				C.SetMapTargetDistance(menu.holomap, zoomDistance)
-				menu.uix_centerOnMap_lastZoomDistance = zoomDistance
-				menu.uix_centerOnMap_lastObject = object
 			end
-		-- end, true, getElapsedTime() + 1)
+		end
+		menu.uix_centerOnMap_lastObject = object
 	end
 end
 

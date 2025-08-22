@@ -5,8 +5,8 @@ by kuertee. Contributors: AlexandreTK, DrWhoKnows, DmytroK, Erixon, Forleyor, IA
 
 Updates
 =======
-8.0.0.4, 31 Jul 2025:
-- Tweak: 8.0 beta hotfix 4 compatibility.
+v8.0.0.6.1, 22 Aug 2025:
+- Tweak: Bug-fixes to the open/close active and offered mission lists.
 
 NOTES FOR PLAYERS:
 ==================
@@ -149,6 +149,8 @@ Mission lists has an "open all/close all" button.
 
 Map Menu: Multi-rename
 ======================
+Note: Like the base game's single-rename function, confirming a blank entry will to revert an object's name to its default name.
+
 When renaming multiple objects, these special texts in the name will be replaced with the listed value.
 - $name: The object's current name.
 - $name_AR: The object's internal name used with UniTrader's Advanced Renaming.
@@ -248,6 +250,14 @@ French localisation by Calvitix.
 
 History
 =======
+v8.0.0.6, 17 Aug 2025:
+- New feature: Interact Menu > Center On Map: Move the map to the object without selecting it.
+- New feature: Interact Menu > Center Destination On Map: Move the map to the gate's destination.
+- Tweak: Compatibilith with the 8.0 beta hotfix 6 version of the base game.
+
+8.0.0.4, 31 Jul 2025:
+- Tweak: 8.0 beta hotfix 4 compatibility.
+
 8.0.0.3, 24 Jul 2025:
 - Tweak: 8.0 beta hotfix 3 compatibility.
 
