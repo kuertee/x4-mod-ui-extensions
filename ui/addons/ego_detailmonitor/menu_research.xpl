@@ -32,6 +32,10 @@ local config = {
 	nodewidth = 270,
 }
 
+-- kuertee start:
+menu.uix_callbacks = {}
+-- kuertee end
+
 -- init menu and register with Helper
 local function init()
 	Menus = Menus or { }
@@ -39,7 +43,16 @@ local function init()
 	if Helper then
 		Helper.registerMenu(menu)
 	end
+
+    -- kuertee start:
+    menu.init_kuertee()
+    -- kuertee end
 end
+
+-- kuertee start:
+function menu.init_kuertee ()
+end
+-- kuertee end
 
 -- cleanup variables in menu, no need for the menu variable to keep all the data while the menu is not active
 function menu.cleanup()
@@ -525,6 +538,15 @@ function menu.expandNode(_, ftable, _, data)
 				row[2]:createText((locamount and (locamount .. " / ") or "") .. resourcedata.amount, { halign = "right", color = color })
 			end
 		end
+
+        -- start: kuertee call-back
+        if menu.uix_callbacks ["expandNode_before_start_button"] then
+            for uix_id, uix_callback in pairs (menu.uix_callbacks ["expandNode_before_start_button"]) do
+                uix_callback (ftable, resources, data)
+            end
+        end
+        -- end: kuertee call-back
+
 		-- start button
 		local row = ftable:addRow(true, { fixed = true })
 		local isavailable = menu.isResearchAvailable(data.techdata.tech, data.mainIdx, data.col)
