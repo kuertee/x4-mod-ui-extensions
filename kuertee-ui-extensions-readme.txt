@@ -5,7 +5,8 @@ by kuertee. Contributors: AlexandreTK, DrWhoKnows, Erixon, Forleyor, IALuir, Myc
 
 Updates
 =======
-7.6.2, X Jun 2025:
+7.6.2, 24 Aug 2025:
+- New feature: Mycu's new callbacks in the Research menu for an unreleased mod/feature.
 - New feature: Interact Menu action Center On Map / Destination: Right-click on an object and click on Center On Map to center the object on the map without changing your selected objects. This is usable on sectors. When used on a gate, the Center On Destination action centers the gate's destination. (Based on Brinnie's mod request: https://forum.egosoft.com/viewtopic.php?t=471439&sid=a3f501f4bd3cc9a74a01dd4eb5107998.)
 
 NOTES FOR PLAYERS:
