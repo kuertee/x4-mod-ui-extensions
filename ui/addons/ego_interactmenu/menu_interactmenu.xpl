@@ -2787,12 +2787,12 @@ function menu.uix_centerOnMap(object)
 			C.NotifyInteractMenuHidden(menu.interactMenuID, true)
 		end
 		if IsValidComponent(object) then
-			Helper.closeMenuAndOpenNewMenu(menu, "MapMenu", { 0, 0, true, nil, nil, "uix_centeronmap", { object } })
+			Helper.closeMenuAndOpenNewMenu(menu, "MapMenu", { 0, 0, true, nil, nil, "uix_centeronmap", { object, true } })
 		end
 	else
 		Helper.resetUpdateHandler()
 		Helper.clearFrame(menu, config.layer)
-		Helper.returnFromInteractMenu(menu.currentOverTable, "uix_centeronmap", { object })
+		Helper.returnFromInteractMenu(menu.currentOverTable, "uix_centeronmap", { object, true })
 	end
 end
 -- kuertee end: center on map

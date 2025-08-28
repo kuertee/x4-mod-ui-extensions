@@ -5,8 +5,12 @@ by kuertee. Contributors: AlexandreTK, DrWhoKnows, DmytroK, Erixon, Forleyor, IA
 
 Updates
 =======
+v8.0.0.6.2, 24 Aug 2025:
+- Bug-fix: Missing callback from 7.6.1 in the Player Information menu that broke Mycu's Purchasable Paint Modifications mod when used in the 8.0 beta.
+- New feature: Mycu's new callbacks in the Research menu for an unreleased mod/feature.
+
 v8.0.0.6.1, 22 Aug 2025:
-- Tweak: Bug-fixes to the open/close active and offered mission lists.
+- Bug-fix: Open/close active and offered mission lists.
 
 NOTES FOR PLAYERS:
 ==================

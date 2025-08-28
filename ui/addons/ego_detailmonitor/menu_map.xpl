@@ -18,7 +18,7 @@
 --		  -- kuertee end: multi-rename
 
 --		  -- kuertee start: center on map
---		  - "uix_centeronmap",					param: { component }
+--		  - "uix_centeronmap",					param: { component, isStaticZoom }
 --		  -- kuertee end: center on map
 
 --		  - "changelogocontext",				param: { component }
@@ -1853,13 +1853,19 @@ end
 function menu.init_kuertee ()
 	-- kuertee start: center on map
 	menu.uix_centerOnMap_lastObject = nil
-	menu.uix_centerOnMap_zoomVeryNear = 50000
-	menu.uix_centerOnMap_zoomNear = 300000
+	menu.uix_centerOnMap_zoomStationLevel = 18750
+	menu.uix_centerOnMap_zoomZoneLevel = 37500
+	menu.uix_centerOnMap_zoomVeryVeryNear = 75000
+	menu.uix_centerOnMap_zoomVeryNear = 150000
+	menu.uix_centerOnMap_zoomSectorLevel = 300000
 	menu.uix_centerOnMap_zoomFar = 600000
 	menu.uix_centerOnMap_zoomVeryFar = 1200000
-	menu.uix_centerOnMap_objectZooms = {menu.uix_centerOnMap_zoomVeryNear, menu.uix_centerOnMap_zoomNear, menu.uix_centerOnMap_zoomFar}
-	menu.uix_centerOnMap_spaceZooms = {menu.uix_centerOnMap_zoomNear, menu.uix_centerOnMap_zoomFar, menu.uix_centerOnMap_zoomVeryFar}
-	menu.uix_centerOnMap_currentZoomIdx = 2
+	menu.uix_centerOnMap_zoomVeryVeryFar = 2400000
+	menu.uix_centerOnMap_zoomVeryVeryVeryFar = 4800000
+	menu.uix_centerOnMap_objectZooms = {menu.uix_centerOnMap_zoomVeryNear, menu.uix_centerOnMap_zoomSectorLevel}
+	menu.uix_centerOnMap_spaceZooms = {menu.uix_centerOnMap_zoomSectorLevel, menu.uix_centerOnMap_zoomVeryVeryFar}
+	menu.uix_centerOnMap_freeZooms = {menu.uix_centerOnMap_zoomStationLevel, menu.uix_centerOnMap_zoomZoneLevel, menu.uix_centerOnMap_zoomVeryVeryNear, menu.uix_centerOnMap_zoomVeryNear, menu.uix_centerOnMap_zoomSectorLevel, menu.uix_centerOnMap_zoomFar, menu.uix_centerOnMap_zoomVeryFar, menu.uix_centerOnMap_zoomVeryVeryFar, menu.uix_centerOnMap_zoomVeryVeryVeryFar}
+	menu.uix_centerOnMap_currentZoomIdx = 1
 	-- kuertee end: center on map
 	-- kuertee start: open/close mission lists
 	__userdata_uix_menu_map.savedExpandedMissionOffers = __userdata_uix_menu_map.savedExpandedMissionOffers or {}
@@ -5435,18 +5441,40 @@ function menu.hotkey(action)
 		end
 	elseif action == "INPUT_ACTION_ADDON_DETAILMONITOR_ZONE_VIEW" then
 		if menu.holomap and (menu.holomap ~= 0) then
-			C.SetMapTargetDistance(menu.holomap, 20000)
-			C.ResetMapPlayerRotation(menu.holomap)
-			C.SetFocusMapComponent(menu.holomap, C.GetPlayerObjectID(), true)
+
+			-- kuertee start: zoom in
+			-- C.SetMapTargetDistance(menu.holomap, 20000)
+			-- C.ResetMapPlayerRotation(menu.holomap)
+			-- C.SetFocusMapComponent(menu.holomap, C.GetPlayerObjectID(), true)
+			-- zoom in
+			menu.uix_centerOnMap_currentZoomIdx = menu.uix_getCurrentZoomIdx(menu.uix_centerOnMap_freeZooms) - 1
+			if menu.uix_centerOnMap_currentZoomIdx < 1 then
+				menu.uix_centerOnMap_currentZoomIdx = 1
+			end
+			local zoomDistance = menu.uix_centerOnMap_freeZooms[menu.uix_centerOnMap_currentZoomIdx]
+			C.SetMapTargetDistance(menu.holomap, zoomDistance)
+			-- kuertee end
+
 			if menu.infoTableMode == "objectlist" then
 				menu.refreshInfoFrame()
 			end
 		end
 	elseif action == "INPUT_ACTION_ADDON_DETAILMONITOR_SECTOR_VIEW" then
 		if menu.holomap and (menu.holomap ~= 0) then
-			C.SetMapTargetDistance(menu.holomap, 2000000)
-			C.ResetMapPlayerRotation(menu.holomap)
-			C.SetFocusMapComponent(menu.holomap, C.GetPlayerObjectID(), true)
+
+			-- kuertee start: zoom out
+			-- C.SetMapTargetDistance(menu.holomap, 2000000)
+			-- C.ResetMapPlayerRotation(menu.holomap)
+			-- C.SetFocusMapComponent(menu.holomap, C.GetPlayerObjectID(), true)
+			-- zoom out
+			menu.uix_centerOnMap_currentZoomIdx = menu.uix_getCurrentZoomIdx(menu.uix_centerOnMap_freeZooms) + 1
+			if menu.uix_centerOnMap_currentZoomIdx > #menu.uix_centerOnMap_freeZooms then
+				menu.uix_centerOnMap_currentZoomIdx = #menu.uix_centerOnMap_freeZooms
+			end
+			local zoomDistance = menu.uix_centerOnMap_freeZooms[menu.uix_centerOnMap_currentZoomIdx]
+			C.SetMapTargetDistance(menu.holomap, zoomDistance)
+			-- kuertee end
+
 			if menu.infoTableMode == "objectlist" then
 				menu.refreshInfoFrame()
 			end
@@ -6394,7 +6422,7 @@ function menu.displayMenu(firsttime)
 
 	-- kuertee start: center on map
 	elseif menu.mode == "uix_centeronmap" then
-		menu.uix_centerOnMap(menu.modeparam[1])
+		menu.uix_centerOnMap(menu.modeparam[1], menu.modeparam[2])
 	-- kuertee end: center on map
 	end
 
@@ -18408,19 +18436,23 @@ function menu.uix_getIsMissionExpanded(missionEntry, isOffer, listId)
 	end
 	local isExpanded, sourceOfIsExpanded
 	local expandableChildIds, isActive = menu.uix_getExpandableChildren(missionEntry, isOffer)
-	debugFunc("missionEntry.name" .. tostring(missionEntry.name) .. " uix_Id " .. tostring(uix_Id) .. " #expandableChildIds", #expandableChildIds)
-	local isBaseOpenCloseStatusOnOpenChildren = (#expandableChildIds > 0) and ((not isOffer) or (listId == "uix_plotListOffer"))
+	debugFunc("uix_getIsMissionExpanded")
+	debugFunc("    missionEntry.name " .. tostring(missionEntry.name) .. " uix_Id " .. tostring(uix_Id) .. " #expandableChildIds", #expandableChildIds)
+	-- local isOpenCloseStatusDependsOnOpenChildren = (#expandableChildIds > 0) and ((not isOffer) or (listId == "uix_plotListOffer"))
+	-- TODO: isOpenCloseStatusDependsOnOpenChildren when FALSE is buggy!!!
+	-- set isOpenCloseStatusDependsOnOpenChildren to "(#expandableChildIds > 0) and true or false" to disable its effects
+	local isOpenCloseStatusDependsOnOpenChildren = (#expandableChildIds > 0) and true or false
 	-- base open/close status on actual individual active missions or on actual individual important mission offers.
 	-- other mission offers and missions lists will be based on their open/close status on their list itself.
 	-- e.g. when a new important mission is offered or is accepted, the main important mission offer will be auto-opened.
 	-- e.g. when a new guild mission is offered, the main guild mission offer list will stay open or close depending on the player's last interaction with its +/- buttons.
 	-- i.e. for guild mission offers and other mission offers, the list will stay open or close REGARDLESS of whether a new mission was offered.
-	-- without isBaseOpenCloseStatusOnOpenChildren, the lists will be auto-opened AT EVERY new mission entry because their open/close vars wouldn't have been set and defaults to "open".
-	-- with isBaseOpenCloseStatusOnOpenChildren, the lists will stay open or close depending on the player's last interaction.
-	-- with isBaseOpenCloseStatusOnOpenChildren, all new important mission offers will AND all new accepted missions will auto-open.
-	debugFunc("    isBaseOpenCloseStatusOnOpenChildren", isBaseOpenCloseStatusOnOpenChildren)
-	-- if isBaseOpenCloseStatusOnOpenChildren == false then
-	if #expandableChildIds > 0 then
+	-- without isOpenCloseStatusDependsOnOpenChildren, the lists will be auto-opened AT EVERY new mission entry because their open/close vars wouldn't have been set and defaults to "open".
+	-- with isOpenCloseStatusDependsOnOpenChildren, the lists will stay open or close depending on the player's last interaction.
+	-- with isOpenCloseStatusDependsOnOpenChildren, all new important mission offers will AND all new accepted missions will auto-open.
+	debugFunc("        isOpenCloseStatusDependsOnOpenChildren", isOpenCloseStatusDependsOnOpenChildren)
+	if isOpenCloseStatusDependsOnOpenChildren == true then
+	-- if #expandableChildIds > 0 then
 		-- if missionEntry has expandable children, then get expanded states of missionEntry from them
 		sourceOfIsExpanded = "children"
 		-- if not set, then must be false.
@@ -18445,9 +18477,10 @@ function menu.uix_getIsMissionExpanded(missionEntry, isOffer, listId)
 				break
 			end
 		end
+		debugFunc("        isExpanded " .. tostring(isExpanded) .. " sourceOfIsExpanded " .. tostring(sourceOfIsExpanded) .. " isActive " .. tostring(isActive))
 		if debugFunc == Helper.debugText_forced then
 			for _, uix_Id in ipairs(expandableChildIds) do
-				debugFunc("    " .. tostring(uix_Id) .. " current " .. tostring(menu.expandedMissionGroups[uix_Id]) .. " saved " .. tostring(savedExpandedMissionsTable["saved" .. tostring(uix_Id)]))
+				debugFunc("        " .. tostring(uix_Id) .. " current " .. tostring(menu.expandedMissionGroups[uix_Id]) .. " saved " .. tostring(savedExpandedMissionsTable["saved" .. tostring(uix_Id)]))
 			end
 		end
 	else
@@ -18464,17 +18497,18 @@ function menu.uix_getIsMissionExpanded(missionEntry, isOffer, listId)
 				isExpanded = true
 			end
 		end
+		debugFunc("        isExpanded " .. tostring(isExpanded) .. " sourceOfIsExpanded " .. tostring(sourceOfIsExpanded) .. " isActive " .. tostring(isActive))
+		-- TODO: isOpenCloseStatusDependsOnOpenChildren when FALSE is buggy!!!
 		-- ensure that children's expanded state is the same
-		-- if #expandableChildIds > 0 then
+		-- if isOpenCloseStatusDependsOnOpenChildren == false and #expandableChildIds > 0 then
 		-- 	for _, uix_Id_child in ipairs(expandableChildIds) do
 		-- 		menu.expandedMissionGroups[uix_Id_child] = isExpanded
 		-- 		savedExpandedMissionsTable["saved" .. tostring(uix_Id_child)] = menu.expandedMissionGroups[uix_Id_child]
-		-- 		debugFunc("    uix_Id_child " .. tostring(uix_Id_child) .. " confirmed", menu.expandedMissionGroups[uix_Id_child])
-		-- 		debugFunc("    uix_Id_child " .. tostring(uix_Id_child) .. " confirmed2", savedExpandedMissionsTable["saved" .. tostring(uix_Id_child)])
+		-- 		debugFunc("        uix_Id_child " .. tostring(uix_Id_child) .. " confirmed", menu.expandedMissionGroups[uix_Id_child])
+		-- 		debugFunc("        uix_Id_child " .. tostring(uix_Id_child) .. " confirmed2", savedExpandedMissionsTable["saved" .. tostring(uix_Id_child)])
 		-- 	end
 		-- end
 	end
-	debugFunc("    isExpanded " .. tostring(isExpanded) .. " sourceOfIsExpanded " .. tostring(sourceOfIsExpanded) .. " isActive " .. tostring(isActive))
 	return isExpanded, isActive, expandableChildIds
 end
 
@@ -18494,49 +18528,52 @@ function menu.uix_expandMissionList(missionEntry, row, contextCallback, isOffer,
 	end
 	local isExpanded, _, expandableChildIds = menu.uix_getIsMissionExpanded(missionEntry, isOffer, listId)
 	isExpanded = not isExpanded
-	debugFunc("uix_expandMissionList " .. tostring(uix_Id) .. " isExpanded (toggled already)", isExpanded)
+	debugFunc("uix_expandMissionList")
+	debugFunc("    uix_expandMissionList " .. tostring(uix_Id) .. " isExpanded", isExpanded)
 	local firstMissionId
-	local isBaseOpenCloseStatusOnOpenChildren = (#expandableChildIds > 0) and ((not isOffer) or (listId == "uix_plotListOffer"))
+	-- local isOpenCloseStatusDependsOnOpenChildren = (#expandableChildIds > 0) and ((not isOffer) or (listId == "uix_plotListOffer"))
+	-- TODO: isOpenCloseStatusDependsOnOpenChildren when FALSE is buggy!!!
+	-- set isOpenCloseStatusDependsOnOpenChildren to "(#expandableChildIds > 0) and true or false" to disable its effects
+	local isOpenCloseStatusDependsOnOpenChildren = (#expandableChildIds > 0) and true or false
 	-- base open/close status on actual individual active missions or on actual individual important mission offers.
 	-- other mission offers and missions lists will be based on their open/close status on their list itself.
 	-- e.g. when a new important mission is offered or is accepted, the main important mission offer will be auto-opened.
 	-- e.g. when a new guild mission is offered, the main guild mission offer list will stay open or close depending on the player's last interaction with its +/- buttons.
 	-- i.e. for guild mission offers and other mission offers, the list will stay open or close REGARDLESS of whether a new mission was offered.
-	-- without isBaseOpenCloseStatusOnOpenChildren, the lists will be auto-opened AT EVERY new mission entry because their open/close vars wouldn't have been set and defaults to "open".
-	-- with isBaseOpenCloseStatusOnOpenChildren, the lists will stay open or close depending on the player's last interaction.
-	-- with isBaseOpenCloseStatusOnOpenChildren, all new important mission offers will AND all new accepted missions will auto-open.
-	debugFunc("    isBaseOpenCloseStatusOnOpenChildren", isBaseOpenCloseStatusOnOpenChildren)
-	if isBaseOpenCloseStatusOnOpenChildren == false then
+	-- without isOpenCloseStatusDependsOnOpenChildren, the lists will be auto-opened AT EVERY new mission entry because their open/close vars wouldn't have been set and defaults to "open".
+	-- with isOpenCloseStatusDependsOnOpenChildren, the lists will stay open or close depending on the player's last interaction.
+	-- with isOpenCloseStatusDependsOnOpenChildren, all new important mission offers will AND all new accepted missions will auto-open.
+	debugFunc("        isOpenCloseStatusDependsOnOpenChildren", isOpenCloseStatusDependsOnOpenChildren)
+	if isOpenCloseStatusDependsOnOpenChildren == true then
 	-- if #expandableChildIds > 0 then
 		-- if missionEntry has expandable children, then the expanded status of missionEntry is based on their expanded states
 		for _, uix_Id in ipairs(expandableChildIds) do
-			debugFunc("toggling uix_Id", uix_Id)
+			debugFunc("    toggling uix_Id", uix_Id)
 			if not firstMissionId then
 				firstMissionId = uix_Id
 			end
 			menu.expandedMissionGroups[uix_Id] = isExpanded
 			savedExpandedMissionsTable["saved" .. tostring(uix_Id)] = menu.expandedMissionGroups[uix_Id]
-			debugFunc("    confirmed", menu.expandedMissionGroups[uix_Id])
-			debugFunc("    confirmed2", savedExpandedMissionsTable["saved" .. tostring(uix_Id)])
+			debugFunc("        confirmed", menu.expandedMissionGroups[uix_Id])
+			debugFunc("        confirmed2", savedExpandedMissionsTable["saved" .. tostring(uix_Id)])
 		end
 	else
 		-- otherwise, get expanded state of missionEntry itself
-		if uix_Id then
-			firstMissionId = uix_Id
-			menu.expandedMissionGroups[uix_Id] = not menu.expandedMissionGroups[uix_Id]
-			savedExpandedMissionsTable["saved" .. tostring(uix_Id)] = menu.expandedMissionGroups[uix_Id]
-		end
-		debugFunc("    confirmed", menu.expandedMissionGroups[uix_Id])
-		debugFunc("    confirmed2", savedExpandedMissionsTable["saved" .. tostring(uix_Id)])
+		firstMissionId = uix_Id
+		menu.expandedMissionGroups[uix_Id] = isExpanded
+		savedExpandedMissionsTable["saved" .. tostring(uix_Id)] = menu.expandedMissionGroups[uix_Id]
+		debugFunc("        confirmed", menu.expandedMissionGroups[uix_Id])
+		debugFunc("        confirmed2", savedExpandedMissionsTable["saved" .. tostring(uix_Id)])
+		-- TODO: isOpenCloseStatusDependsOnOpenChildren when FALSE is buggy!!!
 		-- ensure that children's expanded state is the same
-		if #expandableChildIds > 0 then
-			for _, uix_Id_child in ipairs(expandableChildIds) do
-				menu.expandedMissionGroups[uix_Id_child] = isExpanded
-				savedExpandedMissionsTable["saved" .. tostring(uix_Id_child)] = menu.expandedMissionGroups[uix_Id_child]
-				debugFunc("    uix_Id_child " .. tostring(uix_Id_child) .. " confirmed", menu.expandedMissionGroups[uix_Id_child])
-				debugFunc("    uix_Id_child " .. tostring(uix_Id_child) .. " confirmed2", savedExpandedMissionsTable["saved" .. tostring(uix_Id_child)])
-			end
-		end
+		-- if isOpenCloseStatusDependsOnOpenChildren == false and #expandableChildIds > 0 then
+		-- 	for _, uix_Id_child in ipairs(expandableChildIds) do
+		-- 		menu.expandedMissionGroups[uix_Id_child] = isExpanded
+		-- 		savedExpandedMissionsTable["saved" .. tostring(uix_Id_child)] = menu.expandedMissionGroups[uix_Id_child]
+		-- 		debugFunc("        uix_Id_child " .. tostring(uix_Id_child) .. " confirmed", menu.expandedMissionGroups[uix_Id_child])
+		-- 		debugFunc("        uix_Id_child " .. tostring(uix_Id_child) .. " confirmed2", savedExpandedMissionsTable["saved" .. tostring(uix_Id_child)])
+		-- 	end
+		-- end
 	end
 	-- NOTE: copy what buttonExpandMissionGroup does for individual missions
 	-- e.g. look for "copied from buttonExpandMissionGroup" notes within uix_expandMissionList()
@@ -26626,6 +26663,10 @@ function menu.onUpdate()
 
 			if menu.focuscomponent then
 				C.SetFocusMapComponent(menu.holomap, menu.focuscomponent, true)
+
+				-- kuertee start: center on map
+				menu.uix_centerOnMap_lastObject = ConvertStringTo64Bit(tostring(pickedcomponent))
+				-- kuertee end
 			end
 
 			if menu.mapstate then
@@ -27841,9 +27882,14 @@ function menu.onRenderTargetDoubleClick(modified)
 
 				-- kuertee start: center on map
 				-- C.SetFocusMapComponent(menu.holomap, pickedcomponent, true)
-				menu.uix_centerOnMap(pickedcomponent)
 				-- kuertee end
 			end
+
+			-- kuertee start: center on map
+			if modified ~= "shift" then
+				menu.uix_centerOnMap(pickedcomponent)
+			end
+			-- kuertee end
 
 			local components = {}
 			Helper.ffiVLA(components, "UniverseID", C.GetNumMapSelectedComponents, C.GetMapSelectedComponents, menu.holomap)
@@ -30175,7 +30221,7 @@ function menu.onInteractMenuCallback(type, param)
 
 	-- kuertee start: center on map
 	elseif type == "uix_centeronmap" then
-		menu.uix_centerOnMap(param[1])
+		menu.uix_centerOnMap(param[1], param[2])
 	-- kuertee end: center on map
 	end
 end
@@ -31371,50 +31417,91 @@ function menu.sortCombinedSkill(a, b, invert)
 end
 
 -- center on map
-function menu.uix_centerOnMap(object)
+function menu.uix_centerOnMap(object, isStaticZoom)
 	object = ConvertStringTo64Bit(tostring(object))
 	if menu.holomap and (menu.holomap ~= 0) then
-		C.SetFocusMapComponent(menu.holomap, object, true)
 		local sector, isObjectSector
-		local isLastObjectSector = menu.uix_centerOnMap_lastObject and C.IsComponentClass(menu.uix_centerOnMap_lastObject, "sector")
 		if C.IsComponentClass(object, "sector") then
 			isObjectSector = true
 			sector = object
 		else
 			sector = GetComponentData(object, "sectorid")
 		end
-		local isNewObject = isObjectSector and (not isLastObjectSector)
 		if IsValidComponent(sector) then
-			if object == menu.uix_centerOnMap_lastObject or isNewObject then
-				C.ResetMapPlayerRotation(menu.holomap)
+			C.SetFocusMapComponent(menu.holomap, object, true)
+			C.ResetMapPlayerRotation(menu.holomap)
+			if not isStaticZoom then
 				local zooms
 				if isObjectSector then
 					zooms = menu.uix_centerOnMap_spaceZooms
 				else
 					zooms = menu.uix_centerOnMap_objectZooms
 				end
-				if isNewObject and isObjectSector then
-					menu.uix_centerOnMap_currentZoomIdx = 1
-				else
-					menu.uix_centerOnMap_currentZoomIdx = menu.uix_centerOnMap_currentZoomIdx + 1
-					if menu.uix_centerOnMap_currentZoomIdx > #zooms then
-						menu.uix_centerOnMap_currentZoomIdx = 1
-					end
+				local isNewObject = true
+				if menu.uix_centerOnMap_lastObject then
+					isNewObject = not IsSameComponent(menu.uix_centerOnMap_lastObject, object)
 				end
 				local zoomDistance
-				-- if isObjectSector then
+				if isNewObject then
+					menu.uix_centerOnMap_currentZoomIdx = 1
 					zoomDistance = zooms[menu.uix_centerOnMap_currentZoomIdx]
-				-- else
-				-- 	local posrot = ffi.new("UIPosRot")
-				-- 	local eclipticoffset = ffi.new("UIPosRot")
-				-- 	local posrotcomponent = C.GetMapPositionOnEcliptic2(menu.holomap, posrot, false, object, eclipticoffset)
-				-- 	zoomDistance = zooms[menu.uix_centerOnMap_currentZoomIdx] + posrot.y
-				-- end
+				else
+					if isObjectSector then
+						menu.uix_centerOnMap_currentZoomIdx = menu.uix_getCurrentZoomIdx(zooms) + 1
+						if menu.uix_centerOnMap_currentZoomIdx > #zooms then
+							menu.uix_centerOnMap_currentZoomIdx = 1
+						end
+						zoomDistance = zooms[menu.uix_centerOnMap_currentZoomIdx]
+					else
+						menu.uix_centerOnMap_currentZoomIdx = menu.uix_getCurrentZoomIdx(zooms) - 1
+						if menu.uix_centerOnMap_currentZoomIdx < 1 then
+							menu.uix_centerOnMap_currentZoomIdx = #zooms
+						end
+						zoomDistance = zooms[menu.uix_centerOnMap_currentZoomIdx]
+						-- DISABLED because need to work out how to get Y of object: when object Y is near zoomDistance, use object Y as zoomDistance
+						-- local posrot = ffi.new("UIPosRot")
+						-- local eclipticoffset = ffi.new("UIPosRot")
+						-- local posrotcomponent = C.GetMapPositionOnEcliptic2(menu.holomap, posrot, false, object, eclipticoffset)
+						-- local nearestZoomIdxToObjectY, nearestZoomDiffToObjectY
+						-- Helper.debugText_forced("eclipticoffset.y", eclipticoffset.y)
+						-- for idx, zoomDistance in ipairs(zooms) do
+						-- 	local diff = math.abs(zoomDistance - eclipticoffset.y)
+						-- 	Helper.debugText_forced("    diff", diff)
+						-- 	if (not nearestZoomIdxToObjectY) or diff < nearestZoomDiffToObjectY then
+						-- 		nearestZoomIdxToObjectY = idx
+						-- 		nearestZoomDiffToObjectY = diff
+						-- 		Helper.debugText_forced("    nearestZoomIdxToObjectY", nearestZoomIdxToObjectY)
+						-- 		Helper.debugText_forced("    nearestZoomDiffToObjectY", nearestZoomDiffToObjectY)
+						-- 	end
+						-- end
+						-- if menu.uix_centerOnMap_currentZoomIdx == idx then
+						-- 	zoomDistance = posrot.y
+						-- else
+						-- 	zoomDistance = zooms[menu.uix_centerOnMap_currentZoomIdx]
+						-- end
+					end
+				end
 				C.SetMapTargetDistance(menu.holomap, zoomDistance)
 			end
 		end
 		menu.uix_centerOnMap_lastObject = object
+		menu.focuscomponent = nil
+		menu.mapstate = nil
 	end
+end
+
+function menu.uix_getCurrentZoomIdx(zoomDistances)
+	local mapstate = ffi.new("HoloMapState")
+	C.GetMapState(menu.holomap, mapstate)
+	local nearestIdx, nearestDistance
+	for idx, zoomDistance in ipairs(zoomDistances) do
+		local distance = math.abs(mapstate.cameradistance - zoomDistance)
+		if (not nearestIdx) or distance < nearestDistance then
+			nearestIdx = idx
+			nearestDistance = distance
+		end
+	end
+	return nearestIdx
 end
 
 menu.uix_callbackCount = 0

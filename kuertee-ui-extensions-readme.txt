@@ -5,8 +5,13 @@ by kuertee. Contributors: AlexandreTK, DrWhoKnows, DmytroK, Erixon, Forleyor, IA
 
 Updates
 =======
+v8.0.0.6.2, 24 Aug 2025:
+- New feature: Map zoom function tweaks: (1) The Zone and Sector View hotkeys snap-zoom in and out across 7 zoom levels. They also do not pan to the player's location like in the base game. (2) Double-clicking on an object or sector on the map will toggle between 2 zoom levels appropriate for them. (Most times I want the map zoom levels to be at distinct levels that the smooth zoom-in/out buttons do not provide.)
+- New feature: Mycu's new callbacks in the Research menu for an unreleased mod/feature.
+- Bug-fix: Missing callback from 7.6.1 in the Player Information menu that broke Mycu's Purchasable Paint Modifications mod when used in the 8.0 beta.
+
 v8.0.0.6.1, 22 Aug 2025:
-- Tweak: Bug-fixes to the open/close active and offered mission lists.
+- Bug-fix: Open/close active and offered mission lists.
 
 NOTES FOR PLAYERS:
 ==================
@@ -145,7 +150,7 @@ Map Menu: Distance tool
 
 Map Menu: Mission lists
 =======================
-Mission lists has an "open all/close all" button.
+Mission lists have an "open all/close all" button.
 
 Map Menu: Multi-rename
 ======================
@@ -177,6 +182,11 @@ The base game makes these buttons unavailable for Guidance Missions.
 Map Menu: Center On Map / Destination
 =====================================
 Right-click on an object and click on Center On Map to center the object on the map without changing your selected objects. This is usable on sectors. When used on a gate, the Center On Destination action centers the gate's destination. (Based on Brinnie's mod request: https://forum.egosoft.com/viewtopic.php?t=471439&sid=a3f501f4bd3cc9a74a01dd4eb5107998.)
+
+Map Menu: Zoom Function Tweaks
+==============================
+1. The Zone and Sector View hotkeys zoom in and out across 7 zoom levels. They also do not pan to the player's location like in the base game.
+2. Double-clicking on an object or sector on the map will toggle between 2 zoom levels appropriate for them.
 
 CHANGES BUILT INTO THIS MOD (for developers)
 ============================================
