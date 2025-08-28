@@ -9048,7 +9048,7 @@ function menu.createPropertyRow(instance, ftable, component, iteration, commande
 						secondtext2 = ColorText["order_temp"] .. behaviouricon .. "\27X" .. secondtext2
 					end
 				end
-				local secondtext1truncated = TruncateText(secondtext1, font, Helper.scaleFont(font, config.mapFontSize), icon:getColSpanWidth() - Helper.scaleX(Helper.standardTextOffsetx))
+				local secondtext1truncated = TruncateText(secondtext1, font, Helper.scaleFont(font, config.mapFontSize), icon:getColSpanWidth() - Helper.scaleX(Helper.standardTextOffsetx) - Helper.scaleX(10))
 				local secondtext1width = C.GetTextWidth(secondtext1truncated, font, Helper.scaleFont(font, config.mapFontSize))
 				local secondtext2width = C.GetTextWidth(secondtext2, font, Helper.scaleFont(font, config.mapFontSize))
 
@@ -13073,7 +13073,7 @@ function menu.createInfoSubmenu(inputframe, instance)
 
 	AddUITriggeredEvent(menu.name, "infomenu_open", menu.infoSubmenuObject)
 
-	local isdatavault, islandmark, classid, realclassid = GetComponentData(menu.infoSubmenuObject, "isdatavault", "islandmark", "classid", "realclassid")
+	local isdatavault, islandmark, classid, realclassid, ismodule = GetComponentData(menu.infoSubmenuObject, "isdatavault", "islandmark", "classid", "realclassid", "ismodule")
 	if Helper.isComponentClass(realclassid, "ship") then
 		mode = "ship"
 	elseif Helper.isComponentClass(realclassid, "station") then
@@ -13088,6 +13088,8 @@ function menu.createInfoSubmenu(inputframe, instance)
 		mode = "deployable"
 	elseif Helper.isComponentClass(classid, "asteroid") then
 		mode = "asteroid"
+	elseif ismodule then
+		mode = "module"
 	elseif Helper.isComponentClass(classid, "lockbox") or Helper.isComponentClass(classid, "collectablewares") then
 		mode = "none"
 	elseif Helper.isComponentClass(classid, "object") and (isdatavault or islandmark) then
@@ -13229,7 +13231,7 @@ function menu.createCrewInfoSubmenu(inputframe, instance)
 
 	AddUITriggeredEvent(menu.name, "crewinfomenu_open", menu.infoSubmenuObject)
 
-	local macro, classid, realclassid = GetComponentData(menu.infoSubmenuObject, "macro", "classid", "realclassid")
+	local macro, classid, realclassid, ismodule = GetComponentData(menu.infoSubmenuObject, "macro", "classid", "realclassid", "ismodule")
 	if Helper.isComponentClass(realclassid, "ship_xs") then
 		mode = "none"
 	elseif GetMacroData(macro, "islasertower") then
@@ -13243,6 +13245,8 @@ function menu.createCrewInfoSubmenu(inputframe, instance)
 	elseif Helper.isComponentClass(classid, "gate") then
 		mode = "none"
 	elseif Helper.isComponentClass(classid, "mine") or Helper.isComponentClass(classid, "navbeacon") or Helper.isComponentClass(classid, "resourceprobe") or Helper.isComponentClass(classid, "satellite") then
+		mode = "none"
+	elseif ismodule then
 		mode = "none"
 	elseif Helper.isComponentClass(classid, "asteroid") or Helper.isComponentClass(classid, "collectablewares") then
 		mode = "none"
@@ -13316,7 +13320,7 @@ function menu.createLoadoutInfoSubmenu(inputframe, instance)
 
 	AddUITriggeredEvent(menu.name, "loadoutinfomenu_open", menu.infoSubmenuObject)
 
-	local macro, classid, realclassid = GetComponentData(menu.infoSubmenuObject, "macro", "classid", "realclassid")
+	local macro, classid, realclassid, ismodule = GetComponentData(menu.infoSubmenuObject, "macro", "classid", "realclassid", "ismodule")
 	if Helper.isComponentClass(realclassid, "ship_xs") then
 		mode = "none"
 	elseif GetMacroData(macro, "islasertower") then
@@ -13330,6 +13334,8 @@ function menu.createLoadoutInfoSubmenu(inputframe, instance)
 	elseif Helper.isComponentClass(classid, "gate") then
 		mode = "none"
 	elseif Helper.isComponentClass(classid, "mine") or Helper.isComponentClass(classid, "navbeacon") or Helper.isComponentClass(classid, "resourceprobe") or Helper.isComponentClass(classid, "satellite") then
+		mode = "none"
+	elseif ismodule then
 		mode = "none"
 	elseif Helper.isComponentClass(classid, "asteroid") or Helper.isComponentClass(classid, "collectablewares") then
 		mode = "none"
@@ -13607,7 +13613,7 @@ function menu.setupInfoSubmenuRows(mode, inputtable, inputobject, instance)
 		if objectlocid64 == 0 then
 			objectlocid64 = ConvertStringTo64Bit(tostring(clusterid))		-- no sector; object is in superhighway
 		end
-		local objectloc = Helper.unlockInfo(C.IsInfoUnlockedForPlayer(objectlocid64, "name"), name)
+		local objectloc = Helper.unlockInfo(C.IsInfoUnlockedForPlayer(objectlocid64, "name"), ffi.string(C.GetComponentName(objectlocid64)))
 		if loccontainer then
 			objectloc = ReadText(1001, 3248) .. " " .. ffi.string(C.GetComponentName(loccontainer)) .. ", " .. objectloc	-- Docked at
 		end
@@ -14813,6 +14819,18 @@ function menu.setupInfoSubmenuRows(mode, inputtable, inputobject, instance)
 				end
 			end
 		end
+	elseif mode == "module" then
+		local ownername, sector, hullmax, hullpercent = GetComponentData(object64, "ownername", "sector", "hullmax", "hullpercent")
+
+		locrowdata = { false, ReadText(1001, 9040), Helper.unlockInfo(ownerinfo, ownername) }	-- Owner
+		row = menu.addInfoSubmenuRow(instance, inputtable, row, locrowdata, false, false, false, 1, indentsize)
+
+		locrowdata = { false, ReadText(1001, 2943), sector }	-- Location
+		row = menu.addInfoSubmenuRow(instance, inputtable, row, locrowdata, false, false, false, 1, indentsize)
+
+		local hull_max = defenceinfo_low and ConvertIntegerString(Helper.round(hullmax), true, 4, true, true, true) or unknowntext
+		locrowdata = { false, ReadText(1001, 1), (defenceinfo_high and (function() return (ConvertIntegerString(Helper.round(GetComponentData(object64, "hull")), true, 4, true, true, true) .. " / " .. hull_max .. " " .. ReadText(1001, 118) .. " (" .. GetComponentData(object64, "hullpercent") .. "%)") end) or (unknowntext .. " / " .. hull_max .. " " .. ReadText(1001, 118) .. " (" .. hullpercent .. "%)")) }	-- Hull, MJ
+		row = menu.addInfoSubmenuRow(instance, inputtable, row, locrowdata, false, false, false, 1, indentsize)
 	elseif mode == "none" then
 		local locrowdata = { "info_none", ReadText(1001, 6526) }
 		row = menu.addInfoSubmenuRow(instance, inputtable, row, locrowdata, false, false, false)
@@ -26665,7 +26683,7 @@ function menu.onUpdate()
 				C.SetFocusMapComponent(menu.holomap, menu.focuscomponent, true)
 
 				-- kuertee start: center on map
-				menu.uix_centerOnMap_lastObject = ConvertStringTo64Bit(tostring(pickedcomponent))
+				menu.uix_centerOnMap_lastObject = menu.focuscomponent
 				-- kuertee end
 			end
 
@@ -27487,6 +27505,13 @@ function menu.onSelectElement(uitable, modified, row, isdblclick, input)
 							else
 								C.SetFocusMapComponent(menu.holomap, convertedRowComponent, true)
 							end
+						end
+					elseif rowdata[1] == "fleetunit" then
+						local fleetunit = rowdata[3].fleetunit
+						local info = C.GetFleetUnitInfo(fleetunit)
+						if info.buildtaskid ~= 0 then
+							local buildtaskinfo = C.GetBuildTaskInfo(info.buildtaskid)
+							C.SetFocusMapComponent(menu.holomap, buildtaskinfo.buildingcontainer, true)
 						end
 					end
 				end
@@ -29083,7 +29108,7 @@ function menu.isInfoModeValidFor(object, mode)
 	if object == nil or object == 0 then
 		print(TraceBack())
 	end
-	local isonlineobject, isplayerowned, macro, classid, realclassid, isunit, isdatavault, islandmark = GetComponentData(object, "isonlineobject", "isplayerowned", "macro", "classid", "realclassid", "isunit", "isdatavault", "islandmark")
+	local isonlineobject, isplayerowned, macro, classid, realclassid, isunit, isdatavault, islandmark, ismodule = GetComponentData(object, "isonlineobject", "isplayerowned", "macro", "classid", "realclassid", "isunit", "isdatavault", "islandmark", "ismodule")
 	if isplayerowned and isonlineobject then
 		return false
 	end
@@ -29100,6 +29125,7 @@ function menu.isInfoModeValidFor(object, mode)
 			Helper.isComponentClass(classid, "resourceprobe") or
 			Helper.isComponentClass(classid, "satellite") or
 			Helper.isComponentClass(classid, "asteroid") or
+			(ismodule and (mode == "objectinfo")) or 
 			(Helper.isComponentClass(classid, "object") and (isdatavault or islandmark))
 		then
 			return true
@@ -29928,6 +29954,7 @@ function menu.closeContextMenu(dueToClose)
 			or (menu.contextMenuMode == "venturecontactcontext")
 			or (menu.contextMenuMode == "filter_multiselectlist")
 			or (menu.contextMenuMode == "hire")
+			or (menu.contextMenuMode == "mission")
 		) then
 			menu.picking = true
 			menu.currentMouseOverTable = nil

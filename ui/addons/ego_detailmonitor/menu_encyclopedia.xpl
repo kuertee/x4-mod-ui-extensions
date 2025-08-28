@@ -3155,31 +3155,36 @@ function menu.addDetailRows(ftable)
 			-- all known shield generators are in menu.data["Equipment"]["shieldgentypes"]
 			local bestshield
 			local bestname = ReadText(1001, 9003)	-- "No Known Component"
-			local numslots = tonumber(C.GetNumUpgradeSlots(0, menu.id, "shield"))
-			for i = numslots, 1, -1 do
-				local locgroup = C.GetUpgradeSlotGroup(0, menu.id, "shield", i)
-				if (ffi.string(locgroup.path) == "..") and (ffi.string(locgroup.group) == "") then
-					for _, shieldgen in pairs(menu.data.Equipment.shieldgentypes) do
-						-- check all aliases due to collision / no-collision compatibilities
-						local n = C.GetNumLibraryEntryAliases("shieldgentypes", shieldgen.id)
-						local buf = ffi.new("const char*[?]", n)
-						n = C.GetLibraryEntryAliases(buf, n, "shieldgentypes", shieldgen.id)
-						for j = 0, n - 1 do
-							local aliasid = ffi.string(buf[j])
-							local makerrace = GetMacroData(aliasid, "makerraceid")
-							local allowed = menu.isMakerRaceAllowed(makerrace, shipmakerraces)
-							if allowed then
-								if C.IsUpgradeMacroCompatible(0, 0, menu.id, false, "shield", i, aliasid) then
-									local evalshieldgen = GetLibraryEntry("shieldgentypes", aliasid)
-									if not bestshield or evalshieldgen.shield > bestshield.shield then
-										bestshield = evalshieldgen
+
+			if hasdefaultloadout and menu.preobject then
+				bestshield = GetLibraryEntry( "shieldgentypes", ffi.string(C.GetUpgradeSlotCurrentMacro(ConvertIDTo64Bit(menu.preobject), 0, "shield", 1)) )
+			else
+				local numslots = tonumber(C.GetNumUpgradeSlots(0, menu.id, "shield"))
+				for i = numslots, 1, -1 do
+					local locgroup = C.GetUpgradeSlotGroup(0, menu.id, "shield", i)
+					if (ffi.string(locgroup.path) == "..") and (ffi.string(locgroup.group) == "") then
+						for _, shieldgen in pairs(menu.data.Equipment.shieldgentypes) do
+							-- check all aliases due to collision / no-collision compatibilities
+							local n = C.GetNumLibraryEntryAliases("shieldgentypes", shieldgen.id)
+							local buf = ffi.new("const char*[?]", n)
+							n = C.GetLibraryEntryAliases(buf, n, "shieldgentypes", shieldgen.id)
+							for j = 0, n - 1 do
+								local aliasid = ffi.string(buf[j])
+								local makerrace = GetMacroData(aliasid, "makerraceid")
+								local allowed = menu.isMakerRaceAllowed(makerrace, shipmakerraces)
+								if allowed then
+									if C.IsUpgradeMacroCompatible(0, 0, menu.id, false, "shield", i, aliasid) then
+										local evalshieldgen = GetLibraryEntry("shieldgentypes", aliasid)
+										if not bestshield or evalshieldgen.shield > bestshield.shield then
+											bestshield = evalshieldgen
+										end
 									end
 								end
 							end
 						end
+					else
+						numslots = numslots - 1
 					end
-				else
-					numslots = numslots - 1
 				end
 			end
 			local totalshieldcapacity = 0

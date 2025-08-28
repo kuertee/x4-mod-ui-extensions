@@ -132,6 +132,7 @@ ffi.cdef[[
 	uint32_t GenerateFactionRelationImplications(RelationImplication* result, uint32_t resultlen, const char* factionid);
 	UniverseID GetAgentDiplomacyShip(UniverseID npcid);
 	uint32_t GetAgentMaxSlotCount();
+	const char* GetAgentOriginalOwner(UniverseID npcid);
 	const char* GetAgentSlotResearchWare(size_t slotnumber);
 	double GetCurrentGameTime(void);
 	UILogo GetCurrentPlayerLogo(void);
@@ -151,6 +152,7 @@ ffi.cdef[[
 	uint32_t GetDiplomacyEvents(DiplomacyEventInfo* result, uint32_t resultlen);
 	uint32_t GetDiplomacyExcludedReasons(const char** result, uint32_t resultlen, const char* factionid, const char* otherfactionid);
 	uint32_t GetDockedShips(UniverseID* result, uint32_t resultlen, UniverseID dockingbayorcontainerid, const char* factionid);
+	UniverseID GetFactionAgent(const char* factionid);
 	const char* GetInfluenceLevelName(int32_t influencelevel);
 	uint32_t GetNumDiplomacyActionOperations(bool active);
 	uint32_t GetNumDiplomacyActions();
@@ -588,20 +590,24 @@ function menu.buttonExpand(id)
 end
 
 function menu.dropdownSelectFaction(actionid, i, factionid)
-	menu.contextMenuData.targets[i] = factionid
-	if i == 1 then
-		for j, entry in ipairs(menu.contextMenuData.targets) do
-			if j ~= 1 then
-				menu.contextMenuData.targets[j] = nil
+	if factionid ~= "none" then
+		menu.contextMenuData.targets[i] = factionid
+		if i == 1 then
+			for j, entry in ipairs(menu.contextMenuData.targets) do
+				if j ~= 1 then
+					menu.contextMenuData.targets[j] = nil
+				end
 			end
 		end
+		menu.refreshContextFrame()
 	end
-	menu.refreshContextFrame()
 end
 
 function menu.dropdownSelectWare(actionid, i, wareid)
-	menu.contextMenuData.targets[i] = wareid
-	menu.refreshContextFrame()
+	if wareid ~= "none" then
+		menu.contextMenuData.targets[i] = wareid
+		menu.refreshContextFrame()
+	end
 end
 
 function menu.dropdownAssignEventAgent(eventoperationid, agentid)
@@ -778,6 +784,7 @@ function menu.getData()
 			entry.rankname = ffi.string(attributes.rankname)
 			entry.rankicon = ffi.string(attributes.rankiconid)
 			entry.ship = C.GetAgentDiplomacyShip(id)
+			entry.orgowner = ffi.string(C.GetAgentOriginalOwner(id))
 			table.insert(menu.agents, entry)
 		end
 	end
@@ -1758,6 +1765,10 @@ function menu.createFactionDetailsContext(frame)
 			local row = datatable:addRow(nil, { bgColor = Color["row_background_container"], borderBelow = false })
 			row[1]:createText(ReadText(1001, 12874))
 			row[2]:setColSpan(2):createText(diplomatname, { halign = "right", mouseOverText = mouseovertext })
+
+			local row = datatable:addRow(nil, { bgColor = Color["row_background_container"], borderBelow = false })
+			row[1]:createText(ReadText(1001, 12950))
+			row[2]:setColSpan(2):createText((C.GetFactionAgent(relation.id) ~= 0) and ReadText(1001, 12952) or ReadText(1001, 12953), { halign = "right", mouseOverText = mouseovertext })
 		end
 		-- police authority
 		local printedpolicename = ReadText(1001, 9002)		-- Unknown
@@ -2252,6 +2263,10 @@ function menu.createAgentDetailsContext(frame)
 	local row = agentdetailstable:addRow(nil, {  })
 	row[2]:createText(ReadText(1001, 12822))
 	row[3]:setColSpan(2):createText(function () return menu.getAgentStatus(menu.contextMenuData.id) end, { halign = "right" })
+
+	local row = agentdetailstable:addRow(nil, {  })
+	row[2]:createText(ReadText(1001, 12951))
+	row[3]:setColSpan(2):createText(GetFactionData(agent.orgowner, "name"), { halign = "right" })
 
 	agentdetailstable:addEmptyRow(Helper.standardTextHeight / 2)
 
@@ -3127,7 +3142,7 @@ function menu.createEventContext(frame)
 		local text = ReadText(1001, 12857)
 		if eventoperation.agentresultstate == "killed" then
 			text = ColorText["text_negative"] .. ReadText(1001, 12945)
-		elseif eventoperation.option then
+		elseif eventoperation.option ~= "" then
 			if eventoperation.option == eventoperation.outcome then
 				text = ReadText(1001, 12902)
 			else

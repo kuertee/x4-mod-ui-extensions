@@ -4,7 +4,7 @@
 --		  - "abortupgrade",			param: { container, task, price }
 --		  - "transporter",			param: { transportercomponent, transporterconnection }
 --		  - "markashostile",		param: { component }
---		  - "discardstationeditor"
+--		  - "discardstationeditor"	param: { stationeditorcontainer }
 --		  - "removebuildstorage",	param: { buildstorage }
 --		  - "custom",				param: { title, question, { leftoptionid, leftoptionname[, uicallbackparam, ...] }, { rightoptionid, rightoptionname[, uicallbackparam, ...] }[, uicallbackmode][, preselectoption ("left"|"right")] }
 --			uicallbackmodes:		- "invertinput",				param: { rangeid, configname, value }
@@ -434,6 +434,9 @@ function menu.onCloseElement(dueToClose, allowAutoMenu)
 		elseif dueToClose == "back" then
 			-- restore state
 			Helper.registerStationEditorChanges()
+			Helper.closeMenuAndOpenNewMenu(menu, "StationConfigurationMenu", { 0, 0, menu.modeparam }, true)
+			menu.cleanup()
+			return
 		end
 	end
 	Helper.closeMenu(menu, dueToClose, allowAutoMenu or (menu.mode ~= "abortupgrade"))

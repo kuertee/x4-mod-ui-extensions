@@ -12128,7 +12128,7 @@ end
 
 function Helper.checkDiscardStationEditorChanges(menu, dueToClose)
 	if Helper.confirmDiscardStationEditorChanges then
-		Helper.closeMenuAndOpenNewMenu(menu, "UserQuestionMenu", { 0, 0, "discardstationeditor" })
+		Helper.closeMenuAndOpenNewMenu(menu, "UserQuestionMenu", { 0, 0, "discardstationeditor", Helper.stationEditorState.state.container })
 		if menu.cleanup then
 			menu.cleanup()
 		end

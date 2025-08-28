@@ -11612,7 +11612,7 @@ function menu.displayInputFeedback()
 							end
 							menu.displayInputFeedbackRow(optiontable, control[1], control[2], configentry)
 							count = count + 1
-							if count == 18 then
+							if count == 17 then
 								optiontable.properties.maxVisibleHeight = optiontable:getFullHeight()
 							end
 						end

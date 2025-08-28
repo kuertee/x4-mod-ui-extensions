@@ -908,6 +908,9 @@ function menu.buttonContextEncyclopedia(selectedUpgrade)
 		if library == "moduletypes_radar" then
 			library = "moduletypes_other"
 		end
+
+		menu.state = menu.onSaveState()
+		Helper.registerStationEditorState(menu)
 		Helper.closeMenuAndOpenNewMenu(menu, "EncyclopediaMenu", { 0, 0, "Stations", library, selectedUpgrade.macro })
 		menu.cleanup()
 	else
@@ -915,6 +918,9 @@ function menu.buttonContextEncyclopedia(selectedUpgrade)
 
 		if (upgradetype.supertype == "macro") or (upgradetype.supertype == "virtualmacro") or (upgradetype.supertype == "group") then
 			local library = GetMacroData(selectedUpgrade.macro, "infolibrary")
+
+			menu.state = menu.onSaveState()
+			Helper.registerStationEditorState(menu)
 			Helper.closeMenuAndOpenNewMenu(menu, "EncyclopediaMenu", { 0, 0, upgradetype.emode, library, selectedUpgrade.macro })
 			menu.cleanup()
 		elseif upgradetype.supertype == "software" then
@@ -922,6 +928,8 @@ function menu.buttonContextEncyclopedia(selectedUpgrade)
 		elseif upgradetype.supertype == "ammo" then
 			local library = GetMacroData(selectedUpgrade.macro, "infolibrary")
 			if upgradetype.emode then
+				menu.state = menu.onSaveState()
+				Helper.registerStationEditorState(menu)
 				Helper.closeMenuAndOpenNewMenu(menu, "EncyclopediaMenu", { 0, 0, upgradetype.emode, library, selectedUpgrade.macro })
 				menu.cleanup()
 			end
@@ -947,6 +955,8 @@ function menu.buttonConstructionCommunity()
 end
 
 function menu.buttonEditTradeRule(traderuleid)
+	menu.state = menu.onSaveState()
+	Helper.registerStationEditorState(menu)
 	Helper.closeMenuAndOpenNewMenu(menu, "PlayerInfoMenu", { 0, 0, "globalorders", { "traderule", (traderuleid ~= 0) and traderuleid or nil } })
 	menu.cleanup()
 end
@@ -1226,6 +1236,8 @@ function menu.buttonSaveLoadout(overwrite)
 end
 
 function menu.buttonAssignConstructionVessel()
+	menu.state = menu.onSaveState()
+	Helper.registerStationEditorState(menu)
 	Helper.closeMenuAndOpenNewMenu(menu, "MapMenu", { 0, 0, true, nil, nil, "selectCV", { ConvertStringToLuaID(tostring(menu.container)) } })
 	menu.cleanup()
 end

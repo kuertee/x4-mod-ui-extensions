@@ -745,7 +745,7 @@ function menu.buttonInventoryDrop()
 
 			menu.inventoryData.dropWares = {}
 			for ware in pairs(menu.inventoryData.selectedWares) do
-				if GetWareData(ware, "allowdrop") and (not menu.onlineitems[ware]) then
+				if menu.allowInventoryToBeDropped(ware) then
 					if menu.inventory[ware] and menu.inventory[ware].amount > 0 then
 						table.insert(menu.inventoryData.dropWares, { ware = ware, amount = menu.inventory[ware].amount })
 					end
@@ -818,7 +818,7 @@ end
 function menu.buttonInventoryDropAll(illegalonly)
 	local count = 0
 	for ware in pairs(illegalonly and menu.inventory or menu.inventoryData.selectedWares) do
-		if GetWareData(ware, "allowdrop") and (not menu.onlineitems[ware]) then
+		if menu.allowInventoryToBeDropped(ware) then
 			if (not illegalonly) or (menu.inventoryData.policefaction and IsWareIllegalTo(ware, "player", menu.inventoryData.policefaction)) then
 				if menu.inventory[ware] and menu.inventory[ware].amount > 0 then
 					count = count + 1
@@ -830,7 +830,7 @@ function menu.buttonInventoryDropAll(illegalonly)
 	local wares = ffi.new("UIWareAmount[?]", count)
 	local i = 0
 	for ware in pairs(illegalonly and menu.inventory or menu.inventoryData.selectedWares) do
-		if GetWareData(ware, "allowdrop") and (not menu.onlineitems[ware]) then
+		if menu.allowInventoryToBeDropped(ware) then
 			if (not illegalonly) or (menu.inventoryData.policefaction and IsWareIllegalTo(ware, "player", menu.inventoryData.policefaction)) then
 				if menu.inventory[ware] and menu.inventory[ware].amount > 0 then
 					wares[i].wareid = Helper.ffiNewString(ware)
@@ -6586,7 +6586,7 @@ function menu.createContextFrame(data, x, y, width, nomouseout)
 			if counter > 1 then
 				allowencyclopedia = false
 			end
-			if GetWareData(ware, "allowdrop") and (not menu.onlineitems[ware]) then
+			if menu.allowInventoryToBeDropped(ware) then
 				allowdrop = allowdrop + 1
 			else
 				dropmouseovertext = dropmouseovertext .. "\n" .. GetWareData(ware, "name")
@@ -7325,12 +7325,12 @@ function menu.onInventoryRowChange(row, rowdata, input, mode)
 			local count = 0
 			local allowdrop = false
 			for ware in pairs(menu.inventoryData.selectedWares) do
-				if GetWareData(ware, "allowdrop") and (not menu.onlineitems[ware]) then
+				if menu.allowInventoryToBeDropped(ware) then
 					count = count + 1
 					allowdrop = true
 				end
 			end
-			local active = GetWareData(rowdata[1], "allowdrop") and (not menu.onlineitems[rowdata[1]])
+			local active = menu.allowInventoryToBeDropped(rowdata[1])
 			local desc = Helper.createButton(Helper.createTextInfo((count > 1) and ReadText(1001, 7733) or ReadText(1001, 7705), "center", Helper.standardFont, Helper.standardFontSize, 255, 255, 255, 100), nil, false, active, 0, 0, 0, Helper.standardButtonHeight, nil, nil, nil, nil, "playerinfo_inventory_drop")
 			Helper.setCellContent(menu, menu.inventoryButtonTable.id, desc, buttonrow, 1, nil, "button", nil, menu.buttonInventoryDrop)
 
@@ -7534,6 +7534,11 @@ function menu.findInventoryWare(array, ware)
 		end
 	end
 	return false
+end
+
+function menu.allowInventoryToBeDropped(ware)
+	local allowdrop, ismodpart = GetWareData(ware, "allowdrop", "ismodpart")
+	return allowdrop and (ismodpart or (not menu.onlineitems[ware]))
 end
 
 function menu.createCraftableEntry(ware)
