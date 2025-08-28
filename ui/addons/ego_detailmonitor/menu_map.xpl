@@ -1862,7 +1862,7 @@ function menu.init_kuertee ()
 	menu.uix_centerOnMap_zoomVeryFar = 1200000
 	menu.uix_centerOnMap_zoomVeryVeryFar = 2400000
 	menu.uix_centerOnMap_zoomVeryVeryVeryFar = 4800000
-	menu.uix_centerOnMap_objectZooms = {menu.uix_centerOnMap_zoomVeryNear, menu.uix_centerOnMap_zoomSectorLevel}
+	menu.uix_centerOnMap_objectZooms = {menu.uix_centerOnMap_zoomZoneLevel, menu.uix_centerOnMap_zoomVeryNear}
 	menu.uix_centerOnMap_spaceZooms = {menu.uix_centerOnMap_zoomSectorLevel, menu.uix_centerOnMap_zoomVeryVeryFar}
 	menu.uix_centerOnMap_freeZooms = {menu.uix_centerOnMap_zoomStationLevel, menu.uix_centerOnMap_zoomZoneLevel, menu.uix_centerOnMap_zoomVeryVeryNear, menu.uix_centerOnMap_zoomVeryNear, menu.uix_centerOnMap_zoomSectorLevel, menu.uix_centerOnMap_zoomFar, menu.uix_centerOnMap_zoomVeryFar, menu.uix_centerOnMap_zoomVeryVeryFar, menu.uix_centerOnMap_zoomVeryVeryVeryFar}
 	menu.uix_centerOnMap_currentZoomIdx = 1
@@ -31466,7 +31466,10 @@ function menu.uix_centerOnMap(object, isStaticZoom)
 				end
 				local isNewObject = true
 				if menu.uix_centerOnMap_lastObject then
-					isNewObject = not IsSameComponent(menu.uix_centerOnMap_lastObject, object)
+					menu.uix_centerOnMap_lastObject = ConvertStringTo64Bit(tostring(menu.uix_centerOnMap_lastObject))
+					if IsValidComponent(menu.uix_centerOnMap_lastObject) then
+						isNewObject = not IsSameComponent(menu.uix_centerOnMap_lastObject, object)
+					end
 				end
 				local zoomDistance
 				if isNewObject then

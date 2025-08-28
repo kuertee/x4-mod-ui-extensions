@@ -2256,6 +2256,13 @@ function menu.createEquipmentPropertyEntry(ftable, modclass, property)
 				ftable:addEmptyRow(config.rowHeight / 2)
 			end
 			first = false
+
+			-- kuertee start:
+			if not modwares[quality] then
+				modwares[quality] = {}
+			end
+			-- kuertee end
+
 			for i, modware in ipairs(modwares[quality]) do
 				if i ~= 1 then
 					ftable:addEmptyRow(config.rowHeight / 2)
