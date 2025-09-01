@@ -5,6 +5,12 @@ by kuertee. Contributors: AlexandreTK, DrWhoKnows, DmytroK, Erixon, Forleyor, IA
 
 Updates
 =======
+v8.0.0.7.1, 31 Aug 2025:
+- New feature: The Distance Tool now shows the number of systems between positions if the two are in different systems.
+- New feature: The Distance Tool now works on objects in lists. Previously, it only worked on clicked objects on the map.
+- Bug-fix: The Distance Tool now works from the selected object. Previously, it would work off the last left-clicked or right-clicked position or object.
+- Bug-fix: The Distance Tool is only listed when the map is open. Previously, it was listed when the Interact Menu is opened in first-person view.
+
 v8.0.0.7, 28 Aug 2025:
 - Tweak: 8.0 RC 1 compatibility tweaks.
 - New feature: Map zoom function tweaks: (1) The Zone and Sector View hotkeys snap-zoom in and out across 7 zoom levels. They also do not pan to the player's location like in the base game. (2) Double-clicking on an object or sector on the map will toggle between 2 zoom levels appropriate for them. (Most times I want the map zoom levels to be at distinct levels that the smooth zoom-in/out buttons do not provide.)
@@ -142,9 +148,9 @@ CHANGES BUILT INTO THIS MOD (for players)
 
 Map Menu: Distance tool
 =======================
-- Click on an object or a position on the map.
+- Click on an object or a position on the map or on a list.
 - Right-click on another object or another position on the map.
-- The distance between the two points will be listed.
+- The distance or the number jumps between the two points will be listed.
 
 Map Menu: Mission lists
 =======================

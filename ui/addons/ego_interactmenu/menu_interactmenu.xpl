@@ -3896,12 +3896,20 @@ function menu.createContentTable(frame, position)
 	end
 
 	-- kuertee start: distance tool
-	if Helper.distanceTool_distance then
-		local kuertee_dist = Helper.distanceTool_distance / 1000.0
-		kuertee_dist = math.floor (kuertee_dist * 100 + 0.5) / 100
-		row = ftable:addRow (false, {bgColor = Helper.color.transparent})
-		local kuertee_text = ReadText (1001, 2957) .. ReadText (1001, 120) .. " " .. tostring (kuertee_dist) .. " " .. ReadText (1001, 108) -- Distance colon space X space km
-		row [1]:setColSpan (5):createText (kuertee_text, {halign = "center"})
+	if Helper.uix_distanceTool_distance or Helper.uix_distanceTool_jumps then
+		local kuertee_dist, kuertee_text
+		-- <t id="2957">Distance</t>
+		if Helper.uix_distanceTool_distance then
+			kuertee_dist = Helper.uix_distanceTool_distance / 1000.0
+			kuertee_dist = math.floor (kuertee_dist * 100 + 0.5) / 100
+			kuertee_text = ReadText(1001, 2957) .. ReadText(1001, 120) .. " " .. tostring(kuertee_dist) .. " " .. ReadText(1001, 108)
+		elseif Helper.uix_distanceTool_jumps then
+			-- <t id="103">Systems</t>
+			kuertee_dist = Helper.uix_distanceTool_jumps
+			kuertee_text = ReadText(1001, 2957) .. ReadText(1001, 120) .. " " .. tostring(kuertee_dist) .. " " .. ReadText(20001, 103)
+		end
+		row = ftable:addRow(false, {bgColor = Helper.color.transparent})
+		row [1]:setColSpan(5):createText(kuertee_text, {halign = "center"})
 	end
 	-- kuertee end
 

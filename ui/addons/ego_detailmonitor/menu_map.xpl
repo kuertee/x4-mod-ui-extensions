@@ -1780,10 +1780,10 @@ __CORE_DETAILMONITOR_MAPFILTER = __CORE_DETAILMONITOR_MAPFILTER or {
 menu.uix_callbacks = {}
 __userdata_uix_menu_map = __userdata_uix_menu_map or {}
 
-local distanceTool_from_component
-local distanceTool_from_posRot
-local distanceTool_to_component
-local distanceTool_to_posRot
+local uix_distanceTool_from_component
+local uix_distanceTool_from_posRot
+local uix_distanceTool_to_component
+local uix_distanceTool_to_posRot
 -- kuertee end
 
 local function init()
@@ -2130,6 +2130,11 @@ function menu.cleanup()
 
 	C.SetUICoverOverride(false)
 	__CORE_DETAILMONITOR_MAPFILTER["other_misc_coveroverride"] = false
+
+	-- kuertee start: distance tool
+	Helper.uix_distanceTool_distance = nil
+	Helper.uix_distanceTool_jumps = nil
+	-- kuertee end: distance tool
 end
 
 -- Menu member functions
@@ -8471,7 +8476,7 @@ function menu.createPropertyOwned(frame, instance)
 
 		--kuertee start: add distance sorters
 		-- "distance from player"
-		local buttonLabel = ffi.string (C.GetPlayerName ())
+		local buttonLabel = ffi.string(C.GetPlayerName ())
 		sorterColumn = 3
 		tableColumn = (sorterColumn - 1) * colSpanPerSorterColumn + 1
 		local button = row[tableColumn]:setColSpan(colSpanPerSorterColumn):createButton({ scaling = false, height = buttonheight }):setText(buttonLabel, { halign = "center", scaling = true })
@@ -8483,9 +8488,11 @@ function menu.createPropertyOwned(frame, instance)
 		row[tableColumn].handlers.onClick = function () return menu.buttonPropertySorter("distance_from_player") end
 		-- "distance from object"
 		if menu.infoSubmenuObject then
-			buttonLabel = ffi.string (C.GetObjectIDCode (menu.infoSubmenuObject))
-			if buttonLabel == "" then
-				buttonLabel = ffi.string (C.GetComponentName (menu.infoSubmenuObject))
+			local name, idcode, classid = GetComponentData(ConvertStringToLuaID(tostring(menu.infoSubmenuObject)), "name", "idcode", "classid")
+			if idcode then
+				buttonLabel = idcode
+			else
+				buttonLabel = name
 			end
 			sorterColumn = 4
 			tableColumn = (sorterColumn - 1) * colSpanPerSorterColumn + 1
@@ -28002,9 +28009,9 @@ function menu.onRenderTargetMouseDown(modified)
 	end
 
 	-- kuertee start: distance tool
-	distanceTool_from_posRot = ffi.new("UIPosRot")
+	uix_distanceTool_from_posRot = ffi.new("UIPosRot")
 	local eclipticoffset = ffi.new("UIPosRot")
-	distanceTool_from_component = C.GetMapPositionOnEcliptic2(menu.holomap, distanceTool_from_posRot, false, 0, eclipticoffset)
+	uix_distanceTool_from_component = C.GetMapPositionOnEcliptic2(menu.holomap, uix_distanceTool_from_posRot, false, 0, eclipticoffset)
     -- kuertee end
 end
 
@@ -28171,35 +28178,7 @@ function menu.onRenderTargetRightMouseUp(modified)
 			local posrotcomponent = C.GetMapPositionOnEcliptic2(menu.holomap, posrot, false, 0, eclipticoffset)
 
 			-- kuertee start: distance tool
-			distanceTool_to_posRot = posrot
-			distanceTool_to_component = posrotcomponent
-    
-    			Helper.distanceTool_distance = nil
-			if distanceTool_from_component and distanceTool_from_posRot then
-				local posFrom, sectorFrom, posTo, sectorTo
-				if C.IsComponentClass (distanceTool_from_component, "sector") then
-					posFrom = distanceTool_from_posRot
-					sectorFrom = distanceTool_from_component
-				else
-					posFrom = C.GetObjectPositionInSector (distanceTool_from_component)
-					sectorFrom = ConvertIDTo64Bit(GetComponentData(distanceTool_from_component, "sectorid"))
-				end
-				if C.IsComponentClass (distanceTool_to_component, "sector") then
-					posTo = distanceTool_to_posRot
-					sectorTo = distanceTool_to_component
-				else
-					posTo = C.GetObjectPositionInSector (distanceTool_to_component)
-					sectorTo = ConvertIDTo64Bit(GetComponentData(distanceTool_to_component, "sectorid"))
-				end
-				if sectorFrom == sectorTo then
-					local x_delta = math.abs (posTo.x - posFrom.x)
-					local y_delta = math.abs (posTo.y - posFrom.y)
-					local z_delta = math.abs (posTo.z - posFrom.z)
-					Helper.distanceTool_distance = math.pow (math.pow (x_delta, 2) + math.pow (y_delta, 2) + math.pow (z_delta, 2), 0.5)
-				end
-			end
-			distanceTool_from_posRot = distanceTool_to_posRot
-			distanceTool_from_component = distanceTool_to_component
+			menu.uix_distanceTool(posrot, posrotcomponent)
 		    -- kuertee end
 
 			local playerships, otherobjects, playerdeployables = menu.getSelectedComponentCategories()
@@ -28807,6 +28786,11 @@ function menu.onTableRightMouseClick(uitable, row, posx, posy)
 							end
 
 							local convertedRowComponent = ConvertIDTo64Bit(rowdata[2])
+
+							-- kuertee start: distance tool
+							menu.uix_distanceTool(_, convertedRowComponent)
+							-- kuertee end
+
 							local fleetunit
 							if rowdata[1] == "fleetunit" then
 								fleetunit = rowdata[3].fleetunit
@@ -31532,6 +31516,50 @@ function menu.uix_getCurrentZoomIdx(zoomDistances)
 		end
 	end
 	return nearestIdx
+end
+
+function menu.uix_distanceTool(posrot, posrotcomponent)
+	if not posrot then
+		posrot = ffi.new("UIPosRot")	
+	end
+	local uix_distanceTool_selected_component = next(menu.selectedcomponents)
+	if uix_distanceTool_selected_component then
+		uix_distanceTool_from_posRot = ffi.new("UIPosRot")
+		uix_distanceTool_from_component = ConvertStringTo64Bit(tostring(uix_distanceTool_selected_component))
+	else
+		-- use uix_distanceTool_from_component set at the bottom of menu.onRenderTargetMouseDown()
+		uix_distanceTool_from_component = ConvertStringTo64Bit(tostring(uix_distanceTool_from_component))
+	end
+	Helper.uix_distanceTool_distance = nil
+	Helper.uix_distanceTool_jumps = nil
+	if uix_distanceTool_from_component and uix_distanceTool_from_posRot then
+		uix_distanceTool_to_posRot = posrot
+		uix_distanceTool_to_component = ConvertStringTo64Bit(tostring(posrotcomponent))
+		local uix_posFrom, uix_sectorFrom, uix_posTo, uix_sectorTo
+		if C.IsComponentClass(uix_distanceTool_from_component, "sector") then
+			uix_posFrom = uix_distanceTool_from_posRot
+			uix_sectorFrom = uix_distanceTool_from_component
+		else
+			uix_posFrom = C.GetObjectPositionInSector(uix_distanceTool_from_component)
+			uix_sectorFrom = ConvertIDTo64Bit(GetComponentData(uix_distanceTool_from_component, "sectorid"))
+		end
+		if C.IsComponentClass(uix_distanceTool_to_component, "sector") then
+			uix_posTo = uix_distanceTool_to_posRot
+			uix_sectorTo = uix_distanceTool_to_component
+		else
+			uix_posTo = C.GetObjectPositionInSector(uix_distanceTool_to_component)
+			uix_sectorTo = ConvertIDTo64Bit(GetComponentData(uix_distanceTool_to_component, "sectorid"))
+		end
+		if IsSameComponent(uix_sectorFrom, uix_sectorTo) then
+			local uix_x_delta = math.abs (uix_posTo.x - uix_posFrom.x)
+			local uix_y_delta = math.abs (uix_posTo.y - uix_posFrom.y)
+			local uix_z_delta = math.abs (uix_posTo.z - uix_posFrom.z)
+			Helper.uix_distanceTool_distance = math.pow(math.pow(uix_x_delta, 2) + math.pow(uix_y_delta, 2) + math.pow(uix_z_delta, 2), 0.5)
+		elseif uix_sectorFrom and uix_sectorTo then
+			local uix_gates, uix_jumps = FindJumpRoute(uix_sectorFrom, uix_sectorTo)
+			Helper.uix_distanceTool_jumps = uix_gates + uix_jumps
+		end
+	end
 end
 
 menu.uix_callbackCount = 0
