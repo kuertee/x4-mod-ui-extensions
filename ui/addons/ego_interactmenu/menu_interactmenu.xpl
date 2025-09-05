@@ -3904,9 +3904,14 @@ function menu.createContentTable(frame, position)
 			kuertee_dist = math.floor (kuertee_dist * 100 + 0.5) / 100
 			kuertee_text = ReadText(1001, 2957) .. ReadText(1001, 120) .. " " .. tostring(kuertee_dist) .. " " .. ReadText(1001, 108)
 		elseif Helper.uix_distanceTool_jumps then
+			-- <t id="101">Systems</t>
 			-- <t id="103">Systems</t>
 			kuertee_dist = Helper.uix_distanceTool_jumps
-			kuertee_text = ReadText(1001, 2957) .. ReadText(1001, 120) .. " " .. tostring(kuertee_dist) .. " " .. ReadText(20001, 103)
+			if kuertee_dist == 1 then
+				kuertee_text = ReadText(1001, 2957) .. ReadText(1001, 120) .. " " .. tostring(kuertee_dist) .. " " .. ReadText(20001, 101)
+			else
+				kuertee_text = ReadText(1001, 2957) .. ReadText(1001, 120) .. " " .. tostring(kuertee_dist) .. " " .. ReadText(20001, 103)
+			end
 		end
 		row = ftable:addRow(false, {bgColor = Helper.color.transparent})
 		row [1]:setColSpan(5):createText(kuertee_text, {halign = "center"})

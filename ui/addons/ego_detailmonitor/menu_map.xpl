@@ -5447,7 +5447,7 @@ function menu.hotkey(action)
 	elseif action == "INPUT_ACTION_ADDON_DETAILMONITOR_ZONE_VIEW" then
 		if menu.holomap and (menu.holomap ~= 0) then
 
-			-- kuertee start: zoom in
+			-- kuertee start: zoom in - part of center on map feature
 			-- C.SetMapTargetDistance(menu.holomap, 20000)
 			-- C.ResetMapPlayerRotation(menu.holomap)
 			-- C.SetFocusMapComponent(menu.holomap, C.GetPlayerObjectID(), true)
@@ -5467,7 +5467,7 @@ function menu.hotkey(action)
 	elseif action == "INPUT_ACTION_ADDON_DETAILMONITOR_SECTOR_VIEW" then
 		if menu.holomap and (menu.holomap ~= 0) then
 
-			-- kuertee start: zoom out
+			-- kuertee start: zoom out - part of center on map feature
 			-- C.SetMapTargetDistance(menu.holomap, 2000000)
 			-- C.ResetMapPlayerRotation(menu.holomap)
 			-- C.SetFocusMapComponent(menu.holomap, C.GetPlayerObjectID(), true)
@@ -7441,16 +7441,16 @@ function menu.componentSorter(sorttype)
 	elseif sorttype == "sectorinverse" then
 		sorter = function (a, b) return Helper.sortNameSectorAndObjectID(a, b, true) end
 
-	-- kuertee start: add sort by distance
-	elseif sorttype == "distance_from_player" then
-		sorter = menu.sortDistanceFromPlayer
-	elseif sorttype == "distance_from_playerinverse" then
-		sorter = function (a, b) return menu.sortDistanceFromPlayer (a, b, true) end
-	elseif sorttype == "distance_from_object" then
-		sorter = menu.sortDistanceFromObject
-	elseif sorttype == "distance_from_objectinverse" then
-		sorter = function (a, b) return menu.sortDistanceFromObject (a, b, true) end
-	-- kuertee end: add sort by distance
+	-- kuertee start: extra sort by distance
+	elseif sorttype == "uix_extraSortByDistance_player" then
+		sorter = menu.uix_sortDistanceFromPlayer
+	elseif sorttype == "uix_extraSortByDistance_playerinverse" then
+		sorter = function (a, b) return menu.uix_sortDistanceFromPlayer (a, b, true) end
+	elseif sorttype == "uix_extraSortByDistance_object" then
+		sorter = menu.uix_sortDistanceFromObject
+	elseif sorttype == "uix_extraSortByDistance_objectinverse" then
+		sorter = function (a, b) return menu.uix_sortDistanceFromObject (a, b, true) end
+	-- kuertee end: extra sort by distance
 
 	end
 	return sorter
@@ -8474,22 +8474,22 @@ function menu.createPropertyOwned(frame, instance)
 		end
 		row[tableColumn].handlers.onClick = function () return menu.buttonPropertySorter("sector") end
 
-		--kuertee start: add distance sorters
+		--kuertee start: extra sort by distance
 		-- "distance from player"
 		local buttonLabel = ffi.string(C.GetPlayerName ())
 		sorterColumn = 3
 		tableColumn = (sorterColumn - 1) * colSpanPerSorterColumn + 1
 		local button = row[tableColumn]:setColSpan(colSpanPerSorterColumn):createButton({ scaling = false, height = buttonheight }):setText(buttonLabel, { halign = "center", scaling = true })
-		if menu.propertySorterType == "distance_from_player" then
+		if menu.propertySorterType == "uix_extraSortByDistance_player" then
 			button:setIcon("table_arrow_inv_down", { width = buttonheight, height = buttonheight, x = button:getColSpanWidth() - buttonheight })
-		elseif menu.propertySorterType == "distance_from_playerinverse" then
+		elseif menu.propertySorterType == "uix_extraSortByDistance_playerinverse" then
 			button:setIcon("table_arrow_inv_up", { width = buttonheight, height = buttonheight, x = button:getColSpanWidth() - buttonheight })
 		end
-		row[tableColumn].handlers.onClick = function () return menu.buttonPropertySorter("distance_from_player") end
+		row[tableColumn].handlers.onClick = function () return menu.buttonPropertySorter("uix_extraSortByDistance_player") end
 		-- "distance from object"
 		if menu.infoSubmenuObject then
 			local name, idcode, classid = GetComponentData(ConvertStringToLuaID(tostring(menu.infoSubmenuObject)), "name", "idcode", "classid")
-			if idcode then
+			if idcode ~= "" then
 				buttonLabel = idcode
 			else
 				buttonLabel = name
@@ -8497,14 +8497,14 @@ function menu.createPropertyOwned(frame, instance)
 			sorterColumn = 4
 			tableColumn = (sorterColumn - 1) * colSpanPerSorterColumn + 1
 			local button = row[tableColumn]:setColSpan(colSpanPerSorterColumn):createButton({ scaling = false, height = buttonheight }):setText(buttonLabel, { halign = "center", scaling = true })
-			if menu.propertySorterType == "distance_from_object" then
+			if menu.propertySorterType == "uix_extraSortByDistance_object" then
 				button:setIcon("table_arrow_inv_down", { width = buttonheight, height = buttonheight, x = button:getColSpanWidth() - buttonheight })
-			elseif menu.propertySorterType == "distance_from_objectinverse" then
+			elseif menu.propertySorterType == "uix_extraSortByDistance_objectinverse" then
 				button:setIcon("table_arrow_inv_up", { width = buttonheight, height = buttonheight, x = button:getColSpanWidth() - buttonheight })
 			end
-			row[tableColumn].handlers.onClick = function () return menu.buttonPropertySorter("distance_from_object") end
+			row[tableColumn].handlers.onClick = function () return menu.buttonPropertySorter("uix_extraSortByDistance_object") end
 		end
-		--kuertee end: add distance sorters
+		--kuertee end: extra sort by distance
 	end
 
 	tabtable:setSelectedRow(menu.selectedRows.propertytabs or menu.selectedRows.infotable2 or 0)
@@ -25096,7 +25096,7 @@ function menu.buttonRenameConfirm(isconfirmed)
 					uix_callback ()
 				end
 			end
-			table.sort(menu.contextMenuData.uix_multiRename_objects, function (a, b) return menu.sortDanger(a, b, true) end)
+			table.sort(menu.contextMenuData.uix_multiRename_objects, function (a, b) return menu.uix_sortDanger(a, b, true) end)
 			for uix_index, uix_object in ipairs(menu.contextMenuData.uix_multiRename_objects) do
 				local isplayerowned = GetComponentData(ConvertStringTo64Bit(tostring(uix_object)), "isplayerowned")
 				if isplayerowned then
@@ -31336,7 +31336,7 @@ function menu.setSelectComponentMode (returnsection, classlist, category, player
 	menu.refreshInfoFrame()
 end
 
-function menu.sortDistanceFromPlayer (a, b, invert)
+function menu.uix_sortDistanceFromPlayer (a, b, invert)
 	local distance_a = C.GetDistanceBetween (ConvertStringTo64Bit (tostring (a.id)), ConvertStringTo64Bit (tostring (C.GetPlayerID ())))
 	local distance_b = C.GetDistanceBetween (ConvertStringTo64Bit (tostring (b.id)), ConvertStringTo64Bit (tostring (C.GetPlayerID ())))
 	if invert then
@@ -31346,7 +31346,7 @@ function menu.sortDistanceFromPlayer (a, b, invert)
 	end
 end
 
-function menu.sortDistanceFromObject (a, b, invert)
+function menu.uix_sortDistanceFromObject (a, b, invert)
 	local distance_a = C.GetDistanceBetween (ConvertStringTo64Bit (tostring (a.id)), ConvertStringTo64Bit (tostring (menu.infoSubmenuObject)))
 	local distance_b = C.GetDistanceBetween (ConvertStringTo64Bit (tostring (b.id)), ConvertStringTo64Bit (tostring (menu.infoSubmenuObject)))
 	if invert then
@@ -31356,7 +31356,7 @@ function menu.sortDistanceFromObject (a, b, invert)
 	end
 end
 
-function menu.sortDanger (a, b, invert)
+function menu.uix_sortDanger (a, b, invert)
 	-- danger = menu.object.dps * purpose.fighter * 100
 	-- uint32_t GetDefensibleDPS(DPSData* result, UniverseID defensibleid, bool primary, bool secondary, bool lasers, bool missiles, bool turrets, bool includeheat, bool includeinactive);
 	-- local activedpstable = ffi.new("DPSData[?]", 6)
@@ -31380,7 +31380,7 @@ function menu.sortDanger (a, b, invert)
 		danger_b = danger_b * 100
 	end
 	if danger_a == danger_b then
-		return menu.sortCombinedSkill(a, b, invert)
+		return menu.uix_sortCombinedSkill(a, b, invert)
 	elseif invert then
 		return danger_a > danger_b
 	else
@@ -31388,7 +31388,7 @@ function menu.sortDanger (a, b, invert)
 	end
 end
 
-function menu.sortCombinedSkill(a, b, invert)
+function menu.uix_sortCombinedSkill(a, b, invert)
 	local name_a = GetComponentData(a, "name")
 	local name_b = GetComponentData(b, "name")
 	local idCode_a = ffi.string(C.GetObjectIDCode(a))
@@ -31472,27 +31472,8 @@ function menu.uix_centerOnMap(object, isStaticZoom)
 							menu.uix_centerOnMap_currentZoomIdx = #zooms
 						end
 						zoomDistance = zooms[menu.uix_centerOnMap_currentZoomIdx]
-						-- DISABLED because need to work out how to get Y of object: when object Y is near zoomDistance, use object Y as zoomDistance
-						-- local posrot = ffi.new("UIPosRot")
-						-- local eclipticoffset = ffi.new("UIPosRot")
-						-- local posrotcomponent = C.GetMapPositionOnEcliptic2(menu.holomap, posrot, false, object, eclipticoffset)
-						-- local nearestZoomIdxToObjectY, nearestZoomDiffToObjectY
-						-- Helper.debugText_forced("eclipticoffset.y", eclipticoffset.y)
-						-- for idx, zoomDistance in ipairs(zooms) do
-						-- 	local diff = math.abs(zoomDistance - eclipticoffset.y)
-						-- 	Helper.debugText_forced("    diff", diff)
-						-- 	if (not nearestZoomIdxToObjectY) or diff < nearestZoomDiffToObjectY then
-						-- 		nearestZoomIdxToObjectY = idx
-						-- 		nearestZoomDiffToObjectY = diff
-						-- 		Helper.debugText_forced("    nearestZoomIdxToObjectY", nearestZoomIdxToObjectY)
-						-- 		Helper.debugText_forced("    nearestZoomDiffToObjectY", nearestZoomDiffToObjectY)
-						-- 	end
-						-- end
-						-- if menu.uix_centerOnMap_currentZoomIdx == idx then
-						-- 	zoomDistance = posrot.y
-						-- else
-						-- 	zoomDistance = zooms[menu.uix_centerOnMap_currentZoomIdx]
-						-- end
+						local pos = C.GetObjectPositionInSector(object)
+						zoomDistance = pos.y + zooms[menu.uix_centerOnMap_currentZoomIdx]
 					end
 				end
 				C.SetMapTargetDistance(menu.holomap, zoomDistance)
@@ -31556,8 +31537,8 @@ function menu.uix_distanceTool(posrot, posrotcomponent)
 			local uix_z_delta = math.abs (uix_posTo.z - uix_posFrom.z)
 			Helper.uix_distanceTool_distance = math.pow(math.pow(uix_x_delta, 2) + math.pow(uix_y_delta, 2) + math.pow(uix_z_delta, 2), 0.5)
 		elseif uix_sectorFrom and uix_sectorTo then
-			local uix_gates, uix_jumps = FindJumpRoute(uix_sectorFrom, uix_sectorTo)
-			Helper.uix_distanceTool_jumps = uix_gates + uix_jumps
+			local uix_gates = FindJumpRoute(uix_sectorFrom, uix_sectorTo)
+			Helper.uix_distanceTool_jumps = uix_gates
 		end
 	end
 end
