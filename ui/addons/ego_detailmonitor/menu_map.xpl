@@ -9239,15 +9239,15 @@ function menu.createPropertyRow(instance, ftable, component, iteration, commande
 				end
 			end
 
-            	-- kuertee start: callback
-            	if menu.uix_callbacks ["createPropertyRow_after_config_change"] then
-                	for uix_id, uix_callback in pairs (menu.uix_callbacks ["createPropertyRow_after_config_change"]) do
-                	    uix_callback (config)
-                	end
-            	end
-            	-- kuertee end: callback
+            		-- kuertee start: callback
+            		if menu.uix_callbacks ["createPropertyRow_after_config_change"] then
+                		for uix_id, uix_callback in pairs (menu.uix_callbacks ["createPropertyRow_after_config_change"]) do
+                		    uix_callback (config)
+                		end
+            		end
+            		-- kuertee end: callback
 
-            	-- shieldhullbar
+			-- shieldhullbar
 			row[5 + maxicons]:createObjectShieldHullBar(component)
 		end
 
@@ -9259,13 +9259,13 @@ function menu.createPropertyRow(instance, ftable, component, iteration, commande
 			end
 		end
 
-        -- kuertee start: callback
-        if menu.uix_callbacks ["createPropertyRow_after_row_height"] then
-            for uix_id, uix_callback in pairs (menu.uix_callbacks ["createPropertyRow_after_row_height"]) do
-                uix_callback (row)
-            end
-        end
-        -- kuertee end: callback
+        	-- kuertee start: callback
+        	if menu.uix_callbacks ["createPropertyRow_after_row_height"] then
+        	    for uix_id, uix_callback in pairs (menu.uix_callbacks ["createPropertyRow_after_row_height"]) do
+        	        uix_callback (row)
+        	    end
+        	end
+        	-- kuertee end: callback
 
 		if isstation then
 			AddKnownItem("stationtypes", macro)
@@ -28135,11 +28135,13 @@ function menu.onRenderTargetRightMouseDown()
 		menu.closeContextMenu()
 	end
 	menu.rightdown = { time = getElapsedTime(), position = table.pack(GetLocalMousePosition()), dynpos = table.pack(GetLocalMousePosition()) }
-
-	if menu.mode ~= "selectbuildlocation" then
-		C.StartRotateMap(menu.holomap)
+	
+	if not C.IsMouseEmulationActive() then
+		if menu.mode ~= "selectbuildlocation" then
+			C.StartRotateMap(menu.holomap)
+		end
+		menu.rotatingmap = true
 	end
-	menu.rotatingmap = true
 	menu.noupdate = true
 end
 
@@ -28179,7 +28181,7 @@ function menu.onRenderTargetRightMouseUp(modified)
 
 			-- kuertee start: distance tool
 			menu.uix_distanceTool(posrot, posrotcomponent)
-		    -- kuertee end
+		    	-- kuertee end
 
 			local playerships, otherobjects, playerdeployables = menu.getSelectedComponentCategories()
 			if pickedordercomponent ~= 0 then

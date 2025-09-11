@@ -617,7 +617,7 @@ function menu.display()
 				local row = table_header:addRow(true, { bgColor = Color["row_background_unselectable"] })
 				row[1]:setColSpan(6):createText(ReadText(1001, 8642))
 				row[7]:createDropDown(stanceoptions, { active = function () return C.CanShipSwitchStance(menu.currentplayership) end, startOption = function () local activestance = ffi.string(C.GetShipActiveStance(menu.currentplayership)); return (activestance == "") and "neutral" or activestance end, mouseOverText = function () return (not C.CanShipSwitchStance(menu.currentplayership)) and ReadText(1026, 8612) or "" end })
-				row[7].handlers.onDropDownConfirmed = function (_, id) return C.SetShipStance(menu.currentplayership, id) end
+				row[7].handlers.onDropDownConfirmed = function (_, id) if (id ~= ffi.string(C.GetShipActiveStance(menu.currentplayership))) then return C.SetShipStance(menu.currentplayership, id) end end
 			end
 			
 			-- cover button

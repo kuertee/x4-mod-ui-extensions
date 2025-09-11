@@ -5463,8 +5463,12 @@ function menu.onUpdate()
 					SetMouseCursorOverride("default")
 				end
 			end
-		else
+		elseif menu.mouseOverMacro then
+			menu.mouseOverMacro = nil
 			SetMouseOverOverride(menu.map, nil)
+			if not menu.keepcursor then
+				SetMouseCursorOverride("default")
+			end
 		end
 
 		if not menu.loadoutMode then

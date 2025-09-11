@@ -292,6 +292,7 @@ ffi.cdef[[
 	void SaveDLSSFrameGenOption(void);
 	void SaveDLSSModeOption(void);
 	void SaveDLSSOption(void);
+	void SavePresentModeOption(void);
 	void SaveUIUserData(void);
 	void SaveUpscalingOption(void);
 	void SetAAOption(const char* fxaa);
@@ -347,7 +348,7 @@ ffi.cdef[[
 	void SetMultipleGfxModes2(const char* aamode, const char* upmode, bool dlss, const char* dlssmode, const char* dlssframegen, const char* presentmode);
 	void SetOpenTrackSupportOption(bool value);
 	void SetPOMOption(const char* quality);
-	void SetPresentModeOption(const char* mode);
+	void SetPresentModeOption2(const char* mode, bool saveconfig);
 	void SetReducedSpeedModeOption(double value);
 	void SetSceneCameraActive(bool active);
 	void SetSignalLeakIndicatorOption(bool shown);
@@ -9136,9 +9137,39 @@ end
 
 function menu.callbackGfxPresentMode(id, option)
 	if option ~= menu.curDropDownOption[id] then
+		local hasframegen = C.IsDLSSFrameGenSupported() and (ffi.string(C.GetDLSSFrameGenOption(false)) ~= "off")
+
 		menu.curDropDownOption[id] = option
-		C.SetPresentModeOption(option)
+		C.SetPresentModeOption2(option, not hasframegen)
+
+		if hasframegen then
+			table.insert(menu.history, 1, { optionParameter = menu.currentOption, topRow = GetTopRow(menu.optionTable), selectedOption = "presentmode" })
+			__CORE_GAMEOPTIONS_RESTORE = true
+			__CORE_GAMEOPTIONS_RESTOREINFO.history = menu.history
+			__CORE_GAMEOPTIONS_RESTOREINFO.questionParameter = {
+				question = ReadText(1001, 2602),
+				callback = "callbackGfxPresentModeConfirm",
+				negCallback = "callbackGfxPresentModeCancel",
+				timer = 15.9,
+				waitforgfx = true,
+			}
+			__CORE_GAMEOPTIONS_RESTOREINFO.optionParameter = "question"
+		end
 	end
+end
+
+function menu.callbackGfxPresentModeConfirm()
+	C.SavePresentModeOption()
+	menu.userQuestion = nil
+	menu.onCloseElement("back")
+end
+
+function menu.callbackGfxPresentModeCancel()
+	local oldpresentmode = C.GetPresentModeOption2(true)
+	C.SetPresentModeOption2(oldpresentmode, false)
+	__CORE_GAMEOPTIONS_RESTORE = true
+	__CORE_GAMEOPTIONS_RESTOREINFO.optionParameter = nil
+	__CORE_GAMEOPTIONS_RESTOREINFO.history = menu.history
 end
 
 function menu.callbackGfxTexture(id, option)
@@ -9863,7 +9894,7 @@ function menu.displayNewGame(createAsServer, displayTimelinesScenarios, displayT
 				local doublingcount = 0
 				for _, entry in ipairs(macros) do
 					local name = entry.racename or ""
-					if (entry.race ~= "teladi") and (entry.race ~= "paranid") then
+					if (entry.race ~= "paranid") then
 						if entry.gender == "female" then
 							name = name .. " " .. ReadText(1001, 9906)
 						elseif entry.gender == "male" then
@@ -10211,7 +10242,7 @@ function menu.displayTimelines()
 				local doublingcount = 0
 				for _, entry in ipairs(macros) do
 					local name = entry.racename or ""
-					if (entry.race ~= "teladi") and (entry.race ~= "paranid") then
+					if (entry.race ~= "paranid") then
 						if entry.gender == "female" then
 							name = name .. " " .. ReadText(1001, 9906)
 						elseif entry.gender == "male" then

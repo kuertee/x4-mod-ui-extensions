@@ -1443,6 +1443,9 @@ function menu.createEmbassy(frame, tableProperties)
 					if (menu.contextMenuMode == "actionconfig") and (action.id == menu.contextMenuData.id) and (menu.contextMenuData.operationid == nil) then
 						isselected = true
 					end
+					
+					local row = menu.actiontable:addRow({ type = "action", id = action.id }, { bgColor = isselected and Color["row_background_selected"] or Color["row_background_blue"] })
+					row[1]:setColSpan(4):setBackgroundColSpan(6)
 
 					local desctextlines = GetTextLines(action.shortdesc, Helper.standardFont, Helper.scaleFont(Helper.standardFont, Helper.standardFontSize), menu.narrowtablewidth - Helper.scrollbarWidth - Helper.scaleX(actioniconheight) - 2 * Helper.standardTextOffsetx)
 					local desctext = ""
@@ -1454,7 +1457,6 @@ function menu.createEmbassy(frame, tableProperties)
 					end
 					local extraheight = math.max(0, #desctextlines - 1) * Helper.standardTextHeight
 
-					local row = menu.actiontable:addRow({ type = "action", id = action.id }, { bgColor = isselected and Color["row_background_selected"] or Color["row_background_blue"] })
 					local icon = action.iconid
 					local cooldowntext = ""
 					if action.hidden then
@@ -1465,10 +1467,12 @@ function menu.createEmbassy(frame, tableProperties)
 							cooldowntext = "[" .. ReadText(1001, 12924) .. "] "
 						end
 					end
-					row[1]:setColSpan(4):setBackgroundColSpan(6):createIcon(icon, {
+					local nametext = TruncateText(cooldowntext .. action.name, Helper.standardFont, Helper.scaleFont(Helper.standardFont, Helper.standardFontSize), row[1]:getColSpanWidth() - Helper.scrollbarWidth - Helper.scaleX(actioniconheight) - 2 * Helper.scaleX(Helper.standardTextOffsetx) - Helper.borderSize)
+
+					row[1]:createIcon(icon, {
 						width = actioniconheight,
 						height = actioniconheight,
-					}):setText(cooldowntext .. action.name, {
+					}):setText(nametext, {
 						font = Helper.standardFontBold,
 						fontsize = Helper.headerRow1FontSize,
 						x = actioniconheight + Helper.standardTextOffsetx,
@@ -2906,16 +2910,30 @@ function menu.createEvents(frame, tableProperties)
 			color = Color["text_mission"]
 		end
 
+		local maxtimestring = ReadText(1001, 12839) .. " (" .. ConvertTimeString(53280, ReadText(1001, 207)) .. ")" -- Ongoing (888h 00m)
+		local maxtimewidth = math.ceil(C.GetTextWidth(maxtimestring, Helper.standardFont, Helper.scaleFont(Helper.standardFont, Helper.standardFontSize)))
+
+		local desctextlines = GetTextLines(event.shortdesc, Helper.standardFont, Helper.scaleFont(Helper.standardFont, Helper.standardFontSize), menu.narrowtablewidth - 2 * Helper.scaleX(Helper.standardTextOffsetx) - maxtimewidth)
+		local desctext = ""
+		for i, line in ipairs(desctextlines) do
+			if i > 1 then
+				desctext = desctext .. "\n"
+			end
+			desctext = desctext .. line
+		end
+		local extraheight = math.max(0, #desctextlines - 1) * Helper.standardTextHeight
+		local iconheight = eventiconheight + extraheight
+
 		row[1]:setBackgroundColSpan(2):createIcon("solid", {
 			color = Color["icon_hidden"],
-			height = eventiconheight,
+			height = iconheight,
 		}):setText(name, {
 			font = Helper.standardFontBold,
 			fontsize = Helper.headerRow1FontSize,
 			x = Helper.standardTextOffsetx,
 			y = 2 * eventiconoffset,
 			color = color,
-		}):setText2(event.shortdesc, {
+		}):setText2(desctext, {
 			x = Helper.standardTextOffsetx,
 			y = Helper.titleHeight + Helper.borderSize / 2,
 			color = color,
@@ -2926,12 +2944,12 @@ function menu.createEvents(frame, tableProperties)
 			font = Helper.standardFontBold,
 			fontsize = Helper.headerRow1FontSize,
 			x = Helper.standardTextOffsetx,
-			y = -eventiconheight / 2 + 2 * eventiconoffset,
+			y = -iconheight / 2 + 2 * eventiconoffset,
 			halign = "right",
 			color = color,
 		}):setText2(ispastevent and ReadText(1001, 12840) or function () return menu.eventOperationTime(eventoperation.endtime) end, {
 			x = Helper.standardTextOffsetx,
-			y = Helper.borderSize / 2,
+			y = -extraheight / 2 + Helper.borderSize / 2,
 			halign = "right",
 			color = color,
 		})
@@ -2957,7 +2975,7 @@ function menu.eventOperationTime(endtime)
 		menu.refresh = menu.refresh or getElapsedTime()
 		return ReadText(1001, 12840)
 	else
-		return ReadText(1001, 12839) .. " (" .. Helper.formatTimeLeft(remainingtime) .. ")"
+		return ReadText(1001, 12839) .. " (" .. ConvertTimeString(remainingtime, (remainingtime < 3600) and ReadText(1001, 209) or ReadText(1001, 207)) .. ")"
 	end
 end
 
@@ -3135,7 +3153,7 @@ function menu.createEventContext(frame)
 		local row = middletable:addRow(nil, { fixed = true, bgColor = Color["row_background_container"], borderBelow = false })
 		row[1]:setColSpan(numcols):createText(ReadText(1001, 12854), { fontsize = Helper.headerRow1FontSize, halign = "center", y = Helper.standardContainerOffset })
 		local row = middletable:addRow(nil, { fixed = true, bgColor = Color["row_background_container"], borderBelow = false })
-		row[1]:setColSpan(numcols):createText(function () return Helper.formatTimeLeft(eventoperation.endtime - C.GetCurrentGameTime()) end, { fontsize = Helper.largeIconFontSize, halign = "center", y = Helper.standardContainerOffset })
+		row[1]:setColSpan(numcols):createText(function () local remainingtime = eventoperation.endtime - C.GetCurrentGameTime(); return ConvertTimeString(remainingtime, (remainingtime < 3600) and ReadText(1001, 209) or ReadText(1001, 207)) end, { fontsize = Helper.largeIconFontSize, halign = "center", y = Helper.standardContainerOffset })
 		local row = middletable:addRow(nil, { fixed = true, bgColor = Color["row_background_container"] })
 		row[1]:setColSpan(numcols):createText(" ", { fontsize = 1, minRowHeight = 2 * Helper.standardContainerOffset })
 	else

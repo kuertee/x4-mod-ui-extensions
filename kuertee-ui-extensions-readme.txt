@@ -5,17 +5,18 @@ by kuertee. Contributors: AlexandreTK, DrWhoKnows, DmytroK, Erixon, Forleyor, IA
 
 Updates
 =======
-v8.0.0.7.1, 31 Aug 2025:
+v8.0.0.8, 11 Sep 2025:
+- Tweak: 8.0 final compatibility tweaks.
+- Change log consolidated from the beta version:
 - New feature: The Distance Tool now shows the number of systems between positions if the two are in different systems.
 - New feature: The Distance Tool now works on objects in lists. Previously, it only worked on clicked objects on the map.
 - Bug-fix: The Distance Tool now works from the selected object. Previously, it would work off the last left-clicked or right-clicked position or object.
 - Bug-fix: The Distance Tool is only listed when the map is open. Previously, it was listed when the Interact Menu is opened in first-person view.
-
-v8.0.0.7, 28 Aug 2025:
-- Tweak: 8.0 RC 1 compatibility tweaks.
 - New feature: Map zoom function tweaks: (1) The Zone and Sector View hotkeys snap-zoom in and out across 7 zoom levels. They also do not pan to the player's location like in the base game. (2) Double-clicking on an object or sector on the map will toggle between 2 zoom levels appropriate for them. (Most times I want the map zoom levels to be at distinct levels that the smooth zoom-in/out buttons do not provide.)
 - New feature: Mycu's new callbacks in the Research menu for an unreleased mod/feature.
-- Bug-fix: Missing callback from 7.6.1 in the Player Information menu that broke Mycu's Purchasable Paint Modifications mod when used in the 8.0 beta.
+- New feature: Interact Menu > Center On Map: Move the map to the object without selecting it.
+- New feature: Interact Menu > Center Destination On Map: Move the map to the gate's destination.
+- New features: callbacks in the Diplomacy Menu to better integrate menus from the Crime has consequences mod, the Reputations and professions mod, and the Social standings and citizenships mod.
 
 NOTES FOR PLAYERS:
 ==================
@@ -264,6 +265,18 @@ French localisation by Calvitix.
 
 History
 =======
+v8.0.0.7.1, 31 Aug 2025:
+- New feature: The Distance Tool now shows the number of systems between positions if the two are in different systems.
+- New feature: The Distance Tool now works on objects in lists. Previously, it only worked on clicked objects on the map.
+- Bug-fix: The Distance Tool now works from the selected object. Previously, it would work off the last left-clicked or right-clicked position or object.
+- Bug-fix: The Distance Tool is only listed when the map is open. Previously, it was listed when the Interact Menu is opened in first-person view.
+
+v8.0.0.7, 28 Aug 2025:
+- Tweak: 8.0 RC 1 compatibility tweaks.
+- New feature: Map zoom function tweaks: (1) The Zone and Sector View hotkeys snap-zoom in and out across 7 zoom levels. They also do not pan to the player's location like in the base game. (2) Double-clicking on an object or sector on the map will toggle between 2 zoom levels appropriate for them. (Most times I want the map zoom levels to be at distinct levels that the smooth zoom-in/out buttons do not provide.)
+- New feature: Mycu's new callbacks in the Research menu for an unreleased mod/feature.
+- Bug-fix: Missing callback from 7.6.1 in the Player Information menu that broke Mycu's Purchasable Paint Modifications mod when used in the 8.0 beta.
+
 v8.0.0.6.1, 22 Aug 2025:
 - Bug-fix: Open/close active and offered mission lists.
 
