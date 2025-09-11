@@ -2,8 +2,8 @@
 <content id="kuerteeUIExtensionsAndHUD"
 name="kuertee UI Extensions and HUD"
 author="kuertee"
-version="760"
-date="2025-08-24"
+version="800"
+date="2025-09-11"
 save="false"
 enabled="1">
 
@@ -11,6 +11,6 @@ enabled="1">
 description="UI Extensions and HUD&#13;&#10;
 https://www.nexusmods.com/x4foundations/mods/552&#13;&#10;
 Code: https://github.com/kuertee/x4-mod-ui-extensions.git&#13;&#10;
-by kuertee. Contributors: Forleyor, Mycu.&#13;&#10;"
+by kuertee. Contributors: AlexandreTK, DrWhoKnows, DmytroK, Erixon, Forleyor, IALuir, Mycu, Runekn, sticeIO.&#13;&#10;"
 />
 </content>

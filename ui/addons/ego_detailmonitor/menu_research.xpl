@@ -6,6 +6,7 @@ local C = ffi.C
 ffi.cdef[[
 	void ClearProductionItems(UniverseID productionmoduleid);
 	uint32_t GetAmountOfWareAvailable(const char* wareid, UniverseID productionmoduleid);
+	int64_t GetEstimatedResearchPrice(UniverseID containerid, const char* researchwareid);
 	uint32_t GetHQs(UniverseID* result, uint32_t resultlen, const char* factionid);
 	uint32_t GetNumHQs(const char* factionid);
 	uint32_t GetNumResearchModules(UniverseID containerid);
@@ -486,6 +487,11 @@ function menu.expandNode(_, ftable, _, data)
 					row[1]:createText("  " .. GetWareData(resourcedata.ware, "name"), { color = color })
 					row[2]:createText((locamount and (locamount .. " / ") or "") .. resourcedata.amount, { halign = "right", color = color })
 				end
+				ftable:addEmptyRow()
+				local row = ftable:addRow(nil, { fixed = true })
+				row[1]:setColSpan(2):createText(ReadText(1001, 7929) .. ReadText(1001, 120))
+				local row = ftable:addRow(nil, { fixed = true })
+				row[1]:setColSpan(2):createText(ConvertMoneyString(tonumber(C.GetEstimatedResearchPrice(menu.hq, data.techdata.tech)), false, true, 0, true, false) .. " " .. ReadText(1001, 101), { halign = "right" })
 			end
 			-- cancel
 			local row = ftable:addRow(true, { fixed = true })
@@ -537,15 +543,20 @@ function menu.expandNode(_, ftable, _, data)
 				row[1]:createText("  " .. GetWareData(resourcedata.ware, "name"), { color = color })
 				row[2]:createText((locamount and (locamount .. " / ") or "") .. resourcedata.amount, { halign = "right", color = color })
 			end
+			ftable:addEmptyRow()
+			local row = ftable:addRow(nil, { fixed = true })
+			row[1]:setColSpan(2):createText(ReadText(1001, 7929) .. ReadText(1001, 120))
+			local row = ftable:addRow(nil, { fixed = true })
+			row[1]:setColSpan(2):createText(ConvertMoneyString(tonumber(C.GetEstimatedResearchPrice(menu.hq, data.techdata.tech)), false, true, 0, true, false) .. " " .. ReadText(1001, 101), { halign = "right" })
 		end
 
-        -- start: kuertee call-back
-        if menu.uix_callbacks ["expandNode_before_start_button"] then
-            for uix_id, uix_callback in pairs (menu.uix_callbacks ["expandNode_before_start_button"]) do
-                uix_callback (ftable, resources, data)
-            end
-        end
-        -- end: kuertee call-back
+		-- start: kuertee call-back
+		if menu.uix_callbacks ["expandNode_before_start_button"] then
+			for uix_id, uix_callback in pairs (menu.uix_callbacks ["expandNode_before_start_button"]) do
+				uix_callback (ftable, resources, data)
+			end
+		end
+		-- end: kuertee call-back
 
 		-- start button
 		local row = ftable:addRow(true, { fixed = true })

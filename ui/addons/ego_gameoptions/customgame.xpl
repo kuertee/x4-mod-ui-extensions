@@ -220,7 +220,7 @@ ffi.cdef[[
 	bool AreConstructionPlanLoadoutsCompatible(const char* constructionplanid);
 	bool CanPlayerUseRace(const char* raceid, const char* postid);
 	void ExportCustomGameStart(const char* filename, const char* id, const char* name);
-	const char* GenerateFactionRelationTextFromRelation(int32_t uirelation);
+	const char* GenerateFactionRelationTextFromRelation2(int32_t uirelation);
 	uint32_t GetAllFactions(const char** result, uint32_t resultlen, bool includehidden);
 	uint32_t GetAllRaces(RaceInfo* result, uint32_t resultlen);
 	uint32_t GetAvailableCustomGameStarts(CustomGameStartInfo* result, uint32_t resultlen, const char* id);
@@ -1882,7 +1882,7 @@ function menu.playerMacro(current, customoptions)
 	local doublingcount = 0
 	for _, entry in ipairs(macros) do
 		local name = entry.racename or ""
-		if (entry.race ~= "teladi") and (entry.race ~= "paranid") then
+		if (entry.race ~= "paranid") then
 			if entry.gender == "female" then
 				name = name .. " " .. ReadText(1001, 9906)
 			elseif entry.gender == "male" then
@@ -3019,13 +3019,6 @@ function menu.display()
 				-- cps
 				if active then
 					local onlineitems = OnlineGetUserItems()
-
-					-- kuertee start:
-					if not onlineitems then
-						onlineitems = {}
-					end
-					-- kuertee end
-
 					local limitedmodulesused = {}
 					for j = 0, buf_content.numconstructionplans - 1 do
 						local source, constructionplanid, isHQ = string.match(constructionplanids[j], "(.*):(.*):(%d)")
@@ -3123,7 +3116,15 @@ function menu.display()
 					end
 				end
 
-				rows[#rows][2 * i]:createButton({  }):setText(ReadText(1001, 9950), { halign = "center" })
+				local active = true
+				local mouseovertext = ""
+				if budget.id == "story" then
+					local lockedStories = menu.getLockedStories()
+					active = next(lockedStories) == nil
+					mouseovertext = (not active) and ReadText(1026, 9929) or ""
+				end
+
+				rows[#rows][2 * i]:createButton({ active = active, mouseOverText = mouseovertext }):setText(ReadText(1001, 9950), { halign = "center", x = 0 })
 				rows[#rows][2 * i].handlers.onClick = function () return menu.buttonResetBudget(budget.id) end
 			end
 		end
@@ -3597,12 +3598,6 @@ function menu.display()
 				end
 
 				local onlineitems = OnlineGetUserItems()
-
-				-- kuertee start:
-				if not onlineitems then
-					onlineitems = {}
-				end
-				-- kuertee end
 
 				-- stations
 				menu.constructionplans = {}
@@ -4574,7 +4569,7 @@ function menu.removeFactionRelation(relations, faction, otherfaction)
 end
 
 function menu.relationText(relation, width)
-	local text = ffi.string(C.GenerateFactionRelationTextFromRelation(relation))
+	local text = ffi.string(C.GenerateFactionRelationTextFromRelation2(relation))
 	local lines = GetTextLines(text, Helper.standardFont, Helper.scaleFont(Helper.standardFont, Helper.standardFontSize), width)
 	local maxlines = GetTextLines(ReadText(20218, 705) .. "\n" .. ReadText(20218, 805) .. "\n" .. ReadText(20218, 1005), Helper.standardFont, Helper.scaleFont(Helper.standardFont, Helper.standardFontSize), width)
 	for i = 1, #maxlines - #lines do

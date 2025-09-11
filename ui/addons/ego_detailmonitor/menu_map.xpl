@@ -2,33 +2,33 @@
 -- section == gMain_map
 -- param == { 0, 0, showzone, focuscomponent [, history] [, mode, modeparam] [, showmultiverse] [, focusoffset] }
 
--- modes: - "orderparam_object",	param: { returnfunction, paramdata, toprow, ordercontrollable }
---		  - "orderparam_position",	param: { returnfunction, paramdata, toprow, ordercontrollable }
---		  - "selectbuildlocation",	param: { returnsection, { 0, 0, trader, buildership_or_module, object, macro } }
---		  - "tradecontext",			param: { station, initialtradingship, iswareexchange, shadyOnly, loop, trader }
---		  - "selectCV",				param: { buildstorage }
---		  - "infomode",				param: { mode, ... }
---		  - "boardingcontext",		param: { target, boardingships }
---		  - "hire",					param: { returnsection, npc_or_context, ishiring[, npctemplate] }
---		  - "sellships",			param: { shipyard, ships }
---		  - "dropwarescontext",		param: { mode, entity }
---		  - "renamecontext",		param: { component, renamefleet }
+-- modes: - "orderparam_object",				param: { returnfunction, paramdata, toprow, ordercontrollable }
+--		  - "orderparam_position",				param: { returnfunction, paramdata, toprow, ordercontrollable }
+--		  - "selectbuildlocation",				param: { returnsection, { 0, 0, trader, buildership_or_module, object, macro } }
+--		  - "tradecontext",						param: { station, initialtradingship, iswareexchange, shadyOnly, loop, trader }
+--		  - "selectCV",							param: { buildstorage }
+--		  - "infomode",							param: { mode, ... }
+--		  - "boardingcontext",					param: { target, boardingships }
+--		  - "hire",								param: { returnsection, npc_or_context, ishiring[, npctemplate] }
+--		  - "sellships",						param: { shipyard, ships }
+--		  - "dropwarescontext",					param: { mode, entity }
 
---        -- kuertee start: multi-rename
---		  - "renamecontext",		param: { component, renamefleet, uix_multiRename_objects }
---        -- kuertee end: multi-rename
+--		  -- kuertee start: multi-rename: requires menu_interactmenu.uix_forcedShowMenu
+--		  - "renamecontext",					param: { component, renamefleet, uix_multiRename_objects }
+--		  -- kuertee end: multi-rename
 
---        -- kuertee start: center on map
---		  - "uix_centeronmap",		    param: { component }
---        -- kuertee end: center on map
+--		  -- kuertee start: center on map
+--		  - "uix_centeronmap",					param: { component, isStaticZoom }
+--		  -- kuertee end: center on map
 
---		  - "changelogocontext",	param: { component }
---		  - "selectComponent",		param: { returnsection, classlist[, category][, playerowned][, customheading] }
---		  - "crewtransfercontext",	param: { othership, ship }
---		  - "ventureconsole",		param: { ventureplatform }
---		  - "venturepatroninfo",	param: { ventureplatform }
---		  - "venturereport",		param: { mode, reason[, timestamp, author][, transactionid] }
---		  - "behaviourinspection",	param: { target }
+--		  - "changelogocontext",				param: { component }
+--		  - "selectComponent",					param: { returnsection, classlist[, category][, playerowned][, customheading] }
+--		  - "crewtransfercontext",				param: { othership, ship }
+--		  - "ventureconsole",					param: { ventureplatform }
+--		  - "venturepatroninfo",				param: { ventureplatform }
+--		  - "venturereport",					param: { mode, reason[, timestamp, author][, transactionid] }
+--		  - "behaviourinspection",				param: { target }
+--		  - "diplomaticactionparam_object",		param: { actionid, paramidx, paramdata }
 
 -- ffi setup
 local ffi = require("ffi")
@@ -182,7 +182,8 @@ ffi.cdef[[
 	typedef struct {
 		const char* id;
 		const char* name;
-	} MissionGroupDetails;
+		bool isstory;
+	} MissionGroupDetails2;
 	typedef struct {
 		MissionID missionid;
 		uint32_t amount;
@@ -247,6 +248,19 @@ ffi.cdef[[
 		bool isoverride;
 	} Order2;
 	typedef struct {
+		size_t queueidx;
+		const char* state;
+		const char* statename;
+		const char* orderdef;
+		size_t actualparams;
+		bool enabled;
+		bool isinfinite;
+		bool issyncpointreached;
+		bool istemporder;
+		bool isoverride;
+		bool ispriority;
+	} Order3;
+	typedef struct {
 		uint32_t id;
 		AIOrderID orderid;
 		const char* orderdef;
@@ -299,6 +313,11 @@ ffi.cdef[[
 		const char* max;
 		const char* current;
 	} SoftwareSlot;
+	typedef struct {
+		float speed;
+		float boostspeed;
+		float travelspeed;
+	} SpeedInfo;
 	typedef struct {
 		UniverseID controllableid;
 		int group;
@@ -504,6 +523,7 @@ ffi.cdef[[
 	bool GetAskToSignalForControllable(const char* signalid, UniverseID controllableid);
 	bool GetAskToSignalForFaction(const char* signalid, const char* factionid);
 	uint32_t GetAttackersOfBoardingOperation(UniverseID* result, uint32_t resultlen, UniverseID defensibletargetid, const char* boarderfactionid);
+	bool CanActivateSeta(bool checkcontext);
 	bool CanContainerMineTransport(UniverseID containerid, const char* transportname);
 	bool CanContainerTransport(UniverseID containerid, const char* transportname);
 	bool CanControllableHaveAnyTrainees(UniverseID controllableid);
@@ -536,9 +556,11 @@ ffi.cdef[[
 	bool ExtendBuildPlot(UniverseID stationid, Coord3D poschange, Coord3D negchange, bool allowreduction);
 	bool FilterComponentByText(UniverseID componentid, uint32_t numtexts, const char** textarray, bool includecontainedobjects);
 	bool FilterComponentForDefaultOrderParamObjectMode(UniverseID componentid, UniverseID ordercontrollableid, bool planned, size_t paramidx);
+	bool FilterComponentForDiplomaticActionParamObjectMode(UniverseID componentid, const char* actionid, size_t paramidx);
 	bool FilterComponentForMapMode(UniverseID componentid, const char** classes, uint32_t numclasses, int32_t playerowned, bool allowentitydeliverymissionobject);
 	bool FilterComponentForOrderParamObjectMode(UniverseID componentid, UniverseID ordercontrollableid, size_t orderidx, size_t paramidx);
 	bool FilterFleetUnitByText(FleetUnitID fleetunitid, uint32_t numtexts, const char** textarray);
+	void FireUpdateUseFactionColorTargetSystemEvent(uint32_t value);
 	uint64_t GetActiveMissionID();
 	uint32_t GetAllBoardingBehaviours(BoardingBehaviour* result, uint32_t resultlen);
 	uint32_t GetAllBoardingPhases(BoardingPhase* result, uint32_t resultlen);
@@ -605,8 +627,10 @@ ffi.cdef[[
 	uint32_t GetDefensibleActiveWeaponGroup(UniverseID defensibleid, bool primary);
 	uint32_t GetDefensibleDPS(DPSData* result, UniverseID defensibleid, bool primary, bool secondary, bool lasers, bool missiles, bool turrets, bool includeheat, bool includeinactive);
 	uint32_t GetDefensibleDeployableCapacity(UniverseID defensibleid);
-	float GetDefensibleWeaponFireRange(UniverseID defensibleid, bool primary, bool secondary, bool lasers, bool missiles, bool turrets, bool includeinactive);
 	float GetDefensibleLoadoutLevel(UniverseID defensibleid);
+	SpeedInfo GetDefensibleSpeeds(UniverseID defensibleid);
+	float GetDefensibleWeaponFireRange(UniverseID defensibleid, bool primary, bool secondary, bool lasers, bool missiles, bool turrets, bool includeinactive);
+	double GetDiplomacyActionCooldownEndTime(const char* actionid, const char* targetfactionid, bool checkalltargetfactions);
 	uint32_t GetDiscoveredSectorResources(WareYield* result, uint32_t resultlen, UniverseID sectorid);
 	const char* GetDisplayedModifierKey(const char* uimodifier);
 	uint32_t GetDockedShips(UniverseID* result, uint32_t resultlen, UniverseID dockingbayorcontainerid, const char* factionid);
@@ -649,7 +673,7 @@ ffi.cdef[[
 	uint32_t GetMissingBuildProcessorResources(UIWareInfo* result, uint32_t resultlen);
 	uint32_t GetMissingBuildResources(UIWareInfo* result, uint32_t resultlen);
 	void GetMissionDeliveryWares(MissionWareDeliveryInfo* result, MissionID missionid);
-	MissionGroupDetails GetMissionGroupDetails(MissionID missionid);
+	MissionGroupDetails2 GetMissionGroupDetails2(MissionID missionid);
 	const char* GetMissionHelpOverlayID(MissionID missionid);
 	MissionObjective2 GetMissionIDObjective2(uint64_t missionid);
 	MissionDetails GetMissionIDDetails(uint64_t missionid);
@@ -740,6 +764,7 @@ ffi.cdef[[
 	size_t GetOrderQueueFirstLoopIdx(UniverseID controllableid, bool* isvalid);
 	uint32_t GetOrders(Order* result, uint32_t resultlen, UniverseID controllableid);
 	uint32_t GetOrders2(Order2* result, uint32_t resultlen, UniverseID controllableid);
+	uint32_t GetOrders3(Order3* result, uint32_t resultlen, UniverseID controllableid);
 	FactionDetails GetOwnerDetails(UniverseID componentid);
 	Coord3D GetPaidBuildPlotCenterOffset(UniverseID stationid);
 	Coord3D GetPaidBuildPlotSize(UniverseID stationid);
@@ -779,7 +804,6 @@ ffi.cdef[[
 	UniverseID GetPlayerShipID(void);
 	bool GetPlayerGlobalTradeLoopCargoReservationSetting(void);
 	UIPosRot GetPlayerTargetOffset(void);
-	const char* GetRealComponentClass(UniverseID componentid);
 	uint32_t GetRequestedMissionNPCs(MissionNPCInfo* result, uint32_t resultlen, UniverseID containerid);
 	uint32_t GetRoleTierNPCs(NPCSeed* result, uint32_t resultlen, UniverseID controllableid, const char* role, int32_t skilllevel);
 	uint32_t GetRoleTiers(RoleTierData* result, uint32_t resultlen, UniverseID controllableid, const char* role);
@@ -860,7 +884,6 @@ ffi.cdef[[
 	bool IsRealComponentClass(UniverseID componentid, const char* classname);
 	bool IsShiftPressed(void);
 	bool IsShipAtExternalDock(UniverseID shipid);
-	bool IsStoryFeatureUnlocked(const char* featureid);
 	bool IsTurretGroupArmed(UniverseID defensibleid, UniverseID contextid, const char* path, const char* group);
 	bool IsUICoverOverridden(void);
 	bool IsUnit(UniverseID controllableid);
@@ -932,6 +955,7 @@ ffi.cdef[[
 	void SetGuidance(UniverseID componentid, UIPosRot offset);
 	void SetMapBehaviourInspectionComponent(UniverseID holomapid, UniverseID componentid);
 	void SetMapDefaultOrderParamObjectFilter(UniverseID holomapid, UniverseID ordercontrollableid, bool planned, size_t paramidx);
+	void SetMapDiplomaticActionTargetObjectFilter(UniverseID holomapid, const char* actionid, size_t paramidx);
 	void SetMapFactionRelationColorOption(UniverseID holomapid, bool value);
 	void SetMapFilterSectors(UniverseID holomapid, uint32_t numsectorids, UniverseID* sectorids);
 	void SetMapFilterString(UniverseID holomapid, uint32_t numtexts, const char** textarray);
@@ -1079,9 +1103,9 @@ local config = {
 		{ name = ReadText(1001, 3224),	icon = "mapst_objectlist",			mode = "objectlist",	helpOverlayID = "map_sidebar_objectlist",			helpOverlayText = ReadText(1028, 3201) },
 		{ name = ReadText(1001, 1000),	icon = "mapst_propertyowned",		mode = "propertyowned",	helpOverlayID = "map_sidebar_propertyowned",		helpOverlayText = ReadText(1028, 3203) },
 		{ spacing = true },
-		{ name = ReadText(1001, 3324),	icon = "mapst_mission_offers",		mode = "missionoffer",	helpOverlayID = "map_sidebar_mission_offers",		helpOverlayText = ReadText(1028, 3205) },
-		{ name = ReadText(1001, 3323),	icon = "mapst_mission_accepted",	mode = "mission",		helpOverlayID = "map_sidebar_mission_accepted",		helpOverlayText = ReadText(1028, 3207) },
-		{ spacing = true },
+		{ name = ReadText(1001, 3324),	icon = "mapst_mission_offers",		mode = "missionoffer",	helpOverlayID = "map_sidebar_mission_offers",		helpOverlayText = ReadText(1028, 3205),		condition = function () return C.IsStoryFeatureUnlocked("x4ep1_missionmanagement") end },
+		{ name = ReadText(1001, 3323),	icon = "mapst_mission_accepted",	mode = "mission",		helpOverlayID = "map_sidebar_mission_accepted",		helpOverlayText = ReadText(1028, 3207),		condition = function () return C.IsStoryFeatureUnlocked("x4ep1_missionmanagement") end },
+		{ spacing = true,		condition = function () return C.IsStoryFeatureUnlocked("x4ep1_missionmanagement") end },
 		{ name = ReadText(1001, 2427),	icon = "mapst_information",			mode = "info",			helpOverlayID = "map_sidebar_information",			helpOverlayText = ReadText(1028, 3209) },
 		{ spacing = true },
 		{ name = ReadText(1001, 3226),	icon = "mapst_plotmanagement",		mode = "plots",			helpOverlayID = "map_sidebar_plotmanagement",		helpOverlayText = ReadText(1028, 3211) },
@@ -1140,7 +1164,7 @@ local config = {
 	},
 	layersettings = {
 		["layer_trade"] = {
-			callback = function (value) return C.SetMapRenderTradeOffers(menu.holomap, value) end,
+			callback = function (value) return (menu.holomap ~= 0) and C.SetMapRenderTradeOffers(menu.holomap, value) or nil end,
 			[1] = {
 				caption = ReadText(1001, 46),
 				info = ReadText(1001, 3279),
@@ -1299,7 +1323,7 @@ local config = {
 		["layer_build"] = {},
 		["layer_diplo"] = {},
 		["layer_mining"] = {
-			callback = function (value) return menu.filterMining(value) end,
+			callback = function (...) return menu.filterMining(...) end,
 			[1] = {
 				caption = ReadText(1001, 8330),
 				type = "checkbox",
@@ -1316,7 +1340,7 @@ local config = {
 			},
 		},
 		["layer_other"] = {
-			callback = function (value) return menu.filterOther(value) end,
+			callback = function (...) return menu.filterOther(...) end,
 			[1] = {
 				caption = ReadText(1001, 3285),
 				type = "dropdown",
@@ -1332,7 +1356,7 @@ local config = {
 				},
 			},
 			[2] = {
-				caption = ReadText(1001, 11204),
+				caption = ReadText(1001, 7703),
 				type = "checkbox",
 				callback = function (...) return menu.filterThinkDiplomacy(...) end,
 				helpOverlayID = "otherfilters_diplomacy",
@@ -1340,10 +1364,20 @@ local config = {
 				helpOverlayHighlightOnly = true,
 				[1] = {
 					id = "think_diplomacy_factioncolor",
-					name = ReadText(1001, 11203),
+					name = ReadText(1001, 11678),
 					param = "factioncolor",
 				},
 				[2] = {
+					id = "think_diplomacy_factioncolor_radar",
+					name = ReadText(1001, 11679),
+					param = "factioncolorradar",
+				},
+				[3] = {
+					id = "think_diplomacy_factioncolor_targetsystem",
+					name = ReadText(1001, 11680),
+					param = "factioncolortargetsystem",
+				},
+				[4] = {
 					id = "think_diplomacy_highlightvisitor",
 					name = ReadText(1001, 11216),
 					info = ReadText(1001, 11217),
@@ -1443,7 +1477,7 @@ local config = {
 			},
 		},
 	},
-	mapfilterversion = 20,
+	mapfilterversion = 21,
 	mapfiltersaveversion = 1,
 
 	-- custom default row properties, different from Helper defaults
@@ -1454,23 +1488,6 @@ local config = {
 	cameraResetThresholdAngle = 2, -- in degrees
 
 	contextBorder = 5,
-
-	classOrder = {
-		["station"]		= 1,
-		["ship_xl"]		= 2,
-		["ship_l"]		= 3,
-		["ship_m"]		= 4,
-		["ship_s"]		= 5,
-		["ship_xs"]		= 6,
-		["spacesuit"]	= 7,
-	},
-	purposeOrder = {
-		["fight"]		= 1,
-		["auxiliary"]	= 2,
-		["build"]		= 3,
-		["mine"]		= 4,
-		["trade"]		= 5,
-	},
 
 	missionMainTypeOrder = {
 		["plot"] = 1,
@@ -1742,6 +1759,8 @@ __CORE_DETAILMONITOR_MAPFILTER = __CORE_DETAILMONITOR_MAPFILTER or {
 	["trade_volume"] = 0,
 	["think_alert"] = 1,
 	["think_diplomacy_factioncolor"] = false,
+	["think_diplomacy_factioncolor_radar"] = false,
+	["think_diplomacy_factioncolor_targetsystem"] = false,
 	["think_diplomacy_highlightvisitor"] = true,
 	["mining_resource_display"] = true,
 	["other_misc_orderqueue"] = true,
@@ -1761,10 +1780,10 @@ __CORE_DETAILMONITOR_MAPFILTER = __CORE_DETAILMONITOR_MAPFILTER or {
 menu.uix_callbacks = {}
 __userdata_uix_menu_map = __userdata_uix_menu_map or {}
 
-local distanceTool_from_component
-local distanceTool_from_posRot
-local distanceTool_to_component
-local distanceTool_to_posRot
+local uix_distanceTool_from_component
+local uix_distanceTool_from_posRot
+local uix_distanceTool_to_component
+local uix_distanceTool_to_posRot
 -- kuertee end
 
 local function init()
@@ -1832,14 +1851,26 @@ end
 
 -- kuertee start:
 function menu.init_kuertee ()
-	-- start: center on map
+	-- kuertee start: center on map
 	menu.uix_centerOnMap_lastObject = nil
-	menu.uix_centerOnMap_lastZoomDistance = 0
-	menu.uix_centerOnMap_zoomVeryNear = 50000
-	menu.uix_centerOnMap_zoomNear = 300000
+	menu.uix_centerOnMap_zoomStationLevel = 18750
+	menu.uix_centerOnMap_zoomZoneLevel = 37500
+	menu.uix_centerOnMap_zoomVeryVeryNear = 75000
+	menu.uix_centerOnMap_zoomVeryNear = 150000
+	menu.uix_centerOnMap_zoomSectorLevel = 300000
 	menu.uix_centerOnMap_zoomFar = 600000
 	menu.uix_centerOnMap_zoomVeryFar = 1200000
-	-- end
+	menu.uix_centerOnMap_zoomVeryVeryFar = 2400000
+	menu.uix_centerOnMap_zoomVeryVeryVeryFar = 4800000
+	menu.uix_centerOnMap_objectZooms = {menu.uix_centerOnMap_zoomZoneLevel, menu.uix_centerOnMap_zoomVeryNear}
+	menu.uix_centerOnMap_spaceZooms = {menu.uix_centerOnMap_zoomSectorLevel, menu.uix_centerOnMap_zoomVeryVeryFar}
+	menu.uix_centerOnMap_freeZooms = {menu.uix_centerOnMap_zoomStationLevel, menu.uix_centerOnMap_zoomZoneLevel, menu.uix_centerOnMap_zoomVeryVeryNear, menu.uix_centerOnMap_zoomVeryNear, menu.uix_centerOnMap_zoomSectorLevel, menu.uix_centerOnMap_zoomFar, menu.uix_centerOnMap_zoomVeryFar, menu.uix_centerOnMap_zoomVeryVeryFar, menu.uix_centerOnMap_zoomVeryVeryVeryFar}
+	menu.uix_centerOnMap_currentZoomIdx = 1
+	-- kuertee end: center on map
+	-- kuertee start: open/close mission lists
+	__userdata_uix_menu_map.savedExpandedMissionOffers = __userdata_uix_menu_map.savedExpandedMissionOffers or {}
+	__userdata_uix_menu_map.savedExpandedMissions = __userdata_uix_menu_map.savedExpandedMissions or {}
+	-- kuertee end: open/close mission lists
 end
 -- kuertee end
 
@@ -1882,6 +1913,10 @@ function menu.sortWareGroupsByTier(a, b)
 end
 
 function menu.cleanup()
+	-- kuertee start: open/close mission lists
+	menu.uix_removeInvalidsFromSavedExpandedMissions()
+	-- kuertee end: open/close mission lists
+
 	if not menu.minimized then
 		if (menu.mode == nil) or (menu.mode == "selectbuildlocation") then
 			menu.state = menu.onSaveState()
@@ -2095,6 +2130,11 @@ function menu.cleanup()
 
 	C.SetUICoverOverride(false)
 	__CORE_DETAILMONITOR_MAPFILTER["other_misc_coveroverride"] = false
+
+	-- kuertee start: distance tool
+	Helper.uix_distanceTool_distance = nil
+	Helper.uix_distanceTool_jumps = nil
+	-- kuertee end: distance tool
 end
 
 -- Menu member functions
@@ -2441,7 +2481,7 @@ function menu.buttonToggleObjectList(objectlistparam, confirmed, override)
 			menu.mode = "selectbuildlocation"
 			menu.clearSelectedComponents()
 			C.ShowBuildPlotPlacementMap(menu.holomap, menu.currentsector)
-		elseif (menu.mode ~= "selectCV") and (menu.mode ~= "hire") and (menu.mode ~= "orderparam_object") and (menu.mode ~= "selectComponent") and (menu.mode ~= "behaviourinspection") then
+		elseif (menu.mode ~= "selectCV") and (menu.mode ~= "hire") and (menu.mode ~= "orderparam_object") and (menu.mode ~= "selectComponent") and (menu.mode ~= "behaviourinspection") and (menu.mode ~= "diplomaticactionparam_object") then
 			menu.plots_initialized = nil
 			menu.plotData = {}
 			menu.mode = nil
@@ -2458,7 +2498,7 @@ function menu.buttonToggleObjectList(objectlistparam, confirmed, override)
 			menu.updateMissionOfferList(true)
 		end
 		menu.setTextFilter()
-		menu.applyFilterSettings()
+		menu.applyFilterSettings(true)
 	end
 	menu.setrow = nil
 	menu.setcol = nil
@@ -3225,9 +3265,9 @@ function menu.buttonToggleMultiverseMap()
 	menu.refreshMainFrame = true
 	menu.selectedRows.propertytabs = 1
 	menu.selectedCols.propertytabs = 1
+	menu.applyFilterSettings(true)
 	menu.refreshInfoFrame(0, 0)
 	menu.setTextFilter()
-	menu.applyFilterSettings()
 end
 
 function menu.buttonConvertVentureSave()
@@ -3267,16 +3307,16 @@ function menu.orderMoveWait(component, sector, offset, playerprecise, clear)
 	end
 
 	if clear then
-		C.RemoveAllOrders(component)
+		C.RemoveAllOrders2(component, false, false)
 	end
-	local orderidx = C.CreateOrder(component, "MoveWait", false)
-	if orderidx > 0 then
-		SetOrderParam(ConvertStringToLuaID(tostring(component)), orderidx, 1, nil, { ConvertStringToLuaID(tostring(sector)), {offset.x, offset.y,offset.z} })
-		if playerprecise then
-			SetOrderParam(ConvertStringToLuaID(tostring(component)), orderidx, 5, nil, true)
-		end
-		C.EnableOrder(component, orderidx)
+
+	local params = {
+		destination = { ConvertStringToLuaID(tostring(sector)), { offset.x, offset.y, offset.z } },
+	}
+	if playerprecise then
+		params.playerprecise = true
 	end
+	CreateOrder(component, "MoveWait", params, false, false, false);
 
 	return orderidx
 end
@@ -3323,13 +3363,13 @@ function menu.orderAttack(component, target, clear)
 	end
 
 	if clear then
-		C.RemoveAllOrders(component)
+		C.RemoveAllOrders2(component, false, false)
 	end
-	local orderidx = C.CreateOrder(component, "Attack", false)
-	if orderidx > 0 then
-		SetOrderParam(ConvertStringToLuaID(tostring(component)), orderidx, 1, nil, ConvertStringToLuaID(tostring(target)))
-		C.EnableOrder(component, orderidx)
-	end
+
+	local params = {
+		primarytarget = ConvertStringToLuaID(tostring(target)),
+	}
+	CreateOrder(component, "Attack", params, false, false, false);
 
 	return orderidx
 end
@@ -3493,7 +3533,7 @@ function menu.buttonMissionAbort(confirmed)
 			mode = "abortguildmission"
 		end
 		menu.contextMenuData = { mode = mode, xoffset = (Helper.viewWidth - Helper.scaleX(400)) / 2, yoffset = Helper.viewHeight / 2, missionid = oldcontextmenudata.missionid, saveOption = false }
-		
+
 		if __CORE_DETAILMONITOR_USERQUESTION[menu.contextMenuData.mode] then
 			-- continue immediately
 			menu.buttonConfirmUserQuestion()
@@ -3594,7 +3634,17 @@ function menu.buttonMissionOfferAccept()
 	if menu.missionOfferList then
 		local found = false
 		for i, entry in ipairs(menu.missionOfferList["plot"] or {}) do
-			if ConvertStringTo64Bit(entry.ID) == offerid then
+			if entry.missions then
+				for _, missionentry in ipairs(entry.missions) do
+					if ConvertStringTo64Bit(missionentry.ID) == offerid then
+						found = true
+						missionentry.accepted = true
+						menu.highlightLeftBar["mission"] = true
+						menu.refreshMainFrame = true
+						break
+					end
+				end
+			elseif ConvertStringTo64Bit(entry.ID) == offerid then
 				found = true
 				entry.accepted = true
 				menu.highlightLeftBar["mission"] = true
@@ -3991,6 +4041,11 @@ function menu.buttonSelectHandler()
 			Helper.closeMenuForSection(menu, menu.modeparam[1], { ConvertStringToLuaID(tostring(menu.contextMenuData.component)) })
 			menu.cleanup()
 		end
+	elseif menu.mode == "diplomaticactionparam_object" then
+		menu.param2[3][2].targetindex = menu.modeparam[2]
+		menu.param2[3][2].target = ConvertStringToLuaID(tostring(menu.contextMenuData.component))
+		Helper.closeMenu(menu, "back")
+		menu.cleanup()
 	end
 	menu.closeContextMenu()
 end
@@ -5391,18 +5446,40 @@ function menu.hotkey(action)
 		end
 	elseif action == "INPUT_ACTION_ADDON_DETAILMONITOR_ZONE_VIEW" then
 		if menu.holomap and (menu.holomap ~= 0) then
-			C.SetMapTargetDistance(menu.holomap, 20000)
-			C.ResetMapPlayerRotation(menu.holomap)
-			C.SetFocusMapComponent(menu.holomap, C.GetPlayerObjectID(), true)
+
+			-- kuertee start: zoom in - part of center on map feature
+			-- C.SetMapTargetDistance(menu.holomap, 20000)
+			-- C.ResetMapPlayerRotation(menu.holomap)
+			-- C.SetFocusMapComponent(menu.holomap, C.GetPlayerObjectID(), true)
+			-- zoom in
+			menu.uix_centerOnMap_currentZoomIdx = menu.uix_getCurrentZoomIdx(menu.uix_centerOnMap_freeZooms) - 1
+			if menu.uix_centerOnMap_currentZoomIdx < 1 then
+				menu.uix_centerOnMap_currentZoomIdx = 1
+			end
+			local zoomDistance = menu.uix_centerOnMap_freeZooms[menu.uix_centerOnMap_currentZoomIdx]
+			C.SetMapTargetDistance(menu.holomap, zoomDistance)
+			-- kuertee end
+
 			if menu.infoTableMode == "objectlist" then
 				menu.refreshInfoFrame()
 			end
 		end
 	elseif action == "INPUT_ACTION_ADDON_DETAILMONITOR_SECTOR_VIEW" then
 		if menu.holomap and (menu.holomap ~= 0) then
-			C.SetMapTargetDistance(menu.holomap, 2000000)
-			C.ResetMapPlayerRotation(menu.holomap)
-			C.SetFocusMapComponent(menu.holomap, C.GetPlayerObjectID(), true)
+
+			-- kuertee start: zoom out - part of center on map feature
+			-- C.SetMapTargetDistance(menu.holomap, 2000000)
+			-- C.ResetMapPlayerRotation(menu.holomap)
+			-- C.SetFocusMapComponent(menu.holomap, C.GetPlayerObjectID(), true)
+			-- zoom out
+			menu.uix_centerOnMap_currentZoomIdx = menu.uix_getCurrentZoomIdx(menu.uix_centerOnMap_freeZooms) + 1
+			if menu.uix_centerOnMap_currentZoomIdx > #menu.uix_centerOnMap_freeZooms then
+				menu.uix_centerOnMap_currentZoomIdx = #menu.uix_centerOnMap_freeZooms
+			end
+			local zoomDistance = menu.uix_centerOnMap_freeZooms[menu.uix_centerOnMap_currentZoomIdx]
+			C.SetMapTargetDistance(menu.holomap, zoomDistance)
+			-- kuertee end
+
 			if menu.infoTableMode == "objectlist" then
 				menu.refreshInfoFrame()
 			end
@@ -5433,7 +5510,9 @@ function menu.hotkey(action)
 			C.TriggerInputFeedback("action", "INPUT_ACTION_ADDON_DETAILMONITOR_SETA", "inactive", "")
 		else
 			C.StartPlayerActivity("seta")
-			C.TriggerInputFeedback("action", "INPUT_ACTION_ADDON_DETAILMONITOR_SETA", "active", "")
+			if C.CanActivateSeta(false) then
+				C.TriggerInputFeedback("action", "INPUT_ACTION_ADDON_DETAILMONITOR_SETA", "active", "")
+			end
 		end
 	elseif action == "INPUT_ACTION_ADDON_DETAILMONITOR_MULTIVERSE" then
 		if (menu.mode ~= "selectCV") and (menu.mode ~= "hire") and (menu.mode ~= "orderparam_object") and (menu.mode ~= "selectComponent") then
@@ -5486,7 +5565,9 @@ function menu.hotkey(action)
 			end
 			PlaySound("ui_target_set_fail")
 		elseif action == "INPUT_ACTION_ADDON_DETAILMONITOR_P" then
-			menu.plotCourse(selectedcomponent)
+			if C.IsStoryFeatureUnlocked("x4ep1_guidance") then
+				menu.plotCourse(selectedcomponent)
+			end
 		elseif action == "INPUT_ACTION_ADDON_DETAILMONITOR_F3" then
 			if not C.IsExternalViewDisabled() and C.IsPlayerCameraTargetViewPossible(selectedcomponent, true) then
 				if menu.target(selectedcomponent, true) then
@@ -5637,7 +5718,9 @@ function menu.filterTradeStorage(setting)
 		end
 	end
 
-	C.SetMapTradeFilterByWareTransport(menu.holomap, transport, count)
+	if menu.holomap ~= 0 then
+		C.SetMapTradeFilterByWareTransport(menu.holomap, transport, count)
+	end
 end
 
 function menu.filterTradeRelation(setting, override)
@@ -5647,38 +5730,46 @@ function menu.filterTradeRelation(setting, override)
 			value = menu.getFilterOption(option.id, setting.savegame) or false
 		end
 		if option.param == "enemy" then
-			if value or (option.active and (not option.active())) then
-				C.ClearMapTradeFilterByWillingToTradeWithPlayer(menu.holomap)
-			else
-				C.SetMapTradeFilterByWillingToTradeWithPlayer(menu.holomap)
+			if menu.holomap ~= 0 then
+				if value or (option.active and (not option.active())) then
+					C.ClearMapTradeFilterByWillingToTradeWithPlayer(menu.holomap)
+				else
+					C.SetMapTradeFilterByWillingToTradeWithPlayer(menu.holomap)
+				end
 			end
 		end
 	end
 end
 
-function menu.filterTradeWares(setting)
+function menu.filterTradeWares(setting, override, noupdate)
 	local rawwarelist = menu.getFilterOption(setting.id, setting.savegame) or {}
 	local warelist = ffi.new("const char*[?]", #rawwarelist)
 	for i, ware in ipairs(rawwarelist) do
 		warelist[i - 1] = Helper.ffiNewString(ware)
 	end
-	if (#rawwarelist > 0) and ((not setting.active) or setting.active()) then
-		C.SetMapTradeFilterByWare(menu.holomap, warelist, #rawwarelist)
-	else
-		C.ClearMapTradeFilterByWare(menu.holomap)
+	if menu.holomap ~= 0 then
+		if (#rawwarelist > 0) and ((not setting.active) or setting.active()) then
+			C.SetMapTradeFilterByWare(menu.holomap, warelist, #rawwarelist)
+		else
+			C.ClearMapTradeFilterByWare(menu.holomap)
+		end
 	end
 	menu.refreshMainFrame = true
-	menu.refreshInfoFrame()
+	if not noupdate then
+		menu.refreshIF = getElapsedTime()
+	end
 end
 
 function menu.filterTradePrice(setting)
 	for _, option in ipairs(setting) do
 		local value = menu.getFilterOption(option.id, setting.savegame) or false
 		if option.param == "maxprice" then
-			if (not option.active) or option.active() then
-				C.SetMapTradeFilterByMaxPrice(menu.holomap, value)
-			else
-				C.SetMapTradeFilterByMaxPrice(menu.holomap, 0)
+			if menu.holomap ~= 0 then
+				if (not option.active) or option.active() then
+					C.SetMapTradeFilterByMaxPrice(menu.holomap, value)
+				else
+					C.SetMapTradeFilterByMaxPrice(menu.holomap, 0)
+				end
 			end
 		end
 	end
@@ -5688,93 +5779,118 @@ function menu.filterTradeOffer(setting)
 	for _, option in ipairs(setting) do
 		local value = menu.getFilterOption(option.id, setting.savegame) or false
 		if option.param == "number" then
-			C.SetMapTopTradesCount(menu.holomap, value)
+			if menu.holomap ~= 0 then
+				C.SetMapTopTradesCount(menu.holomap, value)
+			end
 		end
 	end
 end
 
-function menu.filterTradeVolume(setting, override)
+function menu.filterTradeVolume(setting, override, noupdate)
 	for _, option in ipairs(setting) do
 		if option.param == "volume" then
 			local value = override
 			if value == nil then
 				value = menu.getFilterOption(option.id, setting.savegame) or false
 			end
-			if (value ~= 0) and ((not option.active) or option.active()) then
-				C.SetMapTradeFilterByMinTotalVolume(menu.holomap, value)
-			else
-				C.ClearMapTradeFilterByMinTotalVolume(menu.holomap)
+			if menu.holomap ~= 0 then
+				if (value ~= 0) and ((not option.active) or option.active()) then
+					C.SetMapTradeFilterByMinTotalVolume(menu.holomap, value)
+				else
+					C.ClearMapTradeFilterByMinTotalVolume(menu.holomap)
+				end
 			end
 		end
 	end
-	menu.refreshIF = getElapsedTime()
+	if not noupdate then
+		menu.refreshIF = getElapsedTime()
+	end
 end
 
-function menu.filterTradePlayerOffer(setting, override)
+function menu.filterTradePlayerOffer(setting, override, noupdate)
 	for _, option in ipairs(setting) do
 		if option.param == "playeroffer_buy" then
 			local value = override
 			if value == nil then
 				value = menu.getFilterOption(option.id, setting.savegame) or 0
 			end
-			if (value == 0) or (option.active and (not option.active())) then
-				C.ClearMapTradeFilterByPlayerOffer(menu.holomap, true)
-			elseif value == 1 then
-				C.SetMapTradeFilterByPlayerOffer(menu.holomap, true, true)
-			elseif value == 2 then
-				C.SetMapTradeFilterByPlayerOffer(menu.holomap, true, false)
+			if menu.holomap ~= 0 then
+				if (value == 0) or (option.active and (not option.active())) then
+					C.ClearMapTradeFilterByPlayerOffer(menu.holomap, true)
+				elseif value == 1 then
+					C.SetMapTradeFilterByPlayerOffer(menu.holomap, true, true)
+				elseif value == 2 then
+					C.SetMapTradeFilterByPlayerOffer(menu.holomap, true, false)
+				end
 			end
 		elseif option.param == "playeroffer_sell" then
 			local value = override
 			if value == nil then
 				value = menu.getFilterOption(option.id, setting.savegame) or 0
 			end
-			if (value == 0) or (option.active and (not option.active())) then
-				C.ClearMapTradeFilterByPlayerOffer(menu.holomap, false)
-			elseif value == 1 then
-				C.SetMapTradeFilterByPlayerOffer(menu.holomap, false, true)
-			elseif value == 2 then
-				C.SetMapTradeFilterByPlayerOffer(menu.holomap, false, false)
+			if menu.holomap ~= 0 then
+				if (value == 0) or (option.active and (not option.active())) then
+					C.ClearMapTradeFilterByPlayerOffer(menu.holomap, false)
+				elseif value == 1 then
+					C.SetMapTradeFilterByPlayerOffer(menu.holomap, false, true)
+				elseif value == 2 then
+					C.SetMapTradeFilterByPlayerOffer(menu.holomap, false, false)
+				end
 			end
 		end
 	end
-	menu.refreshIF = getElapsedTime()
+	if not noupdate then
+		menu.refreshIF = getElapsedTime()
+	end
 end
 
-function menu.filterThinkAlert(setting, override)
+function menu.filterThinkAlert(setting, override, noupdate)
 	for _, option in ipairs(setting) do
 		local value = override
 		if value == nil then
 			value = menu.getFilterOption(option.id, setting.savegame) or false
 		end
 		if option.param == "alert" then
-			C.SetMapAlertFilter(menu.holomap, value)
+			if menu.holomap ~= 0 then
+				C.SetMapAlertFilter(menu.holomap, value)
+			end
 		end
 	end
-	menu.refreshIF = getElapsedTime()
+	if not noupdate then
+		menu.refreshIF = getElapsedTime()
+	end
 end
 
-function menu.filterThinkDiplomacy(setting, override)
+function menu.filterThinkDiplomacy(setting, override, noupdate)
 	for _, option in ipairs(setting) do
 		local value = override
 		if value == nil then
 			value = menu.getFilterOption(option.id, setting.savegame) or false
 		end
 		if option.param == "factioncolor" then
-			C.SetMapFactionRelationColorOption(menu.holomap, not value)
+			if menu.holomap ~= 0 then
+				C.SetMapFactionRelationColorOption(menu.holomap, not value)
+			end
+		elseif option.param == "factioncolorradar" then
+			C.SetConfigSetting(option.param, value)
+		elseif option.param == "factioncolortargetsystem" then
+			C.SetConfigSetting(option.param, value)
+			C.FireUpdateUseFactionColorTargetSystemEvent(value)
 		elseif option.param == "highlightvisitors" then
 			C.SetConfigSetting(option.param, value)
 		end
 	end
-	menu.refreshIF = getElapsedTime()
+	if not noupdate then
+		menu.refreshIF = getElapsedTime()
+	end
 end
 
-function menu.filterMining(value)
+function menu.filterMining(value, noupdate)
 	for _, setting in ipairs(config.layersettings["layer_mining"]) do
 		if value then
-			setting.callback(setting)
+			setting.callback(setting, nil, noupdate)
 		else
-			setting.callback(setting, false)
+			setting.callback(setting, false, noupdate)
 		end
 	end
 end
@@ -5786,17 +5902,19 @@ function menu.filterMiningResources(setting, override)
 			value = menu.getFilterOption(option.id, setting.savegame) or false
 		end
 		if option.param == "display" then
-			C.SetMapRenderResourceInfo(menu.holomap, value)
+			if menu.holomap ~= 0 then
+				C.SetMapRenderResourceInfo(menu.holomap, value)
+			end
 		end
 	end
 end
 
-function menu.filterOther(value)
+function menu.filterOther(value, noupdate)
 	for _, setting in ipairs(config.layersettings["layer_other"]) do
 		if value then
-			setting.callback(setting)
+			setting.callback(setting, nil, noupdate)
 		else
-			setting.callback(setting, false)
+			setting.callback(setting, false, noupdate)
 		end
 	end
 end
@@ -5808,9 +5926,13 @@ function menu.filterOtherStation(setting, override)
 			value = menu.getFilterOption(option.id, setting.savegame) or false
 		end
 		if option.param == "missions" then
-			C.SetMapRenderMissionOffers(menu.holomap, value)
+			if menu.holomap ~= 0 then
+				C.SetMapRenderMissionOffers(menu.holomap, value)
+			end
 		elseif option.param == "civilian" then
-			C.SetMapRenderCivilianShips(menu.holomap, value)
+			if menu.holomap ~= 0 then
+				C.SetMapRenderCivilianShips(menu.holomap, value)
+			end
 		end
 	end
 end
@@ -5822,34 +5944,50 @@ function menu.filterOtherShip(setting, override)
 			value = menu.getFilterOption(option.id, setting.savegame) or false
 		end
 		if option.param == "orderqueue" then
-			C.SetMapRenderAllOrderQueues(menu.holomap, value)
+			if menu.holomap ~= 0 then
+				C.SetMapRenderAllOrderQueues(menu.holomap, value)
+			end
 		elseif option.param == "allyorderqueue" then
-			C.SetMapRenderAllAllyOrderQueues(menu.holomap, value)
+			if menu.holomap ~= 0 then
+				C.SetMapRenderAllAllyOrderQueues(menu.holomap, value)
+			end
 		end
 	end
 end
 
-function menu.filterOtherMisc(setting, override)
+function menu.filterOtherMisc(setting, override, noupdate)
 	for _, option in ipairs(setting) do
 		local value = override
 		if value == nil then
 			value = menu.getFilterOption(option.id, setting.savegame) or false
 		end
 		if option.param == "ecliptic" then
-			C.SetMapRenderEclipticLines(menu.holomap, value)
+			if menu.holomap ~= 0 then
+				C.SetMapRenderEclipticLines(menu.holomap, value)
+			end
 		elseif option.param == "wrecks" then
-			C.SetMapRenderWrecks(menu.holomap, value)
+			if menu.holomap ~= 0 then
+				C.SetMapRenderWrecks(menu.holomap, value)
+			end
 		elseif option.param == "selectionlines" then
-			C.SetMapRenderSelectionLines(menu.holomap, value)
+			if menu.holomap ~= 0 then
+				C.SetMapRenderSelectionLines(menu.holomap, value)
+			end
 		elseif option.param == "gateconnections" then
-			C.SetMapRenderAllGateConnections(menu.holomap, value)
+			if menu.holomap ~= 0 then
+				C.SetMapRenderAllGateConnections(menu.holomap, value)
+			end
 		elseif option.param == "opacity" then
 			menu.refreshMainFrame = true
 		elseif option.param == "coveroverride" then
 			C.SetUICoverOverride(value)
-			menu.refreshIF = getElapsedTime()
+			if not noupdate then
+				menu.refreshIF = getElapsedTime()
+			end
 		elseif option.param == "rendersatelliteradarrange" then
-			C.SetMapRenderSatelliteRadarRange(menu.holomap, value)
+			if menu.holomap ~= 0 then
+				C.SetMapRenderSatelliteRadarRange(menu.holomap, value)
+			end
 		end
 	end
 end
@@ -6160,6 +6298,7 @@ function menu.displayMenu(firsttime)
 	menu.prepareEconomyWares()
 	if firsttime then
 		menu.prepareKnownSectors()
+		menu.applyFilterSettings(true)
 	end
 
 	-- create frames
@@ -6288,7 +6427,7 @@ function menu.displayMenu(firsttime)
 
 	-- kuertee start: center on map
 	elseif menu.mode == "uix_centeronmap" then
-		menu.uix_centerOnMap(menu.modeparam[1])
+		menu.uix_centerOnMap(menu.modeparam[1], menu.modeparam[2])
 	-- kuertee end: center on map
 	end
 
@@ -6362,12 +6501,6 @@ function menu.displayMenu(firsttime)
 		if menu.contextMenuData.mode == "inventory" then
 			local inventory = GetInventory(menu.contextMenuData.entity)
 			local onlineitems = OnlineGetUserItems()
-
-			-- kuertee start:
-			if not onlineitems then
-				onlineitems = {}
-			end
-			-- kuertee end
 
 			for ware, entry in pairs(inventory) do
 				local ispersonalupgrade = GetWareData(ware, "ispersonalupgrade")
@@ -7096,7 +7229,12 @@ end
 
 function menu.getContainerNameAndColors(container, iteration, issquadleader, showScanLevel, showbehaviourinspection)
 	local convertedContainer = ConvertIDTo64Bit(container)
-	local isplayer, revealpercent, name, faction, icon, ismissiontarget, isonlineobject, isenemy, ishostile = GetComponentData(container, "isplayerowned", "revealpercent", "name", "owner", "icon", "ismissiontarget", "isonlineobject", "isenemy", "ishostile")
+	local isplayer, revealpercent, name, faction, icon, ismissiontarget, isonlineobject, isenemy, ishostile, idcode, classid, realclassid = GetComponentData(container, "isplayerowned", "revealpercent", "name", "owner", "icon", "ismissiontarget", "isonlineobject", "isenemy", "ishostile", "idcode", "classid", "realclassid")
+	if name == nil then
+		-- component does not exist anymore -> early out
+		return "", Color["text_normal"], Color["row_background"], Helper.standardFont, "", ""
+	end
+
 	local unlocked = IsInfoUnlockedForPlayer(container, "name")
 	local usefactioncolor = false
 	local highlightvisitors = false
@@ -7105,12 +7243,12 @@ function menu.getContainerNameAndColors(container, iteration, issquadleader, sho
 		highlightvisitors = menu.getFilterOption("think_diplomacy_highlightvisitor", false)
 	end
 
-	local name = Helper.unlockInfo(unlocked, name .. " (" .. ffi.string(C.GetObjectIDCode(convertedContainer)) .. ")") .. (((not showScanLevel) or isplayer) and "" or " (" .. revealpercent .. " %)")
+	local name = Helper.unlockInfo(unlocked, name .. " (" .. idcode .. ")") .. (((not showScanLevel) or isplayer) and "" or " (" .. revealpercent .. " %)")
 	local font = Helper.standardFont
 	local color = Color["text_normal"]
 
 	if faction == nil then
-		if C.IsComponentClass(convertedContainer, "controllable") then
+		if Helper.isComponentClass(classid, "controllable") then
 			DebugError("Found a controllable without a faction: " .. name)
 		end
 		usefactioncolor = false
@@ -7118,6 +7256,8 @@ function menu.getContainerNameAndColors(container, iteration, issquadleader, sho
 
 	local bgcolor = issquadleader and Color["row_background_blue"] or Color["row_background"]
 	if (menu.mode == "orderparam_object") and (not menu.checkForOrderParamObject(convertedContainer)) then
+		bgcolor = Color["row_background_unselectable"]
+	elseif (menu.mode == "diplomaticactionparam_object") and (not menu.checkForDiplomaticActionParamObject(convertedContainer)) then
 		bgcolor = Color["row_background_unselectable"]
 	elseif (menu.mode == "selectCV") and C.IsBuilderBusy(convertedContainer) then
 		name = ColorText["text_error"] .. ReadText(1001, 7943) .. "\27X - " .. name
@@ -7170,7 +7310,7 @@ function menu.getContainerNameAndColors(container, iteration, issquadleader, sho
 		factioncolor = Helper.convertColorToText(GetFactionData(faction, "color"))
 	end
 
-	if IsComponentClass(container, "ship") or C.IsRealComponentClass(convertedContainer, "station") or IsComponentClass(container, "buildstorage") then
+	if Helper.isComponentClass(classid, "ship") or Helper.isComponentClass(realclassid, "station") or Helper.isComponentClass(classid, "buildstorage") then
 		local iconid = icon
 		if iconid and iconid ~= "" then
 			if usefactioncolor then
@@ -7191,15 +7331,6 @@ function menu.getContainerNameAndColors(container, iteration, issquadleader, sho
 	return name, color, bgcolor, font, mouseover, factioncolor
 end
 
-function menu.getFleetName(object64)
-	if C.IsComponentClass(object64, "controllable") then
-		local fleetname = ffi.string(C.GetFleetName(object64))
-		if fleetname ~= "" then
-			return fleetname
-		end
-	end
-end
-
 function menu.addInternallyStoredShips(id)
 	if C.IsComponentClass(id, "container") then
 		local dockedships = {}
@@ -7207,9 +7338,9 @@ function menu.addInternallyStoredShips(id)
 
 		for i = 1, #dockedships do
 			local dockedID = ConvertStringTo64Bit(tostring(dockedships[i]))
-			local hull, purpose, ismodule, uirelation, isinternallystored = GetComponentData(dockedID, "hullpercent", "primarypurpose", "ismodule", "uirelation", "isinternallystored")
+			local name, hull, purpose, ismodule, uirelation, isinternallystored, classid, idcode, fleetname = GetComponentData(dockedID, "name", "hullpercent", "primarypurpose", "ismodule", "uirelation", "isinternallystored", "classid", "idcode", "fleetname")
 			if isinternallystored then
-				table.insert(menu.renderedComponents, { id = dockedID, name = ffi.string(C.GetComponentName(dockedID)), fleetname = menu.getFleetName(dockedID), objectid = ismodule and "" or ffi.string(C.GetObjectIDCode(dockedID)), class = ffi.string(C.GetComponentClass(dockedID)), hull = hull, purpose = purpose, relation = uirelation })
+				table.insert(menu.renderedComponents, { id = dockedID, name = name, fleetname = fleetname, objectid = ismodule and "" or idcode, classid = classid, hull = hull, purpose = purpose, relation = uirelation })
 				menu.renderedComponentsRef[dockedID] = true
 
 				menu.addInternallyStoredShips(dockedID)
@@ -7226,11 +7357,11 @@ function menu.updateRenderedComponents()
 		for i = #menu.renderedComponents, 1, -1 do
 			local id = ConvertStringTo64Bit(tostring(menu.renderedComponents[i]))
 			if IsValidComponent(id) then
-				local ismasstraffic, isenemy, hull, purpose, ismodule, uirelation = GetComponentData(id, "ismasstraffic", "isenemy", "hullpercent", "primarypurpose", "ismodule", "uirelation")
+				local name, ismasstraffic, isenemy, hull, purpose, ismodule, uirelation, classid, idcode, fleetname = GetComponentData(id, "name", "ismasstraffic", "isenemy", "hullpercent", "primarypurpose", "ismodule", "uirelation", "classid", "idcode", "fleetname")
 				if ismasstraffic and (not isenemy) then
 					table.remove(menu.renderedComponents, i)
 				else
-					menu.renderedComponents[i] = { id = id, name = ffi.string(C.GetComponentName(id)), fleetname = menu.getFleetName(id), objectid = ismodule and "" or ffi.string(C.GetObjectIDCode(id)), class = ffi.string(C.GetComponentClass(id)), hull = hull, purpose = purpose, relation = uirelation }
+					menu.renderedComponents[i] = { id = id, name = name, fleetname = fleetname, objectid = ismodule and "" or idcode, classid = classid, hull = hull, purpose = purpose, relation = uirelation }
 					menu.renderedComponentsRef[ConvertStringTo64Bit(tostring(id))] = true
 
 					menu.addInternallyStoredShips(id)
@@ -7268,8 +7399,8 @@ function menu.updateRenderedComponents()
 	local softtarget = ConvertStringTo64Bit(tostring(C.GetSofttarget2().softtargetID))
 	if softtarget ~= 0 then
 		if not menu.renderedComponentsRef[softtarget] then
-			local hull, purpose, uirelation, sector = GetComponentData(softtarget, "hullpercent", "primarypurpose", "uirelation", "sector")
-			table.insert(menu.renderedComponents, { id = softtarget, name = ffi.string(C.GetComponentName(softtarget)), fleetname = menu.getFleetName(softtarget), objectid = C.IsComponentClass(softtarget, "object") and ffi.string(C.GetObjectIDCode(softtarget)) or "", class = ffi.string(C.GetComponentClass(softtarget)), hull = hull, purpose = purpose, relation = uirelation, sector = sector })
+			local name, hull, purpose, uirelation, sector, classid, idcode, fleetname = GetComponentData(softtarget, "name", "hullpercent", "primarypurpose", "uirelation", "sector", "classid", "idcode", "fleetname")
+			table.insert(menu.renderedComponents, { id = softtarget, name = name, fleetname = fleetname, objectid = idcode, classid = classid, hull = hull, purpose = purpose, relation = uirelation, sector = sector })
 			menu.renderedComponentsRef[softtarget] = true
 		end
 	end
@@ -7279,8 +7410,8 @@ function menu.updateRenderedComponents()
 		local selectedcomponent = ConvertStringTo64Bit(id)
 		if IsValidComponent(selectedcomponent) then
 			if not menu.renderedComponentsRef[selectedcomponent] then
-				local hull, purpose, uirelation, sector = GetComponentData(selectedcomponent, "hullpercent", "primarypurpose", "uirelation", "sector")
-				table.insert(menu.renderedComponents, { id = selectedcomponent, name = ffi.string(C.GetComponentName(selectedcomponent)), fleetname = menu.getFleetName(selectedcomponent), objectid = C.IsComponentClass(selectedcomponent, "object") and ffi.string(C.GetObjectIDCode(selectedcomponent)) or "", class = ffi.string(C.GetComponentClass(selectedcomponent)), hull = hull, purpose = purpose, relation = uirelation, sector = sector })
+				local name, hull, purpose, uirelation, sector, classid, idcode, fleetname = GetComponentData(selectedcomponent, "name", "hullpercent", "primarypurpose", "uirelation", "sector", "classid", "idcode", "fleetname")
+				table.insert(menu.renderedComponents, { id = selectedcomponent, name = name, fleetname = fleetname, objectid = idcode, classid = classid, hull = hull, purpose = purpose, relation = uirelation, sector = sector })
 				menu.renderedComponentsRef[selectedcomponent] = true
 			end
 		end
@@ -7310,16 +7441,16 @@ function menu.componentSorter(sorttype)
 	elseif sorttype == "sectorinverse" then
 		sorter = function (a, b) return Helper.sortNameSectorAndObjectID(a, b, true) end
 
-	-- kuertee start: add sort by distance
-	elseif sorttype == "distance_from_player" then
-		sorter = menu.sortDistanceFromPlayer
-	elseif sorttype == "distance_from_playerinverse" then
-		sorter = function (a, b) return menu.sortDistanceFromPlayer (a, b, true) end
-	elseif sorttype == "distance_from_object" then
-		sorter = menu.sortDistanceFromObject
-	elseif sorttype == "distance_from_objectinverse" then
-		sorter = function (a, b) return menu.sortDistanceFromObject (a, b, true) end
-	-- kuertee end: add sort by distance
+	-- kuertee start: extra sort by distance
+	elseif sorttype == "uix_extraSortByDistance_player" then
+		sorter = menu.uix_sortDistanceFromPlayer
+	elseif sorttype == "uix_extraSortByDistance_playerinverse" then
+		sorter = function (a, b) return menu.uix_sortDistanceFromPlayer (a, b, true) end
+	elseif sorttype == "uix_extraSortByDistance_object" then
+		sorter = menu.uix_sortDistanceFromObject
+	elseif sorttype == "uix_extraSortByDistance_objectinverse" then
+		sorter = function (a, b) return menu.uix_sortDistanceFromObject (a, b, true) end
+	-- kuertee end: extra sort by distance
 
 	end
 	return sorter
@@ -7330,8 +7461,8 @@ function menu.sortComponentListHelper(components, sorter)
 	for _, component in ipairs(components) do
 		if component.component then
 			local component64 = ConvertStringTo64Bit(tostring(component.component))
-			local hull, purpose, uirelation, sector = GetComponentData(component64, "hullpercent", "primarypurpose", "uirelation", "sector")
-			table.insert(sortedComponents, { id = component64, name = ffi.string(C.GetComponentName(component64)), fleetname = menu.getFleetName(component64), objectid = C.IsComponentClass(component64, "object") and ffi.string(C.GetObjectIDCode(component64)) or "", class = ffi.string(C.GetComponentClass(component64)), hull = hull, purpose = purpose, relation = uirelation, sector = sector })
+			local name, hull, purpose, uirelation, sector, classid, idcode, fleetname = GetComponentData(component64, "name", "hullpercent", "primarypurpose", "uirelation", "sector", "classid", "idcode", "fleetname")
+			table.insert(sortedComponents, { id = component64, name = name, fleetname = fleetname, objectid = idcode, classid = classid, hull = hull, purpose = purpose, relation = uirelation, sector = sector })
 		elseif component.fleetunit then
 			local info = C.GetFleetUnitInfo(component.fleetunit)
 			local macro = ffi.string(info.macro)
@@ -7342,11 +7473,13 @@ function menu.sortComponentListHelper(components, sorter)
 			local hull = 0
 			local sector = ""
 			if info.replacementid ~= 0 then
-				local name, hull, sector = GetComponentData(ConvertStringToLuaID(tostring(info.replacementid)), "name", "hullpercent", "sector")
-				name = name
-				objectid = ffi.string(C.GetObjectIDCode(info.replacementid))
-				hull = hull
-				sector = sector
+				local name, hull, sector, idcode = GetComponentData(ConvertStringToLuaID(tostring(info.replacementid)), "name", "hullpercent", "sector", "idcode")
+				if name then
+					name = name
+					objectid = idcode
+					hull = hull
+					sector = sector
+				end
 			end
 			local class = ffi.string(C.GetMacroClass(macro))
 
@@ -7365,14 +7498,23 @@ function menu.sortComponentListHelper(components, sorter)
 	return returnvalue
 end
 
-function menu.isObjectValid(object)
-	local isdeployable, isradarvisible, isorphaned, isattachedaslimpet = GetComponentData(object, "isdeployable", "isradarvisible", "isorphaned", "isattachedaslimpet")
-	local isship = C.IsComponentClass(object, "ship")
-	if not isship and not (C.IsRealComponentClass(object, "station") and (not C.IsComponentWrecked(object))) and not isdeployable and not C.IsComponentClass(object, "lockbox") and not C.IsComponentClass(object, "collectablewares") and not (C.IsComponentClass(object, "buildstorage") and isorphaned) then
+function menu.isObjectValid(object, optclass, optrealclass)
+	local class = optclass
+	local realclass = optrealclass
+
+	local isdeployable, isradarvisible, isorphaned, isattachedaslimpet, iswreck, isunit, isknown
+	if (class == nil) or (realclass == nil) then
+		isdeployable, isradarvisible, isorphaned, isattachedaslimpet, iswreck, isunit, isknown, class, realclass = GetComponentData(object, "isdeployable", "isradarvisible", "isorphaned", "isattachedaslimpet", "iswreck", "isunit", "isknown", "classid", "realclassid")
+	else
+		isdeployable, isradarvisible, isorphaned, isattachedaslimpet, iswreck, isunit, isknown = GetComponentData(object, "isdeployable", "isradarvisible", "isorphaned", "isattachedaslimpet", "iswreck", "isunit", "isknown")
+	end
+
+	local isship = Helper.isComponentClass(class, "ship")
+	if not isship and not (Helper.isComponentClass(realclass, "station") and (not iswreck)) and not isdeployable and not Helper.isComponentClass(class, "lockbox") and not Helper.isComponentClass(class, "collectablewares") and not (Helper.isComponentClass(class, "buildstorage") and isorphaned) then
 		return false
-	elseif C.IsComponentClass(object, "controllable") and C.IsUnit(object) then
+	elseif (isship or Helper.isComponentClass(class, "controllable")) and isunit then
 		return false
-	elseif (not C.IsObjectKnown(object)) or (not isradarvisible) then
+	elseif (not isknown) or (not isradarvisible) then
 		return false
 	elseif isship and isattachedaslimpet then
 		return false
@@ -7392,16 +7534,14 @@ end
 
 -- Object List
 
-function menu.getSubordinates(controllable, checkrendered)
-	local controllable64 = C.ConvertStringTo64Bit(tostring(controllable))
-
+function menu.getSubordinates(controllable, controllable64, checkrendered, classid)
 	local subordinates = {}
-	if C.IsComponentClass(controllable64, "controllable") then
+	if Helper.isComponentClass(classid, "controllable") then
 		local locsubordinates = GetSubordinates(controllable)
 		for _, subordinate in ipairs(locsubordinates) do
 			local subordinate64 = ConvertIDTo64Bit(subordinate)
 			if menu.isObjectValid(subordinate64) then
-				table.insert(subordinates, { component = subordinate })
+				table.insert(subordinates, { component = subordinate, macro = GetComponentData(subordinate, "macro") })
 			end
 			if checkrendered and menu.renderedComponentsRef[subordinate64] then
 				subordinates.hasRendered = true
@@ -7650,9 +7790,9 @@ function menu.createObjectList(frame, instance)
 			local id = entry.id
 			local convertedID = ConvertStringToLuaID(tostring(id))
 			if menu.isObjectValid(id) then
-				local primarypurpose, isplayerowned, isdeployable, isfleetlead, isdocked = GetComponentData(convertedID, "primarypurpose", "isplayerowned", "isdeployable", "isfleetlead", "isdocked")
+				local primarypurpose, isplayerowned, isdeployable, isfleetlead, isdocked, classid, realclassid = GetComponentData(convertedID, "primarypurpose", "isplayerowned", "isdeployable", "isfleetlead", "isdocked", "classid", "realclassid")
 				if menu.mode == "selectCV" then
-					if C.IsComponentClass(id, "ship") and (primarypurpose == "build") then
+					if Helper.isComponentClass(classid, "ship") and (primarypurpose == "build") then
 						if isplayerowned then
 							table.insert(infoTableData.playerShips, convertedID)
 						else
@@ -7661,19 +7801,19 @@ function menu.createObjectList(frame, instance)
 					end
 				else
 
-					if isdeployable or C.IsComponentClass(id, "lockbox") or (C.IsComponentClass(id, "collectablewares") and ((id == menu.softtarget) or menu.isSelectedComponent(id))) then
+					if isdeployable or Helper.isComponentClass(classid, "lockbox") or (Helper.isComponentClass(classid, "collectablewares") and ((id == menu.softtarget) or menu.isSelectedComponent(id))) then
 						table.insert(infoTableData.deployables, convertedID)
-					elseif C.IsComponentClass(id, "ship") or C.IsRealComponentClass(id, "station") then
+					elseif Helper.isComponentClass(classid, "ship") or Helper.isComponentClass(realclassid, "station") then
 						if isfleetlead then
 							-- get all fleet unit subordinate data here once instead of doing recursion
 							menu.getFleetUnitSubordinates(instance, id, true)
 						end
 
 						-- Determine subordinates that may appear in the menu
-						infoTableData.subordinates[tostring(convertedID)] = menu.getSubordinates(convertedID, true)
+						infoTableData.subordinates[tostring(convertedID)] = menu.getSubordinates(convertedID, id, true, classid)
 
 						local dockedships = {}
-						if C.IsComponentClass(id, "container") then
+						if Helper.isComponentClass(classid, "container") then
 							Helper.ffiVLA(dockedships, "UniverseID", C.GetNumDockedShips, C.GetDockedShips, id, nil)
 						end
 						for i = #dockedships, 1, -1 do
@@ -7687,7 +7827,7 @@ function menu.createObjectList(frame, instance)
 						end
 						infoTableData.dockedships[tostring(convertedID)] = dockedships
 
-						if C.IsComponentClass(id, "ship") then
+						if Helper.isComponentClass(classid, "ship") then
 							local commander = GetCommander(convertedID)
 							local dockcontainer = C.GetContextByClass(id, "container", false)
 							if (not commander) or (not menu.renderedComponentsRef[ConvertIDTo64Bit(commander)]) then
@@ -7699,7 +7839,7 @@ function menu.createObjectList(frame, instance)
 									end
 								end
 							end
-						elseif C.IsRealComponentClass(id, "station") then
+						elseif Helper.isComponentClass(realclassid, "station") then
 							local isplayerowned = isplayerowned
 							if isplayerowned then
 								table.insert(infoTableData.playerStations, convertedID)
@@ -7740,7 +7880,7 @@ function menu.createObjectList(frame, instance)
 							end
 							infoTableData.constructions[tostring(convertedID)] = constructions
 						end
-					elseif C.IsComponentClass(id, "buildstorage") then
+					elseif Helper.isComponentClass(classid, "buildstorage") then
 						local isplayerowned = isplayerowned
 						if isplayerowned then
 							table.insert(infoTableData.playerStations, convertedID)
@@ -7978,13 +8118,6 @@ function menu.createPropertyOwned(frame, instance)
 	local onlineitems = {}
 	if menu.propertyMode == "inventoryships" then
 		onlineitems = OnlineGetUserItems()
-
-		-- kuertee start:
-		if not onlineitems then
-			onlineitems = {}
-		end
-		-- kuertee end
-
 	end
 
 	local playerobjects = {}
@@ -7996,9 +8129,9 @@ function menu.createPropertyOwned(frame, instance)
 	for i = #playerobjects, 1, -1 do
 		local object = playerobjects[i]
 		local object64 = ConvertIDTo64Bit(object)
-		if menu.isObjectValid(object64) then
-			local hull, purpose, uirelation, sector = GetComponentData(object, "hullpercent", "primarypurpose", "uirelation", "sector")
-			playerobjects[i] = { id = object, name = ffi.string(C.GetComponentName(object64)), fleetname = menu.getFleetName(object64), objectid = ffi.string(C.GetObjectIDCode(object64)), class = ffi.string(C.GetComponentClass(object64)), hull = hull, purpose = purpose, relation = uirelation, sector = sector }
+		local name, hull, purpose, uirelation, sector, classid, realclassid, idcode, fleetname = GetComponentData(object, "name", "hullpercent", "primarypurpose", "uirelation", "sector", "classid", "realclassid", "idcode", "fleetname")
+		if menu.isObjectValid(object64, classid, realclassid) then
+			playerobjects[i] = { id = object, name = name, fleetname = fleetname, objectid = idcode, classid = classid, realclassid = realclassid, hull = hull, purpose = purpose, relation = uirelation, sector = sector }
 		else
 			table.remove(playerobjects, i)
 		end
@@ -8006,9 +8139,11 @@ function menu.createPropertyOwned(frame, instance)
 
 	table.sort(playerobjects, menu.componentSorter(menu.propertySorterType))
 
+	local playerid = C.GetPlayerID()
 	for _, entry in ipairs(playerobjects) do
 		local object = entry.id
 		local object64 = ConvertIDTo64Bit(object)
+		local object_string = tostring(object)
 
 		local basestation, isdeployable, assignedpilot, isfleetlead = GetComponentData(object, "basestation", "isdeployable", "assignedpilot", "isfleetlead")
 		if isfleetlead then
@@ -8016,11 +8151,11 @@ function menu.createPropertyOwned(frame, instance)
 			menu.getFleetUnitSubordinates(instance, object64, false)
 		end
 		-- Determine subordinates that may appear in the menu
-		local subordinates = menu.getSubordinates(object, false)
-		infoTableData.subordinates[tostring(object)] = subordinates
+		local subordinates = menu.getSubordinates(object, object64, false, entry.classid)
+		infoTableData.subordinates[object_string] = subordinates
 		-- Find docked ships
 		local dockedships = {}
-		if C.IsComponentClass(object64, "container") then
+		if Helper.isComponentClass(entry.classid, "container") then
 			Helper.ffiVLA(dockedships, "UniverseID", C.GetNumDockedShips, C.GetDockedShips, object64, nil)
 		end
 		for i = #dockedships, 1, -1 do
@@ -8032,20 +8167,20 @@ function menu.createPropertyOwned(frame, instance)
 				table.remove(dockedships, i)
 			end
 		end
-		infoTableData.dockedships[tostring(object)] = dockedships
+		infoTableData.dockedships[object_string] = dockedships
 		-- Check if object is station, fleet leader or unassigned
 		local commander
-		if C.IsComponentClass(object64, "controllable") then
+		if Helper.isComponentClass(entry.classid, "controllable") then
 			commander = GetCommander(object)
 		end
 		if not commander then
-			if C.IsRealComponentClass(object64, "station") then
+			if Helper.isComponentClass(entry.realclassid, "station") then
 				table.insert(infoTableData.stations, object)
-			elseif C.IsComponentClass(object64, "buildstorage") then
+			elseif Helper.isComponentClass(entry.classid, "buildstorage") then
 				if not basestation then
 					table.insert(infoTableData.stations, object)
 				end
-			elseif isdeployable or C.IsComponentClass(object64, "lockbox") or C.IsComponentClass(object64, "collectablewares") then
+			elseif isdeployable or Helper.isComponentClass(entry.classid, "lockbox") or Helper.isComponentClass(entry.classid, "collectablewares") then
 				table.insert(infoTableData.deployables, object)
 			elseif #subordinates > 0 then
 				table.insert(infoTableData.fleetLeaderShips, object)
@@ -8054,7 +8189,7 @@ function menu.createPropertyOwned(frame, instance)
 			end
 		end
 
-		if C.IsRealComponentClass(object64, "station") then
+		if Helper.isComponentClass(entry.realclassid, "station") then
 			local constructions = {}
 			local constructionshipsbymacro = {}
 			-- builds in progress
@@ -8086,11 +8221,11 @@ function menu.createPropertyOwned(frame, instance)
 					table.insert(constructions, { id = buf[i].id, buildingcontainer = buf[i].buildingcontainer, component = component, macro = macro, factionid = ffi.string(buf[i].factionid), buildercomponent = buf[i].buildercomponent, price = buf[i].price, ismissingresources = buf[i].ismissingresources, queueposition = buf[i].queueposition, inprogress = false })
 				end
 			end
-			infoTableData.constructions[tostring(object)] = constructions
-		elseif C.IsComponentClass(object64, "ship") then
+			infoTableData.constructions[object_string] = constructions
+		elseif Helper.isComponentClass(entry.classid, "ship") then
 			if menu.propertyMode == "inventoryships" then
 				local pilot = ConvertIDTo64Bit(assignedpilot)
-				if pilot and (pilot ~= C.GetPlayerID()) then
+				if pilot and (pilot ~= playerid) then
 					local inventory = GetInventory(pilot)
 					if next(inventory) then
 						local sortedWares = {}
@@ -8339,35 +8474,37 @@ function menu.createPropertyOwned(frame, instance)
 		end
 		row[tableColumn].handlers.onClick = function () return menu.buttonPropertySorter("sector") end
 
-		--kuertee start: add distance sorters
+		--kuertee start: extra sort by distance
 		-- "distance from player"
-		local buttonLabel = ffi.string (C.GetPlayerName ())
+		local buttonLabel = ffi.string(C.GetPlayerName ())
 		sorterColumn = 3
 		tableColumn = (sorterColumn - 1) * colSpanPerSorterColumn + 1
 		local button = row[tableColumn]:setColSpan(colSpanPerSorterColumn):createButton({ scaling = false, height = buttonheight }):setText(buttonLabel, { halign = "center", scaling = true })
-		if menu.propertySorterType == "distance_from_player" then
+		if menu.propertySorterType == "uix_extraSortByDistance_player" then
 			button:setIcon("table_arrow_inv_down", { width = buttonheight, height = buttonheight, x = button:getColSpanWidth() - buttonheight })
-		elseif menu.propertySorterType == "distance_from_playerinverse" then
+		elseif menu.propertySorterType == "uix_extraSortByDistance_playerinverse" then
 			button:setIcon("table_arrow_inv_up", { width = buttonheight, height = buttonheight, x = button:getColSpanWidth() - buttonheight })
 		end
-		row[tableColumn].handlers.onClick = function () return menu.buttonPropertySorter("distance_from_player") end
+		row[tableColumn].handlers.onClick = function () return menu.buttonPropertySorter("uix_extraSortByDistance_player") end
 		-- "distance from object"
 		if menu.infoSubmenuObject then
-			buttonLabel = ffi.string (C.GetObjectIDCode (menu.infoSubmenuObject))
-			if buttonLabel == "" then
-				buttonLabel = ffi.string (C.GetComponentName (menu.infoSubmenuObject))
+			local name, idcode, classid = GetComponentData(ConvertStringToLuaID(tostring(menu.infoSubmenuObject)), "name", "idcode", "classid")
+			if idcode ~= "" then
+				buttonLabel = idcode
+			else
+				buttonLabel = name
 			end
 			sorterColumn = 4
 			tableColumn = (sorterColumn - 1) * colSpanPerSorterColumn + 1
 			local button = row[tableColumn]:setColSpan(colSpanPerSorterColumn):createButton({ scaling = false, height = buttonheight }):setText(buttonLabel, { halign = "center", scaling = true })
-			if menu.propertySorterType == "distance_from_object" then
+			if menu.propertySorterType == "uix_extraSortByDistance_object" then
 				button:setIcon("table_arrow_inv_down", { width = buttonheight, height = buttonheight, x = button:getColSpanWidth() - buttonheight })
-			elseif menu.propertySorterType == "distance_from_objectinverse" then
+			elseif menu.propertySorterType == "uix_extraSortByDistance_objectinverse" then
 				button:setIcon("table_arrow_inv_up", { width = buttonheight, height = buttonheight, x = button:getColSpanWidth() - buttonheight })
 			end
-			row[tableColumn].handlers.onClick = function () return menu.buttonPropertySorter("distance_from_object") end
+			row[tableColumn].handlers.onClick = function () return menu.buttonPropertySorter("uix_extraSortByDistance_object") end
 		end
-		--kuertee end: add distance sorters
+		--kuertee end: extra sort by distance
 	end
 
 	tabtable:setSelectedRow(menu.selectedRows.propertytabs or menu.selectedRows.infotable2 or 0)
@@ -8502,9 +8639,10 @@ function menu.getOrderInfo(ship, gettargetname)
 			Helper.ffiVLA(targets, "UniverseID", C.GetNumOrderLocationData, C.GetOrderLocationData, ship, curindex, false)
 			if #targets == 1 then
 				local target = targets[1]
-				targetname = ffi.string(C.GetComponentName(target))
-				if C.IsComponentClass(target, "ship") then
-					targetname = targetname .. " (" .. ffi.string(C.GetObjectIDCode(target)) .. ")"
+				local name, idcode, classid = GetComponentData(ConvertStringToLuaID(tostring(target)), "name", "idcode", "classid")
+				targetname = name
+				if Helper.isComponentClass(classid, "ship") then
+					targetname = targetname .. " (" .. idcode .. ")"
 				end
 			elseif #targets > 0 then
 				targetname = ReadText(1001, 3424)
@@ -8607,9 +8745,10 @@ function menu.getOrderInfo(ship, gettargetname)
 			Helper.ffiVLA(targets, "UniverseID", C.GetNumOrderLocationData, C.GetOrderLocationData, ship, 0, true)
 			if #targets == 1 then
 				local target = targets[1]
-				targetname = ffi.string(C.GetComponentName(target))
-				if C.IsComponentClass(target, "ship") then
-					targetname = targetname .. " (" .. ffi.string(C.GetObjectIDCode(target)) .. ")"
+				local name, idcode, classid = GetComponentData(ConvertStringToLuaID(tostring(target)), "name", "idcode", "classid")
+				targetname = name
+				if Helper.isComponentClass(classid, "ship") then
+					targetname = targetname .. " (" .. idcode .. ")"
 				end
 			elseif #targets > 0 then
 				targetname = ReadText(1001, 3424)
@@ -8754,6 +8893,8 @@ function menu.createPropertyRow(instance, ftable, component, iteration, commande
 	if (#menu.searchtext == 0) or Helper.textArrayHelper(menu.searchtext, function (numtexts, texts) return C.FilterComponentByText(convertedComponent, numtexts, texts, true) end, "text") then
 		if (menu.mode == "orderparam_object") and (not menu.checkForOrderParamObject(convertedComponent)) then
 			return numdisplayed
+		elseif (menu.mode == "diplomaticactionparam_object") and (not menu.checkForDiplomaticActionParamObject(convertedComponent)) then
+			return numdisplayed
 		elseif (menu.mode == "selectComponent") and (not menu.checkForSelectComponent(convertedComponent)) then
 			return numdisplayed
 		end
@@ -8764,12 +8905,7 @@ function menu.createPropertyRow(instance, ftable, component, iteration, commande
 			menu.extendedproperty[tostring(component)] = true
 		end
 		if (not menu.isPropertyExtended(tostring(component))) and menu.isDockContext(convertedComponent) then
-
-			-- if menu.infoTableMode ~= "propertyowned" then
-			-- kuertee start: callback
-			if not string.find (menu.infoTableMode, "propertyowned") then
-				-- kuertee end: callback
-
+			if menu.infoTableMode ~= "propertyowned" then
 				menu.extendedproperty[tostring(component)] = true
 			end
 		end
@@ -8783,7 +8919,8 @@ function menu.createPropertyRow(instance, ftable, component, iteration, commande
 			end
 		end
 
-		local isstation = C.IsRealComponentClass(convertedComponent, "station")
+		local location, locationtext, isdocked, aipilot, isplayerowned, isonlineobject, iscovered, isenemy, macro, isally, classid, realclassid = GetComponentData(component, "sectorid", "sector", "isdocked", "assignedaipilot", "isplayerowned", "isonlineobject", "iscovered", "isenemy", "macro", "isally", "classid", "realclassid")
+		local isstation = Helper.isComponentClass(realclassid, "station")
 		local isdoublerow = (iteration == 0 and (isstation or #subordinates > 0))
 		local name, color, bgcolor, font, mouseover, factioncolor = menu.getContainerNameAndColors(component, iteration, isdoublerow, false, true)
 		local alertString = ""
@@ -8804,7 +8941,6 @@ function menu.createPropertyRow(instance, ftable, component, iteration, commande
 				alertMouseOver = ReadText(1001, 3305) .. ReadText(1001, 120) .. "\n" .. missionlist
 			end
 		end
-		local location, locationtext, isdocked, aipilot, isplayerowned, isonlineobject, iscovered, isenemy, macro, isally = GetComponentData(component, "sectorid", "sector", "isdocked", "assignedaipilot", "isplayerowned", "isonlineobject", "iscovered", "isenemy", "macro", "isally")
 		if isplayerowned and iscovered then
 			alertString = alertString .. factioncolor .. "\27[menu_hidden]\27X"
 		end
@@ -8842,10 +8978,10 @@ function menu.createPropertyRow(instance, ftable, component, iteration, commande
 
 		local displaylocation = location and not (commanderlocation and IsSameComponent(location, commanderlocation))
 		local currentordericon, currentorderrawicon, currentordercolor, currentordername, currentorderdescription, currentorderisoverride, currentordermouseovertext, behaviouricon, behaviourrawicon, behaviourname, behaviourdescription = "", "", nil, "", "", false, nil, "", "", "", ""
-		if IsComponentClass(component, "ship") then
+		if Helper.isComponentClass(classid, "ship") then
 			currentordericon, currentorderrawicon, currentordercolor, currentordername, currentorderdescription, currentorderisoverride, currentordermouseovertext, _, behaviouricon, behaviourrawicon, behaviourname, behaviourdescription = menu.getOrderInfo(convertedComponent)
 		end
-		local fleettypes = IsComponentClass(component, "controllable") and menu.getPropertyOwnedFleetData(instance, component, maxicons) or {}
+		local fleettypes = Helper.isComponentClass(classid, "controllable") and menu.getPropertyOwnedFleetData(instance, component, macro, maxicons) or {}
 
 		if isplayerowned and isonlineobject then
 			locationtext = Helper.convertColorToText(menu.holomapcolor.visitorcolor) .. ReadText(1001, 11231) .. "\27X"
@@ -8919,7 +9055,7 @@ function menu.createPropertyRow(instance, ftable, component, iteration, commande
 						secondtext2 = ColorText["order_temp"] .. behaviouricon .. "\27X" .. secondtext2
 					end
 				end
-				local secondtext1truncated = TruncateText(secondtext1, font, Helper.scaleFont(font, config.mapFontSize), icon:getColSpanWidth() - Helper.scaleX(Helper.standardTextOffsetx))
+				local secondtext1truncated = TruncateText(secondtext1, font, Helper.scaleFont(font, config.mapFontSize), icon:getColSpanWidth() - Helper.scaleX(Helper.standardTextOffsetx) - Helper.scaleX(10))
 				local secondtext1width = C.GetTextWidth(secondtext1truncated, font, Helper.scaleFont(font, config.mapFontSize))
 				local secondtext2width = C.GetTextWidth(secondtext2, font, Helper.scaleFont(font, config.mapFontSize))
 
@@ -9103,15 +9239,15 @@ function menu.createPropertyRow(instance, ftable, component, iteration, commande
 				end
 			end
 
-            -- kuertee start: callback
-            if menu.uix_callbacks ["createPropertyRow_after_config_change"] then
-                for uix_id, uix_callback in pairs (menu.uix_callbacks ["createPropertyRow_after_config_change"]) do
-                    uix_callback (config)
-                end
-            end
-            -- kuertee end: callback
+            		-- kuertee start: callback
+            		if menu.uix_callbacks ["createPropertyRow_after_config_change"] then
+                		for uix_id, uix_callback in pairs (menu.uix_callbacks ["createPropertyRow_after_config_change"]) do
+                		    uix_callback (config)
+                		end
+            		end
+            		-- kuertee end: callback
 
-            -- shieldhullbar
+			-- shieldhullbar
 			row[5 + maxicons]:createObjectShieldHullBar(component)
 		end
 
@@ -9123,27 +9259,27 @@ function menu.createPropertyRow(instance, ftable, component, iteration, commande
 			end
 		end
 
-        -- kuertee start: callback
-        if menu.uix_callbacks ["createPropertyRow_after_row_height"] then
-            for uix_id, uix_callback in pairs (menu.uix_callbacks ["createPropertyRow_after_row_height"]) do
-                uix_callback (row)
-            end
-        end
-        -- kuertee end: callback
+        	-- kuertee start: callback
+        	if menu.uix_callbacks ["createPropertyRow_after_row_height"] then
+        	    for uix_id, uix_callback in pairs (menu.uix_callbacks ["createPropertyRow_after_row_height"]) do
+        	        uix_callback (row)
+        	    end
+        	end
+        	-- kuertee end: callback
 
 		if isstation then
 			AddKnownItem("stationtypes", macro)
-		elseif IsComponentClass(component, "ship_xl") then
+		elseif Helper.isComponentClass(classid, "ship_xl") then
 			AddKnownItem("shiptypes_xl", macro)
-		elseif IsComponentClass(component, "ship_l") then
+		elseif Helper.isComponentClass(classid, "ship_l") then
 			AddKnownItem("shiptypes_l", macro)
-		elseif IsComponentClass(component, "ship_m") then
+		elseif Helper.isComponentClass(classid, "ship_m") then
 			AddKnownItem("shiptypes_m", macro)
 		elseif GetMacroData(macro, "islasertower") then
 			AddKnownItem("lasertowers", macro)
-		elseif IsComponentClass(component, "ship_s") then
+		elseif Helper.isComponentClass(classid, "ship_s") then
 			AddKnownItem("shiptypes_s", macro)
-		elseif IsComponentClass(component, "ship_xs") then
+		elseif Helper.isComponentClass(classid, "ship_xs") then
 			AddKnownItem("shiptypes_xs", macro)
 		end
 
@@ -9323,9 +9459,8 @@ function menu.createFleetUnitRow(instance, ftable, fleetunit, iteration, command
 					duration = (displaylocation and ((locationname .. " ") or "") or "")
 					shieldhullbar = true
 				else
-					name = name .. " " .. ColorText["text_player"] .. "(" .. math.floor(C.GetCurrentBuildProgress(info.replacementid)) .. " %)\27X"
-
 					if info.buildtaskid ~= 0 then
+						name = name .. " " .. ColorText["text_player"] .. "(" .. math.floor(C.GetCurrentBuildProgress(info.replacementid)) .. " %)\27X"
 						local buildtaskinfo = C.GetBuildTaskInfo(info.buildtaskid)
 						if buildtaskinfo.buildercomponent ~= 0 then
 							if menu.infoTableMode == "objectlist" then
@@ -9575,7 +9710,7 @@ function menu.createModuleSection(instance, ftable, component, iteration)
 			local istypeextended = menu.isModuleTypeExtended(component, moduletype.type)
 
 			local bgcolor
-			if (menu.mode == "orderparam_object") then
+			if (menu.mode == "orderparam_object") or (menu.mode == "diplomaticactionparam_object") then
 				bgcolor = Color["row_background_unselectable"]
 			end
 
@@ -9610,7 +9745,7 @@ function menu.createModuleSection(instance, ftable, component, iteration)
 					local module = moduleentry.module
 					if type(module) == "string" then
 						local bgcolor
-						if menu.mode == "orderparam_object" then
+						if (menu.mode == "orderparam_object") or (menu.mode == "diplomaticactionparam_object") then
 							bgcolor = Color["row_background_unselectable"]
 						end
 						local row = ftable:addRow({"module", nil, moduletype.type, iteration, component, module}, { bgColor = bgcolor })
@@ -9626,6 +9761,8 @@ function menu.createModuleSection(instance, ftable, component, iteration)
 						local color = (not moduleunlocked) and Color["text_inactive"] or nil
 						local bgcolor
 						if (menu.mode == "orderparam_object") and (not menu.checkForOrderParamObject(module)) then
+							bgcolor = Color["row_background_unselectable"]
+						elseif (menu.mode == "diplomaticactionparam_object") and (not menu.checkForDiplomaticActionParamObject(module)) then
 							bgcolor = Color["row_background_unselectable"]
 						end
 
@@ -9716,7 +9853,7 @@ function menu.createConstructionRow(ftable, component, construction, iteration)
 	end
 	local color = (construction.factionid == "player") and menu.holomapcolor.playercolor or Color["text_normal"]
 	local bgcolor
-	if menu.mode == "orderparam_object" then
+	if (menu.mode == "orderparam_object") or (menu.mode == "diplomaticactionparam_object") then
 		bgcolor = Color["row_background_unselectable"]
 	end
 
@@ -9781,10 +9918,12 @@ function menu.createConstructionRow(ftable, component, construction, iteration)
 	end
 end
 
-function menu.getPropertyOwnedFleetData(instance, component, maxentries)
+function menu.getPropertyOwnedFleetData(instance, component, macro, maxentries)
+	local isfleetlead = GetComponentData(component, "isfleetlead")
+
 	local shiptyperanks = { }
 	local shiptypedata = { }
-	menu.getPropertyOwnedFleetDataInternal(instance, component, shiptyperanks, shiptypedata)
+	menu.getPropertyOwnedFleetDataInternal(instance, component, macro, shiptyperanks, shiptypedata)
 	table.sort(shiptyperanks)
 	local result = { }
 	for _, shiptyperank in ipairs(shiptyperanks) do
@@ -9814,7 +9953,6 @@ function menu.getPropertyOwnedFleetData(instance, component, maxentries)
 		table.insert(result, 1, { icon = "order_dockat", count = numdockedplayerships, color = menu.holomapcolor.playercolor })
 	end
 
-	local isfleetlead = GetComponentData(component, "isfleetlead")
 	if isfleetlead then
 		local count = menu.infoTableData[instance].fleetUnitData[tostring(component)].count
 
@@ -9830,27 +9968,43 @@ function menu.getPropertyOwnedFleetData(instance, component, maxentries)
 	return result
 end
 
-function menu.getPropertyOwnedFleetDataInternal(instance, component, shiptyperanks, shiptypedata)
+menu.macroPurposeCache = {}
+
+function menu.getPropertyOwnedFleetDataInternal(instance, component, macro, shiptyperanks, shiptypedata)
+	local purpose, icon, primarypurposeicon = "", "solid", "solid"
+	if menu.macroPurposeCache[macro] then
+		purpose = menu.macroPurposeCache[macro].purpose
+		icon = menu.macroPurposeCache[macro].icon
+		primarypurposeicon = menu.macroPurposeCache[macro].primarypurposeicon
+	else
+		purpose, icon, primarypurposeicon = GetMacroData(macro, "primarypurpose", "icon", "primarypurposeicon")
+		menu.macroPurposeCache[macro] = {
+			purpose = purpose,
+			icon = icon,
+			primarypurposeicon = primarypurposeicon,
+		}
+	end
+	local classid = GetComponentData(component, "classid")
+
 	local shiptyperank
 	local shipclass = "xs"
-	if IsComponentClass(component, "ship_xl") then
+	if Helper.isComponentClass(classid, "ship_xl") then
 		shiptyperank = 50
 		shipclass = "xl"
-	elseif IsComponentClass(component, "ship_l") then
+	elseif Helper.isComponentClass(classid, "ship_l") then
 		shiptyperank = 40
 		shipclass = "l"
-	elseif IsComponentClass(component, "ship_m") then
+	elseif Helper.isComponentClass(classid, "ship_m") then
 		shiptyperank = 30
 		shipclass = "m"
-	elseif IsComponentClass(component, "ship_s") then
+	elseif Helper.isComponentClass(classid, "ship_s") then
 		shiptyperank = 20
 		shipclass = "s"
-	elseif IsComponentClass(component, "ship_xs") then
+	elseif Helper.isComponentClass(classid, "ship_xs") then
 		shiptyperank = 10
 		shipclass = "xs"
 	end
 	if shiptyperank then
-		local purpose, icon, primarypurposeicon = GetComponentData(component, "primarypurpose", "icon", "primarypurposeicon")
 		if purpose == "fight" then
 			shiptyperank = shiptyperank + 5
 		elseif purpose == "auxiliary" then
@@ -9882,14 +10036,15 @@ function menu.getPropertyOwnedFleetDataInternal(instance, component, shiptyperan
 	end
 	-- kuertee end: callback
 
-	local subordinates = menu.infoTableData[instance].subordinates[tostring(component)]
+	local componentstring = tostring(component)
+	local subordinates = menu.infoTableData[instance].subordinates[componentstring]
 	if subordinates == nil then
-		subordinates = menu.getSubordinates(component, nil)
-		menu.infoTableData[instance].subordinates[tostring(component)] = subordinates
+		subordinates = menu.getSubordinates(component, C.ConvertStringTo64Bit(componentstring), nil, classid)
+		menu.infoTableData[instance].subordinates[componentstring] = subordinates
 	end
 	for _, subordinate in ipairs(subordinates) do
 		if subordinate.component then
-			menu.getPropertyOwnedFleetDataInternal(instance, subordinate.component, shiptyperanks, shiptypedata)
+			menu.getPropertyOwnedFleetDataInternal(instance, subordinate.component, subordinate.macro, shiptyperanks, shiptypedata)
 		end
 	end
 end
@@ -10449,8 +10604,8 @@ function menu.createResponsesForControllable(ftable, controllable, textpropertie
 	local selectedorder = menu.infoTablePersistentData[instance].selectedorder
 
 	local isvalid = menu.isInfoModeValidFor(controllable, "standingorders")
-	local faction, primarypurpose = GetComponentData(controllable, "owner", "primarypurpose")
-	if C.IsComponentClass(controllable, "ship") then
+	local faction, primarypurpose, classid = GetComponentData(controllable, "owner", "primarypurpose", "classid")
+	if Helper.isComponentClass(classid, "ship") then
 		local row = ftable:addRow(false, { bgColor = Color["row_title_background"] })
 		row[1]:setColSpan(8):createText(ReadText(1001, 8362), Helper.headerRowCenteredProperties)
 
@@ -10518,10 +10673,10 @@ function menu.createResponsesForControllable(ftable, controllable, textpropertie
 		end
 	end
 
-	if C.IsComponentClass(controllable, "ship") or C.IsComponentClass(controllable, "station") then
+	if Helper.isComponentClass(classid, "ship") or Helper.isComponentClass(classid, "station") then
 		-- resupply
 		local row = ftable:addRow(false, { bgColor = Color["row_title_background"] })
-		row[1]:setColSpan(8):createText(C.IsComponentClass(controllable, "ship") and ReadText(1001, 7722) or ReadText(1001, 7724), Helper.headerRowCenteredProperties)
+		row[1]:setColSpan(8):createText(Helper.isComponentClass(classid, "ship") and ReadText(1001, 7722) or ReadText(1001, 7724), Helper.headerRowCenteredProperties)
 
 		local curOption = Helper.round(C.GetDefensibleLoadoutLevel(controllable), 1)
 		local hasownresponse = isvalid and (curOption ~= -1)
@@ -10561,7 +10716,7 @@ function menu.createResponsesForControllable(ftable, controllable, textpropertie
 
 		-- blacklists
 		local row = ftable:addRow(false, { bgColor = Color["row_title_background"] })
-		row[1]:setColSpan(8):createText(C.IsComponentClass(controllable, "ship") and ReadText(1001, 9143) or ReadText(1001, 9178), Helper.headerRowCenteredProperties)
+		row[1]:setColSpan(8):createText(Helper.isComponentClass(classid, "ship") and ReadText(1001, 9143) or ReadText(1001, 9178), Helper.headerRowCenteredProperties)
 
 		local blacklists = Helper.getBlackLists()
 
@@ -10641,7 +10796,7 @@ function menu.createResponsesForControllable(ftable, controllable, textpropertie
 	end
 
 	-- ship trade prices & restrictions
-	if C.IsComponentClass(controllable, "ship") then
+	if Helper.isComponentClass(classid, "ship") then
 		ftable:addEmptyRow()
 
 		-- trade loop cargo reservations
@@ -10895,8 +11050,8 @@ function menu.createOrderQueue(frame, mode, instance)
 
 	if menu.isInfoModeValidFor(menu.infoSubmenuObject, mode) then
 		local n = C.GetNumOrders(menu.infoSubmenuObject)
-		local buf = ffi.new("Order2[?]", n)
-		n = C.GetOrders2(buf, n, menu.infoSubmenuObject)
+		local buf = ffi.new("Order3[?]", n)
+		n = C.GetOrders3(buf, n, menu.infoSubmenuObject)
 		for i = 0, n - 1 do
 			local entry = {}
 			entry.state = ffi.string(buf[i].state)
@@ -10907,6 +11062,7 @@ function menu.createOrderQueue(frame, mode, instance)
 			entry.isinfinite = buf[i].isinfinite
 			entry.isoverride = buf[i].isoverride
 			entry.istemporder = buf[i].istemporder
+			entry.ispriority = buf[i].ispriority
 			table.insert(infoTableData.orders, entry)
 		end
 
@@ -11000,7 +11156,7 @@ function menu.createOrderQueue(frame, mode, instance)
 	local isplayeroccupiedship = menu.infoSubmenuObject == playeroccupiedship64
 
 	local color = Color["text_normal"]
-	local isplayerowned, isonlineobject, isenemy, ishostile = GetComponentData(menu.infoSubmenuObject, "isplayerowned", "isonlineobject", "isenemy", "ishostile")
+	local isplayerowned, isonlineobject, isenemy, ishostile, classid = GetComponentData(menu.infoSubmenuObject, "isplayerowned", "isonlineobject", "isenemy", "ishostile", "classid")
 	if isplayerowned then
 		color = menu.holomapcolor.playercolor
 		if menu.infoSubmenuObject == C.GetPlayerObjectID() then
@@ -11023,7 +11179,7 @@ function menu.createOrderQueue(frame, mode, instance)
 	local row = ftable:addRow({ "info_focus" }, { fixed = true, bgColor = Color["row_title_background"] })
 	row[numcols]:createButton({ height = Helper.headerRow1Height, width = config.mapRowHeight, cellBGColor = Color["row_background"] }):setIcon("menu_center_selection", { width = Helper.standardTextHeight, height = Helper.standardTextHeight, y = (Helper.headerRow1Height - Helper.standardTextHeight) / 2 })
 	row[numcols].handlers.onClick = function () return C.SetFocusMapComponent(menu.holomap, menu.infoSubmenuObject, true) end
-	if C.IsComponentClass(menu.infoSubmenuObject, "object") then
+	if Helper.isComponentClass(classid, "object") then
 		row[1]:setBackgroundColSpan(numcols - 1):setColSpan(7):createText(ffi.string(C.GetComponentName(menu.infoSubmenuObject)), Helper.headerRow1Properties)
 		row[1].properties.color = color
 		row[8]:setColSpan(4):createText(ffi.string(C.GetObjectIDCode(menu.infoSubmenuObject)), Helper.headerRow1Properties)
@@ -11036,7 +11192,7 @@ function menu.createOrderQueue(frame, mode, instance)
 
 	local maxvisibleheight
 
-	if C.IsComponentClass(menu.infoSubmenuObject, "ship") then
+	if Helper.isComponentClass(classid, "ship") then
 		---- pilot info ----
 		local pilot, formation, isplayerowned = GetComponentData(menu.infoSubmenuObject, "assignedpilot", "formation", "isplayerowned")
 		local pilot64 = ConvertIDTo64Bit(pilot)
@@ -11265,6 +11421,8 @@ function menu.createOrderQueue(frame, mode, instance)
 			local mouseovertext
 			if order.isoverride then
 				name = name .. " " .. ColorText["text_error"] .. "[" .. ReadText(1001, 11219) .. "]"
+			elseif order.ispriority then
+				name = name .. " " .. ColorText["text_positive"] .. "[" .. ReadText(1001, 11681) .. "]"
 			elseif order.istemporder then
 				name = name .. " " .. ColorText["text_inactive"] .. "[" .. ReadText(1001, 11283) .. "]"
 				mouseovertext = ReadText(1026, 3261)
@@ -11552,15 +11710,15 @@ function menu.createOrderQueue(frame, mode, instance)
 			end
 			row[1]:setColSpan(4):createText(ReadText(1001, 8373) .. ReadText(1001, 120))
 
-			local isstation = IsComponentClass(infoTableData.commander, "station")
-			local isship = IsComponentClass(infoTableData.commander, "ship")
-			local shiptype = GetComponentData(infoTableData.commander, "shiptype")
-			local currentassignment, primarypurpose = GetComponentData(menu.infoSubmenuObject, "assignment", "primarypurpose")
+			local shiptype, commanderclassid = GetComponentData(infoTableData.commander, "shiptype", "classid")
+			local isstation = Helper.isComponentClass(commanderclassid, "station")
+			local isship = Helper.isComponentClass(commanderclassid, "ship")
+			local currentassignment, primarypurpose, cansupplyships = GetComponentData(menu.infoSubmenuObject, "assignment", "primarypurpose", "cansupplyships")
 			local asssignmentOptions = {}
 			-- defence
 			table.insert(asssignmentOptions, { id = "defence", text = ReadText(20208, 40301), icon = "", displayremoveoption = false })
 			-- supplyfleet
-			if isship and (primarypurpose == "auxiliary") and GetComponentData(menu.infoSubmenuObject, "cansupplyships") then
+			if isship and (primarypurpose == "auxiliary") and cansupplyships then
 				table.insert(asssignmentOptions, { id = "supplyfleet", text = ReadText(20208, 40701), icon = "", displayremoveoption = false })
 			end
 			if isstation then
@@ -11979,7 +12137,7 @@ function menu.createStandingOrdersMenu(frame, instance)
 	local tabtable = menu.createOrdersMenuHeader(frame, instance)
 
 	ftable.properties.y = tabtable.properties.y + tabtable:getVisibleHeight() + Helper.borderSize
-	
+
 	local isleft = instance == "left"
 	if isleft then
 		menu.playerinfotable:addConnection(1, 2, true)
@@ -12480,7 +12638,8 @@ function menu.createPlotMode(inputframe)
 	if not menu.plotData.component and not menu.plots_initialized then
 		for id, _ in pairs(menu.selectedcomponents) do
 			local station = ConvertStringTo64Bit(id)
-			if GetComponentData(station, "isplayerowned") and C.IsRealComponentClass(station, "station") then
+			local isplayerowned, realclassid = GetComponentData(station, "isplayerowned", "realclassid")
+			if isplayerowned and Helper.isComponentClass(realclassid, "station") then
 				menu.updatePlotData(station, true)
 
 				for _, row in ipairs(menu.table_plotlist.rows) do
@@ -12921,24 +13080,26 @@ function menu.createInfoSubmenu(inputframe, instance)
 
 	AddUITriggeredEvent(menu.name, "infomenu_open", menu.infoSubmenuObject)
 
-	local isdatavault, islandmark = GetComponentData(menu.infoSubmenuObject, "isdatavault", "islandmark")
-	if C.IsRealComponentClass(menu.infoSubmenuObject, "ship") then
+	local isdatavault, islandmark, classid, realclassid, ismodule = GetComponentData(menu.infoSubmenuObject, "isdatavault", "islandmark", "classid", "realclassid", "ismodule")
+	if Helper.isComponentClass(realclassid, "ship") then
 		mode = "ship"
-	elseif C.IsRealComponentClass(menu.infoSubmenuObject, "station") then
+	elseif Helper.isComponentClass(realclassid, "station") then
 		mode = "station"
-	elseif C.IsComponentClass(menu.infoSubmenuObject, "buildstorage") then
+	elseif Helper.isComponentClass(classid, "buildstorage") then
 		mode = "buildstorage"
-	elseif C.IsComponentClass(menu.infoSubmenuObject, "sector") then
+	elseif Helper.isComponentClass(classid, "sector") then
 		mode = "sector"
-	elseif C.IsComponentClass(menu.infoSubmenuObject, "gate") then
+	elseif Helper.isComponentClass(classid, "gate") then
 		mode = "gate"
-	elseif C.IsComponentClass(menu.infoSubmenuObject, "mine") or C.IsComponentClass(menu.infoSubmenuObject, "navbeacon") or C.IsComponentClass(menu.infoSubmenuObject, "resourceprobe") or C.IsComponentClass(menu.infoSubmenuObject, "satellite") then
+	elseif Helper.isComponentClass(classid, "mine") or Helper.isComponentClass(classid, "navbeacon") or Helper.isComponentClass(classid, "resourceprobe") or Helper.isComponentClass(classid, "satellite") then
 		mode = "deployable"
-	elseif C.IsComponentClass(menu.infoSubmenuObject, "asteroid") then
+	elseif Helper.isComponentClass(classid, "asteroid") then
 		mode = "asteroid"
-	elseif C.IsComponentClass(menu.infoSubmenuObject, "lockbox") or C.IsComponentClass(menu.infoSubmenuObject, "collectablewares") then
+	elseif ismodule then
+		mode = "module"
+	elseif Helper.isComponentClass(classid, "lockbox") or Helper.isComponentClass(classid, "collectablewares") then
 		mode = "none"
-	elseif C.IsComponentClass(menu.infoSubmenuObject, "object") and (isdatavault or islandmark) then
+	elseif Helper.isComponentClass(classid, "object") and (isdatavault or islandmark) then
 		mode = "none"
 	else
 		DebugError("menu.createInfoSubmenu(): Selected component " .. tostring(menu.infoSubmenuObject) .. " of class " .. ffi.string(C.GetComponentClass(menu.infoSubmenuObject)) .. " is unsupported. Support?")
@@ -12968,7 +13129,7 @@ function menu.createInfoSubmenu(inputframe, instance)
 	menu.settoprow = nil
 	menu.setcol = nil
 
-	local isplayerowned, isdeployable, description = GetComponentData(menu.infoSubmenuObject, "isplayerowned", "isdeployable", "description")
+	local isplayerowned, isdeployable, description, classid, basestation, macro = GetComponentData(menu.infoSubmenuObject, "isplayerowned", "isdeployable", "description", "classid", "basestation", "macro")
 
 	local table_button_bottom = inputframe:addTable(2, { tabOrder = 2 })
 	table_button_bottom:setColWidthPercent(2, 50)
@@ -12977,18 +13138,18 @@ function menu.createInfoSubmenu(inputframe, instance)
 		row = table_button_bottom:addRow("info_button_bottom", { fixed = true })
 		if mode == "ship" then
 			local library = "shiptypes_xs"
-			if IsComponentClass(menu.infoSubmenuObject, "ship_xl") then
+			if Helper.isComponentClass(classid, "ship_xl") then
 				library = "shiptypes_xl"
-			elseif IsComponentClass(menu.infoSubmenuObject, "ship_l") then
+			elseif Helper.isComponentClass(classid, "ship_l") then
 				library = "shiptypes_l"
-			elseif IsComponentClass(menu.infoSubmenuObject, "ship_m") then
+			elseif Helper.isComponentClass(classid, "ship_m") then
 				library = "shiptypes_m"
-			elseif IsComponentClass(menu.infoSubmenuObject, "ship_s") then
+			elseif Helper.isComponentClass(classid, "ship_s") then
 				library = "shiptypes_s"
 			end
 
 			row[1]:createButton({ active = true }):setText(ReadText(1001, 2400), { halign = "center" })	-- Encyclopedia
-			row[1].handlers.onClick = function() Helper.closeMenuAndOpenNewMenu(menu, "EncyclopediaMenu", { 0, 0, "Ships", library, GetComponentData(menu.infoSubmenuObject, "macro") }); menu.cleanup() end
+			row[1].handlers.onClick = function() Helper.closeMenuAndOpenNewMenu(menu, "EncyclopediaMenu", { 0, 0, "Ships", library, macro }); menu.cleanup() end
 			if isplayerowned then
 				row[2]:createButton({ active = true }):setText(ReadText(1001, 1137), { halign = "center" })	-- Ship Overview
 				row[2].handlers.onClick = function() Helper.closeMenuAndOpenNewMenu(menu, "ShipConfigurationMenu", { 0, 0, nil, "upgrade", { tostring(menu.infoSubmenuObject) } }) menu.cleanup() end
@@ -12999,7 +13160,6 @@ function menu.createInfoSubmenu(inputframe, instance)
 			row[2]:createButton({ active = true }):setText(ReadText(1001, 1138), { halign = "center" })	-- Station Overview
 			row[2].handlers.onClick = function() Helper.closeMenuAndOpenNewMenu(menu, "StationOverviewMenu", { 0, 0, menu.infoSubmenuObject }) menu.cleanup() end
 		elseif mode == "buildstorage" then
-			local basestation = GetComponentData(menu.infoSubmenuObject, "basestation")
 			if basestation then
 				row[1]:createButton({ active = true }):setText(ReadText(1001, 1136), { halign = "center" })	-- Configure Station
 				row[1].handlers.onClick = function() Helper.closeMenuAndOpenNewMenu(menu, "StationConfigurationMenu", { 0, 0, basestation }) menu.cleanup() end
@@ -13078,29 +13238,32 @@ function menu.createCrewInfoSubmenu(inputframe, instance)
 
 	AddUITriggeredEvent(menu.name, "crewinfomenu_open", menu.infoSubmenuObject)
 
-	if C.IsRealComponentClass(menu.infoSubmenuObject, "ship_xs") then
+	local macro, classid, realclassid, ismodule = GetComponentData(menu.infoSubmenuObject, "macro", "classid", "realclassid", "ismodule")
+	if Helper.isComponentClass(realclassid, "ship_xs") then
 		mode = "none"
-	elseif GetMacroData(GetComponentData(menu.infoSubmenuObject, "macro"), "islasertower") then
+	elseif GetMacroData(macro, "islasertower") then
 		mode = "none"
-	elseif C.IsRealComponentClass(menu.infoSubmenuObject, "ship") then
+	elseif Helper.isComponentClass(realclassid, "ship") then
 		mode = "ship"
-	elseif C.IsRealComponentClass(menu.infoSubmenuObject, "station") then
+	elseif Helper.isComponentClass(realclassid, "station") then
 		mode = "station"
-	elseif C.IsComponentClass(menu.infoSubmenuObject, "sector") then
+	elseif Helper.isComponentClass(classid, "sector") then
 		mode = "none"
-	elseif C.IsComponentClass(menu.infoSubmenuObject, "gate") then
+	elseif Helper.isComponentClass(classid, "gate") then
 		mode = "none"
-	elseif C.IsComponentClass(menu.infoSubmenuObject, "mine") or C.IsComponentClass(menu.infoSubmenuObject, "navbeacon") or C.IsComponentClass(menu.infoSubmenuObject, "resourceprobe") or C.IsComponentClass(menu.infoSubmenuObject, "satellite") then
+	elseif Helper.isComponentClass(classid, "mine") or Helper.isComponentClass(classid, "navbeacon") or Helper.isComponentClass(classid, "resourceprobe") or Helper.isComponentClass(classid, "satellite") then
 		mode = "none"
-	elseif C.IsComponentClass(menu.infoSubmenuObject, "asteroid") or C.IsComponentClass(menu.infoSubmenuObject, "collectablewares") then
+	elseif ismodule then
 		mode = "none"
-	elseif C.IsComponentClass(menu.infoSubmenuObject, "lockbox") then
+	elseif Helper.isComponentClass(classid, "asteroid") or Helper.isComponentClass(classid, "collectablewares") then
+		mode = "none"
+	elseif Helper.isComponentClass(classid, "lockbox") then
 		mode = "none"
 	else
 		DebugError("menu.createCrewInfoSubmenu(): Selected component " .. tostring(menu.infoSubmenuObject) .. " of class " .. ffi.string(C.GetComponentClass(menu.infoSubmenuObject)) .. " is unsupported. Support?")
 	end
 
-	if (C.IsComponentClass(menu.infoSubmenuObject, "ship") or C.IsComponentClass(menu.infoSubmenuObject, "station")) and (menu.infoTablePersistentData[instance].resetcrew or (menu.infoTablePersistentData[instance].crew.object ~= menu.infoSubmenuObject)) then
+	if (Helper.isComponentClass(classid, "ship") or Helper.isComponentClass(classid, "station")) and (menu.infoTablePersistentData[instance].resetcrew or (menu.infoTablePersistentData[instance].crew.object ~= menu.infoSubmenuObject)) then
 		menu.infoSubmenuPrepareCrewInfo(instance)
 		menu.infoTablePersistentData[instance].resetcrew = nil
 	end
@@ -13164,23 +13327,26 @@ function menu.createLoadoutInfoSubmenu(inputframe, instance)
 
 	AddUITriggeredEvent(menu.name, "loadoutinfomenu_open", menu.infoSubmenuObject)
 
-	if C.IsRealComponentClass(menu.infoSubmenuObject, "ship_xs") then
+	local macro, classid, realclassid, ismodule = GetComponentData(menu.infoSubmenuObject, "macro", "classid", "realclassid", "ismodule")
+	if Helper.isComponentClass(realclassid, "ship_xs") then
 		mode = "none"
-	elseif GetMacroData(GetComponentData(menu.infoSubmenuObject, "macro"), "islasertower") then
+	elseif GetMacroData(macro, "islasertower") then
 		mode = "none"
-	elseif C.IsRealComponentClass(menu.infoSubmenuObject, "ship") then
+	elseif Helper.isComponentClass(realclassid, "ship") then
 		mode = "ship"
-	elseif C.IsRealComponentClass(menu.infoSubmenuObject, "station") then
+	elseif Helper.isComponentClass(realclassid, "station") then
 		mode = "station"
-	elseif C.IsComponentClass(menu.infoSubmenuObject, "sector") then
+	elseif Helper.isComponentClass(classid, "sector") then
 		mode = "none"
-	elseif C.IsComponentClass(menu.infoSubmenuObject, "gate") then
+	elseif Helper.isComponentClass(classid, "gate") then
 		mode = "none"
-	elseif C.IsComponentClass(menu.infoSubmenuObject, "mine") or C.IsComponentClass(menu.infoSubmenuObject, "navbeacon") or C.IsComponentClass(menu.infoSubmenuObject, "resourceprobe") or C.IsComponentClass(menu.infoSubmenuObject, "satellite") then
+	elseif Helper.isComponentClass(classid, "mine") or Helper.isComponentClass(classid, "navbeacon") or Helper.isComponentClass(classid, "resourceprobe") or Helper.isComponentClass(classid, "satellite") then
 		mode = "none"
-	elseif C.IsComponentClass(menu.infoSubmenuObject, "asteroid") or C.IsComponentClass(menu.infoSubmenuObject, "collectablewares") then
+	elseif ismodule then
 		mode = "none"
-	elseif C.IsComponentClass(menu.infoSubmenuObject, "lockbox") then
+	elseif Helper.isComponentClass(classid, "asteroid") or Helper.isComponentClass(classid, "collectablewares") then
+		mode = "none"
+	elseif Helper.isComponentClass(classid, "lockbox") then
 		mode = "none"
 	else
 		DebugError("menu.createLoadoutInfoSubmenu(): Selected component " .. tostring(menu.infoSubmenuObject) .. " of class " .. ffi.string(C.GetComponentClass(menu.infoSubmenuObject)) .. " is unsupported. Support?")
@@ -13322,16 +13488,19 @@ function menu.setupInfoSubmenuRows(mode, inputtable, inputobject, instance)
 	local infocashtransferdetails = menu.infoTablePersistentData[instance].cashtransferdetails
 	local infodrops = menu.infoTablePersistentData[instance].drops
 
+	local name, isplayerowned, isonlineobject, isenemy, ishostile, classid, realclassid = GetComponentData(object64, "name", "isplayerowned", "isonlineobject", "isenemy", "ishostile", "classid", "realclassid")
+
 	local indentsize = 0
 
 	local loadout = {}
 	if (mode == "ship") or (mode == "station") then
 		loadout = { ["component"] = {}, ["macro"] = {}, ["ware"] = {} }
+		local isdefensible = Helper.isComponentClass(classid, "defensible")
 		for i, upgradetype in ipairs(Helper.upgradetypes) do
 			if upgradetype.supertype == "macro" then
 				loadout.component[upgradetype.type] = {}
 				local numslots = 0
-				if C.IsComponentClass(inputobject, "defensible") then
+				if isdefensible then
 					numslots = tonumber(C.GetNumUpgradeSlots(inputobject, "", upgradetype.type))
 				end
 				for j = 1, numslots do
@@ -13366,7 +13535,6 @@ function menu.setupInfoSubmenuRows(mode, inputtable, inputobject, instance)
 		end
 	end
 
-	local isplayerowned, isonlineobject, isenemy, ishostile = GetComponentData(object64, "isplayerowned", "isonlineobject", "isenemy", "ishostile")
 	local titlecolor = Color["text_normal"]
 	if isplayerowned then
 		titlecolor = menu.holomapcolor.playercolor
@@ -13412,7 +13580,7 @@ function menu.setupInfoSubmenuRows(mode, inputtable, inputobject, instance)
 	local row = inputtable:addRow(false, { fixed = true, bgColor = Color["row_title_background"] })
 	row[1]:setColSpan(8):createText(ReadText(1001, 1111), Helper.headerRowCenteredProperties)
 
-	local objectname = Helper.unlockInfo(nameinfo, ffi.string(C.GetComponentName(inputobject)))
+	local objectname = Helper.unlockInfo(nameinfo, name)
 	--- object name ---
 	local row = inputtable:addRow("info_focus", { fixed = true, bgColor = Color["row_title_background"] })
 	row[8]:createButton({ width = config.mapRowHeight, cellBGColor = Color["row_background"] }):setIcon("menu_center_selection", { width = config.mapRowHeight, height = config.mapRowHeight, y = (Helper.headerRow1Height - config.mapRowHeight) / 2 })
@@ -13439,16 +13607,18 @@ function menu.setupInfoSubmenuRows(mode, inputtable, inputobject, instance)
 			row = menu.addInfoSubmenuRow(instance, inputtable, row, locrowdata, false, false, false, 1, indentsize, nil, nil, false)
 		end
 
-		locrowdata = { false, ReadText(1001, 9040) .. ReadText(1001, 120), Helper.unlockInfo(ownerinfo, GetComponentData(object64, "ownername")) }	-- "Owner"
+		local ownername, sectorid, clusterid, macro, name, hullmax, shieldmax, maxradarrange, shipstoragecapacity, numdockingbays, pilot, isresupplyship, numtrips, zoneid, prestigename = GetComponentData(object64, "ownername", "sectorid", "clusterid", "macro", "name", "hullmax", "shieldmax", "maxradarrange", "shipstoragecapacity", "numdockingbays", "assignedpilot", "cansupplyships", "numtrips", "zoneid", "prestigename")
+
+		locrowdata = { false, ReadText(1001, 9040) .. ReadText(1001, 120), Helper.unlockInfo(ownerinfo, ownername) }	-- "Owner"
 		row = menu.addInfoSubmenuRow(instance, inputtable, row, locrowdata, false, false, false, 1, indentsize)
 
 		local loccontainer = nil
 		if isdocked then
 			loccontainer = ConvertStringTo64Bit(tostring(C.GetTopLevelContainer(inputobject)))
 		end
-		local objectlocid64 = ConvertStringTo64Bit(tostring(GetComponentData(object64, "sectorid")))
+		local objectlocid64 = ConvertStringTo64Bit(tostring(sectorid))
 		if objectlocid64 == 0 then
-			objectlocid64 = ConvertStringTo64Bit(tostring(GetComponentData(object64, "clusterid")))		-- no sector; object is in superhighway
+			objectlocid64 = ConvertStringTo64Bit(tostring(clusterid))		-- no sector; object is in superhighway
 		end
 		local objectloc = Helper.unlockInfo(C.IsInfoUnlockedForPlayer(objectlocid64, "name"), ffi.string(C.GetComponentName(objectlocid64)))
 		if loccontainer then
@@ -13457,7 +13627,7 @@ function menu.setupInfoSubmenuRows(mode, inputtable, inputobject, instance)
 		locrowdata = { false, ReadText(1001, 2943) .. ReadText(1001, 120), objectloc }	-- Location
 		row = menu.addInfoSubmenuRow(instance, inputtable, row, locrowdata, false, false, false, 1, indentsize)
 
-		local macroname, ware, islasertower = GetMacroData(GetComponentData(object64, "macro"), "name", "ware", "islasertower")
+		local macroname, ware, islasertower = GetMacroData(macro, "name", "ware", "islasertower")
 		local objecttype = Helper.unlockInfo(nameinfo, macroname)
 		locrowdata = { false, ReadText(1001, 94) .. ReadText(1001, 120), objecttype }	-- Model
 		row = menu.addInfoSubmenuRow(instance, inputtable, row, locrowdata, false, false, false, 1, indentsize)
@@ -13505,20 +13675,29 @@ function menu.setupInfoSubmenuRows(mode, inputtable, inputobject, instance)
 
 		row = menu.addInfoSubmenuRow(instance, inputtable, row, locrowdata, false, false, false, 1, indentsize)
 
-		local hull_max = Helper.unlockInfo(defenceinfo_low, ConvertIntegerString(Helper.round(GetComponentData(object64, "hullmax")), true, 4, true, true, true))
+		local hull_max = Helper.unlockInfo(defenceinfo_low, ConvertIntegerString(Helper.round(hullmax), true, 4, true, true, true))
 		locrowdata = { false, ReadText(1001, 1) .. ReadText(1001, 120), (defenceinfo_high and (function() return (ConvertIntegerString(Helper.round(GetComponentData(object64, "hull") or 0), true, 4, true, true, true) .. " / " .. hull_max .. " " .. ReadText(1001, 118) .. " (" .. (GetComponentData(object64, "hullpercent") or 0) .. "%)") end) or (unknowntext .. " / " .. hull_max .. " " .. ReadText(1001, 118) .. " (" ..  (GetComponentData(object64, "hullpercent") or 0) .. "%)")) }	-- Hull, MJ
 		row = menu.addInfoSubmenuRow(instance, inputtable, row, locrowdata, false, false, false, 1, indentsize)
 
-		local shield_max = Helper.unlockInfo(defenceinfo_low, ConvertIntegerString(Helper.round(GetComponentData(object64, "shieldmax")), true, 4, true, true, true))
+		local shield_max = Helper.unlockInfo(defenceinfo_low, ConvertIntegerString(Helper.round(shieldmax), true, 4, true, true, true))
 		locrowdata = { false, ReadText(1001, 2) .. ReadText(1001, 120), (defenceinfo_high and (function() return (ConvertIntegerString(Helper.round(GetComponentData(object64, "shield") or 0), true, 4, true, true, true) .. " / " .. shield_max .. " " .. ReadText(1001, 118) .. " (" .. (GetComponentData(object64, "shieldpercent") or 0) .. "%)") end) or (unknowntext .. " / " .. shield_max .. " " .. ReadText(1001, 118) .. " (" ..  (GetComponentData(object64, "shieldpercent") or 0) .. "%)")) }	-- Shield, MJ
 		row = menu.addInfoSubmenuRow(instance, inputtable, row, locrowdata, false, false, false, 1, indentsize)
 
-		locrowdata = { true, ReadText(1001, 8051) .. ReadText(1001, 120), defenceinfo_low and (function() return (ConvertIntegerString(Helper.round(GetComponentData(object64, "maxunboostedforwardspeed") or 0), true, 0, true) .. " " .. ReadText(1001, 113)) end) or (unknowntext .. " " .. ReadText(1001, 113)) }	-- Cruising Speed, m/s
+		locrowdata = { false, ReadText(1001, 12920) .. ReadText(1001, 120), Helper.unlockInfo(nameinfo, prestigename) }
+		row = menu.addInfoSubmenuRow(instance, inputtable, row, locrowdata, false, false, false, 1, indentsize, nil, nil, false)
+
+		locrowdata = { true, ReadText(1001, 8051) .. ReadText(1001, 120), defenceinfo_low and (function() return (ConvertIntegerString(Helper.round(C.GetDefensibleSpeeds(object64).speed), true, 0, true) .. " " .. ReadText(1001, 113)) end) or (unknowntext .. " " .. ReadText(1001, 113)) }	-- Cruising Speed, m/s
+		row = menu.addInfoSubmenuRow(instance, inputtable, row, locrowdata, false, false, false, 1, indentsize, nil, nil, false)
+
+		locrowdata = { false, ReadText(1001, 8052) .. ReadText(1001, 120), defenceinfo_low and (function() return (ConvertIntegerString(Helper.round(C.GetDefensibleSpeeds(object64).boostspeed), true, 0, true) .. " " .. ReadText(1001, 113)) end) or (unknowntext .. " " .. ReadText(1001, 113)) }	-- Cruising Speed, m/s
+		row = menu.addInfoSubmenuRow(instance, inputtable, row, locrowdata, false, false, false, 1, indentsize, nil, nil, false)
+
+		locrowdata = { false, ReadText(1001, 8053) .. ReadText(1001, 120), defenceinfo_low and (function() return (ConvertIntegerString(Helper.round(C.GetDefensibleSpeeds(object64).travelspeed), true, 0, true) .. " " .. ReadText(1001, 113)) end) or (unknowntext .. " " .. ReadText(1001, 113)) }	-- Cruising Speed, m/s
 		row = menu.addInfoSubmenuRow(instance, inputtable, row, locrowdata, false, false, false, 1, indentsize, nil, nil, false)
 
 		local dpstable = ffi.new("DPSData[?]", 6)
 		local hasturrets = (defenceinfo_low and #loadout.component.turret > 0)
-		local numtotalquadrants = C.GetDefensibleDPS(dpstable, inputobject, true, true, true, true, hasturrets, false, false)
+		local numtotalquadrants = C.GetDefensibleDPS(dpstable, inputobject, true, true, true, true, hasturrets, false, true)
 		if not hasturrets then
 			locrowdata = { false, ReadText(1001, 9092) .. ReadText(1001, 120), defenceinfo_high and (function() return (ConvertIntegerString(Helper.round(dpstable[0].dps), true, 0, true) .. " " .. ReadText(1001, 119)) end) or (unknowntext .. " " .. ReadText(1001, 119)) }	-- Weapon Output, MW
 			row = menu.addInfoSubmenuRow(instance, inputtable, row, locrowdata, false, false, false, 1, indentsize)
@@ -13530,7 +13709,7 @@ function menu.setupInfoSubmenuRows(mode, inputtable, inputobject, instance)
 		end
 
 		local sustainedfwddps = ffi.new("DPSData[?]", 1)
-		C.GetDefensibleDPS(sustainedfwddps, inputobject, true, true, true, true, false, true, false)
+		C.GetDefensibleDPS(sustainedfwddps, inputobject, true, true, true, true, false, true, true)
 		if sustainedfwddps[0].dps > 0 then
 			locrowdata = { false, ReadText(1001, 9093) .. ReadText(1001, 120), defenceinfo_high and (function() return (ConvertIntegerString(Helper.round(sustainedfwddps[0].dps), true, 0, true) .. " " .. ReadText(1001, 119)) end) or (unknowntext .. " " .. ReadText(1001, 119)) }	-- MW
 			row = menu.addInfoSubmenuRow(instance, inputtable, row, locrowdata, false, false, false, 1, indentsize)
@@ -13542,7 +13721,7 @@ function menu.setupInfoSubmenuRows(mode, inputtable, inputobject, instance)
 			row = menu.addInfoSubmenuRow(instance, inputtable, row, locrowdata, false, false, false, 1, indentsize)
 		end
 		-- crew skill
-		if (not C.IsRealComponentClass(inputobject, "ship_xs")) and (not islasertower) then
+		if (not Helper.isComponentClass(realclassid, "ship_xs")) and (not islasertower) then
 			local shipcombinedskill = math.floor(C.GetShipCombinedSkill(inputobject) * 15 / 100)
 			local printedshipcombinedskill = unknowntext
 			local locfont = inputfont
@@ -13557,18 +13736,17 @@ function menu.setupInfoSubmenuRows(mode, inputtable, inputobject, instance)
 			row[4]:setColSpan(5):createText(locrowdata[3], { halign = "right", minRowHeight = config.mapRowHeight, fontsize = config.mapFontSize, font = locfont, color = locfontcolor, mouseOverText = ReadText(1026, 1) })
 		end
 		-- radar range
-		local radarrange = Helper.unlockInfo(defenceinfo_low, ConvertIntegerString((Helper.round(GetComponentData(object64, "maxradarrange")) / 1000), true, 0, true))
+		local radarrange = Helper.unlockInfo(defenceinfo_low, ConvertIntegerString((Helper.round(maxradarrange) / 1000), true, 0, true))
 		locrowdata = { false, ReadText(1001, 2426) .. ReadText(1001, 120), (radarrange .. " " .. ReadText(1001, 108)) }	-- Radar Range, km
 		row = menu.addInfoSubmenuRow(instance, inputtable, row, locrowdata, false, false, false, 1, indentsize)
 		-- boarding strength
 		locrowdata = { false, ReadText(1001, 1325) .. ReadText(1001, 120), Helper.unlockInfo(defenceinfo_high, (function() return ConvertIntegerString(GetComponentData(object64, "boardingstrength") or 0, true, 0, true) end)) }	-- Boarding Attack Strength
 		row = menu.addInfoSubmenuRow(instance, inputtable, row, locrowdata, false, false, false, 1, indentsize)
 		-- docked ships
-		local shipstoragecapacity, numdockingbays = GetComponentData(inputobject, "shipstoragecapacity", "numdockingbays")
 		local maxdockedships = (shipstoragecapacity or 0) + (numdockingbays or 0)
 		if maxdockedships > 0 then
 			local numdockedships = 0
-			if C.IsComponentClass(inputobject, "container") then
+			if Helper.isComponentClass(classid, "container") then
 				numdockedships = C.GetNumDockedShips(inputobject, nil)
 			end
 			local row = inputtable:addRow("info_dockedships", {  })
@@ -13594,36 +13772,33 @@ function menu.setupInfoSubmenuRows(mode, inputtable, inputobject, instance)
 				table.sort(npcowneddockedships, function(a, b) return GetComponentData(a, "size") > GetComponentData(b, "size") end)
 
 				for i, shipid in ipairs(playerowneddockedships) do
-					local shipname = ffi.string(C.GetComponentName(shipid))
-					local iconid = GetComponentData(shipid, "icon")
+					local shipname, iconid, idcode = GetComponentData(shipid, "name", "icon", "idcode")
 					if iconid and iconid ~= "" then
 						shipname = string.format("\027[%s] %s", iconid, shipname)
 					end
 					row = inputtable:addRow("info_dockedship" .. i, {  })
 					row[2]:setColSpan(2):createText(shipname, { color = Color["text_player"], x = Helper.standardTextOffsetx + indentsize })
-					row[4]:setColSpan(5):createText(("(" .. ffi.string(C.GetObjectIDCode(shipid)) .. ")"), { halign = "right", color = Color["text_player"], x = Helper.standardTextOffsetx + indentsize })
+					row[4]:setColSpan(5):createText(("(" .. idcode .. ")"), { halign = "right", color = Color["text_player"], x = Helper.standardTextOffsetx + indentsize })
 				end
 				for i, shipid in ipairs(npcowneddockedships) do
-					local shipname = ffi.string(C.GetComponentName(shipid))
-					local iconid = GetComponentData(shipid, "icon")
+					local shipname, iconid, idcode = GetComponentData(shipid, "name", "icon", "idcode")
 					if iconid and iconid ~= "" then
 						shipname = string.format("\027[%s] %s", iconid, shipname)
 					end
 					row = inputtable:addRow("info_dockedship" .. (#playerowneddockedships + i), {  })
 					row[2]:setColSpan(2):createText(shipname, { x = Helper.standardTextOffsetx + indentsize })
-					row[4]:setColSpan(5):createText(("(" .. ffi.string(C.GetObjectIDCode(shipid)) .. ")"), { halign = "right", x = Helper.standardTextOffsetx + indentsize })
+					row[4]:setColSpan(5):createText(("(" .. idcode .. ")"), { halign = "right", x = Helper.standardTextOffsetx + indentsize })
 				end
 			end
 		end
 		-- pilot
-		local pilot = GetComponentData(inputobject, "assignedpilot")
 		pilot = ConvertIDTo64Bit(pilot)
 		local pilotname, skilltable, postname, aicommandstack, aicommand, aicommandparam, aicommandaction, aicommandactionparam = "-", {}, ReadText(1001, 4847), {}
 		if pilot and IsValidComponent(pilot) then
 			pilotname, skilltable, postname, aicommandstack, aicommand, aicommandparam, aicommandaction, aicommandactionparam = GetComponentData(pilot, "name", "skills", "postname", "aicommandstack", "aicommand", "aicommandparam", "aicommandaction", "aicommandactionparam")
 		end
-		local isbigship = C.IsComponentClass(inputobject, "ship_m") or C.IsComponentClass(inputobject, "ship_l") or C.IsComponentClass(inputobject, "ship_xl")
-		if (not C.IsRealComponentClass(inputobject, "ship_xs")) and (not islasertower) then
+		local isbigship = Helper.isComponentClass(classid, "ship_m") or Helper.isComponentClass(classid, "ship_l") or Helper.isComponentClass(classid, "ship_xl")
+		if (not Helper.isComponentClass(realclassid, "ship_xs")) and (not islasertower) then
 			-- title
 			local printedtitle = isbigship and ReadText(1001, 4848) or ReadText(1001, 4847)	-- Captain, Pilot
 			local row = inputtable:addRow(false, { bgColor = Color["row_title_background"] })
@@ -13657,7 +13832,7 @@ function menu.setupInfoSubmenuRows(mode, inputtable, inputobject, instance)
 			end
 			-- commander
 			local commander = nil
-			if C.IsComponentClass(inputobject, "controllable") then
+			if Helper.isComponentClass(classid, "controllable") then
 				commander = GetCommander(menu.infoSubmenuObject)
 			end
 			local commandername, commandercolor = "-", Color["text_normal"]
@@ -13669,7 +13844,7 @@ function menu.setupInfoSubmenuRows(mode, inputtable, inputobject, instance)
 			row[4]:setColSpan(5):createText(commandername, { halign = "right", color = commandercolor })
 			-- subordinates
 			local subordinates = {}
-			if C.IsComponentClass(inputobject, "controllable") then
+			if Helper.isComponentClass(classid, "controllable") then
 				subordinates = GetSubordinates(inputobject)
 			end
 			local row = inputtable:addRow("info_subordinates", { interactive = false })
@@ -13730,7 +13905,6 @@ function menu.setupInfoSubmenuRows(mode, inputtable, inputobject, instance)
 			end
 		end
 
-		local isresupplyship = GetComponentData(object64, "cansupplyships")
 		if isresupplyship then
 			local n = C.GetNumMaxProductionStorage(object64)
 			local buf = ffi.new("UIWareAmount[?]", n)
@@ -13770,7 +13944,7 @@ function menu.setupInfoSubmenuRows(mode, inputtable, inputobject, instance)
 			--row[2]:setColSpan(7):createSliderCell({ height = config.mapRowHeight, start = storagemodules.stored, max = math.max(storagemodules.capacity, storagemodules.stored), suffix = ReadText(1001, 110), readOnly = true }):setText((ReadText(1001, 1402) .. ReadText(1001, 120)), { fontsize = config.mapFontSize })
 
 			if isplayerowned then
-				local numtrips = GetComponentData(object64, "numtrips") or 0
+				local numtrips = numtrips or 0
 				if numtrips > 0 then
 					local cargoaftertrades = GetCargoAfterTradeOrders(object64, true)
 					local totalvolume = 0
@@ -13785,7 +13959,7 @@ function menu.setupInfoSubmenuRows(mode, inputtable, inputobject, instance)
 			inputtable:addEmptyRow(config.mapRowHeight / 2)
 
 			local candrop = isplayerowned and (not C.IsUnit(menu.infoSubmenuObject))
-			local locpolicefaction = GetComponentData(GetComponentData(object64, "zoneid"), "policefaction")
+			local locpolicefaction = GetComponentData(zoneid, "policefaction")
 			for _, wareentry in ipairs(cargotable) do
 				local ware = wareentry.ware
 				local amount = wareentry.amount
@@ -13869,7 +14043,7 @@ function menu.setupInfoSubmenuRows(mode, inputtable, inputobject, instance)
 		local maxdockedships = (shipstoragecapacity or 0) + (numdockingbays or 0)
 		if maxdockedships > 0 then
 			local numdockedships = 0
-			if C.IsComponentClass(inputobject, "container") then
+			if Helper.isComponentClass(classid, "container") then
 				numdockedships = C.GetNumDockedShips(inputobject, nil)
 			end
 			local row = inputtable:addRow("info_dockedships", {  })
@@ -13895,24 +14069,22 @@ function menu.setupInfoSubmenuRows(mode, inputtable, inputobject, instance)
 				table.sort(npcowneddockedships, function(a, b) return GetComponentData(a, "size") > GetComponentData(b, "size") end)
 
 				for i, shipid in ipairs(playerowneddockedships) do
-					local shipname = ffi.string(C.GetComponentName(shipid))
-					local iconid = GetComponentData(shipid, "icon")
+					local shipname, iconid, idcode = GetComponentData(shipid, "name", "icon", "idcode")
 					if iconid and iconid ~= "" then
 						shipname = string.format("\027[%s] %s", iconid, shipname)
 					end
 					row = inputtable:addRow("info_dockedship" .. i, {  })
 					row[2]:setColSpan(2):createText(shipname, { color = Color["text_player"], x = Helper.standardTextOffsetx + indentsize })
-					row[4]:setColSpan(5):createText(("(" .. ffi.string(C.GetObjectIDCode(shipid)) .. ")"), { halign = "right", color = Color["text_player"], x = Helper.standardTextOffsetx + indentsize })
+					row[4]:setColSpan(5):createText(("(" .. idcode .. ")"), { halign = "right", color = Color["text_player"], x = Helper.standardTextOffsetx + indentsize })
 				end
 				for i, shipid in ipairs(npcowneddockedships) do
-					local shipname = ffi.string(C.GetComponentName(shipid))
-					local iconid = GetComponentData(shipid, "icon")
+					local shipname, iconid, idcode = GetComponentData(shipid, "name", "icon", "idcode")
 					if iconid and iconid ~= "" then
 						shipname = string.format("\027[%s] %s", iconid, shipname)
 					end
 					row = inputtable:addRow("info_dockedship" .. (#playerowneddockedships + i), {  })
 					row[2]:setColSpan(2):createText(shipname, { x = Helper.standardTextOffsetx + indentsize })
-					row[4]:setColSpan(5):createText(("(" .. ffi.string(C.GetObjectIDCode(shipid)) .. ")"), { halign = "right", x = Helper.standardTextOffsetx + indentsize })
+					row[4]:setColSpan(5):createText(("(" .. idcode .. ")"), { halign = "right", x = Helper.standardTextOffsetx + indentsize })
 				end
 			end
 		end
@@ -13927,7 +14099,7 @@ function menu.setupInfoSubmenuRows(mode, inputtable, inputobject, instance)
 			row[1]:setColSpan(8):createText(ReadText(1001, 7708), Helper.headerRowCenteredProperties) -- Account Management
 			local playercash = GetPlayerMoney()
 			local cashcontainers = {}
-			if C.IsComponentClass(inputobject, "container") then
+			if Helper.isComponentClass(classid, "container") then
 				if mode == "buildstorage" then
 					table.insert(cashcontainers, { container = inputobject, estimatetype = "wantedmoney", text = ReadText(1001, 9429), helpoverlayprefix = "info_buildstorage_account_" }) -- Funds for Station Construction
 				else
@@ -14150,7 +14322,7 @@ function menu.setupInfoSubmenuRows(mode, inputtable, inputobject, instance)
 				row[4]:setColSpan(5):createText("-", { halign = "right", color = locfontcolor, mouseOverText = ReadText(1026, 2) })
 			end
 			-- subordinates
-			local subordinates = C.IsComponentClass(inputobject, "controllable") and GetSubordinates(inputobject) or {}
+			local subordinates = Helper.isComponentClass(classid, "controllable") and GetSubordinates(inputobject) or {}
 			local row = inputtable:addRow("info_subordinates", { interactive = false })
 			row[2]:setColSpan(2):createText(ReadText(1001, 1503) .. ReadText(1001, 120)) -- Subordinates
 			row[4]:setColSpan(5):createText(#subordinates, { halign = "right" })
@@ -14190,7 +14362,7 @@ function menu.setupInfoSubmenuRows(mode, inputtable, inputobject, instance)
 			end
 		end
 		storagemodules = {capacity = 0, stored = 0}
-		if C.IsComponentClass(inputobject, "container") then
+		if Helper.isComponentClass(classid, "container") then
 			storagemodules = GetStorageData(inputobject)
 		end
 		cargotable = { products = {text = ReadText(1001, 1610), numcatwares = 0, wares = {}}, intermediatewares = {text = ReadText(1001, 6100), numcatwares = 0, wares = {}}, resources = {text = ReadText(1001, 41), numcatwares = 0, wares = {}}, storage = {text = ReadText(1001, 1400), numcatwares = 0, wares = {}} }	-- Products, Resources, Storage
@@ -14599,16 +14771,16 @@ function menu.setupInfoSubmenuRows(mode, inputtable, inputobject, instance)
 			radarrange, resourcedetectionrange = GetComponentData(inputobject, "maxradarrange", "resourcedetectionrange")
 		end
 
-		if C.IsComponentClass(menu.infoSubmenuObject, "mine") then
+		if Helper.isComponentClass(classid, "mine") then
 			-- add if mines are made selectable in the map again:
 			--	detonation output (s), tracking capability (s), friend/foe (s), proximity (s)
-		elseif C.IsComponentClass(menu.infoSubmenuObject, "resourceprobe") then
+		elseif Helper.isComponentClass(classid, "resourceprobe") then
 			if resourcedetectionrange and resourcedetectionrange ~= unknowntext then
 				resourcedetectionrange = Helper.round(resourcedetectionrange / 1000)
 			end
 			locrowdata = { "info_radarrange", ReadText(1001, 9082), (resourcedetectionrange .. " " .. ReadText(1001, 108)) }	-- Scanning Range, km
 			row = menu.addInfoSubmenuRow(instance, inputtable, row, locrowdata, false, false, false, 1, indentsize)
-		elseif C.IsComponentClass(menu.infoSubmenuObject, "satellite") then
+		elseif Helper.isComponentClass(classid, "satellite") then
 			if radarrange and radarrange ~= unknowntext then
 				radarrange = Helper.round(radarrange / 1000)
 			end
@@ -14654,6 +14826,18 @@ function menu.setupInfoSubmenuRows(mode, inputtable, inputobject, instance)
 				end
 			end
 		end
+	elseif mode == "module" then
+		local ownername, sector, hullmax, hullpercent = GetComponentData(object64, "ownername", "sector", "hullmax", "hullpercent")
+
+		locrowdata = { false, ReadText(1001, 9040), Helper.unlockInfo(ownerinfo, ownername) }	-- Owner
+		row = menu.addInfoSubmenuRow(instance, inputtable, row, locrowdata, false, false, false, 1, indentsize)
+
+		locrowdata = { false, ReadText(1001, 2943), sector }	-- Location
+		row = menu.addInfoSubmenuRow(instance, inputtable, row, locrowdata, false, false, false, 1, indentsize)
+
+		local hull_max = defenceinfo_low and ConvertIntegerString(Helper.round(hullmax), true, 4, true, true, true) or unknowntext
+		locrowdata = { false, ReadText(1001, 1), (defenceinfo_high and (function() return (ConvertIntegerString(Helper.round(GetComponentData(object64, "hull")), true, 4, true, true, true) .. " / " .. hull_max .. " " .. ReadText(1001, 118) .. " (" .. GetComponentData(object64, "hullpercent") .. "%)") end) or (unknowntext .. " / " .. hull_max .. " " .. ReadText(1001, 118) .. " (" .. hullpercent .. "%)")) }	-- Hull, MJ
+		row = menu.addInfoSubmenuRow(instance, inputtable, row, locrowdata, false, false, false, 1, indentsize)
 	elseif mode == "none" then
 		local locrowdata = { "info_none", ReadText(1001, 6526) }
 		row = menu.addInfoSubmenuRow(instance, inputtable, row, locrowdata, false, false, false)
@@ -14674,7 +14858,7 @@ function menu.setupCrewInfoSubmenuRows(mode, inputtable, inputobject, instance)
 	local infocrew = menu.infoTablePersistentData[instance].crew
 
 	local object64 = ConvertStringTo64Bit(tostring(inputobject))
-	local isplayerowned, isonlineobject, isenemy, ishostile = GetComponentData(object64, "isplayerowned", "isonlineobject", "isenemy", "ishostile")
+	local isplayerowned, isonlineobject, isenemy, ishostile, classid = GetComponentData(object64, "isplayerowned", "isonlineobject", "isenemy", "ishostile", "classid")
 	local titlecolor = Color["text_normal"]
 	if isplayerowned then
 		titlecolor = menu.holomapcolor.playercolor
@@ -14720,13 +14904,14 @@ function menu.setupCrewInfoSubmenuRows(mode, inputtable, inputobject, instance)
 	end
 
 	if mode == "ship" then
-		local pilot = ConvertIDTo64Bit(GetComponentData(inputobject, "assignedpilot"))
+		local pilot = GetComponentData(inputobject, "assignedpilot")
+		pilot = ConvertIDTo64Bit(pilot)
 		local pilotname, skilltable, aicommandstack, aicommand, aicommandparam, aicommandaction, aicommandactionparam = "-", {}, {}
 		if pilot and IsValidComponent(pilot) then
 			pilotname, skilltable, aicommandstack, aicommand, aicommandparam, aicommandaction, aicommandactionparam = GetComponentData(pilot, "name", "skills", "aicommandstack", "aicommand", "aicommandparam", "aicommandaction", "aicommandactionparam")
 		end
 
-		local isbigship = C.IsComponentClass(inputobject, "ship_m") or C.IsComponentClass(inputobject, "ship_l") or C.IsComponentClass(inputobject, "ship_xl")
+		local isbigship = Helper.isComponentClass(classid, "ship_m") or Helper.isComponentClass(classid, "ship_l") or Helper.isComponentClass(classid, "ship_xl")
 		-- pilot
 		local printedtitle = isbigship and ReadText(1001, 4848) or ReadText(1001, 4847)	-- Captain, Pilot
 		local row = inputtable:addRow(false, { bgColor = Color["row_title_background"] })
@@ -14788,7 +14973,7 @@ function menu.setupCrewInfoSubmenuRows(mode, inputtable, inputobject, instance)
 		end
 		-- commander
 		local commander
-		if C.IsComponentClass(inputobject, "controllable") then
+		if Helper.isComponentClass(classid, "controllable") then
 			commander = GetCommander(menu.infoSubmenuObject)
 		end
 		local commandername, commandercolor = "-", Color["text_normal"]
@@ -14800,7 +14985,7 @@ function menu.setupCrewInfoSubmenuRows(mode, inputtable, inputobject, instance)
 		row[5]:setColSpan(3):createText(commandername, { halign = "right", color = commandercolor })
 		-- subordinates
 		local subordinates = {}
-		if C.IsComponentClass(inputobject, "controllable") then
+		if Helper.isComponentClass(classid, "controllable") then
 			subordinates = GetSubordinates(inputobject)
 		end
 		local row = inputtable:addRow("info_subordinates", {  })
@@ -14812,7 +14997,8 @@ function menu.setupCrewInfoSubmenuRows(mode, inputtable, inputobject, instance)
 		if (#subordinates > 0) and menu.isInfoExtended("info_subordinates", instance) then
 			for i, locship in ipairs(subordinates) do
 				local locship64 = ConvertIDTo64Bit(locship)
-				subordinates[i] = { id = locship64, name = ffi.string(C.GetComponentName(locship64)), objectid = ffi.string(C.GetObjectIDCode(locship64)), class = ffi.string(C.GetComponentClass(locship64)), purpose = GetComponentData(locship, "primarypurpose") }
+				local name, primarypurpose, classid, idcode = GetComponentData(locship, "name", "primarypurpose", "classid", "idcode")
+				subordinates[i] = { id = locship64, name = name, objectid = idcode, classid = classid, purpose = primarypurpose }
 			end
 			table.sort(subordinates, Helper.sortShipsByClassAndPurpose)
 
@@ -14868,12 +15054,6 @@ function menu.setupCrewInfoSubmenuRows(mode, inputtable, inputobject, instance)
 		if isplayerowned and pilot and IsValidComponent(pilot) then
 			local inventory = GetInventory(pilot)
 			local onlineitems = OnlineGetUserItems()
-
-			-- kuertee start:
-			if not onlineitems then
-				onlineitems = {}
-			end
-			-- kuertee end
 
 			local sortedWares = {}
 			local totalamount = 0
@@ -14940,7 +15120,7 @@ function menu.setupCrewInfoSubmenuRows(mode, inputtable, inputobject, instance)
 				row[6]:setColSpan(2):createText(printedskill, { halign = "right", color = locfontcolor, mouseOverText = mouseovertext })
 			end
 		end
-		if C.IsComponentClass(inputobject, "controllable") then
+		if Helper.isComponentClass(classid, "controllable") then
 			menu.addCrewSection(mode, inputtable, inputobject, instance, infocrew, operatorinfo, aipilot, isplayerowned)
 		end
 	elseif mode == "station" then
@@ -14998,7 +15178,7 @@ function menu.setupCrewInfoSubmenuRows(mode, inputtable, inputobject, instance)
 			row[6]:setColSpan(2):createText(ConvertMoneyString(recommendedfunds, false, true, nil, true) .. " " .. ReadText(1001, 101), { halign = "right" })
 		end
 		-- subordinates
-		if C.IsComponentClass(inputobject, "controllable") then
+		if Helper.isComponentClass(classid, "controllable") then
 			local subordinates = GetSubordinates(inputobject)
 			local row = inputtable:addRow("info_subordinates", {  })
 			row[1]:createButton({ height = config.mapRowHeight, active = #subordinates > 0 }):setText(function() return (#subordinates > 0 and menu.isInfoExtended("info_subordinates", instance)) and "-" or "+" end, { halign = "center" })
@@ -15009,7 +15189,8 @@ function menu.setupCrewInfoSubmenuRows(mode, inputtable, inputobject, instance)
 			if (#subordinates > 0) and menu.isInfoExtended("info_subordinates", instance) then
 				for i, locship in ipairs(subordinates) do
 					local locship64 = ConvertIDTo64Bit(locship)
-					subordinates[i] = { id = locship64, name = ffi.string(C.GetComponentName(locship64)), objectid = ffi.string(C.GetObjectIDCode(locship64)), class = ffi.string(C.GetComponentClass(locship64)), purpose = GetComponentData(locship, "primarypurpose") }
+					local name, primarypurpose, classid, idcode = GetComponentData(locship, "name", "primarypurpose", "classid", "idcode")
+					subordinates[i] = { id = locship64, name = name, objectid = idcode, classid = classid, purpose = primarypurpose }
 				end
 				table.sort(subordinates, Helper.sortShipsByClassAndPurpose)
 
@@ -15397,7 +15578,7 @@ end
 
 function menu.setupLoadoutInfoSubmenuRows(mode, inputtable, inputobject, instance)
 	local object64 = ConvertStringTo64Bit(tostring(inputobject))
-	local isplayerowned, isonlineobject, isenemy, ishostile = GetComponentData(object64, "isplayerowned", "isonlineobject", "isenemy", "ishostile")
+	local isplayerowned, isonlineobject, isenemy, ishostile, classid = GetComponentData(object64, "isplayerowned", "isonlineobject", "isenemy", "ishostile", "classid")
 	local titlecolor = Color["text_normal"]
 	if isplayerowned then
 		titlecolor = menu.holomapcolor.playercolor
@@ -15415,11 +15596,12 @@ function menu.setupLoadoutInfoSubmenuRows(mode, inputtable, inputobject, instanc
 	local loadout = {}
 	if mode == "ship" or mode == "station" then
 		loadout = { ["component"] = {}, ["macro"] = {}, ["ware"] = {} }
+		local isdefensible = Helper.isComponentClass(classid, "defensible")
 		for i, upgradetype in ipairs(Helper.upgradetypes) do
 			if upgradetype.supertype == "macro" then
 				loadout.component[upgradetype.type] = {}
 				local numslots = 0
-				if C.IsComponentClass(inputobject, "defensible") then
+				if isdefensible then
 					numslots = tonumber(C.GetNumUpgradeSlots(inputobject, "", upgradetype.type))
 				end
 				for j = 1, numslots do
@@ -15494,7 +15676,7 @@ function menu.setupLoadoutInfoSubmenuRows(mode, inputtable, inputobject, instanc
 			pilotname, skilltable, postname, aicommandstack, aicommand, aicommandparam, aicommandaction, aicommandactionparam = GetComponentData(pilot, "name", "skills", "postname", "aicommandstack", "aicommand", "aicommandparam", "aicommandaction", "aicommandactionparam")
 		end
 
-		local isbigship = C.IsComponentClass(inputobject, "ship_m") or C.IsComponentClass(inputobject, "ship_l") or C.IsComponentClass(inputobject, "ship_xl")
+		local isbigship = Helper.isComponentClass(classid, "ship_m") or Helper.isComponentClass(classid, "ship_l") or Helper.isComponentClass(classid, "ship_xl")
 		-- weapon config
 		if isplayerowned and (#loadout.component.weapon > 0) then
 			local row = inputtable:addRow(false, { bgColor = Color["row_title_background"] })
@@ -15550,12 +15732,12 @@ function menu.setupLoadoutInfoSubmenuRows(mode, inputtable, inputobject, instanc
 					row[7 + j].handlers.onClick = function() menu.infoSetWeaponGroup(inputobject, gun, false, j, not uiweapongroups.secondary[j]) end
 				end
 
-				if IsComponentClass(gun, "missilelauncher") then
+				local gunmacro, classid = GetComponentData(gun, "macro", "classid")
+				if Helper.isComponentClass(classid, "missilelauncher") then
 					local nummissiletypes = C.GetNumAllMissiles(inputobject)
 					local missilestoragetable = ffi.new("AmmoData[?]", nummissiletypes)
 					nummissiletypes = C.GetAllMissiles(missilestoragetable, nummissiletypes, inputobject)
 
-					local gunmacro = GetComponentData(gun, "macro")
 					local dropdowndata = {}
 					for j = 0, nummissiletypes - 1 do
 						local ammomacro = ffi.string(missilestoragetable[j].macro)
@@ -15579,12 +15761,11 @@ function menu.setupLoadoutInfoSubmenuRows(mode, inputtable, inputobject, instanc
 					row[2]:createText((ReadText(1001, 2800) .. ReadText(1001, 120)))	-- Ammunition, :
 					row[3]:setColSpan(11):createDropDown(dropdowndata, {startOption = currentammomacro, active = dropdownactive})
 					row[3].handlers.onDropDownConfirmed = function(_, newammomacro) C.SetAmmoOfWeapon(gun, newammomacro) end
-				elseif pilot and IsValidComponent(pilot) and IsComponentClass(gun, "bomblauncher") then
+				elseif pilot and IsValidComponent(pilot) and Helper.isComponentClass(classid, "bomblauncher") then
 					local numbombtypes = C.GetNumAllInventoryBombs(pilot)
 					local bombstoragetable = ffi.new("AmmoData[?]", numbombtypes)
 					numbombtypes = C.GetAllInventoryBombs(bombstoragetable, numbombtypes, pilot)
 
-					local gunmacro = GetComponentData(gun, "macro")
 					local dropdowndata = {}
 					for j = 0, numbombtypes - 1 do
 						local ammomacro = ffi.string(bombstoragetable[j].macro)
@@ -15802,7 +15983,7 @@ function menu.setupLoadoutInfoSubmenuRows(mode, inputtable, inputobject, instanc
 		-- drones
 		local isplayeroccupiedship = menu.infoSubmenuObject == ConvertStringTo64Bit(tostring(C.GetPlayerOccupiedShipID()))
 
-		local unitstoragetable = C.IsComponentClass(object64, "defensible") and GetUnitStorageData(object64) or { stored = 0, capacity = 0 }
+		local unitstoragetable = Helper.isComponentClass(classid, "defensible") and GetUnitStorageData(object64) or { stored = 0, capacity = 0 }
 		local locunitcapacity = Helper.unlockInfo(unitinfo_capacity, tostring(unitstoragetable.capacity))
 		local locunitcount = Helper.unlockInfo(unitinfo_amount, tostring(unitstoragetable.stored))
 		menu.drones = {}
@@ -15891,7 +16072,7 @@ function menu.setupLoadoutInfoSubmenuRows(mode, inputtable, inputobject, instanc
 		end
 		-- subordinates
 		if isplayerowned then
-			if C.IsComponentClass(inputobject, "controllable") then
+			if Helper.isComponentClass(classid, "controllable") then
 				local subordinates = GetSubordinates(inputobject)
 				local groups = {}
 				local usedassignments = {}
@@ -15923,7 +16104,7 @@ function menu.setupLoadoutInfoSubmenuRows(mode, inputtable, inputobject, instanc
 					local row = inputtable:addRow(false, { bgColor = Color["row_title_background"] })
 					row[1]:setColSpan(13):createText(ReadText(1001, 8626), Helper.headerRowCenteredProperties)
 
-					local isstation = C.IsComponentClass(inputobject, "station")
+					local isstation = Helper.isComponentClass(classid, "station")
 					for i = 1, isstation and 5 or 10 do
 						if groups[i] then
 							local defenceactive = true
@@ -15949,7 +16130,7 @@ function menu.setupLoadoutInfoSubmenuRows(mode, inputtable, inputobject, instanc
 								table.insert(subordinateassignments, { id = "tradeforbuildstorage", text = ReadText(20208, 40801), icon = "", displayremoveoption = false, active = tradeforbuildstorageactive, mouseovertext = tradeforbuildstorageactive and "" or ReadText(1026, 8603) })
 								local salvageactive = (groups[i].numassignabletugships == #groups[i].subordinates) and ((not usedassignments["salvage"]) or (usedassignments["salvage"] == i))
 								table.insert(subordinateassignments, { id = "salvage", text = ReadText(20208, 41401), icon = "", displayremoveoption = false, active = salvageactive, mouseovertext = salvageactive and "" or ReadText(1026, 8610) })
-							elseif C.IsComponentClass(inputobject, "ship") then
+							elseif Helper.isComponentClass(classid, "ship") then
 								-- position defence
 								local parentcommander = ConvertIDTo64Bit(GetCommander(inputobject))
 								local isfleetcommander = (not parentcommander) and (#subordinates > 0)
@@ -16034,7 +16215,7 @@ function menu.setupLoadoutInfoSubmenuRows(mode, inputtable, inputobject, instanc
 			totalnummissiles = totalnummissiles + missilestoragetable[i].amount
 		end
 		local missilecapacity = 0
-		if C.IsComponentClass(inputobject, "defensible") then
+		if Helper.isComponentClass(classid, "defensible") then
 			missilecapacity = GetComponentData(inputobject, "missilecapacity")
 		end
 		local locmissilecapacity = Helper.unlockInfo(defenceinfo_low, tostring(missilecapacity))
@@ -16387,22 +16568,17 @@ function menu.setupLogbookInfoSubmenuRows(inputtable, inputobject, instance, isv
 		local isuseid, issector = false, false
 		if isvalid then
 			isuseid = true
-			local macro = GetComponentData(inputobject, "macro")
-			if C.IsRealComponentClass(inputobject, "ship") then
-			elseif C.IsRealComponentClass(inputobject, "station") then
-			elseif C.IsComponentClass(inputobject, "sector") then
+			local name, macro, classid, idcode = GetComponentData(inputobject, "name", "macro", "classid", "idcode")
+			if Helper.isComponentClass(classid, "sector") then
 				isuseid = false
 				issector = true
-			elseif C.IsComponentClass(inputobject, "gate") or C.IsComponentClass(inputobject, "highway") then
+			elseif Helper.isComponentClass(classid, "gate") or Helper.isComponentClass(classid, "highway") then
 				isuseid = false
-			elseif C.IsComponentClass(inputobject, "mine") or C.IsComponentClass(inputobject, "navbeacon") or C.IsComponentClass(inputobject, "resourceprobe") or C.IsComponentClass(inputobject, "satellite") then
-			elseif C.IsComponentClass(inputobject, "asteroid") then
-			elseif C.IsComponentClass(inputobject, "object") then
 			end
 			if isuseid then
-				objecttext = ffi.string(C.GetObjectIDCode(inputobject))
+				objecttext = idcode
 			else
-				objecttext = GetComponentData (inputobject, "name")
+				objecttext = name
 			end
 		end
 		menu.infoTablePersistentData[instance].logbookData = { curobject = inputobject, curPage = 1, objecttext = objecttext, searchtext = "", isuseid = isuseid, issector = issector }
@@ -16420,7 +16596,7 @@ function menu.setupLogbookInfoSubmenuRows(inputtable, inputobject, instance, isv
 	row[1]:setColSpan(10):createText(ReadText(1001, 2427), Helper.headerRowCenteredProperties)
 	local row = inputtable:addRow(false, { fixed = true, bgColor = Color["row_title_background"] })
 	row[1]:setColSpan(10):createText(ReadText(1001, 5700), Helper.headerRowCenteredProperties)
-	local isplayerowned = GetComponentData(inputobject, "isplayerowned")
+	local isplayerowned, name = GetComponentData(inputobject, "isplayerowned", "name")
 	if not isplayerowned then
 		local row = inputtable:addRow(false, { fixed = true })
 		local ownername = GetComponentData(inputobject, "ownername")
@@ -16439,7 +16615,7 @@ function menu.setupLogbookInfoSubmenuRows(inputtable, inputobject, instance, isv
 		end
 	end
 
-	local objectname = Helper.unlockInfo(nameinfo, ffi.string(C.GetComponentName(inputobject)))
+	local objectname = Helper.unlockInfo(nameinfo, name)
 	--- object name ---
 	local row = inputtable:addRow("info_focus", { fixed = true, bgColor = Color["row_title_background"] })
 	row[10]:createButton({ width = config.mapRowHeight, cellBGColor = Color["row_background"] }):setIcon("menu_center_selection", { width = config.mapRowHeight, height = config.mapRowHeight, y = (Helper.headerRow1Height - config.mapRowHeight) / 2 })
@@ -16530,7 +16706,7 @@ function menu.setupLogbookInfoSubmenuRows(inputtable, inputobject, instance, isv
 						mouseoverobject = GetContextByClass(mouseoverobject, "sector")
 					end
 					row[1]:setColSpan(9):createText(entry.title, { font = Helper.standardFontBold, color = textcolor, wordwrap = true })
-					row[10]:createButton({ scaling = false, bgColor = Color["button_background_hidden"], mouseOverText = string.format(entry.interactiontext, GetComponentData(mouseoverobject, "name")), height = buttonsize }):setIcon("widget_arrow_right_01", { width = buttonsize, height = buttonsize })
+					row[10]:createButton({ active = (entry.interaction ~= "guidance") or C.IsStoryFeatureUnlocked("x4ep1_guidance"), scaling = false, bgColor = Color["button_background_hidden"], mouseOverText = string.format(entry.interactiontext, GetComponentData(mouseoverobject, "name")), height = buttonsize }):setIcon("widget_arrow_right_01", { width = buttonsize, height = buttonsize })
 					row[10].handlers.onClick = function () return menu.buttonLogbookInteraction(entry) end
 				else
 					row[1]:setColSpan(10):createText(entry.index .. " - " .. entry.title, { font = Helper.standardFontBold, color = textcolor, wordwrap = true })
@@ -17562,17 +17738,79 @@ function menu.createMissionMode(frame)
 			local found = false
 			-- important
 			if #menu.missionOfferList["plot"] > 0 then
-				local row = ftable:addRow(nil, { bgColor = Color["row_title_background"] })
 
 				-- kuertee start: open/close mission lists
+				-- local row = ftable:addRow(nil, { bgColor = Color["row_title_background"] })
 				-- row[1]:setColSpan(9):createText(ReadText(1001, 3340), Helper.headerRowCenteredProperties)
-				row[1]:createText(" ", Helper.headerRowCenteredProperties)
+				local uix_isPlotListOpen = menu.uix_getIsMissionExpanded(menu.missionOfferList["plot"], true, "uix_plotListOffer")
+				local row = ftable:addRow(true, { bgColor = Color["row_title_background"] })
+				row[1]:createButton({active = menu.missionOfferList and menu.missionOfferList["plot"] and #menu.missionOfferList["plot"] > 0 and true or false}):setText(uix_isPlotListOpen and "-" or "+", { halign = "center" })
+				row[1].handlers.onClick = function () return menu.uix_expandMissionList(menu.missionOfferList["plot"], row.index, nil, true, "uix_plotListOffer") end
 				row[2]:setColSpan(8):createText(ReadText(1001, 3340), Helper.headerRowCenteredProperties)
 				-- kuertee end
 
+				local hadStoryMission = false
 				for _, entry in ipairs(menu.missionOfferList["plot"]) do
+					-- kuertee start: open/close mission lists
+					local uix_Id = menu.uix_getMissionId(entry, true)
+					local uix_isExpanded = menu.uix_getIsMissionExpanded(entry, true)
+					-- kuertee end: open/close mission lists
+
 					found = true
-					menu.addMissionRow(ftable, entry)
+					if entry.missions then
+						hadStoryMission = true
+					end
+					if hadStoryMission and (not entry.missions) then
+						hadStoryMission = false
+
+						-- kuertee start: open/close mission lists
+						-- do not add spacer between story mission groups because the title of single story mission now exists.
+						-- see point TITLE OF SINGLE STORY MISSION below.
+						-- ftable:addEmptyRow()
+						-- kuertee end: open/close mission lists
+					end
+					if entry.missions then
+						-- story case
+						local row = ftable:addRow(entry.id, {  })
+						if entry.id == menu.missionModeCurrent then
+							menu.setrow = row.index
+						end
+
+						-- kuertee start: open/close mission lists
+						-- row[1]:setColSpan(9):createText((entry.isstory and "\27[menu_mission_plot] " or "") .. entry.name)
+						row[1]:createButton({active = true}):setText(uix_isExpanded and "-" or "+", { halign = "center" })
+						row[1].handlers.onClick = function () return menu.uix_expandMissionList(entry, row.index, nil, true) end
+						row[2]:setColSpan(8):createText((entry.isstory and "\27[menu_mission_plot] " or "") .. entry.name)
+						-- kuertee end: open/close mission lists
+
+						-- kuertee start: open/close mission lists
+						-- for _, missionentry in ipairs(entry.missions) do
+						-- 	menu.addMissionRow(ftable, missionentry)
+						-- end
+						if uix_isExpanded then
+							for _, missionentry in ipairs(entry.missions) do
+								menu.addMissionRow(ftable, missionentry, 1)
+							end
+						end
+						-- kuertee end: open/close mission lists
+					else
+
+						-- kuertee start: open/close mission lists
+						-- TITLE OF SINGLE STORY MISSION
+						-- add title of this one story mission
+						local row = ftable:addRow(true, {  })
+						row[1]:createButton({active = true}):setText(uix_isExpanded and "-" or "+", { halign = "center" })
+						row[1].handlers.onClick = function () return menu.uix_expandMissionList(entry, row.index, nil, true) end
+						row[2]:setColSpan(8):createText((entry.isstory and "\27[menu_mission_plot] " or "") .. entry.name)
+						-- kuertee end: open/close mission lists
+
+						-- kuertee start: open/close mission lists
+						-- menu.addMissionRow(ftable, entry)
+						if uix_isExpanded then
+							menu.addMissionRow(ftable, entry, 1)
+						end
+						-- kuertee end: open/close mission lists
+					end
 				end
 				if not found then
 					local row = ftable:addRow("plotnone", { interactive = false })
@@ -17589,33 +17827,14 @@ function menu.createMissionMode(frame)
 			-- local row = ftable:addRow(nil, { bgColor = Color["row_title_background"] })
 			-- row[1]:setColSpan(9):createText(ReadText(1001, 3331), Helper.headerRowCenteredProperties)
 			if next(menu.missionOfferList["plot"]) then
+				-- if there were plot entries, create a space between plot and guild
 				local row = ftable:addRow(false, {})
 				row[2]:createText("")
 			end
-			if not __userdata_uix_menu_map.expandedMissionGroups then
-				__userdata_uix_menu_map.expandedMissionGroups = {}
-			end
-			local uix_isAnyGuildMissionOfferGroupOpen
-			for uix_missionGroupId, uix_isMissionGroupOpen in pairs(menu.expandedMissionGroups) do
-				if string.find(uix_missionGroupId, "offer") then
-					if uix_isMissionGroupOpen then
-						uix_isAnyGuildMissionOfferGroupOpen = true
-						break
-					end
-				end
-			end
+			local uix_isGuildListOpen = menu.uix_getIsMissionExpanded(menu.missionOfferList["guild"], true, "uix_guildListOffer")
 			local row = ftable:addRow(true, { bgColor = Color["row_title_background"] })
-			row[1]:createButton({active = menu.missionOfferList and menu.missionOfferList["guild"] and next(menu.missionOfferList["guild"]) and true or false}):setText(uix_isAnyGuildMissionOfferGroupOpen and "-" or "+", { halign = "center" })
-			row[1].handlers.onClick = function ()
-				uix_isAnyGuildMissionOfferGroupOpen = not uix_isAnyGuildMissionOfferGroupOpen
-				for uix_missionGroupId, _ in pairs(menu.expandedMissionGroups) do
-					if string.find(uix_missionGroupId, "offer") then
-						menu.expandedMissionGroups[uix_missionGroupId] = uix_isAnyGuildMissionOfferGroupOpen
-					end
-				end
-				menu.refreshInfoFrame()
-				return
-			end
+			row[1]:createButton({active = menu.missionOfferList and menu.missionOfferList["guild"] and #menu.missionOfferList["guild"] > 0 and true or false}):setText(uix_isGuildListOpen and "-" or "+", { halign = "center" })
+			row[1].handlers.onClick = function () return menu.uix_expandMissionList(menu.missionOfferList["guild"], row.index, nil, true, "uix_guildListOffer") end
 			row[2]:setColSpan(8):createText(ReadText(1001, 3331), Helper.headerRowCenteredProperties)
 			-- kuertee end
 
@@ -17639,27 +17858,26 @@ function menu.createMissionMode(frame)
 					end
 
 					if menu.expandedMissionGroups[data.id .. "offer"] == nil then
-						-- kuertee start: open/close mission lists
-						-- menu.expandedMissionGroups[data.id .. "offer"] = true
-						if __userdata_uix_menu_map.expandedMissionGroups[data.id .. "offer"] ~= nil then
-							menu.expandedMissionGroups[data.id .. "offer"] = __userdata_uix_menu_map.expandedMissionGroups[data.id .. "offer"]
-						else
-							menu.expandedMissionGroups[data.id .. "offer"] = true
-						end
-						-- kuertee end
+						menu.expandedMissionGroups[data.id .. "offer"] = true
 					end
-					local isexpanded = menu.expandedMissionGroups[data.id .. "offer"]
 
 					-- kuertee start: open/close mission lists
-					__userdata_uix_menu_map.expandedMissionGroups[data.id .. "offer"] = isexpanded
-					-- kuertee end
+					-- local isexpanded = menu.expandedMissionGroups[data.id .. "offer"]
+					local uix_Id = menu.uix_getMissionId(data, true)
+					local isexpanded = menu.uix_getIsMissionExpanded(data, true)
+					-- kuertee end: open/close mission lists
 
 					local row = ftable:addRow(data.id, {  })
 					if data.id == menu.missionModeCurrent then
 						menu.setrow = row.index
 					end
 					row[1]:createButton():setText(isexpanded and "-" or "+", { halign = "center" })
-					row[1].handlers.onClick = function () return menu.buttonExpandMissionGroup(data.id .. "offer", row.index) end
+
+					-- kuertee start: open/close mission lists
+					-- row[1].handlers.onClick = function () return menu.buttonExpandMissionGroup(data.id .. "offer", row.index) end
+					row[1].handlers.onClick = function () return menu.uix_expandMissionList(data, row.index) end
+					-- kuertee end: open/close mission lists
+
 					row[2]:setColSpan(7):createText(data.name)
 					row[9]:createText((#data.missions == 1) and ReadText(1001, 3335) or string.format(ReadText(1001, 3336), #data.missions), { halign = "right" })
 
@@ -17683,23 +17901,19 @@ function menu.createMissionMode(frame)
 			-- kuertee start: open/close mission lists
 			-- local row = ftable:addRow(nil, { bgColor = Color["row_title_background"] })
 			-- row[1]:setColSpan(9):createText(ReadText(1001, 3332), Helper.headerRowCenteredProperties)
+			-- because guild offers will list "no missions" when no missions are on offer, there'll always be a guild section.
+			-- create a space between guild and other offers.
 			local row = ftable:addRow(false, {})
 			row[2]:createText("")
-			if __userdata_uix_menu_map.missionOffers_other_isOpen == nil then
-				__userdata_uix_menu_map.missionOffers_other_isOpen = true
-			end
+			local uix_isOtherListOpen = menu.uix_getIsMissionExpanded(menu.missionOfferList["other"], true, "uix_otherListOffer")
 			local row = ftable:addRow(true, { bgColor = Color["row_title_background"] })
-			row[1]:createButton({active = menu.missionOfferList and menu.missionOfferList["other"] and next(menu.missionOfferList["other"]) and true or false}):setText(__userdata_uix_menu_map.missionOffers_other_isOpen and "-" or "+", { halign = "center" })
-			row[1].handlers.onClick = function ()
-				__userdata_uix_menu_map.missionOffers_other_isOpen = not __userdata_uix_menu_map.missionOffers_other_isOpen
-				menu.refreshInfoFrame()
-				return
-			end
+			row[1]:createButton({active = menu.missionOfferList and menu.missionOfferList["other"] and #menu.missionOfferList["other"] > 0 and true or false}):setText(uix_isOtherListOpen and "-" or "+", { halign = "center" })
+			row[1].handlers.onClick = function () return menu.uix_expandMissionList(menu.missionOfferList["other"], row.index, nil, true, "uix_otherListOffer") end
 			row[2]:setColSpan(8):createText(ReadText(1001, 3332), Helper.headerRowCenteredProperties)
 			-- kuertee end
 
 			-- kuertee start: open/close mission lists
-			if __userdata_uix_menu_map.missionOffers_other_isOpen == true then
+			if uix_isOtherListOpen == true then
 			-- kuertee end
 
 				for _, entry in ipairs(menu.missionOfferList["other"]) do
@@ -17747,39 +17961,101 @@ function menu.createMissionMode(frame)
 
 		if menu.missionMode == "plot" then
 			-- important
-			local row = ftable:addRow(nil, { bgColor = Color["row_title_background"] })
 
 			-- kuertee start: open/close mission lists
+			-- local row = ftable:addRow(nil, { bgColor = Color["row_title_background"] })
 			-- row[1]:setColSpan(9):createText(ReadText(1001, 3341), Helper.headerRowCenteredProperties)
-			row[1]:createText(" ", Helper.headerRowCenteredProperties)
+			local uix_isPlotListOpen, uix_isPlotListActive = menu.uix_getIsMissionExpanded(menu.missionList["plot"], nil, "uix_plotList")
+			local row = ftable:addRow(true, { bgColor = Color["row_title_background"] })
+			row[1]:createButton({active = menu.missionList and menu.missionList["plot"] and #menu.missionList["plot"] > 0 and true or false}):setText(uix_isPlotListOpen and "-" or "+", { halign = "center" })
+			row[1].handlers.onClick = function () return menu.uix_expandMissionList(menu.missionList["plot"], row.index, nil, nil, "uix_plotList") end
 			row[2]:setColSpan(8):createText(ReadText(1001, 3341), Helper.headerRowCenteredProperties)
-			local uix_isGroupHaveActiveMission
-			for _, data in ipairs(menu.missionList["plot"]) do
-				if data.active then
-					uix_isGroupHaveActiveMission = true
-				end
-			end
-			if uix_isGroupHaveActiveMission then
+			if uix_isPlotListActive then
 				row[2].properties.color = Color["text_mission"]
 			end
 			-- kuertee end
 
-			local hadThreadMission = false
+			local hadStoryMission, hadThreadMission = false, false
 			for _, entry in ipairs(menu.missionList["plot"]) do
+				-- kuertee start: open/close mission lists
+				local uix_Id = menu.uix_getMissionId(entry)
+				local uix_isExpanded, uix_isActive = menu.uix_getIsMissionExpanded(entry)
+				-- kuertee end: open/close mission lists
+
 				found = true
-				if entry.threadtype ~= "" then
+				if entry.missions then
+					hadStoryMission = true
+				elseif entry.threadtype ~= "" then
 					hadThreadMission = true
 				end
-				if hadThreadMission and (entry.threadtype == "") then
+				if hadStoryMission and (not entry.missions) then
+					hadStoryMission = false
+
+					-- kuertee start: open/close mission lists
+					-- do not render spacers between mission entries
+					-- ftable:addEmptyRow()
+					-- kuertee end: open/close mission lists
+				elseif hadThreadMission and (entry.threadtype == "") then
 					-- first non thread mission after threads
 					hadThreadMission = false
 
-					-- kuertee start: remove blank line between threaded and non-threaded missions
+					-- kuertee start: open/close mission lists
+					-- do not render spacers between mission entries
 					-- local row = ftable:addRow(false, {  })
 					-- row[1]:setColSpan(9):createText("")
-					-- kuertee end
+					-- kuertee end: open/close mission lists
 				end
-				menu.addMissionRow(ftable, entry)
+				if entry.missions then
+					-- story case
+
+					-- kuertee start: open/close mission lists
+					-- local row = ftable:addRow(entry.id, {  })
+					-- if entry.id == menu.missionModeCurrent then
+					-- 	menu.setrow = row.index
+					-- end
+					-- row[1]:setColSpan(9):createText((entry.isstory and "\27[menu_mission_plot] " or "") .. entry.name)
+					if entry.id == menu.missionModeCurrent then
+						menu.setrow = row.index
+					end
+					local row = ftable:addRow(true, {  })
+					row[1]:createButton():setText(uix_isExpanded and "-" or "+", { halign = "center" })
+					row[1].handlers.onClick = function () return menu.uix_expandMissionList(entry, row.index) end
+					row[2]:setColSpan(8):createText((entry.isstory and "\27[menu_mission_plot] " or "") .. entry.name)
+					if uix_isActive then
+						row[2].properties.color = Color["text_mission"]
+					end
+					-- kuertee end: open/close mission lists
+
+					-- kuertee start: open/close mission lists
+					-- for _, missionentry in ipairs(entry.missions) do
+					-- 	menu.addMissionRow(ftable, missionentry)
+					-- end
+					if uix_isExpanded then
+						for _, missionentry in ipairs(entry.missions) do
+							menu.addMissionRow(ftable, missionentry, (#entry.missions > 1 or #entry.missions[1].subMissions < 1) and 1 or nil)
+						end
+					end
+					-- kuertee end: open/close mission lists
+				else
+
+					-- kuertee start: open/close mission lists
+					-- always render a title for the plot missions even if it's only a single mission
+					local row = ftable:addRow(true, {  })
+					row[1]:createButton():setText(uix_isExpanded and "-" or "+", { halign = "center" })
+					row[1].handlers.onClick = function () return menu.uix_expandMissionList(entry, row.index) end
+					row[2]:setColSpan(8):createText((entry.isstory and "\27[menu_mission_plot] " or "") .. entry.name)
+					if uix_isActive then
+						row[2].properties.color = Color["text_mission"]
+					end
+					-- kuertee end: open/close mission lists
+
+					-- kuertee start: open/close mission lists
+					-- menu.addMissionRow(ftable, entry)
+					if uix_isExpanded then
+						menu.addMissionRow(ftable, entry, 1)
+					end
+					-- kuertee end: open/close mission lists
+				end
 			end
 			if not found then
 				local row = ftable:addRow("plotnone", { interactive = false })
@@ -17795,38 +18071,12 @@ function menu.createMissionMode(frame)
 			-- row[1]:setColSpan(9):createText(ReadText(1001, 3333), Helper.headerRowCenteredProperties)
 			local row = ftable:addRow(false, {})
 			row[2]:createText("")
-			if not __userdata_uix_menu_map.expandedMissionGroups then
-				__userdata_uix_menu_map.expandedMissionGroups = {}
-			end
-			local uix_isAnyGuildMissionGroupOpen
-			for uix_missionGroupId, uix_isMissionGroupOpen in pairs(menu.expandedMissionGroups) do
-				if not string.find(uix_missionGroupId, "offer") then
-					if uix_isMissionGroupOpen then
-						uix_isAnyGuildMissionGroupOpen = true
-						break
-					end
-				end
-			end
+			local uix_isGuildListOpen, uix_isGuildListActive = menu.uix_getIsMissionExpanded(menu.missionList["guild"], nil, "uix_guildList")
 			local row = ftable:addRow(true, { bgColor = Color["row_title_background"] })
-			row[1]:createButton({active = menu.missionList and menu.missionList["guild"] and next(menu.missionList["guild"]) and true or false}):setText(uix_isAnyGuildMissionGroupOpen and "-" or "+", { halign = "center" })
-			row[1].handlers.onClick = function ()
-				uix_isAnyGuildMissionGroupOpen = not uix_isAnyGuildMissionGroupOpen
-				for uix_missionGroupId, _ in pairs(menu.expandedMissionGroups) do
-					if not string.find(uix_missionGroupId, "offer") then
-						menu.expandedMissionGroups[uix_missionGroupId] = uix_isAnyGuildMissionGroupOpen
-					end
-				end
-				menu.refreshInfoFrame()
-				return
-			end
+			row[1]:createButton({active = menu.missionList and menu.missionList["guild"] and #menu.missionList["guild"] > 0 and true or false}):setText(uix_isGuildListOpen and "-" or "+", { halign = "center" })
+			row[1].handlers.onClick = function () return menu.uix_expandMissionList(menu.missionList["guild"], row.index, nil, nil, "uix_guildList") end
 			row[2]:setColSpan(8):createText(ReadText(1001, 3333), Helper.headerRowCenteredProperties)
-			local uix_isGroupHaveActiveMission
-			for _, data in ipairs(menu.missionList["guild"]) do
-				if data.active then
-					uix_isGroupHaveActiveMission = true
-				end
-			end
-			if uix_isGroupHaveActiveMission then
+			if uix_isGuildListActive then
 				row[2].properties.color = Color["text_mission"]
 			end
 			-- kuertee end
@@ -17848,22 +18098,14 @@ function menu.createMissionMode(frame)
 					end
 				end
 
-				-- kuertee start: open/close mission lists
 				if menu.expandedMissionGroups[data.id] == nil then
-					-- menu.expandedMissionGroups[data.id] = true
-					if __userdata_uix_menu_map.expandedMissionGroups[data.id] ~= nil then
-						menu.expandedMissionGroups[data.id] = __userdata_uix_menu_map.expandedMissionGroups[data.id]
-					else
-						menu.expandedMissionGroups[data.id] = true
-					end
+					menu.expandedMissionGroups[data.id] = true
 				end
-				-- kuertee end
-
-				local isexpanded = menu.expandedMissionGroups[data.id]
 
 				-- kuertee start: open/close mission lists
-				__userdata_uix_menu_map.expandedMissionGroups[data.id] = isexpanded
-				-- kuertee end
+				-- local isexpanded = menu.expandedMissionGroups[data.id]
+				local isexpanded, uix_isActive = menu.uix_getIsMissionExpanded(data)
+				-- kuertee end: open/close mission lists
 
 				local row = ftable:addRow(data.id, {  })
 				if data.id == menu.missionModeCurrent then
@@ -17876,8 +18118,20 @@ function menu.createMissionMode(frame)
 				end
 
 				row[1]:createButton():setText(isexpanded and "-" or "+", { halign = "center" })
-				row[1].handlers.onClick = function () return menu.buttonExpandMissionGroup(data.id, row.index) end
+
+				-- kuertee start: open/close mission lists
+				-- row[1].handlers.onClick = function () return menu.buttonExpandMissionGroup(data.id, row.index) end
+				row[1].handlers.onClick = function () return menu.uix_expandMissionList(data, row.index) end
+				-- kuertee end: open/close mission lists
+
 				row[2]:setColSpan(7):createText(data.name, { color = color, font = font })
+
+				-- kuertee start: open/close mission lists
+				if uix_isActive then
+					row[2].properties.color = Color["text_mission"]
+				end
+				-- kuertee end: open/close mission lists
+
 				row[9]:createText((#data.missions == 1) and ReadText(1001, 3337) or string.format(ReadText(1001, 3338), #data.missions), { halign = "right", color = color })
 
 				if isexpanded then
@@ -17890,10 +18144,11 @@ function menu.createMissionMode(frame)
 							-- first non thread mission after threads
 							hadThreadMission = false
 
-							-- kuertee start: remove blank line between threaded and non-threaded missions
+							-- kuertee start: open/close mission lists
+							-- do not create spacer between mission entries
 							-- local row = ftable:addRow(false, {  })
 							-- row[1]:setColSpan(9):createText("")
-							-- kuertee end
+							-- kuertee end: open/close mission lists
 						end
 						menu.addMissionRow(ftable, entry, 1)
 					end
@@ -17907,37 +18162,26 @@ function menu.createMissionMode(frame)
 				row[1]:setColSpan(9):createText("--- " .. ReadText(1001, 3302) .. " ---", { halign = "center" })
 			end
 			-- other
-			found = false
 
 			-- kuertee start: open/close mission lists
 			-- local row = ftable:addRow(nil, { bgColor = Color["row_title_background"] })
 			-- row[1]:setColSpan(9):createText(ReadText(1001, 3334), Helper.headerRowCenteredProperties)
+			-- found = false
 			local row = ftable:addRow(false, {})
 			row[2]:createText("")
-			if __userdata_uix_menu_map.missions_other_isOpen == nil then
-				__userdata_uix_menu_map.missions_other_isOpen = true
-			end
+			found = false
+			local uix_isOtherListOpen, uix_isOtherListActive = menu.uix_getIsMissionExpanded(menu.missionList["other"], nil, "uix_otherList")
 			local row = ftable:addRow(true, { bgColor = Color["row_title_background"] })
-			row[1]:createButton({active = menu.missionOfferList and menu.missionOfferList["other"] and next(menu.missionOfferList["other"]) and true or false}):setText(__userdata_uix_menu_map.missions_other_isOpen and "-" or "+", { halign = "center" })
-			row[1].handlers.onClick = function ()
-				__userdata_uix_menu_map.missions_other_isOpen = not __userdata_uix_menu_map.missions_other_isOpen
-				menu.refreshInfoFrame()
-				return
-			end
+			row[1]:createButton({active = menu.missionList and menu.missionList["other"] and #menu.missionList["other"] > 0 and true or false}):setText(uix_isOtherListOpen and "-" or "+", { halign = "center" })
+			row[1].handlers.onClick = function () return menu.uix_expandMissionList(menu.missionList["other"], row.index, nil, nil, "uix_otherList") end
 			row[2]:setColSpan(8):createText(ReadText(1001, 3334), Helper.headerRowCenteredProperties)
-			local uix_isGroupHaveActiveMission
-			for _, data in ipairs(menu.missionList["other"]) do
-				if data.active then
-					uix_isGroupHaveActiveMission = true
-				end
-			end
-			if uix_isGroupHaveActiveMission then
+			if uix_isOtherListActive then
 				row[2].properties.color = Color["text_mission"]
 			end
 			-- kuertee end
 
 			-- kuertee start: open/close mission lists
-			if __userdata_uix_menu_map.missions_other_isOpen == true then
+			if uix_isOtherListOpen == true then
 			-- kuertee end
 
 				local hadThreadMission = false
@@ -17950,10 +18194,11 @@ function menu.createMissionMode(frame)
 						-- first non thread mission after threads
 						hadThreadMission = false
 
-						-- kuertee start: remove blank line between threaded and non-threaded missions
+						-- kuertee start: open/close mission lists
+						-- do not create spacer between mission entries
 						-- local row = ftable:addRow(false, {  })
 						-- row[1]:setColSpan(9):createText("")
-						-- kuertee end
+						-- kuertee end: open/close mission lists
 					end
 					menu.addMissionRow(ftable, entry)
 				end
@@ -18098,6 +18343,283 @@ function menu.createMissionMode(frame)
 	end
 end
 
+-- kuertee start: open/close mission lists
+function menu.uix_getMissionId(missionEntry, isOffer)
+	if isOffer == nil and missionEntry.uix_isOffer then
+		-- restore saved isOffer flag.
+		-- required as a uix funcion is called in addMissionRow(), and at that point, the isOffer flag is unavailabvle.
+		isOffer = missionEntry.uix_isOffer
+	end
+	missionEntry.uix_isOffer = isOffer
+	local uix_Id = missionEntry.ID
+	if not uix_Id then
+		uix_Id = missionEntry.id
+	end
+	if uix_Id and isOffer then
+		uix_Id = tostring(uix_Id) .. "offer"
+	end
+	return uix_Id
+end
+
+function menu.uix_setValidIds(validIds, missionList, listId, isOffers)
+	local expandableChildIds = menu.uix_getExpandableChildren(missionList, isOffers)
+	if #expandableChildIds > 0 then
+		for _, uix_Id in ipairs(expandableChildIds) do
+			validIds["saved" .. tostring(uix_Id)] = true
+		end
+	end
+end
+
+function menu.uix_removeInvalidsFromSavedExpandedMissions()
+	local validIds = {}
+	-- check offers and missions separately because lists of one may not be populated even if the lists of the other are.
+	if menu.missionOfferList and menu.missionOfferList["plot"] and #menu.missionOfferList["plot"] > 0 then
+		-- only do the clean up if lists have been populated.
+		-- only need to check "plot" because if "plot" is populated, then "guild" and "other" would be.
+		menu.uix_setValidIds(validIds, menu.missionOfferList["plot"], "uix_plotListOffer", true)
+		menu.uix_setValidIds(validIds, menu.missionOfferList["guild"], "uix_guildListOffer", true)
+		menu.uix_setValidIds(validIds, menu.missionOfferList["other"], "uix_otherListOffer", true)
+		local invalidIds = {}
+		for uix_Id, data in pairs(__userdata_uix_menu_map.savedExpandedMissionOffers) do
+			if validIds[uix_Id] == nil then
+				table.insert(invalidIds, uix_Id)
+			end
+		end
+		for _, uix_Id in ipairs(invalidIds) do
+			__userdata_uix_menu_map.savedExpandedMissionOffers[uix_Id] = nil
+		end
+	end
+	if menu.missionList and menu.missionList["plot"] and #menu.missionList["plot"] > 0 then
+		menu.uix_setValidIds(validIds, menu.missionList["plot"], "uix_plotList")
+		menu.uix_setValidIds(validIds, menu.missionList["guild"], "uix_guildList")
+		menu.uix_setValidIds(validIds, menu.missionList["other"], "uix_otherList")
+		local invalidIds = {}
+		for uix_Id, data in pairs(__userdata_uix_menu_map.savedExpandedMissions) do
+			if validIds[uix_Id] == nil then
+				table.insert(invalidIds, uix_Id)
+			end
+		end
+		for _, uix_Id in ipairs(invalidIds) do
+			__userdata_uix_menu_map.savedExpandedMissions[uix_Id] = nil
+		end
+	end
+end
+
+function menu.uix_getExpandableChildren(missionEntry, isOffer, isDescendant)
+	local expandableChildIds = {}
+	local isActive
+	if #missionEntry and #missionEntry > 0 then
+		for _, oneMissionEntry in ipairs(missionEntry) do
+			local uix_Ids, hasActiveChild = menu.uix_getExpandableChildren(oneMissionEntry, isOffer, true)
+			isActive = isActive or hasActiveChild
+			if #uix_Ids > 0 then
+				for _, uix_Id in ipairs(uix_Ids) do
+					table.insert(expandableChildIds, uix_Id)
+				end
+			end
+		end
+	elseif missionEntry.missions and #missionEntry.missions > 0 then
+		local uix_Ids, hasActiveChild = menu.uix_getExpandableChildren(missionEntry.missions, isOffer, true)
+		isActive = isActive or hasActiveChild
+		for _, uix_Id in ipairs(uix_Ids) do
+			table.insert(expandableChildIds, uix_Id)
+		end
+	elseif missionEntry.subMissions and #missionEntry.subMissions > 0 then
+		local uix_Ids, hasActiveChild = menu.uix_getExpandableChildren(missionEntry.subMissions, isOffer, true)
+		isActive = isActive or hasActiveChild
+		for _, uix_Id in ipairs(uix_Ids) do
+			table.insert(expandableChildIds, uix_Id)
+		end
+	elseif isDescendant then
+		table.insert(expandableChildIds, menu.uix_getMissionId(missionEntry, isOffer))
+	end
+	if isActive == nil then
+		isActive = missionEntry.active
+	end
+	return expandableChildIds, isActive
+end
+
+function menu.uix_getIsMissionExpanded(missionEntry, isOffer, listId)
+	-- set this to Helper.debugText to hide debugging in this function
+	-- set this to Helper.debugText_forced to show debugging in this function
+	local debugFunc = Helper.debugText
+	local uix_Id = menu.uix_getMissionId(missionEntry, isOffer)
+	if not uix_Id then
+		uix_Id = listId
+	end
+	local savedExpandedMissionsTable
+	if isOffer then
+		savedExpandedMissionsTable = __userdata_uix_menu_map.savedExpandedMissionOffers
+	else
+		savedExpandedMissionsTable = __userdata_uix_menu_map.savedExpandedMissions
+	end
+	if debugFunc == Helper.debugText_forced then
+		if missionEntry and (not missionEntry.uix_Id) then
+			missionEntry.uix_Id = uix_Id
+			missionEntry.name = tostring(missionEntry.name) .. " " .. tostring(uix_Id)
+		end
+	end
+	local isExpanded, sourceOfIsExpanded
+	local expandableChildIds, isActive = menu.uix_getExpandableChildren(missionEntry, isOffer)
+	debugFunc("uix_getIsMissionExpanded")
+	debugFunc("    missionEntry.name " .. tostring(missionEntry.name) .. " uix_Id " .. tostring(uix_Id) .. " #expandableChildIds", #expandableChildIds)
+	-- local isOpenCloseStatusDependsOnOpenChildren = (#expandableChildIds > 0) and ((not isOffer) or (listId == "uix_plotListOffer"))
+	-- TODO: isOpenCloseStatusDependsOnOpenChildren when FALSE is buggy!!!
+	-- set isOpenCloseStatusDependsOnOpenChildren to "(#expandableChildIds > 0) and true or false" to disable its effects
+	local isOpenCloseStatusDependsOnOpenChildren = (#expandableChildIds > 0) and true or false
+	-- base open/close status on actual individual active missions or on actual individual important mission offers.
+	-- other mission offers and missions lists will be based on their open/close status on their list itself.
+	-- e.g. when a new important mission is offered or is accepted, the main important mission offer will be auto-opened.
+	-- e.g. when a new guild mission is offered, the main guild mission offer list will stay open or close depending on the player's last interaction with its +/- buttons.
+	-- i.e. for guild mission offers and other mission offers, the list will stay open or close REGARDLESS of whether a new mission was offered.
+	-- without isOpenCloseStatusDependsOnOpenChildren, the lists will be auto-opened AT EVERY new mission entry because their open/close vars wouldn't have been set and defaults to "open".
+	-- with isOpenCloseStatusDependsOnOpenChildren, the lists will stay open or close depending on the player's last interaction.
+	-- with isOpenCloseStatusDependsOnOpenChildren, all new important mission offers will AND all new accepted missions will auto-open.
+	debugFunc("        isOpenCloseStatusDependsOnOpenChildren", isOpenCloseStatusDependsOnOpenChildren)
+	if isOpenCloseStatusDependsOnOpenChildren == true then
+	-- if #expandableChildIds > 0 then
+		-- if missionEntry has expandable children, then get expanded states of missionEntry from them
+		sourceOfIsExpanded = "children"
+		-- if not set, then must be false.
+		-- not left at nil so that the saved var is not used.
+		-- no child is expanded, so this missionEntry cannot have expanded state.
+		isExpanded = false
+		for _, uix_Id in ipairs(expandableChildIds) do
+			local thisIsExpanded = menu.expandedMissionGroups[uix_Id]
+			if thisIsExpanded == nil then
+				if savedExpandedMissionsTable["saved" .. tostring(uix_Id)] ~= nil then
+					thisIsExpanded = savedExpandedMissionsTable["saved" .. tostring(uix_Id)]
+				else
+					-- default to true because base-game doesn't have this level of expansion, and so starts as true
+					thisIsExpanded = true
+				end
+			end
+			if thisIsExpanded == true then
+				-- only save if true
+				isExpanded = thisIsExpanded
+			end
+			if isExpanded == true then
+				break
+			end
+		end
+		debugFunc("        isExpanded " .. tostring(isExpanded) .. " sourceOfIsExpanded " .. tostring(sourceOfIsExpanded) .. " isActive " .. tostring(isActive))
+		if debugFunc == Helper.debugText_forced then
+			for _, uix_Id in ipairs(expandableChildIds) do
+				debugFunc("        " .. tostring(uix_Id) .. " current " .. tostring(menu.expandedMissionGroups[uix_Id]) .. " saved " .. tostring(savedExpandedMissionsTable["saved" .. tostring(uix_Id)]))
+			end
+		end
+	else
+		-- otherwise, get expanded state of missionEntry itself
+		sourceOfIsExpanded = "previous value"
+		isExpanded = menu.expandedMissionGroups[uix_Id]
+		if isExpanded == nil then
+			if savedExpandedMissionsTable["saved" .. tostring(uix_Id)] ~= nil then
+				sourceOfIsExpanded = "uidata.xml"
+				isExpanded = savedExpandedMissionsTable["saved" .. tostring(uix_Id)]
+			else
+				-- default to true because base-game doesn't have this level of expansion, and so starts as true
+				sourceOfIsExpanded = "default"
+				isExpanded = true
+			end
+		end
+		debugFunc("        isExpanded " .. tostring(isExpanded) .. " sourceOfIsExpanded " .. tostring(sourceOfIsExpanded) .. " isActive " .. tostring(isActive))
+		-- TODO: isOpenCloseStatusDependsOnOpenChildren when FALSE is buggy!!!
+		-- ensure that children's expanded state is the same
+		-- if isOpenCloseStatusDependsOnOpenChildren == false and #expandableChildIds > 0 then
+		-- 	for _, uix_Id_child in ipairs(expandableChildIds) do
+		-- 		menu.expandedMissionGroups[uix_Id_child] = isExpanded
+		-- 		savedExpandedMissionsTable["saved" .. tostring(uix_Id_child)] = menu.expandedMissionGroups[uix_Id_child]
+		-- 		debugFunc("        uix_Id_child " .. tostring(uix_Id_child) .. " confirmed", menu.expandedMissionGroups[uix_Id_child])
+		-- 		debugFunc("        uix_Id_child " .. tostring(uix_Id_child) .. " confirmed2", savedExpandedMissionsTable["saved" .. tostring(uix_Id_child)])
+		-- 	end
+		-- end
+	end
+	return isExpanded, isActive, expandableChildIds
+end
+
+function menu.uix_expandMissionList(missionEntry, row, contextCallback, isOffer, listId, forcedIsExpandedValue)
+	-- set this to Helper.debugText to hide debugging in this function
+	-- set this to Helper.debugText_forced to show debugging in this function
+	local debugFunc = Helper.debugText
+	local uix_Id = menu.uix_getMissionId(missionEntry, isOffer)
+	if not uix_Id then
+		uix_Id = listId
+	end
+	local savedExpandedMissionsTable
+	if isOffer then
+		savedExpandedMissionsTable = __userdata_uix_menu_map.savedExpandedMissionOffers
+	else
+		savedExpandedMissionsTable = __userdata_uix_menu_map.savedExpandedMissions
+	end
+	local isExpanded, _, expandableChildIds = menu.uix_getIsMissionExpanded(missionEntry, isOffer, listId)
+	isExpanded = not isExpanded
+	debugFunc("uix_expandMissionList")
+	debugFunc("    uix_expandMissionList " .. tostring(uix_Id) .. " isExpanded", isExpanded)
+	local firstMissionId
+	-- local isOpenCloseStatusDependsOnOpenChildren = (#expandableChildIds > 0) and ((not isOffer) or (listId == "uix_plotListOffer"))
+	-- TODO: isOpenCloseStatusDependsOnOpenChildren when FALSE is buggy!!!
+	-- set isOpenCloseStatusDependsOnOpenChildren to "(#expandableChildIds > 0) and true or false" to disable its effects
+	local isOpenCloseStatusDependsOnOpenChildren = (#expandableChildIds > 0) and true or false
+	-- base open/close status on actual individual active missions or on actual individual important mission offers.
+	-- other mission offers and missions lists will be based on their open/close status on their list itself.
+	-- e.g. when a new important mission is offered or is accepted, the main important mission offer will be auto-opened.
+	-- e.g. when a new guild mission is offered, the main guild mission offer list will stay open or close depending on the player's last interaction with its +/- buttons.
+	-- i.e. for guild mission offers and other mission offers, the list will stay open or close REGARDLESS of whether a new mission was offered.
+	-- without isOpenCloseStatusDependsOnOpenChildren, the lists will be auto-opened AT EVERY new mission entry because their open/close vars wouldn't have been set and defaults to "open".
+	-- with isOpenCloseStatusDependsOnOpenChildren, the lists will stay open or close depending on the player's last interaction.
+	-- with isOpenCloseStatusDependsOnOpenChildren, all new important mission offers will AND all new accepted missions will auto-open.
+	debugFunc("        isOpenCloseStatusDependsOnOpenChildren", isOpenCloseStatusDependsOnOpenChildren)
+	if isOpenCloseStatusDependsOnOpenChildren == true then
+	-- if #expandableChildIds > 0 then
+		-- if missionEntry has expandable children, then the expanded status of missionEntry is based on their expanded states
+		for _, uix_Id in ipairs(expandableChildIds) do
+			debugFunc("    toggling uix_Id", uix_Id)
+			if not firstMissionId then
+				firstMissionId = uix_Id
+			end
+			menu.expandedMissionGroups[uix_Id] = isExpanded
+			savedExpandedMissionsTable["saved" .. tostring(uix_Id)] = menu.expandedMissionGroups[uix_Id]
+			debugFunc("        confirmed", menu.expandedMissionGroups[uix_Id])
+			debugFunc("        confirmed2", savedExpandedMissionsTable["saved" .. tostring(uix_Id)])
+		end
+	else
+		-- otherwise, get expanded state of missionEntry itself
+		firstMissionId = uix_Id
+		menu.expandedMissionGroups[uix_Id] = isExpanded
+		savedExpandedMissionsTable["saved" .. tostring(uix_Id)] = menu.expandedMissionGroups[uix_Id]
+		debugFunc("        confirmed", menu.expandedMissionGroups[uix_Id])
+		debugFunc("        confirmed2", savedExpandedMissionsTable["saved" .. tostring(uix_Id)])
+		-- TODO: isOpenCloseStatusDependsOnOpenChildren when FALSE is buggy!!!
+		-- ensure that children's expanded state is the same
+		-- if isOpenCloseStatusDependsOnOpenChildren == false and #expandableChildIds > 0 then
+		-- 	for _, uix_Id_child in ipairs(expandableChildIds) do
+		-- 		menu.expandedMissionGroups[uix_Id_child] = isExpanded
+		-- 		savedExpandedMissionsTable["saved" .. tostring(uix_Id_child)] = menu.expandedMissionGroups[uix_Id_child]
+		-- 		debugFunc("        uix_Id_child " .. tostring(uix_Id_child) .. " confirmed", menu.expandedMissionGroups[uix_Id_child])
+		-- 		debugFunc("        uix_Id_child " .. tostring(uix_Id_child) .. " confirmed2", savedExpandedMissionsTable["saved" .. tostring(uix_Id_child)])
+		-- 	end
+		-- end
+	end
+	-- NOTE: copy what buttonExpandMissionGroup does for individual missions
+	-- e.g. look for "copied from buttonExpandMissionGroup" notes within uix_expandMissionList()
+	-- start: copied from buttonExpandMissionGroup.
+	-- i.e. setting missionModeCurrent, setrow, closeContextMenu(), etc.
+	if row and firstId and isExpanded then
+		menu.setrow = row + 1 -- set the highlighted mission to the first mission in the list. i.e. row + 1
+		menu.missionModeCurrent = firstId -- set highlighted mission to the first mission in the list. i.e. the first mission's id
+	else
+		menu.setrow = row
+		menu.missionModeCurrent = listId
+	end
+	menu.closeContextMenu()
+	if contextCallback then
+		contextCallback()
+	end
+	menu.refreshInfoFrame()
+	-- end: copied from buttonExpandMissionGroup
+end
+-- kuertee end: open/close mission lists
+
 function menu.createMissionModeHeader(frame, instance)
 	local categories = (menu.infoTableMode == "missionoffer") and config.missionOfferTabs or config.missionCategories
 
@@ -18239,16 +18761,30 @@ function menu.addMissionRow(ftable, missionentry, indented, seqidx)
 
 	local missioncol = 1
 	if #missionentry.subMissions > 0 then
-		local isexpanded = menu.expandedMissionGroups[missionentry.ID]
+
+		-- kuertee start: open/close mission lists
+		-- local isexpanded = menu.expandedMissionGroups[missionentry.ID]
+		local isexpanded = menu.uix_getIsMissionExpanded(missionentry)
+		-- kuertee end: open/close mission lists
 
 		if indented == 1 then
 			row[1]:setBackgroundColSpan(9)
 			row[2]:createButton():setText(isexpanded and "-" or "+", { halign = "center" })
-			row[2].handlers.onClick = function () return menu.buttonExpandMissionGroup(missionentry.ID, row.index, function() return menu.showMissionContext(missionentry.ID) end) end
+
+			-- kuertee start: open/close mission lists
+			-- row[2].handlers.onClick = function () return menu.buttonExpandMissionGroup(missionentry.ID, row.index, function() return menu.showMissionContext(missionentry.ID) end) end
+			row[2].handlers.onClick = function () return menu.uix_expandMissionList(missionentry, row.index, function() return menu.showMissionContext(missionentry.ID) end) end
+			-- kuertee end: open/close mission lists
+
 			row[3]:setColSpan(7):createText(name, { color = color, font = font })
 		else
 			row[1]:setBackgroundColSpan(9):createButton():setText(isexpanded and "-" or "+", { halign = "center" })
-			row[1].handlers.onClick = function () return menu.buttonExpandMissionGroup(missionentry.ID, row.index, function() return menu.showMissionContext(missionentry.ID) end) end
+
+			-- kuertee start: open/close mission lists
+			-- row[1].handlers.onClick = function () return menu.buttonExpandMissionGroup(missionentry.ID, row.index, function() return menu.showMissionContext(missionentry.ID) end) end
+			row[1].handlers.onClick = function () return menu.uix_expandMissionList(missionentry, row.index, function() return menu.showMissionContext(missionentry.ID) end) end
+			-- kuertee end: open/close mission lists
+
 			row[2]:setColSpan(8):createText(name, { color = color, font = font })
 		end
 
@@ -18345,25 +18881,24 @@ function menu.updateMissionOfferList(clear)
 	end
 
 	for _, entry in ipairs(config.missionOfferCategories) do
-		if entry.category == "guild" then
-			for i, data in ipairs(menu.missionOfferList[entry.category]) do
-				for j = #data.missions, 1, -1 do
-					if missionOfferIDs[data.missions[j].ID] then
-						missionOfferIDs[menu.missionOfferList[entry.category][i].missions[j].ID] = nil
-					else
-						if not menu.missionOfferList[entry.category][i].missions[j].accepted then
-							menu.missionOfferList[entry.category][i].missions[j].expired = true
-						end
+		for i = #menu.missionOfferList[entry.category], 1, -1 do
+			local data = menu.missionOfferList[entry.category][i]
+			if not data.missions then
+				if missionOfferIDs[data.ID] then
+					missionOfferIDs[data.ID] = nil
+				else
+					if not data.accepted then
+						menu.missionOfferList[entry.category][i].expired = true
 					end
 				end
-			end
-		else
-			for i = #menu.missionOfferList[entry.category], 1, -1 do
-				if missionOfferIDs[menu.missionOfferList[entry.category][i].ID] then
-					missionOfferIDs[menu.missionOfferList[entry.category][i].ID] = nil
-				else
-					if not menu.missionOfferList[entry.category][i].accepted then
-						menu.missionOfferList[entry.category][i].expired = true
+			else
+				for j = #data.missions, 1, -1 do
+					if missionOfferIDs[data.missions[j].ID] then
+						missionOfferIDs[data.missions[j].ID] = nil
+					else
+						if not data.missions[j].accepted then
+							menu.missionOfferList[entry.category][i].missions[j].expired = true
+						end
 					end
 				end
 			end
@@ -18373,8 +18908,8 @@ function menu.updateMissionOfferList(clear)
 	for id in pairs(missionOfferIDs) do
 		local missionofferid64 = ConvertStringTo64Bit(id)
 		local name, description, difficulty, threadtype, maintype, subtype, subtypename, faction, reward, rewardtext, briefingobjectives, activebriefingstep, briefingmissions, oppfaction, licence, missiontime, duration, _, _, _, _, actor = GetMissionOfferDetails(ConvertStringToLuaID(id))
-		local missionGroup = C.GetMissionGroupDetails(missionofferid64)
-		local groupID, groupName = ffi.string(missionGroup.id), ffi.string(missionGroup.name)
+		local missionGroup = C.GetMissionGroupDetails2(missionofferid64)
+		local groupID, groupName, isStoryGroup = ffi.string(missionGroup.id), ffi.string(missionGroup.name), missionGroup.isstory
 		local onlineinfo = C.GetMissionOnlineInfo(missionofferid64)
 		local onlinechapter, onlineid = ffi.string(onlineinfo.chapter), ffi.string(onlineinfo.onlineid)
 		local helpoverlayid = ffi.string(C.GetMissionHelpOverlayID(missionofferid64))
@@ -18383,7 +18918,7 @@ function menu.updateMissionOfferList(clear)
 				["name"] = name,
 				["description"] = description,
 				["difficulty"] = difficulty,
-				["missionGroup"] = { id = groupID, name = groupName },
+				["missionGroup"] = { id = groupID, name = groupName, isstory = isStoryGroup },
 				["threadtype"] = threadtype,
 				["type"] = subtype,
 				["faction"] = faction or "",
@@ -18403,25 +18938,43 @@ function menu.updateMissionOfferList(clear)
 				["subMissions"] = {},
 			}
 
-			if entry.missionGroup.id ~= "" then
-				local index = 0
-				for i, data in ipairs(menu.missionOfferList["guild"]) do
-					if data.id == entry.missionGroup.id then
-						index = i
-						break
+			if maintype == "plot" then
+				if entry.missionGroup.id ~= "" then
+					local index = 0
+					for i, data in ipairs(menu.missionOfferList["plot"]) do
+						if data.id == entry.missionGroup.id then
+							index = i
+							break
+						end
 					end
-				end
-				if index ~= 0 then
-					table.insert(menu.missionOfferList["guild"][index].missions, entry)
+					if index ~= 0 then
+						if entry.active then
+							menu.missionOfferList["plot"][index].active = true
+						end
+						table.insert(menu.missionOfferList["plot"][index].missions, entry)
+					else
+						table.insert(menu.missionOfferList["plot"], { id = entry.missionGroup.id, name = entry.missionGroup.name, isstory = entry.missionGroup.isstory, active = entry.active, missions = { entry } })
+					end
 				else
-					table.insert(menu.missionOfferList["guild"], { id = entry.missionGroup.id, name = entry.missionGroup.name, missions = { entry } })
-				end
-			else
-				if maintype == "plot" then
 					table.insert(menu.missionOfferList["plot"], entry)
-				elseif onlinechapter ~= "" then
-					table.insert(menu.missionOfferList["coalition"], entry)
-					menu.missionOfferByOnlineID[entry.onlineID] = entry
+				end
+			elseif onlinechapter ~= "" then
+				table.insert(menu.missionOfferList["coalition"], entry)
+				menu.missionOfferByOnlineID[entry.onlineID] = entry
+			else
+				if entry.missionGroup.id ~= "" then
+					local index = 0
+					for i, data in ipairs(menu.missionOfferList["guild"]) do
+						if data.id == entry.missionGroup.id then
+							index = i
+							break
+						end
+					end
+					if index ~= 0 then
+						table.insert(menu.missionOfferList["guild"][index].missions, entry)
+					else
+						table.insert(menu.missionOfferList["guild"], { id = entry.missionGroup.id, name = entry.missionGroup.name, missions = { entry } })
+					end
 				else
 					table.insert(menu.missionOfferList["other"], entry)
 				end
@@ -18434,22 +18987,33 @@ function menu.updateMissionOfferList(clear)
 		table.sort(entry.missions, menu.missionOfferSorter)
 	end
 	table.sort(menu.missionOfferList["plot"], menu.missionOfferSorter)
+	for _, entry in ipairs(menu.missionOfferList["plot"]) do
+		if entry.missions then
+			table.sort(entry.missions, menu.missionOfferSorter)
+		end
+	end
 	table.sort(menu.missionOfferList["coalition"], menu.missionOfferSorter)
 	table.sort(menu.missionOfferList["other"], menu.missionOfferSorter)
 end
 
 function menu.missionOfferSorter(a, b)
-	if a.name == b.name then
-		return a.ID > b.ID
+	local anotstoryentry = not a.missions
+	local bnotstoryentry = not b.missions
+
+	if anotstoryentry == bnotstoryentry then
+		if a.name == b.name then
+			return a.ID > b.ID
+		end
+		return a.name < b.name
 	end
-	return a.name < b.name
+	return not anotstoryentry
 end
 
 function menu.getMissionInfoHelper(mission)
 	local missionID, name, description, difficulty, threadtype, maintype, subtype, subtypename, faction, reward, rewardtext, _, _, _, _, _, missiontime, _, abortable, disableguidance, associatedcomponent, upkeepalertlevel, hasobjective, threadmissionid = GetMissionDetails(mission)
 	local missionid64 = ConvertIDTo64Bit(missionID)
-	local missionGroup = C.GetMissionGroupDetails(missionid64)
-	local groupID, groupName = ffi.string(missionGroup.id), ffi.string(missionGroup.name)
+	local missionGroup = C.GetMissionGroupDetails2(missionid64)
+	local groupID, groupName, isStoryGroup = ffi.string(missionGroup.id), ffi.string(missionGroup.name), missionGroup.isstory
 	local onlineinfo = C.GetMissionOnlineInfo(missionid64)
 	local onlinechapter, onlineid = ffi.string(onlineinfo.chapter), ffi.string(onlineinfo.onlineid)
 	local helpoverlayid = ffi.string(C.GetMissionHelpOverlayID(missionid64))
@@ -18469,7 +19033,7 @@ function menu.getMissionInfoHelper(mission)
 		["name"] = name,
 		["description"] = description,
 		["difficulty"] = difficulty,
-		["missionGroup"] = { id = groupID, name = groupName },
+		["missionGroup"] = { id = groupID, name = groupName, isstory = isStoryGroup },
 		["threadtype"] = threadtype,
 		["maintype"] = maintype,
 		["type"] = subtype,
@@ -18491,8 +19055,8 @@ function menu.getMissionInfoHelper(mission)
 end
 
 function menu.getMissionIDInfoHelper(missionID)
-	local missionGroup = C.GetMissionGroupDetails(missionID)
-	local groupID, groupName = ffi.string(missionGroup.id), ffi.string(missionGroup.name)
+	local missionGroup = C.GetMissionGroupDetails2(missionID)
+	local groupID, groupName, isStoryGroup = ffi.string(missionGroup.id), ffi.string(missionGroup.name), missionGroup.isstory
 	local onlineinfo = C.GetMissionOnlineInfo(missionID)
 	local onlinechapter, onlineid = ffi.string(onlineinfo.chapter), ffi.string(onlineinfo.onlineid)
 	local helpoverlayid = ffi.string(C.GetMissionHelpOverlayID(missionID))
@@ -18512,7 +19076,7 @@ function menu.getMissionIDInfoHelper(missionID)
 		["name"] = ffi.string(missiondetails.missionName),
 		["description"] = ffi.string(missiondetails.missionDescription),
 		["difficulty"] = missiondetails.difficulty,
-		["missionGroup"] = { id = groupID, name = groupName },
+		["missionGroup"] = { id = groupID, name = groupName, istory = isStoryGroup },
 		["threadtype"] = ffi.string(missiondetails.threadType),
 		["maintype"] = ffi.string(missiondetails.mainType),
 		["type"] = ffi.string(missiondetails.subType),
@@ -18560,7 +19124,25 @@ function menu.addMissionToList(entry)
 			menu.activeMissionMode = "guidance"
 		end
 	elseif entry.maintype == "plot" then
-		table.insert(menu.missionList["plot"], entry)
+		if entry.missionGroup.id ~= "" then
+			local index = 0
+			for i, data in ipairs(menu.missionList["plot"]) do
+				if data.id == entry.missionGroup.id then
+					index = i
+					break
+				end
+			end
+			if index ~= 0 then
+				if entry.active then
+					menu.missionList["plot"][index].active = true
+				end
+				table.insert(menu.missionList["plot"][index].missions, entry)
+			else
+				table.insert(menu.missionList["plot"], { id = entry.missionGroup.id, name = entry.missionGroup.name, isstory = entry.missionGroup.isstory, active = entry.active, missions = { entry } })
+			end
+		else
+			table.insert(menu.missionList["plot"], entry)
+		end
 		if entry.active then
 			menu.activeMissionMode = "plot"
 		end
@@ -18616,9 +19198,14 @@ function menu.updateMissions()
 	end
 
 	for _, entry in ipairs(config.missionCategories) do
-		if (entry.category == "guild") or (entry.category == "upkeep") then
+		if (entry.category == "plot") or (entry.category == "guild") or (entry.category == "upkeep") then
 			for _, data in pairs(menu.missionList[entry.category]) do
-				table.sort(data.missions, menu.missionListSorter)
+				if data.missions then
+					table.sort(data.missions, menu.missionListSorter)
+				end
+			end
+			if entry.category == "plot" then
+				table.sort(menu.missionList[entry.category], menu.missionListSorter)
 			end
 		else
 			table.sort(menu.missionList[entry.category], menu.missionListSorter)
@@ -18627,14 +19214,21 @@ function menu.updateMissions()
 end
 
 function menu.missionListSorter(a, b)
-	if ((a.threadtype ~= "") and (b.threadtype ~= "")) or ((a.threadtype == "") and (b.threadtype == "")) then
-		if config.missionMainTypeOrder[a.maintype] == config.missionMainTypeOrder[b.maintype] then
-			return a.name < b.name
+	local anotstoryentry = not a.missions
+	local bnotstoryentry = not b.missions
+
+	if anotstoryentry == bnotstoryentry then
+		if ((a.threadtype ~= "") and (b.threadtype ~= "")) or ((a.threadtype == "") and (b.threadtype == "")) then
+			if config.missionMainTypeOrder[a.maintype] == config.missionMainTypeOrder[b.maintype] then
+				return a.name < b.name
+			end
+			return config.missionMainTypeOrder[a.maintype] < config.missionMainTypeOrder[b.maintype]
 		end
-		return config.missionMainTypeOrder[a.maintype] < config.missionMainTypeOrder[b.maintype]
+
+		return a.threadtype ~= ""
 	end
 
-	return a.threadtype ~= ""
+	return not anotstoryentry
 end
 
 function menu.createVentureSeasonHeader(frame, instance)
@@ -18987,6 +19581,9 @@ function menu.cheatAllResearch()
 		"research_warp_hq_01",
 		"research_warp_hq_02",
 		"research_diplomacy_network",
+		"research_agentslot_01",
+		"research_agentslot_02",
+		"research_interference_network",
 	}
 
 	for _, research in ipairs(researchwares) do
@@ -19092,6 +19689,7 @@ function menu.createSearchField(frame, width, height, offsetx, offsety, refresh)
 		button:setHotkey("INPUT_STATE_DETAILMONITOR_TOGGLE_FILTER_" .. i, { displayIcon = false })
 		button.handlers.onClick = function () return menu.buttonSetFilterLayer(entry.mode, rows[i].index, i) end
 	end
+
 	-- editbox
 	local active = true
 	local mouseovertext = ""
@@ -19417,6 +20015,10 @@ function menu.createSideBar(firsttime, frame, width, height, offsetx, offsety)
 
 							entry.active = false
 						end
+					elseif menu.mode == "diplomaticactionparam_object" then
+						if (entry.mode ~= "objectlist") and (entry.mode ~= "propertyowned") then
+							entry.active = false
+						end
 					end
 				end
 				if entry.active then
@@ -19573,8 +20175,7 @@ function menu.createSelectedShips(frame)
 	for id, _ in pairs(menu.selectedcomponents) do
 		local selectedcomponent = ConvertStringTo64Bit(id)
 		if C.IsObjectKnown(selectedcomponent) then
-			local class = ffi.string(C.GetComponentClass(selectedcomponent))
-			local icon, primarypurpose, hullpercent, shieldpercent, isplayerowned, isenemy, ismodule, ishostile = GetComponentData(selectedcomponent, "icon", "primarypurpose", "hullpercent", "shieldpercent", "isplayerowned", "isenemy", "ismodule", "ishostile")
+			local icon, primarypurpose, hullpercent, shieldpercent, isplayerowned, isenemy, ismodule, ishostile, classid = GetComponentData(selectedcomponent, "icon", "primarypurpose", "hullpercent", "shieldpercent", "isplayerowned", "isenemy", "ismodule", "ishostile", "classid")
 			if not ismodule then
 				local color = "neutral"
 				if isplayerowned then
@@ -19590,7 +20191,7 @@ function menu.createSelectedShips(frame)
 					selectedobjects[i].hullpercent		= selectedobjects[i].hullpercent	+ hullpercent
 					selectedobjects[i].shieldpercent	= selectedobjects[i].shieldpercent	+ shieldpercent
 				else
-					table.insert(selectedobjects, { icon = icon, color = color, class = class, purpose = primarypurpose, count = 1, hullpercent = hullpercent, shieldpercent = shieldpercent })
+					table.insert(selectedobjects, { icon = icon, color = color, classid = classid, purpose = primarypurpose, count = 1, hullpercent = hullpercent, shieldpercent = shieldpercent })
 				end
 			end
 		end
@@ -19601,8 +20202,7 @@ function menu.createSelectedShips(frame)
 	if #selectedobjects == 0 then
 		if menu.mode == "behaviourinspection" then
 			component = menu.behaviourInspectionComponent
-			local class = ffi.string(C.GetComponentClass(menu.behaviourInspectionComponent))
-			local icon, primarypurpose, hullpercent, shieldpercent, isplayerowned, isenemy, ismodule, ishostile = GetComponentData(menu.behaviourInspectionComponent, "icon", "primarypurpose", "hullpercent", "shieldpercent", "isplayerowned", "isenemy", "ismodule", "ishostile")
+			local icon, primarypurpose, hullpercent, shieldpercent, isplayerowned, isenemy, ismodule, ishostile, classid = GetComponentData(menu.behaviourInspectionComponent, "icon", "primarypurpose", "hullpercent", "shieldpercent", "isplayerowned", "isenemy", "ismodule", "ishostile", "classid")
 			local color = "neutral"
 			if isplayerowned then
 				color = "player"
@@ -19611,7 +20211,7 @@ function menu.createSelectedShips(frame)
 			elseif isenemy then
 				color = "enemy"
 			end
-			table.insert(selectedobjects, { icon = icon, color = color, class = class, purpose = primarypurpose, count = 1, hullpercent = hullpercent, shieldpercent = shieldpercent })
+			table.insert(selectedobjects, { icon = icon, color = color, classid = classid, purpose = primarypurpose, count = 1, hullpercent = hullpercent, shieldpercent = shieldpercent })
 		else
 			-- nothing to do
 			frame:addTable(1, { tabOrder = 0, width = 1, scaling = false, reserveScrollBar = false })
@@ -19689,15 +20289,14 @@ function menu.createSelectedShips(frame)
 		end
 	else
 		local selectedcomponent = ConvertStringTo64Bit(component)
-		local isplayerowned, isonlineobject, isenemy, ishostile = GetComponentData(selectedcomponent, "isplayerowned", "isonlineobject", "isenemy", "ishostile")
-		local objecttitle = ffi.string(C.GetComponentName(selectedcomponent))
-		if C.IsComponentClass(selectedcomponent, "container") then
-			objecttitle = objecttitle .. " (" .. ffi.string(C.GetObjectIDCode(selectedcomponent)) .. ")"
+		local isplayerowned, isonlineobject, isenemy, ishostile, classid, icon, entrygate, name, idcode = GetComponentData(selectedcomponent, "isplayerowned", "isonlineobject", "isenemy", "ishostile", "classid", "icon", "entrygate", "name", "idcode")
+		local objecttitle = name
+		if Helper.isComponentClass(classid, "container") then
+			objecttitle = objecttitle .. " (" .. idcode .. ")"
 		end
 		local objecttitlewidth = math.ceil(C.GetTextWidth(objecttitle, Helper.standardFontBold, Helper.scaleFont(Helper.standardFont, Helper.headerRow1FontSize, true))) + 2 * Helper.standardTextOffsetx
-		local objecticon = GetComponentData(selectedcomponent, "icon")
-		if C.IsComponentClass(selectedcomponent, "highway") then
-			local entrygate = GetComponentData(selectedcomponent, "entrygate")
+		local objecticon = icon
+		if Helper.isComponentClass(classid, "highway") then
 			objecticon = GetComponentData(entrygate, "icon")
 		end
 		local bordericonsize = Helper.scaleX(Helper.headerRow1Height)
@@ -19768,8 +20367,8 @@ function menu.createSelectedShips(frame)
 		row[3]:setColSpan(3):createText(objecttitle, { color = color, halign = "center", font = Helper.headerRow1Font, fontsize = Helper.headerRow1FontSize, minRowHeight = Helper.headerRow1Height })
 		row[6]:createObjectShieldHullBar(selectedcomponent)
 
-		local isship = C.IsComponentClass(selectedcomponent, "ship")
-		if isship or C.IsComponentClass(selectedcomponent, "collectablewares") then
+		local isship = Helper.isComponentClass(classid, "ship")
+		if isship or Helper.isComponentClass(classid, "collectablewares") then
 			local row = ftable:addRow(nil, { fixed = true, borderBelow = false })
 			if isplayerowned then
 				row[1]:setColSpan(3):createText(ReadText(1001, 16), { halign = "center" })
@@ -19943,7 +20542,7 @@ function menu.createSelectedShips(frame)
 				row[4]:createText("", { height = 2, cellBGColor = Color["row_background"], x = 0 })
 				row[5]:setColSpan(3):createText(string.format("%+d %s", #rows.right - 5, ((#rows.right - 5) > 1) and ReadText(1001, 46) or ReadText(1001, 45)))
 			end
-		elseif C.IsComponentClass(selectedcomponent, "station") then
+		elseif Helper.isComponentClass(classid, "station") then
 			local row = ftable:addRow(nil, { fixed = true, borderBelow = false })
 			if isplayerowned then
 				row[1]:setColSpan(3):createText(ReadText(1001, 3305), { halign = "center" })
@@ -20094,11 +20693,11 @@ function menu.createSelectedShips(frame)
 end
 
 function menu.sortShipsByClassAndPurpose(a, b)
-	local aclass = config.classOrder[a.class] or 0
-	local bclass = config.classOrder[b.class] or 0
+	local aclass = Helper.classOrder[a.classid] or 0
+	local bclass = Helper.classOrder[b.classid] or 0
 	if aclass == bclass then
-		local apurpose = (a.purpose ~= "") and config.purposeOrder[a.purpose] or 0
-		local bpurpose = (b.purpose ~= "") and config.purposeOrder[b.purpose] or 0
+		local apurpose = (a.purpose ~= "") and Helper.purposeOrder[a.purpose] or 0
+		local bpurpose = (b.purpose ~= "") and Helper.purposeOrder[b.purpose] or 0
 		return apurpose < bpurpose
 	else
 		return aclass < bclass
@@ -20106,11 +20705,11 @@ function menu.sortShipsByClassAndPurpose(a, b)
 end
 
 function menu.sortShipsByClassAndPurposeReverse(a, b)
-	local apurpose = (a.purpose ~= "") and config.purposeOrder[a.purpose] or 0
-	local bpurpose = (b.purpose ~= "") and config.purposeOrder[b.purpose] or 0
+	local apurpose = (a.purpose ~= "") and Helper.purposeOrder[a.purpose] or 0
+	local bpurpose = (b.purpose ~= "") and Helper.purposeOrder[b.purpose] or 0
 	if apurpose == bpurpose then
-		local aclass = config.classOrder[a.class] or 0
-		local bclass = config.classOrder[b.class] or 0
+		local aclass = Helper.classOrder[a.classid] or 0
+		local bclass = Helper.classOrder[b.classid] or 0
 		return aclass < bclass
 	else
 		return apurpose > bpurpose
@@ -20126,7 +20725,7 @@ function menu.findEntryByShipIcon(array, icon, color)
 end
 
 function menu.createTopLevel(frame)
-	if (menu.mode == "hire") or (menu.mode == "selectCV") or (menu.mode == "orderparam_object") or (menu.mode == "selectComponent") then
+	if (menu.mode == "hire") or (menu.mode == "selectCV") or (menu.mode == "orderparam_object") or (menu.mode == "selectComponent") or (menu.mode == "diplomaticactionparam_object") then
 		local width = 400
 		local ftable = frame:addTable(1, {
 			tabOrder = 20,
@@ -20171,6 +20770,8 @@ function menu.createTopLevel(frame)
 			end
 		elseif menu.mode == "selectComponent" then
 			title = menu.modeparam[5] or ReadText(1001, 8325)
+		elseif menu.mode == "diplomaticactionparam_object" then
+			title = ReadText(1001, 12843)
 		end
 
 		row[1]:createText(title, Helper.titleTextProperties)
@@ -20299,53 +20900,7 @@ function menu.createOrderparamWareContext(frame, instance)
 		param = menu.infoTableData[instance].orders[menu.contextMenuData.order].params[menu.contextMenuData.param]
 	end
 
-	menu.contextMenuData.wares = {}
-
-	if param.inputparams.mining then
-		local sector = ConvertIDTo64Bit(param.inputparams.mining[1])
-		local pos = param.inputparams.mining[2]
-		local nummineables = C.GetNumMineablesAtSectorPos(sector, pos)
-		local mineables = ffi.new("YieldInfo[?]", nummineables)
-		nummineables = C.GetMineablesAtSectorPos(mineables, nummineables, sector, pos)
-		for i = 0, nummineables - 1 do
-			table.insert(menu.contextMenuData.wares, ffi.string(mineables[i].wareid))
-		end
-	elseif param.inputparams.cargoof then
-		local buf = GetComponentData(param.inputparams.cargoof, "cargo")
-		for ware in pairs(buf) do
-			table.insert(menu.contextMenuData.wares, ware)
-		end
-	elseif param.inputparams.soldby then
-		local buf = GetComponentData(param.inputparams.soldby, "products")
-		for _, ware in ipairs(buf) do
-			table.insert(menu.contextMenuData.wares, ware)
-		end
-	elseif param.inputparams.boughtby then
-		local buf = GetComponentData(param.inputparams.boughtby, "allresources")
-		for _, ware in ipairs(buf) do
-			table.insert(menu.contextMenuData.wares, ware)
-		end
-	else
-		for name, ware in pairs(menu.economyWares) do
-			table.insert(menu.contextMenuData.wares, ware)
-		end
-	end
-	if param.inputparams.cancarry then
-		for i = #menu.contextMenuData.wares, 1, -1 do
-			local ware = menu.contextMenuData.wares[i]
-			if GetWareCapacity(param.inputparams.cancarry, ware, true) == 0 then
-				table.remove(menu.contextMenuData.wares, i)
-			end
-		end
-	end
-	if param.inputparams.isminable then
-		for i = #menu.contextMenuData.wares, 1, -1 do
-			local ware = menu.contextMenuData.wares[i]
-			if GetWareData(ware, "isminable") ~= (param.inputparams.isminable == 1) then
-				table.remove(menu.contextMenuData.wares, i)
-			end
-		end
-	end
+	menu.contextMenuData.wares = Helper.getOrderParameterWares(param.inputparams)
 
 	if (param.type == "list") then
 		menu.contextMenuData.selectedWares = {}
@@ -20357,8 +20912,6 @@ function menu.createOrderparamWareContext(frame, instance)
 			end
 		end
 	end
-
-	table.sort(menu.contextMenuData.wares, Helper.sortWareName)
 
 	-- do this first so we still have a table row for the buttons before the list can use them all up
 	local buttontable
@@ -20659,7 +21212,7 @@ function menu.createOrderparamFormationShapeContext(frame, instance)
 	end
 end
 
-function menu.defaultInteraction(component, posrot, posrotvalid, offsetx, offsety)
+function menu.defaultInteraction(component, posrot, posrotvalid, offsetx, offsety, modified)
 	local occupiedship = C.GetPlayerOccupiedShipID()
 	if C.IsComponentClass(component, "sector") then
 		local playerprecise = (#menu.selectedcomponents == 1)
@@ -21770,25 +22323,23 @@ function menu.createTradeContext(frame)
 			found = true
 		end
 
-		local class = ffi.string(C.GetComponentClass(ConvertStringTo64Bit(tostring(ship.shipid))))
-		local icon, primarypurpose = GetComponentData(ship.shipid, "icon", "primarypurpose")
+		local icon, primarypurpose, classid = GetComponentData(ship.shipid, "icon", "primarypurpose", "classid")
 		local i = menu.findEntryByShipIcon(sortedShips, icon)
 		if i then
 			table.insert(sortedShips[i].ships, { shipid = shipid, name = ship.name })
 		else
-			table.insert(sortedShips, { icon = icon, class = class, purpose = primarypurpose, ships = { { shipid = shipid, name = ship.name } } })
+			table.insert(sortedShips, { icon = icon, classid = classid, purpose = primarypurpose, ships = { { shipid = shipid, name = ship.name } } })
 		end
 	end
 	if (not found) and (menu.contextMenuData.currentShip ~= 0) then
 		local ship = { shipid = convertedCurrentShip, name = ffi.string(C.GetComponentName(menu.contextMenuData.currentShip)) }
 
-		local class = ffi.string(C.GetComponentClass(menu.contextMenuData.currentShip))
-		local icon, primarypurpose = GetComponentData(ship.shipid, "icon", "primarypurpose")
+		local icon, primarypurpose, classid = GetComponentData(ship.shipid, "icon", "primarypurpose", "classid")
 		local i = menu.findEntryByShipIcon(sortedShips, icon)
 		if i then
 			table.insert(sortedShips[i].ships, ship)
 		else
-			table.insert(sortedShips, { icon = icon, class = class, purpose = primarypurpose, ships = { ship } })
+			table.insert(sortedShips, { icon = icon, classid = classid, purpose = primarypurpose, ships = { ship } })
 		end
 	end
 	table.sort(sortedShips, menu.sortShipsByClassAndPurposeReverse)
@@ -21798,8 +22349,8 @@ function menu.createTradeContext(frame)
 		table.sort(data.ships, Helper.sortName)
 		for _, ship in ipairs(data.ships) do
 			local name = "\27[" .. data.icon .. "] " .. ship.name
-			local idcode = " (" .. ffi.string(C.GetObjectIDCode(ship.shipid)) .. ")"
-			local sectorname = GetComponentData(ship.shipid, "sector")
+			local sectorname, idcode = GetComponentData(ship.shipid, "sector", "idcode")
+			idcode = " (" .. idcode .. ")"
 
 			local fontsize = Helper.scaleFont(Helper.headerRow1Font, Helper.headerRow1FontSize)
 			local namewidth = math.ceil(C.GetTextWidth(name, Helper.headerRow1Font, fontsize))
@@ -21846,12 +22397,13 @@ function menu.createTradeContext(frame)
 
 	local shipsectorname, blacklistgroup, name = "", "civilian", ""
 	if convertedCurrentShip and (convertedCurrentShip ~= 0) then
-		local loc_shipsectorname, loc_blacklistgroup, loc_name, loc_icon = GetComponentData(convertedCurrentShip, "sector", "blacklistgroup", "name", "icon")
+		local loc_shipsectorname, loc_blacklistgroup, loc_name, loc_icon, loc_idcode = GetComponentData(convertedCurrentShip, "sector", "blacklistgroup", "name", "icon", "idcode")
 		shipsectorname = loc_shipsectorname
 		blacklistgroup = loc_blacklistgroup
-		name = "\27[" .. loc_icon .. "] " .. loc_name .. " (" .. ffi.string(C.GetObjectIDCode(convertedCurrentShip)) .. ")"
+		name = "\27[" .. loc_icon .. "] " .. loc_name .. " (" .. loc_idcode .. ")"
 	end
-	local stationsector = ConvertIDTo64Bit(GetComponentData(convertedTradeOfferContainer, "sectorid"))
+	local stationsector, othername, idcode = GetComponentData(convertedTradeOfferContainer, "sectorid", "name", "idcode")
+	stationsector = ConvertIDTo64Bit(stationsector)
 
 	-- title
 	local row = shiptable:addRow(true, { fixed = true, bgColor = Color["row_title_background"] })
@@ -21860,7 +22412,7 @@ function menu.createTradeContext(frame)
 	row[1]:setText2Properties({ halign = "right", fontsize = Helper.headerRow1FontSize, x = Helper.standardTextOffsetx })
 	row[1].handlers.onDropDownConfirmed = menu.dropdownShip
 
-	local othername = Helper.unlockInfo(IsInfoUnlockedForPlayer(convertedTradeOfferContainer, "name"), ffi.string(C.GetComponentName(menu.contextMenuData.component)) .. " (" .. ffi.string(C.GetObjectIDCode(menu.contextMenuData.component)) .. ")")
+	othername = Helper.unlockInfo(IsInfoUnlockedForPlayer(convertedTradeOfferContainer, "name"), othername .. " (" .. idcode .. ")")
 	local color = Color["text_normal"]
 	if isplayertradeoffercontainer then
 		color = Color["text_player"]
@@ -22040,12 +22592,12 @@ function menu.createTradeContext(frame)
 					local mouseovertext = ""
 					for i, reservation in ipairs(reservationref[waredata.ware].selloffer) do
 						if (not waredata.mission) or (waredata.mission == reservation.mission) then
-							local isplayerowned = GetComponentData(ConvertStringTo64Bit(tostring(reservation.reserver)), "isplayerowned")
+							local isplayerowned, name, idcode = GetComponentData(ConvertStringTo64Bit(tostring(reservation.reserver)), "isplayerowned", "name", "idcode")
 							if isplayerowned or isplayertradeoffercontainer then
 								if mouseovertext ~= "" then
 									mouseovertext = mouseovertext .. "\n"
 								end
-								local name = (isplayerowned and ColorText["text_player"] or "") .. ffi.string(C.GetComponentName(reservation.reserver)) .. " (" .. ffi.string(C.GetObjectIDCode(reservation.reserver)) .. ")\27X"
+								local name = (isplayerowned and ColorText["text_player"] or "") .. name .. " (" .. idcode .. ")\27X"
 								mouseovertext = mouseovertext .. name .. " - " .. (waredata.mission and ColorText["text_mission"] or "") .. ReadText(1001, 1202) .. ReadText(1001, 120) .. " " .. ConvertIntegerString(reservation.amount, true, 0, true) .. "\27X"
 							end
 						end
@@ -22063,12 +22615,12 @@ function menu.createTradeContext(frame)
 					local mouseovertext = ""
 					for i, reservation in ipairs(reservationref[waredata.ware].buyoffer) do
 						if (not waredata.mission) or (waredata.mission == reservation.mission) then
-							local isplayerowned = GetComponentData(ConvertStringTo64Bit(tostring(reservation.reserver)), "isplayerowned")
+							local isplayerowned, name, idcode = GetComponentData(ConvertStringTo64Bit(tostring(reservation.reserver)), "isplayerowned", "name", "idcode")
 							if isplayerowned or isplayertradeoffercontainer then
 								if mouseovertext ~= "" then
 									mouseovertext = mouseovertext .. "\n"
 								end
-								local name = (isplayerowned and ColorText["text_player"] or "") .. ffi.string(C.GetComponentName(reservation.reserver)) .. " (" .. ffi.string(C.GetObjectIDCode(reservation.reserver)) .. ")\27X"
+								local name = (isplayerowned and ColorText["text_player"] or "") .. name .. " (" .. idcode .. ")\27X"
 								mouseovertext = mouseovertext .. name .. " - " .. (waredata.mission and ColorText["text_mission"] or "") .. ReadText(1001, 1202) .. ReadText(1001, 120) .. " " .. ConvertIntegerString(reservation.amount, true, 0, true) .. "\27X"
 							end
 						end
@@ -23856,14 +24408,6 @@ function menu.createRenameContext(frame)
 	row[2]:createButton({  }):setText(ReadText(1001, 64), { halign = "center" })
 	row[2].handlers.onClick = function () return menu.closeContextMenu("back") end
 
-	-- [UniTrader's Advanced Renaming] Forleyor start: callback
-	if menu.uix_callbacks ["utRenaming_createRenameContext_on_after_confirm_button"] then
-		for uix_id, uix_callback in pairs (menu.uix_callbacks ["utRenaming_createRenameContext_on_after_confirm_button"]) do
-			startname = uix_callback (frame, shiptable)
-		end
-	end
-	-- [UniTrader's Advanced Renaming] Forleyor end: callback
-
 	-- adjust frame position
 	local neededheight = shiptable.properties.y + shiptable:getVisibleHeight()
 	if frame.properties.y + neededheight + Helper.frameBorder > Helper.viewHeight then
@@ -23972,7 +24516,8 @@ function menu.contextChangeLogoButtonIcon2Color(logo)
 end
 
 function menu.createHireContext(frame)
-	local isplayerowned = GetComponentData(menu.contextMenuData.hireObject, "isplayerowned")
+	local isplayerowned, name, idcode = GetComponentData(menu.contextMenuData.hireObject, "isplayerowned", "name", "idcode")
+	idcode = " (" .. idcode .. ")"
 
 	local ftable = frame:addTable(2, { tabOrder = 2, x = Helper.borderSize, y = Helper.borderSize, width = menu.contextMenuData.width, highlightMode = "off" })
 
@@ -23987,9 +24532,6 @@ function menu.createHireContext(frame)
 
 	-- title
 	local row = ftable:addRow(nil, { fixed = true })
-
-	local name = ffi.string(C.GetComponentName(menu.contextMenuData.hireObject))
-	local idcode = " (" .. ffi.string(C.GetObjectIDCode(menu.contextMenuData.hireObject)) .. ")"
 
 	local halign = "center"
 	if math.ceil(C.GetTextWidth(name .. idcode, Helper.headerRow1Font, Helper.scaleFont(Helper.headerRow1Font, Helper.headerRow1FontSize))) > menu.contextMenuData.width - 2 * Helper.scaleX(Helper.standardButtonWidth) then
@@ -24343,7 +24885,7 @@ function menu.createUserQuestionContext(frame)
 
 		local row = ftable:addRow(false, { fixed = true })
 		row[1]:setColSpan(numCols):createText(ReadText(1001, 3428), { wordwrap = true })
-	elseif menu.contextMenuData.mode == "removeplot" then 
+	elseif menu.contextMenuData.mode == "removeplot" then
 		local row = ftable:addRow(false, { fixed = true })
 		row[1]:setColSpan(numCols):createText(ReadText(1001, 11664), Helper.headerRowCenteredProperties)
 
@@ -24554,7 +25096,7 @@ function menu.buttonRenameConfirm(isconfirmed)
 					uix_callback ()
 				end
 			end
-			table.sort(menu.contextMenuData.uix_multiRename_objects, function (a, b) return menu.sortDanger(a, b, true) end)
+			table.sort(menu.contextMenuData.uix_multiRename_objects, function (a, b) return menu.uix_sortDanger(a, b, true) end)
 			for uix_index, uix_object in ipairs(menu.contextMenuData.uix_multiRename_objects) do
 				local isplayerowned = GetComponentData(ConvertStringTo64Bit(tostring(uix_object)), "isplayerowned")
 				if isplayerowned then
@@ -24562,12 +25104,12 @@ function menu.buttonRenameConfirm(isconfirmed)
 					SetComponentName(uix_object, uix_name)
 					-- local dpsTable = ffi.new("DPSData[?]", 6)
 					-- C.GetDefensibleDPS(dpsTable, uix_object, true, true, true, false, true, false, false)
-					-- Helper.debugText_forced(ffi.string(C.GetObjectIDCode(uix_object)), dpsTable[0].dps)
-					-- Helper.debugText_forced("    ", dpsTable[1].dps)
-					-- Helper.debugText_forced("    ", dpsTable[2].dps)
-					-- Helper.debugText_forced("    ", dpsTable[3].dps)
-					-- Helper.debugText_forced("    ", dpsTable[4].dps)
-					-- Helper.debugText_forced("    ", dpsTable[5].dps)
+					-- Helper.debugText(ffi.string(C.GetObjectIDCode(uix_object)), dpsTable[0].dps)
+					-- Helper.debugText("    ", dpsTable[1].dps)
+					-- Helper.debugText("    ", dpsTable[2].dps)
+					-- Helper.debugText("    ", dpsTable[3].dps)
+					-- Helper.debugText("    ", dpsTable[4].dps)
+					-- Helper.debugText("    ", dpsTable[5].dps)
 				end
 			end
 			if menu.uix_callbacks ["buttonRenameConfirm_onMultiRename_on_after_rename"] then
@@ -24596,10 +25138,10 @@ function menu.buttonRenameConfirm(isconfirmed)
 				C.SetFleetName(menu.contextMenuData.component, menu.contextMenuData.newtext)
 			else
 				-- kuertee start: debug
-				local uix_name_old = GetComponentData(menu.contextMenuData.component, "name")
-				local uix_idcode = C.GetObjectIDCode(menu.contextMenuData.component)
-				-- Helper.debugText_forced(menu.contextMenuData.component, uix_name_old .. tostring(uix_idcode))
-				-- Helper.debugText_forced("newtext", menu.contextMenuData.newtext)
+				-- local uix_name_old = GetComponentData(menu.contextMenuData.component, "name")
+				-- local uix_idcode = C.GetObjectIDCode(menu.contextMenuData.component)
+				-- Helper.debugText(menu.contextMenuData.component, uix_name_old .. tostring(uix_idcode))
+				-- Helper.debugText("newtext", menu.contextMenuData.newtext)
 				-- kuertee end: debug
 
 				SetComponentName(menu.contextMenuData.component, menu.contextMenuData.newtext)
@@ -25920,7 +26462,7 @@ function menu.createSellShipsContext(frame)
 				break
 			end
 		end
-		local hasanymod = GetComponentData(data, "hasanymod")
+		local hasanymod, name, idcode = GetComponentData(data, "hasanymod", "name", "idcode")
 		if hasanymod then
 			warnings[1] = ReadText(1001, 3268)
 		end
@@ -25938,7 +26480,7 @@ function menu.createSellShipsContext(frame)
 
 		-- keep these selectable to support scrolling when selling a lot of ships
 		local row = ftable:addRow(true, { interactive = false })
-		row[1]:createText(ffi.string(C.GetComponentName(ship)) .. " (" .. ffi.string(C.GetObjectIDCode(ship)) .. ")", { color = color })
+		row[1]:createText(name .. " (" .. idcode .. ")", { color = color })
 		row[2]:createText(ConvertMoneyString(price, false, true, 0, true) .. " " .. ReadText(1001, 101), { halign = "right", color = color })
 
 		for _, error in ipairs(errors) do
@@ -26146,6 +26688,10 @@ function menu.onUpdate()
 
 			if menu.focuscomponent then
 				C.SetFocusMapComponent(menu.holomap, menu.focuscomponent, true)
+
+				-- kuertee start: center on map
+				menu.uix_centerOnMap_lastObject = menu.focuscomponent
+				-- kuertee end
 			end
 
 			if menu.mapstate then
@@ -26178,6 +26724,9 @@ function menu.onUpdate()
 					C.SetMapOrderParamObjectFilter(menu.holomap, ConvertStringTo64Bit(tostring(menu.modeparam[4])), menu.modeparam[5], menu.modeparam[6])
 				end
 				C.ClearMapObjectFilter(menu.holomap)
+			elseif menu.mode == "diplomaticactionparam_object" then
+				C.SetMapDiplomaticActionTargetObjectFilter(menu.holomap, menu.modeparam[1], menu.modeparam[2])
+				C.ClearMapObjectFilter(menu.holomap)
 			else
 				C.ClearMapOrderParamObjectFilter(menu.holomap)
 				C.ClearMapObjectFilter(menu.holomap)
@@ -26186,7 +26735,7 @@ function menu.onUpdate()
 				C.SetMapBehaviourInspectionComponent(menu.holomap, menu.behaviourInspectionComponent)
 			end
 			menu.setTextFilter()
-			menu.applyFilterSettings()
+			menu.applyFilterSettings(true)
 
 			menu.activatemap = false
 			if menu.infoTableMode == "objectlist" then
@@ -26224,6 +26773,27 @@ function menu.onUpdate()
 				if C.IsCurrentBuildMapPlotPositionDiscovered(offsetsector, offset, menu.plotData.size.x * 1000, menu.plotData.size.y * 1000, menu.plotData.size.z * 1000) then
 					local price = tonumber(C.GetBuildPlotPrice(offsetsector, offset, menu.plotData.size.x * 1000, menu.plotData.size.y * 1000, menu.plotData.size.z * 1000, "player"))
 					SetMouseOverOverride(menu.map, ReadText(1001, 2808) .. ReadText(1001, 120) .. " " .. ConvertMoneyString(tostring(price), false, true, 0, true) .. " " .. ReadText(1001, 101))
+				else
+					SetMouseOverOverride(menu.map, nil)
+				end
+			end
+		elseif menu.mode == "diplomaticactionparam_object" then
+			local pickedcomponent = C.GetPickedMapComponent(menu.holomap)
+			if pickedcomponent ~= 0 then
+				local convertedComponent = ConvertStringTo64Bit(tostring(pickedcomponent))
+				if menu.checkForDiplomaticActionParamObject(convertedComponent) then
+					local owner, ownername, classid = GetComponentData(convertedComponent, "owner", "ownername", "classid")
+					if Helper.isComponentClass(classid, "station") then
+						local cooldownendtime = C.GetDiplomacyActionCooldownEndTime(menu.modeparam[1], owner, false)
+						if cooldownendtime >= 0 then
+							local timeleft = cooldownendtime - C.GetCurrentGameTime()
+							SetMouseOverOverride(menu.map, ownername .. " - " .. ReadText(1001, 12924) .. ReadText(1001, 120) .. " " .. ConvertTimeString(timeleft, (timeleft < 3600) and ReadText(1001, 209) or ReadText(1001, 207)))
+						else
+							SetMouseOverOverride(menu.map, ownername)
+						end
+					else
+						SetMouseOverOverride(menu.map, nil)
+					end
 				else
 					SetMouseOverOverride(menu.map, nil)
 				end
@@ -26723,14 +27293,14 @@ function menu.onRowChanged(row, rowdata, uitable, modified, input, source)
 				if type(rowdata) == "table" then
 					local convertedComponent = ConvertIDTo64Bit(rowdata[2])
 					if (source ~= "auto") and convertedComponent then
-						local convertedcomponentclass = ffi.string(C.GetComponentClass(convertedComponent))
-						if convertedcomponentclass  == "station" then
+						local classid, realclassid = GetComponentData(rowdata[2], "classid", "realclassid")
+						if Helper.isComponentClass(realclassid, "station") then
 							AddUITriggeredEvent(menu.name, "selection_station", convertedComponent)
 						end
-						if (convertedcomponentclass  == "ship_s") or (convertedcomponentclass  == "ship_m") or (convertedcomponentclass  == "ship_l") or (convertedcomponentclass  == "ship_xl") then
+						if Helper.isComponentClass(classid, "ship") then
 							AddUITriggeredEvent(menu.name, "selection_ship", convertedComponent)
 						end
-						if (convertedcomponentclass == "resourceprobe") then
+						if Helper.isComponentClass(classid, "resourceprobe") then
 							AddUITriggeredEvent(menu.name, "selection_resourceprobe", convertedComponent)
 						end
 
@@ -26908,8 +27478,8 @@ function menu.onSelectElement(uitable, modified, row, isdblclick, input)
 					menu.setSelectedMapComponents()
 
 					if convertedRowComponent and (convertedRowComponent ~= 0) then
-						local isonlineobject, isplayerowned = GetComponentData(rowdata[2], "isonlineobject", "isplayerowned")
-						if (isdblclick or (input ~= "mouse")) and (ffi.string(C.GetComponentClass(convertedRowComponent)) ~= "sector") then
+						local isonlineobject, isplayerowned, classid = GetComponentData(rowdata[2], "isonlineobject", "isplayerowned", "classid")
+						if (isdblclick or (input ~= "mouse")) and (not Helper.isComponentClass(classid, "sector")) then
 							if string.find(rowdata[1], "subordinates") then
 								local subordinates = menu.infoTableData.left.subordinates[tostring(rowdata[2])] or {}
 								local groups = {}
@@ -26942,6 +27512,13 @@ function menu.onSelectElement(uitable, modified, row, isdblclick, input)
 							else
 								C.SetFocusMapComponent(menu.holomap, convertedRowComponent, true)
 							end
+						end
+					elseif rowdata[1] == "fleetunit" then
+						local fleetunit = rowdata[3].fleetunit
+						local info = C.GetFleetUnitInfo(fleetunit)
+						if info.buildtaskid ~= 0 then
+							local buildtaskinfo = C.GetBuildTaskInfo(info.buildtaskid)
+							C.SetFocusMapComponent(menu.holomap, buildtaskinfo.buildingcontainer, true)
 						end
 					end
 				end
@@ -27042,8 +27619,8 @@ function menu.onRenderTargetSelect(modified)
 				end
 			else
 				local pickedcomponent = C.GetPickedMapComponent(menu.holomap)
-				local pickedcomponentclass = ffi.string(C.GetRealComponentClass(pickedcomponent))
-				if (pickedcomponentclass == "station") and GetComponentData(ConvertStringToLuaID(tostring(pickedcomponent)), "isplayerowned") then
+				local realclassid, isplayerowned = GetComponentData(ConvertStringToLuaID(tostring(pickedcomponent)), "realclassid", "isplayerowned")
+				if Helper.isComponentClass(realclassid, "station") and isplayerowned then
 					station = pickedcomponent
 				end
 			end
@@ -27092,8 +27669,6 @@ function menu.onRenderTargetSelect(modified)
 			local pickedorder = ffi.new("Order")
 			local isintermediate = ffi.new("bool[1]", 0)
 			local pickedordercomponent = C.GetPickedMapOrder(menu.holomap, pickedorder, isintermediate)
-			local pickedcomponentclass = ffi.string(C.GetComponentClass(pickedcomponent))
-			local ispickedcomponentship = C.IsComponentClass(pickedcomponent, "ship") and not C.IsUnit(pickedcomponent)
 			local pickedtradeoffer = C.GetPickedMapTradeOffer(menu.holomap)
 			if pickedordercomponent ~= 0 then
 				local sectorcontext = C.GetContextByClass(pickedordercomponent, "sector", false)
@@ -27123,6 +27698,8 @@ function menu.onRenderTargetSelect(modified)
 				end
 			elseif pickedcomponent ~= 0 then
 				local pickedcomponent64 = ConvertStringTo64Bit(tostring(pickedcomponent))
+				local pickedcomponentclassid, pickedcomponentrealclassid, isunit = GetComponentData(pickedcomponent64, "classid", "realclassid", "isunit")
+				local ispickedcomponentship = Helper.isComponentClass(pickedcomponentclassid, "ship") and (not isunit)
 				if (not menu.sound_selectedelement) or (menu.sound_selectedelement ~= pickedcomponent) or (modified == "ctrl") or (modified == "shift") then
 					local isselected = menu.isSelectedComponent(pickedcomponent)
 					if (not isselected) and (modified == "shift") then
@@ -27133,7 +27710,7 @@ function menu.onRenderTargetSelect(modified)
 						else
 							PlaySound("ui_positive_multiselect")
 						end
-					elseif (pickedcomponentclass == "sector") then
+					elseif Helper.isComponentClass(pickedcomponentclassid, "sector") then
 						PlaySound("ui_positive_deselect")
 					else
 						PlaySound("ui_positive_select")
@@ -27148,7 +27725,7 @@ function menu.onRenderTargetSelect(modified)
 					menu.setInfoSubmenuObjectAndRefresh(pickedcomponent64)
 				end
 
-				if pickedcomponentclass == "sector" then
+				if Helper.isComponentClass(pickedcomponentclassid, "sector") then
 					AddUITriggeredEvent(menu.name, "selection_reset")
 					menu.clearSelectedComponents()
 					if pickedcomponent ~= menu.currentsector then
@@ -27157,10 +27734,10 @@ function menu.onRenderTargetSelect(modified)
 					end
 				elseif (#menu.searchtext == 0) or Helper.textArrayHelper(menu.searchtext, function (numtexts, texts) return C.FilterComponentByText(pickedcomponent, numtexts, texts, true) end, "text") then
 					local isconstruction = IsComponentConstruction(pickedcomponent64)
-					if (C.IsComponentOperational(pickedcomponent) and (pickedcomponentclass ~= "player") and (not menu.createInfoFrameRunning)) or
-						(pickedcomponentclass == "gate") or (pickedcomponentclass == "asteroid") or isconstruction
+					if (C.IsComponentOperational(pickedcomponent) and (not Helper.isComponentClass(pickedcomponentclassid, "player")) and (not menu.createInfoFrameRunning)) or
+						Helper.isComponentClass(pickedcomponentclassid, "gate") or Helper.isComponentClass(pickedcomponentclassid, "asteroid") or isconstruction
 					then
-						if C.IsComponentClass(pickedcomponent, "highway") then
+						if Helper.isComponentClass(pickedcomponentclassid, "highway") then
 							menu.currentsector = C.ConvertStringTo64Bit(tostring(GetComponentData(ConvertStringToLuaID(tostring(pickedcomponent)), "sourcesector") or 0))
 						else
 							menu.currentsector = C.GetContextByClass(pickedcomponent, "sector", false)
@@ -27169,13 +27746,13 @@ function menu.onRenderTargetSelect(modified)
 						if modified == "ctrl" then
 							menu.toggleSelectedComponent(pickedcomponent)
 						else
-							if pickedcomponentclass == "station" then
+							if Helper.isComponentClass(pickedcomponentrealclassid, "station") then
 								AddUITriggeredEvent(menu.name, "selection_station", pickedcomponent64)
 							end
-							if (pickedcomponentclass == "ship_s") or (pickedcomponentclass == "ship_m") or (pickedcomponentclass == "ship_l") or (pickedcomponentclass == "ship_xl") then
+							if Helper.isComponentClass(pickedcomponentclassid, "ship") then
 								AddUITriggeredEvent(menu.name, "selection_ship", pickedcomponent64)
 							end
-							if (pickedcomponentclass == "resourceprobe") then
+							if Helper.isComponentClass(pickedcomponentclassid, "resourceprobe") then
 								AddUITriggeredEvent(menu.name, "selection_resourceprobe", pickedcomponent64)
 							end
 
@@ -27188,10 +27765,10 @@ function menu.onRenderTargetSelect(modified)
 									-- kuertee end:
 
 									local isdeployable = GetComponentData(pickedcomponent64, "isdeployable")
-									if isdeployable or (pickedcomponentclass == "lockbox") or (pickedcomponentclass == "collectablewares") then
+									if isdeployable or Helper.isComponentClass(pickedcomponentclassid, "lockbox") or Helper.isComponentClass(pickedcomponentclassid, "collectablewares") then
 										newmode = "deployables"
 									elseif menu.objectMode ~= "objectall" then
-										if C.IsRealComponentClass(pickedcomponent, "station") then
+										if Helper.isComponentClass(pickedcomponentrealclassid, "station") then
 											newmode = "stations"
 										elseif ispickedcomponentship then
 											local found = false
@@ -27217,10 +27794,10 @@ function menu.onRenderTargetSelect(modified)
 
 									local isplayerowned, isdeployable = GetComponentData(pickedcomponent64, "isplayerowned", "isdeployable")
 									if isplayerowned then
-										if isdeployable or (pickedcomponentclass == "lockbox") or (pickedcomponentclass == "collectablewares") then
+										if isdeployable or Helper.isComponentClass(pickedcomponentclassid, "lockbox") or Helper.isComponentClass(pickedcomponentclassid, "collectablewares") then
 											newmode = "deployables"
 										elseif menu.propertyMode ~= "propertyall" then
-											if C.IsRealComponentClass(pickedcomponent, "station") then
+											if Helper.isComponentClass(pickedcomponentrealclassid, "station") then
 												newmode = "stations"
 											elseif ispickedcomponentship then
 												local found = false
@@ -27309,6 +27886,27 @@ end
 function menu.onRenderTargetDoubleClick(modified)
 	local pickedcomponent = C.GetPickedMapComponent(menu.holomap)
 	if pickedcomponent ~= 0 then
+
+		-- kuertee start: callback
+		local uix_isCancelEgosoftDoubleClickFunc, uix_cancelReason
+		if menu.uix_callbacks ["onRenderTargetDoubleClick_at_start"] then
+			for uix_id, uix_callback in pairs(menu.uix_callbacks ["onRenderTargetDoubleClick_at_start"]) do
+				local uix_return1, uix_return2 = uix_callback(modified, pickedcomponent)
+				if uix_return1 then
+					uix_isCancelEgosoftDoubleClickFunc = true
+				end
+				uix_cancelReason = uix_return2
+				-- uix_cancelReason is for debug purposes.
+				-- if tracking down why double-click has been cancelled, uncomment these 2 lines:
+				-- Helper.debugText("menu_map onRenderTargetDoubleClick uix_isCancelEgosoftDoubleClickFunc", uix_isCancelEgosoftDoubleClickFunc)
+				-- Helper.debugText("menu_map onRenderTargetDoubleClick uix_cancelReason", uix_cancelReason)
+			end
+			if uix_isCancelEgosoftDoubleClickFunc then
+				return
+			end
+		end
+		-- kuertee end: callback
+
 		if not C.IsComponentClass(pickedcomponent, "sector") then
 			if modified == "shift" then
 				C.AddSimilarMapComponentsToSelection(menu.holomap, pickedcomponent)
@@ -27316,9 +27914,14 @@ function menu.onRenderTargetDoubleClick(modified)
 
 				-- kuertee start: center on map
 				-- C.SetFocusMapComponent(menu.holomap, pickedcomponent, true)
-				menu.uix_centerOnMap(pickedcomponent)
 				-- kuertee end
 			end
+
+			-- kuertee start: center on map
+			if modified ~= "shift" then
+				menu.uix_centerOnMap(pickedcomponent)
+			end
+			-- kuertee end
 
 			local components = {}
 			Helper.ffiVLA(components, "UniverseID", C.GetNumMapSelectedComponents, C.GetMapSelectedComponents, menu.holomap)
@@ -27333,6 +27936,14 @@ function menu.onRenderTargetDoubleClick(modified)
 			menu.uix_centerOnMap(pickedcomponent)
 		-- kuertee end
 		end
+
+		-- kuertee start: callback
+		if menu.uix_callbacks ["onRenderTargetDoubleClick_at_end"] then
+			for uix_id, uix_callback in pairs (menu.uix_callbacks ["onRenderTargetDoubleClick_at_end"]) do
+				uix_callback (modified, pickedcomponent)
+			end
+		end
+		-- kuertee end: callback
 	end
 end
 
@@ -27398,9 +28009,9 @@ function menu.onRenderTargetMouseDown(modified)
 	end
 
 	-- kuertee start: distance tool
-	distanceTool_from_posRot = ffi.new("UIPosRot")
+	uix_distanceTool_from_posRot = ffi.new("UIPosRot")
 	local eclipticoffset = ffi.new("UIPosRot")
-	distanceTool_from_component = C.GetMapPositionOnEcliptic2(menu.holomap, distanceTool_from_posRot, false, 0, eclipticoffset)
+	uix_distanceTool_from_component = C.GetMapPositionOnEcliptic2(menu.holomap, uix_distanceTool_from_posRot, false, 0, eclipticoffset)
     -- kuertee end
 end
 
@@ -27524,11 +28135,13 @@ function menu.onRenderTargetRightMouseDown()
 		menu.closeContextMenu()
 	end
 	menu.rightdown = { time = getElapsedTime(), position = table.pack(GetLocalMousePosition()), dynpos = table.pack(GetLocalMousePosition()) }
-
-	if menu.mode ~= "selectbuildlocation" then
-		C.StartRotateMap(menu.holomap)
+	
+	if not C.IsMouseEmulationActive() then
+		if menu.mode ~= "selectbuildlocation" then
+			C.StartRotateMap(menu.holomap)
+		end
+		menu.rotatingmap = true
 	end
-	menu.rotatingmap = true
 	menu.noupdate = true
 end
 
@@ -27567,36 +28180,8 @@ function menu.onRenderTargetRightMouseUp(modified)
 			local posrotcomponent = C.GetMapPositionOnEcliptic2(menu.holomap, posrot, false, 0, eclipticoffset)
 
 			-- kuertee start: distance tool
-			distanceTool_to_posRot = posrot
-			distanceTool_to_component = posrotcomponent
-    
-    			Helper.distanceTool_distance = nil
-			if distanceTool_from_component and distanceTool_from_posRot then
-				local posFrom, sectorFrom, posTo, sectorTo
-				if C.IsComponentClass (distanceTool_from_component, "sector") then
-					posFrom = distanceTool_from_posRot
-					sectorFrom = distanceTool_from_component
-				else
-					posFrom = C.GetObjectPositionInSector (distanceTool_from_component)
-					sectorFrom = ConvertIDTo64Bit(GetComponentData(distanceTool_from_component, "sectorid"))
-				end
-				if C.IsComponentClass (distanceTool_to_component, "sector") then
-					posTo = distanceTool_to_posRot
-					sectorTo = distanceTool_to_component
-				else
-					posTo = C.GetObjectPositionInSector (distanceTool_to_component)
-					sectorTo = ConvertIDTo64Bit(GetComponentData(distanceTool_to_component, "sectorid"))
-				end
-				if sectorFrom == sectorTo then
-					local x_delta = math.abs (posTo.x - posFrom.x)
-					local y_delta = math.abs (posTo.y - posFrom.y)
-					local z_delta = math.abs (posTo.z - posFrom.z)
-					Helper.distanceTool_distance = math.pow (math.pow (x_delta, 2) + math.pow (y_delta, 2) + math.pow (z_delta, 2), 0.5)
-				end
-			end
-			distanceTool_from_posRot = distanceTool_to_posRot
-			distanceTool_from_component = distanceTool_to_component
-		    -- kuertee end
+			menu.uix_distanceTool(posrot, posrotcomponent)
+		    	-- kuertee end
 
 			local playerships, otherobjects, playerdeployables = menu.getSelectedComponentCategories()
 			if pickedordercomponent ~= 0 then
@@ -27626,10 +28211,12 @@ function menu.onRenderTargetRightMouseUp(modified)
 					Helper.openInteractMenu(menu, { component = pickedintersectordefense.controllableid, intersectordefencegroup = pickedintersectordefense.group, playerships = playerships, otherobjects = otherobjects, playerdeployables = playerdeployables, behaviourInspectionComponent = menu.behaviourInspectionComponent })
 				end
 			elseif pickedmission ~= 0 then
-				if menu.mode ~= nil then
-					PlaySound("ui_menu_interact_btn_selectinvalid_core")
-				else
-					Helper.openInteractMenu(menu, { mission = ConvertStringTo64Bit(tostring(pickedmission)), playerships = playerships, otherobjects = otherobjects, playerdeployables = playerdeployables, behaviourInspectionComponent = menu.behaviourInspectionComponent })
+				if C.IsStoryFeatureUnlocked("x4ep1_missionmanagement") then
+					if menu.mode ~= nil then
+						PlaySound("ui_menu_interact_btn_selectinvalid_core")
+					else
+						Helper.openInteractMenu(menu, { mission = ConvertStringTo64Bit(tostring(pickedmission)), playerships = playerships, otherobjects = otherobjects, playerdeployables = playerdeployables, behaviourInspectionComponent = menu.behaviourInspectionComponent })
+					end
 				end
 			elseif pickedtradeoffer ~= 0 then
 				if menu.mode == nil then
@@ -27687,27 +28274,29 @@ function menu.onRenderTargetRightMouseUp(modified)
 					PlaySound("ui_menu_interact_btn_selectinvalid_core")
 				end
 			elseif pickedmissionoffer ~= 0 then
-				if menu.mode == nil then
-					menu.contextMenuMode = "mission"
-					local width = Helper.scaleX(config.missionContextWidth)
-					local height = menu.prepareMissionContextData(nil, tostring(pickedmissionoffer), width)
+				if C.IsStoryFeatureUnlocked("x4ep1_missionmanagement") then
+					if menu.mode == nil then
+						menu.contextMenuMode = "mission"
+						local width = Helper.scaleX(config.missionContextWidth)
+						local height = menu.prepareMissionContextData(nil, tostring(pickedmissionoffer), width)
 
-					local offsetx = offset[1] + Helper.viewWidth / 2
-					local offsety = Helper.viewHeight / 2 - offset[2]
+						local offsetx = offset[1] + Helper.viewWidth / 2
+						local offsety = Helper.viewHeight / 2 - offset[2]
 
-					if offsetx + width > Helper.viewWidth then
-						offsetx = Helper.viewWidth - width - config.contextBorder
-					end
-					if offsety + height > Helper.viewHeight then
-						offsety = Helper.viewHeight - height - config.contextBorder
-					end
+						if offsetx + width > Helper.viewWidth then
+							offsetx = Helper.viewWidth - width - config.contextBorder
+						end
+						if offsety + height > Helper.viewHeight then
+							offsety = Helper.viewHeight - height - config.contextBorder
+						end
 
-					menu.createContextFrame(width, height, offsetx, offsety)
-					if menu.holomap ~= 0 then
-						C.SetMapRenderMissionGuidance(menu.holomap, pickedmissionoffer)
+						menu.createContextFrame(width, height, offsetx, offsety)
+						if menu.holomap ~= 0 then
+							C.SetMapRenderMissionGuidance(menu.holomap, pickedmissionoffer)
+						end
+					else
+						PlaySound("ui_menu_interact_btn_selectinvalid_core")
 					end
-				else
-					PlaySound("ui_menu_interact_btn_selectinvalid_core")
 				end
 			elseif pickedcomponent ~= 0 then
 				local convertedComponent = ConvertStringTo64Bit(tostring(pickedcomponent))
@@ -27745,6 +28334,13 @@ function menu.onRenderTargetRightMouseUp(modified)
 							menu.contextMenuMode = "select"
 							menu.createContextFrame(menu.selectWidth)
 						end
+					elseif menu.mode == "diplomaticactionparam_object" then
+						local owner = GetComponentData(convertedComponent, "owner")
+						if menu.checkForDiplomaticActionParamObject(convertedComponent) and (C.GetDiplomacyActionCooldownEndTime(menu.modeparam[1], owner, false) < 0) then
+							menu.contextMenuData = { component = convertedComponent, xoffset = offset[1] + Helper.viewWidth / 2, yoffset = Helper.viewHeight / 2 - offset[2]  }
+							menu.contextMenuMode = "select"
+							menu.createContextFrame(menu.selectWidth)
+						end
 					else
 						local missions = {}
 						Helper.ffiVLA(missions, "MissionID", C.GetNumMapComponentMissions, C.GetMapComponentMissions, menu.holomap, pickedcomponent)
@@ -27755,7 +28351,7 @@ function menu.onRenderTargetRightMouseUp(modified)
 					local offsetx = offset[1] + Helper.viewWidth / 2
 					local offsety = Helper.viewHeight / 2 - offset[2]
 
-					menu.defaultInteraction(pickedcomponent, posrot, posrotcomponent ~= 0, offsetx, offsety)
+					menu.defaultInteraction(pickedcomponent, posrot, posrotcomponent ~= 0, offsetx, offsety, modified)
 				end
 			end
 		end
@@ -27781,7 +28377,7 @@ function menu.prepareMissionContextData(missionid, missionofferid, width)
 		local missiondetails = C.GetMissionIDDetails(missionid64)
 		local onlineinfo = C.GetMissionOnlineInfo(missionid64)
 		local onlinechapter, onlineid = ffi.string(onlineinfo.chapter), ffi.string(onlineinfo.onlineid)
-		local missionGroup = C.GetMissionGroupDetails(missionid64)
+		local missionGroup = C.GetMissionGroupDetails2(missionid64)
 		local groupID = ffi.string(missionGroup.id)
 		menu.contextMenuData = {
 			isoffer = false,
@@ -27877,7 +28473,7 @@ function menu.prepareMissionContextData(missionid, missionofferid, width)
 		local name, description, difficulty, threadtype, maintype, subtype, subtypename, faction, rewardmoney, rewardtext, briefingobjectives, activebriefingstep, briefingmissions, oppfaction, licence, missiontime, duration, abortable, guidancedisabled, associatedcomponent, alertLevel, offeractor, offercomponent = GetMissionOfferDetails(ConvertStringToLuaID(missionofferid))
 		local onlineinfo = C.GetMissionOnlineInfo(missionofferid64)
 		local onlinechapter, onlineid = ffi.string(onlineinfo.chapter), ffi.string(onlineinfo.onlineid)
-		local missionGroup = C.GetMissionGroupDetails(missionofferid64)
+		local missionGroup = C.GetMissionGroupDetails2(missionofferid64)
 		local groupID = ffi.string(missionGroup.id)
 		menu.contextMenuData = {
 			isoffer = true,
@@ -28065,18 +28661,18 @@ function menu.getSelectedComponentCategories()
 
 	for id, _ in pairs(menu.selectedcomponents) do
 		local selectedcomponent = ConvertStringTo64Bit(id)
-		local isplayerowned, isdeployable = GetComponentData(selectedcomponent, "isplayerowned", "isdeployable")
+		local isplayerowned, isdeployable, classid, realclassid = GetComponentData(selectedcomponent, "isplayerowned", "isdeployable", "classid", "realclassid")
 		if isdeployable then
 			if isplayerowned then
 				table.insert(playerdeployables, selectedcomponent)
 			end
-		elseif C.IsComponentClass(selectedcomponent, "ship") then
+		elseif Helper.isComponentClass(realclassid, "ship") then
 			if isplayerowned then
 				table.insert(playerships, selectedcomponent)
 			else
 				table.insert(otherobjects, selectedcomponent)
 			end
-		elseif C.IsRealComponentClass(selectedcomponent, "station") or C.IsRealComponentClass(selectedcomponent, "ship") then
+		elseif Helper.isComponentClass(realclassid, "station") or Helper.isComponentClass(realclassid, "ship") then
 			table.insert(otherobjects, selectedcomponent)
 		end
 	end
@@ -28192,6 +28788,11 @@ function menu.onTableRightMouseClick(uitable, row, posx, posy)
 							end
 
 							local convertedRowComponent = ConvertIDTo64Bit(rowdata[2])
+
+							-- kuertee start: distance tool
+							menu.uix_distanceTool(_, convertedRowComponent)
+							-- kuertee end
+
 							local fleetunit
 							if rowdata[1] == "fleetunit" then
 								fleetunit = rowdata[3].fleetunit
@@ -28233,6 +28834,13 @@ function menu.onTableRightMouseClick(uitable, row, posx, posy)
 									end
 								elseif menu.mode == "selectComponent" then
 									if menu.checkForSelectComponent(convertedRowComponent) then
+										menu.contextMenuData = { component = convertedRowComponent, xoffset = x, yoffset = y }
+										menu.contextMenuMode = "select"
+										menu.createContextFrame(menu.selectWidth)
+									end
+								elseif menu.mode == "diplomaticactionparam_object" then
+									local owner = GetComponentData(convertedRowComponent, "owner")
+									if menu.checkForDiplomaticActionParamObject(convertedRowComponent) and (C.GetDiplomacyActionCooldownEndTime(menu.modeparam[1], owner, false) < 0) then
 										menu.contextMenuData = { component = convertedRowComponent, xoffset = x, yoffset = y }
 										menu.contextMenuMode = "select"
 										menu.createContextFrame(menu.selectWidth)
@@ -28486,45 +29094,46 @@ function menu.isInfoModeValidFor(object, mode)
 	if object == nil or object == 0 then
 		print(TraceBack())
 	end
-	local isonlineobject, isplayerowned, macro = GetComponentData(object, "isonlineobject", "isplayerowned", "macro")
+	local isonlineobject, isplayerowned, macro, classid, realclassid, isunit, isdatavault, islandmark, ismodule = GetComponentData(object, "isonlineobject", "isplayerowned", "macro", "classid", "realclassid", "isunit", "isdatavault", "islandmark", "ismodule")
 	if isplayerowned and isonlineobject then
 		return false
 	end
 
+	local isship = Helper.isComponentClass(classid, "ship")
 	if (mode == "objectinfo") or (mode == "objectlogbook") then
-		local isdatavault, islandmark = GetComponentData(object, "isdatavault", "islandmark")
-		if	C.IsComponentClass(object, "ship") or
-			C.IsRealComponentClass(object, "station") or
-			C.IsComponentClass(object, "buildstorage") or
-			C.IsComponentClass(object, "sector") or
-			C.IsComponentClass(object, "gate") or
-			C.IsComponentClass(object, "mine") or
-			C.IsComponentClass(object, "navbeacon") or
-			C.IsComponentClass(object, "resourceprobe") or
-			C.IsComponentClass(object, "satellite") or
-			C.IsComponentClass(object, "asteroid") or
-			(C.IsComponentClass(object, "object") and (isdatavault or islandmark))
+		if isship or
+			Helper.isComponentClass(realclassid, "station") or
+			Helper.isComponentClass(classid, "buildstorage") or
+			Helper.isComponentClass(classid, "sector") or
+			Helper.isComponentClass(classid, "gate") or
+			Helper.isComponentClass(classid, "mine") or
+			Helper.isComponentClass(classid, "navbeacon") or
+			Helper.isComponentClass(classid, "resourceprobe") or
+			Helper.isComponentClass(classid, "satellite") or
+			Helper.isComponentClass(classid, "asteroid") or
+			(ismodule and (mode == "objectinfo")) or 
+			(Helper.isComponentClass(classid, "object") and (isdatavault or islandmark))
 		then
 			return true
 		end
 	elseif (mode == "objectcrew") or (mode == "objectloadout") then
-		if C.IsRealComponentClass(object, "ship_xs") then
+		if Helper.isComponentClass(realclassid, "ship_xs") then
 			return false
 		elseif GetMacroData(macro, "islasertower") then
 			return false
-		elseif C.IsComponentClass(object, "ship") or C.IsComponentClass(object, "station") then
+		elseif isship or Helper.isComponentClass(classid, "station") then
 			return true
 		end
 	elseif mode == "orderqueue" then
-		if isplayerowned and C.IsComponentClass(object, "ship") and (not C.IsUnit(object)) then
+		if isplayerowned and isship and (not isunit) then
 			return true
 		end
 	elseif mode == "standingorders" then
-		if isplayerowned and (C.IsComponentClass(object, "ship") or C.IsComponentClass(object, "station")) and (not C.IsUnit(object)) then
+		if isplayerowned and (isship or Helper.isComponentClass(classid, "station")) and (not isunit) then
 			return true
 		end
 	elseif mode == "orderqueue_advanced" then
-		if isplayerowned and C.IsComponentClass(object, "ship") and (not C.IsUnit(object)) then
+		if isplayerowned and isship and (not isunit) then
 			return true
 		end
 	else
@@ -28905,26 +29514,30 @@ function menu.searchTextConfirmed(_, text, textchanged)
 end
 
 function menu.setTextFilter()
-	if menu.mode == "behaviourinspection" then
-		Helper.textArrayHelper({}, function (numtexts, texts) return C.SetMapFilterString(menu.holomap, numtexts, texts) end, "text")
-	else
-		Helper.textArrayHelper(menu.searchtext, function (numtexts, texts) return C.SetMapFilterString(menu.holomap, numtexts, texts) end, "text")
+	if menu.holomap ~= 0 then
+		if menu.mode == "behaviourinspection" then
+			Helper.textArrayHelper({}, function (numtexts, texts) return C.SetMapFilterString(menu.holomap, numtexts, texts) end, "text")
+		else
+			Helper.textArrayHelper(menu.searchtext, function (numtexts, texts) return C.SetMapFilterString(menu.holomap, numtexts, texts) end, "text")
+		end
 	end
 end
 
 function menu.setSectorFilter()
-	if menu.mode == "behaviourinspection" then
-		local components = ffi.new("UniverseID[?]", 0)
-		C.SetMapFilterSectors(menu.holomap, 0, components)
-	else
-		__CORE_DETAILMONITOR_MAPFILTER_SAVE["searchsectors"] = __CORE_DETAILMONITOR_MAPFILTER_SAVE["searchsectors"] or {}
-		local numsectors = #__CORE_DETAILMONITOR_MAPFILTER_SAVE["searchsectors"]
-		local components = ffi.new("UniverseID[?]", numsectors)
-		for i, sector in ipairs(__CORE_DETAILMONITOR_MAPFILTER_SAVE["searchsectors"]) do
-			components[i - 1] = C.ConvertStringTo64Bit(sector)
-		end
+	if menu.holomap ~= 0 then
+		if menu.mode == "behaviourinspection" then
+			local components = ffi.new("UniverseID[?]", 0)
+			C.SetMapFilterSectors(menu.holomap, 0, components)
+		else
+			__CORE_DETAILMONITOR_MAPFILTER_SAVE["searchsectors"] = __CORE_DETAILMONITOR_MAPFILTER_SAVE["searchsectors"] or {}
+			local numsectors = #__CORE_DETAILMONITOR_MAPFILTER_SAVE["searchsectors"]
+			local components = ffi.new("UniverseID[?]", numsectors)
+			for i, sector in ipairs(__CORE_DETAILMONITOR_MAPFILTER_SAVE["searchsectors"]) do
+				components[i - 1] = C.ConvertStringTo64Bit(sector)
+			end
 
-		C.SetMapFilterSectors(menu.holomap, numsectors, components)
+			C.SetMapFilterSectors(menu.holomap, numsectors, components)
+		end
 	end
 end
 
@@ -29141,6 +29754,10 @@ function menu.checkForOrderParamObject(component)
 	end
 end
 
+function menu.checkForDiplomaticActionParamObject(component)
+	return C.FilterComponentForDiplomaticActionParamObjectMode(component, menu.modeparam[1], menu.modeparam[2])
+end
+
 function menu.checkForSelectComponent(component)
 	local numclasses = menu.modeparam[2] and #menu.modeparam[2] or 0
 	local classes = ffi.new("const char*[?]", numclasses)
@@ -29323,6 +29940,7 @@ function menu.closeContextMenu(dueToClose)
 			or (menu.contextMenuMode == "venturecontactcontext")
 			or (menu.contextMenuMode == "filter_multiselectlist")
 			or (menu.contextMenuMode == "hire")
+			or (menu.contextMenuMode == "mission")
 		) then
 			menu.picking = true
 			menu.currentMouseOverTable = nil
@@ -29454,12 +30072,6 @@ function menu.onInteractMenuCallback(type, param)
 			local inventory = GetInventory(menu.contextMenuData.entity)
 			local onlineitems = OnlineGetUserItems()
 
-			-- kuertee start:
-			if not onlineitems then
-				onlineitems = {}
-			end
-			-- kuertee end
-
 			for ware, entry in pairs(inventory) do
 				local ispersonalupgrade = GetWareData(ware, "ispersonalupgrade")
 				if (not ispersonalupgrade) and (not onlineitems[ware]) then
@@ -29492,6 +30104,7 @@ function menu.onInteractMenuCallback(type, param)
 	elseif type == "renamecontext" then
 		local mousepos = C.GetCenteredMousePos()
 		menu.contextMenuMode = "rename"
+		menu.contextMenuData = { component = param[1], fleetrename = param[2], xoffset = mousepos.x + Helper.viewWidth / 2, yoffset = mousepos.y + Helper.viewHeight / 2 }
 
 		-- kuertee start: multi-rename
 		-- menu.contextMenuData = { component = param[1], fleetrename = param[2], xoffset = mousepos.x + Helper.viewWidth / 2, yoffset = mousepos.y + Helper.viewHeight / 2 }
@@ -29621,7 +30234,7 @@ function menu.onInteractMenuCallback(type, param)
 
 	-- kuertee start: center on map
 	elseif type == "uix_centeronmap" then
-		menu.uix_centerOnMap(param[1])
+		menu.uix_centerOnMap(param[1], param[2])
 	-- kuertee end: center on map
 	end
 end
@@ -29678,53 +30291,50 @@ function menu.updateSelectedComponents(modified, keepselection, changedComponent
 	if modified or keepselection then
 		for id in pairs(menu.selectedcomponents) do
 			local component = ConvertStringTo64Bit(id)
+			local isplayerowned, isdeployable, classid, realclassid = GetComponentData(component, "isplayerowned", "isdeployable", "classid", "realclassid")
 			-- keep gates, satellites, etc. selected even if they don't have their own list entries
-			if C.IsComponentClass(component, "gate") or C.IsComponentClass(component, "asteroid") or C.IsComponentClass(component, "buildstorage") or C.IsComponentClass(component, "highwayentrygate") or C.IsComponentClass(component, "highway") then
+			if Helper.isComponentClass(classid, "gate") or Helper.isComponentClass(classid, "asteroid") or Helper.isComponentClass(classid, "buildstorage") or Helper.isComponentClass(classid, "highwayentrygate") or Helper.isComponentClass(classid, "highway") then
 				table.insert(components, component)
 			end
 
 			-- kuertee start:
 			-- if menu.infoTableMode == "propertyowned" then
 			if string.find ("" .. tostring (menu.infoTableMode), "propertyowned") then
-				-- kuertee end:
+			-- kuertee end:
 
-				local isplayerowned, isdeployable = GetComponentData(component, "isplayerowned", "isdeployable")
 				if not isplayerowned then
 					-- keep npc ships selected
 					table.insert(components, component)
 				elseif menu.propertyMode ~= "propertyall" then
 					-- keep other property selected that is currently not displayed
-					if (menu.propertyMode ~= "stations") and C.IsRealComponentClass(component, "station") then
+					if (menu.propertyMode ~= "stations") and Helper.isComponentClass(realclassid, "station") then
 						table.insert(components, component)
 					end
 					if (modified ~= "ctrl") or (component ~= changedComponent) then
-						if C.IsComponentClass(component, "ship") then
+						if Helper.isComponentClass(classid, "ship") then
 							table.insert(components, component)
 						end
 					end
 				end
-				if (menu.propertyMode ~= "deployables") and (isdeployable or C.IsComponentClass(component, "lockbox") or C.IsComponentClass(component, "collectablewares")) then
+				if (menu.propertyMode ~= "deployables") and (isdeployable or Helper.isComponentClass(classid, "lockbox") or Helper.isComponentClass(classid, "collectablewares")) then
 					table.insert(components, component)
 				end
-
-				-- kuertee start:
-				-- elseif menu.infoTableMode == "objectlist" then
+			-- kuertee start:
+			-- elseif menu.infoTableMode == "objectlist" then
 			elseif string.find ("" .. tostring (menu.infoTableMode), "objectlist") then
-				-- kuertee end:
-
-				local isdeployable = GetComponentData(component, "isdeployable")
+			-- kuertee end:
 				if menu.objectMode ~= "objectall" then
 					-- keep other property selected that is currently not displayed
-					if (menu.objectMode ~= "stations") and C.IsRealComponentClass(component, "station") then
+					if (menu.objectMode ~= "stations") and Helper.isComponentClass(realclassid, "station") then
 						table.insert(components, component)
 					end
 					if (modified ~= "ctrl") or (component ~= changedComponent) then
-						if C.IsComponentClass(component, "ship") then
+						if Helper.isComponentClass(classid, "ship") then
 							table.insert(components, component)
 						end
 					end
 				end
-				if (menu.objectMode ~= "deployables") and (isdeployable or C.IsComponentClass(component, "lockbox") or C.IsComponentClass(component, "collectablewares")) then
+				if (menu.objectMode ~= "deployables") and (isdeployable or Helper.isComponentClass(classid, "lockbox") or Helper.isComponentClass(classid, "collectablewares")) then
 					table.insert(components, component)
 				end
 			end
@@ -29810,7 +30420,7 @@ function menu.updateTableSelection(lastcomponent)
 	-- if (menu.infoTableMode == "objectlist") or (menu.infoTableMode == "propertyowned") then
 	-- kuertee start:
 	if (string.find ("" .. tostring (menu.infoTableMode), "objectlist")) or (string.find ("" .. tostring (menu.infoTableMode), "propertyowned")) then
-		-- kuertee end:
+	-- kuertee end:
 
 		-- check if sections need to be extended - if so we need a refresh
 		local refresh = false
@@ -30190,6 +30800,10 @@ function menu.upgradeMapFilterVersion()
 	if oldversion < 20 then
 		__CORE_DETAILMONITOR_MAPFILTER["other_misc_rendersatelliteradarrange"] = true
 	end
+	if oldversion < 21 then
+		__CORE_DETAILMONITOR_MAPFILTER["think_diplomacy_factioncolor_radar"] = false
+		__CORE_DETAILMONITOR_MAPFILTER["think_diplomacy_factioncolor_targetsystem"] = false
+	end
 
 	__CORE_DETAILMONITOR_MAPFILTER.version = config.mapfilterversion
 end
@@ -30214,15 +30828,15 @@ function menu.upgradeMapFilterSaveVersion()
 	__CORE_DETAILMONITOR_MAPFILTER_SAVE.version = config.mapfiltersaveversion
 end
 
-function menu.applyFilterSettings()
+function menu.applyFilterSettings(noupdate)
 	for mode, settings in pairs(config.layersettings) do
 		local active = menu.getFilterOption(mode, false) or false
 		if settings.callback then
-			settings.callback(active)
+			settings.callback(active, noupdate)
 		end
 		if active then
 			for _, setting in ipairs(settings) do
-				setting.callback(setting)
+				setting.callback(setting, nil, noupdate)
 			end
 		end
 	end
@@ -30260,7 +30874,8 @@ function menu.updateMouseCursor()
 	for id, _ in pairs(menu.selectedcomponents) do
 		local selectedcomponent = ConvertStringTo64Bit(id)
 		if IsValidComponent(selectedcomponent) then
-			if C.IsComponentClass(selectedcomponent, "ship") and GetComponentData(selectedcomponent, "isplayerowned") then
+			local isplayerowned, classid = GetComponentData(selectedcomponent, "isplayerowned", "classid")
+			if Helper.isComponentClass(classid, "ship") and isplayerowned then
 				if selectedcomponent ~= occupiedship then
 					hasplayerselectedship = true
 				end
@@ -30291,7 +30906,6 @@ function menu.updateMouseCursor()
 		local shiftpressed = C.IsShiftPressed()
 		local controlpressed = C.IsControlPressed()
 		local pickedcomponent = C.GetPickedMapComponent(menu.holomap)
-		local pickedcomponentclass = ffi.string(C.GetComponentClass(pickedcomponent))
 		local pickedorder = ffi.new("Order")
 		local buf = ffi.new("bool[1]", 0)
 		local pickedordercomponent = C.GetPickedMapOrder(menu.holomap, pickedorder, buf)
@@ -30340,24 +30954,26 @@ function menu.updateMouseCursor()
 			cursor = "trade"
 		elseif pickedcomponent ~= 0 then
 			if menu.picking then
+				local luapickedcomponent = ConvertStringToLuaID(tostring(pickedcomponent))
+				local pickedcomponentclassid, isplayerowned, isenemy = GetComponentData(luapickedcomponent, "classid", "isplayerowned", "isenemy")
 				if shiftpressed then
 					-- changing selection
-					if (pickedcomponentclass ~= "player") and (pickedcomponentclass ~= "ship_xs") and (pickedcomponentclass ~= "highwayentrygate") and (pickedcomponentclass ~= "collectablewares") and (pickedcomponentclass ~= "gate") and (pickedcomponentclass ~= "asteroid") and (pickedcomponentclass ~= "sector") then
-						if C.IsComponentOperational(pickedcomponent) and GetComponentData(ConvertStringTo64Bit(tostring(pickedcomponent)), "isplayerowned") then
+					if (not Helper.isComponentClass(pickedcomponentclassid, "player")) and (not Helper.isComponentClass(pickedcomponentclassid, "ship_xs")) and (not Helper.isComponentClass(pickedcomponentclassid, "highwayentrygate")) and (not Helper.isComponentClass(pickedcomponentclassid, "collectablewares")) and (not Helper.isComponentClass(pickedcomponentclassid, "gate")) and (not Helper.isComponentClass(pickedcomponentclassid, "asteroid")) and (not Helper.isComponentClass(pickedcomponentclassid, "sector")) then
+						if C.IsComponentOperational(pickedcomponent) and isplayerowned then
 							cursor = "cursorplus"
 						end
 					end
 				elseif controlpressed then
 					-- default interactions
-					if C.IsComponentClass(pickedcomponent, "sector") then
+					if Helper.isComponentClass(pickedcomponentclassid, "sector") then
 						if hasplayerselectedship then
 							cursor = "movehere"
 						end
-					elseif GetComponentData(ConvertStringTo64Bit(tostring(pickedcomponent)), "isenemy") then
+					elseif isenemy then
 						if hasplayerselectedship then
 							cursor = "targetred"
 						end
-					elseif C.IsComponentClass(pickedcomponent, "station") then
+					elseif Helper.isComponentClass(pickedcomponentclassid, "station") then
 						local issingleloopship
 						if menu.getNumSelectedComponents() == 1 then
 							local component = next(menu.selectedcomponents)
@@ -30371,7 +30987,7 @@ function menu.updateMouseCursor()
 							cursor = "trade"
 						end
 					end
-				elseif pickedcomponentclass ~= "player" then
+				elseif (not Helper.isComponentClass(pickedcomponentclassid, "player")) then
 					local playerships = menu.getSelectedComponentCategories()
 					for i = #playerships, 1, -1 do
 						local ship = playerships[i]
@@ -30380,7 +30996,7 @@ function menu.updateMouseCursor()
 						end
 					end
 					if #playerships > 0 then
-						if C.IsComponentClass(pickedcomponent, "sector") then
+						if Helper.isComponentClass(pickedcomponentclassid, "sector") then
 							cursor = "crossarrowsorder"
 						else
 							cursor = "cursororder"
@@ -30722,7 +31338,7 @@ function menu.setSelectComponentMode (returnsection, classlist, category, player
 	menu.refreshInfoFrame()
 end
 
-function menu.sortDistanceFromPlayer (a, b, invert)
+function menu.uix_sortDistanceFromPlayer (a, b, invert)
 	local distance_a = C.GetDistanceBetween (ConvertStringTo64Bit (tostring (a.id)), ConvertStringTo64Bit (tostring (C.GetPlayerID ())))
 	local distance_b = C.GetDistanceBetween (ConvertStringTo64Bit (tostring (b.id)), ConvertStringTo64Bit (tostring (C.GetPlayerID ())))
 	if invert then
@@ -30732,7 +31348,7 @@ function menu.sortDistanceFromPlayer (a, b, invert)
 	end
 end
 
-function menu.sortDistanceFromObject (a, b, invert)
+function menu.uix_sortDistanceFromObject (a, b, invert)
 	local distance_a = C.GetDistanceBetween (ConvertStringTo64Bit (tostring (a.id)), ConvertStringTo64Bit (tostring (menu.infoSubmenuObject)))
 	local distance_b = C.GetDistanceBetween (ConvertStringTo64Bit (tostring (b.id)), ConvertStringTo64Bit (tostring (menu.infoSubmenuObject)))
 	if invert then
@@ -30742,7 +31358,7 @@ function menu.sortDistanceFromObject (a, b, invert)
 	end
 end
 
-function menu.sortDanger (a, b, invert)
+function menu.uix_sortDanger (a, b, invert)
 	-- danger = menu.object.dps * purpose.fighter * 100
 	-- uint32_t GetDefensibleDPS(DPSData* result, UniverseID defensibleid, bool primary, bool secondary, bool lasers, bool missiles, bool turrets, bool includeheat, bool includeinactive);
 	-- local activedpstable = ffi.new("DPSData[?]", 6)
@@ -30766,7 +31382,7 @@ function menu.sortDanger (a, b, invert)
 		danger_b = danger_b * 100
 	end
 	if danger_a == danger_b then
-		return menu.sortCombinedSkill(a, b, invert)
+		return menu.uix_sortCombinedSkill(a, b, invert)
 	elseif invert then
 		return danger_a > danger_b
 	else
@@ -30774,7 +31390,7 @@ function menu.sortDanger (a, b, invert)
 	end
 end
 
-function menu.sortCombinedSkill(a, b, invert)
+function menu.uix_sortCombinedSkill(a, b, invert)
 	local name_a = GetComponentData(a, "name")
 	local name_b = GetComponentData(b, "name")
 	local idCode_a = ffi.string(C.GetObjectIDCode(a))
@@ -30814,47 +31430,118 @@ function menu.sortCombinedSkill(a, b, invert)
 end
 
 -- center on map
-function menu.uix_centerOnMap(object)
+function menu.uix_centerOnMap(object, isStaticZoom)
 	object = ConvertStringTo64Bit(tostring(object))
 	if menu.holomap and (menu.holomap ~= 0) then
-		C.SetFocusMapComponent(menu.holomap, object, true)
-		-- Helper.addDelayedOneTimeCallbackOnUpdate(function ()
-			local sector, isObjectSector
-			if C.IsComponentClass(object, "sector") then
-				isObjectSector = true
-				sector = object
-			else
-				sector = GetComponentData(object, "sectorid")
-			end
-			if IsValidComponent(sector) then
-				C.ResetMapPlayerRotation(menu.holomap)
+		local sector, isObjectSector
+		if C.IsComponentClass(object, "sector") then
+			isObjectSector = true
+			sector = object
+		else
+			sector = GetComponentData(object, "sectorid")
+		end
+		if IsValidComponent(sector) then
+			C.SetFocusMapComponent(menu.holomap, object, true)
+			C.ResetMapPlayerRotation(menu.holomap)
+			if not isStaticZoom then
+				local zooms
+				if isObjectSector then
+					zooms = menu.uix_centerOnMap_spaceZooms
+				else
+					zooms = menu.uix_centerOnMap_objectZooms
+				end
+				local isNewObject = true
+				if menu.uix_centerOnMap_lastObject then
+					menu.uix_centerOnMap_lastObject = ConvertStringTo64Bit(tostring(menu.uix_centerOnMap_lastObject))
+					if IsValidComponent(menu.uix_centerOnMap_lastObject) then
+						isNewObject = not IsSameComponent(menu.uix_centerOnMap_lastObject, object)
+					end
+				end
 				local zoomDistance
-				if object ~= menu.uix_centerOnMap_lastObject then
-					zoomDistance = menu.uix_centerOnMap_zoomFar
+				if isNewObject then
+					menu.uix_centerOnMap_currentZoomIdx = 1
+					zoomDistance = zooms[menu.uix_centerOnMap_currentZoomIdx]
 				else
 					if isObjectSector then
-						if menu.uix_centerOnMap_lastZoomDistance == menu.uix_centerOnMap_zoomNear then
-							zoomDistance = menu.uix_centerOnMap_zoomFar
-						elseif menu.uix_centerOnMap_lastZoomDistance == menu.uix_centerOnMap_zoomFar then
-							zoomDistance = menu.uix_centerOnMap_zoomVeryFar
-						else
-							zoomDistance = menu.uix_centerOnMap_zoomNear
+						menu.uix_centerOnMap_currentZoomIdx = menu.uix_getCurrentZoomIdx(zooms) + 1
+						if menu.uix_centerOnMap_currentZoomIdx > #zooms then
+							menu.uix_centerOnMap_currentZoomIdx = 1
 						end
+						zoomDistance = zooms[menu.uix_centerOnMap_currentZoomIdx]
 					else
-						if menu.uix_centerOnMap_lastZoomDistance == menu.uix_centerOnMap_zoomNear then
-							zoomDistance = menu.uix_centerOnMap_zoomFar
-						elseif menu.uix_centerOnMap_lastZoomDistance == menu.uix_centerOnMap_zoomFar then
-							zoomDistance = menu.uix_centerOnMap_zoomVeryNear
-						else
-							zoomDistance = menu.uix_centerOnMap_zoomNear
+						menu.uix_centerOnMap_currentZoomIdx = menu.uix_getCurrentZoomIdx(zooms) - 1
+						if menu.uix_centerOnMap_currentZoomIdx < 1 then
+							menu.uix_centerOnMap_currentZoomIdx = #zooms
 						end
+						zoomDistance = zooms[menu.uix_centerOnMap_currentZoomIdx]
+						local pos = C.GetObjectPositionInSector(object)
+						zoomDistance = pos.y + zooms[menu.uix_centerOnMap_currentZoomIdx]
 					end
 				end
 				C.SetMapTargetDistance(menu.holomap, zoomDistance)
-				menu.uix_centerOnMap_lastZoomDistance = zoomDistance
-				menu.uix_centerOnMap_lastObject = object
 			end
-		-- end, true, getElapsedTime() + 1)
+		end
+		menu.uix_centerOnMap_lastObject = object
+		menu.focuscomponent = nil
+		menu.mapstate = nil
+	end
+end
+
+function menu.uix_getCurrentZoomIdx(zoomDistances)
+	local mapstate = ffi.new("HoloMapState")
+	C.GetMapState(menu.holomap, mapstate)
+	local nearestIdx, nearestDistance
+	for idx, zoomDistance in ipairs(zoomDistances) do
+		local distance = math.abs(mapstate.cameradistance - zoomDistance)
+		if (not nearestIdx) or distance < nearestDistance then
+			nearestIdx = idx
+			nearestDistance = distance
+		end
+	end
+	return nearestIdx
+end
+
+function menu.uix_distanceTool(posrot, posrotcomponent)
+	if not posrot then
+		posrot = ffi.new("UIPosRot")	
+	end
+	local uix_distanceTool_selected_component = next(menu.selectedcomponents)
+	if uix_distanceTool_selected_component then
+		uix_distanceTool_from_posRot = ffi.new("UIPosRot")
+		uix_distanceTool_from_component = ConvertStringTo64Bit(tostring(uix_distanceTool_selected_component))
+	else
+		-- use uix_distanceTool_from_component set at the bottom of menu.onRenderTargetMouseDown()
+		uix_distanceTool_from_component = ConvertStringTo64Bit(tostring(uix_distanceTool_from_component))
+	end
+	Helper.uix_distanceTool_distance = nil
+	Helper.uix_distanceTool_jumps = nil
+	if uix_distanceTool_from_component and uix_distanceTool_from_posRot then
+		uix_distanceTool_to_posRot = posrot
+		uix_distanceTool_to_component = ConvertStringTo64Bit(tostring(posrotcomponent))
+		local uix_posFrom, uix_sectorFrom, uix_posTo, uix_sectorTo
+		if C.IsComponentClass(uix_distanceTool_from_component, "sector") then
+			uix_posFrom = uix_distanceTool_from_posRot
+			uix_sectorFrom = uix_distanceTool_from_component
+		else
+			uix_posFrom = C.GetObjectPositionInSector(uix_distanceTool_from_component)
+			uix_sectorFrom = ConvertIDTo64Bit(GetComponentData(uix_distanceTool_from_component, "sectorid"))
+		end
+		if C.IsComponentClass(uix_distanceTool_to_component, "sector") then
+			uix_posTo = uix_distanceTool_to_posRot
+			uix_sectorTo = uix_distanceTool_to_component
+		else
+			uix_posTo = C.GetObjectPositionInSector(uix_distanceTool_to_component)
+			uix_sectorTo = ConvertIDTo64Bit(GetComponentData(uix_distanceTool_to_component, "sectorid"))
+		end
+		if IsSameComponent(uix_sectorFrom, uix_sectorTo) then
+			local uix_x_delta = math.abs (uix_posTo.x - uix_posFrom.x)
+			local uix_y_delta = math.abs (uix_posTo.y - uix_posFrom.y)
+			local uix_z_delta = math.abs (uix_posTo.z - uix_posFrom.z)
+			Helper.uix_distanceTool_distance = math.pow(math.pow(uix_x_delta, 2) + math.pow(uix_y_delta, 2) + math.pow(uix_z_delta, 2), 0.5)
+		elseif uix_sectorFrom and uix_sectorTo then
+			local uix_gates = FindJumpRoute(uix_sectorFrom, uix_sectorTo)
+			Helper.uix_distanceTool_jumps = uix_gates
+		end
 	end
 end
 

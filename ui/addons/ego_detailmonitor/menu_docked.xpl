@@ -31,6 +31,12 @@ ffi.cdef[[
 		bool possible;
 	} DroneModeInfo;
 	typedef struct {
+		const char* id;
+		const char* name;
+		const char* description;
+		const char* iconid;
+	} ShipStanceInfo;
+	typedef struct {
 		UniverseID softtargetID;
 		const char* softtargetConnectionName;
 		uint32_t messageID;
@@ -58,7 +64,9 @@ ffi.cdef[[
 	bool CanContainerEquipShip(UniverseID containerid, UniverseID shipid);
 	bool CanContainerSupplyShip(UniverseID containerid, UniverseID shipid);
 	bool CanPerformLongRangeScan(void);
+	bool CanPlayerActivateCoverAbility(void);
 	bool CanPlayerStandUp(void);
+	bool CanShipSwitchStance(UniverseID shipid);
 	bool CanStartTravelMode(UniverseID objectid);
 	uint32_t GetAllLaserTowers(AmmoData* result, uint32_t resultlen, UniverseID defensibleid);
 	uint32_t GetAllMines(AmmoData* result, uint32_t resultlen, UniverseID defensibleid);
@@ -85,6 +93,7 @@ ffi.cdef[[
 	uint32_t GetNumBuildTasks(UniverseID containerid, UniverseID buildmoduleid, bool isinprogress, bool includeupgrade);
 	uint32_t GetNumDockedShips(UniverseID dockingbayorcontainerid, const char* factionid);
 	uint32_t GetNumDroneModes(UniverseID defensibleid, const char* dronetype);
+	uint32_t GetNumShipStances(UniverseID shipid);
 	uint32_t GetNumStoredUnits(UniverseID defensibleid, const char* cat, bool virtualammo);
 	uint32_t GetNumUnavailableUnits(UniverseID defensibleid, const char* cat);
 	uint32_t GetNumUpgradeGroups(UniverseID destructibleid, const char* macroname);
@@ -96,6 +105,9 @@ ffi.cdef[[
 	UniverseID GetPlayerID(void);
 	UniverseID GetPlayerObjectID(void);
 	UniverseID GetPlayerOccupiedShipID(void);
+	const char* GetShipActiveStance(UniverseID shipid);
+	const char* GetShipDefaultStance(UniverseID shipid);
+	uint32_t GetShipStances(ShipStanceInfo* result, uint32_t resultlen, UniverseID shipid);
 	SofttargetDetails2 GetSofttarget2(void);
 	const char* GetSubordinateGroupAssignment(UniverseID controllableid, int group);
 	float GetTextHeight(const char*const text, const char*const fontname, const float fontsize, const float wordwrapwidth);
@@ -113,6 +125,7 @@ ffi.cdef[[
 	bool IsDroneTypeArmed(UniverseID defensibleid, const char* dronetype);
 	bool IsDroneTypeBlocked(UniverseID defensibleid, const char* dronetype);
 	bool IsPlayerControlGroupValid(void);
+	bool IsPlayerCoverable(UniverseID controllableid);
 	bool IsTurretGroupArmed(UniverseID defensibleid, UniverseID contextid, const char* path, const char* group);
 	bool IsWeaponArmed(UniverseID weaponid);
 	void LaunchLaserTower(UniverseID defensibleid, const char* lasertowermacroname);
@@ -128,6 +141,8 @@ ffi.cdef[[
 	void SetDroneMode(UniverseID defensibleid, const char* dronetype, const char* mode);
 	void SetDroneTypeArmed(UniverseID defensibleid, const char* dronetype, bool arm);
 	void SetObjectCoverFaction(UniverseID objectid, const char* factionid);
+	void SetPlayerLastCoverFaction(const char* factionid);
+	void SetShipStance(UniverseID shipid, const char* stanceid);
 	void SetSubordinateGroupDockAtCommander(UniverseID controllableid, int group, bool value);
 	void SetTurretGroupArmed(UniverseID defensibleid, UniverseID contextid, const char* path, const char* group, bool arm);
 	void SetTurretGroupMode2(UniverseID defensibleid, UniverseID contextid, const char* path, const char* group, const char* mode);
@@ -426,31 +441,18 @@ function menu.display()
 
 	if menu.mode == "cockpit" then
 		local row = table_header:addRow("buttonRow1", { fixed = true })
-		-- cover button
-		local coverfaction = ""
-		if menu.currentplayership ~= 0 then
-			coverfaction = ffi.string(C.GetObjectCoverAbilityFaction(menu.currentplayership))
-		end
-		local currentcoverfaction = ffi.string(C.GetPlayerCoverFaction())
-		if coverfaction ~= "" then
-			local mouseovertext = ReadText(1026, 8611) .. ReadText(1001, 120) .. " " .. ColorText["licence"] .. GetFactionData(coverfaction, "name") .. "\27X"
-			local shortcut = GetLocalizedKeyName("action", 377)
-			if shortcut ~= "" then
-				mouseovertext = mouseovertext .. " (" .. shortcut .. ")"
-			end
-			row[1]:createButton({ mouseOverText = mouseovertext, helpOverlayID = "docked_cover", helpOverlayText = " ", helpOverlayHighlightOnly = true, uiTriggerID = "docked_cover" }):setText((currentcoverfaction == "") and ReadText(1001, 8640) or ReadText(1001, 8641), config.activeButtonTextProperties)	-- "Enable Cover"
-			row[1].handlers.onClick = function () return menu.buttonCover((currentcoverfaction == "") and coverfaction or "") end
-		else
-			row[1]:createButton(config.inactiveButtonProperties):setText("", config.inactiveButtonTextProperties)	-- dummy
-		end
+		row[1]:createButton(config.inactiveButtonProperties):setText("", config.inactiveButtonTextProperties)	-- dummy
 
 		local active = ((menu.currentplayership ~= 0) or menu.secondarycontrolpost) and C.CanPlayerStandUp()
 		row[2]:createButton(active and { mouseOverText = GetLocalizedKeyName("action", 277), helpOverlayID = "docked_getup", helpOverlayText = " ", helpOverlayHighlightOnly = true } or config.inactiveButtonProperties):setText(ReadText(1002, 20014), active and config.activeButtonTextProperties or config.inactiveButtonTextProperties)	-- "Get Up"
 		if active then
 			row[2].handlers.onClick = menu.buttonGetUp
 		end
-		row[7]:createButton({ mouseOverText = GetLocalizedKeyName("action", 316), helpOverlayID = "docked_shipinformation", helpOverlayText = " ", helpOverlayHighlightOnly = true }):setText(ReadText(1001, 8602), { halign = "center" })	-- "Ship Information"
-		row[7].handlers.onClick = menu.buttonShipInfo
+		local active = C.IsStoryFeatureUnlocked("x4ep1_map")
+		row[7]:createButton(active and { mouseOverText = GetLocalizedKeyName("action", 316), helpOverlayID = "docked_shipinformation", helpOverlayText = " ", helpOverlayHighlightOnly = true } or config.inactiveButtonProperties):setText(ReadText(1001, 8602), { halign = "center" })	-- "Ship Information"
+		if active then
+			row[7].handlers.onClick = menu.buttonShipInfo
+		end
 
 		local row = table_header:addRow("buttonRow3", { fixed = true })
 		local currentactivity = GetPlayerActivity()
@@ -598,6 +600,68 @@ function menu.display()
 		-- end: kuertee call-back
 
 		if menu.currentplayership ~= 0 then
+			table_header:addEmptyRow(yoffset / 2)
+
+			local numstances = C.GetNumShipStances(menu.currentplayership)
+			if numstances > 0 then
+				local stanceoptions = {}
+				local buf = ffi.new("ShipStanceInfo[?]", numstances)
+				numstances = C.GetShipStances(buf, numstances, menu.currentplayership)
+				for i = 0, numstances - 1 do
+					table.insert(stanceoptions, { id = ffi.string(buf[i].id), text = "\27[" .. ffi.string(buf[i].iconid) .. "] " .. ffi.string(buf[i].name), text2 = "", icon = "", displayremoveoption = false })
+				end
+				if ffi.string(C.GetShipDefaultStance(menu.currentplayership)) == "" then -- sic! If the default stance doesn't exist, we need to add a neutral option
+					table.insert(stanceoptions, 1, { id = "neutral", text = "\27[stance_neutral] " .. ReadText(1001, 8644), text2 = "", icon = "", displayremoveoption = false })
+				end
+
+				local row = table_header:addRow(true, { bgColor = Color["row_background_unselectable"] })
+				row[1]:setColSpan(6):createText(ReadText(1001, 8642))
+				row[7]:createDropDown(stanceoptions, { active = function () return C.CanShipSwitchStance(menu.currentplayership) end, startOption = function () local activestance = ffi.string(C.GetShipActiveStance(menu.currentplayership)); return (activestance == "") and "neutral" or activestance end, mouseOverText = function () return (not C.CanShipSwitchStance(menu.currentplayership)) and ReadText(1026, 8612) or "" end })
+				row[7].handlers.onDropDownConfirmed = function (_, id) if (id ~= ffi.string(C.GetShipActiveStance(menu.currentplayership))) then return C.SetShipStance(menu.currentplayership, id) end end
+			end
+			
+			-- cover button
+			local coverfaction = ""
+			if menu.currentplayership ~= 0 then
+				coverfaction = ffi.string(C.GetObjectCoverAbilityFaction(menu.currentplayership))
+			end
+			local currentcoverfaction = ffi.string(C.GetPlayerCoverFaction())
+			if coverfaction ~= "" then
+				-- story case
+				local row = table_header:addRow(true, { bgColor = Color["row_background_unselectable"] })
+				row[1]:setColSpan(6):createText(ReadText(1001, 8643))
+
+				local mouseovertext = ReadText(1026, 8611) .. ReadText(1001, 120) .. " " .. ColorText["licence"] .. GetFactionData(coverfaction, "name") .. "\27X"
+				local shortcut = GetLocalizedKeyName("action", 377)
+				if shortcut ~= "" then
+					mouseovertext = mouseovertext .. " (" .. shortcut .. ")"
+				end
+				row[7]:createButton({ active = function () return C.CanPlayerActivateCoverAbility() end, mouseOverText = mouseovertext, helpOverlayID = "docked_cover", helpOverlayText = " ", helpOverlayHighlightOnly = true, uiTriggerID = "docked_cover" }):setText((currentcoverfaction == "") and ReadText(1001, 8640) or ReadText(1001, 8641), config.activeButtonTextProperties)	-- "Enable Cover"
+				row[7].handlers.onClick = function () return menu.buttonCover((currentcoverfaction == "") and coverfaction or "") end
+			elseif C.IsPlayerCoverable(menu.currentplayership) then
+				-- general case
+				local row = table_header:addRow(true, { bgColor = Color["row_background_unselectable"] })
+				row[1]:setColSpan(6):createText(ReadText(1001, 8643))
+
+				local relations = GetLibrary("factions")
+				for i = #relations, 1, -1 do
+					local relation = relations[i]
+					if (relation.id == "player") or (relation.id == "xenon") or (relation.id == "khaak") then
+						table.remove(relations, i)
+					end
+				end
+				table.sort(relations, Helper.sortName)
+
+				local factionoptions = {}
+				for _, relation in ipairs(relations) do
+					table.insert(factionoptions, { id = relation.id, text = "\27[" .. relation.icon .. "] " .. relation.name, text2 = "", icon = "", displayremoveoption = false })
+				end
+				table.insert(factionoptions, 1, { id = "none", text = "\27[faction_ownerless] " .. ReadText(1001, 38), text2 = "", icon = "", displayremoveoption = false })
+
+				row[7]:createDropDown(factionoptions, { active = function () return C.CanPlayerActivateCoverAbility() end, startOption = (currentcoverfaction == "") and "none" or currentcoverfaction })
+				row[7].handlers.onDropDownConfirmed = function (_, id) return menu.buttonCover((id == "none") and "" or id) end
+			end
+
 			local weapons = {}
 			local numslots = tonumber(C.GetNumUpgradeSlots(menu.currentplayership, "", "weapon"))
 			for j = 1, numslots do
@@ -1034,7 +1098,7 @@ function menu.display()
 		end
 	else
 		local row = table_header:addRow("buttonRow1", { fixed = true })
-		local active = canwareexchange
+		local active = canwareexchange and C.IsStoryFeatureUnlocked("x4ep1_map")
 		local mouseovertext
 		if (not active) and isplayerowned then
 			if C.IsComponentClass(menu.currentcontainer, "ship") then
@@ -1052,7 +1116,7 @@ function menu.display()
 		if active then
 			row[2].handlers.onClick = menu.buttonGetUp
 		end
-		local active = menu.currentplayership ~= 0
+		local active = (menu.currentplayership ~= 0) and C.IsStoryFeatureUnlocked("x4ep1_map")
 		row[7]:createButton(active and { mouseOverText = GetLocalizedKeyName("action", 316), helpOverlayID = "docked_shipinfo", helpOverlayText = " ", helpOverlayHighlightOnly = true } or config.inactiveButtonProperties):setText(ReadText(1001, 8602), active and config.activeButtonTextProperties or config.inactiveButtonTextProperties)	-- "Ship Information"
 		if active then
 			row[7].handlers.onClick = menu.buttonDockedShipInfo
@@ -1506,8 +1570,12 @@ function menu.buttonCover(faction)
 	if menu.currentplayership ~= 0 then
 		coverfaction = ffi.string(C.GetObjectCoverAbilityFaction(menu.currentplayership))
 	end
-	if (faction == coverfaction) or (faction == "") then
+	local isplayercoverable = C.IsPlayerCoverable(menu.currentplayership)
+	if ((menu.currentplayership ~= 0) and isplayercoverable) or (faction == coverfaction) or (faction == "") then
 		C.SetObjectCoverFaction(menu.currentplayership, faction)
+		if isplayercoverable and (faction ~= "") then
+			C.SetPlayerLastCoverFaction(faction)
+		end
 	end
 	menu.display()
 end

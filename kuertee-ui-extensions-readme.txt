@@ -1,13 +1,22 @@
 UI Extensions and HUD
 https://www.nexusmods.com/x4foundations/mods/552
 Code: https://github.com/kuertee/x4-mod-ui-extensions
-by kuertee. Contributors: AlexandreTK, DrWhoKnows, Erixon, Forleyor, IALuir, Mycu, Runekn, sticeIO.
+by kuertee. Contributors: AlexandreTK, DrWhoKnows, DmytroK, Erixon, Forleyor, IALuir, Mycu, Runekn, sticeIO.
 
 Updates
 =======
-7.6.2, 24 Aug 2025:
+v8.0.0.8, 11 Sep 2025:
+- Tweak: 8.0 final compatibility tweaks.
+- Change log from the beta version:
+- New feature: The Distance Tool now shows the number of systems between positions if the two are in different systems.
+- New feature: The Distance Tool now works on objects in lists. Previously, it only worked on clicked objects on the map.
+- Bug-fix: The Distance Tool now works from the selected object. Previously, it would work off the last left-clicked or right-clicked position or object.
+- Bug-fix: The Distance Tool is only listed when the map is open. Previously, it was listed when the Interact Menu is opened in first-person view.
+- New feature: Map zoom function tweaks: (1) The Zone and Sector View hotkeys snap-zoom in and out across 7 zoom levels. They also do not pan to the player's location like in the base game. (2) Double-clicking on an object or sector on the map will toggle between 2 zoom levels appropriate for them. (Most times I want the map zoom levels to be at distinct levels that the smooth zoom-in/out buttons do not provide.)
 - New feature: Mycu's new callbacks in the Research menu for an unreleased mod/feature.
-- New feature: Interact Menu action Center On Map / Destination: Right-click on an object and click on Center On Map to center the object on the map without changing your selected objects. This is usable on sectors. When used on a gate, the Center On Destination action centers the gate's destination. (Based on Brinnie's mod request: https://forum.egosoft.com/viewtopic.php?t=471439&sid=a3f501f4bd3cc9a74a01dd4eb5107998.)
+- New feature: Interact Menu > Center On Map: Move the map to the object without selecting it.
+- New feature: Interact Menu > Center Destination On Map: Move the map to the gate's destination.
+- New features: callbacks in the Diplomacy Menu to better integrate menus from the Crime has consequences mod, the Reputations and professions mod, and the Social standings and citizenships mod.
 
 NOTES FOR PLAYERS:
 ==================
@@ -140,16 +149,18 @@ CHANGES BUILT INTO THIS MOD (for players)
 
 Map Menu: Distance tool
 =======================
-- Click on an object or a position on the map.
+- Click on an object or a position on the map or on a list.
 - Right-click on another object or another position on the map.
-- The distance between the two points will be listed.
+- The distance or the number jumps between the two points will be listed.
 
 Map Menu: Mission lists
 =======================
-Mission lists has an "open all/close all" button.
+Mission lists have an "open all/close all" button.
 
 Map Menu: Multi-rename
 ======================
+Note: Like the base game's single-rename function, confirming a blank entry will to revert an object's name to its default name.
+
 When renaming multiple objects, these special texts in the name will be replaced with the listed value.
 - $name: The object's current name.
 - $name_AR: The object's internal name used with UniTrader's Advanced Renaming.
@@ -177,6 +188,11 @@ Map Menu: Center On Map / Destination
 =====================================
 Right-click on an object and click on Center On Map to center the object on the map without changing your selected objects. This is usable on sectors. When used on a gate, the Center On Destination action centers the gate's destination. (Based on Brinnie's mod request: https://forum.egosoft.com/viewtopic.php?t=471439&sid=a3f501f4bd3cc9a74a01dd4eb5107998.)
 
+Map Menu: Zoom Function Tweaks
+==============================
+1. The Zone and Sector View hotkeys zoom in and out across 7 zoom levels. They also do not pan to the player's location like in the base game.
+2. Double-clicking on an object or sector on the map will toggle between 2 zoom levels appropriate for them.
+
 CHANGES BUILT INTO THIS MOD (for developers)
 ============================================
 
@@ -198,20 +214,20 @@ Add Custom Actions/Orders Group to the Interact Menu (via MD)
 4. Use the new id in Mod Support API's Add_Action function like this:
     ```xml
     ...
-      <signal_cue_instantly cue="md.Interact_Menu_API.Add_Action" param = "table[
-        $id = 'my_custom_action_1,
-        $section = 'my_custom_actions_group_id',
-        $text = 'My Custom Action 1',
-        $mouseover = 'My Custom Action 1 mouse over',
-        $callback = My_Custom_Action_1_Cue
-      ]" />
-      <signal_cue_instantly cue="md.Interact_Menu_API.Add_Action" param = "table[
-        $id = 'my_custom_action_2,
-        $section = 'my_custom_actions_group_id',
-        $text = 'My Custom Action 1',
-        $mouseover = 'My Custom Action 2 mouse over',
-        $callback = My_Custom_Action_2_Cue
-      ]" />
+    	<signal_cue_instantly cue="md.Interact_Menu_API.Add_Action" param = "table[
+    		$id = 'my_custom_action_1,
+    		$section = 'my_custom_actions_group_id',
+    		$text = 'My Custom Action 1',
+    		$mouseover = 'My Custom Action 1 mouse over',
+    		$callback = My_Custom_Action_1_Cue
+    	]" />
+    	<signal_cue_instantly cue="md.Interact_Menu_API.Add_Action" param = "table[
+    		$id = 'my_custom_action_2,
+    		$section = 'my_custom_actions_group_id',
+    		$text = 'My Custom Action 1',
+    		$mouseover = 'My Custom Action 2 mouse over',
+    		$callback = My_Custom_Action_2_Cue
+    	]" />
     ...
     ```
 5. The custom commands will be added to both the Custom Actions and Custom Orders sub-menus.
@@ -236,18 +252,52 @@ Credits
 =======
 kuertee
 Contributors:
-  AlexandreTK
-  DrWhoKnows
-  Erixon
-  Forleyor
-  IALuir
-  Mycu
-  Runekn
-  sticeIO
+	AlexandreTK
+	DrWhoKnows
+  DmytroK
+	Erixon
+	Forleyor
+	IALuir
+	Mycu
+	Runekn
+	sticeIO
 French localisation by Calvitix.
 
 History
 =======
+v8.0.0.7.1, 31 Aug 2025:
+- New feature: The Distance Tool now shows the number of systems between positions if the two are in different systems.
+- New feature: The Distance Tool now works on objects in lists. Previously, it only worked on clicked objects on the map.
+- Bug-fix: The Distance Tool now works from the selected object. Previously, it would work off the last left-clicked or right-clicked position or object.
+- Bug-fix: The Distance Tool is only listed when the map is open. Previously, it was listed when the Interact Menu is opened in first-person view.
+
+v8.0.0.7, 28 Aug 2025:
+- Tweak: 8.0 RC 1 compatibility tweaks.
+- New feature: Map zoom function tweaks: (1) The Zone and Sector View hotkeys snap-zoom in and out across 7 zoom levels. They also do not pan to the player's location like in the base game. (2) Double-clicking on an object or sector on the map will toggle between 2 zoom levels appropriate for them. (Most times I want the map zoom levels to be at distinct levels that the smooth zoom-in/out buttons do not provide.)
+- New feature: Mycu's new callbacks in the Research menu for an unreleased mod/feature.
+- Bug-fix: Missing callback from 7.6.1 in the Player Information menu that broke Mycu's Purchasable Paint Modifications mod when used in the 8.0 beta.
+
+v8.0.0.6.1, 22 Aug 2025:
+- Bug-fix: Open/close active and offered mission lists.
+
+v8.0.0.6, 17 Aug 2025:
+- New feature: Interact Menu > Center On Map: Move the map to the object without selecting it.
+- New feature: Interact Menu > Center Destination On Map: Move the map to the gate's destination.
+- Tweak: Compatibilith with the 8.0 beta hotfix 6 version of the base game.
+
+8.0.0.4, 31 Jul 2025:
+- Tweak: 8.0 beta hotfix 4 compatibility.
+
+8.0.0.3, 24 Jul 2025:
+- Tweak: 8.0 beta hotfix 3 compatibility.
+
+8.0 beta 2, 22 Jul 2025:
+- Tweak: 8.0 beta 2 compatibility. Thanks to DmytroK for merging the 8.0 beta base lua files into UIX.
+- New features: callbacks in the Diplomacy Menu to better integrate menus from the Crime has consequences mod, the Reputations and professions mod, and the Social standings and citizenships mod.
+
+8.0 beta, 13 Jul 2025:
+- Tweak: 8.0 beta compatibility. Thanks to DmytroK for merging the 8.0 beta base lua files into UIX.
+
 7.6.1, 14 Jun 2025:
 - Tweak: SWI compatibility: allow for SWI's larger plot sizes.
 
@@ -325,20 +375,20 @@ v7.5.0061 beta, 25 Jan 2025:
 - Bug-fix: The player's Inventory window wasn't opening.
 - Tweak: The Online Features button is disabled. Because its functionality is natively disabled with how UI Extensions rewrites several menu files, the button might as well be disabled.
 - Tweak: callbacks can now be assigned an id so that they can be deregistered by other mods with "menu.registerCallback(callbackName, myCallbackFunc, myId)".
-        E.g.
-        MapMenu.registerCallback("buttonToggleObjectList_on_start", myCallbackFunc, "mod_a").
-        Then another lua file can do this:
-        MapMenu.deregisterCallback("buttonToggleObjectList_on_start", nil, "mod_a").
-        This is useful when you want to override another mod's custom changes to different menus with your own mod.
-        Note that deregistering callbacks are delayed by 1 second because there is no method to ensure that the callback of another mod that is to be deregistered has been registered.
+				E.g.
+				MapMenu.registerCallback("buttonToggleObjectList_on_start", myCallbackFunc, "mod_a").
+				Then another lua file can do this:
+				MapMenu.deregisterCallback("buttonToggleObjectList_on_start", nil, "mod_a").
+				This is useful when you want to override another mod's custom changes to different menus with your own mod.
+				Note that deregistering callbacks are delayed by 1 second because there is no method to ensure that the callback of another mod that is to be deregistered has been registered.
 - New feature: callbacks of other mods can be updated (i.e. rerouted) to your own callbacks with "updateCallback(callbackName, id, myCallbackFunc)".
-        E.g. Mod_a registered a callback for "buttonToggleObjectList_on_start" with the id "mod_a".
-        And Mod_b wants to reroute that callback for its own function.
-        That callback can be rerouted like this:
-        MapMenu.updateCallback("buttonToggleObjectList_on_start", "mod_a", modb_CallbackFunc).
-        Note that rerouted callbacks will keep their original ids.
-        It might be better to deregister the callback THEN register the new callback instead.
-        Also note that updating callbacks are delayed by 1 second because there is no method to ensure that the callback of another mod that is to be updated has been registered.
+				E.g. Mod_a registered a callback for "buttonToggleObjectList_on_start" with the id "mod_a".
+				And Mod_b wants to reroute that callback for its own function.
+				That callback can be rerouted like this:
+				MapMenu.updateCallback("buttonToggleObjectList_on_start", "mod_a", modb_CallbackFunc).
+				Note that rerouted callbacks will keep their original ids.
+				It might be better to deregister the callback THEN register the new callback instead.
+				Also note that updating callbacks are delayed by 1 second because there is no method to ensure that the callback of another mod that is to be updated has been registered.
 
 v7.1.18, 12 Jan 2025:
 - New: UI Call-backs for the AEGS Faction mod by IALuir.
@@ -469,20 +519,20 @@ v6.1.001, 27 Jun 2023:
 2. Add the new Custom Actions/Orders Group Id <raise_lua_event name="'Interact_Menu_API.Add_Custom_Actions_Group_Id'" param="'my_custom_actions_group_id'" />
 3. Add the new Custom Actions/Orders Group Name <raise_lua_event name="'Interact_Menu_API.Add_Custom_Actions_Group_Text'" param="'My Custom Actions/Orders Group'" />
 4. Use the new id in Mod Support API's Add_Action function like this:
-          <signal_cue_instantly cue="md.Interact_Menu_API.Add_Action" param = "table[
-            $id = 'my_custom_action_1,
-            $section = 'my_custom_actions_group_id',
-            $text = 'My Custom Action 1',
-            $mouseover = 'My Custom Action 1 mouse over',
-            $callback = My_Custom_Action_1_Cue
-          ]" />
-          <signal_cue_instantly cue="md.Interact_Menu_API.Add_Action" param = "table[
-            $id = 'my_custom_action_2,
-            $section = 'my_custom_actions_group_id',
-            $text = 'My Custom Action 1',
-            $mouseover = 'My Custom Action 2 mouse over',
-            $callback = My_Custom_Action_2_Cue
-          ]" />
+					<signal_cue_instantly cue="md.Interact_Menu_API.Add_Action" param = "table[
+						$id = 'my_custom_action_1,
+						$section = 'my_custom_actions_group_id',
+						$text = 'My Custom Action 1',
+						$mouseover = 'My Custom Action 1 mouse over',
+						$callback = My_Custom_Action_1_Cue
+					]" />
+					<signal_cue_instantly cue="md.Interact_Menu_API.Add_Action" param = "table[
+						$id = 'my_custom_action_2,
+						$section = 'my_custom_actions_group_id',
+						$text = 'My Custom Action 1',
+						$mouseover = 'My Custom Action 2 mouse over',
+						$callback = My_Custom_Action_2_Cue
+					]" />
 
 v6.0.004, 10 May 2023:
 - Mycu's contribution: custom nested Interact Menu actions.

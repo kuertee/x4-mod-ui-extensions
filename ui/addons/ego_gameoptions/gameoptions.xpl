@@ -130,7 +130,9 @@ ffi.cdef[[
 	int32_t GetCurrentLanguage(void);
 	const char* GetCurrentSoundDevice(void);
 	const char* GetDisplayedModifierKey(const char* uimodifier);
+	bool GetDLSSAutoFrameGenOption(void);
 	const char* GetDLSSAutoMode(void);
+	const char* GetDLSSFrameGenOption(bool useconfig);
 	const char* GetDLSSModeOption(bool useconfig);
 	bool GetDLSSOption(bool useconfig);
 	bool GetEmergencyEjectOption(void);
@@ -141,6 +143,7 @@ ffi.cdef[[
 	const char* GetExtensionName(uint32_t extensionidx);
 	const char* GetExtensionVersion(const char* extensionid, bool personal);
 	bool GetForceShootingAtCursorOption(void);
+	uint32_t GetFrameRateTarget(void);
 	uint32_t GetGameStartGroups(GameStartGroupInfo* result, uint32_t resultlen);
 	const char* GetGameStartName();
 	const char* GetGameStartUIName();
@@ -179,7 +182,7 @@ ffi.cdef[[
 	bool GetOpenTrackSupportOption(void);
 	uint32_t GetPlayerAlertSounds2(SoundInfo* result, uint32_t resultlen, const char* tags);
 	const char* GetPOMOption(void);
-	const char* GetPresentModeOption(void);
+	const char* GetPresentModeOption2(bool useconfig);
 	double GetReducedSpeedModeOption(void);
 	ResolutionInfo GetRenderResolutionOption(void);
 	uint32_t GetRequestedGPU(void);
@@ -214,6 +217,7 @@ ffi.cdef[[
 	int32_t GetVolumetricFogOption(void);
 	int GetVRVivePointerHand(void);
 	bool HasExtension(const char* extensionid, bool personal);
+	bool HasFrameRateLimit(void);
 	bool HasSavegame(void);
 	void HidePromo(void);
 	void ImportColorMap(bool usedefault);
@@ -227,6 +231,8 @@ ffi.cdef[[
 	bool IsControlPressed(void);
 	bool IsCurrentGPUDiscrete(void);
 	bool IsDemoVersion(void);
+	bool IsDLSSFrameGenOptionSupported(const char* mode);
+	bool IsDLSSFrameGenSupported(void);
 	bool IsDLSSSupported(void);
 	bool IsExtensionEnabled(const char* extensionid, bool personal);
 	bool IsFSROnWithoutAA(void);
@@ -246,6 +252,7 @@ ffi.cdef[[
 	bool IsNetworkEngineEnabled(void);
 	bool IsOnlineEnabled(void);
 	bool IsOpenTrackEnabled(void);
+	bool IsPresentModeAvailable(void);
 	bool IsPresentModeOptionSupported(const char* mode);
 	bool IsRequestedGPUCurrent(void);
 	bool IsRunningOnSteamDeck(void);
@@ -282,8 +289,10 @@ ffi.cdef[[
 	void RestoreAccessibilityOptions(void);
 	void RestoreMiscOptions(void);
 	void SaveAAOption(void);
+	void SaveDLSSFrameGenOption(void);
 	void SaveDLSSModeOption(void);
 	void SaveDLSSOption(void);
+	void SavePresentModeOption(void);
 	void SaveUIUserData(void);
 	void SaveUpscalingOption(void);
 	void SetAAOption(const char* fxaa);
@@ -306,6 +315,8 @@ ffi.cdef[[
 	void SetColorBlindOptionStrength(float value);
 	void SetColorMapDefinition(const char* colorid, Color color, float glowfactor);
 	void SetColorMapReference(const char* mappingid, const char* colorid);
+	void SetDLSSAutoFrameGenOption(bool value);
+	void SetDLSSFrameGenOption(const char* value);
 	void SetDLSSModeOption(const char* value);
 	void SetDLSSOption(bool value);
 	void SetEditBoxText(const int editboxid, const char* text);
@@ -317,6 +328,8 @@ ffi.cdef[[
 	void SetLongRangeScanIndicatorOption(bool shown);
 	void SetMouseOverTextOption(bool value);
 	void SetForceShootingAtCursorOption(bool value);
+	void SetFrameRateLimit(bool limited);
+	void SetFrameRateTarget(uint32_t fps);
 	void SetGlobalLightScale(float value);
 	void SetHUDRadarActive(bool setting);
 	void SetHUDRadarSeparate(bool setting);
@@ -332,10 +345,10 @@ ffi.cdef[[
 	void SetMouseSteeringLine(bool value);
 	void SetMouseSteeringPersistent(bool value);
 	void SetMouseSteeringInvertedOption(const char* paramname, bool value);
-	void SetMultipleGfxModes(const char* aamode, const char* upmode, bool dlss, const char* dlssmode);
+	void SetMultipleGfxModes2(const char* aamode, const char* upmode, bool dlss, const char* dlssmode, const char* dlssframegen, const char* presentmode);
 	void SetOpenTrackSupportOption(bool value);
 	void SetPOMOption(const char* quality);
-	void SetPresentModeOption(const char* mode);
+	void SetPresentModeOption2(const char* mode, bool saveconfig);
 	void SetReducedSpeedModeOption(double value);
 	void SetSceneCameraActive(bool active);
 	void SetSignalLeakIndicatorOption(bool shown);
@@ -484,7 +497,7 @@ local config = {
 	standardTextOffsetX = 5,
 	infoTextOffsetX = 5,
 
-	idleTime = 10,
+	idleTime = 120,
 
 	saveReloadInterval = 60,
 
@@ -494,6 +507,8 @@ local config = {
 	numRecommendedGamestarts = 2,
 
 	minGamestartInfoRows = 8,
+
+	frameRateLimitOff = 201,
 }
 
 config.frame = {
@@ -824,6 +839,14 @@ config.input.controlFunctions = {
 		["ranges"] = {},
 		["contexts"]= { 9 },
 	},
+	[25] = {
+		["name"] = ReadText(1005, 379),
+		["definingcontrol"] = {"actions", 379},
+		["actions"] = { 379, 380 },
+		["states"] = {},
+		["ranges"] = {},
+		["contexts"]= { 1, 2, 10 },
+	},
 }
 
 config.input.controlsorder = {
@@ -839,9 +862,9 @@ config.input.controlsorder = {
 			{ "ranges", 4, { 1, 2 } },
 			{ "ranges", 10, { 1, 2 }, nil, true, mousewheelonly = true },
 			{ "states", 90, { 1, 2 } },
-			{ "ranges", 32, 2, ReadText(1026, 2629), true },
-			{ "ranges", 33, 2, ReadText(1026, 2630), true },
-			{ "ranges", 30, 2, nil, true },
+			{ "ranges", 32, 2, ReadText(1026, 2629), true, mouseaxisonly = true },
+			{ "ranges", 33, 2, ReadText(1026, 2630), true, mouseaxisonly = true },
+			{ "ranges", 30, 2, nil, true, mouseaxisonly = true },
 		},
 		[2] = {
 			["title"] = ReadText(1001, 4866),	-- "Steering: Digital"
@@ -923,6 +946,7 @@ config.input.controlsorder = {
 			{ "functions", 22 },
 			{ "functions", 21 },
 			{ "functions", 23 },
+			{ "functions", 25 },
 			{ "functions", 3 },
 			{ "functions", 5, nil, ReadText(1026, 2602) },
 			{ "functions", 6, nil, ReadText(1026, 2603) },
@@ -1020,6 +1044,7 @@ config.input.controlsorder = {
 			{ "actions", 351, { 1, 2 } },
 			{ "actions", 352, { 1, 2 } },
 			{ "actions", 377, { 1, 2 }, ReadText(1026, 4809) },
+			{ "actions", 381, { 1, 2 }, ReadText(1026, 7222) },
 		},
 		[12] = {
 			["title"] = ReadText(1001, 4815),	-- "Expert Settings - Use with Caution!"
@@ -1084,6 +1109,7 @@ config.input.controlsorder = {
 			{ "states", 46, 6 },
 			{ "states", 37, 6 },
 			{ "states", 38, 6 },
+			{ "states", 95, 6 },
 		},
 		[3] = {
 			["title"] = ReadText(1001, 2666),
@@ -1387,6 +1413,7 @@ config.optionDefinitions = {
 			id = "language",
 			name = ReadText(1001, 11765),
 			info = ReadText(1001, 11766),
+			mouseOverText = ReadText(1026, 4855),
 			valuetype = "dropdown",
 			value = function () return menu.valueOnlinePreferredLanguage() end,
 			callback = function (id, option) return menu.callbackOnlinePreferredLanguage(id, option) end,
@@ -1587,11 +1614,11 @@ config.optionDefinitions = {
 		[4] = {
 			id = "antialias",
 			name = ReadText(1001, 2620),
-			mouseOverText = function () return (not C.GetDLSSOption(false)) and ReadText(1026, 4822) or (ColorText["text_error"] ..  ReadText(1026, 4813)) end,
+			mouseOverText = function () return (ffi.string(C.GetDLSSModeOption(false)) == "off") and ReadText(1026, 4856) or (ColorText["text_error"] ..  ReadText(1026, 7218)) end,
 			valuetype = "dropdown",
 			value = function () return menu.valueGfxAA() end,
 			callback = function (id, option) return menu.callbackGfxAA(id, option) end,
-			selectable = function () return not C.GetDLSSOption(false) end,
+			selectable = function () return ffi.string(C.GetDLSSModeOption(false)) == "off" end,
 		},
 		[5] = {
 			id = "fsr1",
@@ -1605,13 +1632,33 @@ config.optionDefinitions = {
 		[6] = {
 			id = "dlss",
 			name = ReadText(1001, 12735),
-			mouseOverText = ReadText(1026, 4824),
+			mouseOverText = ReadText(1026, 4858),
 			valuetype = "dropdown",
 			value = function () return menu.valueGfxDLSS() end,
 			callback = function (id, option) return menu.callbackGfxDLSS(id, option) end,
 			display = C.IsDLSSSupported,
 		},
 		[7] = {
+			id = "dlssframegen",
+			name = "    " .. ReadText(1001, 12774),
+			mouseOverText = ReadText(1026, 7216),
+			valuetype = "dropdown",
+			value = function () return menu.valueGfxDLSSFrameGen() end,
+			callback = function (id, option) return menu.callbackGfxDLSSFrameGen(id, option) end,
+			selectable = function () return C.GetDLSSOption(false) end,
+			display = C.IsDLSSFrameGenSupported,
+		},
+		[8] = {
+			id = "dlssautoframegen",
+			name = "    " .. ReadText(1001, 12781),
+			mouseOverText = ReadText(1026, 7223),
+			valuetype = "button",
+			value = function () return C.GetDLSSAutoFrameGenOption() and ReadText(1001, 12642) or ReadText(1001, 12641) end,
+			callback = function () return menu.callbackGfxDLSSAutoFrameGen() end,
+			selectable = function () return C.GetDLSSOption(false) and (ffi.string(C.GetDLSSFrameGenOption(false)) ~= "off") end,
+			display = C.IsDLSSFrameGenSupported,
+		},
+		[9] = {
 			id = "dlssmode",
 			name = "    " .. ReadText(1001, 12736),
 			mouseOverText = ReadText(1026, 4825),
@@ -1621,7 +1668,7 @@ config.optionDefinitions = {
 			selectable = function () return C.GetDLSSOption(false) end,
 			display = C.IsDLSSSupported,
 		},
-		[8] = {
+		[10] = {
 			id = "adaptivesampling",
 			name = ReadText(1001, 7221),
 			valuetype = "dropdown",
@@ -1629,29 +1676,29 @@ config.optionDefinitions = {
 			callback = function (id, option) return menu.callbackGfxAdaptiveSampling(id, option) end,
 			display = C.IsVRVersion,
 		},
-		[9] = {
+		[11] = {
 			id = "hmd_fullscreen",
 			name = ReadText(1001, 4817),
 			value = function () return ReadText(1001, 2622), Color["text_normal"] end,
 			display = C.IsVRVersion,
 		},
-		[10] = {
+		[12] = {
 			id = "hmd_sdk",
 			name = ReadText(1001, 7214),
 			value = function () return ffi.string(C.GetTrackerSDKOption()), Color["text_normal"] end,
 			display = C.IsVRVersion,
 		},
-		[11] = {
+		[13] = {
 			id = "line",
 			display = C.IsVRVersion,
 		},
-		[12] = {
+		[14] = {
 			id = "hmd_adapter",
 			name = ReadText(1001, 2623),
 			value = function () return ffi.string(C.GetTrackerNameOption()), Color["text_normal"] end,
 			display = C.IsVRVersion,
 		},
-		[13] = {
+		[15] = {
 			id = "screendisplay",
 			name = ReadText(1001, 7210),
 			valuetype = "button",
@@ -1659,7 +1706,7 @@ config.optionDefinitions = {
 			callback = function () return menu.callbackGfxScreenDisplay() end,
 			display = C.IsVRVersion,
 		},
-		[14] = {
+		[16] = {
 			-- VR case
 			id = "resolution",
 			name = ReadText(1001, 7211),
@@ -1669,7 +1716,7 @@ config.optionDefinitions = {
 			display = C.IsVRVersion,
 			selectable = function () return menu.selectableGfxResolution() end,
 		},
-		[15] = {
+		[17] = {
 			id = "autogpu",
 			name = ReadText(1001, 11709),
 			mouseOverText = ReadText(1026, 4827),
@@ -1677,7 +1724,7 @@ config.optionDefinitions = {
 			value = function () return C.IsGPUAutomaticallySelected() and ReadText(1001, 12642) or ReadText(1001, 12641) end,
 			callback = function () return menu.callbackGfxAutoGPU() end,
 		},
-		[16] = {
+		[18] = {
 			id = "gpu",
 			name = ReadText(1001, 8920),
 			mouseOverText = ReadText(1026, 4828),
@@ -1686,7 +1733,7 @@ config.optionDefinitions = {
 			callback = function (id, option) return menu.callbackGfxGPU(id, option) end,
 			selectable = function () return menu.selectableGfxGPU() end,
 		},
-		[17] = {
+		[19] = {
 			id = "adapter",
 			name = ReadText(1001, 8921),
 			mouseOverText = ReadText(1026, 4829),
@@ -1695,15 +1742,24 @@ config.optionDefinitions = {
 			callback = function (id, option) return menu.callbackGfxAdapter(id, option) end,
 			selectable = function () return menu.selectableGfxAdapter() end,
 		},
-		[18] = {
+		[20] = {
 			id = "presentmode",
 			name = ReadText(1001, 7268),
-			mouseOverText = ReadText(1026, 4830),
+			mouseOverText = function () return C.IsPresentModeAvailable() and ReadText(1026, 4859) or (ColorText["text_error"] ..  ReadText(1026, 7217)) end,
 			valuetype = "dropdown",
 			value = function () return menu.valueGfxPresentMode() end,
 			callback = function (id, option) return menu.callbackGfxPresentMode(id, option) end,
+			selectable = function () return C.IsPresentModeAvailable() end,
 		},
-		[19] = {
+		[21] = {
+			id = "framerate",
+			name = ReadText(1001, 12778),
+			mouseOverText = ReadText(1026, 7221),
+			valuetype = "slidercell",
+			value = function () return menu.valueGfxFrameRate() end,
+			callback = function (value) return menu.callbackGfxFrameRate(value) end,
+		},
+		[22] = {
 			id = "lut",
 			name = ReadText(1001, 7238),
 			mouseOverText = ReadText(1026, 4831),
@@ -1711,7 +1767,7 @@ config.optionDefinitions = {
 			value = function () return menu.valueGfxLUT(false) end,
 			callback = function (id, option) return menu.callbackGfxLUT(id, option) end,
 		},
-		[20] = {
+		[23] = {
 			id = "gamma",
 			name = ReadText(1001, 2629),
 			mouseOverText = ReadText(1026, 4832),
@@ -1719,7 +1775,7 @@ config.optionDefinitions = {
 			value = function () return menu.valueGfxGamma() end,
 			callback = function (value) return menu.callbackGfxGamma(value) end,
 		},
-		[21] = {
+		[24] = {
 			id = "fov",
 			name = ReadText(1001, 4814),
 			mouseOverText = ReadText(1026, 4833),
@@ -1727,10 +1783,10 @@ config.optionDefinitions = {
 			value = function () return menu.valueGfxFOV() end,
 			callback = function (value) return menu.callbackGfxFOV(value) end,
 		},
-		[22] = {
+		[25] = {
 			id = "line",
 		},
-		[23] = {
+		[26] = {
 			id = "display_defaults",
 			name = ReadText(1001, 12772),
 			submenu = "display_defaults",
@@ -1802,6 +1858,7 @@ config.optionDefinitions = {
 			valuetype = "slidercell",
 			value = function () return menu.valueGfxUIGlowIntensity() end,
 			callback = function (value) return menu.callbackGfxUIGlowIntensity(value) end,
+			selectable = function () return menu.selectableGfxUIGlowIntensity() end,
 		},
 		[9] = {
 			id = "chromaticaberration",
@@ -1916,6 +1973,7 @@ config.optionDefinitions = {
 		[1] = {
 			id = "sounddevice",
 			name = ReadText(1001, 8960),
+			mouseOverText = ReadText(1026, 4883),
 			valuetype = "dropdown",
 			value = function () return menu.valueSfxDevice() end,
 			callback = function (id, option) return menu.callbackSfxDevice(id, option) end,
@@ -1923,6 +1981,7 @@ config.optionDefinitions = {
 		[2] = {
 			id = "sound",
 			name = ReadText(1001, 2630),
+			mouseOverText = ReadText(1026, 4884),
 			valuetype = "button",
 			value = function () return GetSoundOption() and ReadText(1001, 12642) or ReadText(1001, 12641) end,
 			callback = function () return menu.callbackSfxSound() end,
@@ -1930,6 +1989,7 @@ config.optionDefinitions = {
 		[3] = {
 			id = "master",
 			name = ReadText(1001, 2631),
+			mouseOverText = ReadText(1026, 4885),
 			valuetype = "slidercell",
 			value = function () return menu.valueSfxSetting("master") end,
 			callback = function (value) return menu.callbackSfxSetting("master", value) end,
@@ -1940,10 +2000,12 @@ config.optionDefinitions = {
 			valuetype = "slidercell",
 			value = function () return menu.valueSfxSetting("music") end,
 			callback = function (value) return menu.callbackSfxSetting("music", value) end,
+			mouseOverText = ReadText(1026, 4886)
 		},
 		[5] = {
 			id = "voice",
 			name = ReadText(1001, 2633),
+			mouseOverText = ReadText(1026, 4887),
 			valuetype = "slidercell",
 			value = function () return menu.valueSfxSetting("voice") end,
 			callback = function (value) return menu.callbackSfxSetting("voice", value) end,
@@ -1951,6 +2013,7 @@ config.optionDefinitions = {
 		[6] = {
 			id = "ambient",
 			name = ReadText(1001, 2634),
+			mouseOverText = ReadText(1026, 4888),
 			valuetype = "slidercell",
 			value = function () return menu.valueSfxSetting("ambient") end,
 			callback = function (value) return menu.callbackSfxSetting("ambient", value) end,
@@ -1958,6 +2021,7 @@ config.optionDefinitions = {
 		[7] = {
 			id = "ui",
 			name = ReadText(1001, 2635),
+			mouseOverText = ReadText(1026, 4889),
 			valuetype = "slidercell",
 			value = function () return menu.valueSfxSetting("ui") end,
 			callback = function (value) return menu.callbackSfxSetting("ui", value) end,
@@ -1965,6 +2029,7 @@ config.optionDefinitions = {
 		[8] = {
 			id = "effect",
 			name = ReadText(1001, 2636),
+			mouseOverText = ReadText(1026, 4890),
 			valuetype = "slidercell",
 			value = function () return menu.valueSfxSetting("effect") end,
 			callback = function (value) return menu.callbackSfxSetting("effect", value) end,
@@ -2019,6 +2084,7 @@ config.optionDefinitions = {
 		[7] = {
 			id = "autoroll",
 			name = ReadText(1001, 2644),
+			mouseOverText = ReadText(1026, 4891),
 			valuetype = "button",
 			value = function () return GetAutorollOption() and ReadText(1001, 12642) or ReadText(1001, 12641) end,
 			callback = function () return menu.callbackGameAutoroll() end,
@@ -2026,6 +2092,7 @@ config.optionDefinitions = {
 		[8] = {
 			id = "collision",
 			name = ReadText(1001, 2698),
+			mouseOverText = ReadText(1026, 4892),
 			valuetype = "button",
 			value = function () return GetCollisionAvoidanceAssistOption() and ReadText(1001, 12642) or ReadText(1001, 12641) end,
 			callback = function () return menu.callbackGameCollision() end,
@@ -2033,6 +2100,7 @@ config.optionDefinitions = {
 		[9] = {
 			id = "boost",
 			name = ReadText(1001, 2646),
+			mouseOverText = ReadText(1026, 4893),
 			valuetype = "button",
 			value = function () return GetBoostToggleOption() and ReadText(1001, 12642) or ReadText(1001, 12641) end,
 			callback = function () return menu.callbackGameBoost() end,
@@ -2047,6 +2115,7 @@ config.optionDefinitions = {
 		[11] = {
 			id = "stopshipinmenu",
 			name = ReadText(1001, 4884),
+			mouseOverText = ReadText(1026, 4894),
 			valuetype = "button",
 			value = function () return GetStopShipInMenuOption() and ReadText(1001, 12641) or ReadText(1001, 12642) end,
 			callback = function () return menu.callbackGameStopInMenu() end,
@@ -2058,6 +2127,7 @@ config.optionDefinitions = {
 		[13] = {
 			id = "subtitles",
 			name = ReadText(1001, 2643),
+			mouseOverText = ReadText(1026, 4895),
 			valuetype = "dropdown",
 			value = function () return menu.valueGameSubtitles() end,
 			callback = function (id, option) return menu.callbackGameSubtitles(id, option) end,
@@ -2065,6 +2135,7 @@ config.optionDefinitions = {
 		[14] = {
 			id = "speaktargetname",
 			name = ReadText(1001, 8924),
+			mouseOverText = ReadText(1026, 4896),
 			valuetype = "button",
 			value = function () return C.GetSpeakTargetNameOption() and ReadText(1001, 12642) or ReadText(1001, 12641) end,
 			callback = function () return menu.callbackGameSpeakTargetName() end,
@@ -2072,6 +2143,7 @@ config.optionDefinitions = {
 		[15] = {
 			id = "inputfeedback",
 			name = ReadText(1001, 12632),
+			mouseOverText = ReadText(1026, 4897),
 			valuetype = "dropdown",
 			value = function () return menu.valueGameInputFeedback() end,
 			callback = function (id, option) return menu.callbackGameInputFeedback(id, option) end,
@@ -2079,6 +2151,7 @@ config.optionDefinitions = {
 		[16] = {
 			id = "mouselook",
 			name = ReadText(1001, 4895),
+			mouseOverText = ReadText(1026, 4898),
 			valuetype = "button",
 			value = function () return GetMouseLookToggleOption() and ReadText(1001, 12642) or ReadText(1001, 12641) end,
 			callback = function () return menu.callbackGameMouselook() end,
@@ -2086,6 +2159,7 @@ config.optionDefinitions = {
 		[17] = {
 			id = "rumble",
 			name = ReadText(1001, 2678),
+			mouseOverText = ReadText(1026, 4899),
 			valuetype = "slidercell",
 			value = function () return menu.valueGameRumble() end,
 			callback = function (value) return menu.callbackGameRumble(value) end,
@@ -2101,6 +2175,7 @@ config.optionDefinitions = {
 		[19] = {
 			id = "mouseover",
 			name = ReadText(1001, 4882),
+			mouseOverText = ReadText(1026, 7201),
 			valuetype = "button",
 			value = function () return C.GetMouseOverTextOption() and ReadText(1001, 12642) or ReadText(1001, 12641) end,
 			callback = function () return menu.callbackGameMouseOver() end,
@@ -2108,6 +2183,7 @@ config.optionDefinitions = {
 		[20] = {
 			id = "radardisplay",
 			name = ReadText(1001, 7258),
+			mouseOverText = ReadText(1026, 7202),
 			valuetype = "dropdown",
 			value = function () return menu.valueGameRadar() end,
 			callback = function (id, option) return menu.callbackGameRadar(id, option) end,
@@ -2170,6 +2246,7 @@ config.optionDefinitions = {
 		[27] = {
 			id = "controlmodemessages",
 			name = ReadText(1001, 4861),
+			mouseOverText = ReadText(1026, 7203),
 			valuetype = "button",
 			value = function () return GetSteeringNoteOption() and ReadText(1001, 12642) or ReadText(1001, 12641) end,
 			callback = function () return menu.callbackGameControlModeMessages() end,
@@ -2187,6 +2264,7 @@ config.optionDefinitions = {
 		[29] = {
 			id = "enemywarning_nearby",
 			name = ReadText(1001, 11729),
+			mouseOverText = ReadText(1026, 7204),
 			valuetype = "sounddropdown",
 			value = function () return menu.valueGameEnemyNearby() end,
 			callback = function (id, option) return menu.callbackGameEnemyNearby(id, option) end,
@@ -2194,6 +2272,7 @@ config.optionDefinitions = {
 		[30] = {
 			id = "enemywarning_attack",
 			name = ReadText(1001, 11730),
+			mouseOverText = ReadText(1026, 7205),
 			valuetype = "sounddropdown",
 			value = function () return menu.valueGameEnemyAttack() end,
 			callback = function (id, option) return menu.callbackGameEnemyAttack(id, option) end,
@@ -2201,6 +2280,7 @@ config.optionDefinitions = {
 		[31] = {
 			id = "startmenu_background",
 			name = ReadText(1001, 11761),
+			mouseOverText = ReadText(1026, 7206),
 			valuetype = "dropdown",
 			value = function () return menu.valueGameStartmenuBackground() end,
 			callback = function (id, option) return menu.callbackGameStartmenuBackground(id, option) end,
@@ -2209,6 +2289,7 @@ config.optionDefinitions = {
 		[32] = {
 			id = "velocityindicator",
 			name = ReadText(1001, 12773),
+			mouseOverText = ReadText(1026, 7207),
 			valuetype = "button",
 			value = function () return C.GetVelocityIndicatorOption() and ReadText(1001, 12642) or ReadText(1001, 12641) end,
 			callback = function () return menu.callbackGameVelocityIndicator() end,
@@ -2235,6 +2316,7 @@ config.optionDefinitions = {
 		[36] = {
 			id = "autozoomreset",
 			name = ReadText(1001, 12702),
+			mouseOverText = ReadText(1026, 7208),
 			valuetype = "button",
 			value = function () return C.GetAutoZoomResetOption() and ReadText(1001, 12642) or ReadText(1001, 12641) end,
 			callback = function () return menu.callbackGameAutoZoomReset() end,
@@ -2254,6 +2336,7 @@ config.optionDefinitions = {
 		[1] = {
 			id = "signalleakindicator",
 			name = ReadText(1001, 8995),
+			mouseOverText = ReadText(1026, 7212),
 			valuetype = "button",
 			value = function () return C.GetSignalLeakIndicatorOption() and ReadText(1001, 12642) or ReadText(1001, 12641) end,
 			callback = function () return menu.callbackAccessibilitySignalLeak() end,
@@ -2261,6 +2344,7 @@ config.optionDefinitions = {
 		[2] = {
 			id = "longrangescanindicator",
 			name = ReadText(1001, 8996),
+			mouseOverText = ReadText(1026, 7213),
 			valuetype = "button",
 			value = function () return C.GetLongRangeScanIndicatorOption() and ReadText(1001, 12642) or ReadText(1001, 12641) end,
 			callback = function () return menu.callbackAccessibilityLongRangeScan() end,
@@ -2291,6 +2375,7 @@ config.optionDefinitions = {
 		[6] = {
 			id = "stardustintensity",
 			name = ReadText(1001, 12763),
+			mouseOverText = ReadText(1026, 7214),
 			valuetype = "slidercell",
 			value = function () return menu.valueAccessibilityStardustIntensity() end,
 			callback = function (value) return menu.callbackAccessibilityStardustIntensity(value) end,
@@ -2659,6 +2744,7 @@ config.optionDefinitions = {
 		[54] = {
 			id = "input_modifiers",
 			name = ReadText(1001, 12643),
+			mouseOverText = ReadText(1026, 7215),
 			submenu = "input_modifiers",
 		},
 	},
@@ -2950,6 +3036,14 @@ config.DLSSmodes = {
 	["dlaa"] = ReadText(1001, 12742),
 }
 
+config.DLSSFrameGenModes = {
+	["off"] = ReadText(1001, 12641),
+	["auto"] = ReadText(1001, 12737),
+	["2x"] = ReadText(1001, 12775),
+	["3x"] = ReadText(1001, 12776),
+	["4x"] = ReadText(1001, 12777),
+}
+
 
 --- widget hooks ---
 
@@ -3088,7 +3182,7 @@ end
 function menu.buttonControl(row, data)
 	if data and not menu.remapControl then
 		-- set update to blink "_" and pass variables on to menu.remapInput
-		menu.remapControl = { row = row, col = data[6], controltype = data[1], controlcode = data[2], controlcontext = data[8] or 1, oldinputtype = data[3], oldinputcode = data[4], oldinputsgn = data[5], nokeyboard = data[7], allowmouseaxis = data[9], checklastnonkeyboard = data[10], mouseonly = data[11], disableremove = data[12], isdblclick = data[13], mousewheelonly = data[14] }
+		menu.remapControl = { row = row, col = data[6], controltype = data[1], controlcode = data[2], controlcontext = data[8] or 1, oldinputtype = data[3], oldinputcode = data[4], oldinputsgn = data[5], nokeyboard = data[7], allowmouseaxis = data[9], checklastnonkeyboard = data[10], mouseonly = data[11], disableremove = data[12], isdblclick = data[13], mousewheelonly = data[14], mouseaxisonly = data[15] }
 
 		-- open popup
 		menu.contextMenuMode = "directinput"
@@ -3103,7 +3197,7 @@ end
 function menu.buttonAddControl(row, data)
 	if data and not menu.remapControl then
 		-- set update to blink "_" and pass variables on to menu.remapInput
-		menu.remapControl = { row = row, col = data[6], controltype = data[1], controlcode = data[2], controlcontext = data[8] or 1, oldinputtype = data[3], oldinputcode = data[4], oldinputsgn = data[5], nokeyboard = data[7], allowmouseaxis = data[9], mouseonly = data[11], mousewheelonly = data[14] }
+		menu.remapControl = { row = row, col = data[6], controltype = data[1], controlcode = data[2], controlcontext = data[8] or 1, oldinputtype = data[3], oldinputcode = data[4], oldinputsgn = data[5], nokeyboard = data[7], allowmouseaxis = data[9], mouseonly = data[11], mousewheelonly = data[14], mouseaxisonly = data[15] }
 
 		-- open popup
 		menu.contextMenuMode = "directinput"
@@ -3729,14 +3823,6 @@ function menu.cleanup()
 	menu.frameOffsetY = nil
 
 	menu.table = {}
-
-	-- kuertee start: callback
-	if menu.uix_callbacks ["cleanup"] then
-		for uix_id, uix_callback in pairs (menu.uix_callbacks ["cleanup"]) do
-			uix_callback()
-		end
-	end
-	-- kuertee end: callback
 end
 
 function menu.createOptionsFrame(extrawide)
@@ -4062,7 +4148,7 @@ function menu.createContextMenuDirectInput(frame)
 
 	local row = ftable:addRow(nil, { fixed = true })
 	row[2]:setColSpan(2):createText(ReadText(1001, 12673) .. ReadText(1001, 120))
-	row[4]:createText(function () return menu.nameNewAssignment(menu.remapControl.nokeyboard, menu.remapControl.mouseonly or menu.remapControl.mousewheelonly) end)
+	row[4]:createText(function () return menu.nameNewAssignment(menu.remapControl.nokeyboard, menu.remapControl.mouseonly or menu.remapControl.mousewheelonly or menu.remapControl.mouseaxisonly) end)
 
 	local row = ftable:addRow(nil, { fixed = true })
 	row[1]:setColSpan(5):createText(" ", { titleColor = Color["row_title"] })
@@ -4468,7 +4554,7 @@ function menu.getMappedButtons(buttons, compassmenubutton, displayed, input, map
 	return buttons, compassmenubutton, displayed
 end
 
-function menu.displayControlRow(ftable, controlsgroup, controltype, code, context, mouseovertext, mappable, allowmouseaxis, first, checklastnonkeyboard, compassmenusupport, mouseonly, mousewheelonly)
+function menu.displayControlRow(ftable, controlsgroup, controltype, code, context, mouseovertext, mappable, allowmouseaxis, first, checklastnonkeyboard, compassmenusupport, mouseonly, mousewheelonly, mouseaxisonly)
 	local buttons = {}
 	local compassmenubutton = nil
 	local name = menu.getControlName(controltype, code)
@@ -4692,10 +4778,10 @@ function menu.displayControlRow(ftable, controlsgroup, controltype, code, contex
 				button:setText2((hasextramousebuttoninfo and "\27[menu_info]" or "") .. buttons[i].keyicon, { halign = "right" })
 			end
 			if buttons[i] then
-				row[3].handlers.onClick = function () return menu.buttonControl(row.index, { controltype, code, buttons[i].input1, buttons[i].input2, buttons[i].input3, 3, not mappable, context, allowmouseaxis, checklastnonkeyboard, mouseonly, mouseonly and (numbuttons == 1), isdblclick, mousewheelonly }) end
+				row[3].handlers.onClick = function () return menu.buttonControl(row.index, { controltype, code, buttons[i].input1, buttons[i].input2, buttons[i].input3, 3, not mappable, context, allowmouseaxis, checklastnonkeyboard, mouseonly, mouseonly and (numbuttons == 1), isdblclick, mousewheelonly, mouseaxisonly }) end
 				row[3].properties.uiTriggerID = "remapcontrol1a"
 			else
-				row[3].handlers.onClick = function () return menu.buttonControl(row.index, { controltype, code, -1, -1, 0, 3, not mappable, context, allowmouseaxis, checklastnonkeyboard, mouseonly, mouseonly and (numbuttons == 1), isdblclick, mousewheelonly }) end
+				row[3].handlers.onClick = function () return menu.buttonControl(row.index, { controltype, code, -1, -1, 0, 3, not mappable, context, allowmouseaxis, checklastnonkeyboard, mouseonly, mouseonly and (numbuttons == 1), isdblclick, mousewheelonly, mouseaxisonly }) end
 				row[3].properties.uiTriggerID = "remapcontrol1b"
 			end
 		end
@@ -4893,7 +4979,22 @@ function menu.displayOption(ftable, option, numCols)
 					row[numCols].handlers.onClick = function () return menu.buttonSoundTest(option.id) end
 				elseif option.valuetype == "slidercell" then
 					local scale = option.value()
-					row[nextCol]:createSliderCell({ valueColor = isselectable and Color["slider_value"] or Color["slider_value_inactive"], min = scale.min, minSelect = scale.minSelect, max = scale.max, maxSelect = scale.maxSelect, start = scale.start, step = scale.step, accuracyOverride = scale.accuracyOverride, suffix = scale.suffix, exceedMaxValue = scale.exceedMaxValue, hideMaxValue = scale.hideMaxValue, readOnly = scale.readOnly }):setText("", { color = isselectable and Color["text_normal"] or Color["text_inactive"] })
+					row[nextCol]:createSliderCell({
+						valueColor = isselectable and Color["slider_value"] or Color["slider_value_inactive"],
+						min = scale.min,
+						minSelect = (not isselectable) and scale.start or scale.minSelect,
+						max = scale.max,
+						maxSelect = (not isselectable) and scale.start or scale.maxSelect,
+						start = scale.start,
+						step = scale.step,
+						accuracyOverride = scale.accuracyOverride,
+						suffix = scale.suffix,
+						exceedMaxValue = scale.exceedMaxValue,
+						hideMaxValue = scale.hideMaxValue,
+						readOnly = scale.readOnly,
+						infiniteValue = scale.infiniteValue,
+						useInfiniteValue = scale.useInfiniteValue,
+					}):setText("", { color = isselectable and Color["text_normal"] or Color["text_inactive"] })
 					row[nextCol].handlers.onSliderCellChanged = function(_, value) return option.callback(value) end
 				else
 					row[nextCol]:createText(function () local text = option.value() return text end, isselectable and config.standardTextProperties or config.disabledTextProperties)
@@ -5543,6 +5644,14 @@ function menu.remapInput(newinputtype, newinputcode, newinputsgn, checked)
 		unmodified = unmodified * config.input.modifierFilter
 
 		if (newinputtype ~= 18) or (unmodified ~= 3) then
+			menu.registerDirectInput()
+			return
+		end
+	end
+
+	-- Accept only mouse axis
+	if menu.remapControl.mouseaxisonly then
+		if newinputtype ~= 18 then
 			menu.registerDirectInput()
 			return
 		end
@@ -6564,9 +6673,9 @@ function menu.mouseOverTextGfxUpscaling()
 	if selectable == 1 then
 		return ColorText["text_error"] ..  ReadText(1026, 4814)
 	elseif selectable == 2 then
-		return ColorText["text_error"] ..  ReadText(1026, 4815)
+		return ColorText["text_error"] ..  ReadText(1026, 7219)
 	end
-	return ReadText(1026, 4823)
+	return ReadText(1026, 4857)
 end
 
 function menu.valueAccessibilityGlobalLightScale()
@@ -6839,12 +6948,12 @@ function menu.valueGameRadar()
 	end
 
 	local settings = {
-		[1] = ReadText(1001, 12641),
-		[2] = ReadText(1001, 7259),
-		[3] = ReadText(1001, 7260),
+		[1] = { ReadText(1001, 12641), ReadText(1026, 7209)},
+		[2] = { ReadText(1001, 7259),  ReadText(1026, 7210)},
+		[3] = { ReadText(1001, 7260),  ReadText(1026, 7211)},
 	}
 	for i, entry in ipairs(settings) do
-		table.insert(options, { id = i, text = entry, icon = "", displayremoveoption = false })
+		table.insert(options, { id = i, text = entry[1], icon = "", mouseovertext = (entry[2] or ""), displayremoveoption = false })
 	end
 
 	return options, currentOption
@@ -6966,24 +7075,26 @@ function menu.valueGfxAA()
 
 	local settings = {
 		{"none"			, ReadText(1001, 7275)}, -- None
-		{"fxaa_low"		, ReadText(1001, 7270)}, -- FXAA low
-		{"fxaa_medium"	, ReadText(1001, 7271)}, -- FXAA medium
-		{"fxaa_high"	, ReadText(1001, 7272)}, -- FXAA high
-		{"msaa_2x"		, ReadText(1001, 7278)}, -- MSAA 2x
-		{"msaa_4x"		, ReadText(1001, 7279)}, -- MSAA 4x
-		{"msaa_8x"		, ReadText(1001, 7280)}, -- MSAA 8x
-		{"msaa_16x"		, ReadText(1001, 7281)}, -- MSAA 16x
-		{"ssaa_2x"		, ReadText(1001, 7273)}, -- SSAA 2x
-		{"ssaa_4x"		, ReadText(1001, 7274)}, -- SSAA 4x
+		{"fxaa_low"		, ReadText(1001, 7270), ReadText(1026, 4860)}, -- FXAA low
+		{"fxaa_medium"	, ReadText(1001, 7271), ReadText(1026, 4861)}, -- FXAA medium
+		{"fxaa_high"	, ReadText(1001, 7272), ReadText(1026, 4862)}, -- FXAA high
+		{"msaa_2x"		, ReadText(1001, 7278), ReadText(1026, 4863)}, -- MSAA 2x
+		{"msaa_4x"		, ReadText(1001, 7279), ReadText(1026, 4864)}, -- MSAA 4x
+		{"msaa_8x"		, ReadText(1001, 7280), ReadText(1026, 4865)}, -- MSAA 8x
+		{"msaa_16x"		, ReadText(1001, 7281), ReadText(1026, 4869)}, -- MSAA 16x
+		{"ssaa_2x"		, ReadText(1001, 7273), ReadText(1026, 4866)}, -- SSAA 2x
+		{"ssaa_4x"		, ReadText(1001, 7274), ReadText(1026, 4867)}, -- SSAA 4x
 		--{"ssaa_6x"		, ReadText(1001, 7276)}, -- SSAA 6x
 		--{"ssaa_9x"		, ReadText(1001, 7277)}, -- SSAA 9x
-		{"temporal"			, ReadText(1001, 12659)}, -- TAA
+		{"temporal"		, ReadText(1001, 12659), ReadText(1026, 4868)}, -- TAA
 		--{"taa_half"		, ReadText(1001, 12659)}, -- TAA half (testing only)
 	}
 
 	local currentUpscalingOption = ffi.string(C.GetUpscalingOption(false))
+	local currentFrameGenOption = ffi.string(C.GetDLSSFrameGenOption(false))
 	for i, entry in ipairs(settings) do
 		entry.id = i
+		entry.mouseovertext = entry[3]
 		entry.active = C.IsAAOptionSupported(entry[1])
 		if not entry.active then
 			entry.mouseovertext = ColorText["text_error"] .. ReadText(1026, 2627)
@@ -6995,11 +7106,23 @@ function menu.valueGfxAA()
 				entry.mouseovertext = ColorText["text_error"] .. ReadText(1026, 2656)
 			end
 		end
+		if (entry[1] == "msaa_2x") or (entry[1] == "msaa_4x") or (entry[1] == "msaa_8x") or (entry[1] == "msaa_16x") then
+			local oldactive = entry.active
+			entry.active = entry.active and (currentFrameGenOption == "off")
+			if oldactive and (not entry.active) then
+				entry.mouseovertext = ColorText["text_error"] .. ReadText(1026, 7220)
+			end
+		end
+		if currentUpscalingOption:find("fsr3") then
+			if entry.active and (entry.mouseovertext ~= nil) then
+				entry.mouseovertext = entry.mouseovertext .. "\n\n" .. ReadText(1026, 4870)
+			end
+		end
 	end
 	table.sort(settings, menu.sortActiveEntries)
 
 	for i, entry in ipairs(settings) do
-		table.insert(options, { id = entry[1], text = entry[2], icon = "", displayremoveoption = false, active = entry.active, mouseovertext = entry.mouseovertext })
+		table.insert(options, { id = entry[1], text = entry[2], icon = "", displayremoveoption = false, active = entry.active, mouseovertext = (entry.mouseovertext or "") })
 	end
 
 	return options, currentOption
@@ -7059,6 +7182,30 @@ function menu.valueGfxDLSS()
 	return options, currentOption
 end
 
+function menu.callbackGfxDLSSAutoFrameGen()
+	C.SetDLSSAutoFrameGenOption(not C.GetDLSSAutoFrameGenOption())
+end
+
+function menu.valueGfxDLSSFrameGen()
+	local options = {}
+	local currentOption = ffi.string(C.GetDLSSFrameGenOption(false))
+	local automode = "2x" -- supposedly it's always that
+
+	local settings = {
+		{"off",					config.DLSSFrameGenModes["off"]},
+		{"auto",				config.DLSSFrameGenModes["auto"] .. " (" .. (config.DLSSFrameGenModes[automode] or "-") .. ")"},
+		{"2X",					config.DLSSFrameGenModes["2x"]},
+		{"3X",					config.DLSSFrameGenModes["3x"]},
+		{"4X",					config.DLSSFrameGenModes["4x"]},
+	}
+
+	for i, entry in ipairs(settings) do
+		table.insert(options, { id = entry[1], text = entry[2], icon = "", displayremoveoption = false, mouseovertext = entry[3] or "", active = C.IsDLSSFrameGenOptionSupported(entry[1]) })
+	end
+
+	return options, currentOption
+end
+
 function menu.valueGfxDLSSMode()
 	local options = {}
 	local currentOption = ffi.string(C.GetDLSSModeOption(false))
@@ -7067,11 +7214,11 @@ function menu.valueGfxDLSSMode()
 	local settings = {
 		{"off",					config.DLSSmodes["off"]},
 		{"auto",				config.DLSSmodes["auto"] .. " (" .. (config.DLSSmodes[automode] or "-") .. ")"},
-		{"quality",				config.DLSSmodes["quality"]},
-		{"balanced",			config.DLSSmodes["balanced"]},
-		{"performance",			config.DLSSmodes["performance"]},
-		{"ultra_performance",	config.DLSSmodes["ultra_performance"], ReadText(1026, 4811)},
-		{"dlaa",				config.DLSSmodes["dlaa"]},
+		{"quality",				config.DLSSmodes["quality"],            ReadText(1026, 4872)},
+		{"balanced",			config.DLSSmodes["balanced"],           ReadText(1026, 4873)},
+		{"performance",			config.DLSSmodes["performance"],        ReadText(1026, 4874)},
+		{"ultra_performance",	config.DLSSmodes["ultra_performance"],  ReadText(1026, 4811)},
+		{"dlaa",				config.DLSSmodes["dlaa"],               ReadText(1026, 4875)},
 	}
 
 	for i, entry in ipairs(settings) do
@@ -7150,6 +7297,35 @@ function menu.valueGfxFOV()
 		suffix         = ReadText(1001, 109),
 		exceedMaxValue = false,
 		hideMaxValue   = true,
+	}
+
+	return scale
+end
+
+function menu.valueGfxFrameRate()
+	local fps = C.GetFrameRateTarget()
+	local start = nil
+	if fps < 30 then
+		start = 30
+	elseif fps >= 200 then
+		start = 200
+	else
+		start = fps
+	end
+	if not C.HasFrameRateLimit() then
+		start = config.frameRateLimitOff
+	end
+
+	local scale = {
+		min            = 30,
+		max            = config.frameRateLimitOff,
+		start          = start,
+		step           = 1,
+		suffix         = ReadText(1001, 12779),
+		exceedMaxValue = false,
+		hideMaxValue   = true,
+		infiniteValue  = config.frameRateLimitOff,
+		useInfiniteValue = true,
 	}
 
 	return scale
@@ -7272,7 +7448,7 @@ function menu.valueGfxHMDResolution()
 end
 
 function menu.valueGfxLOD()
-	local start = Helper.round(GetLODOption() * 100)
+	local start = math.max(1, math.min(100, Helper.round(GetLODOption() * 100)))
 
 	local scale = {
 		min            = 0,
@@ -7458,13 +7634,13 @@ end
 
 function menu.valueGfxPresentMode()
 	local options = {}
-	local currentOption = ffi.string(C.GetPresentModeOption())
+	local currentOption = ffi.string(C.GetPresentModeOption2(false))
 
 	local settings = {
-		{"mailbox"		, ReadText(1001, 12769)}, -- Triple buffering VSync
-		{"fifo_relaxed"	, ReadText(1001, 12770)}, -- Adaptive VSync
-		{"fifo"			, ReadText(1001, 12642)}, -- VSync
-		{"immediate"	, ReadText(1001, 12641)}, -- No VSync
+		{"mailbox"		, ReadText(1001, 12769), ReadText(1026, 4876)}, -- Triple buffering VSync
+		{"fifo_relaxed"	, ReadText(1001, 12770), ReadText(1026, 4877)}, -- Adaptive VSync
+		{"fifo"			, ReadText(1001, 12642), ReadText(1026, 4878)}, -- VSync
+		{"immediate"	, ReadText(1001, 12641), ReadText(1026, 4879)}, -- No VSync
 	}
 	for i, entry in ipairs(settings) do
 		entry.id = i
@@ -7473,7 +7649,7 @@ function menu.valueGfxPresentMode()
 	table.sort(settings, menu.sortActiveEntries)
 
 	for i, entry in ipairs(settings) do
-		table.insert(options, { id = entry[1], text = entry[2], icon = "", displayremoveoption = false, active = entry.active, mouseovertext = entry.active and "" or (ColorText["text_error"] .. ReadText(1026, 2627)) })
+		table.insert(options, { id = entry[1], text = entry[2], icon = "", displayremoveoption = false, active = entry.active, mouseovertext = entry.active and (entry[3] or "") or (ColorText["text_error"] .. ReadText(1026, 2627)) })
 	end
 
 	return options, currentOption
@@ -7530,13 +7706,13 @@ function menu.valueGfxVolumetric()
 	local currentOption = C.GetVolumetricFogOption() + 1
 
 	local settings = {
-		[1] = ReadText(1001, 12641),
-		[2] = ReadText(1001, 12768),
-		[3] = ReadText(1001, 12767),
-		[4] = ReadText(1001, 12766),
+		[1] = { ReadText(1001, 12641)},
+		[2] = { ReadText(1001, 12768), ReadText(1026, 4880)},
+		[3] = { ReadText(1001, 12767), ReadText(1026, 4881)},
+		[4] = { ReadText(1001, 12766), ReadText(1026, 4882)},
 	}
 	for i, entry in ipairs(settings) do
-		table.insert(options, { id = i, text = entry, icon = "", displayremoveoption = false })
+		table.insert(options, { id = i, text = entry[1], icon = "", mouseovertext = (entry[2] or ""), displayremoveoption = false })
 	end
 
 	return options, currentOption
@@ -7979,13 +8155,17 @@ function menu.selectableGfxResolution()
 	return ((not screendisplay) or (not C.IsVRVersion())) and (not borderless)
 end
 
+function menu.selectableGfxUIGlowIntensity()
+	return C.GetUIGlowOption() ~= 0
+end
+
 function menu.selectableGfxUpscaling()
 	local currentAAOption = ffi.string(C.GetAAOption(false))
 
 	if (currentAAOption == "ssaa_2x") or (currentAAOption == "ssaa_4x") or (currentAAOption == "ssaa_6x") or (currentAAOption == "ssaa_9x") then
 		return 1
 	end
-	if C.GetDLSSOption(false) then
+	if ffi.string(C.GetDLSSModeOption(false)) ~= "off" then
 		return 2
 	end
 	return 0
@@ -8043,12 +8223,6 @@ end
 function menu.loadGameCallback(filename, checked)
 	local playerinventory = GetPlayerInventory()
 	local onlineitems = OnlineGetUserItems()
-
-	-- kuertee start:
-	if not onlineitems then
-		onlineitems = {}
-	end
-	-- kuertee end
 
 	local hasnotuploadeditems = false
 	for ware, waredata in Helper.orderedPairs(playerinventory) do
@@ -8539,7 +8713,7 @@ function menu.callbackGfxAACancel()
 	if upmode == "" then
 		upmode = "none"
 	end
-	C.SetMultipleGfxModes(ffi.string(C.GetAAOption(true)), upmode, C.GetDLSSOption(true), ffi.string(C.GetDLSSModeOption(true)))
+	C.SetMultipleGfxModes2(ffi.string(C.GetAAOption(true)), upmode, C.GetDLSSOption(true), ffi.string(C.GetDLSSModeOption(true)), ffi.string(C.GetDLSSFrameGenOption(true)), ffi.string(C.GetPresentModeOption2(true)))
 
 	__CORE_GAMEOPTIONS_RESTORE = true
 	__CORE_GAMEOPTIONS_RESTOREINFO.optionParameter = nil
@@ -8636,7 +8810,46 @@ function menu.callbackGfxDLSSCancel()
 	if upmode == "" then
 		upmode = "none"
 	end
-	C.SetMultipleGfxModes(ffi.string(C.GetAAOption(true)), upmode, C.GetDLSSOption(true), ffi.string(C.GetDLSSModeOption(true)))
+	C.SetMultipleGfxModes2(ffi.string(C.GetAAOption(true)), upmode, C.GetDLSSOption(true), ffi.string(C.GetDLSSModeOption(true)), ffi.string(C.GetDLSSFrameGenOption(true)), ffi.string(C.GetPresentModeOption2(true)))
+
+	__CORE_GAMEOPTIONS_RESTORE = true
+	__CORE_GAMEOPTIONS_RESTOREINFO.optionParameter = nil
+	__CORE_GAMEOPTIONS_RESTOREINFO.history = menu.history
+end
+
+function menu.callbackGfxDLSSFrameGen(id, option)
+	if option ~= menu.curDropDownOption[id] then
+		menu.curDropDownOption[id] = option
+		C.SetDLSSFrameGenOption(option)
+
+		table.insert(menu.history, 1, { optionParameter = menu.currentOption, topRow = GetTopRow(menu.optionTable), selectedOption = "dlssframegen" })
+		__CORE_GAMEOPTIONS_RESTORE = true
+		__CORE_GAMEOPTIONS_RESTOREINFO.history = menu.history
+		__CORE_GAMEOPTIONS_RESTOREINFO.questionParameter = {
+			question = ReadText(1001, 2602),
+			callback = "callbackGfxDLSSFrameGenConfirm",
+			negCallback = "callbackGfxDLSSFrameGenCancel",
+			timer = 15.9,
+			waitforgfx = true,
+
+		}
+		__CORE_GAMEOPTIONS_RESTOREINFO.optionParameter = "question"
+	end
+end
+
+function menu.callbackGfxDLSSFrameGenConfirm()
+	C.SaveDLSSFrameGenOption()
+	menu.userQuestion = nil
+	menu.onCloseElement("back")
+end
+
+function menu.callbackGfxDLSSFrameGenCancel()
+	-- testing DLSS frame gen could have changed other settings -> restore all
+	local upmode = ffi.string(C.GetUpscalingOption(true))
+	if upmode == "" then
+		upmode = "none"
+	end
+	C.SetMultipleGfxModes2(ffi.string(C.GetAAOption(true)), upmode, C.GetDLSSOption(true), ffi.string(C.GetDLSSModeOption(true)), ffi.string(C.GetDLSSFrameGenOption(true)), ffi.string(C.GetPresentModeOption2(true)))
 
 	__CORE_GAMEOPTIONS_RESTORE = true
 	__CORE_GAMEOPTIONS_RESTOREINFO.optionParameter = nil
@@ -8675,7 +8888,7 @@ function menu.callbackGfxDLSSModeCancel()
 	if upmode == "" then
 		upmode = "none"
 	end
-	C.SetMultipleGfxModes(ffi.string(C.GetAAOption(true)), upmode, C.GetDLSSOption(true), ffi.string(C.GetDLSSModeOption(true)))
+	C.SetMultipleGfxModes2(ffi.string(C.GetAAOption(true)), upmode, C.GetDLSSOption(true), ffi.string(C.GetDLSSModeOption(true)), ffi.string(C.GetDLSSFrameGenOption(true)), ffi.string(C.GetPresentModeOption2(true)))
 
 	__CORE_GAMEOPTIONS_RESTORE = true
 	__CORE_GAMEOPTIONS_RESTOREINFO.optionParameter = nil
@@ -8706,6 +8919,17 @@ end
 function menu.callbackGfxFOV(value)
 	if value then
 		SetFOVOption(value / 90)
+	end
+end
+
+function menu.callbackGfxFrameRate(value)
+	if value then
+		if value == config.frameRateLimitOff then
+			C.SetFrameRateLimit(false)
+		else
+			C.SetFrameRateLimit(true)
+			C.SetFrameRateTarget(value)
+		end
 	end
 end
 
@@ -8777,6 +9001,7 @@ function menu.callbackGfxUIGlow(id, option)
 		menu.curDropDownOption[id] = option
 		SetGfxQualityOption(0)
 		C.SetUIGlowOption(tonumber(option) - 1)
+		menu.refresh()
 	end
 end
 
@@ -8912,9 +9137,39 @@ end
 
 function menu.callbackGfxPresentMode(id, option)
 	if option ~= menu.curDropDownOption[id] then
+		local hasframegen = C.IsDLSSFrameGenSupported() and (ffi.string(C.GetDLSSFrameGenOption(false)) ~= "off")
+
 		menu.curDropDownOption[id] = option
-		C.SetPresentModeOption(option)
+		C.SetPresentModeOption2(option, not hasframegen)
+
+		if hasframegen then
+			table.insert(menu.history, 1, { optionParameter = menu.currentOption, topRow = GetTopRow(menu.optionTable), selectedOption = "presentmode" })
+			__CORE_GAMEOPTIONS_RESTORE = true
+			__CORE_GAMEOPTIONS_RESTOREINFO.history = menu.history
+			__CORE_GAMEOPTIONS_RESTOREINFO.questionParameter = {
+				question = ReadText(1001, 2602),
+				callback = "callbackGfxPresentModeConfirm",
+				negCallback = "callbackGfxPresentModeCancel",
+				timer = 15.9,
+				waitforgfx = true,
+			}
+			__CORE_GAMEOPTIONS_RESTOREINFO.optionParameter = "question"
+		end
 	end
+end
+
+function menu.callbackGfxPresentModeConfirm()
+	C.SavePresentModeOption()
+	menu.userQuestion = nil
+	menu.onCloseElement("back")
+end
+
+function menu.callbackGfxPresentModeCancel()
+	local oldpresentmode = C.GetPresentModeOption2(true)
+	C.SetPresentModeOption2(oldpresentmode, false)
+	__CORE_GAMEOPTIONS_RESTORE = true
+	__CORE_GAMEOPTIONS_RESTOREINFO.optionParameter = nil
+	__CORE_GAMEOPTIONS_RESTOREINFO.history = menu.history
 end
 
 function menu.callbackGfxTexture(id, option)
@@ -8957,7 +9212,7 @@ function menu.callbackGfxUpscalingCancel()
 	if upmode == "" then
 		upmode = "none"
 	end
-	C.SetMultipleGfxModes(ffi.string(C.GetAAOption(true)), upmode, C.GetDLSSOption(true), ffi.string(C.GetDLSSModeOption(true)))
+	C.SetMultipleGfxModes2(ffi.string(C.GetAAOption(true)), upmode, C.GetDLSSOption(true), ffi.string(C.GetDLSSModeOption(true)), ffi.string(C.GetDLSSFrameGenOption(true)), ffi.string(C.GetPresentModeOption2(true)))
 
 	__CORE_GAMEOPTIONS_RESTORE = true
 	__CORE_GAMEOPTIONS_RESTOREINFO.optionParameter = nil
@@ -9639,7 +9894,7 @@ function menu.displayNewGame(createAsServer, displayTimelinesScenarios, displayT
 				local doublingcount = 0
 				for _, entry in ipairs(macros) do
 					local name = entry.racename or ""
-					if (entry.race ~= "teladi") and (entry.race ~= "paranid") then
+					if (entry.race ~= "paranid") then
 						if entry.gender == "female" then
 							name = name .. " " .. ReadText(1001, 9906)
 						elseif entry.gender == "male" then
@@ -9987,7 +10242,7 @@ function menu.displayTimelines()
 				local doublingcount = 0
 				for _, entry in ipairs(macros) do
 					local name = entry.racename or ""
-					if (entry.race ~= "teladi") and (entry.race ~= "paranid") then
+					if (entry.race ~= "paranid") then
 						if entry.gender == "female" then
 							name = name .. " " .. ReadText(1001, 9906)
 						elseif entry.gender == "male" then
@@ -11388,7 +11643,7 @@ function menu.displayInputFeedback()
 							end
 							menu.displayInputFeedbackRow(optiontable, control[1], control[2], configentry)
 							count = count + 1
-							if count == 18 then
+							if count == 17 then
 								optiontable.properties.maxVisibleHeight = optiontable:getFullHeight()
 							end
 						end
@@ -12366,7 +12621,7 @@ function menu.displayOnlineLogin()
 	-- username
 	local row = ftable:addRow(true, {  })
 	row[2]:setColSpan(5):createText(ReadText(1001, 7246), config.standardTextProperties)
-	row[7]:setColSpan(4):createEditBox({ description = ReadText(1001, 7246), active = active, textHidden = function () return menu.onlineData.usernameHidden end }):setText(menu.onlineData.username, { fontsize = config.standardFontSize })
+	row[7]:setColSpan(4):createEditBox({ description = ReadText(1001, 7246), active = active, mouseOverText = ReadText(1026, 4853), textHidden = function () return menu.onlineData.usernameHidden end }):setText(menu.onlineData.username, { fontsize = config.standardFontSize })
 	if active then
 		row[7].handlers.onEditBoxActivated = function () menu.onlineData.usernameEditBoxActive = true end
 		row[7].handlers.onTextChanged = menu.editboxOnlineUsername
@@ -12377,7 +12632,7 @@ function menu.displayOnlineLogin()
 	-- password
 	local row = ftable:addRow(true, {  })
 	row[2]:setColSpan(5):createText(ReadText(1001, 7247), config.standardTextProperties)
-	row[7]:setColSpan(5):createEditBox({ textHidden = true, encrypted = true, description = ReadText(1001, 7247), active = active }):setText(active and menu.onlineData.password or "      ", { fontsize = config.standardFontSize })
+	row[7]:setColSpan(5):createEditBox({ textHidden = true, encrypted = true, description = ReadText(1001, 7247), active = active, mouseOverText = ReadText(1026, 4854) }):setText(active and menu.onlineData.password or "      ", { fontsize = config.standardFontSize })
 	if active then
 		row[7].handlers.onTextChanged = menu.editboxOnlinePassword
 		row[7].handlers.onEditBoxDeactivated = menu.editboxOnlinePasswordDeactivated
@@ -12718,7 +12973,7 @@ function menu.displayControls(optionParameter)
 					end
 					if (not control.display) or control.display() then
 						if IsCheatVersion() or (not config.input.cheatControls[control[1]][control[2]]) then
-							menu.displayControlRow(ftable, i, control[1], control[2], control[3], control[4], controls.mappable or control[7], control[5], first, control[6], controls.compassmenusupport, controls.mouseonly, control.mousewheelonly)
+							menu.displayControlRow(ftable, i, control[1], control[2], control[3], control[4], controls.mappable or control[7], control[5], first, control[6], controls.compassmenusupport, controls.mouseonly, control.mousewheelonly, control.mouseaxisonly)
 						end
 					end
 					first = false
@@ -13478,7 +13733,7 @@ function menu.onUpdate()
 			end
 			menu.closeMenu("close")
 		end
-	elseif C.IsTradeShowVersion() and (menu.currentOption ~= "idle") and (menu.idleTimer + config.idleTime < curtime) then
+	elseif C.IsTradeShowVersion() and (menu.currentOption ~= "idle") and menu.idleTimer and (menu.idleTimer + config.idleTime < curtime) then
 		if menu.isStartmenu then
 			menu.openSubmenu("idle", menu.selectedOption.id)
 		end
@@ -13751,12 +14006,6 @@ function menu.newGameCallback(option, checked)
 		else
 			local playerinventory = GetPlayerInventory()
 			local onlineitems = OnlineGetUserItems()
-
-			-- kuertee start:
-			if not onlineitems then
-				onlineitems = {}
-			end
-			-- kuertee end
 
 			local hasnotuploadeditems = false
 			for ware, waredata in Helper.orderedPairs(playerinventory) do

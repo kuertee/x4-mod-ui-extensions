@@ -14,6 +14,10 @@ ffi.cdef[[
 		double productionamount;
 	} ProductionMethodInfo2;
 	typedef struct {
+		const char* text;
+		const char* mouseovertext;
+	} TextEntry;
+	typedef struct {
 		const char* macro;
 		const char* ware;
 		const char* productionmethodid;
@@ -88,7 +92,7 @@ ffi.cdef[[
 		uint32_t maxavailable;
 		double timeuntilnextupdate;
 	} WorkForceInfo;
-	const char* GenerateFactionRelationText(const char* factionid);
+	uint32_t GenerateFactionRelationText2(TextEntry* result, uint32_t resultlen, const char* factionid);
 	uint32_t GetBlueprints(UIBlueprint* result, uint32_t resultlen, const char* set, const char* category, const char* macroname);
 	UniverseID GetContextByClass(UniverseID componentid, const char* classname, bool includeself);
 	uint32_t GetDefaultMissileStorageCapacity(const char* macroname);
@@ -104,6 +108,7 @@ ffi.cdef[[
 	uint32_t GetNumContainedKnownSpaces(UniverseID spaceid);
 	uint32_t GetNumContainedKnownUnreadSpaces(UniverseID spaceid);
 	uint32_t GetNumDiscoveredSectorResources(UniverseID sectorid);
+	uint32_t GetNumFactionRelationText2(const char* factionid);
 	uint32_t GetNumFixedStations(UniverseID spaceid);
 	uint32_t GetNumHQs(const char* factionid);
 	uint32_t GetNumLibraryEntryAliases(const char* librarytypeid, const char* id);
@@ -221,6 +226,36 @@ local config = {
 		{"id"},
 		{"object"},
 		{ "searchtext" },
+	},
+	relationCategories = {
+		"hostile",
+		"enemy",
+		"ally",
+		"member",
+		"friend",
+		"neutral",
+	},
+	relationDisplayOrder = {
+		{ range = "ally",		name = ReadText(1001, 9603),	color = Color["text_ally"],				mouseovertext = ReadText(1026, 2403) },
+		{ range = "friend",		name = ReadText(1001, 12876),	color = Color["text_friend"] },
+		{ range = "neutral",	name = ReadText(1001, 12877),	color = Color["text_relation_neutral"] },
+		{ range = "enemy",		name = ReadText(1001, 9604),	color = Color["text_enemy"],			mouseovertext = ReadText(1026, 2402) },
+		{ range = "hostile",	name = ReadText(1001, 9632),	color = Color["text_hostile"],			mouseovertext = ReadText(1026, 2401) },
+	},
+	inventorycategoryorder = {
+		"generalitem",
+		"luxuryitem",
+		"hardware",
+		"curiosity",
+		"contraband",
+		"others",
+	},
+	inventorycategories = {
+		["generalitem"] = true,
+		["luxuryitem"] = true,
+		["hardware"] = true,
+		["curiosity"] = true,
+		["contraband"] = true,
 	},
 }
 
@@ -710,20 +745,47 @@ function menu.onShowMenu(state)
 		end
 	end
 
+	menu.waregroups = {}
+	local n = C.GetNumAllWareGroups()
+	local buf = ffi.new("WareGroupInfo2[?]", n)
+	n = C.GetAllWareGroups2(buf, n, "craftable")
+	for i = 0, n - 1 do
+		local id = ffi.string(buf[i].id)
+		menu.waregroups[id] = { icon = ffi.string(buf[i].factorymapicon), name = ffi.string(buf[i].name) }
+	end
+
 	for category in pairs(menu.data) do
 		if (category ~= "Factions") and (category ~= "Galaxy") and (category ~= "Blueprints") and (category ~= "FixedStations") then
 			for subcategory, entry in pairs(menu.data[category]) do
 				--print("category: " .. tostring(category) .. ", subcategory: " .. tostring(subcategory))
-				menu.data[category][subcategory] = GetLibrary(subcategory)
-				if entry.additionalcategories then
-					for _, additionalcategory in ipairs(entry.additionalcategories) do
-						local data = GetLibrary(additionalcategory)
-						for _, v in ipairs(data) do
-							table.insert(menu.data[category][subcategory], v)
+				if subcategory == "inventory_wares" then
+					menu.data[category][subcategory] = {}
+					for _, waregroup in ipairs(config.inventorycategoryorder) do
+						menu.data[category][subcategory][waregroup] = {}
+					end
+					local data = GetLibrary(subcategory)
+					for _, entry in ipairs(data) do
+						local groupID, groupName = GetWareData(entry.id, "groupID", "groupName")
+						if not config.inventorycategories[groupID] then
+							groupID = "others"
+						end
+						table.insert(menu.data[category][subcategory][groupID], entry)
+					end
+					for _, data in pairs(menu.data[category][subcategory]) do
+						table.sort(data, Helper.sortName)
+					end
+				else
+					menu.data[category][subcategory] = GetLibrary(subcategory)
+					if entry.additionalcategories then
+						for _, additionalcategory in ipairs(entry.additionalcategories) do
+							local data = GetLibrary(additionalcategory)
+							for _, v in ipairs(data) do
+								table.insert(menu.data[category][subcategory], v)
+							end
 						end
 					end
+					table.sort(menu.data[category][subcategory], Helper.sortName)
 				end
-				table.sort(menu.data[category][subcategory], Helper.sortName)
 			end
 		end
 	end
@@ -741,29 +803,32 @@ function menu.onShowMenu(state)
 			end
 			factionlibrary[i].numlicences = #factionlicences
 			factionlibrary[i].licences = factionlicences
-			local allies = {}
-			local enemies = {}
-			local hostiles = {}
+			factionlibrary[i].relations = {}
+			for _, range in ipairs(config.relationCategories) do
+				factionlibrary[i].relations[range] = {}
+			end
 			for j, faction2 in ipairs(factionlibrary) do
 				if faction.id ~= faction2.id then
-					if C.IsFactionHostileToFaction(faction.id, faction2.id) then
-						table.insert(hostiles, { id = faction2.id, name = GetFactionData(faction2.id, "name") })
-						--print(tostring(faction.id) .. " enemies with " .. tostring(faction2.id))
-					elseif C.IsFactionEnemyToFaction(faction.id, faction2.id) then
-						table.insert(enemies, { id = faction2.id, name = GetFactionData(faction2.id, "name") })
-						--print(tostring(faction.id) .. " enemies with " .. tostring(faction2.id))
-					elseif C.IsFactionAllyToFaction(faction.id, faction2.id) then
-						table.insert(allies, { id = faction2.id, name = GetFactionData(faction2.id, "name") })
-						--print(tostring(faction.id) .. " allied with " .. tostring(faction2.id))
+					for _, range in ipairs(config.relationCategories) do
+						if range == "hostile" then
+							if C.IsFactionHostileToFaction(faction.id, faction2.id) then
+								table.insert(factionlibrary[i].relations[range], { id = faction2.id, name = GetFactionData(faction2.id, "name") })
+								break
+							end
+						elseif C.IsFactionInRelationRangeToFaction(faction.id, faction2.id, range) then
+							if range == "member" then
+								table.insert(factionlibrary[i].relations["ally"], { id = faction2.id, name = GetFactionData(faction2.id, "name") })
+							else
+								table.insert(factionlibrary[i].relations[range], { id = faction2.id, name = GetFactionData(faction2.id, "name") })
+							end
+							break
+						end
 					end
 				end
 			end
-			table.sort(hostiles, Helper.sortName)
-			table.sort(enemies, Helper.sortName)
-			table.sort(allies, Helper.sortName)
-			factionlibrary[i].allies = allies
-			factionlibrary[i].enemies = enemies
-			factionlibrary[i].hostiles = hostiles
+			for _, range in ipairs(config.relationCategories) do
+				table.sort(factionlibrary[i].relations[range], Helper.sortName)
+			end
 			local sectors = {}
 			Helper.ffiVLA(sectors, "UniverseID", C.GetNumSectorsByOwner, C.GetSectorsByOwner, faction.id)
 			for i = #sectors, 1, -1 do
@@ -937,7 +1002,6 @@ function menu.onShowMenu(state)
 						end
 					else
 					-- end: alexandretk call-backs
-
 						if purpose == "auxiliary" then
 							-- sic! We want auxiliary ships to show up in the "support" category under combat
 							purpose = "fight"
@@ -947,7 +1011,15 @@ function menu.onShowMenu(state)
 						end
 						menu.expanded[purpose] = true
 						menu.expanded[purpose .. sizecategory] = true
-
+					end
+				elseif menu.mode == "Wares" then
+					menu.expanded[menu.library] = true
+					if menu.library == "inventory_wares" then
+						local groupID = GetWareData(locware, "groupID")
+						if not config.inventorycategories[groupID] then
+							groupID = "others"
+						end
+						menu.expanded[menu.library .. groupID] = true
 					end
 				else
 					menu.expanded[menu.library] = true
@@ -958,6 +1030,10 @@ function menu.onShowMenu(state)
 						menu.details = entry
 					end
 				end
+			elseif menu.mode == "Licences" then
+				menu.object.factionid = menu.param[6]
+				menu.expanded["Factions"] = true
+				menu.expanded[menu.object.factionid] = true
 			end
 		else
 			print("menu_encyclopedia.lua, menu.onShowMenu(): No matching mode for given encyclopedia entry found! Probably an unsupported infolibrary type. (" .. menu.library .. ", " .. menu.id .. ")")
@@ -1156,6 +1232,14 @@ function menu.addIndexEntry(array, item, name, rowdata, indent, numentries, expa
 					end
 				end
 			end
+		elseif (rowdata[1] == "Wares") and (type(rowdata[2]) == "table") then
+			local category = rowdata[2][1]
+			local group = rowdata[2][2]
+			for _, entry in ipairs(menu.data["Wares"][category][group]) do
+				if not C.IsKnownItemRead(category, entry.id) then
+					numunread = numunread + 1
+				end
+			end
 		else
 			if type(rowdata) == "table" then
 				numunread = C.GetNumUnreadLibraryEntries(rowdata[2])
@@ -1313,14 +1397,34 @@ function menu.createIndex()
 		if i == 1 then
 			warecategory = "wares"
 			loctext = ReadText(1001, 46)
+			numentries = #menu.data["Wares"][warecategory]
 		elseif i == 2 then
 			warecategory = "inventory_wares"
 			loctext = ReadText(1001, 2434)
+			numentries = 0
+			for _, data in pairs(menu.data["Wares"][warecategory]) do
+				numentries = numentries + #data
+			end
 		end
-		numentries = #menu.data["Wares"][warecategory]
 		local ware_cat_index = menu.addIndexEntry(ware_index, nil, loctext, { "Wares", warecategory }, 1, numentries, menu.expanded[warecategory])
-		for _, entry in ipairs(menu.data["Wares"][warecategory]) do
-			menu.addIndexEntry(ware_cat_index, entry.id, entry.name, { "Wares", warecategory, entry }, 2)
+		if i == 1 then
+			for _, entry in ipairs(menu.data["Wares"][warecategory]) do
+				menu.addIndexEntry(ware_cat_index, entry.id, entry.name, { "Wares", warecategory, entry }, 2)
+			end
+		elseif i == 2 then
+			for _, waregroup in ipairs(config.inventorycategoryorder) do
+				if #menu.data["Wares"][warecategory][waregroup] > 0 then
+					local numentries = #menu.data["Wares"][warecategory][waregroup]
+					local name = ReadText(1001, 9653)
+					if menu.waregroups[waregroup] then
+						name = menu.waregroups[waregroup].name
+					end
+					local ware_cat_group_index = menu.addIndexEntry(ware_cat_index, nil, name, { "Wares", { warecategory, waregroup } }, 2, numentries, menu.expanded[warecategory .. waregroup])
+					for _, entry in ipairs(menu.data["Wares"][warecategory][waregroup]) do
+						menu.addIndexEntry(ware_cat_group_index, entry.id, entry.name, { "Wares", warecategory, entry }, 2)
+					end
+				end
+			end
 		end
 	end
 
@@ -1429,7 +1533,10 @@ function menu.displayIndexRow(inputtable, entry)
 		end
 	 
 		if not menu.selectedrow and type(entry.rowdata) == "table" then
-			if ((menu.mode ~= "Galaxy") and menu.id and (menu.id == entry.rowdata[#entry.rowdata].id)) or (menu.object and (menu.object == entry.rowdata[3])) then
+			if (menu.mode == "Licences") and menu.id and (menu.id == entry.rowdata[3].id) then
+				menu.selectedrow = locrow.index
+				menu.toprow = GetTopRow(menu.table_index)
+			elseif ((menu.mode ~= "Galaxy") and menu.id and (menu.id == entry.rowdata[#entry.rowdata].id)) or (menu.object and (menu.object == entry.rowdata[3])) then
 				menu.selectedrow = locrow.index
 				menu.toprow = GetTopRow(menu.table_index)
 			elseif (menu.mode ~= "Galaxy") and menu.id and entry.rowdata[#entry.rowdata].id then
@@ -2764,24 +2871,27 @@ function menu.addDetailRows(ftable)
 					end
 				end
 			end
-			-- Allies
-			menu.addDetailRow(ftable, ReadText(1001, 9603) .. ReadText(1001, 120), nil, nil, nil, nil, { mouseOverText = ReadText(1026, 2403) })
-			for i, entry in ipairs(menu.details.allies) do
-				menu.addDetailRow(ftable, "", entry.name, nil, nil, nil, nil, { font = (entry.id == "player") and Helper.standardFontBold or nil })
-			end
-			-- Enemies
-			menu.addDetailRow(ftable, ReadText(1001, 9604) .. ReadText(1001, 120), nil, nil, nil, nil, { mouseOverText = ReadText(1026, 2402) })
-			for i, entry in ipairs(menu.details.enemies) do
-				menu.addDetailRow(ftable, "", entry.name, nil, nil, nil, nil, { font = (entry.id == "player") and Helper.standardFontBold or nil, color = menu.holomapcolor.enemycolor })
-			end
-			-- Hostiles
-			menu.addDetailRow(ftable, ReadText(1001, 9632) .. ReadText(1001, 120), nil, nil, nil, nil, { mouseOverText = ReadText(1026, 2401) })
-			for i, entry in ipairs(menu.details.hostiles) do
-				menu.addDetailRow(ftable, "", entry.name, nil, nil, nil, nil, { font = (entry.id == "player") and Helper.standardFontBold or nil, color = menu.holomapcolor.hostilecolor })
+			-- Relations
+			for j, displayentry in ipairs(config.relationDisplayOrder) do
+				menu.addDetailRow(ftable, displayentry.name .. ReadText(1001, 120), nil, nil, nil, nil, { mouseOverText = displayentry.mouseovertext })
+				if #menu.details.relations[displayentry.range] > 0 then
+					for i, entry in ipairs(menu.details.relations[displayentry.range]) do
+						menu.addDetailRow(ftable, "", entry.name, nil, nil, nil, nil, { font = (entry.id == "player") and Helper.standardFontBold or nil, color = displayentry.color })
+					end
+				else
+					menu.addDetailRow(ftable, "", ReadText(1001, 38), nil, nil, nil, nil, { color = Color["text_inactive"] })
+				end
 			end
 			-- Your Relation
 			menu.addDetailRow(ftable, ReadText(1001, 9636) .. ReadText(1001, 120))
-			menu.addDetailRow(ftable, ffi.string(C.GenerateFactionRelationText(menu.id)), nil, nil, 25)
+			local n = C.GetNumFactionRelationText2(menu.id)
+			if n > 0 then
+				local buf = ffi.new("TextEntry[?]", n)
+				n = C.GenerateFactionRelationText2(buf, n, menu.id)
+				for i = 0, n - 1 do
+					menu.addDetailRow(ftable, ffi.string(buf[i].text), nil, nil, 25, nil, { mouseOverText = ffi.string(buf[i].mouseovertext) })
+				end
+			end
 			-- empty line
 			menu.addDetailRow(ftable, "")
 			-- Sectors
@@ -2880,7 +2990,7 @@ function menu.addDetailRows(ftable)
 
 		elseif menu.mode == "Ships" then
 			local hasdefaultloadout = C.HasDefaultLoadout2(menu.id, true)
-			local shipmakerraces = GetMacroData(menu.id, "makerraceid")
+			local shipmakerraces, prestigename = GetMacroData(menu.id, "makerraceid", "prestigename")
 			-- hull
 			menu.addDetailRow(ftable, ReadText(1001, 9083), ConvertIntegerString(menu.object.hull, true, 0, true) .. " " .. ReadText(1001, 118))
 			-- ship type
@@ -2905,6 +3015,8 @@ function menu.addDetailRows(ftable)
 			end
 			-- mass
 			menu.addDetailRow(ftable, ReadText(1001, 9052), ConvertIntegerString(menu.object.mass, true, 0, true) .. " " .. ReadText(1001, 116))
+			-- prestige
+			menu.addDetailRow(ftable, ReadText(1001, 12920), prestigename)
 			-- empty line
 			menu.addDetailRow(ftable, "")
 			-- engine
@@ -3043,31 +3155,36 @@ function menu.addDetailRows(ftable)
 			-- all known shield generators are in menu.data["Equipment"]["shieldgentypes"]
 			local bestshield
 			local bestname = ReadText(1001, 9003)	-- "No Known Component"
-			local numslots = tonumber(C.GetNumUpgradeSlots(0, menu.id, "shield"))
-			for i = numslots, 1, -1 do
-				local locgroup = C.GetUpgradeSlotGroup(0, menu.id, "shield", i)
-				if (ffi.string(locgroup.path) == "..") and (ffi.string(locgroup.group) == "") then
-					for _, shieldgen in pairs(menu.data.Equipment.shieldgentypes) do
-						-- check all aliases due to collision / no-collision compatibilities
-						local n = C.GetNumLibraryEntryAliases("shieldgentypes", shieldgen.id)
-						local buf = ffi.new("const char*[?]", n)
-						n = C.GetLibraryEntryAliases(buf, n, "shieldgentypes", shieldgen.id)
-						for j = 0, n - 1 do
-							local aliasid = ffi.string(buf[j])
-							local makerrace = GetMacroData(aliasid, "makerraceid")
-							local allowed = menu.isMakerRaceAllowed(makerrace, shipmakerraces)
-							if allowed then
-								if C.IsUpgradeMacroCompatible(0, 0, menu.id, false, "shield", i, aliasid) then
-									local evalshieldgen = GetLibraryEntry("shieldgentypes", aliasid)
-									if not bestshield or evalshieldgen.shield > bestshield.shield then
-										bestshield = evalshieldgen
+
+			if hasdefaultloadout and menu.preobject then
+				bestshield = GetLibraryEntry( "shieldgentypes", ffi.string(C.GetUpgradeSlotCurrentMacro(ConvertIDTo64Bit(menu.preobject), 0, "shield", 1)) )
+			else
+				local numslots = tonumber(C.GetNumUpgradeSlots(0, menu.id, "shield"))
+				for i = numslots, 1, -1 do
+					local locgroup = C.GetUpgradeSlotGroup(0, menu.id, "shield", i)
+					if (ffi.string(locgroup.path) == "..") and (ffi.string(locgroup.group) == "") then
+						for _, shieldgen in pairs(menu.data.Equipment.shieldgentypes) do
+							-- check all aliases due to collision / no-collision compatibilities
+							local n = C.GetNumLibraryEntryAliases("shieldgentypes", shieldgen.id)
+							local buf = ffi.new("const char*[?]", n)
+							n = C.GetLibraryEntryAliases(buf, n, "shieldgentypes", shieldgen.id)
+							for j = 0, n - 1 do
+								local aliasid = ffi.string(buf[j])
+								local makerrace = GetMacroData(aliasid, "makerraceid")
+								local allowed = menu.isMakerRaceAllowed(makerrace, shipmakerraces)
+								if allowed then
+									if C.IsUpgradeMacroCompatible(0, 0, menu.id, false, "shield", i, aliasid) then
+										local evalshieldgen = GetLibraryEntry("shieldgentypes", aliasid)
+										if not bestshield or evalshieldgen.shield > bestshield.shield then
+											bestshield = evalshieldgen
+										end
 									end
 								end
 							end
 						end
+					else
+						numslots = numslots - 1
 					end
-				else
-					numslots = numslots - 1
 				end
 			end
 			local totalshieldcapacity = 0
@@ -3504,6 +3621,24 @@ function menu.addDetailRows(ftable)
 				end
 
 			end
+
+			-- compatibilities
+			local compatibilityinfo = GetMacroData(menu.id, "compatibilityinfo")
+			if #compatibilityinfo > 0 then
+				menu.addDetailRow(ftable, "")
+				
+				local compatibilitytext = ""
+				for _, entry in ipairs(Helper.equipmentCompatibilities) do
+					for _, compatibility in ipairs(compatibilityinfo) do
+						if entry.tag == compatibility.tag then
+							compatibilitytext = compatibilitytext .. ((compatibilitytext ~= "") and " " or "") .. Helper.convertColorToText(entry.color) .. compatibility.name
+							break
+						end
+					end
+				end
+				menu.addDetailRow(ftable, ReadText(1001, 8548), compatibilitytext)
+			end
+
 			-- build resources
 			if menu.details.productionmethods and (#menu.details.productionmethods > 0) then
 				-- empty line
@@ -3673,6 +3808,24 @@ function menu.addDetailRows(ftable)
 				menu.addDetailRow(ftable, ReadText(1001, 2980), ConvertMoneyString(locware.avgprice, false, true, 0, true) .. " " .. ReadText(1001, 101))
 
 			end
+
+			-- compatibilities
+			local compatibilityinfo = GetMacroData(menu.id, "compatibilityinfo")
+			if #compatibilityinfo > 0 then
+				menu.addDetailRow(ftable, "")
+				
+				local compatibilitytext = ""
+				for _, entry in ipairs(Helper.equipmentCompatibilities) do
+					for _, compatibility in ipairs(compatibilityinfo) do
+						if entry.tag == compatibility.tag then
+							compatibilitytext = compatibilitytext .. ((compatibilitytext ~= "") and " " or "") .. Helper.convertColorToText(entry.color) .. compatibility.name
+							break
+						end
+					end
+				end
+				menu.addDetailRow(ftable, ReadText(1001, 8548), compatibilitytext)
+			end
+
 			-- build resources
 			if menu.details.productionmethods and (#menu.details.productionmethods > 0) then
 				-- empty line
