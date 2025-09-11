@@ -7,7 +7,7 @@ Updates
 =======
 v8.0.0.8, 11 Sep 2025:
 - Tweak: 8.0 final compatibility tweaks.
-- Change log consolidated from the beta version:
+- Change log from the beta version:
 - New feature: The Distance Tool now shows the number of systems between positions if the two are in different systems.
 - New feature: The Distance Tool now works on objects in lists. Previously, it only worked on clicked objects on the map.
 - Bug-fix: The Distance Tool now works from the selected object. Previously, it would work off the last left-clicked or right-clicked position or object.
