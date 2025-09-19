@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<diff>
+	<add sel="/language">
+		<page id="101475" voice="no">
+			<t id="100">Custom Actions</t>
+			<t id="101">Custom Orders</t>
+			<t id="102">Center On Map</t>
+			<t id="103">Center Destination On Map</t>
+		</page>
+	</add>
+</diff>
