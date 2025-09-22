@@ -241,7 +241,11 @@ function menu.createInfoFrame()
 
 	-- kuertee start:
 	if not isUseFrameHeight then
-		menu.infoFrame.properties.height = ftable.properties.y + ftable:getVisibleHeight() + 3 * Helper.borderSize
+		if ftable then
+			menu.infoFrame.properties.height = ftable.properties.y + ftable:getVisibleHeight() + 3 * Helper.borderSize
+		else
+			menu.infoFrame.properties.height = frameProperties.height
+		end
 	else
 	-- kuertee end
 
