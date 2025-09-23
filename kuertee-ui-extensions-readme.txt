@@ -73,14 +73,6 @@ For any questions, it's best to @ me on Egosoft's unofficial Discord modding cha
 
 Read the CHANGES BUILT INTO THIS MOD sections.
 
-Mod-specific lua files
-======================
-- The actual lua that modifies the UI needs to exist in the mod's lua file in the mod's folder.
-- The file needs to be named the same as the lua file it will be modding.
-- Extract and examine "kuertee_uix_mod_sample.ZIP".
-  - It adds a "Hello world" menu item in both the left and right side bars of the Map Menu.
-  - In this example, the lua file is named: "menu_map_uix.lua" because it will be modding the base-game's "menu_map.lua" file.
-
 Features
 ========
 Modded Lua files with callbacks that allow more than one mod to change the same UI element.
