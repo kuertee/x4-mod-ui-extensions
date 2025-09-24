@@ -4240,6 +4240,15 @@ function menu.createContentTable(frame, position)
 			-- kuertee end: callback
 		end
 	end
+
+	-- start uix_callback
+	if menu.uix_callbacks ["createContentTable_AppendToMenu"] then
+		for uix_id, uix_callback in pairs (menu.uix_callbacks ["createContentTable_AppendToMenu"]) do
+			uix_callback (ftable, position)
+		end
+	end
+	-- end uix_callback
+
 	if skiporders then
 		local row = ftable:addEmptyRow(config.rowHeight / 2)
 
