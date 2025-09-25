@@ -3936,12 +3936,6 @@ function menu.createContentTable(frame, position)
 	end
 	-- kuertee end: multi-rename
 
-	-- kuertee start: center on map
-	if menu.mode ~= "shipconsole" and (not menu.shown) then
-		height = height + menu.uix_centerOnMap_addButton(ftable)
-	end
-	-- kuertee end: center on map
-
 	-- entries
 	local convertedComponent = ConvertStringTo64Bit(tostring(menu.componentSlot.component))
 	local isonlinetarget, isplayerownedtarget
@@ -4292,54 +4286,6 @@ function menu.uix_multiRename_addButton(ftable)
 	return height
 end
 -- kuertee end: multi-rename
-
--- kuertee start: center on map
-function menu.uix_centerOnMap_addButton(ftable)
-	local height = 0
-	local object = ConvertStringTo64Bit(tostring(menu.componentSlot.component))
-	if IsValidComponent(object) then
-		local row = ftable:addRow(true, {  })
-		local button = row[1]:setColSpan(5):createButton({
-			active = true,
-			bgColor = Color["button_background_hidden"],
-			highlightColor = Color["button_highlight_default"],
-		}):setText((ReadText(101475, 102))) -- <t id="102">Center On Map</t>
-		row[1].handlers.onClick = function () return menu.uix_centerOnMap(object) end
-		height = height + row:getHeight() + Helper.borderSize
-		local exitGate
-		if C.IsComponentClass(object, "gate") then
-			local isActive = GetComponentData(object, "isactive")
-			if isActive then
-				exitGate = ConvertStringTo64Bit(tostring(GetComponentData(object, "destination")))
-			end
-		elseif C.IsComponentClass(object, "highway") then
-			exitGate = ConvertStringTo64Bit(tostring(GetComponentData(object, "exitgate")))
-		end
-		if IsValidComponent(exitGate) then
-			local row = ftable:addRow(true, {  })
-			local button = row[1]:setColSpan(5):createButton({
-				active = true,
-				bgColor = Color["button_background_hidden"],
-				highlightColor = Color["button_highlight_default"],
-			}):setText((ReadText(101475, 103))) -- <t id="103">Center On Destination</t>
-			row[1].handlers.onClick = function () return menu.uix_centerOnMap(exitGate) end
-			height = height + row:getHeight() + Helper.borderSize
-			-- local nextSector = ConvertStringTo64Bit(tostring(GetContextByClass(connectingGate, "sector")))
-			-- if IsValidComponent(nextSector) then
-			-- 	local row = ftable:addRow(true, {  })
-			-- 	local button = row[1]:setColSpan(5):createButton({
-			-- 		active = true,
-			-- 		bgColor = Color["button_background_hidden"],
-			-- 		highlightColor = Color["button_highlight_default"],
-			-- 	}):setText((ReadText(1025, 34))) -- <t id="34">Follow</t>
-			-- 	row[1].handlers.onClick = function () return menu.uix_centerOnMap(nextSector) end
-			-- 	height = height + row:getHeight() + Helper.borderSize
-			-- end
-		end
-	end
-	return height
-end
--- kuertee end: center on map
 
 function menu.createSubSectionTable(frame, position)
 	local x = 0
@@ -5769,6 +5715,45 @@ function menu.insertLuaAction(actiontype, istobedisplayed)
 			end
 			menu.insertInteractionContent((menu.showPlayerInteractions and (not menu.shown)) and "player_interaction" or "interaction", { type = actiontype, text = IsSameComponent(GetActiveGuidanceMissionComponent(), convertedComponent) and ReadText(1001, 3243) or text, helpOverlayID = "interactmenu_guidance", helpOverlayText = " ", helpOverlayHighlightOnly = true, script = function () return menu.buttonGuidance(useoffset) end, mouseOverText = Helper.getInputMouseOverText("INPUT_ACTION_TOGGLE_GUIDANCE") })
 		end
+
+		-- kuertee start: center on map
+		if menu.mode ~= "shipconsole" and (not menu.shown) then
+			menu.insertInteractionContent(
+				"interaction",
+				{
+					type = actiontype,
+					text = ReadText(101475, 102),
+					helpOverlayID = "",
+					helpOverlayText = "",
+					helpOverlayHighlightOnly = true,
+					script = function () return menu.uix_centerOnMap(convertedComponent) end,
+					mouseOverText = "",
+				})
+			local uix_exitGate
+			if C.IsComponentClass(convertedComponent, "gate") then
+				local uix_isGateActive = GetComponentData(convertedComponent, "isactive")
+				if uix_isGateActive then
+					uix_exitGate = ConvertStringTo64Bit(tostring(GetComponentData(convertedComponent, "destination")))
+				end
+			elseif C.IsComponentClass(convertedComponent, "highway") then
+				uix_exitGate = ConvertStringTo64Bit(tostring(GetComponentData(convertedComponent, "exitgate")))
+			end
+			if IsValidComponent(uix_exitGate) then
+				menu.insertInteractionContent(
+					"interaction",
+					{
+						type = actiontype .. "_destination",
+						text = ReadText(101475, 103),
+						helpOverlayID = "",
+						helpOverlayText = "",
+						helpOverlayHighlightOnly = true,
+						script = function () return menu.uix_centerOnMap(uix_exitGate) end,
+						mouseOverText = "",
+					})
+			end
+		end
+		-- kuertee end: center on map
+
 	elseif actiontype == "hire" then
 		if GetComponentData(convertedComponent, "primarypurpose") == "build" then
 			local stations = GetContainedStationsByOwner("player", nil, true)
