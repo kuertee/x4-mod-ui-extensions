@@ -396,6 +396,13 @@ function menu.display(firsttime)
 
 									local mouseovertext = ""
 									local compatibilityinfo = GetMacroData(macro, "compatibilityinfo")
+
+									-- kuertee start:
+									if not compatibilityinfo then
+										compatibilityinfo = {}
+									end
+									-- kuertee end:
+
 									for _, entry in ipairs(Helper.equipmentCompatibilities) do
 										for _, compatibility in ipairs(compatibilityinfo) do
 											if entry.tag == compatibility.tag then

@@ -3937,7 +3937,9 @@ function menu.createContentTable(frame, position)
 	-- kuertee end: multi-rename
 
 	-- kuertee start: center on map
-	height = height + menu.uix_centerOnMap_addButton(ftable)
+	if menu.mode ~= "shipconsole" and (not menu.shown) then
+		height = height + menu.uix_centerOnMap_addButton(ftable)
+	end
 	-- kuertee end: center on map
 
 	-- entries

@@ -1,6 +1,6 @@
 ui/addons/ego_detailmonitor/menu_diplomacy.xpl 205223 1757567957 67aa3fe5f320fadf4464d1dc109e5201
 ui/addons/ego_detailmonitor/menu_docked.xpl 92890 1757567957 a1250b29ed82d32401aa3aaa5d86570a
-ui/addons/ego_detailmonitor/menu_encyclopedia.xpl 192134 1757567957 201d89c2354c2afeadaf0d8eea7d3dc4
+ui/addons/ego_detailmonitor/menu_encyclopedia.xpl 192366 1758696416 e459c132eab25477ee4af7474806a237
 ui/addons/ego_detailmonitor/menu_map.xpl 1532391 1757568043 ef62b32197ed403f2fff37a5a966407b
 ui/addons/ego_detailmonitor/menu_playerinfo.xpl 344962 1757567957 c5d7aff01713a5b62dd25d3d863ebcc6
 ui/addons/ego_detailmonitor/menu_research.xpl 44971 1757568043 3c627fd4606ba7cf985bd92c9c24c631
@@ -10,7 +10,7 @@ ui/addons/ego_detailmonitor/menu_ship_configuration.xpl 491767 1757567957 33947f
 ui/addons/ego_detailmonitor/menu_station_configuration.xpl 275498 1757567957 bfa25daf72b42c714ccc7ba851853dd0
 ui/addons/ego_detailmonitor/menu_station_overview.xpl 225186 1757547929 3d5d708a1cb61391168b139c46cede42
 ui/addons/ego_detailmonitor/menu_toplevel.xpl 21083 1757547898 f7aafe3c39479377b361f020a5a4e11c
-ui/addons/ego_detailmonitor/menu_trader_blueprintsorlicences.xpl 40682 1757567957 9ac69bafba9d18d35a617b6e1263b5c5
+ui/addons/ego_detailmonitor/menu_trader_blueprintsorlicences.xpl 40828 1758696606 dd1894f0925cf422d25155ecdb37132d
 ui/addons/ego_detailmonitor/menu_transactionlog.xpl 15216 1757567957 cb3f5888412ad2677a48f9b5d183bf26
 ui/addons/ego_detailmonitor/menu_transporter.xpl 41106 1757547807 bf2e62f0f8b45aefd434319424034eb3
 ui/addons/ego_detailmonitor/menu_userquestion.xpl 27407 1758454336 98bbf1ddaaec135d7d25ee23085ad41b

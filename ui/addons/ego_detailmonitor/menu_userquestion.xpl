@@ -214,6 +214,7 @@ function menu.createInfoFrame()
 	end
 	if not frameProperties then
 	-- kuertee end: callback
+
 		frameProperties = {
 			standardButtons = {},
 			width = Helper.scaleX(config.width) + 6 * Helper.borderSize,

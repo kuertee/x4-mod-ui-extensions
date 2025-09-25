@@ -3624,6 +3624,13 @@ function menu.addDetailRows(ftable)
 
 			-- compatibilities
 			local compatibilityinfo = GetMacroData(menu.id, "compatibilityinfo")
+
+			-- kuertee start:
+			if not compatibilityinfo then
+				compatibilityinfo = {}
+			end
+			-- kuertee end:
+
 			if #compatibilityinfo > 0 then
 				menu.addDetailRow(ftable, "")
 				
@@ -3811,6 +3818,13 @@ function menu.addDetailRows(ftable)
 
 			-- compatibilities
 			local compatibilityinfo = GetMacroData(menu.id, "compatibilityinfo")
+
+			-- kuertee start:
+			if not compatibilityinfo then
+				compatibilityinfo = {}
+			end
+			-- kuertee end:
+
 			if #compatibilityinfo > 0 then
 				menu.addDetailRow(ftable, "")
 				
