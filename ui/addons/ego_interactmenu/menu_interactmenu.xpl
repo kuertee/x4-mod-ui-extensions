@@ -4051,6 +4051,12 @@ function menu.createContentTable(frame, position)
 			end
 			-- kuertee end: forceShowMenus: show main, interaction, custom_actions menu when no actions to show
 
+			-- kuertee start: always show interaction
+			-- if (not pass) and section.id == "interaction" and (not menu.intersectordefencegroup) then
+			--	pass = true
+			-- end
+			-- kuertee end: always show interaction
+
 			-- kuertee start: don't show custom actions in position defense options
 			if pass and section.id == "custom_actions" and menu.intersectordefencegroup then
 				pass = false
@@ -6719,6 +6725,44 @@ function menu.insertLuaAction(actiontype, istobedisplayed)
 	else
 		DebugError("Unknown LuaAction type '" .. actiontype .. "'! [Florian]")
 	end
+
+	-- kuertee start: multi-rename
+	-- note: disabled because "interaction" section is not always listed. multi-rename added with uix_multiRename_addButton() instead.
+	-- Helper.debugText_forced("actiontype", actiontype)
+	-- if actiontype == "rename" then
+	-- 	local hasPlayerOwnedSelectedOtherObjects
+	-- 	if menu.selectedotherobjects and #menu.selectedotherobjects > 0 then
+	-- 		for _, object in ipairs(menu.selectedotherobjects) do
+	-- 			if IsValidComponent(object) then
+	-- 				local isplayerowned = GetComponentData(ConvertStringTo64Bit(tostring(object)), "isplayerowned")
+	-- 				if isplayerowned then
+	-- 					hasPlayerOwnedSelectedOtherObjects = true
+	-- 					break
+	-- 				end
+	-- 			end
+	-- 		end
+	-- 	end
+	-- 	Helper.debugText_forced("#menu.selectedplayerships", #menu.selectedplayerships)
+	-- 	Helper.debugText_forced("hasPlayerOwnedSelectedOtherObjects", hasPlayerOwnedSelectedOtherObjects)
+	-- 	Helper.debugText_forced("#menu.selectedplayerdeployables", #menu.selectedplayerdeployables)
+	-- 	if #menu.selectedplayerships > 0 or hasPlayerOwnedSelectedOtherObjects or #menu.selectedplayerdeployables > 0 then
+	-- 		uix_multiRename_objects = menu.uix_multiRename_getObjects()
+	-- 		Helper.debugText_forced("uix_multiRename_objects", uix_multiRename_objects)
+	-- 		menu.insertInteractionContent(
+	-- 			"interaction",
+	-- 			{
+	-- 				type = actiontype,
+	-- 				text = ReadText(1001, 1114),
+	-- 				text2 = string.format(ReadText(1001, 11105), #uix_multiRename_objects),
+	-- 				helpOverlayID = "",
+	-- 				helpOverlayText = "",
+	-- 				helpOverlayHighlightOnly = true,
+	-- 				script = function () return menu.buttonRename(nil, true) end,
+	-- 				mouseOverText = "",
+	-- 			})
+	-- 	end
+	-- end
+	-- kuertee end: multi-rename
 end
 
 function menu.prepareData()
