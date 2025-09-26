@@ -7793,6 +7793,10 @@ function menu.createObjectList(frame, instance)
 				local primarypurpose, isplayerowned, isdeployable, isfleetlead, isdocked, classid, realclassid = GetComponentData(convertedID, "primarypurpose", "isplayerowned", "isdeployable", "isfleetlead", "isdocked", "classid", "realclassid")
 				if menu.mode == "selectCV" then
 					if Helper.isComponentClass(classid, "ship") and (primarypurpose == "build") then
+						if isfleetlead then
+							-- get all fleet unit subordinate data here once instead of doing recursion
+							menu.getFleetUnitSubordinates(instance, id, true)
+						end
 						if isplayerowned then
 							table.insert(infoTableData.playerShips, convertedID)
 						else

@@ -2360,7 +2360,8 @@ function menu.createAgentDetailsContext(frame)
 		helpOverlayID = "diplomacy_agent_ship",
 		helpOverlayText = " ",
 		helpOverlayHighlightOnly = true,
-		active = (not agent.isbusy) or (agent.isbusy.optionselected == false),
+		active = ((not agent.isbusy) or (agent.isbusy.optionselected == false)) and (#shipoptions > 0),
+		mouseOverText = (#shipoptions == 0) and (ColorText["text_error"] .. ReadText(1001, 2942)) or "",
 		highlightColor = Color["dropdown_highlight_big"],
 	}):setTextProperties({
 		y = 1.5 * Helper.standardTextHeight,
@@ -2407,7 +2408,7 @@ function menu.createActionConfigContext(frame)
 
 	titletable:addEmptyRow(2 * Helper.standardContainerOffset)
 
-	local agentdropdownheight = 3 * math.max(tonumber(C.GetTextHeight("M", Helper.standardFont, Helper.standardFontSize, 0)) + 2, Helper.standardTextHeight)
+	local agentdropdownheight = 3 * tonumber(C.GetTextHeight("M", Helper.standardFont, Helper.standardFontSize, 0)) + 2
 
 	local yoffset = titletable:getFullHeight() + Helper.borderSize
 	local descwidth = menu.actionConfig.width / 2 - 3 * Helper.standardContainerOffset
@@ -3044,7 +3045,7 @@ function menu.createEventContext(frame)
 
 	bannertable:addEmptyRow(Helper.standardContainerOffset)
 	
-	local agentdropdownheight = 3 * math.max(tonumber(C.GetTextHeight("M", Helper.standardFont, Helper.standardFontSize, 0)) + 2, Helper.standardTextHeight)
+	local agentdropdownheight = 3 * tonumber(C.GetTextHeight("M", Helper.standardFont, Helper.standardFontSize, 0)) + 2
 
 	local yoffset = bannertable.properties.y + bannertable:getFullHeight() + Helper.borderSize + 2 * Helper.standardContainerOffset
 	local descwidth =  menu.actionConfig.width / 2 - 3 * Helper.standardContainerOffset
