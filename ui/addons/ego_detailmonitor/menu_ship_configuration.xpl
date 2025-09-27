@@ -6844,7 +6844,7 @@ function menu.displayModSlot(ftable, type, modclass, slot, slotdata, isgroup)
 		end
 
 		row[2]:setColSpan(4):createText(GetMacroData(slotdata.currentmacro, "name"))
-		if (not uprgadetype) or (not upgradetype.mergeslots) then
+		if (not upgradetype) or (not upgradetype.mergeslots) then
 			row[6]:createText("[" .. ReadText(1001, 66) .. " " .. slot .. "]", { halign = "right" })
 		end
 	end
