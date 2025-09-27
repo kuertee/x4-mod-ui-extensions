@@ -5,9 +5,22 @@ by kuertee. Contributors: AlexandreTK, DrWhoKnows, DmytroK, Erixon, Forleyor, IA
 
 Updates
 =======
-v8.0.0.11, 24 Sep 2025:
-- New feature: New callback for Forleyor's new unreleased mod.
-- Bug-fix: Error that prevented the UserQuestion menu from getting shown sometimes. E.g. the Accessibility Features menu.
+v8.0.1.0, 28 Sep 2025:
+- Tweak: 8.0 Hot-fix 1 compatibility.
+- Tweak: Center On Map and Center Destination On Map menu items are now listed after the Guidance menu items - as they should have been.
+- Bug-fix: Center On Map and Center Destination On Map are now listed only when the map is open - as they should have been.
+- Clarification of the changed zoom hotkeys and the modded double-click zoom functions:
+Map Menu: Zoom Function Tweaks
+==============================
+1. Reset To Top View: Current function: pan the map to the player. This is unchanged from the base-game.
+2. Zone View: Current function: zoom in across 7 zoom levels. Overriden base-game function: Pan the map to the player at a zoom level approximating a zone view of the player's location.
+3. Sector View: Current function: zoom out across 7 zoom levels. Overridden base-game function: Pan the map to the player at a zoom level approximating a sector view of the player's location.
+4. Double-clicking on an object on the map will toggle between 2 zoom levels:
+  - "near view"
+  - and "zone view" that shows a good portion of the zone
+5. Double-clicking on a sector on the map will toggle between 2 zoom levels:
+  - "sector view" that always shows the icons of major object,
+  - and a "local cluster view".
 
 NOTES FOR PLAYERS:
 ==================
@@ -173,8 +186,15 @@ Right-click on an object and click on Center On Map to center the object on the 
 
 Map Menu: Zoom Function Tweaks
 ==============================
-1. The Zone and Sector View hotkeys zoom in and out across 7 zoom levels. They also do not pan to the player's location like in the base game.
-2. Double-clicking on an object or sector on the map will toggle between 2 zoom levels appropriate for them.
+1. Reset To Top View: Current function: pan the map to the player. This is unchanged from the base-game.
+2. Zone View: Current function: zoom in across 7 zoom levels. Overriden base-game function: Pan the map to the player at a zoom level approximating a zone view of the player's location.
+3. Sector View: Current function: zoom out across 7 zoom levels. Overridden base-game function: Pan the map to the player at a zoom level approximating a sector view of the player's location.
+4. Double-clicking an object on the map will toggle between 2 zoom levels:
+  - "near view"
+  - and "zone view" that shows a good portion of the zone
+5. Double-clicking a sector on the map will toggle between 2 zoom levels:
+  - "sector view" that always shows the icons of major object,
+  - and a "local cluster view".
 
 CHANGES BUILT INTO THIS MOD (for developers)
 ============================================
@@ -248,6 +268,10 @@ French localisation by Calvitix.
 
 History
 =======
+v8.0.0.11, 24 Sep 2025:
+- New feature: New callback for Forleyor's new unreleased mod.
+- Bug-fix: Error that prevented the UserQuestion menu from getting shown sometimes. E.g. the Accessibility Features menu.
+
 v8.0.0.8, 11 Sep 2025:
 - Tweak: 8.0 final compatibility tweaks.
 - Change log from the beta version:
