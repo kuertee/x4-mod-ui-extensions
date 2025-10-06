@@ -4243,14 +4243,6 @@ function menu.createContentTable(frame, position)
 		end
 	end
 
-	-- start uix_callback
-	if menu.uix_callbacks ["createContentTable_AppendToMenu"] then
-		for uix_id, uix_callback in pairs (menu.uix_callbacks ["createContentTable_AppendToMenu"]) do
-			uix_callback (ftable, position)
-		end
-	end
-	-- end uix_callback
-
 	if skiporders then
 		local row = ftable:addEmptyRow(config.rowHeight / 2)
 
@@ -4767,6 +4759,15 @@ end
 
 function menu.prepareSections()
 	menu.actions = {}
+
+	-- start uix_callback
+	if menu.uix_callbacks ["prepareSections_on_start"] then
+		for uix_id, uix_callback in pairs (menu.uix_callbacks ["prepareSections_on_start"]) do
+			uix_callback (config.sections)
+		end
+	end
+	-- end uix_callback
+
 	for _, section in ipairs(config.sections) do
 		if section.subsections then
 
@@ -6722,6 +6723,12 @@ function menu.insertLuaAction(actiontype, istobedisplayed)
 		if menu.offsetcomponent and (menu.offsetcomponent ~= 0) then
 			menu.insertInteractionContent("cheats", { type = actiontype, text = "Warp here", script = menu.buttonWarpCheat }) -- (cheat only)
 		end
+	-- start uix_callback
+	elseif menu.uix_callbacks ["insertLuaAction_insert_custom_action"] then
+		for uix_id, uix_callback in pairs (menu.uix_callbacks ["insertLuaAction_insert_custom_action"]) do
+			uix_callback (actiontype, istobedisplayed)
+		end
+	-- end uix_callback
 	else
 		DebugError("Unknown LuaAction type '" .. actiontype .. "'! [Florian]")
 	end
@@ -6829,6 +6836,14 @@ function menu.prepareActions()
 				menu.insertInteractionContent("behaviourinspection", { type = "stopbehaviourinspection", text = ColorText["behaviour_inspection_text"] .. "\27[menu_behaviourinspection_exit]\27X " .. ReadText(1001, 11145), helpOverlayID = "interactmenu_stopbehaviourinspection", helpOverlayText = " ", helpOverlayHighlightOnly = true, script = menu.buttonStopBehaviourInspection })
 			end
 		end
+
+		-- start uix_callback
+		if menu.uix_callbacks ["prepareActions_prepare_custom_action"] then
+			for uix_id, uix_callback in pairs (menu.uix_callbacks ["prepareActions_prepare_custom_action"]) do
+				uix_callback (actions, definedactions)
+			end
+		end
+		-- end uix_callback
 
 		for i, action in ipairs(actions) do
 			local entry = {}
