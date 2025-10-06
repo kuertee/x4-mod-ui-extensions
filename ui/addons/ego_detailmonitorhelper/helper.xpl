@@ -10024,6 +10024,14 @@ function Helper.createTransactionLog(frame, container, tableProperties, refreshC
 			end
 		end
 
+		-- mycu start: callback
+		if callbacks ["createTransactionLog_on_before_adding_entry"] then
+			for _, callback in ipairs (callbacks ["createTransactionLog_on_before_adding_entry"]) do
+				entry = callback (entry)
+			end
+		end
+		-- mycu end: callback
+
 		table.insert(Helper.transactionLogData.accountLog, entry)
 	end
 	-- pure money stats for graph
