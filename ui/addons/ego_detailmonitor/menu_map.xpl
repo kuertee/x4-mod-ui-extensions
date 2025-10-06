@@ -31537,13 +31537,13 @@ function menu.uix_distanceTool(posrot, posrotcomponent)
 			uix_posTo = C.GetObjectPositionInSector(uix_distanceTool_to_component)
 			uix_sectorTo = ConvertIDTo64Bit(GetComponentData(uix_distanceTool_to_component, "sectorid"))
 		end
-		if IsSameComponent(uix_sectorFrom, uix_sectorTo) then
+		local uix_gates = FindJumpRoute(uix_sectorFrom, uix_sectorTo)
+		if uix_gates == 0 or IsSameComponent(uix_sectorFrom, uix_sectorTo) then
 			local uix_x_delta = math.abs (uix_posTo.x - uix_posFrom.x)
 			local uix_y_delta = math.abs (uix_posTo.y - uix_posFrom.y)
 			local uix_z_delta = math.abs (uix_posTo.z - uix_posFrom.z)
 			Helper.uix_distanceTool_distance = math.pow(math.pow(uix_x_delta, 2) + math.pow(uix_y_delta, 2) + math.pow(uix_z_delta, 2), 0.5)
 		elseif uix_sectorFrom and uix_sectorTo then
-			local uix_gates = FindJumpRoute(uix_sectorFrom, uix_sectorTo)
 			Helper.uix_distanceTool_jumps = uix_gates
 		end
 	end

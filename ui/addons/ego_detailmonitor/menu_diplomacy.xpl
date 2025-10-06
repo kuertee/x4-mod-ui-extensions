@@ -464,6 +464,15 @@ end
 
 function menu.buttonSelectObject(actionid, paramidx, paramdata)
 	menu.state.actiontoprow = GetTopRow(menu.actiontable.id)
+
+	-- kuertee start:
+	if menu.uix_callbacks["buttonSelectObject_before_open_map"] then
+		for uix_id, uix_callback in pairs(menu.uix_callbacks["buttonSelectObject_before_open_map"]) do
+			uix_callback(actionid, paramidx, paramdata)
+		end
+	end
+	-- kuertee end
+
 	Helper.closeMenuAndOpenNewMenu(menu, "MapMenu", { 0, 0, false, nil, nil, "diplomaticactionparam_object", { actionid, paramidx - 1, paramdata } })
 	menu.cleanup()
 end
@@ -496,6 +505,15 @@ function menu.buttonStartAction(checked)
 
 		local actionid = menu.contextMenuData.id
 		menu.laststartedactionoperation = StartDiplomacyActionOperation(actionid, agentid, parameters, giftware)
+
+		-- kuertee start:
+		if menu.uix_callbacks["buttonStartAction_operation_start"] then
+			for uix_id, uix_callback in pairs(menu.uix_callbacks["buttonStartAction_operation_start"]) do
+				uix_callback(menu.laststartedactionoperation, actionid, agentid, parameters, giftware)
+			end
+		end
+		-- kuertee end
+
 		menu.closeContextMenu(true)
 		menu.getData()
 
@@ -850,6 +868,7 @@ function menu.getData()
 	local operationtypes = { "active", "archive" }
 	menu.actionoperations = {}
 	menu.actionoperationsByID = {}
+
 	for _, operationtype in ipairs(operationtypes) do
 		local n = C.GetNumDiplomacyActionOperations(operationtype == "active")
 		if n > 0 then
@@ -1021,6 +1040,14 @@ function menu.getData()
 		end
 	end
 	table.sort(menu.eventoperations, function (a, b) return a.endtime > b.endtime end)
+
+	-- kuertee start:
+	if menu.uix_callbacks["getData"] then
+		for uix_id, uix_callback in pairs(menu.uix_callbacks["getData"]) do
+			uix_callback()
+		end
+	end
+	-- kuertee end
 end
 
 function menu.onSaveState()
@@ -2501,6 +2528,22 @@ function menu.createActionConfigContext(frame)
 			halign = "right",
 		})
 		row[1].handlers.onDropDownConfirmed = function (_, id) menu.contextMenuData.selectedagentid = tonumber(id); menu.refreshContextFrame() end
+
+		-- kuertee start:
+		if menu.uix_callbacks["createActionConfigContext_after_agent_selection"] then
+			for uix_id, uix_callback in pairs(menu.uix_callbacks["createActionConfigContext_after_agent_selection"]) do
+				local actionConfigData = {
+					action = action,
+					active = active,
+					uniqueandlocked = uniqueandlocked,
+					operation = operation,
+					operationparameters = operationparameters,
+					ispastoperation = ispastoperation,
+				}
+				uix_callback(frame, titletable, desctable, infotable, infotable2, actionConfigData)
+			end
+		end
+		-- kuertee end
 	end
 
 	local infotable2height = infotable2:getFullHeight()
@@ -2617,6 +2660,23 @@ function menu.createActionConfigContext(frame)
 			end
 		end
 	end
+
+	-- kuertee start:
+	if menu.uix_callbacks["createActionConfigContext_after_action_targets"] then
+		local actionConfigData = {
+			action = action,
+			active = active,
+			uniqueandlocked = uniqueandlocked,
+			operation = operation,
+			operationparameters = operationparameters,
+			ispastoperation = ispastoperation,
+		}
+		for uix_id, uix_callback in pairs(menu.uix_callbacks["createActionConfigContext_after_action_targets"]) do
+			uix_callback(frame, titletable, desctable, infotable, infotable2, actionConfigData)
+		end
+	end
+	-- kuertee end
+
 	if #targets < 3 then
 		for i = 1, 3 - #targets do
 			local row = infotable2:addRow(nil)
@@ -2834,7 +2894,26 @@ function menu.createActionConfigContext(frame)
 	local row = bottomtable:addRow(true, { fixed = true })
 	if ispastoperation then
 		row[3]:createButton({  }):setText(ReadText(1001, 12891), { halign = "center" })
-		row[3].handlers.onClick = function () C.SetArchivedDiplomacyActionOperationRead(operation.id); menu.getData(); return menu.closeContextMenu() end
+		row[3].handlers.onClick = function ()
+
+			-- kuertee start:
+			if menu.uix_callbacks["createActionConfigContext_archive_operation"] then
+				local actionConfigData = {
+					action = action,
+					active = active,
+					uniqueandlocked = uniqueandlocked,
+					operation = operation,
+					operationparameters = operationparameters,
+					ispastoperation = ispastoperation,
+				}
+				for uix_id, uix_callback in pairs(menu.uix_callbacks["createActionConfigContext_archive_operation"]) do
+					uix_callback(frame, titletable, desctable, infotable, infotable2, actionConfigData)
+				end
+			end
+			-- kuertee end
+
+			C.SetArchivedDiplomacyActionOperationRead(operation.id); menu.getData(); return menu.closeContextMenu()
+		end
 	else
 		row[2]:createButton({ active = errorcount == 0 }):setText(active and ReadText(1001, 12831) or ReadText(1001, 12832), { halign = "center" })
 		row[2].handlers.onClick = active and function () return menu.buttonStartAction() end or function () return menu.buttonAbortAction(operation.agentid, false, action.unique, action.exclusivefactionparamidx, action.cooldown) end

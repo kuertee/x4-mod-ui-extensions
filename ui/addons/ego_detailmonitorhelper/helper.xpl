@@ -9903,7 +9903,11 @@ function Helper.graphDataSelection(data, refreshCallback)
 end
 
 function Helper.onTransactionLogUpdate()
-	if Helper.transactionLogData.curEntry then
+	-- kuertee start:
+	-- if Helper.transactionLogData.curEntry then
+	if Helper.transactionLogData and Helper.transactionLogData.curEntry then
+	-- kuertee end
+
 		local dataIdx
 		for i, point in pairs(Helper.transactionLogData.graphdata) do
 			dataIdx = i
