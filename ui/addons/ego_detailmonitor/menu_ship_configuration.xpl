@@ -3513,6 +3513,11 @@ function menu.displayLeftBar(frame)
 									end
 								end
 							end
+
+						-- kuertee start:
+						else
+							skip = true
+						-- kuertee end:
 						end
 					end
 					for slot, data in pairs(menu.upgradeplan[upgradetype.type]) do
@@ -3543,6 +3548,13 @@ function menu.displayLeftBar(frame)
 						end
 					end
 				end
+
+				-- kuertee start:
+				if count + total == 0 then
+					Helper.debugText_forced("entry.mode (skip)", entry.mode .. " count " .. tostring(count) .. " total " .. tostring(total))
+					skip = true
+				end
+				-- kuertee end
 
 				if not skip then
 					if menu.mode == "purchase" then

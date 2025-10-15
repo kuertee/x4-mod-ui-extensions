@@ -507,8 +507,8 @@ function menu.buttonStartAction(checked)
 		menu.laststartedactionoperation = StartDiplomacyActionOperation(actionid, agentid, parameters, giftware)
 
 		-- kuertee start:
-		if menu.uix_callbacks["buttonStartAction_operation_start"] then
-			for uix_id, uix_callback in pairs(menu.uix_callbacks["buttonStartAction_operation_start"]) do
+		if menu.uix_callbacks["buttonStartAction_start_operation"] then
+			for uix_id, uix_callback in pairs(menu.uix_callbacks["buttonStartAction_start_operation"]) do
 				uix_callback(menu.laststartedactionoperation, actionid, agentid, parameters, giftware)
 			end
 		end
