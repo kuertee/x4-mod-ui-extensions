@@ -5,6 +5,12 @@ by kuertee. Contributors: AlexandreTK, DrWhoKnows, DmytroK, Erixon, Forleyor, IA
 
 Updates
 =======
+v8.0.2.2, 17 Oct 2025:
+- Bug-fix: Ship Configuration menu left bar menu was still buggy.
+
+v8.0.2.1, 17 Oct 2025:
+- Bug-fix: Ship Configuration menu: bug-fix: missing buttons in the left bar menu.
+
 v8.0.2.0, 16 Oct 2025:
 - New feature: Callbacks for Forleyor's new mod.
 - Bug-fix: Re-added Mycu's callback, which I removed accidentally earlier this year, for Verbose Transaction Log mod.
