@@ -3552,7 +3552,7 @@ function menu.displayLeftBar(frame)
 				-- kuertee start:
 				if count + total == 0 then
 					Helper.debugText_forced("entry.mode (skip)", entry.mode .. " count " .. tostring(count) .. " total " .. tostring(total))
-					skip = true
+					active = false
 				end
 				-- kuertee end
 
