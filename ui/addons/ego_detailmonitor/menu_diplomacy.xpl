@@ -622,6 +622,19 @@ function menu.dropdownSelectFaction(actionid, i, factionid)
 end
 
 function menu.dropdownSelectWare(actionid, i, wareid)
+	-- kuertee start:
+	if menu.uix_callbacks["dropdownSelectWare"] then
+		local uix_isProcessed
+		for uix_id, uix_callback in pairs(menu.uix_callbacks["dropdownSelectWare"]) do
+			uix_isProcessed = uix_callback(actionid, i, wareid)
+		end
+		if uix_isProcessed then
+			menu.refreshContextFrame()
+			return
+		end
+	end
+	-- kuertee end
+
 	if wareid ~= "none" then
 		menu.contextMenuData.targets[i] = wareid
 		menu.refreshContextFrame()
@@ -2654,6 +2667,14 @@ function menu.createActionConfigContext(frame)
 						table.insert(wareoptions, 1, { id = "none", text = ReadText(1001, 3102) .. "...", icon = "", displayremoveoption = false })
 					end
 
+					-- kuertee start:
+					if menu.uix_callbacks["createActionConfigContext_modify_wareoptions"] then
+						for uix_id, uix_callback in pairs(menu.uix_callbacks["createActionConfigContext_modify_wareoptions"]) do
+							uix_callback(wareoptions)
+						end
+					end
+					-- kuertee end
+
 					row[3]:createDropDown(wareoptions, { startOption = selectedtarget or "none", height = Helper.standardButtonHeight, active = active and (not uniqueandlocked) })
 					row[3].handlers.onDropDownConfirmed = function (_, wareid) return menu.dropdownSelectWare(action.id, i, wareid) end
 				end
@@ -2751,6 +2772,22 @@ function menu.createActionConfigContext(frame)
 		row[3]:createText(text, { halign = "right", mouseOverText = mouseovertext })
 	end
 
+	-- kuertee start:
+	if menu.uix_callbacks["createActionConfigContext_after_action_requirements"] then
+		local actionConfigData = {
+			action = action,
+			active = active,
+			uniqueandlocked = uniqueandlocked,
+			operation = operation,
+			operationparameters = operationparameters,
+			ispastoperation = ispastoperation,
+		}
+		for uix_id, uix_callback in pairs(menu.uix_callbacks["createActionConfigContext_after_action_requirements"]) do
+			uix_callback(frame, titletable, desctable, infotable, infotable2, actionConfigData)
+		end
+	end
+	-- kuertee end
+
 	infotable2:addEmptyRow()
 	if (action.successchance < 100) and (action.giftwaretags ~= "") then
 		local row = infotable2:addRow(active)
@@ -2800,12 +2837,48 @@ function menu.createActionConfigContext(frame)
 		table.sort(giftwareoptions, function (a, b) return a.text < b.text end)
 		table.insert(giftwareoptions, 1, { id = "none", text = ReadText(1001, 12852), icon = "", displayremoveoption = false })
 
+		-- kuertee start:
+		if menu.uix_callbacks["createActionConfigContext_modify_giftwareoptions"] then
+			for uix_id, uix_callback in pairs(menu.uix_callbacks["createActionConfigContext_modify_giftwareoptions"]) do
+				uix_callback(giftwareoptions)
+			end
+		end
+		-- kuertee end
+
 		local startoption = menu.contextMenuData.giftware or "none"
 		if operation and (operation.giftwareid ~= "") then
 			startoption = operation.giftwareid
 		end
 		row[3]:createDropDown(giftwareoptions, { startOption = startoption, height = Helper.standardButtonHeight, active = active and giftactive, mouseOverText = (not giftactive) and ReadText(1026, 12810) or ReadText(1026, 12811) }):setText2Properties({ halign = "right", x = Helper.standardTextOffsetx })
-		row[3].handlers.onDropDownConfirmed = function (_, id) menu.contextMenuData.giftware = id end
+
+		-- kuertee start:
+		-- row[3].handlers.onDropDownConfirmed = function (_, id) menu.contextMenuData.giftware = id end
+		row[3].handlers.onDropDownConfirmed = function (_, id)
+			menu.contextMenuData.giftware = id
+
+			if menu.uix_callbacks["createActionConfigContext_on_giftware_dropdown_confirmed"] then
+				for uix_id, uix_callback in pairs(menu.uix_callbacks["createActionConfigContext_on_giftware_dropdown_confirmed"]) do
+					uix_callback(id)
+				end
+			end
+		end
+		-- kuertee end
+
+		-- kuertee start:
+		if menu.uix_callbacks["createActionConfigContext_after_action_gift"] then
+			local actionConfigData = {
+				action = action,
+				active = active,
+				uniqueandlocked = uniqueandlocked,
+				operation = operation,
+				operationparameters = operationparameters,
+				ispastoperation = ispastoperation,
+			}
+			for uix_id, uix_callback in pairs(menu.uix_callbacks["createActionConfigContext_after_action_gift"]) do
+				uix_callback(frame, titletable, desctable, infotable, infotable2, actionConfigData, giftactive)
+			end
+		end
+		-- kuertee end
 	else
 		local row = infotable2:addRow(nil)
 		row[1]:setColSpan(2):createText(" ")

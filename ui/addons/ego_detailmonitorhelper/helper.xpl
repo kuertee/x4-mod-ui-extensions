@@ -10026,8 +10026,8 @@ function Helper.createTransactionLog(frame, container, tableProperties, refreshC
 
 		-- mycu start: callback
 		if Helper.uix_callbacks["createTransactionLog_on_before_adding_entry"] then
-			for _, callback in ipairs (Helper.uix_callbacks["createTransactionLog_on_before_adding_entry"]) do
-				entry = callback (entry)
+			for uix_id, uix_callback in pairs(Helper.uix_callbacks["createTransactionLog_on_before_adding_entry"]) do
+				entry = uix_callback(entry)
 			end
 		end
 		-- mycu end: callback

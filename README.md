@@ -5,17 +5,9 @@ by kuertee. Contributors: AlexandreTK, DrWhoKnows, DmytroK, Erixon, Forleyor, IA
 
 Updates
 =======
-v8.0.2.2, 17 Oct 2025:
-- Bug-fix: Ship Configuration menu left bar menu was still buggy.
-
-v8.0.2.1, 17 Oct 2025:
-- Bug-fix: Ship Configuration menu: bug-fix: missing buttons in the left bar menu.
-
-v8.0.2.0, 16 Oct 2025:
-- New feature: Callbacks for Forleyor's new mod.
-- Bug-fix: Re-added Mycu's callback, which I removed accidentally earlier this year, for Verbose Transaction Log mod.
-- New feature: Callbacks in the Diplomacy menu for Additional Agent Actions mod.
-- Tweak: Ship Configuration menu: remove component types from the left bar for hardpoints the selected ship macro don't have.
+v8.0.2.3, 20 Oct 2025:
+- Bug-fix: Mycu's callback for Verbose Transaction Log mod was still broken.
+- New feature: Diplomacy menu: callbacks for my Additional Agent Actions mod.
 
 NOTES FOR PLAYERS:
 ==================
@@ -263,6 +255,18 @@ French localisation by Calvitix.
 
 History
 =======
+v8.0.2.2, 17 Oct 2025:
+- Bug-fix: Ship Configuration menu left bar menu was still buggy.
+
+v8.0.2.1, 17 Oct 2025:
+- Bug-fix: Ship Configuration menu: bug-fix: missing buttons in the left bar menu.
+
+v8.0.2.0, 16 Oct 2025:
+- New feature: Callbacks for Forleyor's new mod.
+- Bug-fix: Re-added Mycu's callback, which I removed accidentally earlier this year, for Verbose Transaction Log mod.
+- New feature: Callbacks in the Diplomacy menu for Additional Agent Actions mod.
+- Tweak: Ship Configuration menu: remove component types from the left bar for hardpoints the selected ship macro don't have.
+
 v8.0.1.0, 28 Sep 2025:
 - Tweak: 8.0 Hot-fix 1 compatibility.
 - Tweak: Center On Map and Center Destination On Map menu items are now listed after the Guidance menu items - as they should have been.
