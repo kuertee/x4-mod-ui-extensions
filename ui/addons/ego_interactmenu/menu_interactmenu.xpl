@@ -4787,6 +4787,17 @@ function menu.prepareSections()
 end
 
 function menu.insertInteractionContent(section, entry)
+    -- start uix_callback
+    if menu.uix_callbacks ["insertInteractionContent_on_start"] then
+        for uix_id, uix_callback in pairs (menu.uix_callbacks ["insertInteractionContent_on_start"]) do
+            entry = uix_callback (entry)
+            if entry == nil then
+                return
+            end
+        end
+    end
+    -- end uix_callback
+
 	if menu.actions[section] then
 
 		if entry.orderid then
