@@ -1442,6 +1442,22 @@ function menu.sorterModules(type, a, b)
 		bmakerrace = ""
 	end
 
+	-- kuertee start:
+	if aname == bname then
+		if atier == btier then
+			if amakerrace == bmakerrace then
+				return awaregroup < bwaregroup
+			else
+				return amakerrace < bmakerrace
+			end
+		else
+			return atier < btier
+		end
+	else
+		return aname < bname
+	end
+	-- kuertee end
+
 	if atier == btier then
 		if type == "moduletypes_production" then
 			if awaregroup == bwaregroup then

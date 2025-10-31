@@ -5,9 +5,9 @@ by kuertee. Contributors: AlexandreTK, DrWhoKnows, DmytroK, Erixon, Forleyor, IA
 
 Updates
 =======
-v8.0.2.3, 20 Oct 2025:
-- Bug-fix: Mycu's callback for Verbose Transaction Log mod was still broken.
-- New feature: Diplomacy menu: callbacks for my Additional Agent Actions mod.
+v8.0.3.0, 31 Oct 2025:
+- Tweak: Station Configuration menu: list modules alphabetically by name.
+- Bug-fix: Station Overview menu: sometimes this menu would fail to open when my Trade Analytics mod is active.
 
 NOTES FOR PLAYERS:
 ==================
@@ -255,6 +255,10 @@ French localisation by Calvitix.
 
 History
 =======
+v8.0.2.3, 20 Oct 2025:
+- Bug-fix: Mycu's callback for Verbose Transaction Log mod was still broken.
+- New feature: Diplomacy menu: callbacks for my Additional Agent Actions mod.
+
 v8.0.2.2, 17 Oct 2025:
 - Bug-fix: Ship Configuration menu left bar menu was still buggy.
 

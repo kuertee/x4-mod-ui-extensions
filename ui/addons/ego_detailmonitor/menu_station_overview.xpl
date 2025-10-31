@@ -1780,7 +1780,10 @@ function menu.display()
 		local extraNames = {}
 		if menu.container then
 			for uix_id, uix_callback in pairs (menu.uix_callbacks ["display_get_station_name_extras"]) do
-				table.insert(extraNames, uix_callback(menu.container))
+				local extraName = uix_callback(menu.container)
+				if extraName then
+					table.insert(extraNames, extraName)
+				end
 			end
 			if #extraNames > 0 then
 				for i, extraName in ipairs(extraNames) do
