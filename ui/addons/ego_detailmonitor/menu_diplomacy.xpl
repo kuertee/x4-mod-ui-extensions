@@ -2943,7 +2943,22 @@ function menu.createActionConfigContext(frame)
 				local row = bottomtable:addRow(nil, { fixed = true })
 				row[1]:setColSpan(3):createText(ReadText(1001, 12848), { halign = "right", color = Color["text_error"] })
 			end
-			if #menu.contextMenuData.targets ~= #targets then
+
+			-- kuertee start: count actual targets intead of # because sometimes nil is one of the elements.
+			-- primarily support for additional agent actions mod.
+			local uix_count_populatedTargets = 0
+			for uix_idx, uix_target in pairs(menu.contextMenuData.targets) do
+				if uix_target then
+					uix_count_populatedTargets = uix_count_populatedTargets + 1
+				end
+			end
+			-- kuertee end: count actual targets intead of # because sometimes nil is one of the elements.
+
+			-- kuertee start: count actual targets intead of # because sometimes nil is one of the elements.
+			-- if #menu.contextMenuData.targets ~= #targets then
+			if uix_count_populatedTargets ~= #targets then
+			-- kuertee end: count actual targets intead of # because sometimes nil is one of the elements.
+
 				errorcount = errorcount + 1
 				local row = bottomtable:addRow(nil, { fixed = true })
 				row[1]:setColSpan(3):createText((#targets == 1) and ReadText(1001, 12850) or ReadText(1001, 12851), { halign = "right", color = Color["text_error"] })

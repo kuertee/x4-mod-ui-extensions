@@ -1,13 +1,13 @@
 UI Extensions and HUD
 https://www.nexusmods.com/x4foundations/mods/552
 Code: https://github.com/kuertee/x4-mod-ui-extensions
-by kuertee. Contributors: AlexandreTK, DrWhoKnows, DmytroK, Erixon, Forleyor, IALuir, Mycu, Runekn, sticeIO.
+by kuertee. Contributors: AlexandreTK, Damonya, DrWhoKnows, DmytroK, Erixon, Forleyor, IALuir, Mycu, Runekn, sticeIO.
 
 Updates
 =======
-v8.0.3.0, 31 Oct 2025:
-- Tweak: Station Configuration menu: list modules alphabetically by name.
-- Bug-fix: Station Overview menu: sometimes this menu would fail to open when my Trade Analytics mod is active.
+v8.0.3.1, 11 Nov 2025:
+- New feature: Map menu: Damonya's new callback for the Enhanced AutoMine/AutoTrade mod.
+- Tweak: Diplomacy menu: support for v8.0.3.1 of the Additional Agent Actions mod.
 
 NOTES FOR PLAYERS:
 ==================
@@ -243,6 +243,7 @@ Credits
 kuertee
 Contributors:
 	AlexandreTK
+  Damonya
 	DrWhoKnows
   DmytroK
 	Erixon
@@ -255,6 +256,10 @@ French localisation by Calvitix.
 
 History
 =======
+v8.0.3.0, 31 Oct 2025:
+- Tweak: Station Configuration menu: list modules alphabetically by name.
+- Bug-fix: Station Overview menu: sometimes this menu would fail to open when my Trade Analytics mod is active.
+
 v8.0.2.3, 20 Oct 2025:
 - Bug-fix: Mycu's callback for Verbose Transaction Log mod was still broken.
 - New feature: Diplomacy menu: callbacks for my Additional Agent Actions mod.

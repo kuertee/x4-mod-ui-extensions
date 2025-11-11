@@ -6081,6 +6081,20 @@ function menu.onShowMenu(state)
 	local orderdefcategories_skillsorted = { mining = true }
 	local orderdefs_forcedorderatfront = { "TradeRoutine_Basic", "TradeRoutine_Advanced" }
 
+	-- Damonya2 start: callback
+	local cbs = menu.uix_callbacks["onShowMenu_orderdefs_forcedorderatfront"]
+	if cbs then
+		local list = { table.unpack(orderdefs_forcedorderatfront) }
+		for _, cb in pairs(cbs) do
+			local newlist = cb(list)
+			if type(newlist) == "table" then
+				list = newlist
+			end
+		end
+		orderdefs_forcedorderatfront = list
+	end
+	-- Damonya2 end: callback
+
 	local n = C.GetNumOrderDefinitions()
 	local buf = ffi.new("OrderDefinition[?]", n)
 	n = C.GetOrderDefinitions(buf, n)
