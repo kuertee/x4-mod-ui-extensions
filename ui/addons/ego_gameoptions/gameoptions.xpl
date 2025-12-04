@@ -10904,14 +10904,7 @@ function menu.displayModRow(ftable, extension, extensionSetting)
 	row[2]:createText(extension.name, config.standardTextProperties)
 	row[2].properties.color = textcolor
 
-	-- kuertee start: sort by author / id
-	-- row[3]:createText(extension.id, config.standardTextProperties)
-	if __userdata_uix_gameoptions.modsorter_isShowAuthor then
-		row[3]:createText(extension.author, config.standardTextProperties)
-	else
-		row[3]:createText(extension.id, config.standardTextProperties)
-	end
-	-- kuertee end
+	row[3]:createText(extension.id, config.standardTextProperties)
 
 	row[4]:createText(extension.version, config.standardTextProperties)
 	row[4].properties.halign = "right"
