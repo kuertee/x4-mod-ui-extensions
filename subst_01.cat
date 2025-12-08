@@ -1,7 +1,7 @@
 ui/addons/ego_detailmonitor/menu_diplomacy.xpl 210984 1762236343 359494cff8fd6a18a67c6f58a64fe020
 ui/addons/ego_detailmonitor/menu_docked.xpl 92890 1757567957 a1250b29ed82d32401aa3aaa5d86570a
 ui/addons/ego_detailmonitor/menu_encyclopedia.xpl 192366 1761456867 e459c132eab25477ee4af7474806a237
-ui/addons/ego_detailmonitor/menu_map.xpl 1532977 1762489061 7279a245a4d991a45196ef871b9d1484
+ui/addons/ego_detailmonitor/menu_map.xpl 1536215 1765085706 37da45325e0b7215f302b3db31688cc7
 ui/addons/ego_detailmonitor/menu_playerinfo.xpl 344962 1757567957 c5d7aff01713a5b62dd25d3d863ebcc6
 ui/addons/ego_detailmonitor/menu_research.xpl 44971 1757568043 3c627fd4606ba7cf985bd92c9c24c631
 ui/addons/ego_detailmonitor/menu_scenario_debriefing.xpl 32323 1757548070 72d643e1bd40ea170383e650d0ba48fd
@@ -16,5 +16,5 @@ ui/addons/ego_detailmonitor/menu_transporter.xpl 41106 1757547807 bf2e62f0f8b45a
 ui/addons/ego_detailmonitor/menu_userquestion.xpl 27409 1758788204 44a4340f00290912bfd91a16810c025a
 ui/addons/ego_detailmonitorhelper/helper.xpl 539331 1761093450 216bd0ace723efd677905dc6e966e19c
 ui/addons/ego_gameoptions/customgame.xpl 238417 1757567957 5994a0ed4c09c3001ed054f6d3f5dccc
-ui/addons/ego_gameoptions/gameoptions.xpl 568180 1757567957 67d6c466d660deb871a6045fc08c8110
+ui/addons/ego_gameoptions/gameoptions.xpl 567911 1764818936 41dec91e81c45b497cd24a5b5d5f8438
 ui/addons/ego_interactmenu/menu_interactmenu.xpl 378922 1761870732 059929d622c05cbe7bb46618cc6079be

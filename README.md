@@ -5,9 +5,9 @@ by kuertee. Contributors: AlexandreTK, Damonya, DrWhoKnows, DmytroK, Erixon, For
 
 Updates
 =======
-v8.0.3.1, 11 Nov 2025:
-- New feature: Map menu: Damonya's new callback for the Enhanced AutoMine/AutoTrade mod.
-- Tweak: Diplomacy menu: support for v8.0.3.1 of the Additional Agent Actions mod.
+v8.0.3.4, 9 Dec 2025:
+- New feature: Map menu: Ship crew list: support for Emergent Missions mod's new Station Rescue mission: list passengers over capacity.
+- New feature: Boarding menu tweak: Ensure that subordinates of selected ships acquire their immediate commander's boarding behaviour. In the base-game, when selecting ships, e.g. SHIP A, with subordinates AND those ships' fleet commander, e.g. THE COMMANDER of SHIP A, the subordinates of SHIP A sometimes acquired THE COMMANDER's behaviour (e.g. Maintain Distance) instead of SHIP A's behaviour (e.g. Target Turrets). This tweak allows the player to select wings of a fleet for separate boarding behaviour assignments without needing each wing to be in separate fleets. Note: also check out Kuda's new boarding behaviour changes (https://www.nexusmods.com/x4foundations/mods/839). e.g.: ships on attack orders during boarding operations now stop their attack minimising the chance of the boarding target getting destroyed.
 
 NOTES FOR PLAYERS:
 ==================
@@ -183,6 +183,10 @@ Map Menu: Zoom Function Tweaks
   - "sector view" that always shows the icons of major object,
   - and a "local cluster view".
 
+Boarding Menu: Ship assignment tweaks
+=====================================
+Ensure that subordinates of selected ships acquire their immediate commander's boarding behaviour. In the base-game, when selecting ships, e.g. SHIP A, with subordinates AND those ships' fleet commander, e.g. THE COMMANDER of SHIP A, the subordinates of SHIP A sometimes acquired THE COMMANDER's behaviour (e.g. Maintain Distance) instead of SHIP A's behaviour (e.g. Target Turrets). This tweak allows the player to select wings of a fleet for separate boarding behaviour assignments without needing each wing to be in separate fleets. Note: also check out Kuda's new boarding behaviour changes (https://www.nexusmods.com/x4foundations/mods/839). e.g.: ships on attack orders during boarding operations now stop their attack minimising the chance of the boarding target getting destroyed.
+
 CHANGES BUILT INTO THIS MOD (for developers)
 ============================================
 
@@ -256,6 +260,10 @@ French localisation by Calvitix.
 
 History
 =======
+v8.0.3.1, 11 Nov 2025:
+- New feature: Map menu: Damonya's new callback for the Enhanced AutoMine/AutoTrade mod.
+- Tweak: Diplomacy menu: support for v8.0.3.1 of the Additional Agent Actions mod.
+
 v8.0.3.0, 31 Oct 2025:
 - Tweak: Station Configuration menu: list modules alphabetically by name.
 - Bug-fix: Station Overview menu: sometimes this menu would fail to open when my Trade Analytics mod is active.

@@ -15592,6 +15592,14 @@ function menu.addCrewSection(mode, inputtable, inputobject, instance, infocrew, 
 			end
 		end
 	end
+
+	-- kuertee start: callback
+	if menu.uix_callbacks["addCrewSection_after_full_crew_list"] then
+		for uix_id, uix_callback in pairs(menu.uix_callbacks["addCrewSection_after_full_crew_list"]) do
+			uix_callback(mode, inputtable, inputobject, instance, infocrew, operatorinfo, aipilot, isplayerowned)
+		end
+	end
+	-- kuertee end: callback
 end
 
 function menu.setupLoadoutInfoSubmenuRows(mode, inputtable, inputobject, instance)
@@ -25358,6 +25366,62 @@ function menu.createBoardingContext(frame, target, boarders)
 			menu.boardingData.shipdata[ship] = { assignedmarines = {}, marines = {}, assignedgroupmarines = {}, groupmarines = {}, subordinates = {}, isprimaryboarder = true, issubordinate = false, action = menu.boardingData.shipactions[2].id }
 		end
 	end
+
+	-- boarding fix
+	-- ============
+	-- kuertee start: ensure toplevelcommander is last in the list
+	-- allows sub-wings to have get the correct behaviour from their commanders.
+	-- e.g.:
+	-- toplevelcommander
+	-- |- commander a
+	-- |  |- ship a-1
+	-- |  |- ship a-2
+	-- |  |- ship a-3
+	-- ships selected for boarding are toplevelcommander, commander a.
+	-- if toplevelcommander isn't last in the list, ship a-1 to a-3 gets the toplevelcommander boarding behaviour
+	-- instead of commander a's behaviour
+	-- BECAUSE the line: local subordinates = GetSubordinates(ship, nil, true) considers ship a-1 to a-3 a subordinate of toplevelcommander.
+	-- adding toplevelcommander last allows commander a and its ships to be assigned their boarding behaviour before toplevelcommander's subordinates.
+	-- done by simply rebuilding the ships with ships with commanders first then ships without commanders.
+	local uix_commanders_ofShipsInList = {}
+	for _, ship in ipairs(menu.boardingData.ships) do
+		if IsValidComponent(ship) then
+			local uix_commander = ConvertStringTo64Bit(tostring(GetCommander(ship)))
+			if IsValidComponent(uix_commander) then
+				uix_commanders_ofShipsInList[uix_commander] = true
+			end
+		end
+	end
+	local uix_ships, uix_ships2 = {}, {}
+	for _, ship in ipairs(menu.boardingData.ships) do
+		if IsValidComponent(ship) then
+			local uix_commander = ConvertStringTo64Bit(tostring(GetCommander(ship)))
+			if IsValidComponent(uix_commander) and uix_commanders_ofShipsInList[uix_commander] then
+				-- this ship's commander is in the ship list, so add this ship in the priority list
+				-- Helper.debugText_forced("to ships list: " .. GetComponentData(ship, "name"), GetComponentData(uix_commander, "name"))
+				table.insert(uix_ships, ship)
+			else
+				-- this ship's commander is NOT in the ship list, so add this ship in the secondary list
+				-- Helper.debugText_forced("to ships2 list: " .. GetComponentData(ship, "name"))
+				table.insert(uix_ships2, ship)
+			end
+		end
+	end
+	menu.boardingData.ships = {}
+	table.sort(uix_ships, function (a, b) return tostring(GetComponentData(a, "name") .. ffi.string(C.GetObjectIDCode(a))) < tostring(GetComponentData(b, "name") .. ffi.string(C.GetObjectIDCode(b))) end)
+	for _, ship in ipairs(uix_ships) do
+		table.insert(menu.boardingData.ships, ship)
+	end
+	table.sort(uix_ships2, function (a, b) return tostring(GetComponentData(a, "name") .. ffi.string(C.GetObjectIDCode(a))) < tostring(GetComponentData(b, "name") .. ffi.string(C.GetObjectIDCode(b))) end)
+	for _, ship in ipairs(uix_ships2) do
+		table.insert(menu.boardingData.ships, ship)
+	end
+	-- Helper.debugText_forced("new ships list:")
+	-- for _, ship in ipairs(menu.boardingData.ships) do
+	-- 	Helper.debugText_forced(ship, GetComponentData(ship, "name"))
+	-- end
+	-- Helper.debugText_forced("new ships list: end")
+	-- kuertee end
 
 	-- populate marine and subordinate data for menu.boardingData.ships in menu.boardingData.shipdata
 	for _, ship in ipairs(menu.boardingData.ships) do
