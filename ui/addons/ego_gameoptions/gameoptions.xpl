@@ -401,7 +401,7 @@ local menu = {
 
 -- kuertee start:
 menu.uix_callbacks = {}
-__userdata_uix_gameoptions = __userdata_uix_gameoptions or {	
+__userdata_uix_gameoptions = __userdata_uix_gameoptions or {
 	modsortertype               = "author",
 	modsorter_isShowAuthor      = true,
 	modsorter_isShowActiveFirst = true,
@@ -3044,6 +3044,9 @@ config.DLSSFrameGenModes = {
 	["4x"] = ReadText(1001, 12777),
 }
 
+-- kuertee start:
+function menu.uix_get_config() return config end
+-- kuertee end
 
 --- widget hooks ---
 
@@ -10585,10 +10588,10 @@ function menu.displayExtensions()
 			menu.displayExtensionRow(optiontable, extension, menu.extensionSettings[extension.index])
 		end
 
-		-- list mods next		
+		-- list mods next
 		row = optiontable:addRow(false, {  })
 		row[2]:setColSpan(6):createText(" ", { fontsize = 1, height = Helper.borderSize, cellBGColor = Color["row_separator"] })
-		
+
 		menu.createSorters(optiontable, __userdata_uix_gameoptions.modsortertype)
 		table.sort(modextensions, menu.sortModExtensions(__userdata_uix_gameoptions.modsortertype))
 		local uix_lastExtensionListed
@@ -14060,7 +14063,7 @@ function menu.newGameCallback(option, checked)
 									uix_callback(option.id)
 								end
 							end
-							NewGame(option.id) 
+							NewGame(option.id)
 						end
 						, true, getElapsedTime() + 0.1)
 					-- kuertee end: callback

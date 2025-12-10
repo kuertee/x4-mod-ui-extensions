@@ -460,6 +460,7 @@ local config = {
 
 -- kuertee start:
 menu.uix_callbacks = {}
+function menu.uix_get_config() return config end
 -- kuertee end
 
 local function init()

@@ -1778,6 +1778,7 @@ __CORE_DETAILMONITOR_MAPFILTER = __CORE_DETAILMONITOR_MAPFILTER or {
 
 -- kuertee start:
 menu.uix_callbacks = {}
+function menu.uix_get_config() return config end
 __userdata_uix_menu_map = __userdata_uix_menu_map or {}
 
 local uix_distanceTool_from_component
@@ -11774,7 +11775,7 @@ function menu.createOrderQueue(frame, mode, instance)
 					mouseovertext = ReadText(1026, 8606)
 				end
 				table.insert(asssignmentOptions, { id = "assist", text = ReadText(20208, 41201), icon = "", displayremoveoption = false, active = active, mouseovertext = mouseovertext })
-				
+
 				-- start: aegs call-back
 				if menu.uix_callbacks ["aegs_map_ship_assignments_insert"] then
 					local data_o
@@ -13678,7 +13679,7 @@ function menu.setupInfoSubmenuRows(mode, inputtable, inputobject, instance)
 		end
 
 		locrowdata = { false, ReadText(1001, 9051) .. ReadText(1001, 120), Helper.unlockInfo(nameinfo, (function() return tostring(GetComponentData(object64, "shiptypename") or 0, true, 0, true) end)) }	-- Ship Type
-		
+
 		-- start: aegs call-back
 		if menu.uix_callbacks ["aegs_map_shipInformation_shiptypename_override"] then
 			local shiptypename_override
@@ -15909,7 +15910,7 @@ function menu.setupLoadoutInfoSubmenuRows(mode, inputtable, inputobject, instanc
 				if mode == "ship" then
 					local row = inputtable:addRow("info_turretconfig", {  })
 					row[2]:setColSpan(3):createText(ReadText(1001, 2963))
-					
+
 					-- Start Subsystem Targeting Orders callback
 					local sto_callbackVal
 					if menu.uix_callbacks ["sto_addTurretBehavioursMapMenu"] then
@@ -26223,7 +26224,7 @@ function menu.createMissionContext(frame)
 				end
 			end
 		end
-				
+
 		if kEM_isBriefingAvailable == nil then
 			-- Vanilla do original logic
 			row[2]:createButton({  }):setText(ReadText(1001, 3326), { halign = "center" })
@@ -27325,7 +27326,7 @@ function menu.onRowChanged(row, rowdata, uitable, modified, input, source)
 			end
 		end
 	else
-		
+
 		-- start Forleyor_infoCenter Callback:
 		if menu.uix_callbacks ["ic_onRowChanged"] then
 			for uix_id, uix_callback in pairs (menu.uix_callbacks ["ic_onRowChanged"]) do
@@ -28217,7 +28218,7 @@ function menu.onRenderTargetRightMouseDown()
 		menu.closeContextMenu()
 	end
 	menu.rightdown = { time = getElapsedTime(), position = table.pack(GetLocalMousePosition()), dynpos = table.pack(GetLocalMousePosition()) }
-	
+
 	if not C.IsMouseEmulationActive() then
 		if menu.mode ~= "selectbuildlocation" then
 			C.StartRotateMap(menu.holomap)
@@ -29193,7 +29194,7 @@ function menu.isInfoModeValidFor(object, mode)
 			Helper.isComponentClass(classid, "resourceprobe") or
 			Helper.isComponentClass(classid, "satellite") or
 			Helper.isComponentClass(classid, "asteroid") or
-			(ismodule and (mode == "objectinfo")) or 
+			(ismodule and (mode == "objectinfo")) or
 			(Helper.isComponentClass(classid, "object") and (isdatavault or islandmark))
 		then
 			return true
@@ -31585,7 +31586,7 @@ end
 
 function menu.uix_distanceTool(posrot, posrotcomponent)
 	if not posrot then
-		posrot = ffi.new("UIPosRot")	
+		posrot = ffi.new("UIPosRot")
 	end
 	local uix_distanceTool_selected_component = next(menu.selectedcomponents)
 	if uix_distanceTool_selected_component then

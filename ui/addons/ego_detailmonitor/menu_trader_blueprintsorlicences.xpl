@@ -83,6 +83,7 @@ local config = {
 
 -- kuertee start:
 menu.uix_callbacks = {}
+function menu.uix_get_config() return config end
 -- kuertee end
 
 -- init menu and register with Helper
@@ -574,7 +575,7 @@ function menu.showEntry(entry, tag, indent)
 	local tradelicence, ishiddenwithoutlicence = GetWareData(ware, "tradelicence", "ishiddenwithoutlicence")
 	local licenced = HasLicence("player", tradelicence, menu.traderfaction)
 	if ishiddenwithoutlicence and (not licenced) then
-		-- don't show hidden 
+		-- don't show hidden
 		return
 	end
 

@@ -385,6 +385,7 @@ __CORE_DETAILMONITOR_STATIONBUILD = __CORE_DETAILMONITOR_STATIONBUILD or {
 
 -- kuertee start:
 menu.uix_callbacks = {}
+function menu.uix_get_config() return config end
 -- kuertee end
 
 local function init()
@@ -2591,7 +2592,7 @@ function menu.displayModules(frame, firsttime)
 					table.insert(menu.groupedslots[group], entry)
 				end
 			end
-			
+
 			menu.rowHeight = math.max(23, Helper.scaleY(Helper.standardTextHeight))
 			menu.extraFontSize = Helper.scaleFont(Helper.standardFont, Helper.standardFontSize)
 			local maxSlotWidth = math.floor((menu.modulesData.width - 8 * Helper.borderSize) / 9)
@@ -3040,7 +3041,7 @@ function menu.refreshPlan()
 			end
 
 			local haspier, hasdock, ismissingventureplatform, ismissingventuredocks, haswaveprotection, hasillegalproductions = false, false, false, false, false, false
-			
+
 			local sector, sectorid = GetComponentData(menu.container, "sector", "sectorid")
 			local policefaction, containsthewave = GetComponentData(sectorid, "policefaction", "containsthewave")
 			for idx, entry in ipairs(menu.constructionplan) do
@@ -3644,7 +3645,7 @@ function menu.displayPlan(frame)
 					row[2]:createButton({ helpOverlayID = "plot_resources_resourceconfig" .. ware.ware, helpOverlayText = " ",  helpOverlayHighlightOnly = true }):setText(isextended and "-" or "+", { halign = "center" })
 					row[2].handlers.onClick = function () return menu.buttonExtendResourceEntry("resourceconfig" .. ware.ware, row.index) end
 					row[2].properties.uiTriggerID = "extendresourceentry" .. ware.ware
-					
+
 					-- kuertee start: callback
 					-- row[3]:setColSpan(2):createText(GetWareData(ware.ware, "name"))
 					if menu.uix_callbacks ["displayPlan_getWareName"] then

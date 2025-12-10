@@ -39,6 +39,7 @@ local config = {
 
 -- kuertee start:
 menu.uix_callbacks = {}
+function menu.uix_get_config() return config end
 -- kuertee end
 
 local function init()
@@ -47,7 +48,7 @@ local function init()
 	if Helper then
 		Helper.registerMenu(menu)
 	end
-	
+
 	RegisterEvent("timelinesRankingsReceived", menu.onTimelinesRankingsReceived)
 
 	-- kuertee start:
@@ -220,7 +221,7 @@ function menu.createInfoFrame()
 		x = 0,
 		y = 0,
 	}):setBackground2("solid", { width = menu.size + 2 * Helper.frameBorder, height = menu.size, color = Color["frame_background_black"] }):setBackground("gradient_alpha_03", { width = backgroundfactor_x * Helper.viewWidth, height = backgroundfactor_y * Helper.viewHeight, rotationStart = (Helper.viewWidth > Helper.viewHeight) and 90 or 0, color = Color["frame_background_black"] })
-	
+
 	if menu.selectedscenario then
 		local showladder = C.IsOnlineEnabled()
 		if showladder then
@@ -378,10 +379,10 @@ function menu.createDescTable(frame, tablewidth, xoffset, yoffset)
 			scenariodescriptiontext = GetTextLines(scenario.scenariodata.scenariodesc, Helper.standardFont, Helper.scaleFont(Helper.standardFont, Helper.standardFontSize), tablewidth - 2 * Helper.scaleX(Helper.standardTextOffsetx) - Helper.scrollbarWidth)
 			headertext = GetTextLines(ReadText(30600, 1201), Helper.standardFont, Helper.scaleFont(Helper.standardFont, Helper.standardFontSize), tablewidth - 2 * Helper.scaleX(Helper.standardTextOffsetx) - Helper.scrollbarWidth)
 		end
-		
+
 		connection = true
 	end
-	
+
 	if hasscenariodescription then
 		for linenum, descline in ipairs(scenariodescriptiontext) do
 			local row = ftable:addRow(true, {  })
@@ -534,7 +535,7 @@ end
 function menu.createButtonTable(frame, tablewidth, xoffset, yoffset)
 	local numcols = 1
 	local ftable = frame:addTable(numcols, { tabOrder = 7, width = tablewidth, x = xoffset, y = yoffset })
-	
+
 	local scenario = menu.scenariosByID[menu.selectedscenario]
 	local row = ftable:addRow(true, { fixed = true })
 	row[1]:createButton({ active = (not scenario.hasunlockconditions) or scenario.unlocked }):setText(scenario.scenariochapterfinale and ReadText(1001, 12414) or ReadText(1001, 12407), { halign = "center" })
