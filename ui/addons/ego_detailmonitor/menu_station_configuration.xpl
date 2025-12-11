@@ -385,7 +385,7 @@ __CORE_DETAILMONITOR_STATIONBUILD = __CORE_DETAILMONITOR_STATIONBUILD or {
 
 -- kuertee start:
 menu.uix_callbacks = {}
-function menu.uix_get_config() return config end
+function menu.uix_getConfig() return config end
 -- kuertee end
 
 local function init()

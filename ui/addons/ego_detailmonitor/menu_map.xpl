@@ -1778,7 +1778,7 @@ __CORE_DETAILMONITOR_MAPFILTER = __CORE_DETAILMONITOR_MAPFILTER or {
 
 -- kuertee start:
 menu.uix_callbacks = {}
-function menu.uix_get_config() return config end
+function menu.uix_getConfig() return config end
 __userdata_uix_menu_map = __userdata_uix_menu_map or {}
 
 local uix_distanceTool_from_component
