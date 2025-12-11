@@ -35,6 +35,7 @@ local config = {
 
 -- kuertee start:
 menu.uix_callbacks = {}
+function menu.uix_getConfig() return config end
 -- kuertee end
 
 -- init menu and register with Helper
@@ -260,7 +261,7 @@ function menu.display()
 
 	-- HACK: Disabling the top level tab table as interactive object
 	local table_data = menu.frame:addTable( 1, { tabOrder = 1, highlightMode = "column", width = width, x = xoffset, y = menu.topLevelOffsetY + Helper.borderSize } )
-	
+
 	local rightBarX = Helper.viewWidth - Helper.scaleX(Helper.sidebarWidth) - Helper.frameBorder
 	local width = rightBarX - Helper.frameBorder - Helper.borderSize
 
@@ -425,7 +426,7 @@ function menu.onFlowchartNodeExpanded(node, frame, ftable, ftable2)
 end
 
 function menu.researchStateText(researchware)
-	if menu.currentResearch[researchware] ~= nil then 
+	if menu.currentResearch[researchware] ~= nil then
 		local proddata = GetProductionModuleData(ConvertStringTo64Bit(tostring(menu.currentResearch[researchware])))
 		return ((proddata.state == "waitingforresources") and ReadText(1001, 4231) or ReadText(1001, 7409)) .. ReadText(1001, 120)
 	end
@@ -433,7 +434,7 @@ function menu.researchStateText(researchware)
 end
 
 function menu.researchTimeText(researchware, researchtime)
-	if menu.currentResearch[researchware] ~= nil then 
+	if menu.currentResearch[researchware] ~= nil then
 		local proddata = GetProductionModuleData(ConvertStringTo64Bit(tostring(menu.currentResearch[researchware])))
 		return (proddata.state == "waitingforresources") and ConvertTimeString(researchtime) or ConvertTimeString(menu.currentResearch[researchware] and (proddata.remainingcycletime or 0) or 0)
 	end
@@ -760,7 +761,7 @@ function menu.buttonAccountConfirm()
 
 			SetMaxBudget(container, (menu.newAccountValue * 3) / 2)
 			SetMinBudget(container, menu.newAccountValue)
-		
+
 			if amount > 0 then
 				TransferPlayerMoneyTo(amount, container)
 			else

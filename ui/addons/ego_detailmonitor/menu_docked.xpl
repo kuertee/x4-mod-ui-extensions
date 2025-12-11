@@ -190,6 +190,7 @@ local config = {
 
 -- kuertee start:
 menu.uix_callbacks = {}
+function menu.uix_getConfig() return config end
 -- kuertee end
 
 -- init menu and register with Helper
@@ -619,7 +620,7 @@ function menu.display()
 				row[7]:createDropDown(stanceoptions, { active = function () return C.CanShipSwitchStance(menu.currentplayership) end, startOption = function () local activestance = ffi.string(C.GetShipActiveStance(menu.currentplayership)); return (activestance == "") and "neutral" or activestance end, mouseOverText = function () return (not C.CanShipSwitchStance(menu.currentplayership)) and ReadText(1026, 8612) or "" end })
 				row[7].handlers.onDropDownConfirmed = function (_, id) if (id ~= ffi.string(C.GetShipActiveStance(menu.currentplayership))) then return C.SetShipStance(menu.currentplayership, id) end end
 			end
-			
+
 			-- cover button
 			local coverfaction = ""
 			if menu.currentplayership ~= 0 then
@@ -1078,7 +1079,7 @@ function menu.display()
 						row[1]:createText(function () menu.updateSubordinateGroupInfo(); return ReadText(20401, i) .. (menu.subordinategroups[i] and (" (" .. ((not C.ShouldSubordinateGroupDockAtCommander(menu.currentplayership, i)) and ((#menu.subordinategroups[i].subordinates - menu.subordinategroups[i].numdockedatcommander) .. "/") or "") .. #menu.subordinategroups[i].subordinates ..")") or "") end, { color = isblocked and Color["text_warning"] or nil })
 						row[2]:setColSpan(5):createDropDown(subordinateassignments, { startOption = function () menu.updateSubordinateGroupInfo(); return menu.subordinategroups[i] and menu.subordinategroups[i].assignment or "" end, uiTriggerID = "subordinate_group_role_" .. i, helpOverlayID = "docked_subordinate_role" .. subordinatecounter, helpOverlayText = " ", helpOverlayHighlightOnly = true })
 						row[2].handlers.onDropDownConfirmed = function(_, newassignment) Helper.dropdownAssignment(_, nil, i, menu.currentplayership, newassignment) end
-						
+
 						-- Start Reactive Docking callback
 						local rd_callbackVal
 						if menu.uix_callbacks ["rd_addReactiveDockingDockMenu"] then

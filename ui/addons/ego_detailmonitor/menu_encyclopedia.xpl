@@ -261,6 +261,7 @@ local config = {
 
 -- kuertee start:
 menu.uix_callbacks = {}
+function menu.uix_getConfig() return config end
 -- kuertee end
 
 -- init menu and register with Helper
@@ -307,10 +308,10 @@ function menu.cleanup()
 	menu.printedshipsizes = {}
 
 	-- start: alexandretk call-back
-	if menu.uix_callbacks ["cleanup"] then		
+	if menu.uix_callbacks ["cleanup"] then
 			for uix_id, uix_callback in pairs (menu.uix_callbacks ["cleanup"]) do
 			uix_callback ()
-	    end		
+	    end
 	end
 	-- end: alexandretk call-back
 
@@ -423,7 +424,7 @@ function menu.onShowMenu(state)
 	menu.sortedpurposelist = { "fight", "trade", "mine", "build", "misc" }
 
 	-- start: alexandretk call-back
-	if menu.uix_callbacks ["onShowMenu_override_menu_printed_variables"] then		
+	if menu.uix_callbacks ["onShowMenu_override_menu_printed_variables"] then
 		local printedshipdata_override = {}
 		local printedshipsizes_override = {}
 		local printedmilxlcapshiptype_override = {}
@@ -439,7 +440,7 @@ function menu.onShowMenu(state)
 	else
 
 		menu.printedshipsizes = { "capital", "noncapital" }
-		menu.printedshipdata = { 
+		menu.printedshipdata = {
 								trade = {
 									text = ReadText(1001, 9010),								-- "Trading Ships"
 									capital = {text = ReadText(1001, 9022), ships = {}},			-- "Heavy Freighters"
@@ -1219,7 +1220,7 @@ function menu.addIndexEntry(array, item, name, rowdata, indent, numentries, expa
 				end
 			end
 		elseif (rowdata == "Blueprints") or (rowdata[1] == "Blueprints") then
-			
+
 		elseif rowdata == "FixedStations" then
 			for _, entry in ipairs(menu.data["FixedStations"]) do
 				if entry.macro then
@@ -1474,7 +1475,7 @@ function menu.displayIndexRow(inputtable, entry)
 	local show, searchcount, searchunread = menu.filterIndexCategory(menu.searchtext, entry, true)
 	if show then
 		local locrow = inputtable:addRow(entry.rowdata, {  })
-	
+
 		local arrow
 		if (type(entry.rowdata) == "table") and (#entry.rowdata >= 3) then
 			arrow = "widget_arrow_right_01"
@@ -1531,7 +1532,7 @@ function menu.displayIndexRow(inputtable, entry)
 		if arrow then
 			locrow[6]:createIcon(arrow, { height = Helper.standardTextHeight })
 		end
-	 
+
 		if not menu.selectedrow and type(entry.rowdata) == "table" then
 			if (menu.mode == "Licences") and menu.id and (menu.id == entry.rowdata[3].id) then
 				menu.selectedrow = locrow.index
@@ -1638,7 +1639,7 @@ function menu.display()
 
 		local descriptiontablewidth = 2 * tablewidth - Helper.borderSize
 		table_description = menu.frame:addTable( 1, { tabOrder = 5, width = descriptiontablewidth, x = framewidth - descriptiontablewidth - Helper.frameBorder, highlightMode = "off" } )
-		
+
 		local rendertargetproperties = { width = table_description.properties.width, height = table_description.properties.width, x = table_description.properties.x, y = topborder }
 		if table_description.properties.width > (0.8 * Helper.viewHeight - topborder) then
 			-- secure some space for the description table
@@ -2655,10 +2656,10 @@ function menu.addDetailRows(ftable)
 				end
 
 				-- start: kuertee call-back
-				if menu.uix_callbacks ["addDetailRow_known_cluster_production_module_entries"] then		
+				if menu.uix_callbacks ["addDetailRow_known_cluster_production_module_entries"] then
 						for uix_id, uix_callback in pairs (menu.uix_callbacks ["addDetailRow_known_cluster_production_module_entries"]) do
 						uix_callback(ftable, clusters)
-				    end		
+				    end
 				end
 				-- end: kuertee call-back
 
@@ -2748,10 +2749,10 @@ function menu.addDetailRows(ftable)
 				end
 
 				-- start: kuertee call-back
-				if menu.uix_callbacks ["addDetailRow_known_sector_production_module_entries"] then		
+				if menu.uix_callbacks ["addDetailRow_known_sector_production_module_entries"] then
 						for uix_id, uix_callback in pairs (menu.uix_callbacks ["addDetailRow_known_sector_production_module_entries"]) do
 						uix_callback(ftable, menu.object)
-				    end		
+				    end
 				end
 				-- end: kuertee call-back
 
@@ -3223,10 +3224,10 @@ function menu.addDetailRows(ftable)
 			menu.addDetailRow(ftable, ReadText(1001, 9061), ConvertIntegerString(C.GetDefaultMissileStorageCapacity(menu.id), true, 0, true))
 
 			-- start: kuertee call-back
-			if menu.uix_callbacks ["addDetailRow_post_missile_entry"] then		
+			if menu.uix_callbacks ["addDetailRow_post_missile_entry"] then
 					for uix_id, uix_callback in pairs (menu.uix_callbacks ["addDetailRow_post_missile_entry"]) do
 					uix_callback(ftable, col1, col2, col3, offsetx, iswordwrap, properties1, properties2, properties3, entry)
-			    end		
+			    end
 			end
 			-- end: kuertee call-back
 
@@ -3633,7 +3634,7 @@ function menu.addDetailRows(ftable)
 
 			if #compatibilityinfo > 0 then
 				menu.addDetailRow(ftable, "")
-				
+
 				local compatibilitytext = ""
 				for _, entry in ipairs(Helper.equipmentCompatibilities) do
 					for _, compatibility in ipairs(compatibilityinfo) do
@@ -3827,7 +3828,7 @@ function menu.addDetailRows(ftable)
 
 			if #compatibilityinfo > 0 then
 				menu.addDetailRow(ftable, "")
-				
+
 				local compatibilitytext = ""
 				for _, entry in ipairs(Helper.equipmentCompatibilities) do
 					for _, compatibility in ipairs(compatibilityinfo) do
@@ -4151,7 +4152,7 @@ function menu.createGraph(width, height, x, y)
 				end
 			end
 		end
-		
+
 		if sellDataWeights[i] and (sellDataWeights[i].amount > 0) and (not menu.hiddenData.sell[i]) then
 			if next(menu.graphdata[sellDataWeights[i].dataIdx].selldata) then
 				local highlight = menu.selectedrowdata == entry
@@ -4223,7 +4224,7 @@ function menu.isMakerRaceAllowed(makerraces, objectmakerraces)
 	local allowed = true
 	for _, race in ipairs(makerraces) do
 		if objectmakerraces then
-			local raceallowed = false		
+			local raceallowed = false
 			for _, objectrace in ipairs(objectmakerraces) do
 				if objectrace == race then
 					raceallowed = true

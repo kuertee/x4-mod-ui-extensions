@@ -20,6 +20,7 @@ local config = {
 
 -- kuertee start:
 menu.uix_callbacks = {}
+function menu.uix_getConfig() return config end
 -- end
 
 local function init()
@@ -139,7 +140,7 @@ function menu.createInfoFrame()
 		x = Helper.borderSize,
 		y = Helper.borderSize,
 	}
-	
+
 	if menu.showTabs then
 		if not menu.hasRegistered then
 			menu.hasRegistered = true
