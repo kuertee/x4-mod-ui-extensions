@@ -684,7 +684,7 @@ config.categories = {
 }
 
 -- kuertee start:
-function menu.uix_get_config() return config end
+function menu.uix_getConfig() return config end
 -- kuertee end
 
 menu.budgets = {
