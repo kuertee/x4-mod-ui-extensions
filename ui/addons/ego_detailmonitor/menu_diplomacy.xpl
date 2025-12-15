@@ -261,6 +261,7 @@ local config = {
 
 -- kuertee start:
 menu.uix_callbacks = {}
+function menu.uix_getConfig() return config end
 -- kuertee end
 
 local function init()
@@ -1483,7 +1484,7 @@ function menu.createEmbassy(frame, tableProperties)
 					if (menu.contextMenuMode == "actionconfig") and (action.id == menu.contextMenuData.id) and (menu.contextMenuData.operationid == nil) then
 						isselected = true
 					end
-					
+
 					local row = menu.actiontable:addRow({ type = "action", id = action.id }, { bgColor = isselected and Color["row_background_selected"] or Color["row_background_blue"] })
 					row[1]:setColSpan(4):setBackgroundColSpan(6)
 
@@ -2321,12 +2322,12 @@ function menu.createAgentDetailsContext(frame)
 	local row = agentdetailstable:addRow(nil, {  })
 	row[2]:createText(ReadText(1001, 12821), {  })
 	row[3]:setColSpan(2):createText(agent.exp_espionage_name, { halign = "right" })
-	
+
 	agentdetailstable:addEmptyRow(Helper.standardTextHeight / 2)
-	
+
 	local row = agentdetailstable:addRow(nil, {  })
 	row[1]:setColSpan(4):createText(ReadText(1001, 12918), Helper.headerRow1Properties)
-	
+
 	local row = agentdetailstable:addRow(nil, {  })
 	row[1]:setColSpan(4):createText(ReadText(1001, 12922), { wordwrap = true })
 
@@ -2391,7 +2392,7 @@ function menu.createAgentDetailsContext(frame)
 			displayremoveoption = false,
 		})
 	end
-	
+
 	local row = agentdetailstable:addRow(true, { fixed = true })
 	row[1]:setColSpan(4):createDropDown(shipoptions, {
 		startOption = tostring(agent.ship) or "",
@@ -2761,7 +2762,7 @@ function menu.createActionConfigContext(frame)
 		if i == 1 then
 			row[1]:setColSpan(2):createText(ReadText(1001, 2811))
 		end
-		
+
 		local requirement = (inventory[ware.ware] and inventory[ware.ware].amount or 0) >= ware.amount
 		if not requirement then
 			hasmissingrequirement = true
@@ -3211,7 +3212,7 @@ function menu.createEventContext(frame)
 	row[1]:setBackgroundColSpan(5):createText(" ", { scaling = false, fontsize = 1, y = 0, minRowHeight = Helper.standardContainerOffset })
 
 	bannertable:addEmptyRow(Helper.standardContainerOffset)
-	
+
 	local agentdropdownheight = 3 * tonumber(C.GetTextHeight("M", Helper.standardFont, Helper.standardFontSize, 0)) + 2
 
 	local yoffset = bannertable.properties.y + bannertable:getFullHeight() + Helper.borderSize + 2 * Helper.standardContainerOffset
@@ -3718,7 +3719,7 @@ function menu.createEventCompletedContext(frame)
 
 	local row = ftable:addRow(nil, { bgColor = Color["row_background_container"], borderBelow = false })
 	row[1]:createText(ReadText(1001, 12842), { halign = "center" })
-	
+
 	local factioniconheight = Helper.scaleY(2 * Helper.titleHeight)
 	local iconoffset = Helper.scaleX(12)
 	local iconoffsetx = 0.1 * (popUpWidth - 4 * Helper.borderSize) - factioniconheight - iconoffset
@@ -3776,7 +3777,7 @@ function menu.createUserQuestionContext(frame)
 		useSaveOption = true
 	end
 	local popUpWidth = Helper.scaleX(600)
-	
+
 	local numCols = useSaveOption and 6 or 5
 	local ftable = frame:addTable(numCols, { tabOrder = 1, reserveScrollBar = false, highlightMode = "off", x = (Helper.viewWidth - popUpWidth) / 2, y = Helper.viewHeight / 2 - frame.properties.y, width = popUpWidth - Helper.borderSize, backgroundID = "solid", backgroundColor = Color["frame_background_notification"] })
 	if useSaveOption then

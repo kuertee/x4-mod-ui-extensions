@@ -10,7 +10,7 @@ ffi.cdef[[
 		float maxscore;
 		bool hasscore;
 	} ScenarioStat;
-	
+
 	void EnableScenarioLoading(bool reverse, const char* gamestartid);
 	void FadeScreen2(float fadeouttime, float fadeintime, float holdtime);
 	const char* GetGameStartName();
@@ -42,6 +42,7 @@ local config = {
 
 -- kuertee start:
 menu.uix_callbacks = {}
+function menu.uix_getConfig() return config end
 -- kuertee end
 
 local function init()
@@ -217,7 +218,7 @@ function menu.createInfoFrame()
 		x = 0,
 		y = 0,
 	}):setBackground2("solid", { width = menu.size + 2 * Helper.frameBorder, height = menu.size, color = Color["frame_background_black"] }):setBackground("gradient_alpha_03", { width = backgroundfactor_x * Helper.viewWidth, height = backgroundfactor_y * Helper.viewHeight, rotationStart = (Helper.viewWidth > Helper.viewHeight) and 90 or 0 })
-	
+
 	menu.titletable = menu.createTitleTable(menu.infoFrame)
 	local tablewidth = math.ceil(3 / 8 * menu.size) - 2 * Helper.borderSize
 	menu.tileHeight = math.floor(5 / 8 * menu.size) * 9 / 16 / 2
@@ -314,10 +315,10 @@ function menu.createDescTable(frame, tablewidth, xoffset, yoffset)
 			scenariodescriptiontext = GetTextLines(menu.scenario.scenariodata.scenariodesc, Helper.standardFont, Helper.scaleFont(Helper.standardFont, Helper.standardFontSize), tablewidth - 2 * Helper.scaleX(Helper.standardTextOffsetx) - Helper.scrollbarWidth)
 			headertext = GetTextLines(ReadText(30600, 1201), Helper.standardFont, Helper.scaleFont(Helper.standardFont, Helper.standardFontSize), tablewidth - 2 * Helper.scaleX(Helper.standardTextOffsetx) - Helper.scrollbarWidth)
 		end
-		
+
 		connection = true
 	end
-	
+
 	if hasscenariodescription then
 		for linenum, descline in ipairs(scenariodescriptiontext) do
 			local row = ftable:addRow(true, {  })
@@ -333,7 +334,7 @@ function menu.createDescTable(frame, tablewidth, xoffset, yoffset)
 		local row = ftable:addRow(true, {  })
 		row[1]:createText(descline)
 	end
-	
+
 	if connection then
 		ftable:addConnection(1, 2, true)
 	else
@@ -418,7 +419,7 @@ function menu.createLadderTable(frame, tablewidth, xoffset, yoffset, maxVisibleH
 			row[1]:createCheckBox(menu.ladderDisplayMode == 2, { width = Helper.standardTextHeight, height = Helper.standardTextHeight })
 			row[1].handlers.onClick = menu.checkboxUseLadderContacts
 			row[2]:setColSpan(numcols - 1):createText(ReadText(1001, 12420))
-			
+
 			if #menu.scenario.ladder.rankings > 0 then
 				local hasscrollbar = math.floor((maxVisibleHeight - ftable:getFullHeight()) / (Helper.scaleY(Helper.standardTextHeight) + Helper.borderSize)) < #menu.scenario.ladder.rankings
 
@@ -499,7 +500,7 @@ function menu.createButtonTable(frame, tablewidth, xoffset, yoffset)
 	end
 
 	ftable.properties.y = yoffset + 2 * menu.tileHeight
-	
+
 	ftable:addConnection(4, 2)
 	return ftable
 end

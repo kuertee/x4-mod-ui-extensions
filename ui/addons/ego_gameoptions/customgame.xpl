@@ -189,7 +189,7 @@ ffi.cdef[[
 		const char* macro;
 		int amount;
 	} UIWareInfo;
-	
+
 	typedef struct {
 		const char* type;
 		const char* id;
@@ -683,6 +683,10 @@ config.categories = {
 	{ id = "playerknownobjects",		name = ReadText(1021, 11013),	type = "dummy" },
 }
 
+-- kuertee start:
+function menu.uix_getConfig() return config end
+-- kuertee end
+
 menu.budgets = {
 	{ id = "money",		name = ReadText(1001, 9923),	desc = ReadText(1026, 9917),	icon = "gamestart_custom_credits",		color = Color["customgamestart_budget_money"],		suffix = " " .. ReadText(1001, 101),	details = {} },
 	{ id = "people",	name = ReadText(1001, 9929),	desc = ReadText(1026, 9918),	icon = "gamestart_custom_people",		color = Color["customgamestart_budget_people"],		suffix = "",							details = {} },
@@ -1166,11 +1170,11 @@ function menu.addSatellite(sector, id, x, z)
 	local entryid = ffi.string(C.SetCustomGameStartPlayerPropertyObjectMacro(menu.customgamestart, "playerproperty", id, config.satellites.macro))
 	if entryid ~= "" then
 		local sectorpos = ffi.new("UIPosRot", {
-			x = x, 
-			y = 0, 
-			z = z, 
-			yaw = 0, 
-			pitch = 0, 
+			x = x,
+			y = 0,
+			z = z,
+			yaw = 0,
+			pitch = 0,
 			roll = 0
 		})
 		C.SetCustomGameStartPlayerPropertySectorAndOffset(menu.customgamestart, "playerproperty", entryid, sector, sectorpos)
@@ -1304,11 +1308,11 @@ function menu.addHQ()
 
 			local sector = "cluster_01_sector001_macro"
 			local sectorpos = ffi.new("UIPosRot", {
-				x = 128000, 
-				y = 0, 
-				z = 198000, 
-				yaw = 0, 
-				pitch = 0, 
+				x = 128000,
+				y = 0,
+				z = 198000,
+				yaw = 0,
+				pitch = 0,
 				roll = 0
 			})
 			C.SetCustomGameStartPlayerPropertySectorAndOffset(menu.customgamestart, "playerproperty", entryid, sector, sectorpos)
@@ -1433,7 +1437,7 @@ function menu.dropdownImport(filename)
 	end
 
 	C.ImportCustomGameStart(menu.customgamestart, filename, menu.customgamestart)
-	
+
 	menu.initEncyclopediaValue()
 	menu.initKnownValue()
 	menu.initStoryValue()
@@ -1994,7 +1998,7 @@ function menu.universeSector(current)
 		if not hidden then
 			local mouseovertext = ""
 			local active = true
-			
+
 			if not unlocked then
 				active = false
 				mouseovertext = ReadText(1026, 9928)
@@ -2440,7 +2444,7 @@ function menu.displayMultiSelection(property)
 						end
 					end
 				end
-				
+
 				if active then
 					if menu.contextMenuData.propertyLockedWares[entry.id] then
 						active = false
@@ -3299,7 +3303,7 @@ function menu.display()
 							if i ~= 1 then
 								row = menu.propertyTable:addRow(property, {  })
 							end
-							
+
 							if property.id == "playerknownspace" then
 								row[3]:setColSpan(1):createButton({ helpOverlayID = "knownsector_expand", helpOverlayText = " ", helpOverlayHighlightOnly = true }):setText(menu.expandedProperty["knownsector_" .. entry.id] and "-" or "+", { halign = "center", x = 0 })
 								row[3].handlers.onClick = function () return menu.buttonExpandProperty("knownsector_" .. entry.id) end
@@ -5306,7 +5310,7 @@ function menu.onUpdate()
 										if cutscenekey then
 											menu.cutscenedesc = CreateCutsceneDescriptor(cutscenekey, { npcref = menu.prenpc })
 											menu.cutsceneid = StartCutscene(menu.cutscenedesc, rendertargetTexture)
-											
+
 											if not menu.cutsceneNotification then
 												NotifyOnCutsceneReady(getElement("Scene.UIContract"))
 												NotifyOnCutsceneStopped(getElement("Scene.UIContract"))
@@ -5427,7 +5431,7 @@ end
 -- rendertarget mouse input helper
 function menu.onRenderTargetMouseDown(modified)
 	menu.leftdown = { time = getElapsedTime(), position = table.pack(GetLocalMousePosition()), dynpos = table.pack(GetLocalMousePosition()) }
-	
+
 	if menu.holomap ~= 0 then
 		C.StartPanMap(menu.holomap)
 		menu.panningmap = { isclick = true }
@@ -5468,7 +5472,7 @@ function menu.onRenderTargetRightMouseUp(modified)
 		if menu.holomap ~= 0 then
 			local sectorpos = ffi.new("UIPosRot")
 			local sectormacro = ffi.string(C.GetMacroMapPositionOnEcliptic(menu.holomap, sectorpos))
-		
+
 			if menu.category.id == "universe" then
 				if sectormacro ~= "" then
 					menu.displayMapContext(offset, sectormacro, sectorpos)

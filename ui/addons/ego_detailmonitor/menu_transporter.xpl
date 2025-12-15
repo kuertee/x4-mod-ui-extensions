@@ -61,6 +61,7 @@ local config = {
 
 -- kuertee start:
 menu.uix_callbacks = {}
+function menu.uix_getConfig() return config end
 -- kuertee end
 
 local function init()
@@ -87,9 +88,9 @@ function menu.cleanup()
 	menu.currentselection = nil
 	menu.npcs = {}
 	menu.extendInfo = nil
-	
+
 	menu.refresh = nil
-	
+
 	menu.pretoprow = nil
 	menu.preselectrow = nil
 
@@ -728,7 +729,7 @@ function menu.display()
 					end
 				end
 			end
-			
+
 			if #dockedships > 0 then
 				local row = infotable:addRow(true, {  })
 				row[1]:createButton():setText(menu.extendedcategories["ships"] and "-" or "+", { halign = "center" })
@@ -841,7 +842,7 @@ end
 function menu.getNPCs(room, ships, issubtarget)
 	local rawnpcs = GetPrioritizedPlatformNPCs(ConvertStringTo64Bit(tostring(room)))
 	local npcs = {}
-	
+
 	if not issubtarget then
 		if C.GetContextByClass(room, "ship", false) ~= 0 then
 			npcs = GetNPCs(ConvertStringTo64Bit(tostring(room)))
