@@ -6865,6 +6865,17 @@ function menu.createContextFrame(width, height, xoffset, yoffset, noborder, star
 		closeOnUnhandledClick = false
 	end
 
+	-- kuertee start: callback
+	if menu.uix_callbacks ["createContextFrame_on_start"] then
+		for uix_id, uix_callback in pairs (menu.uix_callbacks ["createContextFrame_on_start"]) do
+			local result = uix_callback (menu.contextMenuData, menu.contextMenuMode)
+			if result then
+				menu.contextMenuData = result.contextMenuData
+			end
+		end
+	end
+	-- kuertee end: callback
+
 	menu.contextFrame = Helper.createFrameHandle(menu, {
 		x = menu.contextMenuData.xoffset - (noborder and 0 or 2 * Helper.borderSize),
 		y = menu.contextMenuData.yoffset,
@@ -6965,6 +6976,17 @@ function menu.createContextFrame(width, height, xoffset, yoffset, noborder, star
 		menu.contextFrame.properties.standardButtons = {}
 	end
 
+	-- kuertee start: callback
+	if menu.uix_callbacks ["createContextFrame_on_end"] then
+		for uix_id, uix_callback in pairs (menu.uix_callbacks ["createContextFrame_on_end"]) do
+			local result = uix_callback (menu.contextFrame, menu.contextMenuData, menu.contextMenuMode)
+			if result then
+				menu.contextFrame = result.contextFrame
+			end
+		end
+	end
+	-- kuertee end: callback
+
 	-- only add one border as the table y offset already is part of frame:getUsedHeight()
 	if adjustFrameHeight then
 		menu.contextFrame.properties.height = math.min(Helper.viewHeight - menu.contextFrame.properties.y, menu.contextFrame:getUsedHeight() + Helper.borderSize)
@@ -7052,6 +7074,17 @@ function menu.refreshContextFrame(setrow, setcol, noborder)
 		closeOnUnhandledClick = false
 	end
 
+	-- kuertee start: callback
+	if menu.uix_callbacks ["refreshContextFrame_on_start"] then
+		for uix_id, uix_callback in pairs (menu.uix_callbacks ["refreshContextFrame_on_start"]) do
+			local result = uix_callback (menu.contextMenuData, menu.contextMenuMode)
+			if result then
+				menu.contextMenuData = result.contextMenuData
+			end
+		end
+	end
+	-- kuertee end: callback
+
 	menu.contextFrame = Helper.createFrameHandle(menu, {
 		x = menu.contextMenuData.xoffset - (noborder and 0 or 2 * Helper.borderSize),
 		y = menu.contextMenuData.yoffset,
@@ -7117,6 +7150,17 @@ function menu.refreshContextFrame(setrow, setcol, noborder)
 		menu.createSearchFieldContext(menu.contextFrame)
 		menu.contextFrame.properties.standardButtons = {}
 	end
+
+	-- kuertee start: callback
+	if menu.uix_callbacks ["refreshContextFrame_on_end"] then
+		for uix_id, uix_callback in pairs (menu.uix_callbacks ["refreshContextFrame_on_end"]) do
+			local result = uix_callback (menu.contextFrame, menu.contextMenuData, menu.contextMenuMode)
+			if result then
+				menu.contextFrame = result.contextFrame
+			end
+		end
+	end
+	-- kuertee end: callback
 
 	-- only add one border as the table y offset already is part of frame:getUsedHeight()
 	if adjustFrameHeight then
