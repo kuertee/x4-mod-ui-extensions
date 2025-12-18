@@ -161,7 +161,7 @@ E.g. The down arrow actually sorts the list in ascending order. The list is sort
 Map Menu: Mission Guidance tab
 ==============================
 Any mission with the "missiontype.guidance" will now be listed in the Mission Guidance tab.
-In the base game, the Mission Guidance tab lists only the Guidance created manually with the right-click mouse button. 
+In the base game, the Mission Guidance tab lists only the Guidance created manually with the right-click mouse button.
 
 The "Set to inactive" and "Set to active" buttons are available on missions listed in the Mission Guidance tab.
 The base game makes these buttons unavailable for Guidance Missions.
@@ -259,6 +259,12 @@ French localisation by Calvitix.
 
 History
 =======
+v8.0.3.6, ?? Dec 2025:
+- New feature: Chem O'Dun's new callbacks to access context menus generated locally in menus via `menu.createContextFrame` and `menu.refreshContextFrame`. Covered menus: `DiplomacyMenu`, `Map Menu`, `Player Information Menu`.
+
+v8.0.3.5, 15 Dec 2025:
+- New feature: Access local configs of menu files via new `uix_getConfig()`function by Chem O'Dun. Covered all currently supported menus.
+
 v8.0.3.4, 9 Dec 2025:
 - New feature: Map menu: Ship crew list: support for Emergent Missions mod's new Station Rescue mission: list passengers over capacity.
 - New feature: Boarding menu tweak: Ensure that subordinates of selected ships acquire their immediate commander's boarding behaviour. In the base-game, when selecting ships, e.g. SHIP A, with subordinates AND those ships' fleet commander, e.g. THE COMMANDER of SHIP A, the subordinates of SHIP A sometimes acquired THE COMMANDER's behaviour (e.g. Maintain Distance) instead of SHIP A's behaviour (e.g. Target Turrets). This tweak allows the player to select wings of a fleet for separate boarding behaviour assignments without needing each wing to be in separate fleets. Note: also check out Kuda's new boarding behaviour changes (https://www.nexusmods.com/x4foundations/mods/839). e.g.: ships on attack orders during boarding operations now stop their attack minimising the chance of the boarding target getting destroyed.
@@ -641,7 +647,7 @@ v5.1.0314, 06 Dec 2022:
 v5.1.0307, 29 Sep 2022:
 - Bug-fix: Removed the stutter when the map is open. The bug was introduced when the sort by name then sector was added in a previous version.
 - Bug-fix: Trade Analytic mod's location and intended sector destination display wasn't working.
-- Bug-fix: Auto-expand feature was preventing the subordinates list from collapsing. Note that the base-game's functionality have station subordinates lists closed by default. 
+- Bug-fix: Auto-expand feature was preventing the subordinates list from collapsing. Note that the base-game's functionality have station subordinates lists closed by default.
 
 v5.1.0306, 18 Sep 2022:
 - Tweak: Expanding a fleet or a station will auto expand their ship sections.
