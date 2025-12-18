@@ -6572,6 +6572,17 @@ function menu.createContextFrame(data, x, y, width, nomouseout)
 
 	local contextmenuwidth = width or menu.contextMenuWidth
 
+	-- kuertee start: callback
+	if menu.uix_callbacks ["createContextFrame_on_start"] then
+		for uix_id, uix_callback in pairs (menu.uix_callbacks ["createContextFrame_on_start"]) do
+			local result = uix_callback (menu.contextMenuData, menu.contextMenuMode)
+			if result then
+				menu.contextMenuData = result.contextMenuData
+			end
+		end
+	end
+	-- kuertee end: callback
+
 	menu.contextFrame = Helper.createFrameHandle(menu, {
 		layer = config.contextLayer,
 		standardButtons = { close = true },
@@ -6738,6 +6749,17 @@ function menu.createContextFrame(data, x, y, width, nomouseout)
 		menu.contextFrame.properties.y = y
 	end
 
+	-- kuertee start: callback
+	if menu.uix_callbacks ["createContextFrame_on_end"] then
+		for uix_id, uix_callback in pairs (menu.uix_callbacks ["createContextFrame_on_end"]) do
+			local result = uix_callback (menu.contextFrame, menu.contextMenuData, menu.contextMenuMode)
+			if result then
+				menu.contextFrame = result.contextFrame
+			end
+		end
+	end
+	-- kuertee end: callback
+
 	menu.contextFrame:display()
 
 	if not nomouseout then
@@ -6754,6 +6776,17 @@ end
 
 function menu.refreshContextFrame(setrow, setcol)
 	Helper.removeAllWidgetScripts(menu, config.contextLayer)
+
+	-- kuertee start: callback
+	if menu.uix_callbacks ["refreshContextFrame_on_start"] then
+		for uix_id, uix_callback in pairs (menu.uix_callbacks ["refreshContextFrame_on_start"]) do
+			local result = uix_callback (menu.contextMenuData, menu.contextMenuMode)
+			if result then
+				menu.contextMenuData = result.contextMenuData
+			end
+		end
+	end
+	-- kuertee end: callback
 
 	local y = menu.contextFrame.properties.y
 	menu.contextFrame = Helper.createFrameHandle(menu, {
@@ -6779,6 +6812,17 @@ function menu.refreshContextFrame(setrow, setcol)
 	else
 		menu.contextFrame.properties.y = y
 	end
+
+	-- kuertee start: callback
+	if menu.uix_callbacks ["refreshContextFrame_on_end"] then
+		for uix_id, uix_callback in pairs (menu.uix_callbacks ["refreshContextFrame_on_end"]) do
+			local result = uix_callback (menu.contextFrame, menu.contextMenuData, menu.contextMenuMode)
+			if result then
+				menu.contextFrame = result.contextFrame
+			end
+		end
+	end
+	-- kuertee end: callback
 
 	menu.contextFrame:display()
 end
