@@ -260,7 +260,7 @@ French localisation by Calvitix.
 History
 =======
 v8.0.3.6, ?? Dec 2025:
-- New feature: Chem O'Dun's new callbacks to access context menus generated locally in menus via `menu.createContextFrame` and `menu.refreshContextFrame`. Covered menus: `DiplomacyMenu`, `Map Menu`, `Player Information Menu`.
+- New feature: Chem O'Dun's new callbacks to access context menus generated locally in menus via `menu.createContextFrame` and `menu.refreshContextFrame`. Covered menus: `DiplomacyMenu`, `MapMenu`, `PlayerInformationMenu`.
 
 v8.0.3.5, 15 Dec 2025:
 - New feature: Access local configs of menu files via new `uix_getConfig()`function by Chem O'Dun. Covered all currently supported menus.
