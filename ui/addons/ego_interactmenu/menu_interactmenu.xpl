@@ -5037,6 +5037,32 @@ function menu.insertLuaAction(actiontype, istobedisplayed)
 			end
 		end
 		-- end: aegs call-back
+				
+		-- start: cpsdo call-back (shipOverview)
+		do
+			local callbacks = menu.uix_callbacks and menu.uix_callbacks["cpsdo_map_rightMenu_shipLogistic_insert"]
+			if not callbacks then
+				-- nothing
+			else
+				local macro = GetComponentData(convertedComponent, "macro")
+
+				for _, cb in next, callbacks do
+					local ok, show, text = pcall(cb, macro)
+					if ok and show then
+						menu.insertInteractionContent("main", {
+							type = "logicalstationoverview",
+							text = text,
+							helpOverlayID = "interactmenu_logicalstationoverview",
+							helpOverlayText = " ",
+							helpOverlayHighlightOnly = true,
+							script = menu.buttonStationOverview,
+						})
+						return
+					end
+				end
+			end
+		end
+		-- end: cpsdo call-back
 
 	elseif actiontype == "attackinrange" then
 		if menu.offsetcomponent and (menu.offsetcomponent ~= 0) then
@@ -6535,6 +6561,52 @@ function menu.insertLuaAction(actiontype, istobedisplayed)
 			end
 		end
 		-- end: aegs call-back
+		
+		-- start: cpsdo call-back (rightMenu shipBuilding insert)
+		do
+			local inserted = false
+
+			if menu.uix_callbacks["cpsdo_map_rightMenu_shipBuildShip_insert"] then
+				for uix_id, uix_callback in pairs(menu.uix_callbacks["cpsdo_map_rightMenu_shipBuildShip_insert"]) do
+					local ok, state, entry = pcall(
+						uix_callback,
+						shiptrader,
+						isdock,
+						GetComponentData(convertedComponent, "macro"),
+						doessellshipstoplayer,
+						isplayerownedtarget,
+						actiontype,
+						menu
+					)
+
+					if ok and state and type(entry) == "table" then
+						local category = entry.category or "main"
+
+						-- 如果你想“替换原版按钮”，回调里给 entry.replace=true
+						if entry.replace then
+							-- 你自己控制：替换时你需要在原版按钮插入前调用本段，并且外层逻辑要跳过原插入
+							-- 这里仅提供 inserted 标记给你外层用
+						end
+
+						menu.insertInteractionContent(category, {
+							type              = entry.type or actiontype, -- 默认沿用 buildships
+							text              = entry.text or ReadText(1001, 7875),
+							helpOverlayID     = entry.helpOverlayID or "interactmenu_buildship",
+							helpOverlayText   = entry.helpOverlayText or " ",
+							helpOverlayHighlightOnly = (entry.helpOverlayHighlightOnly ~= false),
+							script            = entry.script or (function () return menu.buttonShipConfig("purchase") end),
+							active            = (entry.active ~= false),
+							mouseOverText     = entry.mouseOverText or "",
+						})
+
+						inserted = true
+					end
+				end
+			end
+
+			-- inserted 这个标记如果你要“替换原版按钮”，可以在外层用它决定是否跳过原版插入
+		end
+		-- end: cpsdo call-back
 
 		if isdock and (C.IsComponentClass(menu.componentSlot.component, "station") or issupplyship) then
 			local active = false

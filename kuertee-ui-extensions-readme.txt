@@ -1,12 +1,14 @@
 UI Extensions and HUD
 https://www.nexusmods.com/x4foundations/mods/552
 Code: https://github.com/kuertee/x4-mod-ui-extensions
-by kuertee. Contributors: AlexandreTK, ChemODun, Damonya, DrWhoKnows, DmytroK, Erixon, Forleyor, IALuir, Mycu, Runekn, sticeIO.
+by kuertee.
+Contributors: AlexandreTK, ChemODun, Damonya, DrWhoKnows, DmytroK, Erixon, Forleyor, HYLT2233, IALuir, Mycu, Runekn, sticeIO.
 
 Updates
 =======
-v8.0.3.5, 16 Dec 2025:
-- New UIX functions: ChemODun's functions to get local configs of menu files.
+v8.0.4.0, 7 Feb 2025:
+- New callbacks for ChemODun's unreleased mod.
+- New callbacks for HYLT2233's unreleased mod.
 
 NOTES FOR PLAYERS:
 ==================
@@ -244,21 +246,14 @@ Troubleshooting
 Credits
 =======
 kuertee
-Contributors:
-	AlexandreTK
-  Damonya
-	DrWhoKnows
-  DmytroK
-	Erixon
-	Forleyor
-	IALuir
-	Mycu
-	Runekn
-	sticeIO
+Contributors: AlexandreTK, ChemODun, Damonya, DrWhoKnows, DmytroK, Erixon, Forleyor, HYLT2233, IALuir, Mycu, Runekn, sticeIO.
 French localisation by Calvitix.
 
 History
 =======
+v8.0.3.5, 16 Dec 2025:
+- New UIX functions: ChemODun's functions to get local configs of menu files.
+
 v8.0.3.4, 9 Dec 2025:
 - New feature: Map menu: Ship crew list: support for Emergent Missions mod's new Station Rescue mission: list passengers over capacity.
 - New feature: Boarding menu tweak: Ensure that subordinates of selected ships acquire their immediate commander's boarding behaviour. In the base-game, when selecting ships, e.g. SHIP A, with subordinates AND those ships' fleet commander, e.g. THE COMMANDER of SHIP A, the subordinates of SHIP A sometimes acquired THE COMMANDER's behaviour (e.g. Maintain Distance) instead of SHIP A's behaviour (e.g. Target Turrets). This tweak allows the player to select wings of a fleet for separate boarding behaviour assignments without needing each wing to be in separate fleets. Note: also check out Kuda's new boarding behaviour changes (https://www.nexusmods.com/x4foundations/mods/839). e.g.: ships on attack orders during boarding operations now stop their attack minimising the chance of the boarding target getting destroyed.

@@ -3004,6 +3004,14 @@ function menu.addDetailRows(ftable)
 			else
 			-- end: alexandretk call-back
 
+			-- start: cpsdo call-back (encyclopedia onShowMenu add other ship types)
+			if menu.uix_callbacks["cpsdo_onShowMenu_addOtherShipTypes"] then
+				for uix_id, uix_callback in pairs(menu.uix_callbacks["cpsdo_onShowMenu_addOtherShipTypes"]) do
+					local ok, err = pcall(uix_callback, menu, ftable)
+				end
+			end
+			-- end: cpsdo call-back
+
 				menu.addDetailRow(ftable, ReadText(1001, 9051), menu.object.shiptypename)
 
 			end

@@ -13736,6 +13736,31 @@ function menu.setupInfoSubmenuRows(mode, inputtable, inputobject, instance)
 		end
 		-- end: aegs call-back
 
+		-- start: cpsdo call-back (ship information: shiptypename)
+		do
+			local shiptypename_override = nil
+
+			if menu.uix_callbacks["cpsdo_map_shipInformation_shiptypename_replace"] then
+				for uix_id, uix_callback in pairs(menu.uix_callbacks["cpsdo_map_shipInformation_shiptypename_replace"]) do
+					local ok, result = pcall(uix_callback, GetComponentData(object64, "macro"), object64)
+					if ok and type(result) == "string" and result ~= "" then
+						shiptypename_override = result  -- keep last valid string
+					end
+				end
+			end
+
+			if shiptypename_override then
+				locrowdata = {
+					false,
+					ReadText(1001, 9051) .. ReadText(1001, 120),
+					Helper.unlockInfo(nameinfo, (function()
+						return tostring(shiptypename_override or 0, true, 0, true)
+					end))
+				}
+			end
+		end
+		-- end: cpsdo call-back
+
 		row = menu.addInfoSubmenuRow(instance, inputtable, row, locrowdata, false, false, false, 1, indentsize)
 
 		local hull_max = Helper.unlockInfo(defenceinfo_low, ConvertIntegerString(Helper.round(hullmax), true, 4, true, true, true))
@@ -16330,6 +16355,69 @@ function menu.setupLoadoutInfoSubmenuRows(mode, inputtable, inputobject, instanc
 			end
 		end
 	-- end: aegs call-back
+
+	-- start: cpsdo call-back (loadoutinfo display insert: sessystems)
+	do
+		local state, title_text, label_text_1, label_text_2, sessystems = nil, nil, nil, nil, nil
+
+		if menu.uix_callbacks["cpsdo_map_loadoutinfo_sessystem_display_insert"] then
+			for uix_id, uix_callback in pairs(menu.uix_callbacks["cpsdo_map_loadoutinfo_sessystem_display_insert"]) do
+				local ok, s, t, l1, l2, ss = pcall(
+					uix_callback,
+					GetComponentData(inputobject, "macro"),
+					inputobject
+				)
+				if ok and s then
+					state, title_text, label_text_1, label_text_2, sessystems = s, t, l1, l2, ss
+					-- break
+				end
+			end
+		end
+
+		if state and type(sessystems) == "table" and #sessystems > 0 then
+			-- title
+			local row = inputtable:addRow(false, { bgColor = Color["row_title_background"] })
+			row[1]:setColSpan(13):createText(title_text or "", Helper.headerRowCenteredProperties)
+
+			-- labels
+			if (label_text_1 and label_text_1 ~= "") or (label_text_2 and label_text_2 ~= "") then
+				local row = inputtable:addRow(false, { interactive = false })
+				row[1]:setColSpan(6):createText(label_text_1 or "", { halign = "center" })
+				row[7]:setColSpan(7):createText(label_text_2 or "", { halign = "center" })
+			end
+
+			-- sessystem rows
+			for _, sessystem in ipairs(sessystems) do
+				local name  = sessystem.name  or ""
+				local brief = sessystem.brief or ""
+				local intro = sessystem.intro or ""
+				local icon  = sessystem.icon
+
+				local lefttext = name
+				if brief ~= "" then
+					lefttext = lefttext .. "\n" .. brief
+				end
+
+				local row = inputtable:addRow(false, { interactive = false })
+
+				row[1]:setColSpan(6):createText(lefttext, {
+					halign = "left",
+					wordwrap = true,
+				})
+
+				if icon then
+					row[7]:setColSpan(7):createIcon(icon, {
+						height = config.mapRowHeight * 8,
+						mouseOverText = intro,
+						halign = "center",
+					})
+				else
+					row[7]:setColSpan(7):createText(intro, { halign = "left", wordwrap = true })
+				end
+			end
+		end
+	end
+	-- end: cpsdo call-back
 
 	if mode == "ship" then
 		-- countermeasures

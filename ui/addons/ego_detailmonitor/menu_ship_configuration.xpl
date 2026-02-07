@@ -8985,6 +8985,19 @@ function menu.evaluateShipOptions()
 					end
 				end
 				-- end: alexandretk call-back
+				
+				-- start: cpsdo call-back (ship options: override shiptypename)
+				if menu.uix_callbacks["cpsdo_evaluateShipOptions_override_shiptypename"] then
+					local shiptypename_override
+					for uix_id, uix_callback in pairs(menu.uix_callbacks["cpsdo_evaluateShipOptions_override_shiptypename"]) do
+						local ok, result = pcall(uix_callback, shiptypename, shipicon, menu.class, macro, ware)
+						if ok and result then
+							shiptypename = result
+							break
+						end
+					end
+				end
+				-- end: cpsdo call-back
 
 				local ishiddenwithoutlicence = GetWareData(ware, "ishiddenwithoutlicence")
 				if (not ishiddenwithoutlicence) or haslicence then
