@@ -3204,10 +3204,16 @@ function menu.addDetailRows(ftable)
 			local slotsizes = {
 				[1] = { id = "large", text = ReadText(1001, 8081) },
 				[2] = { id = "medium", text = ReadText(1001, 8080) },
+				-- kuertee start: add small turrets
+				[3] = { id = "small", text = ReadText(1001, 8079) },
+				-- kuertee end: add small turrets
 			}
 			local slotspersize = {
 				["medium"] = 0,
 				["large"] = 0,
+				-- kuertee start: add small turrets
+				["small"] = 0,
+				-- kuertee end: add small turrets
 			}
 			for i = 1, numslots do
 				local slotsize = ffi.string(C.GetSlotSize(0, 0, menu.id, false, "turret", i))
