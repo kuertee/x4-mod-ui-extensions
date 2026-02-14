@@ -7170,6 +7170,15 @@ function menu.refreshContextFrame(setrow, setcol, noborder)
 end
 
 function menu.refreshInfoFrame(setrow, setcol, setrow2, setcol2)
+
+	-- kuertee start: callback
+	if menu.uix_callbacks ["refreshInfoFrame_on_start"] then
+		for uix_id, uix_callback in pairs (menu.uix_callbacks ["refreshInfoFrame_on_start"]) do
+			uix_callback (setrow, setcol, setrow2, setcol2)
+		end
+	end
+	-- kuertee end: callback
+
 	if (menu.mode == "tradecontext") or (menu.mode == "dropwarescontext") or (menu.mode == "renamecontext") or (menu.mode == "changelogocontext") or (menu.mode == "crewtransfercontext") or (menu.mode == "venturepatroninfo") or (menu.mode == "venturereport") then
 		return
 	end
