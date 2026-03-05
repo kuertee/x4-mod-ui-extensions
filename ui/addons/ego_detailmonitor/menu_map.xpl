@@ -7840,6 +7840,14 @@ function menu.createObjectList(frame, instance)
 	infoTableData.fleetUnitSubordinates = { }
 	infoTableData.fleetUnitReplacements = { }
 
+	-- kuertee start: callback
+	if menu.uix_callbacks ["createObjectList_on_init_infoTableData"] then
+		for uix_id, uix_callback in pairs (menu.uix_callbacks ["createObjectList_on_init_infoTableData"]) do
+			uix_callback (infoTableData)
+		end
+	end
+	-- kuertee end: callback
+
 	menu.updateRenderedComponents()
 	local numdisplayed = 0
 	local maxvisibleheight
@@ -7953,6 +7961,13 @@ function menu.createObjectList(frame, instance)
 					end
 				end
 			end
+			-- kuertee start: callback
+			if menu.uix_callbacks ["createObjectList_on_add_entry_infoTableData"] then
+				for uix_id, uix_callback in pairs (menu.uix_callbacks ["createObjectList_on_add_entry_infoTableData"]) do
+					uix_callback (infoTableData, entry, id, convertedID)
+				end
+			end
+			-- kuertee end: callback
 		end
 
 		maxvisibleheight = objecttable:getFullHeight()
@@ -7977,6 +7992,19 @@ function menu.createObjectList(frame, instance)
 				numdisplayed = menu.createPropertySection(instance, "deployables", objecttable, ReadText(1001, 1332), infoTableData.deployables, "-- " .. ReadText(1001, 34) .. " --", nil, numdisplayed, nil, menu.objectSorterType)
 			end
 		end
+
+		-- kuertee start: callback
+		if menu.uix_callbacks ["createObjectList_on_createPropertySection"] then
+			local result
+			for uix_id, uix_callback in pairs (menu.uix_callbacks ["createObjectList_on_createPropertySection"]) do
+				result = uix_callback (numdisplayed, instance, objecttable, infoTableData)
+				if result and result.numdisplayed > numdisplayed then
+					numdisplayed = result.numdisplayed
+				end
+			end
+		end
+		-- kuertee end: callback
+
 	end
 
 	if numdisplayed > 50 then
@@ -28001,6 +28029,17 @@ function menu.onRenderTargetSelect(modified)
 											end
 										end
 									end
+
+									-- kuertee start: callback
+									if menu.uix_callbacks ["onRenderTargetSelect_on_objectlist_newmode"] then
+										for uix_id, uix_callback in pairs (menu.uix_callbacks ["onRenderTargetSelect_on_objectlist_newmode"]) do
+											result = uix_callback (pickedcomponent64, newmode)
+											if result then
+												newmode = result.newmode
+											end
+										end
+									end
+									-- kuertee end: callback
 
 									-- kuertee start:
 									-- elseif menu.infoTableMode == "propertyowned" then
