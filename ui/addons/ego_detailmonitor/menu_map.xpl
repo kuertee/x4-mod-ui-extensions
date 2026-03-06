@@ -13858,6 +13858,18 @@ function menu.setupInfoSubmenuRows(mode, inputtable, inputobject, instance)
 		-- boarding strength
 		locrowdata = { false, ReadText(1001, 1325) .. ReadText(1001, 120), Helper.unlockInfo(defenceinfo_high, (function() return ConvertIntegerString(GetComponentData(object64, "boardingstrength") or 0, true, 0, true) end)) }	-- Boarding Attack Strength
 		row = menu.addInfoSubmenuRow(instance, inputtable, row, locrowdata, false, false, false, 1, indentsize)
+
+		-- start: MtCst call-back
+		if menu.uix_callbacks ["MtCst_map_shipInformation_newrowsafterboardingstrength"] then
+			for uix_id, uix_callback in pairs (menu.uix_callbacks ["MtCst_map_shipInformation_newrowsafterboardingstrength"]) do
+				locrowdata = uix_callback(inputobject, object64)
+				if locrowdata then
+					row = menu.addInfoSubmenuRow(instance, inputtable, row, locrowdata, false, false, false, 1, indentsize)
+				end
+			end
+		end
+		-- end: MtCst call-back
+
 		-- docked ships
 		local maxdockedships = (shipstoragecapacity or 0) + (numdockingbays or 0)
 		if maxdockedships > 0 then
