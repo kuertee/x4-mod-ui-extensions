@@ -6,6 +6,9 @@ Contributors: AlexandreTK, ChemODun, Damonya, DrWhoKnows, DmytroK, Erixon, Farem
 
 Updates
 =======
+v8.0.4.2, 11 Mar 2025:
+- Subst.* files have been udpated. Sorry that I forgot to do it in the last update. :D
+
 v8.0.4.1, 9 Mar 2025:
 - New callbacks for Faremen's upcoming mod.
 

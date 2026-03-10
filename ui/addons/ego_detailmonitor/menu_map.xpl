@@ -15641,6 +15641,7 @@ function menu.addCrewSection(mode, inputtable, inputobject, instance, infocrew, 
 					-- kuertee start: open/close crew lists
 					-- local row = inputtable:addRow(false, { bgColor = Color["row_title_background"] })
 					-- row[1]:setColSpan(7):createText(personentry.rolename .. (personentry.tiername and (" - " .. personentry.tiername) or ""), Helper.headerRowCenteredProperties)
+					-- row[2].properties.font = Helper.standardFont
 					local uix_crewSectionId = personentry.rolename .. (personentry.tiername and personentry.tiername or "")
 					local uix_isCrewSectionOpen = not __userdata_uix_menu_map.savedCollapsedCrewList[uix_crewSectionId]
 					local row = inputtable:addRow(true, { bgColor = Color["row_title_background"] })
@@ -15648,7 +15649,6 @@ function menu.addCrewSection(mode, inputtable, inputobject, instance, infocrew, 
 					row[1].handlers.onClick = function()
 						__userdata_uix_menu_map.savedCollapsedCrewList[uix_crewSectionId] = not __userdata_uix_menu_map.savedCollapsedCrewList[uix_crewSectionId]
 					end
-					row[1].properties.font = Helper.standardFont
 					row[2]:setColSpan(6):createText(personentry.rolename .. (personentry.tiername and (" - " .. personentry.tiername) or ""), Helper.headerRowCenteredProperties)
 					row[2].properties.font = Helper.standardFont
 					-- kuertee end
@@ -15676,7 +15676,6 @@ function menu.addCrewSection(mode, inputtable, inputobject, instance, infocrew, 
 					row[1].handlers.onClick = function()
 						__userdata_uix_menu_map.savedCollapsedCrewList[uix_crewSectionId] = not __userdata_uix_menu_map.savedCollapsedCrewList[uix_crewSectionId]
 					end
-					row[1].properties.font = Helper.standardFont
 					row[2]:setColSpan(6):createText(rolename .. (tiername and (" - " .. tiername) or ""), Helper.headerRowCenteredProperties)
 					row[2].properties.font = Helper.standardFont
 					-- kuertee end
