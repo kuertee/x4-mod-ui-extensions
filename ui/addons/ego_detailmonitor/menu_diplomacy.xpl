@@ -250,7 +250,7 @@ local config = {
 	actions = {
 		bannerAspectRatio = 15 / 2,
 		numDescLines = 5,
-		sectionBorder = math.ceil(Helper.scaleY(Helper.standardTextHeight) / 2),
+		sectionBorder = Helper.minorPanelSpacing,
 		categories = {
 			[1] = "negotiation",
 			[2] = "espionage",
@@ -527,8 +527,7 @@ function menu.buttonStartAction(checked)
 						menu.contextMenuData.operationid = operation.id
 						menu.contextMenuData.targets = {}
 
-						local y = math.max(Helper.playerInfoConfig.offsetY + Helper.playerInfoConfig.height + Helper.borderSize, menu.topLevelHeight)
-						menu.createContextFrame(Helper.playerInfoConfig.offsetX + menu.sideBarWidth + Helper.borderSize + menu.narrowtablewidth + Helper.borderSize, y, menu.actionConfig.width, true)
+						menu.createContextFrame(menu.contextFrameOffsetX, menu.tableProperties.y - Helper.standardContainerOffset, menu.actionConfig.width, true)
 					end
 				end
 			end
@@ -594,8 +593,7 @@ function menu.buttonSelectFaction(factionid)
 	menu.factionData.curEntry = menu.relationsByID[factionid]
 	menu.contextMenuMode = "factiondetails"
 	menu.contextMenuData = {}
-	local y = math.max(Helper.playerInfoConfig.offsetY + Helper.playerInfoConfig.height + Helper.borderSize, menu.topLevelHeight)
-	menu.createContextFrame(Helper.playerInfoConfig.offsetX + menu.sideBarWidth + Helper.borderSize + menu.narrowtablewidth + Helper.borderSize, y, menu.factionConfig.width, true)
+	menu.createContextFrame(menu.contextFrameOffsetX + Helper.standardContainerOffset, menu.tableProperties.y, menu.factionConfig.width, true)
 	menu.refresh = getElapsedTime()
 end
 
@@ -678,7 +676,7 @@ function menu.onShowMenu(state)
 	menu.playerInfoFullWidth = Helper.viewWidth - (Helper.playerInfoConfig.offsetX + Helper.frameBorder + Helper.borderSize)
 
 	menu.sideBarWidth = Helper.scaleX(Helper.sidebarWidth)
-	local availableLeftBarHeight = Helper.viewHeight - (Helper.playerInfoConfig.offsetY + Helper.playerInfoConfig.height + Helper.borderSize + menu.sideBarWidth + Helper.scaleY(Helper.titleTextProperties.height) + 3 * Helper.borderSize)
+	local availableLeftBarHeight = Helper.viewHeight - (Helper.playerInfoConfig.offsetY + Helper.playerInfoConfig.height + Helper.borderSize + menu.sideBarWidth + Helper.scaleY(Helper.tabTitleTextProperties.minRowHeight) + 3 * Helper.borderSize)
 	local count, bordercount = 0, 0
 	for _, entry in ipairs(config.leftBar) do
 		if not entry.condition or entry.condition() then
@@ -706,6 +704,8 @@ function menu.onShowMenu(state)
 	menu.eventConfig = {
 		width = Helper.round(1.5 * (Helper.playerInfoConfig.width - menu.sideBarWidth - Helper.borderSize)),
 	}
+
+	menu.contextFrameOffsetX = Helper.playerInfoConfig.offsetX + menu.sideBarWidth + Helper.standardContainerOffset + Helper.minorPanelSpacing + menu.narrowtablewidth + Helper.standardContainerOffset + Helper.minorPanelSpacing
 
 	menu.getData()
 
@@ -744,8 +744,7 @@ function menu.onShowMenu(state)
 			if agentindex then
 				menu.contextMenuMode = "agentdetails"
 				menu.contextMenuData = { id = agentindex }
-				local y = math.max(Helper.playerInfoConfig.offsetY + Helper.playerInfoConfig.height + Helper.borderSize, menu.topLevelHeight)
-				menu.createContextFrame(Helper.playerInfoConfig.offsetX + menu.sideBarWidth + Helper.borderSize + menu.narrowtablewidth + Helper.borderSize, y, menu.narrowtablewidth, true)
+				menu.createContextFrame(menu.contextFrameOffsetX, menu.tableProperties.y - Helper.standardContainerOffset, menu.narrowtablewidth, true)
 				menu.refreshInfoFrame()
 			end
 		end
@@ -755,8 +754,7 @@ function menu.onShowMenu(state)
 		menu.contextMenuData.operationid = nil
 		menu.contextMenuData.targets[menu.param[5] + 1] = C.ConvertStringTo64Bit(tostring(menu.param[6]))
 
-		local y = math.max(Helper.playerInfoConfig.offsetY + Helper.playerInfoConfig.height + Helper.borderSize, menu.topLevelHeight)
-		menu.createContextFrame(Helper.playerInfoConfig.offsetX + menu.sideBarWidth + Helper.borderSize + menu.narrowtablewidth + Helper.borderSize, y, menu.actionConfig.width, true)
+		menu.createContextFrame(menu.contextFrameOffsetX, menu.tableProperties.y - Helper.standardContainerOffset, menu.actionConfig.width, true)
 		menu.selectedRows.actiontable = menu.state.actiontoprow
 		menu.refreshInfoFrame()
 	end
@@ -1083,8 +1081,7 @@ function menu.onRestoreState(state)
 		if state.targetindex then
 			menu.contextMenuData.targets[state.targetindex + 1] = C.ConvertStringTo64Bit(tostring(state.target))
 		end
-		local y = math.max(Helper.playerInfoConfig.offsetY + Helper.playerInfoConfig.height + Helper.borderSize, menu.topLevelHeight)
-		menu.createContextFrame(Helper.playerInfoConfig.offsetX + menu.sideBarWidth + Helper.borderSize + menu.narrowtablewidth + Helper.borderSize, y, menu.actionConfig.width, true)
+		menu.createContextFrame(menu.contextFrameOffsetX, menu.tableProperties.y, menu.actionConfig.width, true)
 	end
 end
 
@@ -1104,7 +1101,7 @@ function menu.createMainFrame()
 	menu.mainFrame = Helper.createFrameHandle(menu, frameProperties)
 	menu.mainFrame:setBackground("solid", { color = Color["frame_background_semitransparent"] })
 
-	menu.createPlayerInfo(menu.mainFrame, Helper.playerInfoConfig.width, Helper.playerInfoConfig.height, Helper.playerInfoConfig.offsetX, Helper.playerInfoConfig.offsetY)
+	menu.createPlayerInfo(menu.mainFrame, Helper.playerInfoConfig.cornerTableWidth, Helper.playerInfoConfig.height, Helper.playerInfoConfig.offsetX, Helper.playerInfoConfig.offsetY)
 
 	menu.mainFrame:display()
 end
@@ -1118,7 +1115,19 @@ function menu.createPlayerInfo(frame, width, height, offsetx, offsety)
 	end
 	-- kuertee end: callback
 
-	local ftable = frame:addTable(2, { tabOrder = 3, scaling = false, borderEnabled = false, x = offsetx, y = offsety, reserveScrollBar = false })
+	local playerinfoborder = frame:addFrameBorder("playerinfo", {
+		offset = Helper.standardContainerOffset,
+	})
+
+	local ftable = frame:addTable(2, {
+		tabOrder = 3,
+		scaling = false,
+		borderEnabled = false,
+		x = offsetx,
+		y = offsety,
+		reserveScrollBar = false,
+		frameborder = playerinfoborder.id,
+	})
 	ftable:setColWidth(1, menu.sideBarWidth, false)
 	ftable:setColWidth(2, width - menu.sideBarWidth - Helper.borderSize, false)
 
@@ -1129,9 +1138,11 @@ function menu.createPlayerInfo(frame, width, height, offsetx, offsety)
 	icon:setText(Helper.playerInfoConfigTextLeft,		{ fontsize = Helper.playerInfoConfig.fontsize, halign = "left",  x = height + Helper.borderSize, y = (height - textheight) / 2 })
 	icon:setText2(Helper.playerInfoConfigTextRight,		{ fontsize = Helper.playerInfoConfig.fontsize, halign = "right", x = Helper.borderSize,          y = (height - textheight) / 2 })
 
+	local playerinfoheight = ftable:getFullHeight()
+
 	local spacingHeight = menu.sideBarWidth / 4
 	row = ftable:addRow(false, { fixed = true, bgColor = Color["row_background_blue"] })
-	row[1]:createText(" ", { minRowHeight = menu.sideBarWidth + Helper.scaleY(Helper.titleTextProperties.height) + 2 * Helper.borderSize })
+	row[1]:createText(" ", { minRowHeight = menu.sideBarWidth + Helper.scaleY(Helper.tabTitleTextProperties.minRowHeight) + 2 * Helper.borderSize })
 	for _, entry in ipairs(config.leftBar) do
 		if not entry.condition or entry.condition() then
 			if entry.spacing then
@@ -1144,6 +1155,8 @@ function menu.createPlayerInfo(frame, width, height, offsetx, offsety)
 			end
 		end
 	end
+
+	playerinfoborder.properties.offsetBottom = -ftable:getFullHeight() + playerinfoheight
 
 	ftable:addConnection(1, 1, true)
 end
@@ -1172,7 +1185,7 @@ function menu.createInfoFrame()
 	-- kuertee start: callback
 	if menu.uix_callbacks ["createInfoFrame_on_start"] then
 		for uix_id, uix_callback in pairs (menu.uix_callbacks ["createInfoFrame_on_start"]) do
-			uix_callback (menu.infoFrame, tableProperties, config)
+			uix_callback (menu.infoFrame, menu.tableProperties, config)
 		end
 	end
 	-- kuertee end: callback
@@ -1198,30 +1211,30 @@ function menu.createInfoFrame()
 
 	menu.createTopLevel(menu.infoFrame)
 
-	local tableProperties = {
+	menu.tableProperties = {
 		width = width - menu.sideBarWidth - Helper.borderSize,
-		x = Helper.playerInfoConfig.offsetX + menu.sideBarWidth + Helper.borderSize,
-		y = math.max(Helper.playerInfoConfig.offsetY + Helper.playerInfoConfig.height + Helper.borderSize, menu.topLevelHeight),
+		x = Helper.playerInfoConfig.offsetX + menu.sideBarWidth + Helper.standardContainerOffset + Helper.minorPanelSpacing,
+		y = math.max(Helper.playerInfoConfig.offsetY + Helper.playerInfoConfig.height + Helper.borderSize, menu.topLevelHeight) + Helper.standardPanelSpacing,
 	}
-	tableProperties.height = Helper.viewHeight - tableProperties.y
+	menu.tableProperties.height = Helper.viewHeight - menu.tableProperties.y - Helper.frameBorder
 
 	Helper.clearTableConnectionColumn(menu, 2)
 
 	if menu.mode == "factions" then
 		Helper.clearTableConnectionColumn(menu, 3)
-		menu.createFactions(menu.infoFrame, tableProperties)
+		menu.createFactions(menu.infoFrame, menu.tableProperties)
 	elseif menu.mode == "embassy" then
-		menu.createEmbassy(menu.infoFrame, tableProperties)
+		menu.createEmbassy(menu.infoFrame, menu.tableProperties)
 	elseif menu.mode == "agents" then
-		menu.createAgents(menu.infoFrame, tableProperties)
+		menu.createAgents(menu.infoFrame, menu.tableProperties)
 	elseif menu.mode == "event" then
-		menu.createEvents(menu.infoFrame, tableProperties)
+		menu.createEvents(menu.infoFrame, menu.tableProperties)
 	end
 
 	-- kuertee start: callback
 	if menu.uix_callbacks ["createInfoFrame_on_info_frame_mode"] then
 		for uix_id, uix_callback in pairs (menu.uix_callbacks ["createInfoFrame_on_info_frame_mode"]) do
-			uix_callback (menu.infoFrame, tableProperties)
+			uix_callback (menu.infoFrame, menu.tableProperties)
 		end
 	end
 	-- kuertee end: callback
@@ -1233,7 +1246,9 @@ function menu.createFactions(frame, tableProperties)
 	local iconheight = config.factionIconHeight
 	local iconoffset = 2
 
-	local infotable = frame:addTable(4, { tabOrder = 1, width = menu.narrowtablewidth, x = tableProperties.x, y = tableProperties.y })
+	local factionlistborder = frame:addFrameBorder("factionlist", { offset = Helper.standardContainerOffset })
+
+	local infotable = frame:addTable(4, { tabOrder = 1, width = menu.narrowtablewidth, x = tableProperties.x, y = tableProperties.y, frameborder = factionlistborder.id })
 	if menu.setdefaulttable then
 		infotable.properties.defaultInteractiveObject = true
 		menu.setdefaulttable = nil
@@ -1243,40 +1258,47 @@ function menu.createFactions(frame, tableProperties)
 	infotable:setColWidthPercent(4, 25)
 	infotable:setDefaultBackgroundColSpan(1, 4)
 
-	local titletable = frame:addTable(6, { tabOrder = 2, width = menu.narrowtablewidth, x = tableProperties.x, y = tableProperties.y })
+	local titletable = frame:addTable(4, {
+		tabOrder = 2,
+		width = menu.narrowtablewidth,
+		x = tableProperties.x,
+		y = tableProperties.y,
+		backgroundID = "solid",
+		backgroundColor = Color["frame_background_black"],
+		backgroundPadding = Helper.standardContainerOffset,
+		frameborder = factionlistborder.id,
+
+	})
 	titletable:setColWidth(1, Helper.scaleX(iconheight) + 2 * iconoffset, false)
-	titletable:setColWidthPercent(3, 20)
-	titletable:setColWidthPercent(4, 20)
-	titletable:setColWidthPercent(5, 20)
-	titletable:setColWidthPercent(6, 20)
+	titletable:setColWidthPercent(3, 33)
+	titletable:setColWidthPercent(4, 33)
 
 	-- title
-	local row = titletable:addRow(nil, { fixed = true, bgColor = Color["row_title_background"] })
-	row[1]:setColSpan(6):createText(ReadText(1001, 7703), Helper.titleTextProperties)
-	row[1].properties.height = row[1].properties.height + Helper.borderSize
+	local row = titletable:addRow(nil, { fixed = true })
+	row[1]:setColSpan(4):createText(ReadText(1001, 7703), Helper.tabTitleTextProperties)
 
 	-- cover override
 	if Helper.isPlayerCovered() then
 		local row = titletable:addRow(true, { fixed = true })
 		row[1]:createCheckBox(C.IsUICoverOverridden(), { width = Helper.standardTextHeight, height = Helper.standardTextHeight, mouseOverText = ReadText(1026, 7713) })
 		row[1].handlers.onClick = function(_, checked) C.SetUICoverOverride(checked); menu.refreshInfoFrame() end
-		row[2]:setColSpan(5):createText(ReadText(1001, 11604), { mouseOverText = ReadText(1026, 7713) })
+		row[2]:setColSpan(3):createText(ReadText(1001, 11604), { mouseOverText = ReadText(1026, 7713) })
 	end
 
 	local row = titletable:addRow(nil, { fixed = true })
 	row[1]:setColSpan(4):createText(ReadText(1001, 2906) .. ReadText(1001, 120))
 
-	local arrowWidth = Helper.scaleY(Helper.standardButtonHeight)
+	local arrowWidth = Helper.scaleY(Helper.sortButtonHeight)
 	local row = titletable:addRow(true, { fixed = true })
-	row[1]:setColSpan(2):createButton({ bgColor = (menu.factionData.sorter == "default") and Color["row_background_selected"] or Color["row_title_background"] }):setText(ReadText(1001, 12870), { halign = "center" })
+	row[1]:setColSpan(2):createButton({ height = Helper.sortButtonHeight, bgColor = (menu.factionData.sorter == "default") and Color["row_background_selected"] or Color["row_title_background"] }):setText(ReadText(1001, 12870), { halign = "center" })
 	row[1].handlers.onClick = function () menu.factionData.sorter = "default"; menu.refreshInfoFrame() end
-	row[3]:createButton({  }):setText(ReadText(1001, 12871), { halign = "center" })
+	row[3]:createButton({ height = Helper.sortButtonHeight }):setText(ReadText(1001, 12871), { halign = "center" })
 	if (menu.factionData.sorter == "name") or (menu.factionData.sorter == "name_inv") then
 		row[3].properties.bgColor = Color["row_background_selected"]
-		row[3]:setIcon((menu.factionData.sorter == "name_inv") and "table_arrow_inv_up" or "table_arrow_inv_down", { scaling = false, width = arrowWidth, height = arrowWidth, x = row[3]:getColSpanWidth() - arrowWidth })
+		row[3]:setIcon((menu.factionData.sorter == "name_inv") and "table_arrow_inv_up" or "table_arrow_inv_down", { scaling = false, width = arrowWidth, height = arrowWidth, x = row[3]:getColSpanWidth() - arrowWidth,  })
 	end
 	row[3].handlers.onClick = function () menu.factionData.sorter = (menu.factionData.sorter == "name") and "name_inv" or "name"; menu.refreshInfoFrame() end
-	row[4]:createButton({  }):setText(ReadText(1001, 12872), { halign = "center" })
+	row[4]:createButton({ height = Helper.sortButtonHeight }):setText(ReadText(1001, 12872), { halign = "center" })
 	if (menu.factionData.sorter == "relation") or (menu.factionData.sorter == "relation_inv") then
 		row[4].properties.bgColor = Color["row_background_selected"]
 		row[4]:setIcon((menu.factionData.sorter == "relation_inv") and "table_arrow_inv_up" or "table_arrow_inv_down", { scaling = false, width = arrowWidth, height = arrowWidth, x = row[4]:getColSpanWidth() - arrowWidth })
@@ -1322,8 +1344,8 @@ function menu.createFactions(frame, tableProperties)
 			if menu.factionData.sorter == "default" then
 				if (not relation.isdiplomacyactive) and (not diplomacyinactiveshown) then
 					diplomacyinactiveshown = true
-					local row = infotable:addRow(nil)
-					row[1]:setColSpan(4):createText(ReadText(1001, 12873), Helper.subHeaderTextProperties)
+					local row = infotable:addRow(nil, Helper.headerRowProperties)
+					row[1]:setColSpan(4):createText(ReadText(1001, 12873), Helper.headerRowCenteredProperties)
 				end
 			end
 
@@ -1436,7 +1458,9 @@ function menu.createEmbassy(frame, tableProperties)
 	local actioniconheight = config.factionIconHeight
 	local actioniconoffset = 2
 
-	menu.actiontable = frame:addTable(6, { tabOrder = 1, width = menu.narrowtablewidth, x = tableProperties.x, y = tableProperties.y })
+	local actionlistborder = frame:addFrameBorder("actionlist", { offset = Helper.standardContainerOffset })
+
+	menu.actiontable = frame:addTable(6, { tabOrder = 1, width = menu.narrowtablewidth, x = tableProperties.x, y = tableProperties.y, maxVisibleHeight = tableProperties.height, frameborder = actionlistborder.id })
 	if menu.setdefaulttable then
 		menu.actiontable.properties.defaultInteractiveObject = true
 		menu.setdefaulttable = nil
@@ -1449,8 +1473,7 @@ function menu.createEmbassy(frame, tableProperties)
 
 	-- title
 	local row = menu.actiontable:addRow(nil, { fixed = true, bgColor = Color["row_title_background"] })
-	row[1]:setColSpan(6):createText(ReadText(1001, 12816), Helper.titleTextProperties)
-	row[1].properties.height = row[1].properties.height + Helper.borderSize
+	row[1]:setColSpan(6):createText(ReadText(1001, 12816), Helper.tabTitleTextProperties)
 
 	-- influence
 	local row = menu.actiontable:addRow(nil, { fixed = true })
@@ -1471,13 +1494,16 @@ function menu.createEmbassy(frame, tableProperties)
 
 		if #actiongroup > 0 then
 			local first = true
+			local rowgroup
 			for _, action in ipairs(actiongroup) do
 				if (not action.hidden) or menu.actionoperations[action.id] then
 					if first then
 						first = false
 
-						local row = menu.actiontable:addRow(nil, {  })
-						row[1]:setColSpan(6):createText(actiongroup.text, Helper.subHeaderTextProperties)
+						local row = menu.actiontable:addRow(nil, Helper.headerRowProperties)
+						row[1]:setColSpan(6):createText(actiongroup.text, Helper.headerRowCenteredProperties)
+
+						rowgroup = menu.actiontable:addRowGroup({  })
 					end
 
 					local isselected = false
@@ -1485,7 +1511,7 @@ function menu.createEmbassy(frame, tableProperties)
 						isselected = true
 					end
 
-					local row = menu.actiontable:addRow({ type = "action", id = action.id }, { bgColor = isselected and Color["row_background_selected"] or Color["row_background_blue"] })
+					local row = rowgroup:addRow({ type = "action", id = action.id }, { bgColor = isselected and Color["row_background_selected"] or Color["row_background_blue"] })
 					row[1]:setColSpan(4):setBackgroundColSpan(6)
 
 					local desctextlines = GetTextLines(action.shortdesc, Helper.standardFont, Helper.scaleFont(Helper.standardFont, Helper.standardFontSize), menu.narrowtablewidth - Helper.scrollbarWidth - Helper.scaleX(actioniconheight) - 2 * Helper.standardTextOffsetx)
@@ -1538,7 +1564,7 @@ function menu.createEmbassy(frame, tableProperties)
 								isselected = true
 							end
 
-							local row = menu.actiontable:addRow({ type = "action", id = action.id, operationid = operation.id }, { bgColor = isselected and Color["row_background_selected"] or nil })
+							local row = rowgroup:addRow({ type = "action", id = action.id, operationid = operation.id }, { bgColor = isselected and Color["row_background_selected"] or nil })
 							if operation.id == menu.laststartedactionoperation then
 								menu.selectedRows.actiontable = row.index
 								menu.laststartedactionoperation = nil
@@ -1576,15 +1602,16 @@ function menu.createAgents(frame, tableProperties)
 	local actioniconheight = config.factionIconHeight
 	local actioniconoffset = 2
 
+	local agentlistborder = frame:addFrameBorder("agentlist", { offset = Helper.standardContainerOffset })
+
 	-- agents
-	menu.agenttable = frame:addTable(2, { tabOrder = 1, width = menu.narrowtablewidth, x = tableProperties.x, y = tableProperties.y })
+	menu.agenttable = frame:addTable(2, { tabOrder = 1, width = menu.narrowtablewidth, x = tableProperties.x, y = tableProperties.y, frameborder = agentlistborder.id })
 
 	local numagentslots = C.GetAgentMaxSlotCount()
 
 	-- title
 	local row = menu.agenttable:addRow(nil, { fixed = true, bgColor = Color["row_title_background"] })
-	row[1]:setColSpan(2):createText(ReadText(1001, 12817), Helper.titleTextProperties)
-	row[1].properties.height = row[1].properties.height + Helper.borderSize
+	row[1]:setColSpan(2):createText(ReadText(1001, 12817), Helper.tabTitleTextProperties)
 
 	for i = 1, numagentslots do
 		if menu.agents[i] then
@@ -1703,8 +1730,10 @@ function menu.createFactionDetailsContext(frame)
 		local relationlockreason, willclaimspace, policefaction, factioncolor = GetFactionData(relation.id, "relationlockreason", "willclaimspace", "policefaction", "color")
 		local infoentry = GetLibraryEntry("factions", relation.id)
 
+		local factioncontextborder = frame:addFrameBorder("factioncontext", { offset = Helper.standardContainerOffset })
+
 		local height = math.ceil(menu.factionConfig.width / config.factions.bannerAspectRatio)
-		local bannertable = frame:addTable(4, { tabOrder = 3, width = menu.factionConfig.width, y = 0, backgroundID = infoentry.banner, backgroundPadding = 0 })
+		local bannertable = frame:addTable(4, { tabOrder = 3, width = menu.factionConfig.width, y = 0, backgroundID = infoentry.banner, backgroundPadding = 0, frameborder = factioncontextborder.id })
 		bannertable:setColWidth(1, Helper.standardContainerOffset)
 		bannertable:setColWidth(2, height, false)
 		bannertable:setColWidthPercent(4, 5)
@@ -1719,17 +1748,20 @@ function menu.createFactionDetailsContext(frame)
 		row[2]:createIcon(relation.icon, { scaling = false, width = factioniconheight, height = factioniconheight, x = iconoffsetx, affectRowHeight = false })
 		row[3]:createText("[" .. relation.shortname .. "] - " .. relation.name, { font = Helper.standardFontBold, fontsize = Helper.largeIconFontSize })
 		local textheight = row[3]:getHeight()
-		local buttoniconsize = Helper.scaleY(Helper.largeRowHeight)
-		row[4]:createButton({ scaling = false, height = height, y = -height / 2 + textheight / 2, affectRowHeight = false, bgColor = Color["button_background_solid"], mouseOverText = ReadText(1026, 12802) }):setIcon("menu_encyclopedia", { scaling = false, width = buttoniconsize, height = buttoniconsize, x = 0.025 * menu.factionConfig.width - buttoniconsize / 2, y = height / 2 - buttoniconsize / 2 })
-		row[4].handlers.onClick = function () return menu.buttonShowEncyclopedia("Factions", "factions", relation.id) end
+
+		if C.IsStoryFeatureUnlocked("x4ep1_encyclopedia") then
+			local buttoniconsize = Helper.scaleY(Helper.largeRowHeight)
+			row[4]:createButton({ scaling = false, height = height, y = -height / 2 + textheight / 2, affectRowHeight = false, bgColor = Color["button_background_solid"], mouseOverText = ReadText(1026, 12802) }):setIcon("menu_encyclopedia", { scaling = false, width = buttoniconsize, height = buttoniconsize, x = 0.025 * menu.factionConfig.width - buttoniconsize / 2, y = height / 2 - buttoniconsize / 2 })
+			row[4].handlers.onClick = function () return menu.buttonShowEncyclopedia("Factions", "factions", relation.id) end
+		end
 
 		firstemptyrow[1].properties.minRowHeight = height / 2 - textheight / 2 - Helper.borderSize
 		bannertable:addEmptyRow(height - bannertable:getFullHeight() - Helper.borderSize, false)
 
 		local yoffset = bannertable.properties.y + bannertable:getFullHeight() + Helper.borderSize + 2 * Helper.standardContainerOffset
 		local descwidth = menu.factionConfig.width / 2 - 3 * Helper.standardContainerOffset
-		local desctable = frame:addTable(1, { tabOrder = 4, width = descwidth, x = 2 * Helper.standardContainerOffset, y = yoffset, highlightMode = "off" })
-		local datatable = frame:addTable(3, { tabOrder = 5, width = descwidth, x = menu.factionConfig.width / 2 + Helper.standardContainerOffset, y = yoffset, defaultInteractiveObject = active })
+		local desctable = frame:addTable(1, { tabOrder = 4, width = descwidth, x = 2 * Helper.standardContainerOffset, y = yoffset, highlightMode = "off", frameborder = factioncontextborder.id })
+		local datatable = frame:addTable(3, { tabOrder = 5, width = descwidth, x = menu.factionConfig.width / 2 + Helper.standardContainerOffset, y = yoffset, defaultInteractiveObject = active, frameborder = factioncontextborder.id })
 		datatable:setDefaultBackgroundColSpan(1, 3)
 		datatable:setColWidth(3, Helper.scaleY(Helper.standardTextHeight) + Helper.standardContainerOffset, false)
 
@@ -1737,7 +1769,7 @@ function menu.createFactionDetailsContext(frame)
 		desctable:addEmptyRow(2 * Helper.standardContainerOffset, false, Color["row_background_container"], false)
 		local hasdescscrollbar = false
 		local row = desctable:addRow(nil, { fixed = true, bgColor = Color["row_background_container"], borderBelow = false })
-		row[1]:createText(ReadText(1001, 2404), Helper.subHeaderTextProperties)
+		row[1]:createText(ReadText(1001, 2404), Helper.headerRowCenteredProperties)
 		row[1].properties.cellBGColor = Color["row_background_container"]
 
 		local row = desctable:addRow(nil, { fixed = true, bgColor = Color["row_background_container"], borderBelow = false })
@@ -1764,7 +1796,7 @@ function menu.createFactionDetailsContext(frame)
 		-- details
 		datatable:addEmptyRow(2 * Helper.standardContainerOffset, false, Color["row_background_container"], false)
 		local row = datatable:addRow(nil, { bgColor = Color["row_background_container"], borderBelow = false })
-		row[1]:setColSpan(3):createText(ReadText(1001, 2961), Helper.subHeaderTextProperties)
+		row[1]:setColSpan(3):createText(ReadText(1001, 2961), Helper.headerRowCenteredProperties)
 		row[1].properties.cellBGColor = Color["row_background_container"]
 		datatable:addEmptyRow(Helper.standardContainerOffset, false, Color["row_background_container"], false)
 
@@ -1862,15 +1894,15 @@ function menu.createFactionDetailsContext(frame)
 		end
 		-- kuertee end: callback
 
-		local detailtable = frame:addTable(7, { tabOrder = 6, width = menu.factionConfig.width - 4 * Helper.standardContainerOffset, x = 2 * Helper.standardContainerOffset, y = datatable.properties.y + heightafterfirstsection + 2 * Helper.standardContainerOffset })
+		local detailtable = frame:addTable(7, { tabOrder = 6, width = menu.factionConfig.width - 4 * Helper.standardContainerOffset, x = 2 * Helper.standardContainerOffset, y = datatable.properties.y + heightafterfirstsection + 2 * Helper.standardContainerOffset, frameborder = factioncontextborder.id })
 		detailtable:setColWidth(1, Helper.largeRowHeight)
 		detailtable:setColWidth(2, 0.25 * menu.factionConfig.width - Helper.scaleY(Helper.standardTextHeight), false)
 		detailtable:setColWidthPercent(3, 25)
 		detailtable:setColWidthPercent(4, 25)
 		detailtable:setColWidth(6, Helper.largeRowHeight)
-		detailtable:setColWidth(7, Helper.largeRowHeight)
+		detailtable:setColWidth(7, Helper.largeRowHeight + Helper.standardContainerOffset)
 
-		local bottomtable = frame:addTable(3, { tabOrder = 7, width = menu.factionConfig.width - 4 * Helper.standardContainerOffset, x = 2 * Helper.standardContainerOffset, y = detailtable.properties.y })
+		local bottomtable = frame:addTable(3, { tabOrder = 7, width = menu.factionConfig.width - 4 * Helper.standardContainerOffset, x = 2 * Helper.standardContainerOffset, y = detailtable.properties.y, frameborder = factioncontextborder.id })
 		bottomtable:setColWidthPercent(2, 40)
 		bottomtable:setColWidthPercent(3, 40)
 
@@ -1889,7 +1921,7 @@ function menu.createFactionDetailsContext(frame)
 		-- kuertee start: callback
 		if menu.uix_callbacks ["createFactionDetailsContext_on_before_detail_tabs"] then
 			for uix_id, uix_callback in pairs (menu.uix_callbacks ["createFactionDetailsContext_on_before_detail_tabs"]) do
-				uix_callback (frame, tableProperties, relation.id, detailtable)
+				uix_callback (frame, menu.tableProperties, relation.id, detailtable)
 			end
 		end
 		-- kuertee end: callback
@@ -1907,7 +1939,7 @@ function menu.createFactionDetailsContext(frame)
 		if menu.uix_callbacks ["createFactionDetailsContext_on_add_detail_tabs"] then
 			local uix_detailTabs = {}
 			for uix_id, uix_callback in pairs (menu.uix_callbacks ["createFactionDetailsContext_on_add_detail_tabs"]) do
-				local uix_detailTab = uix_callback (frame, tableProperties, relation.id, detailtable)
+				local uix_detailTab = uix_callback (frame, menu.tableProperties, relation.id, detailtable)
 				-- e.g. from crime has consequences
 				-- uix_detailTab = {
 				-- 	id = "criminal_record",
@@ -1958,6 +1990,7 @@ function menu.createFactionDetailsContext(frame)
 			if menu.licences[relation.id] and #menu.licences[relation.id] > 0 then
 				local prevminrelation
 				local firstbasic = true
+				local rowgroup
 				for i, licence in ipairs(menu.licences[relation.id]) do
 					if prevminrelation and (not licence.precursor) and (licence.minrelation > prevminrelation) then
 						detailtable:addEmptyRow(Helper.standardContainerOffset - Helper.borderSize, false, nil, false)
@@ -1985,7 +2018,7 @@ function menu.createFactionDetailsContext(frame)
 					if licence.isbasic then
 						if firstbasic then
 							firstbasic = false
-							local row = detailtable:addRow(true, { bgColor = Color["row_background_container2"] })
+							local row = detailtable:addRow(true, { bgColor = Color["row_background_container2"], borderBelow = false })
 							row[1]:setBackgroundColSpan(7):setColSpan(3):createText(prefixicon .. ReadText(1001, 12808), {
 								font = Helper.standardFontBold,
 								fontsize = Helper.headerRow1FontSize,
@@ -2009,7 +2042,21 @@ function menu.createFactionDetailsContext(frame)
 					end
 
 					local sublicence = licence.precursor or licence.isbasic
-					local row = detailtable:addRow({ "licence", licence.id }, { bgColor = sublicence and Color["row_background_container"] or Color["row_background_container2"] })
+
+					local rowparentobject
+					if sublicence then
+						if rowgroup then
+							rowparentobject = rowgroup
+						else
+							rowparentobject = detailtable:addRowGroup({  })
+							rowgroup = rowparentobject
+						end
+					else
+						rowgroup = nil
+						rowparentobject = detailtable
+					end
+
+					local row = rowparentobject:addRow({ "licence", licence.id }, { bgColor = sublicence and Color["row_background_container"] or Color["row_background_container2"], borderBelow = sublicence and true or false })
 					local name = licence.name
 					if sublicence then
 						name = "    " .. name
@@ -2035,8 +2082,10 @@ function menu.createFactionDetailsContext(frame)
 							color = color,
 						})
 					end
-					row[7]:createButton({ height = Helper.largeRowHeight, mouseOverText = ReadText(1026, 12802) }):setIcon("menu_encyclopedia")
-					row[7].handlers.onClick = function () return menu.buttonShowEncyclopedia("Licences", "licences", licence.id, relation.id) end
+					if C.IsStoryFeatureUnlocked("x4ep1_encyclopedia") then
+						row[7]:createButton({ height = Helper.largeRowHeight, width = Helper.largeRowHeight, mouseOverText = ReadText(1026, 12802) }):setIcon("menu_encyclopedia")
+						row[7].handlers.onClick = function () return menu.buttonShowEncyclopedia("Licences", "licences", licence.id, relation.id) end
+					end
 					AddKnownItem("licences", licence.id)
 				end
 			else
@@ -2078,12 +2127,13 @@ function menu.createFactionDetailsContext(frame)
 				if j > 1 then
 					detailtable:addEmptyRow(Helper.standardContainerOffset - Helper.borderSize, false, nil, false)
 				end
-				local row = detailtable:addRow(true, { bgColor = Color["row_background_container2"] })
+				local row = detailtable:addRow(true, { bgColor = Color["row_background_container2"], borderBelow = false })
 				row[1]:setColSpan(7):createText(displayentry.name, { font = Helper.standardFontBold, fontsize = Helper.headerRow1FontSize, y = Helper.largeRowOffsety, minRowHeight = Helper.largeRowHeight, mouseOverText = displayentry.mouseovertext, color = displayentry.color })
 				if #relations[displayentry.range] > 0 then
+					local rowgroup = detailtable:addRowGroup({  })
 					for i, entry in ipairs(relations[displayentry.range]) do
 						local icon, shortname = GetFactionData(entry.id, "icon", "shortname")
-						local row = detailtable:addRow(true, { bgColor = Color["row_background_container"] })
+						local row = rowgroup:addRow(true, { bgColor = Color["row_background_container"] })
 						row[1]:setColSpan(6):createText("    \27[" .. icon .. "] [" .. shortname .. "] - " .. entry.name, { fontsize = Helper.headerRow1FontSize, y = Helper.largeRowOffsety, minRowHeight = Helper.largeRowHeight })
 						row[7]:createButton({ height = Helper.largeRowHeight, mouseOverText = ReadText(1026, 12803) }):setIcon("diplomacy_faction")
 						row[7].handlers.onClick = function () return menu.buttonSelectFaction(entry.id) end
@@ -2186,10 +2236,14 @@ function menu.createFactionDetailsContext(frame)
 						x = Helper.standardTextOffsetx,
 						y = iconheight / 2 + iconoffset,
 					})
-					row[6]:createButton({ height = iconheight, mouseOverText = ReadText(1026, 12802) }):setIcon("menu_encyclopedia", { width = Helper.largeRowHeight, height = Helper.largeRowHeight, y = (iconheight - Helper.largeRowHeight) / 2 })
-					row[6].handlers.onClick = function () return menu.buttonShowEncyclopedia("Galaxy", "", nil, ConvertStringToLuaID(tostring(sector.id))) end
-					row[7]:createButton({ height = iconheight, mouseOverText = ReadText(1001, 3408), active = canopenmap }):setIcon("mapob_poi", { width = Helper.standardTextHeight, height = Helper.standardTextHeight, x = (Helper.largeRowHeight - Helper.standardTextHeight) / 2, y = (iconheight - Helper.standardTextHeight) / 2 })
-					row[7].handlers.onClick = function () return menu.buttonShowObjectOnMap(ConvertStringToLuaID(tostring(sector.id)), false) end
+					if C.IsStoryFeatureUnlocked("x4ep1_encyclopedia") then
+						row[6]:createButton({ height = iconheight, mouseOverText = ReadText(1026, 12802) }):setIcon("menu_encyclopedia", { width = Helper.largeRowHeight, height = Helper.largeRowHeight, y = (iconheight - Helper.largeRowHeight) / 2 })
+						row[6].handlers.onClick = function () return menu.buttonShowEncyclopedia("Galaxy", "", nil, ConvertStringToLuaID(tostring(sector.id))) end
+					end
+					if C.IsStoryFeatureUnlocked("x4ep1_map") then
+						row[7]:createButton({ height = iconheight, mouseOverText = ReadText(1001, 3408), active = canopenmap }):setIcon("mapob_poi", { width = Helper.standardTextHeight, height = Helper.standardTextHeight, x = (Helper.largeRowHeight - Helper.standardTextHeight) / 2, y = (iconheight - Helper.standardTextHeight) / 2 })
+						row[7].handlers.onClick = function () return menu.buttonShowObjectOnMap(ConvertStringToLuaID(tostring(sector.id)), false) end
+					end
 
 					if isexpanded then
 						for _, entry in ipairs(config.factions.stations) do
@@ -2211,8 +2265,10 @@ function menu.createFactionDetailsContext(frame)
 										local name, icon = GetComponentData(station, "name", "icon")
 										local factioncolortext = Helper.convertColorToText(factioncolor)
 										row[2]:setColSpan(5):createText(indent .. factioncolortext .. "\27[" .. icon .. "]\27X " .. name .. " (" .. ffi.string(C.GetObjectIDCode(C.ConvertStringTo64Bit(tostring(station)))) .. ")", { fontsize = Helper.headerRow1FontSize, y = Helper.largeRowOffsety, minRowHeight = Helper.largeRowHeight })
-										row[7]:createButton({ height = Helper.largeRowHeight, mouseOverText = ReadText(1001, 3408), active = canopenmap }):setIcon("mapob_poi", { width = Helper.standardTextHeight, height = Helper.standardTextHeight, x = (Helper.largeRowHeight - Helper.standardTextHeight) / 2, y = (Helper.largeRowHeight - Helper.standardTextHeight) / 2 })
-										row[7].handlers.onClick = function () return menu.buttonShowObjectOnMap(station) end
+										if C.IsStoryFeatureUnlocked("x4ep1_map") then
+											row[7]:createButton({ height = Helper.largeRowHeight, mouseOverText = ReadText(1001, 3408), active = canopenmap }):setIcon("mapob_poi", { width = Helper.standardTextHeight, height = Helper.standardTextHeight, x = (Helper.largeRowHeight - Helper.standardTextHeight) / 2, y = (Helper.largeRowHeight - Helper.standardTextHeight) / 2 })
+											row[7].handlers.onClick = function () return menu.buttonShowObjectOnMap(station) end
+										end
 									end
 								end
 							end
@@ -2287,12 +2343,14 @@ function menu.createAgentDetailsContext(frame)
 
 	local iconheight = Helper.scaleY(5.5 * Helper.standardTextHeight) + 5 * Helper.borderSize
 
-	local agentdetailstable = frame:addTable(4, { tabOrder = 10, width = menu.narrowtablewidth, x = 0, y = 0 })
+	local agentcontextborder = frame:addFrameBorder("agentcontext", { offset = Helper.standardContainerOffset })
+
+	local agentdetailstable = frame:addTable(4, { tabOrder = 10, width = menu.narrowtablewidth - 2 * Helper.standardContainerOffset, x = Helper.standardContainerOffset, y = Helper.standardContainerOffset, frameborder = agentcontextborder.id })
 	agentdetailstable:setColWidth(1, iconheight, false)
 	agentdetailstable:setColWidth(4, Helper.standardButtonHeight)
 
-	local row = agentdetailstable:addRow(nil, {  })
-	row[1]:setColSpan(4):createText(ReadText(1001, 12818), Helper.headerRowCenteredProperties)
+	local row = agentdetailstable:addRow(nil, Helper.headerRowProperties)
+	row[1]:setColSpan(4):createText(ReadText(1001, 12818), Helper.tabTitleTextProperties)
 
 	local agent = menu.agents[menu.contextMenuData.id]
 
@@ -2325,10 +2383,12 @@ function menu.createAgentDetailsContext(frame)
 
 	agentdetailstable:addEmptyRow(Helper.standardTextHeight / 2)
 
-	local row = agentdetailstable:addRow(nil, {  })
-	row[1]:setColSpan(4):createText(ReadText(1001, 12918), Helper.headerRow1Properties)
+	local row = agentdetailstable:addRow(nil, Helper.headerRowProperties)
+	row[1]:setColSpan(4):createText(ReadText(1001, 12918), Helper.headerRowCenteredProperties)
 
-	local row = agentdetailstable:addRow(nil, {  })
+	local rowgroup = agentdetailstable:addRowGroup({  })
+
+	local row = rowgroup:addRow(nil, {  })
 	row[1]:setColSpan(4):createText(ReadText(1001, 12922), { wordwrap = true })
 
 	local playeroccupiedship = C.GetPlayerOccupiedShipID()
@@ -2362,7 +2422,7 @@ function menu.createAgentDetailsContext(frame)
 		end
 		table.insert(shipoptions, {
 			id = tostring(entry.id),
-			text = ColorText["text_player"] .. "\27[" .. entry.icon .. "] " .. entry.name .. "\27X\n" .. ReadText(1001, 12920) .. "\n" .. ReadText(1001, 8053) .. "\n" .. ReadText(1001, 9093),
+			text = ColorText["text_player"] .. "\27[" .. entry.icon .. "] " .. entry.name .. "\27X\n" .. ReadText(1001, 12920) .. "\n" .. ReadText(1001, 8053) .. "\n" .. ReadText(1001, 13212),
 			text2 = "\n" .. entry.prestige .. "\n" .. travelspeedtext .. "\n" .. dpstext,
 			icon = "",
 			displayremoveoption = false,
@@ -2386,17 +2446,19 @@ function menu.createAgentDetailsContext(frame)
 		end
 		table.insert(shipoptions, 2, {
 			id = tostring(agent.ship),
-			text = "\27[" .. icon .. "] " .. name .. " (" .. idcode .. ")" .. "\n" .. ReadText(1001, 12920) .. "\n" .. ReadText(1001, 8053) .. "\n" .. ReadText(1001, 9093),
+			text = "\27[" .. icon .. "] " .. name .. " (" .. idcode .. ")" .. "\n" .. ReadText(1001, 12920) .. "\n" .. ReadText(1001, 8053) .. "\n" .. ReadText(1001, 13212),
 			text2 = "\n" .. prestigename .. "\n" .. travelspeedtext .. "\n" .. dpstext,
 			icon = "",
 			displayremoveoption = false,
 		})
 	end
 
-	local row = agentdetailstable:addRow(true, { fixed = true })
+	local row = rowgroup:addRow(true, { fixed = true })
+	local dropdownheight = Helper.scaleY(4 * Helper.standardTextHeight)
 	row[1]:setColSpan(4):createDropDown(shipoptions, {
+		scaling = false,
 		startOption = tostring(agent.ship) or "",
-		height = 4 * Helper.standardTextHeight,
+		height = dropdownheight,
 		textOverride = (agent.ship == 0) and ("\n" .. ReadText(1001, 2302)) or "",
 		helpOverlayID = "diplomacy_agent_ship",
 		helpOverlayText = " ",
@@ -2404,11 +2466,17 @@ function menu.createAgentDetailsContext(frame)
 		active = ((not agent.isbusy) or (agent.isbusy.optionselected == false)) and (#shipoptions > 0),
 		mouseOverText = (#shipoptions == 0) and (ColorText["text_error"] .. ReadText(1001, 2942)) or "",
 		highlightColor = Color["dropdown_highlight_big"],
+		bg2Color = Color["button_border_inactive"],
+		background2Width = menu.narrowtablewidth - 2 * Helper.standardContainerOffset - dropdownheight,
+		background2Height = dropdownheight,
+		background2X = -math.ceil((dropdownheight - Helper.standardContainerOffset / 2) / 2),
 	}):setTextProperties({
-		y = 1.5 * Helper.standardTextHeight,
+		y = 1.5 * Helper.scaleY(Helper.standardTextHeight),
+		fontsize = Helper.scaleFont(Helper.standardFont, Helper.standardFontSize),
 	}):setText2Properties({
-		x = Helper.standardTextOffsetx,
-		y = 1.5 * Helper.standardTextHeight,
+		x = Helper.scaleX(Helper.standardTextOffsetx),
+		y = 1.5 * Helper.scaleY(Helper.standardTextHeight),
+		fontsize = Helper.scaleFont(Helper.standardFont, Helper.standardFontSize),
 		halign = "right",
 	})
 	row[1].handlers.onDropDownConfirmed = function (_, id) local id64 = C.ConvertStringTo64Bit(id); C.SetAgentDiplomacyShip(agent.id, id64, false); menu.agents[menu.contextMenuData.id].ship = id64; menu.refreshContextFrame() end
@@ -2434,12 +2502,13 @@ function menu.createActionConfigContext(frame)
 		uniqueandlocked = action.unique and (not C.CanStartDiplomacyAction(action.id, ""))
 	end
 
-	local titletable = frame:addTable(1, { tabOrder = 0, width = menu.actionConfig.width, x = 0, y = 0 })
+	local actioncontextborder = frame:addFrameBorder("actioncontext", {  })
+
+	local titletable = frame:addTable(1, { tabOrder = 0, width = menu.actionConfig.width, x = 0, y = 0, frameborder = actioncontextborder.id })
 
 	-- title
 	local row = titletable:addRow(nil, { fixed = true, bgColor = Color["row_title_background"] })
-	row[1]:createText(ReadText(1001, 12823), Helper.titleTextProperties)
-	row[1].properties.height = row[1].properties.height + Helper.borderSize
+	row[1]:createText(ReadText(1001, 12823), Helper.tabTitleTextProperties)
 
 	-- banner
 	titletable:addEmptyRow(2 * Helper.standardContainerOffset)
@@ -2449,20 +2518,23 @@ function menu.createActionConfigContext(frame)
 
 	titletable:addEmptyRow(2 * Helper.standardContainerOffset)
 
-	local agentdropdownheight = 3 * tonumber(C.GetTextHeight("M", Helper.standardFont, Helper.standardFontSize, 0)) + 2
+	local agentdropdownheight = Helper.scaleY(3 * tonumber(C.GetTextHeight("M", Helper.standardFont, Helper.standardFontSize, 0)) + 2) + Helper.standardContainerOffset
 
 	local yoffset = titletable:getFullHeight() + Helper.borderSize
-	local descwidth = menu.actionConfig.width / 2 - 3 * Helper.standardContainerOffset
-	local desctable = frame:addTable(1, { tabOrder = 12, width = descwidth, x = 2 * Helper.standardContainerOffset, y = yoffset, highlightMode = "off" })
-	local infotable = frame:addTable(2, { tabOrder = 0, width = descwidth, x = 2 * Helper.standardContainerOffset, y = yoffset })
+	local descwidth = menu.actionConfig.width / 2 - 1.5 * Helper.minorPanelSpacing
+	local desctable = frame:addTable(1, { tabOrder = 12, width = descwidth, x = Helper.minorPanelSpacing, y = yoffset, highlightMode = "off", frameborder = actioncontextborder.id })
+	local infotable = frame:addTable(2, { tabOrder = 0, width = descwidth, x = Helper.minorPanelSpacing, y = yoffset, frameborder = actioncontextborder.id })
 	infotable:setColWidthPercent(1, 70)
-	local infotable2 = frame:addTable(3, { tabOrder = 10, width = descwidth, x = menu.actionConfig.width / 2 + Helper.standardContainerOffset, y = yoffset, defaultInteractiveObject = active })
-	infotable2:setColWidth(1, 2 * agentdropdownheight)
+	local infotable2 = frame:addTable(3, { tabOrder = 10, width = descwidth, x = menu.actionConfig.width / 2 + Helper.minorPanelSpacing / 2, y = yoffset, defaultInteractiveObject = active, frameborder = actioncontextborder.id })
+	infotable2:setColWidth(1, agentdropdownheight, false)
 	infotable2:setColWidthPercent(3, 50)
 
 	-- desc
-	local row = desctable:addRow(nil, { fixed = true })
-	row[1]:createText(action.name, Helper.subHeaderTextProperties)
+	local row = desctable:addRow(nil, Helper.headerRowProperties)
+	row.properties.fixed = true
+	row[1]:createText(action.name, Helper.headerRowCenteredProperties)
+
+	local rowgroup = desctable:addRowGroup({  })
 
 	local description = GetTextLines(action.desc, Helper.standardFont, Helper.scaleFont(Helper.standardFont, Helper.standardFontSize), descwidth - 2 * Helper.scaleX(Helper.standardTextOffsetx))
 	if #description > config.actions.numDescLines then
@@ -2472,41 +2544,43 @@ function menu.createActionConfigContext(frame)
 
 	local descriptionheight
 	for linenum, descline in ipairs(description) do
-		local row = desctable:addRow(true)
+		local row = rowgroup:addRow(true)
 		row[1]:createText(descline)
 		if linenum == config.actions.numDescLines then
 			descriptionheight = desctable:getFullHeight()
 		end
 	end
 	for i = 1, config.actions.numDescLines - #description do
-		local row = desctable:addRow(nil)
+		local row = rowgroup:addRow(nil)
 		row[1]:createText(" ")
 	end
 	desctable.properties.maxVisibleHeight = descriptionheight
 
 	-- agent selection
-	local row = infotable2:addRow(nil)
-	row[1]:setColSpan(3):createText(ReadText(1001, 12824), Helper.subHeaderTextProperties)
+	local row = infotable2:addRow(nil, Helper.headerRowProperties)
+	row[1]:setColSpan(3):createText(ReadText(1001, 12824), Helper.headerRowCenteredProperties)
 
-	local row = infotable2:addRow(active and (not uniqueandlocked))
+	local rowgroup = infotable2:addRowGroup({  })
+
+	local row = rowgroup:addRow(active and (not uniqueandlocked))
 	if operation and operation.isarchive then
 		row.properties.borderBelow = false
-		local iconsize = Helper.scaleY(agentdropdownheight) - 4
+		local iconsize = agentdropdownheight - 4
 		local icon = operation.agentimageid
 		if operation.agentresultstate == "killed" then
 			icon = icon .. "_bw"
 		end
-		row[1]:createIcon(icon, { scaling = false, width = iconsize, height = iconsize, x = Helper.scaleY(agentdropdownheight), y = iconsize / 2 - 10, affectRowHeight = false })
+		row[1]:createIcon(icon, { scaling = false, width = iconsize, height = iconsize, x = agentdropdownheight, y = iconsize / 2 - 10, affectRowHeight = false })
 		row[2]:setColSpan((operation.agentresultstate == "killed") and 1 or 2):createText("\27[" .. operation.agentrankicon .. "] " .. operation.agentname, { color = Color["text_inactive"], x = 0, y = 2 })
 		if operation.agentresultstate == "killed" then
 			row[3]:createText(ReadText(1001, 12947), { color = Color["text_negative"], y = 2, halign = "right" })
 		end
 
-		local row = infotable2:addRow(active)
+		local row = rowgroup:addRow(active)
 		row[2]:createText(ReadText(1001, 12820) .. "\n" .. ReadText(1001, 12821), { color = Color["text_lowlight"], x = 0, y = 0 })
 		row[3]:createText(operation.agentexp_negotiation_name .. "\n" .. operation.agentexp_espionage_name, { halign = "right", color = Color["text_lowlight"], y = 0 })
 	else
-		local totaltextwidth = descwidth - 2 * Helper.scaleY(agentdropdownheight) - Helper.scaleX(Helper.standardTextOffsetx)
+		local totaltextwidth = descwidth - 2 * agentdropdownheight - Helper.scaleX(Helper.standardTextOffsetx)
 		local agentoptions = {}
 		for i, agent in ipairs(menu.agents) do
 			local statustext = menu.getAgentStatus(i, true)
@@ -2514,31 +2588,50 @@ function menu.createActionConfigContext(frame)
 			local agenttext = TruncateText("\27[" .. agent.rankicon .. "] " .. agent.name, Helper.standardFont, Helper.scaleFont(Helper.standardFont, Helper.standardFontSize), totaltextwidth - statustextwidth)
 			table.insert(agentoptions, {
 				id = i,
-				text = agenttext .. "\n" .. ColorText["text_lowlight"] .. ReadText(1001, 12820) .. "\n" .. ReadText(1001, 12821),
-				text2 = statustext .. "\n" .. ColorText["text_lowlight"] .. agent.exp_negotiation_name .. "\n" .. agent.exp_espionage_name,
+				text = agenttext,
+				text2 = statustext,
+				text3 = "\n" .. ColorText["text_lowlight"] .. ReadText(1001, 12820) .. "\n" .. ReadText(1001, 12821),
+				text4 = "\n" .. ColorText["text_lowlight"] .. agent.exp_negotiation_name .. "\n" .. agent.exp_espionage_name,
 				icon = agent.icon or "",
 				displayremoveoption = false,
 				active = ((not agent.isbusy) or (agent.isbusy.optionselected == false)) and ((agent.injuryendtime < 0) or (agent.injuryendtime < C.GetCurrentGameTime())) and (agent.ship ~= 0),
 			})
 		end
 		row[1]:setColSpan(3):createDropDown(agentoptions, {
+			scaling = false,
 			startOption = (operation and operation.agentindex) or menu.contextMenuData.selectedagentid or "",
 			height = agentdropdownheight,
 			active = active and (not uniqueandlocked),
 			textOverride = ((not active) or menu.contextMenuData.selectedagentid) and "" or ("\n" .. ReadText(1001, 12846)),
 			text2Override = ((not active) or menu.contextMenuData.selectedagentid) and "" or " ",
-			optionColor = Color["dropdown_background_inactive"],
+			text3Override = ((not active) or menu.contextMenuData.selectedagentid) and "" or " ",
+			text4Override = ((not active) or menu.contextMenuData.selectedagentid) and "" or " ",
 			highlightColor = Color["dropdown_highlight_big"],
+			bg2Color = Color["button_border_inactive"],
+			background2Width = descwidth - 2 * Helper.standardContainerOffset - agentdropdownheight,
+			background2Height = agentdropdownheight,
+			background2X = -math.ceil(agentdropdownheight / 2),
 		}):setIconProperties({
 			width = agentdropdownheight,
 			height = agentdropdownheight,
 			color = Color["icon_inactive"],
 		}):setTextProperties({
 			x = agentdropdownheight,
-			y = agentdropdownheight / 4 + 2,
+			y = agentdropdownheight / 4 + 4,
+			fontsize = Helper.scaleFont(Helper.standardFont, Helper.standardFontSize),
 		}):setText2Properties({
 			x = Helper.standardTextOffsetx,
-			y = agentdropdownheight / 4 + 2,
+			y = agentdropdownheight / 4 + 4,
+			fontsize = Helper.scaleFont(Helper.standardFont, Helper.standardFontSize),
+			halign = "right",
+		}):setText3Properties({
+			x = agentdropdownheight,
+			y = agentdropdownheight / 4,
+			fontsize = Helper.scaleFont(Helper.standardFont, Helper.standardFontSize),
+		}):setText4Properties({
+			x = Helper.standardTextOffsetx,
+			y = agentdropdownheight / 4,
+			fontsize = Helper.scaleFont(Helper.standardFont, Helper.standardFontSize),
 			halign = "right",
 		})
 		row[1].handlers.onDropDownConfirmed = function (_, id) menu.contextMenuData.selectedagentid = tonumber(id); menu.refreshContextFrame() end
@@ -2561,7 +2654,7 @@ function menu.createActionConfigContext(frame)
 	end
 
 	local infotable2height = infotable2:getFullHeight()
-	local heightafterfirstsection = math.max(desctable:getVisibleHeight(), infotable2height) + config.actions.sectionBorder
+	local heightafterfirstsection = math.max(desctable:getVisibleHeight(), infotable2height) + config.actions.sectionBorder - Helper.headerRowProperties.paddingTop
 	infotable.properties.y = desctable.properties.y + heightafterfirstsection
 	if heightafterfirstsection > infotable2height + Helper.borderSize then
 		local row = infotable2:addRow(nil, { borderBelow = false })
@@ -2569,30 +2662,34 @@ function menu.createActionConfigContext(frame)
 	end
 
 	-- details
-	local row = infotable:addRow(nil)
-	row[1]:setColSpan(2):createText(ReadText(1001, 2961), Helper.subHeaderTextProperties)
+	local row = infotable:addRow(nil, Helper.headerRowProperties)
+	row[1]:setColSpan(2):createText(ReadText(1001, 2961), Helper.headerRowCenteredProperties)
 
-	local row = infotable:addRow(nil)
+	local detailrowgroup = infotable:addRowGroup({  })
+
+	local row = detailrowgroup:addRow(nil)
 	row[1]:createText(ReadText(1001, 12826))
 	row[2]:createText(menu.getSuccessText(action.successchance), { halign = "right" })
 
-	local row = infotable:addRow(nil)
+	local row = detailrowgroup:addRow(nil)
 	row[1]:createText(ReadText(1001, 12827))
 	row[2]:createText(action.agentrisk, { halign = "right" })
 
-	local row = infotable:addRow(nil)
+	local row = detailrowgroup:addRow(nil)
 	row[1]:createText((action.agenttype == "negotiation") and ReadText(1001, 12914) or ReadText(1001, 12915))
 	row[2]:createText(action.agentexpname, { halign = "right" })
 
 	-- target
-	local row = infotable2:addRow(nil)
-	row[1]:setColSpan(3):createText(ReadText(1001, 12825), Helper.subHeaderTextProperties)
+	local row = infotable2:addRow(nil, Helper.headerRowProperties)
+	row[1]:setColSpan(3):createText(ReadText(1001, 12825), Helper.headerRowCenteredProperties)
+
+	local targetrowgroup = infotable2:addRowGroup({  })
 
 	local targets = GetDiplomaticActionTargetParameters(action.id)
 	for i, target in ipairs(targets) do
 		local selectedtarget = operationparameters and operationparameters[target.name] or menu.contextMenuData.targets[i]
 
-		local row = infotable2:addRow(active and (not uniqueandlocked))
+		local row = targetrowgroup:addRow(active and (not uniqueandlocked))
 		row[1]:setColSpan(2):createText(target.text)
 
 		if ispastoperation then
@@ -2701,7 +2798,7 @@ function menu.createActionConfigContext(frame)
 
 	if #targets < 3 then
 		for i = 1, 3 - #targets do
-			local row = infotable2:addRow(nil)
+			local row = targetrowgroup:addRow(nil)
 			row[1]:setColSpan(2):createText(" ")
 		end
 	end
@@ -2709,28 +2806,42 @@ function menu.createActionConfigContext(frame)
 	local infotableheight = heightafterfirstsection + infotable:getFullHeight()
 	local infotable2height = infotable2:getFullHeight()
 	local heightaftersecondsection = math.max(infotableheight, infotable2height) + config.actions.sectionBorder
-	if heightaftersecondsection > infotableheight + Helper.borderSize then
+	if infotable2height > infotableheight + Helper.borderSize then
+		local row = detailrowgroup:addRow(nil, { borderBelow = false })
+		row[1]:createText(" ", { scaling = false, fontsize = 1, y = 0, minRowHeight = infotable2height - infotableheight - Helper.borderSize })
 		local row = infotable:addRow(nil, { borderBelow = false })
-		row[1]:createText(" ", { scaling = false, fontsize = 1, y = 0, minRowHeight = heightaftersecondsection - infotableheight - Helper.borderSize })
+		row[1]:createText(" ", { scaling = false, fontsize = 1, y = 0, minRowHeight = config.actions.sectionBorder - Helper.headerRowProperties.paddingTop })
+	else
+		local row = infotable:addRow(nil, { borderBelow = false })
+		row[1]:createText(" ", { scaling = false, fontsize = 1, y = 0, minRowHeight = config.actions.sectionBorder - Helper.borderSize - Helper.headerRowProperties.paddingTop })
 	end
-	if heightaftersecondsection > infotable2height + Helper.borderSize then
+	if infotableheight > infotable2height + Helper.borderSize then
+		local row = targetrowgroup:addRow(nil, { borderBelow = false })
+		row[1]:createText(" ", { scaling = false, fontsize = 1, y = 0, minRowHeight = infotableheight - infotable2height - Helper.borderSize })
 		local row = infotable2:addRow(nil, { borderBelow = false })
-		row[1]:createText(" ", { scaling = false, fontsize = 1, y = 0, minRowHeight = heightaftersecondsection - infotable2height - Helper.borderSize })
+		row[1]:createText(" ", { scaling = false, fontsize = 1, y = 0, minRowHeight = config.actions.sectionBorder - Helper.headerRowProperties.paddingTop })
+	else
+		local row = infotable2:addRow(nil, { borderBelow = false })
+		row[1]:createText(" ", { scaling = false, fontsize = 1, y = 0, minRowHeight = config.actions.sectionBorder - Helper.borderSize - Helper.headerRowProperties.paddingTop })
 	end
 
 	-- rewards
-	local row = infotable:addRow(nil)
-	row[1]:setColSpan(2):createText(ReadText(1001, 8807), Helper.subHeaderTextProperties)
+	local row = infotable:addRow(nil, Helper.headerRowProperties)
+	row[1]:setColSpan(2):createText(ReadText(1001, 8807), Helper.headerRowCenteredProperties)
 
-	local row = infotable:addRow(nil)
+	local rewardrowgroup = infotable:addRowGroup({  })
+
+	local row = rewardrowgroup:addRow(nil)
 	row[1]:setColSpan(2):createText(action.rewardtext, { wordwrap = true })
 
 	-- requirements
-	local row = infotable2:addRow(nil)
-	row[1]:setColSpan(3):createText(ReadText(1001, 12828), Helper.subHeaderTextProperties)
+	local row = infotable2:addRow(nil, Helper.headerRowProperties)
+	row[1]:setColSpan(3):createText(ReadText(1001, 12828), Helper.headerRowCenteredProperties)
+
+	local reqrowgroup = infotable2:addRowGroup({  })
 
 	local hasmissingrequirement = false
-	local row = infotable2:addRow(nil)
+	local row = reqrowgroup:addRow(nil)
 	row[1]:setColSpan(2):createText(ReadText(1001, 12815))
 	local requirement = menu.playerinfluence >= action.influencerequirement
 	if not requirement then
@@ -2746,7 +2857,7 @@ function menu.createActionConfigContext(frame)
 			action.price = tonumber(C.GetDiplomacyActionMoneyCost(action.id, menu.contextMenuData.targets[action.warecostscaleparamidx]))
 		end
 	end
-	local row = infotable2:addRow(nil)
+	local row = reqrowgroup:addRow(nil)
 	row[1]:setColSpan(2):createText(ReadText(1001, 2808))
 	local requirement = GetPlayerMoney() >= action.price
 	if not requirement then
@@ -2758,7 +2869,7 @@ function menu.createActionConfigContext(frame)
 	row[3]:createText(text, { halign = "right", mouseOverText = mouseovertext })
 	local inventory = menu.getDiplomacyInventory()
 	for i, ware in ipairs(action.warerequirements) do
-		local row = infotable2:addRow(nil)
+		local row = reqrowgroup:addRow(nil)
 		if i == 1 then
 			row[1]:setColSpan(2):createText(ReadText(1001, 2811))
 		end
@@ -2789,9 +2900,9 @@ function menu.createActionConfigContext(frame)
 	end
 	-- kuertee end
 
-	infotable2:addEmptyRow()
+	reqrowgroup:addEmptyRow()
 	if (action.successchance < 100) and (action.giftwaretags ~= "") then
-		local row = infotable2:addRow(active)
+		local row = reqrowgroup:addRow(active)
 		row[1]:setColSpan(2):createText(ReadText(1001, 12829))
 
 		local giftactive = true
@@ -2881,15 +2992,20 @@ function menu.createActionConfigContext(frame)
 		end
 		-- kuertee end
 	else
-		local row = infotable2:addRow(nil)
+		local row = reqrowgroup:addRow(nil)
 		row[1]:setColSpan(2):createText(" ")
 	end
 
 	local infotableheight = heightafterfirstsection + infotable:getFullHeight()
 	local infotable2height = infotable2:getFullHeight()
-	local heightafterthirdsection = math.max(infotableheight, infotable2height) + Helper.borderSize
+	if infotableheight > infotable2height then
+		reqrowgroup:addEmptyRow(infotableheight - infotable2height - Helper.borderSize)
+	elseif infotableheight < infotable2height then
+		rewardrowgroup:addEmptyRow(infotable2height - infotableheight - Helper.borderSize, false)
+	end
+	local heightafterthirdsection = math.max(infotableheight, infotable2height) + config.actions.sectionBorder
 
-	local bottomtable = frame:addTable(3, { tabOrder = 11, width = menu.actionConfig.width - 4 * Helper.standardContainerOffset, x = 2 * Helper.standardContainerOffset, y = infotable2.properties.y + heightafterthirdsection, defaultInteractiveObject = not active })
+	local bottomtable = frame:addTable(3, { tabOrder = 11, width = menu.actionConfig.width - 2 * Helper.minorPanelSpacing, x = Helper.minorPanelSpacing, y = infotable2.properties.y + heightafterthirdsection, defaultInteractiveObject = not active, frameborder = actioncontextborder.id })
 	bottomtable:setColWidthPercent(2, 40)
 	bottomtable:setColWidthPercent(3, 40)
 
@@ -2944,7 +3060,6 @@ function menu.createActionConfigContext(frame)
 				local row = bottomtable:addRow(nil, { fixed = true })
 				row[1]:setColSpan(3):createText(ReadText(1001, 12848), { halign = "right", color = Color["text_error"] })
 			end
-
 			-- kuertee start: count actual targets intead of # because sometimes nil is one of the elements.
 			-- primarily support for additional agent actions mod.
 			local uix_count_populatedTargets = 0
@@ -3010,7 +3125,7 @@ function menu.createActionConfigContext(frame)
 		row[3].handlers.onClick = menu.closeContextMenu
 	end
 
-	bottomtable:addEmptyRow(2 * Helper.standardContainerOffset - Helper.borderSize, false)
+	bottomtable:addEmptyRow(Helper.minorPanelSpacing - Helper.borderSize, false)
 
 	desctable:addConnection(1, 3, true)
 	infotable2:addConnection(1, 4, true)
@@ -3021,7 +3136,9 @@ function menu.createEvents(frame, tableProperties)
 	local eventiconheight = config.factionIconHeight
 	local eventiconoffset = 2
 
-	menu.eventtable = frame:addTable(2, { tabOrder = 1, width = menu.narrowtablewidth, x = tableProperties.x, y = tableProperties.y })
+	local eventlistborder = frame:addFrameBorder("eventlist", { offset = Helper.standardContainerOffset })
+
+	menu.eventtable = frame:addTable(2, { tabOrder = 1, width = menu.narrowtablewidth, x = tableProperties.x, y = tableProperties.y, frameborder = eventlistborder.id })
 	if menu.setdefaulttable then
 		menu.eventtable.properties.defaultInteractiveObject = true
 		menu.setdefaulttable = nil
@@ -3029,8 +3146,7 @@ function menu.createEvents(frame, tableProperties)
 
 	-- title
 	local row = menu.eventtable:addRow(nil, { fixed = true, bgColor = Color["row_title_background"] })
-	row[1]:setColSpan(2):createText(ReadText(1001, 12836), Helper.titleTextProperties)
-	row[1].properties.height = row[1].properties.height + Helper.borderSize
+	row[1]:setColSpan(2):createText(ReadText(1001, 12836), Helper.tabTitleTextProperties)
 
 	-- influence
 	local row = menu.eventtable:addRow(nil, { fixed = true })
@@ -3046,7 +3162,7 @@ function menu.createEvents(frame, tableProperties)
 	row[1]:setColSpan(2):createText(" ", { scaling = false, fontsize = 1, height = Helper.borderSize })
 
 	local row = menu.eventtable:addRow(nil, { fixed = true, bgColor = Color["row_title_background"] })
-	row[1]:setColSpan(2):createText(ReadText(1001, 12837), Helper.subHeaderTextProperties)
+	row[1]:setColSpan(2):createText(ReadText(1001, 12837), Helper.headerRowCenteredProperties)
 
 	local curgametime = C.GetCurrentGameTime()
 	local hadpastevent = false
@@ -3058,8 +3174,7 @@ function menu.createEvents(frame, tableProperties)
 			hadpastevent = true
 
 			local row = menu.eventtable:addRow(nil, { bgColor = Color["row_title_background"] })
-			row[1]:setColSpan(2):createText(ReadText(1001, 12838), Helper.titleTextProperties)
-			row[1].properties.height = row[1].properties.height + Helper.borderSize
+			row[1]:setColSpan(2):createText(ReadText(1001, 12838), Helper.tabTitleTextProperties)
 		end
 
 		local isselected = false
@@ -3171,14 +3286,15 @@ function menu.createEventContext(frame)
 		menu.getData()
 	end
 
-	local titletable = frame:addTable(1, { tabOrder = 0, width = menu.eventConfig.width, x = 0, y = 0 })
+	local eventcontextborder = frame:addFrameBorder("eventcontext", { offset = Helper.standardContainerOffset })
+
+	local titletable = frame:addTable(1, { tabOrder = 0, width = menu.eventConfig.width, x = 0, y = 0, frameborder = eventcontextborder.id })
 
 	-- title
 	local row = titletable:addRow(nil, { fixed = true, bgColor = Color["row_title_background"] })
-	row[1]:createText(ReadText(1001, 12841), Helper.titleTextProperties)
-	row[1].properties.height = row[1].properties.height + Helper.borderSize
+	row[1]:createText(ReadText(1001, 12841), Helper.tabTitleTextProperties)
 
-	local bannertable = frame:addTable(5, { tabOrder = 0, width = menu.eventConfig.width, x = 0, y = titletable:getFullHeight() + Helper.borderSize + 2 * Helper.standardContainerOffset, backgroundID = event.imageid, backgroundPadding = 0 })
+	local bannertable = frame:addTable(5, { tabOrder = 0, width = menu.eventConfig.width, x = 0, y = titletable:getFullHeight() + Helper.borderSize + 2 * Helper.standardContainerOffset, backgroundID = event.imageid, backgroundPadding = 0, frameborder = eventcontextborder.id })
 	bannertable:setColWidthPercent(1, 10)
 	bannertable:setColWidthPercent(3, 25)
 	bannertable:setColWidthPercent(5, 10)
@@ -3213,19 +3329,22 @@ function menu.createEventContext(frame)
 
 	bannertable:addEmptyRow(Helper.standardContainerOffset)
 
-	local agentdropdownheight = 3 * tonumber(C.GetTextHeight("M", Helper.standardFont, Helper.standardFontSize, 0)) + 2
+	local agentdropdownheight = Helper.scaleY(3 * tonumber(C.GetTextHeight("M", Helper.standardFont, Helper.standardFontSize, 0)) + 2) + Helper.standardContainerOffset
 
 	local yoffset = bannertable.properties.y + bannertable:getFullHeight() + Helper.borderSize + 2 * Helper.standardContainerOffset
 	local descwidth =  menu.actionConfig.width / 2 - 3 * Helper.standardContainerOffset
-	local desctable = frame:addTable(1, { tabOrder = 12, width = descwidth, x = 2 * Helper.standardContainerOffset, y = yoffset, highlightMode = "off" })
-	local infotable = frame:addTable(3, { tabOrder = 10, width = descwidth, x = menu.actionConfig.width / 2 + Helper.standardContainerOffset, y = yoffset, defaultInteractiveObject = active })
-	infotable:setColWidth(1, 2 * agentdropdownheight)
+	local desctable = frame:addTable(1, { tabOrder = 12, width = descwidth, x = 2 * Helper.standardContainerOffset, y = yoffset, highlightMode = "off", frameborder = eventcontextborder.id })
+	local infotable = frame:addTable(3, { tabOrder = 10, width = descwidth, x = menu.actionConfig.width / 2 + Helper.standardContainerOffset, y = yoffset, defaultInteractiveObject = active, frameborder = eventcontextborder.id })
+	infotable:setColWidth(1, 2 * agentdropdownheight, false)
 	infotable:setColWidthPercent(3, 50)
 
 	-- desc
 	local hasdescscrollbar = false
-	local row = desctable:addRow(nil, { fixed = true })
-	row[1]:createText(event.name, Helper.subHeaderTextProperties)
+	local row = desctable:addRow(nil, Helper.headerRowProperties)
+	row.properties.fixed = true
+	row[1]:createText(event.name, Helper.headerRowCenteredProperties)
+
+	local rowgroup = desctable:addRowGroup({  })
 
 	local description = GetTextLines(event.desc, Helper.standardFont, Helper.scaleFont(Helper.standardFont, Helper.standardFontSize), descwidth - 2 * Helper.scaleX(Helper.standardTextOffsetx))
 	if #description > config.actions.numDescLines then
@@ -3236,7 +3355,7 @@ function menu.createEventContext(frame)
 
 	local descriptionheight
 	for linenum, descline in ipairs(description) do
-		local row = desctable:addRow(true)
+		local row = rowgroup:addRow(true)
 		row[1]:createText(descline)
 		if linenum == config.actions.numDescLines then
 			descriptionheight = desctable:getFullHeight()
@@ -3249,12 +3368,14 @@ function menu.createEventContext(frame)
 	desctable.properties.maxVisibleHeight = descriptionheight
 
 	-- agent selection
-	local row = infotable:addRow(nil)
-	row[1]:setColSpan(3):createText(ReadText(1001, 12824), Helper.subHeaderTextProperties)
+	local row = infotable:addRow(nil, Helper.headerRowProperties)
+	row[1]:setColSpan(3):createText(ReadText(1001, 12824), Helper.headerRowCenteredProperties)
 
-	local row = infotable:addRow(active)
+	local rowgroup = infotable:addRowGroup({  })
+
+	local row = rowgroup:addRow(active)
 	if eventoperation.isarchive then
-		local iconsize = Helper.scaleY(agentdropdownheight) - 4
+		local iconsize = agentdropdownheight - 4
 		if eventoperation.agentname ~= "" then
 			local icon = eventoperation.agentimageid
 			local agentstatus = ""
@@ -3270,7 +3391,7 @@ function menu.createEventContext(frame)
 			row[2]:setColSpan(2):createText( ReadText(1001, 12931) .. "\n  \n  ", { color = Color["text_inactive"], x = 0, y = 2, minRowHeight = agentdropdownheight })
 		end
 	else
-		local totaltextwidth = descwidth - 2 * Helper.scaleY(agentdropdownheight) - Helper.scaleX(Helper.standardTextOffsetx)
+		local totaltextwidth = descwidth - 2 * agentdropdownheight - Helper.scaleX(Helper.standardTextOffsetx)
 		local agentoptions = {}
 		for i, agent in ipairs(menu.agents) do
 			local statustext = menu.getAgentStatus(i, true)
@@ -3278,30 +3399,47 @@ function menu.createEventContext(frame)
 			local agenttext = TruncateText("\27[" .. agent.rankicon .. "] " .. agent.name, Helper.standardFont, Helper.scaleFont(Helper.standardFont, Helper.standardFontSize), totaltextwidth - statustextwidth)
 			table.insert(agentoptions, {
 				id = i,
-				text = agenttext .. "\n" .. ColorText["text_lowlight"] .. ReadText(1001, 12820) .. "\n" .. ReadText(1001, 12821),
-				text2 = statustext .. "\n" .. ColorText["text_lowlight"] .. agent.exp_negotiation_name .. "\n" .. agent.exp_espionage_name,
+				text = agenttext,
+				text2 = statustext,
+				text3 = "\n" .. ColorText["text_lowlight"] .. ReadText(1001, 12820) .. "\n" .. ReadText(1001, 12821),
+				text4 = "\n" .. ColorText["text_lowlight"] .. agent.exp_negotiation_name .. "\n" .. agent.exp_espionage_name,
 				icon = agent.icon or "",
 				displayremoveoption = false,
 				active = ((not agent.isbusy) or (agent.isbusy.optionselected == false)) and ((agent.injuryendtime < 0) or (agent.injuryendtime < C.GetCurrentGameTime())) and (agent.ship ~= 0),
 			})
 		end
 		row[1]:setColSpan(3):createDropDown(agentoptions, {
+			scaling = false,
 			startOption = eventoperation.agentindex or "",
 			height = agentdropdownheight,
 			active = active,
 			textOverride = ((not active) or eventoperation.agentindex) and "" or ("\n" .. ReadText(1001, 12846)),
 			text2Override = ((not active) or eventoperation.agentindex) and "" or " ",
-			optionColor = Color["dropdown_background_inactive"],
 			highlightColor = Color["dropdown_highlight_big"],
+			bg2Color = Color["button_border_inactive"],
+			background2Width = descwidth - 2 * Helper.standardContainerOffset - agentdropdownheight,
+			background2Height = agentdropdownheight,
+			background2X = -math.ceil(agentdropdownheight / 2),
 		}):setIconProperties({
 			width = agentdropdownheight,
 			height = agentdropdownheight,
 		}):setTextProperties({
 			x = agentdropdownheight,
-			y = agentdropdownheight / 4 + 2,
+			y = agentdropdownheight / 4 + 4,
+			fontsize = Helper.scaleFont(Helper.standardFont, Helper.standardFontSize),
 		}):setText2Properties({
 			x = Helper.standardTextOffsetx,
-			y = agentdropdownheight / 4 + 2,
+			y = agentdropdownheight / 4 + 4,
+			fontsize = Helper.scaleFont(Helper.standardFont, Helper.standardFontSize),
+			halign = "right",
+		}):setText3Properties({
+			x = agentdropdownheight,
+			y = agentdropdownheight / 4,
+			fontsize = Helper.scaleFont(Helper.standardFont, Helper.standardFontSize),
+		}):setText4Properties({
+			x = Helper.standardTextOffsetx,
+			y = agentdropdownheight / 4,
+			fontsize = Helper.scaleFont(Helper.standardFont, Helper.standardFontSize),
 			halign = "right",
 		})
 		row[1].handlers.onDropDownConfirmed = function (_, id) return menu.dropdownAssignEventAgent(eventoperation.id, id) end
@@ -3310,7 +3448,7 @@ function menu.createEventContext(frame)
 	local heightafterfirstsection = math.max(desctable:getVisibleHeight(), infotable:getFullHeight()) + config.actions.sectionBorder
 
 	local numcols = 8
-	local middletable = frame:addTable(numcols, { tabOrder = 11, width = menu.actionConfig.width - 4 * Helper.standardContainerOffset, x = 2 * Helper.standardContainerOffset, y = infotable.properties.y + heightafterfirstsection, defaultInteractiveObject = not active })
+	local middletable = frame:addTable(numcols, { tabOrder = 11, width = menu.actionConfig.width - 4 * Helper.standardContainerOffset, x = 2 * Helper.standardContainerOffset, y = infotable.properties.y + heightafterfirstsection, defaultInteractiveObject = not active, frameborder = eventcontextborder.id })
 	middletable:setColWidth(3, 2 * Helper.standardContainerOffset)
 	middletable:setColWidth(6, 2 * Helper.standardContainerOffset)
 
@@ -3471,8 +3609,8 @@ function menu.createEventContext(frame)
 	middletable:addEmptyRow(2 * Helper.standardContainerOffset)
 
 	local yoffset2 = middletable.properties.y + middletable:getFullHeight() + Helper.borderSize + 2 * Helper.standardContainerOffset
-	local texttable = frame:addTable(2, { tabOrder = 13, width = descwidth, x = 2 * Helper.standardContainerOffset, y = yoffset2, highlightMode = "off" })
-	local infotable2 = frame:addTable(2, { tabOrder = 14, width = descwidth, x = menu.actionConfig.width / 2 + Helper.standardContainerOffset, y = yoffset2 })
+	local texttable = frame:addTable(2, { tabOrder = 13, width = descwidth, x = 2 * Helper.standardContainerOffset, y = yoffset2, highlightMode = "off", frameborder = eventcontextborder.id })
+	local infotable2 = frame:addTable(2, { tabOrder = 14, width = descwidth, x = menu.actionConfig.width / 2 + Helper.standardContainerOffset, y = yoffset2, frameborder = eventcontextborder.id })
 
 	-- possible outcomes
 	local textoffsety = Helper.standardTextHeight - Helper.headerRow1Height / 2 + Helper.headerRow1Offsety
@@ -3554,7 +3692,7 @@ function menu.createEventContext(frame)
 
 	local heightaftersecondsection = math.max(texttable:getVisibleHeight(), infotable2:getFullHeight()) + config.actions.sectionBorder
 
-	local bottomtable = frame:addTable(numcols, { tabOrder = 15, width = menu.actionConfig.width - 4 * Helper.standardContainerOffset, x = 2 * Helper.standardContainerOffset, y = infotable2.properties.y + heightaftersecondsection })
+	local bottomtable = frame:addTable(numcols, { tabOrder = 15, width = menu.actionConfig.width - 4 * Helper.standardContainerOffset, x = 2 * Helper.standardContainerOffset, y = infotable2.properties.y + heightaftersecondsection, frameborder = eventcontextborder.id })
 	bottomtable:setColWidth(3, 2 * Helper.standardContainerOffset)
 	bottomtable:setColWidth(6, 2 * Helper.standardContainerOffset)
 
@@ -3628,7 +3766,7 @@ function menu.createNewEventContext(frame)
 	ftable:setColWidthPercent(4, 37)
 
 	local row = ftable:addRow(nil, {  })
-	row[1]:createText(ReadText(1001, 12893), Helper.titleTextProperties)
+	row[1]:createText(ReadText(1001, 12893), Helper.tabTitleTextProperties)
 
 	ftable:addEmptyRow(2 * Helper.standardTextHeight)
 
@@ -3670,8 +3808,7 @@ function menu.buttonShowEvent(actionoperationid, eventoperationid)
 	menu.mode = "event"
 	menu.contextMenuMode = "event"
 	menu.contextMenuData = { id = eventoperationid }
-	local y = math.max(Helper.playerInfoConfig.offsetY + Helper.playerInfoConfig.height + Helper.borderSize, menu.topLevelHeight)
-	menu.createContextFrame(Helper.playerInfoConfig.offsetX + menu.sideBarWidth + Helper.borderSize + menu.narrowtablewidth + Helper.borderSize, y, menu.eventConfig.width, true)
+	menu.createContextFrame(menu.contextFrameOffsetX, menu.tableProperties.y, menu.eventConfig.width, true)
 	menu.refreshInfoFrame()
 end
 
@@ -3692,7 +3829,7 @@ function menu.createEventCompletedContext(frame)
 	ftable:setColWidthPercent(9, 10)
 
 	local row = ftable:addRow(nil, {  })
-	row[1]:createText(ReadText(1001, 12897), Helper.titleTextProperties)
+	row[1]:createText(ReadText(1001, 12897), Helper.tabTitleTextProperties)
 
 	ftable:addEmptyRow()
 
@@ -3791,7 +3928,7 @@ function menu.createUserQuestionContext(frame)
 	end
 
 	if menu.userQuestionData.mode == "abortaction" then
-		local row = ftable:addRow(false, { fixed = true })
+		local row = ftable:addRow(false, Helper.headerRowProperties)
 		row[1]:setColSpan(numCols):createText(ReadText(1001, 12832), Helper.headerRowCenteredProperties)
 
 		local text = ReadText(1001, 12926)
@@ -3805,13 +3942,13 @@ function menu.createUserQuestionContext(frame)
 		local row = ftable:addRow(false, { fixed = true })
 		row[1]:setColSpan(numCols):createText(text, { wordwrap = true })
 	elseif menu.userQuestionData.mode == "startdiplomacyaction" then
-		local row = ftable:addRow(false, { fixed = true })
+		local row = ftable:addRow(false, Helper.headerRowProperties)
 		row[1]:setColSpan(numCols):createText(ReadText(1001, 12831), Helper.headerRowCenteredProperties)
 
 		local row = ftable:addRow(false, { fixed = true })
 		row[1]:setColSpan(numCols):createText(ReadText(1001, 12948), { wordwrap = true })
 	elseif menu.userQuestionData.mode == "setdiplomacyeventoption" then
-		local row = ftable:addRow(false, { fixed = true })
+		local row = ftable:addRow(false, Helper.headerRowProperties)
 		row[1]:setColSpan(numCols):createText(ReadText(1001, 12864), Helper.headerRowCenteredProperties)
 
 		local row = ftable:addRow(false, { fixed = true })
@@ -3949,6 +4086,7 @@ function menu.createContextFrame(x, y, width, nomouseout)
 		menu.createFactionDetailsContext(menu.contextFrame)
 		autoFrameHeight = false
 	elseif menu.contextMenuMode == "agentdetails" then
+		menu.contextFrame.properties.autoFrameHeightPadding = Helper.standardContainerOffset
 		menu.createAgentDetailsContext(menu.contextFrame)
 	elseif menu.contextMenuMode == "actionconfig" then
 		menu.createActionConfigContext(menu.contextFrame)
@@ -4215,8 +4353,7 @@ function menu.onRowChanged(row, rowdata, uitable, modified, input, source)
 						menu.factionData.curEntry = rowdata[2]
 						menu.contextMenuMode = "factiondetails"
 						menu.contextMenuData = {}
-						local y = math.max(Helper.playerInfoConfig.offsetY + Helper.playerInfoConfig.height + Helper.borderSize, menu.topLevelHeight)
-						menu.createContextFrame(Helper.playerInfoConfig.offsetX + menu.sideBarWidth + Helper.borderSize + menu.narrowtablewidth + Helper.borderSize, y, menu.factionConfig.width, true)
+						menu.createContextFrame(menu.contextFrameOffsetX + Helper.standardContainerOffset, menu.tableProperties.y, menu.factionConfig.width, true)
 						menu.refreshInfoFrame()
 					end
 				end
@@ -4231,8 +4368,7 @@ function menu.onRowChanged(row, rowdata, uitable, modified, input, source)
 							if (menu.contextMenuMode ~= "actionconfig") or (rowdata.id ~= menu.contextMenuData.id) or (rowdata.operationid ~= menu.contextMenuData.operationid) then
 								menu.contextMenuMode = "actionconfig"
 								menu.contextMenuData = { id = rowdata.id, operationid = rowdata.operationid, targets = {} }
-								local y = math.max(Helper.playerInfoConfig.offsetY + Helper.playerInfoConfig.height + Helper.borderSize, menu.topLevelHeight)
-								menu.createContextFrame(Helper.playerInfoConfig.offsetX + menu.sideBarWidth + Helper.borderSize + menu.narrowtablewidth + Helper.borderSize, y, menu.actionConfig.width, true)
+								menu.createContextFrame(menu.contextFrameOffsetX, menu.tableProperties.y - Helper.standardContainerOffset, menu.actionConfig.width, true)
 								menu.refreshInfoFrame()
 							end
 							return
@@ -4254,8 +4390,7 @@ function menu.onRowChanged(row, rowdata, uitable, modified, input, source)
 							if (menu.contextMenuMode ~= "agentdetails") or (rowdata.id ~= menu.contextMenuData.id) then
 								menu.contextMenuMode = "agentdetails"
 								menu.contextMenuData = { id = rowdata.id }
-								local y = math.max(Helper.playerInfoConfig.offsetY + Helper.playerInfoConfig.height + Helper.borderSize, menu.topLevelHeight)
-								menu.createContextFrame(Helper.playerInfoConfig.offsetX + menu.sideBarWidth + Helper.borderSize + menu.narrowtablewidth + Helper.borderSize, y, menu.narrowtablewidth, true)
+								menu.createContextFrame(menu.contextFrameOffsetX, menu.tableProperties.y - Helper.standardContainerOffset, menu.narrowtablewidth, true)
 								menu.refreshInfoFrame()
 							end
 							return
@@ -4283,8 +4418,7 @@ function menu.onRowChanged(row, rowdata, uitable, modified, input, source)
 							if (menu.contextMenuMode ~= "event") or (rowdata.id ~= menu.contextMenuData.id) then
 								menu.contextMenuMode = "event"
 								menu.contextMenuData = { id = rowdata.id }
-								local y = math.max(Helper.playerInfoConfig.offsetY + Helper.playerInfoConfig.height + Helper.borderSize, menu.topLevelHeight)
-								menu.createContextFrame(Helper.playerInfoConfig.offsetX + menu.sideBarWidth + Helper.borderSize + menu.narrowtablewidth + Helper.borderSize, y, menu.eventConfig.width, true)
+								menu.createContextFrame(menu.contextFrameOffsetX, menu.tableProperties.y, menu.eventConfig.width, true)
 								menu.refreshInfoFrame()
 							end
 							return
@@ -4321,8 +4455,7 @@ function menu.onSelectElement(uitable, modified, row)
 					menu.factionData.curEntry = rowdata[2]
 					menu.contextMenuMode = "factiondetails"
 					menu.contextMenuData = {}
-					local y = math.max(Helper.playerInfoConfig.offsetY + Helper.playerInfoConfig.height + Helper.borderSize, menu.topLevelHeight)
-					menu.createContextFrame(Helper.playerInfoConfig.offsetX + menu.sideBarWidth + Helper.borderSize + menu.narrowtablewidth + Helper.borderSize, y, menu.factionConfig.width, true)
+					menu.createContextFrame(menu.contextFrameOffsetX + Helper.standardContainerOffset, menu.tableProperties.y, menu.factionConfig.width, true)
 					menu.refreshInfoFrame()
 				end
 			end
@@ -4335,8 +4468,7 @@ function menu.onSelectElement(uitable, modified, row)
 						if (menu.contextMenuMode ~= "actionconfig") or (rowdata.id ~= menu.contextMenuData.id) or (rowdata.operationid ~= menu.contextMenuData.operationid) then
 							menu.contextMenuMode = "actionconfig"
 							menu.contextMenuData = { id = rowdata.id, operationid = rowdata.operationid, targets = {} }
-							local y = math.max(Helper.playerInfoConfig.offsetY + Helper.playerInfoConfig.height + Helper.borderSize, menu.topLevelHeight)
-							menu.createContextFrame(Helper.playerInfoConfig.offsetX + menu.sideBarWidth + Helper.borderSize + menu.narrowtablewidth + Helper.borderSize, y, menu.actionConfig.width, true)
+							menu.createContextFrame(menu.contextFrameOffsetX, menu.tableProperties.y - Helper.standardContainerOffset, menu.actionConfig.width, true)
 							menu.refreshInfoFrame()
 						end
 						return
@@ -4356,8 +4488,7 @@ function menu.onSelectElement(uitable, modified, row)
 						if (menu.contextMenuMode ~= "agentdetails") or (rowdata.id ~= menu.contextMenuData.id) then
 							menu.contextMenuMode = "agentdetails"
 							menu.contextMenuData = { id = rowdata.id }
-							local y = math.max(Helper.playerInfoConfig.offsetY + Helper.playerInfoConfig.height + Helper.borderSize, menu.topLevelHeight)
-							menu.createContextFrame(Helper.playerInfoConfig.offsetX + menu.sideBarWidth + Helper.borderSize + menu.narrowtablewidth + Helper.borderSize, y, menu.narrowtablewidth, true)
+							menu.createContextFrame(menu.contextFrameOffsetX, menu.tableProperties.y - Helper.standardContainerOffset, menu.narrowtablewidth, true)
 							menu.refreshInfoFrame()
 						end
 						return
@@ -4377,8 +4508,7 @@ function menu.onSelectElement(uitable, modified, row)
 						if (menu.contextMenuMode ~= "event") or (rowdata.id ~= menu.contextMenuData.id) then
 							menu.contextMenuMode = "event"
 							menu.contextMenuData = { id = rowdata.id }
-							local y = math.max(Helper.playerInfoConfig.offsetY + Helper.playerInfoConfig.height + Helper.borderSize, menu.topLevelHeight)
-							menu.createContextFrame(Helper.playerInfoConfig.offsetX + menu.sideBarWidth + Helper.borderSize + menu.narrowtablewidth + Helper.borderSize, y, menu.eventConfig.width, true)
+							menu.createContextFrame(menu.contextFrameOffsetX, menu.tableProperties.y, menu.eventConfig.width, true)
 							menu.refreshInfoFrame()
 						end
 						return
@@ -4531,7 +4661,7 @@ function menu.updateCallbacksNow()
                         Helper.debugText_forced(menu.name .. " uix updateCallbacksNow (post): menu.uix_callbacks[" .. tostring(callbackName) .. "][" .. tostring(updateData.id) .. "]: " .. tostring(menu.uix_callbacks[callbackName][updateData.id]))
                     end
                 else
-                    Helper.debugText_forced(menu.name .. " uix updateCallbacksNow: callback at " .. callbackName .. " with id " .. tostring(id) .. " doesn't exist")
+                    Helper.debugText_forced(menu.name .. " uix updateCallbacksNow: callback at " .. callbackName .. " with id " .. tostring(updateData.id) .. " doesn't exist")
                 end
             end
         end

@@ -309,8 +309,8 @@ function menu.cleanup()
 
 	-- start: alexandretk call-back
 	if menu.uix_callbacks ["cleanup"] then
-			for uix_id, uix_callback in pairs (menu.uix_callbacks ["cleanup"]) do
-			uix_callback ()
+				for uix_id, uix_callback in pairs (menu.uix_callbacks ["cleanup"]) do
+				uix_callback ()
 	    end
 	end
 	-- end: alexandretk call-back
@@ -325,7 +325,10 @@ function menu.cleanup()
 	menu.oldlibrary = nil
 	menu.oldid = nil
 	menu.searchtext = nil
+	menu.autoExpand = false
 	menu.noupdate = nil
+	menu.jumpToEntryIdstring = nil
+	menu.toprowAdjust = false
 
 	menu.table_toplevel = nil
 	menu.table_sidebar = nil
@@ -344,6 +347,29 @@ function menu.cleanup()
 		end
 	end
 	-- kuertee end: callback
+end
+
+-- reset current view/selection on search
+function menu.resetViewAndSelection()
+	menu.mode = nil
+	menu.library = nil
+	menu.id = nil
+	menu.object = nil
+
+	menu.oldobject = nil
+	menu.oldlibrary = nil
+	menu.oldid = nil
+
+	menu.expanded = {}
+	menu.details = {}
+
+	menu.selectedrow = nil
+	menu.toprow = nil
+	menu.setdefaulttable = true
+
+	menu.autoExpand = false
+
+	menu.activatecutscene = nil
 end
 
 -- Menu member functions
@@ -685,9 +711,9 @@ function menu.onShowMenu(state)
 			if not hasinfoalias and librarytype then
 				local owned = playerblueprints[locware]
 				if menu.data["Blueprints"]["equipment"][librarytype] then
-					table.insert(menu.data["Blueprints"]["equipment"][librarytype], { ware = locware, name = name, owned = owned, unlocked = IsKnownItem(librarytype, macro), hidden = ismissiononly and (not owned) })
+					table.insert(menu.data["Blueprints"]["equipment"][librarytype], { id = macro, ware = locware, name = name, owned = owned, unlocked = IsKnownItem(librarytype, macro), hidden = ismissiononly and (not owned) })
 				else
-					menu.data["Blueprints"]["equipment"][librarytype] = { name = config.librarynames[librarytype], { ware = locware, name = name, owned = owned, unlocked = IsKnownItem(librarytype, macro), hidden = ismissiononly and (not owned) } }
+					menu.data["Blueprints"]["equipment"][librarytype] = { name = config.librarynames[librarytype], { id = macro, ware = locware, name = name, owned = owned, unlocked = IsKnownItem(librarytype, macro), hidden = ismissiononly and (not owned) } }
 				end
 			end
 		end
@@ -713,7 +739,7 @@ function menu.onShowMenu(state)
 						name = "\27[" .. macroicon .. "] " .. name
 					end
 					if menu.data["Blueprints"]["ships"][macroclass] then
-						table.insert(menu.data["Blueprints"]["ships"][macroclass], { ware = locware, name = name, owned = owned, unlocked = IsKnownItem(librarytype, macro), hidden = ismissiononly and (not owned) })
+						table.insert(menu.data["Blueprints"]["ships"][macroclass], { id = macro, ware = locware, name = name, owned = owned, unlocked = IsKnownItem(librarytype, macro), hidden = ismissiononly and (not owned) })
 					else
 						local sizename
 						if macroclass == "ship_xl" then
@@ -726,14 +752,14 @@ function menu.onShowMenu(state)
 							sizename = ReadText(1001, 11000)
 						end
 						if sizename then
-							menu.data["Blueprints"]["ships"][macroclass] = { name = sizename, { ware = locware, name = name, owned = owned, unlocked = IsKnownItem(librarytype, macro), hidden = ismissiononly and (not owned) } }
+							menu.data["Blueprints"]["ships"][macroclass] = { name = sizename, { id = macro, ware = locware, name = name, owned = owned, unlocked = IsKnownItem(librarytype, macro), hidden = ismissiononly and (not owned) } }
 						end
 					end
 				else
 					if menu.data["Blueprints"]["modules"][librarytype] then
-						table.insert(menu.data["Blueprints"]["modules"][librarytype], { ware = locware, name = name, owned = owned, unlocked = IsKnownItem(librarytype, macro), hidden = ismissiononly and (not owned) })
+						table.insert(menu.data["Blueprints"]["modules"][librarytype], { id = macro, ware = locware, name = name, owned = owned, unlocked = IsKnownItem(librarytype, macro), hidden = ismissiononly and (not owned) })
 					else
-						menu.data["Blueprints"]["modules"][librarytype] = { name = config.librarynames[librarytype], { ware = locware, name = name, owned = owned, unlocked = IsKnownItem(librarytype, macro), hidden = ismissiononly and (not owned) } }
+						menu.data["Blueprints"]["modules"][librarytype] = { name = config.librarynames[librarytype], { id = macro, ware = locware, name = name, owned = owned, unlocked = IsKnownItem(librarytype, macro), hidden = ismissiononly and (not owned) } }
 					end
 				end
 			end
@@ -790,6 +816,25 @@ function menu.onShowMenu(state)
 			end
 		end
 	end
+
+	-- build lookup table for production modules by ware they produce
+	menu.wareProductionModuleLookup = {}
+	-- Helper.printDebugValue(menu.data["Stations"]["moduletypes_production"], "Prod")
+	for _, module in pairs(menu.data["Stations"]["moduletypes_production"]) do
+		local prodmoduledata = GetLibraryEntry("moduletypes_production", module.id)
+		if prodmoduledata and prodmoduledata.products then
+			for _, value in pairs(prodmoduledata.products) do
+				if value.ware and (value.ware ~= "") then
+					if menu.wareProductionModuleLookup[value.ware] == nil then
+						menu.wareProductionModuleLookup[value.ware] = {}
+					end
+					local makerRaceid = GetMacroData(module.id, "makerraceid") -- returns table (only one race entry)
+					table.insert(menu.wareProductionModuleLookup[value.ware], { raceid = (makerRaceid and #makerRaceid > 0) and makerRaceid[1] or nil, macro = module.id, name = module.name } )
+				end
+			end
+		end
+	end
+	-- Helper.printDebugValue(menu.wareProductionModuleLookup, "ProdLookup", 6)
 
 	-- Factions
 	for i, faction in ipairs(factionlibrary) do
@@ -859,7 +904,7 @@ function menu.onShowMenu(state)
 			else
 			-- end: alexandretk call-back
 
-				local purpose = GetMacroData(shipdata.id, "primarypurpose")
+				local purpose, ware = GetMacroData(shipdata.id, "primarypurpose", "ware")
 				local sizecategory = "noncapital"
 				if size == "shiptypes_xl" or size == "shiptypes_l" then
 					sizecategory = "capital"
@@ -872,10 +917,10 @@ function menu.onShowMenu(state)
 					purpose = "misc"
 				end
 				shipdata.librarycategory = size
+				shipdata.ware = ware
 				table.insert(menu.printedshipdata[purpose][sizecategory].ships, shipdata)
 			end
 		end
-
 	end
 
 	menu.title = ReadText(1001, 2400)	-- Encyclopedia
@@ -1069,7 +1114,7 @@ function menu.onShowMenu(state)
 		end
 	end
 	menu.xScale = 3600
-	menu.xTitle = ReadText(1001, 6519) .. " [" .. ReadText(1001, 102) .. "]"
+	menu.xTitle = ReadText(1001, 6519)
 	menu.yTitle = ReadText(1001, 6521)
 	menu.hiddenData = { buy = {}, sell = {} }
 
@@ -1258,7 +1303,11 @@ function menu.addIndexEntry(array, item, name, rowdata, indent, numentries, expa
 				isunread = not C.IsKnownRead(rowdata[3].component)
 			end
 		else
-			isunread = not C.IsKnownItemRead(rowdata[2], item)
+			local librarytype = rowdata[2]
+			if rowdata[2] == "moduletypes_other" then
+				librarytype = GetMacroData(item, "infolibrary")
+			end
+			isunread = not C.IsKnownItemRead(librarytype, item)
 		end
 	end
 
@@ -1278,6 +1327,7 @@ function menu.createIndex()
 	for i, entry in ipairs(menu.data["Galaxy"]) do
 		local numsectors = #entry.sectors
 		if numsectors > 1 then
+			entry.expanded = i -- store all extra expand info for autoexpand
 			local system_index = menu.addIndexEntry(gal_index, nil, entry.name, { "Galaxy", "system", i, entry }, 1, numsectors, menu.expanded[i])
 			for _, sector in ipairs(entry.sectors) do
 				menu.addIndexEntry(system_index, sector.sector, sector.name, { "Galaxy", "space", sector.sector, entry }, 2)
@@ -1301,7 +1351,7 @@ function menu.createIndex()
 	local fac_index = menu.addIndexEntry(index, nil, ReadText(1001, 44), "Factions", 0, numentries, menu.expanded["Factions"])
 	for subcategory, _ in pairs(menu.data["Factions"]) do
 		for _, faction in ipairs(menu.data["Factions"][subcategory]) do
-			local lic_index = menu.addIndexEntry(fac_index, nil, faction.name, { "Factions", subcategory, faction }, 1, faction.numlicences, menu.expanded[faction.id])
+			local lic_index = menu.addIndexEntry(fac_index, faction.id, faction.name, { "Factions", subcategory, faction }, 1, faction.numlicences, menu.expanded[faction.id])
 			-- Licences
 			for _, licence in ipairs(faction.licences) do
 				menu.addIndexEntry(lic_index, licence.id, licence.name, { "Licences", "licences", licence, faction.id }, 2)
@@ -1356,6 +1406,7 @@ function menu.createIndex()
 						for _, entry in ipairs(menu.printedshipdata[purpose][sizeclass].ships) do
 							-- rowdata[2] here has to be the librarycategory for looking up information about that entry, tying into other tables.
 							local icon = GetMacroData(entry.id, "icon")
+							entry.expanded = { purpose, purpose .. sizeclass } -- store all extra expand info for autoexpand
 							menu.addIndexEntry(ship_size_index, entry.id, "\27[" .. (C.IsIconValid(icon) and icon or "solid") .. "]" .. entry.name, { "Ships", entry.librarycategory, entry }, 3)
 						end
 					end
@@ -1422,6 +1473,7 @@ function menu.createIndex()
 					end
 					local ware_cat_group_index = menu.addIndexEntry(ware_cat_index, nil, name, { "Wares", { warecategory, waregroup } }, 2, numentries, menu.expanded[warecategory .. waregroup])
 					for _, entry in ipairs(menu.data["Wares"][warecategory][waregroup]) do
+						entry.expanded = { warecategory .. waregroup } -- store all extra expand info for autoexpand
 						menu.addIndexEntry(ware_cat_group_index, entry.id, entry.name, { "Wares", warecategory, entry }, 2)
 					end
 				end
@@ -1471,15 +1523,70 @@ function menu.filterIndexCategory(text, entry, first)
 	return show, count, unreadcount
 end
 
+-- match by name (should be unique in most cases)
+function menu.searchIdstringInEntry(idstring, entry)
+	if type(entry.rowdata) == "table" and entry.rowdata[1] == "Races" then
+		return false -- prefer faction over
+	end
+
+	if (entry.item and entry.item == idstring) then -- by id (wareid, id, faction, macroname) not all have this...
+		return true
+	elseif (entry.name and entry.name == idstring) then -- just by name (might not be unique?) -- beware of names with icons stored in index !
+		return true
+	end
+
+	return false
+end
+
+function menu.isInIndexCategory(idstring, entry)
+	if idstring == nil or entry == nil then
+		return false
+	end
+
+	local found = menu.searchIdstringInEntry(idstring, entry)
+
+	for _, entry2 in ipairs(entry) do
+		local locfound = menu.isInIndexCategory(idstring, entry2)
+		found = found or locfound
+	end
+
+	return found
+end
+
+function menu.getExpandEntry(rowdata)
+	local expandentry = rowdata
+	if type(rowdata) == "table" then
+		if rowdata[1] == "Galaxy" then
+			expandentry = rowdata[3]
+		elseif rowdata[1] == "Factions" then
+			expandentry = rowdata[#rowdata].id
+		else
+			expandentry = rowdata[#rowdata]
+			if type(expandentry) == "table" then
+				expandentry = ""
+				for _, val in ipairs(rowdata[#rowdata]) do
+					expandentry = (expandentry .. val)
+				end
+			end
+		end
+	end
+	return expandentry
+end
+
 function menu.displayIndexRow(inputtable, entry)
 	local show, searchcount, searchunread = menu.filterIndexCategory(menu.searchtext, entry, true)
+	if menu.jumpToEntryIdstring then
+		if menu.isInIndexCategory(menu.jumpToEntryIdstring, entry) then
+			show = true
+			menu.autoExpand = true
+			menu.selectedrow = nil
+		else
+			menu.autoExpand = false
+		end
+	end
+
 	if show then
 		local locrow = inputtable:addRow(entry.rowdata, {  })
-
-		local arrow
-		if (type(entry.rowdata) == "table") and (#entry.rowdata >= 3) then
-			arrow = "widget_arrow_right_01"
-		end
 		local coloffset = math.min(2, entry.indent)
 		if entry.numentries then
 			local numentries = searchcount or entry.numentries
@@ -1492,22 +1599,19 @@ function menu.displayIndexRow(inputtable, entry)
 			locrow[5]:createText(numentriestext .. numunreadtext, { halign = "right" })
 			locrow[2 + coloffset]:setColSpan(3 - coloffset):setBackgroundColSpan(4 - coloffset)
 
-			local expandentry = entry.rowdata
-			if type(entry.rowdata) == "table" then
-				if entry.rowdata[1] == "Galaxy" then
-					expandentry = entry.rowdata[3]
-				elseif entry.rowdata[1] == "Factions" then
-					expandentry = entry.rowdata[#entry.rowdata].id
-				elseif entry.rowdata[1] == "Blueprints" then
-					numentries = 0
-				else
-					expandentry = entry.rowdata[#entry.rowdata]
-					if type(expandentry) == "table" then
-						expandentry = ""
-						for _, val in ipairs(entry.rowdata[#entry.rowdata]) do
-							expandentry = (expandentry .. val)
-						end
-					end
+			local expandentry = menu.getExpandEntry(entry.rowdata)
+			if type(entry.rowdata) == "table" and entry.rowdata[1] == "Blueprints" then
+				numentries = 0
+			end
+
+			-- autoexpand found entries
+			if menu.autoExpand then
+				if menu.searchtext and menu.searchtext ~= "" and (searchcount > 0 or searchunread > 0) then
+					entry.expanded = true
+					menu.expanded[expandentry] = true -- add to permanent expandtable
+				elseif menu.jumpToEntryIdstring then
+					entry.expanded = true
+					menu.expanded[expandentry] = true
 				end
 			end
 			if numentries > 0 then
@@ -1529,8 +1633,27 @@ function menu.displayIndexRow(inputtable, entry)
 			offsetx = offsetx + (entry.indent - 2) * Helper.standardTextHeight
 		end
 		locrow[2 + coloffset]:createText(entry.name, { x = offsetx })
-		if arrow then
-			locrow[6]:createIcon(arrow, { height = Helper.standardTextHeight })
+
+		local isItemEntry = (type(entry.rowdata) == "table") and (#entry.rowdata >= 3)
+		if isItemEntry then
+			locrow[6]:createIcon("widget_arrow_right_01", { height = Helper.standardTextHeight })
+		end
+
+		if menu.jumpToEntryIdstring and menu.searchIdstringInEntry(menu.jumpToEntryIdstring, entry) then
+			menu.selectedrow = locrow.index
+			menu.jumpToEntryIdstring = nil
+		end
+
+		-- autoselect first found entry after search
+		if isItemEntry and menu.autoExpand and not menu.selectedrow then
+			if menu.searchtext and menu.searchtext ~= "" then
+				menu.selectedrow = locrow.index
+			end
+		end
+
+		if menu.selectedrow and menu.toprowAdjust then
+			menu.toprow = math.max(menu.selectedrow - 3, 5) -- make sure we can see the selected entry after a search clear or link-jump
+			menu.toprowAdjust = false
 		end
 
 		if not menu.selectedrow and type(entry.rowdata) == "table" then
@@ -1636,6 +1759,8 @@ function menu.display()
 				menu.displayIndexRow(table_index, entry)
 			end
 		end
+		menu.autoExpand = false -- reset
+		menu.jumpToEntryIdstring = nil -- reset
 
 		local descriptiontablewidth = 2 * tablewidth - Helper.borderSize
 		table_description = menu.frame:addTable( 1, { tabOrder = 5, width = descriptiontablewidth, x = framewidth - descriptiontablewidth - Helper.frameBorder, highlightMode = "off" } )
@@ -1679,7 +1804,7 @@ function menu.display()
 			row[1]:createText(descline)
 		end
 
-		table_detail = menu.frame:addTable( 4, { maxVisibleHeight = frameheight - topborder, y = yoffset + topborder, tabOrder = 2 } )
+		table_detail = menu.frame:addTable( 5, { maxVisibleHeight = frameheight - topborder, y = yoffset + topborder, tabOrder = 2 } )
 		table_detail.properties.x = table_index.properties.x + table_index.properties.width + Helper.borderSize * 2.5
 		table_detail.properties.width = tablewidth * 3 - Helper.borderSize * 2.5
 
@@ -1690,9 +1815,13 @@ function menu.display()
 		table_detail:setColWidthMin(2, 0, 60)
 		table_detail:setColWidthMin(3, 0, 20)
 		table_detail:setColWidthMin(4, 0, 20)
+		table_detail:setColWidth(5, Helper.scaleY(Helper.standardTextHeight))
 
 		row = table_detail:addRow(false, {  })
-		row[1]:createIcon(function () return menu.detailIcon(false) end, { width = Helper.headerRow1Height, height = Helper.headerRow1Height, color = function () return menu.detailIconColor(false) end })
+		local icon = menu.detailIcon(false)
+		if icon then
+			row[1]:createIcon(icon, { width = Helper.headerRow1Height, height = Helper.headerRow1Height, color = menu.detailIconColor(false) })
+		end
 		row[2]:setColSpan(3):createText(menu.detailText, Helper.headerRow1Properties)
 
 		menu.numDetailRows = 0
@@ -1715,9 +1844,12 @@ function menu.display()
 					factor = 1
 				end
 
-				local table_rendertarget = menu.frame:addTable(1, rendertargetproperties)
-				row = table_rendertarget:addRow(false, {  })
-				row[1]:createIcon(function () return menu.detailIcon(true) end, { width = table_rendertarget.properties.width * factor, height = table_rendertarget.properties.height * factor, x = (table_rendertarget.properties.width * (1 - factor)) / 2, y = table_rendertarget.properties.height * (1 - factor) / 4, scaling = false, color = function () return menu.detailIconColor(true) end })
+				local icon = menu.detailIcon(true)
+				if icon then
+					local table_rendertarget = menu.frame:addTable(1, rendertargetproperties)
+					row = table_rendertarget:addRow(false, {  })
+					row[1]:createIcon(icon, { width = table_rendertarget.properties.width * factor, height = table_rendertarget.properties.height * factor, x = (table_rendertarget.properties.width * (1 - factor)) / 2, y = table_rendertarget.properties.height * (1 - factor) / 4, scaling = false, color = menu.detailIconColor(true) })
+				end
 				createrendertarget = false
 			end
 		else
@@ -1737,17 +1869,20 @@ function menu.display()
 			end
 		end
 
-		local table_button = menu.frame:addTable(2, { width = tablewidth * 2 - Helper.borderSize, x = Helper.frameBorder + menu.sidebarWidth + Helper.borderSize, y = yoffset + topborder, tabOrder = 1 } )
+		-- only display markread on full index
+		if menu.searchtext == nil or menu.searchtext == "" then
+			local table_button = menu.frame:addTable(2, { width = tablewidth * 2 - Helper.borderSize, x = Helper.frameBorder + menu.sidebarWidth + Helper.borderSize, y = yoffset + topborder, tabOrder = 1 } )
 
-		local row = table_button:addRow(nil, { fixed = true })
-		row[1]:setColSpan(2):createText("")
-		local row = table_button:addRow(true, { fixed = true })
-		row[2]:createButton({ active = menu.hasUnreadEntries }):setText(ReadText(1001, 7744), { halign = "center" })
-		row[2].handlers.onClick = menu.buttonReadAll
+			local row = table_button:addRow(nil, { fixed = true })
+			row[1]:setColSpan(2):createText("")
+			local row = table_button:addRow(true, { fixed = true })
+			row[2]:createButton({ active = menu.hasUnreadEntries }):setText(ReadText(1001, 7744), { halign = "center" })
+			row[2].handlers.onClick = menu.buttonReadAll
 
-		local maxVisibleHeight = table_index.properties.maxVisibleHeight - table_button:getFullHeight() - Helper.frameBorder
-		table_button.properties.y = table_button.properties.y + math.min(maxVisibleHeight, table_index:getFullHeight())
-		table_index.properties.maxVisibleHeight = table_button.properties.y - table_index.properties.y
+			local maxVisibleHeight = table_index.properties.maxVisibleHeight - table_button:getFullHeight() - Helper.frameBorder
+			table_button.properties.y = table_button.properties.y + math.min(maxVisibleHeight, table_index:getFullHeight())
+			table_index.properties.maxVisibleHeight = table_button.properties.y - table_index.properties.y
+		end
 	end
 
 	-- display view/frame
@@ -1791,7 +1926,7 @@ end
 
 -- Suppress icons for licences for now, they are used for the ship config menu and if they should have any, we need to change the setup there first
 function menu.detailIcon(isrendertargeticon)
-	local icon = "solid"
+	local icon = ""
 	if (menu.mode == "Galaxy") and menu.object then
 		local object = menu.object
 		if type(menu.object) == "number" then
@@ -1801,10 +1936,10 @@ function menu.detailIcon(isrendertargeticon)
 		if isrendertargeticon then
 			icon = image
 			if not C.IsIconValid(icon) then
-				icon = ownericon or "solid"
+				icon = ownericon or ""
 			end
 		else
-			icon = ownericon or "solid"
+			icon = ownericon or ""
 		end
 	elseif menu.library then
 		if (menu.library ~= "licences") and (menu.object.icon ~= "") then
@@ -1819,7 +1954,7 @@ function menu.detailIcon(isrendertargeticon)
 			end
 		end
 	end
-	return (icon and (icon ~= "")) and icon or "solid"
+	return (icon and (icon ~= "")) and icon or nil
 end
 
 -- Suppress icons for licences for now, they are used for the ship config menu and if they should have any, we need to change the setup there first
@@ -1949,10 +2084,10 @@ function menu.onUpdate()
 end
 
 function menu.onRowChanged(row, rowdata, uitable)
-	--print("onRowChanged row: " .. tostring(row) .. " rowdata: " .. tostring(rowdata) .. " uitable: " .. tostring(uitable) .. " table_index: " .. tostring(menu.table_index))
+	-- print("onRowChanged row: " .. tostring(row) .. " rowdata: " .. tostring(rowdata) .. " uitable: " .. tostring(uitable) .. " table_index: " .. tostring(menu.table_index))
 	if (row ~= 1) and (uitable == menu.table_index) then
+		-- Helper.printDebugValue(rowdata, "onRowChanged")
 		menu.setObject(rowdata)
-
 		menu.selectedrow = row
 		menu.toprow = GetTopRow(uitable)
 
@@ -1972,8 +2107,12 @@ function menu.onRowChanged(row, rowdata, uitable)
 				C.SetKnownRead(menu.object.component, true)
 			end
 		elseif menu.library and menu.id then
-			--print("ReadKnownItem. library: " .. menu.library .. ", id: " .. menu.id)
-			C.ReadKnownItem(menu.library, menu.id, true)
+			local librarytype = menu.library
+			if menu.library == "moduletypes_other" then
+				librarytype = GetMacroData(menu.id, "infolibrary")
+			end
+			--print("ReadKnownItem. library: " .. librarytype .. ", id: " .. menu.id)
+			C.ReadKnownItem(librarytype, menu.id, true)
 		end
 
 		if (menu.mode == "Galaxy") and (menu.object ~= menu.oldobject) then
@@ -2047,6 +2186,7 @@ function menu.initWareData(funcware)
 				local n = C.GetNumProductionMethodResources(funcware, productionmethod)
 				if n > 0 then
 					local info = C.GetProductionMethodInfo(funcware, productionmethod)
+					-- print("name:".. ffi.string(info.name) .. ", id:" .. ffi.string(info.id))
 					table.insert(menu.details.productionmethods, { method = productionmethod, name = ffi.string(info.name), productiontime = info.productiontime, productionamount = info.productionamount, resources = {} })
 					local methodentry = menu.details.productionmethods[#menu.details.productionmethods]
 					local buf = ffi.new("UIWareAmount[?]", n)
@@ -2132,6 +2272,9 @@ function menu.setObject(rowdata)
 				menu.id = rowdata[3].id
 				menu.object = GetLibraryEntry(menu.library, menu.id)
 				menu.details = rowdata[3]
+
+				-- Helper.printDebugValue(menu.object, "menu.object", 10)
+				-- Helper.printDebugValue(menu.details, "menu.details", 10)
 
 				if (menu.mode ~= "Factions") and (menu.mode ~= "Licences") and (menu.mode ~= "Races") then
 					local locware = menu.details.id
@@ -2439,9 +2582,72 @@ function menu.buttonTerraforming(cluster, name)
 	menu.cleanup()
 end
 
-function menu.buttonClearEditbox(row)
-	Helper.cancelEditBoxInput(menu.slottable, row, 1)
+function menu.buttonShowLinkedItem(idstring)
+	-- print(item)
+	menu.jumpToEntryIdstring = idstring
+	menu.noupdate = nil
 	menu.searchtext = nil
+	menu.toprowAdjust = true
+
+	menu.mode = nil
+	menu.library = nil
+	menu.id = nil
+	menu.object = nil
+
+	menu.oldobject = nil
+	menu.oldlibrary = nil
+	menu.oldid = nil
+
+	-- menu.expanded = {}
+	menu.details = {}
+
+	menu.selectedrow = nil
+	menu.toprow = nil
+	menu.setdefaulttable = true
+
+	menu.activatecutscene = nil
+
+	menu.display()
+end
+
+function menu.buttonClearEditbox(row)
+	menu.searchtext = nil
+	menu.toprowAdjust = true
+
+	local rows, highlightedborderrow = GetSelectedRows(menu.table_index)
+	local rowdataSelectedItem = nil
+	if highlightedborderrow then
+		local rowdata = menu.rowDataMap[menu.table_index] and menu.rowDataMap[menu.table_index][highlightedborderrow] -- only for items
+		if rowdata and (type(rowdata) == "table") and (#rowdata >= 3) then
+			rowdataSelectedItem = rowdata -- only restore selecteditems
+			-- Helper.printDebugValue(menu.expanded, "Expanded")
+		end
+	end
+
+	menu.resetViewAndSelection()
+
+	-- we want to preserve just the selected item here
+	if rowdataSelectedItem then
+		if rowdataSelectedItem[1] == "Licences" then
+			menu.expanded["Factions"] = true
+			menu.expanded[rowdataSelectedItem[4]] = true -- id
+		elseif rowdataSelectedItem[1] == "Galaxy" then
+			menu.expanded[rowdataSelectedItem[1]] = true
+			if rowdataSelectedItem[4].expanded then
+				menu.expanded[rowdataSelectedItem[4].expanded] = true -- index
+			end
+		else
+			menu.expanded[rowdataSelectedItem[1]] = true
+			menu.expanded[rowdataSelectedItem[2]] = true
+		end
+		-- special cases for ships, inventory_wares, Licences, Galaxy that have extra subcategories to expand
+		if type(rowdataSelectedItem[3]) == "table" and rowdataSelectedItem[3].expanded and type(rowdataSelectedItem[3].expanded) == "table" then
+			for _, expandedCategory in ipairs(rowdataSelectedItem[3].expanded) do
+				menu.expanded[expandedCategory] = true
+			end
+		end
+		menu.setObject(rowdataSelectedItem)
+	end
 
 	menu.display()
 end
@@ -2450,10 +2656,17 @@ function menu.editboxSearchUpdateText(_, text, textchanged)
 	menu.noupdate = nil
 
 	if textchanged then
-		menu.searchtext = text
+		text = Helper.trimWhitespaces(text)
+		menu.searchtext = (text and text ~= "") and text or nil -- prevent invalid search/confusion
 	end
 
-	menu.display()
+	if menu.searchtext then
+		menu.resetViewAndSelection()
+		menu.autoExpand = true -- trigger auto expand
+		menu.display()
+	else
+		menu.buttonClearEditbox(nil) -- empty text = call clear button logic
+	end
 end
 
 function menu.dropdownProductionMethod(_, id)
@@ -2502,7 +2715,7 @@ function menu.getNumEntries(category)
 	return numentries, numunread
 end
 
-function menu.addDetailRow(ftable, col1, col2, col3, offsetx, iswordwrap, properties1, properties2, properties3)
+function menu.addDetailRow(ftable, col1, col2, col3, offsetx, iswordwrap, properties1, properties2, properties3, linkbuttonidstring)
 	menu.numDetailRows = menu.numDetailRows + 1
 
 	properties1 = properties1 or {}
@@ -2527,10 +2740,15 @@ function menu.addDetailRow(ftable, col1, col2, col3, offsetx, iswordwrap, proper
 	else
 		row[2]:setColSpan(3):createText(col1, properties1)
 	end
+
+	if linkbuttonidstring and (type(linkbuttonidstring) == "string") and linkbuttonidstring ~= "" and Helper.trimWhitespaces(linkbuttonidstring) ~= "" then
+		row[5]:createButton({ width = Helper.standardTextHeight, height = Helper.standardTextHeight, bgColor = Color["button_background_solid"], mouseOverText = ReadText(1026, 12802) }):setIcon("menu_encyclopedia")
+		row[5].handlers.onClick = function () return menu.buttonShowLinkedItem(linkbuttonidstring) end -- needs to match org id/name so keep potential extra whitespaces
+	end
 end
 
 function menu.addEngineDetailRow(ftable, name, thruster, hasdefaultloadout)
-	menu.addDetailRow(ftable, name .. ((not hasdefaultloadout) and " (" .. thruster.name .. ")" or ""), ConvertIntegerString(thruster.value, true, 0, true) .. " " .. thruster.unit)
+	menu.addDetailRow(ftable, name .. ((not hasdefaultloadout) and ColorText["text_lowlight"] .. " (" .. thruster.name .. ")" .. "\27X" or ""), ConvertIntegerString(thruster.value, true, 0, true) .. " " .. thruster.unit, nil, nil, nil, nil, nil, nil, thruster.id)
 end
 
 function menu.addProductionMethodDetails(ftable, resourcestring, methodstring, showtime, showamount)
@@ -2539,9 +2757,6 @@ function menu.addProductionMethodDetails(ftable, resourcestring, methodstring, s
 	row[2]:setColSpan(3):createText(resourcestring, Helper.subHeaderTextProperties)
 	row[2].properties.halign = "center"
 
-	menu.numDetailRows = menu.numDetailRows + 1
-	local row = ftable:addRow(("detailrow_" .. menu.numDetailRows), { interactive = false })
-	row[2]:createText(methodstring .. ReadText(1001, 120))
 	local productionmethodoptions = {}
 	local currentMethodIdx = 0
 	for i, entry in ipairs(menu.details.productionmethods) do
@@ -2554,16 +2769,49 @@ function menu.addProductionMethodDetails(ftable, resourcestring, methodstring, s
 		currentMethodIdx = 1
 		menu.productionmethod = menu.details.productionmethods[1].method
 	end
+
+	if (menu.library == "wares") then
+		-- production module lookup
+		local prodData = menu.wareProductionModuleLookup[menu.details.id]
+		local prodModule = nil
+		if prodData and #prodData > 1 then -- more then one method
+			local prodMethod = menu.details.productionmethods[currentMethodIdx].method
+			if prodMethod == "default" then
+				prodMethod = "argon" -- default is argon?
+			end
+			for _, value in pairs(prodData) do
+				if value.raceid == prodMethod then
+					prodModule = value
+					break
+				end
+			end
+		elseif prodData and #prodData == 1 then
+			prodModule = prodData[1]
+		end
+
+		-- production module line
+		if prodModule then
+			menu.addDetailRow(ftable, ReadText(1001, 9654) .. ReadText(1001, 120), prodModule.name, nil, nil, nil, nil, nil, nil, prodModule.macro) -- "Production Module"
+		else
+			menu.addDetailRow(ftable, ReadText(1001, 9654) .. ReadText(1001, 120),  ReadText(1001, 9002)) -- "Unknown"
+		end
+		menu.addDetailRow(ftable, "")
+	end
+
+	menu.numDetailRows = menu.numDetailRows + 1
+	local row = ftable:addRow(("detailrow_" .. menu.numDetailRows), { interactive = false })
+	row[2]:createText(methodstring .. ReadText(1001, 120))
 	row[3]:setColSpan(2):createDropDown(productionmethodoptions, { startOption = menu.productionmethod }):setTextProperties({ halign = "right", x = Helper.standardTextOffsetx })
 	row[3].handlers.onDropDownConfirmed = menu.dropdownProductionMethod
+
 	for i, entry in ipairs(menu.details.productionmethods[currentMethodIdx].resources) do
-		menu.addDetailRow(ftable, "", ConvertIntegerString(entry.amount, true, 0, true) .. ReadText(1001, 42) .. " " .. entry.name)
+		menu.addDetailRow(ftable, "", ConvertIntegerString(entry.amount, true, 0, true) .. ReadText(1001, 42), entry.name, nil, nil, nil, nil, nil, entry.ware) -- use id/ware
 	end
 	if showamount then
 		-- empty line
 		menu.addDetailRow(ftable, "")
 		-- Production Amount
-		menu.addDetailRow(ftable, showamount, ConvertIntegerString(menu.details.productionmethods[currentMethodIdx].productionamount, true, 0, true) .. ReadText(1001, 42) .. " " .. menu.object.name)
+		menu.addDetailRow(ftable, showamount, ConvertIntegerString(menu.details.productionmethods[currentMethodIdx].productionamount, true, 0, true) .. ReadText(1001, 42), menu.object.name, nil, nil, nil, nil, nil, menu.id)
 	end
 	if showtime then
 		if not showamount then
@@ -2647,12 +2895,12 @@ function menu.addDetailRows(ftable)
 						maxproductgrp = groupName
 						maxcount = count
 					end
-					table.insert(sortedProducts, { name = name, count = count })
+					table.insert(sortedProducts, { ware = product, name = name, count = count })
 				end
 				menu.addDetailRow(ftable, ReadText(1001, 9050), maxproductgrp)
 				table.sort(sortedProducts, Helper.sortName)
 				for i, entry in pairs(sortedProducts) do
-					menu.addDetailRow(ftable, (i == 1) and ReadText(1001, 9094) or "", entry.count .. ReadText(1001, 42) .. " " .. entry.name)
+					menu.addDetailRow(ftable, (i == 1) and ReadText(1001, 9094) or "", entry.count .. ReadText(1001, 42), entry.name, nil, nil, nil, nil, nil, entry.ware)
 				end
 
 				-- start: kuertee call-back
@@ -2666,11 +2914,11 @@ function menu.addDetailRows(ftable)
 			else
 				-- owner
 				if IsComponentClass(menu.object, "sector") then
-					local owner = GetComponentData(menu.object, "ownername")
+					local ownername, owner = GetComponentData(menu.object, "ownername", "owner")
 					if C.IsContestedSector(ConvertIDTo64Bit(menu.object)) then
-						owner = owner .. " " .. ReadText(1001, 3247)
+						ownername = ownername .. " " .. ReadText(1001, 3247)
 					end
-					menu.addDetailRow(ftable, ReadText(1001, 2455), owner)
+					menu.addDetailRow(ftable, ReadText(1001, 2455), ownername, nil, nil, nil, nil, nil, nil, (owner ~= "ownerless") and owner or nil)
 				end
 				-- workforce
 				local stationtable = GetContainedStations(menu.object, true)
@@ -2740,12 +2988,12 @@ function menu.addDetailRows(ftable)
 						maxproductgrp = groupName
 						maxcount = count
 					end
-					table.insert(sortedProducts, { name = name, count = count })
+					table.insert(sortedProducts, { ware = product, name = name, count = count })
 				end
 				menu.addDetailRow(ftable, ReadText(1001, 9050), maxproductgrp)
 				table.sort(sortedProducts, Helper.sortName)
 				for i, entry in pairs(sortedProducts) do
-					menu.addDetailRow(ftable, (i == 1) and ReadText(1001, 9094) or "", entry.count .. ReadText(1001, 42) .. " " .. entry.name)
+					menu.addDetailRow(ftable, (i == 1) and ReadText(1001, 9094) or "", entry.count .. ReadText(1001, 42), entry.name, nil, nil, nil, nil, nil, entry.ware)
 				end
 
 				-- start: kuertee call-back
@@ -2824,7 +3072,7 @@ function menu.addDetailRows(ftable)
 				menu.addDetailRow(ftable, ReadText(1001, 2499) .. ReadText(1001, 120))
 				for _, faction in ipairs(menu.object.primaryfactions) do
 					if faction ~= "player" then
-						menu.addDetailRow(ftable, "", GetFactionData(faction, "name"))
+						menu.addDetailRow(ftable, "", GetFactionData(faction, "name"), nil, nil, nil, nil, nil, nil, faction)
 					end
 				end
 			end
@@ -2833,7 +3081,7 @@ function menu.addDetailRows(ftable)
 				table.sort(menu.object.resources, Helper.sortName)
 				menu.addDetailRow(ftable, ReadText(1001, 9098) .. ReadText(1001, 120))
 				for _, resourceentry in ipairs(menu.object.resources) do
-					menu.addDetailRow(ftable, "", resourceentry.name)
+					menu.addDetailRow(ftable, "", resourceentry.name, nil, nil, nil, nil, nil, nil, resourceentry.ware)
 				end
 			end
 
@@ -2861,14 +3109,14 @@ function menu.addDetailRows(ftable)
 			if policefaction then
 				data = GetFactionData(policefaction, "name")
 			end
-			menu.addDetailRow(ftable, ReadText(1001, 9601), data)
+			menu.addDetailRow(ftable, ReadText(1001, 9601), data, nil, nil, nil, nil, nil, nil, policefaction)
 			-- illegal wares
 			if menu.id == policefaction then
 				if #menu.object.illegalwares > 0 then
 					table.sort(menu.object.illegalwares, Helper.sortName)
 					menu.addDetailRow(ftable, ReadText(1001, 2435) .. ReadText(1001, 120))
 					for _, wareentry in ipairs(menu.object.illegalwares) do
-						menu.addDetailRow(ftable, "", wareentry.name)
+						menu.addDetailRow(ftable, "", wareentry.name, nil, nil, nil, nil, nil, nil, wareentry.ware)
 					end
 				end
 			end
@@ -2877,7 +3125,7 @@ function menu.addDetailRows(ftable)
 				menu.addDetailRow(ftable, displayentry.name .. ReadText(1001, 120), nil, nil, nil, nil, { mouseOverText = displayentry.mouseovertext })
 				if #menu.details.relations[displayentry.range] > 0 then
 					for i, entry in ipairs(menu.details.relations[displayentry.range]) do
-						menu.addDetailRow(ftable, "", entry.name, nil, nil, nil, nil, { font = (entry.id == "player") and Helper.standardFontBold or nil, color = displayentry.color })
+						menu.addDetailRow(ftable, "", entry.name, nil, nil, nil, nil, { font = (entry.id == "player") and Helper.standardFontBold or nil, color = displayentry.color }, nil, entry.id)
 					end
 				else
 					menu.addDetailRow(ftable, "", ReadText(1001, 38), nil, nil, nil, nil, { color = Color["text_inactive"] })
@@ -2898,7 +3146,8 @@ function menu.addDetailRows(ftable)
 			-- Sectors
 			menu.addDetailRow(ftable, ReadText(1001, 2459) .. ReadText(1001, 120))
 			for i, entry in ipairs(menu.details.sectors) do
-				menu.addDetailRow(ftable, "", ffi.string(C.GetComponentName(entry)))
+				local sectorname = ffi.string(C.GetComponentName(entry))
+				menu.addDetailRow(ftable, "", sectorname, nil, nil, nil, nil, nil, nil, sectorname)
 			end
 
 		elseif menu.mode == "Stations" then
@@ -2960,19 +3209,19 @@ function menu.addDetailRows(ftable)
 						row[2]:setColSpan(3):createText(proddata.name, Helper.subHeaderTextProperties)
 						row[2].properties.halign = "center"
 
-						menu.addDetailRow(ftable, ReadText(1001, 9609) .. ReadText(1001, 120), ConvertIntegerString(proddata.amount, true, 0, true) .. ReadText(1001, 42) .. " " .. proddata.name)
+						menu.addDetailRow(ftable, ReadText(1001, 9609) .. ReadText(1001, 120), ConvertIntegerString(proddata.amount, true, 0, true) .. ReadText(1001, 42), proddata.name, nil, nil, nil, nil, nil, proddata.name)
 						for j, resourcedata in ipairs(proddata.resources) do
 							resourcedata.name = GetWareData(resourcedata.ware, "name")
-							menu.addDetailRow(ftable, (j == 1) and (ReadText(1001, 9614) .. ReadText(1001, 120)) or "", ConvertIntegerString(resourcedata.amount, true, 0, true) .. ReadText(1001, 42) .. " " .. resourcedata.name)
+							menu.addDetailRow(ftable, (j == 1) and (ReadText(1001, 9614) .. ReadText(1001, 120)) or "", ConvertIntegerString(resourcedata.amount, true, 0, true) .. ReadText(1001, 42), resourcedata.name, nil, nil, nil, nil, nil, resourcedata.name)
 						end
 						if not IsMacroClass(menu.id, "processingmodule") then
 							menu.addDetailRow(ftable, ReadText(1001, 2411) .. ReadText(1001, 120), ConvertTimeString(proddata.cycle, ReadText(1001, 209)))
 							menu.addDetailRow(ftable, "")
 							menu.addDetailRow(ftable, ReadText(1001, 9624) .. " / " .. ReadText(1001, 102) .. ReadText(1001, 120), Helper.round(3600 / queueduration, 2))
-							menu.addDetailRow(ftable, ReadText(1001, 1624) .. " / " .. ReadText(1001, 102) .. ReadText(1001, 120), ConvertIntegerString((queueduration > 0) and Helper.round(proddata.amount * 3600 / queueduration) or 0, true, 0, true) .. ReadText(1001, 42) .. " " .. proddata.name)
+							menu.addDetailRow(ftable, ReadText(1001, 1624) .. " / " .. ReadText(1001, 102) .. ReadText(1001, 120), ConvertIntegerString((queueduration > 0) and Helper.round(proddata.amount * 3600 / queueduration) or 0, true, 0, true) .. ReadText(1001, 42), proddata.name, nil, nil, nil, nil, nil, proddata.name)
 							for j, resourcedata in ipairs(proddata.resources) do
 								resourcedata.name = GetWareData(resourcedata.ware, "name")
-								menu.addDetailRow(ftable, (j == 1) and (ReadText(1001, 7403) .. " / " .. ReadText(1001, 102) .. ReadText(1001, 120)) or "", ConvertIntegerString((queueduration > 0) and Helper.round(resourcedata.amount * 3600 / queueduration) or 0, true, 0, true) .. ReadText(1001, 42) .. " " .. resourcedata.name)
+								menu.addDetailRow(ftable, (j == 1) and (ReadText(1001, 7403) .. " / " .. ReadText(1001, 102) .. ReadText(1001, 120)) or "", ConvertIntegerString((queueduration > 0) and Helper.round(resourcedata.amount * 3600 / queueduration) or 0, true, 0, true) .. ReadText(1001, 42), resourcedata.name, nil, nil, nil, nil, nil, resourcedata.name)
 							end
 						end
 						if i < #menu.object.products then
@@ -3060,6 +3309,7 @@ function menu.addDetailRows(ftable)
 								for property, entry in pairs(bestengines) do
 									if (not entry.engine) or evalengine[property] * (entry.multiply_thrust and evalengine.thrust_forward or 1) > entry.engine[property] * (entry.multiply_thrust and entry.engine.thrust_forward or 1) then
 										entry.engine = evalengine
+										entry.id = engine.id
 									end
 								end
 							end
@@ -3089,7 +3339,7 @@ function menu.addDetailRows(ftable)
 			-- travel speed
 			menu.addEngineDetailRow(ftable, ReadText(1001, 8053), bestengines["travel_thrustfactor"], hasdefaultloadout)
 			-- max acceleration
-			menu.addDetailRow(ftable, ReadText(1001, 9053) .. ((not hasdefaultloadout) and " (" .. bestengines["thrust_forward"].name .. ")" or ""), ConvertIntegerString(maxaccel, true, 0, true) .. " " .. ReadText(1001, 111))
+			menu.addDetailRow(ftable, ReadText(1001, 9053) .. ((not hasdefaultloadout) and ColorText["text_lowlight"] .. " (" .. bestengines["thrust_forward"].name .. ")" .. "\27X" or ""), ConvertIntegerString(maxaccel, true, 0, true) .. " " .. ReadText(1001, 111), nil, nil, nil, nil, nil, nil, bestengines["thrust_forward"].id)
 			-- empty line
 			menu.addDetailRow(ftable, "")
 			-- thruster
@@ -3125,6 +3375,7 @@ function menu.addDetailRows(ftable)
 								for property, entry in pairs(bestthrusters) do
 									if (not entry.thruster) or evalthruster[property] > entry.thruster[property] then
 										entry.thruster = evalthruster
+										entry.id = thruster.id
 									end
 								end
 							end
@@ -3163,10 +3414,11 @@ function menu.addDetailRows(ftable)
 			-- shield capacity
 			-- all known shield generators are in menu.data["Equipment"]["shieldgentypes"]
 			local bestshield
+			local shieldId = nil
 			local bestname = ReadText(1001, 9003)	-- "No Known Component"
 
 			if hasdefaultloadout and menu.preobject then
-				bestshield = GetLibraryEntry( "shieldgentypes", ffi.string(C.GetUpgradeSlotCurrentMacro(ConvertIDTo64Bit(menu.preobject), 0, "shield", 1)) )
+				bestshield = GetLibraryEntry( "shieldgentypes", ffi.string(C.GetUpgradeSlotCurrentMacro(ConvertIDTo64Bit(menu.preobject), 0, "shield", 1)))
 			else
 				local numslots = tonumber(C.GetNumUpgradeSlots(0, menu.id, "shield"))
 				for i = numslots, 1, -1 do
@@ -3186,6 +3438,7 @@ function menu.addDetailRows(ftable)
 										local evalshieldgen = GetLibraryEntry("shieldgentypes", aliasid)
 										if not bestshield or evalshieldgen.shield > bestshield.shield then
 											bestshield = evalshieldgen
+											shieldId = shieldgen.id
 										end
 									end
 								end
@@ -3201,7 +3454,9 @@ function menu.addDetailRows(ftable)
 				totalshieldcapacity = bestshield.shield * numslots
 				bestname = bestshield.name
 			end
-			menu.addDetailRow(ftable, ReadText(1001, 9060) .. ((not hasdefaultloadout) and " (" .. (bestshield and (numslots .. ReadText(1001, 42) .. " ") or "") .. bestname .. ")" or ""), ConvertIntegerString(totalshieldcapacity, true, 0, true) .. " " .. ReadText(1001, 118))
+
+			local namecombined = (not hasdefaultloadout) and " (" .. (bestshield and (numslots .. ReadText(1001, 42) .. " ") or "") .. bestname .. ")" or ""
+			menu.addDetailRow(ftable, ReadText(1001, 9060) .. ColorText["text_lowlight"] .. namecombined .. "\27X", ConvertIntegerString(totalshieldcapacity, true, 0, true) .. " " .. ReadText(1001, 118), nil, nil, nil, nil, nil, nil, shieldId)
 			-- empty line
 			menu.addDetailRow(ftable, "")
 			-- weapons
@@ -3273,7 +3528,8 @@ function menu.addDetailRows(ftable)
 					-- produced by
 					menu.addDetailRow(ftable, ReadText(1001, 8391) .. ReadText(1001, 120))
 					for i, entry in ipairs(menu.details.blueprintowners) do
-						menu.addDetailRow(ftable, "", GetFactionData(entry, "name"))
+						local factionname = GetFactionData(entry, "name")
+						menu.addDetailRow(ftable, "", factionname, nil, nil, nil, nil, nil, nil, factionname)
 					end
 				end
 				-- resources
@@ -3289,14 +3545,18 @@ function menu.addDetailRows(ftable)
 				prodmethodstring = ReadText(1001, 9613)	-- Resources needed for construction, :
 				methodtypestring = ReadText(1001, 9652)
 				-- burst damage
-				menu.addDetailRow(ftable, ReadText(1001, 9092), ConvertIntegerString(menu.object.dps, true, 0, true) .. " " .. ReadText(1001, 119))
+				menu.addDetailRow(ftable, ReadText(1001, 13211), ConvertIntegerString(menu.object.dps, true, 0, true) .. " " .. ReadText(1001, 119))
 				-- sustained damage
-				menu.addDetailRow(ftable, ReadText(1001, 9093), ConvertIntegerString(menu.object.sustaineddps, true, 0, true) .. " " .. ReadText(1001, 119))
+				menu.addDetailRow(ftable, ReadText(1001, 13212), ConvertIntegerString(menu.object.sustaineddps, true, 0, true) .. " " .. ReadText(1001, 119))
 				-- empty line
 				menu.addDetailRow(ftable, "")
 				-- shielded target
 				menu.addDetailRow(ftable, ReadText(1001, 9642))
-				menu.addDetailRow(ftable, ReadText(1001, 2460))
+				local shielddisruptiontext
+				if menu.object.shielddisruption >= 10 then
+					shielddisruptiontext = ReadText(1001, 9656)
+				end
+				menu.addDetailRow(ftable, ReadText(1001, 2460), shielddisruptiontext)
 				local miningmultiplier, surfaceelementmultiplier = 0, 0
 				if menu.object.isrepairweapon == 0 then
 					if menu.object.miningmultiplier and menu.object.miningmultiplier > 1 then
@@ -3326,7 +3586,7 @@ function menu.addDetailRows(ftable)
 							menu.addDetailRow(ftable, "        " .. ReadText(1001, 9646), ConvertIntegerString((menu.object.hullshielddpshot + menu.object.shieldonlydpshot + menu.object.hullshieldareadpshot + menu.object.shieldonlyareadpshot) * surfaceelementmultiplier, true, 0, true) .. " " .. ReadText(1001, 118))
 						end
 						if miningmultiplier and miningmultiplier > 1 then
-							menu.addDetailRow(ftable, "        " .. ReadText(1001, 9647), ConvertIntegerString((menu.object.hullonlydpshot + menu.object.shieldonlydamage + menu.object.hullshieldareadpshot + menu.object.shieldonlyareadpshot) * miningmultiplier, true, 0, true) .. " " .. ReadText(1001, 118))
+							menu.addDetailRow(ftable, "        " .. ReadText(1001, 9647), ConvertIntegerString((menu.object.hullshielddpshot + menu.object.shieldonlydpshot + menu.object.hullshieldareadpshot + menu.object.shieldonlyareadpshot) * miningmultiplier, true, 0, true) .. " " .. ReadText(1001, 118))
 						end
 					else
 						menu.addDetailRow(ftable, "        " .. ReadText(1001, 2462), ConvertIntegerString(menu.object.hullshielddpshot + menu.object.shieldonlydpshot, true, 0, true) .. " " .. ReadText(1001, 118))
@@ -3357,7 +3617,7 @@ function menu.addDetailRows(ftable)
 					if areadpshot_hull > 0 then
 						menu.addDetailRow(ftable, "        " .. ReadText(1001, 2463) .. " (" .. ReadText(1001, 9643) .. ")", ConvertIntegerString(menu.object.hullshielddpshot + menu.object.hullonlydpshot + menu.object.hullnoshielddpshot, true, 0, true) .. " " .. ReadText(1001, 118))
 						menu.addDetailRow(ftable, "        " .. ReadText(1001, 9644) .. " (" .. ReadText(1001, 9640) .. ")", ConvertIntegerString(menu.object.hullshieldareadpshot + menu.object.hullonlyareadpshot + menu.object.hullnoshieldareadpshot, true, 0, true) .. " " .. ReadText(1001, 118))
-						if surfaceelementmultiplier and surfaceelementmultiplier > 0 then
+						if surfaceelementmultiplier and surfaceelementmultiplier > 1 then
 							menu.addDetailRow(ftable, "        " .. ReadText(1001, 9646), ConvertIntegerString((menu.object.hullshielddpshot + menu.object.hullonlydpshot + menu.object.hullnoshielddpshot + menu.object.hullshieldareadamage + menu.object.hullonlyareadamage + menu.object.hullnoshieldareadamage) * surfaceelementmultiplier, true, 0, true) .. " " .. ReadText(1001, 118))
 						end
 						if miningmultiplier and miningmultiplier > 1 then
@@ -3365,7 +3625,7 @@ function menu.addDetailRows(ftable)
 						end
 					else
 						menu.addDetailRow(ftable, "        " .. ReadText(1001, 2463), ConvertIntegerString(menu.object.hullshielddpshot + menu.object.hullonlydpshot + menu.object.hullnoshielddpshot, true, 0, true) .. " " .. ReadText(1001, 118))
-						if surfaceelementmultiplier and surfaceelementmultiplier > 0 then
+						if surfaceelementmultiplier and surfaceelementmultiplier > 1 then
 							menu.addDetailRow(ftable, "        " .. ReadText(1001, 9646), ConvertIntegerString((menu.object.hullshielddpshot + menu.object.hullonlydpshot + menu.object.hullnoshielddpshot) * surfaceelementmultiplier, true, 0, true) .. " " .. ReadText(1001, 118))
 						end
 						if miningmultiplier and miningmultiplier > 1 then
@@ -3429,7 +3689,11 @@ function menu.addDetailRows(ftable)
 				menu.addDetailRow(ftable, "")
 				-- shielded target
 				menu.addDetailRow(ftable, ReadText(1001, 9642))
-				menu.addDetailRow(ftable, ReadText(1001, 2460))
+				local shielddisruptiontext
+				if menu.object.shielddisruption >= 10 then
+					shielddisruptiontext = ReadText(1001, 9656)
+				end
+				menu.addDetailRow(ftable, ReadText(1001, 2460), shielddisruptiontext)
 				local miningmultiplier, surfaceelementmultiplier = 0, 0
 				if menu.object.miningmultiplier and menu.object.miningmultiplier > 1 then
 					miningmultiplier = menu.object.miningmultiplier
@@ -3639,7 +3903,6 @@ function menu.addDetailRows(ftable)
 
 			-- compatibilities
 			local compatibilityinfo = GetMacroData(menu.id, "compatibilityinfo")
-
 			-- kuertee start:
 			if not compatibilityinfo then
 				compatibilityinfo = {}
@@ -3707,8 +3970,10 @@ function menu.addDetailRows(ftable)
 						elseif menu.object.boost_rechargetime > 1 then
 							menu.addDetailRow(ftable, ReadText(1001, 9070), ConvertIntegerString(menu.object.boost_rechargetime, true, 0, true) .. " " .. ReadText(1001, 100))
 						end
-						-- immediate boost
-						menu.addDetailRow(ftable, ReadText(1001, 9071), (menu.object.boost_chargetime == 0 and menu.object.boost_rechargetime > 1) and ReadText(1001, 2617) or ReadText(1001, 2618))
+					end
+					-- boost acc factor
+					if menu.object.boost_accfactor > 0 then
+						menu.addDetailRow(ftable, ReadText(1001, 9655), ConvertIntegerString(menu.object.boost_accfactor * 100, true, 0, true) .. " %")
 					end
 					if menu.object.travel_thrustfactor and menu.object.travel_thrustfactor > 0 then
 						menu.addDetailRow(ftable, "")
@@ -3907,7 +4172,7 @@ function menu.addDetailRows(ftable)
 					-- title
 					menu.addDetailRow(ftable, ReadText(1001, 9608) .. ReadText(1001, 120))
 					for i, entry in ipairs(menu.details.products) do
-						menu.addDetailRow(ftable, "", entry.name)
+						menu.addDetailRow(ftable, "", entry.name, nil, nil, nil, nil, nil, nil, entry.ware)
 					end
 				end
 				-- illegal
@@ -3921,7 +4186,7 @@ function menu.addDetailRows(ftable)
 							menu.addDetailRow(ftable, ReadText(1001, 2437) .. ReadText(1001, 120))
 							first = false
 						end
-						menu.addDetailRow(ftable, "", entry.name)
+						menu.addDetailRow(ftable, "", entry.name, nil, nil, nil, nil, nil, nil, entry.faction)
 					end
 				end
 				-- empty line
@@ -3941,7 +4206,7 @@ function menu.addDetailRows(ftable)
 					-- title
 					menu.addDetailRow(ftable, ReadText(1001, 9605) .. ReadText(1001, 120))
 					for i, entry in ipairs(menu.details.resources) do
-						menu.addDetailRow(ftable, "", entry.amount .. ReadText(1001, 42) .. " " .. entry.name)
+						menu.addDetailRow(ftable, "", entry.amount .. ReadText(1001, 42), entry.name, nil, nil, nil, nil, nil, entry.ware)
 					end
 				end
 				-- products
@@ -3954,7 +4219,7 @@ function menu.addDetailRows(ftable)
 					-- title
 					menu.addDetailRow(ftable, ReadText(1001, 9606) .. ReadText(1001, 120))
 					for i, entry in ipairs(menu.details.products) do
-						menu.addDetailRow(ftable, "", entry.name)
+						menu.addDetailRow(ftable, "", entry.name, nil, nil, nil, nil, nil, nil, entry.ware)
 					end
 				end
 				-- illegal
@@ -3971,7 +4236,7 @@ function menu.addDetailRows(ftable)
 							menu.addDetailRow(ftable, ReadText(1001, 2437) .. ReadText(1001, 120))
 							firstillegal = false
 						end
-						menu.addDetailRow(ftable, "", entry.name)
+						menu.addDetailRow(ftable, "", entry.name, nil, nil, nil, nil, nil, nil, entry.faction)
 					end
 				end
 				-- ware source
@@ -4042,6 +4307,17 @@ function menu.addDetailRows(ftable)
 							local row = ftable:addRow(("detailrow_" .. menu.numDetailRows), { interactive = false })
 							row[2]:createText(entry.name, { color = entry.owned and Color["text_normal"] or Color["text_inactive"], mouseOverText = entry.owned and "" or ReadText(1001, 9622) })
 							row[3]:setColSpan(2):createText(entry.owned and (ColorText["text_player"] .. ReadText(1001, 84)) or "", { halign = "right" })
+
+							if entry.owned then
+								local id = entry.name
+								if entry.id and (entry.id ~= "") then
+									id = entry.id
+								elseif entry.ware and (entry.ware ~= "") then
+									id = entry.ware
+								end
+								row[5]:createButton({ width = Helper.standardTextHeight, height = Helper.standardTextHeight, bgColor = Color["button_background_solid"], mouseOverText = ReadText(1026, 12802) }):setIcon("menu_encyclopedia")
+								row[5].handlers.onClick = function () return menu.buttonShowLinkedItem(id) end
+							end
 						end
 					end
 
@@ -4209,7 +4485,7 @@ function menu.createGraph(width, height, x, y)
 	local xGranularity = Helper.round(menu.xGranularity / menu.xScale, 3)
 	local xOffset = xRange % xGranularity
 
-	graph:setXAxis({ startvalue = -xRange, endvalue = 0, granularity = xGranularity, offset = xOffset, gridcolor = Color["graph_grid"] })
+	graph:setXAxis({ startvalue = -xRange, endvalue = 0, granularity = xGranularity, offset = xOffset, gridcolor = Color["graph_grid"], unittext = ReadText(1001, 102) })
 	graph:setXAxisLabel(menu.xTitle, { fontsize = 9 })
 	graph:setYAxis({ startvalue = 0, endvalue = maxY, granularity = granularity, offset = 0, gridcolor = Color["graph_grid"] })
 	graph:setYAxisLabel(menu.yTitle, { fontsize = 9 })

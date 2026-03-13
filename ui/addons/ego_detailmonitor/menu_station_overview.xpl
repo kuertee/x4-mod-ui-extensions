@@ -196,7 +196,6 @@ ffi.cdef[[
 	uint32_t GetNumRemovedConstructionPlanModules2(UniverseID holomapid, UniverseID defensibleid, uint32_t* newIndex, bool usestoredplan, uint32_t* numChangedIndices, bool checkupgrades);
 	uint32_t GetNumRemovedStationModules2(UniverseID defensibleid, uint32_t* newIndex, uint32_t* numChangedIndices, bool checkupgrades);
 	uint32_t GetNumResearchModules(UniverseID containerid);
-	uint32_t GetNumStationModules(UniverseID stationid, bool includeconstructions, bool includewrecks);
 	uint32_t GetNumStationOverviewGraphWares(UniverseID stationid, bool* initialized);
 	uint32_t GetNumSupplyOrderResources(UniverseID containerid);
 	uint32_t GetNumSupplyOrders(UniverseID containerid, bool defaultorders);
@@ -299,7 +298,6 @@ local function init()
 	if Helper then
 		Helper.registerMenu(menu)
 	end
-
 	-- kuertee start:
 	menu.init_kuertee()
 	-- kuertee end
@@ -352,7 +350,6 @@ function menu.cleanup()
 	menu.selectedRows = {}
 	menu.selectedRowData = {}
 	menu.selectedCols = {}
-
 	-- kuertee start: callback
 	if menu.uix_callbacks ["cleanup"] then
 		for uix_id, uix_callback in pairs (menu.uix_callbacks ["cleanup"]) do
@@ -464,8 +461,10 @@ function menu.onShowMenu(state)
 		end
 	end
 	menu.xScale = 60
-	menu.xTitle = ReadText(1001, 6519) .. " [" .. ReadText(1001, 103) .. "]"
-	menu.yTitle = ReadText(1001, 6520) .. " [" .. ReadText(1001, 101) .. "]"
+	menu.xTitle = ReadText(1001, 6519)
+	menu.xUnitText = ReadText(1001, 103)
+	menu.yTitle = ReadText(1001, 6520)
+	menu.yUnitText = ReadText(1001, 101)
 
 	menu.getData(config.graph.numdatapoints)
 
@@ -890,7 +889,7 @@ function menu.getFlowchartProductionNodes()
 
 	-- buildmodule resource edges
 	local cargo = GetComponentData(menu.containerid, "cargo")
-	for ware in pairs(buildresources) do
+	for ware in Helper.orderedPairsByWareName(buildresources) do
 		local resourcenode = addFlowchartWareNode(nodes, warenodes, { ware = ware, name = GetWareData(ware, "name"), amount = cargo[ware] })
 		for _, buildmodulenode in ipairs(buildmodulenodes) do
 			addFlowchartEdge(resourcenode, buildmodulenode)
@@ -1132,7 +1131,6 @@ function menu.setupFlowchartData()
 		end
 	end
 	-- kuertee end: callback
-
 	local nodes, warenodes, workforcenode, researchnode, terraformingnode = menu.getFlowchartProductionNodes()
 
 	-- assign numrows and numcols
@@ -1591,7 +1589,6 @@ function menu.setupFlowchartData()
 			end
 		end
 		-- kuertee end: callback
-
 		-- add trade wares option
 		local node = {
 			cargo = true,
@@ -1773,7 +1770,6 @@ function menu.display()
 	row = ftable:addRow(false)
 	row[1]:createText(menu.title, Helper.headerRow1Properties)
 	row = ftable:addRow(false)
-
 	-- row[1]:createText(menu.container and GetComponentData(menu.containerid, "name") or "Flowchart Test")
 	-- kuertee start: callback
 	if menu.uix_callbacks ["display_get_station_name_extras"] then
@@ -1802,7 +1798,6 @@ function menu.display()
 		row[1]:createText(menu.container and GetComponentData(menu.containerid, "name") or "Flowchart Test")
 	end
 	-- kuertee end: callback
-
 	--row = ftable:addRow(false)
 	--row[1]:createText("Antigone Memorial")
 
@@ -2169,9 +2164,9 @@ function menu.display()
 		local xGranularity = Helper.round(menu.xGranularity / menu.xScale, 3)
 		local xOffset = xRange % xGranularity
 
-		graph:setXAxis({ startvalue = -xRange, endvalue = 0, granularity = xGranularity, offset = xOffset, gridcolor = Color["graph_grid"] })
+		graph:setXAxis({ startvalue = -xRange, endvalue = 0, granularity = xGranularity, offset = xOffset, gridcolor = Color["graph_grid"], unittext = menu.xUnitText })
 		graph:setXAxisLabel(menu.xTitle, { fontsize = 9 })
-		graph:setYAxis({ startvalue = 0, endvalue = maxY, granularity = granularity, offset = 0, gridcolor = Color["graph_grid"] })
+		graph:setYAxis({ startvalue = 0, endvalue = maxY, granularity = granularity, offset = 0, gridcolor = Color["graph_grid"], unittext = menu.yUnitText })
 		graph:setYAxisLabel(menu.yTitle, { fontsize = 9 })
 
 		-- time interval buttons
@@ -2269,7 +2264,7 @@ function menu.display()
 
 	menu.restoreFlowchartState("flowchart", menu.flowchart)
 
-	Helper.createRightSideBar(menu.frame, menu.container, true, "logical", menu.buttonRightBar)
+	Helper.createRightSideBar(menu, menu.frame, menu.container, true, "logical", menu.buttonRightBar)
 
 	-- display view/frame
 	menu.frame:display()
@@ -2339,7 +2334,6 @@ function menu.onExpandTradeWares(frame, ftable, ftable2, nodedata)
 	for i = 0, n - 1 do
 		local ware = ffi.string(buf[i])
 		if not excludedwares[ware] then
-
 			-- kuertee start: callback
 			if (not menu.uix_callbacks ["onExpandTradeWares_insert_ware_to_allwares"]) or (not next(menu.uix_callbacks ["onExpandTradeWares_insert_ware_to_allwares"])) then
 				table.insert(allwares, { ware = ware, name = GetWareData(ware, "name") })
@@ -2349,7 +2343,6 @@ function menu.onExpandTradeWares(frame, ftable, ftable2, nodedata)
 				end
 			end
 			-- kuertee end: callback
-
 		end
 	end
 	table.sort(allwares, Helper.sortName)
@@ -3716,6 +3709,7 @@ function menu.onExpandSupply(_, ftable, _, nodedata)
 			table.sort(menu.supplies[supplytypeentry.type], Helper.sortName)
 		else
 			local units = GetUnitStorageData(menu.containerid, supplytypeentry.type)
+			menu.supplies[supplytypeentry.type].stored = 0
 			for _, entry in ipairs(units) do
 				if supply_auto[supplytypeentry.type] then
 					currentOrders = currentOrders + (menu.supplyoverride[entry.macro] or menu.supplydefaults[entry.macro] or 0)
@@ -3723,6 +3717,7 @@ function menu.onExpandSupply(_, ftable, _, nodedata)
 					currentOrders = currentOrders + entry.amount + (menu.supplyoverride[entry.macro] or menu.supplydefaults[entry.macro] or 0)
 				end
 				table.insert(menu.supplies[supplytypeentry.type], { name = entry.name, macro = entry.macro, stored = entry.amount })
+				menu.supplies[supplytypeentry.type].stored = menu.supplies[supplytypeentry.type].stored + entry.amount
 			end
 			menu.supplies[supplytypeentry.type].capacity = units.capacity
 
@@ -3731,8 +3726,9 @@ function menu.onExpandSupply(_, ftable, _, nodedata)
 	end
 
 	for _, supplytypeentry in ipairs(menu.types) do
-		if (supplytypeentry.type ~= "build") or canequipships then
+		if (supplytypeentry.type ~= "build") or canequipships or (menu.supplies[supplytypeentry.type].stored > 0) then
 			if menu.supplies[supplytypeentry.type].capacity > 0 then
+				local nobuildunitusage = (supplytypeentry.type == "build") and (not canequipships)
 				-- title
 				row = ftable:addRow(nil, {  })
 				row[1]:setColSpan(3):createText(Helper.unlockInfo(info_low, supplytypeentry.name), Helper.subHeaderTextProperties)
@@ -3741,10 +3737,12 @@ function menu.onExpandSupply(_, ftable, _, nodedata)
 				local auto
 				if isplayerowned then
 					auto = supply_auto[supplytypeentry.type]
-					row = ftable:addRow(true, {  })
-					row[1]:setColSpan(2):createText(supplytypeentry.autoname)
-					row[3]:createCheckBox(auto, { height = Helper.standardButtonHeight })
-					row[3].handlers.onClick = function (_, checked) return menu.checkboxSupplyAuto(menu.container, supplytypeentry.type, checked) end
+					if not nobuildunitusage then
+						row = ftable:addRow(true, {  })
+						row[1]:setColSpan(2):createText(supplytypeentry.autoname)
+						row[3]:createCheckBox(auto, { height = Helper.standardButtonHeight })
+						row[3].handlers.onClick = function (_, checked) return menu.checkboxSupplyAuto(menu.container, supplytypeentry.type, checked) end
+					end
 				end
 				-- available macros
 				if #menu.supplies[supplytypeentry.type] > 0 then
@@ -3766,6 +3764,9 @@ function menu.onExpandSupply(_, ftable, _, nodedata)
 						local start = info_high and (auto and limit or (entry.stored + (menu.supplyoverride[entry.macro] or 0))) or 0
 						local max = math.max(0, menu.supplies[supplytypeentry.type].capacity - currentOrders + start)
 						local maxSelect = math.min(max, (entry.compatible == false) and entry.stored or max)
+						if nobuildunitusage then
+							maxSelect = entry.stored
+						end
 						start = math.min(maxSelect, math.max(0, start))
 						row = ftable:addRow(true, {  })
 						local slidercell = row[1]:setColSpan(3):createSliderCell({
@@ -4162,17 +4163,17 @@ function menu.buttonTimeFrame(type)
 		menu.xStart = math.max(0, menu.xEnd - 3600)
 		menu.xGranularity = 300
 		menu.xScale = 60
-		menu.xTitle = ReadText(1001, 6519) .. " [" .. ReadText(1001, 103) .. "]"
+		menu.xUnitText = ReadText(1001, 103)
 	elseif type == "day" then
 		menu.xStart = math.max(0, menu.xEnd - (24 * 3600))
 		menu.xGranularity = 7200
 		menu.xScale = 3600
-		menu.xTitle = ReadText(1001, 6519) .. " [" .. ReadText(1001, 102) .. "]"
+		menu.xUnitText = ReadText(1001, 102)
 	elseif type == "week" then
 		menu.xStart = math.max(0, menu.xEnd - (7 * 24 * 3600))
 		menu.xGranularity = 12 * 3600
 		menu.xScale = 24 * 3600
-		menu.xTitle = ReadText(1001, 6519) .. " [" .. ReadText(1001, 104) .. "]"
+		menu.xUnitText = ReadText(1001, 104)
 	end
 	if menu.xEnd > menu.xStart then
 		while ((menu.xEnd - menu.xStart) < menu.xGranularity) and (menu.xGranularity >= (0.001 * menu.xScale)) do

@@ -190,7 +190,6 @@ ffi.cdef[[
 	uint32_t GetAvailableLockboxes(const char** result, uint32_t resultlen, UniverseID entityid);
 	uint32_t GetAvailablePaintThemes(UIPaintTheme* result, uint32_t resultlen);
 	float GetAveragePlayerNPCSkill(void);
-	const char* GetComponentName(UniverseID componentid);
 	UniverseID GetContextByClass(UniverseID componentid, const char* classname, bool includeself);
 	double GetCurrentGameTime(void);
 	UILogo GetCurrentPlayerLogo(void);
@@ -218,7 +217,6 @@ ffi.cdef[[
 	uint32_t GetNumPlayerBuildMethods(void);
 	uint32_t GetNumPlayerLogos(bool includestandard, bool includecustom);
 	uint32_t GetNumSkills(void);
-	uint32_t GetNumStationModules(UniverseID stationid, bool includeconstructions, bool includewrecks);
 	uint32_t GetNumTickerCache(const char* categoryname);
 	uint32_t GetNumTransactionLog(UniverseID componentid, double starttime, double endtime);
 	int32_t GetPersonCombinedSkill(UniverseID controllableid, NPCSeed person, const char* role, const char* postid);
@@ -425,7 +423,8 @@ local config = {
 		{ id = "tradeonly",		name = ReadText(1001, 2829) },
 	},
 	inventoryTabs = {
-		{ category = "normal",	name = ReadText(1001, 2202),	icon = "pi_inventory",			helpOverlayID = "playerinfo_inventory_normal",		helpOverlayText = ReadText(1028, 7703) },
+		{ category = "normal",	name = ReadText(1001, 2202),	icon = "pi_inventory",		helpOverlayID = "playerinfo_inventory_normal",		helpOverlayText = ReadText(1028, 7703) },
+		{ category = "hq",		name = ReadText(20109, 9001),	icon = "pi_inventory_hq",	helpOverlayID = "playerinfo_inventory_hq",			helpOverlayText = ReadText(1028, 7704),		condition = Helper.hasPlayerHQ },
 	},
 	blacklistTypes = {
 		[1] = { id = "sectortravel",	text = ReadText(1001, 9165), icon = "", displayremoveoption = false, mouseovertext = ReadText(1026, 9101), shorttext = ReadText(1001, 9162) },
@@ -444,7 +443,7 @@ local config = {
 }
 
 if C.AreVenturesCompatible() then
-	table.insert(config.inventoryTabs, { category = "online",	name = ReadText(1001, 7720),	icon = "vt_inventory_player",	helpOverlayID = "playerinfo_inventory_online",		helpOverlayText = ReadText(1028, 3269) })
+	table.insert(config.inventoryTabs, { category = "online",	name = ReadText(1001, 7720),	icon = "vt_inventory_player",	helpOverlayID = "playerinfo_inventory_online",	helpOverlayText = ReadText(1028, 3269) })
 
 	table.insert(config.logbookCategories, { empty = true,		online = true })
 	table.insert(config.logbookCategories, { name = ReadText(1001, 11319),	icon = "vt_logbook",		mode = "online",	online = true })
@@ -495,12 +494,10 @@ function menu.cleanup()
 	menu.topLevelTable = nil
 	menu.infoTable = nil
 	menu.buttonTable = nil
+	menu.topNavbar = nil
 
 	menu.contextMenuMode = nil
 	menu.mouseOutBox = nil
-
-	menu.expandedTransactionEntry = nil
-	menu.transactionSearchString = nil
 
 	menu.inventoryData.selectedWares = {}
 	menu.accountData.transactions = {}
@@ -521,7 +518,6 @@ function menu.cleanup()
 	menu.setselectedcol2 = nil
 	menu.logbookPageEditBox = nil
 	menu.personnelPageEditBox = nil
-	menu.transactionLogEditBox = nil
 	menu.noupdate = nil
 
 	menu.topRows = {}
@@ -559,10 +555,13 @@ function menu.refreshInfoFrame(toprow, selectedrow, mode, selectedrow2)
 	menu.setselectedrow = selectedrow or Helper.currentTableRow[menu.infoTable]
 	if mode == "accounts" then
 		menu.setselectedrow2 = selectedrow2 or Helper.currentTableRow[menu.infoTable]
+	elseif menu.mode == "transactionlog" then
+		if menu.settoprow and Helper.transactionLogData then
+			Helper.transactionLogData.topRowId = menu.rowDataMap[menu.infoTable] and menu.rowDataMap[menu.infoTable][menu.settoprow]
+		end
 	end
 	menu.logbookPageEditBox = nil
 	menu.personnelPageEditBox = nil
-	menu.transactionLogEditBox = nil
 	if menu.inventoryHeaderTable and menu.lastactivetable == menu.inventoryHeaderTable.id then
 		menu.selectedRows.inventoryHeaderTable = menu.selectedRows.inventoryHeaderTable or Helper.currentTableRow[menu.inventoryHeaderTable.id] or 1
 		menu.selectedCols.inventoryHeaderTable = menu.selectedCols.inventoryHeaderTable or Helper.currentTableCol[menu.inventoryHeaderTable.id]
@@ -855,6 +854,8 @@ function menu.buttonInventorySubMode(mode, col)
 				Helper.callExtensionFunction("multiverse", "unregisterOnlineEvents", menu)
 			end
 		end
+		menu.inventoryData.curEntry = {}
+		menu.inventoryData.selectedWares = {}
 		menu.refreshInfoFrame()
 	end
 end
@@ -1088,14 +1089,6 @@ function menu.editboxChangePlayerFactionName(_, text, textchanged)
 	menu.refreshInfoFrame()
 end
 
-function menu.editboxUpdateTransactionSearchString(_, text, textchanged)
-	if textchanged then
-		menu.transactionSearchString = text
-	end
-
-	menu.refreshInfoFrame()
-end
-
 function menu.dropdownInventoryLockbox(_, id)
 	menu.inventoryData.dropLockbox = id
 end
@@ -1313,7 +1306,11 @@ end
 
 function menu.hotkey(action)
 	if action == "INPUT_ACTION_ADDON_DETAILMONITOR_CLOSE_PLAYERINFO" then
-		menu.closeMenu("close")
+		if menu.mode == "inventory" then
+			menu.closeMenu("close")
+		else
+			menu.buttonTogglePlayerInfo("inventory")
+		end
 	end
 end
 
@@ -1357,9 +1354,6 @@ function menu.onShowMenu(state)
 	-- cleanup parameter, so we are not returned automatically to the original mode when opening another menu/conversation from this menu (but a different mode)
 	menu.param[3] = nil
 
-	menu.expandedTransactionEntry = {}
-	menu.transactionSearchString = ""
-
 	menu.initEmpireData()
 	if menu.mode == "globalorders" then
 		if menu.param[4] then
@@ -1381,6 +1375,7 @@ function menu.onShowMenu(state)
 							["trade"] = C.IsPlayerTradeRuleDefault(id, "buy") and C.IsPlayerTradeRuleDefault(id, "sell"),
 							["supply"] = C.IsPlayerTradeRuleDefault(id, "supply"),
 							["build"] = C.IsPlayerTradeRuleDefault(id, "build"),
+							["transmute"] = C.IsPlayerTradeRuleDefault(id, "transmute"),
 						}
 
 						menu.empireData.mode = { "empire_list", "traderule", { id = id, name = ffi.string(buf.name), factions = factions, iswhitelist = buf.iswhitelist, defaults = defaults } }
@@ -1636,9 +1631,9 @@ function menu.createInfoFrame()
 	elseif menu.mode == "factions" then
 		menu.createFactions(menu.infoFrame, tableProperties)
 	elseif menu.mode == "transactionlog" then
-		tableProperties.width = tableProperties.width * 5 / 4
+		tableProperties.width = Helper.round(tableProperties.width * 1.5)
 		tableProperties.x2 = Helper.frameBorder
-		Helper.createTransactionLog(menu.infoFrame, C.GetPlayerID(), tableProperties, menu.refreshInfoFrame, { toprow = menu.settoprow, selectedrow = menu.setselectedrow })
+		Helper.createTransactionLog(menu, C.GetPlayerID(), tableProperties, menu.refreshInfoFrame)
 		menu.lastTransactionLogRefreshTime = getElapsedTime()
 	elseif menu.mode == "empire" then
 		menu.createEmpire(menu.infoFrame, tableProperties)
@@ -1698,7 +1693,7 @@ function menu.createInventory(frame, tableProperties, mode, tabOrderOffset)
 		end
 	end
 
-	if (menu.inventoryData.mode == "normal") or (menu.inventoryData.mode == "drop") or (mode == "personalupgrade") then
+	if (menu.inventoryData.mode == "normal") or (menu.inventoryData.mode == "hq") or (menu.inventoryData.mode == "drop") or (mode == "personalupgrade") then
 		local infotable = frame:addTable(4, { tabOrder = 1 + tabOrderOffset, borderEnabled = true, width = tableProperties.width, maxVisibleHeight = tableProperties.height, multiSelect = true, x = tableProperties.x, y = tableProperties.y })
 		menu.inventoryInfoTable = infotable
 		if menu.setdefaulttable then
@@ -1711,8 +1706,15 @@ function menu.createInventory(frame, tableProperties, mode, tabOrderOffset)
 		infotable:setDefaultBackgroundColSpan(1, 4)
 
 		-- title
+		local title = ReadText(1001, 2202)
+		if mode == "personalupgrade" then
+			title = ReadText(1001, 7716)
+		elseif menu.inventoryData.mode == "hq" then
+			title = ReadText(20109, 9001)
+		end
+
 		local row = infotable:addRow(nil, { fixed = true, bgColor = Color["row_title_background"] })
-		row[1]:setColSpan(4):createText((mode == "personalupgrade") and ReadText(1001, 7716) or ReadText(1001, 2202), Helper.titleTextProperties)
+		row[1]:setColSpan(4):createText(title, Helper.titleTextProperties)
 
 		local wareCategories = {}
 		local wareCategoryIdx = {}
@@ -1721,7 +1723,16 @@ function menu.createInventory(frame, tableProperties, mode, tabOrderOffset)
 			table.insert(wareCategories, { id = entry.id, name = entry.name, data = {} })
 		end
 
-		menu.inventory = GetPlayerInventory()
+		if menu.inventoryData.mode == "hq" then
+			local stationhqlist = {}
+			Helper.ffiVLA(stationhqlist, "UniverseID", C.GetNumHQs, C.GetHQs, "player")
+			local playerhq = stationhqlist[1] or 0
+
+			local hqdefencenpc = GetComponentData(ConvertStringToLuaID(tostring(playerhq)), "defencenpc")
+			menu.inventory = GetInventory(hqdefencenpc)
+		else
+			menu.inventory = GetPlayerInventory()
+		end
 		menu.onlineitems = OnlineGetUserItems()
 		for ware, waredata in Helper.orderedPairs(menu.inventory) do
 			local iscraftingresource, ismodpart, isprimarymodpart, ispersonalupgrade, tradeonly, ispaintmod, isbraneitem = GetWareData(ware, "iscraftingresource", "ismodpart", "isprimarymodpart", "ispersonalupgrade", "tradeonly", "ispaintmod", "isbraneitem")
@@ -1829,66 +1840,68 @@ function menu.createInventory(frame, tableProperties, mode, tabOrderOffset)
 			buttontable:addEmptyRow(Helper.standardTextHeight / 2)
 		end
 
-		local row = buttontable:addRow(nil, { fixed = true })
-		row[1]:setColSpan(3):createText(ReadText(1001, 7735), Helper.subHeaderTextProperties)
-		row[1].properties.halign = "center"
+		if menu.inventoryData.mode ~= "hq" then
+			local row = buttontable:addRow(nil, { fixed = true })
+			row[1]:setColSpan(3):createText(ReadText(1001, 7735), Helper.subHeaderTextProperties)
+			row[1].properties.halign = "center"
 
-		local curOption = menu.inventoryData.dropLockbox or "none"
-		local options = {
-			{ id = "none", text = ReadText(1001, 7731), icon = "", displayremoveoption = false }
-		}
-		for _, box in ipairs(menu.inventoryData.lockboxes) do
-			if (menu.inventoryData.dropLockbox == nil) and (curOption == "none") then
-				menu.inventoryData.dropLockbox = box
-				menu.inventoryData.defaultLockbox = box
-				curOption = box
-			end
-			table.insert(options, { id = box, text = GetMacroData(box, "name"), icon = "", displayremoveoption = false })
-		end
-
-		local row
-		if menu.inventoryData.mode == "drop" then
-			for _, entry in ipairs(menu.inventoryData.dropWares) do
-				local slidermax = entry.amount
-				row = buttontable:addRow(true, { fixed = true })
-				row[1]:setColSpan(3):createSliderCell({ height = Helper.standardButtonHeight, valueColor = Color["slider_value"], min = 0, minSelect = 1, max = slidermax, start = slidermax }):setText(GetWareData(entry.ware, "name"))
-				row[1].handlers.onSliderCellChanged = function (_, value) return menu.slidercellInventoryDrop(entry.ware, value) end
-			end
-
-			row = buttontable:addRow(false, { fixed = true })
-			row[1]:setColSpan(3):createText("")
-
-			row = buttontable:addRow(true, { fixed = true })
-			row[1]:createText(ReadText(1001, 7732))
-			row[2]:setColSpan(2):createDropDown(options, { startOption = curOption })
-			row[2].handlers.onDropDownConfirmed = menu.dropdownInventoryLockbox
-
-			row = buttontable:addRow(true, { fixed = true })
-			-- cancel button
-			row[3]:createButton():setText(ReadText(1001, 64), { halign = "center" })
-			row[3].handlers.onClick = menu.buttonInventoryCancel
-		else
-			row = buttontable:addRow(true, { fixed = true })
-		end
-		-- drop item button
-		row[1]:createButton({ active = menu.inventoryData.mode == "drop", helpOverlayID = "playerinfo_inventory_drop", helpOverlayText = " ", helpOverlayHighlightOnly = true }):setText((menu.inventoryData.dropWares and (#menu.inventoryData.dropWares > 1)) and ReadText(1001, 7733) or ReadText(1001, 7705), { halign = "center" })
-		row[1].handlers.onClick = menu.buttonInventoryDrop
-
-		if menu.inventoryData.mode ~= "drop" then
-			local hasillegalwares = false
-			for ware in pairs(menu.inventory) do
-				if menu.inventoryData.policefaction and IsWareIllegalTo(ware, "player", menu.inventoryData.policefaction) then
-					hasillegalwares = true
-					break
+			local curOption = menu.inventoryData.dropLockbox or "none"
+			local options = {
+				{ id = "none", text = ReadText(1001, 7731), icon = "", displayremoveoption = false }
+			}
+			for _, box in ipairs(menu.inventoryData.lockboxes) do
+				if (menu.inventoryData.dropLockbox == nil) and (curOption == "none") then
+					menu.inventoryData.dropLockbox = box
+					menu.inventoryData.defaultLockbox = box
+					curOption = box
 				end
+				table.insert(options, { id = box, text = GetMacroData(box, "name"), icon = "", displayremoveoption = false })
 			end
 
-			row = buttontable:addRow(true, { fixed = true })
-			row[1]:createButton({ active = hasillegalwares, helpOverlayID = "playerinfo_inventory_dropallillegal", helpOverlayText = " ", helpOverlayHighlightOnly = true }):setText(ReadText(1001, 7734), { halign = "center" })
-			row[1].handlers.onClick = function () return menu.buttonInventoryDropAll(true) end
+			local row
+			if menu.inventoryData.mode == "drop" then
+				for _, entry in ipairs(menu.inventoryData.dropWares) do
+					local slidermax = entry.amount
+					row = buttontable:addRow(true, { fixed = true })
+					row[1]:setColSpan(3):createSliderCell({ height = Helper.standardButtonHeight, valueColor = Color["slider_value"], min = 0, minSelect = 1, max = slidermax, start = slidermax }):setText(GetWareData(entry.ware, "name"))
+					row[1].handlers.onSliderCellChanged = function (_, value) return menu.slidercellInventoryDrop(entry.ware, value) end
+				end
+
+				row = buttontable:addRow(false, { fixed = true })
+				row[1]:setColSpan(3):createText("")
+
+				row = buttontable:addRow(true, { fixed = true })
+				row[1]:createText(ReadText(1001, 7732))
+				row[2]:setColSpan(2):createDropDown(options, { startOption = curOption })
+				row[2].handlers.onDropDownConfirmed = menu.dropdownInventoryLockbox
+
+				row = buttontable:addRow(true, { fixed = true })
+				-- cancel button
+				row[3]:createButton():setText(ReadText(1001, 64), { halign = "center" })
+				row[3].handlers.onClick = menu.buttonInventoryCancel
+			else
+				row = buttontable:addRow(true, { fixed = true })
+			end
+			-- drop item button
+			row[1]:createButton({ active = menu.inventoryData.mode == "drop", helpOverlayID = "playerinfo_inventory_drop", helpOverlayText = " ", helpOverlayHighlightOnly = true }):setText((menu.inventoryData.dropWares and (#menu.inventoryData.dropWares > 1)) and ReadText(1001, 7733) or ReadText(1001, 7705), { halign = "center" })
+			row[1].handlers.onClick = menu.buttonInventoryDrop
+
+			if menu.inventoryData.mode ~= "drop" then
+				local hasillegalwares = false
+				for ware in pairs(menu.inventory) do
+					if menu.inventoryData.policefaction and IsWareIllegalTo(ware, "player", menu.inventoryData.policefaction) then
+						hasillegalwares = true
+						break
+					end
+				end
+
+				row = buttontable:addRow(true, { fixed = true })
+				row[1]:createButton({ active = hasillegalwares, helpOverlayID = "playerinfo_inventory_dropallillegal", helpOverlayText = " ", helpOverlayHighlightOnly = true }):setText(ReadText(1001, 7734), { halign = "center" })
+				row[1].handlers.onClick = function () return menu.buttonInventoryDropAll(true) end
+			end
 		end
 
-		if isonline and (mode ~= "personalupgrade") then
+		if mode ~= "personalupgrade" then
 			local headertable = menu.createInventoryHeader(frame, tableProperties)
 
 			local maxVisibleHeight = infotable.properties.maxVisibleHeight - buttontable:getFullHeight() - headertable:getFullHeight() - Helper.borderSize - Helper.frameBorder
@@ -1959,16 +1972,18 @@ function menu.createInventoryHeader(frame, tableProperties)
 	local count = 1
 	for _, entry in ipairs(categories) do
 		if not entry.empty then
-			local bgcolor = Color["row_title_background"]
-			local color = Color["text_normal"]
-			if entry.category == menu.inventoryData.mode then
-				bgcolor = Color["row_background_selected"]
-			end
+			if (entry.condition == nil) or entry.condition() then
+				local bgcolor = Color["row_title_background"]
+				local color = Color["text_normal"]
+				if entry.category == menu.inventoryData.mode then
+					bgcolor = Color["row_background_selected"]
+				end
 
-			local loccount = count
-			row[loccount]:createButton({ height = menu.sideBarWidth, bgColor = bgcolor, mouseOverText = entry.name, scaling = false, helpOverlayID = entry.helpOverlayID, helpOverlayText = entry.helpOverlayText }):setIcon(entry.icon, { color = color})
-			row[loccount].handlers.onClick = function () return menu.buttonInventorySubMode(entry.category, loccount) end
-			count = count + 1
+				local loccount = count
+				row[loccount]:createButton({ height = menu.sideBarWidth, bgColor = bgcolor, mouseOverText = entry.name, scaling = false, helpOverlayID = entry.helpOverlayID, helpOverlayText = entry.helpOverlayText }):setIcon(entry.icon, { color = color})
+				row[loccount].handlers.onClick = function () return menu.buttonInventorySubMode(entry.category, loccount) end
+				count = count + 1
+			end
 		end
 	end
 
@@ -2239,7 +2254,6 @@ function menu.createEquipmentPropertyEntry(ftable, modclass, property)
 	row[3]:setBackgroundColSpan(4):createText(property.text, { color = color })
 	local minusedcol = 7
 	for quality, entry2 in ipairs(Helper.modQualities) do
-
 		-- kuertee start:
 		-- if modwares[quality].iscraftable then
 		if modwares and modwares[quality] and modwares[quality].iscraftable then
@@ -3557,13 +3571,13 @@ function menu.createPersonnelInfo(frame, tableProperties)
 	-- sort
 	local arrowWidth = Helper.scaleY(config.rowHeight)
 	local row = infotable:addRow(true, { fixed = true })
-	row[1]:setColSpan(3):createButton({ height = config.mapRowHeight }):setText(ReadText(1001, 2809), { x = Helper.standardTextOffsetx }):setIcon((menu.personnelData.sort == "name_inv") and "table_arrow_inv_up" or "table_arrow_inv_down", { scaling = false, width = arrowWidth, height = arrowWidth, x = row[1]:getColSpanWidth() - arrowWidth, color = ((menu.personnelData.sort == "name") or (menu.personnelData.sort == "name_inv")) and Color["icon_normal"] or Color["icon_hidden"] })
+	row[1]:setColSpan(3):createButton({ height = Helper.sortButtonHeight }):setText(ReadText(1001, 2809), { x = Helper.standardTextOffsetx }):setIcon((menu.personnelData.sort == "name_inv") and "table_arrow_inv_up" or "table_arrow_inv_down", { scaling = false, width = arrowWidth, height = arrowWidth, x = row[1]:getColSpanWidth() - arrowWidth, color = ((menu.personnelData.sort == "name") or (menu.personnelData.sort == "name_inv")) and Color["icon_normal"] or Color["icon_hidden"] })
 	row[1].handlers.onClick = function () menu.personnelData.sort = (menu.personnelData.sort == "name") and "name_inv" or "name"; menu.personnelData.curPage = 1; menu.personnelData.curEntry = {}; menu.refreshInfoFrame(1, 1) end
-	row[4]:createButton({ height = config.mapRowHeight }):setText(ReadText(1001, 11037), { x = Helper.standardTextOffsetx }):setIcon((menu.personnelData.sort == "workplace_inv") and "table_arrow_inv_up" or "table_arrow_inv_down", { scaling = false, width = arrowWidth, height = arrowWidth, x = row[4]:getColSpanWidth() - arrowWidth, color = ((menu.personnelData.sort == "workplace") or (menu.personnelData.sort == "workplace_inv")) and Color["icon_normal"] or Color["icon_hidden"] })
+	row[4]:createButton({ height = Helper.sortButtonHeight }):setText(ReadText(1001, 11037), { x = Helper.standardTextOffsetx }):setIcon((menu.personnelData.sort == "workplace_inv") and "table_arrow_inv_up" or "table_arrow_inv_down", { scaling = false, width = arrowWidth, height = arrowWidth, x = row[4]:getColSpanWidth() - arrowWidth, color = ((menu.personnelData.sort == "workplace") or (menu.personnelData.sort == "workplace_inv")) and Color["icon_normal"] or Color["icon_hidden"] })
 	row[4].handlers.onClick = function () menu.personnelData.sort = (menu.personnelData.sort == "workplace") and "workplace_inv" or "workplace"; menu.personnelData.curPage = 1; menu.personnelData.curEntry = {}; menu.refreshInfoFrame(1, 1) end
-	row[6]:createButton({ height = config.mapRowHeight }):setText(ReadText(1001, 11200), { x = Helper.standardTextOffsetx }):setIcon((menu.personnelData.sort == "role_inv") and "table_arrow_inv_up" or "table_arrow_inv_down", { scaling = false, width = arrowWidth, height = arrowWidth, x = row[6]:getColSpanWidth() - arrowWidth, color = ((menu.personnelData.sort == "role") or (menu.personnelData.sort == "role_inv")) and Color["icon_normal"] or Color["icon_hidden"] })
+	row[6]:createButton({ height = Helper.sortButtonHeight }):setText(ReadText(1001, 11200), { x = Helper.standardTextOffsetx }):setIcon((menu.personnelData.sort == "role_inv") and "table_arrow_inv_up" or "table_arrow_inv_down", { scaling = false, width = arrowWidth, height = arrowWidth, x = row[6]:getColSpanWidth() - arrowWidth, color = ((menu.personnelData.sort == "role") or (menu.personnelData.sort == "role_inv")) and Color["icon_normal"] or Color["icon_hidden"] })
 	row[6].handlers.onClick = function () menu.personnelData.sort = (menu.personnelData.sort == "role") and "role_inv" or "role"; menu.personnelData.curPage = 1; menu.personnelData.curEntry = {}; menu.refreshInfoFrame(1, 1) end
-	row[9]:createButton({ height = config.mapRowHeight }):setText(ReadText(1001, 9124), { x = Helper.standardTextOffsetx }):setIcon((menu.personnelData.sort == "skill_inv") and "table_arrow_inv_up" or "table_arrow_inv_down", { scaling = false, width = arrowWidth, height = arrowWidth, x = row[9]:getColSpanWidth() - arrowWidth, color = ((menu.personnelData.sort == "skill") or (menu.personnelData.sort == "skill_inv")) and Color["icon_normal"] or Color["icon_hidden"] })
+	row[9]:createButton({ height = Helper.sortButtonHeight }):setText(ReadText(1001, 9124), { x = Helper.standardTextOffsetx }):setIcon((menu.personnelData.sort == "skill_inv") and "table_arrow_inv_up" or "table_arrow_inv_down", { scaling = false, width = arrowWidth, height = arrowWidth, x = row[9]:getColSpanWidth() - arrowWidth, color = ((menu.personnelData.sort == "skill") or (menu.personnelData.sort == "skill_inv")) and Color["icon_normal"] or Color["icon_hidden"] })
 	row[9].handlers.onClick = function () menu.personnelData.sort = (menu.personnelData.sort == "skill") and "skill_inv" or "skill"; menu.personnelData.curPage = 1; menu.personnelData.curEntry = {}; menu.refreshInfoFrame(1, 1) end
 
 	local found = false
@@ -3621,7 +3635,7 @@ function menu.createPersonnelInfo(frame, tableProperties)
 
 		local isexpanded = menu.isPersonnelExpanded(employeedata.id)
 		local row = infotable:addRow({"personnel_employee", employeedata}, {  })
-		row[1]:createButton({ height = config.mapRowHeight }):setText(function() return isexpanded and "-" or "+" end, { halign = "center" })
+		row[1]:createButton({ height = Helper.standardTextHeight }):setText(function() return isexpanded and "-" or "+" end, { halign = "center" })
 		row[1].handlers.onClick = function() return menu.expandPersonnel(employeedata.id, row.index) end
 		row[2]:createText(name, { mouseOverText = namemouseovertext, color = namecolor })
 		row[4]:createText(workplace)
@@ -4201,6 +4215,7 @@ function menu.createEmpire(frame, tableProperties)
 					["trade"] = C.IsPlayerTradeRuleDefault(id, "buy") and C.IsPlayerTradeRuleDefault(id, "sell"),
 					["supply"] = C.IsPlayerTradeRuleDefault(id, "supply"),
 					["build"] = C.IsPlayerTradeRuleDefault(id, "build"),
+					["transmute"] = C.IsPlayerTradeRuleDefault(id, "transmute"),
 				}
 
 				menu.traderules[i] = { id = id, name = ffi.string(buf.name), factions = factions, iswhitelist = buf.iswhitelist, defaults = defaults }
@@ -5188,6 +5203,11 @@ function menu.setupEmpireRows(mode, properties_table_center, tabOrderOffset, tab
 			row[2]:setColSpan(3):createText(ReadText(1001, 11019))
 			row[5]:createCheckBox(menu.editedTradeRule.defaults.build, {  })
 			row[5].handlers.onClick = function (_, checked) return menu.checkboxTradeRuleDefault("build", checked) end
+			-- transmute
+			row = table_center:addRow(true, {  })
+			row[2]:setColSpan(3):createText(ReadText(1001, 11045))
+			row[5]:createCheckBox(menu.editedTradeRule.defaults.transmute, {  })
+			row[5].handlers.onClick = function (_, checked) return menu.checkboxTradeRuleDefault("transmute", checked) end
 
 			-- data
 			row = table_center:addRow(false, {  })
@@ -5728,6 +5748,9 @@ function menu.buttonTradeRuleConfirm()
 		end
 		if menu.editedTradeRule.defaults.build or menu.traderule.defaults.build then
 			C.SetPlayerTradeRuleDefault(menu.editedTradeRule.id, "build", menu.editedTradeRule.defaults.build)
+		end
+		if menu.editedTradeRule.defaults.transmute or menu.traderule.defaults.transmute then
+			C.SetPlayerTradeRuleDefault(menu.editedTradeRule.id, "transmute", menu.editedTradeRule.defaults.transmute)
 		end
 	end
 
@@ -6620,13 +6643,17 @@ function menu.createContextFrame(data, x, y, width, nomouseout)
 		local row = ftable:addRow(false, { fixed = true, bgColor = Color["row_background_blue"] })
 		row[1]:createText(title, Helper.titleTextProperties)
 
-		row = ftable:addRow(true, { fixed = true })
-		row[1]:createButton({ active = allowencyclopedia, bgColor = allowencyclopedia and Color["button_background_hidden"] or Color["button_background_inactive"] }):setText(ReadText(1001, 2400), { color = allowencyclopedia and Color["text_normal"] or Color["text_inactive"] })
-		row[1].handlers.onClick = function () return menu.buttonInventoryEncyclopedia(data[1]) end
+		if C.IsStoryFeatureUnlocked("x4ep1_encyclopedia") then
+			row = ftable:addRow(true, { fixed = true })
+			row[1]:createButton({ active = allowencyclopedia, bgColor = allowencyclopedia and Color["button_background_hidden"] or Color["button_background_inactive"] }):setText(ReadText(1001, 2400), { color = allowencyclopedia and Color["text_normal"] or Color["text_inactive"] })
+			row[1].handlers.onClick = function () return menu.buttonInventoryEncyclopedia(data[1]) end
+		end
 
-		row = ftable:addRow(true, { fixed = true })
-		row[1]:createButton({ active = allowdrop > 0, bgColor = allowdrop > 0 and Color["button_background_hidden"] or Color["button_background_inactive"], mouseOverText = (allowdrop == counter) and "" or dropmouseovertext }):setText((allowdrop == counter) and ReadText(1001, 7711) or string.format(ReadText(1001, 7712), allowdrop, counter), { color = allowdrop > 0 and Color["text_normal"] or Color["text_inactive"] })
-		row[1].handlers.onClick = function () return menu.buttonInventoryDropAll(false) end
+		if menu.inventoryData.mode ~= "hq" then
+			row = ftable:addRow(true, { fixed = true })
+			row[1]:createButton({ active = allowdrop > 0, bgColor = allowdrop > 0 and Color["button_background_hidden"] or Color["button_background_inactive"], mouseOverText = (allowdrop == counter) and "" or dropmouseovertext }):setText((allowdrop == counter) and ReadText(1001, 7711) or string.format(ReadText(1001, 7712), allowdrop, counter), { color = allowdrop > 0 and Color["text_normal"] or Color["text_inactive"] })
+			row[1].handlers.onClick = function () return menu.buttonInventoryDropAll(false) end
+		end
 	elseif menu.contextMenuMode == "personnel" then
 		local row = ftable:addRow(false, { fixed = true, bgColor = Color["row_background_blue"] })
 		row[1]:createText(menu.personnelData.curEntry.name, Helper.titleTextProperties)
@@ -6710,27 +6737,7 @@ function menu.createContextFrame(data, x, y, width, nomouseout)
 	elseif menu.contextMenuMode == "dropwares" then
 		Helper.createDropWaresContext(menu, menu.contextFrame, "left")
 	elseif menu.contextMenuMode == "transactionlog" then
-		local entryIdx = Helper.transactionLogData.transactionsByIDUnfiltered[data]
-		if entryIdx == nil then
-			return
-		end
-		local entry = Helper.transactionLogData.accountLogUnfiltered[entryIdx]
-		local active = (entry.partner ~= 0) and C.IsComponentOperational(entry.partner)
-
-		local row = ftable:addRow(false, { fixed = true })
-		local text = TruncateText(entry.partnername, Helper.standardFontBold, Helper.scaleFont(Helper.standardFontBold, Helper.headerRow1FontSize), contextmenuwidth - 2 * Helper.scaleX(Helper.standardButtonWidth))
-		row[1]:createText(text, Helper.headerRowCenteredProperties)
-		row[1].properties.mouseOverText = entry.partnername
-
-		row = ftable:addRow(true, { fixed = true })
-		row[1]:createButton({ active = active, bgColor = active and Color["button_background_default"] or Color["button_background_inactive"] }):setText(ReadText(1001, 2427), { color = active and Color["text_normal"] or Color["text_inactive"] })
-		row[1].handlers.onClick = function () return menu.buttonContainerInfo(entry.partner) end
-
-		if active and GetComponentData(ConvertStringTo64Bit(tostring(entry.partner)), "isplayerowned") then
-			row = ftable:addRow(true, { fixed = true })
-			row[1]:createButton({ active = active, bgColor = active and Color["button_background_default"] or Color["button_background_inactive"] }):setText(ReadText(1001, 7702), { color = active and Color["text_normal"] or Color["text_inactive"] })
-			row[1].handlers.onClick = function () return menu.buttonTransactionLog(entry.partner) end
-		end
+		Helper.createTransactionLogTableContext(menu, ftable, data)
 	elseif menu.contextMenuMode == "venturecontactcontext" then
 		Helper.createVentureContactContext(menu, menu.contextFrame)
 	elseif menu.contextMenuMode == "venturefriendlist" then
@@ -6988,6 +6995,8 @@ function menu.viewCreated(layer, ...)
 	elseif layer == config.infoLayer then
 		if menu.mode == "logbook" then
 			menu.topLevelTable, menu.titleTable, menu.infoTable, menu.buttonTable = ...
+		elseif menu.mode == "transactionlog" then
+			menu.topLevelTable, menu.topNavbar, menu.infoTable, menu.buttonTable = ...
 		else
 			menu.topLevelTable, menu.infoTable, menu.buttonTable = ...
 		end
@@ -7054,12 +7063,15 @@ function menu.onUpdate()
 	end
 
 	if menu.mode == "transactionlog" then
-		Helper.onTransactionLogUpdate()
 		if not Helper.transactionLogData.noupdate then
 			local curtime = getElapsedTime()
-			if curtime > menu.lastTransactionLogRefreshTime + 10 then
+			if menu.lastTransactionLogRefreshTime and (curtime > menu.lastTransactionLogRefreshTime + 10) then
 				menu.refreshInfoFrame()
 			end
+		end
+		if Helper.transactionLogData and Helper.transactionLogData.graphUpdateSelection then
+			Helper.updateTransactionLogGraphSelection()
+			Helper.transactionLogData.graphUpdateSelection = false
 		end
 	end
 
@@ -7460,23 +7472,7 @@ function menu.onTableRightMouseClick(uitable, row, posx, posy)
 		end
 	elseif menu.mode == "transactionlog" then
 		if uitable == menu.infoTable then
-			local rowdata = menu.rowDataMap[uitable] and menu.rowDataMap[uitable][row]
-
-			local entryIdx = Helper.transactionLogData.transactionsByIDUnfiltered[rowdata]
-			if entryIdx == nil then
-				return
-			end
-			local entry = Helper.transactionLogData.accountLogUnfiltered[entryIdx]
-			if entry.partnername ~= "" then
-				local x, y = GetLocalMousePosition()
-				if x == nil then
-					-- gamepad case
-					x = posx
-					y = -posy
-				end
-				menu.contextMenuMode = "transactionlog"
-				menu.createContextFrame(rowdata, x + Helper.viewWidth / 2, Helper.viewHeight / 2 - y, Helper.scaleX(260))
-			end
+			Helper.onTransactionLogTableRightMouseClick(menu, uitable, row, posx, posy)
 		end
 	elseif menu.mode == "venturecontacts" then
 		if uitable == menu.infoTable then

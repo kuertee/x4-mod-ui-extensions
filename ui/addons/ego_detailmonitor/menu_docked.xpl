@@ -75,7 +75,6 @@ ffi.cdef[[
 	uint32_t GetAllSatellites(AmmoData* result, uint32_t resultlen, UniverseID defensibleid);
 	double GetBuildProcessorEstimatedTimeLeft(UniverseID buildprocessorid);
 	uint32_t GetBuildTasks(BuildTaskInfo* result, uint32_t resultlen, UniverseID containerid, UniverseID buildmoduleid, bool isinprogress, bool includeupgrade);
-	const char* GetComponentName(UniverseID componentid);
 	UniverseID GetContextByClass(UniverseID componentid, const char* classname, bool includeself);
 	const char* GetCurrentAmmoOfWeapon(UniverseID weaponid);
 	const char* GetCurrentDroneMode(UniverseID defensibleid, const char* dronetype);
@@ -177,7 +176,7 @@ local config = {
 		{ id = "lasertower",	type = "military",	getnum = C.GetNumAllLaserTowers,	getdata = C.GetAllLaserTowers,		callback = C.LaunchLaserTower },
 		{ id = "mine",			type = "military",	getnum = C.GetNumAllMines,			getdata = C.GetAllMines,			callback = C.LaunchMine },
 	},
-	inactiveButtonProperties = { bgColor = Color["button_background_inactive"], highlightColor = Color["button_highlight_inactive"] },
+	inactiveButtonProperties = { bgColor = Color["button_background_inactive"], highlightColor = Color["button_highlight_inactive"], borderColor = Color["button_border_inactive"] },
 	activeButtonTextProperties = { halign = "center" },
 	inactiveButtonTextProperties = { halign = "center", color = Color["text_inactive"] },
 	dronetypes = {
@@ -583,7 +582,7 @@ function menu.display()
 		if active then
 			row[1].handlers.onClick = menu.buttonFlightAssist
 		end
-		row[2]:createButton({ bgColor = menu.dockButtonBGColor, highlightColor = menu.dockButtonHighlightColor, helpOverlayID = "docked_dock", helpOverlayText = " ", helpOverlayHighlightOnly = true }):setText(ReadText(1001, 8605), { halign = "center", color = menu.dockButtonTextColor })	-- "Dock"
+		row[2]:createButton({ bgColor = menu.dockButtonBGColor, highlightColor = menu.dockButtonHighlightColor, borderColor = menu.dockButtonBorderColor, helpOverlayID = "docked_dock", helpOverlayText = " ", helpOverlayHighlightOnly = true }):setText(ReadText(1001, 8605), { halign = "center", color = menu.dockButtonTextColor })	-- "Dock"
 		row[2].properties.mouseOverText = GetLocalizedKeyName("action", 175)
 		row[2].handlers.onClick = menu.buttonDock
 		local active = (menu.currentplayership ~= 0) and C.ToggleAutoPilot(true)
@@ -609,7 +608,7 @@ function menu.display()
 				local buf = ffi.new("ShipStanceInfo[?]", numstances)
 				numstances = C.GetShipStances(buf, numstances, menu.currentplayership)
 				for i = 0, numstances - 1 do
-					table.insert(stanceoptions, { id = ffi.string(buf[i].id), text = "\27[" .. ffi.string(buf[i].iconid) .. "] " .. ffi.string(buf[i].name), text2 = "", icon = "", displayremoveoption = false })
+					table.insert(stanceoptions, { id = ffi.string(buf[i].id), text = "\27[" .. ffi.string(buf[i].iconid) .. "] " .. ffi.string(buf[i].name), text2 = "", icon = "", displayremoveoption = false, mouseovertext = ffi.string(buf[i].description) })
 				end
 				if ffi.string(C.GetShipDefaultStance(menu.currentplayership)) == "" then -- sic! If the default stance doesn't exist, we need to add a neutral option
 					table.insert(stanceoptions, 1, { id = "neutral", text = "\27[stance_neutral] " .. ReadText(1001, 8644), text2 = "", icon = "", displayremoveoption = false })
@@ -630,7 +629,7 @@ function menu.display()
 			if coverfaction ~= "" then
 				-- story case
 				local row = table_header:addRow(true, { bgColor = Color["row_background_unselectable"] })
-				row[1]:setColSpan(6):createText(ReadText(1001, 8643))
+				row[1]:setColSpan(6):createText(ReadText(1001, 8643), { y = Helper.standardTextToButtonPadding })
 
 				local mouseovertext = ReadText(1026, 8611) .. ReadText(1001, 120) .. " " .. ColorText["licence"] .. GetFactionData(coverfaction, "name") .. "\27X"
 				local shortcut = GetLocalizedKeyName("action", 377)
@@ -1218,7 +1217,7 @@ function menu.display()
 		end
 		if not istimelineshub then
 			if menu.currentplayership ~= 0 then
-				row[2]:createButton({ mouseOverText = GetLocalizedKeyName("action", 175), bgColor = menu.undockButtonBGColor, highlightColor = menu.undockButtonHighlightColor, helpOverlayID = "docked_undock", helpOverlayText = " ", helpOverlayHighlightOnly = true }):setText(ReadText(1002, 20013), { halign = "center", color = menu.undockButtonTextColor })	-- "Undock"
+				row[2]:createButton({ mouseOverText = GetLocalizedKeyName("action", 175), bgColor = menu.undockButtonBGColor, highlightColor = menu.undockButtonHighlightColor, borderColor = menu.undockButtonBorderColor, helpOverlayID = "docked_undock", helpOverlayText = " ", helpOverlayHighlightOnly = true }):setText(ReadText(1002, 20013), { halign = "center", color = menu.undockButtonTextColor })	-- "Undock"
 				row[2].handlers.onClick = menu.buttonUndock
 			else
 				row[2]:createButton({ mouseOverText = GetLocalizedKeyName("action", 175), helpOverlayID = "docked_gotoship", helpOverlayText = " ", helpOverlayHighlightOnly = true }):setText(ReadText(1001, 7305), { halign = "center" })	-- "Go to Ship"
@@ -1296,6 +1295,10 @@ function menu.dockButtonHighlightColor()
 	return menu.isDockButtonActive() and Color["button_highlight_default"] or Color["button_highlight_inactive"]
 end
 
+function menu.dockButtonBorderColor()
+	return menu.isDockButtonActive() and Color["button_border_default"] or Color["button_border_inactive"]
+end
+
 function menu.dockButtonTextColor()
 	return menu.isDockButtonActive() and Color["text_normal"] or Color["text_inactive"]
 end
@@ -1310,6 +1313,10 @@ end
 
 function menu.undockButtonHighlightColor()
 	return menu.isUndockButtonActive() and Color["button_highlight_default"] or Color["button_highlight_inactive"]
+end
+
+function menu.undockButtonBorderColor()
+	return menu.isUndockButtonActive() and Color["button_border_default"] or Color["button_border_inactive"]
 end
 
 function menu.undockButtonTextColor()
@@ -1662,7 +1669,7 @@ function menu.onCloseElement(dueToClose)
 	end
 end
 
--- kuetee start:
+-- kuertee start:
 menu.uix_callbackCount = 0
 function menu.registerCallback(callbackName, callbackFunction, id)
     -- note 1: format is generally [function name]_[action]. e.g.: in kuertee_menu_transporter, "display_on_set_room_active" overrides the room's active property with the return of the callback.
@@ -1761,12 +1768,12 @@ function menu.updateCallbacksNow()
                         Helper.debugText_forced(menu.name .. " uix updateCallbacksNow (post): menu.uix_callbacks[" .. tostring(callbackName) .. "][" .. tostring(updateData.id) .. "]: " .. tostring(menu.uix_callbacks[callbackName][updateData.id]))
                     end
                 else
-                    Helper.debugText_forced(menu.name .. " uix updateCallbacksNow: callback at " .. callbackName .. " with id " .. tostring(id) .. " doesn't exist")
+                    Helper.debugText_forced(menu.name .. " uix updateCallbacksNow: callback at " .. callbackName .. " with id " .. tostring(updateData.id) .. " doesn't exist")
                 end
             end
         end
     end
 end
--- kuerte end
+-- kuertee end
 
 init()
