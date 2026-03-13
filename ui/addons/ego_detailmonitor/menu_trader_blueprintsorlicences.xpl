@@ -338,16 +338,16 @@ function menu.display(firsttime)
 
 				row = menu.table_top:addRow({ "entry", licence.id }, {  })
 
-				row[1]:setColSpan(3):createText(licence.name, {color = function() return menu.licencestopurchase[licence.id] and Color["text_positive"] or Color["text_normal"] end})
+				row[1]:setColSpan(3):createText(licence.name, { y = Helper.standardTextToButtonPadding, color = function() return menu.licencestopurchase[licence.id] and Color["text_positive"] or Color["text_normal"] end })
 
 				if not haslicence then
-					row[4]:createText((ConvertMoneyString(tostring(licence.price), false, true, nil, true) .. " " .. ReadText(1001, 101)), {halign = "right", color = function() return menu.licencestopurchase[licence.id] and Color["text_positive"] or Color["text_normal"] end})
+					row[4]:createText((ConvertMoneyString(tostring(licence.price), false, true, nil, true) .. " " .. ReadText(1001, 101)), { halign = "right", y = Helper.standardTextToButtonPadding, color = function() return menu.licencestopurchase[licence.id] and Color["text_positive"] or Color["text_normal"] end })
 				end
 
 				--print("available cash: " .. tostring(menu.playermoney - menu.totalprice) .. " price: " .. tostring(price) .. " active? " .. tostring((menu.playermoney - menu.totalprice) > price) .. " total cash: " .. tostring(menu.playermoney) .. " total price: " .. tostring(menu.totalprice))
 				--print("licence: " .. tostring(licence) .. " canpurchase: " .. tostring(canpurchase))
 				if haslicence then
-					row[5]:createText(ReadText(1001, 84), { halign = "center", color = Color["text_player"], x = 0, minRowHeight = Helper.standardButtonHeight })
+					row[5]:createText(ReadText(1001, 84), { halign = "center", color = Color["text_player"], x = 0, y = Helper.standardTextToButtonPadding, minRowHeight = Helper.standardButtonHeight })
 				else
 					row[5]:createButton({ active = (menu.licencestopurchase[licence.id] and true) or (canpurchase and (menu.playermoney - menu.totalprice) > licence.price) or false })
 					row[5]:setText(function() return (HasLicence("player", licence.type, menu.traderfaction) and ReadText(1001, 84)) or (menu.licencestopurchase[licence.id] and ReadText(1001, 17)) or ReadText(1001, 3102) end, {halign = "center"})		-- Owned, Selected, Select
@@ -396,9 +396,9 @@ function menu.display(firsttime)
 									end
 
 									local mouseovertext = ""
-									local compatibilityinfo = GetMacroData(macro, "compatibilityinfo")
+									local compatibilityinfo = GetMacroData(macro, "compatibilityinfo")										-- kuertee start:
 
-									-- kuertee start:
+                                    -- kuertee start:
 									if not compatibilityinfo then
 										compatibilityinfo = {}
 									end
@@ -415,26 +415,26 @@ function menu.display(firsttime)
 
 									row = menu.table_top:addRow({ "entry", ware }, {  })
 
-									row[3]:setColSpan(menu.blueprintlist[ware] and 2 or 1):createText(GetWareData(ware, "name"), { color = function() return menu.blueprintstopurchase[ware] and Color["text_positive"] or Color["text_normal"] end, x = Helper.standardTextOffsetx + Helper.standardIndentStep * 2, mouseOverText = mouseovertext })
+									row[3]:setColSpan(menu.blueprintlist[ware] and 2 or 1):createText(GetWareData(ware, "name"), { color = function() return menu.blueprintstopurchase[ware] and Color["text_positive"] or Color["text_normal"] end, x = Helper.standardTextOffsetx + Helper.standardIndentStep * 2, y = Helper.standardTextToButtonPadding, mouseOverText = mouseovertext })
 
-									-- start: mycu callback
-									if menu.uix_callbacks ["display_on_after_create_equipment_text"] then
-										for uix_id, uix_callback in pairs (menu.uix_callbacks ["display_on_after_create_equipment_text"]) do
-											local name, macro = GetWareData(ware, "name", "component")
-											result = uix_callback (macro, macro, name)
-											if result then
-												row[3].properties.mouseOverText = result.mouseovertext
+										-- start: mycu callback
+										if menu.uix_callbacks ["display_on_after_create_equipment_text"] then
+											for uix_id, uix_callback in pairs (menu.uix_callbacks ["display_on_after_create_equipment_text"]) do
+												local name, macro = GetWareData(ware, "name", "component")
+												result = uix_callback (macro, macro, name)
+												if result then
+													row[3].properties.mouseOverText = result.mouseovertext
+												end
 											end
 										end
-									end
-									-- end: mycu callback
+										-- end: mycu callback
 
 									if not menu.blueprintlist[ware] then
-										row[4]:createText((ConvertMoneyString(tostring(price), false, true, nil, true) .. " " .. ReadText(1001, 101)), { halign = "right", color = function() return menu.blueprintstopurchase[ware] and Color["text_positive"] or Color["text_normal"] end, mouseOverText = mouseovertext })
+										row[4]:createText((ConvertMoneyString(tostring(price), false, true, nil, true) .. " " .. ReadText(1001, 101)), { halign = "right", y = Helper.standardTextToButtonPadding, color = function() return menu.blueprintstopurchase[ware] and Color["text_positive"] or Color["text_normal"] end, mouseOverText = mouseovertext })
 									end
 
 									if menu.blueprintlist[ware] then
-										row[5]:createText(ReadText(1001, 84), { halign = "center", color = Color["text_player"], x = 0, minRowHeight = Helper.standardButtonHeight })
+										row[5]:createText(ReadText(1001, 84), { halign = "center", color = Color["text_player"], x = 0, y = Helper.standardTextToButtonPadding, minRowHeight = Helper.standardButtonHeight })
 									else
 										row[5]:createButton({ active = menu.blueprintstopurchase[ware] and true or (licenced and (menu.playermoney - menu.totalprice) > price) })
 										row[5]:setText(function() return menu.blueprintstopurchase[ware] and ReadText(1001, 17) or ReadText(1001, 3102) end, {halign = "center"})		-- Selected, Select
@@ -590,16 +590,16 @@ function menu.showEntry(entry, tag, indent)
 	end
 
 	row = menu.table_top:addRow({ "entry", ware }, {})
-	row[3]:createText(entry.name, { color = function() return menu.blueprintstopurchase[ware] and Color["text_positive"] or Color["text_normal"] end, x = Helper.standardTextOffsetx + Helper.standardIndentStep * indent })
+	row[3]:createText(entry.name, { color = function() return menu.blueprintstopurchase[ware] and Color["text_positive"] or Color["text_normal"] end, x = Helper.standardTextOffsetx + Helper.standardIndentStep * indent, y = Helper.standardTextToButtonPadding })
 
 	if not menu.blueprintlist[ware] then
-		row[4]:createText((ConvertMoneyString(tostring(price), false, true, nil, true) .. " " .. ReadText(1001, 101)), {halign = "right", color = function() return menu.blueprintstopurchase[ware] and Color["text_positive"] or Color["text_normal"] end})
+		row[4]:createText((ConvertMoneyString(tostring(price), false, true, nil, true) .. " " .. ReadText(1001, 101)), {halign = "right", y = Helper.standardTextToButtonPadding, color = function() return menu.blueprintstopurchase[ware] and Color["text_positive"] or Color["text_normal"] end})
 	end
 
 	--print("available cash: " .. tostring(menu.playermoney - menu.totalprice) .. " price: " .. tostring(price) .. " active? " .. tostring((menu.playermoney - menu.totalprice) > price) .. " total cash: " .. tostring(menu.playermoney) .. " total price: " .. tostring(menu.totalprice))
 	--print("ware: " .. tostring(ware) .. " trade licence: " .. tostring(GetWareData(ware, "tradelicence")) .. " player has licence: " .. tostring(HasLicence("player", GetWareData(ware, "tradelicence"), menu.traderfaction)))
 	if menu.blueprintlist[ware] then
-		row[5]:createText(ReadText(1001, 84), { halign = "center", color = Color["text_player"], x = 0, minRowHeight = Helper.standardButtonHeight })
+		row[5]:createText(ReadText(1001, 84), { halign = "center", color = Color["text_player"], x = 0, y = Helper.standardTextToButtonPadding, minRowHeight = Helper.standardButtonHeight })
 	else
 		row[5]:createButton({ active = menu.blueprintstopurchase[ware] and true or (licenced and (menu.playermoney - menu.totalprice) > price) })
 		row[5].properties.helpOverlayID = "trader_purchase_" .. tostring(ware)
@@ -882,7 +882,7 @@ function menu.updateCallbacksNow()
                         Helper.debugText_forced(menu.name .. " uix updateCallbacksNow (post): menu.uix_callbacks[" .. tostring(callbackName) .. "][" .. tostring(updateData.id) .. "]: " .. tostring(menu.uix_callbacks[callbackName][updateData.id]))
                     end
                 else
-                    Helper.debugText_forced(menu.name .. " uix updateCallbacksNow: callback at " .. callbackName .. " with id " .. tostring(id) .. " doesn't exist")
+                    Helper.debugText_forced(menu.name .. " uix updateCallbacksNow: callback at " .. callbackName .. " with id " .. tostring(updateData.id) .. " doesn't exist")
                 end
             end
         end

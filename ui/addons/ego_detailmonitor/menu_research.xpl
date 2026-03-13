@@ -45,7 +45,6 @@ local function init()
 	if Helper then
 		Helper.registerMenu(menu)
 	end
-
     -- kuertee start:
     menu.init_kuertee()
     -- kuertee end
@@ -160,6 +159,7 @@ function menu.onShowMenu()
 			local precursordata = {}
 			local smallestMainIdx, foundPrecusorCol
 			-- try to find all precusors in existing data
+			local precursorsByTech = {}
 			for i, precursor in ipairs(techprecursors) do
 				local mainIdx, precursorCol = menu.findTech(menu.techtree, precursor)
 				-- print("    precusor " .. precursor .. ": " .. tostring(mainIdx) .. ", " .. tostring(precursorCol))
@@ -168,6 +168,7 @@ function menu.onShowMenu()
 					foundPrecusorCol = precursorCol
 				end
 				precursordata[i] = { mainIdx = mainIdx, precursorCol = precursorCol }
+				precursorsByTech[precursor] = true
 			end
 			-- sort so that highest index comes first - important for deletion order and keeping smallestMainIdx valid
 			table.sort(precursordata, menu.precursorSorter)
@@ -193,10 +194,10 @@ function menu.onShowMenu()
 				local state_completed = C.HasResearched(temptechlist[idx])
 				if menu.techtree[smallestMainIdx][foundPrecusorCol + 1] then
 					-- print("    adding")
-					table.insert(menu.techtree[smallestMainIdx][foundPrecusorCol + 1], { tech = temptechlist[idx], sortorder = sortorder, completed = state_completed })
+					table.insert(menu.techtree[smallestMainIdx][foundPrecusorCol + 1], { tech = temptechlist[idx], sortorder = sortorder, completed = state_completed, precursors = precursorsByTech })
 				else
 					-- print("    new entry")
-					menu.techtree[smallestMainIdx][foundPrecusorCol + 1] = { [1] = { tech = temptechlist[idx], sortorder = sortorder, completed = state_completed } }
+					menu.techtree[smallestMainIdx][foundPrecusorCol + 1] = { [1] = { tech = temptechlist[idx], sortorder = sortorder, completed = state_completed, precursors = precursorsByTech } }
 				end
 				-- print("    removed")
 				table.remove(temptechlist, idx)
@@ -261,7 +262,7 @@ function menu.display()
 
 	-- HACK: Disabling the top level tab table as interactive object
 	local table_data = menu.frame:addTable( 1, { tabOrder = 1, highlightMode = "column", width = width, x = xoffset, y = menu.topLevelOffsetY + Helper.borderSize } )
-
+	
 	local rightBarX = Helper.viewWidth - Helper.scaleX(Helper.sidebarWidth) - Helper.frameBorder
 	local width = rightBarX - Helper.frameBorder - Helper.borderSize
 
@@ -383,12 +384,14 @@ function menu.display()
 				if col > 1 then
 					for k, previousentry in ipairs(mainentry[col - 1]) do
 						-- print("adding edge from node " .. previousentry.tech .. " to " .. techentry.tech)
-						local edge = previousentry.node:addEdgeTo(techentry.node)
-						if not previousentry.completed then
-							edge.properties.sourceSlotColor = Color["research_incomplete"]
-							edge.properties.color = Color["research_incomplete"]
+						if techentry.precursors[previousentry.tech] then
+							local edge = previousentry.node:addEdgeTo(techentry.node)
+							if not previousentry.completed then
+								edge.properties.sourceSlotColor = Color["research_incomplete"]
+								edge.properties.color = Color["research_incomplete"]
+							end
+							edge.properties.destSlotColor = color
 						end
-						edge.properties.destSlotColor = color
 					end
 				end
 			end
@@ -407,7 +410,7 @@ function menu.display()
 
 	local stationhqlist = {}
 	Helper.ffiVLA(stationhqlist, "UniverseID", C.GetNumHQs, C.GetHQs, "player")
-	Helper.createRightSideBar(menu.frame, ConvertStringTo64Bit(tostring(stationhqlist[1] or 0)), #menu.researchmodules > 0, "research", menu.buttonRightBar)
+	Helper.createRightSideBar(menu, menu.frame, ConvertStringTo64Bit(tostring(stationhqlist[1] or 0)), #menu.researchmodules > 0, "research", menu.buttonRightBar)
 
 	-- display view/frame
 	menu.frame:display()
@@ -426,7 +429,7 @@ function menu.onFlowchartNodeExpanded(node, frame, ftable, ftable2)
 end
 
 function menu.researchStateText(researchware)
-	if menu.currentResearch[researchware] ~= nil then
+	if menu.currentResearch[researchware] ~= nil then 
 		local proddata = GetProductionModuleData(ConvertStringTo64Bit(tostring(menu.currentResearch[researchware])))
 		return ((proddata.state == "waitingforresources") and ReadText(1001, 4231) or ReadText(1001, 7409)) .. ReadText(1001, 120)
 	end
@@ -434,7 +437,7 @@ function menu.researchStateText(researchware)
 end
 
 function menu.researchTimeText(researchware, researchtime)
-	if menu.currentResearch[researchware] ~= nil then
+	if menu.currentResearch[researchware] ~= nil then 
 		local proddata = GetProductionModuleData(ConvertStringTo64Bit(tostring(menu.currentResearch[researchware])))
 		return (proddata.state == "waitingforresources") and ConvertTimeString(researchtime) or ConvertTimeString(menu.currentResearch[researchware] and (proddata.remainingcycletime or 0) or 0)
 	end
@@ -761,7 +764,7 @@ function menu.buttonAccountConfirm()
 
 			SetMaxBudget(container, (menu.newAccountValue * 3) / 2)
 			SetMinBudget(container, menu.newAccountValue)
-
+		
 			if amount > 0 then
 				TransferPlayerMoneyTo(amount, container)
 			else

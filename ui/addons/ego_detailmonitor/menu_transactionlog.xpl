@@ -45,6 +45,14 @@ end
 function menu.cleanup()
 	menu.infoFrame = nil
 	menu.sidebar = nil
+	menu.topNavbar = nil
+	menu.infoTable = nil
+
+	menu.settoprow = nil
+	menu.setselectedrow = nil
+	menu.settoprowid = nil
+
+	menu.selectedRows = {}
 
 	-- start: kuertee call-back
 	if menu.uix_callbacks ["cleanup"] then
@@ -87,18 +95,29 @@ function menu.onShowMenu()
 	menu.createFrame()
 end
 
-function menu.createFrame(toprow, selectedrow)
+function menu.refreshInfoFrame(toprow, selectedrow)
+	if menu.infoTable then
+		menu.settoprow = toprow or GetTopRow(menu.infoTable)
+		if menu.settoprow and Helper.transactionLogData then
+			Helper.transactionLogData.topRowId = menu.rowDataMap[menu.infoTable] and menu.rowDataMap[menu.infoTable][menu.settoprow]
+		end
+		menu.setselectedrow = selectedrow or Helper.currentTableRow[menu.infoTable]
+	end
+
+	menu.createFrame()
+end
+
+function menu.createFrame()
 	-- remove old data
 	Helper.clearDataForRefresh(menu, config.infoLayer)
 
 	local frameProperties = {
 		layer = config.infoLayer,
-		standardButtons = {},
+		standardButtons = { back = true, close = true, help = true  },
 		width = Helper.viewWidth,
 		height = Helper.viewHeight,
 		x = 0,
 		y = 0,
-		standardButtons = { back = true, close = true, help = true  }
 	}
 	menu.infoFrame = Helper.createFrameHandle(menu, frameProperties)
 	menu.infoFrame:setBackground("solid", { color = Color["frame_background_semitransparent"] })
@@ -106,22 +125,18 @@ function menu.createFrame(toprow, selectedrow)
 	menu.sidebarWidth = Helper.scaleX(Helper.sidebarWidth)
 
 	if menu.isstation then
-		local rightbartable = Helper.createRightSideBar(menu.infoFrame, menu.container, true, "transactions", menu.buttonRightBar)
+		local rightbartable = Helper.createRightSideBar(menu, menu.infoFrame, menu.container, true, "transactions", menu.buttonRightBar)
 		rightbartable:addConnection(1, 4, true)
 	end
 
 	local tableProperties = {
-		width = Helper.playerInfoConfig.width * 5 / 4,
+		width = Helper.round(Helper.playerInfoConfig.width * 1.5),
 		height = Helper.viewHeight - 2 * Helper.frameBorder,
 		x = Helper.frameBorder,
 		y = Helper.frameBorder,
 		x2 = menu.isstation and (menu.sidebarWidth + Helper.borderSize + Helper.frameBorder) or Helper.frameBorder,
 	}
-	local selection = {}
-	if menu.infoTable then
-		selection = { toprow = toprow or GetTopRow(menu.infoTable), selectedrow = selectedrow or Helper.currentTableRow[menu.infoTable] }
-	end
-	Helper.createTransactionLog(menu.infoFrame, menu.container, tableProperties, menu.createFrame, selection)
+	Helper.createTransactionLog(menu, menu.container, tableProperties, menu.refreshInfoFrame)
 
 	-- start: kuertee call-back
 	if menu.uix_callbacks ["createFrame_on_create_transaction_log"] then
@@ -152,27 +167,9 @@ function menu.createContextFrame(data, x, y, width, nomouseout)
 	menu.contextFrame:setBackground("solid", { color = Color["frame_background_semitransparent"] })
 
 	local ftable = menu.contextFrame:addTable(1, { tabOrder = 4, highlightMode = "off" })
-	local entryIdx = Helper.transactionLogData.transactionsByIDUnfiltered[data]
-	if entryIdx == nil then
-		return
-	end
-	local entry = Helper.transactionLogData.accountLogUnfiltered[entryIdx]
-	local active = (entry.partner ~= 0) and C.IsComponentOperational(entry.partner)
 
-	local row = ftable:addRow(false, { fixed = true })
-	local text = TruncateText(entry.partnername, Helper.standardFontBold, Helper.scaleFont(Helper.standardFontBold, Helper.headerRow1FontSize), contextmenuwidth - 2 * Helper.scaleX(Helper.standardButtonWidth))
-	row[1]:createText(text, Helper.headerRowCenteredProperties)
-	row[1].properties.mouseOverText = entry.partnername
-
-	row = ftable:addRow(true, { fixed = true })
-	row[1]:createButton({ active = active and C.IsStoryFeatureUnlocked("x4ep1_map"), bgColor = active and Color["button_background_default"] or Color["button_background_inactive"] }):setText(ReadText(1001, 2427), { color = active and Color["text_normal"] or Color["text_inactive"] })
-	row[1].handlers.onClick = function () return menu.buttonContainerInfo(entry.partner) end
-
-	if active and GetComponentData(ConvertStringTo64Bit(tostring(entry.partner)), "isplayerowned") then
-		row = ftable:addRow(true, { fixed = true })
-		row[1]:createButton({ active = active, bgColor = active and Color["button_background_default"] or Color["button_background_inactive"] }):setText(ReadText(1001, 7702), { color = active and Color["text_normal"] or Color["text_inactive"] })
-		row[1].handlers.onClick = function () return menu.buttonTransactionLog(entry.partner) end
-	end
+	-- fill data
+	Helper.createTransactionLogTableContext(menu, ftable, data)
 
 	if menu.contextFrame.properties.x + contextmenuwidth > Helper.viewWidth then
 		menu.contextFrame.properties.x = Helper.viewWidth - contextmenuwidth - Helper.frameBorder
@@ -198,9 +195,9 @@ end
 
 function menu.viewCreated(layer, ...)
 	if menu.isstation then
-		menu.sidebar, menu.infoTable = ...
+		menu.sidebar, menu.topNavbar, menu.infoTable = ...
 	else
-		menu.infoTable = ...
+		menu.topNavbar, menu.infoTable = ...
 	end
 end
 
@@ -208,8 +205,6 @@ end
 menu.updateInterval = 0.1
 
 function menu.onUpdate()
-	Helper.onTransactionLogUpdate()
-
 	-- kuertee start: in case onUpdate is called without the menu being opened. i.e. from kuertee_trade_analytics mod.
 	if not menu.infoFrame then
 		return
@@ -221,8 +216,13 @@ function menu.onUpdate()
 	if not Helper.transactionLogData.noupdate then
 		local curtime = getElapsedTime()
 		if curtime > menu.lastRefreshTime + 10 then
-			menu.createFrame()
+			menu.refreshInfoFrame()
 		end
+	end
+
+	if Helper.transactionLogData and Helper.transactionLogData.graphUpdateSelection then
+		Helper.updateTransactionLogGraphSelection()
+		Helper.transactionLogData.graphUpdateSelection = false
 	end
 
 	if menu.mouseOutBox then
@@ -252,23 +252,7 @@ end
 
 function menu.onTableRightMouseClick(uitable, row, posx, posy)
 	if uitable == menu.infoTable then
-		local rowdata = menu.rowDataMap[uitable] and menu.rowDataMap[uitable][row]
-
-		local entryIdx = Helper.transactionLogData.transactionsByIDUnfiltered[rowdata]
-		if entryIdx == nil then
-			return
-		end
-		local entry = Helper.transactionLogData.accountLogUnfiltered[entryIdx]
-		if entry.partnername ~= "" then
-			local x, y = GetLocalMousePosition()
-			if x == nil then
-				-- gamepad case
-				x = posx
-				y = -posy
-			end
-			menu.contextMenuMode = "transactionlog"
-			menu.createContextFrame(rowdata, x + Helper.viewWidth / 2, Helper.viewHeight / 2 - y, Helper.scaleX(260))
-		end
+		Helper.onTransactionLogTableRightMouseClick(menu, uitable, row, posx, posy)
 	end
 end
 

@@ -124,6 +124,7 @@ function menu.createInfoFrame()
 		y = Helper.scaleY(config.offsetY),
 		layer = config.layer,
 		startAnimation = false,
+		blurBackground = false,
 		playerControls = true,
 		-- kuertee custom HUD start:
 		-- useMiniWidgetSystem = (not menu.showTabs) and (not menu.over),

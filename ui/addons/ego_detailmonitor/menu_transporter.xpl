@@ -16,7 +16,6 @@ ffi.cdef[[
 	typedef uint64_t UniverseID;
 	const char* GetActiveObjectiveType(void);
 	const char* GetComponentClass(UniverseID componentid);
-	const char* GetComponentName(UniverseID componentid);
 	UniverseID GetContextByClass(UniverseID componentid, const char* classname, bool includeself);
 	UniverseID GetContextForTransporterCheck(UniverseID positionalid);
 	UniverseID GetSlotComponent(UIComponentSlot slot);
@@ -49,9 +48,10 @@ local config = {
 		["cockpit"] = 2,
 		["shipinterior"] = 3,
 		["walkablemodule"] = 4,
-		["ship"] = 5,
-		["parent"] = 6,
-		["zone"] = 7,
+		["showroom"] = 5,
+		["ship"] = 6,
+		["parent"] = 7,
+		["zone"] = 8,
 	},
 	roomClassSortOrder = {
 		["room"] = 1,
@@ -185,12 +185,25 @@ function menu.onShowMenu()
 		local parent, roomtype = GetComponentData(ConvertStringTo64Bit(tostring(target.component)), "parent", "roomtype")
 		parent = ConvertIDTo64Bit(parent)
 		if C.IsComponentClass(parent, "walkablemodule") then
+			local type = "walkablemodule"
+			if GetComponentData(parent, "isshowroommodule") then
+				type = "showroom"
+			end
 			local containercontext = C.GetContextByClass(parent, "container", false)
 			if containercontext == menu.topcontext then
 				local i = menu.findArrayEntry(menu.targets, parent)
 				if i == nil then
-					table.insert(menu.targets, { type = "walkablemodule", component = parent, directtarget = target, subtargets = { target }, subcomponents = {}, iscurrent = iscurrent, hasshiptradercorner = roomtype == "shiptradercorner", hastradercorner = roomtype == "tradercorner" })
+					table.insert(menu.targets, { type = type, component = parent, directtarget = target, subtargets = { target }, subcomponents = {}, iscurrent = iscurrent, hasshiptradercorner = roomtype == "shiptradercorner", hastradercorner = roomtype == "tradercorner" })
 					menu.extendedcategories[tostring(parent)] = true
+					if type == "showroom" then
+						local subcomponents = menu.targets[#menu.targets].subcomponents
+
+						local dockedships = {}
+						Helper.ffiVLA(dockedships, "UniverseID", C.GetNumDockedShips, C.GetDockedShips, parent, nil)
+						for _, dockedship in ipairs(dockedships) do
+							table.insert(subcomponents, { type = "ship", component = dockedship, subtargets = {}, subcomponents = {}, iscurrent = false, isshowroomdocked = true })
+						end
+					end
 				else
 					if iscurrent then
 						menu.targets[i].iscurrent = iscurrent
@@ -206,13 +219,13 @@ function menu.onShowMenu()
 			else
 				local i = menu.findArrayEntry(menu.targets, containercontext)
 				if i == nil then
-					table.insert(menu.targets, { type = "walkablemodule", component = containercontext, subtargets = {}, subcomponents = { { component = parent, directtarget = target, subtargets = { target }, subcomponents = {}, iscurrent = iscurrent } } })
+					table.insert(menu.targets, { type = type, component = containercontext, subtargets = {}, subcomponents = { { component = parent, directtarget = target, subtargets = { target }, subcomponents = {}, iscurrent = iscurrent } } })
 					menu.extendedcategories[tostring(containercontext)] = true
 				else
 					local subcomponents = menu.targets[i].subcomponents
 					local j = menu.findArrayEntry(subcomponents, parent)
 					if j == nil then
-						table.insert(subcomponents, { type = "walkablemodule", component = parent, directtarget = target, subtargets = { target }, subcomponents = {}, iscurrent = iscurrent })
+						table.insert(subcomponents, { type = type, component = parent, directtarget = target, subtargets = { target }, subcomponents = {}, iscurrent = iscurrent })
 						menu.extendedcategories[tostring(parent)] = true
 					else
 						if iscurrent then
@@ -455,10 +468,15 @@ function menu.addEntry(ftable, target, indent, parentcomponent)
 
 	local row = ftable:addRow({ target = target.directtarget, issubtarget = false, hassubentries = (#target.subcomponents > 0) or displaysubtargets }, {  })
 	local name = ffi.string(C.GetComponentName(target.component))
+	local isplayerowned, icon = GetComponentData(ConvertStringToLuaID(tostring(target.component)), "isplayerowned", "icon")
+	if target.isshowroomdocked then
+		name = "\27[" .. icon .. "] " .. name
+	end
+	local isnavcontext = C.IsComponentClass(target.component, "navcontext")
 
 	local font = Helper.standardFont
 	local color = Color["text_normal"]
-	if GetComponentData(ConvertStringTo64Bit(tostring(target.component)), "isplayerowned") then
+	if (target.type == "ship") and isplayerowned and (not isnavcontext) then
 		color = Color["text_player"]
 	end
 	local objectid
@@ -467,7 +485,7 @@ function menu.addEntry(ftable, target, indent, parentcomponent)
 	end
 	if target.component == menu.topcontext then
 		name = ffi.string(C.GetTransporterLocationName(target.directtarget))
-		if menu.checkPlayerProperty(target.directtarget) then
+		if (target.type == "ship") and menu.checkPlayerProperty(target.directtarget) then
 			color = Color["text_player"]
 		end
 	end
@@ -495,7 +513,7 @@ function menu.addEntry(ftable, target, indent, parentcomponent)
 			if (target.type == "ship") or (target.type == "cockpit") then
 				if C.IsComponentClass(target.component, "ship_m") or C.IsComponentClass(target.component, "ship_s") then
 					menu.infotext = string.format(ReadText(1001, 6308), ffi.string(C.GetComponentName(target.component)))
-				elseif C.IsComponentClass(target.component, "navcontext") then
+				elseif isnavcontext then
 					menu.infotext = string.format(ReadText(1001, 6306), name)
 				else
 					menu.infotext = string.format(ReadText(1001, 6307), ffi.string(C.GetComponentName(target.component)))
@@ -507,7 +525,7 @@ function menu.addEntry(ftable, target, indent, parentcomponent)
 				menu.buttontext = ReadText(1001, 6312)
 			elseif target.type == "dyninterior" then
 				menu.infotext = string.format(ReadText(1001, 6306), name)
-			elseif target.type == "walkablemodule" then
+			elseif (target.type == "walkablemodule") or (target.type == "showroom") then
 				menu.infotext = string.format(ReadText(1001, 6305), ffi.string(C.GetComponentName(parentcomponent)))
 			end
 		end
@@ -553,7 +571,7 @@ function menu.addEntry(ftable, target, indent, parentcomponent)
 
 			local font = Helper.standardFont
 			local color = Color["text_normal"]
-			if menu.checkPlayerProperty(subtarget) then
+			if isship and menu.checkPlayerProperty(subtarget) then
 				color = Color["text_player"]
 			end
 			if hasmissionshipsubtarget then
@@ -631,6 +649,7 @@ function menu.display()
 
 	local row = ftable:addRow(false, { bgColor = Color["row_background_blue"] })
 	row[1]:setColSpan(3):createText(ffi.string(C.GetComponentName(menu.topcontext)), Helper.subHeaderTextProperties)
+	row[1].properties.color = GetComponentData(ConvertStringToLuaID(tostring(menu.topcontext)), "isplayerowned") and Color["text_player"] or nil
 
 	for _, target in ipairs(menu.targets) do
 		menu.addEntry(ftable, target, 0, menu.topcontext)
@@ -662,7 +681,7 @@ function menu.display()
 	buttonrow[3].handlers.onClick = menu.buttonExpand
 
 	local buttonrow = buttontable:addRow(true, { fixed = true })
-	local active = ((not menu.currentselection.hassubentries) or menu.currentselection.target) and ((menu.transportercomponent ~= menu.currentselection.target.component) or (menu.transporterconnection ~= menu.currentselection.target.connection))
+	local active = (menu.currentselection.target ~= nil) and (not menu.currentselection.hassubentries) and ((menu.transportercomponent ~= menu.currentselection.target.component) or (menu.transporterconnection ~= menu.currentselection.target.connection))
 
 	-- kuertee start: callback
 	if menu.uix_callbacks ["display_on_set_room_active"] then
@@ -680,7 +699,7 @@ function menu.display()
 	end
 	-- kuertee end: callback
 
-	buttonrow[2]:setColSpan(2):createButton({ active = active, height = Helper.standardTextHeight }):setText(menu.buttontext, { halign = "center" })
+	buttonrow[2]:setColSpan(2):createButton({ active = active, height = Helper.standardTextHeight }):setText(menu.buttontext, { halign = "center" }):setHotkey("INPUT_STATE_DETAILMONITOR_X", { displayIcon = true })
 	buttonrow[2].handlers.onClick = menu.buttonGoTo
 
 	-- kuertee start: callback
@@ -703,7 +722,7 @@ function menu.display()
 		local row = infotable:addRow(false, { fixed = true, bgColor = Color["row_background_blue"] })
 		row[1]:setColSpan(4):createText(ReadText(1001, 2427), Helper.headerRow1Properties)
 
-		menu.room = C.GetRoomForTransporter(menu.currentselection.target)
+		menu.room = menu.currentselection.target and C.GetRoomForTransporter(menu.currentselection.target) or 0
 		if menu.room ~= 0 then
 			--- SHIPS ---
 			local internalstoragecontext
