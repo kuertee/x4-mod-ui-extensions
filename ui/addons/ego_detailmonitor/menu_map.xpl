@@ -593,6 +593,7 @@ ffi.cdef[[
 	Coord2D GetCenteredMousePos(void);
 	UniverseID GetCommonContext(UniverseID componentid, UniverseID othercomponentid, bool includeself, bool includeother, UniverseID limitid, bool includelimit);
 	const char* GetComponentClass(UniverseID componentid);
+	const char* GetComponentKnownName(UniverseID componentid);
 	int GetConfigSetting(const char*const setting);
 	const char* GetContainerBuildMethod(UniverseID containerid);
 	uint32_t GetContainerCriticalWares(const char** result, uint32_t resultlen, UniverseID containerid);
@@ -1830,8 +1831,8 @@ local config = {
 				{ icons = { "mouse_input_mousebutton_right" },	name = ColorText["input_reference"] .. "(" .. ReadText(1001, 13319) .. ")\27X " .. ReadText(1001, 13303) },
 			},
 			right = {
-				{ modifiers = { "ctrl" }, icons = { "mouse_input_mousebutton_right" },	name = ReadText(1001, 13317) },
-				{ modifiers = { "shift" }, icons = { "mouse_input_mousebutton_right" },	name = ReadText(1001, 13316) },
+				{ modifiers = { Helper.useShiftToQueueOrders and "shift" or "ctrl" }, icons = { "mouse_input_mousebutton_right" },	name = ReadText(1001, 13317) },
+				{ modifiers = { Helper.useShiftToQueueOrders and "ctrl" or "shift" }, icons = { "mouse_input_mousebutton_right" },	name = ReadText(1001, 13316) },
 				{ modifiers = { "shift", "ctrl" }, icons = { "mouse_input_mousebutton_right" },	name = ReadText(1001, 13327) },
 				{ icons = { "mouse_input_mousebutton_right" },	name = ReadText(1001, 13309) },
 				{ modifiers = { "shift" }, icons = { "mouse_input_mousebutton_left" },	name = ColorText["input_reference"] .. "(" .. ReadText(1001, 13319) .. ")\27X " .. ReadText(1001, 13308) },
@@ -1844,8 +1845,8 @@ local config = {
 				{ icons = { "mouse_input_mousebutton_right" },	name = ColorText["input_reference"] .. "(" .. ReadText(1001, 13319) .. ")\27X " .. ReadText(1001, 13303) },
 			},
 			right = {
-				{ modifiers = { "ctrl" }, name = ColorText["input_reference"] .. "(" .. ReadText(1001, 13318) .. ")\27X " .. ReadText(1001, 13317) },
-				{ modifiers = { "shift" }, name = ColorText["input_reference"] .. "(" .. ReadText(1001, 13318) .. ")\27X " .. ReadText(1001, 13316) },
+				{ modifiers = { Helper.useShiftToQueueOrders and "shift" or "ctrl" }, name = ColorText["input_reference"] .. "(" .. ReadText(1001, 13318) .. ")\27X " .. ReadText(1001, 13317) },
+				{ modifiers = { Helper.useShiftToQueueOrders and "ctrl" or "shift" }, name = ColorText["input_reference"] .. "(" .. ReadText(1001, 13318) .. ")\27X " .. ReadText(1001, 13316) },
 				{ modifiers = { "shift", "ctrl" }, name = ColorText["input_reference"] .. "(" .. ReadText(1001, 13318) .. ")\27X " .. ReadText(1001, 13327) },
 			}
 		},
@@ -3482,7 +3483,7 @@ function menu.orderMoveWait(component, sectororgate, offset, playerprecise, clea
 	end
 
 	if clear then
-		C.RemoveAllOrders2(component, false, modified == "shift")
+		C.RemoveAllOrders2(component, false, modified == (Helper.useShiftToQueueOrders and "ctrl" or "shift"))
 	end
 
 	local params = {}
@@ -3494,7 +3495,7 @@ function menu.orderMoveWait(component, sectororgate, offset, playerprecise, clea
 	if playerprecise then
 		params.playerprecise = true
 	end
-	CreateOrder(component, "MoveWait", params, false, false, (modified == "shift") or (modified == "both"))
+	CreateOrder(component, "MoveWait", params, false, false, (modified == (Helper.useShiftToQueueOrders and "ctrl" or "shift")) or (modified == "both"))
 end
 
 function menu.orderWithdrawFromCombat(component, clear, modified, immediate, attacker)
@@ -3503,7 +3504,7 @@ function menu.orderWithdrawFromCombat(component, clear, modified, immediate, att
 	end
 
 	if clear then
-		C.RemoveAllOrders2(component, false, modified == "shift")
+		C.RemoveAllOrders2(component, false, modified == (Helper.useShiftToQueueOrders and "ctrl" or "shift"))
 	end
 
 	local params = {
@@ -3559,13 +3560,13 @@ function menu.orderAttack(component, target, clear, modified)
 	end
 
 	if clear then
-		C.RemoveAllOrders2(component, false, modified == "shift")
+		C.RemoveAllOrders2(component, false, modified == (Helper.useShiftToQueueOrders and "ctrl" or "shift"))
 	end
 
 	local params = {
 		primarytarget = ConvertStringToLuaID(tostring(target)),
 	}
-	CreateOrder(component, "Attack", params, false, false, (modified == "shift") or (modified == "both"))
+	CreateOrder(component, "Attack", params, false, false, (modified == (Helper.useShiftToQueueOrders and "ctrl" or "shift")) or (modified == "both"))
 
 	return orderidx
 end
@@ -3618,13 +3619,13 @@ function menu.orderFollow(component, target, clear, modified)
 	end
 
 	if clear then
-		C.RemoveAllOrders2(component, false, modified == "shift")
+		C.RemoveAllOrders2(component, false, modified == (Helper.useShiftToQueueOrders and "ctrl" or "shift"))
 	end
 
 	local params = {
 		target = ConvertStringToLuaID(tostring(target)),
 	}
-	CreateOrder(component, "Follow", params, false, false, (modified == "shift") or (modified == "both"))
+	CreateOrder(component, "Follow", params, false, false, (modified == (Helper.useShiftToQueueOrders and "ctrl" or "shift")) or (modified == "both"))
 
 	return orderidx
 end
@@ -10205,7 +10206,11 @@ end
 function menu.createConstructionRow(ftable, rowgroup, component, construction, iteration)
 	local name = ReadText(20109, 5101)
 	if construction.component ~= 0 then
-		name = ffi.string(C.GetComponentName(construction.component))
+		if GetComponentData(component, "isplayerowned") then
+			name = ffi.string(C.GetComponentKnownName(construction.component))
+		else
+			name = ffi.string(C.GetComponentName(construction.component))
+		end
 	elseif construction.macro ~= "" then
 		name = GetMacroData(construction.macro, "name")
 		if construction.amount then
@@ -22347,7 +22352,7 @@ function menu.defaultInteraction(component, posrot, posrotvalid, offsetx, offset
 				local hasloop = ffi.new("bool[1]", 0)
 				C.GetOrderQueueFirstLoopIdx(selectedcomponent, hasloop)
 				if ((not hasloop[0]) or menu.orderdefbyid["MoveWait"].loopable) then
-					menu.orderMoveWait(selectedcomponent, component, posrot, issingleship, modified == "shift", modified)
+					menu.orderMoveWait(selectedcomponent, component, posrot, issingleship, modified == (Helper.useShiftToQueueOrders and "ctrl" or "shift"), modified)
 				end
 			end
 		end
@@ -22359,7 +22364,7 @@ function menu.defaultInteraction(component, posrot, posrotvalid, offsetx, offset
 				local hasloop = ffi.new("bool[1]", 0)
 				C.GetOrderQueueFirstLoopIdx(selectedcomponent, hasloop)
 				if ((not hasloop[0]) or menu.orderdefbyid["Attack"].loopable) then
-					menu.orderAttack(selectedcomponent, component, modified == "shift", modified)
+					menu.orderAttack(selectedcomponent, component, modified == (Helper.useShiftToQueueOrders and "ctrl" or "shift"), modified)
 				end
 			end
 		end
@@ -22397,7 +22402,7 @@ function menu.defaultInteraction(component, posrot, posrotvalid, offsetx, offset
 				local hasloop = ffi.new("bool[1]", 0)
 				C.GetOrderQueueFirstLoopIdx(selectedcomponent, hasloop)
 				if ((not hasloop[0]) or menu.orderdefbyid["Follow"].loopable) then
-					menu.orderFollow(selectedcomponent, component, modified == "shift", modified)
+					menu.orderFollow(selectedcomponent, component, modified == (Helper.useShiftToQueueOrders and "ctrl" or "shift"), modified)
 				end
 			end
 		end
@@ -22411,7 +22416,7 @@ function menu.defaultInteraction(component, posrot, posrotvalid, offsetx, offset
 				if ((not hasloop[0]) or menu.orderdefbyid["MoveWait"].loopable) then
 					--local destinationsector = GetComponentData(ConvertStringToLuaID(tostring(component)), "destinationsector")
 					--local offset = C.GetGateDestinationSectorPosition(component)
-					menu.orderMoveWait(selectedcomponent, component, posrot, issingleship, modified == "shift", modified, true)
+					menu.orderMoveWait(selectedcomponent, component, posrot, issingleship, modified == (Helper.useShiftToQueueOrders and "ctrl" or "shift"), modified, true)
 				end
 			end
 		end
@@ -26241,14 +26246,13 @@ function menu.createOrderQueueSettingContext(frame)
 	ftable:addEmptyRow(Helper.standardTextHeight / 2)
 
 	local row = ftable:addRow(nil, {  })
-	row[1]:createText(ReadText(1001, 12783), Helper.headerRowCenteredProperties)
+	row[1]:createText(ReadText(1001, 11691), Helper.headerRowCenteredProperties)
 
 	local row = ftable:addRow(nil, {  })
-	local text = ReadText(1001, 11682)
-	text = text .. "\n\n" .. ReadText(1001, 11683)
-	text = text .. "\n\n" .. ReadText(1001, 11684)
-	text = text .. "\n\n" .. ReadText(1001, 11685)
-	row[1]:createText(text, { fontsize = Helper.headerRow1FontSize, x = 3 * Helper.standardTextOffsetx, wordwrap = true })
+	local text = string.format(ReadText(1001, 11692), ffi.string(C.GetDisplayedModifierKey(Helper.useShiftToQueueOrders and "shift" or "ctrl")), ffi.string(C.GetDisplayedModifierKey(Helper.useShiftToQueueOrders and "ctrl" or "shift")))
+	text = text .. "\n\n" .. string.format(ReadText(1001, 11693), ffi.string(C.GetDisplayedModifierKey(Helper.useShiftToQueueOrders and "shift" or "ctrl")))
+	text = text .. "\n\n" .. string.format(ReadText(1001, 11694), ffi.string(C.GetDisplayedModifierKey(Helper.useShiftToQueueOrders and "shift" or "ctrl")))
+	row[1]:createText(text, { scaling = false, fontsize = Helper.scaleFont(Helper.standardFont, Helper.headerRow1FontSize), x = 3 * Helper.scaleX(Helper.standardTextOffsetx), wordwrap = true, width = row[1]:getWidth() - 6 * Helper.scaleX(Helper.standardTextOffsetx) })
 
 	ftable:addEmptyRow(Helper.standardTextHeight / 2)
 
@@ -32379,6 +32383,13 @@ function menu.updateMouseCursor()
 					end
 				elseif shiftpressed or controlpressed then
 					-- default interactions
+					local priorityorder = false
+					if Helper.useShiftToQueueOrders then
+						priorityorder = controlpressed
+					else
+						priorityorder = shiftpressed
+					end
+
 					local curtime = GetCurTime()
 					local issingleship = menu.getNumSelectedComponents() == 1
 					local singleselectedcomponent
@@ -32404,11 +32415,11 @@ function menu.updateMouseCursor()
 						end
 					elseif Helper.isComponentClass(pickedcomponentclassid, "sector") then
 						if hasplayerselectedship then
-							cursor = shiftpressed and "moveherepriority" or "movehere"
+							cursor = priorityorder and "moveherepriority" or "movehere"
 						end
 					elseif isenemy then
 						if hasplayerselectedship then
-							cursor = shiftpressed and "targetredpriority" or "targetred"
+							cursor = priorityorder and "targetredpriority" or "targetred"
 						end
 					elseif Helper.isComponentClass(pickedcomponentclassid, "station") then
 						local issingleloopship
@@ -32423,11 +32434,11 @@ function menu.updateMouseCursor()
 						end
 					elseif Helper.isComponentClass(pickedcomponentclassid, "ship") then
 						if hasplayerselectedship then
-							cursor = shiftpressed and "followpriority" or "follow"
+							cursor = priorityorder and "followpriority" or "follow"
 						end
 					elseif Helper.isComponentClass(pickedcomponentclassid, "gate") then
 						if hasplayerselectedship then
-							cursor = shiftpressed and "moveherepriority" or "movehere"
+							cursor = priorityorder and "moveherepriority" or "movehere"
 						end
 					end
 				elseif (not Helper.isComponentClass(pickedcomponentclassid, "player")) then

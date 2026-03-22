@@ -254,6 +254,7 @@ ffi.cdef[[
 	bool IsObjectKnown(const UniverseID componentid);
 	bool IsOrderLoopable(const char* orderdefid);
 	bool IsPlayerCameraTargetViewPossible(UniverseID targetid, bool force);
+	bool IsShiftPressed(void);
 	bool IsShipAtExternalDock(UniverseID shipid);
 	bool IsSurfaceElement(const UniverseID componentid);
 	bool IsUnit(UniverseID controllableid);
@@ -5088,7 +5089,7 @@ function menu.insertLuaAction(actiontype, istobedisplayed)
 			end
 		end
 		-- end: aegs call-back
-				
+
 		-- start: cpsdo call-back (shipOverview)
 		do
 			local callbacks = menu.uix_callbacks and menu.uix_callbacks["cpsdo_map_rightMenu_shipLogistic_insert"]
@@ -6650,7 +6651,7 @@ function menu.insertLuaAction(actiontype, istobedisplayed)
 			end
 		end
 		-- end: aegs call-back
-		
+
 		-- start: cpsdo call-back (rightMenu shipBuilding insert)
 		do
 			local inserted = false
@@ -6744,6 +6745,8 @@ function menu.insertLuaAction(actiontype, istobedisplayed)
 								isalreadydocked = false
 								break
 							end
+						else
+							isalreadydocked = false
 						end
 					else
 						isalreadydocked = false
@@ -7929,11 +7932,20 @@ function menu.onUpdate()
 	end
 
 	if controllermode ~= "gamepad" then
-		menu.priorityOrderMode = C.IsShiftPressed()
-		if menu.clearOrderQueueByDefault then
-			menu.clearOtherOrders = not C.IsControlPressed()
+		if Helper.useShiftToQueueOrders then
+			menu.priorityOrderMode = C.IsControlPressed()
+			if menu.clearOrderQueueByDefault then
+				menu.clearOtherOrders = not C.IsShiftPressed()
+			else
+				menu.clearOtherOrders = C.IsShiftPressed()
+			end
 		else
-			menu.clearOtherOrders = C.IsControlPressed()
+			menu.priorityOrderMode = C.IsShiftPressed()
+			if menu.clearOrderQueueByDefault then
+				menu.clearOtherOrders = not C.IsControlPressed()
+			else
+				menu.clearOtherOrders = C.IsControlPressed()
+			end
 		end
 	end
 
