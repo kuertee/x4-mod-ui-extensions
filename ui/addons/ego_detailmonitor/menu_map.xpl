@@ -7494,16 +7494,16 @@ function menu.getContainerNameAndColors(container, iteration, issquadleader, sho
 		bgcolor = Color["row_background_unselectable"]
 	end
 
-    -- mycu start: callback
-    if menu.uix_callbacks ["getContainerNameAndColors_on_name_construct"] then
-        for uix_id, uix_callback in pairs (menu.uix_callbacks ["getContainerNameAndColors_on_name_construct"]) do
-            local result = uix_callback (container, name)
-            if result then
-                name = result.name
-            end
-        end
-    end
-    -- mycu end: callback
+	-- mycu start: callback
+	if menu.uix_callbacks ["getContainerNameAndColors_on_name_construct"] then
+		for uix_id, uix_callback in pairs (menu.uix_callbacks ["getContainerNameAndColors_on_name_construct"]) do
+			local result = uix_callback (container, name)
+			if result then
+				name = result.name
+			end
+		end
+	end
+	-- mycu end: callback
 
 	if not menu.mode then
 		if convertedContainer == menu.softtarget then
@@ -8754,8 +8754,8 @@ function menu.createPropertyOwned(frame, instance)
 					-- start: mycu callback
 					if menu.uix_callbacks ["onSetActiveStateForCVMode_on_createPropertyOwned"] then
 						for uix_id, uix_callback in pairs (menu.uix_callbacks ["onSetActiveStateForCVMode_on_createPropertyOwned"]) do
-						        active = uix_callback (entry)
-					        end
+								active = uix_callback (entry)
+							end
 					end
 					-- end: mycu callback
 
@@ -9575,13 +9575,13 @@ function menu.createPropertyRow(instance, ftable, rowgroup, component, iteration
 
 			end
 
-            -- kuertee start: callback
-            if menu.uix_callbacks ["createPropertyRow_before_config_change"] then
-                for uix_id, uix_callback in pairs (menu.uix_callbacks ["createPropertyRow_before_config_change"]) do
-                    uix_callback (config)
-                end
-            end
-            -- kuertee end: callback
+			-- kuertee start: callback
+			if menu.uix_callbacks ["createPropertyRow_before_config_change"] then
+				for uix_id, uix_callback in pairs (menu.uix_callbacks ["createPropertyRow_before_config_change"]) do
+					uix_callback (config)
+				end
+			end
+			-- kuertee end: callback
 
 			if (currentordericon ~= "") or isdocked then
 				local col = 4 + maxicons
@@ -9599,13 +9599,13 @@ function menu.createPropertyRow(instance, ftable, rowgroup, component, iteration
 				end
 			end
 
-            		-- kuertee start: callback
-            		if menu.uix_callbacks ["createPropertyRow_after_config_change"] then
-                		for uix_id, uix_callback in pairs (menu.uix_callbacks ["createPropertyRow_after_config_change"]) do
-                		    uix_callback (config)
-                		end
-            		end
-            		-- kuertee end: callback
+					-- kuertee start: callback
+					if menu.uix_callbacks ["createPropertyRow_after_config_change"] then
+						for uix_id, uix_callback in pairs (menu.uix_callbacks ["createPropertyRow_after_config_change"]) do
+							uix_callback (config)
+						end
+					end
+					-- kuertee end: callback
 
 			-- shieldhullbar
 			row[5 + maxicons]:createObjectShieldHullBar(component)
@@ -9619,13 +9619,13 @@ function menu.createPropertyRow(instance, ftable, rowgroup, component, iteration
 			end
 		end
 
-        	-- kuertee start: callback
-        	if menu.uix_callbacks ["createPropertyRow_after_row_height"] then
-        	    for uix_id, uix_callback in pairs (menu.uix_callbacks ["createPropertyRow_after_row_height"]) do
-        	        uix_callback (row)
-        	    end
-        	end
-        	-- kuertee end: callback
+			-- kuertee start: callback
+			if menu.uix_callbacks ["createPropertyRow_after_row_height"] then
+				for uix_id, uix_callback in pairs (menu.uix_callbacks ["createPropertyRow_after_row_height"]) do
+					uix_callback (row)
+				end
+			end
+			-- kuertee end: callback
 
 		if isstation then
 			AddKnownItem("stationtypes", macro)
@@ -18590,8 +18590,11 @@ function menu.createMissionMode(frame)
 						-- kuertee end: open/close mission lists
 					end
 					if entry.missions then
-						-- story case
-						local row = plotmissionrowgroup:addRow(entry.id, {  })
+						-- story casem
+						-- kuertee start: open/close mission lists
+						-- local row = plotmissionrowgroup:addRow(entry.id, {  })
+						local row = plotmissionrowgroup:addRow(true, {  })
+						-- kuertee end: open/close mission lists
 						if entry.id == menu.missionModeCurrent then
 							menu.setrow = row.index
 						end
@@ -18632,7 +18635,7 @@ function menu.createMissionMode(frame)
 					end
 				end
 				if not found then
-					local row = ftable:addRow("plotnone", { interactive = false })
+					local row = plotmissionrowgroup:addRow("plotnone", { interactive = false })
 					if menu.missionModeCurrent == "plotnone" then
 						menu.setrow = row.index
 					end
@@ -18657,6 +18660,7 @@ function menu.createMissionMode(frame)
 			row[2]:setColSpan(8):createText(ReadText(1001, 3331), Helper.headerRowCenteredProperties)
 			-- kuertee end
 
+			local guildmissionrowgroup = ftable:addRowGroup({  })
 			-- kuertee start: callback
 			if menu.uix_callbacks ["createMissionMode_on_missionoffer_guild_start"] then
 				for uix_id, uix_callback in pairs (menu.uix_callbacks ["createMissionMode_on_missionoffer_guild_start"]) do
@@ -18672,22 +18676,22 @@ function menu.createMissionMode(frame)
 					-- check if we need to expand for the current selected mission
 					for _, entry in ipairs(data.missions) do
 						if entry.ID == menu.missionModeCurrent then
-							menu.expandedMissionGroups[data.id] = true
+							menu.expandedMissionGroups[data.groupid] = true
 						end
 					end
 
-					if menu.expandedMissionGroups[data.id .. "offer"] == nil then
-						menu.expandedMissionGroups[data.id .. "offer"] = true
+					if menu.expandedMissionGroups[data.groupid .. "offer"] == nil then
+						menu.expandedMissionGroups[data.groupid .. "offer"] = true
 					end
 
 					-- kuertee start: open/close mission lists
-					-- local isexpanded = menu.expandedMissionGroups[data.id .. "offer"]
+					-- local isexpanded = menu.expandedMissionGroups[data.groupid .. "offer"]
 					local uix_Id = menu.uix_getMissionId(data, true)
 					local isexpanded = menu.uix_getIsMissionExpanded(data, true)
 					-- kuertee end: open/close mission lists
 
-					local row = ftable:addRow(data.id, {  })
-					if data.id == menu.missionModeCurrent then
+					local row = guildmissionrowgroup:addRow(data.groupid, {  })
+					if data.groupid == menu.missionModeCurrent then
 						menu.setrow = row.index
 					end
 					row[1]:createButton():setText(isexpanded and "-" or "+", { halign = "center" })
@@ -18702,13 +18706,13 @@ function menu.createMissionMode(frame)
 
 					if isexpanded then
 						for _, entry in ipairs(data.missions) do
-							menu.addMissionRow(ftable, plotmissionrowgroup, entry, 1)
+							menu.addMissionRow(ftable, guildmissionrowgroup, entry, 1)
 						end
 					end
 				end
 			end
 			if not found then
-				local row = ftable:addRow("guildnone", { interactive = false })
+				local row = guildmissionrowgroup:addRow("guildnone", { interactive = false })
 				if menu.missionModeCurrent == "guildnone" then
 					menu.setrow = row.index
 				end
@@ -18731,16 +18735,17 @@ function menu.createMissionMode(frame)
 			row[2]:setColSpan(8):createText(ReadText(1001, 3332), Helper.headerRowCenteredProperties)
 			-- kuertee end
 
+			local othermissionrowgroup = ftable:addRowGroup({  })
 			-- kuertee start: open/close mission lists
 			if uix_isOtherListOpen == true then
 			-- kuertee end
 
 				for _, entry in ipairs(menu.missionOfferList["other"]) do
 					found = true
-					menu.addMissionRow(ftable, entry)
+					menu.addMissionRow(ftable, othermissionrowgroup, entry)
 				end
 				if not found then
-					local row = ftable:addRow("othernone", { interactive = false })
+					local row = othermissionrowgroup:addRow("othernone", { interactive = false })
 					if menu.missionModeCurrent == "othernone" then
 						menu.setrow = row.index
 					end
@@ -19022,7 +19027,7 @@ function menu.createMissionMode(frame)
 						-- row[1]:setColSpan(9):createText("")
 						-- kuertee end: open/close mission lists
 					end
-					menu.addMissionRow(ftable, entry)
+					menu.addMissionRow(ftable, othermissionrowgroup, entry)
 				end
 				if not found then
 					local row = othermissionrowgroup:addRow("othernone", { interactive = false })
@@ -19179,7 +19184,7 @@ function menu.uix_getMissionId(missionEntry, isOffer)
 	missionEntry.uix_isOffer = isOffer
 	local uix_Id = missionEntry.ID
 	if not uix_Id then
-		uix_Id = missionEntry.id
+		uix_Id = missionEntry.groupid -- used groupId instead id, as it now used in 9.00
 	end
 	if uix_Id and isOffer then
 		uix_Id = tostring(uix_Id) .. "offer"
@@ -19430,9 +19435,9 @@ function menu.uix_expandMissionList(missionEntry, row, contextCallback, isOffer,
 	-- e.g. look for "copied from buttonExpandMissionGroup" notes within uix_expandMissionList()
 	-- start: copied from buttonExpandMissionGroup.
 	-- i.e. setting missionModeCurrent, setrow, closeContextMenu(), etc.
-	if row and firstId and isExpanded then
+	if row and firstMissionId and isExpanded then -- fixed: replaced undefined firstId with previously defined firstMissionId
 		menu.setrow = row + 1 -- set the highlighted mission to the first mission in the list. i.e. row + 1
-		menu.missionModeCurrent = firstId -- set highlighted mission to the first mission in the list. i.e. the first mission's id
+		menu.missionModeCurrent = firstMissionId -- set highlighted mission to the first mission in the list. i.e. the first mission's id
 	else
 		menu.setrow = row
 		menu.missionModeCurrent = listId
@@ -29326,7 +29331,7 @@ function menu.onRenderTargetMouseDown(modified)
 	uix_distanceTool_from_posRot = ffi.new("UIPosRot")
 	local eclipticoffset = ffi.new("UIPosRot")
 	uix_distanceTool_from_component = C.GetMapPositionOnEcliptic2(menu.holomap, uix_distanceTool_from_posRot, false, 0, eclipticoffset)
-    -- kuertee end
+	-- kuertee end
 end
 
 function menu.onRenderTargetMouseUp(modified)
@@ -29495,7 +29500,7 @@ function menu.onRenderTargetRightMouseUp(modified)
 
 			-- kuertee start: distance tool
 			menu.uix_distanceTool(posrot, posrotcomponent)
-		    	-- kuertee end
+				-- kuertee end
 
 			local playerships, otherobjects, playerdeployables = menu.getSelectedComponentCategories()
 			if pickedordercomponent ~= 0 then
@@ -32985,107 +32990,107 @@ end
 
 menu.uix_callbackCount = 0
 function menu.registerCallback(callbackName, callbackFunction, id)
-    -- note 1: format is generally [function name]_[action]. e.g.: in kuertee_menu_transporter, "display_on_set_room_active" overrides the room's active property with the return of the callback.
-    -- note 2: events have the word "_on_" followed by a PRESENT TENSE verb. e.g.: in kuertee_menu_transporter, "display_on_set_buttontable" is called after all of the rows of buttontable are set.
-    -- note 3: new callbacks can be added or existing callbacks can be edited. but commit your additions/changes to the mod's GIT repository.
-    -- note 4: search for the callback names to see where they are executed.
-    -- note 5: if a callback requires a return value, return it in an object var. e.g. "display_on_set_room_active" requires a return of {active = true | false}.
-    if menu.uix_callbacks [callbackName] == nil then
-        menu.uix_callbacks [callbackName] = {}
-    end
-    if not menu.uix_callbacks[callbackName][id] then
-        if not id then
-            menu.uix_callbackCount = menu.uix_callbackCount + 1
-            id = "_" .. tostring(menu.uix_callbackCount)
-        end
-        menu.uix_callbacks[callbackName][id] = callbackFunction
-        if Helper.isDebugCallbacks then
-            Helper.debugText_forced(menu.name .. " uix registerCallback: menu.uix_callbacks[" .. tostring(callbackName) .. "][" .. tostring(id) .. "]: " .. tostring(menu.uix_callbacks[callbackName][id]))
-        end
-    else
-        Helper.debugText_forced(menu.name .. " uix registerCallback: callback at " .. callbackName .. " with id " .. tostring(id) .. " was already previously registered")
-    end
+	-- note 1: format is generally [function name]_[action]. e.g.: in kuertee_menu_transporter, "display_on_set_room_active" overrides the room's active property with the return of the callback.
+	-- note 2: events have the word "_on_" followed by a PRESENT TENSE verb. e.g.: in kuertee_menu_transporter, "display_on_set_buttontable" is called after all of the rows of buttontable are set.
+	-- note 3: new callbacks can be added or existing callbacks can be edited. but commit your additions/changes to the mod's GIT repository.
+	-- note 4: search for the callback names to see where they are executed.
+	-- note 5: if a callback requires a return value, return it in an object var. e.g. "display_on_set_room_active" requires a return of {active = true | false}.
+	if menu.uix_callbacks [callbackName] == nil then
+		menu.uix_callbacks [callbackName] = {}
+	end
+	if not menu.uix_callbacks[callbackName][id] then
+		if not id then
+			menu.uix_callbackCount = menu.uix_callbackCount + 1
+			id = "_" .. tostring(menu.uix_callbackCount)
+		end
+		menu.uix_callbacks[callbackName][id] = callbackFunction
+		if Helper.isDebugCallbacks then
+			Helper.debugText_forced(menu.name .. " uix registerCallback: menu.uix_callbacks[" .. tostring(callbackName) .. "][" .. tostring(id) .. "]: " .. tostring(menu.uix_callbacks[callbackName][id]))
+		end
+	else
+		Helper.debugText_forced(menu.name .. " uix registerCallback: callback at " .. callbackName .. " with id " .. tostring(id) .. " was already previously registered")
+	end
 end
 
 menu.uix_isDeregisterQueued = nil
 menu.uix_callbacks_toDeregister = {}
 function menu.deregisterCallback(callbackName, callbackFunction, id)
-    if not menu.uix_callbacks_toDeregister[callbackName] then
-        menu.uix_callbacks_toDeregister[callbackName] = {}
-    end
-    if id then
-        table.insert(menu.uix_callbacks_toDeregister[callbackName], id)
-    else
-        if menu.uix_callbacks[callbackName] then
-            for id, func in pairs(menu.uix_callbacks[callbackName]) do
-                if func == callbackFunction then
-                    table.insert(menu.uix_callbacks_toDeregister[callbackName], id)
-                end
-            end
-        end
-    end
-    if not menu.uix_isDeregisterQueued then
-        menu.uix_isDeregisterQueued = true
-        Helper.addDelayedOneTimeCallbackOnUpdate(menu.deregisterCallbacksNow, true, getElapsedTime() + 1)
-    end
+	if not menu.uix_callbacks_toDeregister[callbackName] then
+		menu.uix_callbacks_toDeregister[callbackName] = {}
+	end
+	if id then
+		table.insert(menu.uix_callbacks_toDeregister[callbackName], id)
+	else
+		if menu.uix_callbacks[callbackName] then
+			for id, func in pairs(menu.uix_callbacks[callbackName]) do
+				if func == callbackFunction then
+					table.insert(menu.uix_callbacks_toDeregister[callbackName], id)
+				end
+			end
+		end
+	end
+	if not menu.uix_isDeregisterQueued then
+		menu.uix_isDeregisterQueued = true
+		Helper.addDelayedOneTimeCallbackOnUpdate(menu.deregisterCallbacksNow, true, getElapsedTime() + 1)
+	end
 end
 
 function menu.deregisterCallbacksNow()
-    menu.uix_isDeregisterQueued = nil
-    for callbackName, ids in pairs(menu.uix_callbacks_toDeregister) do
-        if menu.uix_callbacks[callbackName] then
-            for _, id in ipairs(ids) do
-                if menu.uix_callbacks[callbackName][id] then
-                    if Helper.isDebugCallbacks then
-                        Helper.debugText_forced(menu.name .. " uix deregisterCallbacksNow (pre): menu.uix_callbacks[" .. tostring(callbackName) .. "][" .. tostring(id) .. "]: " .. tostring(menu.uix_callbacks[callbackName][id]))
-                    end
-                    menu.uix_callbacks[callbackName][id] = nil
-                    if Helper.isDebugCallbacks then
-                        Helper.debugText_forced(menu.name .. " uix deregisterCallbacksNow (post): menu.uix_callbacks[" .. tostring(callbackName) .. "][" .. tostring(id) .. "]: " .. tostring(menu.uix_callbacks[callbackName][id]))
-                    end
-                else
-                    Helper.debugText_forced(menu.name .. " uix deregisterCallbacksNow: callback at " .. callbackName .. " with id " .. tostring(id) .. " doesn't exist")
-                end
-            end
-        end
-    end
-    menu.uix_callbacks_toDeregister = {}
+	menu.uix_isDeregisterQueued = nil
+	for callbackName, ids in pairs(menu.uix_callbacks_toDeregister) do
+		if menu.uix_callbacks[callbackName] then
+			for _, id in ipairs(ids) do
+				if menu.uix_callbacks[callbackName][id] then
+					if Helper.isDebugCallbacks then
+						Helper.debugText_forced(menu.name .. " uix deregisterCallbacksNow (pre): menu.uix_callbacks[" .. tostring(callbackName) .. "][" .. tostring(id) .. "]: " .. tostring(menu.uix_callbacks[callbackName][id]))
+					end
+					menu.uix_callbacks[callbackName][id] = nil
+					if Helper.isDebugCallbacks then
+						Helper.debugText_forced(menu.name .. " uix deregisterCallbacksNow (post): menu.uix_callbacks[" .. tostring(callbackName) .. "][" .. tostring(id) .. "]: " .. tostring(menu.uix_callbacks[callbackName][id]))
+					end
+				else
+					Helper.debugText_forced(menu.name .. " uix deregisterCallbacksNow: callback at " .. callbackName .. " with id " .. tostring(id) .. " doesn't exist")
+				end
+			end
+		end
+	end
+	menu.uix_callbacks_toDeregister = {}
 end
 
 menu.uix_isUpdateQueued = nil
 menu.uix_callbacks_toUpdate = {}
 function menu.updateCallback(callbackName, id, callbackFunction)
-    if not menu.uix_callbacks_toUpdate[callbackName] then
-        menu.uix_callbacks_toUpdate[callbackName] = {}
-    end
-    if id then
-        table.insert(menu.uix_callbacks_toUpdate[callbackName], {id = id, callbackFunction = callbackFunction})
-    end
-    if not menu.uix_isUpdateQueued then
-        menu.uix_isUpdateQueued = true
-        Helper.addDelayedOneTimeCallbackOnUpdate(menu.updateCallbacksNow, true, getElapsedTime() + 1)
-    end
+	if not menu.uix_callbacks_toUpdate[callbackName] then
+		menu.uix_callbacks_toUpdate[callbackName] = {}
+	end
+	if id then
+		table.insert(menu.uix_callbacks_toUpdate[callbackName], {id = id, callbackFunction = callbackFunction})
+	end
+	if not menu.uix_isUpdateQueued then
+		menu.uix_isUpdateQueued = true
+		Helper.addDelayedOneTimeCallbackOnUpdate(menu.updateCallbacksNow, true, getElapsedTime() + 1)
+	end
 end
 
 function menu.updateCallbacksNow()
-    menu.uix_isUpdateQueued = nil
-    for callbackName, updateDatas in pairs(menu.uix_callbacks_toUpdate) do
-        if menu.uix_callbacks[callbackName] then
-            for _, updateData in ipairs(updateDatas) do
-                if menu.uix_callbacks[callbackName][updateData.id] then
-                    if Helper.isDebugCallbacks then
-                        Helper.debugText_forced(menu.name .. " uix updateCallbacksNow (pre): menu.uix_callbacks[" .. tostring(callbackName) .. "][" .. tostring(updateData.id) .. "]: " .. tostring(menu.uix_callbacks[callbackName][updateData.id]))
-                    end
-                    menu.uix_callbacks[callbackName][updateData.id] = updateData.callbackFunction
-                    if Helper.isDebugCallbacks then
-                        Helper.debugText_forced(menu.name .. " uix updateCallbacksNow (post): menu.uix_callbacks[" .. tostring(callbackName) .. "][" .. tostring(updateData.id) .. "]: " .. tostring(menu.uix_callbacks[callbackName][updateData.id]))
-                    end
-                else
-                    Helper.debugText_forced(menu.name .. " uix updateCallbacksNow: callback at " .. callbackName .. " with id " .. tostring(id) .. " doesn't exist")
-                end
-            end
-        end
-    end
+	menu.uix_isUpdateQueued = nil
+	for callbackName, updateDatas in pairs(menu.uix_callbacks_toUpdate) do
+		if menu.uix_callbacks[callbackName] then
+			for _, updateData in ipairs(updateDatas) do
+				if menu.uix_callbacks[callbackName][updateData.id] then
+					if Helper.isDebugCallbacks then
+						Helper.debugText_forced(menu.name .. " uix updateCallbacksNow (pre): menu.uix_callbacks[" .. tostring(callbackName) .. "][" .. tostring(updateData.id) .. "]: " .. tostring(menu.uix_callbacks[callbackName][updateData.id]))
+					end
+					menu.uix_callbacks[callbackName][updateData.id] = updateData.callbackFunction
+					if Helper.isDebugCallbacks then
+						Helper.debugText_forced(menu.name .. " uix updateCallbacksNow (post): menu.uix_callbacks[" .. tostring(callbackName) .. "][" .. tostring(updateData.id) .. "]: " .. tostring(menu.uix_callbacks[callbackName][updateData.id]))
+					end
+				else
+					Helper.debugText_forced(menu.name .. " uix updateCallbacksNow: callback at " .. callbackName .. " with id " .. tostring(id) .. " doesn't exist")
+				end
+			end
+		end
+	end
 end
 -- kuertee end
 
