@@ -1,4 +1,4 @@
-
+﻿
 -- section == gMain_map
 -- param == { 0, 0, showzone, focuscomponent [, history] [, mode, modeparam] [, showmultiverse] [, focusoffset] }
 
@@ -8872,6 +8872,16 @@ function menu.createPropertyOwned(frame, instance)
 		end
 		--kuertee end: extra sort by distance
 	end
+
+
+	-- kuertee start: callback
+	if menu.uix_callbacks ["createPropertyOwned_on_tabtable_end"] then
+		local result
+		for uix_id, uix_callback in pairs (menu.uix_callbacks ["createPropertyOwned_on_tabtable_end"]) do
+			uix_callback (numdisplayed, instance, tabtable, infoTableData)
+		end
+	end
+	-- kuertee end: callback
 
 	tabtable:setSelectedRow(menu.selectedRows.propertytabs or menu.selectedRows.infotable2 or 0)
 	tabtable:setSelectedCol(menu.selectedCols.propertytabs or Helper.currentTableCol[menu.infoTable2] or 0)
