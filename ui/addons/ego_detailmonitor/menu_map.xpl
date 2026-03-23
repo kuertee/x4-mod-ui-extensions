@@ -8706,6 +8706,15 @@ function menu.createPropertyOwned(frame, instance)
 		maxNumCategoryColumns = Helper.maxTableCols
 	end
 	local numOfSorterColumns = 4 -- "sort by", "size", "name", "hull"
+	--kuertee start: extra sort by distance
+	-- "distance from player"
+	numOfSorterColumns = numOfSorterColumns + 1
+	if menu.infoSubmenuObject then
+		-- "distance from object"
+		numOfSorterColumns = numOfSorterColumns + 1
+	end
+	--kuertee end: extra sort by distance
+
 	local colSpanPerSorterColumn = math.floor(maxNumCategoryColumns / numOfSorterColumns)
 	local tabtable = frame:addTable(maxNumCategoryColumns, {
 		tabOrder = 2,
@@ -8834,7 +8843,7 @@ function menu.createPropertyOwned(frame, instance)
 		--kuertee start: extra sort by distance
 		-- "distance from player"
 		local buttonLabel = ffi.string(C.GetPlayerName ())
-		sorterColumn = 3
+		sorterColumn = 5
 		tableColumn = (sorterColumn - 1) * colSpanPerSorterColumn + 1
 		local button = row[tableColumn]:setColSpan(colSpanPerSorterColumn):createButton({ scaling = false, height = buttonheight }):setText(buttonLabel, { halign = "center", scaling = true })
 		if menu.propertySorterType == "uix_extraSortByDistance_player" then
@@ -8851,7 +8860,7 @@ function menu.createPropertyOwned(frame, instance)
 			else
 				buttonLabel = name
 			end
-			sorterColumn = 4
+			sorterColumn = 6
 			tableColumn = (sorterColumn - 1) * colSpanPerSorterColumn + 1
 			local button = row[tableColumn]:setColSpan(colSpanPerSorterColumn):createButton({ scaling = false, height = buttonheight }):setText(buttonLabel, { halign = "center", scaling = true })
 			if menu.propertySorterType == "uix_extraSortByDistance_object" then
