@@ -617,10 +617,10 @@ function menu.buttonTogglePlayerInfo(mode)
 		end
 	end
 	if newidx then
-		Helper.updateButtonColor(menu.mainTable, newidx + 2, 1, Color["row_background_selected"])
+		Helper.updateButtonColor(menu.mainTable, newidx, 1, Color["row_background_selected"])
 	end
 	if oldidx then
-		Helper.updateButtonColor(menu.mainTable, oldidx + 2, 1, Color["button_background_default"])
+		Helper.updateButtonColor(menu.mainTable, oldidx, 1, Color["button_background_default"])
 	end
 
 	-- Mark items as read when hiding them
@@ -652,7 +652,7 @@ function menu.buttonTogglePlayerInfo(mode)
 		menu.mode = nil
 		menu.personnelData.curEntry = {}
 		if oldidx then
-			SelectRow(menu.mainTable, oldidx + 2)
+			SelectRow(menu.mainTable, oldidx)
 		end
 	else
 		menu.setdefaulttable = true
@@ -664,7 +664,7 @@ function menu.buttonTogglePlayerInfo(mode)
 			menu.inventoryData.clearRendertarget = true
 		end
 		if newidx then
-			SelectRow(menu.mainTable, newidx + 2)
+			SelectRow(menu.mainTable, newidx)
 		end
 	end
 
@@ -685,7 +685,7 @@ function menu.deactivatePlayerInfo()
 	end
 
 	if oldidx then
-		Helper.updateButtonColor(menu.mainTable, oldidx + 2, 1, Color["button_background_default"])
+		Helper.updateButtonColor(menu.mainTable, oldidx, 1, Color["button_background_default"])
 	end
 
 	-- Mark items as read when hiding them
@@ -715,7 +715,7 @@ function menu.deactivatePlayerInfo()
 	PlaySound("ui_negative_back")
 	menu.mode = nil
 	if oldidx then
-		SelectRow(menu.mainTable, oldidx + 2)
+		SelectRow(menu.mainTable, oldidx)
 	end
 
 	menu.refreshInfoFrame(1, 1)
@@ -1330,24 +1330,6 @@ function menu.onShowMenu(state)
 	-- Init
 	menu.playerInfoFullWidth = Helper.viewWidth - (Helper.playerInfoConfig.offsetX + Helper.frameBorder + Helper.borderSize)
 
-	menu.sideBarWidth = Helper.scaleX(Helper.sidebarWidth)
-	local availableLeftBarHeight = Helper.viewHeight - (Helper.playerInfoConfig.offsetY + Helper.playerInfoConfig.height + Helper.borderSize + menu.sideBarWidth + Helper.scaleY(Helper.titleTextProperties.height) + 3 * Helper.borderSize)
-	local count, bordercount = 0, 0
-	for _, entry in ipairs(config.leftBar) do
-		if not entry.condition or entry.condition() then
-			if entry.spacing then
-				count = count + 0.25
-				bordercount = bordercount + 1
-			else
-				count = count + 1
-				bordercount = bordercount + 1
-			end
-		end
-	end
-	if (count * menu.sideBarWidth + bordercount * Helper.borderSize) > availableLeftBarHeight then
-		menu.sideBarWidth = math.floor((availableLeftBarHeight - bordercount * Helper.borderSize) / count)
-	end
-
 	menu.contextMenuWidth = Helper.scaleX(200)
 
 	menu.mode = menu.param[3] or menu.mode or config.mode
@@ -1501,34 +1483,37 @@ function menu.createMainFrame()
 	menu.mainFrame = Helper.createFrameHandle(menu, frameProperties)
 	menu.mainFrame:setBackground("solid", { color = Color["frame_background_semitransparent"] })
 
-	menu.createPlayerInfo(menu.mainFrame, Helper.playerInfoConfig.width, Helper.playerInfoConfig.height, Helper.playerInfoConfig.offsetX, Helper.playerInfoConfig.offsetY)
+	Helper.createPlayerInfo(menu, menu.mainFrame, Helper.playerInfoConfig.cornerTableWidth, Helper.playerInfoConfig.height, Helper.playerInfoConfig.offsetX, Helper.playerInfoConfig.offsetY)
+
+	local sidebaroffset = Helper.scaleY(Helper.largeRowHeight) + Helper.borderSize
+	menu.createLeftBar(menu.mainFrame, Helper.playerInfoConfig.offsetX, menu.playerInfoHeight + sidebaroffset)
 
 	menu.mainFrame:display()
 end
 
-function menu.createPlayerInfo(frame, width, height, offsetx, offsety)
-	-- kuertee start: callback
-	if menu.uix_callbacks ["createPlayerInfo_on_start"] then
-		for uix_id, uix_callback in pairs (menu.uix_callbacks ["createPlayerInfo_on_start"]) do
-			uix_callback (config)
+function menu.createLeftBar(frame, offsetx, offsety)
+	menu.sideBarWidth = Helper.scaleX(Helper.sidebarWidth)
+	local availableLeftBarHeight = Helper.viewHeight - (menu.playerInfoHeight + menu.sideBarWidth + Helper.scaleY(Helper.titleTextProperties.height) + 3 * Helper.borderSize)
+	local count, bordercount = 0, 0
+	for _, entry in ipairs(config.leftBar) do
+		if not entry.condition or entry.condition() then
+			if entry.spacing then
+				count = count + 0.25
+				bordercount = bordercount + 1
+			else
+				count = count + 1
+				bordercount = bordercount + 1
+			end
 		end
 	end
-	-- kuertee end: callback
+	if (count * menu.sideBarWidth + bordercount * Helper.borderSize) > availableLeftBarHeight then
+		menu.sideBarWidth = math.floor((availableLeftBarHeight - bordercount * Helper.borderSize) / count)
+	end
 
-	local ftable = frame:addTable(2, { tabOrder = 3, scaling = false, borderEnabled = false, x = offsetx, y = offsety, reserveScrollBar = false })
+	local ftable = frame:addTable(1, { tabOrder = 3, scaling = false, borderEnabled = false, x = offsetx, y = offsety, reserveScrollBar = false })
 	ftable:setColWidth(1, menu.sideBarWidth, false)
-	ftable:setColWidth(2, width - menu.sideBarWidth - Helper.borderSize, false)
-
-	local row = ftable:addRow(false, { fixed = true, bgColor = Color["player_info_background"] })
-	local icon = row[1]:setColSpan(2):createIcon(function () local logo = C.GetCurrentPlayerLogo(); return ffi.string(logo.icon) end, { width = height, height = height, color = Helper.getPlayerLogoColor })
-
-	local textheight = math.ceil(C.GetTextHeight(Helper.playerInfoConfigTextLeft(), Helper.standardFont, Helper.playerInfoConfig.fontsize, width - height - Helper.borderSize))
-	icon:setText(Helper.playerInfoConfigTextLeft,		{ fontsize = Helper.playerInfoConfig.fontsize, halign = "left",  x = height + Helper.borderSize, y = (height - textheight) / 2 })
-	icon:setText2(Helper.playerInfoConfigTextRight,		{ fontsize = Helper.playerInfoConfig.fontsize, halign = "right", x = Helper.borderSize,          y = (height - textheight) / 2 })
 
 	local spacingHeight = menu.sideBarWidth / 4
-	row = ftable:addRow(false, { fixed = true, bgColor = Color["row_background_blue"] })
-	row[1]:createText(" ", { minRowHeight = menu.sideBarWidth + Helper.scaleY(Helper.titleTextProperties.height) + 2 * Helper.borderSize })
 	for _, entry in ipairs(config.leftBar) do
 		if not entry.condition or entry.condition() then
 			if entry.spacing then
@@ -1610,8 +1595,8 @@ function menu.createInfoFrame()
 
 	local tableProperties = {
 		width = width - menu.sideBarWidth - Helper.borderSize,
-		x = Helper.playerInfoConfig.offsetX + menu.sideBarWidth + Helper.borderSize,
-		y = math.max(Helper.playerInfoConfig.offsetY + Helper.playerInfoConfig.height + Helper.borderSize, menu.topLevelHeight),
+		x = Helper.playerInfoConfig.offsetX + menu.sideBarWidth + Helper.minorPanelSpacing,
+		y = math.max(menu.playerInfoHeight, menu.topLevelHeight),
 	}
 	tableProperties.height = Helper.viewHeight - tableProperties.y
 
@@ -1932,15 +1917,27 @@ function menu.createInventory(frame, tableProperties, mode, tabOrderOffset)
 			local mediaProperties = { width = width, x = Helper.viewWidth - width - Helper.frameBorder, height = height, y = tableProperties.y, clear = menu.inventoryData.clearRendertarget }
 			menu.inventoryData.clearRendertarget = false
 
-			menu.rendertarget = frame:addRenderTarget(mediaProperties)
-			menu.inventoryData.activatecutscene = true
+			local description, image, isexplorationchart = GetWareData(menu.inventoryData.curEntry[1], "description", "image", "isexplorationchart")
+			local showImage = isexplorationchart and (image ~= "")
 
-			local descriptiontable = frame:addTable(1, { tabOrder = 0, width = width, x = Helper.viewWidth - width - Helper.frameBorder, y = tableProperties.y + height + Helper.borderSize })
+			local descTableOffsetY = tableProperties.y
+			if not showImage then
+				menu.rendertarget = frame:addRenderTarget(mediaProperties)
+				menu.inventoryData.activatecutscene = true
+				descTableOffsetY = descTableOffsetY + height + Helper.borderSize
+			end
+
+			local descriptiontable = frame:addTable(1, { tabOrder = 0, width = width, x = Helper.viewWidth - width - Helper.frameBorder, y = descTableOffsetY })
+			if showImage then
+				local row = descriptiontable:addRow(nil, { fixed = true })
+				row[1]:createIcon(image, { width = width, height = height, scaling = false })
+			end
+
 			local row = descriptiontable:addRow(nil, { fixed = true, bgColor = Color["row_title_background"] })
 			row[1]:createText(ReadText(1001, 2404), Helper.titleTextProperties)
 
 			local row = descriptiontable:addRow(nil, { fixed = true })
-			row[1]:createText(GetWareData(menu.inventoryData.curEntry[1], "description"), { wordwrap = true })
+			row[1]:createText(description, { wordwrap = true })
 		end
 	elseif menu.inventoryData.mode == "online" then
 		if Helper.hasExtension("multiverse") then
@@ -6991,7 +6988,7 @@ end
 
 function menu.viewCreated(layer, ...)
 	if layer == config.mainLayer then
-		menu.mainTable = ...
+		menu.playerInfoTable, menu.mainTable = ...
 	elseif layer == config.infoLayer then
 		if menu.mode == "logbook" then
 			menu.topLevelTable, menu.titleTable, menu.infoTable, menu.buttonTable = ...

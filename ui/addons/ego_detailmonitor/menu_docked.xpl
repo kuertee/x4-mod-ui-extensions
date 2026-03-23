@@ -341,12 +341,19 @@ function menu.display()
 	local xoffset = 0
 	local yoffset = 0
 
-	menu.frame = Helper.createFrameHandle(menu, { width = width, x = xoffset, y = yoffset, standardButtons = (((menu.mode == "docked") and (menu.currentplayership ~= 0)) or menu.secondarycontrolpost) and {} or { close = true, back = true }, showTickerPermanently = true })
+	menu.frame = Helper.createFrameHandle(menu, {
+		width = width,
+		x = xoffset,
+		y = yoffset,
+		standardButtons = (((menu.mode == "docked") and (menu.currentplayership ~= 0)) or menu.secondarycontrolpost) and {} or { close = true, back = true },
+		showTickerPermanently = true,
+		blurBackground = false,
+	})
 	menu.frame:setBackground("solid", { color = Color["frame_background_semitransparent"] })
 
 	menu.createTopLevel(menu.frame)
 
-	local table_topleft, table_header, table_button, row
+	local table_header, table_button, row
 
 	local isdocked = (menu.currentplayership ~= 0) and GetComponentData(menu.currentplayership, "isdocked")
 	local ownericon, owner, shiptrader, isdock, canbuildships, isplayerowned, issupplyship, canhavetradeoffers, aipilot = GetComponentData(menu.currentcontainer, "ownericon", "owner", "shiptrader", "isdock", "canbuildships", "isplayerowned", "issupplyship", "canhavetradeoffers", "aipilot")
@@ -384,17 +391,9 @@ function menu.display()
 	local istimelineshub = ffi.string(C.GetGameStartName()) == "x4ep1_gamestart_hub"
 	--print("cantrade: " .. tostring(cantrade) .. ", canbuyship: " .. tostring(canbuyship) .. ", canmodifyship: " .. tostring(canmodifyship))
 
-	width = (width / 3) - Helper.borderSize
+	width = math.max(Helper.scaleX(600), (width / 3) - Helper.borderSize)
 
-	-- set up a new table
-	table_topleft = menu.frame:addTable(1, { tabOrder = 0, width = Helper.playerInfoConfig.width, height = Helper.playerInfoConfig.height, x = Helper.playerInfoConfig.offsetX, y = Helper.playerInfoConfig.offsetY, scaling = false })
-
-	row = table_topleft:addRow(false, { fixed = true, bgColor = Color["player_info_background"] })
-	local icon = row[1]:createIcon(function () local logo = C.GetCurrentPlayerLogo(); return ffi.string(logo.icon) end, { width = Helper.playerInfoConfig.height, height = Helper.playerInfoConfig.height, color = Helper.getPlayerLogoColor })
-
-	local textheight = math.ceil(C.GetTextHeight(Helper.playerInfoConfigTextLeft(), Helper.standardFont, Helper.playerInfoConfig.fontsize, Helper.playerInfoConfig.width - Helper.playerInfoConfig.height - Helper.borderSize))
-	icon:setText(Helper.playerInfoConfigTextLeft,	{ fontsize = Helper.playerInfoConfig.fontsize, halign = "left",  x = Helper.playerInfoConfig.height + Helper.borderSize, y = (Helper.playerInfoConfig.height - textheight) / 2 })
-	icon:setText2(Helper.playerInfoConfigTextRight,	{ fontsize = Helper.playerInfoConfig.fontsize, halign = "right", x = Helper.borderSize,          y = (Helper.playerInfoConfig.height - textheight) / 2 })
+	Helper.createPlayerInfo(menu, menu.frame, Helper.playerInfoConfig.cornerTableWidth, Helper.playerInfoConfig.height, Helper.playerInfoConfig.offsetX, Helper.playerInfoConfig.offsetY)
 
 	local xoffset = (Helper.viewWidth - width) / 2
 	local yoffset = 25
@@ -547,7 +546,7 @@ function menu.display()
 			mouseOverText = mouseovertext,
 		}):setTextProperties(active and config.activeButtonTextProperties or config.inactiveButtonTextProperties):setText2Properties(active and config.activeButtonTextProperties or config.inactiveButtonTextProperties)	-- Deploy Civilian
 		row[1].properties.text2.halign = "right"
-		row[1].properties.text2.x = Helper.standardTextOffsetx
+		row[1].properties.text2.x = 0
 		if active then
 			row[1].handlers.onDropDownConfirmed = menu.dropdownDeploy
 		end
@@ -571,7 +570,7 @@ function menu.display()
 			mouseOverText = mouseovertext,
 		}):setTextProperties(active and config.activeButtonTextProperties or config.inactiveButtonTextProperties):setText2Properties(active and config.activeButtonTextProperties or config.inactiveButtonTextProperties)	-- Deploy Military
 		row[7].properties.text2.halign = "right"
-		row[7].properties.text2.x = Helper.standardTextOffsetx
+		row[7].properties.text2.x = 0
 		if active then
 			row[7].handlers.onDropDownConfirmed = menu.dropdownDeploy
 		end

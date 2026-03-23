@@ -575,6 +575,7 @@ Helper = {
 	standardFrameBorderLineWidth = 1,
 	activePanelLineWidth = 2,
 	inputBarStandardHeight = 32,
+	useShiftToQueueOrders = true,
 }
 MakeGlobalAvailable("Helper")
 
@@ -10341,6 +10342,44 @@ function Helper.getPlayerLogoColor()
 		color = Color["player_cover"]
 	end
 	return color
+end
+
+function Helper.createPlayerInfo(menu, frame, width, height, offsetx, offsety)
+	local playerinfoborder = frame:addFrameBorder("playerinfo", {
+		offset = Helper.standardContainerOffset,
+	})
+
+	local textheight = Helper.scaleY(Helper.headerRow1Height)
+	local iconsize = 2 * textheight + Helper.borderSize
+
+	local ftable = frame:addTable(4, {
+		tabOrder = 0,
+		width = width,
+		height = height,
+		x = offsetx + Helper.standardContainerOffset,
+		y = offsety + Helper.standardContainerOffset,
+		scaling = false,
+		backgroundID = "solid",
+		backgroundColor = Color["frame_background_black"],
+		backgroundPadding = Helper.standardContainerOffset,
+		frameborder = playerinfoborder.id
+	})
+	menu.playerinfotable = ftable
+	ftable:setColWidth(1, iconsize, false)
+	ftable:setColWidthPercent(3, 30)
+	ftable:setColWidth(4, textheight, false)
+
+	local row = ftable:addRow(nil, { fixed = true, borderBelow = false })
+	row[1]:setBackgroundColSpan(4):createIcon(function () local logo = C.GetCurrentPlayerLogo(); return ffi.string(logo.icon) end, { width = iconsize, height = iconsize, color = Helper.getPlayerLogoColor })
+	row[2]:setColSpan(3):createText(function (cell) return Helper.playerInfoConfigInfoText(cell, nil, menu.showMultiverse) end, { fontsize = Helper.playerInfoConfig.fontsize, x = Helper.borderSize, y = Helper.borderSize })
+
+	local row = ftable:addRow(nil, { fixed = true, bgColor = Color["container_section_header"] })
+	row[1]:setColSpan(2):setBackgroundColSpan(4):createText(function (cell) return Helper.playerInfoConfigTimeText() end, { fontsize = Helper.playerInfoConfig.fontsize, x = Helper.borderSize })
+	row[3]:setColSpan(2):createText(function (cell) return Helper.playerInfoConfigSectorText(cell, menu.showMultiverse) end, { fontsize = Helper.playerInfoConfig.fontsize, halign = "right", x = Helper.borderSize })
+
+	row.properties.paddingTop = Helper.scaleY(Helper.standardTextHeight / 2)
+
+	menu.playerInfoHeight = Helper.playerInfoConfig.offsetY + ftable:getFullHeight() + 2 * Helper.standardContainerOffset + Helper.standardPanelSpacing
 end
 
 Helper.shipComparisonData = {}
