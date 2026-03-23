@@ -471,7 +471,7 @@ ffi.cdef[[
 	void GenerateShipLoadout2(UILoadout2* result, UniverseID containerid, UniverseID shipid, const char* macroname, float level);
 	void GenerateShipLoadoutCounts2(UILoadoutCounts2* result, UniverseID containerid, UniverseID shipid, const char* macroname, float level);
 	uint32_t GetAllCountermeasures(AmmoData* result, uint32_t resultlen, UniverseID defensibleid);
-	uint32_t GetAllEquipment(EquipmentWareInfo* result, uint32_t resultlen, bool playerblueprint);
+	uint32_t GetAllEquipment2(EquipmentWareInfo* result, uint32_t resultlen, bool playerblueprint, bool customgamestart);
 	uint32_t GetAllLaserTowers(AmmoData* result, uint32_t resultlen, UniverseID defensibleid);
 	uint32_t GetAllMines(AmmoData* result, uint32_t resultlen, UniverseID defensibleid);
 	uint32_t GetAllMissiles(AmmoData* result, uint32_t resultlen, UniverseID defensibleid);
@@ -539,7 +539,7 @@ ffi.cdef[[
 	void GetMissionLoadout(UILoadout2* result, MissionID missionid, const char* uimacroname);
 	void GetMissionLoadoutCounts(UILoadoutCounts2* result, MissionID missionid, const char* uimacroname);
 	uint32_t GetNumAllCountermeasures(UniverseID defensibleid);
-	uint32_t GetNumAllEquipment(bool playerblueprint);
+	uint32_t GetNumAllEquipment2(bool playerblueprint, bool customgamestart);
 	uint32_t GetNumAllLaserTowers(UniverseID defensibleid);
 	uint32_t GetNumAllMines(UniverseID defensibleid);
 	uint32_t GetNumAllMissiles(UniverseID defensibleid);
@@ -4072,9 +4072,9 @@ function menu.getDataAndDisplay(upgradeplan, crew, newedit, firsttime, noundo, s
 		local n = 0
 		local buf
 		if menu.mode == "customgamestart" then
-			n = C.GetNumAllEquipment(not menu.allownonplayerblueprints)
+			n = C.GetNumAllEquipment2(not menu.allownonplayerblueprints, true)
 			buf = ffi.new("EquipmentWareInfo[?]", n)
-			n = C.GetAllEquipment(buf, n, not menu.allownonplayerblueprints)
+			n = C.GetAllEquipment2(buf, n, not menu.allownonplayerblueprints, true)
 		elseif (not menu.isReadOnly) and ((menu.mode ~= "modify") or (not menu.modeparam[1])) then
 			n = C.GetNumAvailableEquipment(menu.container, "")
 			buf = ffi.new("EquipmentWareInfo[?]", n)
@@ -10091,6 +10091,8 @@ function menu.addEquipmentInfoRow(ftable, rowparent, entry, value, installedvalu
 			textvalue = menu.formatRange(value)
 		elseif entry.accuracy then
 			textvalue = menu.formatLoadoutStat(textvalue, entry.accuracy)
+		elseif type(value) == "number" then
+			textvalue = Helper.round(value)
 		end
 		local unit = entry.unit
 		if type(textvalue) == "number" then

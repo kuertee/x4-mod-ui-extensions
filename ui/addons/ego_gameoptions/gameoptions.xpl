@@ -139,6 +139,7 @@ ffi.cdef[[
 	const char* GetEnemyWarningNearbySound(void);
 	const char* GetEnvMapProbeOption(void);
 	float GetEnvMapProbeInsideGlassFadeOption(void);
+	const char* GetExtensionErrorText(const char* extensionid, bool personal);
 	const char* GetExtensionName(uint32_t extensionidx);
 	const char* GetExtensionNameByID(const char* extensionid, bool personal);
 	const char* GetExtensionVersion(const char* extensionid, bool personal);
@@ -6259,11 +6260,13 @@ function menu.errorSavegameInfo()
 				error = error .. "\n" .. ColorText["text_warning"] .. ReadText(1001, 11751) .. "\27X"
 			end
 		else
-			if not menu.selectedOption.empty then
-				error = error .. string.format(ReadText(1001, 8959), menu.selectedOption.displayedname)
-			end
-			if Helper.isOnlineGame() and (not menu.selectedOption.isonline) then
-				error = error .. "\n" .. ReadText(1001, 11703)
+			if not menu.selectedOption.titlerow then
+				if not menu.selectedOption.empty then
+					error = error .. string.format(ReadText(1001, 8959), menu.selectedOption.displayedname)
+				end
+				if Helper.isOnlineGame() and (not menu.selectedOption.isonline) then
+					error = error .. "\n" .. ReadText(1001, 11703)
+				end
 			end
 		end
 	end
@@ -12423,7 +12426,7 @@ function menu.displaySavegameOptions(optionParameter)
 	local row = buttontable:addRow((menu.currentOption == "save") or (menu.currentOption == "saveoffline"), {  })
 	row[1]:setColSpan(2):createText(ReadText(1001, 8970) .. ReadText(1001, 120))
 	if (menu.currentOption == "save") or (menu.currentOption == "saveoffline") then
-		menu.saveNameEditBox = row[3]:setColSpan(2):createEditBox({ height = config.standardTextHeight, description = ReadText(1001, 8970), active = function () return (menu.selectedOption ~= nil) and (next(menu.selectedOption) ~= nil) and (not menu.selectedOption.isonline) end }):setText(menu.savegameName, { fontsize = config.standardFontSize, halign = "right" }):setHotkey("INPUT_STATE_DETAILMONITOR_Y", { displayIcon = true, x = 0 })
+		menu.saveNameEditBox = row[3]:setColSpan(2):createEditBox({ height = config.standardTextHeight, description = ReadText(1001, 8970), active = function () return (menu.selectedOption ~= nil) and (next(menu.selectedOption) ~= nil) and (not menu.selectedOption.isonline) and (not menu.selectedOption.titlerow) end }):setText(menu.savegameName, { fontsize = config.standardFontSize, halign = "right" }):setHotkey("INPUT_STATE_DETAILMONITOR_Y", { displayIcon = true, x = 0 })
 		row[3].handlers.onEditBoxActivated = function (widget) menu.noupdate = true end
 		row[3].handlers.onEditBoxDeactivated = function (_, text, textchanged) menu.noupdate = nil end
 		row[3].handlers.onTextChanged = menu.editboxSaveName
@@ -12733,7 +12736,8 @@ function menu.displayOnlineLogin()
 	-- venture extension
 	if C.IsVentureExtensionSupported() then
 		local ventureextensionid = "ego_dlc_ventures"
-		local isinstalled = C.IsExtensionEnabled(ventureextensionid, false)
+		local isinstalled = C.HasExtension(ventureextensionid, false)
+		local dlcerror = ffi.string(C.GetExtensionErrorText(ventureextensionid, false))
 		local dlcstate = config.ventureDLCStates[C.GetVentureDLCStatus()] or "unknownerror"
 
 		local row = ftable:addRow(false, {  })
@@ -12759,22 +12763,26 @@ function menu.displayOnlineLogin()
 		row[2]:setColSpan(5):createText(ReadText(1001, 11737), config.standardTextProperties)
 
 		local statusstring = "---"
-		if dlcstate == "valid" then
-			statusstring = ReadText(1001, 11738)
-		elseif dlcstate == "userdisabled" then
-			statusstring = ColorText["text_warning"] .. ReadText(1001, 11739) .. "\27X"
-		elseif dlcstate == "userskipped" then
-			statusstring = ColorText["text_warning"] .. ReadText(1001, 11740) .. "\27X"
-		elseif dlcstate == "notpossible" then
-			statusstring = ColorText["text_error"] .. ReadText(1001, 11741) .. "\27X"
-		elseif dlcstate == "updatedisabled" then
-			statusstring = ColorText["text_warning"] .. ReadText(1001, 11742) .. "\27X"
-		elseif dlcstate == "updateskipped" then
-			statusstring = ColorText["text_warning"] .. ReadText(1001, 11743) .. "\27X"
-		elseif dlcstate == "updatenotpossible" then
-			statusstring = ColorText["text_error"] .. ReadText(1001, 11744) .. "\27X"
+		if dlcerror ~= "" then
+			statusstring = ColorText["text_error"] .. dlcerror
 		else
-			statusstring = ColorText["text_error"] .. ReadText(1001, 11745) .. "\27X"
+			if dlcstate == "valid" then
+				statusstring = ReadText(1001, 11738)
+			elseif dlcstate == "userdisabled" then
+				statusstring = ColorText["text_warning"] .. ReadText(1001, 11739) .. "\27X"
+			elseif dlcstate == "userskipped" then
+				statusstring = ColorText["text_warning"] .. ReadText(1001, 11740) .. "\27X"
+			elseif dlcstate == "notpossible" then
+				statusstring = ColorText["text_error"] .. ReadText(1001, 11741) .. "\27X"
+			elseif dlcstate == "updatedisabled" then
+				statusstring = ColorText["text_warning"] .. ReadText(1001, 11742) .. "\27X"
+			elseif dlcstate == "updateskipped" then
+				statusstring = ColorText["text_warning"] .. ReadText(1001, 11743) .. "\27X"
+			elseif dlcstate == "updatenotpossible" then
+				statusstring = ColorText["text_error"] .. ReadText(1001, 11744) .. "\27X"
+			else
+				statusstring = ColorText["text_error"] .. ReadText(1001, 11745) .. "\27X"
+			end
 		end
 
 		row[7]:setColSpan(5):createText(isinstalled and statusstring or "---", config.standardTextProperties)
