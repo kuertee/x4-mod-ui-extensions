@@ -2575,16 +2575,20 @@ function menu.buttonClearCustomShipName()
 	menu.refreshMenu()
 end
 
-function menu.buttonCustomShipNameAppendShip(name)
-	if menu.customshipname == "" then
-		menu.customshipname = name
+function menu.helperSpaceAwareConcat(stringa,stringb)
+	if stringa == "" or stringb  == "" then
+		return stringa .. stringb
 	else
-		if utf8.sub(menu.customshipname, -1) ~= " " then
-			menu.customshipname = menu.customshipname .. " "
+		if utf8.sub(stringa, -1) ~= " " then
+			stringa = stringa .. " "
 		end
-		menu.customshipname = menu.customshipname .. name
+		return stringa .. stringb
 	end
+end
 
+function menu.buttonCustomShipNameAppendShip(name)
+	menu.customshipname = menu.helperSpaceAwareConcat(menu.customshipname,name)
+	menu.customshipname = utf8.sub(menu.customshipname, 0, Helper.standardEditBoxMaxTextLength)
 	if menu.customShipNameEditBox then
 		C.SetEditBoxText(menu.customShipNameEditBox.id, menu.customshipname)
 	end
@@ -2592,15 +2596,8 @@ function menu.buttonCustomShipNameAppendShip(name)
 end
 
 function menu.buttonCustomShipNameAppendLoadout()
-	if menu.customshipname == "" then
-		menu.customshipname = menu.loadoutName
-	else
-		if utf8.sub(menu.customshipname, -1) ~= " " then
-			menu.customshipname = menu.customshipname .. " "
-		end
-		menu.customshipname = menu.customshipname .. menu.loadoutName
-	end
-
+	menu.customshipname = menu.helperSpaceAwareConcat(menu.customshipname,menu.loadoutName)
+	menu.customshipname = utf8.sub(menu.customshipname, 0, Helper.standardEditBoxMaxTextLength)
 	if menu.customShipNameEditBox then
 		C.SetEditBoxText(menu.customShipNameEditBox.id, menu.customshipname)
 	end
@@ -4391,6 +4388,7 @@ function menu.getDataAndDisplay(upgradeplan, crew, newedit, firsttime, noundo, s
 			menu.slotStats[upgradetype.type] = {}
 			slots.count = #slots
 			local sizecounts = {}
+			local mergedslotnumber
 			for i, slot in ipairs(slots) do
 				if menu.upgradewares[type] then
 					for _, upgradeware in ipairs(menu.upgradewares[type]) do
@@ -4415,12 +4413,24 @@ function menu.getDataAndDisplay(upgradeplan, crew, newedit, firsttime, noundo, s
 					slot.slotname = i
 					slot.slotsize = slotsize
 					if slot.slotsize ~= "" then
-						if sizecounts[slot.slotsize] then
-							sizecounts[slot.slotsize] = sizecounts[slot.slotsize] + 1
-						else
-							sizecounts[slot.slotsize] = 1
+						local countslot = true
+						if slots.mergedslotindices and slots.mergedslotindices[i] and mergedslotnumber then
+							countslot = false
 						end
-						slot.slotname = upgradetype.shorttext[slot.slotsize] .. sizecounts[slot.slotsize]
+
+						if countslot then
+							if sizecounts[slot.slotsize] then
+								sizecounts[slot.slotsize] = sizecounts[slot.slotsize] + 1
+							else
+								sizecounts[slot.slotsize] = 1
+							end
+							if slots.mergedslotindices and slots.mergedslotindices[i] and (not mergedslotnumber) then
+								mergedslotnumber = sizecounts[slot.slotsize]
+							end
+							slot.slotname = upgradetype.shorttext[slot.slotsize] .. sizecounts[slot.slotsize]
+						else
+							slot.slotname = upgradetype.shorttext[slot.slotsize] .. mergedslotnumber
+						end
 					end
 
 					menu.slotStats[upgradetype.type][slotsize] = (menu.slotStats[upgradetype.type][slotsize] or 0) + 1
@@ -5490,8 +5500,8 @@ function menu.displaySlots(frame, firsttime)
 
 		menu.equipmentOffsetY = ftable:getFullHeight() + Helper.borderSize
 
+		menu.equipmentMacroData = {}
 		if next(menu.groupedupgrades) then
-			menu.equipmentMacroData = {}
 			if (menu.upgradetypeMode == "enginegroup") or (menu.upgradetypeMode == "turretgroup") then
 				for i, upgradetype2 in ipairs(Helper.upgradetypes) do
 					if upgradetype2.supertype == "group" then
@@ -8402,11 +8412,13 @@ function menu.displayPlan(frame)
 			end
 
 			local row = ftable:addRow(true, {  })
-			row[1]:setColSpan(colspan + 1):createButton({ height = Helper.standardTextHeight, active = function () return not utf8.find(menu.customshipname, name, nil, true) end }):setText(ReadText(1001, 8588), { halign = "center" })
+			-- The "- 1" in the below line accounts for the " " added by helperSpaceAwareConcat
+			row[1]:setColSpan(colspan + 1):createButton({ height = Helper.standardTextHeight, active = function () return (not utf8.find(menu.customshipname, name, nil, true)) and (utf8.len(menu.customshipname) < (Helper.standardEditBoxMaxTextLength - 1)) end }):setText(ReadText(1001, 8588), { halign = "center" })
 			row[1].handlers.onClick = function () return menu.buttonCustomShipNameAppendShip(name) end
 
 			local row = ftable:addRow(true, {  })
-			row[1]:setColSpan(colspan + 1):createButton({ height = Helper.standardTextHeight, active = function () return not utf8.find(menu.customshipname, menu.loadoutName, nil, true) end }):setText(ReadText(1001, 8589), { halign = "center" })
+			-- The "- 1" in the below line accounts for the " " added by helperSpaceAwareConcat
+			row[1]:setColSpan(colspan + 1):createButton({ height = Helper.standardTextHeight, active = function () return (not utf8.find(menu.customshipname, menu.loadoutName, nil, true)) and (utf8.len(menu.customshipname) < (Helper.standardEditBoxMaxTextLength - 1)) end }):setText(ReadText(1001, 8589), { halign = "center" })
 			row[1].handlers.onClick = menu.buttonCustomShipNameAppendLoadout
 
 			local row = ftable:addRow(false, { bgColor = Color["row_background_unselectable"] })
@@ -9126,19 +9138,31 @@ function menu.displayStats(frame)
 			row[5]:setColSpan(2):createText((maxtraveldrivestabilityvalue < defaultmaxtraveldrivestabilityvalue) and ReadText(1001, 7736) or ReadText(1001, 7738), { halign = "right" })
 		end
 
-		if (shieldcapacitymodifier ~= 1) and (shieldrechargedelaymodifier ~= 1) and (shieldrechargeratemodifier ~= 1) then
-			local row = ftable:addRow(nil, {  })
-			if shieldcapacitymodifier ~= 1 then
-				row[1]:createText(ReadText(1001, 8599))
-				row[2]:setColSpan(2):createText(menu.displayModifier(shieldcapacitymodifier), { halign = "right" })
-			elseif shieldrechargedelaymodifier ~= 1 then
-				row[1]:createText(ReadText(1001, 13201))
-				row[2]:setColSpan(2):createText(menu.displayModifier(shieldrechargedelaymodifier), { halign = "right" })
-			elseif shieldrechargeratemodifier ~= 1 then
-				row[1]:createText(ReadText(1001, 13202))
-				row[2]:setColSpan(2):createText(menu.displayModifier(shieldrechargeratemodifier), { halign = "right" })
+		local row
+		local newrow, coloffset = true, 0
+
+		local shieldprops = {
+			{ name = ReadText(1001, 8599),	value = shieldcapacitymodifier },
+			{ name = ReadText(1001, 13201),	value = shieldrechargedelaymodifier },
+			{ name = ReadText(1001, 13202),	value = shieldrechargeratemodifier },
+		}
+		for _, shieldprop in ipairs(shieldprops) do
+			if shieldprop.value ~= 1 and shieldprop.value ~= nil then
+				if newrow then
+					row = ftable:addRow(nil, {  })
+					newrow = false
+				end
+				row[1 + coloffset]:createText(shieldprop.name)
+				row[2 + coloffset]:setColSpan(2):createText(menu.displayModifier(shieldprop.value), { halign = "right" })
+				if coloffset > 0 then
+					newrow = true
+					coloffset = 0
+				else
+					coloffset = 3
+				end
 			end
 		end
+
 
 		titletable.properties.y = Helper.viewHeight - titletable:getFullHeight() - Helper.borderSize - ftable:getVisibleHeight() - menu.statsData.offsetY
 		ftable.properties.y = titletable.properties.y + ftable.properties.y
@@ -9194,7 +9218,7 @@ function menu.evaluateShipOptions()
 					end
 				end
 				-- end: alexandretk call-back
-				
+
 				-- start: cpsdo call-back (ship options: override shiptypename)
 				if menu.uix_callbacks["cpsdo_evaluateShipOptions_override_shiptypename"] then
 					local shiptypename_override

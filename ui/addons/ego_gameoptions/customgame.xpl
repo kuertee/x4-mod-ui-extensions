@@ -189,7 +189,7 @@ ffi.cdef[[
 		const char* macro;
 		int amount;
 	} UIWareInfo;
-	
+
 	typedef struct {
 		const char* type;
 		const char* id;
@@ -1176,11 +1176,11 @@ function menu.addSatellite(sector, id, x, z)
 	local entryid = ffi.string(C.SetCustomGameStartPlayerPropertyObjectMacro(menu.customgamestart, "playerproperty", id, config.satellites.macro))
 	if entryid ~= "" then
 		local sectorpos = ffi.new("UIPosRot", {
-			x = x, 
-			y = 0, 
-			z = z, 
-			yaw = 0, 
-			pitch = 0, 
+			x = x,
+			y = 0,
+			z = z,
+			yaw = 0,
+			pitch = 0,
 			roll = 0
 		})
 		C.SetCustomGameStartPlayerPropertySectorAndOffset(menu.customgamestart, "playerproperty", entryid, sector, sectorpos)
@@ -1314,11 +1314,11 @@ function menu.addHQ()
 
 			local sector = "cluster_01_sector001_macro"
 			local sectorpos = ffi.new("UIPosRot", {
-				x = 128000, 
-				y = 0, 
-				z = 198000, 
-				yaw = 0, 
-				pitch = 0, 
+				x = 128000,
+				y = 0,
+				z = 198000,
+				yaw = 0,
+				pitch = 0,
 				roll = 0
 			})
 			C.SetCustomGameStartPlayerPropertySectorAndOffset(menu.customgamestart, "playerproperty", entryid, sector, sectorpos)
@@ -1443,7 +1443,7 @@ function menu.dropdownImport(filename)
 	end
 
 	C.ImportCustomGameStart(menu.customgamestart, filename, menu.customgamestart)
-	
+
 	menu.initEncyclopediaValue()
 	menu.initKnownValue()
 	menu.initStoryValue()
@@ -2004,7 +2004,7 @@ function menu.universeSector(current)
 		if not hidden then
 			local mouseovertext = ""
 			local active = true
-			
+
 			if not unlocked then
 				active = false
 				mouseovertext = ReadText(1026, 9928)
@@ -2450,7 +2450,7 @@ function menu.displayMultiSelection(property)
 						end
 					end
 				end
-				
+
 				if active then
 					if menu.contextMenuData.propertyLockedWares[entry.id] then
 						active = false
@@ -2957,6 +2957,7 @@ function menu.display()
 			local filename = ffi.string(buf[i].filename)
 			local name = ffi.string(buf[i].name)
 			local active = true
+			local hasdeprecatedwares = false
 			local mouseovertext = ""
 
 			local content = C.GetCustomGameStartContentCounts2(menu.customgamestart, filename, menu.customgamestart)
@@ -2986,10 +2987,13 @@ function menu.display()
 						nocustomgamestart = false
 						islimited = false
 					end
-					if (not hasblueprint) or isdeprecated or (not isplayerblueprintallowed) or nocustomgamestart then
+					if (not hasblueprint) or (not isplayerblueprintallowed) or nocustomgamestart then
 						active = false
 						mouseovertext = ReadText(1026, 9925)
 						break
+					end
+					if isdeprecated then
+						hasdeprecatedwares = true
 					end
 					if islimited then
 						usedlimitedwares[ware] = (usedlimitedwares[ware] or 0) + buf_content.macros[j].amount
@@ -3021,10 +3025,13 @@ function menu.display()
 							break
 						end
 					end
-					if (not hasblueprint) or isdeprecated or (not isplayerblueprintallowed) or nocustomgamestart or isventure or ismissiononly then
+					if (not hasblueprint) or (not isplayerblueprintallowed) or nocustomgamestart or isventure or ismissiononly then
 						active = false
 						mouseovertext = ReadText(1026, 9926)
 						break
+					end
+					if isdeprecated then
+						hasdeprecatedwares = true
 					end
 				end
 			end
@@ -3040,6 +3047,10 @@ function menu.display()
 						break
 					end
 				end
+			end
+
+			if active and hasdeprecatedwares then
+				mouseovertext = mouseovertext .. ((mouseovertext ~= "") and "\n\n" or "") .. ColorText["text_warning"] .. ReadText(1026, 9932)
 			end
 
 			table.insert(menu.availablecustomgamestarts, { id = filename, text = name, icon = "", displayremoveoption = false, active = active, mouseovertext = mouseovertext })
@@ -3307,7 +3318,7 @@ function menu.display()
 							if i ~= 1 then
 								row = menu.propertyTable:addRow(property, {  })
 							end
-							
+
 							if property.id == "playerknownspace" then
 								row[3]:setColSpan(1):createButton({ helpOverlayID = "knownsector_expand", helpOverlayText = " ", helpOverlayHighlightOnly = true }):setText(menu.expandedProperty["knownsector_" .. entry.id] and "-" or "+", { halign = "center", x = 0 })
 								row[3].handlers.onClick = function () return menu.buttonExpandProperty("knownsector_" .. entry.id) end
@@ -5316,7 +5327,7 @@ function menu.onUpdate()
 										if cutscenekey then
 											menu.cutscenedesc = CreateCutsceneDescriptor(cutscenekey, { npcref = menu.prenpc })
 											menu.cutsceneid = StartCutscene(menu.cutscenedesc, rendertargetTexture)
-											
+
 											if not menu.cutsceneNotification then
 												NotifyOnCutsceneReady(getElement("Scene.UIContract"))
 												NotifyOnCutsceneStopped(getElement("Scene.UIContract"))
@@ -5438,7 +5449,7 @@ end
 -- rendertarget mouse input helper
 function menu.onRenderTargetMouseDown(modified)
 	menu.leftdown = { time = getElapsedTime(), position = table.pack(GetLocalMousePosition()), dynpos = table.pack(GetLocalMousePosition()) }
-	
+
 	if menu.holomap ~= 0 then
 		C.StartPanMap(menu.holomap)
 		menu.panningmap = { isclick = true }
@@ -5479,7 +5490,7 @@ function menu.onRenderTargetRightMouseUp(modified)
 		if menu.holomap ~= 0 then
 			local sectorpos = ffi.new("UIPosRot")
 			local sectormacro = ffi.string(C.GetMacroMapPositionOnEcliptic(menu.holomap, sectorpos))
-		
+
 			if menu.category.id == "universe" then
 				if sectormacro ~= "" then
 					menu.displayMapContext(offset, sectormacro, sectorpos)

@@ -1530,8 +1530,8 @@ local config = {
 		{ text = ReadText(1001, 3245) },																																								-- Map
 		-- hexes
 		{ icon = "maplegend_hexagon_fog_01",		text = ReadText(10002, 606),	width = Helper.sidebarWidth,	height = Helper.sidebarWidth },														-- Unknown location
-		{ icon = "maplegend_hexagon_01",			text = ReadText(1001, 11689),	width = Helper.sidebarWidth,	height = Helper.sidebarWidth,	color = Color["icon_inactive"] },					-- Potential Resource
-		{ icon = "maplegend_hexagon_01",			text = ReadText(1001, 11690),	width = Helper.sidebarWidth,	height = Helper.sidebarWidth },														-- Detected Resource
+		{ icon = "maplegend_hexagon_01",			text = ReadText(1001, 11689),	width = Helper.sidebarWidth,	height = Helper.sidebarWidth,	color = Color["resource_map_default"] },					-- Potential Resource
+		{ icon = "maplegend_hexagon_02",			text = ReadText(1001, 11690),	width = Helper.sidebarWidth,	height = Helper.sidebarWidth,	color = Color["resource_map_default"] },														-- Detected Resource
 		-- highways, gates, etc
 		{ icon = "solid",							text = ReadText(1001, 9809),	width = Helper.sidebarWidth,	height = Helper.standardTextHeight / 2,	minRowHeight = Helper.sidebarWidth / 2 },	-- Jump Gate Connection
 		{ icon = "maplegend_hw_01",					text = ReadText(20001, 601),	width = Helper.sidebarWidth,	height = Helper.sidebarWidth / 2,	color = "superhighwaycolor" },					-- Superhighway
@@ -6115,6 +6115,7 @@ function menu.onShowMenu(state)
 	menu.infoTableWidth = math.max(menu.infoTableWidth, 400)
 	menu.infoTableOffsetX = menu.sideBarOffsetX + menu.sideBarWidth + Helper.minorPanelSpacing
 	menu.infoTableOffsetY = menu.sideBarOffsetY
+	menu.infoTable2OffsetY = menu.sideBarOffsetY
 
 	-- searchfield
 	menu.searchFieldData = {
@@ -8214,7 +8215,7 @@ function menu.createObjectList(frame, instance)
 			menu.selectedCols["objectlist"] = nil
 		end
 	else
-		menu.settoprow = ((not menu.settoprow) or (menu.settoprow == 0)) and ((menu.setrow and menu.setrow > 21) and (menu.setrow - 17) or 3) or menu.settoprow
+		menu.settoprow = ((not menu.settoprow) or (menu.settoprow == 0)) and ((menu.setrow and menu.setrow > 21) and (menu.setrow - 17) or 1) or menu.settoprow
 		objecttable:setTopRow(menu.settoprow)
 		local highlightborderrow = menu.sethighlightborderrow or menu.setrow
 		if menu.infoTable then
@@ -8679,7 +8680,7 @@ function menu.createPropertyOwned(frame, instance)
 			menu.selectedCols["propertyowned"] = nil
 		end
 	else
-		menu.settoprow = ((not menu.settoprow) or (menu.settoprow == 0)) and ((menu.setrow and menu.setrow > 21) and (menu.setrow - 17) or 3) or menu.settoprow
+		menu.settoprow = ((not menu.settoprow) or (menu.settoprow == 0)) and ((menu.setrow and menu.setrow > 21) and (menu.setrow - 17) or 1) or menu.settoprow
 		ftable:setTopRow(menu.settoprow)
 		local highlightborderrow = menu.sethighlightborderrow or menu.setrow
 		if menu.infoTable then
@@ -16059,7 +16060,7 @@ function menu.addCrewSection(mode, inputtable, inputobject, instance, infocrew, 
 				local maxselect = math.min(peoplecapacity, roletable.amount + infocrew.reassigned.roles[i].amount + infocrew.unassigned.total)
 				local start = math.min(maxselect, roletable.amount + infocrew.reassigned.roles[i].amount)
 				row[1]:setColSpan(7):createSliderCell({ height = config.mapRowHeight, start = start, minSelect = roletable.transferring, max = peoplecapacity, maxSelect = maxselect, readOnly = not isplayerowned or not roletable.canhire }):setText(ffi.string(roletable.name), { fontsize = config.mapFontSize })
-				sliderrows[slidercounter] = { ["row"] = row, ["col"] = 2, ["roleindex"] = i,["id"] = roletable.id, ["name"] = roletable.name, ["desc"] = roletable.desc, ["amount"] = roletable.amount, ["numtiers"] = roletable.numtiers, ["canhire"] = roletable.canhire, ["tiers"] = {} }
+				sliderrows[slidercounter] = { ["row"] = row, ["col"] = 1, ["roleindex"] = i,["id"] = roletable.id, ["name"] = roletable.name, ["desc"] = roletable.desc, ["amount"] = roletable.amount, ["numtiers"] = roletable.numtiers, ["canhire"] = roletable.canhire, ["tiers"] = {} }
 				titlerow[1].properties.helpOverlayHeight = titlerow[1].properties.helpOverlayHeight + row:getHeight() + Helper.borderSize
 				local numtiers = roletable.numtiers
 				for j, tiertable in ipairs(roletable.tiers) do
@@ -16076,7 +16077,7 @@ function menu.addCrewSection(mode, inputtable, inputobject, instance, infocrew, 
 						local maxselect = math.min(peoplecapacity, tiertable.amount + infocrew.reassigned.roles[i].tiers[j].amount)
 						local start = math.min(maxselect, tiertable.amount + infocrew.reassigned.roles[i].tiers[j].amount)
 						row[2]:setColSpan(6):createSliderCell({ height = config.mapRowHeight, start = start, minSelect = tiertable.transferring, max = peoplecapacity, maxSelect = maxselect, readOnly = not isplayerowned }):setText(ffi.string(tiertable.name), { fontsize = config.mapFontSize })
-						sliderrows[slidercounter].tiers[j] = { ["row"] = row, ["col"] = 3, ["roleindex"] = i, ["name"] = tiertable.name, ["skilllevel"] = tiertable.skilllevel, ["amount"] = tiertable.amount }
+						sliderrows[slidercounter].tiers[j] = { ["row"] = row, ["col"] = 2, ["roleindex"] = i, ["name"] = tiertable.name, ["skilllevel"] = tiertable.skilllevel, ["amount"] = tiertable.amount }
 						titlerow[1].properties.helpOverlayHeight = titlerow[1].properties.helpOverlayHeight + row:getHeight() + Helper.borderSize
 					end
 				end
@@ -20660,7 +20661,7 @@ function menu.createSearchField(frame, width, height, offsetx, offsety, refresh,
 	for i = 1, math.min(maxsearchtermsdisplayed, #menu.searchtext) do
 		local usedrow = rows[2]
 		local col = 5 + i
-		if col > 8 then
+		if col > 7 then
 			usedrow = rows[3]
 			col = col - 2
 		end
@@ -20689,7 +20690,7 @@ function menu.createSearchField(frame, width, height, offsetx, offsety, refresh,
 		for i = 1, math.min(maxsearchtermsdisplayed - #menu.searchtext, #warefilter) do
 			local usedrow = rows[2]
 			local col = 5 + i + #menu.searchtext
-			if col > 8 then
+			if col > 7 then
 				usedrow = rows[3]
 				col = col - 2
 			end

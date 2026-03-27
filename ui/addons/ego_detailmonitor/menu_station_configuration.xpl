@@ -676,6 +676,7 @@ function menu.buttonLeftBar(mode, row)
 		PlaySound("ui_positive_select")
 		menu.modulesMode = mode
 	end
+	menu.noupdate = false
 	menu.refresh = menu.refresh or getElapsedTime()
 end
 
@@ -2182,6 +2183,7 @@ function menu.createTitleBar(frame)
 		table.sort(loadOptions, function (a, b) return a.text < b.text end)
 		row[2]:createDropDown(loadOptions, { textOverride = ReadText(1001, 7904), optionWidth = menu.titleData.dropdownWidth + 7 * (menu.titleData.height + Helper.borderSize) }):setTextProperties(config.dropDownTextProperties)
 		row[2].handlers.onDropDownActivated = function () menu.noupdate = true; menu.closeContextMenu() end
+		row[2].handlers.onDropDownDeactivated = function () menu.noupdate = false end
 		row[2].handlers.onDropDownConfirmed = menu.dropdownLoad
 		row[2].handlers.onDropDownRemoved = menu.dropdownRemovedCP
 		-- save
@@ -2264,7 +2266,7 @@ function menu.refreshTitleBar()
 		Helper.setCellContent(menu, menu.titlebartable, desc, 1, 1, nil, "editbox", nil, menu.editboxNameUpdateText)
 		-- dropdown
 		local desc = Helper.createDropDown(loadOptions, "", text, nil, true, true, 0, 0, 0, 0, nil, nil, "", menu.titleData.dropdownWidth + 7 * (menu.titleData.height + Helper.borderSize))
-		Helper.setCellContent(menu, menu.titlebartable, desc, 1, 2, nil, "dropdown", nil, function () menu.noupdate = true; menu.closeContextMenu() end, menu.dropdownLoad, menu.dropdownRemovedCP)
+		Helper.setCellContent(menu, menu.titlebartable, desc, 1, 2, nil, "dropdown", nil, function () menu.noupdate = true; menu.closeContextMenu() end, menu.dropdownLoad, menu.dropdownRemovedCP, function () menu.update = false end)
 		-- save
 		local desc = Helper.createButton(nil, Helper.createButtonIcon("menu_save", nil, 255, 255, 255, 100), true, true, 0, 0, 0, menu.titleData.height, nil, nil, nil, ReadText(1026, 7901))
 		Helper.setCellContent(menu, menu.titlebartable, desc, 1, 3, nil, "button", nil, menu.buttonTitleSave)
