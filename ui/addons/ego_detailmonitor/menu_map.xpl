@@ -6931,7 +6931,14 @@ function menu.createInfoFrame()
 				menu.createOrderQueue(menu.infoFrame, menu.infoMode.left, "left")
 			elseif menu.infoMode.left == "standingorders" then
 				menu.createStandingOrdersMenu(menu.infoFrame, "left")
+				-- start: InfoSubmenu Create Letf call-back
+			elseif menu.uix_callbacks ["info_sub_menu_create"] then
+				for uix_id, uix_callback in pairs (menu.uix_callbacks ["info_sub_menu_create"]) do
+					uix_callback (menu.infoFrame, "left")
+				end
+				-- end: InfoSubmenu Create Letf call-back
 			end
+
 		elseif menu.infoTableMode == "missionoffer" then
 			menu.infoFrame.properties.autoFrameHeightPadding = Helper.standardContainerOffset
 			menu.createMissionMode(menu.infoFrame)
@@ -10917,7 +10924,25 @@ end
 
 function menu.createOrdersMenuHeader(frame, frameborder, instance)
 	-- sync with tab table in menu.createOrderQueue()
-	local numcols = #config.infoCategories + 3
+	-- start: InfoSubmenu To Show call-back
+	local infoCategories = {}
+	for i, entry in ipairs(config.infoCategories) do
+		local shown = true
+		if menu.uix_callbacks ["info_sub_menu_to_show"] then
+			for uix_id, uix_callback in pairs (menu.uix_callbacks ["info_sub_menu_to_show"]) do
+				if  uix_callback (menu.infoSubmenuObject, entry.category) == false then
+					shown = false
+					break
+				end
+			end
+		end
+		if shown then
+			table.insert(infoCategories, entry)
+		end
+	end
+	-- local numcols = #config.infoCategories + 3
+	local numcols = #infoCategories + 3
+	-- end: InfoSubmenu To Show call-back
 	local orderHeaderTable
 	if instance == "left" then
 		menu.orderHeaderTable = frame:addTable(numcols, { tabOrder = 1, reserveScrollBar = false, frameborder = frameborder.id })
@@ -10928,7 +10953,10 @@ function menu.createOrdersMenuHeader(frame, frameborder, instance)
 	end
 
 	local count = 0
-	for i, entry in ipairs(config.infoCategories) do
+	-- start: InfoSubmenu To Show call-back
+	-- for i, entry in ipairs(config.infoCategories) do
+	for i, entry in ipairs(infoCategories) do
+	-- end: InfoSubmenu To Show call-back
 		if entry.empty then
 			count = count + 0.5
 		else
@@ -10943,7 +10971,10 @@ function menu.createOrdersMenuHeader(frame, frameborder, instance)
 	end
 
 	orderHeaderTable:setColWidth(1, menu.scrollIconSize + Helper.standardContainerOffset, false)
-	for i, entry in ipairs(config.infoCategories) do
+	-- start: InfoSubmenu To Show call-back
+	-- for i, entry in ipairs(config.infoCategories) do
+	for i, entry in ipairs(infoCategories) do
+		-- end: InfoSubmenu To Show call-back
 		if entry.empty then
 			orderHeaderTable:setColWidth(i + 1, sideBarWidth / 2, false)
 		else
@@ -10962,7 +10993,10 @@ function menu.createOrdersMenuHeader(frame, frameborder, instance)
 	local count = 1
 
 	Helper.setTabScrollLeftIcon(menu, menu.panelState[instance .. "menu"], row, 1, menu.scrollIconSize)
-	for _, entry in ipairs(config.infoCategories) do
+	-- start: InfoSubmenu To Show call-back
+	-- for _, entry in ipairs(config.infoCategories) do
+	for _, entry in ipairs(infoCategories) do
+		-- end: InfoSubmenu To Show call-back
 		if not entry.empty then
 			local bgcolor = Color["row_title_background"]
 			local color = Color["icon_normal"]
@@ -20886,6 +20920,12 @@ function menu.createInfoFrame2()
 			menu.createOrderQueue(menu.infoFrame2, menu.infoMode.right, "right")
 		elseif menu.infoMode.right == "standingorders" then
 			menu.createStandingOrdersMenu(menu.infoFrame2, "right")
+			-- start: InfoSubmenu Create Right call-back
+		elseif menu.uix_callbacks ["info_sub_menu_create"] then
+			for uix_id, uix_callback in pairs (menu.uix_callbacks ["info_sub_menu_create"]) do
+				uix_callback (menu.infoFrame, "right")
+			end
+			-- end: InfoSubmenu Create Right call-back
 		end
 	else
 		-- empty
@@ -30529,6 +30569,16 @@ function menu.isInfoModeValidFor(object, mode)
 			return true
 		end
 	else
+		-- start: InfoSubmenu IsValid call-back
+		if menu.uix_callbacks ["info_sub_menu_is_valid_for"] then
+			for uix_id, uix_callback in pairs (menu.uix_callbacks ["info_sub_menu_is_valid_for"]) do
+				if  uix_callback (object, mode) then
+					return true
+				end
+			end
+		end
+		-- end: InfoSubmenu IsValid call-back
+
 		local text = ""
 		for i, entry in ipairs(config.infoCategories) do
 			if not entry.empty then
