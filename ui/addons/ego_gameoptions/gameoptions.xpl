@@ -1308,19 +1308,18 @@ config.optionDefinitions = {
 			submenu = "tutorials",
 		},
 		[7] = {
-			id = "timelines",
-			name = ReadText(1001, 12661),
-			prefixicon = function () return menu.prefixIconTopLevel("timelines") end,
-			mouseOverText = ReadText(1026, 2696) .. "\n\n" .. ReadText(1026, 2681),
-			submenu = "timelines",
-			selectable = function () return ffi.string(C.GetGameStartName()) ~= "x4ep1_gamestart_hub" end,
-		},
-		[8] = {
 			id = "new",
-			name = ReadText(1001, 12662),
+			name = ReadText(1001, 12790),
 			prefixicon = function () return menu.prefixIconTopLevel("new") end,
 			submenu = "new",
 			mouseOverText = ReadText(1026, 4801) .. "\n\n" .. ReadText(1026, 4802),
+		},
+		[8] = {
+			id = "timelines",
+			name = ReadText(1001, 12661),
+			mouseOverText = ReadText(1026, 2696),
+			submenu = "timelines",
+			selectable = function () return ffi.string(C.GetGameStartName()) ~= "x4ep1_gamestart_hub" end,
 		},
 		[9] = {
 			id = "multiplayer",
@@ -4304,22 +4303,16 @@ end
 function menu.createContextMenuFirstGame(frame)
 	local ftable = frame:addTable(3, { tabOrder = 1, width = menu.contextMenuData.width, x = 3 * Helper.borderSize, y = 3 * Helper.borderSize, defaultInteractiveObject = true })
 
-	local hastimelines = C.HasExtension("ego_dlc_timelines", false)
+	local row = ftable:addRow(false, { fixed = true })
+	row[1]:setColSpan(3):createText(ReadText(1001, 12720), Helper.headerRowCenteredProperties)
 
 	local row = ftable:addRow(false, { fixed = true })
-	row[1]:setColSpan(3):createText(hastimelines and ReadText(1001, 12716) or ReadText(1001, 12720), Helper.headerRowCenteredProperties)
-
-	local row = ftable:addRow(false, { fixed = true })
-	if hastimelines then
-		row[1]:setColSpan(3):createText(ReadText(1001, 12717) .. "\n\n" .. ReadText(1001, 12718) .. " " .. ReadText(1001, 12722) .. "\n\n" .. ReadText(1001, 12719), { wordwrap = true })
-	else
-		row[1]:setColSpan(3):createText(ReadText(1001, 12721) .. "\n\n" .. ReadText(1001, 12722) .. "\n\n" .. ReadText(1001, 12719), { wordwrap = true })
-	end
+	row[1]:setColSpan(3):createText(ReadText(1001, 12789) .. "\n\n" .. ReadText(1001, 12722), { wordwrap = true })
 
 	ftable:addEmptyRow()
 
 	local row = ftable:addRow(true, { fixed = true })
-	row[2]:createButton({  }):setText(ReadText(1001, 14), { halign = "center" })
+	row[2]:createButton({  }):setText("\27[menu_recommended] " .. ReadText(1001, 14), { halign = "center" })
 	row[2].handlers.onClick = function() menu.closeContextMenu() end
 
 	return ftable:getVisibleHeight()
@@ -6180,18 +6173,9 @@ function menu.nameOnlineSeason()
 end
 
 function menu.prefixIconTopLevel(type)
-	local m0bossscore = ffi.string(C.GetUserData("scenario_m0_boss_battle_best_score"))
-	local timelinesDone = false
-	if m0bossscore ~= "" then
-		timelinesDone = tonumber(m0bossscore) >= 1
-	end
-	local hastimelines = C.HasExtension("ego_dlc_timelines", false)
-
 	if (type == "tutorials") and (not menu.allBasicTutorialsDone) then
 		return "menu_recommended", Color["gamestart_recommended"]
-	elseif (type == "timelines") and menu.allBasicTutorialsDone and hastimelines and (not timelinesDone) then
-		return "menu_recommended", Color["gamestart_recommended"]
-	elseif(type == "new") and menu.allBasicTutorialsDone and (timelinesDone or (not hastimelines)) then
+	elseif(type == "new") and menu.allBasicTutorialsDone then
 		return "menu_recommended", Color["gamestart_recommended"]
 	end
 end

@@ -205,6 +205,7 @@ local function init()
 	registerForEvent("gameplanchange", getElement("Scene.UIContract"), menu.onGamePlanChange)
 	RegisterEvent("conversationCancelled", menu.onConvEnds)
 	RegisterEvent("conversationFinished", menu.onConvEnds)
+	RegisterEvent("cinematic_camera_deactivated", menu.checkActivation)
 
 	-- kuertee start:
 	menu.init_kuertee()
@@ -237,11 +238,15 @@ end
 
 function menu.onConvEnds()
 	if not Helper.hasConversationReturnHandler then
-		local controlpost = ffi.string(C.GetPlayerCurrentControlGroup())
-		local occupiedship = ConvertStringTo64Bit(tostring(C.GetPlayerOccupiedShipID()))
-		if ((occupiedship ~= 0) and GetComponentData(occupiedship, "isdocked")) or ((controlpost ~= "") and (controlpost ~= "pilotcontrol")) then
-			OpenMenu("DockedMenu", { 0, 0 }, nil)
-		end
+		menu.checkActivation()
+	end
+end
+
+function menu.checkActivation()
+	local controlpost = ffi.string(C.GetPlayerCurrentControlGroup())
+	local occupiedship = ConvertStringTo64Bit(tostring(C.GetPlayerOccupiedShipID()))
+	if ((occupiedship ~= 0) and GetComponentData(occupiedship, "isdocked")) or ((controlpost ~= "") and (controlpost ~= "pilotcontrol")) then
+		OpenMenu("DockedMenu", { 0, 0 }, nil)
 	end
 end
 

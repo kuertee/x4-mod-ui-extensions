@@ -529,6 +529,7 @@ Helper = {
 	standardTextOffsety = 0,
 	standardTextHeight = 16,
 	standardTextWidth = 0,
+	standardEditBoxMaxTextLength = 50,
 	-- title text properties
 	titleFont = "Zekton bold",
 	titleFontSize = 12,
@@ -1344,6 +1345,11 @@ local function createCustomHooks(menu)
 								menu.onDropDownActivated(dropdown)
 							end
 						end
+	menu.dropdownDeactivated = function(dropdown)
+							if menu.onDropDownDeactivated then
+								menu.onDropDownDeactivated(dropdown)
+							end
+						end
 	menu.dropdownConfirmed = function(dropdown, value)
 							PlaySound("ui_positive_click")
 							if menu.onDropDownConfirmed then
@@ -1787,7 +1793,9 @@ function Helper.openInteractMenu(menu, param)
 	Helper.interactMenuCallbacks.onTableMouseOver = menu.onTableMouseOver
 
 	Helper.interactMenuActive = true
-	menu.updateInputBar()
+	if menu.updateInputBar then
+		menu.updateInputBar()
+	end
 	Helper.updateHandlerBackup = onUpdateHandler
 	local nextUpdateTime = 0
 	onUpdateHandler = function()
@@ -2831,12 +2839,15 @@ function Helper.setCheckBoxScript(menu, id, tableobj, row, col, script)
 	SetScript(cell, "onCheckBoxSelect", menu.checkboxOver)
 end
 
-function Helper.setDropDownScript(menu, id, tableobj, row, col, activateScript, confirmScript, removedScript)
+function Helper.setDropDownScript(menu, id, tableobj, row, col, activateScript, confirmScript, removedScript, deactivateScript)
 	menu.dropdownScriptMap = menu.dropdownScriptMap or {}
 	local layer = Helper.findFrameLayer(menu, tableobj)
 
 	if not activateScript then
 		activateScript = menu.dropdownActivated
+	end
+	if not deactivateScript then
+		deactivateScript = menu.dropdownDeactivated
 	end
 	if not confirmScript then
 		confirmScript = menu.dropdownConfirmed
@@ -2865,12 +2876,14 @@ function Helper.setDropDownScript(menu, id, tableobj, row, col, activateScript, 
 	end
 
 	table.insert(menu.dropdownScriptMap, { layer = layer, tableobj = tableobj, row = row, col = col, type = "onDropDownActivated", script = activateWrapper })
+	table.insert(menu.dropdownScriptMap, { layer = layer, tableobj = tableobj, row = row, col = col, type = "onDropDownDeactivated", script = deactivateScript })
 	table.insert(menu.dropdownScriptMap, { layer = layer, tableobj = tableobj, row = row, col = col, type = "onDropDownConfirmed", script = scriptWrapper })
 	table.insert(menu.dropdownScriptMap, { layer = layer, tableobj = tableobj, row = row, col = col, type = "onDropDownRemoved", script = removedScript })
 	table.insert(menu.dropdownScriptMap, { layer = layer, tableobj = tableobj, row = row, col = col, type = "onDropDownOptionChanged", script = onOptionChangedScript })
 
 	local cell = GetCellContent(tableobj, row, col)
 	SetScript(cell, "onDropDownActivated", activateWrapper)
+	SetScript(cell, "onDropDownDeactivated", deactivateScript)
 	SetScript(cell, "onDropDownConfirmed", scriptWrapper)
 	SetScript(cell, "onDropDownRemoved", removedScript)
 	SetScript(cell, "onDropDownOptionChanged", onOptionChangedScript)
@@ -3339,7 +3352,7 @@ local defaultWidgetProperties = {
 		selectTextOnActivation = true,							-- whether the text is pre-selected when activating the editbox
 		active = true,											-- whether the editbox is active
 		restoreInteractiveObject = false,						-- whether the input focus is restored to the previous object after the editbox is deactivated
-		maxChars = 50,											-- max characters that can be entered
+		maxChars = Helper.standardEditBoxMaxTextLength,			-- max characters that can be entered
 		_basetype = "cell"
 	},
 	["shieldhullbar"] = {
@@ -4265,7 +4278,7 @@ function onFrameHandleViewCreated(framehandle, frames)
 							elseif cell.type == "slidercell" then
 								Helper.setSliderCellScript(menu, triggerid, widgetid, rowidx, cellidx, cell.handlers.onSliderCellChanged, cell.handlers.onSliderCellActivated, cell.handlers.onSliderCellDeactivated, cell.handlers.onRightClick, cell.handlers.onSliderCellConfirm)
 							elseif cell.type == "dropdown" then
-								Helper.setDropDownScript(menu, triggerid, widgetid, rowidx, cellidx, cell.handlers.onDropDownActivated, cell.handlers.onDropDownConfirmed, cell.handlers.onDropDownRemoved)
+								Helper.setDropDownScript(menu, triggerid, widgetid, rowidx, cellidx, cell.handlers.onDropDownActivated, cell.handlers.onDropDownConfirmed, cell.handlers.onDropDownRemoved, cell.handlers.onDropDownDeactivated)
 							elseif cell.type == "graph" then
 								Helper.setGraphScript(menu, triggerid, widgetid, rowidx, cellidx, cell.handlers.onClick)
 							end
