@@ -6,9 +6,10 @@ Contributors: AlexandreTK, ChemODun, Damonya, DrWhoKnows, DmytroK, Erixon, Farem
 
 Updates
 =======
-v9.0.0.0.2, 23 Mar 2026:
+v9.0.0.0.3, 30 Mar 2026:
 - For 9.0 beta. Thanks to ChemODun for merging the UI files into this mod again.
-- Bug-fix: Mission Offers menu.
+- Bug-fix by ChemODun: fix buttons for the extra sorting options by distance.
+- New features by ChemODun: several new callbacks in the Map Menu.
 
 NOTES FOR PLAYERS:
 ==================
@@ -251,6 +252,10 @@ French localisation by Calvitix.
 
 History
 =======
+v9.0.0.0.2, 23 Mar 2026:
+- For 9.0 beta. Thanks to ChemODun for merging the UI files into this mod again.
+- Bug-fix: Mission Offers menu.
+
 v9.0.0.0.1, 14 Mar 2026:
 - For 9.0 beta. Thanks to ChemODun for merging the UI files into this mod. From his early tests, he has found these mods to work: his mods, Forleyor's mods, and Mycu's Custom Tabs mod. Other mods likely work also. I have not tested this version because my game is still on 8.x.
 
