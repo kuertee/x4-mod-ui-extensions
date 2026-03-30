@@ -20190,7 +20190,7 @@ function menu.createInfoFrame2()
 			-- start: InfoSubmenu Create Right call-back
 		elseif menu.uix_callbacks ["info_sub_menu_create"] then
 			for uix_id, uix_callback in pairs (menu.uix_callbacks ["info_sub_menu_create"]) do
-				uix_callback (menu.infoFrame, "right")
+				uix_callback (menu.infoFrame2, "right")
 			end
 			-- end: InfoSubmenu Create Right call-back
 		end
