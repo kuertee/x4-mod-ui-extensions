@@ -960,7 +960,7 @@ function menu.orderSalvageCollect(component, target, clear)
 		return
 	end
 
-	if clearr or menu.clearOtherOrders then
+	if clear or menu.clearOtherOrders then
 		C.RemoveAllOrders2(component, false, menu.clearOtherOrders and menu.priorityOrderMode)
 	end
 
@@ -975,7 +975,7 @@ function menu.orderSalvageCrush(component, target, clear)
 		return
 	end
 
-	if clearr or menu.clearOtherOrders then
+	if clear or menu.clearOtherOrders then
 		C.RemoveAllOrders2(component, false, menu.clearOtherOrders and menu.priorityOrderMode)
 	end
 

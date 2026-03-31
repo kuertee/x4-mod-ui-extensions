@@ -15772,7 +15772,7 @@ function menu.setupCrewInfoSubmenuRows(mode, inputtable, inputobject, instance)
 					-- drop inventory
 					local row = pilotrowgroup:addRow("DropPilotInventory", {  })
 					row[1]:setColSpan(4):createButton({  }):setText(ReadText(1001, 7733), { halign = "center" })
-					row[2].handlers.onClick = function() return menu.buttonDropPilotInventory(pilot, sortedWares) end
+					row[1].handlers.onClick = function() return menu.buttonDropPilotInventory(pilot, sortedWares) end
 				end
 			end
 		end

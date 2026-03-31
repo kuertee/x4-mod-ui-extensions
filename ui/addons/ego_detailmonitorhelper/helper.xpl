@@ -13120,6 +13120,7 @@ function Helper.buttonDropWares(menu)
 	end
 
 	menu.closeContextMenu()
+	menu.refreshInfoFrame()
 end
 
 -- indents given text with given char sequence
