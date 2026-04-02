@@ -6797,7 +6797,14 @@ function menu.createInfoFrame()
 				menu.createOrderQueue(menu.infoFrame, menu.infoMode.left, "left")
 			elseif menu.infoMode.left == "standingorders" then
 				menu.createStandingOrdersMenu(menu.infoFrame, "left")
+				-- start: InfoSubmenu Create Letf call-back
+			elseif menu.uix_callbacks ["info_sub_menu_create"] then
+				for uix_id, uix_callback in pairs (menu.uix_callbacks ["info_sub_menu_create"]) do
+					uix_callback (menu.infoFrame, "left")
+				end
+				-- end: InfoSubmenu Create Letf call-back
 			end
+
 		elseif menu.infoTableMode == "missionoffer" then
 			menu.createMissionMode(menu.infoFrame)
 		elseif menu.infoTableMode == "mission" then
@@ -10621,17 +10628,43 @@ end
 
 function menu.createOrdersMenuHeader(frame, instance)
 	-- sync with tab table in menu.createOrderQueue()
+	-- start: InfoSubmenu To Show call-back
+	local infoCategories = {}
+	for i, entry in ipairs(config.infoCategories) do
+		local shown = true
+		if menu.uix_callbacks ["info_sub_menu_to_show"] then
+			for uix_id, uix_callback in pairs (menu.uix_callbacks ["info_sub_menu_to_show"]) do
+				if  uix_callback (menu.infoSubmenuObject, entry.category) == false then
+					shown = false
+					break
+				end
+			end
+		end
+		if shown then
+			table.insert(infoCategories, entry)
+		end
+	end
+	-- end: InfoSubmenu To Show call-back
 	local orderHeaderTable
 	if instance == "left" then
-		menu.orderHeaderTable = frame:addTable(#config.infoCategories + 1, { tabOrder = 1, reserveScrollBar = false })
+		-- start: InfoSubmenu To Show call-back
+		-- menu.orderHeaderTable = frame:addTable(#config.infoCategories + 1, { tabOrder = 1, reserveScrollBar = false })
+		menu.orderHeaderTable = frame:addTable(#infoCategories + 1, { tabOrder = 1, reserveScrollBar = false })
+		-- end: InfoSubmenu To Show call-back
 		orderHeaderTable = menu.orderHeaderTable
 	elseif instance == "right" then
-		menu.orderHeaderTableRight = frame:addTable(#config.infoCategories + 1, { tabOrder = 1, reserveScrollBar = false })
+		-- start: InfoSubmenu To Show call-back
+		-- menu.orderHeaderTableRight = frame:addTable(#config.infoCategories + 1, { tabOrder = 1, reserveScrollBar = false })
+		menu.orderHeaderTableRight = frame:addTable(#infoCategories + 1, { tabOrder = 1, reserveScrollBar = false })
+		-- end: InfoSubmenu To Show call-back
 		orderHeaderTable = menu.orderHeaderTableRight
 	end
 
 	local count = 0
-	for i, entry in ipairs(config.infoCategories) do
+	-- start: InfoSubmenu To Show call-back
+	-- for i, entry in ipairs(config.infoCategories) do
+	for i, entry in ipairs(infoCategories) do
+	-- end: InfoSubmenu To Show call-back
 		if entry.empty then
 			count = count + 0.5
 		else
@@ -10641,11 +10674,20 @@ function menu.createOrdersMenuHeader(frame, instance)
 
 	local extraColWidth = Helper.borderSize + 1
 	local sideBarWidth = menu.sideBarWidth
-	if (count * menu.sideBarWidth + (#config.infoCategories - 1) * Helper.borderSize + extraColWidth) > frame.properties.width then
-		sideBarWidth = math.floor((frame.properties.width - (#config.infoCategories - 1) * Helper.borderSize - extraColWidth) / count)
-	end
 
-	for i, entry in ipairs(config.infoCategories) do
+	-- start: InfoSubmenu To Show call-back
+	-- if (count * menu.sideBarWidth + (#config.infoCategories - 1) * Helper.borderSize + extraColWidth) > frame.properties.width then
+	-- 	sideBarWidth = math.floor((frame.properties.width - (#config.infoCategories - 1) * Helper.borderSize - extraColWidth) / count)
+	-- end
+	if (count * menu.sideBarWidth + (#infoCategories - 1) * Helper.borderSize + extraColWidth) > frame.properties.width then
+		sideBarWidth = math.floor((frame.properties.width - (#infoCategories - 1) * Helper.borderSize - extraColWidth) / count)
+	end
+	-- end: InfoSubmenu To Show call-back
+
+	-- start: InfoSubmenu To Show call-back
+	-- for i, entry in ipairs(config.infoCategories) do
+	for i, entry in ipairs(infoCategories) do
+		-- end: InfoSubmenu To Show call-back
 		if entry.empty then
 			orderHeaderTable:setColWidth(i, sideBarWidth / 2, false)
 		else
@@ -10655,7 +10697,10 @@ function menu.createOrdersMenuHeader(frame, instance)
 
 	local row = orderHeaderTable:addRow("orders_tabs", { fixed = true })
 	local count = 1
-	for _, entry in ipairs(config.infoCategories) do
+	-- start: InfoSubmenu To Show call-back
+	-- for _, entry in ipairs(config.infoCategories) do
+	for _, entry in ipairs(infoCategories) do
+		-- end: InfoSubmenu To Show call-back
 		if not entry.empty then
 			local bgcolor = Color["row_title_background"]
 			local color = Color["icon_normal"]
@@ -20142,6 +20187,12 @@ function menu.createInfoFrame2()
 			menu.createOrderQueue(menu.infoFrame2, menu.infoMode.right, "right")
 		elseif menu.infoMode.right == "standingorders" then
 			menu.createStandingOrdersMenu(menu.infoFrame2, "right")
+			-- start: InfoSubmenu Create Right call-back
+		elseif menu.uix_callbacks ["info_sub_menu_create"] then
+			for uix_id, uix_callback in pairs (menu.uix_callbacks ["info_sub_menu_create"]) do
+				uix_callback (menu.infoFrame2, "right")
+			end
+			-- end: InfoSubmenu Create Right call-back
 		end
 	else
 		-- empty
@@ -29440,6 +29491,16 @@ function menu.isInfoModeValidFor(object, mode)
 			return true
 		end
 	else
+		-- start: InfoSubmenu IsValid call-back
+		if menu.uix_callbacks ["info_sub_menu_is_valid_for"] then
+			for uix_id, uix_callback in pairs (menu.uix_callbacks ["info_sub_menu_is_valid_for"]) do
+				if  uix_callback (object, mode) then
+					return true
+				end
+			end
+		end
+		-- end: InfoSubmenu IsValid call-back
+
 		local text = ""
 		for i, entry in ipairs(config.infoCategories) do
 			if not entry.empty then
