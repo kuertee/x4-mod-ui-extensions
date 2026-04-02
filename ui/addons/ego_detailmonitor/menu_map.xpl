@@ -15772,7 +15772,7 @@ function menu.setupCrewInfoSubmenuRows(mode, inputtable, inputobject, instance)
 					-- drop inventory
 					local row = pilotrowgroup:addRow("DropPilotInventory", {  })
 					row[1]:setColSpan(4):createButton({  }):setText(ReadText(1001, 7733), { halign = "center" })
-					row[2].handlers.onClick = function() return menu.buttonDropPilotInventory(pilot, sortedWares) end
+					row[1].handlers.onClick = function() return menu.buttonDropPilotInventory(pilot, sortedWares) end
 				end
 			end
 		end
@@ -20923,7 +20923,7 @@ function menu.createInfoFrame2()
 			-- start: InfoSubmenu Create Right call-back
 		elseif menu.uix_callbacks ["info_sub_menu_create"] then
 			for uix_id, uix_callback in pairs (menu.uix_callbacks ["info_sub_menu_create"]) do
-				uix_callback (menu.infoFrame, "right")
+				uix_callback (menu.infoFrame2, "right")
 			end
 			-- end: InfoSubmenu Create Right call-back
 		end

@@ -2801,25 +2801,31 @@ function menu.addProductionMethodDetails(ftable, resourcestring, methodstring, s
 	menu.numDetailRows = menu.numDetailRows + 1
 	local row = ftable:addRow(("detailrow_" .. menu.numDetailRows), { interactive = false })
 	row[2]:createText(methodstring .. ReadText(1001, 120))
-	row[3]:setColSpan(2):createDropDown(productionmethodoptions, { startOption = menu.productionmethod }):setTextProperties({ halign = "right", x = Helper.standardTextOffsetx })
-	row[3].handlers.onDropDownConfirmed = menu.dropdownProductionMethod
+	local allowed = menu.isMakerRaceAllowed(GetMacroData(menu.details.id, "makerraceid"), nil)
+	if allowed then
+		row[3]:setColSpan(2):createDropDown(productionmethodoptions, { startOption = menu.productionmethod }):setTextProperties({ halign = "right", x = Helper.standardTextOffsetx })
+		row[3].handlers.onDropDownConfirmed = menu.dropdownProductionMethod
 
-	for i, entry in ipairs(menu.details.productionmethods[currentMethodIdx].resources) do
-		menu.addDetailRow(ftable, "", ConvertIntegerString(entry.amount, true, 0, true) .. ReadText(1001, 42), entry.name, nil, nil, nil, nil, nil, entry.ware) -- use id/ware
-	end
-	if showamount then
-		-- empty line
-		menu.addDetailRow(ftable, "")
-		-- Production Amount
-		menu.addDetailRow(ftable, showamount, ConvertIntegerString(menu.details.productionmethods[currentMethodIdx].productionamount, true, 0, true) .. ReadText(1001, 42), menu.object.name, nil, nil, nil, nil, nil, menu.id)
-	end
-	if showtime then
-		if not showamount then
+		for i, entry in ipairs(menu.details.productionmethods[currentMethodIdx].resources) do
+			menu.addDetailRow(ftable, "", ConvertIntegerString(entry.amount, true, 0, true) .. ReadText(1001, 42), entry.name, nil, nil, nil, nil, nil, entry.ware) -- use id/ware
+		end
+
+		if showamount then
 			-- empty line
 			menu.addDetailRow(ftable, "")
+			-- Production Amount
+			menu.addDetailRow(ftable, showamount, ConvertIntegerString(menu.details.productionmethods[currentMethodIdx].productionamount, true, 0, true) .. ReadText(1001, 42), menu.object.name, nil, nil, nil, nil, nil, menu.id)
 		end
-		-- buildtime
-		menu.addDetailRow(ftable, showtime .. ReadText(1001, 120), ConvertTimeString(menu.details.productionmethods[currentMethodIdx].productiontime, ReadText(1001, 209)))
+		if showtime then
+			if not showamount then
+				-- empty line
+				menu.addDetailRow(ftable, "")
+			end
+			-- buildtime
+			menu.addDetailRow(ftable, showtime .. ReadText(1001, 120), ConvertTimeString(menu.details.productionmethods[currentMethodIdx].productiontime, ReadText(1001, 209)))
+		end
+	else
+		row[4]:createText(ReadText(1001, 9408), { halign = "right", x = Helper.standardTextOffsetx })
 	end
 end
 
@@ -3526,10 +3532,13 @@ function menu.addDetailRows(ftable)
 					-- empty line
 					menu.addDetailRow(ftable, "")
 					-- produced by
-					menu.addDetailRow(ftable, ReadText(1001, 8391) .. ReadText(1001, 120))
 					for i, entry in ipairs(menu.details.blueprintowners) do
 						local factionname = GetFactionData(entry, "name")
-						menu.addDetailRow(ftable, "", factionname, nil, nil, nil, nil, nil, nil, factionname)
+						if i == 1 then
+							menu.addDetailRow(ftable, ReadText(1001, 8391) .. ReadText(1001, 120), factionname, nil, nil, nil, nil, nil, nil, factionname)
+						else
+							menu.addDetailRow(ftable, "",factionname, nil, nil, nil, nil, nil, nil, factionname)
+						end
 					end
 				end
 				-- resources
