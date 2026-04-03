@@ -1,4 +1,4 @@
-﻿-- section == gMain_map
+-- section == gMain_map
 -- param == { 0, 0, showzone, focuscomponent [, history] [, mode, modeparam] [, showmultiverse] [, focusoffset] }
 
 -- modes: - "orderparam_object",				param: { returnfunction, paramdata, toprow, ordercontrollable }
