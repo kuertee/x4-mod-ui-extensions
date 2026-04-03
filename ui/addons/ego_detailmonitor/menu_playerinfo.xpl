@@ -1,4 +1,4 @@
-﻿
+
 -- param == { 0, 0, mode, modeparam }
 -- modes: - "globalorders",		param: { "traderule|blacklist|fightrule", id }
 

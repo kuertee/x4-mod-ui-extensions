@@ -1,4 +1,4 @@
-﻿
+
 -- param == { 0, 0, mode }
 
 -- ffi setup

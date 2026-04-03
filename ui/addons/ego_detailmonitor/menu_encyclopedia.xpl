@@ -1,4 +1,4 @@
-﻿-- param == { 0, 0, mode, library, id, object }
+-- param == { 0, 0, mode, library, id, object }
 -- modes are: "Galaxy", "Factions", "Stations", "Ships", "Weapons", "Equipment", "Licences", and "Wares"
 -- see menu.data initialization for libaries
 

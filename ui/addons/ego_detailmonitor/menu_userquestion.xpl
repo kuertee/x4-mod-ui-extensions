@@ -1,4 +1,4 @@
-﻿
+
 -- param == { 0, 0, mode, modeparam }
 -- modes: - "hackpanel",			param: { panelcomponent, panelconnection, paneltype }
 --		  - "abortupgrade",			param: { container, task, price }

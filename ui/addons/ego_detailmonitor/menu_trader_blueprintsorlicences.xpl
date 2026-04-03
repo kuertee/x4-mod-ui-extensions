@@ -1,4 +1,4 @@
-﻿-- param == { 0, 0, traderentity, mode }
+-- param == { 0, 0, traderentity, mode }
 
 -- modes:	- "blueprint"
 --			- "licence"
