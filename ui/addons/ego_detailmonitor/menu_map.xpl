@@ -8350,6 +8350,13 @@ function menu.createPropertyOwned(frame, instance)
 			-- kuertee end: callback
 
 		end
+		-- kuertee start: callback on every playerobject
+		if menu.uix_callbacks ["createPropertyOwned_on_every_playerobject"] then
+			for uix_id, uix_callback in pairs (menu.uix_callbacks ["createPropertyOwned_on_every_playerobject"]) do
+				uix_callback (infoTableData, entry, menu.propertyMode)
+			end
+		end
+		-- kuertee end: callback on every playerobject
 	end
 
 	-- kuertee start: callback
