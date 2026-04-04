@@ -1,4 +1,4 @@
-﻿-- ffi setup
+-- ffi setup
 local ffi = require("ffi")
 local C = ffi.C
 ffi.cdef[[

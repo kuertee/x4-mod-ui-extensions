@@ -1,4 +1,4 @@
-﻿-- param == { 0, 0, transporter, transporterconnection }
+-- param == { 0, 0, transporter, transporterconnection }
 
 -- ffi setup
 local ffi = require("ffi")

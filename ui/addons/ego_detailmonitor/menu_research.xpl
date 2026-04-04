@@ -1,4 +1,4 @@
-﻿-- param == { 0, 0 }
+-- param == { 0, 0 }
 
 -- ffi setup
 local ffi = require("ffi")
