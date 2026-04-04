@@ -1,4 +1,4 @@
-﻿-- param == { 0, 0, enablesecretscenarios }
+-- param == { 0, 0, enablesecretscenarios }
 
 -- ffi setup
 local ffi = require("ffi")

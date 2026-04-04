@@ -1,4 +1,4 @@
-﻿-- Custom gamestart editor
+-- Custom gamestart editor
 -- param == { 0, 0, gamestartid, ismultiplayer, iscreative, ispaused }
 
 -- ffi setup

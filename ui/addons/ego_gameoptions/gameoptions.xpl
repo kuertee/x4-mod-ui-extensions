@@ -1,4 +1,4 @@
-﻿-- Ingame Options Main Menu
+-- Ingame Options Main Menu
 
 -- ffi setup
 local ffi = require("ffi")
