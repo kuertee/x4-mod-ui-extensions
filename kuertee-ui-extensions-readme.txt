@@ -6,12 +6,8 @@ Contributors: AlexandreTK, ChemODun, Damonya, DrWhoKnows, DmytroK, Erixon, Farem
 
 Updates
 =======
-v8.0.4.2, 11 Mar 2025:
-- Subst.* files have been udpated. Sorry that I forgot to do it in the last update. :D
-- New feature: Collapsable/expandable ship crew list.
-
-v8.0.4.1, 9 Mar 2025:
-- New callbacks for Faremen's upcoming mod.
+v8.0.4.3, 06 Apr 2025:
+- New feature: new callbacks by ChemOdun.
 
 NOTES FOR PLAYERS:
 ==================
@@ -254,6 +250,13 @@ French localisation by Calvitix.
 
 History
 =======
+v8.0.4.2, 11 Mar 2025:
+- Subst.* files have been udpated. Sorry that I forgot to do it in the last update. :D
+- New feature: Collapsable/expandable ship crew list.
+
+v8.0.4.1, 9 Mar 2025:
+- New callbacks for Faremen's upcoming mod.
+
 v8.0.4.0, 7 Feb 2025:
 - New callbacks for ChemODun's unreleased mod.
 - New callbacks for HYLT2233's unreleased mod.

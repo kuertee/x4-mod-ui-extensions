@@ -2,13 +2,12 @@ UI Extensions and HUD
 https://www.nexusmods.com/x4foundations/mods/552
 Code: https://github.com/kuertee/x4-mod-ui-extensions
 by kuertee.
-Contributors: AlexandreTK, ChemODun, Damonya, DrWhoKnows, DmytroK, Erixon, Forleyor, HYLT2233, IALuir, Mycu, Runekn, sticeIO.
+Contributors: AlexandreTK, ChemODun, Damonya, DrWhoKnows, DmytroK, Erixon, Faremen, Forleyor, HYLT2233, IALuir, Mycu, Runekn, sticeIO.
 
 Updates
 =======
-v8.0.4.0, 7 Feb 2025:
-- New callbacks for ChemODun's unreleased mod.
-- New callbacks for HYLT2233's unreleased mod.
+v8.0.4.3, 06 Apr 2025:
+- New feature: new callbacks by ChemOdun.
 
 NOTES FOR PLAYERS:
 ==================
@@ -246,11 +245,22 @@ Troubleshooting
 Credits
 =======
 kuertee
-Contributors: AlexandreTK, ChemODun, Damonya, DrWhoKnows, DmytroK, Erixon, Forleyor, HYLT2233, IALuir, Mycu, Runekn, sticeIO.
+Contributors: AlexandreTK, ChemODun, Damonya, DrWhoKnows, DmytroK, Erixon, Faremen, Forleyor, HYLT2233, IALuir, Mycu, Runekn, sticeIO.
 French localisation by Calvitix.
 
 History
 =======
+v8.0.4.2, 11 Mar 2025:
+- Subst.* files have been udpated. Sorry that I forgot to do it in the last update. :D
+- New feature: Collapsable/expandable ship crew list.
+
+v8.0.4.1, 9 Mar 2025:
+- New callbacks for Faremen's upcoming mod.
+
+v8.0.4.0, 7 Feb 2025:
+- New callbacks for ChemODun's unreleased mod.
+- New callbacks for HYLT2233's unreleased mod.
+
 v8.0.3.5, 16 Dec 2025:
 - New UIX functions: ChemODun's functions to get local configs of menu files.
 
