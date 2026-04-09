@@ -1,4 +1,4 @@
--- section == cArch_configureships
+﻿-- section == cArch_configureships
 -- param == { 0, 0, container, mode, modeparam, immediate }
 
 -- modes:	"purchase",	param:	{}
@@ -4022,7 +4022,40 @@ function menu.getPresetLoadouts()
 			table.insert(menu.loadouts, 3, { id = "medium",	name = ReadText(1001, 7911), icon = "", deleteable = false, preset = 0.5,	active = menu.validLoadoutPossible and (not hasanymod),	mouseovertext = mouseovertext })
 			table.insert(menu.loadouts, 4, { id = "high",	name = ReadText(1001, 7912), icon = "", deleteable = false, preset = 1.0,	active = menu.validLoadoutPossible and (not hasanymod),	mouseovertext = mouseovertext })
 		else
-			table.insert(menu.loadouts, 1, { id = "default",	name = ReadText(1001, 3231), icon = "", deleteable = false,	active = menu.validLoadoutPossible and (not hasanymod),	mouseovertext = hasanymod and (ColorText["text_error"] .. ReadText(1026, 8020)) or "" })
+			local active = false
+			local mouseovertext = ""
+
+			if menu.mode == "customgamestart" then
+				active = true
+			elseif menu.mode == "comparison" then
+				active = C.CanApplyKnownLoadout(menu.macro, "default")
+				if not active then
+					mouseovertext = ReadText(1026, 8015)
+				end
+			else
+				local result = ffi.string(C.GetMissingLoadoutBlueprints(menu.container, menu.object, menu.macro, "default"))
+				active = result == ""
+				if not active then
+					mouseovertext = ReadText(1026, 8011)
+
+					local missingmacros = {}
+					if string.find(result, "error") ~= 1 then
+						for macro in string.gmatch(result, "([^;]+);") do
+							missingmacros[macro] = true
+						end
+					end
+					local missingmacronames = {}
+					for macro, v in pairs(missingmacros) do
+						table.insert(missingmacronames, GetMacroData(macro, "name"))
+					end
+					table.sort(missingmacronames)
+					for _, name in ipairs(missingmacronames) do
+						mouseovertext = mouseovertext .. "\n· " .. name
+					end
+				end
+			end
+
+			table.insert(menu.loadouts, 1, { id = "default",	name = ReadText(1001, 3231), icon = "", deleteable = false,	active = menu.validLoadoutPossible and (not hasanymod) and active,	mouseovertext = hasanymod and (ColorText["text_error"] .. ReadText(1026, 8020)) or mouseovertext })
 		end
 	end
 end
@@ -9952,7 +9985,7 @@ function menu.createEquipmentInfoContext(frame)
 		if (not haslicence) and (licencetext ~= "") then
 			local row = backgroundrowgroup:addRow(nil, { fixed = true, bgColor = (not haslicence) and Color["row_error"] or nil })
 			row[1]:setBackgroundColSpan(3):createIcon("diplomacy_license_negative", { width = 2 * Helper.standardTextHeight, height = 2 * Helper.standardTextHeight, color = Color["icon_error"] })
-			row[2]:setColSpan(2):createText(licencetext, { wordwrap = true })
+			row[2]:setColSpan(2):createText(licencetext, { wordwrap = true, y = Helper.standardTextHeight / 2 })
 		end
 
 		local slot = upgradetype.mergeslots and 1 or menu.currentSlot
@@ -10173,7 +10206,7 @@ function menu.formatLoadoutStat(value, accuracy)
 end
 
 function menu.formatRange(range)
-	return (range > 10000) and ConvertIntegerString(range / 1000, true, 0, true) or string.format("%." .. ((range > 1000) and 1 or 3) .. "f", Helper.round(range / 1000, (range > 1000) and 1 or 3))
+	return string.format("%." .. ((range > 1000) and 1 or 3) .. "f", Helper.round(range / 1000, (range > 1000) and 1 or 3))
 end
 
 function menu.checkStatCondition(statconditions, statcondition)

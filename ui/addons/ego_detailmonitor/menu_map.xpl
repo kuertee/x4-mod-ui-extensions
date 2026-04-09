@@ -5596,7 +5596,7 @@ function menu.hotkey(action)
 				PlaySound("ui_target_set_fail")
 			end
 		elseif action == "INPUT_ACTION_ADDON_DETAILMONITOR_I" then
-			if (not menu.mode) and IsInfoUnlockedForPlayer(selectedcomponent, "name") and CanViewLiveData(selectedcomponent) then
+			if (not menu.mode) and IsInfoUnlockedForPlayer(selectedcomponent, "name") then
 				menu.openDetails(selectedcomponent)
 			else
 				PlaySound("ui_target_set_fail")
@@ -9321,7 +9321,7 @@ function menu.createPropertyRow(instance, ftable, rowgroup, component, iteration
 		local alertMouseOver = ""
 		if menu.getFilterOption("layer_other", false) then
 			local alertStatus, missionlist = menu.getContainerAlertLevel(component)
-			local minAlertLevel = menu.getFilterOption("think_alert", false)
+			local minAlertLevel = tonumber(menu.getFilterOption("think_alert", false))
 			if (minAlertLevel ~= 0) and alertStatus >= minAlertLevel then
 				local color = Color["text_normal"]
 				if alertStatus == 1 then
@@ -10781,8 +10781,12 @@ function menu.displayFailureParam(ftable, failureidx, paramidx, param, listidx, 
 		print(TraceBack())
 	end
 	local selectedorder = menu.infoTablePersistentData[instance].selectedorder
+	local ismissing = param.value == nil
 
-	local value = menu.getParamValue(param.type, param.value, param.inputparams)
+	local value
+	if not ismissing then
+		value = menu.getParamValue(param.type, param.value, param.inputparams)
+	end
 
 	local paramtext = (param.text ~= "") and ("  " .. param.text .. ReadText(1001, 120)) or ""
 
@@ -15540,17 +15544,19 @@ function menu.setupInfoSubmenuRows(mode, inputtable, inputobject, instance)
 			end
 		end
 	elseif mode == "module" then
+		local generalrowgroup = inputtable:addRowGroup({  })
+
 		local ownername, sector, hullmax, hullpercent = GetComponentData(object64, "ownername", "sector", "hullmax", "hullpercent")
 
 		locrowdata = { false, ReadText(1001, 9040), Helper.unlockInfo(ownerinfo, ownername) }	-- Owner
-		row = menu.addInfoSubmenuRow(instance, inputtable, row, locrowdata, false, false, false, 1, indentsize)
+		row = menu.addInfoSubmenuRow(instance, inputtable, generalrowgroup, row, locrowdata, false, false, false, 1, indentsize)
 
 		locrowdata = { false, ReadText(1001, 2943), sector }	-- Location
-		row = menu.addInfoSubmenuRow(instance, inputtable, row, locrowdata, false, false, false, 1, indentsize)
+		row = menu.addInfoSubmenuRow(instance, inputtable, generalrowgroup, row, locrowdata, false, false, false, 1, indentsize)
 
 		local hull_max = defenceinfo_low and ConvertIntegerString(Helper.round(hullmax), true, 4, true, true, true) or unknowntext
 		locrowdata = { false, ReadText(1001, 1), (defenceinfo_high and (function() return (ConvertIntegerString(Helper.round(GetComponentData(object64, "hull")), true, 4, true, true, true) .. " / " .. hull_max .. " " .. ReadText(1001, 118) .. " (" .. GetComponentData(object64, "hullpercent") .. "%)") end) or (unknowntext .. " / " .. hull_max .. " " .. ReadText(1001, 118) .. " (" .. hullpercent .. "%)")) }	-- Hull, MJ
-		row = menu.addInfoSubmenuRow(instance, inputtable, row, locrowdata, false, false, false, 1, indentsize)
+		row = menu.addInfoSubmenuRow(instance, inputtable, generalrowgroup, row, locrowdata, false, false, false, 1, indentsize)
 	elseif mode == "none" then
 		local generalrowgroup = inputtable:addRowGroup({  })
 

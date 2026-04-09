@@ -1,4 +1,4 @@
--- ffi setup
+﻿-- ffi setup
 local ffi = require("ffi")
 local C = ffi.C
 ffi.cdef[[
@@ -8817,28 +8817,37 @@ end
 
 function Helper.convertGameTimeToXTimeString(time, dateonly)
 	if not Helper.xTimeOffset then
+		local year, month, day, hour = 825, 2, 8, 11			-- offset to 825-02-08 11:00 by default
 		local date = C.GetGameStartDate()
 		if date.isvalid then
-			Helper.xTimeOffset = (date.year - 2170) * 31104000 + date.month * 2592000 + date.day * 86400 + 11 * 3600
-		else
-			-- offset to 825-02-08 11:00
-			Helper.xTimeOffset = 825 * 31104000 + 2 * 2592000 + 8 * 86400 + 11 * 3600
+			year = date.year - 2170
+			month = date.month
+			day = date.day
 		end
+		-- turn 1-based day and month into 0-based numbers
+		day = (day + 29) % 30
+		month = (month + 11) % 12
+		Helper.xTimeOffset = year * (12*30*24*3600) + month * (30*24*3600) + day * (24*3600) + hour * 3600
 	end
 
 	time = time + Helper.xTimeOffset
 
-	local timestring = math.floor(time / 31104000) .. "-"
-	time = time % 31104000
-	timestring = timestring .. string.format("%02d", math.floor(time / 2592000)) .. "-"
-	time = time % 2592000
-	timestring = timestring .. string.format("%02d", math.floor(time / 86400)) .. " "
+	-- year
+	local timestring = math.floor(time / (12*30*24*3600)) .. "-"
+	-- month
+	time = time % (12*30*24*3600)
+	timestring = timestring .. string.format("%02d", math.floor(time / (30*24*3600)) + 1) .. "-"
+	-- day
+	time = time % (30*24*3600)
+	timestring = timestring .. string.format("%02d", math.floor(time / (24*3600)) + 1) .. " "
 	if dateonly then
 		return timestring
 	end
 
-	time = time % 86400
+	-- hour
+	time = time % (24*3600)
 	timestring = timestring .. string.format("%02d", math.floor(time / 3600)) .. ":"
+	-- minute
 	time = time % 3600
 	timestring = timestring .. string.format("%02d", math.floor(time / 60))
 
