@@ -10,9 +10,10 @@ ffi.cdef[[
 	typedef struct {
 		const char* id;
 		const char* name;
++		const char* tags;
 		double productiontime;
 		double productionamount;
-	} ProductionMethodInfo2;
+	} ProductionMethodInfo3;
 	typedef struct {
 		const char* text;
 		const char* mouseovertext;
@@ -125,7 +126,7 @@ ffi.cdef[[
 	uint32_t GetNumWareTransportTypes(void);
 	uint32_t GetPeopleCapacity(UniverseID controllableid, const char* macroname, bool includepilot);
 	UniverseID GetPlayerZoneID(void);
-	ProductionMethodInfo2 GetProductionMethodInfo(const char* wareid, const char* productionmethod);
+	ProductionMethodInfo3 GetProductionMethodInfo2(const char* wareid, const char* productionmethod);
 	uint32_t GetProductionMethodResources(UIWareAmount* result, uint32_t resultlen, const char* wareid, const char* productionmethod);
 	uint32_t GetSectorsByOwner(UniverseID* result, uint32_t resultlen, const char* factionid);
 	uint32_t GetTradeOfferStatistics(UITradeOfferStat* result, uint32_t resultlen, size_t numdatapoints);
@@ -2185,10 +2186,11 @@ function menu.initWareData(funcware)
 			for _, productionmethod in ipairs(productionmethods) do
 				local n = C.GetNumProductionMethodResources(funcware, productionmethod)
 				if n > 0 then
-					local info = C.GetProductionMethodInfo(funcware, productionmethod)
-					-- print("name:".. ffi.string(info.name) .. ", id:" .. ffi.string(info.id))
+					local info = C.GetProductionMethodInfo2(funcware, productionmethod)
+					-- print("name:".. ffi.string(info.name) .. ", id:" .. ffi.string(info.id).. ", tags:".. ffi.string(info.tags))
 					table.insert(menu.details.productionmethods, { method = productionmethod, name = ffi.string(info.name), productiontime = info.productiontime, productionamount = info.productionamount, resources = {} })
 					local methodentry = menu.details.productionmethods[#menu.details.productionmethods]
+					methodentry.playerbuild = not string.find(ffi.string(info.tags), "noplayerbuild") -- inverting the boolean to make the usage more readable
 					local buf = ffi.new("UIWareAmount[?]", n)
 					n = C.GetProductionMethodResources(buf, n, funcware, productionmethod)
 					for i = 0, n - 1 do
@@ -2801,31 +2803,32 @@ function menu.addProductionMethodDetails(ftable, resourcestring, methodstring, s
 	menu.numDetailRows = menu.numDetailRows + 1
 	local row = ftable:addRow(("detailrow_" .. menu.numDetailRows), { interactive = false })
 	row[2]:createText(methodstring .. ReadText(1001, 120))
-	local allowed = menu.isMakerRaceAllowed(GetMacroData(menu.details.id, "makerraceid"), nil)
-	if allowed then
-		row[3]:setColSpan(2):createDropDown(productionmethodoptions, { startOption = menu.productionmethod }):setTextProperties({ halign = "right", x = Helper.standardTextOffsetx })
-		row[3].handlers.onDropDownConfirmed = menu.dropdownProductionMethod
+	row[3]:setColSpan(2):createDropDown(productionmethodoptions, { startOption = menu.productionmethod }):setTextProperties({ halign = "right", x = Helper.standardTextOffsetx })
+	row[3].handlers.onDropDownConfirmed = menu.dropdownProductionMethod
 
-		for i, entry in ipairs(menu.details.productionmethods[currentMethodIdx].resources) do
+	local playerbuild = menu.details.productionmethods[currentMethodIdx].playerbuild
+	for i, entry in ipairs(menu.details.productionmethods[currentMethodIdx].resources) do
+		if playerbuild then
 			menu.addDetailRow(ftable, "", ConvertIntegerString(entry.amount, true, 0, true) .. ReadText(1001, 42), entry.name, nil, nil, nil, nil, nil, entry.ware) -- use id/ware
+		else
+			menu.addDetailRow(ftable, "", ReadText(1001, 9657)) -- For rendering "Unknown production"" details
+			break
 		end
+	end
 
-		if showamount then
+	if showamount and playerbuild then
+		-- empty line
+		menu.addDetailRow(ftable, "")
+		-- Production Amount
+		menu.addDetailRow(ftable, showamount, ConvertIntegerString(menu.details.productionmethods[currentMethodIdx].productionamount, true, 0, true) .. ReadText(1001, 42), menu.object.name, nil, nil, nil, nil, nil, menu.id)
+	end
+	if showtime and playerbuild then
+		if not showamount then
 			-- empty line
 			menu.addDetailRow(ftable, "")
-			-- Production Amount
-			menu.addDetailRow(ftable, showamount, ConvertIntegerString(menu.details.productionmethods[currentMethodIdx].productionamount, true, 0, true) .. ReadText(1001, 42), menu.object.name, nil, nil, nil, nil, nil, menu.id)
 		end
-		if showtime then
-			if not showamount then
-				-- empty line
-				menu.addDetailRow(ftable, "")
-			end
-			-- buildtime
-			menu.addDetailRow(ftable, showtime .. ReadText(1001, 120), ConvertTimeString(menu.details.productionmethods[currentMethodIdx].productiontime, ReadText(1001, 209)))
-		end
-	else
-		row[4]:createText(ReadText(1001, 9408), { halign = "right", x = Helper.standardTextOffsetx })
+		-- buildtime
+		menu.addDetailRow(ftable, showtime .. ReadText(1001, 120), ConvertTimeString(menu.details.productionmethods[currentMethodIdx].productiontime, ReadText(1001, 209)))
 	end
 end
 
@@ -3426,7 +3429,6 @@ function menu.addDetailRows(ftable)
 			if hasdefaultloadout and menu.preobject then
 				bestshield = GetLibraryEntry( "shieldgentypes", ffi.string(C.GetUpgradeSlotCurrentMacro(ConvertIDTo64Bit(menu.preobject), 0, "shield", 1)))
 			else
-				local numslots = tonumber(C.GetNumUpgradeSlots(0, menu.id, "shield"))
 				for i = numslots, 1, -1 do
 					local locgroup = C.GetUpgradeSlotGroup(0, menu.id, "shield", i)
 					if (ffi.string(locgroup.path) == "..") and (ffi.string(locgroup.group) == "") then
@@ -4546,7 +4548,7 @@ end
 
 -- input in m
 function menu.formatRange(range)
-	return (range > 10000) and ConvertIntegerString(range / 1000, true, 0, true) or Helper.round(range / 1000, (range > 1000) and 1 or 3)
+	return string.format("%." .. ((range > 1000) and 1 or 3) .. "f", Helper.round(range / 1000, (range > 1000) and 1 or 3))
 end
 
 -- kuertee start:
