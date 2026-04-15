@@ -10,7 +10,7 @@ ffi.cdef[[
 	typedef struct {
 		const char* id;
 		const char* name;
-+		const char* tags;
+		const char* tags;
 		double productiontime;
 		double productionamount;
 	} ProductionMethodInfo3;

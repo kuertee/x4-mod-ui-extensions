@@ -136,7 +136,7 @@ function menu.createFrame()
 		y = Helper.frameBorder,
 		x2 = menu.isstation and (menu.sidebarWidth + Helper.borderSize + Helper.frameBorder) or Helper.frameBorder,
 	}
-	Helper.createTransactionLog(menu, menu.container, tableProperties, menu.refreshInfoFrame)
+	Helper.createTransactionLog(menu, menu.container, tableProperties, menu.refreshInfoFrame, 0)
 
 	-- start: kuertee call-back
 	if menu.uix_callbacks ["createFrame_on_create_transaction_log"] then

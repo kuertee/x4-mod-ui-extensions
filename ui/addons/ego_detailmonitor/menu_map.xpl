@@ -962,6 +962,7 @@ ffi.cdef[[
 	void SetMapRenderMissionGuidance(UniverseID holomapid, MissionID missionid);
 	void SetMapRenderMissionOffers(UniverseID holomapid, bool value);
 	void SetMapRenderResourceInfo(UniverseID holomapid, bool value);
+	void SetMapRenderResourceProbeRange(UniverseID holomapid, bool value);
 	void SetMapRenderSatelliteRadarRange(UniverseID holomapid, bool value);
 	void SetMapRenderSelectionLines(UniverseID holomapid, bool value);
 	void SetMapRenderTradeOffers(UniverseID holomapid, bool value);
@@ -1324,8 +1325,8 @@ local config = {
 		["layer_mining"] = {
 			callback = function (...) return menu.filterMining(...) end,
 			[1] = {
-				caption = ReadText(1001, 8306),
-				type = "dropdown",
+				caption = ReadText(1001, 46),
+				type = "selectlist",
 				callback = function (...) return menu.filterMiningResources(...) end,
 				helpOverlayID = "miningfilters_resource",
 				helpOverlayText = " ",
@@ -1334,6 +1335,20 @@ local config = {
 					id = "mining_resource_ware",
 					listOptions = function (...) return menu.getFilterMiningResourcesOptions(...) end,
 					param = "resource"
+				},
+			},
+			[2] = {
+				caption = ReadText(1001, 1329),
+				type = "checkbox",
+				callback = function (...) return menu.filterMiningResourceProbes(...) end,
+				helpOverlayID = "miningfilters_resourceprobes",
+				helpOverlayText = " ",
+				helpOverlayHighlightOnly = true,
+				[1] = {
+					id = "mining_renderresourceproberange",
+					name = ReadText(1001, 11697),
+					info = ReadText(1001, 11698),
+					param = "renderresourceproberange",
 				},
 			},
 		},
@@ -1475,7 +1490,7 @@ local config = {
 			},
 		},
 	},
-	mapfilterversion = 22,
+	mapfilterversion = 23,
 	mapfiltersaveversion = 1,
 
 	-- custom default row properties, different from Helper defaults
@@ -1625,6 +1640,9 @@ local config = {
 		{ icon = "mapob_collectableammo",			text = ReadText(20109, 1001),	color = "friendcolor" },							-- Ammo Container
 		{ icon = "mapob_asteroid",					text = ReadText(20001, 801),	color = "friendcolor" },							-- Asteroid
 		{ icon = "mapob_collectableasteroid",		text = ReadText(1001, 11652),	color = "friendcolor" },							-- Collectable Asteroid
+		{ icon = "mapob_scrap_tow",					text = ReadText(1001, 11695),	color = "friendcolor" },							-- Towable Wreck
+		{ icon = "mapob_scrap_dismantle",			text = ReadText(1001, 11696),	color = "friendcolor" },							-- Dismantable Wreck
+		{ icon = "mapob_recyclable",				text = ReadText(20109, 10801),	color = "friendcolor" },							-- Scrap Cube
 		{ icon = "mapob_poi",						text = ReadText(1001, 9811),	color = "friendcolor" },							-- Point of Interest
 		{ icon = "mapob_unknown",					text = ReadText(20109, 5001) },														-- Unknown Object
 		{ icon = "npc_factionrep",					text = ReadText(20208, 10601),	color = "friendcolor" },							-- Faction Representative
@@ -1874,6 +1892,7 @@ __CORE_DETAILMONITOR_MAPFILTER = __CORE_DETAILMONITOR_MAPFILTER or {
 	["think_diplomacy_highlightvisitor"] = true,
 	["mining_resource_display"] = true,
 	["mining_resource_ware"] = "all",
+	["mining_renderresourceproberange"] = true,
 	["other_misc_orderqueue"] = true,
 	["other_misc_allyorderqueue"] = true,
 	["other_misc_missions"] = true,
@@ -6013,6 +6032,20 @@ function menu.filterOtherShip(setting, override)
 		elseif option.param == "allyorderqueue" then
 			if menu.holomap ~= 0 then
 				C.SetMapRenderAllAllyOrderQueues(menu.holomap, value)
+			end
+		end
+	end
+end
+
+function menu.filterMiningResourceProbes(setting, override, noupdate)
+	for _, option in ipairs(setting) do
+		local value = override
+		if value == nil then
+			value = menu.getFilterOption(option.id, setting.savegame) or false
+		end
+		if option.param == "renderresourceproberange" then
+			if menu.holomap ~= 0 then
+				C.SetMapRenderResourceProbeRange(menu.holomap, value)
 			end
 		end
 	end
@@ -13442,6 +13475,7 @@ function menu.createFilterMode(frame, ftable, numCols)
 	row[1]:setBackgroundColSpan(3):setColSpan(2):createButton({ height = Helper.largeRowHeight, width = Helper.largeRowHeight, helpOverlayID = "toggle_current_filter", helpOverlayText = " ", helpOverlayHighlightOnly = true, cellBGColor = Color["container_section_header"] }):setIcon("menu_on_off", { color = onoffcolor })
 	row[1].handlers.onClick = function () return menu.buttonSetFilterLayer(menu.displayedFilterLayer, row.index, 1, false) end
 	row[3]:setColSpan(numCols - 2):createText(title, Helper.subTabTitleTextProperties)
+	row[3].properties.x = -Helper.largeRowHeight
 
 	local settings = config.layersettings[menu.displayedFilterLayer]
 	for i, setting in ipairs(settings) do
@@ -13510,6 +13544,15 @@ function menu.createFilterMode(frame, ftable, numCols)
 					row[1].handlers.onDropDownConfirmed = function (_, id) return menu.setFilterOption(menu.displayedFilterLayer, setting, option.id, id) end
 					row[1].handlers.onDropDownActivated = function () menu.noupdate = true end
 					titlerow[1].properties.helpOverlayHeight = titlerow[1].properties.helpOverlayHeight + row:getHeight() + Helper.borderSize
+				elseif setting.type == "selectlist" then
+					local listOptions = option.listOptions()
+					for _, entry in ipairs(listOptions) do
+						local row = settingrowgroup:addRow(true)
+						row[1]:createCheckBox(function () return menu.getFilterOption(option.id, setting.savegame) == entry.id end, { scaling = false, width = Helper.scaleY(config.mapRowHeight), height = Helper.scaleY(config.mapRowHeight), active = active and optionactive })
+						row[1].handlers.onClick = function () return menu.setFilterOption(menu.displayedFilterLayer, setting, option.id, entry.id) end
+						row[2]:setColSpan(numCols - 1):createText(entry.text, { color = ((not active) or (not optionactive)) and Color["text_inactive"] or color, mouseOverText = option.info })
+						titlerow[1].properties.helpOverlayHeight = titlerow[1].properties.helpOverlayHeight + row:getHeight() + Helper.borderSize
+					end
 				end
 			end
 		end
@@ -17600,11 +17643,11 @@ function menu.setupLogbookInfoSubmenuRows(inputtable, inputobject, instance, isv
 				local moneystring = ""
 				if entry.money ~= 0 then
 					local moneycolor = (entry.money >= 0) and Color["text_positive"] or Color["text_negative"]
-					moneystring = moneystring .. Helper.convertColorToText(moneycolor) .. ((entry.bonus >= 0) and "+" or "-") .. ConvertMoneyString(entry.money, false, true, nil, true) .. " " .. ReadText(1001, 101)
+					moneystring = moneystring .. Helper.convertColorToText(moneycolor) .. ((entry.money >= 0) and "+" or "") .. ConvertMoneyString(entry.money, false, true, nil, true) .. " " .. ReadText(1001, 101)
 				end
 				if entry.bonus ~= 0 then
 					local bonuscolor = (entry.bonus >= 0) and Color["text_positive"] or Color["text_negative"]
-					moneystring = moneystring .. " " .. Helper.convertColorToText(bonuscolor) .. "(" .. ((entry.bonus >= 0) and "+" or "-") .. " " .. ReadText(1001, 5712) .. " " .. ConvertMoneyString(entry.bonus, false, true, nil, true) .. " " .. ReadText(1001, 101) .. ")"
+					moneystring = moneystring .. " " .. Helper.convertColorToText(bonuscolor) .. "(+ " .. ReadText(1001, 5712) .. " " .. ConvertMoneyString(entry.bonus, false, true, nil, true) .. " " .. ReadText(1001, 101) .. ")"
 				end
 				row[3]:setColSpan(8):createText(moneystring, { halign = "right" })
 
@@ -32211,6 +32254,8 @@ function menu.setFilterOption(mode, setting, id, value, index)
 		settings[id] = value
 	elseif setting.type == "dropdown" then
 		settings[id] = value
+	elseif setting.type == "selectlist" then
+		settings[id] = value
 	end
 
 	if not settings[mode] then
@@ -32303,6 +32348,9 @@ function menu.upgradeMapFilterVersion()
 	end
 	if oldversion < 22 then
 		__CORE_DETAILMONITOR_MAPFILTER["mining_resource_ware"] = "all"
+	end
+	if oldversion < 23 then
+		__CORE_DETAILMONITOR_MAPFILTER["mining_renderresourceproberange"] = true
 	end
 
 	__CORE_DETAILMONITOR_MAPFILTER.version = config.mapfilterversion

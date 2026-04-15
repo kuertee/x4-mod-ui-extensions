@@ -8066,9 +8066,6 @@ function menu.selectableGfxUpscaling()
 	if (currentAAOption == "ssaa_2x") or (currentAAOption == "ssaa_4x") or (currentAAOption == "ssaa_6x") or (currentAAOption == "ssaa_9x") then
 		return 1
 	end
-	if ffi.string(C.GetDLSSModeOption(false)) ~= "off" then
-		return 2
-	end
 	return 0
 end
 
@@ -8844,7 +8841,8 @@ function menu.callbackGfxFSR(id, option)
 	if option ~= menu.curDropDownOption[id] then
 		menu.curDropDownOption[id] = option
 		if option == "on" then
-			C.SetMultipleGfxModes3(ffi.string(C.GetAAOption(true)), "fsr3_quality", C.GetDLSSOption(true), ffi.string(C.GetDLSSModeOption(true)), ffi.string(C.GetDLSSFrameGenOption(true)), ffi.string(C.GetPresentModeOption2(true)), C.IsFSRFrameGenSupported() and "on" or "off")
+			-- turn off DLSS options explicitly here as they would overwrite the FSR settings otherwise
+			C.SetMultipleGfxModes3(ffi.string(C.GetAAOption(true)), "fsr3_quality", false, "off", "off", ffi.string(C.GetPresentModeOption2(true)), C.IsFSRFrameGenSupported() and "on" or "off")
 		elseif option == "off" then
 			C.SetMultipleGfxModes3(ffi.string(C.GetAAOption(true)), "none", C.GetDLSSOption(true), ffi.string(C.GetDLSSModeOption(true)), ffi.string(C.GetDLSSFrameGenOption(true)), ffi.string(C.GetPresentModeOption2(true)), "off")
 		end

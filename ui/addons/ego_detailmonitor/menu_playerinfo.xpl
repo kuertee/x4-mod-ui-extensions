@@ -1618,7 +1618,7 @@ function menu.createInfoFrame()
 	elseif menu.mode == "transactionlog" then
 		tableProperties.width = Helper.round(tableProperties.width * 1.5)
 		tableProperties.x2 = Helper.frameBorder
-		Helper.createTransactionLog(menu, C.GetPlayerID(), tableProperties, menu.refreshInfoFrame)
+		Helper.createTransactionLog(menu, C.GetPlayerID(), tableProperties, menu.refreshInfoFrame, 1)
 		menu.lastTransactionLogRefreshTime = getElapsedTime()
 	elseif menu.mode == "empire" then
 		menu.createEmpire(menu.infoFrame, tableProperties)
@@ -3060,11 +3060,11 @@ function menu.createLogbook(frame, tableProperties)
 				local moneystring = ""
 				if entry.money ~= 0 then
 					local moneycolor = (entry.money >= 0) and Color["text_positive"] or Color["text_negative"]
-					moneystring = moneystring .. Helper.convertColorToText(moneycolor) .. ((entry.bonus >= 0) and "+" or "-") .. ConvertMoneyString(entry.money, false, true, nil, true) .. " " .. ReadText(1001, 101)
+					moneystring = moneystring .. Helper.convertColorToText(moneycolor) .. ((entry.money >= 0) and "+" or "") .. ConvertMoneyString(entry.money, false, true, nil, true) .. " " .. ReadText(1001, 101)
 				end
 				if entry.bonus ~= 0 then
 					local bonuscolor = (entry.bonus >= 0) and Color["text_positive"] or Color["text_negative"]
-					moneystring = moneystring .. " " .. Helper.convertColorToText(bonuscolor) .. "(" .. ((entry.bonus >= 0) and "+" or "-") .. " " .. ReadText(1001, 5712) .. " " .. ConvertMoneyString(entry.bonus, false, true, nil, true) .. " " .. ReadText(1001, 101) .. ")"
+					moneystring = moneystring .. " " .. Helper.convertColorToText(bonuscolor) .. "(+ " .. ReadText(1001, 5712) .. " " .. ConvertMoneyString(entry.bonus, false, true, nil, true) .. " " .. ReadText(1001, 101) .. ")"
 				end
 				row[3]:setColSpan(8):createText(moneystring, config.rightAlignTextProperties)
 
@@ -6927,7 +6927,7 @@ function menu.buttonContainerInfo(controllable)
 end
 
 function menu.buttonTransactionLog(controllable)
-	Helper.closeMenuAndOpenNewMenu(menu, "TransactionLogMenu", { 0, 0, controllable });
+	Helper.closeMenuAndOpenNewMenu(menu, "TransactionLogMenu", { 0, 0, controllable })
 	menu.cleanup()
 end
 
@@ -7400,6 +7400,10 @@ function menu.onInventoryRowChange(row, rowdata, input, mode)
 				menu.refresh = getElapsedTime()
 			end
 		end
+	else
+		menu.inventoryData.curEntry = {}
+		menu.inventoryData.activatecutscene = nil
+		menu.refresh = getElapsedTime()
 	end
 end
 

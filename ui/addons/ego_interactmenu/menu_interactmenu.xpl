@@ -818,7 +818,7 @@ function menu.orderGetSupplies(component, clear)
 	end
 
 	local params = {}
-	CreateOrder(component, "GetSupplies", params, false, false, menu.priorityOrderMode)
+	CreateOrder(ConvertStringToLuaID(tostring(component)), "GetSupplies", params, false, false, menu.priorityOrderMode)
 end
 
 function menu.orderMining(component, ware, sector, offset, clear)

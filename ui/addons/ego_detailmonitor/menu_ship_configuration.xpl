@@ -2694,8 +2694,10 @@ function menu.determineInitialSlot()
 		local curslotsizepriority
 		for i, group in ipairs(menu.groups) do
 			if (menu.upgradetypeMode == "enginegroup") == (group["engine"].total > 0) then
-				if group.slotsize and (group.slotsize ~= "") then
-					local sizeorder = Helper.slotSizeOrder[group.slotsize] or 0
+				local slotsize = group[(menu.upgradetypeMode == "enginegroup") and "engine" or "turret"].slotsize
+				local groupinfo = C.GetUpgradeGroupInfo(menu.object, menu.macro, group.path, group.group, "engine")
+				if slotsize and (slotsize ~= "") then
+					local sizeorder = Helper.slotSizeOrder[slotsize] or 0
 					if (not curslotsizepriority) or (sizeorder < curslotsizepriority) then
 						curslotsizepriority = sizeorder
 						menu.currentSlot = i
@@ -3493,8 +3495,8 @@ function menu.displayLeftBar(frame)
 						local curslotsizepriority
 						for slot, groupdata in pairs(menu.groups) do
 							if groupdata[upgradetype.grouptype] and (groupdata[upgradetype.grouptype].total > 0) then
-								if groupdata.slotsize and (groupdata.slotsize ~= "") then
-									local sizeorder = Helper.slotSizeOrder[groupdata.slotsize] or 0
+								if groupdata[upgradetype.grouptype].slotsize and (groupdata[upgradetype.grouptype].slotsize ~= "") then
+									local sizeorder = Helper.slotSizeOrder[groupdata[upgradetype.grouptype].slotsize] or 0
 									if (not curslotsizepriority) or (sizeorder < curslotsizepriority) then
 										curslotsizepriority = sizeorder
 										overrideSlot = slot
@@ -3696,6 +3698,7 @@ function menu.displayLeftBar(frame)
 						found = true
 						selected = true
 						menu.upgradetypeMode = entry.mode
+						menu.determineInitialSlot()
 						menu.selectMapMacroSlot()
 					end
 
@@ -5825,7 +5828,11 @@ function menu.displaySlots(frame, firsttime)
 							else
 								name, shortname = GetMacroData(group[i].macro, "name", "shortname")
 							end
-							local extraText, untruncatedExtraText = menu.getExtraText(columnWidths[i], shortname, name, group[i].macro, (totalprice > 0) and totalprice * menu.repairdiscounts.totalfactor or nil, repairslotdata[4])
+							local price
+							if not menu.isplayerowned then
+								price = (totalprice > 0) and totalprice * menu.repairdiscounts.totalfactor or nil
+							end
+							local extraText, untruncatedExtraText = menu.getExtraText(columnWidths[i], shortname, name, group[i].macro, price, repairslotdata[4])
 
 							local color = Color["button_background_default"]
 							-- TODO: handle button colors for queued items here.
@@ -8558,7 +8565,7 @@ function menu.displayPlan(frame)
 			for _, entry in ipairs(repairedEquipment) do
 				local repaircomponent = ConvertStringTo64Bit(entry.component)
 				local isextended = menu.isUpgradeExpanded(menu.currentIdx, repaircomponent, "repair")
-				local name = ffi.string(C.GetComponentName(repaircomponent)) .. " (" .. ffi.string(C.GetObjectIDCode(repaircomponent)) .. ")"
+				local name = ffi.string(C.GetComponentName(repaircomponent)) .. (C.IsComponentClass(repaircomponent, "ship") and (" (" .. ffi.string(C.GetObjectIDCode(repaircomponent)) .. ")") or "")
 
 				local resources = {}
 				local n = C.GetNumRepairResources2(menu.container, menu.object, repaircomponent)
