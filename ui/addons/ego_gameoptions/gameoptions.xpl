@@ -10583,7 +10583,7 @@ function menu.displayExtensions()
 				end
 				-- add name of author
 				local row = optiontable:addRow(false, {})
-				row[2]:createText(extension.author, config.standardTextProperties)
+				row[2]:setColSpan(6):createText(extension.author, config.standardTextProperties)
 				row[2].properties.fontsize = row[2].properties.fontsize * 2
 				if not extension.enabled then
 					row[2].properties.color = Helper.color.grey
@@ -10885,7 +10885,11 @@ function menu.displayModRow(ftable, extension, extensionSetting)
 	row[2]:createText(extension.name, config.standardTextProperties)
 	row[2].properties.color = textcolor
 
-	row[3]:createText(extension.id, config.standardTextProperties)
+	local textIdAuthor = extension.id
+	if not (__userdata_uix_gameoptions.modsortertype =="author" or __userdata_uix_gameoptions.modsortertype == "authorinverse") and extension.author ~= "" then
+		textIdAuthor = extension.author .. "\n" .. extension.id
+	end
+	row[3]:createText(textIdAuthor, config.standardTextProperties)
 
 	row[4]:createText(extension.version, config.standardTextProperties)
 	row[4].properties.halign = "right"
