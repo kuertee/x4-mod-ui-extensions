@@ -7401,9 +7401,11 @@ function menu.onInventoryRowChange(row, rowdata, input, mode)
 			end
 		end
 	else
-		menu.inventoryData.curEntry = {}
-		menu.inventoryData.activatecutscene = nil
-		menu.refresh = getElapsedTime()
+		if next(menu.inventoryData.curEntry) then
+			menu.inventoryData.curEntry = {}
+			menu.inventoryData.activatecutscene = nil
+			menu.refresh = getElapsedTime()
+		end
 	end
 end
 

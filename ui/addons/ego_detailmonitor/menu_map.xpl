@@ -6445,7 +6445,7 @@ function menu.displayMenu(firsttime)
 	RegisterAddonBindings("ego_detailmonitor", "autopilot")
 	RegisterAddonBindings("ego_detailmonitor", "undo")
 	RegisterAddonBindings("ego_detailmonitor", "modes")
-	menu.panelMode = (C.GetImprovedControllerMode() == 1) and (GetControllerInfo() == "gamepad")
+	menu.panelMode = (C.GetImprovedControllerMode() == 1) and (GetControllerInfo() == "gamepad") and (menu.mode ~= "tradecontext")
 	Helper.updatePanelState(menu)
 
 	menu.renderedComponents = {}
@@ -22044,7 +22044,7 @@ function menu.updateInputBar()
 end
 
 function menu.onInputModeChanged(_, mode)
-	menu.panelMode = (C.GetImprovedControllerMode() == 1) and (mode == "gamepad")
+	menu.panelMode = (C.GetImprovedControllerMode() == 1) and (mode == "gamepad") and (menu.mode ~= "tradecontext")
 	Helper.updatePanelState(menu)
 	if not menu.noupdate then
 		menu.refreshMainFrame = true
@@ -22472,14 +22472,16 @@ function menu.defaultInteraction(component, posrot, posrotvalid, offsetx, offset
 			end
 		end
 	elseif GetComponentData(ConvertStringToLuaID(tostring(component)), "isenemy") then
-		for id, _ in pairs(menu.selectedcomponents) do
-			local selectedcomponent = ConvertStringTo64Bit(id)
-			local assignedpilot, isplayerowned = GetComponentData(selectedcomponent, "assignedpilot", "isplayerowned")
-			if (selectedcomponent ~= occupiedship) and assignedpilot and isplayerowned then
-				local hasloop = ffi.new("bool[1]", 0)
-				C.GetOrderQueueFirstLoopIdx(selectedcomponent, hasloop)
-				if ((not hasloop[0]) or menu.orderdefbyid["Attack"].loopable) then
-					menu.orderAttack(selectedcomponent, component, modified == (Helper.useShiftToQueueOrders and "ctrl" or "shift"), modified)
+		if not C.IsComponentClass(component, "buildstorage") then
+			for id, _ in pairs(menu.selectedcomponents) do
+				local selectedcomponent = ConvertStringTo64Bit(id)
+				local assignedpilot, isplayerowned = GetComponentData(selectedcomponent, "assignedpilot", "isplayerowned")
+				if (selectedcomponent ~= occupiedship) and assignedpilot and isplayerowned then
+					local hasloop = ffi.new("bool[1]", 0)
+					C.GetOrderQueueFirstLoopIdx(selectedcomponent, hasloop)
+					if ((not hasloop[0]) or menu.orderdefbyid["Attack"].loopable) then
+						menu.orderAttack(selectedcomponent, component, modified == (Helper.useShiftToQueueOrders and "ctrl" or "shift"), modified)
+					end
 				end
 			end
 		end
@@ -32548,8 +32550,10 @@ function menu.updateMouseCursor()
 							cursor = priorityorder and "moveherepriority" or "movehere"
 						end
 					elseif isenemy then
-						if hasplayerselectedship then
-							cursor = priorityorder and "targetredpriority" or "targetred"
+						if not Helper.isComponentClass(pickedcomponentclassid, "buildstorage") then
+							if hasplayerselectedship then
+								cursor = priorityorder and "targetredpriority" or "targetred"
+							end
 						end
 					elseif Helper.isComponentClass(pickedcomponentclassid, "station") then
 						local issingleloopship

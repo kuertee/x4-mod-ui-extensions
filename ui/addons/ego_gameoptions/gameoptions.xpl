@@ -3370,11 +3370,13 @@ function menu.buttonOnlineLogout()
 end
 
 function menu.buttonUserQuestionPositive()
+	__CORE_GAMEOPTIONS_RESTORE = nil
 	menu.userQuestion.callback(menu.userQuestion.hasEditBox and menu.userQuestion.editboxText or nil)
 	menu.userQuestion = nil
 end
 
 function menu.buttonUserQuestionNegative()
+	__CORE_GAMEOPTIONS_RESTORE = nil
 	if menu.userQuestion.negCallback then
 		menu.userQuestion.negCallback()
 	else
@@ -13607,8 +13609,8 @@ function menu.onShowMenu()
 					end
 				end
 			end
+			__CORE_GAMEOPTIONS_RESTORE = nil
 		end
-		__CORE_GAMEOPTIONS_RESTORE = nil
 		C.SaveUIUserData()
 		return
 	elseif __CORE_GAMEOPTIONS_RESTOREINFO.returnhistory then
@@ -13848,6 +13850,7 @@ function menu.onUpdate()
 		if menu.userQuestion and menu.userQuestion.timer then
 			if curtime >= menu.userQuestion.timer then
 				if menu.userQuestion.negCallback then
+					__CORE_GAMEOPTIONS_RESTORE = nil
 					menu.userQuestion.negCallback()
 					menu.userQuestion = nil
 				else
@@ -14186,6 +14189,7 @@ function menu.onSelectElement(uitable, modified, row, isdblclick, input)
 			end
 		elseif menu.currentOption == "question" then
 			if option and next(option) then
+				__CORE_GAMEOPTIONS_RESTORE = nil
 				if option.positive then
 					menu.userQuestion.callback(menu.userQuestion.hasEditBox and menu.userQuestion.editboxText or nil)
 					menu.userQuestion = nil
@@ -14331,6 +14335,7 @@ function menu.onCloseElement(dueToClose)
 
 	if dueToClose == "close" then
 		if menu.userQuestion and menu.userQuestion.negCallback then
+			__CORE_GAMEOPTIONS_RESTORE = nil
 			menu.userQuestion.negCallback()
 		end
 		if menu.remapControl then
@@ -14368,6 +14373,7 @@ function menu.onCloseElement(dueToClose)
 			end
 		else
 			if menu.userQuestion and menu.userQuestion.negCallback then
+				__CORE_GAMEOPTIONS_RESTORE = nil
 				menu.userQuestion.negCallback()
 			else
 				local lastOption = menu.history[1]
