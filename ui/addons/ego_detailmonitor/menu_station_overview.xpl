@@ -2297,9 +2297,9 @@ function menu.onFlowchartNodeExpanded(node, frame, ftable, ftable2)
 end
 
 function menu.onExpandTradeWares(frame, ftable, ftable2, nodedata)
-	ftable:setColWidth(1, Helper.scaleY(Helper.standardButtonHeight), false)
+	ftable:setColWidth(1, Helper.scaleY(Helper.standardTextHeight), false)
 	ftable:setColWidthPercent(3, 50)
-	ftable2:setColWidth(1, Helper.scaleY(Helper.standardButtonHeight), false)
+	ftable2:setColWidth(1, Helper.scaleY(Helper.standardTextHeight), false)
 	ftable2:setColWidthPercent(3, 50)
 
 	-- kuertee start: callback
@@ -2349,7 +2349,7 @@ function menu.onExpandTradeWares(frame, ftable, ftable2, nodedata)
 
 	for _, entry in ipairs(allwares) do
 		local row = ftable:addRow(true, {  })
-		row[1]:setBackgroundColSpan(3):createCheckBox(menu.selectedWares[entry.ware], { width = Helper.standardButtonHeight, height = Helper.standardButtonHeight, helpOverlayID = "station_overview_tradeware_option_" .. entry.ware, helpOverlayText = " ", helpOverlayHighlightOnly = true, helpOverlayUseBackgroundSpan = true, uiTriggerID = "tradeware_" .. entry.ware })
+		row[1]:setBackgroundColSpan(3):createCheckBox(menu.selectedWares[entry.ware], { width = Helper.standardTextHeight, height = Helper.standardTextHeight, helpOverlayID = "station_overview_tradeware_option_" .. entry.ware, helpOverlayText = " ", helpOverlayHighlightOnly = true, helpOverlayUseBackgroundSpan = true, uiTriggerID = "tradeware_" .. entry.ware })
 		row[1].handlers.onClick = function (_, checked) if checked then menu.selectedWares[entry.ware] = true else menu.selectedWares[entry.ware] = nil end end
 		row[2]:setColSpan(2):createText(entry.name)
 	end
@@ -2436,7 +2436,7 @@ function menu.onExpandSupplyResource(_, ftable, _, nodedata)
 			-- global
 			local row = ftable:addRow("supplytraderule_global", {  })
 			row[1]:setColSpan(2):createText(ReadText(1001, 11025) .. ReadText(1001, 120), textproperties)
-			row[3]:createCheckBox(not hasownlist, { height = Helper.standardButtonHeight })
+			row[3]:createCheckBox(not hasownlist, { width = Helper.standardTextHeight, height = Helper.standardTextHeight, x = Helper.standardButtonHeight - Helper.standardTextHeight })
 			row[3].handlers.onClick = function(_, checked) return menu.checkboxSetTradeRuleOverride(menu.container, "supply", nodedata.ware, checked) end
 			-- current
 			local row = ftable:addRow("supplytraderule_current", {  })
@@ -2709,7 +2709,7 @@ function menu.onExpandProduction(_, ftable, _, nodedata, productionmodules)
 		local factor = menu.showSingleProduction[productionmodules.macro] and 1 or producing
 		row = ftable:addRow(true, {  })
 		row[1]:setColSpan(2):createText(ReadText(1001, 8462) .. ReadText(1001, 120))
-		row[3]:createCheckBox(menu.showSingleProduction[productionmodules.macro], { width = Helper.standardButtonHeight, height = Helper.standardButtonHeight, active = (producing ~= 1) or (baseamount ~= currentamount) })
+		row[3]:createCheckBox(menu.showSingleProduction[productionmodules.macro], { width = Helper.standardTextHeight, height = Helper.standardTextHeight, active = (producing ~= 1) or (baseamount ~= currentamount) })
 		row[3].handlers.onClick = function (_, checked) return menu.checkboxProductionSingle(productionmodules.macro, checked) end
 		-- product
 		row = ftable:addRow(nil, {  })
@@ -3355,7 +3355,7 @@ function menu.onExpandBuildModule(_, ftable, _, nodedata, buildmodule)
 		-- global
 		local row = ftable:addRow("buildtraderule_global", {  })
 		row[1]:setColSpan(3):createText(ReadText(1001, 8367) .. ReadText(1001, 120), textproperties)
-		row[4]:createCheckBox(not hasownlist, { height = Helper.standardButtonHeight })
+		row[4]:createCheckBox(not hasownlist, { width = Helper.standardTextHeight, height = Helper.standardTextHeight, x = Helper.standardButtonHeight - Helper.standardTextHeight })
 		row[4].handlers.onClick = function(_, checked) return menu.checkboxSetTradeRuleOverride(menu.container, "build", "", checked) end
 		-- current
 		local row = ftable:addRow("buildtraderule_current", {  })
@@ -3449,7 +3449,7 @@ function menu.onExpandWorkforce(_, ftable, _, nodedata)
 			ftable:addEmptyRow(Helper.standardTextHeight / 2)
 			-- target
 			row = ftable:addRow(true, {  })
-			row[1]:createCheckBox(shouldfill, { height = Helper.standardButtonHeight })
+			row[1]:createCheckBox(shouldfill, { height = Helper.standardTextHeight })
 			row[1].handlers.onClick = function(_, checked) return menu.checkboxSetWorkforceFill(menu.container) end
 			row[2]:setColSpan(3):createText(ReadText(1001, 8453), { mouseOverText = ReadText(1026, 8406) })
 			if shouldfill then
@@ -3740,7 +3740,7 @@ function menu.onExpandSupply(_, ftable, _, nodedata)
 					if not nobuildunitusage then
 						row = ftable:addRow(true, {  })
 						row[1]:setColSpan(2):createText(supplytypeentry.autoname)
-						row[3]:createCheckBox(auto, { height = Helper.standardButtonHeight })
+						row[3]:createCheckBox(auto, { width = Helper.standardTextHeight, height = Helper.standardTextHeight, x = Helper.standardButtonHeight - Helper.standardTextHeight })
 						row[3].handlers.onClick = function (_, checked) return menu.checkboxSupplyAuto(menu.container, supplytypeentry.type, checked) end
 					end
 				end
@@ -3809,7 +3809,7 @@ function menu.onExpandSupply(_, ftable, _, nodedata)
 		-- global
 		local row = ftable:addRow("supplytraderule_global", {  })
 		row[1]:setColSpan(2):createText(ReadText(1001, 8367) .. ReadText(1001, 120), textproperties)
-		row[3]:createCheckBox(not hasownlist, { height = Helper.standardButtonHeight })
+		row[3]:createCheckBox(not hasownlist, { width = Helper.standardTextHeight, height = Helper.standardTextHeight, x = Helper.standardButtonHeight - Helper.standardTextHeight })
 		row[3].handlers.onClick = function(_, checked) return menu.checkboxSetTradeRuleOverride(menu.container, "supply", "", checked) end
 		-- current
 		local row = ftable:addRow("supplytraderule_current", {  })

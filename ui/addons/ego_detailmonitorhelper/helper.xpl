@@ -10723,7 +10723,7 @@ function Helper.getNameAndIdString(universeID)
 	return name
 end
 
-function Helper.createTransactionLog(menu, container, tableProperties, refreshCallback)
+function Helper.createTransactionLog(menu, container, tableProperties, refreshCallback, tableColOffset)
 	local frame = menu.infoFrame
 	-- print("selectionData:" .. tostring(menu.setselectedrow) .. "/" .. tostring(menu.settoprow)) -- debug
 
@@ -11133,8 +11133,8 @@ function Helper.createTransactionLog(menu, container, tableProperties, refreshCa
 		table_total.properties.y = table_data.properties.y + table_data:getVisibleHeight()
 
 		-- add connections
-		table_navigation:addConnection(1, 1)
-		table_data:addConnection(2, 1)
+		table_navigation:addConnection(1, 1 + tableColOffset, true)
+		table_data:addConnection(2, 1 + tableColOffset)
 
 		if menu.setselectedrow then
 			table_data:setSelectedRow(menu.setselectedrow)
@@ -11158,7 +11158,7 @@ function Helper.createTransactionLog(menu, container, tableProperties, refreshCa
 		local row = table_data:addRow(nil, {  })
 		row[1]:setColSpan(7):createText("--- " .. ReadText(1001, 5705) .. " ---", { halign = "center" }) -- No entries
 
-		table_data:addConnection(2, 1)
+		table_data:addConnection(1, 1 + tableColOffset, true)
 	end
 
 	-- graph table
@@ -11296,8 +11296,7 @@ function Helper.createTransactionLog(menu, container, tableProperties, refreshCa
 		end
 	end
 
-	-- table_graph:addConnection(1, 2)
-	table_rangeselection:addConnection(1, 2)
+	table_rangeselection:addConnection(1, 2 + tableColOffset, true)
 end
 
 function Helper.getSyncPointName(id)
@@ -12130,7 +12129,7 @@ function Helper.onExpandLSOStorageNode(menu, container, _, ftable, _, nodedata)
 						menu.selectedRowData["nodeTable"] = nil
 					end
 					row[1]:setColSpan(2):createText(ReadText(1001, 8439) .. ReadText(1001, 120))
-					row[3]:createCheckBox(not haslimitoverride, { height = Helper.standardButtonHeight })
+					row[3]:createCheckBox(not haslimitoverride, { width = Helper.standardTextHeight, height = Helper.standardTextHeight, x = Helper.standardButtonHeight - Helper.standardTextHeight })
 					row[3].handlers.onClick = function (_, checked) return Helper.checkboxStorageLevelOverride(menu, container, nodedata.ware, row.index, currentlimit, checked) end
 					if haslimitoverride then
 						-- price
@@ -12204,7 +12203,7 @@ function Helper.onExpandLSOStorageNode(menu, container, _, ftable, _, nodedata)
 						mouseovertext = (waretype == "trade") and ReadText(1026, 8415) or ReadText(1026, 8408)
 						row[1]:setColSpan(2):createText(ReadText(1001, 8440), { mouseOverText = mouseovertext })
 					end
-					row[3]:createCheckBox(not haslimitoverride, { height = Helper.standardButtonHeight, mouseOverText = mouseovertext })
+					row[3]:createCheckBox(not haslimitoverride, { width = Helper.standardTextHeight, height = Helper.standardTextHeight, x = Helper.standardButtonHeight - Helper.standardTextHeight, mouseOverText = mouseovertext })
 					row[3].handlers.onClick = function (_, checked) return Helper.checkboxBuyLimitOverride(menu, container, nodedata.ware, row.index, currentlimit, checked) end
 				end
 				-- buy limit
@@ -12240,7 +12239,7 @@ function Helper.onExpandLSOStorageNode(menu, container, _, ftable, _, nodedata)
 					row[1]:createText(ReadText(1001, 8402) .. ReadText(1001, 120), { wordwrap = true })
 					row[2]:createText(function () return ConvertMoneyString(math.max(minprice, math.min(maxprice, GetContainerWarePrice(container, nodedata.ware, true))), true, true, 2, true) .. " " .. ReadText(1001, 101) end, { halign = "right" })
 				end
-				row[3]:createCheckBox(not haspriceoverride, { height = Helper.standardButtonHeight })
+				row[3]:createCheckBox(not haspriceoverride, { width = Helper.standardTextHeight, height = Helper.standardTextHeight, x = Helper.standardButtonHeight - Helper.standardTextHeight })
 				row[3].handlers.onClick = function (_, checked) return Helper.checkboxStorageWarePriceOverride(menu, container, nodedata.ware, row.index, true, currentprice, checked) end
 				if haspriceoverride then
 					-- price
@@ -12273,7 +12272,7 @@ function Helper.onExpandLSOStorageNode(menu, container, _, ftable, _, nodedata)
 				-- global
 				local row = ftable:addRow("buytraderule_global", {  })
 				row[1]:setColSpan(2):createText(ReadText(1001, 11025) .. ReadText(1001, 120), textproperties)
-				row[3]:createCheckBox(not hasownlist, { height = Helper.standardButtonHeight })
+				row[3]:createCheckBox(not hasownlist, { width = Helper.standardTextHeight, height = Helper.standardTextHeight, x = Helper.standardButtonHeight - Helper.standardTextHeight })
 				row[3].handlers.onClick = function(_, checked) return Helper.checkboxSetTradeRuleOverride(menu, container, "buy", nodedata.ware, checked) end
 				-- current
 				local row = ftable:addRow("buytraderule_current", {  })
@@ -12362,7 +12361,7 @@ function Helper.onExpandLSOStorageNode(menu, container, _, ftable, _, nodedata)
 						mouseovertext = (waretype == "trade") and ReadText(1026, 8416) or ReadText(1026, 8409)
 						row[1]:setColSpan(2):createText(ReadText(1001, 8441), { mouseOverText = mouseovertext })
 					end
-					row[3]:createCheckBox(not haslimitoverride, { height = Helper.standardButtonHeight, mouseOverText = mouseovertext })
+					row[3]:createCheckBox(not haslimitoverride, { width = Helper.standardTextHeight, height = Helper.standardTextHeight, x = Helper.standardButtonHeight - Helper.standardTextHeight, mouseOverText = mouseovertext })
 					row[3].handlers.onClick = function (_, checked) return Helper.checkboxSellLimitOverride(menu, container, nodedata.ware, row.index, currentlimit, checked) end
 				end
 				-- sell limit
@@ -12398,7 +12397,7 @@ function Helper.onExpandLSOStorageNode(menu, container, _, ftable, _, nodedata)
 					row[1]:createText(ReadText(1001, 8402) .. ReadText(1001, 120), { wordwrap = true })
 					row[2]:createText(function () return ConvertMoneyString(math.max(minprice, math.min(maxprice, GetContainerWarePrice(container, nodedata.ware, false))), true, true, 2, true) .. " " .. ReadText(1001, 101) end, { halign = "right" })
 				end
-				row[3]:createCheckBox(not haspriceoverride, { height = Helper.standardButtonHeight })
+				row[3]:createCheckBox(not haspriceoverride, { width = Helper.standardTextHeight, height = Helper.standardTextHeight, x = Helper.standardButtonHeight - Helper.standardTextHeight })
 				row[3].handlers.onClick = function (_, checked) return Helper.checkboxStorageWarePriceOverride(menu, container, nodedata.ware, row.index, false, currentprice, checked) end
 				if haspriceoverride then
 					-- price
@@ -12431,7 +12430,7 @@ function Helper.onExpandLSOStorageNode(menu, container, _, ftable, _, nodedata)
 				-- global
 				local row = ftable:addRow("selltraderule_global", {  })
 				row[1]:setColSpan(2):createText(ReadText(1001, 11025) .. ReadText(1001, 120), textproperties)
-				row[3]:createCheckBox(not hasownlist, { height = Helper.standardButtonHeight })
+				row[3]:createCheckBox(not hasownlist, { width = Helper.standardTextHeight, height = Helper.standardTextHeight, x = Helper.standardButtonHeight - Helper.standardTextHeight })
 				row[3].handlers.onClick = function(_, checked) return Helper.checkboxSetTradeRuleOverride(menu, container, "sell", nodedata.ware, checked) end
 				-- current
 				local row = ftable:addRow("selltraderule_current", {  })

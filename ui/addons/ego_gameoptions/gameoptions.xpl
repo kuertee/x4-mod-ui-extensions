@@ -3370,11 +3370,13 @@ function menu.buttonOnlineLogout()
 end
 
 function menu.buttonUserQuestionPositive()
+	__CORE_GAMEOPTIONS_RESTORE = nil
 	menu.userQuestion.callback(menu.userQuestion.hasEditBox and menu.userQuestion.editboxText or nil)
 	menu.userQuestion = nil
 end
 
 function menu.buttonUserQuestionNegative()
+	__CORE_GAMEOPTIONS_RESTORE = nil
 	if menu.userQuestion.negCallback then
 		menu.userQuestion.negCallback()
 	else
@@ -8066,9 +8068,6 @@ function menu.selectableGfxUpscaling()
 	if (currentAAOption == "ssaa_2x") or (currentAAOption == "ssaa_4x") or (currentAAOption == "ssaa_6x") or (currentAAOption == "ssaa_9x") then
 		return 1
 	end
-	if ffi.string(C.GetDLSSModeOption(false)) ~= "off" then
-		return 2
-	end
 	return 0
 end
 
@@ -8844,7 +8843,8 @@ function menu.callbackGfxFSR(id, option)
 	if option ~= menu.curDropDownOption[id] then
 		menu.curDropDownOption[id] = option
 		if option == "on" then
-			C.SetMultipleGfxModes3(ffi.string(C.GetAAOption(true)), "fsr3_quality", C.GetDLSSOption(true), ffi.string(C.GetDLSSModeOption(true)), ffi.string(C.GetDLSSFrameGenOption(true)), ffi.string(C.GetPresentModeOption2(true)), C.IsFSRFrameGenSupported() and "on" or "off")
+			-- turn off DLSS options explicitly here as they would overwrite the FSR settings otherwise
+			C.SetMultipleGfxModes3(ffi.string(C.GetAAOption(true)), "fsr3_quality", false, "off", "off", ffi.string(C.GetPresentModeOption2(true)), C.IsFSRFrameGenSupported() and "on" or "off")
 		elseif option == "off" then
 			C.SetMultipleGfxModes3(ffi.string(C.GetAAOption(true)), "none", C.GetDLSSOption(true), ffi.string(C.GetDLSSModeOption(true)), ffi.string(C.GetDLSSFrameGenOption(true)), ffi.string(C.GetPresentModeOption2(true)), "off")
 		end
@@ -10585,7 +10585,7 @@ function menu.displayExtensions()
 				end
 				-- add name of author
 				local row = optiontable:addRow(false, {})
-				row[2]:createText(extension.author, config.standardTextProperties)
+				row[2]:setColSpan(6):createText(extension.author, config.standardTextProperties)
 				row[2].properties.fontsize = row[2].properties.fontsize * 2
 				if not extension.enabled then
 					row[2].properties.color = Helper.color.grey
@@ -10887,7 +10887,11 @@ function menu.displayModRow(ftable, extension, extensionSetting)
 	row[2]:createText(extension.name, config.standardTextProperties)
 	row[2].properties.color = textcolor
 
-	row[3]:createText(extension.id, config.standardTextProperties)
+	local textIdAuthor = extension.id
+	if not (__userdata_uix_gameoptions.modsortertype =="author" or __userdata_uix_gameoptions.modsortertype == "authorinverse") and extension.author ~= "" then
+		textIdAuthor = extension.author .. "\n" .. extension.id
+	end
+	row[3]:createText(textIdAuthor, config.standardTextProperties)
 
 	row[4]:createText(extension.version, config.standardTextProperties)
 	row[4].properties.halign = "right"
@@ -13605,8 +13609,8 @@ function menu.onShowMenu()
 					end
 				end
 			end
+			__CORE_GAMEOPTIONS_RESTORE = nil
 		end
-		__CORE_GAMEOPTIONS_RESTORE = nil
 		C.SaveUIUserData()
 		return
 	elseif __CORE_GAMEOPTIONS_RESTOREINFO.returnhistory then
@@ -13846,6 +13850,7 @@ function menu.onUpdate()
 		if menu.userQuestion and menu.userQuestion.timer then
 			if curtime >= menu.userQuestion.timer then
 				if menu.userQuestion.negCallback then
+					__CORE_GAMEOPTIONS_RESTORE = nil
 					menu.userQuestion.negCallback()
 					menu.userQuestion = nil
 				else
@@ -14184,6 +14189,7 @@ function menu.onSelectElement(uitable, modified, row, isdblclick, input)
 			end
 		elseif menu.currentOption == "question" then
 			if option and next(option) then
+				__CORE_GAMEOPTIONS_RESTORE = nil
 				if option.positive then
 					menu.userQuestion.callback(menu.userQuestion.hasEditBox and menu.userQuestion.editboxText or nil)
 					menu.userQuestion = nil
@@ -14329,6 +14335,7 @@ function menu.onCloseElement(dueToClose)
 
 	if dueToClose == "close" then
 		if menu.userQuestion and menu.userQuestion.negCallback then
+			__CORE_GAMEOPTIONS_RESTORE = nil
 			menu.userQuestion.negCallback()
 		end
 		if menu.remapControl then
@@ -14366,6 +14373,7 @@ function menu.onCloseElement(dueToClose)
 			end
 		else
 			if menu.userQuestion and menu.userQuestion.negCallback then
+				__CORE_GAMEOPTIONS_RESTORE = nil
 				menu.userQuestion.negCallback()
 			else
 				local lastOption = menu.history[1]
