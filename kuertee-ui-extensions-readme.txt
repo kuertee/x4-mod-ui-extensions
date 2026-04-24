@@ -6,8 +6,8 @@ Contributors: AlexandreTK, ChemODun, Damonya, DrWhoKnows, DmytroK, Erixon, Farem
 
 Updates
 =======
-v9.0.0.0.4, 02 Apr 2026:
-- For 9.0 beta 4. Thanks to ChemODun for merging the UI files into this mod again.
+v9.0.0.0.7, 24 Apr 2026:
+- For 9.0 beta 7. Thanks to ChemODun for merging the UI files into this mod again.
 
 NOTES FOR PLAYERS:
 ==================
@@ -250,6 +250,9 @@ French localisation by Calvitix.
 
 History
 =======
+v9.0.0.0.4, 02 Apr 2026:
+- For 9.0 beta 4. Thanks to ChemODun for merging the UI files into this mod again.
+
 v9.0.0.0.3, 30 Mar 2026:
 - For 9.0 beta. Thanks to ChemODun for merging the UI files into this mod again.
 - Bug-fix by ChemODun: fix buttons for the extra sorting options by distance.
