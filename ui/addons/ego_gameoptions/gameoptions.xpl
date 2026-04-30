@@ -7152,7 +7152,7 @@ end
 
 function menu.valueGfxEnvMapProbesInsideGlassFade()
 	local value = C.GetEnvMapProbeInsideGlassFadeOption()
-	local start = math.floor(value * 100)
+	local start = Helper.round(value * 100)
 
 	local scale = {
 		min            = 0,

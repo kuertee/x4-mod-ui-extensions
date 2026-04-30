@@ -1,4 +1,4 @@
--- ffi setup
+﻿-- ffi setup
 local ffi = require("ffi")
 local C = ffi.C
 ffi.cdef[[
@@ -10388,7 +10388,7 @@ function Helper.createPlayerInfo(menu, frame, width, height, offsetx, offsety)
 	})
 	menu.playerinfotable = ftable
 	ftable:setColWidth(1, iconsize, false)
-	ftable:setColWidthPercent(3, 30)
+	ftable:setColWidthPercent(3, 60)
 	ftable:setColWidth(4, textheight, false)
 
 	local row = ftable:addRow(nil, { fixed = true, borderBelow = false })

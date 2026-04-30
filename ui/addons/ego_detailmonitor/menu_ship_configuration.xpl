@@ -1,4 +1,4 @@
--- section == cArch_configureships
+﻿-- section == cArch_configureships
 -- param == { 0, 0, container, mode, modeparam, immediate }
 
 -- modes:	"purchase",	param:	{}
@@ -4035,7 +4035,7 @@ function menu.getPresetLoadouts()
 				if not active then
 					mouseovertext = ReadText(1026, 8015)
 				end
-			else
+			elseif menu.mode ~= "modify" then
 				local result = ffi.string(C.GetMissingLoadoutBlueprints(menu.container, menu.object, menu.macro, "default"))
 				active = result == ""
 				if not active then

@@ -1,4 +1,4 @@
--- ffi setup
+﻿-- ffi setup
 local ffi = require("ffi")
 local C = ffi.C
 ffi.cdef[[
@@ -5253,7 +5253,7 @@ function menu.insertLuaAction(actiontype, istobedisplayed)
 		end
 	elseif actiontype == "collectdeployables" then
 		if istobedisplayed and isplayerownedtarget and (not istargetplayeroccupiedship) and IsComponentOperational(convertedComponent) and (not GetComponentData(convertedComponent, "isdeployable")) and (not C.IsUnit(convertedComponent)) then
-			if menu.mode ~= "shipconsole" then
+			if (not menu.shown) and (menu.mode ~= "shipconsole") then
 				local active, mouseovertext = menu.canCollectCrates(hastargetpilot)
 				if menu.data.hastargetorderloop and (not menu.loopableorders["CollectDeployables"]) then
 					active = false

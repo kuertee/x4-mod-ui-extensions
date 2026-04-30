@@ -677,7 +677,7 @@ function menu.buttonLeftBar(mode, row)
 		menu.modulesMode = mode
 	end
 	menu.noupdate = false
-	menu.refresh = menu.refresh or getElapsedTime()
+	menu.refresh = getElapsedTime()
 end
 
 function menu.buttonLeftBarLoadout(mode, row)
@@ -699,7 +699,7 @@ function menu.buttonLeftBarLoadout(mode, row)
 	else
 		C.ClearSelectedMapMacroSlots(menu.holomap)
 	end
-	menu.refresh = menu.refresh or getElapsedTime()
+	menu.refresh = getElapsedTime()
 end
 
 function menu.buttonLeftBarColor(mode)
@@ -3501,6 +3501,7 @@ function menu.refreshPlan()
 			table.insert(menu.buildstorageresources, { ware = ffi.string(buf[i].ware), amount = buf[i].amount })
 		end
 
+		local newmoduleexists = false;
 		C.PrepareBuildSequenceResources2(menu.holomap, menu.container, false)
 		menu.constructionplan = {}
 		menu.removedModules = {}
@@ -3524,7 +3525,7 @@ function menu.refreshPlan()
 				entry.upgradeplan           = Helper.convertLoadout(entry.component, entry.macro, loadout, nil)
 
 				entry.resources = {}
-				local numModuleResources = C. GetNumModuleNeededResources(menu.holomap, buf[i].idx)
+				local numModuleResources = C.GetNumModuleNeededResources(menu.holomap, buf[i].idx)
 				if numModuleResources > 0 then
 					local resourceBuffer = ffi.new("UIWareInfo[?]", numModuleResources)
 					numModuleResources = C.GetModuleNeededResources(resourceBuffer, numModuleResources, menu.holomap, buf[i].idx)
@@ -3534,6 +3535,9 @@ function menu.refreshPlan()
 					table.sort(entry.resources, menu.wareNameSorter)
 				end
 
+				if i == 0 then
+					newmoduleexists = entry.component ~= 0
+				end
 				table.insert(menu.constructionplan, entry)
 			end
 			local newIndex = ffi.new("uint32_t[1]", 0)
@@ -3618,15 +3622,17 @@ function menu.refreshPlan()
 					end
 				end
 				if #immediateresources > 0 then
-					for i = #immediateresources, 1, -1 do
-						local entry = immediateresources[i]
-						for _, removedModule in ipairs(menu.removedModules) do
-							local idx = menu.findWareIdx(removedModule.resources, entry.ware)
-							if idx then
-								entry.amount = entry.amount + removedModule.resources[idx].amount
-								if entry.amount <= 0 then
-									table.remove(immediateresources, i)
-									break
+					if not newmoduleexists then
+						for i = #immediateresources, 1, -1 do
+							local entry = immediateresources[i]
+							for _, removedModule in ipairs(menu.removedModules) do
+								local idx = menu.findWareIdx(removedModule.resources, entry.ware)
+								if idx then
+									entry.amount = entry.amount + removedModule.resources[idx].amount
+									if entry.amount <= 0 then
+										table.remove(immediateresources, i)
+										break
+									end
 								end
 							end
 						end

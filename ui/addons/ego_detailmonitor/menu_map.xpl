@@ -1959,7 +1959,9 @@ local function init()
 	end
 
 	RegisterEvent("mapfilter", menu.filterUpdate)
-	registerForEvent("gameLoadingDone", getElement("Scene.UIContract"), menu.onLoadingDone)
+	local contract = getElement("Scene.UIContract")
+	registerForEvent("gameLoadingDone", contract, menu.onLoadingDone)
+	registerForEvent("setKnownToPlayer", contract, menu.onSetKnownToPlayer)
 
 	-- kuertee start:
 	menu.init_kuertee()
@@ -2007,6 +2009,14 @@ function menu.init_kuertee ()
 	-- kuertee end: open/close crew lists
 end
 -- kuertee end
+
+function menu.onSetKnownToPlayer(_, component)
+	if menu.shown then
+		if IsComponentClass(component, "sector") then
+			menu.updateKnownSectors = true
+		end
+	end
+end
 
 function menu.createLegend()
 	if menu.haslegend then
@@ -6246,6 +6256,11 @@ function menu.onShowMenu(state)
 
 	Helper.setTabScrollCallback(menu, menu.onTabScroll)
 	registerForEvent("inputModeChanged", getElement("Scene.UIContract"), menu.onInputModeChanged)
+
+	if not menu.setKnownToPlayerNotification then
+		menu.setKnownToPlayerNotification = true
+		NotifyOnSetKnownToPlayer(getElement("Scene.UIContract"))
+	end
 
 	menu.sound_ambient = StartPlayingSound("ui_map_ambient")
 	menu.displayMenu(true)
@@ -14419,7 +14434,7 @@ function menu.setupInfoSubmenuRows(mode, inputtable, inputobject, instance)
 			row = menu.addInfoSubmenuRow(instance, inputtable, statsrowgroup, row, locrowdata, false, false, false, 1, indentsize)
 		else
 			for i = 0, numtotalquadrants - 1 do
-				locrowdata = { false, (ReadText(1001, 13211) .. " (" .. ReadText(20220, dpstable[i].quadranttextid) .. ")" .. ReadText(1001, 120)), defenceinfo_high and (function() return (ConvertIntegerString(Helper.round(dpstable[i].dps), true, 0, true) .. " " .. ReadText(1001, 119)) end) or (unknowntext .. " " .. ReadText(1001, 119)) }	-- Weapon Output, MW
+				locrowdata = { i == 0, (ReadText(1001, 13211) .. " (" .. ReadText(20220, dpstable[i].quadranttextid) .. ")" .. ReadText(1001, 120)), defenceinfo_high and (function() return (ConvertIntegerString(Helper.round(dpstable[i].dps), true, 0, true) .. " " .. ReadText(1001, 119)) end) or (unknowntext .. " " .. ReadText(1001, 119)) }	-- Weapon Output, MW
 				row = menu.addInfoSubmenuRow(instance, inputtable, statsrowgroup, row, locrowdata, false, false, false, 1, indentsize)
 			end
 		end
@@ -20604,7 +20619,7 @@ function menu.createPlayerInfo(frame, width, height, offsetx, offsety)
 	})
 	menu.playerinfotable = ftable
 	ftable:setColWidth(1, iconsize, false)
-	ftable:setColWidthPercent(3, 30)
+	ftable:setColWidthPercent(3, 60)
 	ftable:setColWidth(4, textheight, false)
 
 	local row = ftable:addRow(true, { fixed = true, borderBelow = false })
@@ -22055,7 +22070,7 @@ function menu.onInputModeChanged(_, mode)
 end
 
 function menu.createNewOrderContext(frame, instance)
-	local ftable = frame:addTable(1, { tabOrder = 3, x = Helper.borderSize, y = Helper.borderSize, width = menu.contextMenuData.width, highlightMode = "off" })
+	local ftable = frame:addTable(1, { tabOrder = 3, x = Helper.borderSize, y = Helper.borderSize, width = menu.contextMenuData.width, highlightMode = "offnormalscroll" })
 
 	local aipilot = GetComponentData(menu.infoSubmenuObject, "assignedaipilot")
 	local adjustedskill = aipilot and math.floor(C.GetEntityCombinedSkill(ConvertIDTo64Bit(aipilot), nil, "aipilot")) or -1
@@ -28615,6 +28630,11 @@ function menu.onUpdate()
 	if menu.mouseEmulation ~= C.IsMouseEmulationActive() then
 		menu.mouseEmulation = not menu.mouseEmulation
 		menu.updateInputBar()
+	end
+
+	if menu.updateKnownSectors then
+		menu.prepareKnownSectors()
+		menu.updateKnownSectors = nil
 	end
 end
 
