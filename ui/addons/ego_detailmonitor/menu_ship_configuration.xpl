@@ -1,4 +1,4 @@
-﻿-- section == cArch_configureships
+-- section == cArch_configureships
 -- param == { 0, 0, container, mode, modeparam, immediate }
 
 -- modes:	"purchase",	param:	{}
