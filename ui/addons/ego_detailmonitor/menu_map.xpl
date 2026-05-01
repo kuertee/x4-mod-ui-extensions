@@ -1875,6 +1875,9 @@ function menu.init_kuertee ()
 	-- kuertee start: open/close crew lists
 	__userdata_uix_menu_map.savedCollapsedCrewList = __userdata_uix_menu_map.savedCollapsedCrewList or {}
 	-- kuertee end: open/close crew lists
+	-- kuertee start: open/close deployables
+	__userdata_uix_menu_map.savedCollapsedDeployables = __userdata_uix_menu_map.savedCollapsedDeployables or {}
+	-- kuertee end: open/close deployables
 end
 -- kuertee end
 
@@ -8630,8 +8633,21 @@ end
 function menu.createPropertySection(instance, id, ftable, name, array, nonetext, showmodules, numdisplayed, hidesubordinates, sorter)
 	local maxicons = menu.infoTableData[instance].maxIcons
 
-	local row = ftable:addRow(false, { bgColor = Color["row_background_blue"] })
-	row[1]:setColSpan(5 + maxicons):createText(name, Helper.headerRowCenteredProperties)
+
+
+	-- kuertee start: open/close deployables
+	local uix_openCloseDeployables_headerRow
+	if menu.propertyMode == "deployables" then
+		local row = ftable:addRow({}, { bgColor = Color["row_background_blue"] })
+		uix_openCloseDeployables_headerRow = row
+		row[2]:setColSpan(4 + maxicons):createText(name, Helper.headerRowCenteredProperties)
+
+	else
+	-- kuertee start: open/close deployables
+
+		local row = ftable:addRow(false, { bgColor = Color["row_background_blue"] })
+		row[1]:setColSpan(5 + maxicons):createText(name, Helper.headerRowCenteredProperties)
+	end
 
 	if id == menu.highlightedbordersection then
 		menu.sethighlightborderrow = row.index + 1
@@ -8639,8 +8655,53 @@ function menu.createPropertySection(instance, id, ftable, name, array, nonetext,
 
 	local prevnumdisplayed = numdisplayed
 	if #array > 0 then
-		for _, component in ipairs(array) do
-			numdisplayed = menu.createPropertyRow(instance, ftable, component, 0, nil, showmodules, hidesubordinates, numdisplayed, sorter)
+
+		-- kuertee start: open/close deployables
+		if menu.propertyMode == "deployables" then
+			local uix_openCloseDeployables_names = {}
+			local uix_openCloseDeployables_componentsByName = {}
+			local uix_openCloseDeployables_rowByName = {}
+
+			for uix_idx, component in ipairs(array) do
+				local uix_name = utf8.lower(GetComponentData(component, "name"))
+				if (not uix_openCloseDeployables_componentsByName[uix_name]) then
+					table.insert(uix_openCloseDeployables_names, uix_name)
+					uix_openCloseDeployables_componentsByName[uix_name] = {}
+				end
+				table.insert(uix_openCloseDeployables_componentsByName[uix_name], component)
+			end
+
+			local uix_isAnyExpanded
+			for _, uix_name in ipairs(uix_openCloseDeployables_names) do
+				local components = uix_openCloseDeployables_componentsByName[uix_name]
+				local uix_isExpanded = not __userdata_uix_menu_map.savedCollapsedDeployables[uix_name]
+				uix_isAnyExpanded = uix_isAnyExpanded or uix_isExpanded
+				for _, component in ipairs(components) do
+					if (not uix_openCloseDeployables_rowByName[uix_name]) or uix_isExpanded then
+						numdisplayed = menu.createPropertyRow(instance, ftable, component, 0, nil, showmodules, hidesubordinates, numdisplayed, sorter)
+						if not uix_openCloseDeployables_rowByName[uix_name] then
+							uix_openCloseDeployables_rowByName[uix_name] = ftable.rows[#ftable.rows]
+							uix_openCloseDeployables_rowByName[uix_name][1]:createButton({active = true}):setText(uix_isExpanded and "-" or "+", { halign = "center" })
+							uix_openCloseDeployables_rowByName[uix_name][1].handlers.onClick = function()
+								__userdata_uix_menu_map.savedCollapsedDeployables[uix_name] = not __userdata_uix_menu_map.savedCollapsedDeployables[uix_name]
+							end
+						end
+					end
+				end
+			end
+
+			uix_openCloseDeployables_headerRow[1]:createButton({active = true}):setText(uix_isAnyExpanded and "-" or "+", { halign = "center" })
+			uix_openCloseDeployables_headerRow[1].handlers.onClick = function()
+				for _, uix_name in ipairs(uix_openCloseDeployables_names) do
+					__userdata_uix_menu_map.savedCollapsedDeployables[uix_name] = uix_isAnyExpanded
+				end
+			end
+		else
+		-- kuertee end: open/close deployables
+
+			for _, component in ipairs(array) do
+				numdisplayed = menu.createPropertyRow(instance, ftable, component, 0, nil, showmodules, hidesubordinates, numdisplayed, sorter)
+			end
 		end
 	end
 	if numdisplayed == prevnumdisplayed then
