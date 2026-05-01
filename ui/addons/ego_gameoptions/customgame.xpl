@@ -1,4 +1,4 @@
--- Custom gamestart editor
+﻿-- Custom gamestart editor
 -- param == { 0, 0, gamestartid, ismultiplayer, iscreative, ispaused }
 
 -- ffi setup
@@ -189,7 +189,7 @@ ffi.cdef[[
 		const char* macro;
 		int amount;
 	} UIWareInfo;
-
+	
 	typedef struct {
 		const char* type;
 		const char* id;
@@ -1042,6 +1042,13 @@ function menu.buttonResetBudget(budgetid)
 	if budgetid == "story" then
 		C.ResetCustomGameStartProperty(menu.customgamestart, "universestorystates")
 		C.ResetCustomGameStartProperty(menu.customgamestart, "playerresearch")
+
+		for _, entry in pairs(menu.stories) do
+			local curid = (entry.currentstory == "") and "default" or entry.currentstory
+			menu.cleanupKnownSectorsAllowedByStory(curid, "")
+			menu.cleanupFactionRelationsAllowedByStory(curid, "default")
+		end
+
 		menu.initStoryValue()
 		menu.removeHQ()
 		if menu.category.id == "playerresearch" then
@@ -1170,11 +1177,11 @@ function menu.addSatellite(sector, id, x, z)
 	local entryid = ffi.string(C.SetCustomGameStartPlayerPropertyObjectMacro(menu.customgamestart, "playerproperty", id, config.satellites.macro))
 	if entryid ~= "" then
 		local sectorpos = ffi.new("UIPosRot", {
-			x = x,
-			y = 0,
-			z = z,
-			yaw = 0,
-			pitch = 0,
+			x = x, 
+			y = 0, 
+			z = z, 
+			yaw = 0, 
+			pitch = 0, 
 			roll = 0
 		})
 		C.SetCustomGameStartPlayerPropertySectorAndOffset(menu.customgamestart, "playerproperty", entryid, sector, sectorpos)
@@ -1308,11 +1315,11 @@ function menu.addHQ()
 
 			local sector = "cluster_01_sector001_macro"
 			local sectorpos = ffi.new("UIPosRot", {
-				x = 128000,
-				y = 0,
-				z = 198000,
-				yaw = 0,
-				pitch = 0,
+				x = 128000, 
+				y = 0, 
+				z = 198000, 
+				yaw = 0, 
+				pitch = 0, 
 				roll = 0
 			})
 			C.SetCustomGameStartPlayerPropertySectorAndOffset(menu.customgamestart, "playerproperty", entryid, sector, sectorpos)
@@ -1437,7 +1444,7 @@ function menu.dropdownImport(filename)
 	end
 
 	C.ImportCustomGameStart(menu.customgamestart, filename, menu.customgamestart)
-
+	
 	menu.initEncyclopediaValue()
 	menu.initKnownValue()
 	menu.initStoryValue()
@@ -1998,7 +2005,7 @@ function menu.universeSector(current)
 		if not hidden then
 			local mouseovertext = ""
 			local active = true
-
+			
 			if not unlocked then
 				active = false
 				mouseovertext = ReadText(1026, 9928)
@@ -2444,7 +2451,7 @@ function menu.displayMultiSelection(property)
 						end
 					end
 				end
-
+				
 				if active then
 					if menu.contextMenuData.propertyLockedWares[entry.id] then
 						active = false
@@ -2951,91 +2958,100 @@ function menu.display()
 			local filename = ffi.string(buf[i].filename)
 			local name = ffi.string(buf[i].name)
 			local active = true
+			local hasdeprecatedwares = false
 			local mouseovertext = ""
 
 			local content = C.GetCustomGameStartContentCounts2(menu.customgamestart, filename, menu.customgamestart)
-			if not content.hasincompatibleloadout then
-				local buf_content = ffi.new("CustomGameStartContentData2")
-				buf_content.nummacros = content.nummacros
-				buf_content.macros = Helper.ffiNewHelper("UIMacroCount[?]", content.nummacros)
-				buf_content.numblueprints = content.numblueprints
-				buf_content.blueprints = Helper.ffiNewHelper("const char*[?]", content.numblueprints)
-				buf_content.numconstructionplans = content.numconstructionplans
-				buf_content.constructionplanids = Helper.ffiNewHelper("const char*[?]", content.numconstructionplans)
-				C.GetCustomGameStartContent2(buf_content, menu.customgamestart, filename, menu.customgamestart)
-				-- need to cache the constructionplanids due to menu.checkConstructionPlan() in the constructionplan loop calling other ffi functions, causing the last entry in the array to break for an unknown (FFI library internal) reason
-				local constructionplanids = {}
+			if content.hasincompatibleloadout then
+				mouseovertext = ColorText["text_warning"] .. ReadText(1026, 9931) .. "\27X"
+			end
+			local buf_content = ffi.new("CustomGameStartContentData2")
+			buf_content.nummacros = content.nummacros
+			buf_content.macros = Helper.ffiNewHelper("UIMacroCount[?]", content.nummacros)
+			buf_content.numblueprints = content.numblueprints
+			buf_content.blueprints = Helper.ffiNewHelper("const char*[?]", content.numblueprints)
+			buf_content.numconstructionplans = content.numconstructionplans
+			buf_content.constructionplanids = Helper.ffiNewHelper("const char*[?]", content.numconstructionplans)
+			C.GetCustomGameStartContent2(buf_content, menu.customgamestart, filename, menu.customgamestart)
+			-- need to cache the constructionplanids due to menu.checkConstructionPlan() in the constructionplan loop calling other ffi functions, causing the last entry in the array to break for an unknown (FFI library internal) reason
+			local constructionplanids = {}
+			for j = 0, buf_content.numconstructionplans - 1 do
+				constructionplanids[j] = ffi.string(buf_content.constructionplanids[j])
+			end
+			-- macros
+			local usedlimitedwares = {}
+			for j = 0, buf_content.nummacros - 1 do
+				local ware = GetMacroData(ffi.string(buf_content.macros[j].macro), "ware")
+				if ware then
+					local hasblueprint, isdeprecated, isplayerblueprintallowed, nocustomgamestart, islimited = GetWareData(ware, "hasblueprint", "isdeprecated", "isplayerblueprintallowed", "nocustomgamestart", "islimited")
+					if menu.creative then
+						nocustomgamestart = false
+						islimited = false
+					end
+					if (not hasblueprint) or (not isplayerblueprintallowed) or nocustomgamestart then
+						active = false
+						mouseovertext = ReadText(1026, 9925)
+						break
+					end
+					if isdeprecated then
+						hasdeprecatedwares = true
+					end
+					if islimited then
+						usedlimitedwares[ware] = (usedlimitedwares[ware] or 0) + buf_content.macros[j].amount
+					end
+				end
+			end
+			if active then
+				for ware, amount in pairs(usedlimitedwares) do
+					local limitamount = Helper.getLimitedWareAmount(ware)
+					if amount > limitamount then
+						active = false
+						mouseovertext = ReadText(1026, 9930)
+						break
+					end
+				end
+			end
+			-- blueprints
+			if active then
+				for j = 0, buf_content.numblueprints - 1 do
+					local ware = ffi.string(buf_content.blueprints[j])
+					local hasblueprint, isdeprecated, isplayerblueprintallowed, nocustomgamestart, blueprintsowners, ismissiononly = GetWareData(ware, "hasblueprint", "isdeprecated", "isplayerblueprintallowed", "nocustomgamestart", "blueprintsowners", "ismissiononly")
+					if menu.creative then
+						nocustomgamestart = false
+					end
+					local isventure = false
+					for i, owner in ipairs(blueprintsowners or {}) do
+						if owner == "visitor" then
+							isventure = true
+							break
+						end
+					end
+					if (not hasblueprint) or (not isplayerblueprintallowed) or nocustomgamestart or isventure or ismissiononly then
+						active = false
+						mouseovertext = ReadText(1026, 9926)
+						break
+					end
+					if isdeprecated then
+						hasdeprecatedwares = true
+					end
+				end
+			end
+			-- cps
+			if active then
+				local onlineitems = OnlineGetUserItems()
+				local limitedmodulesused = {}
 				for j = 0, buf_content.numconstructionplans - 1 do
-					constructionplanids[j] = ffi.string(buf_content.constructionplanids[j])
-				end
-				-- macros
-				local usedlimitedwares = {}
-				for j = 0, buf_content.nummacros - 1 do
-					local ware = GetMacroData(ffi.string(buf_content.macros[j].macro), "ware")
-					if ware then
-						local hasblueprint, isdeprecated, isplayerblueprintallowed, nocustomgamestart, islimited = GetWareData(ware, "hasblueprint", "isdeprecated", "isplayerblueprintallowed", "nocustomgamestart", "islimited")
-						if menu.creative then
-							nocustomgamestart = false
-							islimited = false
-						end
-						if (not hasblueprint) or isdeprecated or (not isplayerblueprintallowed) or nocustomgamestart then
-							active = false
-							mouseovertext = ReadText(1026, 9925)
-							break
-						end
-						if islimited then
-							usedlimitedwares[ware] = (usedlimitedwares[ware] or 0) + buf_content.macros[j].amount
-						end
+					local source, constructionplanid, isHQ = string.match(constructionplanids[j], "(.*):(.*):(%d)")
+					if not menu.checkConstructionPlan(source, constructionplanid, limitedmodulesused, onlineitems, tonumber(isHQ) == 1) then
+						active = false
+						mouseovertext = ReadText(1026, 9927)
+						break
 					end
 				end
-				if active then
-					for ware, amount in pairs(usedlimitedwares) do
-						local limitamount = Helper.getLimitedWareAmount(ware)
-						if amount > limitamount then
-							active = false
-							mouseovertext = ReadText(1026, 9930)
-							break
-						end
-					end
-				end
-				-- blueprints
-				if active then
-					for j = 0, buf_content.numblueprints - 1 do
-						local ware = ffi.string(buf_content.blueprints[j])
-						local hasblueprint, isdeprecated, isplayerblueprintallowed, nocustomgamestart, blueprintsowners, ismissiononly = GetWareData(ware, "hasblueprint", "isdeprecated", "isplayerblueprintallowed", "nocustomgamestart", "blueprintsowners", "ismissiononly")
-						if menu.creative then
-							nocustomgamestart = false
-						end
-						local isventure = false
-						for i, owner in ipairs(blueprintsowners or {}) do
-							if owner == "visitor" then
-								isventure = true
-								break
-							end
-						end
-						if (not hasblueprint) or isdeprecated or (not isplayerblueprintallowed) or nocustomgamestart or isventure or ismissiononly then
-							active = false
-							mouseovertext = ReadText(1026, 9926)
-							break
-						end
-					end
-				end
-				-- cps
-				if active then
-					local onlineitems = OnlineGetUserItems()
-					local limitedmodulesused = {}
-					for j = 0, buf_content.numconstructionplans - 1 do
-						local source, constructionplanid, isHQ = string.match(constructionplanids[j], "(.*):(.*):(%d)")
-						if not menu.checkConstructionPlan(source, constructionplanid, limitedmodulesused, onlineitems, tonumber(isHQ) == 1) then
-							active = false
-							mouseovertext = ReadText(1026, 9927)
-							break
-						end
-					end
-				end
-			else
-				active = false
-				mouseovertext = ReadText(1026, 9924)
+			end
+
+			if active and hasdeprecatedwares then
+				mouseovertext = mouseovertext .. ((mouseovertext ~= "") and "\n\n" or "") .. ColorText["text_warning"] .. ReadText(1026, 9932)
 			end
 
 			table.insert(menu.availablecustomgamestarts, { id = filename, text = name, icon = "", displayremoveoption = false, active = active, mouseovertext = mouseovertext })
@@ -3303,7 +3319,7 @@ function menu.display()
 							if i ~= 1 then
 								row = menu.propertyTable:addRow(property, {  })
 							end
-
+							
 							if property.id == "playerknownspace" then
 								row[3]:setColSpan(1):createButton({ helpOverlayID = "knownsector_expand", helpOverlayText = " ", helpOverlayHighlightOnly = true }):setText(menu.expandedProperty["knownsector_" .. entry.id] and "-" or "+", { halign = "center", x = 0 })
 								row[3].handlers.onClick = function () return menu.buttonExpandProperty("knownsector_" .. entry.id) end
@@ -3455,12 +3471,14 @@ function menu.display()
 							if col > 1 then
 								for k, previousentry in ipairs(mainentry[col - 1]) do
 									-- print("adding edge from node " .. previousentry.tech .. " to " .. techentry.tech)
-									local edge = previousentry.node:addEdgeTo(techentry.node)
-									if not previousentry.completed then
-										edge.properties.sourceSlotColor = Color["lso_node_inactive"]
-										edge.properties.color = Color["lso_node_inactive"]
+									if techentry.precursors[previousentry.tech] then
+										local edge = previousentry.node:addEdgeTo(techentry.node)
+										if not previousentry.completed then
+											edge.properties.sourceSlotColor = Color["lso_node_inactive"]
+											edge.properties.color = Color["lso_node_inactive"]
+										end
+										edge.properties.destSlotColor = color
 									end
-									edge.properties.destSlotColor = color
 								end
 							end
 						end
@@ -3615,7 +3633,7 @@ function menu.display()
 					local source = ffi.string(buf[i].source)
 					if (source == "local") or C.IsConstructionPlanAvailableInCustomGameStart(id) or ischeatversion then
 						local isvalid, exceedslimitedmodules, hasexcludedmacros = true, false, false
-						local mouseovertext
+						local mouseovertext = (not C.AreConstructionPlanLoadoutsCompatible(id)) and (ColorText["text_warning"] .. ReadText(1026, 7935) .. "\27X") or nil
 						local numinvalidpatches = ffi.new("uint32_t[?]", 1)
 						if not C.IsConstructionPlanValid(id, numinvalidpatches) then
 							isvalid = false
@@ -3637,9 +3655,6 @@ function menu.display()
 									mouseovertext = mouseovertext .. " " .. string.format(ReadText(1001, 2688), ffi.string(patchbuf[j].installedversion))
 								end
 							end
-						elseif not C.AreConstructionPlanLoadoutsCompatible(id) then
-							isvalid = false
-							mouseovertext = ReadText(1026, 7929)
 						end
 
 						local limitedmodulestext = ""
@@ -4955,6 +4970,7 @@ function menu.initResearch()
 		local precursordata = {}
 		local smallestMainIdx, foundPrecusorCol
 		-- try to find all precusors in existing data
+		local precursorsByTech = {}
 		for i, precursor in ipairs(techprecursors) do
 			local mainIdx, precursorCol = menu.findTech(menu.techtree, precursor)
 			--print("    precusor " .. precursor .. ": " .. tostring(mainIdx) .. ", " .. tostring(precursorCol))
@@ -4963,6 +4979,7 @@ function menu.initResearch()
 				foundPrecusorCol = precursorCol
 			end
 			precursordata[i] = { mainIdx = mainIdx, precursorCol = precursorCol }
+			precursorsByTech[precursor] = true
 		end
 		-- sort so that highest index comes first - important for deletion order and keeping smallestMainIdx valid
 		table.sort(precursordata, menu.precursorSorter)
@@ -4988,10 +5005,10 @@ function menu.initResearch()
 			local completed = research[temptechlist[idx]] or false
 			if menu.techtree[smallestMainIdx][foundPrecusorCol + 1] then
 				--print("    adding")
-				table.insert(menu.techtree[smallestMainIdx][foundPrecusorCol + 1], { tech = temptechlist[idx], sortorder = sortorder, completed = completed, origCompleted = completed })
+				table.insert(menu.techtree[smallestMainIdx][foundPrecusorCol + 1], { tech = temptechlist[idx], sortorder = sortorder, completed = completed, origCompleted = completed, precursors = precursorsByTech })
 			else
 				--print("    new entry")
-				menu.techtree[smallestMainIdx][foundPrecusorCol + 1] = { [1] = { tech = temptechlist[idx], sortorder = sortorder, completed = completed, origCompleted = completed } }
+				menu.techtree[smallestMainIdx][foundPrecusorCol + 1] = { [1] = { tech = temptechlist[idx], sortorder = sortorder, completed = completed, origCompleted = completed, precursors = precursorsByTech } }
 			end
 			--print("    removed")
 			table.remove(temptechlist, idx)
@@ -5254,6 +5271,7 @@ function menu.onUpdate()
 							local sectoroffset = C.GetCustomGameStartPosRotProperty(menu.customgamestart, "offset", buf2)
 							-- pass relative screenspace of the holomap rendertarget to the holomap (value range = -1 .. 1)
 							menu.holomap = C.AddHoloMap(rendertargetTexture, renderX0, renderX1, renderY0, renderY1, menu.renderTargetWidth / menu.renderTargetHeight, 1)
+							C.SetMapFocus(menu.holomap, false)
 
 							C.ShowUniverseMacroMap2(menu.holomap, galaxymacro, sectormacro, sectoroffset, true, false, menu.customgamestart)
 							C.SetMacroMapSelection(menu.holomap, false, menu.category.selectedEntry or "")
@@ -5310,7 +5328,7 @@ function menu.onUpdate()
 										if cutscenekey then
 											menu.cutscenedesc = CreateCutsceneDescriptor(cutscenekey, { npcref = menu.prenpc })
 											menu.cutsceneid = StartCutscene(menu.cutscenedesc, rendertargetTexture)
-
+											
 											if not menu.cutsceneNotification then
 												NotifyOnCutsceneReady(getElement("Scene.UIContract"))
 												NotifyOnCutsceneStopped(getElement("Scene.UIContract"))
@@ -5329,6 +5347,7 @@ function menu.onUpdate()
 								local sectoroffset = C.GetCustomGameStartPosRotProperty(menu.customgamestart, "offset", buf2)
 								-- pass relative screenspace of the holomap rendertarget to the holomap (value range = -1 .. 1)
 								menu.holomap = C.AddHoloMap(rendertargetTexture, renderX0, renderX1, renderY0, renderY1, menu.renderTargetWidth / menu.renderTargetHeight, 1)
+								C.SetMapFocus(menu.holomap, false)
 								C.ShowUniverseMacroMap2(menu.holomap, galaxymacro, sectormacro, sectoroffset, true, false, menu.customgamestart)
 								C.SetMacroMapSelection(menu.holomap, true, "")
 							end
@@ -5431,7 +5450,7 @@ end
 -- rendertarget mouse input helper
 function menu.onRenderTargetMouseDown(modified)
 	menu.leftdown = { time = getElapsedTime(), position = table.pack(GetLocalMousePosition()), dynpos = table.pack(GetLocalMousePosition()) }
-
+	
 	if menu.holomap ~= 0 then
 		C.StartPanMap(menu.holomap)
 		menu.panningmap = { isclick = true }
@@ -5472,7 +5491,7 @@ function menu.onRenderTargetRightMouseUp(modified)
 		if menu.holomap ~= 0 then
 			local sectorpos = ffi.new("UIPosRot")
 			local sectormacro = ffi.string(C.GetMacroMapPositionOnEcliptic(menu.holomap, sectorpos))
-
+		
 			if menu.category.id == "universe" then
 				if sectormacro ~= "" then
 					menu.displayMapContext(offset, sectormacro, sectorpos)
