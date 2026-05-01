@@ -1,4 +1,4 @@
--- param == { 0, 0, container }
+﻿-- param == { 0, 0, container }
 
 -- ffi setup
 local ffi = require("ffi")
@@ -196,7 +196,6 @@ ffi.cdef[[
 	uint32_t GetNumRemovedConstructionPlanModules2(UniverseID holomapid, UniverseID defensibleid, uint32_t* newIndex, bool usestoredplan, uint32_t* numChangedIndices, bool checkupgrades);
 	uint32_t GetNumRemovedStationModules2(UniverseID defensibleid, uint32_t* newIndex, uint32_t* numChangedIndices, bool checkupgrades);
 	uint32_t GetNumResearchModules(UniverseID containerid);
-	uint32_t GetNumStationModules(UniverseID stationid, bool includeconstructions, bool includewrecks);
 	uint32_t GetNumStationOverviewGraphWares(UniverseID stationid, bool* initialized);
 	uint32_t GetNumSupplyOrderResources(UniverseID containerid);
 	uint32_t GetNumSupplyOrders(UniverseID containerid, bool defaultorders);
@@ -464,8 +463,10 @@ function menu.onShowMenu(state)
 		end
 	end
 	menu.xScale = 60
-	menu.xTitle = ReadText(1001, 6519) .. " [" .. ReadText(1001, 103) .. "]"
-	menu.yTitle = ReadText(1001, 6520) .. " [" .. ReadText(1001, 101) .. "]"
+	menu.xTitle = ReadText(1001, 6519)
+	menu.xUnitText = ReadText(1001, 103)
+	menu.yTitle = ReadText(1001, 6520)
+	menu.yUnitText = ReadText(1001, 101)
 
 	menu.getData(config.graph.numdatapoints)
 
@@ -890,7 +891,7 @@ function menu.getFlowchartProductionNodes()
 
 	-- buildmodule resource edges
 	local cargo = GetComponentData(menu.containerid, "cargo")
-	for ware in pairs(buildresources) do
+	for ware in Helper.orderedPairsByWareName(buildresources) do
 		local resourcenode = addFlowchartWareNode(nodes, warenodes, { ware = ware, name = GetWareData(ware, "name"), amount = cargo[ware] })
 		for _, buildmodulenode in ipairs(buildmodulenodes) do
 			addFlowchartEdge(resourcenode, buildmodulenode)
@@ -2169,9 +2170,9 @@ function menu.display()
 		local xGranularity = Helper.round(menu.xGranularity / menu.xScale, 3)
 		local xOffset = xRange % xGranularity
 
-		graph:setXAxis({ startvalue = -xRange, endvalue = 0, granularity = xGranularity, offset = xOffset, gridcolor = Color["graph_grid"] })
+		graph:setXAxis({ startvalue = -xRange, endvalue = 0, granularity = xGranularity, offset = xOffset, gridcolor = Color["graph_grid"], unittext = menu.xUnitText })
 		graph:setXAxisLabel(menu.xTitle, { fontsize = 9 })
-		graph:setYAxis({ startvalue = 0, endvalue = maxY, granularity = granularity, offset = 0, gridcolor = Color["graph_grid"] })
+		graph:setYAxis({ startvalue = 0, endvalue = maxY, granularity = granularity, offset = 0, gridcolor = Color["graph_grid"], unittext = menu.yUnitText })
 		graph:setYAxisLabel(menu.yTitle, { fontsize = 9 })
 
 		-- time interval buttons
@@ -2269,7 +2270,7 @@ function menu.display()
 
 	menu.restoreFlowchartState("flowchart", menu.flowchart)
 
-	Helper.createRightSideBar(menu.frame, menu.container, true, "logical", menu.buttonRightBar)
+	Helper.createRightSideBar(menu, menu.frame, menu.container, true, "logical", menu.buttonRightBar)
 
 	-- display view/frame
 	menu.frame:display()
@@ -2302,9 +2303,9 @@ function menu.onFlowchartNodeExpanded(node, frame, ftable, ftable2)
 end
 
 function menu.onExpandTradeWares(frame, ftable, ftable2, nodedata)
-	ftable:setColWidth(1, Helper.scaleY(Helper.standardButtonHeight), false)
+	ftable:setColWidth(1, Helper.scaleY(Helper.standardTextHeight), false)
 	ftable:setColWidthPercent(3, 50)
-	ftable2:setColWidth(1, Helper.scaleY(Helper.standardButtonHeight), false)
+	ftable2:setColWidth(1, Helper.scaleY(Helper.standardTextHeight), false)
 	ftable2:setColWidthPercent(3, 50)
 
 	-- kuertee start: callback
@@ -2356,7 +2357,7 @@ function menu.onExpandTradeWares(frame, ftable, ftable2, nodedata)
 
 	for _, entry in ipairs(allwares) do
 		local row = ftable:addRow(true, {  })
-		row[1]:setBackgroundColSpan(3):createCheckBox(menu.selectedWares[entry.ware], { width = Helper.standardButtonHeight, height = Helper.standardButtonHeight, helpOverlayID = "station_overview_tradeware_option_" .. entry.ware, helpOverlayText = " ", helpOverlayHighlightOnly = true, helpOverlayUseBackgroundSpan = true, uiTriggerID = "tradeware_" .. entry.ware })
+		row[1]:setBackgroundColSpan(3):createCheckBox(menu.selectedWares[entry.ware], { width = Helper.standardTextHeight, height = Helper.standardTextHeight, helpOverlayID = "station_overview_tradeware_option_" .. entry.ware, helpOverlayText = " ", helpOverlayHighlightOnly = true, helpOverlayUseBackgroundSpan = true, uiTriggerID = "tradeware_" .. entry.ware })
 		row[1].handlers.onClick = function (_, checked) if checked then menu.selectedWares[entry.ware] = true else menu.selectedWares[entry.ware] = nil end end
 		row[2]:setColSpan(2):createText(entry.name)
 	end
@@ -2443,7 +2444,7 @@ function menu.onExpandSupplyResource(_, ftable, _, nodedata)
 			-- global
 			local row = ftable:addRow("supplytraderule_global", {  })
 			row[1]:setColSpan(2):createText(ReadText(1001, 11025) .. ReadText(1001, 120), textproperties)
-			row[3]:createCheckBox(not hasownlist, { height = Helper.standardButtonHeight })
+			row[3]:createCheckBox(not hasownlist, { width = Helper.standardTextHeight, height = Helper.standardTextHeight, x = Helper.standardButtonHeight - Helper.standardTextHeight })
 			row[3].handlers.onClick = function(_, checked) return menu.checkboxSetTradeRuleOverride(menu.container, "supply", nodedata.ware, checked) end
 			-- current
 			local row = ftable:addRow("supplytraderule_current", {  })
@@ -2716,7 +2717,7 @@ function menu.onExpandProduction(_, ftable, _, nodedata, productionmodules)
 		local factor = menu.showSingleProduction[productionmodules.macro] and 1 or producing
 		row = ftable:addRow(true, {  })
 		row[1]:setColSpan(2):createText(ReadText(1001, 8462) .. ReadText(1001, 120))
-		row[3]:createCheckBox(menu.showSingleProduction[productionmodules.macro], { width = Helper.standardButtonHeight, height = Helper.standardButtonHeight, active = (producing ~= 1) or (baseamount ~= currentamount) })
+		row[3]:createCheckBox(menu.showSingleProduction[productionmodules.macro], { width = Helper.standardTextHeight, height = Helper.standardTextHeight, active = (producing ~= 1) or (baseamount ~= currentamount) })
 		row[3].handlers.onClick = function (_, checked) return menu.checkboxProductionSingle(productionmodules.macro, checked) end
 		-- product
 		row = ftable:addRow(nil, {  })
@@ -3362,7 +3363,7 @@ function menu.onExpandBuildModule(_, ftable, _, nodedata, buildmodule)
 		-- global
 		local row = ftable:addRow("buildtraderule_global", {  })
 		row[1]:setColSpan(3):createText(ReadText(1001, 8367) .. ReadText(1001, 120), textproperties)
-		row[4]:createCheckBox(not hasownlist, { height = Helper.standardButtonHeight })
+		row[4]:createCheckBox(not hasownlist, { width = Helper.standardTextHeight, height = Helper.standardTextHeight, x = Helper.standardButtonHeight - Helper.standardTextHeight })
 		row[4].handlers.onClick = function(_, checked) return menu.checkboxSetTradeRuleOverride(menu.container, "build", "", checked) end
 		-- current
 		local row = ftable:addRow("buildtraderule_current", {  })
@@ -3456,7 +3457,7 @@ function menu.onExpandWorkforce(_, ftable, _, nodedata)
 			ftable:addEmptyRow(Helper.standardTextHeight / 2)
 			-- target
 			row = ftable:addRow(true, {  })
-			row[1]:createCheckBox(shouldfill, { height = Helper.standardButtonHeight })
+			row[1]:createCheckBox(shouldfill, { height = Helper.standardTextHeight })
 			row[1].handlers.onClick = function(_, checked) return menu.checkboxSetWorkforceFill(menu.container) end
 			row[2]:setColSpan(3):createText(ReadText(1001, 8453), { mouseOverText = ReadText(1026, 8406) })
 			if shouldfill then
@@ -3716,6 +3717,7 @@ function menu.onExpandSupply(_, ftable, _, nodedata)
 			table.sort(menu.supplies[supplytypeentry.type], Helper.sortName)
 		else
 			local units = GetUnitStorageData(menu.containerid, supplytypeentry.type)
+			menu.supplies[supplytypeentry.type].stored = 0
 			for _, entry in ipairs(units) do
 				if supply_auto[supplytypeentry.type] then
 					currentOrders = currentOrders + (menu.supplyoverride[entry.macro] or menu.supplydefaults[entry.macro] or 0)
@@ -3723,6 +3725,7 @@ function menu.onExpandSupply(_, ftable, _, nodedata)
 					currentOrders = currentOrders + entry.amount + (menu.supplyoverride[entry.macro] or menu.supplydefaults[entry.macro] or 0)
 				end
 				table.insert(menu.supplies[supplytypeentry.type], { name = entry.name, macro = entry.macro, stored = entry.amount })
+				menu.supplies[supplytypeentry.type].stored = menu.supplies[supplytypeentry.type].stored + entry.amount
 			end
 			menu.supplies[supplytypeentry.type].capacity = units.capacity
 
@@ -3731,8 +3734,9 @@ function menu.onExpandSupply(_, ftable, _, nodedata)
 	end
 
 	for _, supplytypeentry in ipairs(menu.types) do
-		if (supplytypeentry.type ~= "build") or canequipships then
+		if (supplytypeentry.type ~= "build") or canequipships or (menu.supplies[supplytypeentry.type].stored > 0) then
 			if menu.supplies[supplytypeentry.type].capacity > 0 then
+				local nobuildunitusage = (supplytypeentry.type == "build") and (not canequipships)
 				-- title
 				row = ftable:addRow(nil, {  })
 				row[1]:setColSpan(3):createText(Helper.unlockInfo(info_low, supplytypeentry.name), Helper.subHeaderTextProperties)
@@ -3741,10 +3745,12 @@ function menu.onExpandSupply(_, ftable, _, nodedata)
 				local auto
 				if isplayerowned then
 					auto = supply_auto[supplytypeentry.type]
-					row = ftable:addRow(true, {  })
-					row[1]:setColSpan(2):createText(supplytypeentry.autoname)
-					row[3]:createCheckBox(auto, { height = Helper.standardButtonHeight })
-					row[3].handlers.onClick = function (_, checked) return menu.checkboxSupplyAuto(menu.container, supplytypeentry.type, checked) end
+					if not nobuildunitusage then
+						row = ftable:addRow(true, {  })
+						row[1]:setColSpan(2):createText(supplytypeentry.autoname)
+						row[3]:createCheckBox(auto, { width = Helper.standardTextHeight, height = Helper.standardTextHeight, x = Helper.standardButtonHeight - Helper.standardTextHeight })
+						row[3].handlers.onClick = function (_, checked) return menu.checkboxSupplyAuto(menu.container, supplytypeentry.type, checked) end
+					end
 				end
 				-- available macros
 				if #menu.supplies[supplytypeentry.type] > 0 then
@@ -3766,6 +3772,9 @@ function menu.onExpandSupply(_, ftable, _, nodedata)
 						local start = info_high and (auto and limit or (entry.stored + (menu.supplyoverride[entry.macro] or 0))) or 0
 						local max = math.max(0, menu.supplies[supplytypeentry.type].capacity - currentOrders + start)
 						local maxSelect = math.min(max, (entry.compatible == false) and entry.stored or max)
+						if nobuildunitusage then
+							maxSelect = entry.stored
+						end
 						start = math.min(maxSelect, math.max(0, start))
 						row = ftable:addRow(true, {  })
 						local slidercell = row[1]:setColSpan(3):createSliderCell({
@@ -3808,7 +3817,7 @@ function menu.onExpandSupply(_, ftable, _, nodedata)
 		-- global
 		local row = ftable:addRow("supplytraderule_global", {  })
 		row[1]:setColSpan(2):createText(ReadText(1001, 8367) .. ReadText(1001, 120), textproperties)
-		row[3]:createCheckBox(not hasownlist, { height = Helper.standardButtonHeight })
+		row[3]:createCheckBox(not hasownlist, { width = Helper.standardTextHeight, height = Helper.standardTextHeight, x = Helper.standardButtonHeight - Helper.standardTextHeight })
 		row[3].handlers.onClick = function(_, checked) return menu.checkboxSetTradeRuleOverride(menu.container, "supply", "", checked) end
 		-- current
 		local row = ftable:addRow("supplytraderule_current", {  })
@@ -4162,17 +4171,17 @@ function menu.buttonTimeFrame(type)
 		menu.xStart = math.max(0, menu.xEnd - 3600)
 		menu.xGranularity = 300
 		menu.xScale = 60
-		menu.xTitle = ReadText(1001, 6519) .. " [" .. ReadText(1001, 103) .. "]"
+		menu.xUnitText = ReadText(1001, 103)
 	elseif type == "day" then
 		menu.xStart = math.max(0, menu.xEnd - (24 * 3600))
 		menu.xGranularity = 7200
 		menu.xScale = 3600
-		menu.xTitle = ReadText(1001, 6519) .. " [" .. ReadText(1001, 102) .. "]"
+		menu.xUnitText = ReadText(1001, 102)
 	elseif type == "week" then
 		menu.xStart = math.max(0, menu.xEnd - (7 * 24 * 3600))
 		menu.xGranularity = 12 * 3600
 		menu.xScale = 24 * 3600
-		menu.xTitle = ReadText(1001, 6519) .. " [" .. ReadText(1001, 104) .. "]"
+		menu.xUnitText = ReadText(1001, 104)
 	end
 	if menu.xEnd > menu.xStart then
 		while ((menu.xEnd - menu.xStart) < menu.xGranularity) and (menu.xGranularity >= (0.001 * menu.xScale)) do

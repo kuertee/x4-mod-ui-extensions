@@ -1,4 +1,4 @@
--- section == cArch_configureStation
+﻿-- section == cArch_configureStation
 -- param == { 0, 0, container }
 
 -- ffi setup
@@ -154,6 +154,17 @@ ffi.cdef[[
 		const char* predecessorconnectionid;
 		bool isfixed;
 	} UIConstructionPlanEntry;
+	typedef struct {
+		size_t idx;
+		const char* macroid;
+		UniverseID componentid;
+		UIPosRot offset;
+		const char* connectionid;
+		size_t predecessoridx;
+		const char* predecessorconnectionid;
+		bool isfixed;
+		uint32_t bookmarknum;
+	} UIConstructionPlanEntry2;
 	void AddFloatingSequenceToConstructionPlan(UniverseID holomapid);
 	void AddCopyToConstructionMap(UniverseID holomapid, size_t cp_idx, bool copysequence);
 	void AddMacroToConstructionMap(UniverseID holomapid, const char* macroname, bool startdragging);
@@ -166,14 +177,16 @@ ffi.cdef[[
 	bool CompareMapConstructionSequenceWithPlanned(UniverseID holomapid, UniverseID defensibleid, bool usestoredplan);
 	const char* ConvertInputString(const char* text, const char* defaultvalue);
 	void DeselectMacroForConstructionMap(UniverseID holomapid);
+	const char* GetDisplayedModifierKey(const char* uimodifier);
 	bool DoesConstructionSequenceRequireBuilder(UniverseID containerid);
 	void ExportMapConstructionPlan(UniverseID holomapid, const char* filename, const char* id, bool overwrite, const char* name, const char* desc);
+	bool ExtendBuildPlot(UniverseID stationid, Coord3D poschange, Coord3D negchange, bool allowreduction);
 	void ForceBuildCompletion(UniverseID containerid);
 	void GenerateModuleLoadout(UILoadout* result, UniverseID holomapid, size_t cp_idx, UniverseID defensibleid, float level);
 	void GenerateModuleLoadoutCounts(UILoadoutCounts* result, UniverseID holomapid, size_t cp_idx, UniverseID defensibleid, float level);
 	uint32_t GetAssignedConstructionVessels(UniverseID* result, uint32_t resultlen, UniverseID containerid);
 	uint32_t GetBlueprints(UIBlueprint* result, uint32_t resultlen, const char* set, const char* category, const char* macroname);
-	size_t GetBuildMapConstructionPlan(UniverseID holomapid, UniverseID defensibleid, bool usestoredplan, UIConstructionPlanEntry* result, uint32_t resultlen);
+	size_t GetBuildMapConstructionPlan2(UniverseID holomapid, UniverseID defensibleid, bool usestoredplan, UIConstructionPlanEntry2* result, uint32_t resultlen);
 	double GetBuildProcessorEstimatedTimeLeft(UniverseID buildprocessorid);
 	uint32_t GetCargo(UIWareInfo* result, uint32_t resultlen, UniverseID containerid, const char* tags);
 	uint32_t GetConstructionPlanInvalidPatches(InvalidPatchInfo* result, uint32_t resultlen, const char* constructionplanid);
@@ -221,6 +234,7 @@ ffi.cdef[[
 	bool GetPickedMapMacroSlot(UniverseID holomapid, UniverseID defensibleid, UniverseID moduleid, const char* macroname, bool ismodule, UILoadoutSlot* result);
 	uint32_t GetPlannedLimitedModules(UIMacroCount* result, uint32_t resultlen, const char* constructionplanid);
 	uint32_t GetRemovedConstructionPlanModules2(UniverseID* result, uint32_t resultlen, uint32_t* changedIndices, uint32_t* numChangedIndices);
+	UniverseID GetSectorControlStation(UniverseID sectorid);
 	size_t GetSelectedBuildMapEntry(UniverseID holomapid);
 	float GetStationModuleLoadoutLevel(UniverseID stationid);
 	uint32_t GetUpgradeGroupCompatibilities(EquipmentCompatibilityInfo* result, uint32_t resultlen, UniverseID destructibleid, const char* macroname, UniverseID contextid, const char* path, const char* group, const char* upgradetypename);
@@ -232,6 +246,7 @@ ffi.cdef[[
 	uint32_t GetUsedLimitedModulesFromSubsequence(UIMacroCount* result, uint32_t resultlen, UniverseID holomapid, size_t cp_idx);
 	uint32_t GetWares(const char** result, uint32_t resultlen, const char* tags, bool research, const char* licenceownerid, const char* exclusiontags);
 	WorkForceInfo GetWorkForceInfo(UniverseID containerid, const char* raceid);
+	bool HasBuildMapFloatingSelection(UniverseID holomapid);
 	bool HasContainerOwnTradeRule(UniverseID containerid, const char* ruletype, const char* wareid);
 	bool HasProductionModuleIllegalProducts(const char* macroname, const char* licencefactionid, const char* policefactionid);
 	void ImportMapConstructionPlan(const char* filename, const char* id);
@@ -243,6 +258,7 @@ ffi.cdef[[
 	bool IsMasterVersion(void);
 	bool IsNextStartAnimationSkipped(bool reset);
 	bool IsPlayerTradeRuleDefault(TradeRuleID id, const char* ruletype);
+	bool IsShiftPressed(void);
 	bool IsUpgradeGroupMacroCompatible(UniverseID destructibleid, const char* macroname, const char* path, const char* group, const char* upgradetypename, const char* upgrademacroname);
 	bool IsUpgradeMacroCompatible(UniverseID objectid, UniverseID moduleid, const char* macroname, bool ismodule, const char* upgradetypename, size_t slot, const char* upgrademacroname);
 	bool IsValidTrade(TradeID tradeid);
@@ -253,6 +269,7 @@ ffi.cdef[[
 	bool RemoveConstructionPlan(const char* source, const char* id);
 	void RemoveFloatingSequenceFromConstructionPlan(UniverseID holomapid);
 	void RemoveItemFromConstructionMap2(UniverseID holomapid, size_t itemidx, bool removesequence);
+	void SetConstructionMapItemBookmarked(UniverseID holomapid, size_t itemidx, bool bookmarked);
 	bool RemoveOrder2(UniverseID controllableid, size_t idx, bool playercancelled, bool checkonly, bool onlyimmediate);
 	void ResetConstructionMapModuleRotation(UniverseID holomapid, size_t cp_idx);
 	void ResetMapPlayerRotation(UniverseID holomapid);
@@ -280,6 +297,7 @@ ffi.cdef[[
 	bool StopPanMap(UniverseID holomapid);
 	bool StopRotateMap(UniverseID holomapid);
 	void StoreConstructionMapState(UniverseID holomapid);
+	void UpdateConstructionMapBuildPlot(UniverseID holomapid);
 	void UpdateConstructionMapItemLoadout(UniverseID holomapid, size_t itemidx, UniverseID defensibleid, UILoadout uiloadout);
 	void UpdateObjectConfigurationMap(UniverseID holomapid, UniverseID defensibleid, UniverseID moduleid, const char* macroname, bool ismodule, UILoadout uiloadout);
 	void ZoomMap(UniverseID holomapid, float zoomstep);
@@ -308,6 +326,14 @@ local menu = {
 	dirtyreservations = {},
 	shuffleconnectionrace = "all",
 	picking = true,
+	panelState = {
+		["leftbar"] = false,
+		["leftmenu"] = false,
+		["rightbar"] = false,
+		["rightmenu"] = false,
+		["exitmenu"] = false,
+	},
+	panelPins = {},
 }
 
 local config = {
@@ -325,6 +351,8 @@ local config = {
 		{ name = ReadText(1001, 9621),	icon = "stationbuildst_processing",		mode = "moduletypes_processing",	helpOverlayID = "stationbuildst_processing",	helpOverlayText = ReadText(1028, 3259)  },
 		{ name = ReadText(1001, 2453),	icon = "stationbuildst_other",			mode = "moduletypes_other",			helpOverlayID = "stationbuildst_other",			helpOverlayText = ReadText(1028, 3256),		additionaltypes = { "moduletypes_radar" }  },
 		{ name = ReadText(1001, 2454),	icon = "stationbuildst_venture",		mode = "moduletypes_venture",		helpOverlayID = "stationbuildst_venture",		helpOverlayText = ReadText(1028, 3257),		condition = C.IsVentureSeasonSupported },
+		{ spacing = true },
+		{ name = ReadText(1001, 11285),	icon = "mapst_plotmanagement",			mode = "plotsize",					helpOverlayID = "stationbuildst_plotsize",		helpOverlayText = ReadText(1028, 3276)  },
 	},
 	leftBarLoadout = {
 		{ name = ReadText(1001, 7901),	icon = "shipbuildst_turretgroups",		mode = "turretgroup" },
@@ -373,6 +401,101 @@ local config = {
 		step = 5,
 	},
 	moduleFilterWidth = 300,
+	plotPairedDimension = { posX = "negX", negX = "posX", posY = "negY", negY = "posY", posZ = "negZ", negZ = "posZ" },
+	maxPlotSize = 20,
+	numSlotsPerRow = 7,
+
+	inputBarStates = {
+		["controller"] = {
+			left = {
+				{ inputs = { "INPUT_RANGE_MAP_PAN_LEFT_RIGHT", "INPUT_RANGE_MAP_PAN_UP_DOWN" },	name = ReadText(1001, 13301) },
+				{ inputs = { "INPUT_RANGE_CONTROLLERMOUSECURSOR_X", "INPUT_RANGE_CONTROLLERMOUSECURSOR_Y" },	name = ReadText(1001, 13306) },
+				{ inputs = { "INPUT_RANGE_MAP_ZOOM_OUT", "INPUT_RANGE_MAP_ZOOM_IN" },	name = ReadText(1001, 13321) },
+			},
+			right = {
+				{ inputs = { "INPUT_STATE_MAP_INTERACT" },	name = ReadText(1001, 13309) },
+				{ inputs = { "INPUT_STATE_MAP_SELECT" },	name = ReadText(1001, 13307) },
+			}
+		},
+		["controller_loadout"] = {
+			left = {
+				{ inputs = { "INPUT_RANGE_CONTROLLERMOUSECURSOR_X", "INPUT_RANGE_CONTROLLERMOUSECURSOR_Y" },	name = ReadText(1001, 13306) },
+			},
+			right = {
+				{ inputs = { "INPUT_STATE_MAP_INTERACT" },	name = ReadText(1001, 13309) },
+				{ inputs = { "INPUT_STATE_MAP_SELECT" },	name = ReadText(1001, 13307) },
+			}
+		},
+		["newcontroller"] = {
+			left = {
+				{ inputs = { "INPUT_RANGE_MAP_PAN_LEFT_RIGHT", "INPUT_RANGE_MAP_PAN_UP_DOWN" },	name = ReadText(1001, 13301) },
+				{ inputs = { "INPUT_STATE_MAP_RESET_POSITION" },	name = ReadText(1001, 13302) },
+				{ inputs = { "INPUT_RANGE_MAP_ROTATE_LEFT_RIGHT", "INPUT_RANGE_MAP_ROTATE_UP_DOWN" },	name = ReadText(1001, 13303) },
+				{ inputs = { "INPUT_STATE_MAP_RESET_ROTATION" },	name = ReadText(1001, 13304) },
+				{ inputs = { "INPUT_RANGE_MAP_ZOOM_OUT", "INPUT_RANGE_MAP_ZOOM_IN" },	name = ReadText(1001, 13321) },
+			},
+			right = {
+				{ inputs = { "INPUT_STATE_MAP_INTERACT" },	name = ReadText(1001, 13309) },
+				{ inputs = { "INPUT_STATE_MAP_SELECT" },	name = ReadText(1001, 13307) },
+				{ inputs = { "INPUT_STATE_MAP_BACK" },		name = ReadText(1001, 13323) },
+			}
+		},
+		["newcontroller_selected"] = {
+			left = {
+				{ inputs = { "INPUT_RANGE_MAP_PAN_LEFT_RIGHT", "INPUT_RANGE_MAP_PAN_UP_DOWN" },	name = ReadText(1001, 13322) },
+				{ inputs = { "INPUT_RANGE_MAP_ROTATE_LEFT_RIGHT", "INPUT_RANGE_MAP_ROTATE_UP_DOWN" },	name = ReadText(1001, 13303) },
+			},
+			right = {
+				{ inputs = { "INPUT_STATE_MAP_SELECT" },	name = ReadText(1001, 13324) },
+				{ inputs = { "INPUT_STATE_MAP_BACK" },		name = ReadText(1001, 13325) },
+			}
+		},
+		["newcontroller_sidebar"] = {
+			left = {
+				{ inputs = { "INPUT_RANGE_MAP_PAN_LEFT_RIGHT", "INPUT_RANGE_MAP_PAN_UP_DOWN" },	name = ReadText(1001, 13326) },
+				{ inputs = { "INPUT_RANGE_MAP_ROTATE_LEFT_RIGHT", "INPUT_RANGE_MAP_ROTATE_UP_DOWN" },	name = ReadText(1001, 13303) },
+				{ inputs = { "INPUT_RANGE_MAP_ZOOM_OUT", "INPUT_RANGE_MAP_ZOOM_IN" },	name = ReadText(1001, 13326) },
+			},
+			right = {
+			}
+		},
+		["newcontroller_loadout"] = {
+			left = {
+				{ inputs = { "INPUT_RANGE_MAP_ROTATE_LEFT_RIGHT", "INPUT_RANGE_MAP_ROTATE_UP_DOWN" },	name = ReadText(1001, 13303) },
+			},
+			right = {
+			}
+		},
+		["mouse"] = {
+			left = {
+				{ icons = { "mouse_input_mousebutton_left" },	name = ColorText["input_reference"] .. "(" .. ReadText(1001, 13319) .. ")\27X " .. ReadText(1001, 13301) },
+				{ icons = { "mouse_input_mousebutton_right" },	name = ColorText["input_reference"] .. "(" .. ReadText(1001, 13319) .. ")\27X " .. ReadText(1001, 13303) },
+			},
+			right = {
+				{ icons = { "mouse_input_mousebutton_right" },	name = ReadText(1001, 13309) },
+				{ icons = { "mouse_input_mousebutton_left" },	name = ReadText(1001, 13307) },
+			}
+		},
+		["mouse_selected"] = {
+			left = {
+				{ icons = { "mouse_input_mousebutton_left" },	name = ColorText["input_reference"] .. "(" .. ReadText(1001, 13319) .. ")\27X " .. ReadText(1001, 13322) },
+				{ icons = { "mouse_input_mousebutton_right" },	name = ColorText["input_reference"] .. "(" .. ReadText(1001, 13319) .. ")\27X " .. ReadText(1001, 13303) },
+			},
+			right = {
+				{ icons = { "mouse_input_mousebutton_right" },	name = ReadText(1001, 13309) },
+				{ icons = { "mouse_input_mousebutton_left" },	name = ReadText(1001, 13307) },
+			}
+		},
+		["mouse_loadout"] = {
+			left = {
+				{ icons = { "mouse_input_mousebutton_right" },	name = ColorText["input_reference"] .. "(" .. ReadText(1001, 13319) .. ")\27X " .. ReadText(1001, 13303) },
+			},
+			right = {
+				{ icons = { "mouse_input_mousebutton_right" },	name = ReadText(1001, 13309) },
+				{ icons = { "mouse_input_mousebutton_left" },	name = ReadText(1001, 13307) },
+			}
+		},
+	},
 }
 
 __CORE_DETAILMONITOR_STATIONBUILD = __CORE_DETAILMONITOR_STATIONBUILD or {
@@ -402,6 +525,7 @@ local function init()
 	end
 
 	RegisterEvent("openmenu", function (_, menuname) return menu.openOtherMenu(menuname) end)
+	RegisterEvent("refreshplan", function() menu.refreshPlan() menu.displayMenu() end)
 
 	-- kuertee start:
 	menu.init_kuertee()
@@ -417,6 +541,8 @@ function menu.openOtherMenu(menuname)
 	if menu.shown then
 		if menu.haschanges then
 			menu.contextData = { othermenu = menuname }
+			menu.panelState.exitmenu = true
+			Helper.updatePanelState(menu)
 			menu.displayContextFrame("userquestion", Helper.scaleX(400), (Helper.viewWidth - Helper.scaleX(400)) / 2, Helper.viewHeight / 2)
 		else
 			Helper.closeMenuAndOpenNewMenu(menu, menuname, nil, true, true)
@@ -426,7 +552,12 @@ function menu.openOtherMenu(menuname)
 end
 
 function menu.cleanup()
+	UnregisterEvent("clearMenuFocus", menu.clearMenuFocus)
 	UnregisterEvent("newWareReservation", menu.newWareReservationCallback)
+	UnregisterEvent("interact", menu.onInteractEvent)
+	UnregisterEvent("close", menu.onCloseEvent)
+
+	unregisterForEvent("inputModeChanged", getElement("Scene.UIContract"), menu.onInputModeChanged)
 
 	menu.container = nil
 	menu.buildstorage = nil
@@ -500,8 +631,10 @@ function menu.cleanup()
 	menu.selectedRows = {}
 	menu.selectedCols = {}
 
-	UnregisterAddonBindings("ego_detailmonitor", "undo")
+	menu.panelMode = nil
+	Helper.updatePanelState(menu)
 
+	UnregisterAddonBindings("ego_detailmonitor", "undo")
 	-- kuertee start: callback
 	if menu.uix_callbacks ["cleanup"] then
 		for uix_id, uix_callback in pairs (menu.uix_callbacks ["cleanup"]) do
@@ -513,8 +646,28 @@ end
 
 -- button scripts
 
+function menu.buttonToggleLeftPanel()
+	menu.panelState.leftmenu = true
+	menu.panelState.leftbar = false
+	Helper.updatePanelState(menu)
+	menu.displayMainFrame()
+	menu.displayMenu()
+end
+
+function menu.refreshMenu()
+	menu.displayMainFrame()
+	menu.displayMenu()
+end
+
+function menu.deactivateLeftPanel()
+	if menu.loadoutMode then
+		menu.deactivateUpgradetypeMode()
+	else
+		menu.deactivateModulesMode()
+	end
+end
+
 function menu.buttonLeftBar(mode, row)
-	menu.prevModulesMode = menu.modulesMode
 	AddUITriggeredEvent(menu.name, mode, menu.modulesMode == mode and "off" or "on")
 	if menu.modulesMode == mode then
 		PlaySound("ui_negative_back")
@@ -524,9 +677,8 @@ function menu.buttonLeftBar(mode, row)
 		PlaySound("ui_positive_select")
 		menu.modulesMode = mode
 	end
-
-	menu.storePlanTableState()
-	menu.displayMenu()
+	menu.noupdate = false
+	menu.refresh = getElapsedTime()
 end
 
 function menu.buttonLeftBarLoadout(mode, row)
@@ -548,13 +700,13 @@ function menu.buttonLeftBarLoadout(mode, row)
 	else
 		C.ClearSelectedMapMacroSlots(menu.holomap)
 	end
-
-	menu.storePlanTableState()
-	menu.displayMenu()
+	menu.refresh = getElapsedTime()
 end
 
 function menu.buttonLeftBarColor(mode)
 	if menu.loadoutMode then
+		return Color["icon_normal"]
+	elseif mode == "plotsize" then
 		return Color["icon_normal"]
 	else
 		local modules = menu.modules[mode] or {}
@@ -568,7 +720,6 @@ function menu.buttonLeftBarColor(mode)
 end
 
 function menu.deactivateModulesMode()
-	menu.prevModulesMode = menu.modulesMode
 	PlaySound("ui_negative_back")
 	menu.modulesMode = nil
 	menu.storePlanTableState()
@@ -701,6 +852,7 @@ function menu.buttonAddModule(macro, row, col)
 	SelectColumn(menu.moduletable, col)
 	AddUITriggeredEvent(menu.name, "moduleadded", macro)
 	Helper.closeDropDownOptions(menu.titlebartable, 1, 2)
+	menu.clearMenuFocus()
 end
 
 function menu.buttonRemoveModule(module, removesequence)
@@ -719,6 +871,12 @@ function menu.buttonCopyModule(module, copysequence)
 	C.AddCopyToConstructionMap(menu.holomap, module.idx, copysequence)
 	menu.floatingCopyModule = module.macro
 	menu.closeContextMenu()
+end
+
+function menu.buttonSetModuleAsBookmark(module, bookmark)
+	C.SetConstructionMapItemBookmarked(menu.holomap, module.idx, bookmark)
+	menu.refreshPlan()
+	menu.displayMenu()
 end
 
 function menu.buttonResetModuleRotation(module)
@@ -940,13 +1098,15 @@ end
 
 function menu.buttonInteract(selectedData, button, row, col, posx, posy)
 	menu.selectedUpgrade = selectedData
-	local x, y = GetLocalMousePosition()
-	if x == nil then
-		-- gamepad case
-		x = posx
-		y = -posy
+	if C.IsStoryFeatureUnlocked("x4ep1_encyclopedia") then
+		local x, y = GetLocalMousePosition()
+		if x == nil then
+			-- gamepad case
+			x = posx
+			y = -posy
+		end
+		menu.displayContextFrame("equipment", Helper.scaleX(200), x + Helper.viewWidth / 2, Helper.viewHeight / 2 - y)
 	end
-	menu.displayContextFrame("equipment", Helper.scaleX(200), x + Helper.viewWidth / 2, Helper.viewHeight / 2 - y)
 end
 
 function menu.buttonConstructionCommunity()
@@ -1414,6 +1574,36 @@ function menu.hotkey(action)
 		menu.undoHelper(true)
 	elseif action == "INPUT_ACTION_ADDON_DETAILMONITOR_REDO" then
 		menu.undoHelper(false)
+	elseif action == "INPUT_ACTION_ADDON_DETAILMONITORHELPER_RIGHT" then
+		if not menu.panelState.rightbar then
+			menu.panelState.rightbar = true
+			menu.panelState.rightmenu = true
+			menu.panelState.leftbar = false
+			Helper.updatePanelState(menu)
+			menu.deactivateLeftPanel()
+			menu.refreshMenu()
+		end
+	elseif action == "INPUT_ACTION_ADDON_DETAILMONITORHELPER_LEFT" then
+		if not menu.panelState.leftbar then
+			if menu.modulesMode then
+				menu.panelState.leftmenu = true
+			else
+				if menu.panelPins.leftmenu then
+					menu.panelState.leftmenu = true
+				else
+					menu.panelState.leftbar = true
+				end
+			end
+			menu.panelState.rightbar = false
+			menu.panelState.rightmenu = false
+			Helper.updatePanelState(menu)
+			menu.refreshMenu()
+		end
+	elseif action == "INPUT_ACTION_ADDON_DETAILMONITORHELPER_PIN" then
+		if menu.panelState.leftmenu then
+			menu.panelPins.leftmenu = not menu.panelPins.leftmenu
+			menu.refreshMenu()
+		end
 	end
 end
 
@@ -1498,6 +1688,20 @@ function menu.newWareReservationCallback(_, data)
 	end
 end
 
+function menu.clearMenuFocus()
+	if menu.panelMode then
+		menu.closeContextMenu()
+		if menu.panelState.leftbar and (not menu.panelPins.leftmenu) then
+			menu.deactivateLeftPanel()
+		end
+		for panelstate in pairs(menu.panelState) do
+			menu.panelState[panelstate] = false
+		end
+		Helper.updatePanelState(menu)
+		menu.refreshMenu()
+	end
+end
+
 function menu.getModules(uitype, moduletype, races, connectionmoduleraces)
 	local n = C.GetNumBlueprints(menu.set, moduletype, "")
 	if n > 0 then
@@ -1519,7 +1723,18 @@ function menu.getModules(uitype, moduletype, races, connectionmoduleraces)
 	return n
 end
 
+function menu.onInteractEvent()
+	menu.onRenderTargetRightMouseDown()
+	menu.onRenderTargetRightMouseUp()
+end
+
+function menu.onCloseEvent()
+	menu.onCloseElement("back")
+end
+
 function menu.onShowMenu(state)
+	Helper.addInputBar(menu, Helper.inputBarStandardHeight)
+
 	-- layout
 	menu.scaleSize = Helper.scaleX(config.scaleSize)
 	menu.frameworkData = {
@@ -1527,12 +1742,13 @@ function menu.onShowMenu(state)
 		offsetX = Helper.frameBorder,
 		offsetY = Helper.frameBorder + 20,
 	}
+	menu.frameworkData.scrollIconSize = menu.frameworkData.sidebarWidth / 2
 	local reservedSidePanelWidth = math.floor(0.25 * Helper.viewWidth)
 	local actualSidePanelWidth = math.min(reservedSidePanelWidth, Helper.scaleX(config.maxSidePanelWidth))
 	reservedSidePanelWidth = reservedSidePanelWidth - menu.frameworkData.sidebarWidth - menu.frameworkData.offsetX - 2 * Helper.borderSize
 	menu.modulesData = {
 		width = actualSidePanelWidth - menu.frameworkData.sidebarWidth - menu.frameworkData.offsetX - 2 * Helper.borderSize,
-		offsetX = menu.frameworkData.sidebarWidth + menu.frameworkData.offsetX + 2 * Helper.borderSize,
+		offsetX = menu.frameworkData.sidebarWidth + menu.frameworkData.offsetX + Helper.minorPanelSpacing + Helper.standardContainerOffset,
 		offsetY = Helper.frameBorder + Helper.borderSize,
 	}
 	menu.planData = {
@@ -1540,7 +1756,7 @@ function menu.onShowMenu(state)
 		offsetY = Helper.frameBorder + Helper.borderSize,
 	}
 
-	local reserverdCenterPanelWidth = Helper.viewWidth - 2 * menu.modulesData.offsetX - 2 * reservedSidePanelWidth - 4 * Helper.borderSize
+	local reserverdCenterPanelWidth = Helper.viewWidth - 2 * menu.modulesData.offsetX - 2 * reservedSidePanelWidth - 2 * Helper.minorPanelSpacing - Helper.standardContainerOffset
 	local actualCenterPanelWidth = math.min(reserverdCenterPanelWidth, Helper.scaleX(config.maxCenterPanelWidth))
 	menu.statsData = {
 		width = actualCenterPanelWidth / 2,
@@ -1560,7 +1776,7 @@ function menu.onShowMenu(state)
 		menu.titleData.dropdownWidth = 5 * menu.titleData.height
 		menu.titleData.nameWidth = math.max(20, menu.titleData.width - 7 * (menu.titleData.height + Helper.borderSize) - menu.titleData.dropdownWidth - Helper.borderSize)
 	end
-	menu.planData.offsetX = Helper.viewWidth - actualSidePanelWidth + Helper.borderSize
+	menu.planData.offsetX = Helper.viewWidth - actualSidePanelWidth - Helper.minorPanelSpacing
 	menu.mapData = {
 		width = Helper.viewWidth,
 		height = Helper.viewHeight,
@@ -1607,7 +1823,12 @@ function menu.onShowMenu(state)
 	menu.defaultLoadout = Helper.round(C.GetStationModuleLoadoutLevel(menu.container), 1)
 	menu.origDefaultLoadout = menu.defaultLoadout
 
+	Helper.setTabScrollCallback(menu, menu.onTabScroll)
+	registerForEvent("inputModeChanged", getElement("Scene.UIContract"), menu.onInputModeChanged)
 	RegisterEvent("newWareReservation", menu.newWareReservationCallback)
+	RegisterEvent("clearMenuFocus", menu.clearMenuFocus)
+	RegisterEvent("interact", menu.onInteractEvent)
+	RegisterEvent("close", menu.onCloseEvent)
 
 	menu.initExtendedEntry(menu.container)
 
@@ -1619,17 +1840,21 @@ function menu.onShowMenu(state)
 	local races = {}
 	local connectionmoduleraces = {}
 	for _, entry in ipairs(config.leftBar) do
-		menu.modules[entry.mode] = {}
-		local n = menu.getModules(entry.mode, entry.mode, races, connectionmoduleraces)
+		if entry.mode and (entry.mode ~= "plotsize") then
+			menu.modules[entry.mode] = {}
+			local n = menu.getModules(entry.mode, entry.mode, races, connectionmoduleraces)
 
-		if entry.additionaltypes then
-			for _, moduletype in ipairs(entry.additionaltypes) do
-				n = n + menu.getModules(entry.mode, moduletype, races, connectionmoduleraces)
+			if entry.additionaltypes then
+				for _, moduletype in ipairs(entry.additionaltypes) do
+					n = n + menu.getModules(entry.mode, moduletype, races, connectionmoduleraces)
+				end
 			end
-		end
 
-		table.sort(menu.modules[entry.mode], function (a, b) return menu.sorterModules(entry.mode, a, b) end)
-		entry.active = n > 0
+			table.sort(menu.modules[entry.mode], function (a, b) return menu.sorterModules(entry.mode, a, b) end)
+			entry.active = n > 0
+		else
+			entry.active = true
+		end
 	end
 
 	menu.races = {}
@@ -1682,7 +1907,7 @@ function menu.onShowMenu(state)
 	menu.searchtext = ""
 	menu.modulesearchtext = {}
 	menu.loadoutName = ""
-	menu.modulesMode = "moduletypes_production"
+	menu.modulesMode = nil
 	menu.upgradetypeMode = "turretgroup"
 	menu.planMode = "construction"
 	menu.loadoutPlanMode = "normal"
@@ -1698,6 +1923,8 @@ function menu.onShowMenu(state)
 	-- we are (again) in the station config menu, menu keeps track of changes itself
 	Helper.unregisterStationEditorChanges()
 
+	menu.panelMode = (C.GetImprovedControllerMode() == 1) and (GetControllerInfo() == "gamepad")
+	Helper.updatePanelState(menu)
 	menu.displayMainFrame()
 
 	RegisterAddonBindings("ego_detailmonitor", "undo")
@@ -1722,17 +1949,28 @@ function menu.displayLeftBar(frame)
 		offsety = menu.modulesData.offsetY + menu.titleData.height + 2 * Helper.borderSize + maxSlotWidth
 	end
 
-	local ftable = frame:addTable(1, { tabOrder = 2, width = menu.frameworkData.sidebarWidth, height = 0, x = menu.frameworkData.offsetX, y = offsety, scaling = false, borderEnabled = false, reserveScrollBar = false })
+	local leftbarpanel = frame:addHiddenFrameBorder("leftbar", { active = menu.panelState.leftbar })
+	Helper.sideBarIcons(menu, leftbarpanel, "left", menu.frameworkData.sidebarWidth / 2)
+
+	local ftable = frame:addTable(1, {
+		tabOrder = 2,
+		width = menu.frameworkData.sidebarWidth,
+		height = 0,
+		x = menu.frameworkData.offsetX,
+		y = offsety,
+		scaling = false,
+		borderEnabled = false,
+		reserveScrollBar = false,
+		frameborder = leftbarpanel.id,
+	})
 
 	local found = true
 	for _, entry in ipairs(leftBar) do
 		local active = true
 		local selected = false
-		local prevSelected = false
 		local mouseovertext = entry.name
 		if menu.loadoutMode then
 			selected = entry.mode == menu.upgradetypeMode
-			prevSelected = entry.mode == menu.prevUpgradetypeMode
 			if entry.mode == "turretgroup" then
 				active = active and (#menu.groups > 0)
 			end
@@ -1744,38 +1982,48 @@ function menu.displayLeftBar(frame)
 				end
 			end
 			selected = entry.mode == menu.modulesMode
-			prevSelected = entry.mode == menu.prevModulesMode
-		end
-		local row = ftable:addRow(active, { fixed = true, bgColor = Color["row_background_blue"] })
-
-		-- if nothing selected yet, select this one if active
-		if (not found) and active then
-			found = true
-			menu.modulesMode = entry.mode
 		end
 
-		-- if selected, but not active, select next active entry
-		if selected and (not active) then
-			found = false
-			selected = false
-		end
-
-		if selected then
-			menu.selectedRows.left = row.index
-		elseif prevSelected then
-			menu.selectedRows.left = row.index
-		end
-		row[1]:createButton({ helpOverlayID = entry.helpOverlayID, helpOverlayText = entry.helpOverlayText,  active = active, height = menu.frameworkData.sidebarWidth, mouseOverText = mouseovertext, bgColor = selected and Color["row_background_selected"] or Color["button_background_default"] }):setIcon(entry.icon, { color = function () return menu.buttonLeftBarColor(entry.mode) end })
-		if not menu.loadoutMode then
-			row[1].handlers.onClick = function () return menu.buttonLeftBar(entry.mode, row.index) end
+		if entry.spacing then
+			local row = ftable:addRow(nil, { fixed = true, bgColor = Color["row_background_blue"] })
+			row[1]:createIcon("mapst_seperator_line", { width = menu.frameworkData.sidebarWidth, height = menu.frameworkData.sidebarWidth / 4 })
 		else
-			row[1].handlers.onClick = function () return menu.buttonLeftBarLoadout(entry.mode, row.index) end
+			local row = ftable:addRow(active and entry.mode or nil, { fixed = true, bgColor = Color["row_background_blue"] })
+
+			-- if nothing selected yet, select this one if active
+			if (not found) and active then
+				found = true
+				menu.modulesMode = entry.mode
+				selected = true
+			end
+
+			-- if selected, but not active, select next active entry
+			if selected and (not active) then
+				found = false
+				selected = false
+			end
+
+			if selected then
+				menu.selectedRows.left = row.index
+			end
+			row[1]:createButton({ helpOverlayID = entry.helpOverlayID, helpOverlayText = entry.helpOverlayText, active = active, height = menu.frameworkData.sidebarWidth, mouseOverText = mouseovertext, bgColor = selected and Color["row_background_selected"] or Color["button_background_default"] }):setIcon(entry.icon, { color = function () return menu.buttonLeftBarColor(entry.mode) end })
+			if menu.panelMode then
+				row[1].handlers.onClick = function () return menu.buttonToggleLeftPanel() end
+			else
+				if not menu.loadoutMode then
+					row[1].handlers.onClick = function () return menu.buttonLeftBar(entry.mode, row.index) end
+				else
+					row[1].handlers.onClick = function () return menu.buttonLeftBarLoadout(entry.mode, row.index) end
+				end
+			end
 		end
 	end
 	ftable:setTopRow(menu.topRows.left)
 	ftable:setSelectedRow(menu.selectedRows.left)
 	menu.topRows.left = nil
 	menu.selectedRows.left = nil
+
+	ftable:addConnection(1, 1, true)
 end
 
 function menu.updateConstructionPlans()
@@ -1790,7 +2038,7 @@ function menu.updateConstructionPlans()
 		if (source == "local") or ischeatversion then
 			local id = ffi.string(buf[i].id)
 			local active = false
-			local mouseovertext
+			local mouseovertext = (not C.AreConstructionPlanLoadoutsCompatible(id)) and (ColorText["text_warning"] .. ReadText(1026, 7935) .. "\27X") or nil
 			local numinvalidpatches = ffi.new("uint32_t[?]", 1)
 			if not C.IsConstructionPlanValid(id, numinvalidpatches) then
 				local numpatches = numinvalidpatches[0]
@@ -1811,8 +2059,6 @@ function menu.updateConstructionPlans()
 						mouseovertext = mouseovertext .. " " .. string.format(ReadText(1001, 2688), ffi.string(patchbuf[j].installedversion))
 					end
 				end
-			elseif not C.AreConstructionPlanLoadoutsCompatible(id) then
-				mouseovertext = ReadText(1026, 7929)
 			else
 				local result = ffi.string(C.GetMissingConstructionPlanBlueprints3(menu.container, 0, id, false))
 				active = result == ""
@@ -1907,7 +2153,16 @@ function menu.createTitleBar(frame)
 	menu.updateConstructionPlans()
 	menu.getImportablePlans()
 
-	local ftable = frame:addTable(9, { tabOrder = 5, height = 0, x = menu.titleData.offsetX, y = menu.titleData.offsetY, scaling = false, reserveScrollBar = false })
+	local titlebarpanel = frame:addHiddenFrameBorder("titlebar", { active = menu.panelState.leftmenu })
+	local ftable = frame:addTable(9, {
+		tabOrder = 5,
+		height = 0,
+		x = menu.titleData.offsetX,
+		y = menu.titleData.offsetY,
+		scaling = false,
+		reserveScrollBar = false,
+		frameborder = titlebarpanel.id,
+	})
 	ftable:setColWidth(1, menu.titleData.nameWidth)
 	ftable:setColWidth(2, menu.titleData.dropdownWidth)
 	ftable:setColWidth(3, menu.titleData.height)
@@ -1930,7 +2185,8 @@ function menu.createTitleBar(frame)
 		end
 		table.sort(loadOptions, function (a, b) return a.text < b.text end)
 		row[2]:createDropDown(loadOptions, { textOverride = ReadText(1001, 7904), optionWidth = menu.titleData.dropdownWidth + 7 * (menu.titleData.height + Helper.borderSize) }):setTextProperties(config.dropDownTextProperties)
-		row[2].handlers.onDropDownActivated = function () menu.noupdate = true end
+		row[2].handlers.onDropDownActivated = function () menu.noupdate = true; menu.closeContextMenu() end
+		row[2].handlers.onDropDownDeactivated = function () menu.noupdate = false end
 		row[2].handlers.onDropDownConfirmed = menu.dropdownLoad
 		row[2].handlers.onDropDownRemoved = menu.dropdownRemovedCP
 		-- save
@@ -1983,16 +2239,18 @@ function menu.createTitleBar(frame)
 		row[9]:createButton({ helpOverlayID = "reset_topview", helpOverlayText = " ", helpOverlayHighlightOnly = true, active = true, height = menu.titleData.height, mouseOverText = ffi.string(C.ConvertInputString(ReadText(1026, 7911), ReadText(1026, 7902))) }):setIcon("menu_reset_view"):setHotkey("INPUT_STATE_DETAILMONITOR_RESET_VIEW", { displayIcon = false })
 		row[9].handlers.onClick = function () return C.ResetMapPlayerRotation(menu.holomap) end
 	end
+
+	ftable:addConnection(1, 3, true)
 end
 
 function menu.refreshTitleBar()
 	local text = {
-		alignment = "center",
+		alignment = "left",
 		fontname = Helper.standardFont,
 		fontsize = Helper.scaleFont(Helper.standardFont, Helper.standardFontSize),
 		color = Color["text_normal"],
-		x = 0,
-		y = 0
+		x = Helper.standardTextOffsetx,
+		y = 0,
 	}
 
 	menu.updateConstructionPlans()
@@ -2002,16 +2260,16 @@ function menu.refreshTitleBar()
 		text.override = ReadText(1001, 7904)
 		local loadOptions = {}
 		for _, plan in ipairs(menu.constructionplans) do
-			table.insert(loadOptions, { id = plan.id, text = plan.name, icon = "", displayremoveoption = plan.deleteable, active = plan.active, mouseovertext = plan.mouseovertext })
+			table.insert(loadOptions, { id = plan.id, text1 = plan.name, icon = "", displayremoveoption = plan.deleteable, active = plan.active, mouseovertext = plan.mouseovertext })
 		end
-		table.sort(loadOptions, function (a, b) return a.text < b.text end)
+		table.sort(loadOptions, function (a, b) return a.text1 < b.text1 end)
 
 		-- editbox
 		local desc = Helper.createEditBox(Helper.createTextInfo(ffi.string(C.GetComponentName(menu.container)), "center", Helper.headerRow1Font, Helper.scaleFont(Helper.headerRow1Font, Helper.headerRow1FontSize), 255, 255, 255, 100), true, 0, 0, 0, 0, nil, nil, false)
 		Helper.setCellContent(menu, menu.titlebartable, desc, 1, 1, nil, "editbox", nil, menu.editboxNameUpdateText)
 		-- dropdown
-		local desc = Helper.createDropDown(loadOptions, "", text, nil, true, true, 0, 0, 0, 0, nil, nil, "", menu.titleData.dropdownWidth + menu.titleData.height + Helper.borderSize)
-		Helper.setCellContent(menu, menu.titlebartable, desc, 1, 2, nil, "dropdown", nil, function () menu.noupdate = true end, menu.dropdownLoad, menu.dropdownRemovedCP)
+		local desc = Helper.createDropDown(loadOptions, "", text, nil, true, true, 0, 0, 0, 0, nil, nil, "", menu.titleData.dropdownWidth + 7 * (menu.titleData.height + Helper.borderSize))
+		Helper.setCellContent(menu, menu.titlebartable, desc, 1, 2, nil, "dropdown", nil, function () menu.noupdate = true; menu.closeContextMenu() end, menu.dropdownLoad, menu.dropdownRemovedCP, function () menu.update = false end)
 		-- save
 		local desc = Helper.createButton(nil, Helper.createButtonIcon("menu_save", nil, 255, 255, 255, 100), true, true, 0, 0, 0, menu.titleData.height, nil, nil, nil, ReadText(1026, 7901))
 		Helper.setCellContent(menu, menu.titlebartable, desc, 1, 3, nil, "button", nil, menu.buttonTitleSave)
@@ -2020,7 +2278,7 @@ function menu.refreshTitleBar()
 		local loadoutOptions = {}
 		if next(menu.loadouts) then
 			for _, loadout in ipairs(menu.loadouts) do
-				table.insert(loadoutOptions, { id = loadout.id, text = loadout.name, icon = "", displayremoveoption = loadout.deleteable, active = loadout.active, mouseovertext = loadout.mouseovertext })
+				table.insert(loadoutOptions, { id = loadout.id, text1 = loadout.name, icon = "", displayremoveoption = loadout.deleteable, active = loadout.active, mouseovertext = loadout.mouseovertext })
 			end
 		end
 
@@ -2047,7 +2305,7 @@ function menu.getPresetLoadouts()
 	for i = 0, n - 1 do
 		local id = ffi.string(buf[i].id)
 		local active = false
-		local mouseovertext = ""
+		local mouseovertext = (not C.IsLoadoutCompatible(currentmacro, id)) and (ColorText["text_warning"] .. ReadText(1026, 8031) .. "\27X") or ""
 		local numinvalidpatches = ffi.new("uint32_t[?]", 1)
 		if not C.IsLoadoutValid(0, menu.loadoutModule.macro, id, numinvalidpatches) then
 			local numpatches = numinvalidpatches[0]
@@ -2068,8 +2326,6 @@ function menu.getPresetLoadouts()
 					mouseovertext = mouseovertext .. " " .. string.format(ReadText(1001, 2688), ffi.string(patchbuf[j].installedversion))
 				end
 			end
-		elseif not C.IsLoadoutCompatible(currentmacro, id) then
-			mouseovertext = ReadText(1026, 8024)
 		else
 			local result = ffi.string(C.GetMissingLoadoutBlueprints(menu.buildstorage, 0, menu.loadoutModule.macro, id))
 			active = result == ""
@@ -2249,7 +2505,7 @@ end
 
 function menu.displayModules(frame, firsttime)
 	if firsttime then
-		AddUITriggeredEvent(menu.name, menu.modulesMode, "on")
+		AddUITriggeredEvent(menu.name, menu.modulesMode or "", "on")
 	end
 
 	local count, rowcount, slidercount = 1, 0, 0
@@ -2288,6 +2544,14 @@ function menu.displayModules(frame, firsttime)
 				local upgradegroupcount = 1
 				if upgradetype.supertype == "group" then
 					menu.groupedupgrades[upgradetype.grouptype] = {}
+
+					if upgradetype.allowempty then
+						local group = math.ceil(upgradegroupcount / 3)
+						menu.groupedupgrades[upgradetype.grouptype][group] = menu.groupedupgrades[upgradetype.grouptype][group] or {}
+						table.insert(menu.groupedupgrades[upgradetype.grouptype][group], { macro = "", icon = "upgrade_empty", name = ReadText(1001, 7906), helpOverlayID = "upgrade_empty", helpOverlayText = " ", helpOverlayHighlightOnly = true })
+						upgradegroupcount = upgradegroupcount + 1
+					end
+
 					if upgradegroup then
 						for i, macro in ipairs(upgradegroup[upgradetype.grouptype].possiblemacros) do
 							if (menu.searchtext == "") or menu.filterUpgradeByText(macro, menu.searchtext) then
@@ -2297,13 +2561,6 @@ function menu.displayModules(frame, firsttime)
 								upgradegroupcount = upgradegroupcount + 1
 							end
 						end
-					end
-
-					if upgradetype.allowempty then
-						local group = math.ceil(upgradegroupcount / 3)
-						menu.groupedupgrades[upgradetype.grouptype][group] = menu.groupedupgrades[upgradetype.grouptype][group] or {}
-						table.insert(menu.groupedupgrades[upgradetype.grouptype][group], { macro = "", icon = "upgrade_empty", name = ReadText(1001, 7906), helpOverlayID = "upgrade_empty", helpOverlayText = " ", helpOverlayHighlightOnly = true })
-						upgradegroupcount = upgradegroupcount + 1
 					end
 				end
 				count = count + upgradegroupcount - 1
@@ -2324,7 +2581,28 @@ function menu.displayModules(frame, firsttime)
 			local maxColumnWidth = math.floor((menu.modulesData.width - 2 * Helper.borderSize) / 3)
 			local columnWidth = maxColumnWidth - math.floor(((count / 3 > 6) and Helper.scrollbarWidth or 0) / 3)
 
-			local ftable = frame:addTable(5, { tabOrder = 1, width = menu.modulesData.width, height = 0, x = menu.modulesData.offsetX, y = menu.modulesData.offsetY, scaling = false, reserveScrollBar = false, highlightMode = "column", backgroundID = "solid", backgroundColor = Color["table_background_3d_editor"] })
+			local modulelistpanel = frame:addFrameBorder("modulelist", {
+				offset = Helper.standardContainerOffset,
+				active = menu.panelState.leftmenu,
+				color = Helper.getFrameBorderColor(menu, menu.panelState.leftmenu, menu.panelPins.leftmenu),
+				linewidth = Helper.getFrameBorderLineWidth(menu, menu.panelState.leftmenu),
+			})
+			Helper.setFrameBorderIcon(menu, modulelistpanel, "left", menu.frameworkData.sidebarWidth / 2)
+
+			local ftable = frame:addTable(5, {
+				tabOrder = 1,
+				width = menu.modulesData.width,
+				height = 0,
+				x = menu.modulesData.offsetX,
+				y = menu.modulesData.offsetY,
+				scaling = false,
+				reserveScrollBar = false,
+				highlightMode = "column",
+				backgroundID = "solid",
+				backgroundColor = Color["table_background_3d_editor"],
+				backgroundPadding = Helper.standardContainerOffset,
+				frameborder = modulelistpanel.id,
+			})
 			if menu.setdefaulttable then
 				ftable.properties.defaultInteractiveObject = true
 				menu.setdefaulttable = nil
@@ -2549,6 +2827,10 @@ function menu.displayModules(frame, firsttime)
 			ftable:setTopRow(menu.topRows.modules)
 			ftable:setSelectedRow(menu.selectedRows.modules)
 			ftable:setSelectedCol(menu.selectedCols.modules or 0)
+
+			ftable:addConnection(1, 2, true)
+		else
+			Helper.clearTableConnectionColumn(menu, 2)
 		end
 		menu.topRows.modules = nil
 		menu.selectedRows.modules = nil
@@ -2587,7 +2869,7 @@ function menu.displayModules(frame, firsttime)
 				table.sort(groupedslots, menu.sortSlots)
 				menu.groupedslots = {}
 				for i, entry in ipairs(groupedslots) do
-					local group = math.ceil(i / 9)
+					local group = math.ceil(i / config.numSlotsPerRow)
 					menu.groupedslots[group] = menu.groupedslots[group] or {}
 					table.insert(menu.groupedslots[group], entry)
 				end
@@ -2595,7 +2877,7 @@ function menu.displayModules(frame, firsttime)
 
 			menu.rowHeight = math.max(23, Helper.scaleY(Helper.standardTextHeight))
 			menu.extraFontSize = Helper.scaleFont(Helper.standardFont, Helper.standardFontSize)
-			local maxSlotWidth = math.floor((menu.modulesData.width - 8 * Helper.borderSize) / 9)
+			local maxSlotWidth = math.floor((menu.modulesData.width - 8 * Helper.borderSize) / (config.numSlotsPerRow + 2))
 
 			local hasScrollbar = false
 			local headerHeight = menu.titleData.height + #menu.groupedslots * (maxSlotWidth + Helper.borderSize) + menu.rowHeight + 2 * Helper.borderSize
@@ -2610,8 +2892,8 @@ function menu.displayModules(frame, firsttime)
 				hasScrollbar = true
 			end
 
-			local slotWidth = maxSlotWidth - math.floor((hasScrollbar and Helper.scrollbarWidth or 0) / 9)
-			local extraPixels = (menu.modulesData.width - 8 * Helper.borderSize) % 9
+			local slotWidth = maxSlotWidth - math.floor((hasScrollbar and Helper.scrollbarWidth or 0) / (config.numSlotsPerRow + 2))
+			local extraPixels = (menu.modulesData.width - 8 * Helper.borderSize) % (config.numSlotsPerRow + 2)
 			local slotWidths = { slotWidth, slotWidth, slotWidth, slotWidth, slotWidth, slotWidth, slotWidth, slotWidth, slotWidth }
 			if extraPixels > 0 then
 				for i = 1, extraPixels do
@@ -2626,15 +2908,36 @@ function menu.displayModules(frame, firsttime)
 			end
 			local slidercellWidth = menu.modulesData.width - math.floor(hasScrollbar and Helper.scrollbarWidth or 0)
 
-			local ftable = frame:addTable(10, { tabOrder = 1, width = menu.modulesData.width, height = 0, x = menu.modulesData.offsetX, y = menu.modulesData.offsetY, scaling = false, reserveScrollBar = false, highlightMode = "column", backgroundID = "solid", backgroundColor = Color["table_background_3d_editor"] })
+			local upgradelistpanel = frame:addFrameBorder("upgradelist", {
+				offset = Helper.standardContainerOffset,
+				active = menu.panelState.leftmenu,
+				color = Helper.getFrameBorderColor(menu, menu.panelState.leftmenu, menu.panelPins.leftmenu),
+				linewidth = Helper.getFrameBorderLineWidth(menu, menu.panelState.leftmenu),
+			})
+			Helper.setFrameBorderIcon(menu, upgradelistpanel, "left", menu.frameworkData.sidebarWidth / 2)
+
+			local ftable = frame:addTable(config.numSlotsPerRow + 3, {
+				tabOrder = 1,
+				width = menu.modulesData.width,
+				height = 0,
+				x = menu.modulesData.offsetX,
+				y = menu.modulesData.offsetY,
+				scaling = false,
+				reserveScrollBar = false,
+				highlightMode = "column",
+				backgroundID = "solid",
+				backgroundColor = Color["table_background_3d_editor"],
+				backgroundPadding = Helper.standardContainerOffset,
+				frameborder = upgradelistpanel.id,
+			})
 			if menu.setdefaulttable then
 				ftable.properties.defaultInteractiveObject = true
 				menu.setdefaulttable = nil
 			end
-			for i = 1, 8 do
+			for i = 1, config.numSlotsPerRow + 1 do
 				ftable:setColWidth(i, slotWidths[i])
 			end
-			ftable:setColWidth(10, editboxheight)
+			ftable:setColWidth(config.numSlotsPerRow + 3, editboxheight)
 			ftable:setDefaultColSpan(1, 3)
 			ftable:setDefaultColSpan(4, 3)
 			ftable:setDefaultColSpan(7, 4)
@@ -2643,11 +2946,15 @@ function menu.displayModules(frame, firsttime)
 			local row = ftable:addRow(false, { fixed = true, bgColor = Color["row_title_background"] })
 			row[1]:setColSpan(10):createText(name, menu.headerTextProperties)
 
-			for _, group in ipairs(menu.groupedslots) do
+			for j, group in ipairs(menu.groupedslots) do
 				local row = ftable:addRow(true, {  })
-				for i = 1, 9 do
+				row[1]:setColSpan(1)
+				if j == 1 then
+					Helper.setTabScrollLeftIcon(menu, menu.panelState.leftmenu, row, 1, menu.frameworkData.scrollIconSize, menu.frameworkData.scrollIconSize)
+				end
+				for i = 1, config.numSlotsPerRow do
 					if group[i] then
-						local colspan = (i == 9) and 2 or 1
+						local colspan = (i == 8) and 2 or 1
 
 						local bgcolor = Color["row_title_background"]
 						if group[i][1] == menu.currentSlot then
@@ -2678,10 +2985,10 @@ function menu.displayModules(frame, firsttime)
 							mouseovertext = ReadText(1001, 8023) .. " " .. group[i][1]
 						end
 
-						row[i]:setColSpan(colspan):createButton({ height = slotWidths[i], bgColor = bgcolor, mouseOverText = mouseovertext, width = slotWidths[i] }):setText(group[i][3], { halign = "center", fontsize = Helper.scaleFont(Helper.standardFont, Helper.standardFontSize) })
+						row[i + 1]:setColSpan(colspan):createButton({ height = slotWidths[i], bgColor = bgcolor, mouseOverText = mouseovertext, width = slotWidths[i] }):setText(group[i][3], { halign = "center", fontsize = Helper.scaleFont(Helper.standardFont, Helper.standardFontSize) })
 						if total > 0 then
 							local width = math.max(1, math.floor(count * (slotWidths[i] - 2 * menu.scaleSize) / total))
-							row[i]:setIcon("solid", { width = width + 2 * Helper.configButtonBorderSize, height = menu.scaleSize + 2 * Helper.configButtonBorderSize, x = menu.scaleSize - Helper.configButtonBorderSize, y = slotWidths[i] - 2 * menu.scaleSize - Helper.configButtonBorderSize })
+							row[i + 1]:setIcon("solid", { width = width + 2 * Helper.configButtonBorderSize, height = menu.scaleSize + 2 * Helper.configButtonBorderSize, x = menu.scaleSize - Helper.configButtonBorderSize, y = slotWidths[i] - 2 * menu.scaleSize - Helper.configButtonBorderSize })
 						end
 						if group[i].compatibilities then
 							local compatibilitytext = ""
@@ -2702,10 +3009,16 @@ function menu.displayModules(frame, firsttime)
 							fontsize = fontsize * actualSidePanelWidth / reservedSidePanelWidth
 
 							local compatibilityTextHeight = math.ceil(C.GetTextHeight(compatibilitytext, Helper.standardFont, fontsize, 0)) + 2 * Helper.borderSize
-							row[i]:setText2(compatibilitytext, { halign = "center", fontsize = fontsize, y = (slotWidths[i] - compatibilityTextHeight) / 2 })
+							row[i + 1]:setText2(compatibilitytext, { halign = "center", fontsize = fontsize, y = (slotWidths[i] - compatibilityTextHeight) / 2 })
 						end
-						row[i].handlers.onClick = function () return menu.buttonSelectSlot(group[i][1], row.index, i) end
+						row[i + 1].handlers.onClick = function () return menu.buttonSelectSlot(group[i][1], row.index, i + 1) end
 					end
+				end
+				if j == #menu.groupedslots then
+					if #group == config.numSlotsPerRow then
+						row[#group + 2]:setColSpan(2)
+					end
+					Helper.setTabScrollRightIcon(menu, menu.panelState.leftmenu, row, #group + 2, menu.frameworkData.scrollIconSize)
 				end
 			end
 
@@ -2869,11 +3182,306 @@ function menu.displayModules(frame, firsttime)
 			ftable:setTopRow(menu.topRows.modules)
 			ftable:setSelectedRow(menu.selectedRows.modules)
 			ftable:setSelectedCol(menu.selectedCols.modules or 0)
+
+			ftable:addConnection(1, 2, true)
+		else
+			Helper.clearTableConnectionColumn(menu, 2)
 		end
 		menu.topRows.modules = nil
 		menu.selectedRows.modules = nil
 		menu.selectedCols.modules = nil
 	end
+end
+
+function menu.displayPlotSize(frame)
+	menu.plotData = Helper.getPlotData(menu.container, nil, menu.holomap)
+	menu.plotData.permanent = #menu.constructionplan > 0
+
+	local plotpanel = frame:addFrameBorder("plot", {
+		offset = Helper.standardContainerOffset,
+		active = menu.panelState.leftmenu,
+		color = Helper.getFrameBorderColor(menu, menu.panelState.leftmenu, menu.panelPins.leftmenu),
+		linewidth = Helper.getFrameBorderLineWidth(menu, menu.panelState.leftmenu),
+	})
+	Helper.setFrameBorderIcon(menu, plotpanel, "left", menu.frameworkData.sidebarWidth / 2)
+
+	local ftable = frame:addTable(3, {
+		tabOrder = 1,
+		width = menu.modulesData.width,
+		height = 0,
+		x = menu.modulesData.offsetX,
+		y = menu.modulesData.offsetY,
+		backgroundID = "solid",
+		backgroundColor = Color["table_background_3d_editor"],
+		backgroundPadding = Helper.standardContainerOffset,
+		frameborder = plotpanel.id,
+	})
+	if menu.setdefaulttable then
+		ftable.properties.defaultInteractiveObject = true
+		menu.setdefaulttable = nil
+	end
+
+	local row = ftable:addRow(nil, { fixed = true, bgColor = Color["row_title_background"] })
+	row[1]:setColSpan(3):createText(ReadText(1001, 11285), menu.headerTextProperties)
+
+	menu.plotsliders = {}
+	local dimensions = { [1] = { dimension = "posX", text = ReadText(1001, 9220) },
+						 [2] = { dimension = "negX", text = ReadText(1001, 9221) },
+						 [3] = { dimension = "posY", text = ReadText(1001, 9222) },
+						 [4] = { dimension = "negY", text = ReadText(1001, 9223) },
+						 [5] = { dimension = "posZ", text = ReadText(1001, 9224) },
+						 [6] = { dimension = "negZ", text = ReadText(1001, 9225) },
+					}
+
+	for i, dimension in ipairs(dimensions) do
+		local row = ftable:addRow(true, {})
+		local locdimension = menu.plotData.dimensions[dimension.dimension]
+		local minimumdimension = menu.plotData.minimumdimensions[dimension.dimension] or 0
+		local locpaireddimension = menu.plotData.dimensions[config.plotPairedDimension[dimension.dimension]]
+
+		local minselect = math.max(menu.plotData.permanent and minimumdimension or 0, (locpaireddimension == 0 and 1 or 0))
+		local maxselect = (menu.plotData.dimensions[config.plotPairedDimension[dimension.dimension]] > config.maxPlotSize) and menu.plotData.dimensions[config.plotPairedDimension[dimension.dimension]] or (config.maxPlotSize - menu.plotData.dimensions[config.plotPairedDimension[dimension.dimension]])
+		local max = (menu.plotData.dimensions[config.plotPairedDimension[dimension.dimension]] > config.maxPlotSize) and menu.plotData.dimensions[config.plotPairedDimension[dimension.dimension]] or config.maxPlotSize
+		if maxselect > max then
+			print("maxselect > max. axis: " .. tostring(dimension.dimension) .. " maxselect: " .. tostring(maxselect) .. ", max: " .. tostring(max) .. ", paired value: " .. tostring(menu.plotData.dimensions[config.plotPairedDimension[dimension.dimension]]))
+		end
+		if minselect > maxselect then
+			print("menu.createPlotMode(): for dimension '" .. dimension.dimension .. "': minselect (" .. minselect .. ") > maxselect (" .. maxselect .. "). Ignore if the station is visually bigger than its plot (How did that happen?). [Florian]")
+			minselect = maxselect
+		end
+		if locdimension < minselect then
+			print("menu.createPlotMode(): for dimension '" .. dimension.dimension .. "': start (" .. locdimension .. ") < minselect (" .. minselect .. "). Ignore if the station is visually bigger than its plot (How did that happen?). [Florian]")
+			locdimension = minselect
+		end
+
+		-- increased minSelect to 1 because it looks like slider text is rounding to the nearest integer (and shows 0.5 as 0). so smallest possible plot size is 2x2x2.
+		local slider = row[1]:setColSpan(3):createSliderCell({
+			height = Helper.standardTextHeight,
+			min = 0,
+			minSelect = minselect,
+			max = (locpaireddimension > config.maxPlotSize) and locpaireddimension or config.maxPlotSize,
+			maxSelect = (locpaireddimension > config.maxPlotSize) and locpaireddimension or (config.maxPlotSize - locpaireddimension),
+			start = locdimension,
+			step = 1,
+			suffix = ReadText(1001, 108),
+			mouseOverText = ffi.string(C.GetDisplayedModifierKey("shift")) .. " - " .. ReadText(1026, 3279),
+		}):setText(dimension.text, {fontsize = config.mapFontSize})
+		row[1].handlers.onSliderCellChanged = function(_, val) return menu.slidercellPlotValue(val, dimension.dimension) end
+		row[1].handlers.onSliderCellConfirm = menu.slidercellPlotConfirm
+		row[1].handlers.onSliderCellActivated = function() menu.noupdate = true end
+		row[1].handlers.onSliderCellDeactivated = function() menu.noupdate = false end
+		table.insert(menu.plotsliders, { table = ftable, cell = row[1], row = row.index, col = 1, dimension = dimension.dimension, slider = slider })
+	end
+
+	ftable:addEmptyRow(Helper.standardTextHeight / 2)
+
+	local row = ftable:addRow(nil, { bgColor = Color["row_background_unselectable"] })
+	row[1]:setBackgroundColSpan(3):createText(ReadText(1001, 8026) .. ReadText(1001, 120))
+	row[2]:setColSpan(2):createText(function () return (menu.plotData.dimensions.posX + menu.plotData.dimensions.negX) .. " " .. ReadText(1001, 42) .. " " .. (menu.plotData.dimensions.posY + menu.plotData.dimensions.negY) .. " " .. ReadText(1001, 42) .. " " .. (menu.plotData.dimensions.posZ + menu.plotData.dimensions.negZ) .. " " .. ReadText(1001, 108) end, { halign = "right" })
+
+	local row = ftable:addRow("createplot", {})
+	row[3]:createButton({ height = Helper.standardTextHeight, active = (menu.plotData.isinownedspace and menu.plotData.paid and (menu.plotData.size.x * 1000 ~= menu.plotData.boughtrawsize.x or menu.plotData.size.y * 1000 ~= menu.plotData.boughtrawsize.y or menu.plotData.size.z * 1000 ~= menu.plotData.boughtrawsize.z) and not menu.plotData.permanent) and true or false }):setText(ReadText(1001, 9230), { halign = "center", fontsize = config.mapFontSize })	-- Reset size
+	row[3].handlers.onClick = function() return menu.resetPlotSize() end
+
+	row = ftable:addRow(nil, {bgColor = Color["row_title_background"]})
+	row[1]:setColSpan(3):createText(ReadText(1001, 9202), Helper.headerRowCenteredProperties)	-- Real Estate Transfer Tax
+
+	row = ftable:addRow(nil, { bgColor = Color["row_background_unselectable"] })
+	row2 = ftable:addRow("buyplot", {})
+
+	row[1]:setColSpan(2):setBackgroundColSpan(3):createText(function() return ((menu.plotData.fullypaid or (not menu.plotData.isinownedspace)) and ReadText(1001, 9241) or (ReadText(1001, 9242)) .. ReadText(1001, 120)) end, textproperties)	-- Place or select plot to see required fees., You own this plot., Fee to acquire plot licence, :
+	row[3]:createText(function() return ((not menu.plotData.fullypaid) and menu.plotData.isinownedspace and (ConvertMoneyString(tostring(menu.plotData.price), false, true, 0, true) .. " " .. ReadText(1001, 101))) or "" end, textproperties)
+	row[3].properties.halign = "right"
+
+	local mouseovertext = ""
+	if (not menu.plotData.fullypaid) and menu.plotData.isinownedspace and (not menu.plotData.affordable) then
+		mouseovertext = ReadText(1026, 3222)
+	end
+	row2[3]:createButton({ active = (not menu.plotData.fullypaid) and menu.plotData.isinownedspace and menu.plotData.affordable, height = config.mapRowHeight, mouseOverText = mouseovertext, helpOverlayID = "create_plot_purchase", helpOverlayText = " ",  helpOverlayHighlightOnly = true, uiTriggerID = "buyplot" }):setText(ReadText(1001, 9233), { halign = "center", fontsize = config.mapFontSize })	-- Buy licence
+	row2[3].handlers.onClick = function() return menu.buttonBuyPlot() end
+	row2[3].properties.uiTriggerID = "buyplot"
+
+	ftable:setTopRow(menu.topRows.modules)
+	ftable:setSelectedRow(menu.selectedRows.modules)
+	ftable:setSelectedCol(menu.selectedCols.modules or 0)
+	menu.topRows.modules = nil
+	menu.selectedRows.modules = nil
+	menu.selectedCols.modules = nil
+
+	ftable:addConnection(1, 2, true)
+end
+
+function menu.slidercellPlotValue(value, dimension)
+	if not dimension then
+		DebugError("menu.slidercellPlotValue(): no dimension passed in.")
+		return
+	end
+
+	local shiftpressed = C.IsShiftPressed()
+	local dimensions = { dimension }
+	if shiftpressed then
+		dimensions = {
+			[1] = "posX",
+			[2] = "negX",
+			[3] = "posY",
+			[4] = "negY",
+			[5] = "posZ",
+			[6] = "negZ",
+		}
+
+		value = math.min(value, config.maxPlotSize / 2)
+	end
+
+	for i, dimension2 in ipairs(dimensions) do
+		local minimumdimension = menu.plotData.minimumdimensions[dimension2] or 0
+		local locvalue = math.max(value, minimumdimension)
+
+		local valchange = locvalue - menu.plotData.dimensions[dimension2]
+		menu.plotData.dimensions[dimension2] = locvalue
+		menu.plotModeUpdateValue(dimension2, valchange)
+	end
+	if shiftpressed then
+		menu.updatePlotSliders()
+	end
+end
+
+function menu.slidercellPlotConfirm()
+	menu.topRows.modules = GetTopRow(menu.moduletable)
+	menu.selectedRows.modules = Helper.currentTableRow[menu.moduletable]
+	menu.selectedCols.modules = Helper.currentTableCol[menu.moduletable]
+	menu.displayMenu()
+end
+
+function menu.plotModeUpdateValue(dimension, valchange)
+	local axis = "x"
+	local bigaxis = "X"
+	if (dimension == "posY") or (dimension == "negY") then
+		axis = "y"
+		bigaxis = "Y"
+	elseif (dimension == "posZ") or (dimension == "negZ") then
+		axis = "z"
+		bigaxis = "Z"
+	end
+	menu.plotData.size[axis] = menu.plotData.dimensions["pos" .. bigaxis] + menu.plotData.dimensions["neg" .. bigaxis]
+	menu.plotModeUpdatePrice()
+	menu.updatePlotSize(dimension, axis, valchange)
+end
+
+function menu.plotModeUpdatePrice()
+	if not menu.plotData.price then
+		return
+	end
+
+	local x = menu.plotData.size.x * 1000
+	local y = menu.plotData.size.y * 1000
+	local z = menu.plotData.size.z * 1000
+
+	local owner = GetComponentData(ConvertStringTo64Bit(tostring(menu.plotData.component)), "owner")
+	local buf = ffi.new("bool[1]", 0)
+	local plotpayment = tonumber(C.GetBuildPlotPayment(menu.plotData.component, buf))
+	menu.plotData.price = tonumber(C.GetBuildPlotPrice(menu.plotData.sector, menu.plotData.position, x, y, z, owner)) - plotpayment
+	menu.plotData.affordable = GetPlayerMoney() >= menu.plotData.price
+
+	menu.plotData.fullypaid = menu.plotData.price <= 0
+end
+
+function menu.updatePlotSize(dimension, axis, valchange)
+	local posSizeChange = { x = 0, y = 0, z = 0 }
+	local negSizeChange = { x = 0, y = 0, z = 0 }
+	if dimension == "posX" or dimension == "posY" or dimension == "posZ" then
+		posSizeChange[axis] = valchange * 1000
+	elseif dimension == "negX" or dimension == "negY" or dimension == "negZ" then
+		negSizeChange[axis] = valchange * 1000
+	else
+		DebugError("menu.updatePlotSize: dimension passed in: " .. tostring(dimension) .. " indicates neither positive nor negative.")
+		return
+	end
+	if C.ExtendBuildPlot(menu.plotData.component, posSizeChange, negSizeChange, true) then
+		C.UpdateConstructionMapBuildPlot(menu.holomap)
+
+		if (not menu.plotData.isinownedspace) or GetComponentData(ConvertStringTo64Bit(tostring(menu.plotData.sector)), "isplayerowned") then
+			local rawsize = C.GetBuildPlotSize(menu.plotData.component)
+			local plotcenter = C.GetBuildPlotCenterOffset(menu.plotData.component)
+			menu.plotData.boughtrawcenteroffset = plotcenter
+
+			C.PayBuildPlotSize(menu.plotData.component, rawsize, plotcenter)
+		end
+	else
+		DebugError("menu.updatePlotSize: failed to extend build plot of station: " .. ffi.string(C.GetComponentName(menu.plotData.component)) .. ". posSizeChange.x: " .. tostring(posSizeChange.x) .. ", posSizeChange.y: " .. tostring(posSizeChange.y) .. ", posSizeChange.z: " .. tostring(posSizeChange.z) .. ", negSizeChange.x: " .. tostring(negSizeChange.x) .. ", negSizeChange.y: " .. tostring(negSizeChange.y) .. ", negSizeChange.z: " .. tostring(negSizeChange.z) .. ".")
+	end
+end
+
+function menu.updatePlotData(station)
+	menu.plotData = Helper.getPlotData(station, nil, menu.holomap)
+	menu.plotData.permanent = #menu.constructionplan > 0
+end
+
+function menu.updatePlotSliders()
+	for _, slider in ipairs(menu.plotsliders) do
+		local locdimension = menu.plotData.dimensions[slider.dimension]
+		local locpaireddimension = menu.plotData.dimensions[config.plotPairedDimension[slider.dimension]]
+
+		local maxselect = (locpaireddimension > config.maxPlotSize) and locpaireddimension or (config.maxPlotSize - locpaireddimension)
+		Helper.setSliderCellValue(slider.table.id, slider.row, slider.col, locdimension, maxselect)
+	end
+end
+
+function menu.resetPlotSize()
+	if menu.plotData.paid then
+		local wantedcenteroffset = menu.plotData.boughtrawcenteroffset
+		local boughtdimensions = {
+			posX = math.ceil((menu.plotData.boughtrawsize.x / 2 + wantedcenteroffset.x) / 1000),
+			negX = math.floor((menu.plotData.boughtrawsize.x / 2 - wantedcenteroffset.x) / 1000),
+			posY = math.ceil((menu.plotData.boughtrawsize.y / 2 + wantedcenteroffset.y) / 1000),
+			negY = math.floor((menu.plotData.boughtrawsize.y / 2 - wantedcenteroffset.y) / 1000),
+			posZ = math.ceil((menu.plotData.boughtrawsize.z / 2 + wantedcenteroffset.z) / 1000),
+			negZ = math.floor((menu.plotData.boughtrawsize.z / 2 - wantedcenteroffset.z) / 1000),
+		}
+		local posSizeChange = { x = (boughtdimensions.posX - menu.plotData.dimensions.posX) * 1000, y = (boughtdimensions.posY - menu.plotData.dimensions.posY) * 1000, z = (boughtdimensions.posZ - menu.plotData.dimensions.posZ) * 1000 }
+		local negSizeChange = { x = (boughtdimensions.negX - menu.plotData.dimensions.negX) * 1000, y = (boughtdimensions.negY - menu.plotData.dimensions.negY) * 1000, z = (boughtdimensions.negZ - menu.plotData.dimensions.negZ) * 1000 }
+		if C.ExtendBuildPlot(menu.plotData.component, posSizeChange, negSizeChange, true) then
+			local plotcenteroffset = C.GetBuildPlotCenterOffset(menu.plotData.component)
+			menu.plotData.size = { x = menu.plotData.boughtrawsize.x / 1000, y = menu.plotData.boughtrawsize.y / 1000, z = menu.plotData.boughtrawsize.z / 1000 }
+			menu.plotData.dimensions = {
+				posX = math.ceil((menu.plotData.boughtrawsize.x / 2 + plotcenteroffset.x) / 1000),
+				negX = math.floor((menu.plotData.boughtrawsize.x / 2 - plotcenteroffset.x) / 1000),
+				posY = math.ceil((menu.plotData.boughtrawsize.y / 2 + plotcenteroffset.y) / 1000),
+				negY = math.floor((menu.plotData.boughtrawsize.y / 2 - plotcenteroffset.y) / 1000),
+				posZ = math.ceil((menu.plotData.boughtrawsize.z / 2 + plotcenteroffset.z) / 1000),
+				negZ = math.floor((menu.plotData.boughtrawsize.z / 2 - plotcenteroffset.z) / 1000),
+			}
+			C.UpdateConstructionMapBuildPlot(menu.holomap)
+		else
+			DebugError("menu.resetPlotSize: failed to reset build plot of station: " .. ffi.string(C.GetComponentName(menu.plotData.component)) .. "\nposSizeChange.x: " .. tostring(posSizeChange.x) .. ", posSizeChange.y: " .. tostring(posSizeChange.y) .. ", posSizeChange.z: " .. tostring(posSizeChange.z) .. "\nnegSizeChange.x: " .. tostring(negSizeChange.x) .. ", negSizeChange.y: " .. tostring(negSizeChange.y) .. ", negSizeChange.z: " .. tostring(negSizeChange.z))
+		end
+		if not menu.plotData.fullypaid and menu.plotData.price <= 0 then
+			menu.plotData.fullypaid = true
+		end
+		menu.updatePlotData(menu.plotData.component)
+		menu.topRows.modules = GetTopRow(menu.moduletable)
+		menu.selectedRows.modules = Helper.currentTableRow[menu.moduletable]
+		menu.selectedCols.modules = nil
+		menu.displayMenu()
+	end
+end
+
+function menu.buttonBuyPlot()
+	local station = menu.plotData.component
+	local size = { x = menu.plotData.size.x * 1000, y = menu.plotData.size.y * 1000, z = menu.plotData.size.z * 1000 }
+	if not menu.plotData.price or GetPlayerMoney() < menu.plotData.price then
+		DebugError("menu.buttonBuyPlot() called but there is no price or the player cannot afford the plot. price: " .. tostring(menu.plotData.price) .. ", player cash: " .. tostring(GetPlayerMoney()))
+		return
+	end
+	local offset = C.GetBuildPlotCenterOffset(station)
+	menu.plotData.boughtrawcenteroffset = offset
+	local controlstation = C.GetSectorControlStation(menu.plotData.sector)
+	TransferPlayerMoneyTo(menu.plotData.price, ConvertStringTo64Bit(tostring(controlstation)))
+	C.PayBuildPlotSize(station, size, offset)
+	menu.updatePlotData(menu.plotData.component)
+	menu.topRows.modules = GetTopRow(menu.moduletable)
+	menu.selectedRows.modules = Helper.currentTableRow[menu.moduletable]
+	menu.selectedCols.modules = nil
+	menu.displayMenu()
 end
 
 function menu.refreshPlan()
@@ -2903,8 +3511,8 @@ function menu.refreshPlan()
 		menu.removedModules = {}
 		if menu.holomap ~= 0 then
 			local n = C.GetNumBuildMapConstructionPlan(menu.holomap, false)
-			local buf = ffi.new("UIConstructionPlanEntry[?]", n)
-			n = tonumber(C.GetBuildMapConstructionPlan(menu.holomap, menu.container, false, buf, n))
+			local buf = ffi.new("UIConstructionPlanEntry2[?]", n)
+			n = tonumber(C.GetBuildMapConstructionPlan2(menu.holomap, menu.container, false, buf, n))
 			for i = 0, n - 1 do
 				local entry = {}
 				entry.idx                   = buf[i].idx
@@ -2915,6 +3523,7 @@ function menu.refreshPlan()
 				entry.predecessoridx        = buf[i].predecessoridx
 				entry.predecessorconnection = ffi.string(buf[i].predecessorconnectionid)
 				entry.isfixed               = buf[i].isfixed
+				entry.bookmarknum			= buf[i].bookmarknum
 
 				local loadout = Helper.getLoadoutHelper(C.GetConstructionMapItemLoadout2, C.GetConstructionMapItemLoadoutCounts2, menu.holomap, entry.idx, menu.container, entry.component)
 				entry.upgradeplan           = Helper.convertLoadout(entry.component, entry.macro, loadout, nil)
@@ -2981,6 +3590,7 @@ function menu.refreshPlan()
 
 				if menu.selectedModule and (entry.idx == menu.selectedModule.idx) then
 					menu.selectedModule = entry
+					menu.updateInputBar()
 				end
 			end
 
@@ -3045,12 +3655,13 @@ function menu.refreshPlan()
 			local sector, sectorid = GetComponentData(menu.container, "sector", "sectorid")
 			local policefaction, containsthewave = GetComponentData(sectorid, "policefaction", "containsthewave")
 			for idx, entry in ipairs(menu.constructionplan) do
-				local data = GetLibraryEntry(GetMacroData(entry.macro, "infolibrary"), entry.macro)
+				local infolibrary, isshowroommodule, isventuremodule, loc_haswaveprotection = GetMacroData(entry.macro, "infolibrary", "isshowroommodule", "isventuremodule", "haswaveprotection")
+				local data = GetLibraryEntry(infolibrary, entry.macro)
 				if IsMacroClass(entry.macro, "pier") then
 					haspier = true
 				elseif IsMacroClass(entry.macro, "dockarea") then
-					hasdock = true
-					if GetMacroData(entry.macro, "isventuremodule") then
+					hasdock = hasdock or (not isshowroommodule)
+					if isventuremodule then
 						ismissingventureplatform = ismissingventureplatform or (C.GetConstructionMapVenturePlatform(menu.holomap, idx) == 0)
 					end
 				elseif IsMacroClass(entry.macro, "ventureplatform") then
@@ -3064,7 +3675,7 @@ function menu.refreshPlan()
 						hasillegalproductions = C.HasProductionModuleIllegalProducts(entry.macro, "player", policefaction)
 					end
 				end
-				haswaveprotection = haswaveprotection or GetMacroData(entry.macro, "haswaveprotection")
+				haswaveprotection = haswaveprotection or loc_haswaveprotection
 			end
 
 			local mapresult = ffi.string(C.GetMissingConstructionPlanBlueprints3(menu.container, menu.holomap, nil, false))
@@ -3145,8 +3756,27 @@ function menu.displayPlan(frame)
 		local ftable, modulestatustable, resourcetable
 		local statusBars = {}
 		if menu.planMode == "construction" then
+			local planpanel = frame:addFrameBorder("plan", {
+				offset = Helper.standardContainerOffset,
+				active = menu.panelState.rightmenu,
+				color = Helper.getFrameBorderColor(menu, menu.panelState.rightmenu),
+				linewidth = Helper.getFrameBorderLineWidth(menu, menu.panelState.rightmenu),
+			})
+			Helper.setFrameBorderIcon(menu, planpanel, "right", menu.frameworkData.sidebarWidth / 2, true)
+
 			-- MODULE CHANGES
-			ftable = frame:addTable(5, { tabOrder = 3, width = menu.planData.width, maxVisibleHeight = 0.4 * Helper.viewHeight, x = menu.planData.offsetX, y = menu.planData.offsetY, reserveScrollBar = true, backgroundID = "solid", backgroundColor = Color["table_background_3d_editor"] })
+			ftable = frame:addTable(5, {
+				tabOrder = 3,
+				width = menu.planData.width,
+				maxVisibleHeight = 0.4 * Helper.viewHeight,
+				x = menu.planData.offsetX,
+				y = menu.planData.offsetY,
+				reserveScrollBar = true,
+				backgroundID = "solid",
+				backgroundColor = Color["table_background_3d_editor"],
+				backgroundPadding = Helper.standardContainerOffset,
+				frameborder = planpanel.id,
+			})
 			ftable:setColWidth(1, Helper.scaleY(Helper.standardTextHeight), false)
 			ftable:setColWidth(2, Helper.scaleY(Helper.standardTextHeight), false)
 			ftable:setColWidth(4, 0.25 * menu.planData.width, false)
@@ -3179,12 +3809,14 @@ function menu.displayPlan(frame)
 				end
 			end
 			for _, entry in ipairs(config.leftBar) do
-				if entry.additionaltypes then
-					for _, moduletype in ipairs(entry.additionaltypes) do
-						if sortedModules[moduletype] then
-							sortedModules[entry.mode] = sortedModules[entry.mode] or {}
-							for _, module in ipairs(sortedModules[moduletype]) do
-								table.insert(sortedModules[entry.mode], module)
+				if entry.mode and (entry.mode ~= "plotsize") then
+					if entry.additionaltypes then
+						for _, moduletype in ipairs(entry.additionaltypes) do
+							if sortedModules[moduletype] then
+								sortedModules[entry.mode] = sortedModules[entry.mode] or {}
+								for _, module in ipairs(sortedModules[moduletype]) do
+									table.insert(sortedModules[entry.mode], module)
+								end
 							end
 						end
 					end
@@ -3294,7 +3926,17 @@ function menu.displayPlan(frame)
 
 			-- MODULE LOADOUTS & STATUS
 			local yoffset = ftable.properties.y + ftable:getVisibleHeight() + 2 * Helper.borderSize
-			modulestatustable = frame:addTable(6, { tabOrder = 4, width = menu.planData.width, x = menu.planData.offsetX, y = yoffset, reserveScrollBar = true, backgroundID = "solid", backgroundColor = Color["table_background_3d_editor"] })
+			modulestatustable = frame:addTable(6, {
+				tabOrder = 4,
+				width = menu.planData.width,
+				x = menu.planData.offsetX,
+				y = yoffset,
+				reserveScrollBar = true,
+				backgroundID = "solid",
+				backgroundColor = Color["table_background_3d_editor"],
+				backgroundPadding = Helper.standardContainerOffset,
+				frameborder = planpanel.id,
+			})
 			local smallColWidth = Helper.scaleY(Helper.standardTextHeight)
 			modulestatustable:setColWidth(1, smallColWidth, false)
 			modulestatustable:setColWidth(2, smallColWidth, false)
@@ -3379,6 +4021,7 @@ function menu.displayPlan(frame)
 				row[1]:setColSpan(6):createText(ReadText(1001, 7923), { color = Color["text_success"] })
 			end
 
+			local xshortcutset = false
 			-- BUTTONS
 			if menu.cancelRequested then
 				local row = modulestatustable:addRow(false, { fixed = true, bgColor = Color["row_title_background"] })
@@ -3395,7 +4038,8 @@ function menu.displayPlan(frame)
 					row[1]:setColSpan(3):createButton({ helpOverlayID = "force_modulechanges", helpOverlayText = " ",  helpOverlayHighlightOnly = true, active = true }):setText(ReadText(1001, 11919), { halign = "center" })
 					row[1].handlers.onClick = menu.buttonForceBuild
 				else
-					row[1]:setColSpan(3):createButton({ helpOverlayID = "confirm_modulechanges", helpOverlayText = " ",  helpOverlayHighlightOnly = true, active = menu.confirmModuleChangesActive }):setText(ReadText(1001, 7919), { halign = "center" })
+					row[1]:setColSpan(3):createButton({ helpOverlayID = "confirm_modulechanges", helpOverlayText = " ",  helpOverlayHighlightOnly = true, active = menu.confirmModuleChangesActive }):setText(ReadText(1001, 7919), { halign = "center" }):setHotkey("INPUT_STATE_DETAILMONITOR_X", { displayIcon = true })
+					xshortcutset = true
 					row[1].handlers.onClick = menu.buttonConfirm
 					row[1].properties.uiTriggerID = "confirmmodulechanges"
 				end
@@ -3406,7 +4050,17 @@ function menu.displayPlan(frame)
 
 			-- BUILD RESOURCES
 			local yoffset = modulestatustable.properties.y + modulestatustable:getVisibleHeight() + 2 * Helper.borderSize
-			resourcetable = frame:addTable(6, { tabOrder = 5, width = menu.planData.width, x = menu.planData.offsetX, y = yoffset, reserveScrollBar = true, backgroundID = "solid", backgroundColor = Color["table_background_3d_editor"] })
+			resourcetable = frame:addTable(6, {
+				tabOrder = 5,
+				width = menu.planData.width,
+				x = menu.planData.offsetX,
+				y = yoffset,
+				reserveScrollBar = true,
+				backgroundID = "solid",
+				backgroundColor = Color["table_background_3d_editor"],
+				backgroundPadding = Helper.standardContainerOffset,
+				frameborder = planpanel.id,
+			})
 			resourcetable:setColWidth(1, smallColWidth, false)
 			resourcetable:setColWidth(2, smallColWidth, false)
 			resourcetable:setColWidth(3, 0.5 * menu.planData.width - 2 * smallColWidth, false)
@@ -3760,6 +4414,9 @@ function menu.displayPlan(frame)
 			if #menu.constructionvessels == 0 then
 				local active = C.DoesConstructionSequenceRequireBuilder(menu.container)
 				row[1]:setColSpan(6):createButton({ active = active and C.IsStoryFeatureUnlocked("x4ep1_map"), helpOverlayID = "assign_hire_builder", helpOverlayText = " ",  helpOverlayHighlightOnly = true, mouseOverText = active and "" or ReadText(1026, 7923) }):setText(ReadText(1001, 7934), { halign = "center" })
+				if not xshortcutset then
+					row[1]:setHotkey("INPUT_STATE_DETAILMONITOR_X", { displayIcon = true })
+				end
 				row[1].handlers.onClick = menu.buttonAssignConstructionVessel
 				row[1].properties.uiTriggerID = "assignhirebuilder"
 			else
@@ -3786,7 +4443,26 @@ function menu.displayPlan(frame)
 		end
 
 		-- STATUS
-		local statustable = frame:addTable(2, { tabOrder = 6, width = menu.planData.width, x = menu.planData.offsetX, y = 0, reserveScrollBar = false, highlightMode = "off", skipTabChange = true, backgroundID = "solid", backgroundColor = Color["table_background_3d_editor"] })
+		local statuspanel = frame:addFrameBorder("status", {
+			offset = Helper.standardContainerOffset,
+			active = menu.panelState.rightmenu,
+			color = Helper.getFrameBorderColor(menu, menu.panelState.rightmenu),
+			linewidth = Helper.getFrameBorderLineWidth(menu, menu.panelState.rightmenu),
+		})
+
+		local statustable = frame:addTable(2, {
+			tabOrder = 6,
+			width = menu.planData.width,
+			x = menu.planData.offsetX,
+			y = 0,
+			reserveScrollBar = false,
+			highlightMode = "off",
+			skipTabChange = true,
+			backgroundID = "solid",
+			backgroundColor = Color["table_background_3d_editor"],
+			backgroundPadding = Helper.standardContainerOffset,
+			frameborder = statuspanel.id,
+		})
 		statustable:setDefaultColSpan(1, 2)
 
 		local row = statustable:addRow(false, { fixed = true, bgColor = Color["row_title_background"] })
@@ -3848,7 +4524,25 @@ function menu.displayPlan(frame)
 		end
 	else
 		-- BUTTONS
-		local buttontable = frame:addTable(2, { tabOrder = 7, width = menu.planData.width, height = Helper.scaleY(Helper.standardButtonHeight), x = menu.planData.offsetX, y = Helper.viewHeight - Helper.scaleY(Helper.standardButtonHeight) - Helper.frameBorder, reserveScrollBar = false, backgroundID = "solid", backgroundColor = Color["table_background_3d_editor"] })
+		local loadoutconfirmpanel = frame:addFrameBorder("loadoutconfirm", {
+			offset = Helper.standardContainerOffset,
+			active = menu.panelState.rightmenu,
+			color = Helper.getFrameBorderColor(menu, menu.panelState.rightmenu),
+			linewidth = Helper.getFrameBorderLineWidth(menu, menu.panelState.rightmenu),
+		})
+
+		local buttontable = frame:addTable(2, {
+			tabOrder = 7,
+			width = menu.planData.width,
+			height = Helper.scaleY(Helper.standardButtonHeight),
+			x = menu.planData.offsetX,
+			y = Helper.viewHeight - Helper.scaleY(Helper.standardButtonHeight) - Helper.frameBorder,
+			reserveScrollBar = false,
+			backgroundID = "solid",
+			backgroundColor = Color["table_background_3d_editor"],
+			backgroundPadding = Helper.standardContainerOffset,
+			frameborder = loadoutconfirmpanel.id,
+		})
 		if menu.cancelRequested then
 			local row = buttontable:addRow(false, { fixed = true, bgColor = Color["row_title_background"] })
 			row[1]:setColSpan(2):createText(ReadText(1001, 9705), menu.headerTextProperties)
@@ -3868,8 +4562,29 @@ function menu.displayPlan(frame)
 		buttontable.properties.y = Helper.viewHeight - buttontable:getFullHeight() - Helper.frameBorder
 
 		if menu.loadoutPlanMode == "normal" then
+			local loadoutplanpanel = frame:addFrameBorder("loadoutplan", {
+				offset = Helper.standardContainerOffset,
+				active = menu.panelState.rightmenu,
+				color = Helper.getFrameBorderColor(menu, menu.panelState.rightmenu),
+				linewidth = Helper.getFrameBorderLineWidth(menu, menu.panelState.rightmenu),
+			})
+			Helper.setFrameBorderIcon(menu, loadoutplanpanel, "right", menu.frameworkData.sidebarWidth / 2, true)
+
 			-- EQUIPMENT
-			local ftable = frame:addTable(5, { tabOrder = 3, width = menu.planData.width, maxVisibleHeight = buttontable.properties.y - menu.planData.offsetY, x = menu.planData.offsetX, y = menu.planData.offsetY, reserveScrollBar = true, skipTabChange = true, highlightMode = "off", backgroundID = "solid", backgroundColor = Color["table_background_3d_editor"] })
+			local ftable = frame:addTable(5, {
+				tabOrder = 3,
+				width = menu.planData.width,
+				maxVisibleHeight = buttontable.properties.y - menu.planData.offsetY,
+				x = menu.planData.offsetX,
+				y = menu.planData.offsetY,
+				reserveScrollBar = true,
+				skipTabChange = true,
+				highlightMode = "off",
+				backgroundID = "solid",
+				backgroundColor = Color["table_background_3d_editor"],
+				backgroundPadding = Helper.standardContainerOffset,
+				frameborder = loadoutplanpanel.id,
+			})
 			ftable:setColWidth(1, Helper.standardTextHeight)
 			ftable:setColWidth(2, Helper.standardTextHeight)
 			ftable:setColWidth(4, 0.3 * menu.planData.width)
@@ -4013,7 +4728,18 @@ function menu.confirmModuleChangesActive()
 end
 
 function menu.displayModuleInfo(frame)
-	local ftable = frame:addTable(2, { tabOrder = 0, width = menu.statsData.width, x = menu.statsData.offsetX, y = 0, reserveScrollBar = false, backgroundID = "solid", backgroundColor = Color["table_background_3d_editor"] })
+	local moduleinfopanel = frame:addFrameBorder("moduleinfo")
+
+	local ftable = frame:addTable(2, {
+		tabOrder = 0,
+		width = menu.statsData.width,
+		x = menu.statsData.offsetX,
+		y = 0,
+		reserveScrollBar = false,
+		backgroundID = "solid",
+		backgroundColor = Color["table_background_3d_editor"],
+		frameborder = moduleinfopanel.id,
+	})
 
 	local name, infolibrary = GetMacroData(menu.selectedModule.macro, "name", "infolibrary")
 
@@ -4214,6 +4940,10 @@ function menu.displayModuleRow(ftable, index, entry, added, removed)
 	if entry.component ~= 0 then
 		name = ffi.string(C.GetComponentName(entry.component))
 	end
+	if IsCheatVersion() and entry.bookmarknum ~= nil and entry.bookmarknum ~= 0 then
+		name = "[Stage " .. entry.bookmarknum .. "] " .. name
+		color = Color["text_warning"]
+	end
 	row[2]:setColSpan(2):createText("   " .. name, { color = color, mouseOverText = menu.getLoadoutSummary(entry.upgradeplan) })
 	local ismissingresources = false
 	if IsComponentConstruction(ConvertStringTo64Bit(tostring(entry.component))) then
@@ -4361,22 +5091,31 @@ function menu.displayMainFrame()
 		height = Helper.viewHeight,
 		x = 0,
 		y = 0,
+		panelMode = menu.panelMode,
 	})
 
 	-- right sidebar
-	Helper.createRightSideBar(menu.mainFrame, menu.container, true, "construction", menu.buttonRightBar, menu.buttonRightBarSelf)
+	local rightbartable = Helper.createRightSideBar(menu, menu.mainFrame, menu.container, true, "construction", menu.buttonRightBar, menu.buttonRightBarSelf, menu.refreshMenu)
+	rightbartable:addConnection(1, 5, true)
 
 	-- title bar
 	menu.createTitleBar(menu.mainFrame)
 
 	-- construction map
-	menu.mainFrame:addRenderTarget({width = menu.mapData.width, height = menu.mapData.height, x = menu.mapData.offsetX, y = menu.mapData.offsetY, scaling = false, alpha = 100})
+	menu.mainFrame:addRenderTarget({ width = menu.mapData.width, height = menu.mapData.height, x = menu.mapData.offsetX, y = menu.mapData.offsetY, scaling = false, alpha = 100, clear = false })
 
 	menu.mainFrame:display()
 end
 
 function menu.displayContextFrame(mode, width, x, y)
 	PlaySound("ui_positive_click")
+
+	if menu.panelMode then
+		if menu.holomap and (menu.holomap ~= 0) then
+			C.SetMapFocus(menu.holomap, false)
+		end
+	end
+
 	menu.contextMode = { mode = mode, width = width, x = x, y = y }
 	if mode == "saveCP" then
 		menu.createCPSaveContext()
@@ -4468,23 +5207,6 @@ function menu.createSlotContext()
 		end
 	end
 
-	for k, macro in ipairs(slotdata.possiblemacros) do
-		local name = prefix .. GetMacroData(macro, "name")
-
-		local color = Color["text_normal"]
-		if (macro == slotdata.currentmacro) and (macro ~= plandata.macro) then
-			color = Color["text_negative"]
-		elseif (macro == plandata.macro) then
-			color = Color["text_positive"]
-		end
-
-		local row = ftable:addRow(true)
-		row[1]:createButton({ height = Helper.standardTextHeight }):setText(name, { color = color })
-		if menu.upgradetypeMode == "turretgroup" then
-			row[1].handlers.onClick = function () return menu.buttonSelectGroupUpgrade(upgradetype2.type, menu.currentSlot, macro, nil, nil, row.index) end
-		end
-	end
-
 	if upgradetype.allowempty then
 		local name = ReadText(1001, 7906)
 
@@ -4499,6 +5221,23 @@ function menu.createSlotContext()
 		row[1]:createButton({ height = Helper.standardTextHeight, helpOverlayID = "turretgroup_empty", helpOverlayText = " ", helpOverlayHighlightOnly = true }):setText(name, { color = color })
 		if menu.upgradetypeMode == "turretgroup" then
 			row[1].handlers.onClick = function () return menu.buttonSelectGroupUpgrade(upgradetype2.type, menu.currentSlot, "", nil, nil, row.index) end
+		end
+	end
+
+	for k, macro in ipairs(slotdata.possiblemacros) do
+		local name = prefix .. GetMacroData(macro, "name")
+
+		local color = Color["text_normal"]
+		if (macro == slotdata.currentmacro) and (macro ~= plandata.macro) then
+			color = Color["text_negative"]
+		elseif (macro == plandata.macro) then
+			color = Color["text_positive"]
+		end
+
+		local row = ftable:addRow(true)
+		row[1]:createButton({ height = Helper.standardTextHeight }):setText(name, { color = color })
+		if menu.upgradetypeMode == "turretgroup" then
+			row[1].handlers.onClick = function () return menu.buttonSelectGroupUpgrade(upgradetype2.type, menu.currentSlot, macro, nil, nil, row.index) end
 		end
 	end
 
@@ -4546,6 +5285,8 @@ end
 
 function menu.resetAndCloseMenu()
 	menu.resetDefaultLoadout()
+	menu.panelState.exitmenu = false
+	Helper.updatePanelState(menu)
 	if menu.contextData.dueToClose then
 		menu.closeMenu(menu.contextData.dueToClose)
 	elseif menu.contextData.othermenu then
@@ -4595,9 +5336,9 @@ function menu.createOverwriteQuestionContext()
 	row[1]:setColSpan(5):createText("")
 
 	local row = ftable:addRow(true, { fixed = true })
-	row[2]:createButton():setText(ReadText(1001, 14), { halign = "center" })
+	row[2]:createButton():setText(ReadText(1001, 14), { halign = "center" }):setHotkey("INPUT_STATE_DETAILMONITOR_X", { displayIcon = true })
 	row[2].handlers.onClick = (menu.contextData.mode == "export") and function () menu.buttonExport(true) end or function () menu.buttonImport(true) end
-	row[4]:createButton():setText(ReadText(1001, 64), { halign = "center" })
+	row[4]:createButton():setText(ReadText(1001, 64), { halign = "center" }):setHotkey("INPUT_STATE_DETAILMONITOR_B", { displayIcon = true })
 	row[4].handlers.onClick = function () return menu.displayContextFrame((menu.contextData.mode == "export") and "exportCP" or "importCP", menu.titleData.dropdownWidth + 7 * (menu.titleData.height + Helper.borderSize), menu.titleData.offsetX + menu.titleData.nameWidth + Helper.borderSize, menu.titleData.offsetY + menu.titleData.height + Helper.borderSize) end
 	ftable:setSelectedCol(4)
 
@@ -4637,9 +5378,11 @@ function menu.createModuleContext()
 		row[1].handlers.onClick = function () return menu.buttonEditLoadout(menu.contextData.item) end
 	end
 
-	local row = ftable:addRow(true, { fixed = true })
-	row[1]:createButton({ bgColor = Color["button_background_hidden"] }):setText(ReadText(1001, 2400))
-	row[1].handlers.onClick = function () return menu.buttonContextEncyclopedia({ type = "module", macro = menu.contextData.item.macro }) end
+	if C.IsStoryFeatureUnlocked("x4ep1_encyclopedia") then
+		local row = ftable:addRow(true, { fixed = true })
+		row[1]:createButton({ bgColor = Color["button_background_hidden"] }):setText(ReadText(1001, 2400))
+		row[1].handlers.onClick = function () return menu.buttonContextEncyclopedia({ type = "module", macro = menu.contextData.item.macro }) end
+	end
 
 	local row = ftable:addRow(true, { fixed = true })
 	row[1]:createButton({ active = not menu.contextData.item.isfixed, bgColor = Color["button_background_hidden"], helpOverlayID = "stationconfig_resetrotation", helpOverlayText = " ", helpOverlayHighlightOnly = true, uiTriggerID = "resetrotation" }):setText(ReadText(1001, 7999))
@@ -4728,6 +5471,12 @@ function menu.createModuleContext()
 	local row = ftable:addRow(true, { fixed = true })
 	row[1]:createButton({ active = not menu.contextData.item.isfixed, bgColor = Color["button_background_hidden"] }):setText(ReadText(1001, 7995))
 	row[1].handlers.onClick = function () return menu.buttonRemoveModule(menu.contextData.item, true) end
+
+	if IsCheatVersion() then
+		local row = ftable:addRow(true, { fixed = true })
+		row[1]:createButton({ active = active, bgColor = Color["button_background_hidden"] }):setText("Toggle Bookmark")
+		row[1].handlers.onClick = function () return menu.buttonSetModuleAsBookmark(menu.contextData.item, menu.contextData.item.bookmarknum == 0) end
+	end
 
 	if ftable.properties.y + ftable:getFullHeight() > Helper.viewHeight - menu.contextFrame.properties.y then
 		menu.contextFrame.properties.y = Helper.viewHeight - ftable.properties.y - ftable:getFullHeight() - Helper.frameBorder
@@ -5258,8 +6007,7 @@ end
 
 function menu.displayMenu(firsttime)
 	-- Remove possible button scripts from previous view
-	Helper.removeAllWidgetScripts(menu, config.infoLayer)
-	Helper.currentTableRow = {}
+	Helper.clearDataForRefresh(menu, config.infoLayer)
 	Helper.closeDropDownOptions(menu.titlebartable, 1, 2)
 
 	menu.infoFrame = Helper.createFrameHandle(menu, {
@@ -5273,7 +6021,11 @@ function menu.displayMenu(firsttime)
 
 	menu.displayLeftBar(menu.infoFrame)
 
-	menu.displayModules(menu.infoFrame, firsttime)
+	if (not menu.loadoutMode) and (menu.modulesMode == "plotsize") then
+		menu.displayPlotSize(menu.infoFrame)
+	else
+		menu.displayModules(menu.infoFrame, firsttime)
+	end
 
 	menu.displayPlan(menu.infoFrame)
 
@@ -5335,6 +6087,7 @@ function menu.onUpdate()
 				menu.showConstructionMap()
 			end
 
+			Helper.updatePanelState(menu)
 			menu.activatemap = false
 			menu.refreshPlan()
 			local refresh = true
@@ -5349,12 +6102,13 @@ function menu.onUpdate()
 		end
 	end
 
-	if (menu.newSelectedModule and ((menu.selectedModule == nil) or (menu.newSelectedModule.idx ~= menu.selectedModule.idx))) or ((menu.newSelectedModule == "clear") and menu.selectedModule) then
+	if ((menu.newSelectedModule ~= nil) and (menu.newSelectedModule ~= "clear") and ((menu.selectedModule == nil) or (menu.newSelectedModule.idx ~= menu.selectedModule.idx))) or ((menu.newSelectedModule == "clear") and menu.selectedModule) then
 		if menu.newSelectedModule == "clear" then
 			menu.selectedModule = nil
 		else
 			menu.selectedModule = menu.newSelectedModule
 		end
+		menu.updateInputBar()
 		menu.newSelectedModule = nil
 		menu.refresh = curtime - 1
 	end
@@ -5408,6 +6162,14 @@ function menu.onUpdate()
 		menu.contextMode.nameEditBox = nil
 	end
 
+	if menu.inputModeHasChanged then
+		if not menu.noupdate then
+			menu.displayMainFrame()
+			menu.refresh = curtime - 1
+			menu.inputModeHasChanged = nil
+		end
+	end
+
 	if menu.refresh and (menu.refresh < curtime) and (not menu.noupdate) then
 		menu.topRows.modules = GetTopRow(menu.moduletable)
 		menu.selectedRows.modules = Helper.currentTableRow[menu.moduletable]
@@ -5440,6 +6202,12 @@ function menu.onUpdate()
 		local haspick = false
 		if (GetControllerInfo() ~= "gamepad") or C.IsMouseEmulationActive() then
 			haspick = C.GetPickedBuildMapEntry2(menu.holomap, menu.container, pickedentry, false)
+		end
+
+		local hasfloatingselection = C.HasBuildMapFloatingSelection(menu.holomap)
+		if hasfloatingselection ~= menu.hasFloatingSelection then
+			menu.hasFloatingSelection = hasfloatingselection
+			menu.updateInputBar()
 		end
 
 		if menu.allowpanning and menu.leftdown then
@@ -5510,20 +6278,41 @@ function menu.onRowChanged(row, rowdata, uitable, modified, input, source)
 	if not menu.loadoutMode then
 		if uitable == menu.plantable then
 			if menu.holomap ~= 0 then
-				if (source ~= "auto") or (menu.selectedModule == nil) then
-					if (type(rowdata) == "table") and rowdata.ismodule and (not rowdata.removed) then
-						menu.newSelectedModule = rowdata.module
-						C.SelectBuildMapEntry(menu.holomap, rowdata.idx)
-					elseif menu.selectedModule ~= nil then
-						menu.newSelectedModule = "clear"
-						C.ClearBuildMapSelection(menu.holomap)
+				if not menu.panelMode then
+					if (source ~= "auto") or (menu.selectedModule == nil) then
+						if (type(rowdata) == "table") and rowdata.ismodule and (not rowdata.removed) then
+							menu.newSelectedModule = rowdata.module
+							C.SelectBuildMapEntry(menu.holomap, rowdata.idx)
+						elseif menu.selectedModule ~= nil then
+							menu.newSelectedModule = "clear"
+							C.ClearBuildMapSelection(menu.holomap)
+						end
 					end
+				else
+					menu.newSelectedModule = "clear"
+					C.ClearBuildMapSelection(menu.holomap)
 				end
 			end
 		elseif uitable == menu.contexttable then
 			if (source ~= "auto") or (menu.contextData and (menu.contextData.selectedEntry == nil)) then
 				if (type(rowdata) == "table") then
 					menu.contextData.newSelectedEntry = rowdata
+				end
+			end
+		end
+	end
+
+	if menu.panelMode then
+		if uitable == menu.leftbartable then
+			if menu.panelState.leftbar then
+				if not menu.loadoutMode then
+					if menu.modulesMode ~= rowdata then
+						menu.buttonLeftBar(rowdata, row)
+					end
+				else
+					if menu.upgradetypeMode ~= rowdata then
+						menu.buttonLeftBarLoadout(rowdata, row)
+					end
 				end
 			end
 		end
@@ -5572,20 +6361,51 @@ function menu.onCloseElement(dueToClose, layer, showinganothermenu)
 		end
 	end
 
-	if menu.loadoutMode then
-		if menu.upgradetypeMode and (dueToClose == "back") then
-			menu.deactivateUpgradetypeMode()
+	if menu.panelMode and (dueToClose == "back") then
+		if menu.panelState.leftmenu then
+			menu.panelState.leftmenu = false
+			menu.panelState.leftbar = true
+			Helper.updatePanelState(menu)
+			menu.refreshMenu()
 			return
 		end
-	else
-		if menu.modulesMode and (dueToClose == "back") then
-			menu.deactivateModulesMode()
+		if menu.panelState.leftbar then
+			menu.panelState.leftbar = false
+			Helper.updatePanelState(menu)
+			if not menu.panelPins.leftmenu then
+				menu.deactivateLeftPanel()
+			else
+				menu.refreshMenu()
+			end
 			return
+		end
+		if menu.panelState.rightbar then
+			menu.panelState.rightbar = false
+			menu.panelState.rightmenu = false
+			Helper.updatePanelState(menu)
+			menu.refreshMenu()
+			return
+		end
+	end
+
+	if not menu.panelPins.leftmenu then
+		if menu.loadoutMode then
+			if menu.upgradetypeMode and (dueToClose == "back") then
+				menu.deactivateUpgradetypeMode()
+				return
+			end
+		else
+			if menu.modulesMode and (dueToClose == "back") then
+				menu.deactivateModulesMode()
+				return
+			end
 		end
 	end
 
 	if (not showinganothermenu) and menu.haschanges then
 		menu.contextData = { dueToClose = dueToClose }
+		menu.panelState.exitmenu = true
+		Helper.updatePanelState(menu)
 		menu.displayContextFrame("userquestion", Helper.scaleX(400), (Helper.viewWidth - Helper.scaleX(400)) / 2, Helper.viewHeight / 2)
 	else
 		menu.closeMenu(dueToClose)
@@ -5594,6 +6414,8 @@ end
 
 function menu.closeContextMenu()
 	Helper.clearFrame(menu, config.contextLayer)
+	menu.panelState.exitmenu = false
+	Helper.updatePanelState(menu)
 
 	-- REMOVE this block once the mouse out/over event order is correct -> This should be unnessecary due to the global tablemouseout event reseting the picking
 	if menu.currentMouseOverTable and (
@@ -5610,6 +6432,7 @@ end
 
 -- rendertarget mouse input helper
 function menu.onRenderTargetMouseDown()
+	Helper.confirmEditBoxInput(menu.titlebartable, 1, 1)
 	menu.leftdown = { time = GetCurRealTime(), position = table.pack(GetLocalMousePosition()) }
 	menu.allowpanning = true
 end
@@ -5688,6 +6511,7 @@ function menu.onRenderTargetMouseUp()
 				newplanrow = addedNewModule and "last" or "first"
 				C.ClearBuildMapSelection(menu.holomap)
 			end
+			menu.updateInputBar()
 			menu.storePlanTableState()
 			menu.selectedRows.plan = newplanrow or Helper.currentTableRow[menu.plantable]
 
@@ -6122,6 +6946,119 @@ function menu.applySettings()
 		C.SetConstructionMapRenderSectorBackground(menu.holomap, __CORE_DETAILMONITOR_STATIONBUILD.environment)
 		C.SetConstructionMapRenderTransformGizmo(menu.holomap, __CORE_DETAILMONITOR_STATIONBUILD.gizmo)
 	end
+end
+
+function menu.onTabScroll(direction)
+	menu.closeContextMenu()
+	if menu.panelMode and (menu.panelState.leftmenu or menu.panelState.rightmenu) then
+		menu.scrollPanelTab(direction)
+	end
+end
+
+function menu.scrollPanelTab(direction)
+	if menu.panelState.leftmenu then
+		local slot, row, col
+		for grouprow, group in ipairs(menu.groupedslots) do
+			for i = 1, config.numSlotsPerRow do
+				if group[i] then
+					if group[i][1] == menu.currentSlot then
+						if direction == "right" then
+							if i < config.numSlotsPerRow then
+								local nextgroup = group[i + 1]
+								if nextgroup then
+									slot = nextgroup[1]
+									row = grouprow + 1
+									col = i + 2
+								end
+							else
+								local nextgroup = menu.groupedslots[grouprow + 1] and menu.groupedslots[grouprow + 1][1] or nil
+								if nextgroup then
+									slot = nextgroup[1]
+									row = grouprow + 2
+									col = 2
+								end
+							end
+						elseif direction == "left" then
+							if i > 1 then
+								local nextgroup = group[i - 1]
+								if nextgroup then
+									slot = nextgroup[1]
+									row = grouprow + 1
+									col = i
+								end
+							else
+								local nextgroup = menu.groupedslots[grouprow - 1] and menu.groupedslots[grouprow - 1][config.numSlotsPerRow] or nil
+								if nextgroup then
+									slot = nextgroup[1]
+									row = grouprow
+									col = config.numSlotsPerRow + 1
+								end
+							end
+						end
+					end
+				end
+			end
+		end
+		if slot then
+			menu.buttonSelectSlot(slot, row, col)
+		end
+	end
+end
+
+function menu.onInputModeChanged(_, mode)
+	menu.panelMode = (C.GetImprovedControllerMode() == 1) and (mode == "gamepad")
+	Helper.updatePanelState(menu)
+	if not menu.noupdate then
+		menu.refreshMenu()
+	else
+		menu.inputModeHasChanged = true
+	end
+end
+
+function menu.updatePanelState()
+	menu.updateInputBar()
+end
+
+function menu.updateInputBar()
+	local inputs = config.inputBarStates["mouse"]
+	if GetControllerInfo() == "gamepad" then
+		if menu.panelMode then
+			local mapfocus = true
+			for _, active in pairs(menu.panelState) do
+				if active then
+					mapfocus = false
+				end
+			end
+			if mapfocus then
+				if menu.loadoutMode then
+					inputs = config.inputBarStates["newcontroller_loadout"]
+				elseif menu.hasFloatingSelection then
+					inputs = config.inputBarStates["newcontroller_selected"]
+				else
+					inputs = config.inputBarStates["newcontroller"]
+				end
+			else
+				if menu.contextMode then
+					inputs = config.inputBarStates["newcontroller"]
+				else
+					inputs = config.inputBarStates["newcontroller_sidebar"]
+				end
+			end
+		else
+			if menu.loadoutMode then
+				inputs = config.inputBarStates["controller_loadout"]
+			else
+				inputs = config.inputBarStates["controller"]
+			end
+		end
+	else
+		if menu.loadoutMode then
+			inputs = config.inputBarStates["mouse_loadout"]
+		elseif menu.selectedModule then
+			inputs = config.inputBarStates["mouse_selected"]
+		end
+	end
+	Helper.updateInputBar(menu, inputs.left, inputs.right)
 end
 
 -- kuertee start:
