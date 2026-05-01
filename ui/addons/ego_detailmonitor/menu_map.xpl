@@ -8322,6 +8322,9 @@ function menu.createObjectList(frame, instance)
 		local row = tabtable:addRow("property_tabs", { fixed = true, bgColor = Color["frame_background_black"], borderBelow = false })
 		row[1]:setBackgroundColSpan(maxNumCategoryColumns)
 		local rowCount = 1
+		-- start: chemodun - fix for big amout of tabs, looks like something started but not finished in vanilla (panelization and scroller icons)
+		local col = 1
+		-- end: chemodun - fix for big amout of tabs
 		if #config.objectCategories > 0 then
 			Helper.setTabScrollLeftIcon(menu, menu.panelState.leftmenu, row, 1, menu.scrollIconSize)
 			for i, entry in ipairs(config.objectCategories) do
@@ -8329,7 +8332,13 @@ function menu.createObjectList(frame, instance)
 					row = tabtable:addRow("property_tabs", { fixed = true, bgColor = Color["frame_background_black"], borderBelow = false })
 					row[1]:setBackgroundColSpan(maxNumCategoryColumns)
 					rowCount = rowCount + 1
+					-- start: chemodun - fix for big amout of tabs
+					col = 1
+					-- end: chemodun - fix for big amout of tabs
 				end
+				-- start: chemodun - fix for big amout of tabs
+				col = col + 1
+				-- end: chemodun - fix for big amout of tabs
 				local bgcolor = Color["row_title_background"]
 				local color = Color["icon_normal"]
 				if entry.category == menu.objectMode then
@@ -8345,7 +8354,9 @@ function menu.createObjectList(frame, instance)
 						menu.selectedCols.propertytabs = i
 					end
 				end
-				local col = i - math.floor((i - 1) / maxNumCategoryColumns) * maxNumCategoryColumns + 1
+				-- start: chemodun - fix for big amout of tabs
+				-- local col = i - math.floor((i - 1) / maxNumCategoryColumns) * maxNumCategoryColumns + 1
+				-- end: chemodun - fix for big amout of tabs
 				row[col]:createButton({ height = menu.sideBarWidth, width = menu.sideBarWidth, x = 0, y = Helper.standardContainerOffset, bgColor = bgcolor, mouseOverText = entry.name, scaling = false, helpOverlayID = entry.helpOverlayID, helpOverlayText = entry.helpOverlayText, active = active }):setIcon(entry.icon, { color = color})
 				row[col].handlers.onClick = function () return menu.buttonObjectSubMode(entry.category, col) end
 			end
@@ -8803,6 +8814,9 @@ function menu.createPropertyOwned(frame, instance)
 		local row = tabtable:addRow("property_tabs", { fixed = true, bgColor = Color["frame_background_black"], borderBelow = false })
 		row[1]:setBackgroundColSpan(maxNumCategoryColumns)
 		local rowCount = 1
+		-- start: chemodun - fix for big amout of tabs, looks like something started but not finished in vanilla (panelization and scroller icons)
+		local col = 1
+		-- end: chemodun - fix for big amout of tabs
 		if #config.propertyCategories > 0 then
 			Helper.setTabScrollLeftIcon(menu, menu.panelState.leftmenu, row, 1, menu.scrollIconSize)
 			for i, entry in ipairs(config.propertyCategories) do
@@ -8810,7 +8824,12 @@ function menu.createPropertyOwned(frame, instance)
 					row = tabtable:addRow("property_tabs", { fixed = true, bgColor = Color["frame_background_black"], borderBelow = false })
 					row[1]:setBackgroundColSpan(maxNumCategoryColumns)
 					rowCount = rowCount + 1
+					-- start: chemodun - fix for big amout of tabs
+					col = 1
+					-- end: chemodun - fix for big amout of tabs
 				end
+				-- start: chemodun - fix for big amout of tabs
+				col = col + 1
 				local bgcolor = Color["row_title_background"]
 				local color = Color["icon_normal"]
 				if entry.category == menu.propertyMode then
@@ -8826,8 +8845,8 @@ function menu.createPropertyOwned(frame, instance)
 					-- start: mycu callback
 					if menu.uix_callbacks ["onSetActiveStateForCVMode_on_createPropertyOwned"] then
 						for uix_id, uix_callback in pairs (menu.uix_callbacks ["onSetActiveStateForCVMode_on_createPropertyOwned"]) do
-								active = uix_callback (entry)
-							end
+							active = uix_callback (entry)
+						end
 					end
 					-- end: mycu callback
 
@@ -8837,7 +8856,9 @@ function menu.createPropertyOwned(frame, instance)
 						menu.selectedCols.propertytabs = i
 					end
 				end
-				local col = i - math.floor((i - 1) / maxNumCategoryColumns) * maxNumCategoryColumns + 1
+				-- start: chemodun - fix for big amout of tabs
+				-- local col = i - math.floor((i - 1) / maxNumCategoryColumns) * maxNumCategoryColumns + 1
+				-- end: chemodun - fix for big amout of tabs
 				row[col]:createButton({ height = menu.sideBarWidth, width = menu.sideBarWidth, x = 0, y = Helper.standardContainerOffset, bgColor = bgcolor, mouseOverText = entry.name, scaling = false, helpOverlayID = entry.helpOverlayID, helpOverlayText = entry.helpOverlayText, active = active }):setIcon(entry.icon, { color = color})
 				row[col].handlers.onClick = function () return menu.buttonPropertySubMode(entry.category, col) end
 			end
