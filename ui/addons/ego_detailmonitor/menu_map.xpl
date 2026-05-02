@@ -1912,11 +1912,17 @@ menu.uix_callbacks = {}
 function menu.uix_getConfig() return config end
 __userdata_uix_menu_map = __userdata_uix_menu_map or {}
 
+-- kuertee start: distance tool
 local uix_distanceTool_from_component
 local uix_distanceTool_from_posRot
 local uix_distanceTool_to_component
 local uix_distanceTool_to_posRot
--- kuertee end
+-- kuertee end: distance tool
+
+-- kuertee start: extra sort by distance
+local uix_extraSortByDistance_byObject_isActive
+local uix_extraSortByDistance_byObject_object
+-- kuertee end: extra sort by distance
 
 local function init()
 	Menus = Menus or { }
@@ -7727,6 +7733,10 @@ function menu.updateRenderedComponents()
 end
 
 function menu.componentSorter(sorttype)
+	-- kuertee start: extra sort by distance
+	uix_extraSortByDistance_byObject_isActive = nil
+	-- kuertee end: extra sort by distance
+
 	local sorter = Helper.sortNameAndObjectID
 	if sorttype == "nameinverse" then
 		sorter = function (a, b) return Helper.sortNameAndObjectID(a, b, true) end
@@ -7753,8 +7763,10 @@ function menu.componentSorter(sorttype)
 	elseif sorttype == "uix_extraSortByDistance_playerinverse" then
 		sorter = function (a, b) return menu.uix_sortDistanceFromPlayer (a, b, true) end
 	elseif sorttype == "uix_extraSortByDistance_object" then
+		uix_extraSortByDistance_byObject_isActive = true
 		sorter = menu.uix_sortDistanceFromObject
 	elseif sorttype == "uix_extraSortByDistance_objectinverse" then
+		uix_extraSortByDistance_byObject_isActive = true
 		sorter = function (a, b) return menu.uix_sortDistanceFromObject (a, b, true) end
 	-- kuertee end: extra sort by distance
 
@@ -8431,6 +8443,10 @@ function menu.createObjectList(frame, instance)
 			button:setIcon("table_arrow_inv_up", { width = iconheight, height = iconheight, x = buttonwidth - iconheight, y = (buttonheight - iconheight) / 2 })
 		end
 		row[tableColumn].handlers.onClick = function () return menu.buttonObjectSorter("relation") end
+
+		--kuertee start: extra sort by distance
+		-- menu.uix_renderExtraSortByDistance(tabtable, colSpanPerSorterColumn, buttonheight, iconheight)
+		--kuertee end: extra sort by distance
 	end
 
 	tabtable:setSelectedRow(menu.selectedRows.propertytabs or menu.selectedRows.infotable2 or 0)
@@ -8916,35 +8932,7 @@ function menu.createPropertyOwned(frame, instance)
 		row[tableColumn].handlers.onClick = function () return menu.buttonPropertySorter("sector") end
 
 		--kuertee start: extra sort by distance
-		-- "distance from player"
-		local buttonLabel = ffi.string(C.GetPlayerName ())
-		sorterColumn = 3
-		tableColumn = (sorterColumn - 1) * colSpanPerSorterColumn + 1
-		local button = row[tableColumn]:setColSpan(colSpanPerSorterColumn):createButton({ scaling = false, height = buttonheight }):setText(buttonLabel, { halign = "center", scaling = true })
-		if menu.propertySorterType == "uix_extraSortByDistance_player" then
-			button:setIcon("table_arrow_inv_down", { width = buttonheight, height = buttonheight, x = button:getColSpanWidth() - buttonheight })
-		elseif menu.propertySorterType == "uix_extraSortByDistance_playerinverse" then
-			button:setIcon("table_arrow_inv_up", { width = buttonheight, height = buttonheight, x = button:getColSpanWidth() - buttonheight })
-		end
-		row[tableColumn].handlers.onClick = function () return menu.buttonPropertySorter("uix_extraSortByDistance_player") end
-		-- "distance from object"
-		if menu.infoSubmenuObject then
-			local name, idcode, classid = GetComponentData(ConvertStringToLuaID(tostring(menu.infoSubmenuObject)), "name", "idcode", "classid")
-			if idcode ~= "" then
-				buttonLabel = idcode
-			else
-				buttonLabel = name
-			end
-			sorterColumn = 4
-			tableColumn = (sorterColumn - 1) * colSpanPerSorterColumn + 1
-			local button = row[tableColumn]:setColSpan(colSpanPerSorterColumn):createButton({ scaling = false, height = buttonheight }):setText(buttonLabel, { halign = "center", scaling = true })
-			if menu.propertySorterType == "uix_extraSortByDistance_object" then
-				button:setIcon("table_arrow_inv_down", { width = buttonheight, height = buttonheight, x = button:getColSpanWidth() - buttonheight })
-			elseif menu.propertySorterType == "uix_extraSortByDistance_objectinverse" then
-				button:setIcon("table_arrow_inv_up", { width = buttonheight, height = buttonheight, x = button:getColSpanWidth() - buttonheight })
-			end
-			row[tableColumn].handlers.onClick = function () return menu.buttonPropertySorter("uix_extraSortByDistance_object") end
-		end
+		menu.uix_renderExtraSortByDistance(tabtable, colSpanPerSorterColumn, buttonheight, iconheight)
 		--kuertee end: extra sort by distance
 	end
 
@@ -8959,6 +8947,67 @@ function menu.createPropertyOwned(frame, instance)
 	tabtable:addConnection(2, 2)
 	ftable:addConnection(3, 2)
 end
+
+-- kuertee start: extra sort by distance
+function menu.uix_renderExtraSortByDistance(tabtable, colSpanPerSorterColumn, buttonheight, iconheight)
+	local row = tabtable:addRow(true, { fixed = true })
+	row[1]:setColSpan(colSpanPerSorterColumn):createText(ReadText(1001, 2957) .. ReadText(1001, 120))
+
+	-- "distance from player"
+	local buttonLabel = ffi.string(C.GetPlayerName ())
+	sorterColumn = 3
+	tableColumn = (sorterColumn - 1) * colSpanPerSorterColumn + 1
+	local button = row[tableColumn]:setColSpan(colSpanPerSorterColumn):createButton({ scaling = false, height = buttonheight }):setText(buttonLabel, { halign = "center", scaling = true })
+	if menu.propertySorterType == "uix_extraSortByDistance_player" then
+		button:setIcon("table_arrow_inv_down", { width = buttonheight, height = buttonheight, x = button:getColSpanWidth() - buttonheight })
+	elseif menu.propertySorterType == "uix_extraSortByDistance_playerinverse" then
+		button:setIcon("table_arrow_inv_up", { width = buttonheight, height = buttonheight, x = button:getColSpanWidth() - buttonheight })
+	end
+	row[tableColumn].handlers.onClick = function ()
+		if menu.infoTableMode == "objectlist" then
+			return menu.buttonObjectSorter("uix_extraSortByDistance_player")
+		elseif menu.infoTableMode == "propertyowned" then
+			return menu.buttonPropertySorter("uix_extraSortByDistance_player")
+		end
+	end
+
+	-- "distance from object"
+	sorterColumn = 4
+	tableColumn = (sorterColumn - 1) * colSpanPerSorterColumn + 1
+	row[tableColumn]:setColSpan(colSpanPerSorterColumn)
+	local buttonwidth = row[tableColumn]:getWidth() - Helper.standardContainerOffset
+	if not uix_extraSortByDistance_byObject_isActive then
+		if menu.infoTableMode == "objectlist" then
+		elseif menu.infoTableMode == "propertyowned" then
+			uix_extraSortByDistance_byObject_object = menu.infoSubmenuObject
+		end
+	end
+	if uix_extraSortByDistance_byObject_object then
+		local name, idcode, classid = GetComponentData(ConvertStringToLuaID(tostring(menu.infoSubmenuObject)), "name", "idcode", "classid")
+		if idcode ~= "" then
+			buttonLabel = idcode
+		else
+			buttonLabel = name
+		end
+		local button = row[tableColumn]:createButton({ scaling = false, width = buttonwidth, height = buttonheight }):setText(buttonLabel, { halign = "center", scaling = true })
+		if menu.propertySorterType == "uix_extraSortByDistance_object" then
+			button:setIcon("table_arrow_inv_down", { width = iconheight, height = iconheight, x = buttonwidth - iconheight, y = (buttonheight - iconheight) / 2 })
+		elseif menu.propertySorterType == "uix_extraSortByDistance_objectinverse" then
+			button:setIcon("table_arrow_inv_up", { width = iconheight, height = iconheight, x = buttonwidth - iconheight, y = (buttonheight - iconheight) / 2 })
+		end
+		row[tableColumn].handlers.onClick = function ()
+			if menu.infoTableMode == "objectlist" then
+				return menu.buttonObjectSorter("uix_extraSortByDistance_object")
+			elseif menu.infoTableMode == "propertyowned" then
+				return menu.buttonPropertySorter("uix_extraSortByDistance_object")
+			end
+		end
+	else
+		buttonLabel = ""
+		local button = row[tableColumn]:setColSpan(colSpanPerSorterColumn):createButton({ active = false, scaling = false, width = buttonwidth, height = buttonheight }):setText(buttonLabel, { halign = "center", scaling = true })
+	end
+end
+-- kuertee end: extra sort by distance
 
 function menu.createPropertySection(instance, id, ftable, name, array, nonetext, showmodules, numdisplayed, hidesubordinates, sorter)
 	local maxicons = menu.infoTableData[instance].maxIcons
@@ -9014,6 +9063,7 @@ function menu.createPropertySection(instance, id, ftable, name, array, nonetext,
 							uix_openCloseDeployables_rowByName[uix_name][1]:createButton({active = true}):setText(uix_isExpanded and "-" or "+", { halign = "center" })
 							uix_openCloseDeployables_rowByName[uix_name][1].handlers.onClick = function()
 								__userdata_uix_menu_map.savedCollapsedDeployables[uix_name] = not __userdata_uix_menu_map.savedCollapsedDeployables[uix_name]
+								menu.refreshInfoFrame()
 							end
 						end
 					end
@@ -9025,6 +9075,7 @@ function menu.createPropertySection(instance, id, ftable, name, array, nonetext,
 				for _, uix_name in ipairs(uix_openCloseDeployables_names) do
 					__userdata_uix_menu_map.savedCollapsedDeployables[uix_name] = uix_isAnyExpanded
 				end
+				menu.refreshInfoFrame()
 			end
 		else
 		-- kuertee end: open/close deployables
@@ -11062,11 +11113,11 @@ function menu.createOrdersMenuHeader(frame, frameborder, instance)
 	-- local numcols = #config.infoCategories + 3
 	local numcols
 	if menu.uix_callbacks ["info_sub_menu_to_show"] then
-		numCols = uix_infoCategories + 3
+		numcols = uix_infoCategories + 3
 	else
 	-- end: InfoSubmenu To Show call-back
 
-		numCols = #config.infoCategories + 3
+		numcols = #config.infoCategories + 3
 	-- start: InfoSubmenu To Show call-back
 	end
 	-- end: InfoSubmenu To Show call-back
@@ -16444,6 +16495,7 @@ function menu.addCrewSection(mode, inputtable, inputobject, instance, infocrew, 
 					row[1]:createButton({active = true}):setText(uix_isCrewSectionOpen and "-" or "+", { halign = "center" })
 					row[1].handlers.onClick = function()
 						__userdata_uix_menu_map.savedCollapsedCrewList[uix_crewSectionId] = not __userdata_uix_menu_map.savedCollapsedCrewList[uix_crewSectionId]
+						menu.refreshInfoFrame()
 					end
 					-- kuertee end: open/close crew lists
 				end
@@ -16474,6 +16526,7 @@ function menu.addCrewSection(mode, inputtable, inputobject, instance, infocrew, 
 					row[1]:createButton({active = true}):setText(uix_isCrewSectionOpen and "-" or "+", { halign = "center" })
 					row[1].handlers.onClick = function()
 						__userdata_uix_menu_map.savedCollapsedCrewList[uix_crewSectionId] = not __userdata_uix_menu_map.savedCollapsedCrewList[uix_crewSectionId]
+						menu.createInfoFrame()
 					end
 					-- kuertee end
 				end
@@ -19031,7 +19084,6 @@ function menu.createMissionMode(frame)
 			-- create a space between guild and other offers.
 			local row = ftable:addRow(false, {})
 			row[2]:createText("")
-			local uix_isOtherListOpen = menu.uix_getIsMissionExpanded(menu.missionOfferList["other"], true, "uix_otherListOffer")
 			-- kuertee end
 
 			-- kuertee start: open/close mission lists
@@ -19042,6 +19094,7 @@ function menu.createMissionMode(frame)
 			-- kuertee end
 
 			-- kuertee start: open/close mission lists
+			local uix_isOtherListOpen = menu.uix_getIsMissionExpanded(menu.missionOfferList["other"], true, "uix_otherListOffer")
 			row[1]:createButton({active = menu.missionOfferList and menu.missionOfferList["other"] and #menu.missionOfferList["other"] > 0 and true or false}):setText(uix_isOtherListOpen and "-" or "+", { halign = "center" })
 			row[1].handlers.onClick = function () return menu.uix_expandMissionList(menu.missionOfferList["other"], row.index, nil, true, "uix_otherListOffer") end
 			-- kuertee end
@@ -19299,8 +19352,10 @@ function menu.createMissionMode(frame)
 				row[1]:setColSpan(9):createText("--- " .. ReadText(1001, 3302) .. " ---", { halign = "center" })
 			end
 			-- other
+			found = false
 
 			-- kuertee start: open/close mission lists
+			-- create a space between guild and other missions.
 			local row = ftable:addRow(false, {})
 			row[2]:createText("")
 			-- kuertee end: open/close mission lists
@@ -19313,6 +19368,7 @@ function menu.createMissionMode(frame)
 			-- kuertee end: open/close mission lists
 
 			-- kuertee start: open/close mission lists
+			local uix_isOtherListOpen, uix_isOtherListActive = menu.uix_getIsMissionExpanded(menu.missionList["other"], nil, "uix_otherList")
 			row[1]:createButton({active = menu.missionList and menu.missionList["other"] and #menu.missionList["other"] > 0 and true or false}):setText(uix_isOtherListOpen and "-" or "+", { halign = "center" })
 			row[1].handlers.onClick = function () return menu.uix_expandMissionList(menu.missionList["other"], row.index, nil, nil, "uix_otherList") end
 			if uix_isOtherListActive then
@@ -19320,13 +19376,11 @@ function menu.createMissionMode(frame)
 			end
 			-- kuertee end: open/close mission lists
 
-			local othermissionrowgroup = ftable:addRowGroup({  })
-
-			found = false
-
 			-- kuertee start: open/close mission lists
 			if uix_isOtherListOpen == true then
 			-- kuertee end: open/close mission lists
+
+				local othermissionrowgroup = ftable:addRowGroup({  })
 
 				local hadThreadMission = false
 				for _, entry in ipairs(menu.missionList["other"]) do
@@ -32189,6 +32243,16 @@ function menu.updateTableSelection(lastcomponent)
 				end
 			end
 		end
+
+		-- kuertee start: extra sort by distance
+		-- if (not refresh) and (menu.infoTableMode == "propertyowned" or menu.infoTableMode == "objectlist") and (not uix_extraSortByDistance_byObject_isActive) then
+		if (not refresh) and menu.infoTableMode == "propertyowned" and (not uix_extraSortByDistance_byObject_isActive) then
+			if uix_extraSortByDistance_byObject_object ~= menu.infoSubmenuObject then
+				refresh = true
+			end
+		end
+		-- kuertee end: extra sort by distance
+
 		if refresh then
 			menu.refreshInfoFrame()
 			return
@@ -32274,6 +32338,7 @@ function menu.addSelectedComponent(component, clear, noupdate)
 	if add then
 		menu.selectedcomponents[tostring(component)] = {}
 	end
+
 	if not noupdate then
 		menu.updateTableSelection(component)
 	end

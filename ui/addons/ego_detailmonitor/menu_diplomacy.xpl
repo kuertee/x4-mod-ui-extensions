@@ -1168,14 +1168,6 @@ function menu.onInputModeChanged(_, mode)
 end
 
 function menu.createInfoFrame()
-	-- kuertee start: callback
-	if menu.uix_callbacks ["createInfoFrame_on_start"] then
-		for uix_id, uix_callback in pairs (menu.uix_callbacks ["createInfoFrame_on_start"]) do
-			uix_callback (menu.infoFrame, tableProperties, config)
-		end
-	end
-	-- kuertee end: callback
-
 	-- remove old data
 	Helper.clearDataForRefresh(menu, config.infoLayer)
 
@@ -1204,6 +1196,16 @@ function menu.createInfoFrame()
 	}
 	menu.tableProperties.height = Helper.viewHeight - menu.tableProperties.y - Helper.frameBorder
 
+	-- kuertee start: callback
+	-- kuertee NOTE: moved from start of function to here because menu.tableProperties is required.
+	-- kuertee NOTE: callback name not changed for backward compatibility.
+	if menu.uix_callbacks ["createInfoFrame_on_start"] then
+		for uix_id, uix_callback in pairs (menu.uix_callbacks ["createInfoFrame_on_start"]) do
+			uix_callback (menu.infoFrame, menu.tableProperties, config)
+		end
+	end
+	-- kuertee end: callback
+
 	Helper.clearTableConnectionColumn(menu, 2)
 
 	if menu.mode == "factions" then
@@ -1220,7 +1222,7 @@ function menu.createInfoFrame()
 	-- kuertee start: callback
 	if menu.uix_callbacks ["createInfoFrame_on_info_frame_mode"] then
 		for uix_id, uix_callback in pairs (menu.uix_callbacks ["createInfoFrame_on_info_frame_mode"]) do
-			uix_callback (menu.infoFrame, tableProperties)
+			uix_callback (menu.infoFrame, menu.tableProperties)
 		end
 	end
 	-- kuertee end: callback
@@ -1293,10 +1295,11 @@ function menu.createFactions(frame, tableProperties)
 
 	-- kuertee start: callback
 	if menu.uix_callbacks["createFactions_after_sorter"] then
-		local nextCol = 5
+		local uix_row = titletable:addRow(true, { fixed = true })
+		local uix_col = 1
 		for uix_id, uix_callback in pairs (menu.uix_callbacks["createFactions_after_sorter"]) do
-			if uix_callback (frame, tableProperties, infotable, row, nextCol, arrowWidth) then
-				nextCol = nextCol + 1
+			if uix_callback (frame, tableProperties, infotable, uix_row, uix_col, arrowWidth) then
+				uix_col = uix_col + 1
 			end
 		end
 	end

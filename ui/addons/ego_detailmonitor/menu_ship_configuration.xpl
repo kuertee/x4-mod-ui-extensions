@@ -5695,16 +5695,21 @@ function menu.displaySlots(frame, firsttime)
 
 											-- start: mycu call-back
 											if menu.uix_callbacks ["displaySlots_on_before_create_button_mouseovertext"] then
+												if not mouseovertext then
+													mouseovertext = ""
+												end
+												if not untruncatedExtraText then
+													untruncatedExtraText = ""
+												end
 												for uix_id, uix_callback in pairs (menu.uix_callbacks ["displaySlots_on_before_create_button_mouseovertext"]) do
 													result = uix_callback (group[i].macro, plandata.macro, mouseovertext)
 													if result then
 														mouseovertext = result.mouseovertext
 													end
 												end
+												mouseovertext = untruncatedExtraText .. ((mouseovertext ~= "") and ("\n\n" .. mouseovertext) or "")
 											end
 											-- end: mycu call-back
-
-											mouseovertext = untruncatedExtraText .. ((mouseovertext ~= "") and ("\n\n" .. mouseovertext) or "")
 
 											local active = ((group[i].macro == plandata.macro) or (not hasmod))
 											local useable = hasstock and haslicence
@@ -5976,16 +5981,21 @@ function menu.displaySlots(frame, firsttime)
 
 							-- start: mycu call-back
 							if menu.uix_callbacks ["displaySlots_on_before_create_button_mouseovertext"] then
+								if not mouseovertext then
+									mouseovertext = ""
+								end
+								if not untruncatedExtraText then
+									untruncatedExtraText = ""
+								end
 								for uix_id, uix_callback in pairs (menu.uix_callbacks ["displaySlots_on_before_create_button_mouseovertext"]) do
 									result = uix_callback (group[i].macro, plandata.macro, mouseovertext)
 									if result then
 										mouseovertext = result.mouseovertext
 									end
 								end
+								mouseovertext = untruncatedExtraText .. ((mouseovertext ~= "") and ("\n\n" .. mouseovertext) or "")
 							end
 							-- end: mycu call-back
-
-							mouseovertext = untruncatedExtraText .. ((mouseovertext ~= "") and ("\n\n" .. mouseovertext) or "")
 
 							local active = ((group[i].macro == plandata.macro) or (not hasmod))
 							local useable = hasstock and haslicence
