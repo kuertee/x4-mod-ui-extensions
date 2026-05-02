@@ -1295,12 +1295,9 @@ function menu.createFactions(frame, tableProperties)
 
 	-- kuertee start: callback
 	if menu.uix_callbacks["createFactions_after_sorter"] then
-		local uix_row = titletable:addRow(true, { fixed = true })
-		local uix_col = 1
+		local uix_row, uix_nextFreeCol
 		for uix_id, uix_callback in pairs (menu.uix_callbacks["createFactions_after_sorter"]) do
-			if uix_callback (frame, tableProperties, infotable, uix_row, uix_col, arrowWidth) then
-				uix_col = uix_col + 1
-			end
+			uix_row, uix_nextFreeCol = uix_callback (frame, tableProperties, titletable, arrowWidth, uix_row, uix_nextFreeCol)
 		end
 	end
 	-- kuertee end: callback

@@ -1920,7 +1920,8 @@ local uix_distanceTool_to_posRot
 -- kuertee end: distance tool
 
 -- kuertee start: extra sort by distance
-local uix_extraSortByDistance_byObject_isActive
+local uix_extraSortByDistance_byObject_mode
+local uix_extraSortByDistance_byObject_potentialObject
 local uix_extraSortByDistance_byObject_object
 -- kuertee end: extra sort by distance
 
@@ -7734,7 +7735,7 @@ end
 
 function menu.componentSorter(sorttype)
 	-- kuertee start: extra sort by distance
-	uix_extraSortByDistance_byObject_isActive = nil
+	uix_extraSortByDistance_byObject_mode = nil
 	-- kuertee end: extra sort by distance
 
 	local sorter = Helper.sortNameAndObjectID
@@ -7759,14 +7760,16 @@ function menu.componentSorter(sorttype)
 
 	-- kuertee start: extra sort by distance
 	elseif sorttype == "uix_extraSortByDistance_player" then
+		uix_extraSortByDistance_byObject_mode = sorttype
 		sorter = menu.uix_sortDistanceFromPlayer
 	elseif sorttype == "uix_extraSortByDistance_playerinverse" then
+		uix_extraSortByDistance_byObject_mode = sorttype
 		sorter = function (a, b) return menu.uix_sortDistanceFromPlayer (a, b, true) end
 	elseif sorttype == "uix_extraSortByDistance_object" then
-		uix_extraSortByDistance_byObject_isActive = true
+		uix_extraSortByDistance_byObject_mode = sorttype
 		sorter = menu.uix_sortDistanceFromObject
 	elseif sorttype == "uix_extraSortByDistance_objectinverse" then
-		uix_extraSortByDistance_byObject_isActive = true
+		uix_extraSortByDistance_byObject_mode = sorttype
 		sorter = function (a, b) return menu.uix_sortDistanceFromObject (a, b, true) end
 	-- kuertee end: extra sort by distance
 
@@ -8445,7 +8448,7 @@ function menu.createObjectList(frame, instance)
 		row[tableColumn].handlers.onClick = function () return menu.buttonObjectSorter("relation") end
 
 		--kuertee start: extra sort by distance
-		-- menu.uix_renderExtraSortByDistance(tabtable, colSpanPerSorterColumn, buttonheight, iconheight)
+		menu.uix_renderExtraSortByDistance(tabtable, colSpanPerSorterColumn, buttonheight, iconheight)
 		--kuertee end: extra sort by distance
 	end
 
@@ -8958,9 +8961,9 @@ function menu.uix_renderExtraSortByDistance(tabtable, colSpanPerSorterColumn, bu
 	sorterColumn = 3
 	tableColumn = (sorterColumn - 1) * colSpanPerSorterColumn + 1
 	local button = row[tableColumn]:setColSpan(colSpanPerSorterColumn):createButton({ scaling = false, height = buttonheight }):setText(buttonLabel, { halign = "center", scaling = true })
-	if menu.propertySorterType == "uix_extraSortByDistance_player" then
+	if uix_extraSortByDistance_byObject_mode == "uix_extraSortByDistance_player" then
 		button:setIcon("table_arrow_inv_down", { width = buttonheight, height = buttonheight, x = button:getColSpanWidth() - buttonheight })
-	elseif menu.propertySorterType == "uix_extraSortByDistance_playerinverse" then
+	elseif uix_extraSortByDistance_byObject_mode == "uix_extraSortByDistance_playerinverse" then
 		button:setIcon("table_arrow_inv_up", { width = buttonheight, height = buttonheight, x = button:getColSpanWidth() - buttonheight })
 	end
 	row[tableColumn].handlers.onClick = function ()
@@ -8976,11 +8979,8 @@ function menu.uix_renderExtraSortByDistance(tabtable, colSpanPerSorterColumn, bu
 	tableColumn = (sorterColumn - 1) * colSpanPerSorterColumn + 1
 	row[tableColumn]:setColSpan(colSpanPerSorterColumn)
 	local buttonwidth = row[tableColumn]:getWidth() - Helper.standardContainerOffset
-	if not uix_extraSortByDistance_byObject_isActive then
-		if menu.infoTableMode == "objectlist" then
-		elseif menu.infoTableMode == "propertyowned" then
-			uix_extraSortByDistance_byObject_object = menu.infoSubmenuObject
-		end
+	if uix_extraSortByDistance_byObject_mode ~= "uix_extraSortByDistance_object" and uix_extraSortByDistance_byObject_mode ~= "uix_extraSortByDistance_objectinverse" then
+		uix_extraSortByDistance_byObject_object = uix_extraSortByDistance_byObject_potentialObject
 	end
 	if uix_extraSortByDistance_byObject_object then
 		local name, idcode, classid = GetComponentData(ConvertStringToLuaID(tostring(menu.infoSubmenuObject)), "name", "idcode", "classid")
@@ -8990,9 +8990,9 @@ function menu.uix_renderExtraSortByDistance(tabtable, colSpanPerSorterColumn, bu
 			buttonLabel = name
 		end
 		local button = row[tableColumn]:createButton({ scaling = false, width = buttonwidth, height = buttonheight }):setText(buttonLabel, { halign = "center", scaling = true })
-		if menu.propertySorterType == "uix_extraSortByDistance_object" then
+		if uix_extraSortByDistance_byObject_mode == "uix_extraSortByDistance_object" then
 			button:setIcon("table_arrow_inv_down", { width = iconheight, height = iconheight, x = buttonwidth - iconheight, y = (buttonheight - iconheight) / 2 })
-		elseif menu.propertySorterType == "uix_extraSortByDistance_objectinverse" then
+		elseif uix_extraSortByDistance_byObject_mode == "uix_extraSortByDistance_objectinverse" then
 			button:setIcon("table_arrow_inv_up", { width = iconheight, height = iconheight, x = buttonwidth - iconheight, y = (buttonheight - iconheight) / 2 })
 		end
 		row[tableColumn].handlers.onClick = function ()
@@ -32245,9 +32245,8 @@ function menu.updateTableSelection(lastcomponent)
 		end
 
 		-- kuertee start: extra sort by distance
-		-- if (not refresh) and (menu.infoTableMode == "propertyowned" or menu.infoTableMode == "objectlist") and (not uix_extraSortByDistance_byObject_isActive) then
-		if (not refresh) and menu.infoTableMode == "propertyowned" and (not uix_extraSortByDistance_byObject_isActive) then
-			if uix_extraSortByDistance_byObject_object ~= menu.infoSubmenuObject then
+		if (not refresh) and (menu.infoTableMode == "propertyowned" or menu.infoTableMode == "objectlist") and (not uix_extraSortByDistance_byObject_mode) then
+			if uix_extraSortByDistance_byObject_object ~= uix_extraSortByDistance_byObject_potentialObject then
 				refresh = true
 			end
 		end
@@ -32334,6 +32333,14 @@ function menu.addSelectedComponent(component, clear, noupdate)
 			-- add -> nothing to do
 		end
 	end
+
+	-- kuertee start: extra sort by distance
+	uix_extraSortByDistance_byObject_potentialObject = nil
+	if not next(menu.selectedcomponents) and add then
+		-- always set uix_extraSortByDistance_byObject_potentialObject to only the first component added to menu.selectedcomponents
+		uix_extraSortByDistance_byObject_potentialObject = component
+	end
+	-- kuertee end: extra sort by distance
 
 	if add then
 		menu.selectedcomponents[tostring(component)] = {}
