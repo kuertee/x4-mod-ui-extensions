@@ -5091,26 +5091,20 @@ function menu.insertLuaAction(actiontype, istobedisplayed)
 		-- end: aegs call-back
 				
 		-- start: cpsdo call-back (shipOverview)
-		do
-			local callbacks = menu.uix_callbacks and menu.uix_callbacks["cpsdo_map_rightMenu_shipLogistic_insert"]
-			if not callbacks then
-				-- nothing
-			else
-				local macro = GetComponentData(convertedComponent, "macro")
-
-				for _, cb in next, callbacks do
-					local ok, show, text = pcall(cb, macro)
-					if ok and show then
-						menu.insertInteractionContent("main", {
-							type = "logicalstationoverview",
-							text = text,
-							helpOverlayID = "interactmenu_logicalstationoverview",
-							helpOverlayText = " ",
-							helpOverlayHighlightOnly = true,
-							script = menu.buttonStationOverview,
-						})
-						return
-					end
+		if menu.uix_callbacks["cpsdo_map_rightMenu_shipLogistic_insert"] then
+			local macro = GetComponentData(convertedComponent, "macro")
+			for _, cb in next, menu.uix_callbacks["cpsdo_map_rightMenu_shipLogistic_insert"] do
+				local ok, show, text = pcall(cb, macro)
+				if ok and show then
+					menu.insertInteractionContent("main", {
+						type = "logicalstationoverview",
+						text = text,
+						helpOverlayID = "interactmenu_logicalstationoverview",
+						helpOverlayText = " ",
+						helpOverlayHighlightOnly = true,
+						script = menu.buttonStationOverview,
+					})
+					return
 				end
 			end
 		end
@@ -6653,48 +6647,37 @@ function menu.insertLuaAction(actiontype, istobedisplayed)
 		-- end: aegs call-back
 		
 		-- start: cpsdo call-back (rightMenu shipBuilding insert)
-		do
-			local inserted = false
+		local inserted = false
+		if menu.uix_callbacks["cpsdo_map_rightMenu_shipBuildShip_insert"] then
+			for uix_id, uix_callback in pairs(menu.uix_callbacks["cpsdo_map_rightMenu_shipBuildShip_insert"]) do
+				local ok, state, entry = pcall(
+					uix_callback,
+					shiptrader,
+					isdock,
+					GetComponentData(convertedComponent, "macro"),
+					doessellshipstoplayer,
+					isplayerownedtarget,
+					actiontype,
+					menu
+				)
 
-			if menu.uix_callbacks["cpsdo_map_rightMenu_shipBuildShip_insert"] then
-				for uix_id, uix_callback in pairs(menu.uix_callbacks["cpsdo_map_rightMenu_shipBuildShip_insert"]) do
-					local ok, state, entry = pcall(
-						uix_callback,
-						shiptrader,
-						isdock,
-						GetComponentData(convertedComponent, "macro"),
-						doessellshipstoplayer,
-						isplayerownedtarget,
-						actiontype,
-						menu
-					)
+				if ok and state and type(entry) == "table" then
+					local category = entry.category or "main"
 
-					if ok and state and type(entry) == "table" then
-						local category = entry.category or "main"
+					menu.insertInteractionContent(category, {
+						type              = entry.type or actiontype, -- é»˜è®¤æ²¿ç”¨ buildships
+						text              = entry.text or ReadText(1001, 7875),
+						helpOverlayID     = entry.helpOverlayID or "interactmenu_buildship",
+						helpOverlayText   = entry.helpOverlayText or " ",
+						helpOverlayHighlightOnly = (entry.helpOverlayHighlightOnly ~= false),
+						script            = entry.script or (function () return menu.buttonShipConfig("purchase") end),
+						active            = (entry.active ~= false),
+						mouseOverText     = entry.mouseOverText or "",
+					})
 
-						-- å¦‚æžœä½ æƒ³â€œæ›¿æ¢åŽŸç‰ˆæŒ‰é’®â€ï¼Œå›žè°ƒé‡Œç»™ entry.replace=true
-						if entry.replace then
-							-- ä½ è‡ªå·±æŽ§åˆ¶ï¼šæ›¿æ¢æ—¶ä½ éœ€è¦åœ¨åŽŸç‰ˆæŒ‰é’®æ’å…¥å‰è°ƒç”¨æœ¬æ®µï¼Œå¹¶ä¸”å¤–å±‚é€»è¾‘è¦è·³è¿‡åŽŸæ’å…¥
-							-- è¿™é‡Œä»…æä¾› inserted æ ‡è®°ç»™ä½ å¤–å±‚ç”¨
-						end
-
-						menu.insertInteractionContent(category, {
-							type              = entry.type or actiontype, -- é»˜è®¤æ²¿ç”¨ buildships
-							text              = entry.text or ReadText(1001, 7875),
-							helpOverlayID     = entry.helpOverlayID or "interactmenu_buildship",
-							helpOverlayText   = entry.helpOverlayText or " ",
-							helpOverlayHighlightOnly = (entry.helpOverlayHighlightOnly ~= false),
-							script            = entry.script or (function () return menu.buttonShipConfig("purchase") end),
-							active            = (entry.active ~= false),
-							mouseOverText     = entry.mouseOverText or "",
-						})
-
-						inserted = true
-					end
+					inserted = true
 				end
 			end
-
-			-- inserted è¿™ä¸ªæ ‡è®°å¦‚æžœä½ è¦â€œæ›¿æ¢åŽŸç‰ˆæŒ‰é’®â€ï¼Œå¯ä»¥åœ¨å¤–å±‚ç”¨å®ƒå†³å®šæ˜¯å¦è·³è¿‡åŽŸç‰ˆæ’å…¥
 		end
 		-- end: cpsdo call-back
 
