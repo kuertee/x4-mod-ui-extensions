@@ -16492,7 +16492,7 @@ function menu.addCrewSection(mode, inputtable, inputobject, instance, infocrew, 
 					-- kuertee end: open/close crew lists
 
 					-- kuertee start: open/close crew lists
-					row[1]:createButton({active = true}):setText(uix_isCrewSectionOpen and "-" or "+", { halign = "center" })
+					row[1]:createButton({active = true, height = Helper.headerRowCenteredProperties.minRowHeight}):setText(uix_isCrewSectionOpen and "-" or "+", { halign = "center" })
 					row[1].handlers.onClick = function()
 						__userdata_uix_menu_map.savedCollapsedCrewList[uix_crewSectionId] = not __userdata_uix_menu_map.savedCollapsedCrewList[uix_crewSectionId]
 						menu.refreshInfoFrame()
@@ -18914,7 +18914,7 @@ function menu.createMissionMode(frame)
 
 				-- kuertee start: open/close mission lists
 				local uix_isPlotListOpen = menu.uix_getIsMissionExpanded(menu.missionOfferList["plot"], true, "uix_plotListOffer")
-				row[1]:createButton({active = menu.missionOfferList and menu.missionOfferList["plot"] and #menu.missionOfferList["plot"] > 0 and true or false}):setText(uix_isPlotListOpen and "-" or "+", { halign = "center" })
+				row[1]:createButton({active = menu.missionOfferList and menu.missionOfferList["plot"] and #menu.missionOfferList["plot"] > 0 and true or false, height = Helper.headerRowCenteredProperties.minRowHeight}):setText(uix_isPlotListOpen and "-" or "+", { halign = "center" })
 				row[1].handlers.onClick = function () return menu.uix_expandMissionList(menu.missionOfferList["plot"], row.index, nil, true, "uix_plotListOffer") end
 				-- kuertee end: open/close mission lists
 
@@ -19013,7 +19013,7 @@ function menu.createMissionMode(frame)
 			-- kuertee end: open/close mission lists
 
 			-- kuertee start: open/close mission lists
-			row[1]:createButton({active = menu.missionOfferList and menu.missionOfferList["guild"] and #menu.missionOfferList["guild"] > 0 and true or false}):setText(uix_isGuildListOpen and "-" or "+", { halign = "center" })
+			row[1]:createButton({active = menu.missionOfferList and menu.missionOfferList["guild"] and #menu.missionOfferList["guild"] > 0 and true or false, height = Helper.headerRowCenteredProperties.minRowHeight}):setText(uix_isGuildListOpen and "-" or "+", { halign = "center" })
 			row[1].handlers.onClick = function () return menu.uix_expandMissionList(menu.missionOfferList["guild"], row.index, nil, true, "uix_guildListOffer") end
 			-- kuertee end: open/close mission lists
 
@@ -19095,7 +19095,7 @@ function menu.createMissionMode(frame)
 
 			-- kuertee start: open/close mission lists
 			local uix_isOtherListOpen = menu.uix_getIsMissionExpanded(menu.missionOfferList["other"], true, "uix_otherListOffer")
-			row[1]:createButton({active = menu.missionOfferList and menu.missionOfferList["other"] and #menu.missionOfferList["other"] > 0 and true or false}):setText(uix_isOtherListOpen and "-" or "+", { halign = "center" })
+			row[1]:createButton({active = menu.missionOfferList and menu.missionOfferList["other"] and #menu.missionOfferList["other"] > 0 and true or false, height = Helper.headerRowCenteredProperties.minRowHeight}):setText(uix_isOtherListOpen and "-" or "+", { halign = "center" })
 			row[1].handlers.onClick = function () return menu.uix_expandMissionList(menu.missionOfferList["other"], row.index, nil, true, "uix_otherListOffer") end
 			-- kuertee end
 
@@ -19159,11 +19159,11 @@ function menu.createMissionMode(frame)
 			-- local row = ftable:addRow(nil, Helper.headerRowProperties)
 			-- row[1]:setColSpan(9):createText(ReadText(1001, 5701), Helper.headerRowCenteredProperties)
 			local row = ftable:addRow(true, Helper.headerRowProperties)
-			row[2]:setColSpan(8):createText(ReadText(1001, 3341), Helper.headerRowCenteredProperties)
+			row[2]:setColSpan(8):createText(ReadText(1001, 5701), Helper.headerRowCenteredProperties)
 			-- kuertee end: open/close mission lists
 
 			-- kuertee start: open/close mission lists
-			row[1]:createButton({active = menu.missionList and menu.missionList["plot"] and #menu.missionList["plot"] > 0 and true or false}):setText(uix_isPlotListOpen and "-" or "+", { halign = "center" })
+			row[1]:createButton({active = menu.missionList and menu.missionList["plot"] and #menu.missionList["plot"] > 0 and true or false, height = Helper.headerRowCenteredProperties.minRowHeight}):setText(uix_isPlotListOpen and "-" or "+", { halign = "center" })
 			row[1].handlers.onClick = function () return menu.uix_expandMissionList(menu.missionList["plot"], row.index, nil, nil, "uix_plotList") end
 			if uix_isPlotListActive then
 				row[2].properties.color = Color["text_mission"]
@@ -19266,7 +19266,7 @@ function menu.createMissionMode(frame)
 			local guildmissionrowgroup = ftable:addRowGroup({  })
 
 			-- kuertee start: open/close mission lists
-			row[1]:createButton({active = menu.missionList and menu.missionList["guild"] and #menu.missionList["guild"] > 0 and true or false}):setText(uix_isGuildListOpen and "-" or "+", { halign = "center" })
+			row[1]:createButton({active = menu.missionList and menu.missionList["guild"] and #menu.missionList["guild"] > 0 and true or false, height = Helper.headerRowCenteredProperties.minRowHeight}):setText(uix_isGuildListOpen and "-" or "+", { halign = "center" })
 			row[1].handlers.onClick = function () return menu.uix_expandMissionList(menu.missionList["guild"], row.index, nil, nil, "uix_guildList") end
 			if uix_isGuildListActive then
 				row[2].properties.color = Color["text_mission"]
@@ -19369,7 +19369,7 @@ function menu.createMissionMode(frame)
 
 			-- kuertee start: open/close mission lists
 			local uix_isOtherListOpen, uix_isOtherListActive = menu.uix_getIsMissionExpanded(menu.missionList["other"], nil, "uix_otherList")
-			row[1]:createButton({active = menu.missionList and menu.missionList["other"] and #menu.missionList["other"] > 0 and true or false}):setText(uix_isOtherListOpen and "-" or "+", { halign = "center" })
+			row[1]:createButton({active = menu.missionList and menu.missionList["other"] and #menu.missionList["other"] > 0 and true or false, height = Helper.headerRowCenteredProperties.minRowHeight}):setText(uix_isOtherListOpen and "-" or "+", { halign = "center" })
 			row[1].handlers.onClick = function () return menu.uix_expandMissionList(menu.missionList["other"], row.index, nil, nil, "uix_otherList") end
 			if uix_isOtherListActive then
 				row[2].properties.color = Color["text_mission"]
@@ -19856,7 +19856,11 @@ function menu.createMissionModeHeader(frame, frameborder, instance)
 
 	-- title
 	local row = ftable:addRow(nil, { fixed = true, bgColor = Color["frame_background_black"], borderBelow = false })
-	row[1]:setColSpan(numcols):createText((menu.infoTableMode ~= "missionoffer") and ReadText(1001, 3323) or ReadText(1001, 3324), Helper.tabTitleTextProperties)
+
+	-- kuertee start: open/close mission lists
+	-- row[1]:setColSpan(numcols):createText((menu.infoTableMode ~= "missionoffer") and ReadText(1001, 3323) or ReadText(1001, 3324), Helper.tabTitleTextProperties)
+	row[2]:setColSpan(numcols - 1):createText((menu.infoTableMode ~= "missionoffer") and ReadText(1001, 3323) or ReadText(1001, 3324), Helper.tabTitleTextProperties)
+	-- kuertee end: open/close mission lists
 
 	if (menu.infoTableMode ~= "missionoffer") or ((menu.missionOfferMode ~= "operation") and isonline) then
 		local selectedtabname = ""
@@ -19906,7 +19910,11 @@ function menu.createMissionModeHeader(frame, frameborder, instance)
 		--- sub title ---
 		local row = ftable:addRow(false, Helper.headerRowProperties)
 		row.properties.fixed = true
-		row[1]:setColSpan(numcols):createText(selectedtabname, Helper.subTabTitleTextProperties)
+
+		-- kuertee start: open/close mission lists
+		-- row[1]:setColSpan(numcols):createText(selectedtabname, Helper.subTabTitleTextProperties)
+		row[2]:setColSpan(numcols - 1):createText(selectedtabname, Helper.subTabTitleTextProperties)
+		-- kuertee end: open/close mission lists
 	end
 
 	if menu.selectedRows["missionModeHeaderTable" .. instance] then
