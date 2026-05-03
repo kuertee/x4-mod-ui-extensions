@@ -1959,7 +1959,9 @@ local function init()
 	end
 
 	RegisterEvent("mapfilter", menu.filterUpdate)
-	registerForEvent("gameLoadingDone", getElement("Scene.UIContract"), menu.onLoadingDone)
+	local contract = getElement("Scene.UIContract")
+	registerForEvent("gameLoadingDone", contract, menu.onLoadingDone)
+	registerForEvent("setKnownToPlayer", contract, menu.onSetKnownToPlayer)
 
 	-- kuertee start:
 	menu.init_kuertee()
@@ -2007,6 +2009,14 @@ function menu.init_kuertee ()
 	-- kuertee end: open/close crew lists
 end
 -- kuertee end
+
+function menu.onSetKnownToPlayer(_, component)
+	if menu.shown then
+		if IsComponentClass(component, "sector") then
+			menu.updateKnownSectors = true
+		end
+	end
+end
 
 function menu.createLegend()
 	if menu.haslegend then
@@ -6247,6 +6257,11 @@ function menu.onShowMenu(state)
 	Helper.setTabScrollCallback(menu, menu.onTabScroll)
 	registerForEvent("inputModeChanged", getElement("Scene.UIContract"), menu.onInputModeChanged)
 
+	if not menu.setKnownToPlayerNotification then
+		menu.setKnownToPlayerNotification = true
+		NotifyOnSetKnownToPlayer(getElement("Scene.UIContract"))
+	end
+
 	menu.sound_ambient = StartPlayingSound("ui_map_ambient")
 	menu.displayMenu(true)
 
@@ -8307,6 +8322,9 @@ function menu.createObjectList(frame, instance)
 		local row = tabtable:addRow("property_tabs", { fixed = true, bgColor = Color["frame_background_black"], borderBelow = false })
 		row[1]:setBackgroundColSpan(maxNumCategoryColumns)
 		local rowCount = 1
+		-- start: chemodun - fix for big amout of tabs, looks like something started but not finished in vanilla (panelization and scroller icons)
+		local col = 1
+		-- end: chemodun - fix for big amout of tabs
 		if #config.objectCategories > 0 then
 			Helper.setTabScrollLeftIcon(menu, menu.panelState.leftmenu, row, 1, menu.scrollIconSize)
 			for i, entry in ipairs(config.objectCategories) do
@@ -8314,7 +8332,13 @@ function menu.createObjectList(frame, instance)
 					row = tabtable:addRow("property_tabs", { fixed = true, bgColor = Color["frame_background_black"], borderBelow = false })
 					row[1]:setBackgroundColSpan(maxNumCategoryColumns)
 					rowCount = rowCount + 1
+					-- start: chemodun - fix for big amout of tabs
+					col = 1
+					-- end: chemodun - fix for big amout of tabs
 				end
+				-- start: chemodun - fix for big amout of tabs
+				col = col + 1
+				-- end: chemodun - fix for big amout of tabs
 				local bgcolor = Color["row_title_background"]
 				local color = Color["icon_normal"]
 				if entry.category == menu.objectMode then
@@ -8330,7 +8354,9 @@ function menu.createObjectList(frame, instance)
 						menu.selectedCols.propertytabs = i
 					end
 				end
-				local col = i - math.floor((i - 1) / maxNumCategoryColumns) * maxNumCategoryColumns + 1
+				-- start: chemodun - fix for big amout of tabs
+				-- local col = i - math.floor((i - 1) / maxNumCategoryColumns) * maxNumCategoryColumns + 1
+				-- end: chemodun - fix for big amout of tabs
 				row[col]:createButton({ height = menu.sideBarWidth, width = menu.sideBarWidth, x = 0, y = Helper.standardContainerOffset, bgColor = bgcolor, mouseOverText = entry.name, scaling = false, helpOverlayID = entry.helpOverlayID, helpOverlayText = entry.helpOverlayText, active = active }):setIcon(entry.icon, { color = color})
 				row[col].handlers.onClick = function () return menu.buttonObjectSubMode(entry.category, col) end
 			end
@@ -8788,6 +8814,9 @@ function menu.createPropertyOwned(frame, instance)
 		local row = tabtable:addRow("property_tabs", { fixed = true, bgColor = Color["frame_background_black"], borderBelow = false })
 		row[1]:setBackgroundColSpan(maxNumCategoryColumns)
 		local rowCount = 1
+		-- start: chemodun - fix for big amout of tabs, looks like something started but not finished in vanilla (panelization and scroller icons)
+		local col = 1
+		-- end: chemodun - fix for big amout of tabs
 		if #config.propertyCategories > 0 then
 			Helper.setTabScrollLeftIcon(menu, menu.panelState.leftmenu, row, 1, menu.scrollIconSize)
 			for i, entry in ipairs(config.propertyCategories) do
@@ -8795,7 +8824,12 @@ function menu.createPropertyOwned(frame, instance)
 					row = tabtable:addRow("property_tabs", { fixed = true, bgColor = Color["frame_background_black"], borderBelow = false })
 					row[1]:setBackgroundColSpan(maxNumCategoryColumns)
 					rowCount = rowCount + 1
+					-- start: chemodun - fix for big amout of tabs
+					col = 1
+					-- end: chemodun - fix for big amout of tabs
 				end
+				-- start: chemodun - fix for big amout of tabs
+				col = col + 1
 				local bgcolor = Color["row_title_background"]
 				local color = Color["icon_normal"]
 				if entry.category == menu.propertyMode then
@@ -8811,8 +8845,8 @@ function menu.createPropertyOwned(frame, instance)
 					-- start: mycu callback
 					if menu.uix_callbacks ["onSetActiveStateForCVMode_on_createPropertyOwned"] then
 						for uix_id, uix_callback in pairs (menu.uix_callbacks ["onSetActiveStateForCVMode_on_createPropertyOwned"]) do
-								active = uix_callback (entry)
-							end
+							active = uix_callback (entry)
+						end
 					end
 					-- end: mycu callback
 
@@ -8822,7 +8856,9 @@ function menu.createPropertyOwned(frame, instance)
 						menu.selectedCols.propertytabs = i
 					end
 				end
-				local col = i - math.floor((i - 1) / maxNumCategoryColumns) * maxNumCategoryColumns + 1
+				-- start: chemodun - fix for big amout of tabs
+				-- local col = i - math.floor((i - 1) / maxNumCategoryColumns) * maxNumCategoryColumns + 1
+				-- end: chemodun - fix for big amout of tabs
 				row[col]:createButton({ height = menu.sideBarWidth, width = menu.sideBarWidth, x = 0, y = Helper.standardContainerOffset, bgColor = bgcolor, mouseOverText = entry.name, scaling = false, helpOverlayID = entry.helpOverlayID, helpOverlayText = entry.helpOverlayText, active = active }):setIcon(entry.icon, { color = color})
 				row[col].handlers.onClick = function () return menu.buttonPropertySubMode(entry.category, col) end
 			end
@@ -14419,7 +14455,7 @@ function menu.setupInfoSubmenuRows(mode, inputtable, inputobject, instance)
 			row = menu.addInfoSubmenuRow(instance, inputtable, statsrowgroup, row, locrowdata, false, false, false, 1, indentsize)
 		else
 			for i = 0, numtotalquadrants - 1 do
-				locrowdata = { false, (ReadText(1001, 13211) .. " (" .. ReadText(20220, dpstable[i].quadranttextid) .. ")" .. ReadText(1001, 120)), defenceinfo_high and (function() return (ConvertIntegerString(Helper.round(dpstable[i].dps), true, 0, true) .. " " .. ReadText(1001, 119)) end) or (unknowntext .. " " .. ReadText(1001, 119)) }	-- Weapon Output, MW
+				locrowdata = { i == 0, (ReadText(1001, 13211) .. " (" .. ReadText(20220, dpstable[i].quadranttextid) .. ")" .. ReadText(1001, 120)), defenceinfo_high and (function() return (ConvertIntegerString(Helper.round(dpstable[i].dps), true, 0, true) .. " " .. ReadText(1001, 119)) end) or (unknowntext .. " " .. ReadText(1001, 119)) }	-- Weapon Output, MW
 				row = menu.addInfoSubmenuRow(instance, inputtable, statsrowgroup, row, locrowdata, false, false, false, 1, indentsize)
 			end
 		end
@@ -20604,7 +20640,7 @@ function menu.createPlayerInfo(frame, width, height, offsetx, offsety)
 	})
 	menu.playerinfotable = ftable
 	ftable:setColWidth(1, iconsize, false)
-	ftable:setColWidthPercent(3, 30)
+	ftable:setColWidthPercent(3, 60)
 	ftable:setColWidth(4, textheight, false)
 
 	local row = ftable:addRow(true, { fixed = true, borderBelow = false })
@@ -22055,7 +22091,7 @@ function menu.onInputModeChanged(_, mode)
 end
 
 function menu.createNewOrderContext(frame, instance)
-	local ftable = frame:addTable(1, { tabOrder = 3, x = Helper.borderSize, y = Helper.borderSize, width = menu.contextMenuData.width, highlightMode = "off" })
+	local ftable = frame:addTable(1, { tabOrder = 3, x = Helper.borderSize, y = Helper.borderSize, width = menu.contextMenuData.width, highlightMode = "offnormalscroll" })
 
 	local aipilot = GetComponentData(menu.infoSubmenuObject, "assignedaipilot")
 	local adjustedskill = aipilot and math.floor(C.GetEntityCombinedSkill(ConvertIDTo64Bit(aipilot), nil, "aipilot")) or -1
@@ -28615,6 +28651,11 @@ function menu.onUpdate()
 	if menu.mouseEmulation ~= C.IsMouseEmulationActive() then
 		menu.mouseEmulation = not menu.mouseEmulation
 		menu.updateInputBar()
+	end
+
+	if menu.updateKnownSectors then
+		menu.prepareKnownSectors()
+		menu.updateKnownSectors = nil
 	end
 end
 
