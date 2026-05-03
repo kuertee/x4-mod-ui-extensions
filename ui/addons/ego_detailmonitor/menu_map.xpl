@@ -1,4 +1,4 @@
-
+ï»¿
 -- section == gMain_map
 -- param == { 0, 0, showzone, focuscomponent [, history] [, mode, modeparam] [, showmultiverse] [, focusoffset] }
 
@@ -9063,7 +9063,6 @@ end
 function menu.createPropertySection(instance, id, ftable, name, array, nonetext, showmodules, numdisplayed, hidesubordinates, sorter)
 	local maxicons = menu.infoTableData[instance].maxIcons
 
-
 	-- kuertee start: open/close deployables
 	local uix_openCloseDeployables_headerRow
 	if menu.propertyMode == "deployables" then
@@ -9285,10 +9284,10 @@ function menu.getOrderInfo(ship, gettargetname)
 							if j == 1 then
 								overridewares = overridewares .. "\n\n" .. ReadText(1001, 11651) .. ReadText(1001, 120)
 							elseif j > 5 then
-								overridewares = overridewares .. "\n· " .. ((#entry.value == 6) and GetWareData(ware, "name") or string.format(ReadText(1001, 11633), #entry.value - 5))
+								overridewares = overridewares .. "\nÂ· " .. ((#entry.value == 6) and GetWareData(ware, "name") or string.format(ReadText(1001, 11633), #entry.value - 5))
 								break
 							end
-							overridewares = overridewares .. "\n· " .. GetWareData(ware, "name")
+							overridewares = overridewares .. "\nÂ· " .. GetWareData(ware, "name")
 						end
 						break
 					end
@@ -9329,10 +9328,10 @@ function menu.getOrderInfo(ship, gettargetname)
 						if j == 1 then
 							overridewares = overridewares .. "\n\n" .. ReadText(1001, 11651) .. ReadText(1001, 120)
 						elseif j > 5 then
-							overridewares = overridewares .. "\n· " .. ((#entry.value == 6) and GetWareData(ware, "name") or string.format(ReadText(1001, 11633), #entry.value - 5))
+							overridewares = overridewares .. "\nÂ· " .. ((#entry.value == 6) and GetWareData(ware, "name") or string.format(ReadText(1001, 11633), #entry.value - 5))
 							break
 						end
-						overridewares = overridewares .. "\n· " .. GetWareData(ware, "name")
+						overridewares = overridewares .. "\nÂ· " .. GetWareData(ware, "name")
 					end
 					break
 				end
@@ -10033,7 +10032,7 @@ function menu.createFleetUnitRow(instance, ftable, rowgroup, fleetunit, iteratio
 					local buf = ffi.new("const char*[?]", n)
 					n = C.GetFleetUnitProblematicEquipmentWares(buf, n, fleetunit)
 					for i = 0, n - 1 do
-						mouseovertext2 = mouseovertext2 .. "\n· " .. GetWareData(ffi.string(buf[i]), "name")
+						mouseovertext2 = mouseovertext2 .. "\nÂ· " .. GetWareData(ffi.string(buf[i]), "name")
 					end
 				end
 			elseif issue == "hacked" then
@@ -10091,7 +10090,7 @@ function menu.createFleetUnitRow(instance, ftable, rowgroup, fleetunit, iteratio
 					duration = ColorText["text_warning"]
 					mouseovertext2 = mouseovertext2 .. "\n\n" .. ColorText["text_warning"] .. ReadText(1001, 8018) .. "\n\n" .. ReadText(1001, 8046) .. ReadText(1001, 120)
 					for i, entry in ipairs(missingresources) do
-						mouseovertext2 = mouseovertext2 .. "\n· " .. entry.amount .. ReadText(1001, 42) .. " " .. GetWareData(entry.ware, "name")
+						mouseovertext2 = mouseovertext2 .. "\nÂ· " .. entry.amount .. ReadText(1001, 42) .. " " .. GetWareData(entry.ware, "name")
 					end
 				end
 
@@ -10492,7 +10491,7 @@ function menu.createConstructionRow(ftable, rowgroup, component, construction, i
 			if #missingresources > 0 then
 				mouseovertext = mouseovertext .. "\n\n" .. ReadText(1001, 8046) .. ReadText(1001, 120)
 				for i, entry in ipairs(missingresources) do
-					mouseovertext = mouseovertext .. "\n· " .. entry.amount .. ReadText(1001, 42) .. " " .. GetWareData(entry.ware, "name")
+					mouseovertext = mouseovertext .. "\nÂ· " .. entry.amount .. ReadText(1001, 42) .. " " .. GetWareData(entry.ware, "name")
 				end
 			end
 		end
@@ -10515,7 +10514,7 @@ function menu.createConstructionRow(ftable, rowgroup, component, construction, i
 		if #missingresources > 0 then
 			mouseovertext = ColorText["text_warning"] .. ReadText(1001, 8018) .. "\n\n" .. ReadText(1001, 8046) .. ReadText(1001, 120)
 			for i, entry in ipairs(missingresources) do
-				mouseovertext = mouseovertext .. "\n· " .. entry.amount .. ReadText(1001, 42) .. " " .. GetWareData(entry.ware, "name")
+				mouseovertext = mouseovertext .. "\nÂ· " .. entry.amount .. ReadText(1001, 42) .. " " .. GetWareData(entry.ware, "name")
 			end
 		end
 
@@ -21236,7 +21235,7 @@ function menu.allowResetView()
 		local radthreshold = math.rad(config.cameraResetThresholdAngle)
 		-- offset rotation when camera is reset:
 		--   yaw: 0
-		--   pitch: -1.5533 = -179°
+		--   pitch: -1.5533 = -179Â°
 		--   roll: 0
 		if (math.abs(mapstate.offset.yaw) > radthreshold) or (math.abs(mapstate.offset.roll) > radthreshold) or (mapstate.offset.pitch > -math.pi / 2 + radthreshold) then
 			return true
@@ -21816,7 +21815,7 @@ function menu.createSelectedShips(frame)
 			if isship and isplayerowned then
 				-- order
 				local _, _, _, name, _, _, _, targetname = menu.getOrderInfo(selectedcomponent, true)
-				table.insert(rows.left, { entrytype = "text", text = "· " .. name .. ((targetname ~= "") and (ReadText(1001, 120) .. " " .. targetname) or ""), properties = { color = menu.holomapcolor.playercolor } })
+				table.insert(rows.left, { entrytype = "text", text = "Â· " .. name .. ((targetname ~= "") and (ReadText(1001, 120) .. " " .. targetname) or ""), properties = { color = menu.holomapcolor.playercolor } })
 				-- failed orders
 				local hasloop = ffi.new("bool[1]", 0)
 				C.GetOrderQueueFirstLoopIdx(selectedcomponent, hasloop)
@@ -21843,12 +21842,12 @@ function menu.createSelectedShips(frame)
 						DebugError("Order failure of '" .. tostring(selectedcomponent) .. "' is of unknown definition '" .. orderdefid .. "' [Florian]")
 					end
 
-					table.insert(rows.left, { entrytype = "text", text = orderfailuredef and ("· " .. orderfailuredef.name) or "", properties = { color = Color["text_warning"] } })
-					table.insert(rows.left, { entrytype = "text", text = "· " .. ffi.string(failure.message), properties = { color = Color["text_warning"] } })
+					table.insert(rows.left, { entrytype = "text", text = orderfailuredef and ("Â· " .. orderfailuredef.name) or "", properties = { color = Color["text_warning"] } })
+					table.insert(rows.left, { entrytype = "text", text = "Â· " .. ffi.string(failure.message), properties = { color = Color["text_warning"] } })
 					if n > 2 then
-						table.insert(rows.left, { entrytype = "text", text = string.format("· " .. ReadText(1001, 11631), n - 1), properties = { color = Color["text_warning"] } })
+						table.insert(rows.left, { entrytype = "text", text = string.format("Â· " .. ReadText(1001, 11631), n - 1), properties = { color = Color["text_warning"] } })
 					elseif n > 1 then
-						table.insert(rows.left, { entrytype = "text", text = "· " .. ReadText(1001, 11630), properties = { color = Color["text_warning"] } })
+						table.insert(rows.left, { entrytype = "text", text = "Â· " .. ReadText(1001, 11630), properties = { color = Color["text_warning"] } })
 					end
 				else
 					local failure = ffi.new("OrderFailure")
@@ -21869,8 +21868,8 @@ function menu.createSelectedShips(frame)
 							DebugError("Default order failure of '" .. tostring(selectedcomponent) .. "' is of unknown definition '" .. orderdefid .. "' [Florian]")
 						end
 
-						table.insert(rows.left, { entrytype = "text", text = orderfailuredef and ("· " .. orderfailuredef.name) or "", properties = { color = Color["text_warning"] } })
-						table.insert(rows.left, { entrytype = "text", text = "· " .. ffi.string(failure.message), properties = { color = Color["text_warning"] } })
+						table.insert(rows.left, { entrytype = "text", text = orderfailuredef and ("Â· " .. orderfailuredef.name) or "", properties = { color = Color["text_warning"] } })
+						table.insert(rows.left, { entrytype = "text", text = "Â· " .. ffi.string(failure.message), properties = { color = Color["text_warning"] } })
 					end
 				end
 			end
@@ -22006,7 +22005,7 @@ function menu.createSelectedShips(frame)
 					else
 						color = menu.holomapcolor.highalertcolor
 					end
-					table.insert(rows.left, { entrytype = "text", text = "· " .. entry.name, properties = { color = color } })
+					table.insert(rows.left, { entrytype = "text", text = "Â· " .. entry.name, properties = { color = color } })
 				end
 			end
 
@@ -26452,7 +26451,7 @@ function menu.createUserQuestionContext(frame)
 			local adjustedskill = math.floor(C.GetPersonCombinedSkill(menu.contextMenuData.controllable, entry.person, entry.oldrole, nil) * 15 / 100)
 
 			local row = ftable:addRow(false, { fixed = true })
-			row[1]:setColSpan(3):createText("    · " .. ffi.string(C.GetPersonName(entry.person, menu.contextMenuData.controllable)))
+			row[1]:setColSpan(3):createText("    Â· " .. ffi.string(C.GetPersonName(entry.person, menu.contextMenuData.controllable)))
 			row[4]:setColSpan(2):createText(Helper.displaySkill(adjustedskill), { halign = "right", color = Color["text_skills"] })
 
 			if i == 10 then
@@ -26462,7 +26461,7 @@ function menu.createUserQuestionContext(frame)
 
 		if count > 10 then
 			local row = ftable:addRow(false, { fixed = true })
-			row[1]:setColSpan(3):createText("    · ... (+" .. count - 10 .. ")")
+			row[1]:setColSpan(3):createText("    Â· ... (+" .. count - 10 .. ")")
 		end
 	elseif menu.contextMenuData.mode == "markashostile" then
 		local row = ftable:addRow(false, { fixed = true })
@@ -27700,7 +27699,7 @@ function menu.createMissionContext(frame)
 			if #menu.contextMenuData.briefingmissions > 0 then
 				for i, details in ipairs(menu.contextMenuData.briefingmissions) do
 					local row = objectivetable:addRow(true, {  })
-					row[1]:setColSpan(1):createText(((menu.contextMenuData.threadtype == "sequential") and (i .. ReadText(1001, 120)) or "·") .. " " .. details.name, textProperties)
+					row[1]:setColSpan(1):createText(((menu.contextMenuData.threadtype == "sequential") and (i .. ReadText(1001, 120)) or "Â·") .. " " .. details.name, textProperties)
 					local timeouttext = ((details.duration and (details.duration > 0)) and ConvertTimeString(details.duration, (details.duration >= 3600) and "%h:%M:%S" or "%M:%S") or "")
 					row[2]:createText(timeouttext .. "  \27[missiontype_" .. details.type .. "]", { halign = "right" })
 
@@ -27716,7 +27715,7 @@ function menu.createMissionContext(frame)
 			if #menu.contextMenuData.subMissions > 0 then
 				for i, submissionEntry in ipairs(menu.contextMenuData.subMissions) do
 					local row = objectivetable:addRow(true, {  })
-					row[1]:setColSpan(1):createText(((menu.contextMenuData.threadtype == "sequential") and (i .. ReadText(1001, 120)) or "·") .. " " .. submissionEntry.name, textProperties)
+					row[1]:setColSpan(1):createText(((menu.contextMenuData.threadtype == "sequential") and (i .. ReadText(1001, 120)) or "Â·") .. " " .. submissionEntry.name, textProperties)
 					row[2]:createText(function () return menu.getSubMissionTimer(submissionEntry) end, { halign = "right" })
 					if i == maxObjectiveLines then
 						visibleHeight = objectivetable:getFullHeight()
@@ -30545,7 +30544,7 @@ function menu.onTableRightMouseClick(uitable, row, posx, posy)
 
 	if (menu.mode == "orderparam_position") then
 		menu.resetOrderParamMode()
-	else
+	elseif (not menu.panelMode) or menu.panelState.leftmenu or menu.panelState.rightmenu or (C.GetImprovedControllerMode() == 0) then
 		if row > (menu.numFixedRows or 0) then
 			local rowdata = menu.rowDataMap[uitable] and menu.rowDataMap[uitable][row]
 			if not menu.showMultiverse then
@@ -32409,7 +32408,6 @@ function menu.addSelectedComponent(component, clear, noupdate)
 	if add then
 		menu.selectedcomponents[tostring(component)] = {}
 	end
-
 	if not noupdate then
 		menu.updateTableSelection(component)
 	end

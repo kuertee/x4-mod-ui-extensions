@@ -4108,27 +4108,29 @@ function menu.addDetailRows(ftable)
 			end
 
 			-- compatibilities
-			local compatibilityinfo = GetMacroData(menu.id, "compatibilityinfo")
+			if (menu.library ~= "software") and (menu.library ~= "paintmods") then
+				local compatibilityinfo = GetMacroData(menu.id, "compatibilityinfo")
 
-			-- kuertee start:
-			if not compatibilityinfo then
-				compatibilityinfo = {}
-			end
-			-- kuertee end:
+				-- kuertee start:
+				if not compatibilityinfo then
+					compatibilityinfo = {}
+				end
+				-- kuertee end:
 
-			if #compatibilityinfo > 0 then
-				menu.addDetailRow(ftable, "")
+				if #compatibilityinfo > 0 then
+					menu.addDetailRow(ftable, "")
 
-				local compatibilitytext = ""
-				for _, entry in ipairs(Helper.equipmentCompatibilities) do
-					for _, compatibility in ipairs(compatibilityinfo) do
-						if entry.tag == compatibility.tag then
-							compatibilitytext = compatibilitytext .. ((compatibilitytext ~= "") and " " or "") .. Helper.convertColorToText(entry.color) .. compatibility.name
-							break
+					local compatibilitytext = ""
+					for _, entry in ipairs(Helper.equipmentCompatibilities) do
+						for _, compatibility in ipairs(compatibilityinfo) do
+							if entry.tag == compatibility.tag then
+								compatibilitytext = compatibilitytext .. ((compatibilitytext ~= "") and " " or "") .. Helper.convertColorToText(entry.color) .. compatibility.name
+								break
+							end
 						end
 					end
+					menu.addDetailRow(ftable, ReadText(1001, 8548), compatibilitytext)
 				end
-				menu.addDetailRow(ftable, ReadText(1001, 8548), compatibilitytext)
 			end
 
 			-- build resources

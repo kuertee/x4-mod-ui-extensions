@@ -25,12 +25,12 @@ copy "%SOURCE%\helper.lua" "%DEST%\helper.xpl"
 
 set "SOURCE=..\base 9.0 beta 8\ui\addons\ego_gameoptions"
 set "DEST=%~dp0\ui\addons\ego_gameoptions"
-copy "%SOURCE%\helper.lua" "%DEST%\customgame.xpl"
-copy "%SOURCE%\helper.lua" "%DEST%\gameoptions.xpl"
+copy "%SOURCE%\customgame.lua" "%DEST%\customgame.xpl"
+copy "%SOURCE%\gameoptions.lua" "%DEST%\gameoptions.xpl"
 
 set "SOURCE=..\base 9.0 beta 8\ui\addons\ego_interactmenu"
 set "DEST=%~dp0\ui\addons\ego_interactmenu"
-copy "%SOURCE%\helper.lua" "%DEST%\menu_interactmenu.xpl"
+copy "%SOURCE%\menu_interactmenu.lua" "%DEST%\menu_interactmenu.xpl"
 
 echo Done.
 pause
