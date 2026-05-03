@@ -1,4 +1,4 @@
-ï»¿
+
 -- section == gMain_map
 -- param == { 0, 0, showzone, focuscomponent [, history] [, mode, modeparam] [, showmultiverse] [, focusoffset] }
 
@@ -4109,7 +4109,7 @@ function menu.buttonRemoveOrderSyncPoint(orderidx, instance)
 	end
 end
 
-function menu.buttonSetFilterLayer(mode, row, col)
+function menu.buttonSetFilterLayer(mode, row, col, setSelectedRow)
 	__CORE_DETAILMONITOR_MAPFILTER[mode] = not __CORE_DETAILMONITOR_MAPFILTER[mode]
 	AddUITriggeredEvent(menu.name, mode .. "_toggle", __CORE_DETAILMONITOR_MAPFILTER[mode] and "true" or "false")
 	menu.applyFilterSettings(nil, true)
@@ -5311,6 +5311,13 @@ function menu.updatePlotData(station, donotrefresh)
 		end
 		local owner = GetComponentData(ConvertStringToLuaID(tostring(sector)), "owner")
 
+		-- kuertee start: swi stations max size is 31 for some reason
+		menu.uix_station_with_weird_plot_size = nil
+		if config.uix_maxPlotSize_old then
+			config.maxPlotSize = config.uix_maxPlotSize_old
+		end
+		-- kuertee end: swi stations max size is 31 for some reason
+
 		menu.plotData = {
 			name = ReadText(1001, 9200),	-- New Plot
 			set = "factory",
@@ -5373,6 +5380,29 @@ function menu.resetPlotSize()
 		if C.ExtendBuildPlot(menu.plotData.component, posSizeChange, negSizeChange, true) then
 			local plotcenteroffset = C.GetBuildPlotCenterOffset(menu.plotData.component)
 			menu.plotData.size = { x = menu.plotData.boughtrawsize.x / 1000, y = menu.plotData.boughtrawsize.y / 1000, z = menu.plotData.boughtrawsize.z / 1000 }
+			-- kuertee start: swi stations max size is 31 for some reason
+			if menu.plotData.size.x > config.maxPlotSize or menu.plotData.size.y > config.maxPlotSize or menu.plotData.size.z > config.maxPlotSize then
+				if station ~= menu.uix_station_with_weird_plot_size then
+					menu.uix_station_with_weird_plot_size = station
+				end
+				if not config.uix_maxPlotSize_old then
+					config.uix_maxPlotSize_old = config.maxPlotSize
+				end
+				local uix_stationPlotSize = menu.plotData.size.x
+				if menu.plotData.size.y > uix_stationPlotSize then
+					uix_stationPlotSize = menu.plotData.size.y
+				end
+				if menu.plotData.size.z > uix_stationPlotSize then
+					uix_stationPlotSize = menu.plotData.size.z
+				end
+				config.maxPlotSize = uix_stationPlotSize
+			elseif station ~= menu.uix_station_with_weird_plot_size then
+				menu.uix_station_with_weird_plot_size = nil
+				if config.uix_maxPlotSize_old then
+					config.maxPlotSize = config.uix_maxPlotSize_old
+				end
+			end
+		-- kuertee end: swi stations max size is 31 for some reason
 			menu.plotData.dimensions = {
 				posX = math.ceil((menu.plotData.boughtrawsize.x / 2 + plotcenteroffset.x) / 1000),
 				negX = math.floor((menu.plotData.boughtrawsize.x / 2 - plotcenteroffset.x) / 1000),
@@ -8359,6 +8389,9 @@ function menu.createObjectList(frame, instance)
 		local row = tabtable:addRow("property_tabs", { fixed = true, bgColor = Color["frame_background_black"], borderBelow = false })
 		row[1]:setBackgroundColSpan(maxNumCategoryColumns)
 		local rowCount = 1
+		-- start: chemodun - fix for big amout of tabs, looks like something started but not finished in vanilla (panelization and scroller icons)
+		local col = 1
+		-- end: chemodun - fix for big amout of tabs
 		if #config.objectCategories > 0 then
 			Helper.setTabScrollLeftIcon(menu, menu.panelState.leftmenu, row, 1, menu.scrollIconSize)
 			for i, entry in ipairs(config.objectCategories) do
@@ -8366,7 +8399,13 @@ function menu.createObjectList(frame, instance)
 					row = tabtable:addRow("property_tabs", { fixed = true, bgColor = Color["frame_background_black"], borderBelow = false })
 					row[1]:setBackgroundColSpan(maxNumCategoryColumns)
 					rowCount = rowCount + 1
+					-- start: chemodun - fix for big amout of tabs
+					col = 1
+					-- end: chemodun - fix for big amout of tabs
 				end
+				-- start: chemodun - fix for big amout of tabs
+				col = col + 1
+				-- end: chemodun - fix for big amout of tabs
 				local bgcolor = Color["row_title_background"]
 				local color = Color["icon_normal"]
 				if entry.category == menu.objectMode then
@@ -8382,7 +8421,9 @@ function menu.createObjectList(frame, instance)
 						menu.selectedCols.propertytabs = i
 					end
 				end
-				local col = i - math.floor((i - 1) / maxNumCategoryColumns) * maxNumCategoryColumns + 1
+				-- start: chemodun - fix for big amout of tabs
+				-- local col = i - math.floor((i - 1) / maxNumCategoryColumns) * maxNumCategoryColumns + 1
+				-- end: chemodun - fix for big amout of tabs
 				row[col]:createButton({ height = menu.sideBarWidth, width = menu.sideBarWidth, x = 0, y = Helper.standardContainerOffset, bgColor = bgcolor, mouseOverText = entry.name, scaling = false, helpOverlayID = entry.helpOverlayID, helpOverlayText = entry.helpOverlayText, active = active }):setIcon(entry.icon, { color = color})
 				row[col].handlers.onClick = function () return menu.buttonObjectSubMode(entry.category, col) end
 			end
@@ -8835,6 +8876,9 @@ function menu.createPropertyOwned(frame, instance)
 		local row = tabtable:addRow("property_tabs", { fixed = true, bgColor = Color["frame_background_black"], borderBelow = false })
 		row[1]:setBackgroundColSpan(maxNumCategoryColumns)
 		local rowCount = 1
+		-- start: chemodun - fix for big amout of tabs, looks like something started but not finished in vanilla (panelization and scroller icons)
+		local col = 1
+		-- end: chemodun - fix for big amout of tabs
 		if #config.propertyCategories > 0 then
 			Helper.setTabScrollLeftIcon(menu, menu.panelState.leftmenu, row, 1, menu.scrollIconSize)
 			for i, entry in ipairs(config.propertyCategories) do
@@ -8842,7 +8886,12 @@ function menu.createPropertyOwned(frame, instance)
 					row = tabtable:addRow("property_tabs", { fixed = true, bgColor = Color["frame_background_black"], borderBelow = false })
 					row[1]:setBackgroundColSpan(maxNumCategoryColumns)
 					rowCount = rowCount + 1
+					-- start: chemodun - fix for big amout of tabs
+					col = 1
+					-- end: chemodun - fix for big amout of tabs
 				end
+				-- start: chemodun - fix for big amout of tabs
+				col = col + 1
 				local bgcolor = Color["row_title_background"]
 				local color = Color["icon_normal"]
 				if entry.category == menu.propertyMode then
@@ -8869,7 +8918,9 @@ function menu.createPropertyOwned(frame, instance)
 						menu.selectedCols.propertytabs = i
 					end
 				end
-				local col = i - math.floor((i - 1) / maxNumCategoryColumns) * maxNumCategoryColumns + 1
+				-- start: chemodun - fix for big amout of tabs
+				-- local col = i - math.floor((i - 1) / maxNumCategoryColumns) * maxNumCategoryColumns + 1
+				-- end: chemodun - fix for big amout of tabs
 				row[col]:createButton({ height = menu.sideBarWidth, width = menu.sideBarWidth, x = 0, y = Helper.standardContainerOffset, bgColor = bgcolor, mouseOverText = entry.name, scaling = false, helpOverlayID = entry.helpOverlayID, helpOverlayText = entry.helpOverlayText, active = active }):setIcon(entry.icon, { color = color})
 				row[col].handlers.onClick = function () return menu.buttonPropertySubMode(entry.category, col) end
 			end
@@ -9234,10 +9285,10 @@ function menu.getOrderInfo(ship, gettargetname)
 							if j == 1 then
 								overridewares = overridewares .. "\n\n" .. ReadText(1001, 11651) .. ReadText(1001, 120)
 							elseif j > 5 then
-								overridewares = overridewares .. "\nÂ· " .. ((#entry.value == 6) and GetWareData(ware, "name") or string.format(ReadText(1001, 11633), #entry.value - 5))
+								overridewares = overridewares .. "\n· " .. ((#entry.value == 6) and GetWareData(ware, "name") or string.format(ReadText(1001, 11633), #entry.value - 5))
 								break
 							end
-							overridewares = overridewares .. "\nÂ· " .. GetWareData(ware, "name")
+							overridewares = overridewares .. "\n· " .. GetWareData(ware, "name")
 						end
 						break
 					end
@@ -9278,10 +9329,10 @@ function menu.getOrderInfo(ship, gettargetname)
 						if j == 1 then
 							overridewares = overridewares .. "\n\n" .. ReadText(1001, 11651) .. ReadText(1001, 120)
 						elseif j > 5 then
-							overridewares = overridewares .. "\nÂ· " .. ((#entry.value == 6) and GetWareData(ware, "name") or string.format(ReadText(1001, 11633), #entry.value - 5))
+							overridewares = overridewares .. "\n· " .. ((#entry.value == 6) and GetWareData(ware, "name") or string.format(ReadText(1001, 11633), #entry.value - 5))
 							break
 						end
-						overridewares = overridewares .. "\nÂ· " .. GetWareData(ware, "name")
+						overridewares = overridewares .. "\n· " .. GetWareData(ware, "name")
 					end
 					break
 				end
@@ -9982,7 +10033,7 @@ function menu.createFleetUnitRow(instance, ftable, rowgroup, fleetunit, iteratio
 					local buf = ffi.new("const char*[?]", n)
 					n = C.GetFleetUnitProblematicEquipmentWares(buf, n, fleetunit)
 					for i = 0, n - 1 do
-						mouseovertext2 = mouseovertext2 .. "\nÂ· " .. GetWareData(ffi.string(buf[i]), "name")
+						mouseovertext2 = mouseovertext2 .. "\n· " .. GetWareData(ffi.string(buf[i]), "name")
 					end
 				end
 			elseif issue == "hacked" then
@@ -10040,7 +10091,7 @@ function menu.createFleetUnitRow(instance, ftable, rowgroup, fleetunit, iteratio
 					duration = ColorText["text_warning"]
 					mouseovertext2 = mouseovertext2 .. "\n\n" .. ColorText["text_warning"] .. ReadText(1001, 8018) .. "\n\n" .. ReadText(1001, 8046) .. ReadText(1001, 120)
 					for i, entry in ipairs(missingresources) do
-						mouseovertext2 = mouseovertext2 .. "\nÂ· " .. entry.amount .. ReadText(1001, 42) .. " " .. GetWareData(entry.ware, "name")
+						mouseovertext2 = mouseovertext2 .. "\n· " .. entry.amount .. ReadText(1001, 42) .. " " .. GetWareData(entry.ware, "name")
 					end
 				end
 
@@ -10441,7 +10492,7 @@ function menu.createConstructionRow(ftable, rowgroup, component, construction, i
 			if #missingresources > 0 then
 				mouseovertext = mouseovertext .. "\n\n" .. ReadText(1001, 8046) .. ReadText(1001, 120)
 				for i, entry in ipairs(missingresources) do
-					mouseovertext = mouseovertext .. "\nÂ· " .. entry.amount .. ReadText(1001, 42) .. " " .. GetWareData(entry.ware, "name")
+					mouseovertext = mouseovertext .. "\n· " .. entry.amount .. ReadText(1001, 42) .. " " .. GetWareData(entry.ware, "name")
 				end
 			end
 		end
@@ -10464,7 +10515,7 @@ function menu.createConstructionRow(ftable, rowgroup, component, construction, i
 		if #missingresources > 0 then
 			mouseovertext = ColorText["text_warning"] .. ReadText(1001, 8018) .. "\n\n" .. ReadText(1001, 8046) .. ReadText(1001, 120)
 			for i, entry in ipairs(missingresources) do
-				mouseovertext = mouseovertext .. "\nÂ· " .. entry.amount .. ReadText(1001, 42) .. " " .. GetWareData(entry.ware, "name")
+				mouseovertext = mouseovertext .. "\n· " .. entry.amount .. ReadText(1001, 42) .. " " .. GetWareData(entry.ware, "name")
 			end
 		end
 
@@ -19811,9 +19862,9 @@ function menu.uix_expandMissionList(missionEntry, row, contextCallback, isOffer,
 	-- e.g. look for "copied from buttonExpandMissionGroup" notes within uix_expandMissionList()
 	-- start: copied from buttonExpandMissionGroup.
 	-- i.e. setting missionModeCurrent, setrow, closeContextMenu(), etc.
-	if row and firstId and isExpanded then
+	if row and firstMissionId and isExpanded then -- fixed: replaced undefined firstId with previously defined firstMissionId
 		menu.setrow = row + 1 -- set the highlighted mission to the first mission in the list. i.e. row + 1
-		menu.missionModeCurrent = firstId -- set highlighted mission to the first mission in the list. i.e. the first mission's id
+		menu.missionModeCurrent = firstMissionId -- set highlighted mission to the first mission in the list. i.e. the first mission's id
 	else
 		menu.setrow = row
 		menu.missionModeCurrent = listId
@@ -21185,7 +21236,7 @@ function menu.allowResetView()
 		local radthreshold = math.rad(config.cameraResetThresholdAngle)
 		-- offset rotation when camera is reset:
 		--   yaw: 0
-		--   pitch: -1.5533 = -179Â°
+		--   pitch: -1.5533 = -179°
 		--   roll: 0
 		if (math.abs(mapstate.offset.yaw) > radthreshold) or (math.abs(mapstate.offset.roll) > radthreshold) or (mapstate.offset.pitch > -math.pi / 2 + radthreshold) then
 			return true
@@ -21765,7 +21816,7 @@ function menu.createSelectedShips(frame)
 			if isship and isplayerowned then
 				-- order
 				local _, _, _, name, _, _, _, targetname = menu.getOrderInfo(selectedcomponent, true)
-				table.insert(rows.left, { entrytype = "text", text = "Â· " .. name .. ((targetname ~= "") and (ReadText(1001, 120) .. " " .. targetname) or ""), properties = { color = menu.holomapcolor.playercolor } })
+				table.insert(rows.left, { entrytype = "text", text = "· " .. name .. ((targetname ~= "") and (ReadText(1001, 120) .. " " .. targetname) or ""), properties = { color = menu.holomapcolor.playercolor } })
 				-- failed orders
 				local hasloop = ffi.new("bool[1]", 0)
 				C.GetOrderQueueFirstLoopIdx(selectedcomponent, hasloop)
@@ -21792,12 +21843,12 @@ function menu.createSelectedShips(frame)
 						DebugError("Order failure of '" .. tostring(selectedcomponent) .. "' is of unknown definition '" .. orderdefid .. "' [Florian]")
 					end
 
-					table.insert(rows.left, { entrytype = "text", text = orderfailuredef and ("Â· " .. orderfailuredef.name) or "", properties = { color = Color["text_warning"] } })
-					table.insert(rows.left, { entrytype = "text", text = "Â· " .. ffi.string(failure.message), properties = { color = Color["text_warning"] } })
+					table.insert(rows.left, { entrytype = "text", text = orderfailuredef and ("· " .. orderfailuredef.name) or "", properties = { color = Color["text_warning"] } })
+					table.insert(rows.left, { entrytype = "text", text = "· " .. ffi.string(failure.message), properties = { color = Color["text_warning"] } })
 					if n > 2 then
-						table.insert(rows.left, { entrytype = "text", text = string.format("Â· " .. ReadText(1001, 11631), n - 1), properties = { color = Color["text_warning"] } })
+						table.insert(rows.left, { entrytype = "text", text = string.format("· " .. ReadText(1001, 11631), n - 1), properties = { color = Color["text_warning"] } })
 					elseif n > 1 then
-						table.insert(rows.left, { entrytype = "text", text = "Â· " .. ReadText(1001, 11630), properties = { color = Color["text_warning"] } })
+						table.insert(rows.left, { entrytype = "text", text = "· " .. ReadText(1001, 11630), properties = { color = Color["text_warning"] } })
 					end
 				else
 					local failure = ffi.new("OrderFailure")
@@ -21818,8 +21869,8 @@ function menu.createSelectedShips(frame)
 							DebugError("Default order failure of '" .. tostring(selectedcomponent) .. "' is of unknown definition '" .. orderdefid .. "' [Florian]")
 						end
 
-						table.insert(rows.left, { entrytype = "text", text = orderfailuredef and ("Â· " .. orderfailuredef.name) or "", properties = { color = Color["text_warning"] } })
-						table.insert(rows.left, { entrytype = "text", text = "Â· " .. ffi.string(failure.message), properties = { color = Color["text_warning"] } })
+						table.insert(rows.left, { entrytype = "text", text = orderfailuredef and ("· " .. orderfailuredef.name) or "", properties = { color = Color["text_warning"] } })
+						table.insert(rows.left, { entrytype = "text", text = "· " .. ffi.string(failure.message), properties = { color = Color["text_warning"] } })
 					end
 				end
 			end
@@ -21955,7 +22006,7 @@ function menu.createSelectedShips(frame)
 					else
 						color = menu.holomapcolor.highalertcolor
 					end
-					table.insert(rows.left, { entrytype = "text", text = "Â· " .. entry.name, properties = { color = color } })
+					table.insert(rows.left, { entrytype = "text", text = "· " .. entry.name, properties = { color = color } })
 				end
 			end
 
@@ -26401,7 +26452,7 @@ function menu.createUserQuestionContext(frame)
 			local adjustedskill = math.floor(C.GetPersonCombinedSkill(menu.contextMenuData.controllable, entry.person, entry.oldrole, nil) * 15 / 100)
 
 			local row = ftable:addRow(false, { fixed = true })
-			row[1]:setColSpan(3):createText("    Â· " .. ffi.string(C.GetPersonName(entry.person, menu.contextMenuData.controllable)))
+			row[1]:setColSpan(3):createText("    · " .. ffi.string(C.GetPersonName(entry.person, menu.contextMenuData.controllable)))
 			row[4]:setColSpan(2):createText(Helper.displaySkill(adjustedskill), { halign = "right", color = Color["text_skills"] })
 
 			if i == 10 then
@@ -26411,7 +26462,7 @@ function menu.createUserQuestionContext(frame)
 
 		if count > 10 then
 			local row = ftable:addRow(false, { fixed = true })
-			row[1]:setColSpan(3):createText("    Â· ... (+" .. count - 10 .. ")")
+			row[1]:setColSpan(3):createText("    · ... (+" .. count - 10 .. ")")
 		end
 	elseif menu.contextMenuData.mode == "markashostile" then
 		local row = ftable:addRow(false, { fixed = true })
@@ -27649,7 +27700,7 @@ function menu.createMissionContext(frame)
 			if #menu.contextMenuData.briefingmissions > 0 then
 				for i, details in ipairs(menu.contextMenuData.briefingmissions) do
 					local row = objectivetable:addRow(true, {  })
-					row[1]:setColSpan(1):createText(((menu.contextMenuData.threadtype == "sequential") and (i .. ReadText(1001, 120)) or "Â·") .. " " .. details.name, textProperties)
+					row[1]:setColSpan(1):createText(((menu.contextMenuData.threadtype == "sequential") and (i .. ReadText(1001, 120)) or "·") .. " " .. details.name, textProperties)
 					local timeouttext = ((details.duration and (details.duration > 0)) and ConvertTimeString(details.duration, (details.duration >= 3600) and "%h:%M:%S" or "%M:%S") or "")
 					row[2]:createText(timeouttext .. "  \27[missiontype_" .. details.type .. "]", { halign = "right" })
 
@@ -27665,7 +27716,7 @@ function menu.createMissionContext(frame)
 			if #menu.contextMenuData.subMissions > 0 then
 				for i, submissionEntry in ipairs(menu.contextMenuData.subMissions) do
 					local row = objectivetable:addRow(true, {  })
-					row[1]:setColSpan(1):createText(((menu.contextMenuData.threadtype == "sequential") and (i .. ReadText(1001, 120)) or "Â·") .. " " .. submissionEntry.name, textProperties)
+					row[1]:setColSpan(1):createText(((menu.contextMenuData.threadtype == "sequential") and (i .. ReadText(1001, 120)) or "·") .. " " .. submissionEntry.name, textProperties)
 					row[2]:createText(function () return menu.getSubMissionTimer(submissionEntry) end, { halign = "right" })
 					if i == maxObjectiveLines then
 						visibleHeight = objectivetable:getFullHeight()
@@ -29743,7 +29794,7 @@ function menu.onRenderTargetMouseDown(modified)
 	uix_distanceTool_from_posRot = ffi.new("UIPosRot")
 	local eclipticoffset = ffi.new("UIPosRot")
 	uix_distanceTool_from_component = C.GetMapPositionOnEcliptic2(menu.holomap, uix_distanceTool_from_posRot, false, 0, eclipticoffset)
-    -- kuertee end
+	-- kuertee end
 end
 
 function menu.onRenderTargetMouseUp(modified)
@@ -30498,7 +30549,12 @@ function menu.onTableRightMouseClick(uitable, row, posx, posy)
 		if row > (menu.numFixedRows or 0) then
 			local rowdata = menu.rowDataMap[uitable] and menu.rowDataMap[uitable][row]
 			if not menu.showMultiverse then
-				if (menu.infoTableMode == "objectlist") or (menu.infoTableMode == "propertyowned") then
+
+				-- kuertee start:
+				-- if (menu.infoTableMode == "objectlist") or (menu.infoTableMode == "propertyowned") then
+				if (string.find ("" .. tostring (menu.infoTableMode), "objectlist")) or (string.find ("" .. tostring (menu.infoTableMode), "propertyowned")) then
+					-- kuertee end:
+
 					if uitable == menu.infoTable then
 						if type(rowdata) == "table" then
 							local x, y = GetLocalMousePosition()

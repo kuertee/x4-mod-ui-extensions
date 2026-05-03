@@ -14287,7 +14287,6 @@ function Helper.updateInputBar(menu, inputsLeft, inputsRight)
 	end
 end
 
-
 -- kuertee start:
 function OnlineGetUserItems()
 	return {}

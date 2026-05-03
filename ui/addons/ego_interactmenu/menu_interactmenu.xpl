@@ -395,7 +395,7 @@ local config = {
 		{ id = "trade_orders",			text = ReadText(1001, 7861),	isorder = true,		showloop = true },
 
 		-- mycu start: add custom orders group
-		{ id = "custom_orders",	text = ReadText(101475, 101),		isorder = true,	showloop = true, subsections = {}},
+		{ id = "custom_orders",	text = ReadText(101475, 101),			isorder = true,	showloop = true, subsections = {}},
 		-- mycu end: add custom orders group
 
 		{ id = "selected_assignments_all", text = ReadText(1001, 7886),	isorder = true },
@@ -5089,7 +5089,7 @@ function menu.insertLuaAction(actiontype, istobedisplayed)
 			end
 		end
 		-- end: aegs call-back
-				
+
 		-- start: cpsdo call-back (shipOverview)
 		if menu.uix_callbacks["cpsdo_map_rightMenu_shipLogistic_insert"] then
 			local macro = GetComponentData(convertedComponent, "macro")
@@ -6645,7 +6645,7 @@ function menu.insertLuaAction(actiontype, istobedisplayed)
 			end
 		end
 		-- end: aegs call-back
-		
+
 		-- start: cpsdo call-back (rightMenu shipBuilding insert)
 		local inserted = false
 		if menu.uix_callbacks["cpsdo_map_rightMenu_shipBuildShip_insert"] then
@@ -6665,7 +6665,7 @@ function menu.insertLuaAction(actiontype, istobedisplayed)
 					local category = entry.category or "main"
 
 					menu.insertInteractionContent(category, {
-						type              = entry.type or actiontype, -- é»˜è®¤æ²¿ç”¨ buildships
+						type              = entry.type or actiontype, -- 默认沿用 buildships
 						text              = entry.text or ReadText(1001, 7875),
 						helpOverlayID     = entry.helpOverlayID or "interactmenu_buildship",
 						helpOverlayText   = entry.helpOverlayText or " ",

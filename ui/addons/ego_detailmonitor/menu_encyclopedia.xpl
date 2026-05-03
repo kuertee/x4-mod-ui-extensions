@@ -1406,6 +1406,7 @@ function menu.createIndex()
 						for _, entry in ipairs(menu.printedshipdata[purpose][sizeclass].ships) do
 							-- rowdata[2] here has to be the librarycategory for looking up information about that entry, tying into other tables.
 							local icon = GetMacroData(entry.id, "icon")
+							entry.expanded = { purpose, purpose .. sizeclass } -- store all extra expand info for autoexpand
 							menu.addIndexEntry(ship_size_index, entry.id, "\27[" .. (C.IsIconValid(icon) and icon or "solid") .. "]" .. entry.name, { "Ships", entry.librarycategory, entry }, 3)
 						end
 					end
@@ -4107,29 +4108,27 @@ function menu.addDetailRows(ftable)
 			end
 
 			-- compatibilities
-			if (menu.library ~= "software") and (menu.library ~= "paintmods") then
-				local compatibilityinfo = GetMacroData(menu.id, "compatibilityinfo")
+			local compatibilityinfo = GetMacroData(menu.id, "compatibilityinfo")
 
-				-- kuertee start:
-				if not compatibilityinfo then
-					compatibilityinfo = {}
-				end
-				-- kuertee end:
+			-- kuertee start:
+			if not compatibilityinfo then
+				compatibilityinfo = {}
+			end
+			-- kuertee end:
 
-				if #compatibilityinfo > 0 then
-					menu.addDetailRow(ftable, "")
+			if #compatibilityinfo > 0 then
+				menu.addDetailRow(ftable, "")
 
-					local compatibilitytext = ""
-					for _, entry in ipairs(Helper.equipmentCompatibilities) do
-						for _, compatibility in ipairs(compatibilityinfo) do
-							if entry.tag == compatibility.tag then
-								compatibilitytext = compatibilitytext .. ((compatibilitytext ~= "") and " " or "") .. Helper.convertColorToText(entry.color) .. compatibility.name
-								break
-							end
+				local compatibilitytext = ""
+				for _, entry in ipairs(Helper.equipmentCompatibilities) do
+					for _, compatibility in ipairs(compatibilityinfo) do
+						if entry.tag == compatibility.tag then
+							compatibilitytext = compatibilitytext .. ((compatibilitytext ~= "") and " " or "") .. Helper.convertColorToText(entry.color) .. compatibility.name
+							break
 						end
 					end
-					menu.addDetailRow(ftable, ReadText(1001, 8548), compatibilitytext)
 				end
+				menu.addDetailRow(ftable, ReadText(1001, 8548), compatibilitytext)
 			end
 
 			-- build resources

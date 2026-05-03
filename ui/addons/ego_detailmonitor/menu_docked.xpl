@@ -205,6 +205,7 @@ local function init()
 	registerForEvent("gameplanchange", getElement("Scene.UIContract"), menu.onGamePlanChange)
 	RegisterEvent("conversationCancelled", menu.onConvEnds)
 	RegisterEvent("conversationFinished", menu.onConvEnds)
+	RegisterEvent("cinematic_camera_deactivated", menu.checkActivation)
 
 	-- kuertee start:
 	menu.init_kuertee()
@@ -1672,7 +1673,7 @@ function menu.onCloseElement(dueToClose)
 	end
 end
 
--- kuetee start:
+-- kuertee start:
 menu.uix_callbackCount = 0
 function menu.registerCallback(callbackName, callbackFunction, id)
     -- note 1: format is generally [function name]_[action]. e.g.: in kuertee_menu_transporter, "display_on_set_room_active" overrides the room's active property with the return of the callback.
@@ -1771,12 +1772,12 @@ function menu.updateCallbacksNow()
                         Helper.debugText_forced(menu.name .. " uix updateCallbacksNow (post): menu.uix_callbacks[" .. tostring(callbackName) .. "][" .. tostring(updateData.id) .. "]: " .. tostring(menu.uix_callbacks[callbackName][updateData.id]))
                     end
                 else
-                    Helper.debugText_forced(menu.name .. " uix updateCallbacksNow: callback at " .. callbackName .. " with id " .. tostring(id) .. " doesn't exist")
+                    Helper.debugText_forced(menu.name .. " uix updateCallbacksNow: callback at " .. callbackName .. " with id " .. tostring(updateData.id) .. " doesn't exist")
                 end
             end
         end
     end
 end
--- kuerte end
+-- kuertee end
 
 init()
