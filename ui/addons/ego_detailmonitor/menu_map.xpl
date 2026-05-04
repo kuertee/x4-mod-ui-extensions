@@ -19095,7 +19095,7 @@ function menu.createMissionMode(frame)
 			-- kuertee end
 
 				local othermissionrowgroup = ftable:addRowGroup({  })
-
+	
 				for _, entry in ipairs(menu.missionOfferList["other"]) do
 					found = true
 					menu.addMissionRow(ftable, othermissionrowgroup, entry)
@@ -32565,7 +32565,7 @@ function menu.setFilterOption(mode, setting, id, value, index)
 	if not settings[mode] then
 		settings[mode] = true
 		menu.applyFilterSettings(nil, true)
-	else
+	else 
 		setting.callback(setting, nil, nil, true)
 	end
 end
