@@ -2984,8 +2984,8 @@ function menu.loadSaveCallback(_, filename)
 			if menu.uix_callbacks ["loadGameCallback_preLoadGame"] then
 				for uix_id, uix_callback in pairs (menu.uix_callbacks ["loadGameCallback_preLoadGame"]) do
 					uix_callback(filename)
-		end
-	end
+				end
+			end
 			LoadGame(filename)
 		end
 		, true, getElapsedTime() + 0.1)
