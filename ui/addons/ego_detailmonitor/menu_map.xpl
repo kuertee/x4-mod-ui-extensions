@@ -8489,7 +8489,7 @@ function menu.createObjectList(frame, instance)
 		row[tableColumn].handlers.onClick = function () return menu.buttonObjectSorter("relation") end
 
 		--kuertee start: extra sort by distance
-		menu.uix_renderExtraSortByDistance(tabtable, colSpanPerSorterColumn, buttonheight, iconheight)
+		-- menu.uix_renderExtraSortByDistance(tabtable, colSpanPerSorterColumn, buttonheight, iconheight)
 		--kuertee end: extra sort by distance
 	end
 
@@ -11163,7 +11163,7 @@ function menu.createOrdersMenuHeader(frame, frameborder, instance)
 	-- local numcols = #config.infoCategories + 3
 	local numcols
 	if menu.uix_callbacks ["info_sub_menu_to_show"] then
-		numcols = uix_infoCategories + 3
+		numcols = #uix_infoCategories + 3
 	else
 	-- end: InfoSubmenu To Show call-back
 
@@ -11175,102 +11175,58 @@ function menu.createOrdersMenuHeader(frame, frameborder, instance)
 
 	local orderHeaderTable
 	if instance == "left" then
-
-		-- start: InfoSubmenu To Show call-back
-		-- menu.orderHeaderTable = frame:addTable(numcols, { tabOrder = 1, reserveScrollBar = false, frameborder = frameborder.id })
-		if menu.uix_callbacks ["info_sub_menu_to_show"] then
-			menu.orderHeaderTable = frame:addTable(numcols + 1, { tabOrder = 1, reserveScrollBar = false })
-		else
-			menu.orderHeaderTable = frame:addTable(numcols, { tabOrder = 1, reserveScrollBar = false, frameborder = frameborder.id })
-		end
-		-- end: InfoSubmenu To Show call-back
-
+		menu.orderHeaderTable = frame:addTable(numcols, { tabOrder = 1, reserveScrollBar = false, frameborder = frameborder.id })
 		orderHeaderTable = menu.orderHeaderTable
 	elseif instance == "right" then
-
-		-- start: InfoSubmenu To Show call-back
-		-- menu.orderHeaderTableRight = frame:addTable(numcols, { tabOrder = 1, reserveScrollBar = false, frameborder = frameborder.id })
-		if menu.uix_callbacks ["info_sub_menu_to_show"] then
-			menu.orderHeaderTableRight = frame:addTable(numcols + 1, { tabOrder = 1, reserveScrollBar = false })
-		else
-			menu.orderHeaderTableRight = frame:addTable(numcols, { tabOrder = 1, reserveScrollBar = false, frameborder = frameborder.id })
-		end
-		-- end: InfoSubmenu To Show call-back
-
+		menu.orderHeaderTableRight = frame:addTable(numcols, { tabOrder = 1, reserveScrollBar = false, frameborder = frameborder.id })
 		orderHeaderTable = menu.orderHeaderTableRight
 	end
 
 	local count = 0
 
 	-- start: InfoSubmenu To Show call-back
+	-- for _, entry in ipairs(config.infoCategories) do
 	if menu.uix_callbacks ["info_sub_menu_to_show"] then
-		for i, entry in ipairs(uix_infoCategories) do
-			if entry.empty then
-				count = count + 0.5
-			else
-				count = count + 1
-			end
-		end
+		-- nothing here on purpose
 	else
+		uix_infoCategories = config.infoCategories
+	end
+	-- for i, entry in ipairs(config.infoCategories) do
+	for i, entry in ipairs(uix_infoCategories) do
 	-- end: InfoSubmenu To Show call-back
 
-		for i, entry in ipairs(config.infoCategories) do
-			if entry.empty then
-				count = count + 0.5
-			else
-				count = count + 1
-			end
+		if entry.empty then
+			count = count + 0.5
+		else
+			count = count + 1
 		end
-	-- start: InfoSubmenu To Show call-back
 	end
-	-- end: InfoSubmenu To Show call-back
 
 	local extraColWidth = Helper.borderSize + 1
 	local sideBarWidth = menu.sideBarWidth
-
-	-- start: InfoSubmenu To Show call-back
-	if menu.uix_callbacks ["info_sub_menu_to_show"] then
-
-		if (count * menu.sideBarWidth + (#uix_infoCategories - 1) * Helper.borderSize + extraColWidth) > frame.properties.width then
-			sideBarWidth = math.floor((frame.properties.width - (#uix_infoCategories - 1) * Helper.borderSize - extraColWidth) / count)
-		end
-	else
-	-- end: InfoSubmenu To Show call-back
-
-		if ((count + 2) * menu.sideBarWidth + (numcols - 2) * Helper.borderSize + extraColWidth + Helper.standardContainerOffset) > frame.properties.width then
-			sideBarWidth = math.floor((frame.properties.width - (numcols - 2) * Helper.borderSize - extraColWidth - Helper.standardContainerOffset) / (count + 2))
-		end
-
-	-- start: InfoSubmenu To Show call-back
+	if ((count + 2) * menu.sideBarWidth + (numcols - 2) * Helper.borderSize + extraColWidth + Helper.standardContainerOffset) > frame.properties.width then
+		sideBarWidth = math.floor((frame.properties.width - (numcols - 2) * Helper.borderSize - extraColWidth - Helper.standardContainerOffset) / (count + 2))
 	end
-	-- end: InfoSubmenu To Show call-back
 
 	orderHeaderTable:setColWidth(1, menu.scrollIconSize + Helper.standardContainerOffset, false)
 
 	-- start: InfoSubmenu To Show call-back
+	-- for _, entry in ipairs(config.infoCategories) do
 	if menu.uix_callbacks ["info_sub_menu_to_show"] then
-		for i, entry in ipairs(uix_infoCategories) do
-			-- end: InfoSubmenu To Show call-back
-			if entry.empty then
-				orderHeaderTable:setColWidth(i, sideBarWidth / 2, false)
-			else
-				orderHeaderTable:setColWidth(i, sideBarWidth, false)
-			end
-		end
+		-- nothing here on purpose
 	else
-	-- end: InfoSubmenu To Show call-back
-
-		for i, entry in ipairs(config.infoCategories) do
-			if entry.empty then
-				orderHeaderTable:setColWidth(i + 1, sideBarWidth / 2, false)
-			else
-				orderHeaderTable:setColWidth(i + 1, sideBarWidth, false)
-			end
-		end
-
-	-- start: InfoSubmenu To Show call-back
+		uix_infoCategories = config.infoCategories
 	end
+	-- for i, entry in ipairs(config.infoCategories) do
+	for i, entry in ipairs(uix_infoCategories) do
 	-- end: InfoSubmenu To Show call-back
+
+		if entry.empty then
+			orderHeaderTable:setColWidth(i + 1, sideBarWidth / 2, false)
+		else
+			orderHeaderTable:setColWidth(i + 1, sideBarWidth, false)
+		end
+	end
 
 	orderHeaderTable:setColWidth(numcols - 1, sideBarWidth, false)
 
@@ -14615,15 +14571,13 @@ function menu.setupInfoSubmenuRows(mode, inputtable, inputobject, instance)
 		-- end: aegs call-back
 
 		-- start: cpsdo call-back (ship information: shiptypename)
-		do
+		if menu.uix_callbacks["cpsdo_map_shipInformation_shiptypename_replace"] then
 			local shiptypename_override = nil
 
-			if menu.uix_callbacks["cpsdo_map_shipInformation_shiptypename_replace"] then
-				for uix_id, uix_callback in pairs(menu.uix_callbacks["cpsdo_map_shipInformation_shiptypename_replace"]) do
-					local ok, result = pcall(uix_callback, GetComponentData(object64, "macro"), object64)
-					if ok and type(result) == "string" and result ~= "" then
-						shiptypename_override = result  -- keep last valid string
-					end
+			for uix_id, uix_callback in pairs(menu.uix_callbacks["cpsdo_map_shipInformation_shiptypename_replace"]) do
+				local ok, result = pcall(uix_callback, GetComponentData(object64, "macro"), object64)
+				if ok and type(result) == "string" and result ~= "" then
+					shiptypename_override = result  -- keep last valid string
 				end
 			end
 
@@ -17349,28 +17303,6 @@ function menu.setupLoadoutInfoSubmenuRows(mode, inputtable, inputobject, instanc
 			end
 		end
 	end
-
-	-- start: aegs call-back
-		if menu.uix_callbacks ["aegs_map_loadoutinfo_double_insert"] then
-			local state,title_text,label_text_1,label_text_2,subsystems
-			for uix_id, uix_callback in pairs (menu.uix_callbacks ["aegs_map_loadoutinfo_double_insert"]) do
-				state,title_text,label_text_1,label_text_2,subsystems = uix_callback (GetComponentData(inputobject, "macro"))
-				if state then
-					local row = inputtable:addRow(false, { bgColor = Color["row_title_background"] })
-					row[1]:setColSpan(13):createText(title_text, Helper.headerRowCenteredProperties)
-					for _, subsystem in ipairs(subsystems) do
-						local row = inputtable:addRow(false, { interactive = false })
-						row[1]:setColSpan(13):createText(subsystem.name, {halign = "center"})
-						if subsystem.icon then
-							local row = inputtable:addRow(false, { interactive = false })
-							row[2]:setColSpan(11):createIcon(subsystem.icon, {height = config.mapRowHeight * 10, mouseOverText = subsystem.intro,halign = "center"})
-						end
-					end
-				end
-			end
-		end
-	-- end: aegs call-back
-
 
 	-- start: aegs call-back
 		if menu.uix_callbacks ["aegs_map_loadoutinfo_double_insert"] then
