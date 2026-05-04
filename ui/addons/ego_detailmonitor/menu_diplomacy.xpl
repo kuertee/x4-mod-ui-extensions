@@ -3847,7 +3847,7 @@ function menu.createEventCompletedContext(frame)
 	local factioniconheight = Helper.scaleY(2 * Helper.titleHeight)
 	local iconoffset = Helper.scaleX(12)
 	local iconoffsetx = 0.1 * (popUpWidth - 4 * Helper.borderSize) - factioniconheight - iconoffset
-	
+
 	local row = ftable:addRow(nil, { bgColor = Color["row_background_container"], borderBelow = false })
 	local factionicon, factionname, factionshortname = GetFactionData(eventoperation.faction, "icon", "name", "shortname")
 	row[1]:setBackgroundColSpan(9):setColSpan(1):createIcon(factionicon, { scaling = false, width = factioniconheight, height = factioniconheight, x = iconoffsetx, y = (factioniconheight - Helper.scaleY(Helper.titleHeight)) / 2, affectRowHeight = false })
@@ -3901,7 +3901,7 @@ function menu.createUserQuestionContext(frame)
 		useSaveOption = true
 	end
 	local popUpWidth = Helper.scaleX(600)
-
+	
 	local numCols = useSaveOption and 6 or 5
 	local ftable = frame:addTable(numCols, { tabOrder = 1, reserveScrollBar = false, highlightMode = "off", x = (Helper.viewWidth - popUpWidth) / 2, y = Helper.viewHeight / 2 - frame.properties.y, width = popUpWidth - Helper.borderSize, backgroundID = "solid", backgroundColor = Color["frame_background_notification"] })
 	if useSaveOption then
