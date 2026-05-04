@@ -1496,7 +1496,7 @@ function menu.createEmbassy(frame, tableProperties)
 					if (menu.contextMenuMode == "actionconfig") and (action.id == menu.contextMenuData.id) and (menu.contextMenuData.operationid == nil) then
 						isselected = true
 					end
-					
+
 					local row = rowgroup:addRow({ type = "action", id = action.id }, { bgColor = isselected and Color["row_background_selected"] or Color["row_background_blue"] })
 					row[1]:setColSpan(4):setBackgroundColSpan(6)
 
@@ -1967,7 +1967,7 @@ function menu.createFactionDetailsContext(frame)
 			-- kuertee start: callback for backward compatibility. obsolete do not create new callbacks with this id.
 			if menu.uix_callbacks ["createFactions_on_before_render_licences"] then
 				for uix_id, uix_callback in pairs (menu.uix_callbacks ["createFactions_on_before_render_licences"]) do
-					uix_callback (frame, tableProperties, relation.id, detailtable)
+					uix_callback (frame, menu.tableProperties, relation.id, detailtable)
 				end
 			end
 			-- kuertee end: callback
@@ -2366,9 +2366,9 @@ function menu.createAgentDetailsContext(frame)
 	local row = agentdetailstable:addRow(nil, {  })
 	row[2]:createText(ReadText(1001, 12821), {  })
 	row[3]:setColSpan(2):createText(agent.exp_espionage_name, { halign = "right" })
-	
+
 	agentdetailstable:addEmptyRow(Helper.standardTextHeight / 2)
-	
+
 	local row = agentdetailstable:addRow(nil, Helper.headerRowProperties)
 	row[1]:setColSpan(4):createText(ReadText(1001, 12918), Helper.headerRowCenteredProperties)
 
@@ -2438,7 +2438,7 @@ function menu.createAgentDetailsContext(frame)
 			displayremoveoption = false,
 		})
 	end
-	
+
 	local row = rowgroup:addRow(true, { fixed = true })
 	local dropdownheight = Helper.scaleY(4 * Helper.standardTextHeight)
 	row[1]:setColSpan(4):createDropDown(shipoptions, {
@@ -2859,7 +2859,7 @@ function menu.createActionConfigContext(frame)
 		if i == 1 then
 			row[1]:setColSpan(2):createText(ReadText(1001, 2811))
 		end
-		
+
 		local requirement = (inventory[ware.ware] and inventory[ware.ware].amount or 0) >= ware.amount
 		if not requirement then
 			hasmissingrequirement = true
@@ -3843,7 +3843,7 @@ function menu.createEventCompletedContext(frame)
 
 	local row = ftable:addRow(nil, { bgColor = Color["row_background_container"], borderBelow = false })
 	row[1]:createText(ReadText(1001, 12842), { halign = "center" })
-	
+
 	local factioniconheight = Helper.scaleY(2 * Helper.titleHeight)
 	local iconoffset = Helper.scaleX(12)
 	local iconoffsetx = 0.1 * (popUpWidth - 4 * Helper.borderSize) - factioniconheight - iconoffset
@@ -3901,7 +3901,7 @@ function menu.createUserQuestionContext(frame)
 		useSaveOption = true
 	end
 	local popUpWidth = Helper.scaleX(600)
-	
+
 	local numCols = useSaveOption and 6 or 5
 	local ftable = frame:addTable(numCols, { tabOrder = 1, reserveScrollBar = false, highlightMode = "off", x = (Helper.viewWidth - popUpWidth) / 2, y = Helper.viewHeight / 2 - frame.properties.y, width = popUpWidth - Helper.borderSize, backgroundID = "solid", backgroundColor = Color["frame_background_notification"] })
 	if useSaveOption then
