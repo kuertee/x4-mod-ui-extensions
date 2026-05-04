@@ -8990,6 +8990,15 @@ function menu.createPropertyOwned(frame, instance)
 		--kuertee end: extra sort by distance
 	end
 
+	-- kuertee start: callback
+	if menu.uix_callbacks ["createPropertyOwned_on_tabtable_end"] then
+		local result
+		for uix_id, uix_callback in pairs (menu.uix_callbacks ["createPropertyOwned_on_tabtable_end"]) do
+			uix_callback (numdisplayed, instance, tabtable, infoTableData)
+		end
+	end
+	-- kuertee end: callback
+
 	tabtable:setSelectedRow(menu.selectedRows.propertytabs or menu.selectedRows.infotable2 or 0)
 	tabtable:setSelectedCol(menu.selectedCols.propertytabs or Helper.currentTableCol[menu.infoTable2] or 0)
 	menu.selectedRows.propertytabs = nil
@@ -19086,7 +19095,7 @@ function menu.createMissionMode(frame)
 			-- kuertee end
 
 				local othermissionrowgroup = ftable:addRowGroup({  })
-	
+
 				for _, entry in ipairs(menu.missionOfferList["other"]) do
 					found = true
 					menu.addMissionRow(ftable, othermissionrowgroup, entry)
@@ -32556,7 +32565,7 @@ function menu.setFilterOption(mode, setting, id, value, index)
 	if not settings[mode] then
 		settings[mode] = true
 		menu.applyFilterSettings(nil, true)
-	else 
+	else
 		setting.callback(setting, nil, nil, true)
 	end
 end
