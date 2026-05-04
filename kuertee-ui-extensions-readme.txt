@@ -6,8 +6,16 @@ Contributors: AlexandreTK, ChemODun, Damonya, DrWhoKnows, DmytroK, Erixon, Farem
 
 Updates
 =======
-v8.0.4.4, 1 May 2025:
-- New feature: Expand/collapse deployables by name.
+v9.0.0.0.8, 4 May 2026:
+- Tweak: Multi-rename now adds leading zeroes to the "$i" portion of the objects name. Previously, it used raw text numbers preventing the ship from getting sorted propertly.
+- New feature: Map Menu > Properties Owned > Deployables: The list of deployables are grouped by name that can be expanded and collapsed.
+- New feature: Map Menu > Information > Full Crew List: The list of people on board can be expanded and collapsed.
+- Bug-fix: Multi-rename feature was missing from the Interact Menu.
+- Bug-fix: Missing callbacks in the Game Options menu that prevented mods like Grouped Saved Files from working.
+- Bug-fix: Possible bug in the Ship Configuration menu that might have prevented mods like Mycu's Equipment Tooltips from working.
+- Bug-fix: Missing callbacks in the Player Information menu that prevented mods like Social Standing And Citizenships from working.
+- Bug-fix: Missing callbacks in the Diplomacy menu that prevented mods like Reputations And Professions from working.
+- Bug-fix: Bug in the Map > Manage Plots menu that prevented mods that allow very large plot sizes (e.g. Star Wars Interworlds) from working. Note: The last working version of Star Wars Interworlds is not yet compatible with the 9.0 beta.
 
 NOTES FOR PLAYERS:
 ==================
@@ -130,18 +138,26 @@ But here is documentation on NEW features (not connected to mod-specific changes
 CHANGES BUILT INTO THIS MOD (for players)
 =========================================
 
+Map Menu: Boarding Menu: Ship assignment tweaks
+===============================================
+Ensure that subordinates of selected ships acquire their immediate commander's boarding behaviour. In the base-game, when selecting ships, e.g. SHIP A, with subordinates AND those ships' fleet commander, e.g. THE COMMANDER of SHIP A, the subordinates of SHIP A sometimes acquired THE COMMANDER's behaviour (e.g. Maintain Distance) instead of SHIP A's behaviour (e.g. Target Turrets). This tweak allows the player to select wings of a fleet for separate boarding behaviour assignments without needing each wing to be in separate fleets. Note: also check out Kuda's new boarding behaviour changes (https://www.nexusmods.com/x4foundations/mods/839). e.g.: ships on attack orders during boarding operations now stop their attack minimising the chance of the boarding target getting destroyed.
+
 Map Menu: Distance tool
 =======================
 - Click on an object or a position on the map or on a list.
 - Right-click on another object or another position on the map.
 - The distance or the number jumps between the two points will be listed.
 
-Map Menu: Mission lists
-=======================
-Mission lists have an "open all/close all" button.
+Map Menu: Information: Full Crew List
+=====================================
+The list of people on board can be expanded and collapsed.
 
-Map Menu: Multi-rename
-======================
+Map Menu: Interact Menu: Center On Map / Destination
+====================================================
+Right-click on an object and click on Center On Map to center the object on the map without changing your selected objects. This is usable on sectors. When used on a gate, the Center On Destination action centers the gate's destination. (Based on Brinnie's mod request: https://forum.egosoft.com/viewtopic.php?t=471439&sid=a3f501f4bd3cc9a74a01dd4eb5107998.)
+
+Map Menu: Interact Menu: Multi-rename
+=====================================
 Note: Like the base game's single-rename function, confirming a blank entry will to revert an object's name to its default name.
 
 When renaming multiple objects, these special texts in the name will be replaced with the listed value.
@@ -153,23 +169,27 @@ Examples:
 - "Red $i" will name all the objects "Red X" in which X is the object's order in the list.
 - "$name $i" will add the object's order in the list to the object's current name.
 
-Map Menu: Sort by distance
-==========================
-The Player Owned list can be sorted by distance from the player or from the last selected object.
-Note that Egosoft's sorting icons (the up and down arrows) signify direction of the list NOT ascending descending orders.
-E.g. The down arrow actually sorts the list in ascending order. The list is sorted from least to greatest.
+Map Menu: Mission Offers / Mission Manager
+==========================================
+Mission lists have an "open all/close all" button.
 
-Map Menu: Mission Guidance tab
-==============================
+Map Menu: Mission Manager > Guidance Missions
+=============================================
 Any mission with the "missiontype.guidance" will now be listed in the Mission Guidance tab.
 In the base game, the Mission Guidance tab lists only the Guidance created manually with the right-click mouse button. 
 
 The "Set to inactive" and "Set to active" buttons are available on missions listed in the Mission Guidance tab.
 The base game makes these buttons unavailable for Guidance Missions.
 
-Map Menu: Center On Map / Destination
-=====================================
-Right-click on an object and click on Center On Map to center the object on the map without changing your selected objects. This is usable on sectors. When used on a gate, the Center On Destination action centers the gate's destination. (Based on Brinnie's mod request: https://forum.egosoft.com/viewtopic.php?t=471439&sid=a3f501f4bd3cc9a74a01dd4eb5107998.)
+Map Menu: Properties Owned > Deployables
+========================================
+The list of deployables are grouped by name that can be expanded and collapsed.
+
+Map Menu: Sort by distance
+==========================
+The Properties Owned list can be sorted by distance from the player or from the last selected object.
+Note that Egosoft's sorting icons (the up and down arrows) signify direction of the list NOT ascending descending orders.
+E.g. The down arrow actually sorts the list in ascending order. The list is sorted from least to greatest.
 
 Map Menu: Zoom Function Tweaks
 ==============================
@@ -183,12 +203,35 @@ Map Menu: Zoom Function Tweaks
   - "sector view" that always shows the icons of major object,
   - and a "local cluster view".
 
-Boarding Menu: Ship assignment tweaks
-=====================================
-Ensure that subordinates of selected ships acquire their immediate commander's boarding behaviour. In the base-game, when selecting ships, e.g. SHIP A, with subordinates AND those ships' fleet commander, e.g. THE COMMANDER of SHIP A, the subordinates of SHIP A sometimes acquired THE COMMANDER's behaviour (e.g. Maintain Distance) instead of SHIP A's behaviour (e.g. Target Turrets). This tweak allows the player to select wings of a fleet for separate boarding behaviour assignments without needing each wing to be in separate fleets. Note: also check out Kuda's new boarding behaviour changes (https://www.nexusmods.com/x4foundations/mods/839). e.g.: ships on attack orders during boarding operations now stop their attack minimising the chance of the boarding target getting destroyed.
-
 CHANGES BUILT INTO THIS MOD (for developers)
 ============================================
+
+Interact Menu: Add Custom Actions/Orders Group (via MD)
+=======================================================
+1. At `<event_ui_triggered screen="'Interact_Menu_API'" control="'reloaded'" />`, add the Custom Actions/Orders below.
+2. Add the new Custom Actions/Orders Group Id `<raise_lua_event name="'Interact_Menu_API.Add_Custom_Actions_Group_Id'" param="'my_custom_actions_group_id'" />`
+3. Add the new Custom Actions/Orders Group Name `<raise_lua_event name="'Interact_Menu_API.Add_Custom_Actions_Group_Text'" param="'My Custom Actions/Orders Group'" />`
+4. Use the new id in Mod Support API's Add_Action function like this:
+    ```xml
+    ...
+      <signal_cue_instantly cue="md.Interact_Menu_API.Add_Action" param = "table[
+        $id = 'my_custom_action_1,
+        $section = 'my_custom_actions_group_id',
+        $text = 'My Custom Action 1',
+        $mouseover = 'My Custom Action 1 mouse over',
+        $callback = My_Custom_Action_1_Cue
+      ]" />
+      <signal_cue_instantly cue="md.Interact_Menu_API.Add_Action" param = "table[
+        $id = 'my_custom_action_2,
+        $section = 'my_custom_actions_group_id',
+        $text = 'My Custom Action 1',
+        $mouseover = 'My Custom Action 2 mouse over',
+        $callback = My_Custom_Action_2_Cue
+      ]" />
+    ...
+    ```
+5. The custom commands will be added to both the Custom Actions and Custom Orders sub-menus.
+6. To add only to one sub-menu and not the other, start the section name with either "actions_" or "orders_". E.g. "actions_my_custom_actions" will add the custom action to only the Custom Actions sub-menu. And "orders_my_custom_orders" will add the custom order to only the Custom Orders sub-menu.
 
 Map Menu: selectComponent mode
 ==============================
@@ -199,33 +242,6 @@ To use:
 2. The parameters are described at the top of the base game's menu_map.lua file. They are described in more detail at the top of UIX's kuertee_menu_map.lua file.
 3. To trigger an "AddUITriggeredEvent" after the player selects an object, set screenname in the mapMenu.setSelectComponentMode call.
 4. To disable the default "event_conversation_next_section" after the player selects an object, set returnsection to nil in the mapMenu.setSelectComponentMode call.
-
-Add Custom Actions/Orders Group to the Interact Menu (via MD)
-=============================================================
-1. At `<event_ui_triggered screen="'Interact_Menu_API'" control="'reloaded'" />`, add the Custom Actions/Orders below.
-2. Add the new Custom Actions/Orders Group Id `<raise_lua_event name="'Interact_Menu_API.Add_Custom_Actions_Group_Id'" param="'my_custom_actions_group_id'" />`
-3. Add the new Custom Actions/Orders Group Name `<raise_lua_event name="'Interact_Menu_API.Add_Custom_Actions_Group_Text'" param="'My Custom Actions/Orders Group'" />`
-4. Use the new id in Mod Support API's Add_Action function like this:
-    ```xml
-    ...
-    	<signal_cue_instantly cue="md.Interact_Menu_API.Add_Action" param = "table[
-    		$id = 'my_custom_action_1,
-    		$section = 'my_custom_actions_group_id',
-    		$text = 'My Custom Action 1',
-    		$mouseover = 'My Custom Action 1 mouse over',
-    		$callback = My_Custom_Action_1_Cue
-    	]" />
-    	<signal_cue_instantly cue="md.Interact_Menu_API.Add_Action" param = "table[
-    		$id = 'my_custom_action_2,
-    		$section = 'my_custom_actions_group_id',
-    		$text = 'My Custom Action 1',
-    		$mouseover = 'My Custom Action 2 mouse over',
-    		$callback = My_Custom_Action_2_Cue
-    	]" />
-    ...
-    ```
-5. The custom commands will be added to both the Custom Actions and Custom Orders sub-menus.
-6. To add only to one sub-menu and not the other, start the section name with either "actions_" or "orders_". E.g. "actions_my_custom_actions" will add the custom action to only the Custom Actions sub-menu. And "orders_my_custom_orders" will add the custom order to only the Custom Orders sub-menu.
 
 Install
 =======

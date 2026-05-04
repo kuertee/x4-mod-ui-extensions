@@ -26671,10 +26671,13 @@ function menu.buttonRenameConfirm(isconfirmed)
 				end
 			end
 			table.sort(menu.contextMenuData.uix_multiRename_objects, function (a, b) return menu.uix_sortDanger(a, b, true) end)
+			local uix_leading0Count = tostring(#menu.contextMenuData.uix_multiRename_objects):len()
+			Helper.debugText_forced("uix_leading0Count", uix_leading0Count)
 			for uix_index, uix_object in ipairs(menu.contextMenuData.uix_multiRename_objects) do
 				local isplayerowned = GetComponentData(ConvertStringTo64Bit(tostring(uix_object)), "isplayerowned")
 				if isplayerowned then
-					local uix_name = menu.uix_multiRename_formatName(uix_object, newtext, uix_index)
+					local uix_indexText = string.format("%0" .. uix_leading0Count .. "d", uix_index)
+					local uix_name = menu.uix_multiRename_formatName(uix_object, newtext, uix_indexText)
 					SetComponentName(uix_object, uix_name)
 					-- local dpsTable = ffi.new("DPSData[?]", 6)
 					-- C.GetDefensibleDPS(dpsTable, uix_object, true, true, true, false, true, false, false)
@@ -26737,7 +26740,7 @@ function menu.buttonRenameConfirm(isconfirmed)
 end
 
 -- kuertee start: multi-rename
-function menu.uix_multiRename_formatName(object, newName, uix_index)
+function menu.uix_multiRename_formatName(object, newName, uix_indexText)
 	local uix_name = newName
 	if string.find(uix_name, "$name") then
 		uix_name = string.gsub(uix_name, "%$name", GetComponentData(object, "name"))
@@ -26760,7 +26763,7 @@ function menu.uix_multiRename_formatName(object, newName, uix_index)
 		uix_name = string.gsub(uix_name, "%$name_UTAR", GetComponentData(object, "editName"))
 	end
 	if string.find(uix_name, "$i") then
-		uix_name = string.gsub(uix_name, "%$i", uix_index)
+		uix_name = string.gsub(uix_name, "%$i", uix_indexText)
 	end
 	return uix_name
 end
