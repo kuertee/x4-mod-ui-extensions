@@ -2,7 +2,7 @@ dev-revert_files_to_base_lua_files.bat 1866 1777818310 f779be35540f9dd6f524ca67f
 ui/addons/ego_detailmonitor/menu_diplomacy.xpl 216927 1777944186 5a55ee4ca0dc161d9dde4d1dc7f7ceb5
 ui/addons/ego_detailmonitor/menu_docked.xpl 92501 1777820850 9bd61fbd7bddcabb12ffb1a39a62d006
 ui/addons/ego_detailmonitor/menu_encyclopedia.xpl 204490 1777820811 d1cdcc6742d1f9c2058954434fe52e0a
-ui/addons/ego_detailmonitor/menu_map.xpl 1612635 1777944388 47981aa923d11c9aa30fba30273e2e91
+ui/addons/ego_detailmonitor/menu_map.xpl 1612783 1777964872 216f4d174de64686230ff23540b663fa
 ui/addons/ego_detailmonitor/menu_playerinfo.xpl 346325 1777820685 c4e2973fbbef464bb434bbd4906894ca
 ui/addons/ego_detailmonitor/menu_research.xpl 45233 1777820645 2fcb7af78441f4eb28cc180e5f9ef262
 ui/addons/ego_detailmonitor/menu_scenario_debriefing.xpl 32372 1777820627 15b07b65cec637402d8ecbc28629fd6c
@@ -15,7 +15,7 @@ ui/addons/ego_detailmonitor/menu_trader_blueprintsorlicences.xpl 41252 177782038
 ui/addons/ego_detailmonitor/menu_transactionlog.xpl 13824 1777820366 3036a3134299bbc7952c3050e0bb3fb9
 ui/addons/ego_detailmonitor/menu_transporter.xpl 42214 1777820340 12aa352d491514ac422583c4e09ec9e9
 ui/addons/ego_detailmonitor/menu_userquestion.xpl 27458 1777820314 53f5a30c315fe0f717aea776f400e5e3
-ui/addons/ego_detailmonitorhelper/helper.xpl 594644 1777818791 6598fec7d656ae5c65bb637704c29eee
+ui/addons/ego_detailmonitorhelper/helper.xpl 594644 1777952767 6598fec7d656ae5c65bb637704c29eee
 ui/addons/ego_gameoptions/customgame.xpl 239300 1777818716 2f436cd3dfd27d42bade697571f483e0
 ui/addons/ego_gameoptions/gameoptions.xpl 568335 1777818664 9d8398f09a6144ed88c8d474f9d121af
 ui/addons/ego_interactmenu/menu_interactmenu.xpl 392703 1777818477 3d79be44d1f2aadca01d6253867f9793

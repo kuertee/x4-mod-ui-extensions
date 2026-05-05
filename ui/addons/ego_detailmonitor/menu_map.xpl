@@ -18995,18 +18995,14 @@ function menu.createMissionMode(frame)
 					end
 					row[1]:setColSpan(9):createText("--- " .. ReadText(1001, 3302) .. " ---", { halign = "center" })
 				end
+
+				-- kuertee start: open/close mission lists
+				local row = plotmissionrowgroup:addRow(false, {})
+				row[2]:createText("")
+				-- kuertee end: open/close mission lists
 			end
 			-- guild
 			found = false
-
-			-- kuertee start: open/close mission lists
-			if next(menu.missionOfferList["plot"]) then
-				-- if there were plot entries, create a space between plot and guild
-				local row = plotmissionrowgroup:addRow(false, {})
-				row[2]:createText("")
-			end
-			local uix_isGuildListOpen = menu.uix_getIsMissionExpanded(menu.missionOfferList["guild"], true, "uix_guildListOffer")
-			-- kuertee end: open/close mission lists
 
 			-- kuertee start: open/close mission lists
 			-- local row = ftable:addRow(nil, Helper.headerRowProperties)
@@ -19016,6 +19012,7 @@ function menu.createMissionMode(frame)
 			-- kuertee end: open/close mission lists
 
 			-- kuertee start: open/close mission lists
+			local uix_isGuildListOpen = menu.uix_getIsMissionExpanded(menu.missionOfferList["guild"], true, "uix_guildListOffer")
 			row[1]:createButton({active = menu.missionOfferList and menu.missionOfferList["guild"] and #menu.missionOfferList["guild"] > 0 and true or false, height = Helper.headerRowCenteredProperties.minRowHeight}):setText(uix_isGuildListOpen and "-" or "+", { halign = "center" })
 			row[1].handlers.onClick = function () return menu.uix_expandMissionList(menu.missionOfferList["guild"], row.index, nil, true, "uix_guildListOffer") end
 			-- kuertee end: open/close mission lists
@@ -19079,15 +19076,16 @@ function menu.createMissionMode(frame)
 				end
 				row[1]:setColSpan(9):createText("--- " .. ReadText(1001, 3302) .. " ---", { halign = "center" })
 			end
-			-- other
-			found = false
 
 			-- kuertee start: open/close mission lists
 			-- because guild offers will list "no missions" when no missions are on offer, there'll always be a guild section.
 			-- create a space between guild and other offers.
-			local row = ftable:addRow(false, {})
+			local row = guildmissionrowgroup:addRow(false, {})
 			row[2]:createText("")
-			-- kuertee end
+			-- kuertee end: open/close mission lists
+
+			-- other
+			found = false
 
 			-- kuertee start: open/close mission lists
 			-- local row = ftable:addRow(nil, Helper.headerRowProperties)
@@ -19159,10 +19157,6 @@ function menu.createMissionMode(frame)
 			-- important
 
 			-- kuertee start: open/close mission lists
-			local uix_isPlotListOpen, uix_isPlotListActive = menu.uix_getIsMissionExpanded(menu.missionList["plot"], nil, "uix_plotList")
-			-- kuertee end: open/close mission lists
-
-			-- kuertee start: open/close mission lists
 			-- local row = ftable:addRow(nil, Helper.headerRowProperties)
 			-- row[1]:setColSpan(9):createText(ReadText(1001, 5701), Helper.headerRowCenteredProperties)
 			local row = ftable:addRow(true, Helper.headerRowProperties)
@@ -19170,6 +19164,7 @@ function menu.createMissionMode(frame)
 			-- kuertee end: open/close mission lists
 
 			-- kuertee start: open/close mission lists
+			local uix_isPlotListOpen, uix_isPlotListActive = menu.uix_getIsMissionExpanded(menu.missionList["plot"], nil, "uix_plotList")
 			row[1]:createButton({active = menu.missionList and menu.missionList["plot"] and #menu.missionList["plot"] > 0 and true or false, height = Helper.headerRowCenteredProperties.minRowHeight}):setText(uix_isPlotListOpen and "-" or "+", { halign = "center" })
 			row[1].handlers.onClick = function () return menu.uix_expandMissionList(menu.missionList["plot"], row.index, nil, nil, "uix_plotList") end
 			if uix_isPlotListActive then
@@ -19253,15 +19248,13 @@ function menu.createMissionMode(frame)
 				end
 				row[1]:setColSpan(9):createText("--- " .. ReadText(1001, 3302) .. " ---", { halign = "center" })
 			end
-			-- guild
 
 			-- kuertee start: open/close mission lists
-			-- local row = ftable:addRow(nil, { bgColor = Color["row_title_background"] })
-			-- row[1]:setColSpan(9):createText(ReadText(1001, 3333), Helper.headerRowCenteredProperties)
 			local row = ftable:addRow(false, {})
 			row[2]:createText("")
-			local uix_isGuildListOpen, uix_isGuildListActive = menu.uix_getIsMissionExpanded(menu.missionList["guild"], nil, "uix_guildList")
 			-- kuertee end: open/close mission lists
+
+			-- guild
 
 			-- kuertee start: open/close mission lists
 			-- local row = ftable:addRow(nil, Helper.headerRowProperties)
@@ -19273,6 +19266,7 @@ function menu.createMissionMode(frame)
 			local guildmissionrowgroup = ftable:addRowGroup({  })
 
 			-- kuertee start: open/close mission lists
+			local uix_isGuildListOpen, uix_isGuildListActive = menu.uix_getIsMissionExpanded(menu.missionList["guild"], nil, "uix_guildList")
 			row[1]:createButton({active = menu.missionList and menu.missionList["guild"] and #menu.missionList["guild"] > 0 and true or false, height = Helper.headerRowCenteredProperties.minRowHeight}):setText(uix_isGuildListOpen and "-" or "+", { halign = "center" })
 			row[1].handlers.onClick = function () return menu.uix_expandMissionList(menu.missionList["guild"], row.index, nil, nil, "uix_guildList") end
 			if uix_isGuildListActive then
@@ -19358,14 +19352,14 @@ function menu.createMissionMode(frame)
 				end
 				row[1]:setColSpan(9):createText("--- " .. ReadText(1001, 3302) .. " ---", { halign = "center" })
 			end
-			-- other
-			found = false
 
 			-- kuertee start: open/close mission lists
-			-- create a space between guild and other missions.
 			local row = ftable:addRow(false, {})
 			row[2]:createText("")
 			-- kuertee end: open/close mission lists
+
+			-- other
+			found = false
 
 			-- kuertee start: open/close mission lists
 			-- local row = ftable:addRow(nil, Helper.headerRowProperties)
@@ -32281,6 +32275,10 @@ function menu.updateTableSelection(lastcomponent)
 				if type(rowdata) == "table" then
 					if rowdata[1] == nil then
 						print(TraceBack())
+
+						-- kuertee start
+						rowdata[1] = ""
+						-- kuertee end
 					end
 					if (rowdata[1] ~= "moduletype") and (not string.find(rowdata[1], "subordinates")) and (rowdata[1] ~= "dockedships") and (rowdata[1] ~= "constructions") and (rowdata[1] ~= "construction") and (rowdata[1] ~= "fleetunit") and menu.isSelectedComponent(rowdata[2]) then
 						table.insert(rows, row)

@@ -6,6 +6,10 @@ Contributors: AlexandreTK, ChemODun, Damonya, DrWhoKnows, DmytroK, Erixon, Farem
 
 Updates
 =======
+v9.0.0.0.8.3, 5 May 2026:
+- Bug-fix: Map > Mission Offers / Mission Manager: If there were no missions in a mission type, the menu would break.
+- Bug-fix: Map > Mission Offers / Mission Manager: The internal list of variables for the expanded/collapsed flags for missions were not getting cleaned-up properly.
+
 v9.0.0.0.8.2, 5 May 2026:
 - Bug-fix: Missing calback in the Map > Property Owned menu that prevent mods that use that callback from working. Fix by ChemODun.
 - Bug-fix: Bug in the Diplomacy menu that incorrectly sent nil data to callback functions. Fix by ChemODun.
