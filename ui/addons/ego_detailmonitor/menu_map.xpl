@@ -9109,6 +9109,14 @@ function menu.createPropertySection(instance, id, ftable, name, array, nonetext,
 				table.insert(uix_openCloseDeployables_componentsByName[uix_name], component)
 			end
 
+			-- start: clean obsolete flags
+			for uix_name, _ in ipairs(__userdata_uix_menu_map.savedCollapsedDeployables) do
+				if not uix_openCloseDeployables_componentsByName[uix_name] then
+					__userdata_uix_menu_map.savedCollapsedDeployables[uix_name] = nil
+				end
+			end
+			-- end: clean obsolete flags
+
 			local uix_isAnyExpanded
 			for _, uix_name in ipairs(uix_openCloseDeployables_names) do
 				local components = uix_openCloseDeployables_componentsByName[uix_name]
@@ -18892,6 +18900,10 @@ function menu.createMissionMode(frame)
 	end
 
 	if menu.infoTableMode == "missionoffer" then
+		-- kuertee start: open/close mission lists
+		menu.uix_removeInvalidsFromSavedExpandedMissions()
+		-- kuertee end: open/close mission lists
+
 		if (menu.missionOfferMode == "normal") or (not isonline) then
 			local found = false
 			-- important
@@ -19124,6 +19136,10 @@ function menu.createMissionMode(frame)
 			end
 		end
 	elseif menu.infoTableMode == "mission" then
+		-- kuertee start: open/close mission lists
+		menu.uix_removeInvalidsFromSavedExpandedMissions()
+		-- kuertee end: open/close mission lists
+
 		local found = false
 
 		-- kuertee start: callback
@@ -19571,7 +19587,7 @@ end
 function menu.uix_removeInvalidsFromSavedExpandedMissions()
 	local validIds = {}
 	-- check offers and missions separately because lists of one may not be populated even if the lists of the other are.
-	if menu.missionOfferList and menu.missionOfferList["plot"] and #menu.missionOfferList["plot"] > 0 then
+	if menu.missionOfferList and (menu.missionOfferList["plot"] or menu.missionOfferList["guild"] or menu.missionOfferList["other"]) then
 		-- only do the clean up if lists have been populated.
 		-- only need to check "plot" because if "plot" is populated, then "guild" and "other" would be.
 		menu.uix_setValidIds(validIds, menu.missionOfferList["plot"], "uix_plotListOffer", true)
@@ -19580,25 +19596,19 @@ function menu.uix_removeInvalidsFromSavedExpandedMissions()
 		local invalidIds = {}
 		for uix_Id, data in pairs(__userdata_uix_menu_map.savedExpandedMissionOffers) do
 			if validIds[uix_Id] == nil then
-				table.insert(invalidIds, uix_Id)
+				__userdata_uix_menu_map.savedExpandedMissionOffers[uix_Id] = nil
 			end
 		end
-		for _, uix_Id in ipairs(invalidIds) do
-			__userdata_uix_menu_map.savedExpandedMissionOffers[uix_Id] = nil
-		end
 	end
-	if menu.missionList and menu.missionList["plot"] and #menu.missionList["plot"] > 0 then
+	if menu.missionList and (menu.missionList["plot"] or menu.missionList["guild"] or menu.missionList["other"]) then
 		menu.uix_setValidIds(validIds, menu.missionList["plot"], "uix_plotList")
 		menu.uix_setValidIds(validIds, menu.missionList["guild"], "uix_guildList")
 		menu.uix_setValidIds(validIds, menu.missionList["other"], "uix_otherList")
 		local invalidIds = {}
 		for uix_Id, data in pairs(__userdata_uix_menu_map.savedExpandedMissions) do
 			if validIds[uix_Id] == nil then
-				table.insert(invalidIds, uix_Id)
+				__userdata_uix_menu_map.savedExpandedMissions[uix_Id] = nil
 			end
-		end
-		for _, uix_Id in ipairs(invalidIds) do
-			__userdata_uix_menu_map.savedExpandedMissions[uix_Id] = nil
 		end
 	end
 end
