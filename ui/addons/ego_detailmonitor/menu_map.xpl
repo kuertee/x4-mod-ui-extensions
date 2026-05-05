@@ -14500,7 +14500,7 @@ function menu.setupInfoSubmenuRows(mode, inputtable, inputobject, instance)
 			for uix_id, uix_callback in pairs (menu.uix_callbacks ["MtCst_map_shipInformation_newrowsafterboardingstrength"]) do
 				locrowdata = uix_callback(inputobject, object64)
 				if locrowdata then
-					row = menu.addInfoSubmenuRow(instance, inputtable, row, locrowdata, false, false, false, 1, indentsize)
+					row = menu.addInfoSubmenuRow(instance, inputtable, statsrowgroup, row, locrowdata, false, false, false, 1, indentsize)
 				end
 			end
 		end
