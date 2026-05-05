@@ -1907,7 +1907,7 @@ function menu.createFactionDetailsContext(frame)
 		-- kuertee start: callback
 		if menu.uix_callbacks ["createFactionDetailsContext_on_before_detail_tabs"] then
 			for uix_id, uix_callback in pairs (menu.uix_callbacks ["createFactionDetailsContext_on_before_detail_tabs"]) do
-				uix_callback (frame, tableProperties, relation.id, detailtable)
+				uix_callback (frame, menu.tableProperties, relation.id, detailtable)
 			end
 		end
 		-- kuertee end: callback
@@ -1925,7 +1925,7 @@ function menu.createFactionDetailsContext(frame)
 		if menu.uix_callbacks ["createFactionDetailsContext_on_add_detail_tabs"] then
 			local uix_detailTabs = {}
 			for uix_id, uix_callback in pairs (menu.uix_callbacks ["createFactionDetailsContext_on_add_detail_tabs"]) do
-				local uix_detailTab = uix_callback (frame, tableProperties, relation.id, detailtable)
+				local uix_detailTab = uix_callback (frame, menu.tableProperties, relation.id, detailtable)
 				-- e.g. from crime has consequences
 				-- uix_detailTab = {
 				-- 	id = "criminal_record",
@@ -1967,7 +1967,7 @@ function menu.createFactionDetailsContext(frame)
 			-- kuertee start: callback for backward compatibility. obsolete do not create new callbacks with this id.
 			if menu.uix_callbacks ["createFactions_on_before_render_licences"] then
 				for uix_id, uix_callback in pairs (menu.uix_callbacks ["createFactions_on_before_render_licences"]) do
-					uix_callback (frame, tableProperties, relation.id, detailtable)
+					uix_callback (frame, menu.tableProperties, relation.id, detailtable)
 				end
 			end
 			-- kuertee end: callback
@@ -2133,7 +2133,7 @@ function menu.createFactionDetailsContext(frame)
 			-- kuertee start: callback for backward compatibility. obsolete do not create new callbacks with this id.
 			if menu.uix_callbacks ["createFactions_on_after_declare_war_button"] then
 				for uix_id, uix_callback in pairs (menu.uix_callbacks ["createFactions_on_after_declare_war_button"]) do
-					uix_callback (frame, tableProperties, relation.id, detailtable)
+					uix_callback (frame, menu.tableProperties, relation.id, detailtable)
 				end
 			end
 			-- kuertee end: callback
@@ -2306,7 +2306,7 @@ function menu.createFactionDetailsContext(frame)
 		-- kuertee start: callback
 		if menu.uix_callbacks ["createFactionDetailsContext_on_render_detail_tab"] then
 			for uix_id, uix_callback in pairs (menu.uix_callbacks ["createFactionDetailsContext_on_render_detail_tab"]) do
-				uix_callback (frame, tableProperties, relation.id, detailtable, menu.factionData.curTab)
+				uix_callback (frame, menu.tableProperties, relation.id, detailtable, menu.factionData.curTab)
 			end
 		end
 		-- kuertee end: callback
