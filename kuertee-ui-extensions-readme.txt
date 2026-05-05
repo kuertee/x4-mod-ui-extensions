@@ -6,6 +6,11 @@ Contributors: AlexandreTK, ChemODun, Damonya, DrWhoKnows, DmytroK, Erixon, Farem
 
 Updates
 =======
+v9.0.0.0.8.2, 5 May 2026:
+- Bug-fix: Missing calback in the Map > Property Owned menu that prevent mods that use that callback from working. Fix by ChemODun.
+- Bug-fix: Bug in the Diplomacy menu that incorrectly sent nil data to callback functions. Fix by ChemODun.
+- Bug-fix: Bug in the Map > Information menu that sent incorrect data to a callback function. Fix by DrWhoKnows.
+
 v9.0.0.0.8, 4 May 2026:
 - Tweak: Multi-rename now adds leading zeroes to the "$i" portion of the objects name. Previously, it used raw text numbers preventing the ship from getting sorted propertly.
 - New feature: Map Menu > Properties Owned > Deployables: The list of deployables are grouped by name that can be expanded and collapsed.
