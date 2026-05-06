@@ -8489,7 +8489,7 @@ function menu.createObjectList(frame, instance)
 		row[tableColumn].handlers.onClick = function () return menu.buttonObjectSorter("relation") end
 
 		--kuertee start: extra sort by distance
-		-- menu.uix_renderExtraSortByDistance(tabtable, colSpanPerSorterColumn, buttonheight, iconheight)
+		menu.uix_renderExtraSortByDistance(tabtable, colSpanPerSorterColumn, buttonheight, iconheight)
 		--kuertee end: extra sort by distance
 	end
 
@@ -9043,13 +9043,15 @@ function menu.uix_renderExtraSortByDistance(tabtable, colSpanPerSorterColumn, bu
 		uix_extraSortByDistance_byObject_object = uix_extraSortByDistance_byObject_potentialObject
 	end
 	if uix_extraSortByDistance_byObject_object then
-		local name, idcode, classid = GetComponentData(ConvertStringToLuaID(tostring(menu.infoSubmenuObject)), "name", "idcode", "classid")
+		local name, idcode, classid = GetComponentData(ConvertStringToLuaID(tostring(uix_extraSortByDistance_byObject_object)), "name", "idcode", "classid")
+		local mouseovertext = name
 		if idcode ~= "" then
 			buttonLabel = idcode
+			mouseovertext = mouseovertext .. " (" .. idcode .. ")"
 		else
 			buttonLabel = name
 		end
-		local button = row[tableColumn]:createButton({ scaling = false, width = buttonwidth, height = buttonheight }):setText(buttonLabel, { halign = "center", scaling = true })
+		local button = row[tableColumn]:createButton({ scaling = false, width = buttonwidth, height = buttonheight, mouseOverText = mouseovertext }):setText(buttonLabel, { halign = "center", scaling = true })
 		if uix_extraSortByDistance_byObject_mode == "uix_extraSortByDistance_object" then
 			button:setIcon("table_arrow_inv_down", { width = iconheight, height = iconheight, x = buttonwidth - iconheight, y = (buttonheight - iconheight) / 2 })
 		elseif uix_extraSortByDistance_byObject_mode == "uix_extraSortByDistance_objectinverse" then
@@ -19105,7 +19107,7 @@ function menu.createMissionMode(frame)
 			-- kuertee end
 
 				local othermissionrowgroup = ftable:addRowGroup({  })
-	
+
 				for _, entry in ipairs(menu.missionOfferList["other"]) do
 					found = true
 					menu.addMissionRow(ftable, othermissionrowgroup, entry)
@@ -32354,6 +32356,9 @@ function menu.addSelectedComponent(component, clear, noupdate)
 	if not next(menu.selectedcomponents) and add then
 		-- always set uix_extraSortByDistance_byObject_potentialObject to only the first component added to menu.selectedcomponents
 		uix_extraSortByDistance_byObject_potentialObject = component
+	else
+		local firstSelectedComponent = next(menu.selectedcomponents)
+		uix_extraSortByDistance_byObject_potentialObject = firstSelectedComponent and ConvertStringTo64Bit(tostring(firstSelectedComponent)) or nil
 	end
 	-- kuertee end: extra sort by distance
 
@@ -32573,7 +32578,7 @@ function menu.setFilterOption(mode, setting, id, value, index)
 	if not settings[mode] then
 		settings[mode] = true
 		menu.applyFilterSettings(nil, true)
-	else 
+	else
 		setting.callback(setting, nil, nil, true)
 	end
 end
@@ -33247,8 +33252,8 @@ function menu.uix_sortDistanceFromPlayer (a, b, invert)
 end
 
 function menu.uix_sortDistanceFromObject (a, b, invert)
-	local distance_a = C.GetDistanceBetween (ConvertStringTo64Bit (tostring (a.id)), ConvertStringTo64Bit (tostring (menu.infoSubmenuObject)))
-	local distance_b = C.GetDistanceBetween (ConvertStringTo64Bit (tostring (b.id)), ConvertStringTo64Bit (tostring (menu.infoSubmenuObject)))
+	local distance_a = C.GetDistanceBetween (ConvertStringTo64Bit (tostring (a.id)), ConvertStringTo64Bit (tostring (uix_extraSortByDistance_byObject_object)))
+	local distance_b = C.GetDistanceBetween (ConvertStringTo64Bit (tostring (b.id)), ConvertStringTo64Bit (tostring (uix_extraSortByDistance_byObject_object)))
 	if invert then
 		return distance_a > distance_b
 	else
