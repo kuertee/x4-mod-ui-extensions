@@ -32256,7 +32256,7 @@ function menu.updateTableSelection(lastcomponent)
 		end
 
 		-- kuertee start: extra sort by distance
-		if (not refresh) and (menu.infoTableMode == "propertyowned" or menu.infoTableMode == "objectlist") and (not uix_extraSortByDistance_byObject_mode) then
+		if (not refresh) and (menu.infoTableMode == "propertyowned"--[[  or menu.infoTableMode == "objectlist" ]]) and (not uix_extraSortByDistance_byObject_mode) then
 			if uix_extraSortByDistance_byObject_object ~= uix_extraSortByDistance_byObject_potentialObject then
 				refresh = true
 			end
