@@ -9044,12 +9044,14 @@ function menu.uix_renderExtraSortByDistance(tabtable, colSpanPerSorterColumn, bu
 	end
 	if uix_extraSortByDistance_byObject_object then
 		local name, idcode, classid = GetComponentData(ConvertStringToLuaID(tostring(uix_extraSortByDistance_byObject_object)), "name", "idcode", "classid")
+		local mouseovertext = name
 		if idcode ~= "" then
 			buttonLabel = idcode
+			mouseovertext = mouseovertext .. " (" .. idcode .. ")"
 		else
 			buttonLabel = name
 		end
-		local button = row[tableColumn]:createButton({ scaling = false, width = buttonwidth, height = buttonheight }):setText(buttonLabel, { halign = "center", scaling = true })
+		local button = row[tableColumn]:createButton({ scaling = false, width = buttonwidth, height = buttonheight, mouseOverText = mouseovertext }):setText(buttonLabel, { halign = "center", scaling = true })
 		if uix_extraSortByDistance_byObject_mode == "uix_extraSortByDistance_object" then
 			button:setIcon("table_arrow_inv_down", { width = iconheight, height = iconheight, x = buttonwidth - iconheight, y = (buttonheight - iconheight) / 2 })
 		elseif uix_extraSortByDistance_byObject_mode == "uix_extraSortByDistance_objectinverse" then
