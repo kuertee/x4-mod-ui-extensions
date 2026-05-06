@@ -19105,7 +19105,7 @@ function menu.createMissionMode(frame)
 			-- kuertee end
 
 				local othermissionrowgroup = ftable:addRowGroup({  })
-	
+
 				for _, entry in ipairs(menu.missionOfferList["other"]) do
 					found = true
 					menu.addMissionRow(ftable, othermissionrowgroup, entry)
@@ -32354,6 +32354,9 @@ function menu.addSelectedComponent(component, clear, noupdate)
 	if not next(menu.selectedcomponents) and add then
 		-- always set uix_extraSortByDistance_byObject_potentialObject to only the first component added to menu.selectedcomponents
 		uix_extraSortByDistance_byObject_potentialObject = component
+	else
+		local firstSelectedComponent = next(menu.selectedcomponents)
+		uix_extraSortByDistance_byObject_potentialObject = firstSelectedComponent and ConvertStringTo64Bit(tostring(firstSelectedComponent)) or nil
 	end
 	-- kuertee end: extra sort by distance
 
@@ -32573,7 +32576,7 @@ function menu.setFilterOption(mode, setting, id, value, index)
 	if not settings[mode] then
 		settings[mode] = true
 		menu.applyFilterSettings(nil, true)
-	else 
+	else
 		setting.callback(setting, nil, nil, true)
 	end
 end
