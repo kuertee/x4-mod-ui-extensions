@@ -18945,7 +18945,11 @@ function menu.createMissionMode(frame)
 					end
 					if entry.missions then
 						-- story case
-						local row = plotmissionrowgroup:addRow(entry.id, {  })
+						-- kuertee start: open/close mission lists
+						-- local row = plotmissionrowgroup:addRow(entry.id, {  })
+						local row = plotmissionrowgroup:addRow(entry.id or true, {  })
+						-- kuertee end: open/close mission lists
+
 						if entry.id == menu.missionModeCurrent then
 							menu.setrow = row.index
 						end
@@ -18997,7 +19001,7 @@ function menu.createMissionMode(frame)
 				end
 
 				-- kuertee start: open/close mission lists
-				local row = plotmissionrowgroup:addRow(false, {})
+				local row = ftable:addRow(false, {})
 				row[2]:createText("")
 				-- kuertee end: open/close mission lists
 			end
@@ -19048,7 +19052,11 @@ function menu.createMissionMode(frame)
 					local isexpanded = menu.uix_getIsMissionExpanded(data, true)
 					-- kuertee end: open/close mission lists
 
-					local row = guildmissionrowgroup:addRow(data.groupid, {  })
+					-- kuertee start: open/close mission lists
+					-- local row = guildmissionrowgroup:addRow(data.groupid, {  })
+					local row = guildmissionrowgroup:addRow(data.groupid or true, {  })
+					-- kuertee end: open/close mission lists
+
 					if data.groupid == menu.missionModeCurrent then
 						menu.setrow = row.index
 					end
@@ -19080,7 +19088,7 @@ function menu.createMissionMode(frame)
 			-- kuertee start: open/close mission lists
 			-- because guild offers will list "no missions" when no missions are on offer, there'll always be a guild section.
 			-- create a space between guild and other offers.
-			local row = guildmissionrowgroup:addRow(false, {})
+			local row = ftable:addRow(false, {})
 			row[2]:createText("")
 			-- kuertee end: open/close mission lists
 
@@ -19208,7 +19216,7 @@ function menu.createMissionMode(frame)
 					-- story case
 					-- kuertee start: open/close mission lists
 					-- local row = generalmissionrowgroup:addRow(entry.groupid, {  })
-					local row = generalmissionrowgroup:addRow(entry.groupid, {  })
+					local row = generalmissionrowgroup:addRow(entry.groupid or true, {  })
 					-- kuertee end: open/close mission lists
 
 					if entry.groupid == menu.missionModeCurrent then
@@ -19298,7 +19306,11 @@ function menu.createMissionMode(frame)
 				local isexpanded, uix_isActive = menu.uix_getIsMissionExpanded(data)
 				-- kuertee end: open/close mission lists
 
-				local row = guildmissionrowgroup:addRow(data.groupid, {  })
+				-- kuertee start: open/close mission lists
+				-- local row = guildmissionrowgroup:addRow(data.groupid, {  })
+				local row = guildmissionrowgroup:addRow(data.groupid or true, {  })
+				-- kuertee end: open/close mission lists
+
 				if data.groupid == menu.missionModeCurrent then
 					menu.setrow = row.index
 				end
