@@ -2586,6 +2586,13 @@ function menu.buttonRemoveFleetUnit()
 	C.RemoveFleetUnit(menu.fleetunit)
 	menu.onCloseElement("close")
 end
+ 
+function menu.buttonEditFleetUnit()
+	Helper.resetUpdateHandler()
+	Helper.clearFrame(menu, config.layer)
+	Helper.returnFromInteractMenu(menu.currentOverTable, "newmenu", { "ShipConfigurationMenu", { 0, 0, nil, "upgradefleetunit", { menu.fleetunit } } })
+	menu.cleanup()
+end
 
 function menu.buttonRemoveOrder()
 	if menu.componentOrder then
@@ -7454,6 +7461,15 @@ function menu.prepareActions()
 
 		-- remove fleetunit
 		menu.insertInteractionContent("main", { text = ReadText(1001, 11148), script = menu.buttonRemoveFleetUnit, active = true })
+
+		-- edit fleetunit loadout
+		local issues = ffi.string(C.GetFleetUnitBuildIssues(menu.fleetunit))
+		for issue in string.gmatch(issues, "[^;]+") do
+			if issue == "equipment" then
+				menu.insertInteractionContent("main", { text = ReadText(1001, 7938), script = menu.buttonEditFleetUnit, active = true })
+				break
+			end
+		end
 
 		-- Change assignment
 		local shiptype = GetMacroData(menu.fleetunitinfo.macro, "shiptype")

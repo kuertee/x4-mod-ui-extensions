@@ -32506,10 +32506,11 @@ function menu.getFilterMiningResourcesOptions()
 	n = C.GetRegionResourceWares(buf, n)
 	for i = 0, n - 1 do
 		local ware = ffi.string(buf[i])
-		table.insert(result, { id = ware, text = GetWareData(ware, "name"), icon = "", displayremoveoption = false })
+		local name, icon, miningmapcolor = GetWareData(ware, "name", "icon", "miningmapcolor")
+		table.insert(result, { id = ware, text = Helper.convertColorToText(miningmapcolor) .. "\27[" .. icon .. "]\27X " .. name, icon = "", displayremoveoption = false, name = name })
 	end
-	table.sort(result, function (a, b) return a.text < b.text end)
-	table.insert(result, 1, { id = "all", text = ReadText(1001, 2963), icon = "", displayremoveoption = false })
+	table.sort(result, Helper.sortName)
+	table.insert(result, 1, { id = "all", text = "\27[ware_all] " .. ReadText(1001, 2963) .. " (" .. ColorText["resource_map_anymineral"] .. ReadText(1001, 11699) .. "\27X / " .. ColorText["resource_map_anygas"] .. ReadText(1001, 13401) .. "\27X / " .. ColorText["resource_map_anyscrap"] .. ReadText(1001, 13402) .. "\27X)", icon = "", displayremoveoption = false })
 	return result
 end
 
