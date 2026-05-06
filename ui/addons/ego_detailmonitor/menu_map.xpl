@@ -8489,7 +8489,7 @@ function menu.createObjectList(frame, instance)
 		row[tableColumn].handlers.onClick = function () return menu.buttonObjectSorter("relation") end
 
 		--kuertee start: extra sort by distance
-		-- menu.uix_renderExtraSortByDistance(tabtable, colSpanPerSorterColumn, buttonheight, iconheight)
+		menu.uix_renderExtraSortByDistance(tabtable, colSpanPerSorterColumn, buttonheight, iconheight)
 		--kuertee end: extra sort by distance
 	end
 
@@ -9043,7 +9043,7 @@ function menu.uix_renderExtraSortByDistance(tabtable, colSpanPerSorterColumn, bu
 		uix_extraSortByDistance_byObject_object = uix_extraSortByDistance_byObject_potentialObject
 	end
 	if uix_extraSortByDistance_byObject_object then
-		local name, idcode, classid = GetComponentData(ConvertStringToLuaID(tostring(menu.infoSubmenuObject)), "name", "idcode", "classid")
+		local name, idcode, classid = GetComponentData(ConvertStringToLuaID(tostring(uix_extraSortByDistance_byObject_object)), "name", "idcode", "classid")
 		if idcode ~= "" then
 			buttonLabel = idcode
 		else
@@ -32256,7 +32256,7 @@ function menu.updateTableSelection(lastcomponent)
 		end
 
 		-- kuertee start: extra sort by distance
-		if (not refresh) and (menu.infoTableMode == "propertyowned"--[[  or menu.infoTableMode == "objectlist" ]]) and (not uix_extraSortByDistance_byObject_mode) then
+		if (not refresh) and (menu.infoTableMode == "propertyowned" or menu.infoTableMode == "objectlist") and (not uix_extraSortByDistance_byObject_mode) then
 			if uix_extraSortByDistance_byObject_object ~= uix_extraSortByDistance_byObject_potentialObject then
 				refresh = true
 			end
@@ -33250,8 +33250,8 @@ function menu.uix_sortDistanceFromPlayer (a, b, invert)
 end
 
 function menu.uix_sortDistanceFromObject (a, b, invert)
-	local distance_a = C.GetDistanceBetween (ConvertStringTo64Bit (tostring (a.id)), ConvertStringTo64Bit (tostring (menu.infoSubmenuObject)))
-	local distance_b = C.GetDistanceBetween (ConvertStringTo64Bit (tostring (b.id)), ConvertStringTo64Bit (tostring (menu.infoSubmenuObject)))
+	local distance_a = C.GetDistanceBetween (ConvertStringTo64Bit (tostring (a.id)), ConvertStringTo64Bit (tostring (uix_extraSortByDistance_byObject_object)))
+	local distance_b = C.GetDistanceBetween (ConvertStringTo64Bit (tostring (b.id)), ConvertStringTo64Bit (tostring (uix_extraSortByDistance_byObject_object)))
 	if invert then
 		return distance_a > distance_b
 	else
