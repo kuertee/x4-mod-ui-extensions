@@ -6,7 +6,10 @@ Contributors: AlexandreTK, ChemODun, Damonya, DrWhoKnows, DmytroK, Erixon, Farem
 
 Updates
 =======
-v9.0.0.0.8.4, 7 May 2026:
+v9.0.0.0.8.5, 7 May 2026:
+- Compatibility: Update to 9.0 beta 9 of the base lua files.
+- Bug-fix: Map Menu > Information menu: missing "row" parameter after a custom callback function.
+- Bug-fix: Doh! I Forgot to pack the fixed files for the two bug fixes below (from the previous update) into the subst files. Sorry, my bad.
 - Bug-fix: UIX's sort by distance from object breaks the objects list sometimes. Fixed by ChemODun. Thanks!
 - Bug-fix: Another bug in Map > Mission Offers / Mission Manager: If there were no missions in a mission type, the menu would break.
 
