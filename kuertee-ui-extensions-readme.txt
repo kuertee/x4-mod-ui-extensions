@@ -6,6 +6,10 @@ Contributors: AlexandreTK, ChemODun, Damonya, DrWhoKnows, DmytroK, Erixon, Farem
 
 Updates
 =======
+v9.0.0.0.8.4, 7 May 2026:
+- Bug-fix: UIX's sort by distance from object breaks the objects list sometimes. Fixed by ChemODun. Thanks!
+- Bug-fix: Another bug in Map > Mission Offers / Mission Manager: If there were no missions in a mission type, the menu would break.
+
 v9.0.0.0.8.3, 5 May 2026:
 - Bug-fix: Map > Mission Offers / Mission Manager: If there were no missions in a mission type, the menu would break.
 - Bug-fix: Map > Mission Offers / Mission Manager: The internal list of variables for the expanded/collapsed flags for missions were not getting cleaned-up properly.

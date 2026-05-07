@@ -9076,7 +9076,7 @@ function menu.createPropertySection(instance, id, ftable, name, array, nonetext,
 
 	-- kuertee start: open/close deployables
 	local uix_openCloseDeployables_headerRow
-	if menu.propertyMode == "deployables" then
+	if menu.propertyMode == "deployables" and #array > 0 then
 		local row = ftable:addRow({}, { bgColor = Color["row_background_blue"] })
 		uix_openCloseDeployables_headerRow = row
 		row[2]:setColSpan(4 + maxicons):createText(name, Helper.headerRowCenteredProperties)
@@ -19115,7 +19115,7 @@ function menu.createMissionMode(frame)
 			-- kuertee end
 
 				local othermissionrowgroup = ftable:addRowGroup({  })
-
+	
 				for _, entry in ipairs(menu.missionOfferList["other"]) do
 					found = true
 					menu.addMissionRow(ftable, othermissionrowgroup, entry)
@@ -32590,7 +32590,7 @@ function menu.setFilterOption(mode, setting, id, value, index)
 	if not settings[mode] then
 		settings[mode] = true
 		menu.applyFilterSettings(nil, true)
-	else
+	else 
 		setting.callback(setting, nil, nil, true)
 	end
 end
