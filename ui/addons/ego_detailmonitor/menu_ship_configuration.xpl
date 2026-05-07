@@ -3,6 +3,7 @@
 
 -- modes:	"purchase",	param:	{}
 --			"upgrade",			{ selectableships }
+--			"upgradefleetunit",	{ fleetunit }
 --			"modify",			{ [ paintonly = false, selectedships = {} ] }
 --			"customgamestart",	{ gamestartid, creative, shipproperty, shiploadoutproperty, shippeopleproperty, shippeoplefillpercentageproperty, shippilotproperty, paintthemeproperty, playerpropertyid, propertymacro, propertycommander, propertypeopledef, propertypeoplefillpercentage, propertycount, paused }
 --			"comparison",		{ id }
@@ -110,6 +111,14 @@ ffi.cdef[[
 		FightRuleID id;
 		const char* type;
 	} FightRuleTypeID;
+	typedef struct {
+		FleetUnitID fleetunitid;
+		const char* name;
+		const char* idcode;
+		const char* macro;
+		BuildTaskID buildtaskid;
+		UniverseID replacementid;
+	} FleetUnitInfo;
 	typedef struct {
 		const char* id;
 		const char* name;
@@ -514,6 +523,9 @@ ffi.cdef[[
 	uint32_t GetDefensibleDeployableCapacity(UniverseID defensibleid);
 	uint32_t GetDockedShips(UniverseID* result, uint32_t resultlen, UniverseID dockingbayorcontainerid, const char* factionid);
 	const char* GetEquipmentModPropertyName(const char* wareid);
+	FleetUnitInfo GetFleetUnitInfo(FleetUnitID fleetunitid);
+	void GetFleetUnitLoadout(UILoadout2* result, FleetUnitID fleetunitid);
+	void GetFleetUnitLoadoutCounts(UILoadoutCounts2* result, FleetUnitID fleetunitid);
 	uint32_t GetHighestEquipmentModQuality(UniverseID defensibleid);
 	bool GetInstalledEngineMod2(UniverseID objectid, UIEngineMod2* enginemod);
 	bool GetInstalledPaintMod(UniverseID objectid, UIPaintMod* paintmod);
@@ -565,6 +577,7 @@ ffi.cdef[[
 	uint32_t GetNumMissileCargo(UniverseID containerid);
 	uint32_t GetNumMissingBuildResources2(UniverseID containerid, UIBuildOrderList* orders, uint32_t numorders, bool playercase);
 	uint32_t GetNumMissingLoadoutResources2(UniverseID containerid, UIBuildOrderList* orders, uint32_t numorders, bool playercase);
+	uint32_t GetNumPlayerEquipmentWares();
 	uint32_t GetNumPlayerPeopleDefinitions(void);
 	uint32_t GetNumRepairResources2(UniverseID containerid, UniverseID defensibleid, UniverseID componenttorepairid);
 	uint32_t GetNumRequestedMissionShips(void);
@@ -586,6 +599,7 @@ ffi.cdef[[
 	uint32_t GetPeople2(PeopleInfo* result, uint32_t resultlen, UniverseID controllableid, bool includearriving);
 	uint32_t GetPeopleCapacity(UniverseID controllableid, const char* macroname, bool includepilot);
 	bool GetPickedMapMacroSlot(UniverseID holomapid, UniverseID defensibleid, UniverseID moduleid, const char* macroname, bool ismodule, UILoadoutSlot* result);
+	uint32_t GetPlayerEquipmentWares(EquipmentWareInfo* result, uint32_t resultlen);
 	UniverseID GetPlayerOccupiedShipID(void);
 	const char* GetPlayerPaintTheme(void);
 	bool GetPlayerPaintThemeMod(UniverseID objectid, const char* macroname, UIPaintMod* paintmod);
@@ -649,6 +663,7 @@ ffi.cdef[[
 	void SetCustomGameStartPlayerPropertyPerson(const char* id, const char* propertyid, const char* entryid, CustomGameStartPersonEntry uivalue);
 	void SetCustomGameStartShipAndLoadoutProperty2(const char* id, const char* shippropertyid, const char* loadoutpropertyid, const char* macroname, UILoadout2 uiloadout);
 	void SetCustomGameStartShipPilot(const char* id, const char* propertyid, CustomGameStartPersonEntry uivalue);
+	void SetFleetUnitLoadout(FleetUnitID fleetunitid, const char* macroname, UILoadout2 uiloadout);
 	void SetCustomGameStartStringProperty(const char* id, const char* propertyid, const char* uivalue);
 	void SetMapPaintMod(UniverseID holomapid, const char* wareid);
 	void SetMapPicking(UniverseID holomapid, bool enable);
@@ -700,9 +715,9 @@ local config = {
 		{ name = ReadText(1001, 87),	icon = "shipbuildst_software",		mode = "software" },
 		{ spacing = true,																			comparison = false },
 		{ name = ReadText(1001, 8003),	icon = "shipbuildst_consumable",	mode = "consumables",	comparison = false },
-		{ name = ReadText(1001, 80),	icon = "shipbuildst_crew",			mode = "crew",			comparison = false },
-		{ spacing = true,																			customgamestart = false,	comparison = false },
-		{ name = ReadText(1001, 8510),	icon = "shipbuildst_paint",			mode = "paintmods",		customgamestart = false,	comparison = false,		upgrademode = "paint",	modclass = "paint" },
+		{ name = ReadText(1001, 80),	icon = "shipbuildst_crew",			mode = "crew",			comparison = false,		upgradefleetunit = false },
+		{ spacing = true,																			customgamestart = false,	comparison = false,		upgradefleetunit = false },
+		{ name = ReadText(1001, 8510),	icon = "shipbuildst_paint",			mode = "paintmods",		customgamestart = false,	comparison = false,		upgradefleetunit = false,		upgrademode = "paint",	modclass = "paint" },
 		{ spacing = true,																			customgamestart = false,	comparison = false,		hascontainer = true },
 		{ name = ReadText(1001, 3000),	icon = "shipbuildst_repair",		mode = "repair",		customgamestart = false,	comparison = false,		hascontainer = true },
 		{ spacing = true,																			comparison = false,			hascontainer = true },
@@ -1917,6 +1932,8 @@ function menu.buttonConfirm()
 					end
 				end
 			end
+		elseif menu.mode == "upgradefleetunit" then
+			Helper.callLoadoutFunction(menu.upgradeplan, nil, function (loadout, _) return C.SetFleetUnitLoadout(menu.fleetunit, menu.macro, loadout) end, nil, "UILoadout2")
 		elseif menu.mode == "modify" then
 			-- TODO
 		elseif menu.mode == "customgamestart" then
@@ -2805,6 +2822,9 @@ function menu.onShowMenu(state)
 	if menu.param[3] == nil then
 		if menu.mode == "upgrade" then
 			menu.isReadOnly = true
+		elseif menu.mode == "upgradefleetunit" then
+			menu.containerowner = "player"
+			menu.isplayerowned = true
 		end
 	else
 		menu.container = ConvertIDTo64Bit(menu.param[3])
@@ -2842,6 +2862,8 @@ function menu.onShowMenu(state)
 			end
 		elseif menu.mode == "comparison" then
 			menu.modeparam = menu.param[5]
+		elseif menu.mode == "upgradefleetunit" then
+			menu.fleetunit = ConvertIDTo64Bit(menu.param[5][1])
 		else
 			for _, ship in pairs(menu.param[5]) do
 				table.insert(menu.modeparam, ConvertIDTo64Bit(ship))
@@ -2853,7 +2875,7 @@ function menu.onShowMenu(state)
 		menu.immediate = menu.param[6]
 	end
 	menu.usemacro = nil
-	if (menu.mode == "purchase") or (menu.mode == "customgamestart") or (menu.mode == "comparison") then
+	if (menu.mode == "purchase") or (menu.mode == "customgamestart") or (menu.mode == "comparison") or (menu.mode == "upgradefleetunit") then
 		menu.usemacro = true
 	end
 
@@ -3213,6 +3235,15 @@ function menu.onShowMenu(state)
 				menu.availableshipmacrosbyclass[class] = { macro }
 			end
 		end
+	elseif menu.mode == "upgradefleetunit" then
+		local info = C.GetFleetUnitInfo(menu.fleetunit)
+
+		menu.object = 0
+		menu.macro = ffi.string(info.macro)
+		menu.class = ffi.string(C.GetMacroClass(menu.macro))
+
+		menu.availableshipmacros = { menu.macro }
+		menu.availableshipmacrosbyclass = { [menu.class] = { menu.macro } }
 	end
 
 	menu.hasDefaultLoadout = false
@@ -3237,7 +3268,7 @@ function menu.onShowMenu(state)
 
 	menu.equipmentsearchtext = {}
 	menu.loadoutName = ""
-	if (menu.mode == "purchase") or (menu.mode == "upgrade") or (menu.mode == "customgamestart") or (menu.mode == "comparison") then
+	if (menu.mode == "purchase") or (menu.mode == "upgrade") or (menu.mode == "upgradefleetunit") or (menu.mode == "customgamestart") or (menu.mode == "comparison") then
 		menu.upgradetypeMode = "engine"
 	elseif menu.mode == "modify" then
 		menu.upgradetypeMode = "shipmods"
@@ -3254,23 +3285,7 @@ function menu.onShowMenu(state)
 	if state then
 		upgradeplan, crew = menu.onRestoreState(state)
 	elseif menu.mode == "customgamestart" then
-		menu.software = {}
-		for i, upgradetype in ipairs(Helper.upgradetypes) do
-			if upgradetype.supertype == "software" then
-				menu.software[upgradetype.type] = {}
-				if menu.macro ~= "" then
-					local n = C.GetNumSoftwareSlots(0, menu.macro)
-					local buf = ffi.new("SoftwareSlot[?]", n)
-					n = C.GetSoftwareSlots(buf, n, 0, menu.macro)
-					for j = 0, n - 1 do
-						local entry = {}
-						entry.maxsoftware = ffi.string(buf[j].max)
-						entry.currentsoftware = ffi.string(buf[j].current)
-						table.insert(menu.software[upgradetype.type], entry)
-					end
-				end
-			end
-		end
+		menu.prepareSoftwareData(menu.macro)
 
 		if menu.modeparam.playerpropertyid then
 			if menu.macro ~= "" then
@@ -3283,24 +3298,15 @@ function menu.onShowMenu(state)
 		end
 	elseif menu.mode == "comparison" then
 		if menu.macro ~= "" then
-			menu.software = {}
-			for i, upgradetype in ipairs(Helper.upgradetypes) do
-				if upgradetype.supertype == "software" then
-					menu.software[upgradetype.type] = {}
-					local n = C.GetNumSoftwareSlots(0, menu.macro)
-					local buf = ffi.new("SoftwareSlot[?]", n)
-					n = C.GetSoftwareSlots(buf, n, 0, menu.macro)
-					for j = 0, n - 1 do
-						local entry = {}
-						entry.maxsoftware = ffi.string(buf[j].max)
-						entry.currentsoftware = ffi.string(buf[j].current)
-						table.insert(menu.software[upgradetype.type], entry)
-					end
-				end
-			end
+			menu.prepareSoftwareData(menu.macro)
 
 			upgradeplan = Helper.getShipComparisonUpgradeplan(menu.modeparam[1])
 		end
+	elseif menu.mode == "upgradefleetunit" then
+		menu.prepareSoftwareData(menu.macro)
+
+		local loadout = Helper.getLoadoutHelper2(C.GetFleetUnitLoadout, C.GetFleetUnitLoadoutCounts, "UILoadout2", menu.fleetunit)
+		upgradeplan = Helper.convertLoadout(menu.object, menu.macro, loadout, menu.software, "UILoadout2")
 	end
 
 	if menu.container then
@@ -3345,6 +3351,24 @@ function menu.onShowMenu(state)
 		menu.bindingRegistered = true
 		RegisterAddonBindings("ego_detailmonitor", "undo")
 		Helper.setKeyBinding(menu, menu.hotkey)
+	end
+end
+
+function menu.prepareSoftwareData(macro)
+	menu.software = {}
+	for i, upgradetype in ipairs(Helper.upgradetypes) do
+		if upgradetype.supertype == "software" then
+			menu.software[upgradetype.type] = {}
+			local n = C.GetNumSoftwareSlots(0, macro)
+			local buf = ffi.new("SoftwareSlot[?]", n)
+			n = C.GetSoftwareSlots(buf, n, 0, macro)
+			for j = 0, n - 1 do
+				local entry = {}
+				entry.maxsoftware = ffi.string(buf[j].max)
+				entry.currentsoftware = ffi.string(buf[j].current)
+				table.insert(menu.software[upgradetype.type], entry)
+			end
+		end
 	end
 end
 
@@ -3409,6 +3433,9 @@ function menu.displayLeftBar(frame)
 		end
 		if condition and (entry.comparison ~= nil) then
 			condition = entry.comparison == (menu.mode == "comparison")
+		end
+		if condition and (entry.upgradefleetunit ~= nil) then
+			condition = entry.upgradefleetunit == (menu.mode == "upgradefleetunit")
 		end
 		if condition and (entry.hascontainer ~= nil) then
 			condition = entry.hascontainer == (menu.container ~= nil)
@@ -4108,6 +4135,10 @@ function menu.getDataAndDisplay(upgradeplan, crew, newedit, firsttime, noundo, s
 			n = C.GetNumAllEquipment2(not menu.allownonplayerblueprints, true)
 			buf = ffi.new("EquipmentWareInfo[?]", n)
 			n = C.GetAllEquipment2(buf, n, not menu.allownonplayerblueprints, true)
+		elseif menu.mode == "upgradefleetunit" then
+			n = C.GetNumPlayerEquipmentWares()
+			buf = ffi.new("EquipmentWareInfo[?]", n)
+			n = C.GetPlayerEquipmentWares(buf, n)
 		elseif (not menu.isReadOnly) and ((menu.mode ~= "modify") or (not menu.modeparam[1])) then
 			n = C.GetNumAvailableEquipment(menu.container, "")
 			buf = ffi.new("EquipmentWareInfo[?]", n)
@@ -4178,7 +4209,7 @@ function menu.getDataAndDisplay(upgradeplan, crew, newedit, firsttime, noundo, s
 		}
 	end
 
-	if (not menu.isReadOnly) and (menu.mode ~= "customgamestart") and (menu.mode ~= "comparison") and ((menu.mode ~= "modify") or (not menu.modeparam[1])) then
+	if (not menu.isReadOnly) and (menu.mode ~= "customgamestart") and (menu.mode ~= "comparison") and (menu.mode ~= "upgradefleetunit") and ((menu.mode ~= "modify") or (not menu.modeparam[1])) then
 		if C.IsComponentClass(menu.container, "ship") then
 			local n = C.GetNumAllRoles()
 			local buf = ffi.new("PeopleInfo[?]", n)
@@ -4209,7 +4240,7 @@ function menu.getDataAndDisplay(upgradeplan, crew, newedit, firsttime, noundo, s
 			menu.defaultpaintmod.ware = ffi.string(buf.Ware)
 			menu.defaultpaintmod.quality = buf.Quality
 			menu.defaultpaintmod.isdefault = true
-			if (menu.mode ~= "customgamestart") and (menu.mode ~= "comparison") then
+			if (menu.mode ~= "customgamestart") and (menu.mode ~= "comparison") and (menu.mode ~= "upgradefleetunit") then
 				menu.modwaresByWare[menu.defaultpaintmod.ware] = menu.defaultpaintmod
 			end
 		end
@@ -4389,7 +4420,7 @@ function menu.getDataAndDisplay(upgradeplan, crew, newedit, firsttime, noundo, s
 		end
 	end
 
-	if (menu.mode ~= "customgamestart") and (menu.mode ~= "comparison") then
+	if (menu.mode ~= "customgamestart") and (menu.mode ~= "comparison") and (menu.mode ~= "upgradefleetunit") then
 		if menu.installedPaintMod then
 			if menu.modwares["paint"] then
 				local found = false
@@ -8061,7 +8092,7 @@ function menu.displayPlan(frame)
 		end
 	end
 
-	if (not menu.isReadOnly) and (menu.mode ~= "customgamestart") and (menu.mode ~= "comparison") then
+	if (not menu.isReadOnly) and (menu.mode ~= "customgamestart") and (menu.mode ~= "comparison") and (menu.mode ~= "upgradefleetunit") then
 		menu.addedCrewByPlayerBuildTasks = 0
 		local constructions = {}
 		-- current builds
@@ -8165,7 +8196,7 @@ function menu.displayPlan(frame)
 	end
 
 	Helper.ffiClearNewHelper()
-	if (menu.mode ~= "customgamestart") and (menu.mode ~= "comparison") then
+	if (menu.mode ~= "customgamestart") and (menu.mode ~= "comparison") and (menu.mode ~= "upgradefleetunit") then
 		-- edit warning
 		if (menu.macro ~= "") or (menu.object ~= 0) then
 			menu.warnings[6] = menu.objectgroup and ReadText(1001, 8567) or ReadText(1001, 8019)
@@ -8219,6 +8250,9 @@ function menu.displayPlan(frame)
 
 				row[2]:createText(ConvertIntegerString(value, true, 0, true)  .. " " .. ColorText["customgamestart_budget_people"] .. "\27[gamestart_custom_people]", { halign = "right" })
 			end
+		elseif menu.mode == "upgradefleetunit" then
+			local row = buttontable:addRow(false, { fixed = true, bgColor = Color["row_title_background"] })
+			row[1]:setColSpan(2):createText(ReadText(1001, 7938), menu.headerTextProperties)
 		else
 			if menu.discounts.totalfactor < 1 then
 				buttontable:addEmptyRow(Helper.standardTextHeight)
@@ -8271,12 +8305,21 @@ function menu.displayPlan(frame)
 		row[2].handlers.onClick = function () return menu.closeMenu("back") end
 	else
 		row = buttontable:addRow(true, { fixed = true, bgColor = Color["row_title_background"] })
-		local button = row[1]:createButton({ active = ((#menu.shoppinglist > (menu.editingshoppinglist and 1 or 0)) or (menu.mode == "customgamestart") or ((menu.mode == "comparison") and (menu.macro ~= ""))) and (next(menu.criticalerrors) == nil), helpOverlayID = "shipconfig_confirm", helpOverlayText = " ", helpOverlayHighlightOnly = true, uiTriggerID = "shipconfig_confirm" }):setText(((menu.mode == "customgamestart") or (menu.mode == "comparison")) and ReadText(1001, 2821) or ReadText(1001, 8011), { halign = "center" })
+		local active = false
+		if (menu.mode == "customgamestart") or (menu.mode == "upgradefleetunit") then
+			active = true
+		elseif menu.mode == "comparison" then
+			active = menu.macro ~= ""
+		else
+			active = #menu.shoppinglist > (menu.editingshoppinglist and 1 or 0)
+		end
+		active = active and (next(menu.criticalerrors) == nil)
+		local button = row[1]:createButton({ active = active, helpOverlayID = "shipconfig_confirm", helpOverlayText = " ", helpOverlayHighlightOnly = true, uiTriggerID = "shipconfig_confirm" }):setText(((menu.mode == "customgamestart") or (menu.mode == "comparison") or (menu.mode == "upgradefleetunit")) and ReadText(1001, 2821) or ReadText(1001, 8011), { halign = "center" })
 		if (menu.object == 0) and (menu.macro == "") then
 			button:setHotkey("INPUT_STATE_DETAILMONITOR_X", { displayIcon = true })
 		end
 		row[1].handlers.onClick = menu.buttonConfirm
-		row[2]:createButton({  }):setText(((menu.mode == "customgamestart") or (menu.mode == "comparison")) and ReadText(1001, 64) or ReadText(1001, 8010), { halign = "center" })
+		row[2]:createButton({  }):setText(((menu.mode == "customgamestart") or (menu.mode == "comparison") or (menu.mode == "upgradefleetunit")) and ReadText(1001, 64) or ReadText(1001, 8010), { halign = "center" })
 		row[2].handlers.onClick = function () return menu.closeMenu("back") end
 	end
 	buttontable.properties.y = Helper.viewHeight - buttontable:getFullHeight() - menu.planData.offsetY
@@ -8284,7 +8327,7 @@ function menu.displayPlan(frame)
 	-- STATUS
 	local statustable, resourcetable
 	if not menu.isReadOnly then
-		if (menu.mode ~= "customgamestart") and (menu.mode ~= "comparison") then
+		if (menu.mode ~= "customgamestart") and (menu.mode ~= "comparison") and (menu.mode ~= "upgradefleetunit") then
 			if #menu.missingResources > 0 then
 				resourcetable = frame:addTable(2, { tabOrder = 8, width = menu.planData.width, x = menu.planData.offsetX, y = 0, reserveScrollBar = true, highlightMode = "off", skipTabChange = true, backgroundID = "solid", backgroundColor = Color["table_background_3d_editor"] })
 
@@ -8363,7 +8406,7 @@ function menu.displayPlan(frame)
 			else
 				statustable.properties.maxVisibleHeight = statustable:getFullHeight()
 			end
-			if (menu.mode ~= "customgamestart") and (menu.mode ~= "comparison") and (#menu.missingResources > 0) then
+			if (menu.mode ~= "customgamestart") and (menu.mode ~= "comparison") and (menu.mode ~= "upgradefleetunit") and (#menu.missingResources > 0) then
 				statustable.properties.y = resourcetable.properties.y - statustable:getVisibleHeight() - 2 * Helper.borderSize
 			else
 				statustable.properties.y = buttontable.properties.y - statustable:getVisibleHeight() - 2 * Helper.borderSize
@@ -8378,7 +8421,7 @@ function menu.displayPlan(frame)
 	if (not menu.isReadOnly) then
 		if next(menu.criticalerrors) or next(menu.errors) or next(menu.warnings) then
 			maxVisibleHeight = statustable.properties.y - menu.planData.offsetY
-		elseif (menu.mode ~= "customgamestart") and (menu.mode ~= "comparison") and (#menu.missingResources > 0) then
+		elseif (menu.mode ~= "customgamestart") and (menu.mode ~= "comparison") and (menu.mode ~= "upgradefleetunit") and (#menu.missingResources > 0) then
 			maxVisibleHeight = resourcetable.properties.y - menu.planData.offsetY
 		end
 	end
@@ -8430,7 +8473,7 @@ function menu.displayPlan(frame)
 		buildorder.macroname = Helper.ffiNewString(menu.macro)
 		buildorder.loadout = Helper.callLoadoutFunction(menu.upgradeplan, nil, function (loadout, _) return loadout end)
 		buildorder.amount = 1
-		if (not menu.isReadOnly) and (menu.mode ~= "customgamestart") and (menu.mode ~= "comparison") then
+		if (not menu.isReadOnly) and (menu.mode ~= "customgamestart") and (menu.mode ~= "comparison") and (menu.mode ~= "upgradefleetunit") then
 			menu.duration = (not menu.errors[4]) and C.GetBuildDuration(menu.container, buildorder) or 0
 		end
 
@@ -8452,7 +8495,7 @@ function menu.displayPlan(frame)
 
 		if menu.objectgroup then
 			row[1]:setColSpan(colspan + 2):createText(#menu.objectgroup.ships .. ReadText(1001, 42) .. " " .. GetMacroData(menu.objectgroup.macro, "name"))
-		elseif (not menu.isReadOnly) and (menu.mode ~= "customgamestart") and (menu.mode ~= "comparison") then
+		elseif (not menu.isReadOnly) and (menu.mode ~= "customgamestart") and (menu.mode ~= "comparison") and (menu.mode ~= "upgradefleetunit") then
 			menu.customShipNameEditBox = row[1]:setColSpan(colspan):createEditBox({ description = ReadText(1001, 8537), height = Helper.standardTextHeight }):setText(menu.customshipname, { halign = "left" })
 			row[1].handlers.onTextChanged = menu.editboxCustomShipName
 			row[1].handlers.onEditBoxDeactivated = menu.editboxCustomShipNameDeactivated
@@ -8465,7 +8508,7 @@ function menu.displayPlan(frame)
 
 			local row = ftable:addRow(true, {  })
 			-- The "- 1" in the below line accounts for the " " added by helperSpaceAwareConcat
-			row[1]:setColSpan(colspan + 1):createButton({ height = Helper.standardTextHeight, active = function () return (not utf8.find(menu.customshipname, name, nil, true)) and (utf8.len(menu.customshipname) < (Helper.standardEditBoxMaxTextLength - 1)) end }):setText(ReadText(1001, 8588), { halign = "center" }) 
+			row[1]:setColSpan(colspan + 1):createButton({ height = Helper.standardTextHeight, active = function () return (not utf8.find(menu.customshipname, name, nil, true)) and (utf8.len(menu.customshipname) < (Helper.standardEditBoxMaxTextLength - 1)) end }):setText(ReadText(1001, 8588), { halign = "center" })
 			row[1].handlers.onClick = function () return menu.buttonCustomShipNameAppendShip(name) end
 
 			local row = ftable:addRow(true, {  })
@@ -8608,7 +8651,7 @@ function menu.displayPlan(frame)
 			row[2]:setColSpan(5):createText("--- " .. ReadText(1001, 7936) .. " ---", { halign = "center" } )
 		end
 
-		if (not menu.isReadOnly) and (menu.mode ~= "customgamestart") and (menu.mode ~= "comparison") then
+		if (not menu.isReadOnly) and (menu.mode ~= "customgamestart") and (menu.mode ~= "comparison") and (menu.mode ~= "upgradefleetunit") then
 			local row = ftable:addRow(true, {  })
 			local hasupgrades = (next(removedEquipment) ~= nil) or (next(newEquipment) ~= nil) or (#menu.crew.transferdetails > 0)
 			local hasrepairs = (#repairedEquipment > 0)
@@ -8638,7 +8681,7 @@ function menu.displayPlan(frame)
 		row[3]:setColSpan(4):createButton({ active = false, helpOverlayID = "shipconfig_addtoshoppinglist", helpOverlayText = " ", helpOverlayHighlightOnly = true, uiTriggerID = "shipconfig_addtoshoppinglist" }):setText(ReadText(1001, 8006), { halign = "center" })
 	end
 
-	if (not menu.isReadOnly) and (menu.mode ~= "customgamestart") and (menu.mode ~= "comparison") then
+	if (not menu.isReadOnly) and (menu.mode ~= "customgamestart") and (menu.mode ~= "comparison") and (menu.mode ~= "upgradefleetunit") then
 		-- shoppinglist
 		local row = ftable:addRow(false, { bgColor = Color["row_title_background"] })
 		row[1]:setColSpan(6):createText(ReadText(1001, 8009), menu.headerTextProperties)
@@ -9214,7 +9257,7 @@ function menu.displayStats(frame)
 				end
 			end
 		end
-		
+
 
 		titletable.properties.y = Helper.viewHeight - titletable:getFullHeight() - Helper.borderSize - ftable:getVisibleHeight() - menu.statsData.offsetY
 		ftable.properties.y = titletable.properties.y + ftable.properties.y
@@ -9270,7 +9313,7 @@ function menu.evaluateShipOptions()
 					end
 				end
 				-- end: alexandretk call-back
-				
+
 				-- start: cpsdo call-back (ship options: override shiptypename)
 				if menu.uix_callbacks["cpsdo_evaluateShipOptions_override_shiptypename"] then
 					local shiptypename_override
