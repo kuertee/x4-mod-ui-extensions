@@ -1924,6 +1924,14 @@ function menu.cleanup()
 	menu.uix_removeInvalidsFromSavedExpandedMissions()
 	-- kuertee end: open/close mission lists
 
+	-- kuertee start: callback
+	if menu.uix_callbacks ["on_menu_cleanup"] then
+		for uix_id, uix_callback in pairs (menu.uix_callbacks ["on_menu_cleanup"]) do
+			uix_callback (menu, config)
+		end
+	end
+	-- kuertee end: callback
+
 	if not menu.minimized then
 		if (menu.mode == nil) or (menu.mode == "selectbuildlocation") then
 			menu.state = menu.onSaveState()
@@ -6162,6 +6170,15 @@ function menu.onShowMenu(state)
 end
 
 function menu.onMinimizeMenu()
+
+	-- kuertee start: callback
+	if menu.uix_callbacks ["on_menu_minimize"] then
+		for uix_id, uix_callback in pairs (menu.uix_callbacks ["on_menu_minimize"]) do
+			uix_callback (menu, config)
+		end
+	end
+	-- kuertee end: callback
+
 	UnregisterAddonBindings("ego_detailmonitor")
 	UnregisterEvent("updateHolomap", menu.updateHolomap)
 	UnregisterEvent("info_updatePeople", menu.infoUpdatePeople)
@@ -6659,6 +6676,14 @@ function menu.createMainFrame(firsttime, height, refresh)
 		x = 0,
 		y = 0,
 	})
+
+	-- kuertee start: callback
+	if menu.uix_callbacks ["on_create_main_frame"] then
+		for uix_id, uix_callback in pairs (menu.uix_callbacks ["on_create_main_frame"]) do
+			uix_callback (menu, config, firsttime)
+		end
+	end
+	-- kuertee end: callback
 
 	-- player info
 	menu.createPlayerInfo(menu.mainFrame, Helper.playerInfoConfig.width, Helper.playerInfoConfig.height, Helper.playerInfoConfig.offsetX, Helper.playerInfoConfig.offsetY)
