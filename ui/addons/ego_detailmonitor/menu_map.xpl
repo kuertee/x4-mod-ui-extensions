@@ -32352,6 +32352,15 @@ function menu.updateTableSelection(lastcomponent)
 			SetSelectedRows(menu.infoTable, rows, curRow or (Helper.currentTableRow[menu.infoTable] or 0))
 		end
 	end
+
+	-- kuertee start: callback
+	if menu.uix_callbacks ["onUpdateTableSelection_at_end"] then
+		for uix_id, uix_callback in pairs (menu.uix_callbacks ["onUpdateTableSelection_at_end"]) do
+			uix_callback (lastcomponent)
+		end
+	end
+	-- kuertee end: callback
+
 	menu.setSelectedMapComponents()
 end
 
