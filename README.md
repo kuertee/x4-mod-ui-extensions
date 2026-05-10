@@ -6,32 +6,19 @@ Contributors: AlexandreTK, ChemODun, Damonya, DrWhoKnows, DmytroK, Erixon, Farem
 
 Updates
 =======
+v9.0.0.0.8.6, 10 May 2026:
+- New feature: New callbacks by ChemODun.
+
 v9.0.0.0.8.5, 7 May 2026:
 - Compatibility: Update to 9.0 beta 9 of the base lua files.
 - Bug-fix: Map Menu > Information menu: missing "row" parameter after a custom callback function.
-- Bug-fix: Doh! I forgot to pack the fixed files for the two bug fixes below (from the previous update) into the subst files. Sorry, my bad.
+- Bug-fix: Doh! I Forgot to pack the fixed files for the two bug fixes below (from the previous update) into the subst files. Sorry, my bad.
 - Bug-fix: UIX's sort by distance from object breaks the objects list sometimes. Fixed by ChemODun. Thanks!
 - Bug-fix: Another bug in Map > Mission Offers / Mission Manager: If there were no missions in a mission type, the menu would break.
 
 v9.0.0.0.8.3, 5 May 2026:
 - Bug-fix: Map > Mission Offers / Mission Manager: If there were no missions in a mission type, the menu would break.
 - Bug-fix: Map > Mission Offers / Mission Manager: The internal list of variables for the expanded/collapsed flags for missions were not getting cleaned-up properly.
-
-v9.0.0.0.8.2, 5 May 2026:
-- Bug-fix: Missing calback in the Map > Property Owned menu that prevent mods that use that callback from working. Fix by ChemODun.
-- Bug-fix: Bug in the Diplomacy menu that incorrectly sent nil data to callback functions. Fix by ChemODun.
-- Bug-fix: Bug in the Map > Information menu that sent incorrect data to a callback function. Fix by DrWhoKnows.
-
-v9.0.0.0.8, 4 May 2026:
-- Tweak: Multi-rename now adds leading zeroes to the "$i" portion of the objects name. Previously, it used raw text numbers preventing the ship from getting sorted propertly.
-- New feature: Map Menu > Properties Owned > Deployables: The list of deployables are grouped by name that can be expanded and collapsed.
-- New feature: Map Menu > Information > Full Crew List: The list of people on board can be expanded and collapsed.
-- Bug-fix: Multi-rename feature was missing from the Interact Menu.
-- Bug-fix: Missing callbacks in the Game Options menu that prevented mods like Grouped Saved Files from working.
-- Bug-fix: Possible bug in the Ship Configuration menu that might have prevented mods like Mycu's Equipment Tooltips from working.
-- Bug-fix: Missing callbacks in the Player Information menu that prevented mods like Social Standing And Citizenships from working.
-- Bug-fix: Missing callbacks in the Diplomacy menu that prevented mods like Reputations And Professions from working.
-- Bug-fix: Bug in the Map > Manage Plots menu that prevented mods that allow very large plot sizes (e.g. Star Wars Interworlds) from working. Note: The last working version of Star Wars Interworlds is not yet compatible with the 9.0 beta.
 
 NOTES FOR PLAYERS:
 ==================
@@ -282,6 +269,22 @@ French localisation by Calvitix.
 
 History
 =======
+v9.0.0.0.8.2, 5 May 2026:
+- Bug-fix: Missing calback in the Map > Property Owned menu that prevent mods that use that callback from working. Fix by ChemODun.
+- Bug-fix: Bug in the Diplomacy menu that incorrectly sent nil data to callback functions. Fix by ChemODun.
+- Bug-fix: Bug in the Map > Information menu that sent incorrect data to a callback function. Fix by DrWhoKnows.
+
+v9.0.0.0.8, 4 May 2026:
+- Tweak: Multi-rename now adds leading zeroes to the "$i" portion of the objects name. Previously, it used raw text numbers preventing the ship from getting sorted propertly.
+- New feature: Map Menu > Properties Owned > Deployables: The list of deployables are grouped by name that can be expanded and collapsed.
+- New feature: Map Menu > Information > Full Crew List: The list of people on board can be expanded and collapsed.
+- Bug-fix: Multi-rename feature was missing from the Interact Menu.
+- Bug-fix: Missing callbacks in the Game Options menu that prevented mods like Grouped Saved Files from working.
+- Bug-fix: Possible bug in the Ship Configuration menu that might have prevented mods like Mycu's Equipment Tooltips from working.
+- Bug-fix: Missing callbacks in the Player Information menu that prevented mods like Social Standing And Citizenships from working.
+- Bug-fix: Missing callbacks in the Diplomacy menu that prevented mods like Reputations And Professions from working.
+- Bug-fix: Bug in the Map > Manage Plots menu that prevented mods that allow very large plot sizes (e.g. Star Wars Interworlds) from working. Note: The last working version of Star Wars Interworlds is not yet compatible with the 9.0 beta.
+
 v8.0.4.3, 06 Apr 2025:
 - New feature: new callbacks by ChemOdun.
 
