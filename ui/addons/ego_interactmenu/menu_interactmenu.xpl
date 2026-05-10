@@ -1,4 +1,4 @@
--- ffi setup
+﻿-- ffi setup
 local ffi = require("ffi")
 local C = ffi.C
 ffi.cdef[[
@@ -519,6 +519,9 @@ function menu.cleanup()
 	menu.groupShips = {}
 
 	menu.subsection = nil
+	-- kurtee start: menu subsection stack
+	menu.subsectionStack = {}
+	-- kurtee end: menu subsection stack
 	menu.pendingSubSection = nil
 	menu.possibleorders = {}
 	menu.numdockingpossible = nil
@@ -4304,6 +4307,30 @@ function menu.createSubSectionTable(frame, position)
 		if entry.active == nil then
 			entry.active = true
 		end
+
+		-- kuertee start: sub-subsection group navigation
+		if entry.isgroup then
+			local haschildren = menu.actions[entry.groupId] and #menu.actions[entry.groupId] > 0
+			local data = { id = entry.groupId, y = menu.subsection.y }
+			local iconHeight = Helper.scaleY(config.rowHeight)
+			row = ftable:addRow(data, {})
+			local button = row[1]:setColSpan(2):createButton({
+				active = entry.active and haschildren,
+				bgColor = (entry.active and haschildren) and Color["button_background_hidden"] or Color["button_background_inactive"],
+				highlightColor = (entry.active and haschildren) and Color["button_highlight_default"] or Color["button_highlight_inactive"],
+				mouseOverText = entry.mouseOverText,
+			}):setText(entry.text):setIcon("table_arrow_inv_right", { scaling = false, width = iconHeight, height = iconHeight, x = menu.width - iconHeight })
+			if entry.active and haschildren then
+				row[1].handlers.onClick = function()
+					table.insert(menu.subsectionStack, menu.subsection)
+					menu.subsection = data
+					menu.pendingSubSection = nil
+					menu.refresh = true
+				end
+			end
+		else
+		-- kuertee end: sub-subsection group navigation
+
 		row = ftable:addRow(true, {  })
 		local maxtextwidth = 0
 		if entry.text2 then
@@ -4348,6 +4375,8 @@ function menu.createSubSectionTable(frame, position)
 		if entry.text2 then
 			button:setText2(entry.text2, { halign = "right", color = entry.active and Color["text_normal"] or Color["text_inactive"], font = entry.text2font or Helper.standardFont })
 		end
+
+		end -- kuertee: end of sub-subsection else branch
 	end
 
 	return ftable
@@ -4489,6 +4518,9 @@ function menu.setOrderImmediate(component, orderidx)
 end
 
 function menu.handleSubSectionOption(data, skipdelay)
+	-- kuertee start: clear subsection stack on any root-panel navigation
+	menu.subsectionStack = {}
+	-- kuertee end: clear subsection stack on any root-panel navigation
 	if type(data) == "table" then
 		if ((not menu.pendingSubSection) and ((not menu.subsection) or (menu.subsection.id ~= data.id))) or (menu.pendingSubSection and ((type(menu.pendingSubSection) ~= "table") or (menu.pendingSubSection.id ~= data.id))) then
 			if #menu.actions[data.id] > 0 then
@@ -4824,6 +4856,32 @@ function menu.insertInteractionContent(section, entry)
 	end
 end
 
+-- kuertee start: sub-subsection group API
+-- Register a navigable group entry inside an existing section or group.
+-- parentSectionId : section or group ID to insert the group button into
+-- groupId         : unique ID for this group's action list (key into menu.actions)
+-- groupText       : display label for the group button
+-- options         : optional table { active = bool, mouseOverText = string }
+-- Call insertInteractionContent(groupId, entry) afterwards to populate children.
+function menu.insertInteractionGroup(parentSectionId, groupId, groupText, options)
+	if not menu.actions[parentSectionId] then
+		DebugError("insertInteractionGroup: parent section not defined: '" .. tostring(parentSectionId) .. "'")
+		return
+	end
+	options = options or {}
+	if not menu.actions[groupId] then
+		menu.actions[groupId] = {}
+	end
+	table.insert(menu.actions[parentSectionId], {
+		isgroup       = true,
+		groupId       = groupId,
+		text          = groupText,
+		active        = options.active ~= false,
+		mouseOverText = options.mouseOverText,
+	})
+end
+-- kuertee end: sub-subsection group API
+
 config.consumables = {
 	{ id = "satellite",		type = "civilian",	getnum = C.GetNumAllSatellites,		getdata = C.GetAllSatellites },
 	{ id = "navbeacon",		type = "civilian",	getnum = C.GetNumAllNavBeacons,		getdata = C.GetAllNavBeacons },
@@ -5037,7 +5095,7 @@ function menu.insertLuaAction(actiontype, istobedisplayed)
 			end
 		end
 		-- end: aegs call-back
-				
+
 		-- start: cpsdo call-back (shipOverview)
 		do
 			local callbacks = menu.uix_callbacks and menu.uix_callbacks["cpsdo_map_rightMenu_shipLogistic_insert"]
@@ -6561,7 +6619,7 @@ function menu.insertLuaAction(actiontype, istobedisplayed)
 			end
 		end
 		-- end: aegs call-back
-		
+
 		-- start: cpsdo call-back (rightMenu shipBuilding insert)
 		do
 			local inserted = false
@@ -7817,7 +7875,13 @@ end
 function menu.onCloseElement(dueToClose, layer, allowAutoMenu)
 	if dueToClose == "back" then
 		if menu.subsection then
-			menu.subsection = nil
+			-- kuertee start: pop subsection stack for nested navigation
+			if menu.subsectionStack and #menu.subsectionStack > 0 then
+				menu.subsection = table.remove(menu.subsectionStack)
+			else
+				menu.subsection = nil
+			end
+			-- kuertee end: pop subsection stack for nested navigation
 			menu.refresh = true
 			return
 		end
