@@ -6,8 +6,8 @@ Contributors: AlexandreTK, ChemODun, Damonya, DrWhoKnows, DmytroK, Erixon, Farem
 
 Updates
 =======
-v8.0.4.3, 06 Apr 2025:
-- New feature: new callbacks by ChemOdun.
+v8.0.4.5, 10 May 2026:
+- New feature: New callbacks by ChemOdun.
 
 NOTES FOR PLAYERS:
 ==================
@@ -250,6 +250,12 @@ French localisation by Calvitix.
 
 History
 =======
+v8.0.4.4, 1 May 2025:
+- New feature: Expand/collapse deployables by name.
+
+v8.0.4.3, 06 Apr 2025:
+- New feature: new callbacks by ChemOdun.
+
 v8.0.4.2, 11 Mar 2025:
 - Subst.* files have been udpated. Sorry that I forgot to do it in the last update. :D
 - New feature: Collapsable/expandable ship crew list.
