@@ -4343,10 +4343,14 @@ function menu.createSubSectionTable(frame, position)
 			}):setText(entry.text):setIcon("table_arrow_inv_right", { scaling = false, width = iconHeight, height = iconHeight, x = menu.width - iconHeight })
 			if entry.active and haschildren then
 				row[1].handlers.onClick = function()
-					table.insert(menu.subsectionStack, menu.subsection)
-					menu.subsection = data
-					menu.pendingSubSection = nil
-					menu.refresh = true
+					-- kuertee start: cap nesting depth at 10 stack frames
+					if #menu.subsectionStack < 10 then
+						table.insert(menu.subsectionStack, menu.subsection)
+						menu.subsection = data
+						menu.pendingSubSection = nil
+						menu.refresh = true
+					end
+					-- kuertee end: cap nesting depth at 10 stack frames
 				end
 			end
 		else
