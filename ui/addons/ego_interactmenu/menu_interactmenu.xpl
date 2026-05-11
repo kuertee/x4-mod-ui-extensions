@@ -481,6 +481,8 @@ end
 function menu.init_kuertee ()
 	RegisterEvent ("Interact_Menu_API.Add_Custom_Actions_Group_Id", menu.Add_Custom_Actions_Group_Id)
 	RegisterEvent ("Interact_Menu_API.Add_Custom_Actions_Group_Text", menu.Add_Custom_Actions_Group_Text)
+	RegisterEvent ("Interact_Menu_API.Add_Custom_Actions_SubGroup_Id_to_Group_Id", menu.Add_Custom_Actions_SubGroup_Id_to_Group_Id)
+	RegisterEvent ("Interact_Menu_API.Add_Custom_Actions_SubGroup_Text", menu.Add_Custom_Actions_SubGroup_Text)
 	RegisterEvent ("Interact_Menu_API.Existence_Query", menu.Existence_Query)
 end
 -- kuertee end
@@ -4092,7 +4094,7 @@ function menu.createContentTable(frame, position)
 								first = false
 								hastitle = true
 							end
-							local data = { id = subsection.id, y = height }
+							local data = { id = subsection.id, y = height, text = subsection.text }
 							local row = ftable:addRow(data, {  })
 							local iconHeight = Helper.scaleY(config.rowHeight)
 							local button = row[1]:setColSpan(5):createButton({
@@ -4303,6 +4305,25 @@ function menu.createSubSectionTable(frame, position)
 	ftable:setColWidthPercent(2, 40)
 	ftable:setDefaultBackgroundColSpan(1, 2)
 
+	-- kuertee start: back navigation header row
+	if menu.subsection.text and menu.subsectionStack and #menu.subsectionStack > 0 then
+		local iconHeight = Helper.scaleY(config.rowHeight)
+		local backRow = ftable:addRow(true, {})
+		backRow[1]:setColSpan(2):createButton({
+			bgColor = Color["button_background_hidden"],
+			highlightColor = Color["button_highlight_default"],
+		}):setText(menu.subsection.text, { x = iconHeight }):setIcon("table_arrow_inv_left", { scaling = false, width = iconHeight, height = iconHeight, x = 0 })
+		backRow[1].handlers.onClick = function()
+			if menu.subsectionStack and #menu.subsectionStack > 0 then
+				menu.subsection = table.remove(menu.subsectionStack)
+			else
+				menu.subsection = nil
+			end
+			menu.refresh = true
+		end
+	end
+	-- kuertee end: back navigation header row
+
 	for _, entry in ipairs(menu.actions[menu.subsection.id]) do
 		if entry.active == nil then
 			entry.active = true
@@ -4311,7 +4332,7 @@ function menu.createSubSectionTable(frame, position)
 		-- kuertee start: sub-subsection group navigation
 		if entry.isgroup then
 			local haschildren = menu.actions[entry.groupId] and #menu.actions[entry.groupId] > 0
-			local data = { id = entry.groupId, y = menu.subsection.y }
+			local data = { id = entry.groupId, y = menu.subsection.y, text = entry.text }
 			local iconHeight = Helper.scaleY(config.rowHeight)
 			row = ftable:addRow(data, {})
 			local button = row[1]:setColSpan(2):createButton({
@@ -4790,6 +4811,12 @@ function menu.processSelectedPlayerShips()
 	end
 end
 
+-- kuertee start: sub-group MD API state (must be declared before prepareSections)
+local registeredSubGroups = {}
+local newCustomSubGroupIds   -- "parentId;subGroupId"
+local newCustomSubGroupText
+-- kuertee end: sub-group MD API state
+
 function menu.prepareSections()
 	menu.actions = {}
 
@@ -4817,6 +4844,12 @@ function menu.prepareSections()
 			menu.actions[section.id] = {}
 		end
 	end
+
+	-- kuertee start: initialize registered sub-groups
+	for _, subGroup in ipairs(registeredSubGroups) do
+		menu.insertInteractionGroup(subGroup.parentId, subGroup.subGroupId, subGroup.text)
+	end
+	-- kuertee end: initialize registered sub-groups
 end
 
 function menu.insertInteractionContent(section, entry)
@@ -7998,6 +8031,47 @@ function menu.Add_Custom_Actions_Group(id, text)
 		Helper.debugText("Add_Custom_Actions_Group customOrdersSection.subsections", customOrdersSection.subsections)
 	end
 end
+
+-- kuertee start: sub-group MD API handlers
+function menu.Add_Custom_Actions_SubGroup_Id_to_Group_Id(_, ids)
+	newCustomSubGroupIds = ids
+	if newCustomSubGroupIds and newCustomSubGroupText then
+		local parentId, subGroupId = string.match(newCustomSubGroupIds, "^([^;]+);(.+)$")
+		if parentId and subGroupId then
+			menu.Add_Custom_Actions_SubGroup(parentId, subGroupId, newCustomSubGroupText)
+		else
+			Helper.debugText("Add_Custom_Actions_SubGroup_Id_to_Group_Id: invalid param format (expected 'parentId;subGroupId'): " .. tostring(ids))
+		end
+		newCustomSubGroupIds = nil
+		newCustomSubGroupText = nil
+	end
+end
+
+function menu.Add_Custom_Actions_SubGroup_Text(_, text)
+	newCustomSubGroupText = text
+	if newCustomSubGroupIds and newCustomSubGroupText then
+		local parentId, subGroupId = string.match(newCustomSubGroupIds, "^([^;]+);(.+)$")
+		if parentId and subGroupId then
+			menu.Add_Custom_Actions_SubGroup(parentId, subGroupId, newCustomSubGroupText)
+		else
+			Helper.debugText("Add_Custom_Actions_SubGroup_Text: invalid Id param format (expected 'parentId;subGroupId'): " .. tostring(newCustomSubGroupIds))
+		end
+		newCustomSubGroupIds = nil
+		newCustomSubGroupText = nil
+	end
+end
+
+function menu.Add_Custom_Actions_SubGroup(parentId, subGroupId, text)
+	Helper.debugText("Add_Custom_Actions_SubGroup parentId: " .. tostring(parentId) .. " subGroupId: " .. tostring(subGroupId) .. " text: " .. tostring(text))
+	for _, entry in ipairs(registeredSubGroups) do
+		if entry.subGroupId == subGroupId then
+			Helper.debugText("Add_Custom_Actions_SubGroup: subGroupId already registered: " .. tostring(subGroupId))
+			return
+		end
+	end
+	table.insert(registeredSubGroups, { parentId = parentId, subGroupId = subGroupId, text = text })
+end
+-- kuertee end: sub-group MD API handlers
 
 menu.uix_callbackCount = 0
 function menu.registerCallback(callbackName, callbackFunction, id)
