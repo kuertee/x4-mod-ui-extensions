@@ -1,4 +1,4 @@
-﻿-- ffi setup
+-- ffi setup
 local ffi = require("ffi")
 local C = ffi.C
 ffi.cdef[[
@@ -4308,10 +4308,19 @@ function menu.createSubSectionTable(frame, position)
 	-- kuertee start: back navigation header row
 	if menu.subsection.text and menu.subsectionStack and #menu.subsectionStack > 0 then
 		local iconHeight = Helper.scaleY(config.rowHeight)
+		-- Build full breadcrumb path from stack + current level for mouseOverText
+		local breadcrumb = ""
+		for _, stackEntry in ipairs(menu.subsectionStack) do
+			if stackEntry.text then
+				breadcrumb = breadcrumb == "" and stackEntry.text or (breadcrumb .. " > " .. stackEntry.text)
+			end
+		end
+		breadcrumb = breadcrumb == "" and menu.subsection.text or (breadcrumb .. " > " .. menu.subsection.text)
 		local backRow = ftable:addRow(true, {})
 		backRow[1]:setColSpan(2):createButton({
 			bgColor = Color["button_background_hidden"],
 			highlightColor = Color["button_highlight_default"],
+			mouseOverText = breadcrumb,
 		}):setText(menu.subsection.text, { x = iconHeight }):setIcon("table_arrow_inv_left", { scaling = false, width = iconHeight, height = iconHeight, x = 0 })
 		backRow[1].handlers.onClick = function()
 			if menu.subsectionStack and #menu.subsectionStack > 0 then
@@ -4872,6 +4881,14 @@ function menu.prepareSections()
 		DebugError("insertInteractionGroup: parent not found for sub-group '" .. tostring(subGroup.subGroupId) .. "', parent: '" .. tostring(subGroup.parentId) .. "'")
 	end
 	-- kuertee end: initialize registered sub-groups
+
+	-- kuertee start: callback
+	if menu.uix_callbacks ["prepareSections_on_end"] then
+		for uix_id, uix_callback in pairs (menu.uix_callbacks ["prepareSections_on_end"]) do
+			uix_callback (config.sections)
+		end
+	end
+	-- kuertee end: callback
 end
 
 function menu.insertInteractionContent(section, entry)
@@ -5150,7 +5167,7 @@ function menu.insertLuaAction(actiontype, istobedisplayed)
 			end
 		end
 		-- end: aegs call-back
-
+				
 		-- start: cpsdo call-back (shipOverview)
 		do
 			local callbacks = menu.uix_callbacks and menu.uix_callbacks["cpsdo_map_rightMenu_shipLogistic_insert"]
@@ -6674,7 +6691,7 @@ function menu.insertLuaAction(actiontype, istobedisplayed)
 			end
 		end
 		-- end: aegs call-back
-
+		
 		-- start: cpsdo call-back (rightMenu shipBuilding insert)
 		do
 			local inserted = false
