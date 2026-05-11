@@ -1,4 +1,4 @@
--- ffi setup
+﻿-- ffi setup
 local ffi = require("ffi")
 local C = ffi.C
 ffi.cdef[[
@@ -4094,7 +4094,9 @@ function menu.createContentTable(frame, position)
 								first = false
 								hastitle = true
 							end
+							-- kurtee start: menu subsection text for path displaying
 							local data = { id = subsection.id, y = height, text = subsection.text }
+							-- kurtee end: menu subsection text for path displaying
 							local row = ftable:addRow(data, {  })
 							local iconHeight = Helper.scaleY(config.rowHeight)
 							local button = row[1]:setColSpan(5):createButton({
