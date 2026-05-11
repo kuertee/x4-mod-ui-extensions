@@ -6,6 +6,9 @@ Contributors: AlexandreTK, ChemODun, Damonya, DrWhoKnows, DmytroK, Erixon, Farem
 
 Updates
 =======
+v9.0.0.0.8.?, ?? May 2026:
+- New feature: hierarchical sub-groups in the Interact Menu (available via Lua/MD) by ChemODun.
+
 v9.0.0.0.8.6, 10 May 2026:
 - New feature: New callbacks by ChemODun.
 
@@ -235,6 +238,105 @@ Interact Menu: Add Custom Actions/Orders Group (via MD)
     ```
 5. The custom commands will be added to both the Custom Actions and Custom Orders sub-menus.
 6. To add only to one sub-menu and not the other, start the section name with either "actions_" or "orders_". E.g. "actions_my_custom_actions" will add the custom action to only the Custom Actions sub-menu. And "orders_my_custom_orders" will add the custom order to only the Custom Orders sub-menu.
+
+Add Nested Sub-Groups to a Custom Actions/Orders Group (via MD)
+===============================================================
+Sub-groups allow multi-level navigation panels inside a Custom Actions/Orders group. Each sub-group appears as a navigation button; clicking it drills into a sub-panel with a back-navigation header.
+
+1. Register the top-level group as described in "Add Custom Actions/Orders Group" above.
+2. At the same `event_ui_triggered` handler, register a sub-group inside it:
+   ```xml
+   <raise_lua_event name="'Interact_Menu_API.Add_Custom_Actions_SubGroup_Id_to_Group_Id'" param="'my_custom_actions_group_id;my_sub_group_id'" />
+   <raise_lua_event name="'Interact_Menu_API.Add_Custom_Actions_SubGroup_Text'" param="'My Sub-Group'" />
+   ```
+   The `param` for the Id event is `"parentId;subGroupId"` — the parent must be registered first, but registration order among siblings does not matter.
+3. Nest further levels the same way, referencing the previous sub-group as the parent:
+   ```xml
+   <raise_lua_event name="'Interact_Menu_API.Add_Custom_Actions_SubGroup_Id_to_Group_Id'" param="'my_sub_group_id;my_deep_group_id'" />
+   <raise_lua_event name="'Interact_Menu_API.Add_Custom_Actions_SubGroup_Text'" param="'My Deep Group'" />
+   ```
+4. Add actions to any level by using its id as `$section` in Mod Support API's `Add_Action`:
+   ```xml
+   <signal_cue_instantly cue="md.Interact_Menu_API.Add_Action" param="table[
+     $id       = 'my_sub_group_action',
+     $section  = 'my_sub_group_id',
+     $text     = 'My Sub-Group Action',
+     $callback = My_Sub_Group_Action_Cue
+   ]" />
+   ```
+5. Sub-group registrations are permanent (they survive across menu openings). Action registrations must be repeated on every `md.Interact_Menu_API.Get_Actions` signal.
+6. The back-navigation header shows the full breadcrumb path on mouse-over. Navigation depth is capped at 10 levels.
+
+Add Nested Sub-Groups to a Custom Actions/Orders Group (via Lua)
+================================================================
+From Lua, the same multi-level structure can be built using the `InteractMenu` Lua API.
+
+- Top-level group (visible as a navigation button in custom_actions / custom_orders): call `menu.Add_Custom_Actions_Group(id, text)` once at script load. This is idempotent — safe to call on every reload.
+- Nested sub-groups (levels 2 and deeper): call `menu.insertInteractionGroup(parentId, groupId, groupText)` inside a `prepareSections_on_end` callback. This must be repeated every menu open because `menu.actions` is rebuilt fresh each time.
+- Actions: call `menu.insertInteractionContent(sectionId, entry)` inside the same `prepareSections_on_end` callback.
+
+```lua
+local SECTION_PARENT = "my_parent"
+local SECTION_CHILD  = "my_child"
+
+local function init()
+    local m = Helper.getMenu("InteractMenu")
+
+    -- Register top-level group once (persists across menu opens):
+    m.Add_Custom_Actions_Group(SECTION_PARENT, "My Parent Group")
+
+    -- Register nested groups and actions every menu open:
+    m.registerCallback("prepareSections_on_end", function()
+        m.insertInteractionGroup(SECTION_PARENT, SECTION_CHILD, "My Sub-Group")
+        m.insertInteractionContent(SECTION_PARENT, {
+            text = "Parent Action", active = true,
+            script = function() DebugError("Parent Action clicked") end
+        })
+        m.insertInteractionContent(SECTION_CHILD, {
+            text = "Child Action", active = true,
+            script = function() DebugError("Child Action clicked") end
+        })
+    end, "my_mod_id")
+end
+init()
+```
+
+Add a Custom Root Section with Multi-Level Sub-Groups (via Lua)
+===============================================================
+To add a fully custom root section (not inside custom_actions/custom_orders) with multi-level navigation:
+
+1. In `prepareSections_on_start`, inject a section with `subsections = {}` into `config.sections` once (guarded by a flag). Also push the top-level subsection entry into `section.subsections`. Both tables are persistent.
+2. In `prepareSections_on_end`, call `insertInteractionGroup` and `insertInteractionContent` for all nested levels and actions. These must be repeated every menu open.
+
+```lua
+local mySection = { id = "my_root", text = "My Section", isorder = false, subsections = {} }
+local sectionAdded = false
+
+local function init()
+    local m = Helper.getMenu("InteractMenu")
+
+    m.registerCallback("prepareSections_on_start", function(sections)
+        if not sectionAdded then
+            table.insert(sections, mySection)
+            table.insert(mySection.subsections, { id = "my_l1", text = "Level 1 Group" })
+            sectionAdded = true
+        end
+    end, "my_mod_id")
+
+    m.registerCallback("prepareSections_on_end", function()
+        m.insertInteractionGroup("my_l1", "my_l2", "Level 2 Group")
+        m.insertInteractionContent("my_l1", {
+            text = "Level 1 Action", active = true,
+            script = function() DebugError("L1 clicked") end
+        })
+        m.insertInteractionContent("my_l2", {
+            text = "Level 2 Action", active = true,
+            script = function() DebugError("L2 clicked") end
+        })
+    end, "my_mod_id")
+end
+init()
+```
 
 Map Menu: selectComponent mode
 ==============================
