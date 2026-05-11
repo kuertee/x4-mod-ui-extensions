@@ -4845,9 +4845,27 @@ function menu.prepareSections()
 		end
 	end
 
-	-- kuertee start: initialize registered sub-groups
+	-- kuertee start: initialize registered sub-groups (multi-pass to handle any registration order)
+	local remaining = {}
 	for _, subGroup in ipairs(registeredSubGroups) do
-		menu.insertInteractionGroup(subGroup.parentId, subGroup.subGroupId, subGroup.text)
+		table.insert(remaining, subGroup)
+	end
+	local changed = true
+	while changed and #remaining > 0 do
+		changed = false
+		local nextRemaining = {}
+		for _, subGroup in ipairs(remaining) do
+			if menu.actions[subGroup.parentId] then
+				menu.insertInteractionGroup(subGroup.parentId, subGroup.subGroupId, subGroup.text)
+				changed = true
+			else
+				table.insert(nextRemaining, subGroup)
+			end
+		end
+		remaining = nextRemaining
+	end
+	for _, subGroup in ipairs(remaining) do
+		DebugError("insertInteractionGroup: parent not found for sub-group '" .. tostring(subGroup.subGroupId) .. "', parent: '" .. tostring(subGroup.parentId) .. "'")
 	end
 	-- kuertee end: initialize registered sub-groups
 end
