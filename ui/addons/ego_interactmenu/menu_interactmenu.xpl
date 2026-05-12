@@ -478,9 +478,13 @@ end
 function menu.init_kuertee ()
 	RegisterEvent ("Interact_Menu_API.Add_Custom_Actions_Group_Id", menu.Add_Custom_Actions_Group_Id)
 	RegisterEvent ("Interact_Menu_API.Add_Custom_Actions_Group_Text", menu.Add_Custom_Actions_Group_Text)
+
+	-- chemodun start: menu subsection stack
 	RegisterEvent ("Interact_Menu_API.Add_Custom_Actions_SubGroup_Id_to_Group_Id", menu.Add_Custom_Actions_SubGroup_Id_to_Group_Id)
 	RegisterEvent ("Interact_Menu_API.Add_Custom_Actions_SubGroup_Text", menu.Add_Custom_Actions_SubGroup_Text)
 	RegisterEvent ("Interact_Menu_API.Existence_Query", menu.Existence_Query)
+	-- chemodun end: menu subsection stack
+
 end
 -- kuertee end
 
@@ -518,9 +522,11 @@ function menu.cleanup()
 	menu.groupShips = {}
 
 	menu.subsection = nil
-	-- kurtee start: menu subsection stack
+
+	-- chemodun start: menu subsection stack
 	menu.subsectionStack = {}
-	-- kurtee end: menu subsection stack
+	-- chemodun end: menu subsection stack
+
 	menu.pendingSubSection = nil
 	menu.possibleorders = {}
 	menu.numdockingpossible = nil
@@ -4105,9 +4111,12 @@ function menu.createContentTable(frame, position)
 								first = false
 								hastitle = true
 							end
-							-- kurtee start: menu subsection text for path displaying
+
+							-- chemodun start: menu subsection stack: text for path displaying
+							-- local data = { id = subsection.id, y = height }
 							local data = { id = subsection.id, y = height, text = subsection.text }
-							-- kurtee end: menu subsection text for path displaying
+							-- chemodun end: menu subsection stack: text for path displaying
+
 							local row = ftable:addRow(data, {  })
 							local iconHeight = Helper.scaleY(config.rowHeight)
 							local button = row[1]:setColSpan(5):createButton({
@@ -4352,7 +4361,7 @@ function menu.createSubSectionTable(frame, position)
 	ftable:setColWidthPercent(2, 40)
 	ftable:setDefaultBackgroundColSpan(1, 2)
 
-	-- kuertee start: back navigation header row
+	-- chemodun start: menu subsection stack: back navigation header row
 	if menu.subsection.text and menu.subsectionStack and #menu.subsectionStack > 0 then
 		local iconHeight = Helper.scaleY(config.rowHeight)
 		-- Build full breadcrumb path from stack + current level for mouseOverText
@@ -4378,14 +4387,14 @@ function menu.createSubSectionTable(frame, position)
 			menu.refresh = true
 		end
 	end
-	-- kuertee end: back navigation header row
+	-- chemodun end: menu subsection stack: back navigation header row
 
 	for _, entry in ipairs(menu.actions[menu.subsection.id]) do
 		if entry.active == nil then
 			entry.active = true
 		end
 
-		-- kuertee start: sub-subsection group navigation
+		-- chemodun start: menu subsection stack: sub-subsection group navigation
 		if entry.isgroup then
 			local haschildren = menu.actions[entry.groupId] and #menu.actions[entry.groupId] > 0
 			local data = { id = entry.groupId, y = menu.subsection.y, text = entry.text }
@@ -4410,7 +4419,7 @@ function menu.createSubSectionTable(frame, position)
 				end
 			end
 		else
-		-- kuertee end: sub-subsection group navigation
+		-- chemodun end: menu subsection stack: sub-subsection group navigation
 
 		row = ftable:addRow(true, {  })
 		local maxtextwidth = 0
@@ -4457,7 +4466,11 @@ function menu.createSubSectionTable(frame, position)
 		if entry.text2 then
 			button:setText2(entry.text2, { halign = "right", color = entry.active and Color["text_normal"] or Color["text_inactive"], font = entry.text2font or Helper.standardFont })
 		end
-		end -- kuertee: end of sub-subsection else branch
+
+		-- chemodun start: menu subsection stack: sub-subsection group navigation
+		end
+		-- chemodun end: menu subsection stack: sub-subsection group navigation
+
 	end
 
 	return ftable
@@ -4599,9 +4612,10 @@ function menu.setOrderImmediate(component, orderidx)
 end
 
 function menu.handleSubSectionOption(data, skipdelay)
-	-- kuertee start: clear subsection stack on any root-panel navigation
+	-- chemodun start: menu subsection stack: clear subsection stack on any root-panel navigation
 	menu.subsectionStack = {}
-	-- kuertee end: clear subsection stack on any root-panel navigation
+	-- chemodun end: menu subsection stack: clear subsection stack on any root-panel navigation
+
 	if type(data) == "table" then
 		if ((not menu.pendingSubSection) and ((not menu.subsection) or (menu.subsection.id ~= data.id))) or (menu.pendingSubSection and ((type(menu.pendingSubSection) ~= "table") or (menu.pendingSubSection.id ~= data.id))) then
 			if #menu.actions[data.id] > 0 then
@@ -4878,11 +4892,11 @@ function menu.processSelectedPlayerShips()
 	end
 end
 
--- kuertee start: sub-group MD API state (must be declared before prepareSections)
+-- chemodun start: menu subsection stack: sub-group MD API state (must be declared before prepareSections)
 local registeredSubGroups = {}
 local newCustomSubGroupIds   -- "parentId;subGroupId"
 local newCustomSubGroupText
--- kuertee end: sub-group MD API state
+-- chemodun end: menu subsection stack: sub-group MD API state
 
 function menu.prepareSections()
 	menu.actions = {}
@@ -4912,7 +4926,7 @@ function menu.prepareSections()
 		end
 	end
 
-	-- kuertee start: initialize registered sub-groups (multi-pass to handle any registration order)
+	-- chemodun start: menu subsection stack: initialize registered sub-groups (multi-pass to handle any registration order)
 	local remaining = {}
 	for _, subGroup in ipairs(registeredSubGroups) do
 		table.insert(remaining, subGroup)
@@ -4934,15 +4948,15 @@ function menu.prepareSections()
 	for _, subGroup in ipairs(remaining) do
 		DebugError("insertInteractionGroup: parent not found for sub-group '" .. tostring(subGroup.subGroupId) .. "', parent: '" .. tostring(subGroup.parentId) .. "'")
 	end
-	-- kuertee end: initialize registered sub-groups
+	-- chemodun end: menu subsection stack: initialize registered sub-groups
 
-	-- kuertee start: callback
+	-- chemodun start: menu subsection stack: callback
 	if menu.uix_callbacks ["prepareSections_on_end"] then
 		for uix_id, uix_callback in pairs (menu.uix_callbacks ["prepareSections_on_end"]) do
 			uix_callback (config.sections)
 		end
 	end
-	-- kuertee end: callback
+	-- chemodun end: menu subsection stack: callback
 end
 
 function menu.insertInteractionContent(section, entry)
@@ -4982,7 +4996,7 @@ function menu.insertInteractionContent(section, entry)
 	end
 end
 
--- kuertee start: sub-subsection group API
+-- chemodun start: menu subsection stack: sub-subsection group API
 -- Register a navigable group entry inside an existing section or group.
 -- parentSectionId : section or group ID to insert the group button into
 -- groupId         : unique ID for this group's action list (key into menu.actions)
@@ -5006,7 +5020,7 @@ function menu.insertInteractionGroup(parentSectionId, groupId, groupText, option
 		mouseOverText = options.mouseOverText,
 	})
 end
--- kuertee end: sub-subsection group API
+-- chemodun end: menu subsection stack: sub-subsection group API
 
 config.consumables = {
 	{ id = "satellite",		type = "civilian",	getnum = C.GetNumAllSatellites,		getdata = C.GetAllSatellites },
@@ -8121,13 +8135,14 @@ end
 function menu.onCloseElement(dueToClose, layer, allowAutoMenu)
 	if dueToClose == "back" then
 		if menu.subsection then
-			-- kuertee start: pop subsection stack for nested navigation
+			-- chemodun start: menu subsection stack: pop subsection stack for nested navigation
 			if menu.subsectionStack and #menu.subsectionStack > 0 then
 				menu.subsection = table.remove(menu.subsectionStack)
 			else
 				menu.subsection = nil
 			end
-			-- kuertee end: pop subsection stack for nested navigation
+			-- chemodun end: menu subsection stack: pop subsection stack for nested navigation
+
 			menu.subsection = nil
 			menu.refresh = true
 			return
@@ -8249,7 +8264,7 @@ function menu.Add_Custom_Actions_Group(id, text)
 	end
 end
 
--- kuertee start: sub-group MD API handlers
+-- chemodun start: menu subsection stack: sub-group MD API handlers
 function menu.Add_Custom_Actions_SubGroup_Id_to_Group_Id(_, ids)
 	newCustomSubGroupIds = ids
 	if newCustomSubGroupIds and newCustomSubGroupText then
@@ -8288,7 +8303,7 @@ function menu.Add_Custom_Actions_SubGroup(parentId, subGroupId, text)
 	end
 	table.insert(registeredSubGroups, { parentId = parentId, subGroupId = subGroupId, text = text })
 end
--- kuertee end: sub-group MD API handlers
+-- chemodun end: menu subsection stack: sub-group MD API handlers
 
 menu.uix_callbackCount = 0
 function menu.registerCallback(callbackName, callbackFunction, id)
