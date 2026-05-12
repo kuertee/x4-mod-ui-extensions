@@ -440,6 +440,7 @@ local config = {
 		["ship_s"]	= ReadText(1001, 11000),
 	},
 	personnelPage = 100,
+	minLeftPanelWidth = 600,
 }
 
 if C.AreVenturesCompatible() then
@@ -1622,12 +1623,16 @@ function menu.createInfoFrame()
 	Helper.clearTableConnectionColumn(menu, 3)
 
 	if menu.mode == "inventory" then
+		tableProperties.width = math.max(config.minLeftPanelWidth, tableProperties.width)
 		menu.createInventory(menu.infoFrame, tableProperties)
 	elseif menu.mode == "crafting" then
+		tableProperties.width = math.max(config.minLeftPanelWidth, tableProperties.width)
 		menu.createCrafting(menu.infoFrame, tableProperties)
 	elseif menu.mode == "equipmentmods" then
+		tableProperties.width = math.max(config.minLeftPanelWidth, tableProperties.width)
 		menu.createEquipmentMods(menu.infoFrame, tableProperties)
 	elseif menu.mode == "spacesuit" then
+		tableProperties.width = math.max(config.minLeftPanelWidth, tableProperties.width)
 		menu.createInventory(menu.infoFrame, tableProperties, "personalupgrade")
 	elseif menu.mode == "globalorders" then
 		menu.createEmpire(menu.infoFrame, tableProperties)
@@ -1642,10 +1647,13 @@ function menu.createInfoFrame()
 		menu.createEmpire(menu.infoFrame, tableProperties)
 	elseif menu.mode == "accounts" then
 		tableProperties.width = tableProperties.width * 3 / 2
+		tableProperties.width = math.max(config.minLeftPanelWidth, tableProperties.width)
 		menu.createAccounts(menu.infoFrame, tableProperties)
 	elseif menu.mode == "stats" then
+		tableProperties.width = math.max(config.minLeftPanelWidth, tableProperties.width)
 		menu.createStats(menu.infoFrame, tableProperties)
 	elseif menu.mode == "logbook" then
+		tableProperties.width = math.max(config.minLeftPanelWidth, tableProperties.width)
 		tableProperties.width = tableProperties.width * 5 / 4
 		menu.createLogbook(menu.infoFrame, tableProperties)
 	elseif menu.mode == "messages" then
@@ -6762,6 +6770,17 @@ function menu.createContextFrame(data, x, y, width, nomouseout)
 		Helper.createUserQuestionContext(menu, menu.contextFrame)
 	end
 
+	-- kuertee start: callback
+	if menu.uix_callbacks ["createContextFrame_on_end"] then
+		for uix_id, uix_callback in pairs (menu.uix_callbacks ["createContextFrame_on_end"]) do
+			local result = uix_callback (menu.contextFrame, menu.contextMenuData or data, menu.contextMenuMode)
+			if result then
+				menu.contextFrame = result.contextFrame
+			end
+		end
+	end
+	-- kuertee end: callback
+
 	if menu.contextFrame.properties.x + contextmenuwidth > Helper.viewWidth then
 		menu.contextFrame.properties.x = Helper.viewWidth - contextmenuwidth - Helper.frameBorder
 	end
@@ -6771,17 +6790,6 @@ function menu.createContextFrame(data, x, y, width, nomouseout)
 	else
 		menu.contextFrame.properties.y = y
 	end
-
-	-- kuertee start: callback
-	if menu.uix_callbacks ["createContextFrame_on_end"] then
-		for uix_id, uix_callback in pairs (menu.uix_callbacks ["createContextFrame_on_end"]) do
-			local result = uix_callback (menu.contextFrame, menu.contextMenuData, menu.contextMenuMode)
-			if result then
-				menu.contextFrame = result.contextFrame
-			end
-		end
-	end
-	-- kuertee end: callback
 
 	menu.contextFrame:display()
 
@@ -6826,16 +6834,6 @@ function menu.refreshContextFrame(setrow, setcol)
 		Helper.createDropWaresContext(menu, menu.contextFrame, "left")
 	end
 
-	if menu.contextFrame.properties.x + menu.contextMenuWidth > Helper.viewWidth then
-		menu.contextFrame.properties.x = Helper.viewWidth - menu.contextMenuWidth - Helper.frameBorder
-	end
-	local height = menu.contextFrame:getUsedHeight()
-	if y + height > Helper.viewHeight then
-		menu.contextFrame.properties.y = Helper.viewHeight - height - Helper.frameBorder
-	else
-		menu.contextFrame.properties.y = y
-	end
-
 	-- kuertee start: callback
 	if menu.uix_callbacks ["refreshContextFrame_on_end"] then
 		for uix_id, uix_callback in pairs (menu.uix_callbacks ["refreshContextFrame_on_end"]) do
@@ -6846,6 +6844,16 @@ function menu.refreshContextFrame(setrow, setcol)
 		end
 	end
 	-- kuertee end: callback
+
+	if menu.contextFrame.properties.x + menu.contextMenuWidth > Helper.viewWidth then
+		menu.contextFrame.properties.x = Helper.viewWidth - menu.contextMenuWidth - Helper.frameBorder
+	end
+	local height = menu.contextFrame:getUsedHeight()
+	if y + height > Helper.viewHeight then
+		menu.contextFrame.properties.y = Helper.viewHeight - height - Helper.frameBorder
+	else
+		menu.contextFrame.properties.y = y
+	end
 
 	menu.contextFrame:display()
 end

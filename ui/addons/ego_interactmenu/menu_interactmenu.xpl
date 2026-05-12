@@ -71,6 +71,19 @@ ffi.cdef[[
 		bool istemporder;
 	} Order;
 	typedef struct {
+		size_t queueidx;
+		const char* state;
+		const char* statename;
+		const char* orderdef;
+		size_t actualparams;
+		bool enabled;
+		bool isinfinite;
+		bool issyncpointreached;
+		bool istemporder;
+		bool isoverride;
+		bool ispriority;
+	} Order3;
+	typedef struct {
 		const char* id;
 		const char* name;
 		const char* icon;
@@ -188,6 +201,7 @@ ffi.cdef[[
 	void GetMissionDeliveryWares(MissionWareDeliveryInfo* result, MissionID missionid);
 	uint32_t GetMissionThreadSubMissions(MissionID* result, uint32_t resultlen, MissionID missionid);
 	MonitorExtents GetMonitorExtents(const char* monitorid);
+	Order3 GetMostRecentOrderFromInteractMenu(UniverseID controllableid);
 	uint32_t GetNumAllFleetUnitSubordinates(FleetUnitID fleetunitid);
 	uint32_t GetNumAllLaserTowers(UniverseID defensibleid);
 	uint32_t GetNumAllMines(UniverseID defensibleid);
@@ -606,7 +620,7 @@ function menu.orderAttack(component, target, clear, immediate)
 	local params = {
 		primarytarget = ConvertStringToLuaID(tostring(target)),
 	}
-	CreateOrder(component, "Attack", params, false, immediate, menu.priorityOrderMode)
+	CreateOrder(component, "Attack", params, false, immediate, menu.priorityOrderMode, nil, nil, nil, true)
 end
 
 function menu.orderAttackInRange(component, sector, offset, clear)
@@ -621,7 +635,7 @@ function menu.orderAttackInRange(component, sector, offset, clear)
 	local params = {
 		destination = { ConvertStringToLuaID(tostring(sector)), {offset.x, offset.y, offset.z} },
 	}
-	CreateOrder(component, "AttackInRange", params, false, false, menu.priorityOrderMode)
+	CreateOrder(component, "AttackInRange", params, false, false, menu.priorityOrderMode, nil, nil, nil, true)
 end
 
 function menu.orderAttackSurfaceElements(component, target, targetclasses, clear)
@@ -639,7 +653,7 @@ function menu.orderAttackSurfaceElements(component, target, targetclasses, clear
 		disablehullpercentagethreshold = 100,
 		behaviortargetclasses = targetclasses,
 	}
-	CreateOrder(component, "Attack", params, false, immediate, menu.priorityOrderMode)
+	CreateOrder(component, "Attack", params, false, immediate, menu.priorityOrderMode, nil, nil, nil, true)
 end
 
 function menu.orderCollect(component, drop, sector, offset, clear)
@@ -654,7 +668,7 @@ function menu.orderCollect(component, drop, sector, offset, clear)
 	local params = {
 		targetlist = { ConvertStringToLuaID(tostring(drop)) },
 	}
-	CreateOrder(component, "Collect", params, false, false, menu.priorityOrderMode)
+	CreateOrder(component, "Collect", params, false, false, menu.priorityOrderMode, nil, nil, nil, true)
 end
 
 function menu.orderCollectDeployable(component, deployable, sector, offset, clear)
@@ -669,7 +683,7 @@ function menu.orderCollectDeployable(component, deployable, sector, offset, clea
 	local params = {
 		targetlist = { ConvertStringToLuaID(tostring(deployable)) },
 	}
-	CreateOrder(component, "CollectDeployables", params, false, false, menu.priorityOrderMode)
+	CreateOrder(component, "CollectDeployables", params, false, false, menu.priorityOrderMode, nil, nil, nil, true)
 end
 
 function menu.orderCollectLockbox(component, lockbox, clear)
@@ -684,7 +698,7 @@ function menu.orderCollectLockbox(component, lockbox, clear)
 	local params = {
 		target = ConvertStringToLuaID(tostring(lockbox)),
 	}
-	CreateOrder(component, "CollectLockbox", params, false, false, menu.priorityOrderMode)
+	CreateOrder(component, "CollectLockbox", params, false, false, menu.priorityOrderMode, nil, nil, nil, true)
 end
 
 function menu.orderCollectRadius(component, sector, offset, clear)
@@ -699,7 +713,7 @@ function menu.orderCollectRadius(component, sector, offset, clear)
 	local params = {
 		destination = { ConvertStringToLuaID(tostring(sector)), {offset.x, offset.y, offset.z} },
 	}
-	CreateOrder(component, "CollectDropsInRadius", params, false, false, menu.priorityOrderMode)
+	CreateOrder(component, "CollectDropsInRadius", params, false, false, menu.priorityOrderMode, nil, nil, nil, true)
 end
 
 function menu.orderDeployAtPosition(component, sector, offset, macro, amount, clear)
@@ -716,7 +730,7 @@ function menu.orderDeployAtPosition(component, sector, offset, macro, amount, cl
 		objectstodeploy = macro,
 		amountstodeploy = amount,
 	}
-	CreateOrder(component, "DeployObjectAtPosition", params, false, false, menu.priorityOrderMode)
+	CreateOrder(component, "DeployObjectAtPosition", params, false, false, menu.priorityOrderMode, nil, nil, nil, true)
 end
 
 function menu.orderDeployToStation(component, station, clear, isplayerowned)
@@ -783,7 +797,7 @@ function menu.orderExplore(component, sectororgate, sector, offset, clear)
 	if C.IsComponentClass(sectororgate, "sector") or (C.IsComponentClass(sectororgate, "gate") and (not GetComponentData(ConvertStringTo64Bit(tostring(menu.componentSlot.component)), "isactive"))) then
 		params.destination = { ConvertStringToLuaID(tostring(sector)), {offset.x, offset.y, offset.z} }
 	end
-	CreateOrder(component, "Explore", params, false, false, menu.priorityOrderMode)
+	CreateOrder(component, "Explore", params, false, false, menu.priorityOrderMode, nil, nil, nil, true)
 end
 
 function menu.orderExploreUpdate(component, sectororgate, sector, offset, clear)
@@ -801,7 +815,7 @@ function menu.orderExploreUpdate(component, sectororgate, sector, offset, clear)
 	if C.IsComponentClass(sectororgate, "sector") or (C.IsComponentClass(sectororgate, "gate") and (not GetComponentData(ConvertStringTo64Bit(tostring(menu.componentSlot.component)), "isactive"))) then
 		params.destination = { ConvertStringToLuaID(tostring(sector)), {offset.x, offset.y, offset.z} }
 	end
-	CreateOrder(component, "ExploreUpdate", params, false, false, menu.priorityOrderMode)
+	CreateOrder(component, "ExploreUpdate", params, false, false, menu.priorityOrderMode, nil, nil, nil, true)
 end
 
 function menu.orderFollow(component, targetobject, clear)
@@ -863,12 +877,12 @@ function menu.orderMoveWait(component, sector, offset, targetobject, playerpreci
 		local params = {
 			destination = ConvertStringToLuaID(tostring(targetobject)),
 		}
-		CreateOrder(component, "MoveToObject", params, false, false, menu.priorityOrderMode)
+		CreateOrder(component, "MoveToObject", params, false, false, menu.priorityOrderMode, nil, nil, nil, true)
 	else
 		local params = {
 			destination = { ConvertStringToLuaID(tostring(sector)), { offset.x, offset.y, offset.z } },
 		}
-		CreateOrder(component, "MoveWait", params, false, false, menu.priorityOrderMode)
+		CreateOrder(component, "MoveWait", params, false, false, menu.priorityOrderMode, nil, nil, nil, true)
 	end
 end
 
@@ -948,7 +962,7 @@ function menu.orderRescueInRange(component, sector, offset, clear)
 	local params = {
 		destination = { ConvertStringToLuaID(tostring(sector)), {offset.x, offset.y, offset.z} },
 	}
-	CreateOrder(component, "RescueInRange", params, false, false, menu.priorityOrderMode)
+	CreateOrder(component, "RescueInRange", params, false, false, menu.priorityOrderMode, nil, nil, nil, true)
 end
 
 function menu.orderRescueShip(component, targetobject, clear)
@@ -963,7 +977,7 @@ function menu.orderRescueShip(component, targetobject, clear)
 	local params = {
 		target = ConvertStringToLuaID(tostring(targetobject)),
 	}
-	CreateOrder(component, "RescueShip", params, false, false, menu.priorityOrderMode)
+	CreateOrder(component, "RescueShip", params, false, false, menu.priorityOrderMode, nil, nil, nil, true)
 end
 
 function menu.orderSalvageCollect(component, target, clear)
@@ -978,7 +992,7 @@ function menu.orderSalvageCollect(component, target, clear)
 	local params = {
 		target = ConvertStringToLuaID(tostring(target)),
 	}
-	CreateOrder(component, "SalvageCollect", params, false, false, menu.priorityOrderMode)
+	CreateOrder(component, "SalvageCollect", params, false, false, menu.priorityOrderMode, nil, nil, nil, true)
 end
 
 function menu.orderSalvageCrush(component, target, clear)
@@ -993,7 +1007,7 @@ function menu.orderSalvageCrush(component, target, clear)
 	local params = {
 		target = ConvertStringToLuaID(tostring(target)),
 	}
-	CreateOrder(component, "SalvageCrush", params, false, false, menu.priorityOrderMode)
+	CreateOrder(component, "SalvageCrush", params, false, false, menu.priorityOrderMode, nil, nil, nil, true)
 end
 
 function menu.orderSalvageDeliver(component, target, tradeoffer, amount, clear)
@@ -1036,7 +1050,7 @@ function menu.orderSalvageInRadius(component, sector, offset, clear)
 	local params = {
 		destination = { ConvertStringToLuaID(tostring(sector)), {offset.x, offset.y, offset.z} },
 	}
-	CreateOrder(component, "SalvageInRadius", params, false, false, menu.priorityOrderMode)
+	CreateOrder(component, "SalvageInRadius", params, false, false, menu.priorityOrderMode, nil, nil, nil, true)
 end
 
 function menu.orderStopAndHoldFire(component, clear, immediate)
@@ -1075,7 +1089,7 @@ function menu.orderTacticalAttack(component, target, clear, immediate)
 	local params = {
 		selectedtarget = ConvertStringToLuaID(tostring(target)),
 	}
-	CreateOrder(component, "TacticalOrder", params, false, immediate, menu.priorityOrderMode)
+	CreateOrder(component, "TacticalOrder", params, false, immediate, menu.priorityOrderMode, nil, nil, nil, true)
 end
 
 function menu.orderWithdrawAndHold(component, clear, immediate)
@@ -1224,6 +1238,177 @@ function menu.getCanCancelConstructionCount()
 	return count
 end
 
+function menu.conditionMoveWait()
+	return #menu.selectedplayerships > 0 and menu.possibleorders["MoveWait"], true
+end
+
+function menu.conditionAttackSurfaceElements(targetclass)
+	if (#menu.selectedplayerships > 0) and menu.possibleorders["Attack"] and (not menu.data.isplayerownedtarget) then
+		if targetclass == "engine" then
+			return C.IsComponentClass(menu.componentSlot.component, "ship_l") or C.IsComponentClass(menu.componentSlot.component, "ship_xl"), true
+		else
+			return C.IsComponentClass(menu.componentSlot.component, "ship_l") or C.IsComponentClass(menu.componentSlot.component, "ship_xl") or C.IsComponentClass(menu.componentSlot.component, "station"), true
+		end
+	end
+	return false, false
+end
+
+function menu.conditionAttack()
+	return (#menu.selectedplayerships > 0) and menu.possibleorders["Attack"] and (not menu.data.isplayerownedtarget) and C.IsComponentClass(menu.componentSlot.component, "destructible"), true
+end
+
+function menu.conditionAttackInRange()
+	if menu.offsetcomponent and (menu.offsetcomponent ~= 0) then
+		return (#menu.selectedplayerships > 0) and menu.possibleorders["AttackInRange"], true
+	end
+	return false, false
+end
+
+function menu.conditionCollect()
+	if #menu.selectedplayerships > 0 and menu.possibleorders["Collect"] and menu.componentSlot.component and C.IsComponentClass(menu.componentSlot.component, "drop") then
+		local active, mouseovertext = menu.canCollectCrates(menu.hasPlayerShipPilot)
+		return true, active, mouseovertext
+	end
+	return false, false
+end
+
+function menu.conditionCollectDeployable()
+	if (#menu.selectedplayerships > 0) and menu.data.isplayerownedtarget and menu.possibleorders["CollectDeployables"] and menu.componentSlot.component and GetComponentData(menu.data.convertedComponent, "isdeployable") then
+		local active, mouseovertext = menu.canCollectCrates(menu.hasPlayerShipPilot)
+		return true, active, mouseovertext
+	end
+	return false, false
+end
+
+function menu.conditionCollectLockbox()
+	if #menu.selectedplayerships > 0 and menu.possibleorders["CollectLockbox"] and menu.componentSlot.component and C.IsComponentClass(menu.componentSlot.component, "lockbox") then
+		-- these variables are used to determine if the button should be active and must be initialized to false because the button activates if nil.
+		local isnotcapship = false
+		local hasactiveguns = false
+		local hasinactiveguns = false
+		for _, ship in ipairs(menu.selectedplayerships) do
+			-- we need to make sure that at least one ship in the selection has all of the requirements. selection will be further filtered down when the orders on the individual ships start.
+			isnotcapship = not C.IsComponentClass(ship, "ship_l") and not C.IsComponentClass(ship, "ship_xl")
+
+			--uint32_t GetDefensibleDPS(DPSData* result, UniverseID defensibleid, bool primary, bool secondary, bool lasers, bool missiles, bool turrets, bool includeheat, bool includeinactive);
+			local activedpstable = ffi.new("DPSData[?]", 6)
+			local numtotalquadrants = C.GetDefensibleDPS(activedpstable, ship, true, true, true, false, false, false, false)
+			hasactiveguns = activedpstable[0].dps > 0
+
+			local inactivedpstable = ffi.new("DPSData[?]", 6)
+			local numtotalquadrants = C.GetDefensibleDPS(inactivedpstable, ship, true, true, true, false, false, false, true)
+			hasinactiveguns = inactivedpstable[0].dps > 0
+
+			if isnotcapship and hasactiveguns then
+				break
+			end
+		end
+
+		local active = isnotcapship and hasactiveguns and menu.hasPlayerShipPilot
+		local mouseovertext
+		if not isnotcapship then
+			mouseovertext = ReadText(1026, 20039)
+		elseif not menu.hasPlayerShipPilot then
+			mouseovertext = ReadText(1026, 7801)
+		elseif not hasactiveguns then
+			if hasinactiveguns then
+				mouseovertext = ReadText(1026, 7847)
+			else
+				mouseovertext = ReadText(1026, 20040)
+			end
+		end
+
+		return true, active, mouseovertext
+	end
+	return false, false
+end
+
+function menu.conditionCollectRadius()
+	if menu.offsetcomponent and (menu.offsetcomponent ~= 0) then
+		if #menu.selectedplayerships > 0 and menu.possibleorders["CollectDropsInRadius"] then
+			local active, mouseovertext = menu.canCollectCrates(menu.hasPlayerShipPilot)
+			return true, active, mouseovertext
+		end
+	end
+	return false, false
+end
+
+function menu.conditionDeployAtPosition()
+	if menu.offsetcomponent and (menu.offsetcomponent ~= 0) then
+		return (#menu.selectedplayerships == 1) and menu.possibleorders["DeployObjectAtPosition"] and (menu.numorderloops == 0), true
+	end
+	return false, false
+end
+
+function menu.conditionExplore()
+	if (#menu.selectedplayerships > 0) and menu.possibleorders["Explore"] and menu.componentSlot.component then
+		return C.IsComponentClass(menu.componentSlot.component, "sector") or C.IsComponentClass(menu.componentSlot.component, "highwayentrygate") or C.IsComponentClass(menu.componentSlot.component, "highway") or (C.IsComponentClass(menu.componentSlot.component, "gate") and GetComponentData(ConvertStringTo64Bit(tostring(menu.componentSlot.component)), "isactive")), true
+	end
+	return false, false
+end
+
+function menu.conditionExploreUpdate()
+	if (#menu.selectedplayerships > 0) and menu.possibleorders["ExploreUpdate"] and menu.componentSlot.component then
+		return C.IsComponentClass(menu.componentSlot.component, "sector") or C.IsComponentClass(menu.componentSlot.component, "highwayentrygate") or C.IsComponentClass(menu.componentSlot.component, "highway") or (C.IsComponentClass(menu.componentSlot.component, "gate") and GetComponentData(ConvertStringTo64Bit(tostring(menu.componentSlot.component)), "isactive")), true
+	end
+	return false, false
+end
+
+function menu.conditionRescueInRange()
+	if menu.offsetcomponent and (menu.offsetcomponent ~= 0) then
+		if (#menu.selectedplayerships > 0) and menu.possibleorders["RescueInRange"] then
+			local active = (C.GetFreePeopleCapacity(menu.selectedplayerships[1]) > 0)
+			local mouseovertext = active and "" or ReadText(1026, 7864)
+			return true, active, mouseovertext
+		end
+	end
+	return false, false
+end
+
+function menu.conditionRescueShip()
+	if #menu.selectedplayerships > 0 and menu.possibleorders["RescueShip"] and GetComponentData(menu.data.convertedComponent, "isreallyplayerowned") then
+		local active = (C.GetFreePeopleCapacity(menu.selectedplayerships[1]) > 0)
+		local mouseovertext = active and "" or ReadText(1026, 7864)
+		return true, active, mouseovertext
+	end
+	return false, false
+end
+
+function menu.conditionSalvageCollect()
+	return (#menu.selectedplayerships > 0) and menu.possibleorders["SalvageCollect"] and C.CanBeTowed(menu.componentSlot.component), true
+end
+
+function menu.conditionSalvageCrush()
+	return (#menu.selectedplayerships > 0) and menu.possibleorders["SalvageCrush"] and C.CanBeDismantled(menu.componentSlot.component), true
+end
+
+function menu.conditionSalvageInRadius()
+	if menu.offsetcomponent and (menu.offsetcomponent ~= 0) then
+		if (#menu.selectedplayerships > 0) and menu.possibleorders["SalvageInRadius"] then
+			local active, mouseovertext = menu.canSalvage(menu.hasPlayerShipPilot)
+			return true, active, mouseovertext
+		end
+	end
+	return false, false
+end
+
+function menu.conditionTacticalAttack()
+	if (#menu.selectedplayerships > 0) and menu.possibleorders["TacticalOrder"] and (not menu.data.isplayerownedtarget) and C.IsComponentClass(menu.componentSlot.component, "destructible") then
+		local fleetcommanders = {}
+		for _, ship in ipairs(menu.selectedplayerships) do
+			local commander = ConvertIDTo64Bit(GetCommander(ship))
+			local subordinates = GetSubordinates(ship)
+			if (not commander) and (#subordinates > 0) then
+				table.insert(fleetcommanders, ship)
+			end
+		end
+		if #fleetcommanders > 0 then
+			return true, true, nil, fleetcommanders
+		end
+	end
+end
+
+
 -- widget scripts
 
 function menu.buttonActivateDeployables(isactive)
@@ -1247,10 +1432,7 @@ function menu.buttonSelfDestructDeployables(selecteddeployable)
 end
 
 function menu.buttonArmTurrets(armed)
-	local convertedComponent = ConvertStringTo64Bit(tostring(menu.componentSlot.component))
-	local isplayerownedtarget = GetComponentData(convertedComponent, "isplayerowned")
-
-	if isplayerownedtarget and C.IsComponentClass(menu.componentSlot.component, "ship") and (not GetComponentData(ConvertStringTo64Bit(tostring(menu.componentSlot.component)), "isdeployable")) then
+	if menu.data.isplayerownedtarget and C.IsComponentClass(menu.componentSlot.component, "ship") and (not GetComponentData(ConvertStringTo64Bit(tostring(menu.componentSlot.component)), "isdeployable")) then
 		C.SetAllTurretsArmed(menu.componentSlot.component, armed)
 	end
 	for _, ship in ipairs(menu.selectedplayerships) do
@@ -1263,7 +1445,6 @@ end
 function menu.buttonAssignCommander(assignment, group)
 	if menu.showPlayerInteractions or ((#menu.selectedplayerships == 0) and (not menu.shown)) then
 		local convertedComponent = ConvertStringTo64Bit(tostring(menu.componentSlot.component))
-		local isplayerownedtarget = GetComponentData(convertedComponent, "isplayerowned")
 
 		local playeroccupiedship = C.GetPlayerOccupiedShipID()
 		local oldassignment = ffi.string(C.GetSubordinateGroupAssignment(playeroccupiedship, group))
@@ -1312,7 +1493,6 @@ function menu.buttonAssignCommander(assignment, group)
 			end
 		elseif C.IsComponentClass(menu.componentSlot.component, "controllable") then
 			local convertedComponent = ConvertStringTo64Bit(tostring(menu.componentSlot.component))
-			local isplayerownedtarget = GetComponentData(convertedComponent, "isplayerowned")
 
 			local oldassignment = ffi.string(C.GetSubordinateGroupAssignment(menu.componentSlot.component, group))
 			if assignment == "positiondefence" and oldassignment ~= "positiondefence" then
@@ -1320,7 +1500,7 @@ function menu.buttonAssignCommander(assignment, group)
 			end
 
 			for _, ship in ipairs(menu.selectedplayerships) do
-				if (convertedComponent ~= ship) and isplayerownedtarget then
+				if (convertedComponent ~= ship) and menu.data.isplayerownedtarget then
 					local skip = false
 					if not GetComponentData(ship, "assignedpilot") then
 						skip = true
@@ -1420,7 +1600,6 @@ function menu.buttonAssignFleetUnitCommander(assignment, group)
 		end
 	else
 		local convertedComponent = ConvertStringTo64Bit(tostring(menu.componentSlot.component))
-		local isplayerownedtarget = GetComponentData(convertedComponent, "isplayerowned")
 
 		if C.IsComponentClass(menu.componentSlot.component, "controllable") then
 			local oldassignment = ffi.string(C.GetSubordinateGroupAssignment(menu.componentSlot.component, group))
@@ -2788,6 +2967,56 @@ function menu.uix_centerOnMap(object)
 end
 -- kuertee end: center on map
 
+function menu.buttonRepeatLastOrder()
+	menu.clearOtherOrders = false
+	menu.priorityOrderMode = menu.lastorder.ispriority
+
+	if menu.lastorder.orderdef == "MoveWait" then
+		menu.buttonMoveWait()
+	elseif menu.lastorder.orderdef == "Attack" then
+		if menu.lastorder.params["disable"].value then
+			if #menu.lastorder.params["behaviortargetclasses"].value > 1 then
+				menu.buttonAttackSurfaceElements(menu.componentSlot.component, "all", false)
+			else
+				menu.buttonAttackSurfaceElements(menu.componentSlot.component, menu.lastorder.params["behaviortargetclasses"].value[1], false)
+			end
+		else
+			menu.buttonAttack()
+		end
+	elseif menu.lastorder.orderdef == "AttackInRange" then
+		menu.buttonAttackInRange()
+	elseif menu.lastorder.orderdef == "Collect" then
+		menu.buttonCollect()
+	elseif menu.lastorder.orderdef == "CollectDeployables" then
+		 menu.buttonCollectDeployable()
+	elseif menu.lastorder.orderdef == "CollectLockbox" then
+		menu.buttonCollectLockbox()
+	elseif menu.lastorder.orderdef == "CollectDropsInRadius" then
+		menu.buttonCollectRadius()
+	elseif menu.lastorder.orderdef == "DeployObjectAtPosition" then
+		menu.buttonDeployAtPosition(nil, menu.lastorder.params["objectstodeploy"].value, menu.lastorder.params["amountstodeploy"].value)
+	elseif menu.lastorder.orderdef == "Explore" then
+		menu.buttonExplore()
+	elseif menu.lastorder.orderdef == "ExploreUpdate" then
+		menu.buttonExploreUpdate()
+	elseif menu.lastorder.orderdef == "RescueInRange" then
+		menu.buttonRescueInRange()
+	elseif menu.lastorder.orderdef == "RescueShip" then
+		menu.buttonRescueShip()
+	elseif menu.lastorder.orderdef == "SalvageCollect" then
+		menu.buttonSalvageCollect()
+	elseif menu.lastorder.orderdef == "SalvageCrush" then
+		menu.buttonSalvageCrush()
+	elseif menu.lastorder.orderdef == "SalvageInRadius" then
+		menu.buttonSalvageInRadius()
+	elseif menu.lastorder.orderdef == "TacticalOrder" then
+		local _, _, _, fleetcommanders = menu.conditionTacticalAttack()
+		menu.buttonTacticalAttack(fleetcommanders)
+	else
+		DebugError("menu.buttonRepeatLastOrder(): unsupported order of type " .. menu.lastorder.orderdef .. ".")
+	end
+end
+
 function menu.buttonRequestShip()
 	if menu.shown then
 		if menu.interactMenuID then
@@ -3053,9 +3282,7 @@ function menu.buttonStationOverview()
 end
 
 function menu.buttonTeleport()
-	local isplayerownedtarget = GetComponentData(ConvertStringTo64Bit(tostring(menu.componentSlot.component)), "isplayerowned")
-
-	C.TeleportPlayerTo(menu.componentSlot.component, false, menu.mode == "shipconsole", (menu.mode == "shipconsole") and isplayerownedtarget)
+	C.TeleportPlayerTo(menu.componentSlot.component, false, menu.mode == "shipconsole", (menu.mode == "shipconsole") and menu.data.isplayerownedtarget)
 	menu.onCloseElement("close")
 end
 
@@ -3228,6 +3455,7 @@ function menu.showInteractMenu(param)
 	menu.mouseX = param.mouseX
 	menu.mouseY = param.mouseY
 
+	menu.prepareData()
 	menu.processSelectedPlayerShips()
 	if menu.fleetunit == menu.selectedfleetunit then
 		menu.selectedfleetunit = nil
@@ -3283,8 +3511,9 @@ function menu.onShowMenu(_, _, serializedArg)
 	end
 	menu.selectedotherobjects = {}
 	menu.selectedplayerdeployables = {}
-	menu.processSelectedPlayerShips()
 	menu.playerSquad = menu.getPlayerSquad()
+	menu.prepareData()
+	menu.processSelectedPlayerShips()
 
 	if menu.interactMenuID then
 		C.NotifyInteractMenuShown(menu.interactMenuID)
@@ -3960,9 +4189,9 @@ function menu.createContentTable(frame, position)
 
 	-- entries
 	local convertedComponent = ConvertStringTo64Bit(tostring(menu.componentSlot.component))
-	local isonlinetarget, isplayerownedtarget
+	local isonlinetarget
 	if convertedComponent ~= 0 then
-		isonlinetarget, isplayerownedtarget = GetComponentData(convertedComponent, "isonlineobject", "isplayerowned")
+		isonlinetarget = GetComponentData(convertedComponent, "isonlineobject")
 	end
 
 	local skipped = false
@@ -4007,7 +4236,7 @@ function menu.createContentTable(frame, position)
 			local row = ftable:addRow(true, { bgColor = Color["row_background_unselectable"] })
 			row[1]:setColSpan(5):createText(reason, { wordwrap = true, color = Color["text_inactive"] })
 			skipped = true
-		elseif isonlinetarget and isplayerownedtarget then
+		elseif isonlinetarget and menu.data.isplayerownedtarget then
 			local row = ftable:addRow(true, { fixed = true, bgColor = Color["row_background_unselectable"] })
 			row[1]:setColSpan(5):createText(ReadText(1001, 7868), { wordwrap = true, color = Color["text_inactive"] })
 			skipped = true
@@ -4658,9 +4887,9 @@ end
 
 function menu.processSelectedPlayerShips()
 	local convertedComponent = ConvertStringTo64Bit(tostring(menu.componentSlot.component))
-	local isplayerownedtarget, istargetatdockrelation, istargetdockingenabled = false, false, false
+	local istargetatdockrelation, istargetdockingenabled = false, false, false
 	if convertedComponent ~= 0 then
-		isplayerownedtarget, istargetatdockrelation, istargetdockingenabled = GetComponentData(convertedComponent, "isplayerowned", "isdock", "isdockingenabled")
+		istargetatdockrelation, istargetdockingenabled = GetComponentData(convertedComponent, "isplayerowned", "isdock", "isdockingenabled")
 		iscontrollable = C.IsComponentClass(menu.componentSlot.component, "controllable")
 	end
 	local playercontainer = C.GetPlayerContainerID()
@@ -4705,7 +4934,7 @@ function menu.processSelectedPlayerShips()
 	n = C.GetOrderDefinitions(buf, n)
 	for i = 0, n - 1 do
 		local id = ffi.string(buf[i].id)
-		menu.orderdefs[id] = { icon = ffi.string(buf[i].icon), description = ffi.string(buf[i].description) }
+		menu.orderdefs[id] = { name = ffi.string(buf[i].name), icon = ffi.string(buf[i].icon), description = ffi.string(buf[i].description) }
 		menu.loopableorders[id] = C.IsOrderLoopable(id)
 	end
 
@@ -4809,7 +5038,7 @@ function menu.processSelectedPlayerShips()
 
 			-- Check assignments
 			if (not isspacesuit) and GetComponentData(ship, "assignedpilot") then
-				if menu.fleetunit or (isplayerownedtarget and iscontrollable and (commander ~= convertedComponent) and C.CanAcceptSubordinate(menu.componentSlot.component, ship)) then
+				if menu.fleetunit or (menu.data.isplayerownedtarget and iscontrollable and (commander ~= convertedComponent) and C.CanAcceptSubordinate(menu.componentSlot.component, ship)) then
 					menu.numassignableships = menu.numassignableships + 1
 					if GetComponentData(ship, "primarypurpose") == "mine" then
 						menu.numassignableminingships = menu.numassignableminingships + 1
@@ -4872,7 +5101,7 @@ function menu.processSelectedPlayerShips()
 		end
 	end
 
-	if isplayerownedtarget and C.IsComponentClass(menu.componentSlot.component, "ship") then
+	if menu.data.isplayerownedtarget and C.IsComponentClass(menu.componentSlot.component, "ship") then
 		if (playercontainer ~= 0) and (convertedComponent ~= 0) and IsDockingPossible(convertedComponent, convertedPlayerContainer) and (GetComponentData(convertedComponent, "assignedpilot") ~= nil) then
 			menu.numdockingatplayerpossible = menu.numdockingatplayerpossible + 1
 		end
@@ -5226,7 +5455,8 @@ function menu.insertLuaAction(actiontype, istobedisplayed)
 			end
 		end
 	elseif actiontype == "attack" then
-		if (#menu.selectedplayerships > 0) and menu.possibleorders["Attack"] and (not isplayerownedtarget) and C.IsComponentClass(menu.componentSlot.component, "destructible") then
+		local display, active = menu.conditionAttack()
+		if display then
 			menu.insertInteractionContent("selected_orders", { type = actiontype, text = menu.orderIconText("Attack") .. ReadText(1001, 7815), helpOverlayID = "interactmenu_attack", helpOverlayText = " ", helpOverlayHighlightOnly = true, script = function () return menu.buttonAttack(false) end, orderid = "Attack", prioritysupported = true })
 		end
 
@@ -5263,10 +5493,9 @@ function menu.insertLuaAction(actiontype, istobedisplayed)
 		-- end: cpsdo call-back
 
 	elseif actiontype == "attackinrange" then
-		if menu.offsetcomponent and (menu.offsetcomponent ~= 0) then
-			if #menu.selectedplayerships > 0 and menu.possibleorders["AttackInRange"] then
-				menu.insertInteractionContent("selected_orders", { type = actiontype, text = menu.orderIconText("AttackInRange") .. ReadText(1041, 631), helpOverlayID = "interactmenu_attackinrange", helpOverlayText = " ", helpOverlayHighlightOnly = true, script = function () return menu.buttonAttackInRange(false) end, hidetarget = true, orderid = "AttackInRange", prioritysupported = true } )
-			end
+		local display, active = menu.conditionAttackInRange()
+		if display then
+			menu.insertInteractionContent("selected_orders", { type = actiontype, text = menu.orderIconText("AttackInRange") .. ReadText(1041, 631), helpOverlayID = "interactmenu_attackinrange", helpOverlayText = " ", helpOverlayHighlightOnly = true, script = function () return menu.buttonAttackInRange(false) end, hidetarget = true, orderid = "AttackInRange", prioritysupported = true } )
 		end
 	elseif actiontype == "attackmultiple" then
 		if (#menu.selectedplayerships > 0) and menu.possibleorders["Attack"] and (not isplayerownedtarget) and C.IsComponentClass(menu.componentSlot.component, "destructible") then
@@ -5291,13 +5520,15 @@ function menu.insertLuaAction(actiontype, istobedisplayed)
 			end
 		end
 	elseif actiontype == "disable" then
-		if (#menu.selectedplayerships > 0) and menu.possibleorders["Attack"] and (not isplayerownedtarget) and C.IsComponentClass(menu.componentSlot.component, "defensible") and (C.IsComponentClass(menu.componentSlot.component, "ship_l") or C.IsComponentClass(menu.componentSlot.component, "ship_xl") or C.IsComponentClass(menu.componentSlot.component, "station")) then
-			menu.insertInteractionContent("selected_disable_attack", { type = "disable", text = ReadText(1001, 11129), script = function() menu.buttonAttackSurfaceElements(menu.componentSlot.component, "all", false) end, active = true, orderid = "Attack" })
-			menu.insertInteractionContent("selected_disable_attack", { type = "disable", text = ReadText(1001, 11132), script = function() menu.buttonAttackSurfaceElements(menu.componentSlot.component, "turret", false) end, active = true, orderid = "Attack" })
-			menu.insertInteractionContent("selected_disable_attack", { type = "disable", text = ReadText(1001, 11131), script = function() menu.buttonAttackSurfaceElements(menu.componentSlot.component, "shieldgenerator", false) end, active = true, orderid = "Attack" })
-			if C.IsComponentClass(menu.componentSlot.component, "ship") then
-				menu.insertInteractionContent("selected_disable_attack", { type = "disable", text = ReadText(1001, 11130), script = function() menu.buttonAttackSurfaceElements(menu.componentSlot.component, "engine", false) end, active = true, orderid = "Attack" })
-			end
+		local display, active = menu.conditionAttackSurfaceElements()
+		if display then
+			menu.insertInteractionContent("selected_disable_attack", { type = "disable", text = ReadText(1001, 11129), script = function() menu.buttonAttackSurfaceElements(menu.componentSlot.component, "all", false) end, orderid = "Attack" })
+			menu.insertInteractionContent("selected_disable_attack", { type = "disable", text = ReadText(1001, 11132), script = function() menu.buttonAttackSurfaceElements(menu.componentSlot.component, "turret", false) end, orderid = "Attack" })
+			menu.insertInteractionContent("selected_disable_attack", { type = "disable", text = ReadText(1001, 11131), script = function() menu.buttonAttackSurfaceElements(menu.componentSlot.component, "shieldgenerator", false) end, orderid = "Attack" })
+		end
+		local display, active = menu.conditionAttackSurfaceElements("engine")
+		if display then
+			menu.insertInteractionContent("selected_disable_attack", { type = "disable", text = ReadText(1001, 11130), script = function() menu.buttonAttackSurfaceElements(menu.componentSlot.component, "engine", false) end, orderid = "Attack" })
 		end
 	elseif actiontype == "board" then
 		if menu.data.ismapunlocked and (#menu.selectedplayerships > 0) and menu.possibleorders["Board"] and (not isplayerownedtarget) and (C.IsComponentClass(menu.componentSlot.component, "ship_l") or C.IsComponentClass(menu.componentSlot.component, "ship_xl")) and (GetComponentData(convertedComponent, "owner") ~= "ownerless") then
@@ -5388,13 +5619,13 @@ function menu.insertLuaAction(actiontype, istobedisplayed)
 			menu.insertInteractionContent("main", { type = actiontype, text = ReadText(1001, 7809), helpOverlayID = "interactmenu_configurestation", helpOverlayText = " ", helpOverlayHighlightOnly = true, script = menu.buttonStationConfig })
 		end
 	elseif actiontype == "collect" then
-		if #menu.selectedplayerships > 0 and menu.possibleorders["Collect"] and menu.componentSlot.component and C.IsComponentClass(menu.componentSlot.component, "drop") then
-			local active, mouseovertext = menu.canCollectCrates(menu.hasPlayerShipPilot)
+		local display, active, mouseovertext = menu.conditionCollect()
+		if display then
 			menu.insertInteractionContent("selected_orders", { type = actiontype, text = menu.orderIconText("Collect") .. ReadText(1001, 7867), helpOverlayID = "interactmenu_collect", helpOverlayText = " ", helpOverlayHighlightOnly = true, script = function () return menu.buttonCollect(false) end, hidetarget = true, active = active, mouseOverText = mouseovertext, orderid = "Collect", prioritysupported = true } )
 		end
 	elseif actiontype == "collectdeployable" then
-		if (#menu.selectedplayerships > 0) and isplayerownedtarget and menu.possibleorders["CollectDeployables"] and menu.componentSlot.component and GetComponentData(convertedComponent, "isdeployable") then
-			local active, mouseovertext = menu.canCollectCrates(menu.hasPlayerShipPilot)
+		local display, active, mouseovertext = menu.conditionCollectDeployable()
+		if display then
 			menu.insertInteractionContent("selected_orders", { type = actiontype, text = menu.orderIconText("CollectDeployables") .. ReadText(1001, 11103), helpOverlayID = "interactmenu_collect_deployable", helpOverlayText = " ", helpOverlayHighlightOnly = true, script = function () return menu.buttonCollectDeployable(false) end, hidetarget = true, active = active, mouseOverText = mouseovertext, orderid = "CollectDeployables", prioritysupported = true } )
 		end
 	elseif actiontype == "collectdeployables" then
@@ -5410,59 +5641,21 @@ function menu.insertLuaAction(actiontype, istobedisplayed)
 			end
 		end
 	elseif actiontype == "collectlockbox" then
-		if #menu.selectedplayerships > 0 and menu.possibleorders["CollectLockbox"] and menu.componentSlot.component and C.IsComponentClass(menu.componentSlot.component, "lockbox") then
-			-- these variables are used to determine if the button should be active and must be initialized to false because the button activates if nil.
-			local isnotcapship = false
-			local hasactiveguns = false
-			local hasinactiveguns = false
-			for _, ship in ipairs(menu.selectedplayerships) do
-				-- we need to make sure that at least one ship in the selection has all of the requirements. selection will be further filtered down when the orders on the individual ships start.
-				isnotcapship = not C.IsComponentClass(ship, "ship_l") and not C.IsComponentClass(ship, "ship_xl")
-
-				--uint32_t GetDefensibleDPS(DPSData* result, UniverseID defensibleid, bool primary, bool secondary, bool lasers, bool missiles, bool turrets, bool includeheat, bool includeinactive);
-				local activedpstable = ffi.new("DPSData[?]", 6)
-				local numtotalquadrants = C.GetDefensibleDPS(activedpstable, ship, true, true, true, false, false, false, false)
-				hasactiveguns = activedpstable[0].dps > 0
-
-				local inactivedpstable = ffi.new("DPSData[?]", 6)
-				local numtotalquadrants = C.GetDefensibleDPS(inactivedpstable, ship, true, true, true, false, false, false, true)
-				hasinactiveguns = inactivedpstable[0].dps > 0
-
-				if isnotcapship and hasactiveguns then
-					break
-				end
-			end
-
-			local active = isnotcapship and hasactiveguns and menu.hasPlayerShipPilot
-			local mouseovertext
-			if not isnotcapship then
-				mouseovertext = ReadText(1026, 20039)
-			elseif not menu.hasPlayerShipPilot then
-				mouseovertext = ReadText(1026, 7801)
-			elseif not hasactiveguns then
-				if hasinactiveguns then
-					mouseovertext = ReadText(1026, 7847)
-				else
-					mouseovertext = ReadText(1026, 20040)
-				end
-			end
+		local display, active, mouseovertext = menu.conditionCollectLockbox()
+		if display then
 
 			menu.insertInteractionContent("selected_orders", { type = actiontype, text = menu.orderIconText("CollectLockbox") .. ReadText(1041, 661), helpOverlayID = "interactmenu_collectlockbox", helpOverlayText = " ", helpOverlayHighlightOnly = true, script = function () return menu.buttonCollectLockbox(false) end, active = active, hidetarget = true, mouseOverText = mouseovertext, orderid = "CollectLockbox", prioritysupported = true } )
 		end
 	elseif actiontype == "collectspace" then
-		if menu.offsetcomponent and (menu.offsetcomponent ~= 0) then
-			if #menu.selectedplayerships > 0 and menu.possibleorders["CollectDropsInRadius"] then
-				local active, mouseovertext = menu.canCollectCrates(menu.hasPlayerShipPilot)
-				menu.insertInteractionContent("selected_orders", { type = actiontype, text = menu.orderIconText("CollectDropsInRadius") .. ReadText(1001, 7866), helpOverlayID = "interactmenu_collectspace", helpOverlayText = " ", helpOverlayHighlightOnly = true, script = function () return menu.buttonCollectRadius(false) end, hidetarget = true, active = active, mouseOverText = mouseovertext, orderid = "CollectDropsInRadius", prioritysupported = true } )
-			end
+		local display, active, mouseovertext = menu.conditionCollectRadius()
+		if display then
+			menu.insertInteractionContent("selected_orders", { type = actiontype, text = menu.orderIconText("CollectDropsInRadius") .. ReadText(1001, 7866), helpOverlayID = "interactmenu_collectspace", helpOverlayText = " ", helpOverlayHighlightOnly = true, script = function () return menu.buttonCollectRadius(false) end, hidetarget = true, active = active, mouseOverText = mouseovertext, orderid = "CollectDropsInRadius", prioritysupported = true } )
 		end
 	elseif actiontype == "salvagespace" then
-		if menu.offsetcomponent and (menu.offsetcomponent ~= 0) then
-			if #menu.selectedplayerships > 0 and menu.possibleorders["SalvageInRadius"] then
-				local active, mouseovertext = menu.canSalvage(menu.hasPlayerShipPilot)
-				menu.insertInteractionContent("selected_orders", { type = actiontype, text = menu.orderIconText("SalvageInRadius") .. ReadText(1041, 871), helpOverlayID = "interactmenu_salvagespace", helpOverlayText = " ", helpOverlayHighlightOnly = true, script = function () return menu.buttonSalvageInRadius(false) end, hidetarget = true, active = active, mouseOverText = mouseovertext, orderid = "SalvageInRadius", prioritysupported = true } )
-			end
-		end
+		local display, active, mouseovertext = menu.conditionSalvageInRadius()
+		if display then
+			menu.insertInteractionContent("selected_orders", { type = actiontype, text = menu.orderIconText("SalvageInRadius") .. ReadText(1041, 871), helpOverlayID = "interactmenu_salvagespace", helpOverlayText = " ", helpOverlayHighlightOnly = true, script = function () return menu.buttonSalvageInRadius(false) end, hidetarget = true, active = active, mouseOverText = mouseovertext, orderid = "SalvageInRadius", prioritysupported = true } )
+ 		end
 	elseif actiontype == "crewtransfer" then
 		if menu.data.ismapunlocked and (#menu.selectedplayerships == 1) and GetComponentData(convertedComponent, "isdock") and (not GetComponentData(convertedComponent, "isdeployable")) and (not C.IsUnit(convertedComponent)) and (not C.IsComponentClass(convertedComponent, "ship_xs")) and (C.GetPeopleCapacity(convertedComponent, "", true) > 0) then
 			if (not GetComponentData(menu.selectedplayerships[1], "isdeployable")) and (not C.IsComponentClass(menu.selectedplayerships[1], "spacesuit")) then
@@ -5575,38 +5768,37 @@ function menu.insertLuaAction(actiontype, istobedisplayed)
 			end
 		end
 	elseif actiontype == "deployat" then
-		if menu.offsetcomponent and (menu.offsetcomponent ~= 0) then
-			if (#menu.selectedplayerships == 1) and menu.possibleorders["DeployObjectAtPosition"] and (menu.numorderloops == 0) then
-				-- force sub section and assume we have no deployables
-				menu.forceSubSection["selected_consumables_civilian"] = ReadText(1026, 7818)
-				menu.forceSubSection["selected_consumables_military"] = ReadText(1026, 7819)
-				-- check if we have deploables
-				for _, entry in ipairs(config.consumables) do
-					local numconsumable = entry.getnum(menu.selectedplayerships[1])
-					if numconsumable > 0 then
-						local consumables = ffi.new("AmmoData[?]", numconsumable)
-						numconsumable = entry.getdata(consumables, numconsumable, menu.selectedplayerships[1])
-						for j = 0, numconsumable - 1 do
-							if consumables[j].amount > 0 then
-								-- clear force if we do have deployables, enabling the isdocked check to set it's own force reason
-								menu.forceSubSection["selected_consumables_" .. entry.type] = nil
-								break
-							end
+		local display, active = menu.conditionDeployAtPosition()
+		if display then
+			-- force sub section and assume we have no deployables
+			menu.forceSubSection["selected_consumables_civilian"] = ReadText(1026, 7818)
+			menu.forceSubSection["selected_consumables_military"] = ReadText(1026, 7819)
+			-- check if we have deploables
+			for _, entry in ipairs(config.consumables) do
+				local numconsumable = entry.getnum(menu.selectedplayerships[1])
+				if numconsumable > 0 then
+					local consumables = ffi.new("AmmoData[?]", numconsumable)
+					numconsumable = entry.getdata(consumables, numconsumable, menu.selectedplayerships[1])
+					for j = 0, numconsumable - 1 do
+						if consumables[j].amount > 0 then
+							-- clear force if we do have deployables, enabling the isdocked check to set it's own force reason
+							menu.forceSubSection["selected_consumables_" .. entry.type] = nil
+							break
 						end
 					end
 				end
-				if menu.hasPlayerShipPilot then
-					for _, entry in ipairs(config.consumables) do
-						menu.addConsumableEntry("selected_consumables", entry, menu.selectedplayerships[1], menu.buttonDeployAtPosition)
-					end
-				else
-					-- only force if not previously forced (i.e. no deployables is a more important reason than no pilot)
-					if not menu.forceSubSection["selected_consumables_civilian"] then
-						menu.forceSubSection["selected_consumables_civilian"] = ReadText(1026, 7830)
-					end
-					if not menu.forceSubSection["selected_consumables_military"] then
-						menu.forceSubSection["selected_consumables_military"] = ReadText(1026, 7830)
-					end
+			end
+			if menu.hasPlayerShipPilot then
+				for _, entry in ipairs(config.consumables) do
+					menu.addConsumableEntry("selected_consumables", entry, menu.selectedplayerships[1], menu.buttonDeployAtPosition)
+				end
+			else
+				-- only force if not previously forced (i.e. no deployables is a more important reason than no pilot)
+				if not menu.forceSubSection["selected_consumables_civilian"] then
+					menu.forceSubSection["selected_consumables_civilian"] = ReadText(1026, 7830)
+				end
+				if not menu.forceSubSection["selected_consumables_military"] then
+					menu.forceSubSection["selected_consumables_military"] = ReadText(1026, 7830)
 				end
 			end
 		end
@@ -5825,11 +6017,13 @@ function menu.insertLuaAction(actiontype, istobedisplayed)
 			menu.insertInteractionContent("main", { type = actiontype, text = ReadText(1001, 2416), helpOverlayID = "interactmenu_encyclopedia", helpOverlayText = " ", helpOverlayHighlightOnly = true, script = menu.buttonEncyclopedia })
 		end
 	elseif actiontype == "explore" then
-		if #menu.selectedplayerships > 0 and menu.possibleorders["Explore"] and menu.componentSlot.component and (C.IsComponentClass(menu.componentSlot.component, "sector") or C.IsComponentClass(menu.componentSlot.component, "highwayentrygate") or C.IsComponentClass(menu.componentSlot.component, "highway") or (C.IsComponentClass(menu.componentSlot.component, "gate") and GetComponentData(ConvertStringTo64Bit(tostring(menu.componentSlot.component)), "isactive"))) then
+		local display, active = menu.conditionExplore()
+		if display then
 			menu.insertInteractionContent("selected_orders", { type = actiontype, text = menu.orderIconText("Explore") .. ReadText(1001, 7828), helpOverlayID = "interactmenu_explore", helpOverlayText = " ", helpOverlayHighlightOnly = true, script = function () return menu.buttonExplore(false) end, orderid = "Explore", prioritysupported = true })
 		end
 	elseif actiontype == "exploreupdate" then
-		if #menu.selectedplayerships > 0 and menu.possibleorders["ExploreUpdate"] and menu.componentSlot.component and (C.IsComponentClass(menu.componentSlot.component, "sector") or C.IsComponentClass(menu.componentSlot.component, "highwayentrygate") or C.IsComponentClass(menu.componentSlot.component, "highway") or (C.IsComponentClass(menu.componentSlot.component, "gate") and GetComponentData(ConvertStringTo64Bit(tostring(menu.componentSlot.component)), "isactive"))) then
+		local display, active = menu.conditionExploreUpdate()
+		if display then
 			menu.insertInteractionContent("selected_orders", { type = actiontype, text = menu.orderIconText("ExploreUpdate") .. ReadText(1001, 7829), helpOverlayID = "interactmenu_exploreupdate", helpOverlayText = " ", helpOverlayHighlightOnly = true, script = function () return menu.buttonExploreUpdate(false) end, orderid = "ExploreUpdate", prioritysupported = true })
 		end
 	elseif actiontype == "flee" then
@@ -5937,7 +6131,8 @@ function menu.insertLuaAction(actiontype, istobedisplayed)
 			menu.insertInteractionContent("interaction", { type = actiontype, text = ReadText(1001, 7895), script = function () return menu.buttonRename(true) end })
 		end
 	elseif actiontype == "flyto" then
-		if #menu.selectedplayerships > 0 and menu.possibleorders["MoveWait"] then
+		local display, active = menu.conditionMoveWait()
+		if display then
 			menu.insertInteractionContent("selected_orders", { type = actiontype, text = menu.orderIconText("MoveWait") .. ReadText(1041, 251), helpOverlayID = "interactmenu_flyto", helpOverlayText = " ", helpOverlayHighlightOnly = true, script = function () return menu.buttonMoveWait(false) end, orderid = "MoveWait", prioritysupported = true })
 		end
 	elseif actiontype == "follow" then
@@ -6488,25 +6683,23 @@ function menu.insertLuaAction(actiontype, istobedisplayed)
 			menu.insertInteractionContent("interaction", { type = actiontype, text = ReadText(1001, 1114), script = function () return menu.buttonRename(false) end })
 		end
 	elseif actiontype == "rescueinrange" then
-		if menu.offsetcomponent and (menu.offsetcomponent ~= 0) then
-			if #menu.selectedplayerships > 0 and menu.possibleorders["RescueInRange"] then
-				local active = (C.GetFreePeopleCapacity(menu.selectedplayerships[1]) > 0)
-				local mouseovertext = active and "" or ReadText(1026, 7864)
-				menu.insertInteractionContent("selected_orders", { type = actiontype, text = menu.orderIconText("RescueInRange") .. ReadText(1041, 901), helpOverlayID = "interactmenu_rescueinrange", helpOverlayText = " ", helpOverlayHighlightOnly = true, script = function () return menu.buttonRescueInRange(false) end, hidetarget = true, orderid = "RescueInRange", active = active, mouseOverText = mouseovertext, prioritysupported = true } )
-			end
+		local display, active, mouseovertext = menu.conditionRescueInRange()
+		if display then
+			menu.insertInteractionContent("selected_orders", { type = actiontype, text = menu.orderIconText("RescueInRange") .. ReadText(1041, 901), helpOverlayID = "interactmenu_rescueinrange", helpOverlayText = " ", helpOverlayHighlightOnly = true, script = function () return menu.buttonRescueInRange(false) end, hidetarget = true, orderid = "RescueInRange", active = active, mouseOverText = mouseovertext, prioritysupported = true } )
 		end
 	elseif actiontype == "rescueship" then
-		if #menu.selectedplayerships > 0 and menu.possibleorders["RescueShip"] and GetComponentData(convertedComponent, "isreallyplayerowned") then
-			local active = (C.GetFreePeopleCapacity(menu.selectedplayerships[1]) > 0)
-			local mouseovertext = active and "" or ReadText(1026, 7864)
+		local display, active, mouseovertext = menu.conditionRescueShip()
+		if display then
 			menu.insertInteractionContent("selected_orders", { type = actiontype, text = menu.orderIconText("RescueShip") .. ReadText(1041, 891), helpOverlayID = "interactmenu_rescueship", helpOverlayText = " ", helpOverlayHighlightOnly = true, script = function () return menu.buttonRescueShip(false) end, orderid = "RescueShip", active = active, mouseOverText = mouseovertext, prioritysupported = true })
 		end
 	elseif actiontype == "salvagecollect" then
-		if (#menu.selectedplayerships > 0) and menu.possibleorders["SalvageCollect"] and C.CanBeTowed(menu.componentSlot.component) then
+		local display, active = menu.conditionSalvageCollect()
+		if display then
 			menu.insertInteractionContent("selected_orders", { type = actiontype, text = menu.orderIconText("SalvageCollect") .. ReadText(1041, 801), helpOverlayID = "interactmenu_salvagecollect", helpOverlayText = " ", helpOverlayHighlightOnly = true, script = function () return menu.buttonSalvageCollect(false) end, orderid = "SalvageCollect", prioritysupported = true })
 		end
 	elseif actiontype == "salvagecrush" then
-		if (#menu.selectedplayerships > 0) and menu.possibleorders["SalvageCrush"] and C.CanBeDismantled(menu.componentSlot.component) then
+		local display, active = menu.conditionSalvageCrush()
+		if display then
 			menu.insertInteractionContent("selected_orders", { type = actiontype, text = menu.orderIconText("SalvageCrush") .. ReadText(1041, 831), helpOverlayID = "interactmenu_salvagecrush", helpOverlayText = " ", helpOverlayHighlightOnly = true, script = function () return menu.buttonSalvageCrush(false) end, orderid = "SalvageCrush", prioritysupported = true })
 		end
 	elseif actiontype == "salvagedeliver" then
@@ -6638,18 +6831,9 @@ function menu.insertLuaAction(actiontype, istobedisplayed)
 			menu.insertInteractionContent("playersquad_orders", { type = actiontype, text = ReadText(1001, 7870), helpOverlayID = "interactmenu_stopandholdfire", helpOverlayText = " ", helpOverlayHighlightOnly = true, script = function () return menu.buttonPlayerSquadStopAndHoldFire(true) end, hidetarget = true })	-- Fleet: Stop and hold fire
 		end
 	elseif actiontype == "tacticalattack" then
-		if (#menu.selectedplayerships > 0) and menu.possibleorders["TacticalOrder"] and (not isplayerownedtarget) and C.IsComponentClass(menu.componentSlot.component, "destructible") then
-			local fleetcommanders = {}
-			for _, ship in ipairs(menu.selectedplayerships) do
-				local commander = ConvertIDTo64Bit(GetCommander(ship))
-				local subordinates = GetSubordinates(ship)
-				if (not commander) and (#subordinates > 0) then
-					table.insert(fleetcommanders, ship)
-				end
-			end
-			if #fleetcommanders > 0 then
-				menu.insertInteractionContent("selected_orders", { type = actiontype, text = menu.orderIconText("TacticalOrder") .. ReadText(1041, 731), helpOverlayID = "interactmenu_tacticalattack", helpOverlayText = " ", helpOverlayHighlightOnly = true, script = function () return menu.buttonTacticalAttack(fleetcommanders, false) end, orderid = "TacticalOrder", prioritysupported = true })
-			end
+		local display, active, mouseovertext, fleetcommanders = menu.conditionTacticalAttack()
+		if display then
+			menu.insertInteractionContent("selected_orders", { type = actiontype, text = menu.orderIconText("TacticalOrder") .. ReadText(1041, 731), helpOverlayID = "interactmenu_tacticalattack", helpOverlayText = " ", helpOverlayHighlightOnly = true, script = function () return menu.buttonTacticalAttack(fleetcommanders, false) end, orderid = "TacticalOrder", prioritysupported = true })
 		end
 	elseif actiontype == "targetobject" then
 		local convertedComponent = ConvertStringTo64Bit(tostring(menu.componentSlot.component))
@@ -7145,7 +7329,6 @@ function menu.prepareActions()
 	menu.forceSubSection = {}
 	menu.prepareSections()
 
-	menu.prepareData()
 	local convertedComponent = menu.data.convertedComponent
 
 	local hasanydisplayed = false
@@ -7176,6 +7359,94 @@ function menu.prepareActions()
 		if (not definedactions["lua;behaviourinspection"]) or (not actions[definedactions["lua;behaviourinspection"]].istobedisplayed) or (menu.componentSlot.component == C.GetPlayerControlledShipID()) then
 			if menu.behaviourInspectionComponent and (not menu.shown) then
 				menu.insertInteractionContent("behaviourinspection", { type = "stopbehaviourinspection", text = ColorText["behaviour_inspection_text"] .. "\27[menu_behaviourinspection_exit]\27X " .. ReadText(1001, 11145), helpOverlayID = "interactmenu_stopbehaviourinspection", helpOverlayText = " ", helpOverlayHighlightOnly = true, script = menu.buttonStopBehaviourInspection })
+			end
+		end
+
+		if #menu.selectedplayerships == 1 then
+			local lastorder = C.GetMostRecentOrderFromInteractMenu(menu.selectedplayerships[1])
+			menu.lastorder = {
+				state = ffi.string(lastorder.state),
+				statename = ffi.string(lastorder.statename),
+				orderdef = ffi.string(lastorder.orderdef),
+				actualparams = lastorder.actualparams,
+				enabled = lastorder.enabled,
+				isinfinite = lastorder.isinfinite,
+				issyncpointreached = lastorder.issyncpointreached,
+				istemporder = lastorder.istemporder,
+				isoverride = lastorder.isoverride,
+				ispriority = lastorder.ispriority,
+				params = {}
+			}
+
+			if menu.lastorder.state ~= "" then
+				local params = GetOrderParams(menu.selectedplayerships[1], "lastinteractmenu")
+				for _, param in ipairs(params) do
+					menu.lastorder.params[param.name] = param
+				end
+
+				local text = "\27[menu_repeat] " .. ReadText(1001, 11161)
+				local text2 = menu.orderdefs[menu.lastorder.orderdef].name
+				local display, active
+
+				if menu.lastorder.orderdef == "MoveWait" then
+					display, active = menu.conditionMoveWait()
+				elseif menu.lastorder.orderdef == "Attack" then
+					if menu.lastorder.params["disable"].value then
+						local targetclasses = menu.lastorder.params["behaviortargetclasses"].value
+						display, active = menu.conditionAttackSurfaceElements((#targetclasses == 1) and targetclasses[1] or nil)
+						if #targetclasses > 1 then
+							text2 = text2 .. ReadText(1001, 120) .. " " .. ReadText(1001, 11129)
+						elseif targetclasses[1] == "turret" then
+							text2 = text2 .. ReadText(1001, 120) .. " " .. ReadText(1001, 11132)
+						elseif targetclasses[1] == "shieldgenerator" then
+							text2 = text2 .. ReadText(1001, 120) .. " " .. ReadText(1001, 11131)
+						elseif targetclasses[1] == "engine" then
+							text2 = text2 .. ReadText(1001, 120) .. " " .. ReadText(1001, 11130)
+						end
+					else
+						display, active = menu.conditionAttack()
+					end
+				elseif menu.lastorder.orderdef == "AttackInRange" then
+					display, active = menu.conditionAttackInRange()
+				elseif menu.lastorder.orderdef == "Collect" then
+					display, active = menu.conditionCollect()
+				elseif menu.lastorder.orderdef == "CollectDeployables" then
+					display, active = menu.conditionCollectDeployable()
+				elseif menu.lastorder.orderdef == "CollectLockbox" then
+					display, active = menu.conditionCollectLockbox()
+				elseif menu.lastorder.orderdef == "CollectDropsInRadius" then
+					display, active = menu.conditionCollectRadius()
+				elseif menu.lastorder.orderdef == "DeployObjectAtPosition" then
+					display, active = menu.conditionDeployAtPosition()
+					text2 = text2 .. ReadText(1001, 120) .. " " .. GetMacroData(menu.lastorder.params["objectstodeploy"].value[1], "name")
+				elseif menu.lastorder.orderdef == "Explore" then
+					display, active = menu.conditionExplore()
+				elseif menu.lastorder.orderdef == "ExploreUpdate" then
+					display, active = menu.conditionExploreUpdate()
+				elseif menu.lastorder.orderdef == "RescueInRange" then
+					display, active = menu.conditionRescueInRange()
+				elseif menu.lastorder.orderdef == "RescueShip" then
+					display, active = menu.conditionRescueShip()
+				elseif menu.lastorder.orderdef == "SalvageCollect" then
+					display, active = menu.conditionSalvageCollect()
+				elseif menu.lastorder.orderdef == "SalvageCrush" then
+					display, active = menu.conditionSalvageCrush()
+				elseif menu.lastorder.orderdef == "SalvageInRadius" then
+					display, active = menu.conditionSalvageInRadius()
+				elseif menu.lastorder.orderdef == "TacticalOrder" then
+					display, active = menu.conditionTacticalAttack()
+				end
+
+				if display and active then
+					local mouseovertext = text .. " " .. text2
+					if menu.lastorder.ispriority then
+						text2 = text2 .. " " .. ColorText["holomap_order_priority_active"] .. "\27[warning]" .. "\27[order_queue]"
+					else
+						text2 = text2 .. " " .. ColorText["interactmenu_queueorder"] .. "\27[order_queue]"
+					end
+
+					menu.insertInteractionContent("selected_orders", { type = "repeatlastorder", text = text, text2 = text2, mouseOverText = mouseovertext, helpOverlayID = "interactmenu_repeatlastorder", helpOverlayText = " ", helpOverlayHighlightOnly = true, script = menu.buttonRepeatLastOrder })
+				end
 			end
 		end
 
