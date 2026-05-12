@@ -1,4 +1,4 @@
-
+﻿
 -- param == { 0, 0, mode, modeparam }
 -- modes: - "globalorders",		param: { "traderule|blacklist|fightrule", id }
 
@@ -6739,6 +6739,17 @@ function menu.createContextFrame(data, x, y, width, nomouseout)
 		Helper.createUserQuestionContext(menu, menu.contextFrame)
 	end
 
+	-- kuertee start: callback
+	if menu.uix_callbacks ["createContextFrame_on_end"] then
+		for uix_id, uix_callback in pairs (menu.uix_callbacks ["createContextFrame_on_end"]) do
+			local result = uix_callback (menu.contextFrame, menu.contextMenuData or data, menu.contextMenuMode)
+			if result then
+				menu.contextFrame = result.contextFrame
+			end
+		end
+	end
+	-- kuertee end: callback
+
 	if menu.contextFrame.properties.x + contextmenuwidth > Helper.viewWidth then
 		menu.contextFrame.properties.x = Helper.viewWidth - contextmenuwidth - Helper.frameBorder
 	end
@@ -6748,17 +6759,6 @@ function menu.createContextFrame(data, x, y, width, nomouseout)
 	else
 		menu.contextFrame.properties.y = y
 	end
-
-	-- kuertee start: callback
-	if menu.uix_callbacks ["createContextFrame_on_end"] then
-		for uix_id, uix_callback in pairs (menu.uix_callbacks ["createContextFrame_on_end"]) do
-			local result = uix_callback (menu.contextFrame, menu.contextMenuData, menu.contextMenuMode)
-			if result then
-				menu.contextFrame = result.contextFrame
-			end
-		end
-	end
-	-- kuertee end: callback
 
 	menu.contextFrame:display()
 
@@ -6803,16 +6803,6 @@ function menu.refreshContextFrame(setrow, setcol)
 		Helper.createDropWaresContext(menu, menu.contextFrame, "left")
 	end
 
-	if menu.contextFrame.properties.x + menu.contextMenuWidth > Helper.viewWidth then
-		menu.contextFrame.properties.x = Helper.viewWidth - menu.contextMenuWidth - Helper.frameBorder
-	end
-	local height = menu.contextFrame:getUsedHeight()
-	if y + height > Helper.viewHeight then
-		menu.contextFrame.properties.y = Helper.viewHeight - height - Helper.frameBorder
-	else
-		menu.contextFrame.properties.y = y
-	end
-
 	-- kuertee start: callback
 	if menu.uix_callbacks ["refreshContextFrame_on_end"] then
 		for uix_id, uix_callback in pairs (menu.uix_callbacks ["refreshContextFrame_on_end"]) do
@@ -6823,6 +6813,16 @@ function menu.refreshContextFrame(setrow, setcol)
 		end
 	end
 	-- kuertee end: callback
+
+	if menu.contextFrame.properties.x + menu.contextMenuWidth > Helper.viewWidth then
+		menu.contextFrame.properties.x = Helper.viewWidth - menu.contextMenuWidth - Helper.frameBorder
+	end
+	local height = menu.contextFrame:getUsedHeight()
+	if y + height > Helper.viewHeight then
+		menu.contextFrame.properties.y = Helper.viewHeight - height - Helper.frameBorder
+	else
+		menu.contextFrame.properties.y = y
+	end
 
 	menu.contextFrame:display()
 end
