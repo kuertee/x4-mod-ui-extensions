@@ -1154,7 +1154,6 @@ local config = {
 	},
 	seasonCategories = {
 		{ category = "currentseason",			name = ReadText(1001, 11322),	icon = "vt_season_current",			helpOverlayID = "mapst_ven_curseason",			helpOverlayText = ReadText(1028, 3270) },
-		{ category = "coalition",				name = ReadText(1001, 11323),	icon = "vt_guild",					helpOverlayID = "mapst_ven_coalitions",			helpOverlayText = ReadText(1028, 3271) },
 		{ category = "ventureteam",				name = ReadText(1001, 11320),	icon = "vt_team",					helpOverlayID = "multimap_team",				helpOverlayText = ReadText(1028, 3268) },
 		{ category = "pastseasons",				name = ReadText(1001, 11324),	icon = "vt_season_previous",		helpOverlayID = "mapst_ven_pastseason",			helpOverlayText = ReadText(1028, 3264) },
 	},
@@ -1514,7 +1513,6 @@ local config = {
 	missionOfferCategories = {
 		{ category = "plot",		name = ReadText(1001, 3340),	icon = "mapst_mission_main",		helpOverlayID = "mapst_mission_offer_plot",			helpOverlayText = ReadText(1028, 3240) },
 		{ category = "guild",		name = ReadText(1001, 3331),	icon = "mapst_mission_guild",		helpOverlayID = "mapst_mission_offer_guild",		helpOverlayText = ReadText(1028, 3227) },
-		{ category = "coalition",	name = ReadText(1001, 8801),	icon = "mapst_mission_other",		helpOverlayID = "mapst_mission_offer_coalition",	helpOverlayText = "",					showtab = false },
 		{ category = "other",		name = ReadText(1001, 3332),	icon = "mapst_mission_other",		helpOverlayID = "mapst_mission_offer_other",		helpOverlayText = ReadText(1028, 3228) },
 	},
 
@@ -1526,7 +1524,6 @@ local config = {
 	missionCategories = {
 		{ category = "plot",		name = ReadText(1001, 3341),	icon = "mapst_mission_main",		helpOverlayID = "mapst_mission_active_main",		helpOverlayText = ReadText(1028, 3241) },
 		{ category = "guild",		name = ReadText(1001, 3333),	icon = "mapst_mission_guild",		helpOverlayID = "mapst_mission_active_guild",		helpOverlayText = ReadText(1028, 3229),	showtab = false },
-		{ category = "coalition",	name = ReadText(1001, 8801),	icon = "mapst_mission_other",		helpOverlayID = "mapst_mission_active_coalition",	helpOverlayText = "",					showtab = false },
 		{ category = "other",		name = ReadText(1001, 3334),	icon = "mapst_mission_other",		helpOverlayID = "mapst_mission_active_other",		helpOverlayText = ReadText(1028, 3230),	showtab = false },
 		{ category = "upkeep",		name = ReadText(1001, 3305),	icon = "mapst_mission_upkeep",		helpOverlayID = "mapst_mission_active_upkeep",		helpOverlayText = ReadText(1028, 3231) },
 		{ category = "guidance",	name = ReadText(1001, 3329),	icon = "mapst_mission_guidance",	helpOverlayID = "mapst_mission_active_guidance",	helpOverlayText = ReadText(1028, 3232) },
@@ -2640,6 +2637,9 @@ function menu.buttonToggleObjectList(objectlistparam, confirmed, override)
 		menu.infoTable2 = nil
 		if menu.showMultiverse then
 			menu.ventureMode = objectlistparam
+			if (objectlistparam == "venturecontacts") and OnlineHasSession() then
+				OnlineRequestContactList() -- refresh so contact team IDs are current when the list opens
+			end
 		else
 			menu.infoTableMode = objectlistparam
 		end
@@ -3462,6 +3462,9 @@ function menu.buttonToggleMultiverseMap()
 		menu.plots_initialized = nil
 		menu.plotData = {}
 		menu.seasonMode.left = "currentseason"
+		if not (Helper.isOnlineGame() and OnlineHasSession()) then
+			menu.ventureMode = "ventureseason"
+		end
 		menu.removeMouseCursorOverride(3)
 
 		Helper.callExtensionFunction("multiverse", "getVentures")
@@ -3567,7 +3570,7 @@ end
 
 function menu.selectCV(component)
 	local convertedComponent = ConvertStringTo64Bit(tostring(component))
-	local isplayerowned, isenemy = GetComponentData(convertedComponent, "isplayerowned", "isenemy")
+	local isplayerowned, isenemy = GetComponentData(convertedComponent, "isplayerowned", "isreallyenemy")
 	if (not C.IsBuilderBusy(component)) and (not isenemy) then
 		if not isplayerowned then
 			local playermoney = GetPlayerMoney()
@@ -3885,12 +3888,8 @@ function menu.buttonMissionOfferAccept()
 
 	if onlinechapter ~= "" then
 		if C.HasAcceptedOnlineMission() then
-			if #menu.missionList["coalition"] > 0 then
-				C.AbortMission(ConvertStringTo64Bit(menu.missionList["coalition"][1].ID))
-			else
-				DebugError("menu.buttonMissionOfferAccept(): Could not find accepted online mission. Aborting.")
-				return
-			end
+			DebugError("menu.buttonMissionOfferAccept(): Coalition missions removed. Aborting.")
+			return
 		end
 	end
 	SignalObject(offeractor, "accept", ConvertStringToLuaID(tostring(offerid)))
@@ -6324,6 +6323,12 @@ function menu.onShowMenu(state)
 	Helper.setTabScrollCallback(menu, menu.onTabScroll)
 	registerForEvent("inputModeChanged", getElement("Scene.UIContract"), menu.onInputModeChanged)
 
+	-- Guard: if multiverse map opens while disconnected, force safe tabs before first render
+	if menu.showMultiverse and (not (Helper.isOnlineGame() and OnlineHasSession())) then
+		menu.ventureMode = "ventureseason"
+		menu.seasonMode.left = "currentseason"
+	end
+
 	if not menu.setKnownToPlayerNotification then
 		menu.setKnownToPlayerNotification = true
 		NotifyOnSetKnownToPlayer(getElement("Scene.UIContract"))
@@ -6657,8 +6662,7 @@ function menu.displayMenu(firsttime)
 			menu.mode = nil
 			menu.modeparam = {}
 
-			local isonline = Helper.isOnlineGame()
-			if isonline then
+			if Helper.isOnlineGame() and OnlineHasSession() then
 				local operation = OnlineGetCurrentOperation()
 				local currentteam = OnlineGetCurrentTeam()
 				if operation.isvalid and currentteam.isvalid then
@@ -6667,6 +6671,9 @@ function menu.displayMenu(firsttime)
 					menu.ventureMode = "ventureseason"
 					menu.seasonMode.left = "currentseason"
 				end
+			else
+				menu.ventureMode = "ventureseason"
+				menu.seasonMode.left = "currentseason"
 			end
 		else
 			menu.mode = nil
@@ -6810,6 +6817,11 @@ function menu.displayMenu(firsttime)
 		menu.createContextFrame(width, nil, menu.contextMenuData.xoffset, menu.contextMenuData.yoffset)
 	elseif menu.mode == "venturepatroninfo" then
 		local x, y = GetLocalMousePosition()
+
+		-- ensure online events are subscribed in this mode
+		if Helper.hasExtension("multiverse") then
+			Helper.callExtensionFunction("multiverse", "registerOnlineEvents", menu)
+		end
 
 		menu.contextMenuMode = "venturepatron"
 		menu.contextMenuData = { component = menu.modeparam[1], xoffset = x + Helper.viewWidth / 2, yoffset = Helper.viewHeight / 2 - y }
@@ -7011,8 +7023,6 @@ function menu.createInfoFrame()
 		if menu.ventureMode == "ventureseason" then
 			if menu.seasonMode.left == "currentseason" then
 				menu.createVentureSeason(menu.infoFrame, "left")
-			elseif menu.seasonMode.left == "coalition" then
-				Helper.callExtensionFunction("multiverse", "createVentureCoalition", menu, menu.infoFrame, "left")
 			elseif menu.seasonMode.left == "ventureteam" then
 				Helper.callExtensionFunction("multiverse", "createVentureTeam", menu, menu.infoFrame, "left")
 			elseif menu.seasonMode.left == "pastseasons" then
@@ -7222,6 +7232,8 @@ function menu.createContextFrame(width, height, xoffset, yoffset, noborder, star
 		menu.createUserQuestionContext(menu.contextFrame)
 	elseif menu.contextMenuMode == "userquestion_multiverse" then
 		Helper.callExtensionFunction("multiverse", "createUserQuestionContext", menu, menu.contextFrame)
+	elseif menu.contextMenuMode == "error_multiverse" then
+		Helper.callExtensionFunction("multiverse", "createErrorContext", menu, menu.contextFrame)
 	elseif menu.contextMenuMode == "onlinemode" then
 		local contexttable = menu.createOnlineModeContext(menu.contextFrame)
 		menu.contextFrame:setBackground("gradient_alpha_02", {  })
@@ -7248,6 +7260,8 @@ function menu.createContextFrame(width, height, xoffset, yoffset, noborder, star
 		Helper.callExtensionFunction("multiverse", "createVentureTeamMemberContext", menu, menu.contextFrame)
 	elseif menu.contextMenuMode == "venturecontactcontext" then
 		Helper.createVentureContactContext(menu, menu.contextFrame)
+	elseif menu.contextMenuMode == "contactteaminfo" then
+		Helper.callExtensionFunction("multiverse", "createContactTeamInfoContext", menu, menu.contextFrame)
 	elseif menu.contextMenuMode == "venturefriendlist" then
 		Helper.showVentureFriendListContext(menu, menu.contextFrame)
 	elseif menu.contextMenuMode == "hire" then
@@ -7432,6 +7446,10 @@ function menu.refreshContextFrame(setrow, setcol, noborder)
 		Helper.callExtensionFunction("multiverse", "showVentureConfigurationContext", menu, menu.contextFrame, menu.contextMenuData.instance)
 	elseif menu.contextMenuMode == "venturecreateparty" then
 		Helper.callExtensionFunction("multiverse", "createVentureCreatePartyContext", menu, menu.contextFrame, menu.contextMenuData.instance)
+	elseif menu.contextMenuMode == "venturepatron" then
+		Helper.callExtensionFunction("multiverse", "createVenturePatronContext", menu, menu.contextFrame, menu.contextMenuData.instance)
+	elseif menu.contextMenuMode == "contactteaminfo" then
+		Helper.callExtensionFunction("multiverse", "createContactTeamInfoContext", menu, menu.contextFrame)
 	elseif menu.contextMenuMode == "hire" then
 		menu.createHireContext(menu.contextFrame)
 	elseif menu.contextMenuMode == "dropwares" then
@@ -9563,7 +9581,7 @@ function menu.createPropertyRow(instance, ftable, rowgroup, component, iteration
 			end
 		end
 
-		local location, locationtext, isdocked, aipilot, isplayerowned, isonlineobject, iscovered, isenemy, macro, isally, classid, realclassid = GetComponentData(component, "sectorid", "sector", "isdocked", "assignedaipilot", "isplayerowned", "isonlineobject", "iscovered", "isenemy", "macro", "isally", "classid", "realclassid")
+		local location, locationtext, isdocked, aipilot, isplayerowned, isonlineobject, iscovered, isreallyenemy, macro, isally, classid, realclassid = GetComponentData(component, "sectorid", "sector", "isdocked", "assignedaipilot", "isplayerowned", "isonlineobject", "iscovered", "isreallyenemy", "macro", "isally", "classid", "realclassid")
 		local isstation = Helper.isComponentClass(realclassid, "station")
 		local isdoublerow = (iteration == 0 and (isstation or #subordinates > 0))
 		local name, color, bgcolor, font, mouseover, factioncolor = menu.getContainerNameAndColors(component, iteration, isdoublerow, false, true)
@@ -9590,7 +9608,7 @@ function menu.createPropertyRow(instance, ftable, rowgroup, component, iteration
 		end
 
 		if menu.mode == "selectCV" then
-			if isenemy then
+			if isreallyenemy then
 				mouseover = ColorText["text_error"] .. ReadText(1026, 8014) .. "\027X"
 			elseif C.IsBuilderBusy(convertedComponent) then
 				mouseover = ColorText["text_error"] .. ReadText(1001, 7939) .. "\027X"
@@ -12568,7 +12586,7 @@ function menu.createOrderQueue(frame, mode, instance)
 			end
 
 			row[5]:setColSpan(8):createDropDown(asssignmentOptions, { height = config.mapRowHeight, startOption = currentassignment }):setTextProperties({ fontsize = config.mapFontSize, halign = "center" })
-			row[5].handlers.onDropDownConfirmed = function(_, newassignment) Helper.dropdownAssignment(_, menu.infoSubmenuObject, nil, nil, newassignment) end
+			row[5].handlers.onDropDownConfirmed = function(_, newassignment) Helper.dropdownAssignment(menu, menu.infoSubmenuObject, nil, nil, newassignment, menu.refreshInfoFrame) end
 			row[5].handlers.onDropDownActivated = function () menu.noupdate = true end
 
 			local row = ftable:addRow({ "removeassignment" }, {  })
@@ -17292,7 +17310,7 @@ function menu.setupLoadoutInfoSubmenuRows(mode, inputtable, inputobject, instanc
 							row[1]:setColSpan(2):createText(function () menu.updateSubordinateGroupInfo(inputobject); return ReadText(20401, i) .. (menu.subordinategroups[i] and (" (" .. ((not C.ShouldSubordinateGroupDockAtCommander(inputobject, i)) and ((#menu.subordinategroups[i].subordinates - menu.subordinategroups[i].numdockedatcommander) .. "/") or "") .. #menu.subordinategroups[i].subordinates ..")") or "") end, { color = isblocked and Color["text_warning"] or nil })
 							row[3]:setColSpan(11):createDropDown(subordinateassignments, { startOption = function () menu.updateSubordinateGroupInfo(inputobject); return menu.subordinategroups[i] and menu.subordinategroups[i].assignment or "" end })
 							row[3].handlers.onDropDownActivated = function () menu.noupdate = true end
-							row[3].handlers.onDropDownConfirmed = function(_, newassignment) return Helper.dropdownAssignment(_, nil, i, inputobject, newassignment) end
+							row[3].handlers.onDropDownConfirmed = function(_, newassignment) return Helper.dropdownAssignment(menu, nil, i, inputobject, newassignment, menu.refreshInfoFrame) end
 							local row = subordinaterowgroup:addRow("subordinate_config", {  })
 
 							-- Start Reactive Docking callback
@@ -19448,15 +19466,6 @@ function menu.createMissionMode(frame)
 					row[1]:setColSpan(9):createText("--- " .. ReadText(1001, 3302) .. " ---", { halign = "center" })
 				end
 				found = true
-				-- online
-				if #menu.missionList["coalition"] > 0 then
-					local row = othermissionrowgroup:addRow(nil, Helper.headerRowProperties)
-					row[1]:setColSpan(9):createText(ReadText(1001, 11609), Helper.headerRowCenteredProperties)
-
-					for _, entry in ipairs(menu.missionList["coalition"]) do
-						menu.addMissionRow(ftable, othermissionrowgroup, entry)
-					end
-				end
 
 			-- kuertee start: open/close mission lists
 			else
@@ -20228,7 +20237,7 @@ function menu.updateMissionOfferList(clear)
 					table.insert(menu.missionOfferList["plot"], entry)
 				end
 			elseif onlinechapter ~= "" then
-				table.insert(menu.missionOfferList["coalition"], entry)
+				table.insert(menu.missionOfferList["other"], entry)
 				menu.missionOfferByOnlineID[entry.onlineID] = entry
 			else
 				if entry.missionGroup.id ~= "" then
@@ -20261,7 +20270,6 @@ function menu.updateMissionOfferList(clear)
 			table.sort(entry.missions, menu.missionOfferSorter)
 		end
 	end
-	table.sort(menu.missionOfferList["coalition"], menu.missionOfferSorter)
 	table.sort(menu.missionOfferList["other"], menu.missionOfferSorter)
 end
 
@@ -20422,7 +20430,7 @@ function menu.addMissionToList(entry)
 			menu.activeMissionMode = "plot"
 		end
 	elseif entry.onlinechapter ~= "" then
-		table.insert(menu.missionList["coalition"], entry)
+		table.insert(menu.missionList["other"], entry)
 		menu.missionByOnlineID[entry.onlineID] = entry
 	else
 		if entry.missionGroup.id ~= "" then
@@ -20559,6 +20567,9 @@ function menu.createVentureSeasonHeader(frame, instance)
 			if entry.category == "pastseasons" then
 				active = false
 			end
+			if active and (entry.category == "ventureteam") then
+				active = function () return Helper.isOnlineGame() and OnlineHasSession() end
+			end
 
 			local loccount = count
 			row[loccount]:createButton({ active = active, width = menu.sideBarWidth, height = menu.sideBarWidth, x = (count == 1) and Helper.standardContainerOffset or 0, y = Helper.standardContainerOffset, bgColor = bgcolor, mouseOverText = entry.name, scaling = false, helpOverlayID = entry.helpOverlayID, helpOverlayText = entry.helpOverlayText }):setIcon(entry.icon, { color = color})
@@ -20682,20 +20693,6 @@ function menu.createVentureSeason(frame, instance)
 		row[1]:createText(ReadText(1001, 11340) .. ReadText(1001, 120))
 		row[2]:createText(Helper.ventureSeasonTimeLeftText(), { halign = "right" })
 
-		-- coalition
-		local row = table_info:addRow(true, { fixed = true })
-		row[1]:createText(ReadText(1001, 11341) .. ReadText(1001, 120))
-
-		local coalitionname = ""
-		local currentcoalition = OnlineGetCurrentCoalition()
-		if currentcoalition.isvalid then
-			coalitionname = currentcoalition.name
-		else
-			coalitionname = ReadText(1001, 11577)
-		end
-		row[2]:createButton({ active = function() return (season.ispreseason or season.isrunning) and Helper.isOnlineGame() end }):setText(coalitionname, { halign = "center" })
-		row[2].handlers.onClick = function () return menu.buttonVentureSeasonSubMode("coalition", 2, instance) end
-
 		-- team
 		local row = table_info:addRow(true, { fixed = true })
 		row[1]:createText(ReadText(1001, 11582) .. ReadText(1001, 120))
@@ -20707,7 +20704,7 @@ function menu.createVentureSeason(frame, instance)
 		else
 			teamname = ReadText(1001, 11583)
 		end
-		row[2]:createButton({ active = function () local currentcoalition = OnlineGetCurrentCoalition(); return Helper.isOnlineGame() and currentcoalition.isvalid end }):setText(teamname, { halign = "center" })
+		row[2]:createButton({ active = function () return Helper.isOnlineGame() and OnlineHasSession() end }):setText(teamname, { halign = "center" })
 		row[2].handlers.onClick = function () return menu.buttonVentureSeasonSubMode("ventureteam", 3, instance) end
 
 		table_info:addEmptyRow(config.mapRowHeight / 2)
@@ -20882,6 +20879,17 @@ function menu.cheatAllResearch()
 	end
 end
 
+function menu.getXonConnectionStatusText()
+	if Helper.isOnlineGame() and OnlineHasSession() then
+		return ColorText["text_positive"] .. "\27[vt_connected]\27X"
+	end
+	return ColorText["text_warning"] .. ReadText(1001, 11625) .. " \27[vt_disconnected]\27X" -- Disconnected
+end
+
+function menu.getXonConnectionStatusMouseOverText()
+	return (Helper.isOnlineGame() and OnlineHasSession()) and ReadText(1001, 11624) or ReadText(1001, 11625) -- Connected / Disconnected
+end
+
 function menu.createPlayerInfo(frame, width, height, offsetx, offsety)
 	local playerinfoborder = frame:addFrameBorder("playerinfo", {
 		offset = Helper.standardContainerOffset,
@@ -20933,20 +20941,15 @@ function menu.createPlayerInfo(frame, width, height, offsetx, offsety)
 
 	row.properties.paddingTop = Helper.scaleY(Helper.standardTextHeight / 2)
 
-	--[[
-	if OnlineIsCurrentTeamValid() then
-		local button = row[3]:createButton({
-			width = row[3]:getColSpanWidth(),
-			height = Helper.scaleY(Helper.standardTextHeight),
-			x = Helper.borderSize,
-			y = Helper.borderSize,
-			mouseOverText = Helper.getInputMouseOverText("INPUT_ACTION_SHOW_CHAT_WINDOW"),
-		})
-		button:setText(function (cell) return Helper.playerInfoConfigTextRight(cell, menu.showMultiverse) end, { fontsize = Helper.playerInfoConfig.fontsize, x = Helper.borderSize, y = 0, halign = "right" })
-		button:setText2("\27[mt_chat_unread_low] " .. ReadText(1001, 11648), { scaling = true })
-		button.handlers.onClick = function () return C.QuickMenuAccess("chat") end
-	else
-	end --]]
+	-- xon connection status indicator (auto-updating via function callbacks)
+	if C.AreVenturesEnabled() and menu.showMultiverse then
+		local row = ftable:addRow(nil, { fixed = true })
+		row[1]:setColSpan(4):createText(menu.getXonConnectionStatusText, {
+			fontsize = Helper.playerInfoConfig.fontsize,
+			halign = "right",
+			mouseOverText = menu.getXonConnectionStatusMouseOverText,
+ 		})
+	end
 
 	ftable:addConnection(1, 2)
 
@@ -21509,7 +21512,12 @@ function menu.createSideBar(firsttime, frame, width, height, offsetx, offsety)
 					color = Color["icon_mission"]
 				end
 
-				row[1]:createButton({ active = entry.active, height = menu.sideBarWidth, bgColor = bgcolor, mouseOverText = entry.name, helpOverlayID = entry.helpOverlayID, helpOverlayText = entry.helpOverlayText }):setIcon(entry.icon, { color = color })
+				local buttonactive = entry.active
+				if menu.showMultiverse and ((entry.mode == "ventureoperation") or (entry.mode == "venturecontacts")) then
+					local baseactive = entry.active
+					buttonactive = function () return baseactive and OnlineHasSession() end
+				end
+				row[1]:createButton({ active = buttonactive, height = menu.sideBarWidth, bgColor = bgcolor, mouseOverText = entry.name, helpOverlayID = entry.helpOverlayID, helpOverlayText = entry.helpOverlayText }):setIcon(entry.icon, { color = color })
 				if menu.panelMode then
 					row[1].handlers.onClick = function () return menu.buttonToggleLeftPanel() end
 				else
@@ -28242,11 +28250,11 @@ function menu.createSelectContext(frame)
 	local active = true
 	local mouseovertext = ""
 	if menu.mode == "selectCV" then
-		local assignedpilot, isplayerowned, isenemy = GetComponentData(menu.contextMenuData.component, "assignedpilot", "isplayerowned", "isenemy")
+		local assignedpilot, isplayerowned, isreallyenemy = GetComponentData(menu.contextMenuData.component, "assignedpilot", "isplayerowned", "isreallyenemy")
 		local hasloop = ffi.new("bool[1]", 0)
 		C.GetOrderQueueFirstLoopIdx(menu.contextMenuData.component, hasloop)
 
-		if isenemy then
+		if isreallyenemy then
 			active = false
 			mouseovertext = ColorText["text_error"] .. ReadText(1026, 8014)
 		elseif hasloop[0] then
@@ -31697,7 +31705,7 @@ function menu.getParamValue(type, value, inputparams)
 	return result
 end
 
-function menu.closeContextMenu(dueToClose)
+function menu.closeContextMenu(dueToClose, keepmenu)
 	AddUITriggeredEvent(menu.name, "contextmenu_close")
 
 	if Helper.closeInteractMenu() then
@@ -31788,6 +31796,7 @@ function menu.closeContextMenu(dueToClose)
 			or (menu.contextMenuMode == "venturereport")
 			or (menu.contextMenuMode == "ventureteammembercontext")
 			or (menu.contextMenuMode == "venturecontactcontext")
+			or (menu.contextMenuMode == "contactteaminfo")
 			or (menu.contextMenuMode == "filter_multiselectlist")
 			or (menu.contextMenuMode == "hire")
 			or (menu.contextMenuMode == "mission")
@@ -31801,7 +31810,7 @@ function menu.closeContextMenu(dueToClose)
 		Helper.clearFrame(menu, config.contextFrameLayer)
 		menu.contextMenuData = {}
 		menu.contextMenuMode = nil
-		if (menu.mode == "tradecontext") or (menu.mode == "dropwarescontext") or (menu.mode == "renamecontext") or (menu.mode == "changelogocontext") or (menu.mode == "crewtransfercontext") or(menu.mode == "venturepatroninfo") or (menu.mode == "venturereport") or menu.closemapwithmenu then
+		if (not keepmenu) and ((menu.mode == "tradecontext") or (menu.mode == "dropwarescontext") or (menu.mode == "renamecontext") or (menu.mode == "changelogocontext") or (menu.mode == "crewtransfercontext") or (menu.mode == "venturepatroninfo") or (menu.mode == "venturereport") or menu.closemapwithmenu) then
 			Helper.closeMenu(menu, dueToClose)
 			menu.cleanup()
 		end

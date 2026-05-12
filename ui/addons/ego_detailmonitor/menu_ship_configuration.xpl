@@ -4132,9 +4132,9 @@ function menu.getDataAndDisplay(upgradeplan, crew, newedit, firsttime, noundo, s
 		local n = 0
 		local buf
 		if menu.mode == "customgamestart" then
-			n = C.GetNumAllEquipment2(not menu.allownonplayerblueprints, true)
+			n = C.GetNumAllEquipment2(not menu.allownonplayerblueprints, not menu.modeparam.creative)
 			buf = ffi.new("EquipmentWareInfo[?]", n)
-			n = C.GetAllEquipment2(buf, n, not menu.allownonplayerblueprints, true)
+			n = C.GetAllEquipment2(buf, n, not menu.allownonplayerblueprints, not menu.modeparam.creative)
 		elseif menu.mode == "upgradefleetunit" then
 			n = C.GetNumPlayerEquipmentWares()
 			buf = ffi.new("EquipmentWareInfo[?]", n)
@@ -4416,6 +4416,45 @@ function menu.getDataAndDisplay(upgradeplan, crew, newedit, firsttime, noundo, s
 					table.remove(menu.shieldgroups, i + 1)
 					break
 				end
+			end
+
+			menu.turretgroups = {}
+			local turretsizecounts = {}
+			local groups = {}
+			local n = C.GetNumUpgradeGroups(menu.object, "")
+			local buf = ffi.new("UpgradeGroup2[?]", n)
+			n = C.GetUpgradeGroups2(buf, n, menu.object, "")
+			for i = 0, n - 1 do
+				if (ffi.string(buf[i].path) ~= "..") or (ffi.string(buf[i].group) ~= "") then
+					table.insert(groups, { context = buf[i].contextid, path = ffi.string(buf[i].path), group = ffi.string(buf[i].group) })
+				end
+			end
+			table.sort(groups, function (a, b) return a.group < b.group end)
+
+			for _, group in ipairs(groups) do
+				local groupinfo = C.GetUpgradeGroupInfo2(group.module or menu.object, "", group.context, group.path, group.group, "turret")
+				if (groupinfo.count > 0) then
+					group.operational = groupinfo.operational
+					group.currentcomponent = groupinfo.currentcomponent
+					group.currentmacro = ffi.string(groupinfo.currentmacro)
+					group.slotsize = ffi.string(groupinfo.slotsize)
+					group.sizecount = 0
+
+					if group.slotsize ~= "" then
+						if turretsizecounts[group.slotsize] then
+							turretsizecounts[group.slotsize] = turretsizecounts[group.slotsize] + 1
+						else
+							turretsizecounts[group.slotsize] = 1
+						end
+						group.sizecount = turretsizecounts[group.slotsize]
+					end
+
+					table.insert(menu.turretgroups, group)
+				end
+			end
+
+			if #menu.turretgroups > 0 then
+				table.sort(menu.turretgroups, Helper.sortSlots)
 			end
 		end
 	end
@@ -6686,8 +6725,8 @@ function menu.displayModifySlots(frame)
 					end
 				elseif (entry.upgrademode == "turret") and next(menu.groups) then
 					table.sort(menu.shieldgroups, Helper.sortSlots)
-					for i, shieldgroupdata in ipairs(menu.shieldgroups) do
-						menu.displayModSlot(ftable, entry.upgrademode, entry.modclass, i, shieldgroupdata, true)
+					for i, turretgroupdata in ipairs(menu.turretgroups) do
+						menu.displayModSlot(ftable, entry.upgrademode, entry.modclass, i, turretgroupdata, true)
 					end
 				else
 					local upgradetype = Helper.findUpgradeType(entry.upgrademode)
@@ -7372,6 +7411,7 @@ function menu.checkLicence(macro, rawicon, issoftware, rawmouseovertext)
 	local icon
 	local overridecolor = Color["text_normal"]
 	local mouseovertext = ""
+	local mouseovertextlist = {}
 	local limitstring = ""
 	if macro ~= "" then
 		local ware
@@ -7398,6 +7438,7 @@ function menu.checkLicence(macro, rawicon, issoftware, rawmouseovertext)
 					haslicence = false
 					icon = "menu_locked"
 					mouseovertext = ReadText(1026, 8019)
+					table.insert(mouseovertextlist, { text = ReadText(1026, 8019), icon = "menu_warning" })
 				elseif researchprecursors and (#researchprecursors > 0) then
 					mouseovertext = ReadText(1026, 8023) .. " "
 					local first = true
@@ -7410,6 +7451,7 @@ function menu.checkLicence(macro, rawicon, issoftware, rawmouseovertext)
 						end
 					end
 					icon = "gamestart_custom_research"
+					table.insert(mouseovertextlist, { text = mouseovertext, icon = "menu_warning" })
 				else
 					if tradelicence ~= "" then
 						haslicence = HasLicence("player", tradelicence, menu.containerowner)
@@ -7421,6 +7463,7 @@ function menu.checkLicence(macro, rawicon, issoftware, rawmouseovertext)
 									icon = "\27[" .. icon .. "]"
 								end
 								mouseovertext = (rawmouseovertext and "" or (haslicence and "" or ColorText["text_error"])) .. string.format(ReadText(1026, 8003), ffi.string(licenceinfo.name))
+								table.insert(mouseovertextlist, { text = mouseovertext, icon = "diplomacy_license_negative" })
 							end
 						end
 					end
@@ -7442,6 +7485,7 @@ function menu.checkLicence(macro, rawicon, issoftware, rawmouseovertext)
 					haslicence = false
 					icon = "menu_locked"
 					mouseovertext = ReadText(1026, 8028)
+					table.insert(mouseovertextlist, { text = ReadText(1026, 8028), icon = "menu_warning" })
 				end
 				limitstring = " (" .. used .. "/" .. limitamount .. ")"
 			end
@@ -7451,7 +7495,7 @@ function menu.checkLicence(macro, rawicon, issoftware, rawmouseovertext)
 		end
 	end
 
-	return haslicence, icon, overridecolor, mouseovertext, limitstring
+	return haslicence, icon, overridecolor, mouseovertext, limitstring, mouseovertextlist
 end
 
 function menu.checkMod(type, component, isgroup)
@@ -9931,7 +9975,7 @@ function menu.createEquipmentInfoContext(frame)
 			x = 0,
 			y = 0,
 		})
-		ftable:setColWidth(1, 2 * Helper.standardTextHeight)
+		ftable:setColWidth(1, Helper.scaleY(2 * Helper.standardTextHeight) + Helper.standardContainerOffset, false)
 		ftable:setColWidthPercent(3, 33)
 
 		local name, infolibrary = GetMacroData(macro, "name", "infolibrary")
@@ -9940,10 +9984,10 @@ function menu.createEquipmentInfoContext(frame)
 		if plandata.macro ~= "" then
 			installedlibrarydata = GetLibraryEntry(infolibrary, plandata.macro)
 		end
-		local haslicence, _, _, licencetext = menu.checkLicence(macro)
+		local haslicence, _, _, _, _, licencetexts = menu.checkLicence(macro)
 		if data.hasmod then
 			haslicence = false
-			licencetext = ColorText["text_error"] .. ReadText(1026, 8009) .. "\27X\n" .. licencetext
+			table.insert(licencetexts, { text = ReadText(1026, 8009), icon = "menu_warning" })
 		end
 
 		local iscapship = false
@@ -10044,10 +10088,24 @@ function menu.createEquipmentInfoContext(frame)
 			row[1]:setColSpan(2):createText(ConvertMoneyString(data.price, false, true, 0, true, false) .. " " .. ReadText(1001, 101), { color = color })
 		end
 
-		if (not haslicence) and (licencetext ~= "") then
-			local row = backgroundrowgroup:addRow(nil, { fixed = true, bgColor = (not haslicence) and Color["row_error"] or nil })
-			row[1]:setBackgroundColSpan(3):createIcon("diplomacy_license_negative", { width = 2 * Helper.standardTextHeight, height = 2 * Helper.standardTextHeight, color = Color["icon_error"] })
-			row[2]:setColSpan(2):createText(licencetext, { wordwrap = true, y = Helper.standardTextHeight / 2 })
+		if (not haslicence) and (#licencetexts > 0) then
+			for _, entry in ipairs(licencetexts) do
+				local row = backgroundrowgroup:addRow(nil, { fixed = true, bgColor = Color["row_error"] })
+				row[2]:setColSpan(2)
+
+				local textlines = GetTextLines(entry.text, Helper.standardFont, Helper.scaleFont(Helper.standardFont, Helper.standardFontSize), row[2]:getColSpanWidth() - 2 * Helper.scaleX(Helper.standardTextOffsetx))
+				local text_y = Helper.standardTextHeight / 2
+				if #textlines > 1 then
+					text_y = 0
+				end
+				local text = ""
+				for i, line in ipairs(textlines) do
+					text = text .. ((i ~= 1) and "\n" or "") .. line
+				end
+
+				row[1]:setBackgroundColSpan(3):createIcon(entry.icon, { width = 2 * Helper.standardTextHeight, height = 2 * Helper.standardTextHeight, color = Color["icon_error"] })
+				row[2]:createText(text, { y = text_y, color = Color["text_error"] })
+			end
 		end
 
 		local slot = upgradetype.mergeslots and 1 or menu.currentSlot

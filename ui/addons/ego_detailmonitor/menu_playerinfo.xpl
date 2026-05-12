@@ -440,6 +440,7 @@ local config = {
 		["ship_s"]	= ReadText(1001, 11000),
 	},
 	personnelPage = 100,
+	minLeftPanelWidth = 600,
 }
 
 if C.AreVenturesCompatible() then
@@ -1622,12 +1623,16 @@ function menu.createInfoFrame()
 	Helper.clearTableConnectionColumn(menu, 3)
 
 	if menu.mode == "inventory" then
+		tableProperties.width = math.max(config.minLeftPanelWidth, tableProperties.width)
 		menu.createInventory(menu.infoFrame, tableProperties)
 	elseif menu.mode == "crafting" then
+		tableProperties.width = math.max(config.minLeftPanelWidth, tableProperties.width)
 		menu.createCrafting(menu.infoFrame, tableProperties)
 	elseif menu.mode == "equipmentmods" then
+		tableProperties.width = math.max(config.minLeftPanelWidth, tableProperties.width)
 		menu.createEquipmentMods(menu.infoFrame, tableProperties)
 	elseif menu.mode == "spacesuit" then
+		tableProperties.width = math.max(config.minLeftPanelWidth, tableProperties.width)
 		menu.createInventory(menu.infoFrame, tableProperties, "personalupgrade")
 	elseif menu.mode == "globalorders" then
 		menu.createEmpire(menu.infoFrame, tableProperties)
@@ -1642,10 +1647,13 @@ function menu.createInfoFrame()
 		menu.createEmpire(menu.infoFrame, tableProperties)
 	elseif menu.mode == "accounts" then
 		tableProperties.width = tableProperties.width * 3 / 2
+		tableProperties.width = math.max(config.minLeftPanelWidth, tableProperties.width)
 		menu.createAccounts(menu.infoFrame, tableProperties)
 	elseif menu.mode == "stats" then
+		tableProperties.width = math.max(config.minLeftPanelWidth, tableProperties.width)
 		menu.createStats(menu.infoFrame, tableProperties)
 	elseif menu.mode == "logbook" then
+		tableProperties.width = math.max(config.minLeftPanelWidth, tableProperties.width)
 		tableProperties.width = tableProperties.width * 5 / 4
 		menu.createLogbook(menu.infoFrame, tableProperties)
 	elseif menu.mode == "messages" then

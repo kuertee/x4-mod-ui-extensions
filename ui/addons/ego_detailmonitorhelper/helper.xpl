@@ -12785,7 +12785,7 @@ function Helper.checkboxSetTradeRuleOverride(menu, container, type, ware, checke
 	menu.updateExpandedNode()
 end
 
-function Helper.dropdownAssignment(_, ship, subordinategroupid, commander, newassignment)
+function Helper.dropdownAssignment(menu, ship, subordinategroupid, commander, newassignment, callback)
 	if (not ship and (not subordinategroupid or not commander)) then
 		DebugError("Helper.dropdownAssignment called with neither ship nor valid subordinategroup specified. If working with subordinategroup, commander must also be specified.")
 		return
@@ -12846,6 +12846,10 @@ function Helper.dropdownAssignment(_, ship, subordinategroupid, commander, newas
 			end
 
 			C.SetSubordinateGroupAssignment(commander, subordinategroupid, newassignment)
+		end
+
+		if callback then
+			callback()
 		end
 	end
 end
@@ -13733,6 +13737,24 @@ function Helper.createVentureContactContext(menu, frame)
 	row[1].handlers.onClick = function () return Helper.buttonRemoveContact(menu, contact.id) end
 
 	if C.IsVentureSeasonSupported() then
+		if (contact.teamid or 0) > 0 then
+			local row = infotable:addRow(nil, { fixed = true })
+			row[1]:setColSpan(2):createText(ReadText(1001, 5000), Helper.subHeaderTextProperties) -- "Online"
+
+			local row = infotable:addRow(true, { fixed = true })
+			row[1]:setColSpan(2):createButton({  }):setText(ReadText(50101, 11824)) -- "Venture Team Info"
+			row[1].handlers.onClick = function () return Helper.callExtensionFunction("multiverse", "buttonContactTeamInfo", menu, contact) end
+		end
+
+		if OnlineHasSession() then
+			local currentteam = OnlineGetCurrentTeam()
+			if currentteam.isvalid then
+				local row = infotable:addRow(true, { fixed = true })
+				row[1]:setColSpan(2):createButton({  }):setText(ReadText(50101, 11827)) -- "Send Team Invitation"
+				row[1].handlers.onClick = function () return Helper.callExtensionFunction("multiverse", "buttonSendTeamInvite", menu, contact) end
+			end
+		end
+
 		local row = infotable:addRow(nil, { fixed = true })
 		row[1]:setColSpan(2):createText(ReadText(1001, 12110), Helper.subHeaderTextProperties)
 
