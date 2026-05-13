@@ -6,19 +6,10 @@ Contributors: AlexandreTK, ChemODun, Damonya, DrWhoKnows, DmytroK, Erixon, Farem
 
 Updates
 =======
-v9.0.0.0.8.6, 10 May 2026:
-- New feature: New callbacks by ChemODun.
-
-v9.0.0.0.8.5, 7 May 2026:
-- Compatibility: Update to 9.0 beta 9 of the base lua files.
-- Bug-fix: Map Menu > Information menu: missing "row" parameter after a custom callback function.
-- Bug-fix: Doh! I Forgot to pack the fixed files for the two bug fixes below (from the previous update) into the subst files. Sorry, my bad.
-- Bug-fix: UIX's sort by distance from object breaks the objects list sometimes. Fixed by ChemODun. Thanks!
-- Bug-fix: Another bug in Map > Mission Offers / Mission Manager: If there were no missions in a mission type, the menu would break.
-
-v9.0.0.0.8.3, 5 May 2026:
-- Bug-fix: Map > Mission Offers / Mission Manager: If there were no missions in a mission type, the menu would break.
-- Bug-fix: Map > Mission Offers / Mission Manager: The internal list of variables for the expanded/collapsed flags for missions were not getting cleaned-up properly.
+v9.0.0.0.10, 13 May 2026:
+- Compatibility: Update to 9.0 beta 10 of the base lua files.
+- New feature: hierarchical sub-groups in the Interact Menu (available via Lua/MD) by ChemODun. More details in the "Add Nested Sub-Groups*" and "Add a Custom Root Section*" sections.
+- Bug-fix: Diplomacy Menu: Bug-fix to potential crashes by ChemODun.
 
 NOTES FOR PLAYERS:
 ==================
@@ -30,7 +21,7 @@ NOTES FOR MOD DEVELOPERS:
 1. PROTECTED UI MODE: Mods that use UI Extensions will need the Protected UI Mode setting in the Extensions menu disabled.
 2. LOADING CUSTOM LUAS: ModSupportAPIs' `Lua_Loader` (and in extension its `<raise_lua_event name="'Lua_Loader.Load'" param="'X'"/>)` no longer function.
 3. UI.XML FILE: To load custom lua files, use ui.xml as described here: https://wiki.egosoft.com:1337/X%20Rebirth%20Wiki/Modding%20support/UI%20Modding%20support/Getting%20started%20guide/
-   - Note that guideline is for X Rebirth. But its use in X4 is similar.[/li]
+   - Note that guideline is for X Rebirth. But its use in X4 is similar.
    - Here is the extensions\kuertee_alternatives_to_death\ui.xml file for my mod Alternatives To Death:
    ```xml
    <?xml version="1.0" encoding="UTF-8"?>
@@ -51,7 +42,7 @@ Instructions for players
 - Disable Protected UI Mode in the Settings > Extensions menu.
 - Install UI Extensions as normal.
 - When extracting the package from github, ensure that the folder you install the mod to is: "(X4 game)/extensions/kuertee_ui_extensions/". Extracting the package from Nexus Mods will extract it to "(X4 game)/extensions/kuertee_ui_extensions/". But be sure it does anyway.
-- Read the CHANGES BUILT INTO THIS MOD (for players) section.
+- Read the "CHANGES BUILT INTO THIS MOD (for players)" section.
 
 Instructions for developers
 ===========================
@@ -143,7 +134,7 @@ CHANGES BUILT INTO THIS MOD (for players)
 
 Map Menu: Boarding Menu: Ship assignment tweaks
 ===============================================
-Ensure that subordinates of selected ships acquire their immediate commander's boarding behaviour. In the base-game, when selecting ships, e.g. SHIP A, with subordinates AND those ships' fleet commander, e.g. THE COMMANDER of SHIP A, the subordinates of SHIP A sometimes acquired THE COMMANDER's behaviour (e.g. Maintain Distance) instead of SHIP A's behaviour (e.g. Target Turrets). This tweak allows the player to select wings of a fleet for separate boarding behaviour assignments without needing each wing to be in separate fleets. Note: also check out Kuda's new boarding behaviour changes (https://www.nexusmods.com/x4foundations/mods/839). e.g.: ships on attack orders during boarding operations now stop their attack minimising the chance of the boarding target getting destroyed.
+Ensure that subordinates of selected ships acquire their immediate commander's boarding behaviour. In the base-game, when selecting ships, e.g. SHIP A, with subordinates AND those ships' fleet commander (i.e. THE COMMANDER of SHIP A) the subordinates of SHIP A sometimes acquired THE COMMANDER's behaviour (e.g. Maintain Distance) instead of SHIP A's behaviour (e.g. Target Turrets). This tweak allows the player to select wings of a fleet for separate boarding behaviour assignments without needing each wing to be in separate fleets. Note: also check out Kuda's new boarding behaviour changes (https://www.nexusmods.com/x4foundations/mods/839). e.g.: ships on attack orders during boarding operations now stop their attack minimising the chance of the boarding target getting destroyed.
 
 Map Menu: Distance tool
 =======================
@@ -236,6 +227,105 @@ Interact Menu: Add Custom Actions/Orders Group (via MD)
 5. The custom commands will be added to both the Custom Actions and Custom Orders sub-menus.
 6. To add only to one sub-menu and not the other, start the section name with either "actions_" or "orders_". E.g. "actions_my_custom_actions" will add the custom action to only the Custom Actions sub-menu. And "orders_my_custom_orders" will add the custom order to only the Custom Orders sub-menu.
 
+Add Nested Sub-Groups to a Custom Actions/Orders Group (via MD)
+===============================================================
+Sub-groups allow multi-level navigation panels inside a Custom Actions/Orders group. Each sub-group appears as a navigation button; clicking it drills into a sub-panel with a back-navigation header.
+
+1. Register the top-level group as described in "Add Custom Actions/Orders Group" above.
+2. At the same `event_ui_triggered` handler, register a sub-group inside it:
+   ```xml
+   <raise_lua_event name="'Interact_Menu_API.Add_Custom_Actions_SubGroup_Id_to_Group_Id'" param="'my_custom_actions_group_id;my_sub_group_id'" />
+   <raise_lua_event name="'Interact_Menu_API.Add_Custom_Actions_SubGroup_Text'" param="'My Sub-Group'" />
+   ```
+   The `param` for the Id event is `"parentId;subGroupId"` — the parent must be registered first, but registration order among siblings does not matter.
+3. Nest further levels the same way, referencing the previous sub-group as the parent:
+   ```xml
+   <raise_lua_event name="'Interact_Menu_API.Add_Custom_Actions_SubGroup_Id_to_Group_Id'" param="'my_sub_group_id;my_deep_group_id'" />
+   <raise_lua_event name="'Interact_Menu_API.Add_Custom_Actions_SubGroup_Text'" param="'My Deep Group'" />
+   ```
+4. Add actions to any level by using its id as `$section` in Mod Support API's `Add_Action`:
+   ```xml
+   <signal_cue_instantly cue="md.Interact_Menu_API.Add_Action" param="table[
+     $id       = 'my_sub_group_action',
+     $section  = 'my_sub_group_id',
+     $text     = 'My Sub-Group Action',
+     $callback = My_Sub_Group_Action_Cue
+   ]" />
+   ```
+5. Sub-group registrations are permanent (they survive across menu openings). Action registrations must be repeated on every `md.Interact_Menu_API.Get_Actions` signal.
+6. The back-navigation header shows the full breadcrumb path on mouse-over. Navigation depth is capped at 10 levels.
+
+Add Nested Sub-Groups to a Custom Actions/Orders Group (via Lua)
+================================================================
+From Lua, the same multi-level structure can be built using the `InteractMenu` Lua API.
+
+- Top-level group (visible as a navigation button in custom_actions / custom_orders): call `menu.Add_Custom_Actions_Group(id, text)` once at script load. This is idempotent — safe to call on every reload.
+- Nested sub-groups (levels 2 and deeper): call `menu.insertInteractionGroup(parentId, groupId, groupText)` inside a `prepareSections_on_end` callback. This must be repeated every menu open because `menu.actions` is rebuilt fresh each time.
+- Actions: call `menu.insertInteractionContent(sectionId, entry)` inside the same `prepareSections_on_end` callback.
+
+```lua
+local SECTION_PARENT = "my_parent"
+local SECTION_CHILD  = "my_child"
+
+local function init()
+    local m = Helper.getMenu("InteractMenu")
+
+    -- Register top-level group once (persists across menu opens):
+    m.Add_Custom_Actions_Group(SECTION_PARENT, "My Parent Group")
+
+    -- Register nested groups and actions every menu open:
+    m.registerCallback("prepareSections_on_end", function()
+        m.insertInteractionGroup(SECTION_PARENT, SECTION_CHILD, "My Sub-Group")
+        m.insertInteractionContent(SECTION_PARENT, {
+            text = "Parent Action", active = true,
+            script = function() DebugError("Parent Action clicked") end
+        })
+        m.insertInteractionContent(SECTION_CHILD, {
+            text = "Child Action", active = true,
+            script = function() DebugError("Child Action clicked") end
+        })
+    end, "my_mod_id")
+end
+init()
+```
+
+Add a Custom Root Section with Multi-Level Sub-Groups (via Lua)
+===============================================================
+To add a fully custom root section (not inside custom_actions/custom_orders) with multi-level navigation:
+
+1. In `prepareSections_on_start`, inject a section with `subsections = {}` into `config.sections` once (guarded by a flag). Also push the top-level subsection entry into `section.subsections`. Both tables are persistent.
+2. In `prepareSections_on_end`, call `insertInteractionGroup` and `insertInteractionContent` for all nested levels and actions. These must be repeated every menu open.
+
+```lua
+local mySection = { id = "my_root", text = "My Section", isorder = false, subsections = {} }
+local sectionAdded = false
+
+local function init()
+    local m = Helper.getMenu("InteractMenu")
+
+    m.registerCallback("prepareSections_on_start", function(sections)
+        if not sectionAdded then
+            table.insert(sections, mySection)
+            table.insert(mySection.subsections, { id = "my_l1", text = "Level 1 Group" })
+            sectionAdded = true
+        end
+    end, "my_mod_id")
+
+    m.registerCallback("prepareSections_on_end", function()
+        m.insertInteractionGroup("my_l1", "my_l2", "Level 2 Group")
+        m.insertInteractionContent("my_l1", {
+            text = "Level 1 Action", active = true,
+            script = function() DebugError("L1 clicked") end
+        })
+        m.insertInteractionContent("my_l2", {
+            text = "Level 2 Action", active = true,
+            script = function() DebugError("L2 clicked") end
+        })
+    end, "my_mod_id")
+end
+init()
+```
+
 Map Menu: selectComponent mode
 ==============================
 The selectComponent mode is now available to use from directly within the Map Menu. In the base game, the use of this mode is limited to conversations triggered from the Mission Director (md). E.g. `<open_conversation_menu menu="MapMenu" param="[0, 0, true, player.entity, null, 'selectComponent', ['kTFTR_set_destination', [class.ship_s, class.ship_m, class.ship_l, class.ship_xl, class.station]]]" />`. Which then triggers an "event_conversation_next_section" with the menu.modeparam[1] as the section of the conversation. In this version, this mode can be called directly from the Map Menu.
@@ -269,6 +359,20 @@ French localisation by Calvitix.
 
 History
 =======
+v9.0.0.0.8.6, 10 May 2026:
+- New feature: New callbacks by ChemODun.
+
+v9.0.0.0.8.5, 7 May 2026:
+- Compatibility: Update to 9.0 beta 9 of the base lua files.
+- Bug-fix: Map Menu > Information menu: missing "row" parameter after a custom callback function.
+- Bug-fix: Doh! I Forgot to pack the fixed files for the two bug fixes below (from the previous update) into the subst files. Sorry, my bad.
+- Bug-fix: UIX's sort by distance from object breaks the objects list sometimes. Fixed by ChemODun. Thanks!
+- Bug-fix: Another bug in Map > Mission Offers / Mission Manager: If there were no missions in a mission type, the menu would break.
+
+v9.0.0.0.8.3, 5 May 2026:
+- Bug-fix: Map > Mission Offers / Mission Manager: If there were no missions in a mission type, the menu would break.
+- Bug-fix: Map > Mission Offers / Mission Manager: The internal list of variables for the expanded/collapsed flags for missions were not getting cleaned-up properly.
+
 v9.0.0.0.8.2, 5 May 2026:
 - Bug-fix: Missing calback in the Map > Property Owned menu that prevent mods that use that callback from working. Fix by ChemODun.
 - Bug-fix: Bug in the Diplomacy menu that incorrectly sent nil data to callback functions. Fix by ChemODun.
@@ -474,20 +578,20 @@ v7.5.0061 beta, 25 Jan 2025:
 - Bug-fix: The player's Inventory window wasn't opening.
 - Tweak: The Online Features button is disabled. Because its functionality is natively disabled with how UI Extensions rewrites several menu files, the button might as well be disabled.
 - Tweak: callbacks can now be assigned an id so that they can be deregistered by other mods with "menu.registerCallback(callbackName, myCallbackFunc, myId)".
-				E.g.
-				MapMenu.registerCallback("buttonToggleObjectList_on_start", myCallbackFunc, "mod_a").
-				Then another lua file can do this:
-				MapMenu.deregisterCallback("buttonToggleObjectList_on_start", nil, "mod_a").
-				This is useful when you want to override another mod's custom changes to different menus with your own mod.
-				Note that deregistering callbacks are delayed by 1 second because there is no method to ensure that the callback of another mod that is to be deregistered has been registered.
+        E.g.
+        MapMenu.registerCallback("buttonToggleObjectList_on_start", myCallbackFunc, "mod_a").
+        Then another lua file can do this:
+        MapMenu.deregisterCallback("buttonToggleObjectList_on_start", nil, "mod_a").
+        This is useful when you want to override another mod's custom changes to different menus with your own mod.
+        Note that deregistering callbacks are delayed by 1 second because there is no method to ensure that the callback of another mod that is to be deregistered has been registered.
 - New feature: callbacks of other mods can be updated (i.e. rerouted) to your own callbacks with "updateCallback(callbackName, id, myCallbackFunc)".
-				E.g. Mod_a registered a callback for "buttonToggleObjectList_on_start" with the id "mod_a".
-				And Mod_b wants to reroute that callback for its own function.
-				That callback can be rerouted like this:
-				MapMenu.updateCallback("buttonToggleObjectList_on_start", "mod_a", modb_CallbackFunc).
-				Note that rerouted callbacks will keep their original ids.
-				It might be better to deregister the callback THEN register the new callback instead.
-				Also note that updating callbacks are delayed by 1 second because there is no method to ensure that the callback of another mod that is to be updated has been registered.
+        E.g. Mod_a registered a callback for "buttonToggleObjectList_on_start" with the id "mod_a".
+        And Mod_b wants to reroute that callback for its own function.
+        That callback can be rerouted like this:
+        MapMenu.updateCallback("buttonToggleObjectList_on_start", "mod_a", modb_CallbackFunc).
+        Note that rerouted callbacks will keep their original ids.
+        It might be better to deregister the callback THEN register the new callback instead.
+        Also note that updating callbacks are delayed by 1 second because there is no method to ensure that the callback of another mod that is to be updated has been registered.
 
 v7.1.18, 12 Jan 2025:
 - New: UI Call-backs for the AEGS Faction mod by IALuir.
@@ -618,20 +722,20 @@ v6.1.001, 27 Jun 2023:
 2. Add the new Custom Actions/Orders Group Id <raise_lua_event name="'Interact_Menu_API.Add_Custom_Actions_Group_Id'" param="'my_custom_actions_group_id'" />
 3. Add the new Custom Actions/Orders Group Name <raise_lua_event name="'Interact_Menu_API.Add_Custom_Actions_Group_Text'" param="'My Custom Actions/Orders Group'" />
 4. Use the new id in Mod Support API's Add_Action function like this:
-					<signal_cue_instantly cue="md.Interact_Menu_API.Add_Action" param = "table[
-						$id = 'my_custom_action_1,
-						$section = 'my_custom_actions_group_id',
-						$text = 'My Custom Action 1',
-						$mouseover = 'My Custom Action 1 mouse over',
-						$callback = My_Custom_Action_1_Cue
-					]" />
-					<signal_cue_instantly cue="md.Interact_Menu_API.Add_Action" param = "table[
-						$id = 'my_custom_action_2,
-						$section = 'my_custom_actions_group_id',
-						$text = 'My Custom Action 1',
-						$mouseover = 'My Custom Action 2 mouse over',
-						$callback = My_Custom_Action_2_Cue
-					]" />
+          <signal_cue_instantly cue="md.Interact_Menu_API.Add_Action" param = "table[
+            $id = 'my_custom_action_1,
+            $section = 'my_custom_actions_group_id',
+            $text = 'My Custom Action 1',
+            $mouseover = 'My Custom Action 1 mouse over',
+            $callback = My_Custom_Action_1_Cue
+          ]" />
+          <signal_cue_instantly cue="md.Interact_Menu_API.Add_Action" param = "table[
+            $id = 'my_custom_action_2,
+            $section = 'my_custom_actions_group_id',
+            $text = 'My Custom Action 1',
+            $mouseover = 'My Custom Action 2 mouse over',
+            $callback = My_Custom_Action_2_Cue
+          ]" />
 
 v6.0.004, 10 May 2023:
 - Mycu's contribution: custom nested Interact Menu actions.

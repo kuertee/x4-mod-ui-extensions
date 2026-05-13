@@ -6,22 +6,10 @@ Contributors: AlexandreTK, ChemODun, Damonya, DrWhoKnows, DmytroK, Erixon, Farem
 
 Updates
 =======
-v9.0.0.0.8.?, ?? May 2026:
-- New feature: hierarchical sub-groups in the Interact Menu (available via Lua/MD) by ChemODun.
-
-v9.0.0.0.8.6, 10 May 2026:
-- New feature: New callbacks by ChemODun.
-
-v9.0.0.0.8.5, 7 May 2026:
-- Compatibility: Update to 9.0 beta 9 of the base lua files.
-- Bug-fix: Map Menu > Information menu: missing "row" parameter after a custom callback function.
-- Bug-fix: Doh! I Forgot to pack the fixed files for the two bug fixes below (from the previous update) into the subst files. Sorry, my bad.
-- Bug-fix: UIX's sort by distance from object breaks the objects list sometimes. Fixed by ChemODun. Thanks!
-- Bug-fix: Another bug in Map > Mission Offers / Mission Manager: If there were no missions in a mission type, the menu would break.
-
-v9.0.0.0.8.3, 5 May 2026:
-- Bug-fix: Map > Mission Offers / Mission Manager: If there were no missions in a mission type, the menu would break.
-- Bug-fix: Map > Mission Offers / Mission Manager: The internal list of variables for the expanded/collapsed flags for missions were not getting cleaned-up properly.
+v9.0.0.0.10, 13 May 2026:
+- Compatibility: Update to 9.0 beta 10 of the base lua files.
+- New feature: hierarchical sub-groups in the Interact Menu (available via Lua/MD) by ChemODun. More details in the "Add Nested Sub-Groups*" and "Add a Custom Root Section*" sections.
+- Bug-fix: Diplomacy Menu: Bug-fix to potential crashes by ChemODun.
 
 NOTES FOR PLAYERS:
 ==================
@@ -33,7 +21,7 @@ NOTES FOR MOD DEVELOPERS:
 1. PROTECTED UI MODE: Mods that use UI Extensions will need the Protected UI Mode setting in the Extensions menu disabled.
 2. LOADING CUSTOM LUAS: ModSupportAPIs' `Lua_Loader` (and in extension its `<raise_lua_event name="'Lua_Loader.Load'" param="'X'"/>)` no longer function.
 3. UI.XML FILE: To load custom lua files, use ui.xml as described here: https://wiki.egosoft.com:1337/X%20Rebirth%20Wiki/Modding%20support/UI%20Modding%20support/Getting%20started%20guide/
-   - Note that guideline is for X Rebirth. But its use in X4 is similar.[/li]
+   - Note that guideline is for X Rebirth. But its use in X4 is similar.
    - Here is the extensions\kuertee_alternatives_to_death\ui.xml file for my mod Alternatives To Death:
    ```xml
    <?xml version="1.0" encoding="UTF-8"?>
@@ -54,7 +42,7 @@ Instructions for players
 - Disable Protected UI Mode in the Settings > Extensions menu.
 - Install UI Extensions as normal.
 - When extracting the package from github, ensure that the folder you install the mod to is: "(X4 game)/extensions/kuertee_ui_extensions/". Extracting the package from Nexus Mods will extract it to "(X4 game)/extensions/kuertee_ui_extensions/". But be sure it does anyway.
-- Read the CHANGES BUILT INTO THIS MOD (for players) section.
+- Read the "CHANGES BUILT INTO THIS MOD (for players)" section.
 
 Instructions for developers
 ===========================
@@ -146,7 +134,7 @@ CHANGES BUILT INTO THIS MOD (for players)
 
 Map Menu: Boarding Menu: Ship assignment tweaks
 ===============================================
-Ensure that subordinates of selected ships acquire their immediate commander's boarding behaviour. In the base-game, when selecting ships, e.g. SHIP A, with subordinates AND those ships' fleet commander, e.g. THE COMMANDER of SHIP A, the subordinates of SHIP A sometimes acquired THE COMMANDER's behaviour (e.g. Maintain Distance) instead of SHIP A's behaviour (e.g. Target Turrets). This tweak allows the player to select wings of a fleet for separate boarding behaviour assignments without needing each wing to be in separate fleets. Note: also check out Kuda's new boarding behaviour changes (https://www.nexusmods.com/x4foundations/mods/839). e.g.: ships on attack orders during boarding operations now stop their attack minimising the chance of the boarding target getting destroyed.
+Ensure that subordinates of selected ships acquire their immediate commander's boarding behaviour. In the base-game, when selecting ships, e.g. SHIP A, with subordinates AND those ships' fleet commander (i.e. THE COMMANDER of SHIP A) the subordinates of SHIP A sometimes acquired THE COMMANDER's behaviour (e.g. Maintain Distance) instead of SHIP A's behaviour (e.g. Target Turrets). This tweak allows the player to select wings of a fleet for separate boarding behaviour assignments without needing each wing to be in separate fleets. Note: also check out Kuda's new boarding behaviour changes (https://www.nexusmods.com/x4foundations/mods/839). e.g.: ships on attack orders during boarding operations now stop their attack minimising the chance of the boarding target getting destroyed.
 
 Map Menu: Distance tool
 =======================
@@ -371,6 +359,20 @@ French localisation by Calvitix.
 
 History
 =======
+v9.0.0.0.8.6, 10 May 2026:
+- New feature: New callbacks by ChemODun.
+
+v9.0.0.0.8.5, 7 May 2026:
+- Compatibility: Update to 9.0 beta 9 of the base lua files.
+- Bug-fix: Map Menu > Information menu: missing "row" parameter after a custom callback function.
+- Bug-fix: Doh! I Forgot to pack the fixed files for the two bug fixes below (from the previous update) into the subst files. Sorry, my bad.
+- Bug-fix: UIX's sort by distance from object breaks the objects list sometimes. Fixed by ChemODun. Thanks!
+- Bug-fix: Another bug in Map > Mission Offers / Mission Manager: If there were no missions in a mission type, the menu would break.
+
+v9.0.0.0.8.3, 5 May 2026:
+- Bug-fix: Map > Mission Offers / Mission Manager: If there were no missions in a mission type, the menu would break.
+- Bug-fix: Map > Mission Offers / Mission Manager: The internal list of variables for the expanded/collapsed flags for missions were not getting cleaned-up properly.
+
 v9.0.0.0.8.2, 5 May 2026:
 - Bug-fix: Missing calback in the Map > Property Owned menu that prevent mods that use that callback from working. Fix by ChemODun.
 - Bug-fix: Bug in the Diplomacy menu that incorrectly sent nil data to callback functions. Fix by ChemODun.
