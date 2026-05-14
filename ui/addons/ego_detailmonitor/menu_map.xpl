@@ -2070,9 +2070,9 @@ function menu.cleanup()
 	-- kuertee end: open/close mission lists
 
 	-- kuertee start: callback
-	if menu.uix_callbacks ["on_menu_cleanup"] then
-		for uix_id, uix_callback in pairs (menu.uix_callbacks ["on_menu_cleanup"]) do
-			uix_callback (menu, config)
+	if menu.uix_callbacks["on_menu_cleanup"] then
+		for uix_id, uix_callback in pairs(menu.uix_callbacks["on_menu_cleanup"]) do
+			uix_callback(menu, config)
 		end
 	end
 	-- kuertee end: callback
@@ -2521,9 +2521,9 @@ end
 
 function menu.buttonToggleObjectList(objectlistparam, confirmed, override)
 	-- kuertee start: callback
-	if menu.uix_callbacks ["buttonToggleObjectList_on_start"] then
-		for uix_id, uix_callback in pairs (menu.uix_callbacks ["buttonToggleObjectList_on_start"]) do
-			uix_callback (objectlistparam, config)
+	if menu.uix_callbacks["buttonToggleObjectList_on_start"] then
+		for uix_id, uix_callback in pairs(menu.uix_callbacks["buttonToggleObjectList_on_start"]) do
+			uix_callback(objectlistparam, config)
 		end
 	end
 	-- kuertee end: callback
@@ -3841,7 +3841,7 @@ function menu.buttonMissionActivate()
 		PlaySound("ui_mission_set_active")
 
 		-- kuertee start: callback
-		if menu.uix_callbacks ["buttonMissionActivate_on_activate"] then
+		if menu.uix_callbacks["buttonMissionActivate_on_activate"] then
 			-- get active mission first, because the clicked item may have been a group
 			local activeMissionId
 			local numMissions = GetNumMissions ()
@@ -3851,9 +3851,9 @@ function menu.buttonMissionActivate()
 					activeMissionId = entry.ID
 				end
 			end
-			for uix_id, uix_callback in pairs (menu.uix_callbacks ["buttonMissionActivate_on_activate"]) do
+			for uix_id, uix_callback in pairs(menu.uix_callbacks["buttonMissionActivate_on_activate"]) do
 				-- callback (menu.contextMenuData.missionid)
-				uix_callback (activeMissionId)
+				uix_callback(activeMissionId)
 			end
 		end
 		-- kuertee end: callback
@@ -6343,9 +6343,9 @@ end
 function menu.onMinimizeMenu()
 
 	-- kuertee start: callback
-	if menu.uix_callbacks ["on_menu_minimize"] then
-		for uix_id, uix_callback in pairs (menu.uix_callbacks ["on_menu_minimize"]) do
-			uix_callback (menu, config)
+	if menu.uix_callbacks["on_menu_minimize"] then
+		for uix_id, uix_callbac in pairs(menu.uix_callbacks["on_menu_minimize"]) do
+			uix_callback(menu, config)
 		end
 	end
 	-- kuertee end: callback
@@ -6909,9 +6909,9 @@ function menu.createMainFrame(firsttime, height, refresh)
 	})
 
 	-- kuertee start: callback
-	if menu.uix_callbacks ["on_create_main_frame"] then
-		for uix_id, uix_callback in pairs (menu.uix_callbacks ["on_create_main_frame"]) do
-			uix_callback (menu, config, firsttime)
+	if menu.uix_callbacks["on_create_main_frame"] then
+		for uix_id, uix_callback in pairs(menu.uix_callbacks["on_create_main_frame"]) do
+			uix_callback(menu, config, firsttime)
 		end
 	end
 	-- kuertee end: callback
@@ -7072,10 +7072,11 @@ function menu.createInfoFrame()
 				menu.createOrderQueue(menu.infoFrame, menu.infoMode.left, "left")
 			elseif menu.infoMode.left == "standingorders" then
 				menu.createStandingOrdersMenu(menu.infoFrame, "left")
+
 				-- start: InfoSubmenu Create Letf call-back
-			elseif menu.uix_callbacks ["info_sub_menu_create"] then
-				for uix_id, uix_callback in pairs (menu.uix_callbacks ["info_sub_menu_create"]) do
-					uix_callback (menu.infoFrame, "left")
+			elseif menu.uix_callbacks["info_sub_menu_create"] then
+				for uix_id, uix_callback in pairs(menu.uix_callbacks["info_sub_menu_create"]) do
+					uix_callback(menu.infoFrame, "left")
 				end
 				-- end: InfoSubmenu Create Letf call-back
 			end
@@ -7091,9 +7092,9 @@ function menu.createInfoFrame()
 
 		elseif menu.uix_callbacks then
 			-- kuertee start: callback
-			if menu.uix_callbacks ["createInfoFrame_on_menu_infoTableMode"] then
-				for uix_id, uix_callback in pairs (menu.uix_callbacks ["createInfoFrame_on_menu_infoTableMode"]) do
-					uix_callback (menu.infoFrame)
+			if menu.uix_callbacks["createInfoFrame_on_menu_infoTableMode"] then
+				for uix_id, uix_callback in pairs(menu.uix_callbacks["createInfoFrame_on_menu_infoTableMode"]) do
+					uix_callback(menu.infoFrame)
 				end
 			end
 			-- kuertee end: callback
@@ -7166,9 +7167,9 @@ function menu.createContextFrame(width, height, xoffset, yoffset, noborder, star
 	end
 
 	-- kuertee start: callback
-	if menu.uix_callbacks ["createContextFrame_on_start"] then
-		for uix_id, uix_callback in pairs (menu.uix_callbacks ["createContextFrame_on_start"]) do
-			local result = uix_callback (menu.contextMenuData, menu.contextMenuMode)
+	if menu.uix_callbacks["createContextFrame_on_start"] then
+		for uix_id, uix_callback in pairs(menu.uix_callbacks["createContextFrame_on_start"]) do
+			local result = uix_callback(menu.contextMenuData, menu.contextMenuMode)
 			if result then
 				menu.contextMenuData = result.contextMenuData
 			end
@@ -7291,9 +7292,9 @@ function menu.createContextFrame(width, height, xoffset, yoffset, noborder, star
 	end
 
 	-- kuertee start: callback
-	if menu.uix_callbacks ["createContextFrame_on_end"] then
-		for uix_id, uix_callback in pairs (menu.uix_callbacks ["createContextFrame_on_end"]) do
-			local result = uix_callback (menu.contextFrame, menu.contextMenuData, menu.contextMenuMode)
+	if menu.uix_callbacks["createContextFrame_on_end"] then
+		for uix_id, uix_callback in pairs(menu.uix_callbacks["createContextFrame_on_end"]) do
+			local result = uix_callback(menu.contextFrame, menu.contextMenuData, menu.contextMenuMode)
 			if result then
 				menu.contextFrame = result.contextFrame
 			end
@@ -7395,9 +7396,9 @@ function menu.refreshContextFrame(setrow, setcol, noborder)
 	end
 
 	-- kuertee start: callback
-	if menu.uix_callbacks ["refreshContextFrame_on_start"] then
-		for uix_id, uix_callback in pairs (menu.uix_callbacks ["refreshContextFrame_on_start"]) do
-			local result = uix_callback (menu.contextMenuData, menu.contextMenuMode)
+	if menu.uix_callbacks["refreshContextFrame_on_start"] then
+		for uix_id, uix_callback in pairs(menu.uix_callbacks["refreshContextFrame_on_start"]) do
+			local result = uix_callback(menu.contextMenuData, menu.contextMenuMode)
 			if result then
 				menu.contextMenuData = result.contextMenuData
 			end
@@ -7479,9 +7480,9 @@ function menu.refreshContextFrame(setrow, setcol, noborder)
 	end
 
 	-- kuertee start: callback
-	if menu.uix_callbacks ["refreshContextFrame_on_end"] then
-		for uix_id, uix_callback in pairs (menu.uix_callbacks ["refreshContextFrame_on_end"]) do
-			local result = uix_callback (menu.contextFrame, menu.contextMenuData, menu.contextMenuMode)
+	if menu.uix_callbacks["refreshContextFrame_on_end"] then
+		for uix_id, uix_callback in pairs(menu.uix_callbacks["refreshContextFrame_on_end"]) do
+			local result = uix_callback(menu.contextFrame, menu.contextMenuData, menu.contextMenuMode)
 			if result then
 				menu.contextFrame = result.contextFrame
 			end
@@ -7562,9 +7563,9 @@ end
 function menu.refreshInfoFrame2(setrow, setcol)
 	-- kuertee start: callback
 	local isCreated = false
-	if menu.uix_callbacks ["refreshInfoFrame2_on_start"] then
-		for uix_id, uix_callback in pairs (menu.uix_callbacks ["refreshInfoFrame2_on_start"]) do
-			if uix_callback () then
+	if menu.uix_callbacks["refreshInfoFrame2_on_start"] then
+		for uix_id, uix_callback in pairs(menu.uix_callbacks["refreshInfoFrame2_on_start"]) do
+			if uix_callback() then
 				isCreated = true
 			end
 		end
@@ -7653,9 +7654,9 @@ function menu.getContainerNameAndColors(container, iteration, issquadleader, sho
 	end
 
     	-- mycu start: callback
-	    if menu.uix_callbacks ["getContainerNameAndColors_on_name_construct"] then
-	        for uix_id, uix_callback in pairs (menu.uix_callbacks ["getContainerNameAndColors_on_name_construct"]) do
-	            local result = uix_callback (container, name)
+	    if menu.uix_callbacks["getContainerNameAndColors_on_name_construct"] then
+	        for uix_id, uix_callback in pairs(menu.uix_callbacks["getContainerNameAndColors_on_name_construct"]) do
+	            local result = uix_callback(container, name)
 	            if result then
 	                name = result.name
 	            end
@@ -8195,9 +8196,9 @@ function menu.createObjectList(frame, instance)
 	infoTableData.fleetUnitReplacements = { }
 
 	-- kuertee start: callback
-	if menu.uix_callbacks ["createObjectList_on_init_infoTableData"] then
-		for uix_id, uix_callback in pairs (menu.uix_callbacks ["createObjectList_on_init_infoTableData"]) do
-			uix_callback (infoTableData)
+	if menu.uix_callbacks["createObjectList_on_init_infoTableData"] then
+		for uix_id, uix_callback in pairs(menu.uix_callbacks["createObjectList_on_init_infoTableData"]) do
+			uix_callback(infoTableData)
 		end
 	end
 	-- kuertee end: callback
@@ -8316,9 +8317,9 @@ function menu.createObjectList(frame, instance)
 				end
 			end
 			-- kuertee start: callback
-			if menu.uix_callbacks ["createObjectList_on_add_entry_infoTableData"] then
-				for uix_id, uix_callback in pairs (menu.uix_callbacks ["createObjectList_on_add_entry_infoTableData"]) do
-					uix_callback (infoTableData, entry, id, convertedID)
+			if menu.uix_callbacks["createObjectList_on_add_entry_infoTableData"] then
+				for uix_id, uix_callback in pairs(menu.uix_callbacks["createObjectList_on_add_entry_infoTableData"]) do
+					uix_callback(infoTableData, entry, id, convertedID)
 				end
 			end
 			-- kuertee end: callback
@@ -8348,10 +8349,10 @@ function menu.createObjectList(frame, instance)
 		end
 
 		-- kuertee start: callback
-		if menu.uix_callbacks ["createObjectList_on_createPropertySection"] then
+		if menu.uix_callbacks["createObjectList_on_createPropertySection"] then
 			local result
-			for uix_id, uix_callback in pairs (menu.uix_callbacks ["createObjectList_on_createPropertySection"]) do
-				result = uix_callback (numdisplayed, instance, objecttable, infoTableData)
+			for uix_id, uix_callback in pairs(menu.uix_callbacks["createObjectList_on_createPropertySection"]) do
+				result = uix_callback(numdisplayed, instance, objecttable, infoTableData)
 				if result and result.numdisplayed > numdisplayed then
 					numdisplayed = result.numdisplayed
 				end
@@ -8552,9 +8553,9 @@ end
 
 function menu.createPropertyOwned(frame, instance)
 	-- kuertee start: callback
-	if menu.uix_callbacks ["createPropertyOwned_on_start"] then
-		for uix_id, uix_callback in pairs (menu.uix_callbacks ["createPropertyOwned_on_start"]) do
-			uix_callback (config)
+	if menu.uix_callbacks["createPropertyOwned_on_start"] then
+		for uix_id, uix_callback in pairs(menu.uix_callbacks["createPropertyOwned_on_start"]) do
+			uix_callback(config)
 		end
 	end
 	-- kuertee end: callback
@@ -8613,9 +8614,9 @@ function menu.createPropertyOwned(frame, instance)
 	infoTableData.moduledata = { }
 
 	-- kuertee start: callback
-	if menu.uix_callbacks ["createPropertyOwned_on_init_infoTableData"] then
-		for uix_id, uix_callback in pairs (menu.uix_callbacks ["createPropertyOwned_on_init_infoTableData"]) do
-			uix_callback (infoTableData)
+	if menu.uix_callbacks["createPropertyOwned_on_init_infoTableData"] then
+		for uix_id, uix_callback in pairs(menu.uix_callbacks["createPropertyOwned_on_init_infoTableData"]) do
+			uix_callback(infoTableData)
 		end
 	end
 	-- kuertee end: callback
@@ -8746,27 +8747,27 @@ function menu.createPropertyOwned(frame, instance)
 			end
 
 			-- kuertee start: callback
-			if menu.uix_callbacks ["createPropertyOwned_on_add_ship_infoTableData"] then
-				for uix_id, uix_callback in pairs (menu.uix_callbacks ["createPropertyOwned_on_add_ship_infoTableData"]) do
-					uix_callback (infoTableData, object)
+			if menu.uix_callbacks["createPropertyOwned_on_add_ship_infoTableData"] then
+				for uix_id, uix_callback in pairs(menu.uix_callbacks["createPropertyOwned_on_add_ship_infoTableData"]) do
+					uix_callback(infoTableData, object)
 				end
 			end
 			-- kuertee end: callback
 
 		end
 		-- kuertee start: callback on every playerobject
-		if menu.uix_callbacks ["createPropertyOwned_on_every_playerobject"] then
-			for uix_id, uix_callback in pairs (menu.uix_callbacks ["createPropertyOwned_on_every_playerobject"]) do
-				uix_callback (infoTableData, entry, menu.propertyMode)
+		if menu.uix_callbacks["createPropertyOwned_on_every_playerobject"] then
+			for uix_id, uix_callback in pairs(menu.uix_callbacks["createPropertyOwned_on_every_playerobject"]) do
+				uix_callback(infoTableData, entry, menu.propertyMode)
 			end
 		end
 		-- kuertee end: callback on every playerobject
 	end
 
 	-- kuertee start: callback
-	if menu.uix_callbacks ["createPropertyOwned_on_add_other_objects_infoTableData"] then
-		for uix_id, uix_callback in pairs (menu.uix_callbacks ["createPropertyOwned_on_add_other_objects_infoTableData"]) do
-			result = uix_callback (infoTableData)
+	if menu.uix_callbacks["createPropertyOwned_on_add_other_objects_infoTableData"] then
+		for uix_id, uix_callback in pairs(menu.uix_callbacks["createPropertyOwned_on_add_other_objects_infoTableData"]) do
+			result = uix_callback(infoTableData)
 			if result then
 				infoTableData = result.infoTableData
 			end
@@ -8836,11 +8837,25 @@ function menu.createPropertyOwned(frame, instance)
 		end
 	end
 
-	-- kuertee start: callback
-	if menu.uix_callbacks ["createPropertyOwned_on_createPropertySection_unassignedships"] then
+	-- kuertee start: callback:
+	-- OBSOLETE: do not use this callback. kept for backward-compatibility.
+	-- USE the "createPropertyOwned_on_createPropertySection" callback instead, which is immediately below this one.
+	if menu.uix_callbacks["createPropertyOwned_on_createPropertySection_unassignedships"] then
 		local result
-		for uix_id, uix_callback in pairs (menu.uix_callbacks ["createPropertyOwned_on_createPropertySection_unassignedships"]) do
-			result = uix_callback (numdisplayed, instance, ftable, infoTableData)
+		for uix_id, uix_callback in pairs(menu.uix_callbacks["createPropertyOwned_on_createPropertySection_unassignedships"]) do
+			result = uix_callback(numdisplayed, instance, ftable, infoTableData)
+			if result and result.numdisplayed > numdisplayed then
+				numdisplayed = result.numdisplayed
+			end
+		end
+	end
+	-- kuertee end: callback
+
+	-- kuertee start: callback
+	if menu.uix_callbacks["createPropertyOwned_on_createPropertySection"] then
+		local result
+		for uix_id, uix_callback in pairs(menu.uix_callbacks["createPropertyOwned_on_createPropertySection"]) do
+			result = uix_callback(numdisplayed, instance, ftable, infoTableData)
 			if result and result.numdisplayed > numdisplayed then
 				numdisplayed = result.numdisplayed
 			end
@@ -8948,9 +8963,9 @@ function menu.createPropertyOwned(frame, instance)
 					active = entry.category == "propertyall"
 
 					-- start: mycu callback
-					if menu.uix_callbacks ["onSetActiveStateForCVMode_on_createPropertyOwned"] then
-						for uix_id, uix_callback in pairs (menu.uix_callbacks ["onSetActiveStateForCVMode_on_createPropertyOwned"]) do
-						        active = uix_callback (entry)
+					if menu.uix_callbacks["onSetActiveStateForCVMode_on_createPropertyOwned"] then
+						for uix_id, uix_callback in pairs(menu.uix_callbacks["onSetActiveStateForCVMode_on_createPropertyOwned"]) do
+						        active = uix_callback(entry)
 					        end
 					end
 					-- end: mycu callback
@@ -9034,10 +9049,10 @@ function menu.createPropertyOwned(frame, instance)
 	end
 
 	-- kuertee start: callback
-	if menu.uix_callbacks ["createPropertyOwned_on_tabtable_end"] then
+	if menu.uix_callbacks["createPropertyOwned_on_tabtable_end"] then
 		local result
-		for uix_id, uix_callback in pairs (menu.uix_callbacks ["createPropertyOwned_on_tabtable_end"]) do
-			uix_callback (numdisplayed, instance, tabtable, infoTableData)
+		for uix_id, uix_callback in pairs(menu.uix_callbacks["createPropertyOwned_on_tabtable_end"]) do
+			uix_callback(numdisplayed, instance, tabtable, infoTableData)
 		end
 	end
 	-- kuertee end: callback
@@ -9536,10 +9551,10 @@ function menu.createPropertyRow(instance, ftable, rowgroup, component, iteration
 	local convertedComponent = ConvertStringTo64Bit(tostring(component))
 
 	-- kuertee start: callback
-	if menu.uix_callbacks ["createPropertyRow_on_init_vars"] then
+	if menu.uix_callbacks["createPropertyRow_on_init_vars"] then
 		local result
-		for uix_id, uix_callback in pairs (menu.uix_callbacks ["createPropertyRow_on_init_vars"]) do
-			result = uix_callback (maxicons, subordinates, dockedships, constructions, convertedComponent, iteration)
+		for uix_id, uix_callback in pairs(menu.uix_callbacks["createPropertyRow_on_init_vars"]) do
+			result = uix_callback(maxicons, subordinates, dockedships, constructions, convertedComponent, iteration)
 			if result then
 				maxicons = result.maxicons
 				subordinates = result.subordinates
@@ -9656,10 +9671,10 @@ function menu.createPropertyRow(instance, ftable, rowgroup, component, iteration
 		end
 
 		-- kuertee start: callback
-		if menu.uix_callbacks ["createPropertyRow_on_set_locationtext"] then
+		if menu.uix_callbacks["createPropertyRow_on_set_locationtext"] then
 			local result
-			for uix_id, uix_callback in pairs (menu.uix_callbacks ["createPropertyRow_on_set_locationtext"]) do
-				result = uix_callback (locationtext, component)
+			for uix_id, uix_callback in pairs(menu.uix_callbacks["createPropertyRow_on_set_locationtext"]) do
+				result = uix_callback(locationtext, component)
 				if result.locationtext then
 					locationtext = result.locationtext
 				end
@@ -9828,12 +9843,12 @@ function menu.createPropertyRow(instance, ftable, rowgroup, component, iteration
 
 			-- kuertee start: callback
 			-- row[2]:createText(shipname, { font = font, color = color, mouseOverText = mouseover })
-			if not menu.uix_callbacks ["createPropertyRow_override_row_shipname_createText"] then
+			if not menu.uix_callbacks["createPropertyRow_override_row_shipname_createText"] then
 				row[2]:createText(shipname, { font = font, color = color, mouseOverText = mouseover })
 			else
 				local result
-				for uix_id, uix_callback in pairs (menu.uix_callbacks ["createPropertyRow_override_row_shipname_createText"]) do
-					result = uix_callback (shipname, { font = font, color = color, mouseOverText = mouseover }, component)
+				for uix_id, uix_callback in pairs(menu.uix_callbacks["createPropertyRow_override_row_shipname_createText"]) do
+					result = uix_callback(shipname, { font = font, color = color, mouseOverText = mouseover }, component)
 					if result then
 						row[2]:createText(result.shipname, result.properties)
 					end
@@ -9859,12 +9874,12 @@ function menu.createPropertyRow(instance, ftable, rowgroup, component, iteration
 
 				-- kuertee start: callback
 				-- row[3 + namecolspan]:setColSpan(colspan):createText(locationtext, { halign = "right", font = font, x = 0 })
-				if not menu.uix_callbacks ["createPropertyRow_override_row_location_createText"] then
+				if not menu.uix_callbacks["createPropertyRow_override_row_location_createText"] then
 					row[3 + namecolspan]:setColSpan(colspan):createText(locationtext, { halign = "right", font = font, x = 0 })
 				else
 					local result
-					for uix_id, uix_callback in pairs (menu.uix_callbacks ["createPropertyRow_override_row_location_createText"]) do
-						result = uix_callback (locationtext, {halign = "right", font = font, mouseOverText = mouseovertext, x = 0}, component)
+					for uix_id, uix_callback in pairs(menu.uix_callbacks["createPropertyRow_override_row_location_createText"]) do
+						result = uix_callback(locationtext, {halign = "right", font = font, mouseOverText = mouseovertext, x = 0}, component)
 						if result then
 							row[3 + namecolspan]:createText(result.locationtext, result.properties)
 						end
@@ -9874,13 +9889,12 @@ function menu.createPropertyRow(instance, ftable, rowgroup, component, iteration
 					end
 				end
 				-- kuertee end: callback
-
 			end
 
             -- kuertee start: callback
-            if menu.uix_callbacks ["createPropertyRow_before_config_change"] then
-                for uix_id, uix_callback in pairs (menu.uix_callbacks ["createPropertyRow_before_config_change"]) do
-                    uix_callback (config)
+            if menu.uix_callbacks["createPropertyRow_before_config_change"] then
+                for uix_id, uix_callback in pairs(menu.uix_callbacks["createPropertyRow_before_config_change"]) do
+                    uix_callback(config)
                 end
             end
             -- kuertee end: callback
@@ -9902,9 +9916,9 @@ function menu.createPropertyRow(instance, ftable, rowgroup, component, iteration
 			end
 
             		-- kuertee start: callback
-            		if menu.uix_callbacks ["createPropertyRow_after_config_change"] then
-                		for uix_id, uix_callback in pairs (menu.uix_callbacks ["createPropertyRow_after_config_change"]) do
-                		    uix_callback (config)
+            		if menu.uix_callbacks["createPropertyRow_after_config_change"] then
+                		for uix_id, uix_callback in pairs(menu.uix_callbacks["createPropertyRow_after_config_change"]) do
+                		    uix_callback(config)
                 		end
             		end
             		-- kuertee end: callback
@@ -9922,9 +9936,9 @@ function menu.createPropertyRow(instance, ftable, rowgroup, component, iteration
 		end
 
         	-- kuertee start: callback
-        	if menu.uix_callbacks ["createPropertyRow_after_row_height"] then
-        	    for uix_id, uix_callback in pairs (menu.uix_callbacks ["createPropertyRow_after_row_height"]) do
-        	        uix_callback (row)
+        	if menu.uix_callbacks["createPropertyRow_after_row_height"] then
+        	    for uix_id, uix_callback in pairs(menu.uix_callbacks["createPropertyRow_after_row_height"]) do
+        	        uix_callback(row)
         	    end
         	end
         	-- kuertee end: callback
@@ -10700,9 +10714,9 @@ function menu.getPropertyOwnedFleetDataInternal(instance, component, macro, ship
 	end
 
 	-- kuertee start: callback
-	if menu.uix_callbacks ["getPropertyOwnedFleetDataInternal_addToFleetIcons"] then
-		for uix_id, uix_callback in pairs (menu.uix_callbacks ["getPropertyOwnedFleetDataInternal_addToFleetIcons"]) do
-			uix_callback (component, shiptyperanks, shiptypedata)
+	if menu.uix_callbacks["getPropertyOwnedFleetDataInternal_addToFleetIcons"] then
+		for uix_id, uix_callback in pairs(menu.uix_callbacks["getPropertyOwnedFleetDataInternal_addToFleetIcons"]) do
+			uix_callback(component, shiptyperanks, shiptypedata)
 		end
 	end
 	-- kuertee end: callback
@@ -11205,11 +11219,11 @@ function menu.createOrdersMenuHeader(frame, frameborder, instance)
 
 	-- start: InfoSubmenu To Show call-back
 	local uix_infoCategories = {}
-	if menu.uix_callbacks ["info_sub_menu_to_show"] then
+	if menu.uix_callbacks["info_sub_menu_to_show"] then
 		for i, entry in ipairs(config.infoCategories) do
 			local shown = true
-			for uix_id, uix_callback in pairs (menu.uix_callbacks ["info_sub_menu_to_show"]) do
-				if  uix_callback (menu.infoSubmenuObject, entry.category) == false then
+			for uix_id, uix_callback in pairs(menu.uix_callbacks["info_sub_menu_to_show"]) do
+				if  uix_callback(menu.infoSubmenuObject, entry.category) == false then
 					shown = false
 					break
 				end
@@ -11224,7 +11238,7 @@ function menu.createOrdersMenuHeader(frame, frameborder, instance)
 	-- start: InfoSubmenu To Show call-back
 	-- local numcols = #config.infoCategories + 3
 	local numcols
-	if menu.uix_callbacks ["info_sub_menu_to_show"] then
+	if menu.uix_callbacks["info_sub_menu_to_show"] then
 		numcols = #uix_infoCategories + 3
 	else
 	-- end: InfoSubmenu To Show call-back
@@ -11248,7 +11262,7 @@ function menu.createOrdersMenuHeader(frame, frameborder, instance)
 
 	-- start: InfoSubmenu To Show call-back
 	-- for _, entry in ipairs(config.infoCategories) do
-	if menu.uix_callbacks ["info_sub_menu_to_show"] then
+	if menu.uix_callbacks["info_sub_menu_to_show"] then
 		-- nothing here on purpose
 	else
 		uix_infoCategories = config.infoCategories
@@ -11274,7 +11288,7 @@ function menu.createOrdersMenuHeader(frame, frameborder, instance)
 
 	-- start: InfoSubmenu To Show call-back
 	-- for _, entry in ipairs(config.infoCategories) do
-	if menu.uix_callbacks ["info_sub_menu_to_show"] then
+	if menu.uix_callbacks["info_sub_menu_to_show"] then
 		-- nothing here on purpose
 	else
 		uix_infoCategories = config.infoCategories
@@ -11305,7 +11319,7 @@ function menu.createOrdersMenuHeader(frame, frameborder, instance)
 
 	-- start: InfoSubmenu To Show call-back
 	-- for _, entry in ipairs(config.infoCategories) do
-	if menu.uix_callbacks ["info_sub_menu_to_show"] then
+	if menu.uix_callbacks["info_sub_menu_to_show"] then
 		-- nothing here on purpose
 	else
 		uix_infoCategories = config.infoCategories
@@ -12568,10 +12582,10 @@ function menu.createOrderQueue(frame, mode, instance)
 				table.insert(asssignmentOptions, { id = "assist", text = ReadText(20208, 41201), icon = "", displayremoveoption = false, active = active, mouseovertext = mouseovertext })
 
 				-- start: aegs call-back
-				if menu.uix_callbacks ["aegs_map_ship_assignments_insert"] then
+				if menu.uix_callbacks["aegs_map_ship_assignments_insert"] then
 					local data_o
-					for uix_id, uix_callback in pairs (menu.uix_callbacks ["aegs_map_ship_assignments_insert"]) do
-						data_o = uix_callback (GetComponentData(infoTableData.commander, "macro"),primarypurpose)
+					for uix_id, uix_callback in pairs(menu.uix_callbacks["aegs_map_ship_assignments_insert"]) do
+						data_o = uix_callback(GetComponentData(infoTableData.commander, "macro"),primarypurpose)
 						if data_o then
 							table.insert(asssignmentOptions, data_o)
 						end
@@ -13202,9 +13216,9 @@ function menu.displayDefaultBehaviour(ftable, mode, titlerow, instance)
 						end
 
 						-- kuertee start: callback
-						if menu.uix_callbacks ["displayDefaultBehaviour_change_param_behaviouractive"] then
-							for uix_id, uix_callback in pairs (menu.uix_callbacks ["displayDefaultBehaviour_change_param_behaviouractive"]) do
-								result = uix_callback (behaviouractive)
+						if menu.uix_callbacks["displayDefaultBehaviour_change_param_behaviouractive"] then
+							for uix_id, uix_callback in pairs(menu.uix_callbacks["displayDefaultBehaviour_change_param_behaviouractive"]) do
+								result = uix_callback(behaviouractive)
 								if result then
 									behaviouractive = result.behaviouractive
 								end
@@ -14621,10 +14635,10 @@ function menu.setupInfoSubmenuRows(mode, inputtable, inputobject, instance)
 		locrowdata = { false, ReadText(1001, 9051) .. ReadText(1001, 120), Helper.unlockInfo(nameinfo, (function() return tostring(GetComponentData(object64, "shiptypename") or 0, true, 0, true) end)) }	-- Ship Type
 
 		-- start: aegs call-back
-		if menu.uix_callbacks ["aegs_map_shipInformation_shiptypename_override"] then
+		if menu.uix_callbacks["aegs_map_shipInformation_shiptypename_override"] then
 			local shiptypename_override
-			for uix_id, uix_callback in pairs (menu.uix_callbacks ["aegs_map_shipInformation_shiptypename_override"]) do
-				shiptypename_override = uix_callback (GetComponentData(object64, "macro"))
+			for uix_id, uix_callback in pairs(menu.uix_callbacks["aegs_map_shipInformation_shiptypename_override"]) do
+				shiptypename_override = uix_callback(GetComponentData(object64, "macro"))
 				if shiptypename_override then
 					locrowdata = { false, ReadText(1001, 9051) .. ReadText(1001, 120), Helper.unlockInfo(nameinfo, (function() return tostring(shiptypename_override or 0, true, 0, true) end)) }
 				end
@@ -14731,8 +14745,8 @@ function menu.setupInfoSubmenuRows(mode, inputtable, inputobject, instance)
 		row = menu.addInfoSubmenuRow(instance, inputtable, statsrowgroup, row, locrowdata, false, false, false, 1, indentsize)
 
 		-- start: MtCst call-back
-		if menu.uix_callbacks ["MtCst_map_shipInformation_newrowsafterboardingstrength"] then
-			for uix_id, uix_callback in pairs (menu.uix_callbacks ["MtCst_map_shipInformation_newrowsafterboardingstrength"]) do
+		if menu.uix_callbacks["MtCst_map_shipInformation_newrowsafterboardingstrength"] then
+			for uix_id, uix_callback in pairs(menu.uix_callbacks["MtCst_map_shipInformation_newrowsafterboardingstrength"]) do
 				locrowdata = uix_callback(inputobject, object64)
 				if locrowdata then
 					row = menu.addInfoSubmenuRow(instance, inputtable, statsrowgroup, row, locrowdata, false, false, false, 1, indentsize)
@@ -15881,8 +15895,8 @@ function menu.setupInfoSubmenuRows(mode, inputtable, inputobject, instance)
 	end
 
 	-- [UniTrader's Advanced Renaming] Forleyor start: callback
-	if menu.uix_callbacks ["utRenaming_setupInfoSubmenuRows_on_end"] then
-		for uix_id, uix_callback in pairs (menu.uix_callbacks ["utRenaming_setupInfoSubmenuRows_on_end"]) do
+	if menu.uix_callbacks["utRenaming_setupInfoSubmenuRows_on_end"] then
+		for uix_id, uix_callback in pairs(menu.uix_callbacks["utRenaming_setupInfoSubmenuRows_on_end"]) do
 			uix_callback(mode, inputtable, inputobject, instance)
 		end
 	end
@@ -17006,9 +17020,9 @@ function menu.setupLoadoutInfoSubmenuRows(mode, inputtable, inputobject, instanc
 
 					-- Start Subsystem Targeting Orders callback
 					local sto_callbackVal
-					if menu.uix_callbacks ["sto_addTurretBehavioursMapMenu"] then
-						for uix_id, uix_callback in pairs (menu.uix_callbacks ["sto_addTurretBehavioursMapMenu"]) do
-							sto_callbackVal = uix_callback (row, inputobject)
+					if menu.uix_callbacks["sto_addTurretBehavioursMapMenu"] then
+						for uix_id, uix_callback in pairs(menu.uix_callbacks["sto_addTurretBehavioursMapMenu"]) do
+							sto_callbackVal = uix_callback(row, inputobject)
 						end
 					end
 					if not sto_callbackVal then
@@ -17262,10 +17276,10 @@ function menu.setupLoadoutInfoSubmenuRows(mode, inputtable, inputobject, instanc
 								end
 
 								-- start: aegs call-back
-								if menu.uix_callbacks ["aegs_map_ship_subordinateassignments_insert"] then
+								if menu.uix_callbacks["aegs_map_ship_subordinateassignments_insert"] then
 									local ship_assignment
-									for uix_id, uix_callback in pairs (menu.uix_callbacks ["aegs_map_ship_subordinateassignments_insert"]) do
-										ship_assignment = uix_callback (GetComponentData(inputobject, "macro"),(groups[i].numassignableminingships == #groups[i].subordinates) and ((not usedassignments["mining"]) or (usedassignments["mining"] == i)),(groups[i].numassignabletugships == #groups[i].subordinates) and ((not usedassignments["salvage"]) or (usedassignments["salvage"] == i)))
+									for uix_id, uix_callback in pairs(menu.uix_callbacks["aegs_map_ship_subordinateassignments_insert"]) do
+										ship_assignment = uix_callback(GetComponentData(inputobject, "macro"),(groups[i].numassignableminingships == #groups[i].subordinates) and ((not usedassignments["mining"]) or (usedassignments["mining"] == i)),(groups[i].numassignabletugships == #groups[i].subordinates) and ((not usedassignments["salvage"]) or (usedassignments["salvage"] == i)))
 										if ship_assignment then
 											table.insert(subordinateassignments, ship_assignment)
 										end
@@ -17315,9 +17329,9 @@ function menu.setupLoadoutInfoSubmenuRows(mode, inputtable, inputobject, instanc
 
 							-- Start Reactive Docking callback
 							local rd_callbackVal
-							if menu.uix_callbacks ["rd_addReactiveDockingMapMenu"] then
-								for uix_id, uix_callback in pairs (menu.uix_callbacks ["rd_addReactiveDockingMapMenu"]) do
-									rd_callbackVal = uix_callback (row, inputobject, i, mode, active, mouseovertext, isstation, isdockingpossible)
+							if menu.uix_callbacks["rd_addReactiveDockingMapMenu"] then
+								for uix_id, uix_callback in pairs(menu.uix_callbacks["rd_addReactiveDockingMapMenu"]) do
+									rd_callbackVal = uix_callback(row, inputobject, i, mode, active, mouseovertext, isstation, isdockingpossible)
 								end
 							end
 							if not rd_callbackVal then
@@ -17367,10 +17381,10 @@ function menu.setupLoadoutInfoSubmenuRows(mode, inputtable, inputobject, instanc
 	end
 
 	-- start: aegs call-back
-		if menu.uix_callbacks ["aegs_map_loadoutinfo_double_insert"] then
+		if menu.uix_callbacks["aegs_map_loadoutinfo_double_insert"] then
 			local state,title_text,label_text_1,label_text_2,subsystems
-			for uix_id, uix_callback in pairs (menu.uix_callbacks ["aegs_map_loadoutinfo_double_insert"]) do
-				state,title_text,label_text_1,label_text_2,subsystems = uix_callback (GetComponentData(inputobject, "macro"))
+			for uix_id, uix_callback in pairs(menu.uix_callbacks["aegs_map_loadoutinfo_double_insert"]) do
+				state,title_text,label_text_1,label_text_2,subsystems = uix_callback(GetComponentData(inputobject, "macro"))
 				if state then
 					local row = inputtable:addRow(false, { bgColor = Color["row_title_background"] })
 					row[1]:setColSpan(13):createText(title_text, Helper.headerRowCenteredProperties)
@@ -19067,9 +19081,9 @@ function menu.createMissionMode(frame)
 			-- kuertee end: open/close mission lists
 
 			-- kuertee start: callback
-			if menu.uix_callbacks ["createMissionMode_on_missionoffer_guild_start"] then
-				for uix_id, uix_callback in pairs (menu.uix_callbacks ["createMissionMode_on_missionoffer_guild_start"]) do
-					uix_callback (ftable)
+			if menu.uix_callbacks["createMissionMode_on_missionoffer_guild_start"] then
+				for uix_id, uix_callback in pairs(menu.uix_callbacks["createMissionMode_on_missionoffer_guild_start"]) do
+					uix_callback(ftable)
 				end
 			end
 			-- kuertee end: callback
@@ -19194,10 +19208,10 @@ function menu.createMissionMode(frame)
 		local found = false
 
 		-- kuertee start: callback
-		if menu.uix_callbacks ["createMissionMode_replaceMissionModeCurrent"] then
+		if menu.uix_callbacks["createMissionMode_replaceMissionModeCurrent"] then
 			local oldMissionModeCurrent = menu.missionModeCurrent
-			for uix_id, uix_callback in pairs (menu.uix_callbacks ["createMissionMode_replaceMissionModeCurrent"]) do
-				menu.missionModeCurrent = uix_callback (menu.missionModeCurrent)
+			for uix_id, uix_callback in pairs(menu.uix_callbacks["createMissionMode_replaceMissionModeCurrent"]) do
+				menu.missionModeCurrent = uix_callback(menu.missionModeCurrent)
 				if menu.missionModeCurrent ~= oldMissionModeCurrent then
 					-- break immediately if changed
 					break
@@ -21283,9 +21297,9 @@ function menu.createInfoFrame2()
 			menu.createStandingOrdersMenu(menu.infoFrame2, "right")
 
 			-- start: InfoSubmenu Create Right call-back
-		elseif menu.uix_callbacks ["info_sub_menu_create"] then
-			for uix_id, uix_callback in pairs (menu.uix_callbacks ["info_sub_menu_create"]) do
-				uix_callback (menu.infoFrame2, "right")
+		elseif menu.uix_callbacks["info_sub_menu_create"] then
+			for uix_id, uix_callback in pairs(menu.uix_callbacks["info_sub_menu_create"]) do
+				uix_callback(menu.infoFrame2, "right")
 			end
 			-- end: InfoSubmenu Create Right call-back
 		end
@@ -21299,9 +21313,9 @@ function menu.createInfoFrame2()
 		-- menu.infoFrame2:addTable(0)
 
 		local isCreated = false
-		if menu.uix_callbacks ["createInfoFrame2_on_menu_infoModeRight"] then
-			for uix_id, uix_callback in pairs (menu.uix_callbacks ["createInfoFrame2_on_menu_infoModeRight"]) do
-				if uix_callback (menu.infoFrame2) then
+		if menu.uix_callbacks["createInfoFrame2_on_menu_infoModeRight"] then
+			for uix_id, uix_callback in pairs(menu.uix_callbacks["createInfoFrame2_on_menu_infoModeRight"]) do
+				if uix_callback(menu.infoFrame2) then
 					isCreated = true
 				end
 			end
@@ -21332,9 +21346,9 @@ end
 
 function menu.createSideBar(firsttime, frame, width, height, offsetx, offsety)
 	-- kuertee start: callback
-	if menu.uix_callbacks ["createSideBar_on_start"] then
-		for uix_id, uix_callback in pairs (menu.uix_callbacks ["createSideBar_on_start"]) do
-			uix_callback (config)
+	if menu.uix_callbacks["createSideBar_on_start"] then
+		for uix_id, uix_callback in pairs(menu.uix_callbacks["createSideBar_on_start"]) do
+			uix_callback(config)
 		end
 	end
 	-- kuertee end: callback
@@ -21533,9 +21547,9 @@ end
 
 function menu.createRightBar(frame, width, height, offsetx, offsety)
 	-- kuertee start: callback
-	if menu.uix_callbacks ["createRightBar_on_start"] then
-		for uix_id, uix_callback in pairs (menu.uix_callbacks ["createRightBar_on_start"]) do
-			uix_callback (config)
+	if menu.uix_callbacks["createRightBar_on_start"] then
+		for uix_id, uix_callback in pairs(menu.uix_callbacks["createRightBar_on_start"]) do
+			uix_callback(config)
 		end
 	end
 	-- kuertee end: callback
@@ -25980,9 +25994,9 @@ function menu.createRenameContext(frame)
 	local startname = menu.contextMenuData.fleetrename and ffi.string(C.GetFleetName(menu.contextMenuData.component)) or ffi.string(C.GetComponentName(menu.contextMenuData.component))
 
 	-- [UniTrader's Advanced Renaming] Forleyor start: callback
-	if menu.uix_callbacks ["utRenaming_createRenameContext_get_startname"] then
-		for uix_id, uix_callback in pairs (menu.uix_callbacks ["utRenaming_createRenameContext_get_startname"]) do
-			uix_startname = uix_callback (frame)
+	if menu.uix_callbacks["utRenaming_createRenameContext_get_startname"] then
+		for uix_id, uix_callback in pairs(menu.uix_callbacks["utRenaming_createRenameContext_get_startname"]) do
+			uix_startname = uix_callback(frame)
 			if uix_startname then
 				startname = uix_startname
 				break
@@ -26725,9 +26739,9 @@ function menu.buttonRenameConfirm(isconfirmed)
 			if not newtext then
 				newtext = GetComponentData(menu.contextMenuData.uix_multiRename_objects[1], "name")
 			end
-			if menu.uix_callbacks ["buttonRenameConfirm_onMultiRename_on_before_rename"] then
-				for uix_id, uix_callback in pairs (menu.uix_callbacks ["buttonRenameConfirm_onMultiRename_on_before_rename"]) do
-					uix_callback ()
+			if menu.uix_callbacks["buttonRenameConfirm_onMultiRename_on_before_rename"] then
+				for uix_id, uix_callback in pairs(menu.uix_callbacks["buttonRenameConfirm_onMultiRename_on_before_rename"]) do
+					uix_callback()
 				end
 			end
 			table.sort(menu.contextMenuData.uix_multiRename_objects, function (a, b) return menu.uix_sortDanger(a, b, true) end)
@@ -26749,16 +26763,16 @@ function menu.buttonRenameConfirm(isconfirmed)
 					-- Helper.debugText("    ", dpsTable[5].dps)
 				end
 			end
-			if menu.uix_callbacks ["buttonRenameConfirm_onMultiRename_on_after_rename"] then
-				for uix_id, uix_callback in pairs (menu.uix_callbacks ["buttonRenameConfirm_onMultiRename_on_after_rename"]) do
-					uix_callback ()
+			if menu.uix_callbacks["buttonRenameConfirm_onMultiRename_on_after_rename"] then
+				for uix_id, uix_callback in pairs(menu.uix_callbacks["buttonRenameConfirm_onMultiRename_on_after_rename"]) do
+					uix_callback()
 				end
 			end
 
 			-- [UniTrader's Advanced Renaming] Forleyor start: callback
-			if menu.uix_callbacks ["utRenaming_buttonRenameConfirm"] then
-				for uix_id, uix_callback in pairs (menu.uix_callbacks ["utRenaming_buttonRenameConfirm"]) do
-					uix_callback ()
+			if menu.uix_callbacks["utRenaming_buttonRenameConfirm"] then
+				for uix_id, uix_callback in pairs(menu.uix_callbacks["utRenaming_buttonRenameConfirm"]) do
+					uix_callback()
 				end
 			end
 			-- [UniTrader's Advanced Renaming] Forleyor end: callback
@@ -26784,9 +26798,9 @@ function menu.buttonRenameConfirm(isconfirmed)
 				SetComponentName(menu.contextMenuData.component, menu.contextMenuData.newtext)
 
 				-- [UniTrader's Advanced Renaming] Forleyor start: callback
-				if menu.uix_callbacks ["utRenaming_buttonRenameConfirm"] then
-					for uix_id, uix_callback in pairs (menu.uix_callbacks ["utRenaming_buttonRenameConfirm"]) do
-						uix_callback ()
+				if menu.uix_callbacks["utRenaming_buttonRenameConfirm"] then
+					for uix_id, uix_callback in pairs(menu.uix_callbacks["utRenaming_buttonRenameConfirm"]) do
+						uix_callback()
 					end
 				end
 				-- [UniTrader's Advanced Renaming] Forleyor end: callback
@@ -27602,9 +27616,9 @@ function menu.createMissionContext(frame)
 	desctable:setDefaultColSpan(1, 3)
 
 	-- kuertee start: callback
-	if menu.uix_callbacks ["createMissionContext_startDescriptionTable"] then
-		for uix_id, uix_callback in pairs (menu.uix_callbacks ["createMissionContext_startDescriptionTable"]) do
-			uix_callback (desctable)
+	if menu.uix_callbacks["createMissionContext_startDescriptionTable"] then
+		for uix_id, uix_callback in pairs(menu.uix_callbacks["createMissionContext_startDescriptionTable"]) do
+			uix_callback(desctable)
 		end
 	end
 	-- kuertee end: callback
@@ -27847,9 +27861,9 @@ function menu.createMissionContext(frame)
 
 		-- kuertee start: callback
 		if active then
-			if menu.uix_callbacks ["createMissionContext_getIsMissionAcceptable"] then
-				for uix_id, uix_callback in pairs (menu.uix_callbacks ["createMissionContext_getIsMissionAcceptable"]) do
-					active = uix_callback (menu.contextMenuData.missionid)
+			if menu.uix_callbacks["createMissionContext_getIsMissionAcceptable"] then
+				for uix_id, uix_callback in pairs(menu.uix_callbacks["createMissionContext_getIsMissionAcceptable"]) do
+					active = uix_callback(menu.contextMenuData.missionid)
 					if active == 0 or active == false then
 						break
 					end
@@ -27864,9 +27878,9 @@ function menu.createMissionContext(frame)
 
 		-- kuertee start: callback
 		local kEM_isBriefingAvailable = nil
-		if menu.uix_callbacks ["createMissionContext_getIsMissionBriefingAvailable"] then
-			for uix_id, uix_callback in pairs (menu.uix_callbacks ["createMissionContext_getIsMissionBriefingAvailable"]) do
-				kEM_isBriefingAvailable = uix_callback (menu.contextMenuData.missionid)
+		if menu.uix_callbacks["createMissionContext_getIsMissionBriefingAvailable"] then
+			for uix_id, uix_callback in pairs(menu.uix_callbacks["createMissionContext_getIsMissionBriefingAvailable"]) do
+				kEM_isBriefingAvailable = uix_callback(menu.contextMenuData.missionid)
 				if kEM_isBriefingAvailable == 0 or kEM_isBriefingAvailable == false then
 					break
 				end
@@ -27895,9 +27909,9 @@ function menu.createMissionContext(frame)
 		end
 
 		-- kuertee start: callback
-		if menu.uix_callbacks ["createMissionContext_addMissionOfferButtons"] then
-			for uix_id, uix_callback in pairs (menu.uix_callbacks ["createMissionContext_addMissionOfferButtons"]) do
-				active = uix_callback (bottomtable, menu.contextMenuData.missionid)
+		if menu.uix_callbacks["createMissionContext_addMissionOfferButtons"] then
+			for uix_id, uix_callback in pairs(menu.uix_callbacks["createMissionContext_addMissionOfferButtons"]) do
+				active = uix_callback(bottomtable, menu.contextMenuData.missionid)
 			end
 		end
 		-- kuertee end: callback
@@ -27965,9 +27979,9 @@ function menu.createMissionContext(frame)
 		end
 
 		-- kuertee start: callback
-		if menu.uix_callbacks ["createMissionContext_addMissionAcceptedButtons"] then
-			for uix_id, uix_callback in pairs (menu.uix_callbacks ["createMissionContext_addMissionAcceptedButtons"]) do
-				active = uix_callback (bottomtable, menu.contextMenuData.missionid)
+		if menu.uix_callbacks["createMissionContext_addMissionAcceptedButtons"] then
+			for uix_id, uix_callback in pairs(menu.uix_callbacks["createMissionContext_addMissionAcceptedButtons"]) do
+				active = uix_callback(bottomtable, menu.contextMenuData.missionid)
 			end
 		end
 		-- kuertee end: callback
@@ -27985,9 +27999,9 @@ function menu.createMissionContext(frame)
 	bottomtable.properties.prevTable = objectivetable.index
 
 	-- kuertee start: callback
-	if menu.uix_callbacks ["createMissionContext_on_end"] then
-		for uix_id, uix_callback in pairs (menu.uix_callbacks ["createMissionContext_on_end"]) do
-			uix_callback (frame)
+	if menu.uix_callbacks["createMissionContext_on_end"] then
+		for uix_id, uix_callback in pairs(menu.uix_callbacks["createMissionContext_on_end"]) do
+			uix_callback(frame)
 		end
 	end
 	-- kuertee end: callback
@@ -29009,9 +29023,9 @@ function menu.onRowChanged(row, rowdata, uitable, modified, input, source)
 	else
 
 		-- start Forleyor_infoCenter Callback:
-		if menu.uix_callbacks ["ic_onRowChanged"] then
-			for uix_id, uix_callback in pairs (menu.uix_callbacks ["ic_onRowChanged"]) do
-				uix_callback (row, rowdata, uitable, modified, input, source)
+		if menu.uix_callbacks["ic_onRowChanged"] then
+			for uix_id, uix_callback in pairs(menu.uix_callbacks["ic_onRowChanged"]) do
+				uix_callback(row, rowdata, uitable, modified, input, source)
 			end
 		end
 		-- end Forleyor_infoCenter:
@@ -29225,9 +29239,9 @@ function menu.onSelectElement(uitable, modified, row, isdblclick, input)
 	else
 
 		-- start Forleyor_infoCenter Callback:
-		if menu.uix_callbacks ["ic_onSelectElement"] then
-			for uix_id, uix_callback in pairs (menu.uix_callbacks ["ic_onSelectElement"]) do
-				uix_callback (uitable, modified, row, isdblclick, input)
+		if menu.uix_callbacks["ic_onSelectElement"] then
+			for uix_id, uix_callback in pairs(menu.uix_callbacks["ic_onSelectElement"]) do
+				uix_callback(uitable, modified, row, isdblclick, input)
 			end
 		end
 		-- end Forleyor_infoCenter:
@@ -29553,9 +29567,9 @@ function menu.onRenderTargetSelect(modified)
 									end
 
 									-- kuertee start: callback
-									if menu.uix_callbacks ["onRenderTargetSelect_on_objectlist_newmode"] then
-										for uix_id, uix_callback in pairs (menu.uix_callbacks ["onRenderTargetSelect_on_objectlist_newmode"]) do
-											result = uix_callback (pickedcomponent64, newmode)
+									if menu.uix_callbacks["onRenderTargetSelect_on_objectlist_newmode"] then
+										for uix_id, uix_callback in pairs(menu.uix_callbacks["onRenderTargetSelect_on_objectlist_newmode"]) do
+											result = uix_callback(pickedcomponent64, newmode)
 											if result then
 												newmode = result.newmode
 											end
@@ -29599,9 +29613,9 @@ function menu.onRenderTargetSelect(modified)
 									end
 
 									-- start: mycu call-back
-									if menu.uix_callbacks ["onRenderTargetSelect_on_propertyowned_newmode"] then
-										for uix_id, uix_callback in pairs (menu.uix_callbacks ["onRenderTargetSelect_on_propertyowned_newmode"]) do
-											result = uix_callback (pickedcomponent64, newmode)
+									if menu.uix_callbacks["onRenderTargetSelect_on_propertyowned_newmode"] then
+										for uix_id, uix_callback in pairs(menu.uix_callbacks["onRenderTargetSelect_on_propertyowned_newmode"]) do
+											result = uix_callback(pickedcomponent64, newmode)
 											if result then
 												newmode = result.newmode
 											end
@@ -29648,9 +29662,9 @@ function menu.onRenderTargetSelect(modified)
 	end
 
 	-- start Forleyor_infoCenter Callback:
-	if menu.uix_callbacks ["onRenderTargetSelect_on_leave"] then
-		for uix_id, uix_callback in pairs (menu.uix_callbacks ["onRenderTargetSelect_on_leave"]) do
-			uix_callback (modified)
+	if menu.uix_callbacks["onRenderTargetSelect_on_leave"] then
+		for uix_id, uix_callback in pairs(menu.uix_callbacks["onRenderTargetSelect_on_leave"]) do
+			uix_callback(modified)
 		end
 	end
 	-- end Forleyor_infoCenter:
@@ -29665,8 +29679,8 @@ function menu.onRenderTargetDoubleClick(modified)
 
 		-- kuertee start: callback
 		local uix_isCancelEgosoftDoubleClickFunc, uix_cancelReason
-		if menu.uix_callbacks ["onRenderTargetDoubleClick_at_start"] then
-			for uix_id, uix_callback in pairs(menu.uix_callbacks ["onRenderTargetDoubleClick_at_start"]) do
+		if menu.uix_callbacks["onRenderTargetDoubleClick_at_start"] then
+			for uix_id, uix_callback in pairs(menu.uix_callbacks["onRenderTargetDoubleClick_at_start"]) do
 				local uix_return1, uix_return2 = uix_callback(modified, pickedcomponent)
 				if uix_return1 then
 					uix_isCancelEgosoftDoubleClickFunc = true
@@ -29714,9 +29728,9 @@ function menu.onRenderTargetDoubleClick(modified)
 		end
 
 		-- kuertee start: callback
-		if menu.uix_callbacks ["onRenderTargetDoubleClick_at_end"] then
-			for uix_id, uix_callback in pairs (menu.uix_callbacks ["onRenderTargetDoubleClick_at_end"]) do
-				uix_callback (modified, pickedcomponent)
+		if menu.uix_callbacks["onRenderTargetDoubleClick_at_end"] then
+			for uix_id, uix_callback in pairs(menu.uix_callbacks["onRenderTargetDoubleClick_at_end"]) do
+				uix_callback(modified, pickedcomponent)
 			end
 		end
 		-- kuertee end: callback
@@ -30530,9 +30544,9 @@ end
 
 function menu.onTableRightMouseClick(uitable, row, posx, posy)
 	-- start Forleyor_infoCenter Callback:
-	if menu.uix_callbacks ["ic_onTableRightMouseClick"] then
-		for uix_id, uix_callback in pairs (menu.uix_callbacks ["ic_onTableRightMouseClick"]) do
-			uix_callback (uitable, row, posx, posy)
+	if menu.uix_callbacks["ic_onTableRightMouseClick"] then
+		for uix_id, uix_callback in pairs(menu.uix_callbacks["ic_onTableRightMouseClick"]) do
+			uix_callback(uitable, row, posx, posy)
 		end
 	end
 	-- end Forleyor_infoCenter:
@@ -30963,9 +30977,9 @@ function menu.isInfoModeValidFor(object, mode)
 		end
 	else
 		-- start: InfoSubmenu IsValid call-back
-		if menu.uix_callbacks ["info_sub_menu_is_valid_for"] then
-			for uix_id, uix_callback in pairs (menu.uix_callbacks ["info_sub_menu_is_valid_for"]) do
-				if  uix_callback (object, mode) then
+		if menu.uix_callbacks["info_sub_menu_is_valid_for"] then
+			for uix_id, uix_callback in pairs(menu.uix_callbacks["info_sub_menu_is_valid_for"]) do
+				if  uix_callback(object, mode) then
 					return true
 				end
 			end
@@ -31025,9 +31039,9 @@ function menu.infoChangeObjectName(objectid, text, textchanged)
 	end
 
 	-- [UniTrader's Advanced Renaming] Forleyor start: callback
-	if menu.uix_callbacks ["utRenaming_infoChangeObjectName"] then
-		for uix_id, uix_callback in pairs (menu.uix_callbacks ["utRenaming_infoChangeObjectName"]) do
-			uix_callback (objectid, text, textchanged)
+	if menu.uix_callbacks["utRenaming_infoChangeObjectName"] then
+		for uix_id, uix_callback in pairs(menu.uix_callbacks["utRenaming_infoChangeObjectName"]) do
+			uix_callback(objectid, text, textchanged)
 		end
 	end
 	-- [UniTrader's Advanced Renaming] Forleyor end: callback
@@ -32363,9 +32377,9 @@ function menu.updateTableSelection(lastcomponent)
 	end
 
 	-- kuertee start: callback
-	if menu.uix_callbacks ["onUpdateTableSelection_at_end"] then
-		for uix_id, uix_callback in pairs (menu.uix_callbacks ["onUpdateTableSelection_at_end"]) do
-			uix_callback (lastcomponent)
+	if menu.uix_callbacks["onUpdateTableSelection_at_end"] then
+		for uix_id, uix_callback in pairs(menu.uix_callbacks["onUpdateTableSelection_at_end"]) do
+			uix_callback(lastcomponent)
 		end
 	end
 	-- kuertee end: callback
@@ -33511,8 +33525,8 @@ function menu.registerCallback(callbackName, callbackFunction, id)
     -- note 3: new callbacks can be added or existing callbacks can be edited. but commit your additions/changes to the mod's GIT repository.
     -- note 4: search for the callback names to see where they are executed.
     -- note 5: if a callback requires a return value, return it in an object var. e.g. "display_on_set_room_active" requires a return of {active = true | false}.
-    if menu.uix_callbacks [callbackName] == nil then
-        menu.uix_callbacks [callbackName] = {}
+    if menu.uix_callbacks[callbackName] == nil then
+        menu.uix_callbacks[callbackName] = {}
     end
     if not menu.uix_callbacks[callbackName][id] then
         if not id then
