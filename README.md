@@ -6,7 +6,7 @@ Contributors: AlexandreTK, ChemODun, Damonya, DrWhoKnows, DmytroK, Erixon, Farem
 
 Updates
 =======
-v9.0.0.0.10, 21 May 2026:
+v9.0.0.0.11, 21 May 2026:
 - Compatibility: Update to 9.0 beta 11 of the base lua files.
 - New feature: Boarding Menu: Set-up "All" ships entry that propagates its settings to all attacking ships.
 - Bug-fix: Map Menu: The UI breaks when the "Sort by distance to object" is active then the object becomes invalid. E.g. after collecting a deployable.
