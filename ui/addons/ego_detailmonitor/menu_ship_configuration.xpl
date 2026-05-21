@@ -985,6 +985,11 @@ __CORE_DETAILMONITOR_SHIPBUILD = __CORE_DETAILMONITOR_SHIPBUILD or {
 	["showStatsPaintMod2"] = "hidden",
 }
 
+-- kuertee start:
+menu.uix_callbacks = {}
+function menu.uix_getConfig() return config end
+-- kuertee end
+
 local function init()
 	Menus = Menus or {}
 	table.insert(Menus, menu)
@@ -997,7 +1002,16 @@ local function init()
 	if __CORE_DETAILMONITOR_SHIPBUILD.version < config.persistentdataversion then
 		menu.upgradeSettingsVersion()
 	end
+
+	-- kuertee start:
+	menu.init_kuertee()
+	-- kuertee end
 end
+
+-- kuertee start:
+function menu.init_kuertee ()
+end
+-- kuertee end
 
 function menu.cleanup()
 	if menu.paused then
@@ -1093,6 +1107,14 @@ function menu.cleanup()
 		UnregisterAddonBindings("ego_detailmonitor", "undo")
 		menu.bindingRegistered = nil
 	end
+
+	-- kuertee start: callback
+	if menu.uix_callbacks ["cleanup"] then
+		for uix_id, uix_callback in pairs (menu.uix_callbacks ["cleanup"]) do
+			uix_callback ()
+		end
+	end
+	-- kuertee end: callback
 end
 
 -- button scripts
@@ -1970,6 +1992,14 @@ function menu.buttonConfirm()
 end
 
 function menu.buttonSelectPaintMod(entry, row, col)
+	-- kuertee start: callback
+	if menu.uix_callbacks ["buttonSelectPaintMod_onStart"] then
+		for uix_id, uix_callback in pairs (menu.uix_callbacks ["buttonSelectPaintMod_onStart"]) do
+			uix_callback (entry)
+		end
+	end
+	-- kuertee end: callback
+
 	menu.selectedPaintMod = entry
 	C.SetMapPaintMod(menu.holomap, entry.ware)
 
@@ -3537,6 +3567,13 @@ function menu.displayLeftBar(frame)
 							end
 						end
 					end
+
+					-- kuertee start:
+					if count + total == 0 then
+						active = false
+					end
+					-- kuertee end
+
 				elseif entry.mode == "software" then
 					if menu.software[entry.mode] and (#menu.software[entry.mode] > 0) then
 						active = true
@@ -4707,6 +4744,14 @@ function menu.getDataAndDisplay(upgradeplan, crew, newedit, firsttime, noundo, s
 		end
 	end
 
+	-- kuertee start: callback
+	if menu.uix_callbacks ["getDataAndDisplay_beforeDisplay"] then
+		for uix_id, uix_callback in pairs (menu.uix_callbacks ["getDataAndDisplay_beforeDisplay"]) do
+			uix_callback ()
+		end
+	end
+	-- kuertee end: callback
+
 	menu.displayMenu(firsttime)
 end
 
@@ -5722,6 +5767,24 @@ function menu.displaySlots(frame, firsttime)
 												end
 											end
 
+											-- start: mycu call-back
+											if menu.uix_callbacks ["displaySlots_on_before_create_button_mouseovertext"] then
+												if not mouseovertext then
+													mouseovertext = ""
+												end
+												if not untruncatedExtraText then
+													untruncatedExtraText = ""
+												end
+												for uix_id, uix_callback in pairs (menu.uix_callbacks ["displaySlots_on_before_create_button_mouseovertext"]) do
+													result = uix_callback (group[i].macro, plandata.macro, mouseovertext)
+													if result then
+														mouseovertext = result.mouseovertext
+													end
+												end
+												mouseovertext = untruncatedExtraText .. ((mouseovertext ~= "") and ("\n\n" .. mouseovertext) or "")
+											end
+											-- end: mycu call-back
+
 											local active = ((group[i].macro == plandata.macro) or (not hasmod))
 											local useable = hasstock and haslicence
 											local overlayid
@@ -5989,6 +6052,24 @@ function menu.displaySlots(frame, firsttime)
 									end
 								end
 							end
+
+							-- start: mycu call-back
+							if menu.uix_callbacks ["displaySlots_on_before_create_button_mouseovertext"] then
+								if not mouseovertext then
+									mouseovertext = ""
+								end
+								if not untruncatedExtraText then
+									untruncatedExtraText = ""
+								end
+								for uix_id, uix_callback in pairs (menu.uix_callbacks ["displaySlots_on_before_create_button_mouseovertext"]) do
+									result = uix_callback (group[i].macro, plandata.macro, mouseovertext)
+									if result then
+										mouseovertext = result.mouseovertext
+									end
+								end
+								mouseovertext = untruncatedExtraText .. ((mouseovertext ~= "") and ("\n\n" .. mouseovertext) or "")
+							end
+							-- end: mycu call-back
 
 							local active = ((group[i].macro == plandata.macro) or (not hasmod))
 							local useable = hasstock and haslicence
@@ -6720,6 +6801,15 @@ function menu.displayModifyPaintSlots(frame)
 
 		if menu.modwares[entry.modclass] then
 			for _, entry in ipairs(menu.modwares[entry.modclass]) do
+
+				-- kuertee start: callback
+				if menu.uix_callbacks ["displayModifyPaintSlots_assigningPaintsToGroups"] then
+					for uix_id, uix_callback in pairs (menu.uix_callbacks ["displayModifyPaintSlots_assigningPaintsToGroups"]) do
+						count = uix_callback (entry, categoryQuality, count)
+					end
+				end
+				-- kuertee end: callback
+
 				if (entry.quality == categoryQuality) and ((menu.defaultpaintmod == nil) or (entry.ware ~= menu.defaultpaintmod.ware)) then
 					count = count + 1
 					local group = math.ceil(count / 3)
@@ -6921,6 +7011,18 @@ function menu.displayModifyPaintSlots(frame)
 						installicon = "be_upgrade_uninstalled"
 						installcolor = Color["text_negative"]
 					end
+
+					-- kuertee start: callback
+					if menu.uix_callbacks ["displayModifyPaintSlots_onShowingButton"] then
+						for uix_id, uix_callback in pairs (menu.uix_callbacks ["displayModifyPaintSlots_onShowingButton"]) do
+							result = uix_callback (amount, active, installicon, config, row, col, entry)
+							if result then
+								amount = result.amount
+								installicon = result.installicon
+							end
+						end
+					end
+					-- kuertee end: callback
 
 					row[col]:setColSpan(3):createButton({
 						width = columnWidths[i],
@@ -7624,6 +7726,14 @@ function menu.checkEquipment(removedEquipment, currentEquipment, newEquipment, r
 						menu.insertWare(currentEquipment, objectEquipment.current, upgradetype.supertype, newware, 1)
 					end
 				end
+
+				-- kuertee start: callback
+				if menu.uix_callbacks ["checkEquipment_onUpgradeSlots"] then
+					for uix_id, uix_callback in pairs (menu.uix_callbacks ["checkEquipment_onUpgradeSlots"]) do
+						uix_callback (upgradetype, newEquipment, objectEquipment, macro)
+					end
+				end
+				-- kuertee end: callback
 			end
 		end
 	end
@@ -8961,6 +9071,14 @@ function menu.displayModifyPlan(frame)
 			if C.GetInstalledPaintMod(ship, paintmod) then
 				row[2]:createText(ffi.string(paintmod.Name), { color = Helper.modQualities[paintmod.Quality].color, halign = "right" })
 			end
+
+			-- kuertee start: callback
+			if menu.uix_callbacks ["displayModifyPlan_onSelectedShips"] then
+				for uix_id, uix_callback in pairs (menu.uix_callbacks ["displayModifyPlan_onSelectedShips"]) do
+					uix_callback (ftable)
+				end
+			end
+			-- kuertee end: callback
 		end
 	end
 
@@ -9229,6 +9347,33 @@ function menu.evaluateShipOptions()
 			for _, macro in ipairs(menu.availableshipmacrosbyclass[menu.class]) do
 				local haslicence, icon, overridecolor, mouseovertext, limitstring = menu.checkLicence(macro, true)
 				local name, infolibrary, shiptypename, primarypurpose, shipicon, ware = GetMacroData(macro, "name", "infolibrary", "shiptypename", "primarypurpose", "icon", "ware")
+
+				-- start: alexandretk call-back
+				if menu.uix_callbacks ["evaluateShipOptions_override_shiptypename"] then
+					local shiptypename_override
+					for uix_id, uix_callback in pairs (menu.uix_callbacks ["evaluateShipOptions_override_shiptypename"]) do
+						shiptypename_override = uix_callback (shiptypename, shipicon, menu.class)
+						if shiptypename_override then
+							shiptypename = shiptypename_override
+							break
+						end
+					end
+				end
+				-- end: alexandretk call-back
+
+				-- start: cpsdo call-back (ship options: override shiptypename)
+				if menu.uix_callbacks["cpsdo_evaluateShipOptions_override_shiptypename"] then
+					local shiptypename_override
+					for uix_id, uix_callback in pairs(menu.uix_callbacks["cpsdo_evaluateShipOptions_override_shiptypename"]) do
+						local ok, result = pcall(uix_callback, shiptypename, shipicon, menu.class, macro, ware)
+						if ok and result then
+							shiptypename = result
+							break
+						end
+					end
+				end
+				-- end: cpsdo call-back
+
 				local ishiddenwithoutlicence = GetWareData(ware, "ishiddenwithoutlicence")
 				if (not ishiddenwithoutlicence) or haslicence then
 					table.insert(shipOptions, { id = macro, text = "\27[" .. shipicon .. "] " .. name .. " - " .. shiptypename .. limitstring, icon = icon or "", displayremoveoption = false, overridecolor = overridecolor, mouseovertext = mouseovertext, name = name .. " - " .. shiptypename, objectid = "", class = menu.class, purpose = primarypurpose, helpOverlayID = "shipconfig_shipoptions_" .. macro, helpOverlayText = " ", helpOverlayHighlightOnly = true })
@@ -9411,8 +9556,26 @@ function menu.createTitleBar(frame)
 		row[3].handlers.onDropDownConfirmed = menu.dropdownLoadout
 		row[3].handlers.onDropDownRemoved = menu.dropdownLoadoutRemoved
 		-- save
+
+		-- mycu start: callback
+		if menu.uix_callbacks ["displaySlots_on_before_create_store_loadout_button"] then
+			for uix_id, uix_callback in pairs (menu.uix_callbacks ["displaySlots_on_before_create_store_loadout_button"]) do
+				uix_callback ()
+			end
+		end
+		-- mycu end: callback
+
 		row[4]:createButton({ active = (not menu.isReadOnly) and active and ((menu.object ~= 0) or (menu.macro ~= "")), height = menu.titleData.height, mouseOverText = ReadText(1026, 7905), helpOverlayID = "shipconfig_saveloadout", helpOverlayText = " ", helpOverlayHighlightOnly = true, uiTriggerID = "shipconfig_saveloadout" }):setIcon("menu_save")
 		row[4].handlers.onClick = menu.buttonTitleSave
+
+		-- mycu start: callback
+		if menu.uix_callbacks ["displaySlots_on_after_create_store_loadout_button"] then
+			for uix_id, uix_callback in pairs (menu.uix_callbacks ["displaySlots_on_after_create_store_loadout_button"]) do
+				uix_callback ()
+			end
+		end
+		-- mycu end: callback
+
 		-- reset camera
 		row[5]:createButton({ active = true, height = menu.titleData.height, mouseOverText = ffi.string(C.ConvertInputString(ReadText(1026, 7911), ReadText(1026, 7902))) }):setIcon("menu_reset_view"):setHotkey("INPUT_STATE_DETAILMONITOR_RESET_VIEW", { displayIcon = false })
 		row[5].handlers.onClick = function () return C.ResetMapPlayerRotation(menu.holomap) end
@@ -11579,6 +11742,14 @@ function menu.prepareModWares()
 		end
 		menu.modwaresByWare[entry.ware] = entry
 	end
+
+	-- kuertee start: callback
+	if menu.uix_callbacks ["prepareModWares_onEnd"] then
+		for uix_id, uix_callback in pairs (menu.uix_callbacks ["prepareModWares_onEnd"]) do
+			uix_callback (config)
+		end
+	end
+	-- kuertee end: callback
 end
 
 function menu.determineNeededRepairs(ship)
@@ -11630,6 +11801,13 @@ function menu.insertWare(array, objectarray, category, ware, count, pricetype)
 			elseif pricetype == "crew" then
 				price = menu.crew.price
 			end
+			-- kuertee start: callback
+			if menu.uix_callbacks ["insertWare_onPriceCalculation"] then
+				for uix_id, uix_callback in pairs (menu.uix_callbacks ["insertWare_onPriceCalculation"]) do
+					price = uix_callback (price, pricetype, ware)
+				end
+			end
+			-- kuertee end: callback
 		end
 		table.insert(array2, { ware = ware, amount = count, price = price })
 	end
@@ -11932,6 +12110,15 @@ function menu.repairandupgrade(shoppinglistentry, object, macro, hasupgrades, ha
 			if (buildtaskid ~= 0) and haspaid then
 				C.SetBuildTaskTransferredMoney(buildtaskid, objectprice and (objectprice + objectcrewprice) or haspaid)
 			end
+
+            		-- kuertee start: callback
+			if menu.uix_callbacks["repairandupgrade_after_build_order_created"] then
+				for uix_id, uix_callback in pairs(menu.uix_callbacks["repairandupgrade_after_build_order_created"]) do
+					uix_callback(shoppinglistentry, object, buildtaskid)
+				end
+			end
+			-- kuertee end: callback
+
 		end
 	end
 end
@@ -11972,5 +12159,112 @@ function menu.updateInputBar()
 	end
 	Helper.updateInputBar(menu, inputs.left, inputs.right)
 end
+
+-- kuertee start:
+menu.uix_callbackCount = 0
+function menu.registerCallback(callbackName, callbackFunction, id)
+    -- note 1: format is generally [function name]_[action]. e.g.: in kuertee_menu_transporter, "display_on_set_room_active" overrides the room's active property with the return of the callback.
+    -- note 2: events have the word "_on_" followed by a PRESENT TENSE verb. e.g.: in kuertee_menu_transporter, "display_on_set_buttontable" is called after all of the rows of buttontable are set.
+    -- note 3: new callbacks can be added or existing callbacks can be edited. but commit your additions/changes to the mod's GIT repository.
+    -- note 4: search for the callback names to see where they are executed.
+    -- note 5: if a callback requires a return value, return it in an object var. e.g. "display_on_set_room_active" requires a return of {active = true | false}.
+    if menu.uix_callbacks [callbackName] == nil then
+        menu.uix_callbacks [callbackName] = {}
+    end
+    if not menu.uix_callbacks[callbackName][id] then
+        if not id then
+            menu.uix_callbackCount = menu.uix_callbackCount + 1
+            id = "_" .. tostring(menu.uix_callbackCount)
+        end
+        menu.uix_callbacks[callbackName][id] = callbackFunction
+        if Helper.isDebugCallbacks then
+            Helper.debugText_forced(menu.name .. " uix registerCallback: menu.uix_callbacks[" .. tostring(callbackName) .. "][" .. tostring(id) .. "]: " .. tostring(menu.uix_callbacks[callbackName][id]))
+        end
+    else
+        Helper.debugText_forced(menu.name .. " uix registerCallback: callback at " .. callbackName .. " with id " .. tostring(id) .. " was already previously registered")
+    end
+end
+
+menu.uix_isDeregisterQueued = nil
+menu.uix_callbacks_toDeregister = {}
+function menu.deregisterCallback(callbackName, callbackFunction, id)
+    if not menu.uix_callbacks_toDeregister[callbackName] then
+        menu.uix_callbacks_toDeregister[callbackName] = {}
+    end
+    if id then
+        table.insert(menu.uix_callbacks_toDeregister[callbackName], id)
+    else
+        if menu.uix_callbacks[callbackName] then
+            for id, func in pairs(menu.uix_callbacks[callbackName]) do
+                if func == callbackFunction then
+                    table.insert(menu.uix_callbacks_toDeregister[callbackName], id)
+                end
+            end
+        end
+    end
+    if not menu.uix_isDeregisterQueued then
+        menu.uix_isDeregisterQueued = true
+        Helper.addDelayedOneTimeCallbackOnUpdate(menu.deregisterCallbacksNow, true, getElapsedTime() + 1)
+    end
+end
+
+function menu.deregisterCallbacksNow()
+    menu.uix_isDeregisterQueued = nil
+    for callbackName, ids in pairs(menu.uix_callbacks_toDeregister) do
+        if menu.uix_callbacks[callbackName] then
+            for _, id in ipairs(ids) do
+                if menu.uix_callbacks[callbackName][id] then
+                    if Helper.isDebugCallbacks then
+                        Helper.debugText_forced(menu.name .. " uix deregisterCallbacksNow (pre): menu.uix_callbacks[" .. tostring(callbackName) .. "][" .. tostring(id) .. "]: " .. tostring(menu.uix_callbacks[callbackName][id]))
+                    end
+                    menu.uix_callbacks[callbackName][id] = nil
+                    if Helper.isDebugCallbacks then
+                        Helper.debugText_forced(menu.name .. " uix deregisterCallbacksNow (post): menu.uix_callbacks[" .. tostring(callbackName) .. "][" .. tostring(id) .. "]: " .. tostring(menu.uix_callbacks[callbackName][id]))
+                    end
+                else
+                    Helper.debugText_forced(menu.name .. " uix deregisterCallbacksNow: callback at " .. callbackName .. " with id " .. tostring(id) .. " doesn't exist")
+                end
+            end
+        end
+    end
+    menu.uix_callbacks_toDeregister = {}
+end
+
+menu.uix_isUpdateQueued = nil
+menu.uix_callbacks_toUpdate = {}
+function menu.updateCallback(callbackName, id, callbackFunction)
+    if not menu.uix_callbacks_toUpdate[callbackName] then
+        menu.uix_callbacks_toUpdate[callbackName] = {}
+    end
+    if id then
+        table.insert(menu.uix_callbacks_toUpdate[callbackName], {id = id, callbackFunction = callbackFunction})
+    end
+    if not menu.uix_isUpdateQueued then
+        menu.uix_isUpdateQueued = true
+        Helper.addDelayedOneTimeCallbackOnUpdate(menu.updateCallbacksNow, true, getElapsedTime() + 1)
+    end
+end
+
+function menu.updateCallbacksNow()
+    menu.uix_isUpdateQueued = nil
+    for callbackName, updateDatas in pairs(menu.uix_callbacks_toUpdate) do
+        if menu.uix_callbacks[callbackName] then
+            for _, updateData in ipairs(updateDatas) do
+                if menu.uix_callbacks[callbackName][updateData.id] then
+                    if Helper.isDebugCallbacks then
+                        Helper.debugText_forced(menu.name .. " uix updateCallbacksNow (pre): menu.uix_callbacks[" .. tostring(callbackName) .. "][" .. tostring(updateData.id) .. "]: " .. tostring(menu.uix_callbacks[callbackName][updateData.id]))
+                    end
+                    menu.uix_callbacks[callbackName][updateData.id] = updateData.callbackFunction
+                    if Helper.isDebugCallbacks then
+                        Helper.debugText_forced(menu.name .. " uix updateCallbacksNow (post): menu.uix_callbacks[" .. tostring(callbackName) .. "][" .. tostring(updateData.id) .. "]: " .. tostring(menu.uix_callbacks[callbackName][updateData.id]))
+                    end
+                else
+                    Helper.debugText_forced(menu.name .. " uix updateCallbacksNow: callback at " .. callbackName .. " with id " .. tostring(id) .. " doesn't exist")
+                end
+            end
+        end
+    end
+end
+-- kuertee end
 
 init()
