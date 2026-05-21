@@ -288,6 +288,9 @@ ffi.cdef[[
 		UIFightRuleSetting* factions;
 	} FightRuleInfo;
 	void AddTradeWare(UniverseID containerid, const char* wareid);
+	bool ArePersonalVenturesEnabled(void);
+	bool AreVentureFeaturesEnabled(void);
+	bool AreVentureTeamsEnabled(void);
 	bool AreVenturesCompatible(void);
 	bool AreVenturesEnabled(void);
 	bool CancelPlayerInvolvedTradeDeal(UniverseID containerid, TradeID tradeid, bool checkonly);
@@ -9976,6 +9979,9 @@ function Helper.checkTopLevelConditions(entry)
 	if (entry.isonline ~= nil) and (entry.isonline ~= (C.AreVenturesCompatible() and (C.IsVentureSeasonSupported() or C.WasSessionOnline()))) then
 		return false
 	end
+	if (entry.isonline == true) and (not C.AreVentureFeaturesEnabled()) then
+		return false
+	end
 	if (entry.istimelinescenario ~= nil) and (entry.istimelinescenario ~= (C.IsTimelinesScenario() or (ffi.string(C.GetGameStartName()) == "x4ep1_gamestart_hub"))) then
 		return false
 	end
@@ -10233,7 +10239,7 @@ function Helper.playerInfoConfigTextLeft(_, width, ismultiverse)
 
 	local connectionStatus = ""
 	if C.IsOnlineEnabled() then
-		connectionStatus = (Helper.isOnlineGame() and OnlineHasSession()) and (ReadText(1001, 11624) .. " \27[vt_connected]") or (ReadText(1001, 11625) .. " \27[vt_disconnected]")
+		connectionStatus = Helper.isOnlineConnected() and (ReadText(1001, 11624) .. " \27[vt_connected]") or (ReadText(1001, 11625) .. " \27[vt_disconnected]")
 	end
 	local connectedtextwidth = C.GetTextWidth(connectionStatus .. " ", Helper.playerInfoConfig.fontname, Helper.playerInfoConfig.fontsize)
 	playername = TruncateText(playername, Helper.playerInfoConfig.fontname, Helper.playerInfoConfig.fontsize, width or Helper.playerInfoConfig.width - Helper.playerInfoConfig.height - 2 * Helper.borderSize - connectedtextwidth)
@@ -10312,9 +10318,9 @@ function Helper.playerInfoConfigTextRight(_, ismultiverse)
 	local connectionStatus = ""
 	if C.AreVenturesEnabled() then
 		if OnlineIsCurrentTeamValid() then
-			connectionStatus = (Helper.isOnlineGame() and OnlineHasSession()) and "\27[vt_connected]" or (ColorText["text_warning"] .. "\27[vt_disconnected]\27X")
+			connectionStatus = Helper.isOnlineConnected() and "\27[vt_connected]" or (ColorText["text_warning"] .. "\27[vt_disconnected]\27X")
 		else
-			connectionStatus = (Helper.isOnlineGame() and OnlineHasSession()) and (ReadText(1001, 11624) .. " \27[vt_connected]") or (ColorText["text_warning"] .. ReadText(1001, 11625) .. " \27[vt_disconnected]\27X")
+			connectionStatus = Helper.isOnlineConnected() and (ReadText(1001, 11624) .. " \27[vt_connected]") or (ColorText["text_warning"] .. ReadText(1001, 11625) .. " \27[vt_disconnected]\27X")
 		end
 	end
 
@@ -11353,6 +11359,14 @@ end
 
 function Helper.isOnlineGame()
 	return OnlineIsOnlineModeActive()
+end
+
+function Helper.isOnlineConnected()
+	return Helper.isOnlineGame() and OnlineHasSession()
+end
+
+function Helper.shouldShowVentureUI()
+	return C.IsVentureSeasonSupported() and C.AreVentureFeaturesEnabled()
 end
 
 function Helper.hasVentureRewards()
@@ -13569,9 +13583,9 @@ function Helper.createVentureContactsHeader(menu, frame, instance, x, y)
 				bgcolor = Color["row_background_blue"]
 			end
 
-			local hassession = OnlineHasSession()
+			local connected = Helper.isOnlineConnected()
 			local loccount = count
-			row[loccount]:createButton({ active = hassession, height = sidebarwidth, bgColor = bgcolor, mouseOverText = entry.name, scaling = false, helpOverlayID = entry.helpOverlayID, helpOverlayText = entry.helpOverlayText }):setIcon(entry.icon, { color = color})
+			row[loccount]:createButton({ active = connected, height = sidebarwidth, bgColor = bgcolor, mouseOverText = entry.name, scaling = false, helpOverlayID = entry.helpOverlayID, helpOverlayText = entry.helpOverlayText }):setIcon(entry.icon, { color = color})
 			row[loccount].handlers.onClick = function () return Helper.buttonVentureContactsSubMode(menu, entry.category, loccount, instance) end
 			count = count + 1
 		else
@@ -13737,7 +13751,7 @@ function Helper.createVentureContactContext(menu, frame)
 	row[1].handlers.onClick = function () return Helper.buttonRemoveContact(menu, contact.id) end
 
 	if C.IsVentureSeasonSupported() then
-		if (contact.teamid or 0) > 0 then
+		if Helper.isOnlineConnected() and C.AreVentureTeamsEnabled() and ((contact.teamid or 0) > 0) then
 			local row = infotable:addRow(nil, { fixed = true })
 			row[1]:setColSpan(2):createText(ReadText(1001, 5000), Helper.subHeaderTextProperties) -- "Online"
 
@@ -13746,7 +13760,7 @@ function Helper.createVentureContactContext(menu, frame)
 			row[1].handlers.onClick = function () return Helper.callExtensionFunction("multiverse", "buttonContactTeamInfo", menu, contact) end
 		end
 
-		if OnlineHasSession() then
+		if Helper.isOnlineConnected() and C.AreVentureTeamsEnabled() then
 			local currentteam = OnlineGetCurrentTeam()
 			if currentteam.isvalid then
 				local row = infotable:addRow(true, { fixed = true })

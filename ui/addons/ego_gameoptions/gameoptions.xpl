@@ -1270,7 +1270,7 @@ config.optionDefinitions = {
 			callback = function () return menu.callbackOnlineSeason() end,
 			selectable = function () return menu.selectableOnlineSeason() end,
 			wordwrap = true,
-			display = function () return C.IsVentureSeasonSupported() and (not C.IsTimelinesScenario()) and (ffi.string(C.GetGameStartName()) ~= "x4ep1_gamestart_hub") end,
+			display = function () return C.AreVentureFeaturesEnabled() and (not C.IsTimelinesScenario()) and (ffi.string(C.GetGameStartName()) ~= "x4ep1_gamestart_hub") end,
 		},
 		[2] = {
 			id = "continue",
@@ -1467,6 +1467,15 @@ config.optionDefinitions = {
 			value = function () return menu.valueOnlineSeasonSummary() end,
 			callback = function (id, option) return menu.callbackOnlineSeasonSummary(id, option) end,
 			display = function () return false end,
+		},
+		[9] = {
+			id = "ugcsubmission",
+			name = ReadText(1001, 12791), -- User-Generated Content
+			info = ReadText(1001, 12792), -- Whether to include your forum username with user-generated content you submit.
+			valuetype = "dropdown",
+			value = function () return menu.valueOnlineUGCSubmission() end,
+			callback = function (id, option) return menu.callbackOnlineUGCSubmission(id, option) end,
+			display = function () return C.IsVentureSeasonSupported() and OnlineHasSession() end,
 		},
 	},
 	["extensionsettings"] = {
@@ -7965,6 +7974,16 @@ function menu.valueOnlineSeasonUpdates()
 	return options, currentOption
 end
 
+function menu.valueOnlineUGCSubmission()
+	local options = {
+		{ id = "anonymous", text = ReadText(1001, 12793), icon = "", displayremoveoption = false }, -- Anonymously
+		{ id = "forumname", text = ReadText(1001, 12794), icon = "", displayremoveoption = false }, -- Allow Forum Username
+	}
+	local _, _, _, isforumattributionallowed = OnlineGetUserName()
+	local currentOption = isforumattributionallowed and "forumname" or "anonymous"
+	return options, currentOption
+end
+
 function menu.valueSfxDevice()
 	local options = {
 		{ id = "default", text = ReadText(1001, 8961), icon = "", displayremoveoption = false }
@@ -9393,6 +9412,13 @@ end
 function menu.callbackOnlineSeasonUpdates(id, option)
 	if option ~= menu.curDropDownOption[id] then
 		menu.curDropDownOption[id] = option
+	end
+end
+
+function menu.callbackOnlineUGCSubmission(id, option)
+	if option ~= menu.curDropDownOption[id] then
+		menu.curDropDownOption[id] = option
+		OnlineUserAllowForumAttribution(option == "forumname")
 	end
 end
 

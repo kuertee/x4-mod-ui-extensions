@@ -179,6 +179,7 @@ ffi.cdef[[
 	uint32_t GetAllNavBeacons(AmmoData* result, uint32_t resultlen, UniverseID defensibleid);
 	uint32_t GetAllResourceProbes(AmmoData* result, uint32_t resultlen, UniverseID defensibleid);
 	uint32_t GetAllSatellites(AmmoData* result, uint32_t resultlen, UniverseID defensibleid);
+	uint32_t GetAmmoCount(UniverseID defensibleid, const char* macroname);
 	CommanderInfo GetCommander(UniverseID controllableid, FleetUnitID fleetunitid);
 	uint32_t GetCompSlotPlayerActions(UIAction* result, uint32_t resultlen, UIComponentSlot compslot);
 	Coord2D GetCompSlotScreenPos(UIComponentSlot compslot);
@@ -233,6 +234,7 @@ ffi.cdef[[
 	uint32_t GetNumWares(const char* tags, bool research, const char* licenceownerid, const char* exclusiontags);
 	uint32_t GetOrderDefinitions(OrderDefinition* result, uint32_t resultlen);
 	const char* GetOrderQueueOption(void);
+	uint32_t GetOrders3(Order3* result, uint32_t resultlen, UniverseID controllableid);
 	UniverseID GetPlayerContainerID(void);
 	UniverseID GetPlayerID(void);
 	UniverseID GetPlayerOccupiedShipID(void);
@@ -1333,9 +1335,25 @@ function menu.conditionCollectRadius()
 	return false, false
 end
 
-function menu.conditionDeployAtPosition()
+function menu.conditionDeployAtPosition(macro)
 	if menu.offsetcomponent and (menu.offsetcomponent ~= 0) then
-		return (#menu.selectedplayerships == 1) and menu.possibleorders["DeployObjectAtPosition"] and (menu.numorderloops == 0), true
+		if (#menu.selectedplayerships == 1) and menu.possibleorders["DeployObjectAtPosition"] and (menu.numorderloops == 0) then
+			local active = true
+			if macro then
+				local ammocount = C.GetAmmoCount(menu.selectedplayerships[1], macro)
+				local virtualuseddeployables = menu.getDeployAtOrderQueueAmounts(menu.selectedplayerships[1])
+				local orderqueueamount = 0
+				if virtualuseddeployables[macro] then
+					if menu.lastorder.ispriority then
+						orderqueueamount = virtualuseddeployables[macro].priority or 0
+					else
+						orderqueueamount = virtualuseddeployables[macro].all
+					end
+				end
+				active = (ammocount - orderqueueamount) > 0
+			end
+			return true, active
+		end
 	end
 	return false, false
 end
@@ -2776,7 +2794,7 @@ function menu.buttonRemoveFleetUnit()
 	C.RemoveFleetUnit(menu.fleetunit)
 	menu.onCloseElement("close")
 end
- 
+
 function menu.buttonEditFleetUnit()
 	Helper.resetUpdateHandler()
 	Helper.clearFrame(menu, config.layer)
@@ -3595,6 +3613,7 @@ function menu.draw()
 		x = menu.frameX,
 		y = 0,
 		width = width + Helper.scrollbarWidth,
+		height = menu.wasMonitorAdjusted and menu.wasMonitorAdjusted.height or nil,
 		layer = config.layer,
 		standardButtons = { close = true },
 		standardButtonX = Helper.scrollbarWidth,
@@ -3702,6 +3721,7 @@ function menu.draw()
 
 		-- keep original frame position for comparision with new position to judge convenience
 		local origFrameX, origFrameY = menu.frameX, menu.frameY
+		local monitorexclusionzones = {}
 		for _, monitor in ipairs(monitors) do
 			-- get the monitor extents (in worldspace coordinates)
 			local monitoroffset = C.GetMonitorExtents(monitor.offsetid)
@@ -3713,6 +3733,7 @@ function menu.draw()
 					y = math.floor(minY),
 					width = math.ceil(maxX - minX),
 				}
+				monitorexclusionzones[monitor.offsetid] = monitorexclusionzone
 
 				if visframe then
 					-- debug visualization
@@ -3723,6 +3744,22 @@ function menu.draw()
 
 				-- move interact menu out of exclusion zone
 				menu.excludeMonitorZone(frame, monitorexclusionzone, width, frameheight, origFrameX, origFrameY, mouseOutBoxExtension, monitor.noright)
+			end
+		end
+
+		-- check if we are still clipping into a monitor (due to Interact menu being too tall)
+		for _, monitor in ipairs(monitors) do
+			local monitorexclusionzone = monitorexclusionzones[monitor.offsetid]
+			if monitorexclusionzone then
+				-- are we overlapping this monitor horizontally?
+				if ((menu.frameX > monitorexclusionzone.x) and (menu.frameX < (monitorexclusionzone.x + monitorexclusionzone.width))) or (((menu.frameX + width) > monitorexclusionzone.x) and ((menu.frameX + width) < (monitorexclusionzone.x + monitorexclusionzone.width))) then
+					-- do we clip into it vertically?
+					if menu.frameY + frameheight > monitorexclusionzone.y then
+						frame.properties.height = monitorexclusionzone.y - menu.frameY
+						frameheight = frame:getUsedHeight()
+						menu.wasMonitorAdjusted.height = frame.properties.height
+					end
+				end
 			end
 		end
 
@@ -3890,7 +3927,6 @@ function menu.excludeMonitorZone(frame, monitorexclusionzone, framewidth, frameh
 		frame.properties.x = menu.frameX
 		frame.properties.y = menu.frameY
 	end
-
 end
 
 function menu.addSectionTitle(ftable, section, first)
@@ -4653,7 +4689,11 @@ function menu.createSubSectionTable(frame, position)
 		row = ftable:addRow(true, {  })
 		local maxtextwidth = 0
 		if entry.text2 then
-			maxtextwidth = C.GetTextWidth(entry.text2 .. " ", entry.text2font or Helper.standardFont, Helper.scaleFont(Helper.standardFont, config.entryFontSize, true))
+			local text2 = entry.text2
+			if type(text2) == "function" then
+				text2 = text2()
+			end
+			maxtextwidth = C.GetTextWidth(text2 .. " ", entry.text2font or Helper.standardFont, Helper.scaleFont(Helper.standardFont, config.entryFontSize, true))
 		end
 		local availabletextwidth = menu.width - maxtextwidth - 2 * Helper.scaleX(config.entryX) - Helper.borderSize
 
@@ -5259,7 +5299,7 @@ config.consumables = {
 	{ id = "mine",			type = "military",	getnum = C.GetNumAllMines,			getdata = C.GetAllMines },
 }
 
-function menu.addConsumableEntry(basesection, consumabledata, object, callback)
+function menu.addConsumableEntry(basesection, consumabledata, object, callback, virtualuseddeployables)
 	local numconsumable = consumabledata.getnum(object)
 	if numconsumable > 0 then
 		local consumables = ffi.new("AmmoData[?]", numconsumable)
@@ -5267,10 +5307,64 @@ function menu.addConsumableEntry(basesection, consumabledata, object, callback)
 		for j = 0, numconsumable - 1 do
 			if consumables[j].amount > 0 then
 				local macro = ffi.string(consumables[j].macro)
-				menu.insertInteractionContent(basesection .. "_" .. consumabledata.type, { type = consumabledata.type, text = GetMacroData(macro, "name"), text2 = "(" .. consumables[j].amount .. ")", script = function () return callback(consumabledata.id, macro, 1) end })
+				menu.insertInteractionContent(basesection .. "_" .. consumabledata.type, { active = function () return menu.checkConsumableEntryActive(macro, consumables[j].amount, virtualuseddeployables) end, type = consumabledata.type, text = GetMacroData(macro, "name"), text2 = function () return menu.getConsumableEntryText2(macro, consumables[j].amount, virtualuseddeployables) end, script = function () return callback(consumabledata.id, macro, 1) end })
 			end
 		end
 	end
+end
+
+function menu.checkConsumableEntryActive(macro, cargoamount, virtualuseddeployables)
+	if menu.clearOtherOrders then
+		return cargoamount > 0
+	else
+		local orderqueueamount = 0
+		if virtualuseddeployables[macro] then
+			if menu.priorityOrderMode then
+				orderqueueamount = virtualuseddeployables[macro].priority or 0
+			else
+				orderqueueamount = virtualuseddeployables[macro].all
+			end
+		end
+		return (cargoamount - orderqueueamount) > 0
+	end
+end
+
+function menu.getConsumableEntryText2(macro, cargoamount, virtualuseddeployables)
+	if menu.clearOtherOrders then
+		return "(" .. cargoamount .. ")"
+	else
+		local orderqueueamount = 0
+		if virtualuseddeployables[macro] then
+			if menu.priorityOrderMode then
+				orderqueueamount = virtualuseddeployables[macro].priority or 0
+			else
+				orderqueueamount = virtualuseddeployables[macro].all
+			end
+		end
+		return "(" .. (cargoamount - orderqueueamount) .. ")"
+	end
+end
+
+function menu.getDeployAtOrderQueueAmounts(object)
+	local amounts = {}
+
+	local n = C.GetNumOrders(object)
+	local buf = ffi.new("Order3[?]", n)
+	n = C.GetOrders3(buf, n, object)
+	for i = 0, n - 1 do
+		if ffi.string(buf[i].orderdef) == "DeployObjectAtPosition" then
+			local params = GetOrderParams(ConvertStringToLuaID(tostring(object)), i + 1)
+			for j, ordermacro in ipairs(params[2].value) do
+				amounts[ordermacro] = amounts[ordermacro] or {}
+				amounts[ordermacro].all = (amounts[ordermacro].all or 0) + params[3].value[j]
+				if buf[i].ispriority then
+					amounts[ordermacro].priority = (amounts[ordermacro].priority or 0) + params[3].value[j]
+				end
+			end
+		end
+	end
+
+	return amounts
 end
 
 function menu.insertAssignSubActions(section, assignment, callback, groups, isstation, unique, currentgroup, mouseovertextadd)
@@ -5643,7 +5737,6 @@ function menu.insertLuaAction(actiontype, istobedisplayed)
 	elseif actiontype == "collectlockbox" then
 		local display, active, mouseovertext = menu.conditionCollectLockbox()
 		if display then
-
 			menu.insertInteractionContent("selected_orders", { type = actiontype, text = menu.orderIconText("CollectLockbox") .. ReadText(1041, 661), helpOverlayID = "interactmenu_collectlockbox", helpOverlayText = " ", helpOverlayHighlightOnly = true, script = function () return menu.buttonCollectLockbox(false) end, active = active, hidetarget = true, mouseOverText = mouseovertext, orderid = "CollectLockbox", prioritysupported = true } )
 		end
 	elseif actiontype == "collectspace" then
@@ -5655,7 +5748,7 @@ function menu.insertLuaAction(actiontype, istobedisplayed)
 		local display, active, mouseovertext = menu.conditionSalvageInRadius()
 		if display then
 			menu.insertInteractionContent("selected_orders", { type = actiontype, text = menu.orderIconText("SalvageInRadius") .. ReadText(1041, 871), helpOverlayID = "interactmenu_salvagespace", helpOverlayText = " ", helpOverlayHighlightOnly = true, script = function () return menu.buttonSalvageInRadius(false) end, hidetarget = true, active = active, mouseOverText = mouseovertext, orderid = "SalvageInRadius", prioritysupported = true } )
- 		end
+		end
 	elseif actiontype == "crewtransfer" then
 		if menu.data.ismapunlocked and (#menu.selectedplayerships == 1) and GetComponentData(convertedComponent, "isdock") and (not GetComponentData(convertedComponent, "isdeployable")) and (not C.IsUnit(convertedComponent)) and (not C.IsComponentClass(convertedComponent, "ship_xs")) and (C.GetPeopleCapacity(convertedComponent, "", true) > 0) then
 			if (not GetComponentData(menu.selectedplayerships[1], "isdeployable")) and (not C.IsComponentClass(menu.selectedplayerships[1], "spacesuit")) then
@@ -5773,6 +5866,7 @@ function menu.insertLuaAction(actiontype, istobedisplayed)
 			-- force sub section and assume we have no deployables
 			menu.forceSubSection["selected_consumables_civilian"] = ReadText(1026, 7818)
 			menu.forceSubSection["selected_consumables_military"] = ReadText(1026, 7819)
+
 			-- check if we have deploables
 			for _, entry in ipairs(config.consumables) do
 				local numconsumable = entry.getnum(menu.selectedplayerships[1])
@@ -5789,8 +5883,9 @@ function menu.insertLuaAction(actiontype, istobedisplayed)
 				end
 			end
 			if menu.hasPlayerShipPilot then
+				local virtualuseddeployables = menu.getDeployAtOrderQueueAmounts(menu.selectedplayerships[1])
 				for _, entry in ipairs(config.consumables) do
-					menu.addConsumableEntry("selected_consumables", entry, menu.selectedplayerships[1], menu.buttonDeployAtPosition)
+					menu.addConsumableEntry("selected_consumables", entry, menu.selectedplayerships[1], menu.buttonDeployAtPosition, virtualuseddeployables)
 				end
 			else
 				-- only force if not previously forced (i.e. no deployables is a more important reason than no pilot)
@@ -7417,7 +7512,7 @@ function menu.prepareActions()
 				elseif menu.lastorder.orderdef == "CollectDropsInRadius" then
 					display, active = menu.conditionCollectRadius()
 				elseif menu.lastorder.orderdef == "DeployObjectAtPosition" then
-					display, active = menu.conditionDeployAtPosition()
+					display, active = menu.conditionDeployAtPosition(menu.lastorder.params["objectstodeploy"].value[1])
 					text2 = text2 .. ReadText(1001, 120) .. " " .. GetMacroData(menu.lastorder.params["objectstodeploy"].value[1], "name")
 				elseif menu.lastorder.orderdef == "Explore" then
 					display, active = menu.conditionExplore()

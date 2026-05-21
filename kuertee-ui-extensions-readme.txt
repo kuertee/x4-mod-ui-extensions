@@ -6,6 +6,11 @@ Contributors: AlexandreTK, ChemODun, Damonya, DrWhoKnows, DmytroK, Erixon, Farem
 
 Updates
 =======
+v9.0.0.0.10, 21 May 2026:
+- Compatibility: Update to 9.0 beta 11 of the base lua files.
+- New feature: Boarding Menu: Set-up "All" ships entry that propagates its settings to all attacking ships.
+- Bug-fix: Map Menu: The UI breaks when the "Sort by distance to object" is active then the object becomes invalid. E.g. after collecting a deployable.
+
 v9.0.0.0.10, 13 May 2026:
 - Compatibility: Update to 9.0 beta 10 of the base lua files.
 - New feature: hierarchical sub-groups in the Interact Menu (available via Lua/MD) by ChemODun. More details in the "Add Nested Sub-Groups*" and "Add a Custom Root Section*" sections.
@@ -135,6 +140,10 @@ CHANGES BUILT INTO THIS MOD (for players)
 Map Menu: Boarding Menu: Ship assignment tweaks
 ===============================================
 Ensure that subordinates of selected ships acquire their immediate commander's boarding behaviour. In the base-game, when selecting ships, e.g. SHIP A, with subordinates AND those ships' fleet commander (i.e. THE COMMANDER of SHIP A) the subordinates of SHIP A sometimes acquired THE COMMANDER's behaviour (e.g. Maintain Distance) instead of SHIP A's behaviour (e.g. Target Turrets). This tweak allows the player to select wings of a fleet for separate boarding behaviour assignments without needing each wing to be in separate fleets. Note: also check out Kuda's new boarding behaviour changes (https://www.nexusmods.com/x4foundations/mods/839). e.g.: ships on attack orders during boarding operations now stop their attack minimising the chance of the boarding target getting destroyed.
+
+Map Menu: Boarding Menu: "All" ships set-up
+===========================================
+Set-up "All" ships entry that propagates its settings to all attacking ships.
 
 Map Menu: Distance tool
 =======================

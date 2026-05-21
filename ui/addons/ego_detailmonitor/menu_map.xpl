@@ -1114,11 +1114,11 @@ local config = {
 		{ name = "Cheats",				icon = "mapst_cheats",				mode = "cheats",		condition = IsCheatVersion }, -- (cheats only)
 	},
 	leftBarMultiverse = {
-		{ name = ReadText(1001, 11288),	icon = "vt_season",					mode = "ventureseason",		helpOverlayID = "multimap_season",				helpOverlayText = ReadText(1028, 3263),		condition = C.IsVentureSeasonSupported },
-		{ spacing = true,		condition = C.IsVentureSeasonSupported },
-		{ name = ReadText(1001, 11318),	icon = "vt_mission",				mode = "ventureoperation",	helpOverlayID = "multimap_operation",			helpOverlayText = ReadText(1028, 3266),		condition = C.IsVentureSeasonSupported },
+		{ name = ReadText(1001, 11288),	icon = "vt_season",					mode = "ventureseason",		helpOverlayID = "multimap_season",				helpOverlayText = ReadText(1028, 3263) },
+		{ spacing = true },
+		{ name = ReadText(1001, 11318),	icon = "vt_mission",				mode = "ventureoperation",	helpOverlayID = "multimap_operation",			helpOverlayText = ReadText(1028, 3266) },
 		{ name = ReadText(1001, 11319),	icon = "vt_logbook",				mode = "venturelogbook",	helpOverlayID = "multimap_logbook",				helpOverlayText = ReadText(1028, 3267) },
-		{ spacing = true, },
+		{ spacing = true },
 		{ name = ReadText(1001, 7720),	icon = "vt_inventory",				mode = "ventureinventory",	helpOverlayID = "multimap_inventory",			helpOverlayText = ReadText(1028, 3269) },
 		{ name = ReadText(1001, 11386),	icon = "vt_contactlist",			mode = "venturecontacts",	helpOverlayID = "multimap_contacts",			helpOverlayText = ReadText(1028, 3275) },
 	},
@@ -1154,7 +1154,7 @@ local config = {
 	},
 	seasonCategories = {
 		{ category = "currentseason",			name = ReadText(1001, 11322),	icon = "vt_season_current",			helpOverlayID = "mapst_ven_curseason",			helpOverlayText = ReadText(1028, 3270) },
-		{ category = "ventureteam",				name = ReadText(1001, 11320),	icon = "vt_team",					helpOverlayID = "multimap_team",				helpOverlayText = ReadText(1028, 3268) },
+		{ category = "ventureteam",				name = ReadText(1001, 11320),	icon = "vt_team",					helpOverlayID = "multimap_team",				helpOverlayText = ReadText(1028, 3268),	condition = C.AreVentureTeamsEnabled },
 		{ category = "pastseasons",				name = ReadText(1001, 11324),	icon = "vt_season_previous",		helpOverlayID = "mapst_ven_pastseason",			helpOverlayText = ReadText(1028, 3264) },
 	},
 	layers = {
@@ -2529,7 +2529,7 @@ function menu.buttonToggleObjectList(objectlistparam, confirmed, override)
 	-- kuertee end: callback
 
 	local oldidx, newidx
-	local leftbar = menu.showMultiverse and config.leftBarMultiverse or config.leftBar
+	local leftbar = (menu.showMultiverse and Helper.shouldShowVentureUI()) and config.leftBarMultiverse or config.leftBar
 	local count = 1
 	for _, entry in ipairs(leftbar) do
 		if (entry.condition == nil) or entry.condition() then
@@ -2637,7 +2637,7 @@ function menu.buttonToggleObjectList(objectlistparam, confirmed, override)
 		menu.infoTable2 = nil
 		if menu.showMultiverse then
 			menu.ventureMode = objectlistparam
-			if (objectlistparam == "venturecontacts") and OnlineHasSession() then
+			if (objectlistparam == "venturecontacts") and Helper.isOnlineConnected() then
 				OnlineRequestContactList() -- refresh so contact team IDs are current when the list opens
 			end
 		else
@@ -2705,7 +2705,7 @@ end
 
 function menu.deactivateObjectList(confirmed)
 	local oldidx
-	local leftbar = menu.showMultiverse and config.leftBarMultiverse or config.leftBar
+	local leftbar = (menu.showMultiverse and Helper.shouldShowVentureUI()) and config.leftBarMultiverse or config.leftBar
 	local count = 1
 	for _, entry in ipairs(leftbar) do
 		if (entry.condition == nil) or entry.condition() then
@@ -3431,6 +3431,9 @@ function menu.buttonToggleMultiverseMap()
 	if (not C.AreVenturesCompatible()) or ((not C.IsVentureSeasonSupported()) and (not C.WasSessionOnline())) then
 		return
 	end
+	if not C.AreVentureFeaturesEnabled() then
+		return
+	end
 
 	menu.closeContextMenu()
 	if Helper.hasExtension("multiverse") then
@@ -3462,7 +3465,7 @@ function menu.buttonToggleMultiverseMap()
 		menu.plots_initialized = nil
 		menu.plotData = {}
 		menu.seasonMode.left = "currentseason"
-		if not (Helper.isOnlineGame() and OnlineHasSession()) then
+		if not Helper.isOnlineConnected() then
 			menu.ventureMode = "ventureseason"
 		end
 		menu.removeMouseCursorOverride(3)
@@ -5440,7 +5443,7 @@ function menu.resetPlotSize()
 					config.maxPlotSize = config.uix_maxPlotSize_old
 				end
 			end
-		-- kuertee end: swi stations max size is 31 for some reason
+			-- kuertee end: swi stations max size is 31 for some reason
 			menu.plotData.dimensions = {
 				posX = math.ceil((menu.plotData.boughtrawsize.x / 2 + plotcenteroffset.x) / 1000),
 				negX = math.floor((menu.plotData.boughtrawsize.x / 2 - plotcenteroffset.x) / 1000),
@@ -6224,6 +6227,9 @@ function menu.onShowMenu(state)
 			menu.state = nil
 		end
 	end
+	if menu.initMultiverse and (not C.AreVentureFeaturesEnabled()) then
+		menu.initMultiverse = nil
+	end
 	if menu.initMultiverse then
 		if Helper.hasExtension("multiverse") then
 			Helper.callExtensionFunction("multiverse", "getVentures")
@@ -6355,7 +6361,7 @@ function menu.onShowMenu(state)
 	registerForEvent("inputModeChanged", getElement("Scene.UIContract"), menu.onInputModeChanged)
 
 	-- Guard: if multiverse map opens while disconnected, force safe tabs before first render
-	if menu.showMultiverse and (not (Helper.isOnlineGame() and OnlineHasSession())) then
+	if menu.showMultiverse and (not Helper.isOnlineConnected()) then
 		menu.ventureMode = "ventureseason"
 		menu.seasonMode.left = "currentseason"
 	end
@@ -6679,7 +6685,7 @@ function menu.displayMenu(firsttime)
 			menu.propertyMode = "deployables"
 		end
 	elseif menu.mode == "ventureconsole" then
-		if C.AreVenturesCompatible() and (C.IsVentureSeasonSupported() or C.WasSessionOnline()) then
+		if C.AreVenturesCompatible() and (C.IsVentureSeasonSupported() or C.WasSessionOnline()) and C.AreVentureFeaturesEnabled() then
 			if Helper.hasExtension("multiverse") then
 				Helper.callExtensionFunction("multiverse", "getVentures")
 			end
@@ -6693,7 +6699,7 @@ function menu.displayMenu(firsttime)
 			menu.mode = nil
 			menu.modeparam = {}
 
-			if Helper.isOnlineGame() and OnlineHasSession() then
+			if Helper.isOnlineConnected() then
 				local operation = OnlineGetCurrentOperation()
 				local currentteam = OnlineGetCurrentTeam()
 				if operation.isvalid and currentteam.isvalid then
@@ -7052,6 +7058,10 @@ function menu.createInfoFrame()
 	menu.infoTableData.left = {}
 	if menu.showMultiverse then
 		if menu.ventureMode == "ventureseason" then
+			-- reset to currentseason if teamview tab is no longer available
+			if (menu.seasonMode.left == "ventureteam") and ((not Helper.isOnlineConnected()) or (not C.AreVentureTeamsEnabled())) then
+				menu.seasonMode.left = "currentseason"
+			end
 			if menu.seasonMode.left == "currentseason" then
 				menu.createVentureSeason(menu.infoFrame, "left")
 			elseif menu.seasonMode.left == "ventureteam" then
@@ -9925,13 +9935,13 @@ function menu.createPropertyRow(instance, ftable, rowgroup, component, iteration
 				-- kuertee end: callback
 			end
 
-            -- kuertee start: callback
-            if menu.uix_callbacks["createPropertyRow_before_config_change"] then
-                for uix_id, uix_callback in pairs(menu.uix_callbacks["createPropertyRow_before_config_change"]) do
-                    uix_callback(config)
-                end
-            end
-            -- kuertee end: callback
+            		-- kuertee start: callback
+            		if menu.uix_callbacks["createPropertyRow_before_config_change"] then
+            		    for uix_id, uix_callback in pairs(menu.uix_callbacks["createPropertyRow_before_config_change"]) do
+            		        uix_callback(config)
+            		    end
+            		end
+            		-- kuertee end: callback
 
 			if (currentordericon ~= "") or isdocked then
 				local col = 4 + maxicons
@@ -10971,10 +10981,10 @@ function menu.displayOrderParam(ftable, orderidx, order, paramidx, param, listid
 			local suffix = ""
 			local mouseovertext = ""
 			if param.canplayeroverride.criticalwares[param.value] then
-				suffix = " " .. ColorText["text_warning"] .. "\27[menu_ware_critical]"
+				suffix = " " .. ColorText["text_warning"] .. "\27[menu_ware_critical]\27X"
 				mouseovertext = ReadText(1026, 3284)
 			end
-			row[7]:createText(value and (tostring(value) .. suffix) or "", { mouseOverText = mouseovertext })
+			row[7]:setColSpan(6):createText(value and (tostring(value) .. suffix) or "", { mouseOverText = mouseovertext })
 		else
 			row[menu.infoTableData[instance].hasloop and 4 or 2]:setColSpan(menu.infoTableData[instance].hasloop and 1 or 3):createText(paramtext)
 			local active = paramactive and (not isplayeroccupiedship) and (((order.state == "setup") and (paramidx <= (order.actualparams + 1))) or ((order.state ~= "setup") and param.editable))
@@ -11337,7 +11347,6 @@ function menu.createOrdersMenuHeader(frame, frameborder, instance)
 			orderHeaderTable:setColWidth(i + 1, sideBarWidth, false)
 		end
 	end
-
 	orderHeaderTable:setColWidth(numcols - 1, sideBarWidth, false)
 
 	-- title
@@ -13628,14 +13637,14 @@ function menu.createPlotMode(inputframe)
 		local locpaireddimension = menu.plotData.dimensions[config.plotPairedDimension[dimension.dimension]]
 
 		local minselect = math.max(menu.plotData.permanent and minimumdimension or 0, (locpaireddimension == 0 and 1 or 0))
-		local maxselect = (menu.plotData.dimensions[config.plotPairedDimension[dimension.dimension]] > config.maxPlotSize) and menu.plotData.dimensions[config.plotPairedDimension[dimension.dimension]] or (config.maxPlotSize - menu.plotData.dimensions[config.plotPairedDimension[dimension.dimension]])
-		local max = (menu.plotData.dimensions[config.plotPairedDimension[dimension.dimension]] > config.maxPlotSize) and menu.plotData.dimensions[config.plotPairedDimension[dimension.dimension]] or config.maxPlotSize
+		local maxselect = (locpaireddimension > config.maxPlotSize) and locpaireddimension or (config.maxPlotSize - locpaireddimension)
+		local max = (locpaireddimension > config.maxPlotSize) and locpaireddimension or config.maxPlotSize
 		if maxselect > max then
-			print("maxselect > max. axis: " .. tostring(dimension.dimension) .. " maxselect: " .. tostring(maxselect) .. ", max: " .. tostring(max) .. ", paired value: " .. tostring(menu.plotData.dimensions[config.plotPairedDimension[dimension.dimension]]))
+			print("maxselect > max. axis: " .. tostring(dimension.dimension) .. " maxselect: " .. tostring(maxselect) .. ", max: " .. tostring(max) .. ", paired value: " .. tostring(locpaireddimension))
 		end
 		if minselect > maxselect then
 			print("menu.createPlotMode(): for dimension '" .. dimension.dimension .. "': minselect (" .. minselect .. ") > maxselect (" .. maxselect .. "). Ignore if the station is visually bigger than its plot (How did that happen?). [Florian]")
-			minselect = maxselect
+			maxselect = minselect
 		end
 		if locdimension < minselect then
 			print("menu.createPlotMode(): for dimension '" .. dimension.dimension .. "': start (" .. locdimension .. ") < minselect (" .. minselect .. "). Ignore if the station is visually bigger than its plot (How did that happen?). [Florian]")
@@ -13647,14 +13656,14 @@ function menu.createPlotMode(inputframe)
 			height = config.mapRowHeight,
 			min = 0,
 			minSelect = minselect,
-			max = (locpaireddimension > config.maxPlotSize) and locpaireddimension or config.maxPlotSize,
-			maxSelect = (locpaireddimension > config.maxPlotSize) and locpaireddimension or (config.maxPlotSize - locpaireddimension),
+			max = max,
+			maxSelect = maxselect,
 			start = locdimension,
 			step = 1,
 			suffix = ReadText(1001, 108),
 			mouseOverText = ffi.string(C.GetDisplayedModifierKey("shift")) .. " - " .. ReadText(1026, 3279),
 		}):setText(dimension.text, {fontsize = config.mapFontSize})
-		--row[1]:setColSpan(3):createSliderCell({ height = config.mapRowHeight, min = 0, minSelect = (menu.plotData.paid or menu.plotData.permanent) and menu.plotData.dimensions[dimension.dimension] or 1, max = 9, maxSelect = config.maxPlotSize - menu.plotData.dimensions[config.plotPairedDimension[dimension.dimension]], start = menu.plotData.dimensions[dimension.dimension], step = 1, suffix = ReadText(1001, 108) }):setText(dimension.text, {fontsize = config.mapFontSize})
+		--row[1]:setColSpan(3):createSliderCell({ height = config.mapRowHeight, min = 0, minSelect = (menu.plotData.paid or menu.plotData.permanent) and menu.plotData.dimensions[dimension.dimension] or 1, max = 9, maxSelect = config.maxPlotSize - locpaireddimension, start = menu.plotData.dimensions[dimension.dimension], step = 1, suffix = ReadText(1001, 108) }):setText(dimension.text, {fontsize = config.mapFontSize})
 		row[1].handlers.onSliderCellChanged = function(_, val) return menu.slidercellPlotValue(_, val, dimension.dimension) end
 		row[1].handlers.onSliderCellConfirm = function() return menu.refreshInfoFrame() end
 		row[1].handlers.onSliderCellActivated = function() menu.noupdate = true end
@@ -14281,7 +14290,7 @@ function menu.createCrewInfoSubmenu(inputframe, instance)
 	table_info:setColWidthPercent(4, 25)
 	table_info:setColWidth(5, 0.25 * inputframe.properties.width - Helper.borderSize, false)
 	table_info:setColWidth(6, 0.25 * inputframe.properties.width - (Helper.scaleY(config.mapRowHeight) + Helper.borderSize) , false)
-	table_info:setColWidth(7, config.mapRowHeight)
+	table_info:setColWidth(7, Helper.scaleY(config.mapRowHeight) + Helper.standardContainerOffset, false)
 
 	table_info:setDefaultBackgroundColSpan(1, 7)
 
@@ -16434,7 +16443,7 @@ function menu.addCrewSection(mode, inputtable, inputobject, instance, infocrew, 
 		row[1]:setBackgroundColSpan(6)
 		row[1]:setColSpan(5):createText(ReadText(1001, 5207)) -- Unassigned
 		row[6]:createText(function() return (tostring(infocrew.unassigned.total)) end, { halign = "right" })
-		row[7]:createButton({ active = function () return infocrew.unassigned.total > 0 end, mouseOverText = ReadText(1026, 8002) }):setIcon("menu_dismiss")
+		row[7]:createButton({ width = config.mapRowHeight, height = config.mapRowHeight, active = function () return infocrew.unassigned.total > 0 end, mouseOverText = ReadText(1026, 8002) }):setIcon("menu_dismiss")
 		row[7].handlers.onClick = function () return menu.infoSubmenuFireAllNPCConfirm(inputobject, instance) end
 		titlerow[1].properties.helpOverlayHeight = titlerow[1].properties.helpOverlayHeight + row:getHeight() + Helper.borderSize
 
@@ -20563,7 +20572,15 @@ function menu.missionListSorter(a, b)
 end
 
 function menu.createVentureSeasonHeader(frame, instance)
-	local numcols = #config.seasonCategories + 1
+	-- skip condition-hidden entries
+	local visibleCategories = {}
+	for _, entry in ipairs(config.seasonCategories) do
+		if (entry.condition == nil) or entry.condition() then
+			table.insert(visibleCategories, entry)
+		end
+	end
+
+	local numcols = #visibleCategories + 1
 	local ftable
 	if instance == "left" then
 		menu.ventureSeasonHeaderTableLeft = frame:addTable(numcols, { tabOrder = 1 })
@@ -20573,7 +20590,7 @@ function menu.createVentureSeasonHeader(frame, instance)
 		ftable = menu.ventureSeasonHeaderTableRight
 	end
 
-	for i, entry in ipairs(config.seasonCategories) do
+	for i, entry in ipairs(visibleCategories) do
 		if entry.empty then
 			ftable:setColWidth(i, menu.sideBarWidth / 2, false)
 		else
@@ -20583,7 +20600,7 @@ function menu.createVentureSeasonHeader(frame, instance)
 
 	local isonline = Helper.isOnlineGame()
 	local invitations = {}
-	if not OnlineGetCurrentTeam().isvalid then
+	if Helper.isOnlineConnected() and C.AreVentureTeamsEnabled() and (not OnlineGetCurrentTeam().isvalid) then
 		invitations = Helper.callExtensionFunction("multiverse", "getTeamInvites") or {}
 	end
 
@@ -20594,7 +20611,7 @@ function menu.createVentureSeasonHeader(frame, instance)
 	local selectedtabname = ""
 	local row = ftable:addRow("orders_tabs", { fixed = true })
 	local count = 1
-	for _, entry in ipairs(config.seasonCategories) do
+	for _, entry in ipairs(visibleCategories) do
 		if not entry.empty then
 			local bgcolor = Color["row_title_background"]
 			local color = Color["icon_normal"]
@@ -20616,7 +20633,7 @@ function menu.createVentureSeasonHeader(frame, instance)
 				active = false
 			end
 			if active and (entry.category == "ventureteam") then
-				active = function () return Helper.isOnlineGame() and OnlineHasSession() end
+				active = function () return Helper.isOnlineConnected() and C.AreVentureTeamsEnabled() end
 			end
 
 			local loccount = count
@@ -20752,7 +20769,7 @@ function menu.createVentureSeason(frame, instance)
 		else
 			teamname = ReadText(1001, 11583)
 		end
-		row[2]:createButton({ active = function () return Helper.isOnlineGame() and OnlineHasSession() end }):setText(teamname, { halign = "center" })
+		row[2]:createButton({ active = function () return Helper.isOnlineConnected() and C.AreVentureTeamsEnabled() end }):setText(teamname, { halign = "center" })
 		row[2].handlers.onClick = function () return menu.buttonVentureSeasonSubMode("ventureteam", 3, instance) end
 
 		table_info:addEmptyRow(config.mapRowHeight / 2)
@@ -20928,14 +20945,15 @@ function menu.cheatAllResearch()
 end
 
 function menu.getXonConnectionStatusText()
-	if Helper.isOnlineGame() and OnlineHasSession() then
+	if Helper.isOnlineConnected() then
 		return ColorText["text_positive"] .. "\27[vt_connected]\27X"
+	else
+		return ColorText["text_warning"] .. ReadText(1001, 11625) .. " \27[vt_disconnected]\27X" -- Disconnected
 	end
-	return ColorText["text_warning"] .. ReadText(1001, 11625) .. " \27[vt_disconnected]\27X" -- Disconnected
 end
 
 function menu.getXonConnectionStatusMouseOverText()
-	return (Helper.isOnlineGame() and OnlineHasSession()) and ReadText(1001, 11624) or ReadText(1001, 11625) -- Connected / Disconnected
+	return Helper.isOnlineConnected() and ReadText(1001, 11624) or ReadText(1001, 11625) -- Connected / Disconnected
 end
 
 function menu.createPlayerInfo(frame, width, height, offsetx, offsety)
@@ -20996,7 +21014,7 @@ function menu.createPlayerInfo(frame, width, height, offsetx, offsety)
 			fontsize = Helper.playerInfoConfig.fontsize,
 			halign = "right",
 			mouseOverText = menu.getXonConnectionStatusMouseOverText,
- 		})
+		})
 	end
 
 	ftable:addConnection(1, 2)
@@ -21418,7 +21436,7 @@ function menu.createSideBar(firsttime, frame, width, height, offsetx, offsety)
 	ftable:addConnection(1, 1, true)
 
 	local foundselection
-	local leftbar = menu.showMultiverse and config.leftBarMultiverse or config.leftBar
+	local leftbar = (menu.showMultiverse and Helper.shouldShowVentureUI()) and config.leftBarMultiverse or config.leftBar
 	local areventurescompatible = C.AreVenturesCompatible()
 	for _, entry in ipairs(leftbar) do
 		if (entry.condition == nil) or entry.condition() then
@@ -21563,7 +21581,7 @@ function menu.createSideBar(firsttime, frame, width, height, offsetx, offsety)
 				local buttonactive = entry.active
 				if menu.showMultiverse and ((entry.mode == "ventureoperation") or (entry.mode == "venturecontacts")) then
 					local baseactive = entry.active
-					buttonactive = function () return baseactive and OnlineHasSession() end
+					buttonactive = function () return baseactive and Helper.isOnlineConnected() end
 				end
 				row[1]:createButton({ active = buttonactive, height = menu.sideBarWidth, bgColor = bgcolor, mouseOverText = entry.name, helpOverlayID = entry.helpOverlayID, helpOverlayText = entry.helpOverlayText }):setIcon(entry.icon, { color = color })
 				if menu.panelMode then
@@ -23613,6 +23631,8 @@ function menu.getTradeContextRowContent(waredata)
 		end
 	end
 
+	local movedamount = -(selloffer_curorder < 0 and selloffer_curorder or buyoffer_curorder)
+
 	local buyoffer_max, buyoffer_maxselect = 0, 0
 	local hasdesiredbuyamount = false
 	if waredata.buy then
@@ -23622,7 +23642,7 @@ function menu.getTradeContextRowContent(waredata)
 		if waredata.buy.desiredamount > 0 then
 			hasdesiredbuyamount = true
 		end
-		local availableamount = (waredata.buy.ammotypename and menu.contextMenuData.currentammo[waredata.ware] or ((menu.contextMenuData.currentcargo[waredata.ware] or 0) - menu.getCargoOrderAmountByWare(waredata.ware) + buyoffer_curorder)) or 0
+		local availableamount = (waredata.buy.ammotypename and menu.contextMenuData.currentammo[waredata.ware] or ((menu.contextMenuData.currentcargo[waredata.ware] or 0) - menu.getCargoOrderAmountByWare(waredata.ware) - movedamount)) or 0
 		buyoffer_maxselect = math.min(waredata.buy.amount, availableamount)
 		buyoffer_max = waredata.buy.amount
 
@@ -23754,7 +23774,6 @@ function menu.getTradeContextRowContent(waredata)
 		end
 	end
 
-	local movedamount = -(selloffer_curorder < 0 and selloffer_curorder or buyoffer_curorder)
 	local shipamount = (menu.contextMenuData.currentcargo[waredata.ware] or menu.contextMenuData.currentammo[waredata.ware] or 0) + movedamount
 	local shipamountcolor = (movedamount > 0 and Color["text_positive"]) or (movedamount < 0 and Color["text_negative"]) or color
 

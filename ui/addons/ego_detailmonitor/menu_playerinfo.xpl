@@ -1653,8 +1653,8 @@ function menu.createInfoFrame()
 		tableProperties.width = math.max(config.minLeftPanelWidth, tableProperties.width)
 		menu.createStats(menu.infoFrame, tableProperties)
 	elseif menu.mode == "logbook" then
-		tableProperties.width = math.max(config.minLeftPanelWidth, tableProperties.width)
 		tableProperties.width = tableProperties.width * 5 / 4
+		tableProperties.width = math.max(config.minLeftPanelWidth, tableProperties.width)
 		menu.createLogbook(menu.infoFrame, tableProperties)
 	elseif menu.mode == "messages" then
 		menu.createMessages(menu.infoFrame, tableProperties)
@@ -6505,6 +6505,12 @@ function menu.createContext(x, y)
 		end
 	end
 
+	local buttontable
+	if #menu.contextMenuData.data > 0 then
+		-- create this table first in case we run out of table rows
+		buttontable = menu.contextFrame:addTable(2, { tabOrder = 5 })
+	end
+
 	local ftable = menu.contextFrame:addTable(3, { tabOrder = 4 })
 	ftable:setColWidth(1, Helper.standardTextHeight)
 	ftable:setColWidthPercent(3, 50)
@@ -6531,6 +6537,12 @@ function menu.createContext(x, y)
 	row[2]:setColSpan(2):createText(text, Helper.headerRowCenteredProperties)
 
 	if #menu.contextMenuData.data > 0 then
+		local row = buttontable:addRow(true, { fixed = true })
+		row[1]:createButton({ active = menu.isDataSelectionChanged }):setText(ReadText(1001, 14), { halign = "center" })
+		row[1].handlers.onClick = function () return menu.buttonSelectContextSetList(menu.contextMenuData.selectedData) end
+		row[2]:createButton({  }):setText(ReadText(1001, 64), { halign = "center" })
+		row[2].handlers.onClick = function () return menu.onCloseElement("back") end
+
 		for _, entry in ipairs(menu.contextMenuData.data) do
 			local row = ftable:addRow(true, {  })
 			row[1]:createCheckBox(function () return menu.contextMenuData.selectedData[entry] or false end, {  })
@@ -6560,20 +6572,12 @@ function menu.createContext(x, y)
 			row[2]:setColSpan(2):createText(text, { color = color })
 		end
 
-		local buttontable = menu.contextFrame:addTable(2, { tabOrder = 5 })
-
-		local row = buttontable:addRow(true, { fixed = true })
-		row[1]:createButton({ active = menu.isDataSelectionChanged }):setText(ReadText(1001, 14), { halign = "center" })
-		row[1].handlers.onClick = function () return menu.buttonSelectContextSetList(menu.contextMenuData.selectedData) end
-		row[2]:createButton({  }):setText(ReadText(1001, 64), { halign = "center" })
-		row[2].handlers.onClick = function () return menu.onCloseElement("back") end
-
 		local dataheight = ftable:getFullHeight()
 		local buttonheight = buttontable:getFullHeight()
 		if menu.contextFrame.properties.y + ftable.properties.y + dataheight + buttonheight + Helper.frameBorder > Helper.viewHeight then
 			buttontable.properties.y = Helper.viewHeight - menu.contextFrame.properties.y - Helper.frameBorder - buttonheight
 			ftable.properties.maxVisibleHeight = buttontable.properties.y - Helper.borderSize - ftable.properties.y
-	else
+		else
 			buttontable.properties.y = ftable.properties.y + dataheight + Helper.borderSize
 		end
 
@@ -7225,6 +7229,8 @@ function menu.onRowChanged(row, rowdata, uitable, modified, input)
 				-- always clear the selected object when changing modes. selectedobject will be populated right after as appropriate.
 				menu.empireData.selectedobject = nil
 				menu.empireData.objecttype = nil
+
+				menu.closeContextMenu()
 
 				menu.over = true
 			end
