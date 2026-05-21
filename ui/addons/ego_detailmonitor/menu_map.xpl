@@ -9098,9 +9098,12 @@ function menu.uix_renderExtraSortByDistance(tabtable, colSpanPerSorterColumn, bu
 	row[tableColumn]:setColSpan(colSpanPerSorterColumn)
 	local buttonwidth = row[tableColumn]:getWidth() - Helper.standardContainerOffset
 	if uix_extraSortByDistance_byObject_mode ~= "uix_extraSortByDistance_object" and uix_extraSortByDistance_byObject_mode ~= "uix_extraSortByDistance_objectinverse" then
-		uix_extraSortByDistance_byObject_object = uix_extraSortByDistance_byObject_potentialObject
+		uix_extraSortByDistance_byObject_object = nil
+		if IsValidComponent(uix_extraSortByDistance_byObject_potentialObject) then
+			uix_extraSortByDistance_byObject_object = uix_extraSortByDistance_byObject_potentialObject
+		end
 	end
-	if uix_extraSortByDistance_byObject_object then
+	if IsValidComponent(uix_extraSortByDistance_byObject_object) then
 		local name, idcode, classid = GetComponentData(ConvertStringToLuaID(tostring(uix_extraSortByDistance_byObject_object)), "name", "idcode", "classid")
 		local mouseovertext = name
 		if idcode ~= "" then
@@ -26746,7 +26749,6 @@ function menu.buttonRenameConfirm(isconfirmed)
 			end
 			table.sort(menu.contextMenuData.uix_multiRename_objects, function (a, b) return menu.uix_sortDanger(a, b, true) end)
 			local uix_leading0Count = tostring(#menu.contextMenuData.uix_multiRename_objects):len()
-			Helper.debugText_forced("uix_leading0Count", uix_leading0Count)
 			for uix_index, uix_object in ipairs(menu.contextMenuData.uix_multiRename_objects) do
 				local isplayerowned = GetComponentData(ConvertStringTo64Bit(tostring(uix_object)), "isplayerowned")
 				if isplayerowned then
@@ -32424,10 +32426,14 @@ function menu.addSelectedComponent(component, clear, noupdate)
 	uix_extraSortByDistance_byObject_potentialObject = nil
 	if not next(menu.selectedcomponents) and add then
 		-- always set uix_extraSortByDistance_byObject_potentialObject to only the first component added to menu.selectedcomponents
-		uix_extraSortByDistance_byObject_potentialObject = component
+		if IsValidComponent(component) then
+			uix_extraSortByDistance_byObject_potentialObject = component
+		end
 	else
 		local firstSelectedComponent = next(menu.selectedcomponents)
-		uix_extraSortByDistance_byObject_potentialObject = firstSelectedComponent and ConvertStringTo64Bit(tostring(firstSelectedComponent)) or nil
+		if IsValidComponent(firstSelectedComponent) then
+			uix_extraSortByDistance_byObject_potentialObject = firstSelectedComponent and ConvertStringTo64Bit(tostring(firstSelectedComponent)) or nil
+		end
 	end
 	-- kuertee end: extra sort by distance
 
@@ -33322,16 +33328,20 @@ function menu.uix_sortDistanceFromPlayer (a, b, invert)
 end
 
 function menu.uix_sortDistanceFromObject (a, b, invert)
-	local distance_a = C.GetDistanceBetween (ConvertStringTo64Bit (tostring (a.id)), ConvertStringTo64Bit (tostring (uix_extraSortByDistance_byObject_object)))
-	local distance_b = C.GetDistanceBetween (ConvertStringTo64Bit (tostring (b.id)), ConvertStringTo64Bit (tostring (uix_extraSortByDistance_byObject_object)))
-	if invert then
-		return distance_a > distance_b
+	if IsValidComponent(uix_extraSortByDistance_byObject_object) then
+		local distance_a = C.GetDistanceBetween (ConvertStringTo64Bit (tostring (a.id)), ConvertStringTo64Bit (tostring (uix_extraSortByDistance_byObject_object)))
+		local distance_b = C.GetDistanceBetween (ConvertStringTo64Bit (tostring (b.id)), ConvertStringTo64Bit (tostring (uix_extraSortByDistance_byObject_object)))
+		if invert then
+			return distance_a > distance_b
+		else
+			return distance_a < distance_b
+		end
 	else
-		return distance_a < distance_b
+		return true
 	end
 end
 
-function menu.uix_sortDanger (a, b, invert)
+function menu.uix_sortDanger(a, b, invert)
 	-- danger = menu.object.dps * purpose.fighter * 100
 	-- uint32_t GetDefensibleDPS(DPSData* result, UniverseID defensibleid, bool primary, bool secondary, bool lasers, bool missiles, bool turrets, bool includeheat, bool includeinactive);
 	-- local activedpstable = ffi.new("DPSData[?]", 6)
@@ -33340,6 +33350,7 @@ function menu.uix_sortDanger (a, b, invert)
 	-- local inactivedpstable = ffi.new("DPSData[?]", 6)
 	-- local numtotalquadrants = C.GetDefensibleDPS(inactivedpstable, ship, true, true, true, false, false, false, true)
 	-- hasinactiveguns = inactivedpstable[0].dps > 0
+	a = ConvertStringTo64Bit(tostring(a))
 	local purpose_a = GetComponentData(a, "primarypurpose")
 	local dpsTable_a = ffi.new("DPSData[?]", 6)
 	C.GetDefensibleDPS(dpsTable_a, a, true, true, true, false, true, false, false)
@@ -33347,6 +33358,7 @@ function menu.uix_sortDanger (a, b, invert)
 	if purpose_a == "fighter" then
 		danger_a = danger_a * 100
 	end
+	b = ConvertStringTo64Bit(tostring(b))
 	local purpose_b = GetComponentData(b, "primarypurpose")
 	local dpsTable_b = ffi.new("DPSData[?]", 6)
 	C.GetDefensibleDPS(dpsTable_b, b, true, true, true, false, true, false, false)
