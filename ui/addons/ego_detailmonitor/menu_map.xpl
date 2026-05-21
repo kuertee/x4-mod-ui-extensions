@@ -4708,6 +4708,29 @@ function menu.slidercellBoardingAssignedMarines(ship, marinelevel, newvalue)
 			--print("recording " .. tostring(menu.boardingData.shipdata[ship].assignedmarines[marinelevel]) .. " assigned marines from " .. ffi.string(C.GetComponentName(ship)))
 		end
 	end
+
+	-- kuertee start: boarding set-up for all ships
+	if ship == "all" then
+		local uix_newValue = menu.boardingData.shipdata["all"].assignedgroupmarines[marinelevel]
+		for _, uix_ship in ipairs(menu.boardingData.ships) do
+			if uix_ship ~= "all" then
+				if menu.boardingData.shipdata[uix_ship].marines[marinelevel] > 0 then
+					menu.boardingData.shipdata[uix_ship].assignedgroupmarines[marinelevel] = 0
+					if menu.boardingData.shipdata[uix_ship].marines[marinelevel] < uix_newValue then
+						uix_value = menu.boardingData.shipdata[uix_ship].marines[marinelevel]
+					-- elseif menu.boardingData.shipdata[uix_ship].marines[marinelevel] > uix_newValue then
+					-- 	uix_value = uix_newValue
+					else
+						uix_value = uix_newValue
+					end
+					menu.slidercellBoardingAssignedMarines(uix_ship, marinelevel, uix_value)
+					uix_newValue = uix_newValue - uix_value
+				end
+			end
+		end
+	end
+	-- kuertee end: boarding set-up for all ships
+
 	menu.boardingData.changed = true
 end
 
@@ -4807,6 +4830,14 @@ end
 function menu.dropdownBoardingSetAction(ship, newaction)
 	menu.boardingData.shipdata[ship].action = newaction
 	menu.boardingData.changed = true
+
+	-- kuertee start: boarding set-up for all ships
+	if ship == "all" then
+		for _, uix_ship in ipairs(menu.boardingData.ships) do
+			menu.boardingData.shipdata[uix_ship].action = newaction
+		end
+	end
+	-- kuertee end: boarding set-up for all ships
 end
 
 function menu.dropdownBoardingSetRisk(newrisklevel, phaseindex)
@@ -26994,9 +27025,9 @@ function menu.createBoardingContext(frame, target, boarders)
 		end
 	end
 
-	-- boarding fix
-	-- ============
-	-- kuertee start: ensure toplevelcommander is last in the list
+	-- kuertee start: boarding fix
+	-- ===========================
+	-- ensure toplevelcommander is last in the list
 	-- allows sub-wings to have get the correct behaviour from their commanders.
 	-- e.g.:
 	-- toplevelcommander
@@ -27048,7 +27079,7 @@ function menu.createBoardingContext(frame, target, boarders)
 	-- 	Helper.debugText_forced(ship, GetComponentData(ship, "name"))
 	-- end
 	-- Helper.debugText_forced("new ships list: end")
-	-- kuertee end
+	-- kuertee end: boarding fix
 
 	-- populate marine and subordinate data for menu.boardingData.ships in menu.boardingData.shipdata
 	for _, ship in ipairs(menu.boardingData.ships) do
@@ -27123,6 +27154,44 @@ function menu.createBoardingContext(frame, target, boarders)
 		end
 	end
 
+	-- kuertee start: boarding set-up for all ships
+	menu.boardingData.shipdata["all"] = {
+		assignedmarines = {},
+		marines = {},
+		assignedgroupmarines = {},
+		groupmarines = {},
+		subordinates = {},
+		isprimaryboarder = true,
+		issubordinate = false,
+	}
+	local uix_action
+	local uix_counterIds = {"marines", "groupmarines", "assignedmarines", "assignedgroupmarines"}
+	for _, uix_counterId in ipairs(uix_counterIds) do
+		for _, uix_tierData in ipairs(menu.boardingData.marinelevels) do
+			menu.boardingData.shipdata["all"][uix_counterId][uix_tierData.skilllevel] = 0
+		end
+	end
+	for uix_ship, uix_shipData in pairs(menu.boardingData.shipdata) do
+		if uix_ship ~= "all" then
+			uix_ship = ConvertStringTo64Bit(tostring(uix_ship))
+			if IsValidComponent(uix_ship) then
+				if not uix_action then
+					uix_action = menu.boardingData.shipdata[uix_ship].action
+				elseif menu.boardingData.shipdata[uix_ship].action ~= uix_action then
+					uix_action = ""
+				end
+				for _, uix_counterId in ipairs(uix_counterIds) do
+					for _, uix_tierData in ipairs(menu.boardingData.marinelevels) do
+						local uix_skillLevel = uix_tierData.skilllevel
+						menu.boardingData.shipdata["all"][uix_counterId][uix_skillLevel] = menu.boardingData.shipdata["all"][uix_counterId][uix_skillLevel] + menu.boardingData.shipdata[uix_ship][uix_counterId][uix_skillLevel]
+					end
+				end
+			end
+		end
+	end
+	menu.boardingData.shipdata["all"].action = uix_action
+	-- kuertee end: boarding set-up for all ships
+
 	local targetname, targetowner, hullpercentage = GetComponentData(target, "name", "ownername", "hullpercent")
 
 	local numoperationalturrets = 0
@@ -27165,7 +27234,10 @@ function menu.createBoardingContext(frame, target, boarders)
 	end
 
 	if not menu.boardingData.selectedship or not menu.boardingData.shipdata[menu.boardingData.selectedship] then
-		menu.boardingData.selectedship = menu.boardingData.ships[1]
+		-- kuertee start: boarding set-up for all ships
+		-- menu.boardingData.selectedship = menu.boardingData.ships[1]
+		menu.boardingData.selectedship = "all"
+		-- kuertee end: boarding set-up for all ships
 	end
 
 	local boardingstrength = 0
@@ -27411,7 +27483,16 @@ function menu.createBoardingContext(frame, target, boarders)
 
 	row = table_left:addRow(false, { fixed = true, bgColor = Color["row_background_blue"] })
 	row[1]:setBackgroundColSpan(2):createText(ReadText(1001, 9502) .. ReadText(1001, 120))		-- Configuring, :
-	row[2]:createText(ffi.string(C.GetComponentName(menu.boardingData.selectedship)) .. " (" .. ffi.string(C.GetObjectIDCode(menu.boardingData.selectedship)) .. ")", { halign = "right" })
+
+	-- kuertee start: boarding set-up for all ships
+	-- row[2]:createText(ffi.string(C.GetComponentName(menu.boardingData.selectedship)) .. " (" .. ffi.string(C.GetObjectIDCode(menu.boardingData.selectedship)) .. ")", { halign = "right" })
+	if menu.boardingData.selectedship == "all" then
+		-- <t id="2963">All</t>
+		row[2]:createText(ReadText(1001, 2963), { halign = "right" })
+	else
+		row[2]:createText(ffi.string(C.GetComponentName(menu.boardingData.selectedship)) .. " (" .. ffi.string(C.GetObjectIDCode(menu.boardingData.selectedship)) .. ")", { halign = "right" })
+	end
+	-- kuertee end: boarding set-up for all ships
 
 	row = table_left:addRow(false, { fixed = true, bgColor = Color["row_background_unselectable"] })
 	row[1]:setColSpan(2):createText((ReadText(1001, 9524) .. ReadText(1001, 120)), { x = Helper.standardTextOffsetx * 2 })		-- Ship behaviour while engaging the target, :
@@ -27496,6 +27577,16 @@ function menu.createBoardingContext(frame, target, boarders)
 	row = menu.boardingtable_shipselection:addRow(false, { fixed = true, bgColor = Color["row_background_blue"] })
 	row[1]:setColSpan(3):createText(ReadText(1001, 9528))		-- Ships assigned to boarding operation
 
+	-- kuertee start: boarding set-up for all ships
+	local uix_row_boarding_shipAll, uix_nummarines
+	if next(menu.boardingData.ships) then
+		uix_row_boarding_shipAll = menu.boardingtable_shipselection:addRow({"boardingship", "all"}, {  })
+		uix_nummarines = 0
+		-- <t id="2963">All</t>
+		uix_row_boarding_shipAll[1]:setBackgroundColSpan(3):createText(ReadText(1001, 2963))
+	end
+	-- kuertee end: boarding set-up for all ships
+
 	for _, shipid in ipairs(menu.boardingData.ships) do
 		row = menu.boardingtable_shipselection:addRow({"boardingship", shipid}, {  })
 		local nameappendix = ""
@@ -27508,6 +27599,10 @@ function menu.createBoardingContext(frame, target, boarders)
 		local nummarines = 0
 		for _, leveldata in ipairs(menu.boardingData.marinelevels) do
 			nummarines = nummarines + menu.boardingData.shipdata[shipid].groupmarines[leveldata.skilllevel]
+
+			-- kuertee start: boarding set-up for all ships
+			uix_nummarines = uix_nummarines + menu.boardingData.shipdata[shipid].groupmarines[leveldata.skilllevel]
+			-- kuertee end: boarding set-up for all ships
 		end
 		row[2]:createText(nummarines, { halign = "right" })
 		if not menu.boardingData.shipdata[shipid].issubordinate then
@@ -27519,6 +27614,13 @@ function menu.createBoardingContext(frame, target, boarders)
 			menu.boardingtable_shipselection:setSelectedRow(row.index)
 		end
 	end
+
+	-- kuertee start: boarding set-up for all ships
+	uix_row_boarding_shipAll[2]:createText(uix_nummarines, { halign = "right" })
+	if menu.boardingData.selectedship == "all" then
+		menu.boardingtable_shipselection:setSelectedRow(uix_row_boarding_shipAll.index)
+	end
+	-- kuertee end: boarding set-up for all ships
 
 	menu.boardingtable_shipselection.properties.maxVisibleHeight = table_left.properties.y - Helper.scaleY(table_button_topleft:getVisibleHeight()) - Helper.scaleY(table_header:getVisibleHeight()) - Helper.borderSize * 3
 	table_button_topleft.properties.y = menu.boardingtable_shipselection.properties.y + menu.boardingtable_shipselection:getVisibleHeight() + Helper.borderSize
@@ -28976,7 +29078,11 @@ function menu.onRowChanged(row, rowdata, uitable, modified, input, source)
 	menu.lock = getElapsedTime()
 
 	-- handle map modes without a holomap first
-	if (menu.mode == "boardingcontext") and menu.boardingtable_shipselection and (uitable == menu.boardingtable_shipselection.id) and (type(rowdata) == "table") and (rowdata[1] == "boardingship") and C.IsComponentClass(rowdata[2], "defensible") and (menu.boardingData.selectedship ~= rowdata[2]) then
+	-- kuertee start: boarding set-up for all ships
+	-- if (menu.mode == "boardingcontext") and menu.boardingtable_shipselection and (uitable == menu.boardingtable_shipselection.id) and (type(rowdata) == "table") and (rowdata[1] == "boardingship") and C.IsComponentClass(rowdata[2], "defensible") and (menu.boardingData.selectedship ~= rowdata[2]) then
+	if (menu.mode == "boardingcontext") and menu.boardingtable_shipselection and (uitable == menu.boardingtable_shipselection.id) and (type(rowdata) == "table") and (rowdata[1] == "boardingship") and (rowdata[2] == "all" or C.IsComponentClass(rowdata[2], "defensible")) and (menu.boardingData.selectedship ~= rowdata[2]) then
+	-- kuertee end: boarding set-up for all ships
+
 		--print("queueing refresh on next frame. ship: " .. ffi.string(C.GetComponentName(rowdata[2])) .. " " .. tostring(rowdata[2]))
 		menu.boardingData.selectedship = rowdata[2]
 		menu.queuecontextrefresh = menu.lock
