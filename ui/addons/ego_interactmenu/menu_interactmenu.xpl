@@ -5554,18 +5554,6 @@ function menu.insertLuaAction(actiontype, istobedisplayed)
 			menu.insertInteractionContent("selected_orders", { type = actiontype, text = menu.orderIconText("Attack") .. ReadText(1001, 7815), helpOverlayID = "interactmenu_attack", helpOverlayText = " ", helpOverlayHighlightOnly = true, script = function () return menu.buttonAttack(false) end, orderid = "Attack", prioritysupported = true })
 		end
 
-		-- start: aegs call-back
-		if menu.uix_callbacks ["aegs_map_rightMenu_shipOverview_insert"] then
-			local category_o,text_o
-			for uix_id, uix_callback in pairs (menu.uix_callbacks ["aegs_map_rightMenu_shipOverview_insert"]) do
-				category_o,text_o = uix_callback (GetComponentData(convertedComponent, "macro"))
-				if category_o then
-					menu.insertInteractionContent("main", { type = "logicalstationoverview", text = text_o, helpOverlayID = "interactmenu_logicalstationoverview", helpOverlayText = " ", helpOverlayHighlightOnly = true, script = menu.buttonStationOverview })
-				end
-			end
-		end
-		-- end: aegs call-back
-
 		-- start: cpsdo call-back (shipOverview)
 		if menu.uix_callbacks["cpsdo_map_rightMenu_shipLogistic_insert"] then
 			local macro = GetComponentData(convertedComponent, "macro")
@@ -5601,6 +5589,18 @@ function menu.insertLuaAction(actiontype, istobedisplayed)
 			menu.insertInteractionContent("playersquad_orders", { type = actiontype, text = ReadText(1001, 7869), helpOverlayID = "interactmenu_attackplayertarget", helpOverlayText = " ", helpOverlayHighlightOnly = true, script = function () return menu.buttonPlayerSquadAttackPlayerTarget(false) end, hidetarget = true })	-- Fleet: Attack my target
 		end
 	elseif actiontype == "behaviourinspection" then
+		-- start: aegs call-back
+		if menu.uix_callbacks ["aegs_map_rightMenu_shipOverview_insert"] then
+			local category_o,text_o
+			for uix_id, uix_callback in pairs (menu.uix_callbacks ["aegs_map_rightMenu_shipOverview_insert"]) do
+				category_o,text_o = uix_callback (GetComponentData(convertedComponent, "macro"))
+				if category_o then
+					menu.insertInteractionContent("main", { type = "logicalstationoverview", text = text_o, helpOverlayID = "interactmenu_logicalstationoverview", helpOverlayText = " ", helpOverlayHighlightOnly = true, script = menu.buttonStationOverview })
+				end
+			end
+		end
+		-- end: aegs call-back
+		
 		if menu.data.ismapunlocked and (not menu.shown) and istobedisplayed and (menu.componentSlot.component ~= C.GetPlayerControlledShipID()) and C.IsComponentOperational(menu.componentSlot.component) then
 			local active = true
 			local mouseovertext = ""
@@ -7065,18 +7065,6 @@ function menu.insertLuaAction(actiontype, istobedisplayed)
 			Helper.ffiVLA(dockedships, "UniverseID", C.GetNumDockedShips, C.GetDockedShips, menu.componentSlot.component, "player")
 		end
 
-		-- start: aegs call-back
-		if menu.uix_callbacks ["aegs_map_rightMenu_shipBuilding_insert"] then
-			local state,activate_o,text_o,mouseovertext_o
-			for uix_id, uix_callback in pairs (menu.uix_callbacks ["aegs_map_rightMenu_shipBuilding_insert"]) do
-				state,activate_o,text_o,mouseovertext_o = uix_callback (shiptrader,isdock,GetComponentData(convertedComponent, "macro"),doessellshipstoplayer,isplayerownedtarget)
-				if state then
-					menu.insertInteractionContent("main", { type = actiontype, text = text_o, helpOverlayID = "interactmenu_buildship", helpOverlayText = " ", helpOverlayHighlightOnly = true, script = function () return menu.buttonShipConfig("purchase") end, active = activate_o, mouseOverText = mouseovertext_o })
-				end
-			end
-		end
-		-- end: aegs call-back
-
 		-- start: cpsdo call-back (rightMenu shipBuilding insert)
 		local inserted = false
 		if menu.uix_callbacks["cpsdo_map_rightMenu_shipBuildShip_insert"] then
@@ -7111,6 +7099,60 @@ function menu.insertLuaAction(actiontype, istobedisplayed)
 			end
 		end
 		-- end: cpsdo call-back
+
+		-- start: aegs call-back
+		if menu.uix_callbacks["aegs_map_rightMenu_shipBuilding_insert"] then
+			for uix_id, uix_callback in pairs(menu.uix_callbacks["aegs_map_rightMenu_shipBuilding_insert"]) do
+				local state, entry = uix_callback(
+					shiptrader,
+					isdock,
+					GetComponentData(convertedComponent, "macro"),
+					doessellshipstoplayer,
+					isplayerownedtarget,
+					"purchase",
+					issupplyship,
+					menu.componentSlot.component,
+					dockedships
+				)
+				if state and type(entry) == "table" then
+					menu.insertInteractionContent(entry.category or "main", {
+						type = entry.type or "buildships",
+						text = entry.text or ReadText(1001, 7875),
+						helpOverlayID = entry.helpOverlayID or "interactmenu_buildship",
+						helpOverlayText = entry.helpOverlayText or " ",
+						helpOverlayHighlightOnly = (entry.helpOverlayHighlightOnly ~= false),
+						script = entry.script or function () return menu.buttonShipConfig("purchase") end,
+						active = (entry.active ~= false),
+						mouseOverText = entry.mouseOverText or ""
+					})
+				end
+
+				state, entry = uix_callback(
+					shiptrader,
+					isdock,
+					GetComponentData(convertedComponent, "macro"),
+					doessellshipstoplayer,
+					isplayerownedtarget,
+					"upgrade",
+					issupplyship,
+					menu.componentSlot.component,
+					dockedships
+				)
+				if state and type(entry) == "table" then
+					menu.insertInteractionContent(entry.category or "main", {
+						type = entry.type or actiontype,
+						text = entry.text or (issupplyship and ReadText(1001, 7877) or ReadText(1001, 7841)),
+						helpOverlayID = entry.helpOverlayID or "interactmenu_upgradeships",
+						helpOverlayText = entry.helpOverlayText or " ",
+						helpOverlayHighlightOnly = (entry.helpOverlayHighlightOnly ~= false),
+						script = entry.script or function () return menu.buttonShipConfig("upgrade") end,
+						active = (entry.active ~= false),
+						mouseOverText = entry.mouseOverText or ""
+					})
+				end
+			end
+		end
+		-- end: aegs call-back
 
 		if isdock and (C.IsComponentClass(menu.componentSlot.component, "station") or issupplyship) then
 			local active = false

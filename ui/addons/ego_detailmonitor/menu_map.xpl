@@ -8851,6 +8851,19 @@ function menu.createPropertyOwned(frame, instance)
 		end
 	end
 
+	-- start: aegs call-back
+	if menu.uix_callbacks["aegs_map_propertyowned_constructionships_insert"] then
+		for uix_id, uix_callback in pairs(menu.uix_callbacks["aegs_map_propertyowned_constructionships_insert"]) do
+			local result = uix_callback(infoTableData)
+			if result and result.constructionships then
+				for _, entry in ipairs(result.constructionships) do
+					table.insert(infoTableData.constructionShips, entry)
+				end
+			end
+		end
+	end
+	-- end: aegs call-back
+
 	local numdisplayed = 0
 	local maxvisibleheight = ftable:getFullHeight()
 	local ispropertyall = menu.propertyMode == "propertyall"
