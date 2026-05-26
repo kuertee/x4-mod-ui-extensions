@@ -31867,6 +31867,16 @@ function menu.getParamValue(type, value, inputparams)
 end
 
 function menu.closeContextMenu(dueToClose, keepmenu)
+	-- kuertee start: callback
+	if menu.uix_callbacks["closeContextMenu_on_before"] then
+		for uix_id, uix_callback in pairs(menu.uix_callbacks["closeContextMenu_on_before"]) do
+			if uix_callback(dueToClose, keepmenu) then
+				return true
+			end
+		end
+	end
+	-- kuertee end: callback
+
 	AddUITriggeredEvent(menu.name, "contextmenu_close")
 
 	if Helper.closeInteractMenu() then
@@ -32258,6 +32268,17 @@ function menu.onInteractMenuCallback(type, param)
 	elseif type == "uix_centeronmap" then
 		menu.uix_centerOnMap(param[1], param[2])
 	-- kuertee end: center on map
+
+	-- kuertee start: callback
+	else
+		if menu.uix_callbacks["onInteractMenuCallback_on_custom_type"] then
+			for uix_id, uix_callback in pairs(menu.uix_callbacks["onInteractMenuCallback_on_custom_type"]) do
+				if uix_callback(type, param) then
+					return
+				end
+			end
+		end
+	-- kuertee end: callback
 	end
 end
 
