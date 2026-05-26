@@ -1995,7 +1995,8 @@ function menu.init_kuertee ()
 	menu.uix_centerOnMap_zoomZoneLevel = 37500
 	menu.uix_centerOnMap_zoomVeryVeryNear = 75000
 	menu.uix_centerOnMap_zoomVeryNear = 150000
-	menu.uix_centerOnMap_zoomSectorLevel = 300000
+	-- menu.uix_centerOnMap_zoomSectorLevel = 300000 -- cap ship icons have disappeared at this zoom level
+	menu.uix_centerOnMap_zoomSectorLevel = 295000 -- cap ship icons are only partially transparent at this zoom level
 	menu.uix_centerOnMap_zoomFar = 600000
 	menu.uix_centerOnMap_zoomVeryFar = 1200000
 	menu.uix_centerOnMap_zoomVeryVeryFar = 2400000
@@ -9231,7 +9232,7 @@ function menu.createPropertySection(instance, id, ftable, name, array, nonetext,
 						numdisplayed = menu.createPropertyRow(instance, ftable, propertysectionrowgroup, component, 0, nil, showmodules, hidesubordinates, numdisplayed, sorter)
 						if not uix_openCloseDeployables_rowByName[uix_name] then
 							uix_openCloseDeployables_rowByName[uix_name] = ftable.rows[#ftable.rows]
-							uix_openCloseDeployables_rowByName[uix_name][1]:createButton({active = true}):setText(uix_isExpanded and "-" or "+", { halign = "center" })
+							uix_openCloseDeployables_rowByName[uix_name][1]:createButton({active = #components > 1}):setText(uix_isExpanded and "-" or "+", { halign = "center" })
 							uix_openCloseDeployables_rowByName[uix_name][1].handlers.onClick = function()
 								__userdata_uix_menu_map.savedCollapsedDeployables[uix_name] = not __userdata_uix_menu_map.savedCollapsedDeployables[uix_name]
 								menu.refreshInfoFrame()
@@ -31090,6 +31091,12 @@ function menu.isInfoModeValidFor(object, mode)
 		elseif isship or Helper.isComponentClass(classid, "station") then
 			return true
 		end
+
+	-- kuertee start: debug
+	-- elseif mode == "orderqueue" or mode == "standingorders" or mode == "orderqueue_advanced" then
+	-- 	return true
+	-- kuertee end: debug
+
 	elseif mode == "orderqueue" then
 		if isplayerowned and isship and (not isunit) then
 			return true
