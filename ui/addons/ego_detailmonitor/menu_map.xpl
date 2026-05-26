@@ -4293,9 +4293,9 @@ function menu.buttonSelectHandler()
 		-- kuertee start: callback
 		if menu.modeparam[6] ~= nil then
 			-- if selectComponent returnsection is nil, then do a AddUITriggeredEvent instead
-			-- DebugError ("kuertee_menu_map.ui.buttonSelectHandler menu.contextMenuData.component " .. tostring (menu.contextMenuData.component))
-			-- DebugError ("kuertee_menu_map.ui.buttonSelectHandler menu.contextMenuData.component " .. tostring (ConvertStringToLuaID (tostring (menu.contextMenuData.component))))
-			AddUITriggeredEvent (menu.modeparam[6], "select_component", ConvertStringToLuaID (tostring (menu.contextMenuData.component)))
+			-- DebugError ("kuertee_menu_map.ui.buttonSelectHandler menu.contextMenuData.component " .. tostring(menu.contextMenuData.component))
+			-- DebugError ("kuertee_menu_map.ui.buttonSelectHandler menu.contextMenuData.component " .. tostring(ConvertStringToLuaID(tostring(menu.contextMenuData.component))))
+			AddUITriggeredEvent (menu.modeparam[6], "select_component", ConvertStringToLuaID(tostring(menu.contextMenuData.component)))
 			menu.mode = menu.old_mode
 			menu.modeparam = menu.old_modeparam
 			menu.infoTableMode = menu.old_infoTableMode
@@ -4304,7 +4304,7 @@ function menu.buttonSelectHandler()
 			menu.refreshInfoFrame()
 			return
 
-			-- DebugError ("kuertee_menu_map buttonSelectHandler menu.modeparam [1]: " .. tostring (menu.modeparam [1]))
+			-- DebugError ("kuertee_menu_map buttonSelectHandler menu.modeparam [1]: " .. tostring(menu.modeparam [1]))
 			-- if menu.checkForSelectComponent(menu.contextMenuData.component) then
 		elseif menu.checkForSelectComponent(menu.contextMenuData.component) then
 			-- kuertee end: callback
@@ -7880,7 +7880,7 @@ function menu.componentSorter(sorttype)
 		sorter = menu.uix_sortDistanceFromPlayer
 	elseif sorttype == "uix_extraSortByDistance_playerinverse" then
 		uix_extraSortByDistance_byObject_mode = sorttype
-		sorter = function (a, b) return menu.uix_sortDistanceFromPlayer (a, b, true) end
+		sorter = function (a, b) return menu.uix_sortDistanceFromPlayer(a, b, true) end
 	elseif sorttype == "uix_extraSortByDistance_object" then
 		uix_extraSortByDistance_byObject_mode = sorttype
 		sorter = menu.uix_sortDistanceFromObject
@@ -10033,7 +10033,7 @@ function menu.createPropertyRow(instance, ftable, rowgroup, component, iteration
 
 					-- kuertee start: callback
 					-- if menu.infoTableMode ~= "propertyowned" then
-					if not string.find (menu.infoTableMode, "propertyowned") then
+					if not string.find(menu.infoTableMode, "propertyowned") then
 						-- kuertee end: callback
 
 						menu.extendeddockedships[tostring(component)] = true
@@ -21465,7 +21465,7 @@ function menu.createSideBar(firsttime, frame, width, height, offsetx, offsety)
 
 						-- if (entry.mode ~= "objectlist") and (entry.mode ~= "propertyowned") then
 						-- kuertee start:
-						if (not string.find (entry.mode, "objectlist")) and (not string.find (entry.mode, "propertyowned")) then
+						if (not string.find(entry.mode, "objectlist")) and (not string.find(entry.mode, "propertyowned")) then
 							-- kuertee end:
 
 							entry.active = false
@@ -21474,7 +21474,7 @@ function menu.createSideBar(firsttime, frame, width, height, offsetx, offsety)
 
 						-- if entry.mode ~= "propertyowned" then
 						-- kuertee start:
-						if not string.find (entry.mode, "propertyowned") then
+						if not string.find(entry.mode, "propertyowned") then
 							-- kuertee end:
 
 							entry.active = false
@@ -21483,7 +21483,7 @@ function menu.createSideBar(firsttime, frame, width, height, offsetx, offsety)
 
 						-- if (entry.mode ~= "objectlist") and (entry.mode ~= "propertyowned") then
 						-- kuertee start:
-						if (not string.find (entry.mode, "objectlist")) and (not string.find (entry.mode, "propertyowned")) then
+						if (not string.find(entry.mode, "objectlist")) and (not string.find(entry.mode, "propertyowned")) then
 							-- kuertee end:
 
 							entry.active = false
@@ -21492,7 +21492,7 @@ function menu.createSideBar(firsttime, frame, width, height, offsetx, offsety)
 
 						-- if (entry.mode ~= "objectlist") and (entry.mode ~= "propertyowned") then
 						-- kuertee start:
-						if (not string.find (entry.mode, "objectlist")) and (not string.find (entry.mode, "propertyowned")) then
+						if (not string.find(entry.mode, "objectlist")) and (not string.find(entry.mode, "propertyowned")) then
 							-- kuertee end:
 
 							entry.active = false
@@ -29205,7 +29205,7 @@ function menu.onRowChanged(row, rowdata, uitable, modified, input, source)
 
 		-- kuertee start:
 		-- elseif (menu.infoTableMode == "objectlist") or (menu.infoTableMode == "propertyowned") then
-		elseif (string.find ("" .. tostring (menu.infoTableMode), "objectlist")) or (string.find ("" .. tostring (menu.infoTableMode), "propertyowned")) then
+		elseif (string.find("" .. tostring(menu.infoTableMode), "objectlist")) or (string.find("" .. tostring(menu.infoTableMode), "propertyowned")) then
 			-- kuertee end:
 
 			if uitable == menu.infoTable then
@@ -29389,7 +29389,7 @@ function menu.onSelectElement(uitable, modified, row, isdblclick, input)
 
 		-- if (menu.infoTableMode == "objectlist") or (menu.infoTableMode == "propertyowned") then
 		-- kuertee start: callback
-		if (string.find ("" .. tostring (menu.infoTableMode), "objectlist")) or (string.find ("" .. tostring (menu.infoTableMode), "propertyowned")) then
+		if (string.find("" .. tostring(menu.infoTableMode), "objectlist")) or (string.find("" .. tostring(menu.infoTableMode), "propertyowned")) then
 			-- kuertee end: callback
 
 			if uitable == menu.infoTable then
@@ -29681,7 +29681,7 @@ function menu.onRenderTargetSelect(modified)
 
 								-- kuertee start:
 								-- if menu.infoTableMode == "objectlist" then
-								if string.find ("" .. tostring (menu.infoTableMode), "objectlist") then
+								if string.find("" .. tostring(menu.infoTableMode), "objectlist") then
 									-- kuertee end:
 
 									local isdeployable = GetComponentData(pickedcomponent64, "isdeployable")
@@ -29720,7 +29720,7 @@ function menu.onRenderTargetSelect(modified)
 
 									-- kuertee start:
 									-- elseif menu.infoTableMode == "propertyowned" then
-								elseif string.find ("" .. tostring (menu.infoTableMode), "propertyowned") then
+								elseif string.find("" .. tostring(menu.infoTableMode), "propertyowned") then
 									-- kuertee end:
 
 									local isplayerowned, isdeployable = GetComponentData(pickedcomponent64, "isplayerowned", "isdeployable")
@@ -29771,7 +29771,7 @@ function menu.onRenderTargetSelect(modified)
 
 								-- kuertee start:
 								-- if menu.infoTableMode == "objectlist" then
-								if string.find ("" .. tostring (menu.infoTableMode), "objectlist") then
+								if string.find("" .. tostring(menu.infoTableMode), "objectlist") then
 									-- kuertee end:
 
 									if newmode ~= menu.objectMode then
@@ -29781,7 +29781,7 @@ function menu.onRenderTargetSelect(modified)
 
 									-- kuertee start:
 									-- elseif menu.infoTableMode == "propertyowned" then
-								elseif string.find ("" .. tostring (menu.infoTableMode), "propertyowned") then
+								elseif string.find("" .. tostring(menu.infoTableMode), "propertyowned") then
 									-- kuertee end:
 
 									if newmode ~= menu.propertyMode then
@@ -30701,7 +30701,7 @@ function menu.onTableRightMouseClick(uitable, row, posx, posy)
 
 				-- kuertee start:
 				-- if (menu.infoTableMode == "objectlist") or (menu.infoTableMode == "propertyowned") then
-				if (string.find ("" .. tostring (menu.infoTableMode), "objectlist")) or (string.find ("" .. tostring (menu.infoTableMode), "propertyowned")) then
+				if (string.find("" .. tostring(menu.infoTableMode), "objectlist")) or (string.find("" .. tostring(menu.infoTableMode), "propertyowned")) then
 					-- kuertee end:
 
 					if uitable == menu.infoTable then
@@ -32325,7 +32325,7 @@ function menu.updateSelectedComponents(modified, keepselection, changedComponent
 
 			-- kuertee start:
 			-- if menu.infoTableMode == "propertyowned" then
-			if string.find ("" .. tostring (menu.infoTableMode), "propertyowned") then
+			if string.find("" .. tostring(menu.infoTableMode), "propertyowned") then
 			-- kuertee end:
 
 				if not isplayerowned then
@@ -32347,7 +32347,7 @@ function menu.updateSelectedComponents(modified, keepselection, changedComponent
 				end
 			-- kuertee start:
 			-- elseif menu.infoTableMode == "objectlist" then
-			elseif string.find ("" .. tostring (menu.infoTableMode), "objectlist") then
+			elseif string.find("" .. tostring(menu.infoTableMode), "objectlist") then
 			-- kuertee end:
 				if menu.objectMode ~= "objectall" then
 					-- keep other property selected that is currently not displayed
@@ -32445,7 +32445,7 @@ function menu.updateTableSelection(lastcomponent)
 
 	-- if (menu.infoTableMode == "objectlist") or (menu.infoTableMode == "propertyowned") then
 	-- kuertee start:
-	if (string.find ("" .. tostring (menu.infoTableMode), "objectlist")) or (string.find ("" .. tostring (menu.infoTableMode), "propertyowned")) then
+	if (string.find("" .. tostring(menu.infoTableMode), "objectlist")) or (string.find("" .. tostring(menu.infoTableMode), "propertyowned")) then
 	-- kuertee end:
 
 		-- check if sections need to be extended - if so we need a refresh
@@ -33442,7 +33442,7 @@ function menu.setInfoSubmenuObjectAndRefresh(component)
 end
 
 -- kuertee start:
-function menu.setSelectComponentMode (returnsection, classlist, category, playerowned, customheading, screenname)
+function menu.setSelectComponentMode(returnsection, classlist, category, playerowned, customheading, screenname)
 	menu.old_mode = menu.mode
 	menu.old_modeparam = menu.modeparam
 	menu.old_infoTableMode = menu.infoTableMode
@@ -33462,27 +33462,57 @@ function menu.setSelectComponentMode (returnsection, classlist, category, player
 	menu.refreshInfoFrame()
 end
 
-function menu.uix_sortDistanceFromPlayer (a, b, invert)
-	local distance_a = C.GetDistanceBetween (ConvertStringTo64Bit (tostring (a.id)), ConvertStringTo64Bit (tostring (C.GetPlayerID ())))
-	local distance_b = C.GetDistanceBetween (ConvertStringTo64Bit (tostring (b.id)), ConvertStringTo64Bit (tostring (C.GetPlayerID ())))
-	if invert then
-		return distance_a > distance_b
-	else
-		return distance_a < distance_b
-	end
-end
-
-function menu.uix_sortDistanceFromObject (a, b, invert)
-	if IsValidComponent(uix_extraSortByDistance_byObject_object) then
-		local distance_a = C.GetDistanceBetween (ConvertStringTo64Bit (tostring (a.id)), ConvertStringTo64Bit (tostring (uix_extraSortByDistance_byObject_object)))
-		local distance_b = C.GetDistanceBetween (ConvertStringTo64Bit (tostring (b.id)), ConvertStringTo64Bit (tostring (uix_extraSortByDistance_byObject_object)))
+function menu.uix_sortDistanceFromPlayer(a, b, invert)
+	a = ConvertStringTo64Bit(tostring(a.id))
+	b = ConvertStringTo64Bit(tostring(b.id))
+	if IsValidComponent(a) and IsValidComponent(b) then
+		local player = ConvertStringTo64Bit(tostring(C.GetPlayerID()))
+		local distance_a = C.GetDistanceBetween(a, player)
+		local distance_b = C.GetDistanceBetween(b, player)
 		if invert then
 			return distance_a > distance_b
 		else
 			return distance_a < distance_b
 		end
+	elseif IsValidComponent(a) then
+		if invert then
+			return true
+		else
+			return false
+		end
 	else
-		return true
+		if invert then
+			return false
+		else
+			return true
+		end
+	end
+end
+
+function menu.uix_sortDistanceFromObject (a, b, invert)
+	a = ConvertStringTo64Bit(tostring(a.id))
+	b = ConvertStringTo64Bit(tostring(b.id))
+	uix_extraSortByDistance_byObject_object = ConvertStringTo64Bit(tostring(uix_extraSortByDistance_byObject_object))
+	if IsValidComponent(a) and IsValidComponent(b) and IsValidComponent(uix_extraSortByDistance_byObject_object) then
+		local distance_a = C.GetDistanceBetween(a, uix_extraSortByDistance_byObject_object)
+		local distance_b = C.GetDistanceBetween(b, uix_extraSortByDistance_byObject_object)
+		if invert then
+			return distance_a > distance_b
+		else
+			return distance_a < distance_b
+		end
+	elseif IsValidComponent(a) then
+		if invert then
+			return true
+		else
+			return false
+		end
+	else
+		if invert then
+			return false
+		else
+			return true
+		end
 	end
 end
 

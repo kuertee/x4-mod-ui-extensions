@@ -6,6 +6,9 @@ Contributors: AlexandreTK, ChemODun, Damonya, DrWhoKnows, DmytroK, Erixon, Farem
 
 Updates
 =======
+v9.0.0.0.X, X May 2026:
+- Tweaks: AEGS call-back tweaks from IALuir.
+
 v9.0.0.0.11.1, 22 May 2026:
 - Bug-fix: Ship Configuration Menu: merge of new base UI file removed all mod callbacks.
 
