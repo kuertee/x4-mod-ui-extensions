@@ -8852,7 +8852,7 @@ function menu.createPropertyOwned(frame, instance)
 		end
 	end
 
-	-- start: aegs call-back
+	-- IALuir start: aegs call-back
 	if menu.uix_callbacks["aegs_map_propertyowned_constructionships_insert"] then
 		for uix_id, uix_callback in pairs(menu.uix_callbacks["aegs_map_propertyowned_constructionships_insert"]) do
 			local result = uix_callback(infoTableData)
@@ -8863,7 +8863,7 @@ function menu.createPropertyOwned(frame, instance)
 			end
 		end
 	end
-	-- end: aegs call-back
+	-- IALuir end: aegs call-back
 
 	local numdisplayed = 0
 	local maxvisibleheight = ftable:getFullHeight()
@@ -12638,7 +12638,7 @@ function menu.createOrderQueue(frame, mode, instance)
 				end
 				table.insert(asssignmentOptions, { id = "assist", text = ReadText(20208, 41201), icon = "", displayremoveoption = false, active = active, mouseovertext = mouseovertext })
 
-				-- start: aegs call-back
+				-- IALuir start: aegs call-back
 				if menu.uix_callbacks["aegs_map_ship_assignments_insert"] then
 					local data_o
 					for uix_id, uix_callback in pairs(menu.uix_callbacks["aegs_map_ship_assignments_insert"]) do
@@ -12648,7 +12648,7 @@ function menu.createOrderQueue(frame, mode, instance)
 						end
 					end
 				end
-				-- end: aegs call-back
+				-- IALuir end: aegs call-back
 
 				-- trade
 				if shiptype == "resupplier" then
@@ -14691,7 +14691,7 @@ function menu.setupInfoSubmenuRows(mode, inputtable, inputobject, instance)
 
 		locrowdata = { false, ReadText(1001, 9051) .. ReadText(1001, 120), Helper.unlockInfo(nameinfo, (function() return tostring(GetComponentData(object64, "shiptypename") or 0, true, 0, true) end)) }	-- Ship Type
 
-		-- start: aegs call-back
+		-- IALuir start: aegs call-back
 		if menu.uix_callbacks["aegs_map_shipInformation_shiptypename_override"] then
 			local shiptypename_override
 			for uix_id, uix_callback in pairs(menu.uix_callbacks["aegs_map_shipInformation_shiptypename_override"]) do
@@ -14701,7 +14701,7 @@ function menu.setupInfoSubmenuRows(mode, inputtable, inputobject, instance)
 				end
 			end
 		end
-		-- end: aegs call-back
+		-- IALuir end: aegs call-back
 
 		-- start: cpsdo call-back (ship information: shiptypename)
 		if menu.uix_callbacks["cpsdo_map_shipInformation_shiptypename_replace"] then
@@ -17332,7 +17332,7 @@ function menu.setupLoadoutInfoSubmenuRows(mode, inputtable, inputobject, instanc
 									table.insert(subordinateassignments, { id = "positiondefence", text = ReadText(20208, 41501), icon = "", displayremoveoption = false })
 								end
 
-								-- start: aegs call-back
+								-- IALuir start: aegs call-back
 								if menu.uix_callbacks["aegs_map_ship_subordinateassignments_insert"] then
 									local ship_assignment
 									for uix_id, uix_callback in pairs(menu.uix_callbacks["aegs_map_ship_subordinateassignments_insert"]) do
@@ -17342,7 +17342,7 @@ function menu.setupLoadoutInfoSubmenuRows(mode, inputtable, inputobject, instanc
 										end
 									end
 								end
-								-- end: aegs call-back
+								-- IALuir end: aegs call-back
 
 								table.insert(subordinateassignments, { id = "attack", text = ReadText(20208, 40901), icon = "", displayremoveoption = false })
 								table.insert(subordinateassignments, { id = "interception", text = ReadText(20208, 41001), icon = "", displayremoveoption = false })
@@ -17437,7 +17437,7 @@ function menu.setupLoadoutInfoSubmenuRows(mode, inputtable, inputobject, instanc
 		end
 	end
 
-	-- start: aegs call-back
+	-- IALuir start: aegs call-back
 		if menu.uix_callbacks["aegs_map_loadoutinfo_double_insert"] then
 			local state,title_text,label_text_1,label_text_2,subsystems
 			for uix_id, uix_callback in pairs(menu.uix_callbacks["aegs_map_loadoutinfo_double_insert"]) do
@@ -17456,7 +17456,7 @@ function menu.setupLoadoutInfoSubmenuRows(mode, inputtable, inputobject, instanc
 				end
 			end
 		end
-	-- end: aegs call-back
+	-- IALuir end: aegs call-back
 
 	-- start: cpsdo call-back (loadoutinfo display insert: sessystems)
 	if menu.uix_callbacks["cpsdo_map_loadoutinfo_sessystem_display_insert"] then
@@ -31867,7 +31867,7 @@ function menu.getParamValue(type, value, inputparams)
 end
 
 function menu.closeContextMenu(dueToClose, keepmenu)
-	-- kuertee start: callback
+	-- sticeIO start: callback
 	if menu.uix_callbacks["closeContextMenu_on_before"] then
 		for uix_id, uix_callback in pairs(menu.uix_callbacks["closeContextMenu_on_before"]) do
 			if uix_callback(dueToClose, keepmenu) then
@@ -31875,7 +31875,7 @@ function menu.closeContextMenu(dueToClose, keepmenu)
 			end
 		end
 	end
-	-- kuertee end: callback
+	-- sticeIO end: callback
 
 	AddUITriggeredEvent(menu.name, "contextmenu_close")
 
@@ -32269,7 +32269,7 @@ function menu.onInteractMenuCallback(type, param)
 		menu.uix_centerOnMap(param[1], param[2])
 	-- kuertee end: center on map
 
-	-- kuertee start: callback
+	-- sticeIO start: callback
 	else
 		if menu.uix_callbacks["onInteractMenuCallback_on_custom_type"] then
 			for uix_id, uix_callback in pairs(menu.uix_callbacks["onInteractMenuCallback_on_custom_type"]) do
@@ -32278,7 +32278,7 @@ function menu.onInteractMenuCallback(type, param)
 				end
 			end
 		end
-	-- kuertee end: callback
+	-- sticeIO end: callback
 	end
 end
 

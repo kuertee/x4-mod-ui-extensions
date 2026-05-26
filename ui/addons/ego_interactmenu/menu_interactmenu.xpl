@@ -5528,7 +5528,7 @@ function menu.insertLuaAction(actiontype, istobedisplayed)
 					menu.insertAssignSubActions("selected_assignments_assist", "assist", menu.buttonAssignCommander, groups, isstation, true)
 				end
 
-				-- start: aegs call-back
+				-- IALuir start: aegs call-back
 				if menu.uix_callbacks ["aegs_map_rightMenu_shipassignments_insert_01"] then
 					local state,main_o,assignment_o
 					for uix_id, uix_callback in pairs (menu.uix_callbacks ["aegs_map_rightMenu_shipassignments_insert_01"]) do
@@ -5538,7 +5538,7 @@ function menu.insertLuaAction(actiontype, istobedisplayed)
 						end
 					end
 				end
-				-- end: aegs call-back
+				-- IALuir end: aegs call-back
 
 				if shiptype == "resupplier" then
 					menu.insertAssignSubActions("selected_assignments_trade", "trade", menu.buttonAssignCommander, groups, isstation, true)
@@ -5589,7 +5589,7 @@ function menu.insertLuaAction(actiontype, istobedisplayed)
 			menu.insertInteractionContent("playersquad_orders", { type = actiontype, text = ReadText(1001, 7869), helpOverlayID = "interactmenu_attackplayertarget", helpOverlayText = " ", helpOverlayHighlightOnly = true, script = function () return menu.buttonPlayerSquadAttackPlayerTarget(false) end, hidetarget = true })	-- Fleet: Attack my target
 		end
 	elseif actiontype == "behaviourinspection" then
-		-- start: aegs call-back
+		-- IALuir start: aegs call-back
 		if menu.uix_callbacks ["aegs_map_rightMenu_shipOverview_insert"] then
 			local category_o,text_o
 			for uix_id, uix_callback in pairs (menu.uix_callbacks ["aegs_map_rightMenu_shipOverview_insert"]) do
@@ -5599,7 +5599,7 @@ function menu.insertLuaAction(actiontype, istobedisplayed)
 				end
 			end
 		end
-		-- end: aegs call-back
+		-- IALuir end: aegs call-back
 		
 		if menu.data.ismapunlocked and (not menu.shown) and istobedisplayed and (menu.componentSlot.component ~= C.GetPlayerControlledShipID()) and C.IsComponentOperational(menu.componentSlot.component) then
 			local active = true
@@ -6448,7 +6448,7 @@ function menu.insertLuaAction(actiontype, istobedisplayed)
 						end
 					end
 
-					-- start: aegs call-back
+					-- IALuir start: aegs call-back
 					if menu.uix_callbacks ["aegs_map_rightMenu_shipassignments_insert_02"] then
 						local state,main_o,assignment_o,purpose_o
 						for uix_id, uix_callback in pairs (menu.uix_callbacks ["aegs_map_rightMenu_shipassignments_insert_02"]) do
@@ -6458,7 +6458,7 @@ function menu.insertLuaAction(actiontype, istobedisplayed)
 							end
 						end
 					end
-					-- end: aegs call-back
+					-- IALuir end: aegs call-back
 
 					if commandershiptype == "resupplier" then
 						menu.insertAssignSubActions("main_assignments_trade", "trade", menu.buttonChangeAssignment, groups, isstation, true, currentgroup)
@@ -6537,7 +6537,7 @@ function menu.insertLuaAction(actiontype, istobedisplayed)
 						menu.insertAssignSubActions("selected_change_assignments_assist", "assist", menu.buttonChangeAssignment, groups, isstation, true)
 					end
 
-					-- start: aegs call-back
+					-- IALuir start: aegs call-back
 					if menu.uix_callbacks ["aegs_map_rightMenu_shipassignments_insert_03"] then
 						local state,main_o,assignment_o
 						for uix_id, uix_callback in pairs (menu.uix_callbacks ["aegs_map_rightMenu_shipassignments_insert_03"]) do
@@ -6547,7 +6547,7 @@ function menu.insertLuaAction(actiontype, istobedisplayed)
 							end
 						end
 					end
-					-- end: aegs call-back
+					-- IALuir end: aegs call-back
 
 					if shiptype == "resupplier" then
 						menu.insertAssignSubActions("selected_change_assignments_trade", "trade", menu.buttonChangeAssignment, groups, isstation, true)
@@ -7100,7 +7100,7 @@ function menu.insertLuaAction(actiontype, istobedisplayed)
 		end
 		-- end: cpsdo call-back
 
-		-- start: aegs call-back
+		-- IALuir start: aegs call-back
 		if menu.uix_callbacks["aegs_map_rightMenu_shipBuilding_insert"] then
 			for uix_id, uix_callback in pairs(menu.uix_callbacks["aegs_map_rightMenu_shipBuilding_insert"]) do
 				local state, entry = uix_callback(
@@ -7152,7 +7152,7 @@ function menu.insertLuaAction(actiontype, istobedisplayed)
 				end
 			end
 		end
-		-- end: aegs call-back
+		-- IALuir end: aegs call-back
 
 		if isdock and (C.IsComponentClass(menu.componentSlot.component, "station") or issupplyship) then
 			local active = false
