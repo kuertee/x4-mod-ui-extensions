@@ -380,6 +380,7 @@ local config = {
 			{ id = "main_assignments_bombardment",			text = ReadText(20208, 41604),	helpOverlayID = "interactmenu_change_assign_bombardment",			helpOverlayText = " ",	helpOverlayHighlightOnly = true },
 			{ id = "main_assignments_follow",				text = ReadText(20208, 41304),	helpOverlayID = "interactmenu_change_assign_follow",				helpOverlayText = " ",	helpOverlayHighlightOnly = true },
 			{ id = "main_assignments_supplyfleet",			text = ReadText(20208, 40704),	helpOverlayID = "interactmenu_change_assign_supplyfleet",			helpOverlayText = " ",	helpOverlayHighlightOnly = true },
+			{ id = "main_assignments_prospect",				text = ReadText(20208, 41704),	helpOverlayID = "interactmenu_change_assign_prospect",				helpOverlayText = " ",	helpOverlayHighlightOnly = true },
 			{ id = "main_assignments_mining",				text = ReadText(20208, 40204),	helpOverlayID = "interactmenu_change_assign_mining",				helpOverlayText = " ",	helpOverlayHighlightOnly = true },
 			{ id = "main_assignments_trade",				text = ReadText(20208, 40104),	helpOverlayID = "interactmenu_change_assign_trade",					helpOverlayText = " ",	helpOverlayHighlightOnly = true },
 			{ id = "main_assignments_tradeforbuildstorage",	text = ReadText(20208, 40804),	helpOverlayID = "interactmenu_change_assign_tradeforbuildstorage",	helpOverlayText = " ",	helpOverlayHighlightOnly = true },
@@ -423,6 +424,7 @@ local config = {
 			{ id = "selected_change_assignments_bombardment",			text = ReadText(20208, 41604),	helpOverlayID = "interactmenu_change_assign_bombardment",			helpOverlayText = " ",	helpOverlayHighlightOnly = true },
 			{ id = "selected_change_assignments_follow",				text = ReadText(20208, 41304),	helpOverlayID = "interactmenu_change_assign_follow",				helpOverlayText = " ",	helpOverlayHighlightOnly = true },
 			{ id = "selected_change_assignments_supplyfleet",			text = ReadText(20208, 40704),	helpOverlayID = "interactmenu_change_assign_supplyfleet",			helpOverlayText = " ",	helpOverlayHighlightOnly = true },
+			{ id = "selected_change_assignments_prospect",				text = ReadText(20208, 41704),	helpOverlayID = "interactmenu_change_assign_prospect",				helpOverlayText = " ",	helpOverlayHighlightOnly = true },
 			{ id = "selected_change_assignments_mining",				text = ReadText(20208, 40204),	helpOverlayID = "interactmenu_change_assign_mining",				helpOverlayText = " ",	helpOverlayHighlightOnly = true },
 			{ id = "selected_change_assignments_trade",					text = ReadText(20208, 40104),	helpOverlayID = "interactmenu_change_assign_trade",					helpOverlayText = " ",	helpOverlayHighlightOnly = true },
 			{ id = "selected_change_assignments_tradeforbuildstorage",	text = ReadText(20208, 40804),	helpOverlayID = "interactmenu_change_assign_tradeforbuildstorage",	helpOverlayText = " ",	helpOverlayHighlightOnly = true },
@@ -437,6 +439,7 @@ local config = {
 			{ id = "selected_assignments_bombardment",			text = ReadText(20208, 41604),	helpOverlayID = "interactmenu_assign_bombardment",			helpOverlayText = " ",	helpOverlayHighlightOnly = true },
 			{ id = "selected_assignments_follow",				text = ReadText(20208, 41304),	helpOverlayID = "interactmenu_assign_follow",				helpOverlayText = " ",	helpOverlayHighlightOnly = true },
 			{ id = "selected_assignments_supplyfleet",			text = ReadText(20208, 40704),	helpOverlayID = "interactmenu_assign_supplyfleet",			helpOverlayText = " ",	helpOverlayHighlightOnly = true },
+			{ id = "selected_assignments_prospect",				text = ReadText(20208, 41704),	helpOverlayID = "interactmenu_assign_prospect",				helpOverlayText = " ",	helpOverlayHighlightOnly = true },
 			{ id = "selected_assignments_mining",				text = ReadText(20208, 40204),	helpOverlayID = "interactmenu_assign_mining",				helpOverlayText = " ",	helpOverlayHighlightOnly = true },
 			{ id = "selected_assignments_trade",				text = ReadText(20208, 40104),	helpOverlayID = "interactmenu_assign_trade",				helpOverlayText = " ",	helpOverlayHighlightOnly = true },
 			{ id = "selected_assignments_tradeforbuildstorage",	text = ReadText(20208, 40804),	helpOverlayID = "interactmenu_assign_tradeforbuildstorage",	helpOverlayText = " ",	helpOverlayHighlightOnly = true },
@@ -462,7 +465,8 @@ local config = {
 		["trade"]					= { name = ReadText(20208, 40104) },
 		["tradeforbuildstorage"]	= { name = ReadText(20208, 40804) },
 		["assist"]					= { name = ReadText(20208, 41204) },
-		["salvage"]					= { name = ReadText(20208, 41401) },
+		["salvage"]					= { name = ReadText(20208, 41404) },
+		["prospect"]				= { name = ReadText(20208, 41704) },
 	},
 
 	buildStationModeAllowedActions = {
@@ -5476,8 +5480,11 @@ function menu.insertLuaAction(actiontype, istobedisplayed)
 					if C.GetDefaultOrder(buf, occupiedplayership) then
 						menu.insertAssignSubActions("main_assignments_assist", "assist", menu.buttonAssignCommander, groups, false, true)
 					end
-					if (commandershiptype == "miningrig") and (GetComponentData(convertedComponent, "primarypurpose") == "mine") then
-						menu.insertAssignSubActions("main_assignments_mining", "mining", menu.buttonAssignCommander, groups, false, false)
+					if (commandershiptype == "miningrig") then
+						menu.insertAssignSubActions("main_assignments_prospect", "prospect", menu.buttonAssignCommander, groups, false, false)
+						if (GetComponentData(convertedComponent, "primarypurpose") == "mine") then
+							menu.insertAssignSubActions("main_assignments_mining", "mining", menu.buttonAssignCommander, groups, false, false)
+						end
 					end
 				end
 			end
@@ -5499,6 +5506,7 @@ function menu.insertLuaAction(actiontype, istobedisplayed)
 			if isstation then
 				-- trading
 				menu.insertAssignSubActions("selected_assignments_trade", "trade", menu.buttonAssignCommander, groups, isstation, true, nil, (menu.numassignableminingships > 0) and (ColorText["text_warning"] .. ReadText(1026, 8609)) or "")
+				menu.insertAssignSubActions("selected_assignments_prospect", "prospect", menu.buttonAssignCommander, groups, isstation, true)
 				-- mining
 				if menu.numassignableminingships > 0 then
 					menu.insertAssignSubActions("selected_assignments_mining", "mining", menu.buttonAssignCommander, groups, isstation, true)
@@ -5543,8 +5551,11 @@ function menu.insertLuaAction(actiontype, istobedisplayed)
 				if shiptype == "resupplier" then
 					menu.insertAssignSubActions("selected_assignments_trade", "trade", menu.buttonAssignCommander, groups, isstation, true)
 				end
-				if menu.numassignableminingships > 0 and (shiptype == "miningrig") then
-					menu.insertAssignSubActions("selected_assignments_mining", "mining", menu.buttonAssignCommander, groups, isstation)
+				if (shiptype == "miningrig") then
+					menu.insertAssignSubActions("selected_assignments_prospect", "prospect", menu.buttonAssignCommander, groups, isstation)
+					if menu.numassignableminingships > 0 then
+						menu.insertAssignSubActions("selected_assignments_mining", "mining", menu.buttonAssignCommander, groups, isstation)
+					end
 				end
 			end
 		end
@@ -6413,11 +6424,12 @@ function menu.insertLuaAction(actiontype, istobedisplayed)
 				if isstation then
 					-- trading
 					menu.insertAssignSubActions("main_assignments_trade", "trade", menu.buttonChangeAssignment, groups, isstation, true, currentgroup, (purpose == "mine") and (ColorText["text_warning"] .. ReadText(1026, 8608)) or "")
+					menu.insertAssignSubActions("main_assignments_prospect", "prospect", menu.buttonChangeAssignment, groups, isstation, true, currentgroup)
 					if purpose == "mine" then
 						-- mining
 						menu.insertAssignSubActions("main_assignments_mining", "mining", menu.buttonChangeAssignment, groups, isstation, true, currentgroup)
 					else
-						-- tarding for buildstorage
+						-- trading for buildstorage
 						menu.insertAssignSubActions("main_assignments_tradeforbuildstorage", "tradeforbuildstorage", menu.buttonChangeAssignment, groups, isstation, true, currentgroup)
 					end
 					if purpose == "salvage" then
@@ -6463,8 +6475,11 @@ function menu.insertLuaAction(actiontype, istobedisplayed)
 					if commandershiptype == "resupplier" then
 						menu.insertAssignSubActions("main_assignments_trade", "trade", menu.buttonChangeAssignment, groups, isstation, true, currentgroup)
 					end
-					if (commandershiptype == "miningrig") and (purpose == "mine") then
-						menu.insertAssignSubActions("main_assignments_mining", "mining", menu.buttonChangeAssignment, groups, isstation, nil, currentgroup)
+					if (commandershiptype == "miningrig") then
+						menu.insertAssignSubActions("main_assignments_prospect", "prospect", menu.buttonChangeAssignment, groups, isstation, nil, currentgroup)
+						if (purpose == "mine") then
+							menu.insertAssignSubActions("main_assignments_mining", "mining", menu.buttonChangeAssignment, groups, isstation, nil, currentgroup)
+						end
 					end
 				end
 			end
@@ -6510,6 +6525,7 @@ function menu.insertLuaAction(actiontype, istobedisplayed)
 					end
 					-- trading
 					menu.insertAssignSubActions("selected_change_assignments_trade", "trade", menu.buttonChangeAssignment, groups, isstation, true, nil, (not allnomining) and (ColorText["text_warning"] .. ReadText(1026, 8609)) or "")
+					menu.insertAssignSubActions("selected_change_assignments_prospect", "prospect", menu.buttonChangeAssignment, groups, isstation, true)
 					if allmining then
 						-- mining
 						menu.insertAssignSubActions("selected_change_assignments_mining", "mining", menu.buttonChangeAssignment, groups, isstation, true)
@@ -6552,8 +6568,11 @@ function menu.insertLuaAction(actiontype, istobedisplayed)
 					if shiptype == "resupplier" then
 						menu.insertAssignSubActions("selected_change_assignments_trade", "trade", menu.buttonChangeAssignment, groups, isstation, true)
 					end
-					if allmining and(shiptype == "miningrig") then
-						menu.insertAssignSubActions("selected_change_assignments_mining", "mining", menu.buttonChangeAssignment, groups, isstation, nil)
+					if (shiptype == "miningrig") then
+						menu.insertAssignSubActions("selected_change_assignments_prospect", "prospect", menu.buttonChangeAssignment, groups, isstation, nil)
+						if allmining then
+							menu.insertAssignSubActions("selected_change_assignments_mining", "mining", menu.buttonChangeAssignment, groups, isstation, nil)
+						end
 					end
 				end
 			end
@@ -7970,6 +7989,7 @@ function menu.prepareActions()
 			if isstation then
 				-- trading
 				menu.insertAssignSubActions("main_assignments_trade", "trade", menu.buttonChangeAssignment, groups, isstation, true, nil, (not allnomining) and (ColorText["text_warning"] .. ReadText(1026, 8607)) or "")
+				menu.insertAssignSubActions("main_assignments_prospect", "prospect", menu.buttonChangeAssignment, groups, isstation, true)
 				if allmining then
 					-- mining
 					menu.insertAssignSubActions("main_assignments_mining", "mining", menu.buttonChangeAssignment, groups, isstation, true)
@@ -7994,8 +8014,11 @@ function menu.prepareActions()
 				if commandershiptype == "resupplier" then
 					menu.insertAssignSubActions("main_assignments_trade", "trade", menu.buttonChangeAssignment, groups, isstation, true)
 				end
-				if allmining and (commandershiptype == "miningrig") then
-					menu.insertAssignSubActions("main_assignments_mining", "mining", menu.buttonChangeAssignment, groups, isstation, true)
+				if (commandershiptype == "miningrig") then
+					menu.insertAssignSubActions("main_assignments_prospect", "prospect", menu.buttonChangeAssignment, groups, isstation, true)
+					if allmining then
+						menu.insertAssignSubActions("main_assignments_mining", "mining", menu.buttonChangeAssignment, groups, isstation, true)
+					end
 				end
 			end
 
@@ -8067,6 +8090,7 @@ function menu.prepareActions()
 			menu.insertAssignSubActions("main_assignments_trade", "trade", menu.buttonChangeFleetUnitAssignment, groups, false, true, currentgroup)
 		end
 		if (commandershiptype == "miningrig") then
+			menu.insertAssignSubActions("main_assignments_prospect", "prospect", menu.buttonChangeFleetUnitAssignment, groups, false, nil, currentgroup)
 			menu.insertAssignSubActions("main_assignments_mining", "mining", menu.buttonChangeFleetUnitAssignment, groups, false, nil, currentgroup)
 		end
 
@@ -8145,6 +8169,7 @@ function menu.prepareActions()
 				local isminingfleetunit = primarypurpose == "mine"
 				-- trading
 				menu.insertAssignSubActions("selected_assignments_trade", "trade", menu.buttonAssignFleetUnitCommander, groups, isstation, true, nil, isminingfleetunit and (ColorText["text_warning"] .. ReadText(1026, 8609)) or "")
+				menu.insertAssignSubActions("selected_assignments_prospect", "prospect", menu.buttonAssignFleetUnitCommander, groups, isstation, true)
 				-- mining
 				if isminingfleetunit then
 					menu.insertAssignSubActions("selected_assignments_mining", "mining", menu.buttonAssignFleetUnitCommander, groups, isstation, true)
@@ -8175,8 +8200,11 @@ function menu.prepareActions()
 				if commandershiptype == "resupplier" then
 					menu.insertAssignSubActions("selected_assignments_trade", "trade", menu.buttonAssignFleetUnitCommander, groups, isstation, true)
 				end
-				if (primarypurpose == "mine") and (commandershiptype == "miningrig") then
-					menu.insertAssignSubActions("selected_assignments_mining", "mining", menu.buttonAssignFleetUnitCommander, groups, isstation)
+				if (commandershiptype == "miningrig") then
+					menu.insertAssignSubActions("selected_assignments_prospect", "prospect", menu.buttonAssignFleetUnitCommander, groups, isstation)
+					if (primarypurpose == "mine") then
+						menu.insertAssignSubActions("selected_assignments_mining", "mining", menu.buttonAssignFleetUnitCommander, groups, isstation)
+					end
 				end
 			end
 		end

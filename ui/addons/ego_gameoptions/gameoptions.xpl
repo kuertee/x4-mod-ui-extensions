@@ -3438,10 +3438,14 @@ function menu.checkboxScheduleVentureExtensionDownload(_, value)
 	OnlineSetVentureConfig("allow_update_once", value)
 end
 
-function menu.editboxInputProfileSave(profile, text)
-	SaveInputProfile(profile.filename, profile.id, text, true)
-	profile.name = (text == "") and ReadText(1023, profile.id) or text
-	profile.customname = text
+function menu.editboxInputProfileSave(profile, editboxid, text, textchanged, wasconfirmed)
+	if textchanged and wasconfirmed then
+		SaveInputProfile(profile.filename, profile.id, text, true)
+		profile.name = (text == "") and ReadText(1023, profile.id) or text
+		profile.customname = text
+	else
+		C.SetEditBoxText(editboxid, profile.name)
+	end
 end
 
 function menu.editboxOnlineUsername(widgetid, text)
@@ -13237,7 +13241,7 @@ function menu.displayInputProfiles(optionParameter)
 				row[2]:setColSpan(3):createText(profile.name, config.standardTextProperties)
 			else
 				row[2]:createEditBox({ description = ReadText(1001, 4858) }):setText(profile.name, { fontsize = config.standardFontSize })
-				row[2].handlers.onTextChanged = function (_, text) return menu.editboxInputProfileSave(profile, text) end
+				row[2].handlers.onEditBoxDeactivated = function (editboxid, text, textchanged, wasconfirmed) return menu.editboxInputProfileSave(profile, editboxid, text, textchanged, wasconfirmed) end
 				row[3]:createButton({ height = config.standardTextHeight }):setIcon("menu_save")
 				row[3].handlers.onClick = function () return menu.buttonInputProfileSave(profile) end
 				row[4]:createButton({ height = config.standardTextHeight }):setText("X", { halign = "center", x = 0 })

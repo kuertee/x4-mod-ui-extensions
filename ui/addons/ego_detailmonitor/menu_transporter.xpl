@@ -103,14 +103,17 @@ end
 function menu.buttonGoTo()
 	if (not menu.currentselection.hassubentries) or menu.currentselection.target then
 		if (menu.transportercomponent ~= menu.currentselection.target.component) or (menu.transporterconnection ~= menu.currentselection.target.connection) then
-			if C.IsComponentClass(menu.currentselection.target.component, "zone") then
-				-- space suit case
-				Helper.closeMenuAndOpenNewMenu(menu, "UserQuestionMenu", { 0, 0, "transporter", { menu.currentselection.target.component, menu.currentselection.target.connection } })
-			else
-				C.TransportPlayerToTarget(menu.currentselection.target)
-				Helper.closeMenuAndReturn(menu)
+			local room = C.GetRoomForTransporter(menu.currentselection.target)
+			if (room == 0) or (not GetComponentData(ConvertStringToLuaID(tostring(room)), "islocked")) then
+				if C.IsComponentClass(menu.currentselection.target.component, "zone") then
+					-- space suit case
+					Helper.closeMenuAndOpenNewMenu(menu, "UserQuestionMenu", { 0, 0, "transporter", { menu.currentselection.target.component, menu.currentselection.target.connection } })
+				else
+					C.TransportPlayerToTarget(menu.currentselection.target)
+					Helper.closeMenuAndReturn(menu)
+				end
+				menu.cleanup()
 			end
-			menu.cleanup()
 		end
 	end
 end
@@ -508,6 +511,14 @@ function menu.addEntry(ftable, target, indent, parentcomponent)
 			font = Helper.standardFontBold
 			color = Color["text_mission"]
 		end
+		local room = C.GetRoomForTransporter(target.directtarget)
+		if room ~= 0 then
+			if GetComponentData(ConvertStringToLuaID(tostring(room)), "islocked") then
+				name = "\27[menu_locked] " .. name
+				color = Color["text_inactive"]
+			end
+		end
+
 		if (menu.currentselection.target == target.directtarget) then
 			menu.buttontext = ReadText(1001, 6303)
 			if (target.type == "ship") or (target.type == "cockpit") then
@@ -682,7 +693,10 @@ function menu.display()
 
 	local buttonrow = buttontable:addRow(true, { fixed = true })
 	local active = (menu.currentselection.target ~= nil) and (not menu.currentselection.hassubentries) and ((menu.transportercomponent ~= menu.currentselection.target.component) or (menu.transporterconnection ~= menu.currentselection.target.connection))
-
+	local room = C.GetRoomForTransporter(menu.currentselection.target)
+	if room ~= 0 then
+		active = active and (not GetComponentData(ConvertStringToLuaID(tostring(room)), "islocked"))
+	end
 	-- kuertee start: callback
 	if menu.uix_callbacks ["display_on_set_room_active"] then
 		local activeCount = 0

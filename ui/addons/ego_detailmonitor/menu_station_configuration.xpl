@@ -169,6 +169,7 @@ ffi.cdef[[
 	void AddCopyToConstructionMap(UniverseID holomapid, size_t cp_idx, bool copysequence);
 	void AddMacroToConstructionMap(UniverseID holomapid, const char* macroname, bool startdragging);
 	bool AreConstructionPlanLoadoutsCompatible(const char* constructionplanid);
+	bool AreVentureFeaturesEnabled(void);
 	bool CanBuildLoadout(UniverseID containerid, UniverseID defensibleid, const char* macroname, const char* loadoutid);
 	bool CancelPlayerInvolvedTradeDeal(UniverseID containerid, TradeID tradeid, bool checkonly);
 	bool CanOpenWebBrowser(void);
@@ -264,6 +265,7 @@ ffi.cdef[[
 	bool IsValidTrade(TradeID tradeid);
 	bool IsVentureExtensionSupported(void);
 	bool IsVentureSeasonSupported(void);
+	bool IsVentureSeasonSupported(void);
 	void OpenWebBrowser(const char* url);
 	void ReleaseConstructionMapState(void);
 	bool RemoveConstructionPlan(const char* source, const char* id);
@@ -334,10 +336,12 @@ local menu = {
 		["exitmenu"] = false,
 	},
 	panelPins = {},
+	equipmentData = {},
 }
 
 local config = {
-	mainLayer = 5,
+	mainLayer = 6,
+	equipmentInfoLayer = 5,
 	infoLayer = 4,
 	contextLayer = 2,
 	leftBar = {
@@ -350,7 +354,7 @@ local config = {
 		{ name = ReadText(1001, 2424),	icon = "stationbuildst_defense",		mode = "moduletypes_defence",		helpOverlayID = "stationbuildst_defense",		helpOverlayText = ReadText(1028, 3255)  },
 		{ name = ReadText(1001, 9621),	icon = "stationbuildst_processing",		mode = "moduletypes_processing",	helpOverlayID = "stationbuildst_processing",	helpOverlayText = ReadText(1028, 3259)  },
 		{ name = ReadText(1001, 2453),	icon = "stationbuildst_other",			mode = "moduletypes_other",			helpOverlayID = "stationbuildst_other",			helpOverlayText = ReadText(1028, 3256),		additionaltypes = { "moduletypes_radar" }  },
-		{ name = ReadText(1001, 2454),	icon = "stationbuildst_venture",		mode = "moduletypes_venture",		helpOverlayID = "stationbuildst_venture",		helpOverlayText = ReadText(1028, 3257),		condition = C.IsVentureSeasonSupported },
+		{ name = ReadText(1001, 2454),	icon = "stationbuildst_venture",		mode = "moduletypes_venture",		helpOverlayID = "stationbuildst_venture",		helpOverlayText = ReadText(1028, 3257),		condition = C.AreVentureFeaturesEnabled },
 		{ spacing = true },
 		{ name = ReadText(1001, 11285),	icon = "mapst_plotmanagement",			mode = "plotsize",					helpOverlayID = "stationbuildst_plotsize",		helpOverlayText = ReadText(1028, 3276)  },
 	},
@@ -3064,6 +3068,9 @@ function menu.displayModules(frame, firsttime)
 			row[10]:createButton({ height = editboxheight }):setText("X", { halign = "center", font = Helper.standardFontBold })
 			row[10].handlers.onClick = function () return menu.buttonClearEditbox(row.index) end
 
+			menu.equipmentOffsetY = ftable:getFullHeight() + Helper.borderSize
+
+			menu.equipmentMacroData = {}
 			if next(menu.groupedupgrades) then
 				if menu.upgradetypeMode == "turretgroup" then
 					for i, upgradetype in ipairs(Helper.upgradetypes) do
@@ -3166,6 +3173,7 @@ function menu.displayModules(frame, firsttime)
 											local column = i * 3 - 2
 											row[column]:createButton({ width = columnWidths[i], height = maxColumnWidth, mouseOverText = untruncatedExtraText, helpOverlayID = "groupedslot_" .. group[i].macro, helpOverlayText = " ", helpOverlayHighlightOnly = true, uiTriggerID = "groupedslot_" .. group[i].macro }):setIcon(group[i].icon):setIcon2(installicon, { color = installcolor }):setText2(weaponicon, { x = 3, y = -maxColumnWidth / 2 + Helper.scaleY(Helper.standardTextHeight) / 2 + Helper.configButtonBorderSize, fontsize = Helper.scaleFont(Helper.standardFont, Helper.standardFontSize) })
 											row[column].handlers.onClick = function () return menu.buttonSelectGroupUpgrade(upgradetype.type, menu.currentSlot, group[i].macro, row.index, column) end
+											menu.equipmentMacroData[row.index * 1000 + column] = { macro = group[i].macro, type = upgradetype.type }
 											if group[i].macro ~= "" then
 												row[column].handlers.onRightClick = function (...) return menu.buttonInteract({ type = upgradetype.type, name = group[i].name, macro = group[i].macro }, ...) end
 											end
@@ -5113,6 +5121,28 @@ function menu.displayMainFrame()
 	menu.mainFrame:display()
 end
 
+function menu.displayEquipmentInfoFrame()
+	Helper.removeAllWidgetScripts(menu, config.equipmentInfoLayer)
+
+	menu.equipmentInfoFrame = Helper.createFrameHandle(menu, {
+		layer = config.equipmentInfoLayer,
+		standardButtons = {  },
+		width = Helper.scaleX(300) + 2 * Helper.standardContainerOffset,
+		x = menu.modulesData.offsetX + menu.modulesData.width + Helper.minorPanelSpacing,
+		y = menu.modulesData.offsetY + menu.equipmentOffsetY,
+		autoFrameHeight = true,
+	})
+	menu.equipmentInfoFrame:setBackground("solid", {
+		color = Color["frame_background_semitransparent"]
+	})
+
+	if menu.equipmentData.mouse or menu.equipmentData.keyboard then
+		Helper.createEquipmentInfoContext(menu, menu.equipmentInfoFrame, menu.container, "", menu.constructionplan[menu.loadoutMode].upgradeplan)
+	end
+
+	menu.equipmentInfoFrame:display()
+end
+
 function menu.displayContextFrame(mode, width, x, y)
 	PlaySound("ui_positive_click")
 
@@ -6338,6 +6368,44 @@ function menu.onSelectElement(uitable, modified, row)
 	end
 end
 
+function menu.onButtonOver(uitable, row, col, button, input)
+	if menu.loadoutMode then
+		if uitable == menu.moduletable then
+			if row then
+				local curdata = menu.equipmentData[input]
+				local newdata = menu.equipmentMacroData[row * 1000 + col]
+				if ((curdata == nil) ~= (newdata == nil)) or (curdata and newdata and (curdata.macro ~= newdata.macro)) then
+					menu.equipmentData[input] = newdata
+					menu.displayEquipmentInfoFrame()
+				end
+			end
+		end
+	end
+end
+
+function menu.onButtonOut(uitable, row, col, button, input)
+	if menu.loadoutMode then
+		if uitable == menu.moduletable then
+			if row then
+				menu.equipmentData.mouse = nil
+				menu.displayEquipmentInfoFrame()
+			end
+		end
+	end
+end
+
+function menu.onInteractiveElementChanged(element)
+	if menu.loadoutMode then
+		if (element ~= menu.moduletable) and (element ~= menu.contexttable) then
+			if menu.equipmentData.mouse or menu.equipmentData.keyboard then
+				menu.equipmentData.mouse = nil
+				menu.equipmentData.keyboard = nil
+				menu.displayEquipmentInfoFrame()
+			end
+		end
+	end
+end
+
 function menu.closeMenu(dueToClose)
 	if dueToClose == "back" then
 		if menu.loadoutMode then
@@ -7065,6 +7133,67 @@ function menu.updateInputBar()
 		end
 	end
 	Helper.updateInputBar(menu, inputs.left, inputs.right)
+end
+
+function menu.checkLicence(macro, rawicon, issoftware, rawmouseovertext)
+	local haslicence = true
+	local icon
+	local overridecolor = Color["text_normal"]
+	local mouseovertext = ""
+	local mouseovertextlist = {}
+	local limitstring = ""
+	if macro ~= "" then
+		local ware
+		if issoftware then
+			ware = macro
+		else
+			ware = GetMacroData(macro, "ware")
+		end
+		if ware == nil or ware == "" then
+			print("no ware defined for macro '" .. macro .. "'")
+		else
+			local researchprecursors, islimited = GetWareData(ware, "productionresearchprecursors", "islimited")
+			if researchprecursors and (#researchprecursors > 0) then
+				mouseovertext = ReadText(1026, 8023) .. " "
+				local first = true
+				for _, research in ipairs(researchprecursors) do
+					if (not C.HasResearched(research)) then
+						haslicence = false
+						mouseovertext = mouseovertext .. (first and " " or "\n") .. ColorText["text_error"] .. GetWareData(research, "name") .. "\27X"
+					else
+						mouseovertext = mouseovertext .. (first and " " or "\n") .. GetWareData(research, "name")
+					end
+				end
+				icon = "gamestart_custom_research"
+				table.insert(mouseovertextlist, { text = mouseovertext, icon = "menu_warning" })
+			end
+			if islimited then
+				local limitamount = Helper.getLimitedWareAmount(ware)
+				local shoppinglistamount = 0
+				for i, entry in ipairs(menu.shoppinglist) do
+					if i ~= menu.editingshoppinglist then
+						if entry.macro == macro then
+							shoppinglistamount = shoppinglistamount + entry.amount
+						end
+					end
+				end
+
+				local used = (menu.usedLimitedMacros[macro] or 0) + shoppinglistamount
+				if used >= limitamount then
+					haslicence = false
+					icon = "menu_locked"
+					mouseovertext = ReadText(1026, 8028)
+					table.insert(mouseovertextlist, { text = ReadText(1026, 8028), icon = "menu_warning" })
+				end
+				limitstring = " (" .. used .. "/" .. limitamount .. ")"
+			end
+			if not haslicence then
+				overridecolor = Color["text_error"]
+			end
+		end
+	end
+
+	return haslicence, icon, overridecolor, mouseovertext, limitstring, mouseovertextlist
 end
 
 -- kuertee start:
