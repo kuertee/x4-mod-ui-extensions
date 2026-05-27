@@ -7874,6 +7874,13 @@ function menu.componentSorter(sorttype)
 	elseif sorttype == "sectorinverse" then
 		sorter = function (a, b) return Helper.sortNameSectorAndObjectID(a, b, true) end
 
+	-- kuertee start: extra sort by weapons
+	elseif sorttype == "uix_extraSortByWeapons" then
+		sorter = function(a, b) return menu.uix_sortDanger(a.id, b.id, true) end
+	elseif sorttype == "uix_extraSortByWeaponsinverse" then
+		sorter = function (a, b) return menu.uix_sortDanger(a.id, b.id) end
+	-- kuertee end: extra sort by weapons
+
 	-- kuertee start: extra sort by distance
 	elseif sorttype == "uix_extraSortByDistance_player" then
 		uix_extraSortByDistance_byObject_mode = sorttype
@@ -9126,8 +9133,30 @@ end
 
 -- kuertee start: extra sort by distance
 function menu.uix_renderExtraSortByDistance(tabtable, colSpanPerSorterColumn, buttonheight, iconheight)
+	local sorterColumn, tableColumn
 	local row = tabtable:addRow(true, { fixed = true })
-	row[1]:setColSpan(colSpanPerSorterColumn):createText(ReadText(1001, 2957) .. ReadText(1001, 120))
+
+	if menu.infoTableMode == "propertyowned" then
+		-- <t id="1301">Weapons</t>
+		-- row[1]:setColSpan(colSpanPerSorterColumn):createText(ReadText(1001, 2957) .. ReadText(1001, 120))
+		sorterColumn = 1
+		tableColumn = (sorterColumn - 1) * colSpanPerSorterColumn + 1
+		local buttonwidth = menu.scrollIconSize + (colSpanPerSorterColumn - 1) * (menu.sideBarWidth + Helper.borderSize)
+		button = row[tableColumn]:setColSpan(colSpanPerSorterColumn):createButton({ scaling = false, width = buttonwidth, height = buttonheight, x = Helper.standardContainerOffset }):setText(ReadText(1001, 1301), { halign = "center", scaling = true })
+		if menu.propertySorterType == "uix_extraSortByWeapons" then
+			button:setIcon("table_arrow_inv_down", { width = iconheight, height = iconheight, x = buttonwidth - iconheight, y = (buttonheight - iconheight) / 2 })
+		elseif menu.propertySorterType == "uix_extraSortByWeaponsinverse" then
+			button:setIcon("table_arrow_inv_up", { width = iconheight, height = iconheight, x = buttonwidth - iconheight, y = (buttonheight - iconheight) / 2 })
+		end
+		row[tableColumn].handlers.onClick = function ()
+			return menu.buttonPropertySorter("uix_extraSortByWeapons")
+		end
+	end
+
+	-- <t id="2957">Distance</t>
+	sorterColumn = 2
+	tableColumn = (sorterColumn - 1) * colSpanPerSorterColumn + 1
+	row[tableColumn]:setColSpan(colSpanPerSorterColumn):createText(ReadText(1001, 2957) .. ReadText(1001, 120), {halign = "right", y = 3})
 
 	-- "distance from player"
 	local buttonLabel = ffi.string(C.GetPlayerName ())
@@ -9135,9 +9164,9 @@ function menu.uix_renderExtraSortByDistance(tabtable, colSpanPerSorterColumn, bu
 	tableColumn = (sorterColumn - 1) * colSpanPerSorterColumn + 1
 	local button = row[tableColumn]:setColSpan(colSpanPerSorterColumn):createButton({ scaling = false, height = buttonheight }):setText(buttonLabel, { halign = "center", scaling = true })
 	if uix_extraSortByDistance_byObject_mode == "uix_extraSortByDistance_player" then
-		button:setIcon("table_arrow_inv_down", { width = buttonheight, height = buttonheight, x = button:getColSpanWidth() - buttonheight })
+		button:setIcon("table_arrow_inv_down", { width = iconheight, height = iconheight, x = button:getColSpanWidth() - iconheight, y = (buttonheight - iconheight) / 2 })
 	elseif uix_extraSortByDistance_byObject_mode == "uix_extraSortByDistance_playerinverse" then
-		button:setIcon("table_arrow_inv_up", { width = buttonheight, height = buttonheight, x = button:getColSpanWidth() - buttonheight })
+		button:setIcon("table_arrow_inv_up", { width = iconheight, height = iconheight, x = button:getColSpanWidth() - iconheight, y = (buttonheight - iconheight) / 2 })
 	end
 	row[tableColumn].handlers.onClick = function ()
 		if menu.infoTableMode == "objectlist" then
@@ -9148,16 +9177,18 @@ function menu.uix_renderExtraSortByDistance(tabtable, colSpanPerSorterColumn, bu
 	end
 
 	-- "distance from object"
-	sorterColumn = 4
-	tableColumn = (sorterColumn - 1) * colSpanPerSorterColumn + 1
-	row[tableColumn]:setColSpan(colSpanPerSorterColumn)
-	local buttonwidth = row[tableColumn]:getWidth() - Helper.standardContainerOffset
 	if uix_extraSortByDistance_byObject_mode ~= "uix_extraSortByDistance_object" and uix_extraSortByDistance_byObject_mode ~= "uix_extraSortByDistance_objectinverse" then
 		uix_extraSortByDistance_byObject_object = nil
 		if IsValidComponent(uix_extraSortByDistance_byObject_potentialObject) then
 			uix_extraSortByDistance_byObject_object = uix_extraSortByDistance_byObject_potentialObject
+		else
+			uix_extraSortByDistance_byObject_potentialObject = nil
 		end
 	end
+	sorterColumn = 4
+	tableColumn = (sorterColumn - 1) * colSpanPerSorterColumn + 1
+	row[tableColumn]:setColSpan(colSpanPerSorterColumn)
+	local buttonwidth = row[tableColumn]:getWidth() - Helper.standardContainerOffset
 	if IsValidComponent(uix_extraSortByDistance_byObject_object) then
 		local name, idcode, classid = GetComponentData(ConvertStringToLuaID(tostring(uix_extraSortByDistance_byObject_object)), "name", "idcode", "classid")
 		local mouseovertext = name
@@ -9167,6 +9198,7 @@ function menu.uix_renderExtraSortByDistance(tabtable, colSpanPerSorterColumn, bu
 		else
 			buttonLabel = name
 		end
+
 		local button = row[tableColumn]:createButton({ scaling = false, width = buttonwidth, height = buttonheight, mouseOverText = mouseovertext }):setText(buttonLabel, { halign = "center", scaling = true })
 		if uix_extraSortByDistance_byObject_mode == "uix_extraSortByDistance_object" then
 			button:setIcon("table_arrow_inv_down", { width = iconheight, height = iconheight, x = buttonwidth - iconheight, y = (buttonheight - iconheight) / 2 })
@@ -9181,8 +9213,7 @@ function menu.uix_renderExtraSortByDistance(tabtable, colSpanPerSorterColumn, bu
 			end
 		end
 	else
-		buttonLabel = ""
-		local button = row[tableColumn]:setColSpan(colSpanPerSorterColumn):createButton({ active = false, scaling = false, width = buttonwidth, height = buttonheight }):setText(buttonLabel, { halign = "center", scaling = true })
+		local button = row[tableColumn]:createButton({ active = false, scaling = false, width = buttonwidth, height = buttonheight }):setText(buttonLabel, { halign = "center", scaling = true })
 	end
 end
 -- kuertee end: extra sort by distance
@@ -10939,6 +10970,18 @@ function menu.displayOrderParam(ftable, orderidx, order, paramidx, param, listid
 	if orderidx == "default" then
 		paramactive = (menu.infoTableData[instance].commander == nil) and (not isplayeroccupiedship)
 	end
+
+	-- VasiliyTemniy start: callback
+	if menu.uix_callbacks ["displayOrderParam_change_paramactive"] then
+		for uix_id, uix_callback in pairs (menu.uix_callbacks ["displayOrderParam_change_paramactive"]) do
+			local result = uix_callback (ftable, orderidx, order, paramidx, param, listidx, instance, paramactive)
+			if result and (result.paramactive ~= nil) then
+				paramactive = result.paramactive
+			end
+		end
+	end
+	-- VasiliyTemniy end: callback
+
 	if paramactive and ((param.inputparams and param.inputparams.playerreadonly) or param.playerreadonly) then
 		if param.inputparams and param.inputparams.playerreadonly then
 			paramactive = (param.inputparams.playerreadonly ~= 1)
@@ -28509,6 +28552,18 @@ end
 menu.updateInterval = 0.01
 
 function menu.onUpdate()
+	-- kuertee start: extra sort by distance
+	if (menu.infoTableMode == "propertyowned" or menu.infoTableMode == "objectlist") and (uix_extraSortByDistance_byObject_mode ~= "uix_extraSortByDistance_object" and uix_extraSortByDistance_byObject_mode ~= "uix_extraSortByDistance_objectinverse") then
+		-- if uix_extraSortByDistance_byObject_object ~= uix_extraSortByDistance_byObject_potentialObject then
+		if uix_extraSortByDistance_byObject_potentialObject and IsValidComponent(uix_extraSortByDistance_byObject_potentialObject) and uix_extraSortByDistance_byObject_object ~= uix_extraSortByDistance_byObject_potentialObject then
+			menu.refreshInfoFrame()
+			return
+		else
+			uix_extraSortByDistance_byObject_potentialObject = nil
+		end
+	end
+	-- kuertee end: extra sort by distance
+
 	local curtime = getElapsedTime()
 	if menu.updatePeopleInfo and (menu.updatePeopleInfo <= curtime) then
 		menu.refreshCrewInfo()
@@ -32485,14 +32540,6 @@ function menu.updateTableSelection(lastcomponent)
 			end
 		end
 
-		-- kuertee start: extra sort by distance
-		if (not refresh) and (menu.infoTableMode == "propertyowned" or menu.infoTableMode == "objectlist") and (not uix_extraSortByDistance_byObject_mode) then
-			if uix_extraSortByDistance_byObject_object ~= uix_extraSortByDistance_byObject_potentialObject then
-				refresh = true
-			end
-		end
-		-- kuertee end: extra sort by distance
-
 		if refresh then
 			menu.refreshInfoFrame()
 			return
@@ -32590,15 +32637,19 @@ function menu.addSelectedComponent(component, clear, noupdate)
 
 	-- kuertee start: extra sort by distance
 	uix_extraSortByDistance_byObject_potentialObject = nil
-	if not next(menu.selectedcomponents) and add then
+	if (not next(menu.selectedcomponents)) and add and component then
 		-- always set uix_extraSortByDistance_byObject_potentialObject to only the first component added to menu.selectedcomponents
+		component = ConvertStringTo64Bit(tostring(component))
 		if IsValidComponent(component) then
 			uix_extraSortByDistance_byObject_potentialObject = component
 		end
 	else
 		local firstSelectedComponent = next(menu.selectedcomponents)
-		if IsValidComponent(firstSelectedComponent) then
-			uix_extraSortByDistance_byObject_potentialObject = firstSelectedComponent and ConvertStringTo64Bit(tostring(firstSelectedComponent)) or nil
+		if firstSelectedComponent then
+			firstSelectedComponent = ConvertStringTo64Bit(tostring(firstSelectedComponent))
+			if IsValidComponent(firstSelectedComponent) then
+				uix_extraSortByDistance_byObject_potentialObject = firstSelectedComponent
+			end
 		end
 	end
 	-- kuertee end: extra sort by distance
@@ -33547,27 +33598,35 @@ function menu.uix_sortDanger(a, b, invert)
 	-- local numtotalquadrants = C.GetDefensibleDPS(inactivedpstable, ship, true, true, true, false, false, false, true)
 	-- hasinactiveguns = inactivedpstable[0].dps > 0
 	a = ConvertStringTo64Bit(tostring(a))
-	local purpose_a = GetComponentData(a, "primarypurpose")
-	local dpsTable_a = ffi.new("DPSData[?]", 6)
-	C.GetDefensibleDPS(dpsTable_a, a, true, true, true, false, true, false, false)
-	local danger_a = dpsTable_a[0].dps + dpsTable_a[1].dps + dpsTable_a[2].dps + dpsTable_a[3].dps + dpsTable_a[4].dps + dpsTable_a[5].dps
-	if purpose_a == "fighter" then
-		danger_a = danger_a * 100
-	end
 	b = ConvertStringTo64Bit(tostring(b))
-	local purpose_b = GetComponentData(b, "primarypurpose")
-	local dpsTable_b = ffi.new("DPSData[?]", 6)
-	C.GetDefensibleDPS(dpsTable_b, b, true, true, true, false, true, false, false)
-	local danger_b = dpsTable_b[0].dps + dpsTable_b[1].dps + dpsTable_b[2].dps + dpsTable_b[3].dps + dpsTable_b[4].dps + dpsTable_b[5].dps
-	if purpose_b == "fighter" then
-		danger_b = danger_b * 100
-	end
-	if danger_a == danger_b then
-		return menu.uix_sortCombinedSkill(a, b, invert)
-	elseif invert then
-		return danger_a > danger_b
+	local a_valid = IsValidComponent(a)
+	local b_valid = IsValidComponent(b)
+	if a_valid and b_valid then
+		local purpose_a = GetComponentData(a, "primarypurpose")
+		local dpsTable_a = ffi.new("DPSData[?]", 6)
+		C.GetDefensibleDPS(dpsTable_a, a, true, true, true, false, true, false, false)
+		local danger_a = dpsTable_a[0].dps + dpsTable_a[1].dps + dpsTable_a[2].dps + dpsTable_a[3].dps + dpsTable_a[4].dps + dpsTable_a[5].dps
+		if purpose_a == "fighter" then
+			danger_a = danger_a * 100
+		end
+		local purpose_b = GetComponentData(b, "primarypurpose")
+		local dpsTable_b = ffi.new("DPSData[?]", 6)
+		C.GetDefensibleDPS(dpsTable_b, b, true, true, true, false, true, false, false)
+		local danger_b = dpsTable_b[0].dps + dpsTable_b[1].dps + dpsTable_b[2].dps + dpsTable_b[3].dps + dpsTable_b[4].dps + dpsTable_b[5].dps
+		if purpose_b == "fighter" then
+			danger_b = danger_b * 100
+		end
+		if danger_a == danger_b then
+			return menu.uix_sortCombinedSkill(a, b, invert)
+		elseif invert then
+			return danger_a > danger_b
+		else
+			return danger_a < danger_b
+		end
+	elseif a_valid then
+		return false
 	else
-		return danger_a < danger_b
+		return true
 	end
 end
 

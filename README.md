@@ -9,6 +9,8 @@ Updates
 v9.0.0.0.X, X May 2026:
 - New feature: New callbacks for sticeIO mods.
 - Tweaks: AEGS call-back tweaks for IALuir's mods.
+- New feature: Map Menu > Property Owned > Sort by Weapons. The Properties Owned list can be sorted by the objects' damage-per-second value. This is the same sort type used in the Multi-rename feature.
+- Bug-fix: Map Menu: Breaks when a selected object becomes invalid. E.g. when collecting a deployable after deactivating it.
 
 NOTES FOR PLAYERS:
 ==================
@@ -182,11 +184,14 @@ Map Menu: Properties Owned > Deployables
 ========================================
 The list of deployables are grouped by name that can be expanded and collapsed.
 
-Map Menu: Sort by distance
+Map Menu: Sort by Weapons
+=========================
+The Properties Owned list can be sorted by the objects' damage-per-second value.
+This is the same sort type used in the Multi-rename feature.
+
+Map Menu: Sort by Distance
 ==========================
 The Properties Owned list can be sorted by distance from the player or from the last selected object.
-Note that Egosoft's sorting icons (the up and down arrows) signify direction of the list NOT ascending descending orders.
-E.g. The down arrow actually sorts the list in ascending order. The list is sorted from least to greatest.
 
 Map Menu: Zoom Function Tweaks
 ==============================
