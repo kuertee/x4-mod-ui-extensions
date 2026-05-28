@@ -9253,7 +9253,7 @@ function menu.uix_renderExtraSortByDistance(tabtable, colSpanPerSorterColumn, bu
 		if IsValidComponent(uix_extraSortByDistance_byObject_potentialObject) then
 			local name, idCode = GetComponentData(uix_extraSortByDistance_byObject_potentialObject, "name", "idcode")
 			if idcode ~= "" then
-				mouseovertext = name .. " (" .. idcode .. ")"
+				mouseovertext = name .. " (" .. idCode .. ")"
 			else
 				mouseovertext = name
 			end

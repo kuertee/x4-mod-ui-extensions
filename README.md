@@ -6,10 +6,11 @@ Contributors: AlexandreTK, ChemODun, Damonya, DrWhoKnows, DmytroK, Erixon, Farem
 
 Updates
 =======
-v9.0.0.0.X, X May 2026:
-- New feature: New callbacks for sticeIO mods.
-- Tweaks: AEGS call-back tweaks for IALuir's mods.
-- New feature: Map Menu > Property Owned > Sort by Weapons. The Properties Owned list can be sorted by the objects' damage-per-second value. This is the same sort type used in the Multi-rename feature.
+v9.0.0.0.12, 28 May 2026:
+- Compatibility: 9.0 RC 1 UI files merged. Thanks, ChemODun!
+- New feature: Callbacks for sticeIO's mod/s.
+- Tweaks: Callbacks for IALuir's mod/s.
+- New feature: Map Menu > Property Owned > Sort by Weapons. The Properties Owned list can be sorted by objects' damage-per-second value. This is the same sort type used in the Multi-rename feature when.
 - Bug-fix: Map Menu: Breaks when a selected object becomes invalid. E.g. when collecting a deployable after deactivating it.
 
 NOTES FOR PLAYERS:
