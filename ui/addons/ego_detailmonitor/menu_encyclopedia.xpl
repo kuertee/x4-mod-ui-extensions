@@ -3672,7 +3672,7 @@ function menu.addDetailRows(ftable)
 					menu.addDetailRow(ftable, ReadText(1001, 9086), ConvertIntegerString(menu.object.bulletspeed, true, 0, true) .. " " .. ReadText(1001, 113))
 				end
 				-- range
-				menu.addDetailRow(ftable, ReadText(1001, 9087), menu.formatRange(menu.object.range) .. " " .. ReadText(1001, 108))
+				menu.addDetailRow(ftable, ReadText(1001, 9087), Helper.formatRange(menu.object.range) .. " " .. ReadText(1001, 108))
 				-- influence
 				if menu.object.influencename then
 					menu.addDetailRow(ftable, "")
@@ -3789,7 +3789,7 @@ function menu.addDetailRows(ftable)
 					menu.addDetailRow(ftable, ReadText(1001, 9086), ConvertIntegerString(menu.object.bulletspeed, true, 0, true) .. " " .. ReadText(1001, 113))
 				end
 				-- range
-				menu.addDetailRow(ftable, ReadText(1001, 9087), menu.formatRange(menu.object.range) .. " " .. ReadText(1001, 108))
+				menu.addDetailRow(ftable, ReadText(1001, 9087), Helper.formatRange(menu.object.range) .. " " .. ReadText(1001, 108))
 				-- rotation speed
 				local printedrot = (menu.object.rotation > 1 and ConvertIntegerString(menu.object.rotation, true, 0, true)) or (menu.object.rotation > 0.1 and Helper.round(menu.object.rotation, 1)) or Helper.round(menu.object.rotation, 2)
 				menu.addDetailRow(ftable, ReadText(1001, 2419), printedrot .. " " .. ReadText(1001, 117))
@@ -3833,10 +3833,10 @@ function menu.addDetailRows(ftable)
 					menu.addDetailRow(ftable, ReadText(1001, 9088) .. " (" .. ReadText(1001, 2) .. ")", ConvertIntegerString(menu.object.shieldexplosiondamage, true, 0, true) .. " " .. ReadText(1001, 118))
 				end
 				-- range
-				menu.addDetailRow(ftable, ReadText(1001, 9087), menu.formatRange(menu.object.range) .. " " .. ReadText(1001, 108))
+				menu.addDetailRow(ftable, ReadText(1001, 9087), Helper.formatRange(menu.object.range) .. " " .. ReadText(1001, 108))
 				if menu.object.locktime > 0 then
 					-- lock range
-					menu.addDetailRow(ftable, ReadText(1001, 9649), menu.formatRange(menu.object.maxlockrange) .. " " .. ReadText(1001, 108))
+					menu.addDetailRow(ftable, ReadText(1001, 9649), Helper.formatRange(menu.object.maxlockrange) .. " " .. ReadText(1001, 108))
 					-- lock time
 					menu.addDetailRow(ftable, ReadText(1001, 9650), ConvertIntegerString(menu.object.locktime, true, 0, true) .. " " .. ReadText(1001, 100))
 				end
@@ -4549,10 +4549,6 @@ function menu.isMakerRaceAllowed(makerraces, objectmakerraces)
 end
 
 -- input in m
-function menu.formatRange(range)
-	return string.format("%." .. ((range > 1000) and 1 or 3) .. "f", Helper.round(range / 1000, (range > 1000) and 1 or 3))
-end
-
 -- kuertee start:
 menu.uix_callbackCount = 0
 function menu.registerCallback(callbackName, callbackFunction, id)

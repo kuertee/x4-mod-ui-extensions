@@ -1675,6 +1675,7 @@ local config = {
 		{ icon = "order_explore",					text = ReadText(1041, 311) },		-- Explore
 		{ icon = "order_exploreupdate",				text = ReadText(1041, 301) },		-- Revisit known stations
 
+		{ icon = "order_prospect",					text = ReadText(1041, 921) },		-- Prospect
 		{ icon = "order_miningroutine",				text = ReadText(1041, 561) },		-- Mine Resources
 
 		{ icon = "order_tradeperform",				text = ReadText(1041, 171) },		-- Execute Trade
@@ -1739,6 +1740,7 @@ local config = {
 		["tradeforbuildstorage"]	= { name = ReadText(20208, 40801) },
 		["assist"]					= { name = ReadText(20208, 41201) },
 		["salvage"]					= { name = ReadText(20208, 41401) },
+		["prospect"]				= { name = ReadText(20208, 41701) },
 	},
 
 	infoLogbook = {
@@ -7231,6 +7233,7 @@ function menu.createContextFrame(width, height, xoffset, yoffset, noborder, star
 	menu.contextFrame:setBackground("solid", { color = Color["frame_background_semitransparent"] })
 
 	local adjustFrameHeight = true
+	menu.isVentureContextMode = false
 	if menu.contextMenuMode == "neworder" then
 		menu.createNewOrderContext(menu.contextFrame, menu.contextMenuData.instance)
 	elseif menu.contextMenuMode == "set_orderparam_ware" then
@@ -7274,8 +7277,10 @@ function menu.createContextFrame(width, height, xoffset, yoffset, noborder, star
 	elseif menu.contextMenuMode == "userquestion" then
 		menu.createUserQuestionContext(menu.contextFrame)
 	elseif menu.contextMenuMode == "userquestion_multiverse" then
+		menu.isVentureContextMode = true
 		Helper.callExtensionFunction("multiverse", "createUserQuestionContext", menu, menu.contextFrame)
 	elseif menu.contextMenuMode == "error_multiverse" then
+		menu.isVentureContextMode = true
 		Helper.callExtensionFunction("multiverse", "createErrorContext", menu, menu.contextFrame)
 	elseif menu.contextMenuMode == "onlinemode" then
 		local contexttable = menu.createOnlineModeContext(menu.contextFrame)
@@ -7292,26 +7297,34 @@ function menu.createContextFrame(width, height, xoffset, yoffset, noborder, star
 		menu.contextFrame.properties.height = menu.contextMenuData.height
 		adjustFrameHeight = false
 	elseif menu.contextMenuMode == "ventureconfig" then
+		menu.isVentureContextMode = true
 		Helper.callExtensionFunction("multiverse", "showVentureConfigurationContext", menu, menu.contextFrame, menu.contextMenuData.instance)
 	elseif menu.contextMenuMode == "venturecreateparty" then
+		menu.isVentureContextMode = true
 		Helper.callExtensionFunction("multiverse", "createVentureCreatePartyContext", menu, menu.contextFrame, menu.contextMenuData.instance)
 	elseif menu.contextMenuMode == "venturepatron" then
+		menu.isVentureContextMode = true
 		Helper.callExtensionFunction("multiverse", "createVenturePatronContext", menu, menu.contextFrame, menu.contextMenuData.instance)
 	elseif menu.contextMenuMode == "venturereport" then
+		menu.isVentureContextMode = true
 		Helper.callExtensionFunction("multiverse", "createUserQuestionContext", menu, menu.contextFrame)
 	elseif menu.contextMenuMode == "ventureteammembercontext" then
+		menu.isVentureContextMode = true
 		Helper.callExtensionFunction("multiverse", "createVentureTeamMemberContext", menu, menu.contextFrame)
 	elseif menu.contextMenuMode == "venturecontactcontext" then
 		Helper.createVentureContactContext(menu, menu.contextFrame)
 	elseif menu.contextMenuMode == "contactteaminfo" then
+		menu.isVentureContextMode = true
 		Helper.callExtensionFunction("multiverse", "createContactTeamInfoContext", menu, menu.contextFrame)
 	elseif menu.contextMenuMode == "venturefriendlist" then
 		Helper.showVentureFriendListContext(menu, menu.contextFrame)
 	elseif menu.contextMenuMode == "hire" then
 		menu.createHireContext(menu.contextFrame)
 	elseif menu.contextMenuMode == "ventureoutcome" then
+		menu.isVentureContextMode = true
 		Helper.callExtensionFunction("multiverse", "createVentureOutcomeContext", menu, menu.contextFrame, menu.contextMenuData.instance)
 	elseif menu.contextMenuMode == "onlinereward" then
+		menu.isVentureContextMode = true
 		local contexttable
 		contexttable, menu.contextMenuData.allowClose = Helper.callExtensionFunction("multiverse", "createVentureRewardContext", menu, menu.contextFrame, menu.contextMenuData.instance)
 		menu.contextFrame:setBackground("gradient_alpha_02", {  })
@@ -7329,6 +7342,7 @@ function menu.createContextFrame(width, height, xoffset, yoffset, noborder, star
 		menu.createSearchFieldContext(menu.contextFrame)
 		menu.contextFrame.properties.standardButtons = {}
 	elseif menu.contextMenuMode == "ventureshipselection" then
+		menu.isVentureContextMode = true
 		Helper.callExtensionFunction("multiverse", "createVentureShipSelectionContext", menu, menu.contextFrame, menu.contextMenuData.instance)
 		adjustFrameHeight = false
 	end
@@ -12648,6 +12662,7 @@ function menu.createOrderQueue(frame, mode, instance)
 			if isstation then
 				-- trade
 				table.insert(asssignmentOptions, { id = "trade", text = ReadText(20208, 40101), icon = "", displayremoveoption = false, mouseovertext = (primarypurpose == "mine") and (ColorText["text_warning"] .. ReadText(1026, 8608)) or "" })
+				table.insert(asssignmentOptions, { id = "prospect", text = ReadText(20208, 41701), icon = "", displayremoveoption = false })
 				if primarypurpose == "mine" then
 					-- mining
 					table.insert(asssignmentOptions, { id = "mining", text = ReadText(20208, 40201), icon = "", displayremoveoption = false })
@@ -17359,6 +17374,8 @@ function menu.setupLoadoutInfoSubmenuRows(mode, inputtable, inputobject, instanc
 							end
 
 							if isstation then
+								local prospectactive = (not usedassignments["prospect"]) or (usedassignments["prospect"] == i)
+								table.insert(subordinateassignments, { id = "prospect", text = ReadText(20208, 41701), icon = "", displayremoveoption = false, active = prospectactive, mouseovertext = prospectactive and "" or ReadText(1026, 7840) })
 								local miningactive = (groups[i].numassignableminingships == #groups[i].subordinates) and ((not usedassignments["mining"]) or (usedassignments["mining"] == i))
 								table.insert(subordinateassignments, { id = "mining", text = ReadText(20208, 40201), icon = "", displayremoveoption = false, active = miningactive, mouseovertext = miningactive and "" or ReadText(1026, 8602) })
 								local tradeactive = ((not usedassignments["trade"]) or (usedassignments["trade"] == i))
@@ -29056,7 +29073,7 @@ function menu.onUpdate()
 	end
 
 	if Helper.hasExtension("multiverse") then
-		if Helper.callExtensionFunction("multiverse", "updateVentures", menu) then
+		if Helper.callExtensionFunction("multiverse", "updateVentures", menu, menu.isVentureContextMode) then
 			refreshing = true
 		end
 	end
@@ -33306,7 +33323,7 @@ end
 function menu.buttonActiveSubordinateGroupLaunch(inputobject, i)
 	menu.updateSubordinateGroupInfo(inputobject)
 	if menu.subordinategroups[i] then
-		return (menu.subordinategroups[i].assignment ~= "trade") and (menu.subordinategroups[i].assignment ~= "mining") and (menu.subordinategroups[i].assignment ~= "follow") and (menu.subordinategroups[i].assignment ~= "assist") and (menu.subordinategroups[i].assignment ~= "supplyfleet")
+		return (menu.subordinategroups[i].assignment ~= "trade") and (menu.subordinategroups[i].assignment ~= "mining") and (menu.subordinategroups[i].assignment ~= "follow") and (menu.subordinategroups[i].assignment ~= "assist") and (menu.subordinategroups[i].assignment ~= "supplyfleet") and (menu.subordinategroups[i].assignment ~= "prospect")
 	end
 	return false
 end
