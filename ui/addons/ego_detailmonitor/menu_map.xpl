@@ -32586,12 +32586,23 @@ function menu.updateTableSelection(lastcomponent)
 	if (string.find("" .. tostring(menu.infoTableMode), "objectlist")) or (string.find("" .. tostring(menu.infoTableMode), "propertyowned")) then
 	-- kuertee end:
 
+		-- kuertee start: extra sort by distance
+		local uix_firstSelectedComponent
+		-- kuertee end: extra sort by distance
+
 		-- check if sections need to be extended - if so we need a refresh
 		local refresh = false
 		for id in pairs(menu.selectedcomponents) do
 			local component = ConvertStringTo64Bit(id)
 			-- build queues contain components that are not connected to the universe yet
 			if IsValidComponent(component) then
+
+				-- kuertee start: extra sort by distance
+				if not uix_firstSelectedComponent then
+					uix_firstSelectedComponent = component
+				end
+				-- kuertee end: extra sort by distance
+
 				local commanderlist = C.IsComponentClass(component, "controllable") and GetAllCommanders(component) or {}
 				for i, entry in ipairs(commanderlist) do
 					if (not menu.isPropertyExtended(tostring(entry))) then
@@ -32601,6 +32612,23 @@ function menu.updateTableSelection(lastcomponent)
 				end
 			end
 		end
+
+		-- kuertee start: extra sort by distance
+		if IsValidComponent(uix_firstSelectedComponent) and (not IsSameComponent(uix_firstSelectedComponent, uix_extraSortByDistance_byObject_object)) then
+			if uix_extraSortByDistance_byObject_mode ~= "uix_extraSortByDistance_object" and uix_extraSortByDistance_byObject_mode ~= "uix_extraSortByDistance_objectinverse" then
+				-- if not sorting by distance from object ...
+				uix_extraSortByDistance_byObject_isRefresh = true
+				uix_extraSortByDistance_byObject_object = uix_firstSelectedComponent
+				uix_extraSortByDistance_byObject_potentialObject = nil
+			else
+				-- if not sorting by distance from object ...
+				if not IsSameComponent(uix_firstSelectedComponent, uix_extraSortByDistance_byObject_potentialObject) then
+					uix_extraSortByDistance_byObject_isRefresh = true
+					uix_extraSortByDistance_byObject_potentialObject = uix_firstSelectedComponent
+				end
+			end
+		end
+		-- kuertee end: extra sort by distance
 
 		if refresh then
 			menu.refreshInfoFrame()
@@ -32696,38 +32724,6 @@ function menu.addSelectedComponent(component, clear, noupdate)
 			-- add -> nothing to do
 		end
 	end
-
-	-- kuertee start: extra sort by distance
-	local uix_sortByDistanceToObject = nil
-	if (not next(menu.selectedcomponents)) and add and component then
-		-- always set uix_sortByDistanceToObject to only the first component added to menu.selectedcomponents
-		if IsValidComponent(component) then
-			uix_sortByDistanceToObject = component
-		end
-	else
-		local firstSelectedComponent = next(menu.selectedcomponents)
-		if firstSelectedComponent then
-			firstSelectedComponent = ConvertStringTo64Bit(tostring(firstSelectedComponent))
-			if IsValidComponent(firstSelectedComponent) then
-				uix_sortByDistanceToObject = firstSelectedComponent
-			end
-		end
-	end
-	if IsValidComponent(uix_sortByDistanceToObject) and (not IsSameComponent(uix_sortByDistanceToObject, uix_extraSortByDistance_byObject_object)) then
-		if uix_extraSortByDistance_byObject_mode ~= "uix_extraSortByDistance_object" and uix_extraSortByDistance_byObject_mode ~= "uix_extraSortByDistance_objectinverse" then
-			-- if not sorting by distance from object ...
-			uix_extraSortByDistance_byObject_isRefresh = true
-			uix_extraSortByDistance_byObject_object = uix_sortByDistanceToObject
-			uix_extraSortByDistance_byObject_potentialObject = nil
-		else
-			-- if not sorting by distance from object ...
-			if not IsSameComponent(uix_sortByDistanceToObject, uix_extraSortByDistance_byObject_potentialObject) then
-				uix_extraSortByDistance_byObject_isRefresh = true
-				uix_extraSortByDistance_byObject_potentialObject = uix_sortByDistanceToObject
-			end
-		end
-	end
-	-- kuertee end: extra sort by distance
 
 	if add then
 		menu.selectedcomponents[tostring(component)] = {}

@@ -6,6 +6,9 @@ Contributors: AlexandreTK, ChemODun, Damonya, DrWhoKnows, DmytroK, Erixon, Farem
 
 Updates
 =======
+v9.0.0.0.12.1, 28 May 2026:
+- Bug-fix: Map Menu: Selecting multiple objects caused the map to continually refresh.
+
 v9.0.0.0.12, 28 May 2026:
 - Compatibility: 9.0 RC 1 UI files merged. Thanks, ChemODun!
 - New feature: Callbacks for sticeIO's mod/s.
