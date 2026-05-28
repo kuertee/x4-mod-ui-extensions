@@ -1922,6 +1922,7 @@ local uix_distanceTool_to_posRot
 local uix_extraSortByDistance_byObject_mode
 local uix_extraSortByDistance_byObject_potentialObject
 local uix_extraSortByDistance_byObject_object
+local uix_extraSortByDistance_byObject_isRefresh
 -- kuertee end: extra sort by distance
 
 local function init()
@@ -4448,6 +4449,16 @@ function menu.buttonObjectSorter(sorttype)
 	else
 		menu.objectSorterType = sorttype
 	end
+
+	-- kuertee start: extra sort by distance
+	if string.find(menu.objectSorterType, "uix_extraSortByDistance") then
+		uix_extraSortByDistance_byObject_mode = menu.objectSorterType
+	else
+		uix_extraSortByDistance_byObject_mode = nil
+		uix_extraSortByDistance_byObject_potentialObject = nil
+	end
+	-- kuertee end: extra sort by distance
+
 	menu.refreshInfoFrame()
 end
 
@@ -4457,6 +4468,16 @@ function menu.buttonPropertySorter(sorttype)
 	else
 		menu.propertySorterType = sorttype
 	end
+
+	-- kuertee start: extra sort by distance
+	if string.find(menu.propertySorterType, "uix_extraSortByDistance") then
+		uix_extraSortByDistance_byObject_mode = menu.propertySorterType
+	else
+		uix_extraSortByDistance_byObject_mode = nil
+		uix_extraSortByDistance_byObject_potentialObject = nil
+	end
+	-- kuertee end: extra sort by distance
+
 	menu.refreshInfoFrame()
 end
 
@@ -7864,10 +7885,6 @@ function menu.updateRenderedComponents()
 end
 
 function menu.componentSorter(sorttype)
-	-- kuertee start: extra sort by distance
-	uix_extraSortByDistance_byObject_mode = nil
-	-- kuertee end: extra sort by distance
-
 	local sorter = Helper.sortNameAndObjectID
 	if sorttype == "nameinverse" then
 		sorter = function (a, b) return Helper.sortNameAndObjectID(a, b, true) end
@@ -7897,19 +7914,14 @@ function menu.componentSorter(sorttype)
 
 	-- kuertee start: extra sort by distance
 	elseif sorttype == "uix_extraSortByDistance_player" then
-		uix_extraSortByDistance_byObject_mode = sorttype
 		sorter = menu.uix_sortDistanceFromPlayer
 	elseif sorttype == "uix_extraSortByDistance_playerinverse" then
-		uix_extraSortByDistance_byObject_mode = sorttype
 		sorter = function (a, b) return menu.uix_sortDistanceFromPlayer(a, b, true) end
 	elseif sorttype == "uix_extraSortByDistance_object" then
-		uix_extraSortByDistance_byObject_mode = sorttype
 		sorter = menu.uix_sortDistanceFromObject
 	elseif sorttype == "uix_extraSortByDistance_objectinverse" then
-		uix_extraSortByDistance_byObject_mode = sorttype
 		sorter = function (a, b) return menu.uix_sortDistanceFromObject (a, b, true) end
 	-- kuertee end: extra sort by distance
-
 	end
 	return sorter
 end
@@ -8586,7 +8598,13 @@ function menu.createObjectList(frame, instance)
 		sorterColumn = 4
 		tableColumn = (sorterColumn - 1) * colSpanPerSorterColumn + 1
 		row[tableColumn]:setColSpan(colSpanPerSorterColumn)
-		local buttonwidth = row[tableColumn]:getWidth() - Helper.standardContainerOffset
+
+		--kuertee start: extra sort by distance
+		-- last sorter button in row, so do not adjust with Helper.standardContainerOffset
+		-- local buttonwidth = row[tableColumn]:getWidth() - Helper.standardContainerOffset
+		local buttonwidth = row[tableColumn]:getWidth()
+		--kuertee end: extra sort by distance
+
 		button = row[tableColumn]:createButton({ scaling = false, width = buttonwidth, height = buttonheight }):setText(ReadText(1001, 7749), { halign = "center", scaling = true })
 		if menu.objectSorterType == "relation" then
 			button:setIcon("table_arrow_inv_down", { width = iconheight, height = iconheight, x = buttonwidth - iconheight, y = (buttonheight - iconheight) / 2 })
@@ -9110,7 +9128,13 @@ function menu.createPropertyOwned(frame, instance)
 		sorterColumn = 4
 		tableColumn = (sorterColumn - 1) * colSpanPerSorterColumn + 1
 		row[tableColumn]:setColSpan(colSpanPerSorterColumn)
-		local buttonwidth = row[tableColumn]:getWidth() - Helper.standardContainerOffset
+
+		--kuertee start: extra sort by distance
+		-- last sorter button in row, so do not adjust with Helper.standardContainerOffset
+		-- local buttonwidth = row[tableColumn]:getWidth() - Helper.standardContainerOffset
+		local buttonwidth = row[tableColumn]:getWidth()
+		--kuertee end: extra sort by distance
+
 		button = row[tableColumn]:createButton({ scaling = false, width = buttonwidth, height = buttonheight }):setText(ReadText(1001, 11284), { halign = "center", scaling = true })
 		if menu.propertySorterType == "sector" then
 			button:setIcon("table_arrow_inv_down", { width = iconheight, height = iconheight, x = buttonwidth - iconheight, y = (buttonheight - iconheight) / 2 })
@@ -9191,18 +9215,8 @@ function menu.uix_renderExtraSortByDistance(tabtable, colSpanPerSorterColumn, bu
 	end
 
 	-- "distance from object"
-	if uix_extraSortByDistance_byObject_mode ~= "uix_extraSortByDistance_object" and uix_extraSortByDistance_byObject_mode ~= "uix_extraSortByDistance_objectinverse" then
-		uix_extraSortByDistance_byObject_object = nil
-		if IsValidComponent(uix_extraSortByDistance_byObject_potentialObject) then
-			uix_extraSortByDistance_byObject_object = uix_extraSortByDistance_byObject_potentialObject
-		else
-			uix_extraSortByDistance_byObject_potentialObject = nil
-		end
-	end
 	sorterColumn = 4
 	tableColumn = (sorterColumn - 1) * colSpanPerSorterColumn + 1
-	row[tableColumn]:setColSpan(colSpanPerSorterColumn)
-	local buttonwidth = row[tableColumn]:getWidth() - Helper.standardContainerOffset
 	if IsValidComponent(uix_extraSortByDistance_byObject_object) then
 		local name, idcode, classid = GetComponentData(ConvertStringToLuaID(tostring(uix_extraSortByDistance_byObject_object)), "name", "idcode", "classid")
 		local mouseovertext = name
@@ -9213,6 +9227,15 @@ function menu.uix_renderExtraSortByDistance(tabtable, colSpanPerSorterColumn, bu
 			buttonLabel = name
 		end
 
+		local buttonwidth
+		if not IsValidComponent(uix_extraSortByDistance_byObject_potentialObject) then
+			row[tableColumn]:setColSpan(colSpanPerSorterColumn)
+		else
+			row[tableColumn]:setColSpan(colSpanPerSorterColumn - 1)
+		end
+		-- last sorter button in row, so do not adjust with Helper.standardContainerOffset
+		-- buttonwidth = row[tableColumn]:getWidth() - Helper.standardContainerOffset
+		buttonwidth = row[tableColumn]:getWidth()
 		local button = row[tableColumn]:createButton({ scaling = false, width = buttonwidth, height = buttonheight, mouseOverText = mouseovertext }):setText(buttonLabel, { halign = "center", scaling = true })
 		if uix_extraSortByDistance_byObject_mode == "uix_extraSortByDistance_object" then
 			button:setIcon("table_arrow_inv_down", { width = iconheight, height = iconheight, x = buttonwidth - iconheight, y = (buttonheight - iconheight) / 2 })
@@ -9226,8 +9249,34 @@ function menu.uix_renderExtraSortByDistance(tabtable, colSpanPerSorterColumn, bu
 				return menu.buttonPropertySorter("uix_extraSortByDistance_object")
 			end
 		end
+
+		if IsValidComponent(uix_extraSortByDistance_byObject_potentialObject) then
+			local name, idCode = GetComponentData(uix_extraSortByDistance_byObject_potentialObject, "name", "idcode")
+			if idcode ~= "" then
+				mouseovertext = name .. " (" .. idcode .. ")"
+			else
+				mouseovertext = name
+			end
+			-- sorterColumn = 5
+			-- tableColumn = (sorterColumn - 1) * colSpanPerSorterColumn + 1
+			tableColumn = 12
+			row[tableColumn]:setColSpan(1)
+			-- last sorter button in row, so do not adjust with Helper.standardContainerOffset
+			-- buttonwidth = row[tableColumn]:getWidth() - Helper.standardContainerOffset
+			buttonwidth = row[tableColumn]:getWidth()
+			local button = row[tableColumn]:createButton({ scaling = false, width = buttonwidth, height = buttonheight, mouseOverText = mouseovertext })
+			button:setIcon("table_arrow_inv_left", { width = iconheight, height = iconheight, x = buttonwidth * 0.5 - iconheight * 0.5, y = (buttonheight - iconheight) / 2 })
+			row[tableColumn].handlers.onClick = function ()
+				uix_extraSortByDistance_byObject_object = uix_extraSortByDistance_byObject_potentialObject
+				uix_extraSortByDistance_byObject_potentialObject = nil
+				uix_extraSortByDistance_byObject_isRefresh = true
+				-- Helper.refreshInfoFrame()
+			end
+		end
 	else
-		local button = row[tableColumn]:createButton({ active = false, scaling = false, width = buttonwidth, height = buttonheight }):setText(buttonLabel, { halign = "center", scaling = true })
+		row[tableColumn]:setColSpan(colSpanPerSorterColumn)
+		local buttonwidth = row[tableColumn]:getWidth() - Helper.standardContainerOffset
+		local button = row[tableColumn]:createButton({ active = false, scaling = false, width = buttonwidth, height = buttonheight }):setText("", { halign = "center", scaling = true })
 	end
 end
 -- kuertee end: extra sort by distance
@@ -28570,14 +28619,10 @@ menu.updateInterval = 0.01
 
 function menu.onUpdate()
 	-- kuertee start: extra sort by distance
-	if (menu.infoTableMode == "propertyowned" or menu.infoTableMode == "objectlist") and (uix_extraSortByDistance_byObject_mode ~= "uix_extraSortByDistance_object" and uix_extraSortByDistance_byObject_mode ~= "uix_extraSortByDistance_objectinverse") then
-		-- if uix_extraSortByDistance_byObject_object ~= uix_extraSortByDistance_byObject_potentialObject then
-		if uix_extraSortByDistance_byObject_potentialObject and IsValidComponent(uix_extraSortByDistance_byObject_potentialObject) and uix_extraSortByDistance_byObject_object ~= uix_extraSortByDistance_byObject_potentialObject then
-			menu.refreshInfoFrame()
-			return
-		else
-			uix_extraSortByDistance_byObject_potentialObject = nil
-		end
+	if uix_extraSortByDistance_byObject_isRefresh then
+		uix_extraSortByDistance_byObject_isRefresh = nil
+		menu.refreshInfoFrame()
+		return
 	end
 	-- kuertee end: extra sort by distance
 
@@ -32653,19 +32698,32 @@ function menu.addSelectedComponent(component, clear, noupdate)
 	end
 
 	-- kuertee start: extra sort by distance
-	uix_extraSortByDistance_byObject_potentialObject = nil
+	local uix_sortByDistanceToObject = nil
 	if (not next(menu.selectedcomponents)) and add and component then
-		-- always set uix_extraSortByDistance_byObject_potentialObject to only the first component added to menu.selectedcomponents
-		component = ConvertStringTo64Bit(tostring(component))
+		-- always set uix_sortByDistanceToObject to only the first component added to menu.selectedcomponents
 		if IsValidComponent(component) then
-			uix_extraSortByDistance_byObject_potentialObject = component
+			uix_sortByDistanceToObject = component
 		end
 	else
 		local firstSelectedComponent = next(menu.selectedcomponents)
 		if firstSelectedComponent then
 			firstSelectedComponent = ConvertStringTo64Bit(tostring(firstSelectedComponent))
 			if IsValidComponent(firstSelectedComponent) then
-				uix_extraSortByDistance_byObject_potentialObject = firstSelectedComponent
+				uix_sortByDistanceToObject = firstSelectedComponent
+			end
+		end
+	end
+	if IsValidComponent(uix_sortByDistanceToObject) and (not IsSameComponent(uix_sortByDistanceToObject, uix_extraSortByDistance_byObject_object)) then
+		if uix_extraSortByDistance_byObject_mode ~= "uix_extraSortByDistance_object" and uix_extraSortByDistance_byObject_mode ~= "uix_extraSortByDistance_objectinverse" then
+			-- if not sorting by distance from object ...
+			uix_extraSortByDistance_byObject_isRefresh = true
+			uix_extraSortByDistance_byObject_object = uix_sortByDistanceToObject
+			uix_extraSortByDistance_byObject_potentialObject = nil
+		else
+			-- if not sorting by distance from object ...
+			if not IsSameComponent(uix_sortByDistanceToObject, uix_extraSortByDistance_byObject_potentialObject) then
+				uix_extraSortByDistance_byObject_isRefresh = true
+				uix_extraSortByDistance_byObject_potentialObject = uix_sortByDistanceToObject
 			end
 		end
 	end
@@ -33581,7 +33639,6 @@ end
 function menu.uix_sortDistanceFromObject (a, b, invert)
 	a = ConvertStringTo64Bit(tostring(a.id))
 	b = ConvertStringTo64Bit(tostring(b.id))
-	uix_extraSortByDistance_byObject_object = ConvertStringTo64Bit(tostring(uix_extraSortByDistance_byObject_object))
 	if IsValidComponent(a) and IsValidComponent(b) and IsValidComponent(uix_extraSortByDistance_byObject_object) then
 		local distance_a = C.GetDistanceBetween(a, uix_extraSortByDistance_byObject_object)
 		local distance_b = C.GetDistanceBetween(b, uix_extraSortByDistance_byObject_object)
