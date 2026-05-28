@@ -7061,7 +7061,7 @@ function menu.onUpdate()
 	end
 
 	if Helper.hasExtension("multiverse") then
-		if Helper.callExtensionFunction("multiverse", "updateVentures", menu) then
+		if Helper.callExtensionFunction("multiverse", "updateVentures", menu, true) then
 			menu.refreshInfoFrame()
 		end
 	end
