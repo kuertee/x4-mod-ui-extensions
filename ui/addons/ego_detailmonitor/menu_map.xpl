@@ -9275,7 +9275,9 @@ function menu.uix_renderExtraSortByDistance(tabtable, colSpanPerSorterColumn, bu
 		end
 	else
 		row[tableColumn]:setColSpan(colSpanPerSorterColumn)
-		local buttonwidth = row[tableColumn]:getWidth() - Helper.standardContainerOffset
+		-- last sorter button in row, so do not adjust with Helper.standardContainerOffset
+		-- local buttonwidth = row[tableColumn]:getWidth() - Helper.standardContainerOffset
+		local buttonwidth = row[tableColumn]:getWidth()
 		local button = row[tableColumn]:createButton({ active = false, scaling = false, width = buttonwidth, height = buttonheight }):setText("", { halign = "center", scaling = true })
 	end
 end
