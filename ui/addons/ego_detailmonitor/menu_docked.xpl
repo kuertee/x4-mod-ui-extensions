@@ -206,6 +206,7 @@ local function init()
 	RegisterEvent("conversationCancelled", menu.onConvEnds)
 	RegisterEvent("conversationFinished", menu.onConvEnds)
 	RegisterEvent("cinematic_camera_deactivated", menu.checkActivation)
+	RegisterEvent("coverabilitychanged", menu.onCoverAbilityChanged)
 
 	-- kuertee start:
 	menu.init_kuertee()
@@ -247,6 +248,12 @@ function menu.checkActivation()
 	local occupiedship = ConvertStringTo64Bit(tostring(C.GetPlayerOccupiedShipID()))
 	if ((occupiedship ~= 0) and GetComponentData(occupiedship, "isdocked")) or ((controlpost ~= "") and (controlpost ~= "pilotcontrol")) then
 		OpenMenu("DockedMenu", { 0, 0 }, nil)
+	end
+end
+
+function menu.onCoverAbilityChanged()
+	if menu.shown then
+		menu.refresh = getElapsedTime() - 1
 	end
 end
 
