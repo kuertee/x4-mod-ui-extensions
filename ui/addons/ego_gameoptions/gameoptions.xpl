@@ -10605,7 +10605,9 @@ function menu.displayExtensions()
 				end
 				-- add name of author
 				local row = optiontable:addRow(false, {})
-				row[2]:createText(extension.author, config.standardTextProperties)
+				-- Chem start: process long author names
+				row[2]:setColSpan(6):createText(extension.author, config.standardTextProperties)
+				-- Chem end: process long author names
 				row[2].properties.fontsize = row[2].properties.fontsize * 2
 				if not extension.enabled then
 					row[2].properties.color = Helper.color.grey
@@ -10886,6 +10888,15 @@ function menu.displayExtensionRow(ftable, extension, extensionSetting)
 	row[7].handlers.onClick = function () menu.selectedExtension = extension; menu.openSubmenu("extensionsettings", extension.id) end
 end
 
+-- Chem start: long version formatting
+local function formatVersion(ver)
+    local major, patch = ver:match("^(%d+)%.(%d+)$")
+    local n = tonumber(major)
+    if n < 100 then return ver end  -- already short, don't reformat
+    return string.format("%d.%02d.%02d", math.floor(n / 100), n % 100, tonumber(patch))
+end
+-- Chem end: long version formatting
+
 function menu.displayModRow(ftable, extension, extensionSetting)
 	-- cols: 2 name, 3 id, 4 version, 5 date
 	local row = ftable:addRow(extension, {  })
@@ -10909,7 +10920,9 @@ function menu.displayModRow(ftable, extension, extensionSetting)
 
 	row[3]:createText(extension.id, config.standardTextProperties)
 
-	row[4]:createText(extension.version, config.standardTextProperties)
+	-- Chem start: use long version formatting
+	row[4]:createText(formatVersion(extension.version), config.standardTextProperties)
+	-- Chem end: use long version formatting
 	row[4].properties.halign = "right"
 	row[5]:createText(extension.date, config.standardTextProperties)
 	row[5].properties.halign = "right"
