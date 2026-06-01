@@ -456,7 +456,7 @@ local function init()
 		elseif not C.DoesUserDataExist() then
 			menu.contextMenuMode = "firstgame"
 			menu.contextMenuData = { width = Helper.scaleX(500), y = Helper.viewHeight / 2 }
-		elseif C.IsVentureSeasonSupported() and OnlineHasSession() and (not OnlineGetVentureConfig("allow_validation")) and (not OnlineGetVentureConfig("disable_popup")) then
+		elseif C.AreVentureFeaturesEnabled() and OnlineHasSession() and (not OnlineGetVentureConfig("allow_validation")) and (not OnlineGetVentureConfig("disable_popup")) then
 			menu.contextMenuMode = "ventureextension"
 			menu.contextMenuData = { width = Helper.scaleX(400), y = Helper.viewHeight / 2 }
 		end
@@ -3068,7 +3068,7 @@ function menu.onOnlineLogin(_, serializedArg)
 		C.ResetEncryptedDirectInputData()
 		menu.onlineData.password = ""
 
-		if C.IsVentureSeasonSupported() and (error == "") and (not OnlineGetVentureConfig("allow_validation")) and (not OnlineGetVentureConfig("disable_popup")) then
+		if C.AreVentureFeaturesEnabled() and (error == "") and (not OnlineGetVentureConfig("allow_validation")) and (not OnlineGetVentureConfig("disable_popup")) then
 			menu.contextMenuMode = "ventureextension"
 			menu.contextMenuData = { width = Helper.scaleX(400), y = Helper.viewHeight / 2, refreshOnClose = true }
 			menu.createContextMenu()
