@@ -11632,7 +11632,7 @@ function menu.repairandupgrade(shoppinglistentry, object, macro, hasupgrades, ha
 				C.SetBuildTaskTransferredMoney(buildtaskid, objectprice and (objectprice + objectcrewprice) or haspaid)
 			end
 
-            		-- kuertee start: callback
+            -- kuertee start: callback
 			if menu.uix_callbacks["repairandupgrade_after_build_order_created"] then
 				for uix_id, uix_callback in pairs(menu.uix_callbacks["repairandupgrade_after_build_order_created"]) do
 					uix_callback(shoppinglistentry, object, buildtaskid)
