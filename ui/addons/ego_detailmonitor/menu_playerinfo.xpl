@@ -1966,6 +1966,7 @@ function menu.createInventory(frame, tableProperties, mode, tabOrderOffset)
 			row[1]:createText(description, { wordwrap = true })
 		end
 	elseif menu.inventoryData.mode == "online" then
+		menu.cleanupCutsceneRenderTarget()
 		if Helper.hasExtension("multiverse") then
 			Helper.callExtensionFunction("multiverse", "registerOnlineEvents", menu)
 			Helper.callExtensionFunction("multiverse", "createVenturePlayerInventory", menu, menu.infoFrame, "left", "playerinfo", tableProperties)
