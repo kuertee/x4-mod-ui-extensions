@@ -5322,7 +5322,7 @@ function menu.checkConsumableEntryActive(macro, cargoamount, virtualuseddeployab
 		return cargoamount > 0
 	else
 		local orderqueueamount = 0
-		if virtualuseddeployables[macro] then
+		if virtualuseddeployables and virtualuseddeployables[macro] then
 			if menu.priorityOrderMode then
 				orderqueueamount = virtualuseddeployables[macro].priority or 0
 			else
@@ -5338,7 +5338,7 @@ function menu.getConsumableEntryText2(macro, cargoamount, virtualuseddeployables
 		return "(" .. cargoamount .. ")"
 	else
 		local orderqueueamount = 0
-		if virtualuseddeployables[macro] then
+		if virtualuseddeployables and virtualuseddeployables[macro] then
 			if menu.priorityOrderMode then
 				orderqueueamount = virtualuseddeployables[macro].priority or 0
 			else
