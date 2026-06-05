@@ -27011,7 +27011,9 @@ function menu.uix_multiRename_formatName(object, newName, uix_indexText)
 				end
 			end
 		end
-		uix_name = string.gsub(uix_name, "%$name_UTAR", GetComponentData(object, "editName"))
+		if editName then
+			uix_name = string.gsub(uix_name, "%$name_UTAR", editName)
+		end
 	end
 	if string.find(uix_name, "$i") then
 		uix_name = string.gsub(uix_name, "%$i", uix_indexText)

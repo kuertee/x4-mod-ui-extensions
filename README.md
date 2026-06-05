@@ -6,8 +6,8 @@ Contributors: AlexandreTK, ChemODun, Damonya, DrWhoKnows, DmytroK, Erixon, Farem
 
 Updates
 =======
-v9.0.0.0.12.2, 28 May 2026:
-- Compatibility: 9.0 RC 2 UI files merged. Thanks, ChemODun!
+v9.0.0.0.12.4, 5 Jun 2026:
+- Compatibility: 9.0 RC 4 UI files merged. Thanks, ChemODun!
 
 v9.0.0.0.12.1, 28 May 2026:
 - Bug-fix: Map Menu: Selecting multiple objects caused the map to continually refresh.
