@@ -4078,8 +4078,15 @@ function menu.createContentTable(frame, position)
 			-- kuertee end: don't show custom actions in position defense options
 
 			if pass then
+				-- chemodun start: allow a mix of actions and susections in groups
+				local hastitle = false
+				-- kuertee end: allow a mix of actions and susections in groups
+
 				if section.subsections then
-					local hastitle = false
+					-- chemodun start: allow a mix of actions and susections in groups
+					-- local hastitle = false
+					-- kuertee end: allow a mix of actions and susections in groups
+
 					for _, subsection in ipairs(section.subsections) do
 						-- kuertee start: callback
 						local kUIX_isSubsectionValid = true
@@ -4141,8 +4148,17 @@ function menu.createContentTable(frame, position)
 						:: createContentTable_skipSubsection ::
 						-- kuertee end: callback
 					end
-				elseif #menu.actions[section.id] > 0 then
-					height = height + menu.addSectionTitle(ftable, section, first)
+
+				-- chemodun start: allow a mix of actions and susections in groups
+				-- elseif #menu.actions[section.id] > 0 then
+				-- 	height = height + menu.addSectionTitle(ftable, section, first)
+				end
+				if #menu.actions[section.id] > 0 then
+					if not hastitle then
+						height = height + menu.addSectionTitle(ftable, section, first)
+					end
+				-- kuertee end: allow a mix of actions and susections in groups
+
 					first = false
 					local availabletextwidth
 					if (section.id == "main") or (section.id == "selected_orders") or (section.id == "trade_orders") or (section.id == "selected_assignments") or (section.id == "player_interaction") or (section.id == "trade") then
