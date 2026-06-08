@@ -308,13 +308,13 @@ function menu.cleanup()
 	menu.printedshipdata = {}
 	menu.printedshipsizes = {}
 
-	-- start: alexandretk call-back
+	-- start: alexandretk callback
 	if menu.uix_callbacks ["cleanup"] then
 			for uix_id, uix_callback in pairs (menu.uix_callbacks ["cleanup"]) do
 			uix_callback ()
 	    end
 	end
-	-- end: alexandretk call-back
+	-- end: alexandretk callback
 
 	menu.rendertargetmode = nil
 	menu.refresh = nil
@@ -449,7 +449,7 @@ function menu.onShowMenu(state)
 
 	menu.sortedpurposelist = { "fight", "trade", "mine", "build", "misc" }
 
-	-- start: alexandretk call-back
+	-- start: alexandretk callback
 	if menu.uix_callbacks ["onShowMenu_override_menu_printed_variables"] then
 		local printedshipdata_override = {}
 		local printedshipsizes_override = {}
@@ -462,7 +462,7 @@ function menu.onShowMenu(state)
 			menu.printedmilitaryxlcapitalshiptypes =  printedmilxlcapshiptype_override
 			menu.printedmilitarylcapitalshiptypes =  printedmillcapshiptypes_override
 		end
-		-- end: alexandretk call-back
+		-- end: alexandretk callback
 	else
 
 		menu.printedshipsizes = { "capital", "noncapital" }
@@ -894,7 +894,7 @@ function menu.onShowMenu(state)
 	for _, size in ipairs(sortedsizelist) do
 		for _, shipdata in ipairs(menu.data.Ships[size]) do
 
-			-- start: alexandretk call-back
+			-- start: alexandretk callback
 			if menu.uix_callbacks ["onShowMenu_override_sizecategory"] then
 				local purpose, shiptypename, shipicon = GetMacroData(shipdata.id, "primarypurpose", "shiptypename", "icon")
 				local sizecategory = "noncapital"
@@ -902,7 +902,7 @@ function menu.onShowMenu(state)
 					uix_callback(menu,shipdata,size,purpose,typecategory,sizecategory,shiptypename,shipicon)
 				end
 			else
-			-- end: alexandretk call-back
+			-- end: alexandretk callback
 
 				local purpose, ware = GetMacroData(shipdata.id, "primarypurpose", "ware")
 				local sizecategory = "noncapital"
@@ -1039,7 +1039,7 @@ function menu.onShowMenu(state)
 						sizecategory = "capital"
 					end
 
-					-- start: alexandretk call-backs
+					-- start: alexandretk callbacks
 					if sizecategory == "capital" and menu.uix_callbacks ["onShowMenu_override_capitalsizecategory"] then
 						local purpose, shiptypename, shipicon = GetMacroData(shipdata.id, "primarypurpose", "shiptypename", "icon")
 						local sizecategory = "noncapital"
@@ -1047,7 +1047,7 @@ function menu.onShowMenu(state)
 							uix_callback(menu,size,purpose,typecategory,sizecategory,shiptypename,shipicon)
 						end
 					else
-					-- end: alexandretk call-backs
+					-- end: alexandretk callbacks
 						if purpose == "auxiliary" then
 							-- sic! We want auxiliary ships to show up in the "support" category under combat
 							purpose = "fight"
@@ -1206,7 +1206,7 @@ function menu.addIndexEntry(array, item, name, rowdata, indent, numentries, expa
 		elseif (type(rowdata) == "table") and (rowdata[1] == "Ships") then
 			if type(rowdata[2]) == "table" and not menu.printedshipdata[rowdata[2]] then
 
-				-- start: alexandretk call-back
+				-- start: alexandretk callback
 				if menu.uix_callbacks ["onShowMenu_addingTypeIndexEntries"] then
 					local addthis
 					for uix_id, uix_callback in pairs (menu.uix_callbacks["onShowMenu_addingTypeIndexEntries"]) do
@@ -1214,7 +1214,7 @@ function menu.addIndexEntry(array, item, name, rowdata, indent, numentries, expa
 						numunread = numunread + addthis
 					end
 				else
-				-- end: alexandretk call-back
+				-- end: alexandretk callback
 
 					for sizeclass, sizeclassdata in pairs(menu.printedshipdata[rowdata[2][1]]) do
 						if sizeclass == rowdata[2][2] then
@@ -1230,7 +1230,7 @@ function menu.addIndexEntry(array, item, name, rowdata, indent, numentries, expa
 				end
 			else
 
-				-- start: alexandretk call-back
+				-- start: alexandretk callback
 				if menu.uix_callbacks ["onShowMenu_addingIndexEntries"] then
 					local addthis
 					for uix_id, uix_callback in pairs (menu.uix_callbacks["onShowMenu_addingIndexEntries"]) do
@@ -1238,7 +1238,7 @@ function menu.addIndexEntry(array, item, name, rowdata, indent, numentries, expa
 						numunread = numunread + addthis
 					end
 				else
-				-- end: alexandretk call-back
+				-- end: alexandretk callback
 
 					for sizeclass, sizeclassdata in pairs(menu.printedshipdata[rowdata[2]]) do
 						if sizeclass ~= "text" then
@@ -1386,13 +1386,13 @@ function menu.createIndex()
 	for _, purpose in ipairs(menu.sortedpurposelist) do
 		numentries = 0
 
-		-- start: alexandretk call-back
+		-- start: alexandretk callback
 		if menu.uix_callbacks ["onShowMenu_addingIndexNumEntries"] then
 			for uix_id, uix_callback in pairs (menu.uix_callbacks ["onShowMenu_addingIndexNumEntries"]) do
 				uix_callback(C,ship_index,purpose, menu)
 			end
 		else
-		-- end: alexandretk call-back
+		-- end: alexandretk callback
 
 			for _, sizeclass in ipairs(menu.printedshipsizes) do
 				numentries = numentries + #menu.printedshipdata[purpose][sizeclass].ships
@@ -2911,13 +2911,13 @@ function menu.addDetailRows(ftable)
 					menu.addDetailRow(ftable, (i == 1) and ReadText(1001, 9094) or "", entry.count .. ReadText(1001, 42), entry.name, nil, nil, nil, nil, nil, entry.ware)
 				end
 
-				-- start: kuertee call-back
+				-- start: kuertee callback
 				if menu.uix_callbacks ["addDetailRow_known_cluster_production_module_entries"] then
 						for uix_id, uix_callback in pairs (menu.uix_callbacks ["addDetailRow_known_cluster_production_module_entries"]) do
 						uix_callback(ftable, clusters)
 				    end
 				end
-				-- end: kuertee call-back
+				-- end: kuertee callback
 
 			else
 				-- owner
@@ -3004,13 +3004,13 @@ function menu.addDetailRows(ftable)
 					menu.addDetailRow(ftable, (i == 1) and ReadText(1001, 9094) or "", entry.count .. ReadText(1001, 42), entry.name, nil, nil, nil, nil, nil, entry.ware)
 				end
 
-				-- start: kuertee call-back
+				-- start: kuertee callback
 				if menu.uix_callbacks ["addDetailRow_known_sector_production_module_entries"] then
 						for uix_id, uix_callback in pairs (menu.uix_callbacks ["addDetailRow_known_sector_production_module_entries"]) do
 						uix_callback(ftable, menu.object)
 				    end
 				end
-				-- end: kuertee call-back
+				-- end: kuertee callback
 
 			end
 			if (type(menu.object) == "number") or (#menu.details.sectors == 1) then
@@ -3253,21 +3253,21 @@ function menu.addDetailRows(ftable)
 			menu.addDetailRow(ftable, ReadText(1001, 9083), ConvertIntegerString(menu.object.hull, true, 0, true) .. " " .. ReadText(1001, 118))
 			-- ship type
 
-			-- start: alexandretk call-back
+			-- start: alexandretk callback
 			if menu.uix_callbacks ["onShowMenu_addOtherShipTypes"] then
 				for uix_id, uix_callback in pairs (menu.uix_callbacks ["onShowMenu_addOtherShipTypes"]) do
 					uix_callback(menu, ftable)
 				end
 			else
-			-- end: alexandretk call-back
+			-- end: alexandretk callback
 
-			-- start: cpsdo call-back (encyclopedia onShowMenu add other ship types)
+			-- start: cpsdo callback (encyclopedia onShowMenu add other ship types)
 			if menu.uix_callbacks["cpsdo_onShowMenu_addOtherShipTypes"] then
 				for uix_id, uix_callback in pairs(menu.uix_callbacks["cpsdo_onShowMenu_addOtherShipTypes"]) do
 					local ok, err = pcall(uix_callback, menu, ftable)
 				end
 			end
-			-- end: cpsdo call-back
+			-- end: cpsdo callback
 
 				menu.addDetailRow(ftable, ReadText(1001, 9051), menu.object.shiptypename)
 
@@ -3499,13 +3499,13 @@ function menu.addDetailRows(ftable)
 			-- missile storage
 			menu.addDetailRow(ftable, ReadText(1001, 9061), ConvertIntegerString(C.GetDefaultMissileStorageCapacity(menu.id), true, 0, true))
 
-			-- start: kuertee call-back
+			-- start: kuertee callback
 			if menu.uix_callbacks ["addDetailRow_post_missile_entry"] then
 					for uix_id, uix_callback in pairs (menu.uix_callbacks ["addDetailRow_post_missile_entry"]) do
 					uix_callback(ftable, col1, col2, col3, offsetx, iswordwrap, properties1, properties2, properties3, entry)
 			    end
 			end
-			-- end: kuertee call-back
+			-- end: kuertee callback
 
 			-- empty line
 			menu.addDetailRow(ftable, "")
@@ -3563,9 +3563,33 @@ function menu.addDetailRows(ftable)
 				-- shielded target
 				menu.addDetailRow(ftable, ReadText(1001, 9642))
 				local shielddisruptiontext
-				if menu.object.shielddisruption >= 10 then
-					shielddisruptiontext = ReadText(1001, 9656)
+
+				-- kuertee start: callback
+				-- if menu.object.shielddisruption >= 10 then
+				-- 	shielddisruptiontext = ReadText(1001, 9656)
+				-- end
+				local uix_shieldDisruptionText
+				local uix_shieldDisruptionTexts = {}
+				if menu.uix_callbacks ["addDetailRow_get_shield_disruption_text"] then
+					for uix_id, uix_callback in pairs (menu.uix_callbacks ["addDetailRow_get_shield_disruption_text"]) do
+						local uix_result = uix_callback(menu.object)
+						if uix_result then
+							table.insert(uix_shieldDisruptionTexts, uix_result)
+						end
+				    end
+				    if #uix_shieldDisruptionTexts > 0 then
+				    	uix_shieldDisruptionText = table.concat(uix_shieldDisruptionTexts, ", ")
+				    end
 				end
+				if uix_shieldDisruptionText then
+					shielddisruptiontext = uix_shieldDisruptionText
+				else
+					if menu.object.shielddisruption >= 10 then
+						shielddisruptiontext = ReadText(1001, 9656)
+					end
+				end
+				-- kuertee end: callback
+
 				menu.addDetailRow(ftable, ReadText(1001, 2460), shielddisruptiontext)
 				local miningmultiplier, surfaceelementmultiplier = 0, 0
 				if menu.object.isrepairweapon == 0 then

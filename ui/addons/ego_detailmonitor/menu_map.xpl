@@ -2311,6 +2311,12 @@ function menu.cleanup()
 	Helper.uix_distanceTool_distance = nil
 	Helper.uix_distanceTool_jumps = nil
 	-- kuertee end: distance tool
+
+	-- kuertee start: uix properties tab
+	menu.uix_propertiesTabDataById = {}
+	menu.uix_propertiesTab_rendering = nil
+	menu.uix_propertiesTab_renderingPropertyGroup = nil
+	-- kuertee end: uix properties tab
 end
 
 -- Menu member functions
@@ -4293,15 +4299,22 @@ function menu.buttonSelectHandler()
 		end
 	elseif menu.mode == "selectComponent" then
 
-		-- kuertee start: callback
-		if menu.modeparam[6] ~= nil then
-			-- if selectComponent returnsection is nil, then do a AddUITriggeredEvent instead
-			-- DebugError ("kuertee_menu_map.ui.buttonSelectHandler menu.contextMenuData.component " .. tostring(menu.contextMenuData.component))
-			-- DebugError ("kuertee_menu_map.ui.buttonSelectHandler menu.contextMenuData.component " .. tostring(ConvertStringToLuaID(tostring(menu.contextMenuData.component))))
-			AddUITriggeredEvent (menu.modeparam[6], "select_component", ConvertStringToLuaID(tostring(menu.contextMenuData.component)))
+		-- kuertee start: allow trigger of selectComponent mode from lua
+		if menu.modeparam[7].isUIXSelectComponentMode then
+			if type(menu.modeparam[6]) == "string" then
+				-- if selectComponent modeparam[6] is string, then AddUITriggeredEvent menu.modeparam[6]
+				AddUITriggeredEvent(menu.modeparam[6], "select_component", ConvertStringToLuaID(tostring(menu.contextMenuData.component)))
+			end
+			if type(menu.modeparam[1]) == "function" then
+				-- if selectComponent returnsection is function, then call it after
+				local uix_function = menu.modeparam[1]
+				local uix_argument = menu.contextMenuData.component
+				Helper.addDelayedOneTimeCallbackOnUpdate(function() return uix_function(ConvertStringTo64Bit(tostring(uix_argument))) end, true, getElapsedTime())
+			end
 			menu.mode = menu.old_mode
 			menu.modeparam = menu.old_modeparam
 			menu.infoTableMode = menu.old_infoTableMode
+			menu.propertyMode = menu.old_propertyMode
 			menu.closeContextMenu()
 			menu.refreshMainFrame = true
 			menu.refreshInfoFrame()
@@ -4310,7 +4323,7 @@ function menu.buttonSelectHandler()
 			-- DebugError ("kuertee_menu_map buttonSelectHandler menu.modeparam [1]: " .. tostring(menu.modeparam [1]))
 			-- if menu.checkForSelectComponent(menu.contextMenuData.component) then
 		elseif menu.checkForSelectComponent(menu.contextMenuData.component) then
-			-- kuertee end: callback
+			-- kuertee end: allow trigger of selectComponent mode from lua
 
 			if type(menu.modeparam[1]) == "table" then
 				if menu.modeparam[1][1] == "menu_dockat" then
@@ -7464,6 +7477,11 @@ function menu.refreshContextFrame(setrow, setcol, noborder)
 		closeOnUnhandledClick = false
 	elseif menu.contextMenuMode == "orderqueuesetting" then
 		closeOnUnhandledClick = false
+
+	-- kuertee start: allow "mission" to get refreshed
+	elseif menu.contextMenuMode == "mission" then
+		closeOnUnhandledClick = false
+	-- kuertee end: allow "mission" to get refreshed
 	end
 	if menu.contextMenuData.mode == "discardplanneddefaultbehaviour" then
 		closeOnUnhandledClick = false
@@ -7554,6 +7572,11 @@ function menu.refreshContextFrame(setrow, setcol, noborder)
 	elseif menu.contextMenuMode == "ventureshipselection" then
 		Helper.callExtensionFunction("multiverse", "createVentureShipSelectionContext", menu, menu.contextFrame, menu.contextMenuData.instance)
 		adjustFrameHeight = false
+
+	-- kuertee start: allow "mission" to get refreshed
+	elseif menu.contextMenuMode == "mission" then
+		menu.createMissionContext(menu.contextFrame)
+	-- kuertee end: allow "mission" to get refreshed
 	end
 
 	-- kuertee start: callback
@@ -8931,6 +8954,44 @@ function menu.createPropertyOwned(frame, instance)
 		end
 	end
 
+	-- kuertee start: uix properties tab
+	menu.uix_propertiesTab_rendering = nil
+	menu.uix_propertiesTab_renderingPropertyGroup = nil
+	if menu.mode ~= "selectCV" and menu.uix_propertiesTabDataById[menu.propertyMode] then
+		local uix_propertyGroups = menu.uix_propertiesTabDataById[menu.propertyMode].propertyGroups
+		if uix_propertyGroups and next(uix_propertyGroups) and #uix_propertyGroups > 0 then
+
+			if menu.uix_callbacks["createPropertyOwned_on_createPropertySection_uix_propertiesTab"] then
+				for uix_id, uix_callback in pairs(menu.uix_callbacks["createPropertyOwned_on_createPropertySection_uix_propertiesTab"]) do
+					numdisplayed = uix_callback(numdisplayed, instance, ftable, menu.uix_propertiesTabDataById[menu.propertyMode])
+				end
+			end
+
+			table.sort(uix_propertyGroups, function(a, b) return a.name < b.name end)
+			for _, uix_propertyGroup in ipairs(uix_propertyGroups) do
+				local uix_array = uix_propertyGroup.components
+				if uix_array and next(uix_array) and #uix_array > 0 then
+					menu.uix_propertiesTab_rendering = menu.uix_propertiesTabDataById[menu.propertyMode]
+					menu.uix_propertiesTab_renderingPropertyGroup = uix_propertyGroup
+					local uix_id = menu.propertyMode
+					local uix_name = menu.uix_propertiesTab_renderingPropertyGroup.name
+					local uix_noneText = nil
+					local uix_showModules = false
+					local uix_hideSubordinates = false
+					-- function menu.createPropertySection(instance, id, ftable, name, array, nonetext, showmodules, numdisplayed, hidesubordinates, sorter)
+					numdisplayed = menu.createPropertySection(instance, uix_id, ftable, uix_name, uix_array, uix_noneText, uix_showModules, numdisplayed, uix_hideSubordinates, menu.propertySorterType)
+				end
+			end
+
+			if menu.uix_callbacks["createPropertyOwned_on_createPropertySection_after_uix_propertyGroup"] then
+				for uix_id, uix_callback in pairs(menu.uix_callbacks["createPropertyOwned_on_createPropertySection_after_uix_propertyGroup"]) do
+					numdisplayed = uix_callback(numdisplayed, instance, ftable, menu.uix_propertiesTabDataById[menu.propertyMode])
+				end
+			end
+		end
+	end
+	-- kuertee end: uix properties tab
+
 	-- kuertee start: callback:
 	-- OBSOLETE: do not use this callback. kept for backward-compatibility.
 	-- USE the "createPropertyOwned_on_createPropertySection" callback instead, which is immediately below this one.
@@ -9034,6 +9095,11 @@ function menu.createPropertyOwned(frame, instance)
 		if #config.propertyCategories > 0 then
 			Helper.setTabScrollLeftIcon(menu, menu.panelState.leftmenu, row, 1, menu.scrollIconSize)
 			for i, entry in ipairs(config.propertyCategories) do
+
+				-- kuertee start: uix properties tab
+				-- Helper.debugText_forced("createPropertyOwned config.propertyCategories entry.category", entry.category)
+				-- kuertee end: uix properties tab
+
 				if i / (maxNumCategoryColumns - 2) > rowCount then
 					row = tabtable:addRow("property_tabs", { fixed = true, bgColor = Color["frame_background_black"], borderBelow = false })
 					row[1]:setBackgroundColSpan(maxNumCategoryColumns)
@@ -9059,8 +9125,8 @@ function menu.createPropertyOwned(frame, instance)
 					-- start: mycu callback
 					if menu.uix_callbacks["onSetActiveStateForCVMode_on_createPropertyOwned"] then
 						for uix_id, uix_callback in pairs(menu.uix_callbacks["onSetActiveStateForCVMode_on_createPropertyOwned"]) do
-						        active = uix_callback(entry)
-					        end
+							active = uix_callback(entry)
+						end
 					end
 					-- end: mycu callback
 
@@ -9084,6 +9150,14 @@ function menu.createPropertyOwned(frame, instance)
 		local row = tabtable:addRow(nil, { borderBelow = false })
 		row.properties.fixed = true
 		row[1]:setColSpan(maxNumCategoryColumns):createText(propertymodename, Helper.subTabTitleTextProperties)
+
+		-- kuertee start: callback
+		if menu.uix_callbacks["createPropertyOwned_on_category_tab_title"] then
+			for uix_id, uix_callback in pairs(menu.uix_callbacks["createPropertyOwned_on_category_tab_title"]) do
+				uix_callback(tabtable, menu.propertyMode)
+			end
+		end
+		-- kuertee end: callback
 
 		-- "sort by"
 		local row = tabtable:addRow(nil, { fixed = true })
@@ -9289,10 +9363,37 @@ function menu.createPropertySection(instance, id, ftable, name, array, nonetext,
 	-- kuertee start: open/close deployables
 	local uix_openCloseDeployables_headerRow
 	if menu.propertyMode == "deployables" and #array > 0 then
-		local row = ftable:addRow({}, { bgColor = Color["row_background_blue"] })
+		local row = ftable:addRow(true, { bgColor = Color["row_background_blue"] })
 		uix_openCloseDeployables_headerRow = row
 		row[2]:setColSpan(4 + maxicons):createText(name, Helper.headerRowCenteredProperties)
 	-- kuertee start: open/close deployables
+
+	-- kuertee start: uix properties tab
+	elseif menu.uix_propertiesTab_rendering then
+		local row = ftable:addRow(true, Helper.headerRowProperties)
+		row[1]:setColSpan(5 + maxicons):createText(name, Helper.headerRowCenteredProperties)
+		-- row[2]:setColSpan(4 + maxicons):createText(name, Helper.headerRowCenteredProperties)
+		-- row[1]:createButton({active = #menu.uix_propertiesTab_renderingPropertyGroup.components > 1}):setText((not menu.uix_propertiesTab_renderingPropertyGroup.isExpanded) and "-" or "+", { halign = "center" })
+		-- row[1].handlers.onClick = function()
+		-- 	menu.uix_propertiesTab_renderingPropertyGroup.isExpanded = not menu.uix_propertiesTab_renderingPropertyGroup.isExpanded
+		-- 	Helper.debugText_forced("isExpanded", menu.uix_propertiesTab_renderingPropertyGroup.isExpanded)
+		-- 	menu.refreshInfoFrame()
+		-- end
+		if menu.uix_propertiesTab_rendering.propertyInfo and next(menu.uix_propertiesTab_rendering.propertyInfo) then
+			local uix_propertyInfo = menu.uix_propertiesTab_rendering.propertyInfo
+			local uix_dropDownItems = {}
+			for uix_idx, uix_info in ipairs(uix_propertyInfo) do
+				table.insert(uix_dropDownItems, {id = uix_info.id, text = uix_info.name, icon = "", displayremoveoption = false})
+			end
+			if #uix_dropDownItems > 0 then
+				row[3]:setColSpan(3 + maxicons):createDropDown(uix_dropDownItems, {startOption = menu.uix_propertiesTab_renderingPropertyGroup.selectedPropertyInfoId})
+				row[3].handlers.onDropDownConfirmed = function(_, id)
+					menu.uix_propertiesTab_renderingPropertyGroup.selectedPropertyInfoId = id
+					menu.refreshInfoFrame()
+				end
+			end
+		end
+	-- kuertee end: uix properties tab
 
 	elseif name then
 		local row = ftable:addRow(false, Helper.headerRowProperties)
@@ -10027,31 +10128,56 @@ function menu.createPropertyRow(instance, ftable, rowgroup, component, iteration
 				end
 
 				-- kuertee start: callback
-				-- row[3 + namecolspan]:setColSpan(colspan):createText(locationtext, { halign = "right", font = font, x = 0 })
-				if not menu.uix_callbacks["createPropertyRow_override_row_location_createText"] then
-					row[3 + namecolspan]:setColSpan(colspan):createText(locationtext, { halign = "right", font = font, x = 0 })
-				else
-					local result
-					for uix_id, uix_callback in pairs(menu.uix_callbacks["createPropertyRow_override_row_location_createText"]) do
-						result = uix_callback(locationtext, {halign = "right", font = font, mouseOverText = mouseovertext, x = 0}, component)
-						if result then
-							row[3 + namecolspan]:createText(result.locationtext, result.properties)
-						end
+				local uix_locationText
+				local uix_locationTextProperties = {halign = "right", font = font, x = 0}
+				local uix_results = {}
+				for uix_id, uix_callback in pairs(menu.uix_callbacks["createPropertyRow_override_row_location_createText"]) do
+					local uix_textData = uix_callback(locationtext, {halign = "right", font = font, mouseOverText = mouseovertext, x = 0}, component)
+					if uix_textData.locataiontext then
+						table.insert(uix_results, uix_textData.locataiontext)
 					end
-					if not result then
-						row[3 + namecolspan]:setColSpan(colspan):createText(locationtext, { halign = "right", font = font, x = 0 })
+					if uix_textData.properties then
+						uix_locationTextProperties = uix_textData.properties
 					end
 				end
+				if #uix_results then
+					uix_locationText = table.concat(uix_results, ", ")
+					row[3 + namecolspan]:createText(uix_locationText, uix_locationTextProperties)
+				end
 				-- kuertee end: callback
+
+				-- kuertee start: uix properties tab
+				if not uix_locationText then
+					if menu.uix_propertiesTab_renderingPropertyGroup and menu.uix_propertiesTab_renderingPropertyGroup.selectedPropertyInfoId then
+						local uix_propertyInfoId = menu.uix_propertiesTab_renderingPropertyGroup.selectedPropertyInfoId
+						uix_locationText = menu.uix_propertiesTab_renderingPropertyGroup.infoByComponent[component][uix_propertyInfoId]
+						if uix_locationText then
+							if type(uix_locationText) == "function" then
+								uix_locationText = uix_locationText(component)
+							else
+								uix_locationText = tostring(uix_locationText)
+							end
+							row[3 + namecolspan]:setColSpan(colspan):createText(uix_locationText, uix_locationTextProperties)
+						end
+					end
+				end
+				-- kuertee end: uix properties tab
+
+				-- kuertee start
+				-- row[3 + namecolspan]:setColSpan(colspan):createText(locationtext, { halign = "right", font = font, x = 0 })
+				if not uix_locationText then
+					row[3 + namecolspan]:setColSpan(colspan):createText(locationtext, { halign = "right", font = font, x = 0 })
+				end
+				-- kuertee end
 			end
 
-            		-- kuertee start: callback
-            		if menu.uix_callbacks["createPropertyRow_before_config_change"] then
-            		    for uix_id, uix_callback in pairs(menu.uix_callbacks["createPropertyRow_before_config_change"]) do
-            		        uix_callback(config)
-            		    end
-            		end
-            		-- kuertee end: callback
+    		-- kuertee start: callback
+    		if menu.uix_callbacks["createPropertyRow_before_config_change"] then
+    		    for uix_id, uix_callback in pairs(menu.uix_callbacks["createPropertyRow_before_config_change"]) do
+    		        uix_callback(config)
+    		    end
+    		end
+    		-- kuertee end: callback
 
 			if (currentordericon ~= "") or isdocked then
 				local col = 4 + maxicons
@@ -10069,13 +10195,13 @@ function menu.createPropertyRow(instance, ftable, rowgroup, component, iteration
 				end
 			end
 
-            		-- kuertee start: callback
-            		if menu.uix_callbacks["createPropertyRow_after_config_change"] then
-                		for uix_id, uix_callback in pairs(menu.uix_callbacks["createPropertyRow_after_config_change"]) do
-                		    uix_callback(config)
-                		end
-            		end
-            		-- kuertee end: callback
+    		-- kuertee start: callback
+    		if menu.uix_callbacks["createPropertyRow_after_config_change"] then
+        		for uix_id, uix_callback in pairs(menu.uix_callbacks["createPropertyRow_after_config_change"]) do
+        		    uix_callback(config)
+        		end
+    		end
+    		-- kuertee end: callback
 
 			-- shieldhullbar
 			row[5 + maxicons]:createObjectShieldHullBar(component, { width = menu.infoTableData[instance].shipIconWidth - Helper.standardContainerOffset - Helper.borderSize, scaling = false })
@@ -33588,11 +33714,100 @@ function menu.setInfoSubmenuObjectAndRefresh(component)
 	end
 end
 
--- kuertee start:
+-- kuertee start
+-- uix properties tab
+menu.uix_propertiesTabDataById = {}
+menu.uix_propertiesTab_rendering = nil
+menu.uix_propertiesTab_renderingPropertyGroup = nil
+function menu.uix_addUIXPropertyTab(id, name, propertyGroups, propertyInfo, icon, data)
+	if (not id) or (not name) or (not propertyGroups) or (not next(propertyGroups)) then
+		return
+	end
+	if not icon then
+		icon = "mapst_propertyowned"
+	end
+	local isTabExists
+	for _, data in ipairs(config.propertyCategories) do
+		if data.category == id then
+			isTabExists = true
+		end
+	end
+	if not isTabExists then
+		isTabExists = true
+		local category = {
+			category = id,
+			name = name,
+			icon = icon,
+			helpOverlayID = "map_property_owned_" .. id,
+			helpOverlayText = name,
+		}
+		table.insert(config.propertyCategories, category)
+	end
+	if isTabExists then
+		if not menu.uix_propertiesTabDataById[id] then
+			menu.uix_propertiesTabDataById[id] = {
+				id = id,
+				name = name,
+				data = data,
+			}
+		end
+		menu.uix_updateUIXPropertyTabData(id, propertyGroups, propertyInfo)
+	end
+end
+
+function menu.uix_removeUIXPropertyTab(id)
+	for idx, data in ipairs(config.propertyCategories) do
+		if data.category == id then
+			table.remove(config.propertyCategories, idx)
+			break
+		end
+	end
+	menu.uix_propertiesTabDataById[id] = nil
+end
+
+function menu.uix_updateUIXPropertyTabData(id, propertyGroups, propertyInfo)
+	if (not id) or (not propertyGroups) or (not next(propertyGroups)) then
+		return
+	end
+	-- propertyGroups:
+	-- {
+	-- 	{
+	-- 		id = string,
+	-- 		name = string,
+	-- 		components = {component, ...},
+	-- 		(optional) callback = function,
+	-- 		(optional) infoByComponent = {
+	-- 			component = {
+	-- 				key = value, ...
+	-- 			}, ...
+	-- 		}
+	-- 	}
+	-- }
+	-- propertyInfo:
+	-- {
+	-- 	{
+	-- 		id = key string,
+	-- 		name = string,
+	-- 	}, ...
+	-- }
+	if propertyGroups and next(propertyGroups) and #propertyGroups > 0 then
+		menu.uix_propertiesTabDataById[id].propertyGroups = propertyGroups
+	end
+	if propertyInfo and next(propertyInfo) and #propertyInfo > 0 then
+		menu.uix_propertiesTabDataById[id].propertyInfo = propertyInfo
+		menu.uix_propertiesTabDataById[id].selectedPropertyInfoId = propertyInfo[1].id
+	end
+end
+
+function menu.uix_displayPropertyTab(id)
+end
+
+-- allow trigger of selectComponent mode from lua
 function menu.setSelectComponentMode(returnsection, classlist, category, playerowned, customheading, screenname)
 	menu.old_mode = menu.mode
 	menu.old_modeparam = menu.modeparam
 	menu.old_infoTableMode = menu.infoTableMode
+	menu.old_propertyMode = menu.propertyMode
 
 	menu.mode = "selectComponent"
 	menu.modeparam = {
@@ -33601,14 +33816,17 @@ function menu.setSelectComponentMode(returnsection, classlist, category, playero
 		category,
 		playerowned,
 		customheading,
-		screenname
+		screenname,
+		{isUIXSelectComponentMode = true}
 	}
 	menu.infoTableMode = "propertyowned"
+	menu.propertyMode = "propertyall"
 	menu.closeContextMenu()
 	menu.refreshMainFrame = true
 	menu.refreshInfoFrame()
 end
 
+-- extra sort options
 function menu.uix_sortDistanceFromPlayer(a, b, invert)
 	a = ConvertStringTo64Bit(tostring(a.id))
 	b = ConvertStringTo64Bit(tostring(b.id))
