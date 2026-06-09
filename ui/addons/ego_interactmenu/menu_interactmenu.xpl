@@ -502,6 +502,7 @@ function menu.init_kuertee ()
 	-- chemodun start: menu subsection stack
 	RegisterEvent ("Interact_Menu_API.Add_Custom_Actions_SubGroup_Id_to_Group_Id", menu.Add_Custom_Actions_SubGroup_Id_to_Group_Id)
 	RegisterEvent ("Interact_Menu_API.Add_Custom_Actions_SubGroup_Text", menu.Add_Custom_Actions_SubGroup_Text)
+	RegisterEvent ("Interact_Menu_API.Convert_Custom_Actions_Group_Id_To_Root", menu.Convert_Custom_Actions_Group_Id_To_Root)
 	RegisterEvent ("Interact_Menu_API.Existence_Query", menu.Existence_Query)
 	-- chemodun end: menu subsection stack
 
@@ -4061,6 +4062,13 @@ function menu.createContentTable(frame, position)
 	-- local uix_forceShowSections = {"main", "interaction", "custom_actions"}
 	-- local uix_forceShowSections = {"interaction", "custom_actions"}
 	local uix_forceShowSections = {"custom_actions"}
+	-- Chem start: include converted root sections in force-show list
+	if menu.uix_convertedRootSectionIds then
+		for sectionId, _ in pairs(menu.uix_convertedRootSectionIds) do
+			table.insert(uix_forceShowSections, sectionId)
+		end
+	end
+	-- Chem end: include converted root sections in force-show list
 	local uix_forceShowSections_isStationActions
 	if #menu.selectedplayerships == 0 and #menu.selectedotherobjects > 0 then
 		uix_forceShowSections_isStationActions = C.IsRealComponentClass(menu.selectedotherobjects[1], "station")
@@ -8753,9 +8761,59 @@ function menu.Add_Custom_Actions_SubGroup(parentId, subGroupId, text)
 			return
 		end
 	end
-	table.insert(registeredSubGroups, { parentId = parentId, subGroupId = subGroupId, text = text })
+	if menu.uix_convertedRootSectionIds[parentId] then
+		for _, section in ipairs(config.sections) do
+			if section.id == parentId then
+				if not section.subsections then
+					section.subsections = {}
+				end
+				table.insert(section.subsections, { id = subGroupId, text = text })
+				return
+			end
+		end
+	else
+		table.insert(registeredSubGroups, { parentId = parentId, subGroupId = subGroupId, text = text })
+	end
 end
 -- chemodun end: menu subsection stack: sub-group MD API handlers
+
+-- Chem start: convert-to-root MD API handler
+function menu.Convert_Custom_Actions_Group_Id_To_Root(_, id)
+	-- Guard: already a root section?
+	for _, section in ipairs(config.sections) do
+		if section.id == id then
+			Helper.debugText("Convert_Custom_Actions_Group_Id_To_Root: id already a root section: " .. tostring(id))
+			return
+		end
+	end
+	-- Find the group text and remove it from custom_actions / custom_orders subsections
+	local groupText = nil
+	local insertAfterIdx = nil
+	for idx, section in ipairs(config.sections) do
+		if (section.id == "custom_actions" or section.id == "custom_orders") and section.subsections then
+			for subsecIdx, subsection in ipairs(section.subsections) do
+				if subsection.id == id then
+					if groupText == nil then
+						groupText = subsection.text
+					end
+					table.remove(section.subsections, subsecIdx)
+					break
+				end
+			end
+			insertAfterIdx = idx
+		end
+	end
+	if groupText == nil then
+		Helper.debugText("Convert_Custom_Actions_Group_Id_To_Root: group not found in subsections: " .. tostring(id))
+		return
+	end
+	-- Insert as a new root section right after the last of custom_actions/custom_orders
+	table.insert(config.sections, insertAfterIdx + 1, { id = id, text = groupText, isorder = false })
+	-- Track so it appears even in noopreason (non-player-target) scenarios
+	menu.uix_convertedRootSectionIds[id] = true
+	Helper.debugText("Convert_Custom_Actions_Group_Id_To_Root: promoted to root: id=" .. tostring(id) .. " text=" .. tostring(groupText))
+end
+-- Chem end: convert-to-root MD API handler
 
 menu.uix_callbackCount = 0
 function menu.registerCallback(callbackName, callbackFunction, id)
@@ -8828,6 +8886,9 @@ end
 
 menu.uix_isUpdateQueued = nil
 menu.uix_callbacks_toUpdate = {}
+-- Chem start: track converted root sections 
+menu.uix_convertedRootSectionIds = {}
+-- Chem end: track converted root sections
 function menu.updateCallback(callbackName, id, callbackFunction)
 	if not menu.uix_callbacks_toUpdate[callbackName] then
 		menu.uix_callbacks_toUpdate[callbackName] = {}
