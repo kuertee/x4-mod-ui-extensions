@@ -481,6 +481,9 @@ end
 function menu.init_kuertee ()
 	RegisterEvent ("Interact_Menu_API.Add_Custom_Actions_Group_Id", menu.Add_Custom_Actions_Group_Id)
 	RegisterEvent ("Interact_Menu_API.Add_Custom_Actions_Group_Text", menu.Add_Custom_Actions_Group_Text)
+	RegisterEvent ("Interact_Menu_API.Add_Custom_Actions_SubGroup_Id_to_Group_Id", menu.Add_Custom_Actions_SubGroup_Id_to_Group_Id)
+	RegisterEvent ("Interact_Menu_API.Add_Custom_Actions_SubGroup_Text", menu.Add_Custom_Actions_SubGroup_Text)
+	RegisterEvent ("Interact_Menu_API.Convert_Custom_Actions_Group_Id_To_Root", menu.Convert_Custom_Actions_Group_Id_To_Root)
 	RegisterEvent ("Interact_Menu_API.Existence_Query", menu.Existence_Query)
 end
 -- kuertee end
@@ -519,6 +522,9 @@ function menu.cleanup()
 	menu.groupShips = {}
 
 	menu.subsection = nil
+	-- kurtee start: menu subsection stack
+	menu.subsectionStack = {}
+	-- kurtee end: menu subsection stack
 	menu.pendingSubSection = nil
 	menu.possibleorders = {}
 	menu.numdockingpossible = nil
@@ -3771,6 +3777,13 @@ function menu.createContentTable(frame, position)
 	-- local uix_forceShowSections = {"main", "interaction", "custom_actions"}
 	-- local uix_forceShowSections = {"interaction", "custom_actions"}
 	local uix_forceShowSections = {"custom_actions"}
+	-- Chem start: include converted root sections in force-show list
+	if menu.uix_convertedRootSectionIds then
+		for sectionId, _ in pairs(menu.uix_convertedRootSectionIds) do
+			table.insert(uix_forceShowSections, sectionId)
+		end
+	end
+	-- Chem end: include converted root sections in force-show list
 	local uix_forceShowSections_isStationActions
 	if #menu.selectedplayerships == 0 and #menu.selectedotherobjects > 0 then
 		uix_forceShowSections_isStationActions = C.IsRealComponentClass(menu.selectedotherobjects[1], "station")
@@ -4065,8 +4078,15 @@ function menu.createContentTable(frame, position)
 			-- kuertee end: don't show custom actions in position defense options
 
 			if pass then
+				-- chemodun start: allow a mix of actions and susections in groups
+				local hastitle = false
+				-- kuertee end: allow a mix of actions and susections in groups
+
 				if section.subsections then
-					local hastitle = false
+					-- chemodun start: allow a mix of actions and susections in groups
+					-- local hastitle = false
+					-- kuertee end: allow a mix of actions and susections in groups
+
 					for _, subsection in ipairs(section.subsections) do
 						-- kuertee start: callback
 						local kUIX_isSubsectionValid = true
@@ -4089,7 +4109,9 @@ function menu.createContentTable(frame, position)
 								first = false
 								hastitle = true
 							end
-							local data = { id = subsection.id, y = height }
+							-- kurtee start: menu subsection text for path displaying
+							local data = { id = subsection.id, y = height, text = subsection.text }
+							-- kurtee end: menu subsection text for path displaying
 							local row = ftable:addRow(data, {  })
 							local iconHeight = Helper.scaleY(config.rowHeight)
 							local button = row[1]:setColSpan(5):createButton({
@@ -4126,8 +4148,17 @@ function menu.createContentTable(frame, position)
 						:: createContentTable_skipSubsection ::
 						-- kuertee end: callback
 					end
-				elseif #menu.actions[section.id] > 0 then
-					height = height + menu.addSectionTitle(ftable, section, first)
+
+				-- chemodun start: allow a mix of actions and susections in groups
+				-- elseif #menu.actions[section.id] > 0 then
+				-- 	height = height + menu.addSectionTitle(ftable, section, first)
+				end
+				if #menu.actions[section.id] > 0 then
+					if not hastitle then
+						height = height + menu.addSectionTitle(ftable, section, first)
+					end
+				-- kuertee end: allow a mix of actions and susections in groups
+
 					first = false
 					local availabletextwidth
 					if (section.id == "main") or (section.id == "selected_orders") or (section.id == "trade_orders") or (section.id == "selected_assignments") or (section.id == "player_interaction") or (section.id == "trade") then
@@ -4300,10 +4331,66 @@ function menu.createSubSectionTable(frame, position)
 	ftable:setColWidthPercent(2, 40)
 	ftable:setDefaultBackgroundColSpan(1, 2)
 
+	-- kuertee start: back navigation header row
+	if menu.subsection.text and menu.subsectionStack and #menu.subsectionStack > 0 then
+		local iconHeight = Helper.scaleY(config.rowHeight)
+		-- Build full breadcrumb path from stack + current level for mouseOverText
+		local breadcrumb = ""
+		for _, stackEntry in ipairs(menu.subsectionStack) do
+			if stackEntry.text then
+				breadcrumb = breadcrumb == "" and stackEntry.text or (breadcrumb .. " > " .. stackEntry.text)
+			end
+		end
+		breadcrumb = breadcrumb == "" and menu.subsection.text or (breadcrumb .. " > " .. menu.subsection.text)
+		local backRow = ftable:addRow(true, {})
+		backRow[1]:setColSpan(2):createButton({
+			bgColor = Color["button_background_hidden"],
+			highlightColor = Color["button_highlight_default"],
+			mouseOverText = breadcrumb,
+		}):setText(menu.subsection.text, { x = iconHeight }):setIcon("table_arrow_inv_left", { scaling = false, width = iconHeight, height = iconHeight, x = 0 })
+		backRow[1].handlers.onClick = function()
+			if menu.subsectionStack and #menu.subsectionStack > 0 then
+				menu.subsection = table.remove(menu.subsectionStack)
+			else
+				menu.subsection = nil
+			end
+			menu.refresh = true
+		end
+	end
+	-- kuertee end: back navigation header row
+
 	for _, entry in ipairs(menu.actions[menu.subsection.id]) do
 		if entry.active == nil then
 			entry.active = true
 		end
+
+		-- kuertee start: sub-subsection group navigation
+		if entry.isgroup then
+			local haschildren = menu.actions[entry.groupId] and #menu.actions[entry.groupId] > 0
+			local data = { id = entry.groupId, y = menu.subsection.y, text = entry.text }
+			local iconHeight = Helper.scaleY(config.rowHeight)
+			row = ftable:addRow(data, {})
+			local button = row[1]:setColSpan(2):createButton({
+				active = entry.active and haschildren,
+				bgColor = (entry.active and haschildren) and Color["button_background_hidden"] or Color["button_background_inactive"],
+				highlightColor = (entry.active and haschildren) and Color["button_highlight_default"] or Color["button_highlight_inactive"],
+				mouseOverText = entry.mouseOverText,
+			}):setText(entry.text):setIcon("table_arrow_inv_right", { scaling = false, width = iconHeight, height = iconHeight, x = menu.width - iconHeight })
+			if entry.active and haschildren then
+				row[1].handlers.onClick = function()
+					-- kuertee start: cap nesting depth at 10 stack frames
+					if #menu.subsectionStack < 10 then
+						table.insert(menu.subsectionStack, menu.subsection)
+						menu.subsection = data
+						menu.pendingSubSection = nil
+						menu.refresh = true
+					end
+					-- kuertee end: cap nesting depth at 10 stack frames
+				end
+			end
+		else
+		-- kuertee end: sub-subsection group navigation
+
 		row = ftable:addRow(true, {  })
 		local maxtextwidth = 0
 		if entry.text2 then
@@ -4348,6 +4435,8 @@ function menu.createSubSectionTable(frame, position)
 		if entry.text2 then
 			button:setText2(entry.text2, { halign = "right", color = entry.active and Color["text_normal"] or Color["text_inactive"], font = entry.text2font or Helper.standardFont })
 		end
+
+		end -- kuertee: end of sub-subsection else branch
 	end
 
 	return ftable
@@ -4489,6 +4578,9 @@ function menu.setOrderImmediate(component, orderidx)
 end
 
 function menu.handleSubSectionOption(data, skipdelay)
+	-- kuertee start: clear subsection stack on any root-panel navigation
+	menu.subsectionStack = {}
+	-- kuertee end: clear subsection stack on any root-panel navigation
 	if type(data) == "table" then
 		if ((not menu.pendingSubSection) and ((not menu.subsection) or (menu.subsection.id ~= data.id))) or (menu.pendingSubSection and ((type(menu.pendingSubSection) ~= "table") or (menu.pendingSubSection.id ~= data.id))) then
 			if #menu.actions[data.id] > 0 then
@@ -4758,6 +4850,12 @@ function menu.processSelectedPlayerShips()
 	end
 end
 
+-- kuertee start: sub-group MD API state (must be declared before prepareSections)
+local registeredSubGroups = {}
+local newCustomSubGroupIds   -- "parentId;subGroupId"
+local newCustomSubGroupText
+-- kuertee end: sub-group MD API state
+
 function menu.prepareSections()
 	menu.actions = {}
 
@@ -4785,6 +4883,38 @@ function menu.prepareSections()
 			menu.actions[section.id] = {}
 		end
 	end
+
+	-- kuertee start: initialize registered sub-groups (multi-pass to handle any registration order)
+	local remaining = {}
+	for _, subGroup in ipairs(registeredSubGroups) do
+		table.insert(remaining, subGroup)
+	end
+	local changed = true
+	while changed and #remaining > 0 do
+		changed = false
+		local nextRemaining = {}
+		for _, subGroup in ipairs(remaining) do
+			if menu.actions[subGroup.parentId] then
+				menu.insertInteractionGroup(subGroup.parentId, subGroup.subGroupId, subGroup.text)
+				changed = true
+			else
+				table.insert(nextRemaining, subGroup)
+			end
+		end
+		remaining = nextRemaining
+	end
+	for _, subGroup in ipairs(remaining) do
+		DebugError("insertInteractionGroup: parent not found for sub-group '" .. tostring(subGroup.subGroupId) .. "', parent: '" .. tostring(subGroup.parentId) .. "'")
+	end
+	-- kuertee end: initialize registered sub-groups
+
+	-- kuertee start: callback
+	if menu.uix_callbacks ["prepareSections_on_end"] then
+		for uix_id, uix_callback in pairs (menu.uix_callbacks ["prepareSections_on_end"]) do
+			uix_callback (config.sections)
+		end
+	end
+	-- kuertee end: callback
 end
 
 function menu.insertInteractionContent(section, entry)
@@ -4823,6 +4953,32 @@ function menu.insertInteractionContent(section, entry)
 		DebugError("The requested context section is not defined: '" .. section .. "' [Florian]")
 	end
 end
+
+-- kuertee start: sub-subsection group API
+-- Register a navigable group entry inside an existing section or group.
+-- parentSectionId : section or group ID to insert the group button into
+-- groupId         : unique ID for this group's action list (key into menu.actions)
+-- groupText       : display label for the group button
+-- options         : optional table { active = bool, mouseOverText = string }
+-- Call insertInteractionContent(groupId, entry) afterwards to populate children.
+function menu.insertInteractionGroup(parentSectionId, groupId, groupText, options)
+	if not menu.actions[parentSectionId] then
+		DebugError("insertInteractionGroup: parent section not defined: '" .. tostring(parentSectionId) .. "'")
+		return
+	end
+	options = options or {}
+	if not menu.actions[groupId] then
+		menu.actions[groupId] = {}
+	end
+	table.insert(menu.actions[parentSectionId], {
+		isgroup       = true,
+		groupId       = groupId,
+		text          = groupText,
+		active        = options.active ~= false,
+		mouseOverText = options.mouseOverText,
+	})
+end
+-- kuertee end: sub-subsection group API
 
 config.consumables = {
 	{ id = "satellite",		type = "civilian",	getnum = C.GetNumAllSatellites,		getdata = C.GetAllSatellites },
@@ -7817,7 +7973,13 @@ end
 function menu.onCloseElement(dueToClose, layer, allowAutoMenu)
 	if dueToClose == "back" then
 		if menu.subsection then
-			menu.subsection = nil
+			-- kuertee start: pop subsection stack for nested navigation
+			if menu.subsectionStack and #menu.subsectionStack > 0 then
+				menu.subsection = table.remove(menu.subsectionStack)
+			else
+				menu.subsection = nil
+			end
+			-- kuertee end: pop subsection stack for nested navigation
 			menu.refresh = true
 			return
 		end
@@ -7935,6 +8097,97 @@ function menu.Add_Custom_Actions_Group(id, text)
 	end
 end
 
+-- kuertee start: sub-group MD API handlers
+function menu.Add_Custom_Actions_SubGroup_Id_to_Group_Id(_, ids)
+	newCustomSubGroupIds = ids
+	if newCustomSubGroupIds and newCustomSubGroupText then
+		local parentId, subGroupId = string.match(newCustomSubGroupIds, "^([^;]+);(.+)$")
+		if parentId and subGroupId then
+			menu.Add_Custom_Actions_SubGroup(parentId, subGroupId, newCustomSubGroupText)
+		else
+			Helper.debugText("Add_Custom_Actions_SubGroup_Id_to_Group_Id: invalid param format (expected 'parentId;subGroupId'): " .. tostring(ids))
+		end
+		newCustomSubGroupIds = nil
+		newCustomSubGroupText = nil
+	end
+end
+
+function menu.Add_Custom_Actions_SubGroup_Text(_, text)
+	newCustomSubGroupText = text
+	if newCustomSubGroupIds and newCustomSubGroupText then
+		local parentId, subGroupId = string.match(newCustomSubGroupIds, "^([^;]+);(.+)$")
+		if parentId and subGroupId then
+			menu.Add_Custom_Actions_SubGroup(parentId, subGroupId, newCustomSubGroupText)
+		else
+			Helper.debugText("Add_Custom_Actions_SubGroup_Text: invalid Id param format (expected 'parentId;subGroupId'): " .. tostring(newCustomSubGroupIds))
+		end
+		newCustomSubGroupIds = nil
+		newCustomSubGroupText = nil
+	end
+end
+
+function menu.Add_Custom_Actions_SubGroup(parentId, subGroupId, text)
+	Helper.debugText("Add_Custom_Actions_SubGroup parentId: " .. tostring(parentId) .. " subGroupId: " .. tostring(subGroupId) .. " text: " .. tostring(text))
+	for _, entry in ipairs(registeredSubGroups) do
+		if entry.subGroupId == subGroupId then
+			Helper.debugText("Add_Custom_Actions_SubGroup: subGroupId already registered: " .. tostring(subGroupId))
+			return
+		end
+	end
+	if menu.uix_convertedRootSectionIds[parentId] then
+		for _, section in ipairs(config.sections) do
+			if section.id == parentId then
+				if not section.subsections then
+					section.subsections = {}
+				end
+				table.insert(section.subsections, { id = subGroupId, text = text })
+				return
+			end
+		end
+	else
+		table.insert(registeredSubGroups, { parentId = parentId, subGroupId = subGroupId, text = text })
+	end
+end
+-- kuertee end: sub-group MD API handlers
+
+-- Chem start: convert-to-root MD API handler
+function menu.Convert_Custom_Actions_Group_Id_To_Root(_, id)
+	-- Guard: already a root section?
+	for _, section in ipairs(config.sections) do
+		if section.id == id then
+			Helper.debugText("Convert_Custom_Actions_Group_Id_To_Root: id already a root section: " .. tostring(id))
+			return
+		end
+	end
+	-- Find the group text and remove it from custom_actions / custom_orders subsections
+	local groupText = nil
+	local insertAfterIdx = nil
+	for idx, section in ipairs(config.sections) do
+		if (section.id == "custom_actions" or section.id == "custom_orders") and section.subsections then
+			for subsecIdx, subsection in ipairs(section.subsections) do
+				if subsection.id == id then
+					if groupText == nil then
+						groupText = subsection.text
+					end
+					table.remove(section.subsections, subsecIdx)
+					break
+				end
+			end
+			insertAfterIdx = idx
+		end
+	end
+	if groupText == nil then
+		Helper.debugText("Convert_Custom_Actions_Group_Id_To_Root: group not found in subsections: " .. tostring(id))
+		return
+	end
+	-- Insert as a new root section right after the last of custom_actions/custom_orders
+	table.insert(config.sections, insertAfterIdx + 1, { id = id, text = groupText, isorder = false })
+	-- Track so it appears even in noopreason (non-player-target) scenarios
+	menu.uix_convertedRootSectionIds[id] = true
+	Helper.debugText("Convert_Custom_Actions_Group_Id_To_Root: promoted to root: id=" .. tostring(id) .. " text=" .. tostring(groupText))
+end
+-- Chem end: convert-to-root MD API handler
+
 menu.uix_callbackCount = 0
 function menu.registerCallback(callbackName, callbackFunction, id)
     -- note 1: format is generally [function name]_[action]. e.g.: in kuertee_menu_transporter, "display_on_set_room_active" overrides the room's active property with the return of the callback.
@@ -8006,6 +8259,9 @@ end
 
 menu.uix_isUpdateQueued = nil
 menu.uix_callbacks_toUpdate = {}
+-- Chem start: track converted root sections 
+menu.uix_convertedRootSectionIds = {}
+-- Chem end: track converted root sections
 function menu.updateCallback(callbackName, id, callbackFunction)
 	if not menu.uix_callbacks_toUpdate[callbackName] then
 		menu.uix_callbacks_toUpdate[callbackName] = {}

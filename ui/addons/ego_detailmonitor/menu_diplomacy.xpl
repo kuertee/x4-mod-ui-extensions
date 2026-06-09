@@ -3962,6 +3962,18 @@ function menu.createContextFrame(x, y, width, nomouseout)
 		autoFrameHeight = false
 	end
 
+	-- kuertee start: callback
+	if menu.uix_callbacks ["createContextFrame_on_end"] then
+		for uix_id, uix_callback in pairs (menu.uix_callbacks ["createContextFrame_on_end"]) do
+			local result = uix_callback (menu.contextFrame, menu.contextMenuData, menu.contextMenuMode)
+			if result then
+				menu.contextFrame = result.contextFrame
+				autoFrameHeight = result.autoFrameHeight ~= nil and result.autoFrameHeight or autoFrameHeight
+			end
+		end
+	end
+	-- kuertee end: callback
+
 	if menu.contextFrame.properties.x + contextmenuwidth > Helper.viewWidth then
 		menu.contextFrame.properties.x = Helper.viewWidth - contextmenuwidth - Helper.frameBorder
 	end
@@ -3972,17 +3984,6 @@ function menu.createContextFrame(x, y, width, nomouseout)
 		menu.contextFrame.properties.y = y
 	end
 	menu.contextFrame.properties.autoFrameHeight = autoFrameHeight
-
-	-- kuertee start: callback
-	if menu.uix_callbacks ["createContextFrame_on_end"] then
-		for uix_id, uix_callback in pairs (menu.uix_callbacks ["createContextFrame_on_end"]) do
-			local result = uix_callback (menu.contextFrame, menu.contextMenuData, menu.contextMenuMode)
-			if result then
-				menu.contextFrame = result.contextFrame
-			end
-		end
-	end
-	-- kuertee end: callback
 
 	menu.contextFrame:display()
 
@@ -4037,6 +4038,18 @@ function menu.refreshContextFrame()
 		menu.createEventContext(menu.contextFrame)
 	end
 
+	-- kuertee start: callback
+	if menu.uix_callbacks ["refreshContextFrame_on_end"] then
+		for uix_id, uix_callback in pairs (menu.uix_callbacks ["refreshContextFrame_on_end"]) do
+			local result = uix_callback (menu.contextFrame, menu.contextMenuData, menu.contextMenuMode)
+			if result then
+				menu.contextFrame = result.contextFrame
+				autoFrameHeight = result.autoFrameHeight ~= nil and result.autoFrameHeight or autoFrameHeight
+			end
+		end
+	end
+	-- kuertee end: callback
+
 	if menu.contextFrame.properties.x + menu.contextFrame.properties.width > Helper.viewWidth then
 		menu.contextFrame.properties.x = Helper.viewWidth - menu.contextFrame.properties.width - Helper.frameBorder
 	end
@@ -4047,17 +4060,6 @@ function menu.refreshContextFrame()
 		menu.contextFrame.properties.y = y
 	end
 	menu.contextFrame.properties.autoFrameHeight = autoFrameHeight
-
-	-- kuertee start: callback
-	if menu.uix_callbacks ["refreshContextFrame_on_end"] then
-		for uix_id, uix_callback in pairs (menu.uix_callbacks ["refreshContextFrame_on_end"]) do
-			local result = uix_callback (menu.contextFrame, menu.contextMenuData, menu.contextMenuMode)
-			if result then
-				menu.contextFrame = result.contextFrame
-			end
-		end
-	end
-	-- kuertee end: callback
 
 	menu.contextFrame:display()
 end
