@@ -33823,7 +33823,7 @@ function menu.uix_updateUIXPropertyTabData(id, propertyGroups, propertyInfo)
 	-- 		components = {component, ...},
 	-- 		(optional) callback = function,
 	-- 		(optional) infoByComponent = {
-	-- 			component = {
+	-- 			tostring(component) = {
 	-- 				key = value, ...
 	-- 			}, ...
 	-- 		}
