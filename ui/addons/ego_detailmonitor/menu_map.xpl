@@ -2313,9 +2313,13 @@ function menu.cleanup()
 	-- kuertee end: distance tool
 
 	-- kuertee start: uix properties tab
+	for uix_Id, uix_propertyTab in pairs(menu.uix_propertiesTabDataById) do
+		uix_Id = tostring(uix_Id)
+		menu.uix_removeUIXPropertyTab(uix_Id)
+	end
 	menu.uix_propertiesTabDataById = {}
-	menu.uix_propertiesTab_rendering = nil
-	menu.uix_propertiesTab_renderingPropertyGroup = nil
+	menu.uix_propertiesTab_current = nil
+	menu.uix_propertiesTab_currentPropertyGroup = nil
 	-- kuertee end: uix properties tab
 end
 
@@ -8927,6 +8931,11 @@ function menu.createPropertyOwned(frame, instance)
 	end
 	-- IALuir end: aegs call-back
 
+	-- kuertee start: uix properties tab
+	menu.uix_propertiesTab_current = nil
+	menu.uix_propertiesTab_currentPropertyGroup = nil
+	-- kuertee end: uix properties tab
+
 	local numdisplayed = 0
 	local maxvisibleheight = ftable:getFullHeight()
 	local ispropertyall = menu.propertyMode == "propertyall"
@@ -8955,14 +8964,29 @@ function menu.createPropertyOwned(frame, instance)
 	end
 
 	-- kuertee start: uix properties tab
-	menu.uix_propertiesTab_rendering = nil
-	menu.uix_propertiesTab_renderingPropertyGroup = nil
 	if menu.mode ~= "selectCV" and menu.uix_propertiesTabDataById[menu.propertyMode] then
 		local uix_propertyGroups = menu.uix_propertiesTabDataById[menu.propertyMode].propertyGroups
 		if uix_propertyGroups and next(uix_propertyGroups) and #uix_propertyGroups > 0 then
+			menu.uix_propertiesTab_current = menu.uix_propertiesTabDataById[menu.propertyMode]
 
-			if menu.uix_callbacks["createPropertyOwned_on_createPropertySection_uix_propertiesTab"] then
-				for uix_id, uix_callback in pairs(menu.uix_callbacks["createPropertyOwned_on_createPropertySection_uix_propertiesTab"]) do
+			if menu.uix_propertiesTab_current.propertyInfo and next(menu.uix_propertiesTab_current.propertyInfo) then
+				local uix_propertyInfo = menu.uix_propertiesTab_current.propertyInfo
+				local uix_dropDownItems = {}
+				for uix_idx, uix_info in ipairs(uix_propertyInfo) do
+					table.insert(uix_dropDownItems, {id = uix_info.id, text = uix_info.name, icon = "", displayremoveoption = false})
+				end
+				if #uix_dropDownItems > 0 then
+					local uixPropertyTabDropDownRow = ftable:addRow(true)
+					uixPropertyTabDropDownRow[4]:setColSpan(7):createDropDown(uix_dropDownItems, {height = config.mapRowHeight, startOption = menu.uix_propertiesTab_current.selectedPropertyInfoId})
+					uixPropertyTabDropDownRow[4].handlers.onDropDownConfirmed = function(_, id)
+						menu.uix_propertiesTab_current.selectedPropertyInfoId = id
+						menu.refreshInfoFrame()
+					end
+				end
+			end
+
+			if menu.uix_callbacks["createPropertyOwned_before_uix_propertyGroup"] then
+				for uix_id, uix_callback in pairs(menu.uix_callbacks["createPropertyOwned_before_uix_propertyGroup"]) do
 					numdisplayed = uix_callback(numdisplayed, instance, ftable, menu.uix_propertiesTabDataById[menu.propertyMode])
 				end
 			end
@@ -8971,10 +8995,9 @@ function menu.createPropertyOwned(frame, instance)
 			for _, uix_propertyGroup in ipairs(uix_propertyGroups) do
 				local uix_array = uix_propertyGroup.components
 				if uix_array and next(uix_array) and #uix_array > 0 then
-					menu.uix_propertiesTab_rendering = menu.uix_propertiesTabDataById[menu.propertyMode]
-					menu.uix_propertiesTab_renderingPropertyGroup = uix_propertyGroup
+					menu.uix_propertiesTab_currentPropertyGroup = uix_propertyGroup
 					local uix_id = menu.propertyMode
-					local uix_name = menu.uix_propertiesTab_renderingPropertyGroup.name
+					local uix_name = menu.uix_propertiesTab_currentPropertyGroup.name
 					local uix_noneText = nil
 					local uix_showModules = false
 					local uix_hideSubordinates = false
@@ -8983,8 +9006,8 @@ function menu.createPropertyOwned(frame, instance)
 				end
 			end
 
-			if menu.uix_callbacks["createPropertyOwned_on_createPropertySection_after_uix_propertyGroup"] then
-				for uix_id, uix_callback in pairs(menu.uix_callbacks["createPropertyOwned_on_createPropertySection_after_uix_propertyGroup"]) do
+			if menu.uix_callbacks["createPropertyOwned_after_uix_propertyGroup"] then
+				for uix_id, uix_callback in pairs(menu.uix_callbacks["createPropertyOwned_after_uix_propertyGroup"]) do
 					numdisplayed = uix_callback(numdisplayed, instance, ftable, menu.uix_propertiesTabDataById[menu.propertyMode])
 				end
 			end
@@ -9369,30 +9392,16 @@ function menu.createPropertySection(instance, id, ftable, name, array, nonetext,
 	-- kuertee start: open/close deployables
 
 	-- kuertee start: uix properties tab
-	elseif menu.uix_propertiesTab_rendering then
-		local row = ftable:addRow(true, Helper.headerRowProperties)
-		row[1]:setColSpan(5 + maxicons):createText(name, Helper.headerRowCenteredProperties)
-		-- row[2]:setColSpan(4 + maxicons):createText(name, Helper.headerRowCenteredProperties)
-		-- row[1]:createButton({active = #menu.uix_propertiesTab_renderingPropertyGroup.components > 1}):setText((not menu.uix_propertiesTab_renderingPropertyGroup.isExpanded) and "-" or "+", { halign = "center" })
-		-- row[1].handlers.onClick = function()
-		-- 	menu.uix_propertiesTab_renderingPropertyGroup.isExpanded = not menu.uix_propertiesTab_renderingPropertyGroup.isExpanded
-		-- 	Helper.debugText_forced("isExpanded", menu.uix_propertiesTab_renderingPropertyGroup.isExpanded)
+	elseif menu.uix_propertiesTab_current then
+		local propertyGroupRow = ftable:addRow(true, Helper.headerRowProperties)
+		propertyGroupRow[1]:setColSpan(5 + maxicons):createText(name, Helper.headerRowCenteredProperties)
+		-- propertyGroupRow[2]:setColSpan(4 + maxicons):createText(name, Helper.headerRowCenteredProperties)
+		-- propertyGroupRow[1]:createButton({active = #menu.uix_propertiesTab_currentPropertyGroup.components > 1}):setText((not menu.uix_propertiesTab_currentPropertyGroup.isExpanded) and "-" or "+", { halign = "center" })
+		-- propertyGroupRow[1].handlers.onClick = function()
+		-- 	menu.uix_propertiesTab_currentPropertyGroup.isExpanded = not menu.uix_propertiesTab_currentPropertyGroup.isExpanded
+		-- 	Helper.debugText_forced("isExpanded", menu.uix_propertiesTab_currentPropertyGroup.isExpanded)
 		-- 	menu.refreshInfoFrame()
 		-- end
-		if menu.uix_propertiesTab_rendering.propertyInfo and next(menu.uix_propertiesTab_rendering.propertyInfo) then
-			local uix_propertyInfo = menu.uix_propertiesTab_rendering.propertyInfo
-			local uix_dropDownItems = {}
-			for uix_idx, uix_info in ipairs(uix_propertyInfo) do
-				table.insert(uix_dropDownItems, {id = uix_info.id, text = uix_info.name, icon = "", displayremoveoption = false})
-			end
-			if #uix_dropDownItems > 0 then
-				row[3]:setColSpan(3 + maxicons):createDropDown(uix_dropDownItems, {startOption = menu.uix_propertiesTab_renderingPropertyGroup.selectedPropertyInfoId})
-				row[3].handlers.onDropDownConfirmed = function(_, id)
-					menu.uix_propertiesTab_renderingPropertyGroup.selectedPropertyInfoId = id
-					menu.refreshInfoFrame()
-				end
-			end
-		end
 	-- kuertee end: uix properties tab
 
 	elseif name then
@@ -9854,6 +9863,13 @@ function menu.createPropertyRow(instance, ftable, rowgroup, component, iteration
 		local location, locationtext, isdocked, aipilot, isplayerowned, isonlineobject, iscovered, isreallyenemy, macro, isally, classid, realclassid = GetComponentData(component, "sectorid", "sector", "isdocked", "assignedaipilot", "isplayerowned", "isonlineobject", "iscovered", "isreallyenemy", "macro", "isally", "classid", "realclassid")
 		local isstation = Helper.isComponentClass(realclassid, "station")
 		local isdoublerow = (iteration == 0 and (isstation or #subordinates > 0))
+
+		-- kuertee start: uix properties tab
+		if menu.uix_propertiesTab_current then
+			isdoublerow = false
+		end
+		-- kuertee end: uix properties tab
+
 		local name, color, bgcolor, font, mouseover, factioncolor = menu.getContainerNameAndColors(component, iteration, isdoublerow, false, true)
 		local alertString = ""
 		local alertMouseOver = ""
@@ -10127,41 +10143,44 @@ function menu.createPropertyRow(instance, ftable, rowgroup, component, iteration
 					colspan = colspan - 1
 				end
 
-				-- kuertee start: callback
-				local uix_locationText
-				local uix_locationTextProperties = {halign = "right", font = font, x = 0}
-				local uix_results = {}
-				for uix_id, uix_callback in pairs(menu.uix_callbacks["createPropertyRow_override_row_location_createText"]) do
-					local uix_textData = uix_callback(locationtext, {halign = "right", font = font, mouseOverText = mouseovertext, x = 0}, component)
-					if uix_textData.locataiontext then
-						table.insert(uix_results, uix_textData.locataiontext)
-					end
-					if uix_textData.properties then
-						uix_locationTextProperties = uix_textData.properties
-					end
-				end
-				if #uix_results then
-					uix_locationText = table.concat(uix_results, ", ")
-					row[3 + namecolspan]:createText(uix_locationText, uix_locationTextProperties)
-				end
-				-- kuertee end: callback
-
 				-- kuertee start: uix properties tab
-				if not uix_locationText then
-					if menu.uix_propertiesTab_renderingPropertyGroup and menu.uix_propertiesTab_renderingPropertyGroup.selectedPropertyInfoId then
-						local uix_propertyInfoId = menu.uix_propertiesTab_renderingPropertyGroup.selectedPropertyInfoId
-						uix_locationText = menu.uix_propertiesTab_renderingPropertyGroup.infoByComponent[component][uix_propertyInfoId]
+				local uix_locationText
+				local uix_locationTextProperties = {halign = "left", font = font, x = 0}
+				if menu.uix_propertiesTab_current and menu.uix_propertiesTab_currentPropertyGroup and menu.uix_propertiesTab_current.selectedPropertyInfoId then
+					local uix_propertyInfoId = menu.uix_propertiesTab_current.selectedPropertyInfoId
+					if menu.uix_propertiesTab_currentPropertyGroup.infoByComponent[component] then
+						uix_locationText = menu.uix_propertiesTab_currentPropertyGroup.infoByComponent[component][uix_propertyInfoId]
 						if uix_locationText then
 							if type(uix_locationText) == "function" then
 								uix_locationText = uix_locationText(component)
 							else
 								uix_locationText = tostring(uix_locationText)
 							end
+							Helper.debugText_forced("uix_locationText", uix_locationText)
 							row[3 + namecolspan]:setColSpan(colspan):createText(uix_locationText, uix_locationTextProperties)
 						end
 					end
 				end
 				-- kuertee end: uix properties tab
+
+				-- kuertee start: callback
+				if not uix_locationText then
+					local uix_results = {}
+					for uix_id, uix_callback in pairs(menu.uix_callbacks["createPropertyRow_override_row_location_createText"]) do
+						local uix_textData = uix_callback(locationtext, {halign = "right", font = font, mouseOverText = mouseovertext, x = 0}, component)
+						if uix_textData.locataiontext then
+							table.insert(uix_results, uix_textData.locataiontext)
+						end
+						if uix_textData.properties then
+							uix_locationTextProperties = uix_textData.properties
+						end
+					end
+					if #uix_results then
+						uix_locationText = table.concat(uix_results, ", ")
+						row[3 + namecolspan]:createText(uix_locationText, uix_locationTextProperties)
+					end
+				end
+				-- kuertee end: callback
 
 				-- kuertee start
 				-- row[3 + namecolspan]:setColSpan(colspan):createText(locationtext, { halign = "right", font = font, x = 0 })
@@ -33717,8 +33736,8 @@ end
 -- kuertee start
 -- uix properties tab
 menu.uix_propertiesTabDataById = {}
-menu.uix_propertiesTab_rendering = nil
-menu.uix_propertiesTab_renderingPropertyGroup = nil
+menu.uix_propertiesTab_current = nil
+menu.uix_propertiesTab_currentPropertyGroup = nil
 function menu.uix_addUIXPropertyTab(id, name, propertyGroups, propertyInfo, icon, data)
 	if (not id) or (not name) or (not propertyGroups) or (not next(propertyGroups)) then
 		return
@@ -33762,7 +33781,9 @@ function menu.uix_removeUIXPropertyTab(id)
 			break
 		end
 	end
-	menu.uix_propertiesTabDataById[id] = nil
+	if menu.uix_propertiesTabDataById then
+		menu.uix_propertiesTabDataById[id] = nil
+	end
 end
 
 function menu.uix_updateUIXPropertyTabData(id, propertyGroups, propertyInfo)
@@ -33795,7 +33816,9 @@ function menu.uix_updateUIXPropertyTabData(id, propertyGroups, propertyInfo)
 	end
 	if propertyInfo and next(propertyInfo) and #propertyInfo > 0 then
 		menu.uix_propertiesTabDataById[id].propertyInfo = propertyInfo
-		menu.uix_propertiesTabDataById[id].selectedPropertyInfoId = propertyInfo[1].id
+		if not menu.uix_propertiesTabDataById[id].selectedPropertyInfoId then
+			menu.uix_propertiesTabDataById[id].selectedPropertyInfoId = propertyInfo[1].id
+		end
 	end
 end
 
