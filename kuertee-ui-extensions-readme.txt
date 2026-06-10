@@ -6,18 +6,17 @@ Contributors: AlexandreTK, ChemODun, Damonya, DrWhoKnows, DmytroK, Erixon, Farem
 
 Updates
 =======
-v9.0.0.0.12.4, 5 Jun 2026:
-- Compatibility: 9.0 RC 4 UI files merged. Thanks, ChemODun!
+v9.0.0.1, 11 Jun 2026:
+- Compatibility: 9.0.
 
-v9.0.0.0.12.1, 28 May 2026:
-- Bug-fix: Map Menu: Selecting multiple objects caused the map to continually refresh.
-
-v9.0.0.0.12, 28 May 2026:
-- Compatibility: 9.0 RC 1 UI files merged. Thanks, ChemODun!
+Changes from the last v8.0.4.3, 06 Apr 2025 version that were released in previous 9.0 betas:
 - New feature: Callbacks for sticeIO's mod/s.
 - Tweaks: Callbacks for IALuir's mod/s.
 - New feature: Map Menu > Property Owned > Sort by Weapons. The Properties Owned list can be sorted by objects' damage-per-second value. This is the same sort type used in the Multi-rename feature when.
-- Bug-fix: Map Menu: Breaks when a selected object becomes invalid. E.g. when collecting a deployable after deactivating it.
+- New feature: Boarding Menu: Set-up "All" ships entry that propagates its settings to all attacking ships.
+- New feature: hierarchical sub-groups in the Interact Menu (available via Lua/MD) by ChemODun. More details in the "Add Nested Sub-Groups*" and "Add a Custom Root Section*" sections.
+- New feature: Map Menu > Properties Owned > Deployables: The list of deployables are grouped by name that can be expanded and collapsed.
+- New feature: Map Menu > Information > Full Crew List: The list of people on board can be expanded and collapsed.
 
 NOTES FOR PLAYERS:
 ==================
@@ -374,6 +373,19 @@ French localisation by Calvitix.
 
 History
 =======
+v9.0.0.0.12.4, 5 Jun 2026:
+- Compatibility: 9.0 RC 4 UI files merged. Thanks, ChemODun!
+
+v9.0.0.0.12.1, 28 May 2026:
+- Bug-fix: Map Menu: Selecting multiple objects caused the map to continually refresh.
+
+v9.0.0.0.12, 28 May 2026:
+- Compatibility: 9.0 RC 1 UI files merged. Thanks, ChemODun!
+- New feature: Callbacks for sticeIO's mod/s.
+- Tweaks: Callbacks for IALuir's mod/s.
+- New feature: Map Menu > Property Owned > Sort by Weapons. The Properties Owned list can be sorted by objects' damage-per-second value. This is the same sort type used in the Multi-rename feature when.
+- Bug-fix: Map Menu: Breaks when a selected object becomes invalid. E.g. when collecting a deployable after deactivating it.
+
 v9.0.0.0.11.1, 22 May 2026:
 - Bug-fix: Ship Configuration Menu: merge of new base UI file removed all mod callbacks.
 
