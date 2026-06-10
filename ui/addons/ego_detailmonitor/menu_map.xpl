@@ -8734,6 +8734,7 @@ function menu.createPropertyOwned(frame, instance)
 		local uix_propertiesOwnedTabGroups = menu.uix_propertiesOwnedTabDataById[menu.propertyMode].propertyGroups
 		if uix_propertiesOwnedTabGroups and next(uix_propertiesOwnedTabGroups) and #uix_propertiesOwnedTabGroups > 0 then
 			for _, uix_propertiesOwnedTabGroup in ipairs(uix_propertiesOwnedTabGroups) do
+				uix_propertiesOwnedTabGroup.sortedComponents = {}
 				local uix_components = uix_propertiesOwnedTabGroup.components
 				if uix_components and next(uix_components) and #uix_components > 0 then
 					menu.uix_propertiesOwnedTab_current = menu.uix_propertiesOwnedTabDataById[menu.propertyMode]
@@ -8900,9 +8901,6 @@ function menu.createPropertyOwned(frame, instance)
 		if menu.uix_propertiesOwnedTab_current then
 			local uix_propertiesOwnedTabGroup = uix_propertiesOwnedTabGroupByComponent[tostring(object)]
 			if uix_propertiesOwnedTabGroup then
-				if not uix_propertiesOwnedTabGroup.sortedComponents then
-					uix_propertiesOwnedTabGroup.sortedComponents = {}
-				end
 				table.insert(uix_propertiesOwnedTabGroup.sortedComponents, object)
 			end
 		end
@@ -8996,21 +8994,71 @@ function menu.createPropertyOwned(frame, instance)
 	end
 
 	-- kuertee start: uix properties owned tab
+	-- if required, render col headings and/or dropdown for propertyInfo
 	if menu.mode ~= "selectCV" and menu.uix_propertiesOwnedTab_current then
 		local uix_propertiesOwnedTabGroups = menu.uix_propertiesOwnedTab_current.propertyGroups
 		if uix_propertiesOwnedTabGroups and next(uix_propertiesOwnedTabGroups) and #uix_propertiesOwnedTabGroups > 0 then
-			if menu.uix_propertiesOwnedTab_current.propertyInfo and next(menu.uix_propertiesOwnedTab_current.propertyInfo) then
-				local uix_propertyInfo = menu.uix_propertiesOwnedTab_current.propertyInfo
-				local uix_dropDownItems = {}
-				for uix_idx, uix_info in ipairs(uix_propertyInfo) do
-					table.insert(uix_dropDownItems, {id = uix_info.id, text = uix_info.name, icon = "", displayremoveoption = false})
+
+			menu.uix_propertiesOwnedTab_isShowColsAndDropDownForInfo = false
+			if not menu.uix_propertiesOwnedTab_isShowColsAndDropDownForInfo then
+				if menu.uix_propertiesOwnedTab_current.propertyInfo and next(menu.uix_propertiesOwnedTab_current.propertyInfo) then
+					local uix_propertyInfo = menu.uix_propertiesOwnedTab_current.propertyInfo
+					local uix_dropDownItems = {}
+					for uix_idx, uix_info in ipairs(uix_propertyInfo) do
+						table.insert(uix_dropDownItems, {id = uix_info.id, text = uix_info.name, icon = "", displayremoveoption = false})
+					end
+					if #uix_dropDownItems > 1 then
+						local uixPropertyTabDropDownRow = ftable:addRow(true)
+						-- uixPropertyTabDropDownRow[4]:setColSpan(7):createDropDown(uix_dropDownItems, {height = config.mapRowHeight, startOption = menu.uix_propertiesOwnedTab_current.selectedPropertyInfoId})
+						uixPropertyTabDropDownRow[4]:setColSpan(5)
+						local uix_width = uixPropertyTabDropDownRow[4]:getWidth() - Helper.standardContainerOffset + 1
+						uixPropertyTabDropDownRow[4]:createDropDown(uix_dropDownItems, {width = uix_width, height = config.mapRowHeight, startOption = menu.uix_propertiesOwnedTab_current.selectedPropertyInfoId})
+						uixPropertyTabDropDownRow[4].handlers.onDropDownConfirmed = function(_, id)
+							menu.uix_propertiesOwnedTab_current.selectedPropertyInfoId = id
+							menu.refreshInfoFrame()
+						end
+					end
 				end
-				if #uix_dropDownItems > 1 then
-					local uixPropertyTabDropDownRow = ftable:addRow(true)
-					uixPropertyTabDropDownRow[4]:setColSpan(7):createDropDown(uix_dropDownItems, {height = config.mapRowHeight, startOption = menu.uix_propertiesOwnedTab_current.selectedPropertyInfoId})
-					uixPropertyTabDropDownRow[4].handlers.onDropDownConfirmed = function(_, id)
-						menu.uix_propertiesOwnedTab_current.selectedPropertyInfoId = id
-						menu.refreshInfoFrame()
+			else
+				if menu.uix_propertiesOwnedTab_current.propertyInfo and next(menu.uix_propertiesOwnedTab_current.propertyInfo) and #menu.uix_propertiesOwnedTab_current.propertyInfo > 0 then
+					local uix_colsToUse = #menu.uix_propertiesOwnedTab_current.propertyInfo
+					if uix_colsToUse > 2 then
+						uix_colsToUse = 2
+					end
+					if uix_colsToUse == 2 then
+						uix_colsToUse = {3, 4}
+					elseif uix_colsToUse == 1 then
+						uix_colsToUse = {4}
+					end
+					local uix_dropDownItems = {}
+					for uix_idx, uix_info in ipairs(menu.uix_propertiesOwnedTab_current.propertyInfo) do
+						if uix_idx >= 2 and #menu.uix_propertiesOwnedTab_current.propertyInfo > 2 then
+							table.insert(uix_dropDownItems, {id = uix_info.id, text = uix_info.name, icon = "", displayremoveoption = false})
+						end
+					end
+					local uix_row
+					if #uix_dropDownItems > 1 then
+						uix_row = ftable:addRow(true)
+					else
+						uix_row = ftable:addRow()
+					end
+					for uix_idx, uix_propertyInfo in ipairs(menu.uix_propertiesOwnedTab_current.propertyInfo) do
+						local uix_col = uix_colsToUse[uix_idx]
+						if uix_idx == 2 and #menu.uix_propertiesOwnedTab_current.propertyInfo > 2 then
+							-- if menu.uix_propertiesOwnedTab_current.selectedPropertyInfoId and menu.uix_propertiesOwnedTab_current.selectedPropertyInfoId < 3 then
+							-- 	menu.uix_propertiesOwnedTab_current.selectedPropertyInfoId = 2
+							-- end
+							uix_row[uix_col]:createDropDown(uix_dropDownItems, {height = config.mapRowHeight, startOption = menu.uix_propertiesOwnedTab_current.selectedPropertyInfoId})
+							uix_row[uix_col].handlers.onDropDownConfirmed = function(_, id)
+								menu.uix_propertiesOwnedTab_current.selectedPropertyInfoId = id
+								menu.refreshInfoFrame()
+							end
+						else
+							uix_row[uix_col]:createText(uix_propertyInfo.name)
+						end
+						if uix_idx == 2 then
+							break
+						end
 					end
 				end
 			end
@@ -9426,6 +9474,10 @@ function menu.createPropertySection(instance, id, ftable, name, array, nonetext,
 
 	-- kuertee start: uix properties owned tab
 	elseif menu.uix_propertiesOwnedTab_current then
+		if not name then
+			name = ""
+		end
+		name = name .. " (" .. tostring(#array) .. ")"
 		if name then
 			local propertyGroupRow = ftable:addRow(true, Helper.headerRowProperties)
 			propertyGroupRow[1]:setColSpan(5 + maxicons):createText(name, Helper.headerRowCenteredProperties)
@@ -10000,6 +10052,26 @@ function menu.createPropertyRow(instance, ftable, rowgroup, component, iteration
 			end
 		end
 
+		-- kuertee start: uix properties owned tab
+		local uix_colsToUse
+		if menu.uix_propertiesOwnedTab_isShowColsAndDropDownForInfo then
+			if menu.uix_propertiesOwnedTab_current and #menu.uix_propertiesOwnedTab_current.propertyInfo > 0 then
+				uix_colsToUse = #menu.uix_propertiesOwnedTab_current.propertyInfo
+				if uix_colsToUse > 2 then
+					uix_colsToUse = 2
+				end
+				-- namecolspan used as setColSpan(namecolspan + 1), hence with 2 cols used by propertyInfo, namecolspan = 0
+				if uix_colsToUse == 2 then
+					namecolspan = 0
+					uix_colsToUse = {3, 4}
+				elseif uix_colsToUse == 1 then
+					namecolspan = 1
+					uix_colsToUse = {4}
+				end
+			end
+		end
+		-- kuertee end: uix properties owned tab
+
 		if isdoublerow then
 			if isstation then
 				-- station case
@@ -10180,17 +10252,50 @@ function menu.createPropertyRow(instance, ftable, rowgroup, component, iteration
 
 				-- kuertee start: uix properties owned tab
 				local uix_locationText
-				if menu.uix_propertiesOwnedTab_current and menu.uix_propertiesOwnedTab_currentPropertyGroup and menu.uix_propertiesOwnedTab_current.selectedPropertyInfoId then
-					local uix_propertyInfoId = menu.uix_propertiesOwnedTab_current.selectedPropertyInfoId
-					if menu.uix_propertiesOwnedTab_currentPropertyGroup.infoByComponent[tostring(component)] then
-						uix_locationText = menu.uix_propertiesOwnedTab_currentPropertyGroup.infoByComponent[tostring(component)][uix_propertyInfoId]
-						if uix_locationText then
-							if type(uix_locationText) == "function" then
-								uix_locationText = uix_locationText(component)
-							else
-								uix_locationText = tostring(uix_locationText)
+				if not menu.uix_propertiesOwnedTab_isShowColsAndDropDownForInfo then
+					if menu.uix_propertiesOwnedTab_current and menu.uix_propertiesOwnedTab_currentPropertyGroup and menu.uix_propertiesOwnedTab_current.selectedPropertyInfoId then
+						local uix_propertyInfoId = menu.uix_propertiesOwnedTab_current.selectedPropertyInfoId
+						if menu.uix_propertiesOwnedTab_currentPropertyGroup.infoByComponent[tostring(component)] then
+							uix_locationText = menu.uix_propertiesOwnedTab_currentPropertyGroup.infoByComponent[tostring(component)][uix_propertyInfoId]
+							if uix_locationText then
+								if type(uix_locationText) == "function" then
+									uix_locationText = uix_locationText(component)
+								else
+									uix_locationText = tostring(uix_locationText)
+								end
+								row[3 + namecolspan]:setColSpan(colspan):createText(uix_locationText, {halign = "left", font = font, x = 0})
 							end
-							row[3 + namecolspan]:setColSpan(colspan):createText(uix_locationText, {halign = "left", font = font, x = 0})
+						end
+					end
+				else
+					if menu.uix_propertiesOwnedTab_current and #menu.uix_propertiesOwnedTab_current.propertyInfo > 0 then
+						local uix_infoByComponent = menu.uix_propertiesOwnedTab_currentPropertyGroup.infoByComponent and menu.uix_propertiesOwnedTab_currentPropertyGroup.infoByComponent[tostring(component)] or nil
+						if uix_infoByComponent then
+							for uix_idx, uix_propertyInfo in ipairs(menu.uix_propertiesOwnedTab_current.propertyInfo) do
+								local uix_info = uix_infoByComponent[uix_propertyInfo.id]
+								if uix_idx == 2 and #menu.uix_propertiesOwnedTab_current.propertyInfo > 2 then
+									-- the 3rd col will always be selectedPropertyInfoId if there are more propertyInfo
+									uix_info = uix_infoByComponent[menu.uix_propertiesOwnedTab_current.selectedPropertyInfoId]
+								else
+									uix_info = uix_infoByComponent[uix_propertyInfo.id]
+								end
+								if uix_info then
+									local uix_col = uix_colsToUse[uix_idx]
+									if type(uix_info) == "function" then
+										uix_info = uix_info(component, row, uix_col)
+									else
+										uix_info = tostring(uix_info)
+									end
+									if type(uix_info) == "string" then
+										row[uix_col]:createText(uix_info, {halign = "left", font = font, x = 0})
+									end
+									-- set uix_locationText to prevent other location texts below from rendering
+									uix_locationText = uix_info
+								end
+								if uix_idx == 2 then
+									break
+								end
+							end
 						end
 					end
 				end
@@ -33813,7 +33918,15 @@ function menu.uix_addUIXPropertyOwnedTab(id, name, propertyGroups, propertyInfo,
 	menu.uix_propertiesOwnedTabDataById[id].helpOverlayID = "map_property_owned_" .. id
 	menu.uix_propertiesOwnedTabDataById[id].helpOverlayText = name
 	menu.uix_propertiesOwnedTabDataById[id].data = data
-	menu.uix_updateUIXPropertyTabData(id, propertyGroups, propertyInfo)
+	if propertyGroups and next(propertyGroups) and #propertyGroups > 0 then
+		menu.uix_propertiesOwnedTabDataById[id].propertyGroups = propertyGroups
+	end
+	if propertyInfo and next(propertyInfo) and #propertyInfo > 0 then
+		menu.uix_propertiesOwnedTabDataById[id].propertyInfo = propertyInfo
+		if not menu.uix_propertiesOwnedTabDataById[id].selectedPropertyInfoId then
+			menu.uix_propertiesOwnedTabDataById[id].selectedPropertyInfoId = propertyInfo[1].id
+		end
+	end
 	return menu.uix_propertiesOwnedTabDataById[id]
 end
 
@@ -33847,21 +33960,6 @@ function menu.uix_removeUIXPropertyTab(id)
 	if menu.uix_propertiesOwnedTabDataById then
 		menu.uix_propertiesOwnedTabDataById[id].propertyGroups = nil
 		menu.uix_propertiesOwnedTabDataById[id].propertyInfo = nil
-	end
-end
-
-function menu.uix_updateUIXPropertyTabData(id, propertyGroups, propertyInfo)
-	if (not id) or (not propertyGroups) or (not next(propertyGroups)) then
-		return
-	end
-	if propertyGroups and next(propertyGroups) and #propertyGroups > 0 then
-		menu.uix_propertiesOwnedTabDataById[id].propertyGroups = propertyGroups
-	end
-	if propertyInfo and next(propertyInfo) and #propertyInfo > 0 then
-		menu.uix_propertiesOwnedTabDataById[id].propertyInfo = propertyInfo
-		if not menu.uix_propertiesOwnedTabDataById[id].selectedPropertyInfoId then
-			menu.uix_propertiesOwnedTabDataById[id].selectedPropertyInfoId = propertyInfo[1].id
-		end
 	end
 end
 
