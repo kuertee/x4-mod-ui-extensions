@@ -2318,10 +2318,7 @@ function menu.cleanup()
 	-- kuertee end: distance tool
 
 	-- kuertee start: uix properties owned tab
-	for uix_Id, uix_propertyTab in pairs(menu.uix_propertiesOwnedTabDataById) do
-		uix_Id = tostring(uix_Id)
-		menu.uix_removeUIXPropertyTab(uix_Id)
-	end
+	menu.uix_removeUIXPropertyTabs()
 	menu.uix_propertiesOwnedTab_current = nil
 	menu.uix_propertiesOwnedTab_currentPropertyGroup = nil
 	-- kuertee end: uix properties owned tab
@@ -8664,6 +8661,10 @@ end
 -- Property Owned
 
 function menu.createPropertyOwned(frame, instance)
+	-- kuertee start: uix properties owned tab
+	menu.uix_removeUIXPropertyTabs()
+	-- kuertee end: uix properties owned tab
+
 	-- kuertee start: callback
 	if menu.uix_callbacks["createPropertyOwned_on_start"] then
 		for uix_id, uix_callback in pairs(menu.uix_callbacks["createPropertyOwned_on_start"]) do
@@ -33813,6 +33814,7 @@ function menu.uix_addUIXPropertyOwnedTab(id, name, propertyGroups, propertyInfo,
 	menu.uix_propertiesOwnedTabDataById[id].helpOverlayText = name
 	menu.uix_propertiesOwnedTabDataById[id].data = data
 	menu.uix_updateUIXPropertyTabData(id, propertyGroups, propertyInfo)
+	return menu.uix_propertiesOwnedTabDataById[id]
 end
 
 function menu.uix_getUIXPropertiesOwnedTabs()
@@ -33830,6 +33832,15 @@ function menu.uix_getUIXPropertiesOwnedTabs()
 	end
 	table.sort(tabs, function (a, b) return a.name < b.name end)
 	return tabs
+end
+
+function menu.uix_removeUIXPropertyTabs()
+	if menu.uix_propertiesOwnedTabDataById and next(menu.uix_propertiesOwnedTabDataById) then
+		for uix_Id, uix_propertyTab in pairs(menu.uix_propertiesOwnedTabDataById) do
+			uix_Id = tostring(uix_Id)
+			menu.uix_removeUIXPropertyTab(uix_Id)
+		end
+	end
 end
 
 function menu.uix_removeUIXPropertyTab(id)
