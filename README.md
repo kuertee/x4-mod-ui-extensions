@@ -6,7 +6,7 @@ Contributors: AlexandreTK, ChemODun, Damonya, DrWhoKnows, DmytroK, Erixon, Farem
 
 Updates
 =======
-v8.0.4.6, 06 June 2026:
+v8.0.4.6, 11 June 2026:
 - New feature: hierarchical sub-groups in the Interact Menu (available via Lua/MD) by ChemODun.
 - Bug-fix: Diplomacy and PlayerInfo Menu: Bug-fix to potential crashes by ChemODun.
 
