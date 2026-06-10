@@ -2019,6 +2019,11 @@ function menu.init_kuertee ()
 	-- kuertee start: open/close deployables
 	__userdata_uix_menu_map.savedCollapsedDeployables = __userdata_uix_menu_map.savedCollapsedDeployables or {}
 	-- kuertee end: open/close deployables
+	-- kuertee start: uix properties owned tab
+	menu.uix_propertiesOwnedTabDataById = {}
+	menu.uix_propertiesOwnedTab_current = nil
+	menu.uix_propertiesOwnedTab_currentPropertyGroup = nil
+	-- kuertee end: uix properties owned tab
 end
 -- kuertee end
 
@@ -2312,15 +2317,14 @@ function menu.cleanup()
 	Helper.uix_distanceTool_jumps = nil
 	-- kuertee end: distance tool
 
-	-- kuertee start: uix properties tab
-	for uix_Id, uix_propertyTab in pairs(menu.uix_propertiesTabDataById) do
+	-- kuertee start: uix properties owned tab
+	for uix_Id, uix_propertyTab in pairs(menu.uix_propertiesOwnedTabDataById) do
 		uix_Id = tostring(uix_Id)
 		menu.uix_removeUIXPropertyTab(uix_Id)
 	end
-	menu.uix_propertiesTabDataById = {}
-	menu.uix_propertiesTab_current = nil
-	menu.uix_propertiesTab_currentPropertyGroup = nil
-	-- kuertee end: uix properties tab
+	menu.uix_propertiesOwnedTab_current = nil
+	menu.uix_propertiesOwnedTab_currentPropertyGroup = nil
+	-- kuertee end: uix properties owned tab
 end
 
 -- Menu member functions
@@ -8721,25 +8725,25 @@ function menu.createPropertyOwned(frame, instance)
 	infoTableData.fleetUnitReplacements = { }
 	infoTableData.moduledata = { }
 
-	-- kuertee start: uix properties tab
-	menu.uix_propertiesTab_current = nil
-	menu.uix_propertiesTab_currentPropertyGroup = nil
-	local uix_propertyGroupByComponent = {}
-	if menu.mode ~= "selectCV" and menu.uix_propertiesTabDataById[menu.propertyMode] then
-		local uix_propertyGroups = menu.uix_propertiesTabDataById[menu.propertyMode].propertyGroups
-		if uix_propertyGroups and next(uix_propertyGroups) and #uix_propertyGroups > 0 then
-			for _, uix_propertyGroup in ipairs(uix_propertyGroups) do
-				local uix_components = uix_propertyGroup.components
+	-- kuertee start: uix properties owned tab
+	menu.uix_propertiesOwnedTab_current = nil
+	menu.uix_propertiesOwnedTab_currentPropertyGroup = nil
+	local uix_propertiesOwnedTabGroupByComponent = {}
+	if menu.mode ~= "selectCV" and menu.uix_propertiesOwnedTabDataById[menu.propertyMode] then
+		local uix_propertiesOwnedTabGroups = menu.uix_propertiesOwnedTabDataById[menu.propertyMode].propertyGroups
+		if uix_propertiesOwnedTabGroups and next(uix_propertiesOwnedTabGroups) and #uix_propertiesOwnedTabGroups > 0 then
+			for _, uix_propertiesOwnedTabGroup in ipairs(uix_propertiesOwnedTabGroups) do
+				local uix_components = uix_propertiesOwnedTabGroup.components
 				if uix_components and next(uix_components) and #uix_components > 0 then
-					menu.uix_propertiesTab_current = menu.uix_propertiesTabDataById[menu.propertyMode]
+					menu.uix_propertiesOwnedTab_current = menu.uix_propertiesOwnedTabDataById[menu.propertyMode]
 					for _, uix_component in ipairs(uix_components) do
-						uix_propertyGroupByComponent[tostring(uix_component)] = uix_propertyGroup
+						uix_propertiesOwnedTabGroupByComponent[tostring(uix_component)] = uix_propertiesOwnedTabGroup
 					end
 				end
 			end
 		end
 	end
-	-- kuertee end: uix properties tab
+	-- kuertee end: uix properties owned tab
 
 	-- kuertee start: callback
 	if menu.uix_callbacks["createPropertyOwned_on_init_infoTableData"] then
@@ -8891,17 +8895,17 @@ function menu.createPropertyOwned(frame, instance)
 		end
 		-- kuertee end: callback on every playerobject
 
-		-- kuertee start: uix properties tab
-		if menu.uix_propertiesTab_current then
-			local uix_propertyGroup = uix_propertyGroupByComponent[tostring(object)]
-			if uix_propertyGroup then
-				if not uix_propertyGroup.sortedComponents then
-					uix_propertyGroup.sortedComponents = {}
+		-- kuertee start: uix properties owned tab
+		if menu.uix_propertiesOwnedTab_current then
+			local uix_propertiesOwnedTabGroup = uix_propertiesOwnedTabGroupByComponent[tostring(object)]
+			if uix_propertiesOwnedTabGroup then
+				if not uix_propertiesOwnedTabGroup.sortedComponents then
+					uix_propertiesOwnedTabGroup.sortedComponents = {}
 				end
-				table.insert(uix_propertyGroup.sortedComponents, object)
+				table.insert(uix_propertiesOwnedTabGroup.sortedComponents, object)
 			end
 		end
-		-- kuertee end: uix properties tab
+		-- kuertee end: uix properties owned tab
 	end
 
 	-- kuertee start: callback
@@ -8990,55 +8994,51 @@ function menu.createPropertyOwned(frame, instance)
 		end
 	end
 
-	-- kuertee start: uix properties tab
-	if menu.mode ~= "selectCV" and menu.uix_propertiesTab_current then
-		local uix_propertyGroups = menu.uix_propertiesTab_current.propertyGroups
-		if uix_propertyGroups and next(uix_propertyGroups) and #uix_propertyGroups > 0 then
-			if menu.uix_propertiesTab_current.propertyInfo and next(menu.uix_propertiesTab_current.propertyInfo) then
-				local uix_propertyInfo = menu.uix_propertiesTab_current.propertyInfo
+	-- kuertee start: uix properties owned tab
+	if menu.mode ~= "selectCV" and menu.uix_propertiesOwnedTab_current then
+		local uix_propertiesOwnedTabGroups = menu.uix_propertiesOwnedTab_current.propertyGroups
+		if uix_propertiesOwnedTabGroups and next(uix_propertiesOwnedTabGroups) and #uix_propertiesOwnedTabGroups > 0 then
+			if menu.uix_propertiesOwnedTab_current.propertyInfo and next(menu.uix_propertiesOwnedTab_current.propertyInfo) then
+				local uix_propertyInfo = menu.uix_propertiesOwnedTab_current.propertyInfo
 				local uix_dropDownItems = {}
 				for uix_idx, uix_info in ipairs(uix_propertyInfo) do
 					table.insert(uix_dropDownItems, {id = uix_info.id, text = uix_info.name, icon = "", displayremoveoption = false})
 				end
 				if #uix_dropDownItems > 1 then
 					local uixPropertyTabDropDownRow = ftable:addRow(true)
-					uixPropertyTabDropDownRow[4]:setColSpan(7):createDropDown(uix_dropDownItems, {height = config.mapRowHeight, startOption = menu.uix_propertiesTab_current.selectedPropertyInfoId})
+					uixPropertyTabDropDownRow[4]:setColSpan(7):createDropDown(uix_dropDownItems, {height = config.mapRowHeight, startOption = menu.uix_propertiesOwnedTab_current.selectedPropertyInfoId})
 					uixPropertyTabDropDownRow[4].handlers.onDropDownConfirmed = function(_, id)
-						menu.uix_propertiesTab_current.selectedPropertyInfoId = id
+						menu.uix_propertiesOwnedTab_current.selectedPropertyInfoId = id
 						menu.refreshInfoFrame()
 					end
 				end
 			end
 
-			if menu.uix_callbacks["createPropertyOwned_before_uix_propertyGroup"] then
-				for uix_id, uix_callback in pairs(menu.uix_callbacks["createPropertyOwned_before_uix_propertyGroup"]) do
-					numdisplayed = uix_callback(numdisplayed, instance, ftable, menu.uix_propertiesTabDataById[menu.propertyMode])
-				end
+			if menu.uix_propertiesOwnedTab_current.data and type(menu.uix_propertiesOwnedTab_current.data.before_groups_callback) == "function" then
+				numdisplayed = menu.uix_propertiesOwnedTab_current.data.before_groups_callback(numdisplayed, ftable, menu.uix_propertiesOwnedTab_current)
 			end
 
-			table.sort(uix_propertyGroups, function(a, b) return a.name < b.name end)
-			for _, uix_propertyGroup in ipairs(uix_propertyGroups) do
-				local uix_array = uix_propertyGroup.sortedComponents and uix_propertyGroup.sortedComponents or uix_propertyGroup.components
+			table.sort(uix_propertiesOwnedTabGroups, function(a, b) return a.name < b.name end)
+			for _, uix_propertiesOwnedTabGroup in ipairs(uix_propertiesOwnedTabGroups) do
+				local uix_array = uix_propertiesOwnedTabGroup.sortedComponents and uix_propertiesOwnedTabGroup.sortedComponents or uix_propertiesOwnedTabGroup.components
 				if uix_array and next(uix_array) and #uix_array > 0 then
-					menu.uix_propertiesTab_currentPropertyGroup = uix_propertyGroup
+					menu.uix_propertiesOwnedTab_currentPropertyGroup = uix_propertiesOwnedTabGroup
 					local uix_id = menu.propertyMode
-					local uix_name = menu.uix_propertiesTab_currentPropertyGroup.name
+					local uix_name = menu.uix_propertiesOwnedTab_currentPropertyGroup.name
 					local uix_noneText = nil
 					local uix_showModules = false
-					local uix_hideSubordinates = false
+					local uix_hideSubordinates = menu.uix_propertiesOwnedTab_currentPropertyGroup.isHideSubordinates and menu.uix_propertiesOwnedTab_currentPropertyGroup.isHideSubordinates or false
 					-- function menu.createPropertySection(instance, id, ftable, name, array, nonetext, showmodules, numdisplayed, hidesubordinates, sorter)
 					numdisplayed = menu.createPropertySection(instance, uix_id, ftable, uix_name, uix_array, uix_noneText, uix_showModules, numdisplayed, uix_hideSubordinates, menu.propertySorterType)
 				end
 			end
 
-			if menu.uix_callbacks["createPropertyOwned_after_uix_propertyGroup"] then
-				for uix_id, uix_callback in pairs(menu.uix_callbacks["createPropertyOwned_after_uix_propertyGroup"]) do
-					numdisplayed = uix_callback(numdisplayed, instance, ftable, menu.uix_propertiesTabDataById[menu.propertyMode])
-				end
+			if menu.uix_propertiesOwnedTab_current.data and type(menu.uix_propertiesOwnedTab_current.data.after_groups_callback) == "function" then
+				numdisplayed = menu.uix_propertiesOwnedTab_current.data.after_groups_callback(numdisplayed, ftable, menu.uix_propertiesOwnedTab_current)
 			end
 		end
 	end
-	-- kuertee end: uix properties tab
+	-- kuertee end: uix properties owned tab
 
 	-- kuertee start: callback:
 	-- OBSOLETE: do not use this callback. kept for backward-compatibility.
@@ -9142,11 +9142,18 @@ function menu.createPropertyOwned(frame, instance)
 		-- end: chemodun - fix for big amout of tabs
 		if #config.propertyCategories > 0 then
 			Helper.setTabScrollLeftIcon(menu, menu.panelState.leftmenu, row, 1, menu.scrollIconSize)
-			for i, entry in ipairs(config.propertyCategories) do
 
-				-- kuertee start: uix properties tab
-				-- Helper.debugText_forced("createPropertyOwned config.propertyCategories entry.category", entry.category)
-				-- kuertee end: uix properties tab
+			-- kuertee start: uix properties owned tab
+			-- for i, entry in ipairs(config.propertyCategories) do
+			local uix_categoryTabs = {}
+			for _, uix_tab in ipairs(config.propertyCategories) do
+				table.insert(uix_categoryTabs, uix_tab)
+			end
+			for _, uix_tab in ipairs(menu.uix_getUIXPropertiesOwnedTabs()) do
+				table.insert(uix_categoryTabs, uix_tab)
+			end
+			for i, entry in ipairs(uix_categoryTabs) do
+			-- kuertee end: uix properties owned tab
 
 				if i / (maxNumCategoryColumns - 2) > rowCount then
 					row = tabtable:addRow("property_tabs", { fixed = true, bgColor = Color["frame_background_black"], borderBelow = false })
@@ -9416,20 +9423,20 @@ function menu.createPropertySection(instance, id, ftable, name, array, nonetext,
 		row[2]:setColSpan(4 + maxicons):createText(name, Helper.headerRowCenteredProperties)
 	-- kuertee start: open/close deployables
 
-	-- kuertee start: uix properties tab
-	elseif menu.uix_propertiesTab_current then
+	-- kuertee start: uix properties owned tab
+	elseif menu.uix_propertiesOwnedTab_current then
 		if name then
 			local propertyGroupRow = ftable:addRow(true, Helper.headerRowProperties)
 			propertyGroupRow[1]:setColSpan(5 + maxicons):createText(name, Helper.headerRowCenteredProperties)
 			-- propertyGroupRow[2]:setColSpan(4 + maxicons):createText(name, Helper.headerRowCenteredProperties)
-			-- propertyGroupRow[1]:createButton({active = #menu.uix_propertiesTab_currentPropertyGroup.components > 1}):setText((not menu.uix_propertiesTab_currentPropertyGroup.isExpanded) and "-" or "+", { halign = "center" })
+			-- propertyGroupRow[1]:createButton({active = #menu.uix_propertiesOwnedTab_currentPropertyGroup.components > 1}):setText((not menu.uix_propertiesOwnedTab_currentPropertyGroup.isExpanded) and "-" or "+", { halign = "center" })
 			-- propertyGroupRow[1].handlers.onClick = function()
-			-- 	menu.uix_propertiesTab_currentPropertyGroup.isExpanded = not menu.uix_propertiesTab_currentPropertyGroup.isExpanded
-			-- 	Helper.debugText_forced("isExpanded", menu.uix_propertiesTab_currentPropertyGroup.isExpanded)
+			-- 	menu.uix_propertiesOwnedTab_currentPropertyGroup.isExpanded = not menu.uix_propertiesOwnedTab_currentPropertyGroup.isExpanded
+			-- 	Helper.debugText_forced("isExpanded", menu.uix_propertiesOwnedTab_currentPropertyGroup.isExpanded)
 			-- 	menu.refreshInfoFrame()
 			-- end
 		end
-	-- kuertee end: uix properties tab
+	-- kuertee end: uix properties owned tab
 
 	elseif name then
 		local row = ftable:addRow(false, Helper.headerRowProperties)
@@ -9891,11 +9898,11 @@ function menu.createPropertyRow(instance, ftable, rowgroup, component, iteration
 		local isstation = Helper.isComponentClass(realclassid, "station")
 		local isdoublerow = (iteration == 0 and (isstation or #subordinates > 0))
 
-		-- kuertee start: uix properties tab
-		if menu.uix_propertiesTab_current then
+		-- kuertee start: uix properties owned tab
+		if menu.uix_propertiesOwnedTab_current then
 			isdoublerow = false
 		end
-		-- kuertee end: uix properties tab
+		-- kuertee end: uix properties owned tab
 
 		local name, color, bgcolor, font, mouseover, factioncolor = menu.getContainerNameAndColors(component, iteration, isdoublerow, false, true)
 		local alertString = ""
@@ -10170,12 +10177,12 @@ function menu.createPropertyRow(instance, ftable, rowgroup, component, iteration
 					colspan = colspan - 1
 				end
 
-				-- kuertee start: uix properties tab
+				-- kuertee start: uix properties owned tab
 				local uix_locationText
-				if menu.uix_propertiesTab_current and menu.uix_propertiesTab_currentPropertyGroup and menu.uix_propertiesTab_current.selectedPropertyInfoId then
-					local uix_propertyInfoId = menu.uix_propertiesTab_current.selectedPropertyInfoId
-					if menu.uix_propertiesTab_currentPropertyGroup.infoByComponent[tostring(component)] then
-						uix_locationText = menu.uix_propertiesTab_currentPropertyGroup.infoByComponent[tostring(component)][uix_propertyInfoId]
+				if menu.uix_propertiesOwnedTab_current and menu.uix_propertiesOwnedTab_currentPropertyGroup and menu.uix_propertiesOwnedTab_current.selectedPropertyInfoId then
+					local uix_propertyInfoId = menu.uix_propertiesOwnedTab_current.selectedPropertyInfoId
+					if menu.uix_propertiesOwnedTab_currentPropertyGroup.infoByComponent[tostring(component)] then
+						uix_locationText = menu.uix_propertiesOwnedTab_currentPropertyGroup.infoByComponent[tostring(component)][uix_propertyInfoId]
 						if uix_locationText then
 							if type(uix_locationText) == "function" then
 								uix_locationText = uix_locationText(component)
@@ -10186,7 +10193,7 @@ function menu.createPropertyRow(instance, ftable, rowgroup, component, iteration
 						end
 					end
 				end
-				-- kuertee end: uix properties tab
+				-- kuertee end: uix properties owned tab
 
 				-- kuertee start: callback
 				if not uix_locationText then
@@ -33759,55 +33766,76 @@ function menu.setInfoSubmenuObjectAndRefresh(component)
 end
 
 -- kuertee start
--- uix properties tab
-menu.uix_propertiesTabDataById = {}
-menu.uix_propertiesTab_current = nil
-menu.uix_propertiesTab_currentPropertyGroup = nil
-function menu.uix_addUIXPropertyTab(id, name, propertyGroups, propertyInfo, icon, data)
+-- uix properties owned tab
+function menu.uix_addUIXPropertyOwnedTab(id, name, propertyGroups, propertyInfo, icon, data)
+	-- propertyGroups:
+	-- {
+	-- 	{
+	-- 		id = string,
+	-- 		name = string,
+	-- 		components = {component, ...},
+	-- 		(optional) isHideSubordinates = boolean,
+	-- 		(optional) infoByComponent = {
+	-- 			tostring(component) = {
+	-- 				key = value, ...,
+	-- 			}, ...,
+	-- 		}
+	-- 	}
+	-- }
+
+	-- (optional) propertyInfo:
+	-- {
+	-- 	{
+	-- 		id = key string,
+	-- 		name = string,
+	-- 	}, ...,
+	-- }
+
+	-- (optional) data:
+	-- {
+	-- 	before_groups_callback = function,
+	-- 	after_groups_callback = function,
+	-- 	key = value, ...,
+	-- }
 	if (not id) or (not name) or (not propertyGroups) or (not next(propertyGroups)) then
 		return
 	end
 	if not icon then
 		icon = "mapst_propertyowned"
 	end
-	local isTabExists
-	for _, data in ipairs(config.propertyCategories) do
-		if data.category == id then
-			isTabExists = true
+	if not menu.uix_propertiesOwnedTabDataById[id] then
+		menu.uix_propertiesOwnedTabDataById[id] = {}
+	end
+	menu.uix_propertiesOwnedTabDataById[id].id = id
+	menu.uix_propertiesOwnedTabDataById[id].name = name
+	menu.uix_propertiesOwnedTabDataById[id].icon = icon and icon or "mapst_propertyowned"
+	menu.uix_propertiesOwnedTabDataById[id].helpOverlayID = "map_property_owned_" .. id
+	menu.uix_propertiesOwnedTabDataById[id].helpOverlayText = name
+	menu.uix_propertiesOwnedTabDataById[id].data = data
+	menu.uix_updateUIXPropertyTabData(id, propertyGroups, propertyInfo)
+end
+
+function menu.uix_getUIXPropertiesOwnedTabs()
+	local tabs = {}
+	for id, uix_propertyOwnedTab in pairs(menu.uix_propertiesOwnedTabDataById) do
+		if uix_propertyOwnedTab.propertyGroups and next(uix_propertyOwnedTab.propertyGroups) and uix_propertyOwnedTab.propertyGroups[1].components and next(uix_propertyOwnedTab.propertyGroups[1].components) then
+			table.insert(tabs, {
+				category = uix_propertyOwnedTab.id,
+				name = uix_propertyOwnedTab.name,
+				icon = uix_propertyOwnedTab.icon,
+				helpOverlayID = "map_property_owned_" .. uix_propertyOwnedTab.id,
+				helpOverlayText = uix_propertyOwnedTab.name,
+			})
 		end
 	end
-	if not isTabExists then
-		isTabExists = true
-		local category = {
-			category = id,
-			name = name,
-			icon = icon,
-			helpOverlayID = "map_property_owned_" .. id,
-			helpOverlayText = name,
-		}
-		table.insert(config.propertyCategories, category)
-	end
-	if isTabExists then
-		if not menu.uix_propertiesTabDataById[id] then
-			menu.uix_propertiesTabDataById[id] = {
-				id = id,
-				name = name,
-				data = data,
-			}
-		end
-		menu.uix_updateUIXPropertyTabData(id, propertyGroups, propertyInfo)
-	end
+	table.sort(tabs, function (a, b) return a.name < b.name end)
+	return tabs
 end
 
 function menu.uix_removeUIXPropertyTab(id)
-	for idx, data in ipairs(config.propertyCategories) do
-		if data.category == id then
-			table.remove(config.propertyCategories, idx)
-			break
-		end
-	end
-	if menu.uix_propertiesTabDataById then
-		menu.uix_propertiesTabDataById[id] = nil
+	if menu.uix_propertiesOwnedTabDataById then
+		menu.uix_propertiesOwnedTabDataById[id].propertyGroups = nil
+		menu.uix_propertiesOwnedTabDataById[id].propertyInfo = nil
 	end
 end
 
@@ -33815,39 +33843,15 @@ function menu.uix_updateUIXPropertyTabData(id, propertyGroups, propertyInfo)
 	if (not id) or (not propertyGroups) or (not next(propertyGroups)) then
 		return
 	end
-	-- propertyGroups:
-	-- {
-	-- 	{
-	-- 		id = string,
-	-- 		name = string,
-	-- 		components = {component, ...},
-	-- 		(optional) callback = function,
-	-- 		(optional) infoByComponent = {
-	-- 			tostring(component) = {
-	-- 				key = value, ...
-	-- 			}, ...
-	-- 		}
-	-- 	}
-	-- }
-	-- propertyInfo:
-	-- {
-	-- 	{
-	-- 		id = key string,
-	-- 		name = string,
-	-- 	}, ...
-	-- }
 	if propertyGroups and next(propertyGroups) and #propertyGroups > 0 then
-		menu.uix_propertiesTabDataById[id].propertyGroups = propertyGroups
+		menu.uix_propertiesOwnedTabDataById[id].propertyGroups = propertyGroups
 	end
 	if propertyInfo and next(propertyInfo) and #propertyInfo > 0 then
-		menu.uix_propertiesTabDataById[id].propertyInfo = propertyInfo
-		if not menu.uix_propertiesTabDataById[id].selectedPropertyInfoId then
-			menu.uix_propertiesTabDataById[id].selectedPropertyInfoId = propertyInfo[1].id
+		menu.uix_propertiesOwnedTabDataById[id].propertyInfo = propertyInfo
+		if not menu.uix_propertiesOwnedTabDataById[id].selectedPropertyInfoId then
+			menu.uix_propertiesOwnedTabDataById[id].selectedPropertyInfoId = propertyInfo[1].id
 		end
 	end
-end
-
-function menu.uix_displayPropertyTab(id)
 end
 
 -- allow trigger of selectComponent mode from lua
