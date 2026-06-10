@@ -1,8 +1,9 @@
--- section == cArch_configureships
+﻿-- section == cArch_configureships
 -- param == { 0, 0, container, mode, modeparam, immediate }
 
 -- modes:	"purchase",	param:	{}
 --			"upgrade",			{ selectableships }
+--			"upgradefleetunit",	{ fleetunit }
 --			"modify",			{ [ paintonly = false, selectedships = {} ] }
 --			"customgamestart",	{ gamestartid, creative, shipproperty, shiploadoutproperty, shippeopleproperty, shippeoplefillpercentageproperty, shippilotproperty, paintthemeproperty, playerpropertyid, propertymacro, propertycommander, propertypeopledef, propertypeoplefillpercentage, propertycount, paused }
 --			"comparison",		{ id }
@@ -110,6 +111,14 @@ ffi.cdef[[
 		FightRuleID id;
 		const char* type;
 	} FightRuleTypeID;
+	typedef struct {
+		FleetUnitID fleetunitid;
+		const char* name;
+		const char* idcode;
+		const char* macro;
+		BuildTaskID buildtaskid;
+		UniverseID replacementid;
+	} FleetUnitInfo;
 	typedef struct {
 		const char* id;
 		const char* name;
@@ -471,7 +480,7 @@ ffi.cdef[[
 	void GenerateShipLoadout2(UILoadout2* result, UniverseID containerid, UniverseID shipid, const char* macroname, float level);
 	void GenerateShipLoadoutCounts2(UILoadoutCounts2* result, UniverseID containerid, UniverseID shipid, const char* macroname, float level);
 	uint32_t GetAllCountermeasures(AmmoData* result, uint32_t resultlen, UniverseID defensibleid);
-	uint32_t GetAllEquipment(EquipmentWareInfo* result, uint32_t resultlen, bool playerblueprint);
+	uint32_t GetAllEquipment2(EquipmentWareInfo* result, uint32_t resultlen, bool playerblueprint, bool customgamestart);
 	uint32_t GetAllLaserTowers(AmmoData* result, uint32_t resultlen, UniverseID defensibleid);
 	uint32_t GetAllMines(AmmoData* result, uint32_t resultlen, UniverseID defensibleid);
 	uint32_t GetAllMissiles(AmmoData* result, uint32_t resultlen, UniverseID defensibleid);
@@ -493,7 +502,6 @@ ffi.cdef[[
 	uint32_t GetBuildTasks(BuildTaskInfo* result, uint32_t resultlen, UniverseID containerid, UniverseID buildmoduleid, bool isinprogress, bool includeupgrade);
 	int64_t GetBuildWarePrice(UniverseID containerid, const char* warename);
 	const char* GetComponentClass(UniverseID componentid);
-	const char* GetComponentName(UniverseID componentid);
 	uint32_t GetContainerBuilderMacros(const char** result, uint32_t resultlen, UniverseID containerid);
 	float GetContainerBuildPriceFactor(UniverseID containerid);
 	UILoadoutStatistics5 GetCurrentLoadoutStatistics5(UniverseID shipid);
@@ -515,6 +523,9 @@ ffi.cdef[[
 	uint32_t GetDefensibleDeployableCapacity(UniverseID defensibleid);
 	uint32_t GetDockedShips(UniverseID* result, uint32_t resultlen, UniverseID dockingbayorcontainerid, const char* factionid);
 	const char* GetEquipmentModPropertyName(const char* wareid);
+	FleetUnitInfo GetFleetUnitInfo(FleetUnitID fleetunitid);
+	void GetFleetUnitLoadout(UILoadout2* result, FleetUnitID fleetunitid);
+	void GetFleetUnitLoadoutCounts(UILoadoutCounts2* result, FleetUnitID fleetunitid);
 	uint32_t GetHighestEquipmentModQuality(UniverseID defensibleid);
 	bool GetInstalledEngineMod2(UniverseID objectid, UIEngineMod2* enginemod);
 	bool GetInstalledPaintMod(UniverseID objectid, UIPaintMod* paintmod);
@@ -540,7 +551,7 @@ ffi.cdef[[
 	void GetMissionLoadout(UILoadout2* result, MissionID missionid, const char* uimacroname);
 	void GetMissionLoadoutCounts(UILoadoutCounts2* result, MissionID missionid, const char* uimacroname);
 	uint32_t GetNumAllCountermeasures(UniverseID defensibleid);
-	uint32_t GetNumAllEquipment(bool playerblueprint);
+	uint32_t GetNumAllEquipment2(bool playerblueprint, bool customgamestart);
 	uint32_t GetNumAllLaserTowers(UniverseID defensibleid);
 	uint32_t GetNumAllMines(UniverseID defensibleid);
 	uint32_t GetNumAllMissiles(UniverseID defensibleid);
@@ -566,6 +577,7 @@ ffi.cdef[[
 	uint32_t GetNumMissileCargo(UniverseID containerid);
 	uint32_t GetNumMissingBuildResources2(UniverseID containerid, UIBuildOrderList* orders, uint32_t numorders, bool playercase);
 	uint32_t GetNumMissingLoadoutResources2(UniverseID containerid, UIBuildOrderList* orders, uint32_t numorders, bool playercase);
+	uint32_t GetNumPlayerEquipmentWares();
 	uint32_t GetNumPlayerPeopleDefinitions(void);
 	uint32_t GetNumRepairResources2(UniverseID containerid, UniverseID defensibleid, UniverseID componenttorepairid);
 	uint32_t GetNumRequestedMissionShips(void);
@@ -587,6 +599,7 @@ ffi.cdef[[
 	uint32_t GetPeople2(PeopleInfo* result, uint32_t resultlen, UniverseID controllableid, bool includearriving);
 	uint32_t GetPeopleCapacity(UniverseID controllableid, const char* macroname, bool includepilot);
 	bool GetPickedMapMacroSlot(UniverseID holomapid, UniverseID defensibleid, UniverseID moduleid, const char* macroname, bool ismodule, UILoadoutSlot* result);
+	uint32_t GetPlayerEquipmentWares(EquipmentWareInfo* result, uint32_t resultlen);
 	UniverseID GetPlayerOccupiedShipID(void);
 	const char* GetPlayerPaintTheme(void);
 	bool GetPlayerPaintThemeMod(UniverseID objectid, const char* macroname, UIPaintMod* paintmod);
@@ -630,12 +643,14 @@ ffi.cdef[[
 	bool InstallShipMod(UniverseID shipid, const char* wareid);
 	bool InstallWeaponMod(UniverseID weaponid, const char* wareid);
 	bool IsAmmoMacroCompatible(const char* weaponmacroname, const char* ammomacroname);
+	bool IsContainerTransmuteForFactionAllowed(UniverseID containerid, const char* factionid);
 	bool IsDeployableMacroCompatible(UniverseID containerid, const char* macroname, const char* deployablemacroname);
 	bool IsLoadoutCompatible(const char* macroname, const char* loadoutid);
 	bool IsLoadoutValid(UniverseID defensibleid, const char* macroname, const char* loadoutid, uint32_t* numinvalidpatches);
 	bool IsSlotMandatory(UniverseID defensibleid, UniverseID moduleid, const char* macroname, bool ismodule, const char* upgradetypename, size_t slot);
 	bool IsSoftwareDefault(UniverseID controllableid, const char* macroname, const char* softwarename);
 	bool IsUnitMacroCompatible(UniverseID containerid, const char* macroname, const char* unitmacroname);
+	bool IsUpgradeGroupMacroCompatible(UniverseID destructibleid, const char* macroname, const char* path, const char* group, const char* upgradetypename, const char* upgrademacroname);
 	bool IsUpgradeMacroCompatible(UniverseID objectid, UniverseID moduleid, const char* macroname, bool ismodule, const char* upgradetypename, size_t slot, const char* upgrademacroname);
 	bool IsVirtualUpgradeMacroCompatible(UniverseID defensibleid, const char* macroname, const char* upgradetypename, size_t slot, const char* upgrademacroname);
 	bool RemoveLoadout(const char* source, const char* macroname, const char* localid);
@@ -648,11 +663,13 @@ ffi.cdef[[
 	void SetCustomGameStartPlayerPropertyPerson(const char* id, const char* propertyid, const char* entryid, CustomGameStartPersonEntry uivalue);
 	void SetCustomGameStartShipAndLoadoutProperty2(const char* id, const char* shippropertyid, const char* loadoutpropertyid, const char* macroname, UILoadout2 uiloadout);
 	void SetCustomGameStartShipPilot(const char* id, const char* propertyid, CustomGameStartPersonEntry uivalue);
+	void SetFleetUnitLoadout(FleetUnitID fleetunitid, const char* macroname, UILoadout2 uiloadout);
 	void SetCustomGameStartStringProperty(const char* id, const char* propertyid, const char* uivalue);
 	void SetMapPaintMod(UniverseID holomapid, const char* wareid);
 	void SetMapPicking(UniverseID holomapid, bool enable);
 	void SetPaintModLocked(UniverseID objectid, bool value);
 	void SetSelectedMapMacroSlot(UniverseID holomapid, UniverseID defensibleid, UniverseID moduleid, const char* macroname, bool ismodule, const char* upgradetypename, size_t slot);
+	void SetSelectedMapMacroSlots(UniverseID holomapid, UniverseID defensibleid, UniverseID moduleid, const char* macroname, bool ismodule, const char* upgradetypename, size_t* slots, uint32_t numslots);
 	void ShowObjectConfigurationMap2(UniverseID holomapid, UniverseID defensibleid, UniverseID moduleid, const char* macroname, bool ismodule, UILoadout uiloadout, size_t cp_idx);
 	void StartPanMap(UniverseID holomapid);
 	void StartRotateMap(UniverseID holomapid);
@@ -677,10 +694,13 @@ local menu = {
 	equipmentfilter_races_y = 0,
 	equipmentsearch_editboxrow = 0,
 	allownonplayerblueprints = false,
+	newShipStats = false,
+	equipmentData = {},
 }
 
 local config = {
-	mainLayer = 5,
+	mainLayer = 6,
+	equipmentInfoLayer = 5,
 	infoLayer = 4,
 	contextLayer = 2,
 	classorder = { "ship_xl", "ship_l", "ship_m", "ship_s", "ship_xs" },
@@ -695,9 +715,9 @@ local config = {
 		{ name = ReadText(1001, 87),	icon = "shipbuildst_software",		mode = "software" },
 		{ spacing = true,																			comparison = false },
 		{ name = ReadText(1001, 8003),	icon = "shipbuildst_consumable",	mode = "consumables",	comparison = false },
-		{ name = ReadText(1001, 80),	icon = "shipbuildst_crew",			mode = "crew",			comparison = false },
-		{ spacing = true,																			customgamestart = false,	comparison = false },
-		{ name = ReadText(1001, 8510),	icon = "shipbuildst_paint",			mode = "paintmods",		customgamestart = false,	comparison = false,		upgrademode = "paint",	modclass = "paint" },
+		{ name = ReadText(1001, 80),	icon = "shipbuildst_crew",			mode = "crew",			comparison = false,		upgradefleetunit = false },
+		{ spacing = true,																			customgamestart = false,	comparison = false,		upgradefleetunit = false },
+		{ name = ReadText(1001, 8510),	icon = "shipbuildst_paint",			mode = "paintmods",		customgamestart = false,	comparison = false,		upgradefleetunit = false,		upgrademode = "paint",	modclass = "paint" },
 		{ spacing = true,																			customgamestart = false,	comparison = false,		hascontainer = true },
 		{ name = ReadText(1001, 3000),	icon = "shipbuildst_repair",		mode = "repair",		customgamestart = false,	comparison = false,		hascontainer = true },
 		{ spacing = true,																			comparison = false,			hascontainer = true },
@@ -716,8 +736,6 @@ local config = {
 		font = Helper.standardFont,
 		fontsize = Helper.scaleFont(Helper.standardFont, Helper.standardFontSize),
 		color = Color["text_normal"],
-		x = 0,
-		y = 0
 	},
 	stateKeys = {
 		{ "object", "UniverseID" },
@@ -739,75 +757,83 @@ local config = {
 		ship = 1.3,
 	},
 	stats = {
-		{ id = "HullValue",						name = ReadText(1001, 8048),			unit = ReadText(1001, 118),	type = "float",		accuracy = 0 },
-		{ id = "ShieldValue",					name = ReadText(1001, 8049),			unit = ReadText(1001, 118),	type = "float",		accuracy = 0 },
-		{ id = "ShieldRate",					name = "   " .. ReadText(1001, 8553),	unit = ReadText(1001, 119),	type = "float",		accuracy = 0 },
-		{ id = "ShieldDelay",					name = "   " .. ReadText(1001, 8554),	unit = ReadText(1001, 100),	type = "double",	accuracy = 2,	inverted = true },
-		{ id = "GroupedShieldValue",			name = ReadText(1001, 8533),			unit = ReadText(1001, 118),	type = "float",		accuracy = 0,	mouseovertext = ReadText(1026, 8018) },
-		{ id = "GroupedShieldRate",				name = "   " .. ReadText(1001, 8553),	unit = ReadText(1001, 119),	type = "float",		accuracy = 0 },
-		{ id = "GroupedShieldDelay",			name = "   " .. ReadText(1001, 8554),	unit = ReadText(1001, 100),	type = "double",	accuracy = 2,	inverted = true },
-		{ id = "RadarRange",					name = ReadText(1001, 8068),			unit = ReadText(1001, 108),	type = "float",		accuracy = 0 },
-		{ id = "BurstDPS",						name = ReadText(1001, 8073),			unit = ReadText(1001, 119),	type = "float",		accuracy = 0 },
-		{ id = "SustainedDPS",					name = ReadText(1001, 8074),			unit = ReadText(1001, 119),	type = "float",		accuracy = 0 },
-		{ id = "TurretSustainedDPS",			name = ReadText(1001, 8532),			unit = ReadText(1001, 119),	type = "float",		accuracy = 0,	mouseovertext = ReadText(1026, 8017),	capshipid = "GroupedTurretSustainedDPS" },
-		{ id = "" },
-		{ id = "ContainerCapacity",				name = ReadText(1001, 8058),			unit = ReadText(1001, 110),	type = "UINT",		accuracy = 0 },
-		{ id = "SolidCapacity",					name = ReadText(1001, 8059),			unit = ReadText(1001, 110),	type = "UINT",		accuracy = 0 },
-		{ id = "LiquidCapacity",				name = ReadText(1001, 8060),			unit = ReadText(1001, 110),	type = "UINT",		accuracy = 0 },
-		{ id = "CondensateCapacity",			name = ReadText(20109, 9801),			unit = ReadText(1001, 110),	type = "UINT",		accuracy = 0 },
-		{ id = "" },
-		{ id = "NumDocksShipMedium",			name = ReadText(1001, 8524),			unit = "",					type = "UINT",		accuracy = 0 },
-		{ id = "ShipCapacityMedium",			name = ReadText(1001, 8526),			unit = "",					type = "UINT",		accuracy = 0 },
-		{ id = "NumDocksShipSmall",				name = ReadText(1001, 8525),			unit = "",					type = "UINT",		accuracy = 0 },
-		{ id = "ShipCapacitySmall",				name = ReadText(1001, 8527),			unit = "",					type = "UINT",		accuracy = 0 },
-		-- new column
-		{ id = "ForwardSpeed",					name = ReadText(1001, 8051),			unit = ReadText(1001, 113),	type = "float",		accuracy = 0 },
-		{ id = "ForwardAcceleration",			name = "   " .. ReadText(1001, 8069),	unit = ReadText(1001, 111),	type = "float",		accuracy = 0 },
-		{ id = "BoostSpeed",					name = ReadText(1001, 8052),			unit = ReadText(1001, 113),	type = "float",		accuracy = 0 },
-		{ id = "BoostAcceleration",				name = "   " .. ReadText(1001, 8590),	unit = ReadText(1001, 111),	type = "float",		accuracy = 0 },
-		{ id = "BoostMaxDuration",				name = "   " .. ReadText(1001, 8592),	unit = ReadText(1001, 100),	type = "float",		accuracy = 1 },
-		{ id = "BoostRechargeRate",				name = "   " .. ReadText(1001, 8591),	unit = ReadText(1001, 125),	type = "float",		accuracy = 1 },
-		{ id = "TravelSpeed",					name = ReadText(1001, 8053),			unit = ReadText(1001, 113),	type = "float",		accuracy = 0 },
-		{ id = "TravelAcceleration",			name = "   " .. ReadText(1001, 8593),	unit = ReadText(1001, 111),	type = "float",		accuracy = 0 },
-		{ id = "TravelChargeTime",				name = "   " .. ReadText(1001, 8594),	unit = ReadText(1001, 100),	type = "float",		accuracy = 1,	inverted = true },
-		{ id = "HorizontalStrafeSpeed",			name = ReadText(1001, 8559),			unit = ReadText(1001, 113),	type = "float",		accuracy = 1 },
-		{ id = "HorizontalStrafeAcceleration",	name = "   " .. ReadText(1001, 8560),	unit = ReadText(1001, 111),	type = "float",		accuracy = 1 },
-		{ id = "YawSpeed",						name = ReadText(1001, 8054),			unit = ReadText(1001, 117),	type = "float",		accuracy = 1 },
-		{ id = "PitchSpeed",					name = ReadText(1001, 8055),			unit = ReadText(1001, 117),	type = "float",		accuracy = 1 },
-		{ id = "RollSpeed",						name = ReadText(1001, 8056),			unit = ReadText(1001, 117),	type = "float",		accuracy = 1 },
-		{ id = "" },
-		{ id = "CrewCapacity",					name = ReadText(1001, 8057),			unit = "",					type = "UINT",		accuracy = 0 },
-		{ id = "UnitCapacity",					name = ReadText(1001, 8061),			unit = "",					type = "UINT",		accuracy = 0 },
-		{ id = "MissileCapacity",				name = ReadText(1001, 8062),			unit = "",					type = "UINT",		accuracy = 0 },
-		{ id = "DeployableCapacity",			name = ReadText(1001, 8064),			unit = "",					type = "UINT",		accuracy = 0 },
-		{ id = "CountermeasureCapacity",		name = ReadText(1001, 8063),			unit = "",					type = "UINT",		accuracy = 0 },
+		left =  {
+			{ id = "HullValue",						name = ReadText(1001, 8048),			unit = ReadText(1001, 118),	type = "float",		accuracy = 0 },
+			{ id = "ShieldValue",					name = ReadText(1001, 8049),			unit = ReadText(1001, 118),	type = "float",		accuracy = 0,	new = false },
+			{ id = "ShieldRate",					name = "   " .. ReadText(1001, 8553),	unit = ReadText(1001, 119),	type = "float",		accuracy = 0,	new = false },
+			{ id = "ShieldDelay",					name = "   " .. ReadText(1001, 8554),	unit = ReadText(1001, 100),	type = "double",	accuracy = 2,	new = false,	inverted = true },
+			{ id = "shield",						name = ReadText(1001, 13205),			unit = "",					type = "slot",						new = true  },
+			{ id = "GroupedShieldValue",			name = ReadText(1001, 8533),			unit = ReadText(1001, 118),	type = "float",		accuracy = 0,	new = false,	mouseovertext = ReadText(1026, 8018) },
+			{ id = "GroupedShieldRate",				name = "   " .. ReadText(1001, 8553),	unit = ReadText(1001, 119),	type = "float",		accuracy = 0,	new = false },
+			{ id = "GroupedShieldDelay",			name = "   " .. ReadText(1001, 8554),	unit = ReadText(1001, 100),	type = "double",	accuracy = 2,	new = false,	inverted = true },
+			{ id = "shieldgroup",					name = ReadText(1001, 13206),			unit = "",					type = "slot",						new = true  },
+			{ id = "RadarRange",					name = ReadText(1001, 8068),			unit = ReadText(1001, 108),	type = "float",		accuracy = 0 },
+			{ id = "BurstDPS",						name = ReadText(1001, 13211),			unit = ReadText(1001, 119),	type = "float",		accuracy = 0,	new = false },
+			{ id = "SustainedDPS",					name = ReadText(1001, 13212),			unit = ReadText(1001, 119),	type = "float",		accuracy = 0,	new = false },
+			{ id = "weapon",						name = ReadText(1001, 13207),			unit = "",					type = "slot",						new = true  },
+			{ id = "TurretSustainedDPS",			name = ReadText(1001, 8532),			unit = ReadText(1001, 119),	type = "float",		accuracy = 0,	new = false,	mouseovertext = ReadText(1026, 8017),	capshipid = "GroupedTurretSustainedDPS" },
+			{ id = "turret",						name = ReadText(1001, 13208),			unit = "",					type = "slot",						new = true,												capshipid = "turretgroup"  },
+			{ id = "" },
+			{ id = "ContainerCapacity",				name = ReadText(1001, 8058),			unit = ReadText(1001, 110),	type = "UINT",		accuracy = 0,	hasany = true },
+			{ id = "SolidCapacity",					name = ReadText(1001, 8059),			unit = ReadText(1001, 110),	type = "UINT",		accuracy = 0,	hasany = true },
+			{ id = "LiquidCapacity",				name = ReadText(1001, 8060),			unit = ReadText(1001, 110),	type = "UINT",		accuracy = 0,	hasany = true },
+			{ id = "CondensateCapacity",			name = ReadText(20109, 9801),			unit = ReadText(1001, 110),	type = "UINT",		accuracy = 0,	hasany = true },
+			{ id = "mediumdocks",					name = ReadText(1001, 7952),			unit = "",					type = "dock",		amount = "NumDocksShipMedium",		capacity = "ShipCapacityMedium",	class = { ["ship_l"] = true, ["ship_xl"] = true } },
+			{ id = "smalldocks",					name = ReadText(1001, 7953),			unit = "",					type = "dock",		amount = "NumDocksShipSmall",		capacity = "ShipCapacitySmall",	class = { ["ship_m"] = true, ["ship_l"] = true, ["ship_xl"] = true } },
+		},
+		right = {
+			{ id = "ForwardSpeed",					name = ReadText(1001, 8051),			unit = ReadText(1001, 113),	type = "float",		accuracy = 0,	new = false },
+			{ id = "ForwardAcceleration",			name = "   " .. ReadText(1001, 8069),	unit = ReadText(1001, 111),	type = "float",		accuracy = 0,	new = false },
+			{ id = "BoostSpeed",					name = ReadText(1001, 8052),			unit = ReadText(1001, 113),	type = "float",		accuracy = 0,	new = false },
+			{ id = "BoostAcceleration",				name = "   " .. ReadText(1001, 8590),	unit = ReadText(1001, 111),	type = "float",		accuracy = 0,	new = false },
+			{ id = "BoostMaxDuration",				name = "   " .. ReadText(1001, 9068),	unit = ReadText(1001, 100),	type = "float",		accuracy = 1,	new = false },
+			{ id = "BoostRechargeRate",				name = "   " .. ReadText(1001, 8591),	unit = ReadText(1001, 125),	type = "float",		accuracy = 1,	new = false },
+			{ id = "TravelSpeed",					name = ReadText(1001, 8053),			unit = ReadText(1001, 113),	type = "float",		accuracy = 0,	new = false },
+			{ id = "TravelAcceleration",			name = "   " .. ReadText(1001, 8593),	unit = ReadText(1001, 111),	type = "float",		accuracy = 0,	new = false },
+			{ id = "TravelChargeTime",				name = "   " .. ReadText(1001, 8594),	unit = ReadText(1001, 100),	type = "float",		accuracy = 1,	new = false,	inverted = true },
+			{ id = "HorizontalStrafeSpeed",			name = ReadText(1001, 8559),			unit = ReadText(1001, 113),	type = "float",		accuracy = 1,	new = false },
+			{ id = "HorizontalStrafeAcceleration",	name = "   " .. ReadText(1001, 8560),	unit = ReadText(1001, 111),	type = "float",		accuracy = 1,	new = false },
+			{ id = "YawSpeed",						name = ReadText(1001, 13223),			unit = ReadText(1001, 117),	type = "float",		accuracy = 1,	new = false },
+			{ id = "PitchSpeed",					name = ReadText(1001, 13224),			unit = ReadText(1001, 117),	type = "float",		accuracy = 1,	new = false },
+			{ id = "RollSpeed",						name = ReadText(1001, 13225),			unit = ReadText(1001, 117),	type = "float",		accuracy = 1,	new = false },
+			{ id = "engine",						name = ReadText(1001, 13209),			unit = "",					type = "slot",						new = true,												capshipid = "enginegroup"  },
+			{ id = "" },
+			{ id = "CrewCapacity",					name = ReadText(1001, 8057),			unit = "",					type = "UINT",		accuracy = 0 },
+			{ id = "UnitCapacity",					name = ReadText(1001, 8061),			unit = "",					type = "UINT",		accuracy = 0 },
+			{ id = "MissileCapacity",				name = ReadText(1001, 8062),			unit = "",					type = "UINT",		accuracy = 0 },
+			{ id = "DeployableCapacity",			name = ReadText(1001, 8064),			unit = "",					type = "UINT",		accuracy = 0 },
+			{ id = "CountermeasureCapacity",		name = ReadText(1001, 8063),			unit = "",					type = "UINT",		accuracy = 0 },
+		},
 	},
 	limitedStats = {
-		{ id = "HullValue",						name = ReadText(1001, 8048),			unit = ReadText(1001, 118),	type = "float",		accuracy = 0 },
-		{ id = "ShieldValue",					name = ReadText(1001, 8049),			unit = ReadText(1001, 118),	type = "float",		accuracy = 0 },
-		{ id = "RadarRange",					name = ReadText(1001, 8068),			unit = ReadText(1001, 108),	type = "float",		accuracy = 0 },
-		{ id = "BurstDPS",						name = ReadText(1001, 8073),			unit = ReadText(1001, 119),	type = "float",		accuracy = 0 },
-		{ id = "TurretSustainedDPS",			name = ReadText(1001, 8532),			unit = ReadText(1001, 119),	type = "float",		accuracy = 0,	mouseovertext = ReadText(1026, 8017),	capshipid = "GroupedTurretSustainedDPS" },
-		{ id = "ContainerCapacity",				name = ReadText(1001, 8058),			unit = ReadText(1001, 110),	type = "UINT",		accuracy = 0,	hasany = true },
-		{ id = "SolidCapacity",					name = ReadText(1001, 8059),			unit = ReadText(1001, 110),	type = "UINT",		accuracy = 0,	hasany = true },
-		{ id = "LiquidCapacity",				name = ReadText(1001, 8060),			unit = ReadText(1001, 110),	type = "UINT",		accuracy = 0,	hasany = true },
-		{ id = "CondensateCapacity",			name = ReadText(20109, 9801),			unit = ReadText(1001, 110),	type = "UINT",		accuracy = 0,	hasany = true },
-		{ id = "NumDocksShipMedium",			name = ReadText(1001, 8524),			unit = "",					type = "UINT",		accuracy = 0,	class = { ["ship_l"] = true, ["ship_xl"] = true } },
-		{ id = "ShipCapacityMedium",			name = ReadText(1001, 8526),			unit = "",					type = "UINT",		accuracy = 0,	class = { ["ship_l"] = true, ["ship_xl"] = true } },
-		{ id = "NumDocksShipSmall",				name = ReadText(1001, 8525),			unit = "",					type = "UINT",		accuracy = 0,	class = { ["ship_m"] = true, ["ship_l"] = true, ["ship_xl"] = true } },
-		{ id = "ShipCapacitySmall",				name = ReadText(1001, 8527),			unit = "",					type = "UINT",		accuracy = 0,	class = { ["ship_m"] = true, ["ship_l"] = true, ["ship_xl"] = true } },
-		{ id = "",	class = { ["ship_s"] = true } },
-		{ id = "",	class = { ["ship_s"] = true } },
-		{ id = "ForwardSpeed",					name = ReadText(1001, 8051),			unit = ReadText(1001, 113),	type = "float",		accuracy = 0 },
-		{ id = "BoostSpeed",					name = ReadText(1001, 8052),			unit = ReadText(1001, 113),	type = "float",		accuracy = 0 },
-		{ id = "TravelSpeed",					name = ReadText(1001, 8053),			unit = ReadText(1001, 113),	type = "float",		accuracy = 0 },
-		{ id = "CrewCapacity",					name = ReadText(1001, 8057),			unit = "",					type = "UINT",		accuracy = 0 },
-		{ id = "UnitCapacity",					name = ReadText(1001, 8061),			unit = "",					type = "UINT",		accuracy = 0 },
-		{ id = "MissileCapacity",				name = ReadText(1001, 8062),			unit = "",					type = "UINT",		accuracy = 0 },
-		{ id = "DeployableCapacity",			name = ReadText(1001, 8064),			unit = "",					type = "UINT",		accuracy = 0 },
-		{ id = "CountermeasureCapacity",		name = ReadText(1001, 8063),			unit = "",					type = "UINT",		accuracy = 0 },
-		{ id = "",	class = { ["ship_l"] = true, ["ship_xl"] = true } },
-		{ id = "",	class = { ["ship_l"] = true, ["ship_xl"] = true } },
+		left =  {
+			{ id = "HullValue",						name = ReadText(1001, 8048),			unit = ReadText(1001, 118),	type = "float",		accuracy = 0 },
+			{ id = "ShieldValue",					name = ReadText(1001, 8049),			unit = ReadText(1001, 118),	type = "float",		accuracy = 0,	new = false },
+			{ id = "shield",						name = ReadText(1001, 13205),			unit = "",					type = "slot",						new = true  },
+			{ id = "shieldgroup",					name = ReadText(1001, 13206),			unit = "",					type = "slot",						new = true  },
+			{ id = "RadarRange",					name = ReadText(1001, 8068),			unit = ReadText(1001, 108),	type = "float",		accuracy = 0 },
+			{ id = "BurstDPS",						name = ReadText(1001, 13211),			unit = ReadText(1001, 119),	type = "float",		accuracy = 0,	new = false },
+			{ id = "weapon",						name = ReadText(1001, 13207),			unit = "",					type = "slot",						new = true  },
+			{ id = "TurretSustainedDPS",			name = ReadText(1001, 8532),			unit = ReadText(1001, 119),	type = "float",		accuracy = 0,	new = false,	mouseovertext = ReadText(1026, 8017),	capshipid = "GroupedTurretSustainedDPS" },
+			{ id = "turret",						name = ReadText(1001, 13208),			unit = "",					type = "slot",						new = true,												capshipid = "turretgroup"  },
+			{ id = "ContainerCapacity",				name = ReadText(1001, 8058),			unit = ReadText(1001, 110),	type = "UINT",		accuracy = 0,	hasany = true },
+			{ id = "SolidCapacity",					name = ReadText(1001, 8059),			unit = ReadText(1001, 110),	type = "UINT",		accuracy = 0,	hasany = true },
+			{ id = "LiquidCapacity",				name = ReadText(1001, 8060),			unit = ReadText(1001, 110),	type = "UINT",		accuracy = 0,	hasany = true },
+			{ id = "CondensateCapacity",			name = ReadText(20109, 9801),			unit = ReadText(1001, 110),	type = "UINT",		accuracy = 0,	hasany = true },
+			{ id = "mediumdocks",					name = ReadText(1001, 7952),			unit = "",					type = "dock",		amount = "NumDocksShipMedium",		capacity = "ShipCapacityMedium",	class = { ["ship_l"] = true, ["ship_xl"] = true } },
+			{ id = "smalldocks",					name = ReadText(1001, 7953),			unit = "",					type = "dock",		amount = "NumDocksShipSmall",		capacity = "ShipCapacitySmall",	class = { ["ship_m"] = true, ["ship_l"] = true, ["ship_xl"] = true } },
+		},
+		right = {
+			{ id = "ForwardSpeed",					name = ReadText(1001, 8051),			unit = ReadText(1001, 113),	type = "float",		accuracy = 0,	new = false },
+			{ id = "BoostSpeed",					name = ReadText(1001, 8052),			unit = ReadText(1001, 113),	type = "float",		accuracy = 0,	new = false },
+			{ id = "TravelSpeed",					name = ReadText(1001, 8053),			unit = ReadText(1001, 113),	type = "float",		accuracy = 0,	new = false },
+			{ id = "engine",						name = ReadText(1001, 13209),			unit = "",					type = "slot",						new = true,												capshipid = "enginegroup"  },
+			{ id = "CrewCapacity",					name = ReadText(1001, 8057),			unit = "",					type = "UINT",		accuracy = 0 },
+			{ id = "UnitCapacity",					name = ReadText(1001, 8061),			unit = "",					type = "UINT",		accuracy = 0 },
+			{ id = "MissileCapacity",				name = ReadText(1001, 8062),			unit = "",					type = "UINT",		accuracy = 0 },
+			{ id = "DeployableCapacity",			name = ReadText(1001, 8064),			unit = "",					type = "UINT",		accuracy = 0 },
+			{ id = "CountermeasureCapacity",		name = ReadText(1001, 8063),			unit = "",					type = "UINT",		accuracy = 0 },
+		},
 	},
 	scaleSize = 2,
 	deployableOrder = {
@@ -840,6 +866,28 @@ local config = {
 		"hidden",
 		"limited",
 		"full",
+	},
+
+	inputBarStates = {
+		["controller"] = {
+			left = {
+				{ inputs = { "INPUT_RANGE_CONTROLLERMOUSECURSOR_X", "INPUT_RANGE_CONTROLLERMOUSECURSOR_Y" },	name = ReadText(1001, 13306) },
+				{ inputs = { "INPUT_RANGE_MAP_ZOOM_OUT", "INPUT_RANGE_MAP_ZOOM_IN" },	name = ReadText(1001, 13305) },
+			},
+			right = {
+				{ inputs = { "INPUT_STATE_MAP_INTERACT" },	name = ReadText(1001, 13309) },
+				{ inputs = { "INPUT_STATE_MAP_SELECT" },	name = ReadText(1001, 13307) },
+			}
+		},
+		["mouse"] = {
+			left = {
+				{ icons = { "mouse_input_mousebutton_right" },	name = ColorText["input_reference"] .. "(" .. ReadText(1001, 13319) .. ")\27X " .. ReadText(1001, 13303) },
+			},
+			right = {
+				{ icons = { "mouse_input_mousebutton_right" },	name = ReadText(1001, 13309) },
+				{ icons = { "mouse_input_mousebutton_left" },	name = ReadText(1001, 13307) },
+			}
+		},
 	},
 }
 
@@ -882,6 +930,8 @@ function menu.cleanup()
 		Unpause()
 		menu.paused = nil
 	end
+
+	unregisterForEvent("inputModeChanged", getElement("Scene.UIContract"), menu.onInputModeChanged)
 
 	menu.isReadOnly = nil
 	menu.container = nil
@@ -949,6 +999,8 @@ function menu.cleanup()
 	menu.statsData = {}
 	menu.titleData = {}
 	menu.mapData = {}
+
+	menu.newShipStats = false
 
 	menu.picking = true
 	menu.pickstate = nil
@@ -1027,6 +1079,15 @@ function menu.buttonSelectSlot(slot, row, col)
 	menu.refreshMenu()
 end
 
+function menu.setSlotMacro(type, slot, macro)
+	if menu.mode == "upgrade" then
+		if menu.slots[type][slot].component then
+			menu.removeRepairedComponent(menu.object, menu.slots[type][slot].component)
+		end
+	end
+	menu.upgradeplan[type][slot] = { macro = macro, ammomacro = "", weaponmode = "" }
+end
+
 function menu.buttonSelectUpgradeMacro(type, slot, macro, row, col, keepcontext, skipvolatilecheck)
 	local oldcontextmode = Helper.tableCopy(menu.contextMode)
 	if not keepcontext then
@@ -1053,26 +1114,21 @@ function menu.buttonSelectUpgradeMacro(type, slot, macro, row, col, keepcontext,
 			else
 				if upgradetype.mergeslots then
 					for i, slotdata in ipairs(menu.slots[type]) do
-						if menu.mode == "upgrade" then
-							if slotdata.component then
-								menu.removeRepairedComponent(menu.object, slotdata.component)
-							end
-						end
-						menu.upgradeplan[type][i] = { macro = macro, ammomacro = "", weaponmode = "" }
+						menu.setSlotMacro(type, i, macro)
+					end
+				elseif menu.slots[type].mergedslotindices and menu.slots[type].mergedslotindices[slot] then
+					for index in pairs(menu.slots[type].mergedslotindices) do
+						menu.setSlotMacro(type, index, macro)
 					end
 				else
-					if menu.mode == "upgrade" then
-						if menu.slots[type][slot].component then
-							menu.removeRepairedComponent(menu.object, menu.slots[type][slot].component)
-						end
-					end
-					menu.upgradeplan[type][slot] = { macro = macro, ammomacro = "", weaponmode = "" }
+					menu.setSlotMacro(type, slot, macro)
 				end
 
 				menu.addUndoStep()
 
 				menu.selectedRows.slots = row
 				menu.selectedCols.slots = col
+				menu.newShipStats = false
 				menu.refreshMenu()
 			end
 		end
@@ -1263,6 +1319,7 @@ function menu.buttonSelectGroupUpgrade(type, group, macro, row, col, keepcontext
 
 			menu.selectedRows.slots = row
 			menu.selectedCols.slots = col
+			menu.newShipStats = false
 			menu.refreshMenu()
 		end
 	end
@@ -1402,14 +1459,16 @@ end
 
 function menu.buttonInteract(selectedData, button, row, col, posx, posy)
 	menu.selectedUpgrade = selectedData
-	local x, y = GetLocalMousePosition()
-	if x == nil then
-		-- gamepad case
-		x = posx
-		y = -posy
-	end
-	if menu.mode ~= "customgamestart" then
-		menu.displayContextFrame("equipment", Helper.scaleX(200), x + Helper.viewWidth / 2, Helper.viewHeight / 2 - y)
+	if C.IsStoryFeatureUnlocked("x4ep1_encyclopedia") then
+		local x, y = GetLocalMousePosition()
+		if x == nil then
+			-- gamepad case
+			x = posx
+			y = -posy
+		end
+		if menu.mode ~= "customgamestart" then
+			menu.displayContextFrame("equipment", Helper.scaleX(200), x + Helper.viewWidth / 2, Helper.viewHeight / 2 - y)
+		end
 	end
 end
 
@@ -1785,6 +1844,8 @@ function menu.buttonConfirm()
 					end
 				end
 			end
+		elseif menu.mode == "upgradefleetunit" then
+			Helper.callLoadoutFunction(menu.upgradeplan, nil, function (loadout, _) return C.SetFleetUnitLoadout(menu.fleetunit, menu.macro, loadout) end, nil, "UILoadout2")
 		elseif menu.mode == "modify" then
 			-- TODO
 		elseif menu.mode == "customgamestart" then
@@ -1991,8 +2052,9 @@ function menu.dropdownShip(_, shipid)
 			menu.customshipname = nil
 			menu.loadoutName = ""
 			menu.selectedPaintMod = nil
+			menu.newShipStats = true
 			menu.clearUndoStack()
-			menu.getDataAndDisplay()
+			menu.getDataAndDisplay(nil, nil, nil, true)
 		end
 	elseif (menu.mode == "upgrade") or (menu.mode == "modify") then
 		AddUITriggeredEvent(menu.name, "ship_selected", shipid)
@@ -2163,6 +2225,10 @@ function menu.dropdownLoadout(_, loadoutid)
 			loadout = Helper.getLoadoutHelper2(C.GetLoadout2, C.GetLoadoutCounts2, "UILoadout2", menu.object, menu.macro, loadoutid)
 		end
 		local upgradeplan = Helper.convertLoadout(menu.object, menu.macro, loadout, menu.software, "UILoadout2")
+		if menu.mode == "customgamestart" then
+			-- no loadout crew definitions for custom gamestarts
+			upgradeplan.crew = {}
+		end
 		if menu.usemacro then
 			menu.captainSelected = true
 		end
@@ -2442,16 +2508,20 @@ function menu.buttonClearCustomShipName()
 	menu.refreshMenu()
 end
 
-function menu.buttonCustomShipNameAppendShip(name)
-	if menu.customshipname == "" then
-		menu.customshipname = name
+function menu.helperSpaceAwareConcat(stringa,stringb)
+	if stringa == "" or stringb  == "" then
+		return stringa .. stringb
 	else
-		if utf8.sub(menu.customshipname, -1) ~= " " then
-			menu.customshipname = menu.customshipname .. " "
+		if utf8.sub(stringa, -1) ~= " " then
+			stringa = stringa .. " "
 		end
-		menu.customshipname = menu.customshipname .. name
+		return stringa .. stringb
 	end
+end
 
+function menu.buttonCustomShipNameAppendShip(name)
+	menu.customshipname = menu.helperSpaceAwareConcat(menu.customshipname,name)
+	menu.customshipname = utf8.sub(menu.customshipname, 0, Helper.standardEditBoxMaxTextLength)
 	if menu.customShipNameEditBox then
 		C.SetEditBoxText(menu.customShipNameEditBox.id, menu.customshipname)
 	end
@@ -2459,15 +2529,8 @@ function menu.buttonCustomShipNameAppendShip(name)
 end
 
 function menu.buttonCustomShipNameAppendLoadout()
-	if menu.customshipname == "" then
-		menu.customshipname = menu.loadoutName
-	else
-		if utf8.sub(menu.customshipname, -1) ~= " " then
-			menu.customshipname = menu.customshipname .. " "
-		end
-		menu.customshipname = menu.customshipname .. menu.loadoutName
-	end
-
+	menu.customshipname = menu.helperSpaceAwareConcat(menu.customshipname,menu.loadoutName)
+	menu.customshipname = utf8.sub(menu.customshipname, 0, Helper.standardEditBoxMaxTextLength)
 	if menu.customShipNameEditBox then
 		C.SetEditBoxText(menu.customShipNameEditBox.id, menu.customshipname)
 	end
@@ -2564,8 +2627,10 @@ function menu.determineInitialSlot()
 		local curslotsizepriority
 		for i, group in ipairs(menu.groups) do
 			if (menu.upgradetypeMode == "enginegroup") == (group["engine"].total > 0) then
-				if group.slotsize and (group.slotsize ~= "") then
-					local sizeorder = Helper.slotSizeOrder[group.slotsize] or 0
+				local slotsize = group[(menu.upgradetypeMode == "enginegroup") and "engine" or "turret"].slotsize
+				local groupinfo = C.GetUpgradeGroupInfo(menu.object, menu.macro, group.path, group.group, "engine")
+				if slotsize and (slotsize ~= "") then
+					local sizeorder = Helper.slotSizeOrder[slotsize] or 0
 					if (not curslotsizepriority) or (sizeorder < curslotsizepriority) then
 						curslotsizepriority = sizeorder
 						menu.currentSlot = i
@@ -2577,6 +2642,10 @@ function menu.determineInitialSlot()
 end
 
 function menu.onShowMenu(state)
+	Helper.addInputBar(menu, Helper.inputBarStandardHeight)
+
+	registerForEvent("inputModeChanged", getElement("Scene.UIContract"), menu.onInputModeChanged)
+
 	menu.damagedcomponents = {}
 
 	-- layout
@@ -2669,6 +2738,9 @@ function menu.onShowMenu(state)
 	if menu.param[3] == nil then
 		if menu.mode == "upgrade" then
 			menu.isReadOnly = true
+		elseif menu.mode == "upgradefleetunit" then
+			menu.containerowner = "player"
+			menu.isplayerowned = true
 		end
 	else
 		menu.container = ConvertIDTo64Bit(menu.param[3])
@@ -2706,6 +2778,8 @@ function menu.onShowMenu(state)
 			end
 		elseif menu.mode == "comparison" then
 			menu.modeparam = menu.param[5]
+		elseif menu.mode == "upgradefleetunit" then
+			menu.fleetunit = ConvertIDTo64Bit(menu.param[5][1])
 		else
 			for _, ship in pairs(menu.param[5]) do
 				table.insert(menu.modeparam, ConvertIDTo64Bit(ship))
@@ -2717,7 +2791,7 @@ function menu.onShowMenu(state)
 		menu.immediate = menu.param[6]
 	end
 	menu.usemacro = nil
-	if (menu.mode == "purchase") or (menu.mode == "customgamestart") or (menu.mode == "comparison") then
+	if (menu.mode == "purchase") or (menu.mode == "customgamestart") or (menu.mode == "comparison") or (menu.mode == "upgradefleetunit") then
 		menu.usemacro = true
 	end
 
@@ -3077,6 +3151,15 @@ function menu.onShowMenu(state)
 				menu.availableshipmacrosbyclass[class] = { macro }
 			end
 		end
+	elseif menu.mode == "upgradefleetunit" then
+		local info = C.GetFleetUnitInfo(menu.fleetunit)
+
+		menu.object = 0
+		menu.macro = ffi.string(info.macro)
+		menu.class = ffi.string(C.GetMacroClass(menu.macro))
+
+		menu.availableshipmacros = { menu.macro }
+		menu.availableshipmacrosbyclass = { [menu.class] = { menu.macro } }
 	end
 
 	menu.hasDefaultLoadout = false
@@ -3101,7 +3184,7 @@ function menu.onShowMenu(state)
 
 	menu.equipmentsearchtext = {}
 	menu.loadoutName = ""
-	if (menu.mode == "purchase") or (menu.mode == "upgrade") or (menu.mode == "customgamestart") or (menu.mode == "comparison") then
+	if (menu.mode == "purchase") or (menu.mode == "upgrade") or (menu.mode == "upgradefleetunit") or (menu.mode == "customgamestart") or (menu.mode == "comparison") then
 		menu.upgradetypeMode = "engine"
 	elseif menu.mode == "modify" then
 		menu.upgradetypeMode = "shipmods"
@@ -3118,23 +3201,7 @@ function menu.onShowMenu(state)
 	if state then
 		upgradeplan, crew = menu.onRestoreState(state)
 	elseif menu.mode == "customgamestart" then
-		menu.software = {}
-		for i, upgradetype in ipairs(Helper.upgradetypes) do
-			if upgradetype.supertype == "software" then
-				menu.software[upgradetype.type] = {}
-				if menu.macro ~= "" then
-					local n = C.GetNumSoftwareSlots(0, menu.macro)
-					local buf = ffi.new("SoftwareSlot[?]", n)
-					n = C.GetSoftwareSlots(buf, n, 0, menu.macro)
-					for j = 0, n - 1 do
-						local entry = {}
-						entry.maxsoftware = ffi.string(buf[j].max)
-						entry.currentsoftware = ffi.string(buf[j].current)
-						table.insert(menu.software[upgradetype.type], entry)
-					end
-				end
-			end
-		end
+		menu.prepareSoftwareData(menu.macro)
 
 		if menu.modeparam.playerpropertyid then
 			if menu.macro ~= "" then
@@ -3147,24 +3214,15 @@ function menu.onShowMenu(state)
 		end
 	elseif menu.mode == "comparison" then
 		if menu.macro ~= "" then
-			menu.software = {}
-			for i, upgradetype in ipairs(Helper.upgradetypes) do
-				if upgradetype.supertype == "software" then
-					menu.software[upgradetype.type] = {}
-					local n = C.GetNumSoftwareSlots(0, menu.macro)
-					local buf = ffi.new("SoftwareSlot[?]", n)
-					n = C.GetSoftwareSlots(buf, n, 0, menu.macro)
-					for j = 0, n - 1 do
-						local entry = {}
-						entry.maxsoftware = ffi.string(buf[j].max)
-						entry.currentsoftware = ffi.string(buf[j].current)
-						table.insert(menu.software[upgradetype.type], entry)
-					end
-				end
-			end
+			menu.prepareSoftwareData(menu.macro)
 
 			upgradeplan = Helper.getShipComparisonUpgradeplan(menu.modeparam[1])
 		end
+	elseif menu.mode == "upgradefleetunit" then
+		menu.prepareSoftwareData(menu.macro)
+
+		local loadout = Helper.getLoadoutHelper2(C.GetFleetUnitLoadout, C.GetFleetUnitLoadoutCounts, "UILoadout2", menu.fleetunit)
+		upgradeplan = Helper.convertLoadout(menu.object, menu.macro, loadout, menu.software, "UILoadout2")
 	end
 
 	if menu.container then
@@ -3209,6 +3267,24 @@ function menu.onShowMenu(state)
 		menu.bindingRegistered = true
 		RegisterAddonBindings("ego_detailmonitor", "undo")
 		Helper.setKeyBinding(menu, menu.hotkey)
+	end
+end
+
+function menu.prepareSoftwareData(macro)
+	menu.software = {}
+	for i, upgradetype in ipairs(Helper.upgradetypes) do
+		if upgradetype.supertype == "software" then
+			menu.software[upgradetype.type] = {}
+			local n = C.GetNumSoftwareSlots(0, macro)
+			local buf = ffi.new("SoftwareSlot[?]", n)
+			n = C.GetSoftwareSlots(buf, n, 0, macro)
+			for j = 0, n - 1 do
+				local entry = {}
+				entry.maxsoftware = ffi.string(buf[j].max)
+				entry.currentsoftware = ffi.string(buf[j].current)
+				table.insert(menu.software[upgradetype.type], entry)
+			end
+		end
 	end
 end
 
@@ -3273,6 +3349,9 @@ function menu.displayLeftBar(frame)
 		end
 		if condition and (entry.comparison ~= nil) then
 			condition = entry.comparison == (menu.mode == "comparison")
+		end
+		if condition and (entry.upgradefleetunit ~= nil) then
+			condition = entry.upgradefleetunit == (menu.mode == "upgradefleetunit")
 		end
 		if condition and (entry.hascontainer ~= nil) then
 			condition = entry.hascontainer == (menu.container ~= nil)
@@ -3359,8 +3438,8 @@ function menu.displayLeftBar(frame)
 						local curslotsizepriority
 						for slot, groupdata in pairs(menu.groups) do
 							if groupdata[upgradetype.grouptype] and (groupdata[upgradetype.grouptype].total > 0) then
-								if groupdata.slotsize and (groupdata.slotsize ~= "") then
-									local sizeorder = Helper.slotSizeOrder[groupdata.slotsize] or 0
+								if groupdata[upgradetype.grouptype].slotsize and (groupdata[upgradetype.grouptype].slotsize ~= "") then
+									local sizeorder = Helper.slotSizeOrder[groupdata[upgradetype.grouptype].slotsize] or 0
 									if (not curslotsizepriority) or (sizeorder < curslotsizepriority) then
 										curslotsizepriority = sizeorder
 										overrideSlot = slot
@@ -3562,6 +3641,7 @@ function menu.displayLeftBar(frame)
 						found = true
 						selected = true
 						menu.upgradetypeMode = entry.mode
+						menu.determineInitialSlot()
 						menu.selectMapMacroSlot()
 					end
 
@@ -3653,10 +3733,19 @@ function menu.buttonLeftBarColor(mode, active, missing)
 							end
 
 							if ((total > 0) or (capacity > 0)) and display then
-								for macro in pairs(menu.ammo[upgradetype.type]) do
+								local found, haswarning = false, false
+								for macro, amount in pairs(menu.ammo[upgradetype.type]) do
 									if (#menu.equipmentsearchtext == 0) or menu.filterUpgradeByText(mode, macro, menu.equipmentsearchtext) then
-										return missing and Color["icon_error"] or Color["icon_normal"]
+										found = true
 									end
+									if (amount > 0) and (not menu.isAmmoCompatible(upgradetype.type, macro)) then
+										haswarning = true
+									end
+								end
+								if found then
+									return missing and Color["icon_error"] or (haswarning and Color["icon_warning"] or Color["icon_normal"])
+								else
+									return missing and Color["icon_error_inactive"] or (haswarning and Color["icon_warning_inactive"] or Color["icon_inactive"])
 								end
 							end
 						end
@@ -3674,9 +3763,12 @@ function menu.buttonLeftBarColor(mode, active, missing)
 						end
 					end
 				end
+			else
+				return missing and Color["icon_error"] or Color["icon_normal"]
 			end
+		else
+			return missing and Color["icon_error"] or Color["icon_normal"]
 		end
-		return missing and Color["icon_error"] or Color["icon_normal"]
 	end
 	return missing and Color["icon_error_inactive"] or Color["icon_inactive"]
 end
@@ -3723,7 +3815,7 @@ function menu.getPresetLoadouts()
 			for i = 0, n - 1 do
 				local id = ffi.string(buf[i].id)
 				local active = false
-				local mouseovertext = ""
+				local mouseovertext = (not C.IsLoadoutCompatible(currentmacro, id)) and (ColorText["text_warning"] .. ReadText(1026, 8031) .. "\27X") or ""
 				local numinvalidpatches = ffi.new("uint32_t[?]", 1)
 				if not C.IsLoadoutValid(menu.object, menu.macro, id, numinvalidpatches) then
 					local numpatches = numinvalidpatches[0]
@@ -3744,8 +3836,6 @@ function menu.getPresetLoadouts()
 							mouseovertext = mouseovertext .. " " .. string.format(ReadText(1001, 2688), ffi.string(patchbuf[j].installedversion))
 						end
 					end
-				elseif not C.IsLoadoutCompatible(currentmacro, id) then
-					mouseovertext = ReadText(1026, 8024)
 				elseif menu.mode == "customgamestart" then
 					active = true
 				elseif menu.mode == "comparison" then
@@ -3878,7 +3968,40 @@ function menu.getPresetLoadouts()
 			table.insert(menu.loadouts, 3, { id = "medium",	name = ReadText(1001, 7911), icon = "", deleteable = false, preset = 0.5,	active = menu.validLoadoutPossible and (not hasanymod),	mouseovertext = mouseovertext })
 			table.insert(menu.loadouts, 4, { id = "high",	name = ReadText(1001, 7912), icon = "", deleteable = false, preset = 1.0,	active = menu.validLoadoutPossible and (not hasanymod),	mouseovertext = mouseovertext })
 		else
-			table.insert(menu.loadouts, 1, { id = "default",	name = ReadText(1001, 3231), icon = "", deleteable = false,	active = menu.validLoadoutPossible and (not hasanymod),	mouseovertext = hasanymod and (ColorText["text_error"] .. ReadText(1026, 8020)) or "" })
+			local active = false
+			local mouseovertext = ""
+
+			if menu.mode == "customgamestart" then
+				active = true
+			elseif menu.mode == "comparison" then
+				active = C.CanApplyKnownLoadout(menu.macro, "default")
+				if not active then
+					mouseovertext = ReadText(1026, 8015)
+				end
+			elseif menu.mode ~= "modify" then
+				local result = ffi.string(C.GetMissingLoadoutBlueprints(menu.container, menu.object, menu.macro, "default"))
+				active = result == ""
+				if not active then
+					mouseovertext = ReadText(1026, 8011)
+
+					local missingmacros = {}
+					if string.find(result, "error") ~= 1 then
+						for macro in string.gmatch(result, "([^;]+);") do
+							missingmacros[macro] = true
+						end
+					end
+					local missingmacronames = {}
+					for macro, v in pairs(missingmacros) do
+						table.insert(missingmacronames, GetMacroData(macro, "name"))
+					end
+					table.sort(missingmacronames)
+					for _, name in ipairs(missingmacronames) do
+						mouseovertext = mouseovertext .. "\n· " .. name
+					end
+				end
+			end
+
+			table.insert(menu.loadouts, 1, { id = "default",	name = ReadText(1001, 3231), icon = "", deleteable = false,	active = menu.validLoadoutPossible and (not hasanymod) and active,	mouseovertext = hasanymod and (ColorText["text_error"] .. ReadText(1026, 8020)) or mouseovertext })
 		end
 	end
 end
@@ -3925,9 +4048,13 @@ function menu.getDataAndDisplay(upgradeplan, crew, newedit, firsttime, noundo, s
 		local n = 0
 		local buf
 		if menu.mode == "customgamestart" then
-			n = C.GetNumAllEquipment(not menu.allownonplayerblueprints)
+			n = C.GetNumAllEquipment2(not menu.allownonplayerblueprints, not menu.modeparam.creative)
 			buf = ffi.new("EquipmentWareInfo[?]", n)
-			n = C.GetAllEquipment(buf, n, not menu.allownonplayerblueprints)
+			n = C.GetAllEquipment2(buf, n, not menu.allownonplayerblueprints, not menu.modeparam.creative)
+		elseif menu.mode == "upgradefleetunit" then
+			n = C.GetNumPlayerEquipmentWares()
+			buf = ffi.new("EquipmentWareInfo[?]", n)
+			n = C.GetPlayerEquipmentWares(buf, n)
 		elseif (not menu.isReadOnly) and ((menu.mode ~= "modify") or (not menu.modeparam[1])) then
 			n = C.GetNumAvailableEquipment(menu.container, "")
 			buf = ffi.new("EquipmentWareInfo[?]", n)
@@ -3998,7 +4125,7 @@ function menu.getDataAndDisplay(upgradeplan, crew, newedit, firsttime, noundo, s
 		}
 	end
 
-	if (not menu.isReadOnly) and (menu.mode ~= "customgamestart") and (menu.mode ~= "comparison") and ((menu.mode ~= "modify") or (not menu.modeparam[1])) then
+	if (not menu.isReadOnly) and (menu.mode ~= "customgamestart") and (menu.mode ~= "comparison") and (menu.mode ~= "upgradefleetunit") and ((menu.mode ~= "modify") or (not menu.modeparam[1])) then
 		if C.IsComponentClass(menu.container, "ship") then
 			local n = C.GetNumAllRoles()
 			local buf = ffi.new("PeopleInfo[?]", n)
@@ -4029,7 +4156,7 @@ function menu.getDataAndDisplay(upgradeplan, crew, newedit, firsttime, noundo, s
 			menu.defaultpaintmod.ware = ffi.string(buf.Ware)
 			menu.defaultpaintmod.quality = buf.Quality
 			menu.defaultpaintmod.isdefault = true
-			if (menu.mode ~= "customgamestart") and (menu.mode ~= "comparison") then
+			if (menu.mode ~= "customgamestart") and (menu.mode ~= "comparison") and (menu.mode ~= "upgradefleetunit") then
 				menu.modwaresByWare[menu.defaultpaintmod.ware] = menu.defaultpaintmod
 			end
 		end
@@ -4206,10 +4333,49 @@ function menu.getDataAndDisplay(upgradeplan, crew, newedit, firsttime, noundo, s
 					break
 				end
 			end
+
+			menu.turretgroups = {}
+			local turretsizecounts = {}
+			local groups = {}
+			local n = C.GetNumUpgradeGroups(menu.object, "")
+			local buf = ffi.new("UpgradeGroup2[?]", n)
+			n = C.GetUpgradeGroups2(buf, n, menu.object, "")
+			for i = 0, n - 1 do
+				if (ffi.string(buf[i].path) ~= "..") or (ffi.string(buf[i].group) ~= "") then
+					table.insert(groups, { context = buf[i].contextid, path = ffi.string(buf[i].path), group = ffi.string(buf[i].group) })
+				end
+			end
+			table.sort(groups, function (a, b) return a.group < b.group end)
+
+			for _, group in ipairs(groups) do
+				local groupinfo = C.GetUpgradeGroupInfo2(group.module or menu.object, "", group.context, group.path, group.group, "turret")
+				if (groupinfo.count > 0) then
+					group.operational = groupinfo.operational
+					group.currentcomponent = groupinfo.currentcomponent
+					group.currentmacro = ffi.string(groupinfo.currentmacro)
+					group.slotsize = ffi.string(groupinfo.slotsize)
+					group.sizecount = 0
+
+					if group.slotsize ~= "" then
+						if turretsizecounts[group.slotsize] then
+							turretsizecounts[group.slotsize] = turretsizecounts[group.slotsize] + 1
+						else
+							turretsizecounts[group.slotsize] = 1
+						end
+						group.sizecount = turretsizecounts[group.slotsize]
+					end
+
+					table.insert(menu.turretgroups, group)
+				end
+			end
+
+			if #menu.turretgroups > 0 then
+				table.sort(menu.turretgroups, Helper.sortSlots)
+			end
 		end
 	end
 
-	if (menu.mode ~= "customgamestart") and (menu.mode ~= "comparison") then
+	if (menu.mode ~= "customgamestart") and (menu.mode ~= "comparison") and (menu.mode ~= "upgradefleetunit") then
 		if menu.installedPaintMod then
 			if menu.modwares["paint"] then
 				local found = false
@@ -4234,13 +4400,17 @@ function menu.getDataAndDisplay(upgradeplan, crew, newedit, firsttime, noundo, s
 		menu.determineInitialSlot()
 	end
 
+	menu.slotStats = {}
+
 	-- assemble possible upgrades per slot
 	local objectmakerraces = menu.object ~= 0 and GetComponentData(ConvertStringTo64Bit(tostring(menu.object)), "makerraceid") or (menu.macro ~= "" and GetMacroData(menu.macro, "makerraceid") or nil)
 	for type, slots in pairs(menu.slots) do
 		local upgradetype = Helper.findUpgradeType(type)
 		if upgradetype.supertype == "macro" then
+			menu.slotStats[upgradetype.type] = {}
 			slots.count = #slots
 			local sizecounts = {}
+			local mergedslotnumber
 			for i, slot in ipairs(slots) do
 				if menu.upgradewares[type] then
 					for _, upgradeware in ipairs(menu.upgradewares[type]) do
@@ -4260,17 +4430,35 @@ function menu.getDataAndDisplay(upgradeplan, crew, newedit, firsttime, noundo, s
 					slot.isgroup = true
 					slots.count = slots.count - 1
 				end
+				local slotsize = ffi.string(C.GetSlotSize(menu.object, 0, menu.macro, false, upgradetype.type, i))
 				if not slot.isgroup then
 					slot.slotname = i
-					slot.slotsize = ffi.string(C.GetSlotSize(menu.object, 0, menu.macro, false, upgradetype.type, i))
+					slot.slotsize = slotsize
 					if slot.slotsize ~= "" then
-						if sizecounts[slot.slotsize] then
-							sizecounts[slot.slotsize] = sizecounts[slot.slotsize] + 1
-						else
-							sizecounts[slot.slotsize] = 1
+						local countslot = true
+						if slots.mergedslotindices and slots.mergedslotindices[i] and mergedslotnumber then
+							countslot = false
 						end
-						slot.slotname = upgradetype.shorttext[slot.slotsize] .. sizecounts[slot.slotsize]
+
+						if countslot then
+							if sizecounts[slot.slotsize] then
+								sizecounts[slot.slotsize] = sizecounts[slot.slotsize] + 1
+							else
+								sizecounts[slot.slotsize] = 1
+							end
+							if slots.mergedslotindices and slots.mergedslotindices[i] and (not mergedslotnumber) then
+								mergedslotnumber = sizecounts[slot.slotsize]
+							end
+							slot.slotname = upgradetype.shorttext[slot.slotsize] .. sizecounts[slot.slotsize]
+						else
+							slot.slotname = upgradetype.shorttext[slot.slotsize] .. mergedslotnumber
+						end
 					end
+
+					menu.slotStats[upgradetype.type][slotsize] = (menu.slotStats[upgradetype.type][slotsize] or 0) + 1
+				else
+					menu.slotStats[upgradetype.type .. "group"] = menu.slotStats[upgradetype.type .. "group"] or {}
+					menu.slotStats[upgradetype.type .. "group"][slotsize] = (menu.slotStats[upgradetype.type .. "group"][slotsize] or 0) + 1
 				end
 			end
 		elseif upgradetype.supertype == "virtualmacro" then
@@ -4447,6 +4635,7 @@ function menu.getDataAndDisplay(upgradeplan, crew, newedit, firsttime, noundo, s
 	if menu.holomap and (menu.holomap ~= 0) then
 		if (menu.usemacro and (menu.macro ~= "")) or (((menu.mode == "upgrade") or (menu.mode == "modify")) and (menu.object ~= 0)) then
 			if (not newedit) and upgradeplan then
+				menu.newShipStats = false
 				Helper.callLoadoutFunction(menu.upgradeplan, nil, function (loadout, _) return C.UpdateObjectConfigurationMap(menu.holomap, menu.object, 0, menu.macro, false, loadout) end)
 			else
 				menu.currentIdx = menu.currentIdx + 1
@@ -4532,7 +4721,8 @@ function menu.checkCompatibility(macro, objectmakerraces)
 end
 
 function menu.displayAmmoSlot(ftable, type, macro, total, capacity, first)
-	if (menu.upgradeplan[type][macro] and (menu.upgradeplan[type][macro] > 0)) or (menu.ammo[type][macro] and (menu.ammo[type][macro] > 0)) or menu.isAmmoCompatible(type, macro) then
+	local iscompatible = menu.isAmmoCompatible(type, macro)
+	if (menu.upgradeplan[type][macro] and (menu.upgradeplan[type][macro] > 0)) or (menu.ammo[type][macro] and (menu.ammo[type][macro] > 0)) or iscompatible then
 		local planned = menu.upgradeplan[type][macro] or 0
 		local name, infolibrary = GetMacroData(macro, "name", "infolibrary")
 		AddKnownItem(infolibrary, macro)
@@ -4583,9 +4773,9 @@ function menu.displayAmmoSlot(ftable, type, macro, total, capacity, first)
 		end
 
 		local row = ftable:addRow((type ~= "countermeasure") and { type = type, name = name, macro = macro } or true, { scaling = true, borderBelow = false })
-		row[1]:setColSpan(price and 8 or 11):setBackgroundColSpan(11):createBoxText(name)
+		row[1]:setColSpan(price and 8 or 11):setBackgroundColSpan(11):createText(name, { color = iscompatible and Color["text_normal"] or Color["text_warning"] })
 		if price then
-			row[9]:setColSpan(3):createBoxText(ConvertMoneyString(price, false, true, 0, true, false) .. " " .. ReadText(1001, 101), { halign = "right" })
+			row[9]:setColSpan(3):createText(ConvertMoneyString(price, false, true, 0, true, false) .. " " .. ReadText(1001, 101), { halign = "right" })
 		end
 
 		local row = ftable:addRow(true, { scaling = true, bgColor = Color["row_background_blue"] })
@@ -4767,6 +4957,7 @@ function menu.displaySoftwareSlot(ftable, type, slot, slotdata)
 				if price then
 					row[9]:setColSpan(3):createText(ConvertMoneyString(price, false, true, 0, true, false) .. " " .. ReadText(1001, 101), { halign = "right" })
 				end
+				menu.equipmentMacroData[row.index * 1000 + 1] = { software = software, price = price, slot = slot, type = type }
 				lastrow = row
 			end
 		end
@@ -4803,6 +4994,13 @@ function menu.checkCurrentSlot(slots, slot)
 						if not slot2.isgroup then
 							slot = i
 							break
+						end
+					end
+				end
+				if upgradetype.mergecompatibilities then
+					if slots.mergedslotindices and slots.mergedslotindices[slot] then
+						for index in pairs(slots.mergedslotindices) do
+							slot = math.min(slot, index)
 						end
 					end
 				end
@@ -4850,6 +5048,14 @@ function menu.displaySlots(frame, firsttime)
 					local upgradegroupcount = 1
 					if upgradetype2.supertype == "group" then
 						menu.groupedupgrades[upgradetype2.grouptype] = {}
+
+						if (not menu.isReadOnly) and upgradetype2.allowempty then
+							local group = math.ceil(upgradegroupcount / 3)
+							menu.groupedupgrades[upgradetype2.grouptype][group] = menu.groupedupgrades[upgradetype2.grouptype][group] or {}
+							table.insert(menu.groupedupgrades[upgradetype2.grouptype][group], { macro = "", icon = "upgrade_empty", name = ReadText(1001, 7906), helpOverlayID = "upgrade_empty", helpOverlayText = " ", helpOverlayHighlightOnly = true })
+							upgradegroupcount = upgradegroupcount + 1
+						end
+
 						for i, macro in ipairs(upgradegroup[upgradetype2.grouptype].possiblemacros) do
 							local macroname, makerrace, makerracename = GetMacroData(macro, "name", "makerraceid", "makerracename")
 							for race_i, race in ipairs(makerrace) do
@@ -4869,13 +5075,6 @@ function menu.displaySlots(frame, firsttime)
 								table.insert(menu.groupedupgrades[upgradetype2.grouptype][group], { macro = macro, icon = (C.IsIconValid("upgrade_" .. macro) and ("upgrade_" .. macro) or "upgrade_notfound"), name = macroname })
 								upgradegroupcount = upgradegroupcount + 1
 							end
-						end
-
-						if (not menu.isReadOnly) and upgradetype2.allowempty then
-							local group = math.ceil(upgradegroupcount / 3)
-							menu.groupedupgrades[upgradetype2.grouptype][group] = menu.groupedupgrades[upgradetype2.grouptype][group] or {}
-							table.insert(menu.groupedupgrades[upgradetype2.grouptype][group], { macro = "", icon = "upgrade_empty", name = ReadText(1001, 7906), helpOverlayID = "upgrade_empty", helpOverlayText = " ", helpOverlayHighlightOnly = true })
-							upgradegroupcount = upgradegroupcount + 1
 						end
 					end
 					if upgradegroupcount > 1 then
@@ -4918,6 +5117,13 @@ function menu.displaySlots(frame, firsttime)
 		elseif (menu.upgradetypeMode ~= "consumables") and (menu.upgradetypeMode ~= "crew") and (menu.upgradetypeMode ~= "software") and (menu.upgradetypeMode ~= "settings") then
 			if #slots > 0 then
 				if (upgradetype.supertype == "macro") or (upgradetype.supertype == "virtualmacro") then
+					if (not menu.isReadOnly) and (upgradetype.allowempty and (not C.IsSlotMandatory(menu.object, 0, menu.macro, false, upgradetype.type, menu.currentSlot))) then
+						local group = math.ceil(count / 3)
+						menu.groupedupgrades[group] = menu.groupedupgrades[group] or {}
+						table.insert(menu.groupedupgrades[group], { macro = "", icon = "upgrade_empty", name = ReadText(1001, 7906), helpOverlayID = "upgrade_empty", helpOverlayText = " ", helpOverlayHighlightOnly = true })
+						count = count + 1
+					end
+
 					for i, macro in ipairs(slots[menu.currentSlot].possiblemacros) do
 						local macroname, makerrace, makerracename = GetMacroData(macro, "name", "makerraceid", "makerracename")
 						for race_i, race in ipairs(makerrace) do
@@ -4937,13 +5143,6 @@ function menu.displaySlots(frame, firsttime)
 							table.insert(menu.groupedupgrades[group], { macro = macro, icon = (C.IsIconValid("upgrade_" .. macro) and ("upgrade_" .. macro) or "upgrade_notfound"), name = macroname })
 							count = count + 1
 						end
-					end
-
-					if (not menu.isReadOnly) and (upgradetype.allowempty and (not C.IsSlotMandatory(menu.object, 0, menu.macro, false, upgradetype.type, menu.currentSlot))) then
-						local group = math.ceil(count / 3)
-						menu.groupedupgrades[group] = menu.groupedupgrades[group] or {}
-						table.insert(menu.groupedupgrades[group], { macro = "", icon = "upgrade_empty", name = ReadText(1001, 7906), helpOverlayID = "upgrade_empty", helpOverlayText = " ", helpOverlayHighlightOnly = true })
-						count = count + 1
 					end
 				end
 			end
@@ -4997,43 +5196,46 @@ function menu.displaySlots(frame, firsttime)
 			end
 		elseif (menu.upgradetypeMode ~= "consumables") and (menu.upgradetypeMode ~= "software") and (menu.upgradetypeMode ~= "settings") then
 			if not upgradetype.mergeslots then
+				local mergecompatibilitiesslot
 				for i, slot in ipairs(slots) do
 					if not slot.isgroup then
 						local slotname = slot.slotname
 						local slotsize = slot.slotsize
 
-						local compatibilities
-						local n = C.GetNumSlotCompatibilities(menu.object, 0, menu.macro, false, upgradetype.type, i)
-						if n > 0 then
-							compatibilities = {}
-							local buf = ffi.new("EquipmentCompatibilityInfo[?]", n)
-							n = C.GetSlotCompatibilities(buf, n, menu.object, 0, menu.macro, false, upgradetype.type, i)
-							for j = 0, n - 1 do
-								compatibilities[ffi.string(buf[j].tag)] = ffi.string(buf[j].name)
+						local mergecompatibilityfound = false
+						if upgradetype.mergecompatibilities and slot.compatibilities then
+							for compatibility in pairs(upgradetype.mergecompatibilities) do
+								if slot.compatibilities[compatibility] then
+									mergecompatibilityfound = true
+									if not mergecompatibilitiesslot then
+										mergecompatibilitiesslot = { i, slot, slotname, sizecount = i, slotsize = slotsize, compatibilities = slot.compatibilities, slotindices = slots.mergedslotindices }
+									end
+									break
+								end
 							end
 						end
 
 						if i == menu.currentSlot then
 							currentSlotInfo.slotsize = slotsize
-							currentSlotInfo.compatibilities = compatibilities
+							currentSlotInfo.compatibilities = slot.compatibilities
 						end
 
-						table.insert(groupedslots, { i, slot, slotname, sizecount = i, slotsize = slotsize, compatibilities = compatibilities })
+						if not mergecompatibilityfound then
+							table.insert(groupedslots, { i, slot, slotname, sizecount = i, slotsize = slotsize, compatibilities = slot.compatibilities })
+						end
 					end
+				end
+				if mergecompatibilitiesslot then
+					if mergecompatibilitiesslot[1] == menu.currentSlot then
+						currentSlotInfo.mergedslotindices = slots.mergedslotindices
+						currentSlotInfo.mergedslotcount = slots.mergedslotcount
+					end
+					table.insert(groupedslots, mergecompatibilitiesslot)
 				end
 			else
 				if upgradetype.supertype == "macro" then
 					currentSlotInfo.slotsize = ffi.string(C.GetSlotSize(menu.object, 0, menu.macro, false, upgradetype.type, menu.currentSlot))
-
-					local n = C.GetNumSlotCompatibilities(menu.object, 0, menu.macro, false, upgradetype.type, menu.currentSlot)
-					if n > 0 then
-						currentSlotInfo.compatibilities = {}
-						local buf = ffi.new("EquipmentCompatibilityInfo[?]", n)
-						n = C.GetSlotCompatibilities(buf, n, menu.object, 0, menu.macro, false, upgradetype.type, menu.currentSlot)
-						for j = 0, n - 1 do
-							currentSlotInfo.compatibilities[ffi.string(buf[j].tag)] = ffi.string(buf[j].name)
-						end
-					end
+					currentSlotInfo.compatibilities = slots[menu.currentSlot].compatibilities
 				end
 			end
 		end
@@ -5100,7 +5302,7 @@ function menu.displaySlots(frame, firsttime)
 				ftable:setColWidth(i + 1, slotWidths[i])
 			end
 		end
-		ftable:setColWidth(11, menu.rowHeight)
+		ftable:setColWidth(11, Helper.standardButtonHeight, true)
 		ftable:setDefaultColSpan(1, 4)
 		ftable:setDefaultColSpan(5, 3)
 		ftable:setDefaultColSpan(8, 4)
@@ -5274,12 +5476,15 @@ function menu.displaySlots(frame, firsttime)
 		local rowy = ftable:getFullHeight()
 		local row = ftable:addRow(true, { fixed = true, bgColor = Color["row_background_blue"] })
 		local issearchandfilteractive = menu.upgradetypeMode ~= "crew" and menu.upgradetypeMode ~= "repair" and menu.upgradetypeMode ~= "settings"
-		row[1]:setColSpan(10):createEditBox({ active = issearchandfilteractive, defaultText = ReadText(1001, 3250), scaling = true }):setText("", { x = Helper.standardTextOffsetx }):setHotkey("INPUT_STATE_DETAILMONITOR_0", { displayIcon = true })
+		row[1]:setColSpan(10):createEditBox({ active = issearchandfilteractive, height = menu.rowHeight, defaultText = ReadText(1001, 3250) }):setText("", { x = Helper.standardTextOffsetx, scaling = true }):setHotkey("INPUT_STATE_DETAILMONITOR_0", { displayIcon = true })
 		row[1].handlers.onEditBoxDeactivated = menu.editboxSearchUpdateText
 		menu.equipmentsearch_editboxrow = row.index
 		row[11]:createButton({ active = issearchandfilteractive, height = menu.rowHeight }):setIcon("menu_filter")
 		menu.equipmentfilter_races_y = menu.slotData.offsetY + rowy + Helper.borderSize
 		row[11].handlers.onClick = function () return menu.buttonEquipmentFilter(menu.equipmentfilter_races_y) end
+		if firsttime then
+			menu.selectedRows.slots = row.index
+		end
 
 		if #menu.equipmentsearchtext > 0 and issearchandfilteractive then
 			table.sort(menu.equipmentsearchtext, function (a, b)
@@ -5315,6 +5520,9 @@ function menu.displaySlots(frame, firsttime)
 		local row = ftable:addEmptyRow(Helper.standardTextHeight / 2)
 		row.properties.fixed = true
 
+		menu.equipmentOffsetY = ftable:getFullHeight() + Helper.borderSize
+
+		menu.equipmentMacroData = {}
 		if next(menu.groupedupgrades) then
 			if (menu.upgradetypeMode == "enginegroup") or (menu.upgradetypeMode == "turretgroup") then
 				for i, upgradetype2 in ipairs(Helper.upgradetypes) do
@@ -5383,7 +5591,7 @@ function menu.displaySlots(frame, firsttime)
 
 							if #menu.groupedupgrades[upgradetype2.grouptype] > 0 then
 								for _, group in ipairs(menu.groupedupgrades[upgradetype2.grouptype]) do
-									local row = ftable:addRow(true, { borderBelow = false })
+									local row = ftable:addRow("equipment", { borderBelow = false })
 									local row2 = ftable:addRow(false, {  })
 									for i = 1, 3 do
 										if group[i] then
@@ -5392,14 +5600,12 @@ function menu.displaySlots(frame, firsttime)
 												column = column + 1
 											end
 
-											local haslicence, icon, overridecolor, mouseovertext = menu.checkLicence(group[i].macro)
+											local haslicence, icon, overridecolor = menu.checkLicence(group[i].macro)
 											local extraText = ""
-											local untruncatedExtraText = ""
 
 											-- handle already installed equipment
 											if (group[i].macro == menu.groups[menu.currentSlot][upgradetype2.grouptype].currentmacro) and (not haslicence) then
 												haslicence = true
-												mouseovertext = mouseovertext .. "\n" .. ColorText["text_positive"] .. ReadText(1026, 8004)
 											end
 
 											local weaponicon, compatibility = GetMacroData(group[i].macro, "ammoicon", "compatibility")
@@ -5417,9 +5623,6 @@ function menu.displaySlots(frame, firsttime)
 													end
 												end
 												weaponicon = Helper.convertColorToText(color) .. "\27[menu_weaponmount]\27X" .. weaponicon
-											end
-											if hasmod then
-												mouseovertext = ColorText["text_error"] .. ReadText(1026, 8009) .. "\27X\n" .. mouseovertext
 											end
 
 											local price
@@ -5449,10 +5652,10 @@ function menu.displaySlots(frame, firsttime)
 											end
 											if group[i].macro ~= "" then
 												local name, shortname, infolibrary = GetMacroData(group[i].macro, "name", "shortname", "infolibrary")
-												extraText, untruncatedExtraText = menu.getExtraText(columnWidths[i], amounttext .. shortname, amounttext .. name, group[i].macro, price)
+												extraText = menu.getExtraText(columnWidths[i], amounttext .. shortname, amounttext .. name, group[i].macro, price)
 												AddKnownItem(infolibrary, group[i].macro)
 											else
-												extraText, untruncatedExtraText = menu.getExtraText(columnWidths[i], amounttext .. group[i].name, nil, nil, price)
+												extraText = menu.getExtraText(columnWidths[i], amounttext .. group[i].name, nil, nil, price)
 											end
 
 											local installicon, installcolor = (group[i].macro ~= "") and (sizeicon or "") or ""
@@ -5478,16 +5681,21 @@ function menu.displaySlots(frame, firsttime)
 
 											-- start: mycu call-back
 											if menu.uix_callbacks ["displaySlots_on_before_create_button_mouseovertext"] then
+												if not mouseovertext then
+													mouseovertext = ""
+												end
+												if not untruncatedExtraText then
+													untruncatedExtraText = ""
+												end
 												for uix_id, uix_callback in pairs (menu.uix_callbacks ["displaySlots_on_before_create_button_mouseovertext"]) do
 													result = uix_callback (group[i].macro, plandata.macro, mouseovertext)
 													if result then
 														mouseovertext = result.mouseovertext
 													end
 												end
+												mouseovertext = untruncatedExtraText .. ((mouseovertext ~= "") and ("\n\n" .. mouseovertext) or "")
 											end
 											-- end: mycu call-back
-
-											mouseovertext = untruncatedExtraText .. ((mouseovertext ~= "") and ("\n\n" .. mouseovertext) or "")
 
 											local active = ((group[i].macro == plandata.macro) or (not hasmod))
 											local useable = hasstock and haslicence
@@ -5501,13 +5709,13 @@ function menu.displaySlots(frame, firsttime)
 												active = active,
 												width = columnWidths[i],
 												height = maxColumnWidth,
-												mouseOverText = mouseovertext,
 												bgColor = useable and Color["button_background_default"] or Color["button_background_inactive"],
 												highlightColor = useable and Color["button_highlight_bigbutton"] or Color["button_highlight_inactive"],
 												helpOverlayID = overlayid,
 												helpOverlayText = " ",
 												helpOverlayHighlightOnly = true,
 											}):setIcon(group[i].icon):setIcon2(installicon, { color = installcolor }):setText(icon, { y = maxColumnWidth / 2 - Helper.scaleY(Helper.standardTextHeight) / 2 - Helper.configButtonBorderSize, halign = "right", color = overridecolor, fontsize = Helper.scaleFont(Helper.standardFont, Helper.standardFontSize) }):setText2(weaponicon, { x = 3, y = -maxColumnWidth / 2 + Helper.scaleY(Helper.standardTextHeight) / 2 + Helper.configButtonBorderSize, fontsize = Helper.scaleFont(Helper.standardFont, Helper.standardFontSize) })
+											menu.equipmentMacroData[row.index * 1000 + column] = { macro = group[i].macro, hasmod = hasmod, price = price, type = upgradetype2.type }
 											if useable then
 												row[column].handlers.onClick = function () return menu.buttonSelectGroupUpgrade(upgradetype2.type, menu.currentSlot, group[i].macro, row.index, column) end
 											end
@@ -5515,7 +5723,7 @@ function menu.displaySlots(frame, firsttime)
 												row[column].handlers.onRightClick = function (...) return menu.buttonInteract({ type = upgradetype2.type, name = group[i].name, macro = group[i].macro }, ...) end
 											end
 
-											row2[column]:createBoxText(extraText, { width = columnWidths[i], fontsize = menu.extraFontSize, color = overridecolor, boxColor = (active and useable) and Color["button_background_default"] or Color["button_background_inactive"], mouseOverText = untruncatedExtraText })
+											row2[column]:createBoxText(extraText, { width = columnWidths[i], fontsize = menu.extraFontSize, color = overridecolor, boxColor = (active and useable) and Color["button_background_default"] or Color["button_background_inactive"] })
 										end
 									end
 									if (maxVisibleHeight == nil) and row.index >= config.maxSlotRows then
@@ -5612,7 +5820,11 @@ function menu.displaySlots(frame, firsttime)
 							else
 								name, shortname = GetMacroData(group[i].macro, "name", "shortname")
 							end
-							local extraText, untruncatedExtraText = menu.getExtraText(columnWidths[i], shortname, name, group[i].macro, (totalprice > 0) and totalprice * menu.repairdiscounts.totalfactor or nil, repairslotdata[4])
+							local price
+							if not menu.isplayerowned then
+								price = (totalprice > 0) and totalprice * menu.repairdiscounts.totalfactor or nil
+							end
+							local extraText, untruncatedExtraText = menu.getExtraText(columnWidths[i], shortname, name, group[i].macro, price, repairslotdata[4])
 
 							local color = Color["button_background_default"]
 							-- TODO: handle button colors for queued items here.
@@ -5655,7 +5867,7 @@ function menu.displaySlots(frame, firsttime)
 				local hasmod, modicon = menu.checkMod(upgradetype.type, slots[menu.currentSlot].component)
 
 				for _, group in ipairs(menu.groupedupgrades) do
-					local row = ftable:addRow(true, { borderBelow = false })
+					local row = ftable:addRow("equipment", { borderBelow = false })
 					local row2 = ftable:addRow(false, {  })
 					for i = 1, 3 do
 						if group[i] then
@@ -5664,14 +5876,12 @@ function menu.displaySlots(frame, firsttime)
 								column = column + 1
 							end
 
-							local haslicence, icon, overridecolor, mouseovertext = menu.checkLicence(group[i].macro, nil, false)
+							local haslicence, icon, overridecolor = menu.checkLicence(group[i].macro, nil, false)
 							local extraText = ""
-							local untruncatedExtraText = ""
 
 							-- handle already installed equipment
 							if (group[i].macro == slots[menu.currentSlot].currentmacro) and (not haslicence) then
 								haslicence = true
-								mouseovertext = mouseovertext .. "\n" .. ColorText["text_positive"] .. ReadText(1026, 8004)
 							end
 
 							local weaponicon, compatibility
@@ -5692,9 +5902,6 @@ function menu.displaySlots(frame, firsttime)
 									end
 								end
 								weaponicon = Helper.convertColorToText(color) .. "\27[menu_weaponmount]\27X" .. weaponicon
-							end
-							if hasmod then
-								mouseovertext = ColorText["text_error"] .. ReadText(1026, 8009) .. "\27X\n" .. mouseovertext
 							end
 
 							local price
@@ -5724,13 +5931,15 @@ function menu.displaySlots(frame, firsttime)
 							local amounttext = ""
 							if upgradetype.mergeslots and (#menu.upgradeplan[upgradetype.type] > 1) then
 								amounttext = #menu.upgradeplan[upgradetype.type] .. ReadText(1001, 42) .. " "
+							elseif currentSlotInfo.mergedslotindices and (currentSlotInfo.mergedslotcount > 1) then
+								amounttext = currentSlotInfo.mergedslotcount .. ReadText(1001, 42) .. " "
 							end
 							if group[i].macro ~= "" then
 								local name, shortname, infolibrary = GetMacroData(group[i].macro, "name", "shortname", "infolibrary")
-								extraText, untruncatedExtraText = menu.getExtraText(columnWidths[i], amounttext .. shortname, amounttext .. name, group[i].macro, price, nil, upgradetype.type)
+								extraText = menu.getExtraText(columnWidths[i], amounttext .. shortname, amounttext .. name, group[i].macro, price, nil, upgradetype.type)
 								AddKnownItem(infolibrary, group[i].macro)
 							else
-								extraText, untruncatedExtraText = menu.getExtraText(columnWidths[i], amounttext .. group[i].name, nil, nil, price)
+								extraText = menu.getExtraText(columnWidths[i], amounttext .. group[i].name, nil, nil, price)
 							end
 
 							local installicon, installcolor = (group[i].macro ~= "") and (sizeicon or "") or ""
@@ -5758,16 +5967,21 @@ function menu.displaySlots(frame, firsttime)
 
 							-- start: mycu call-back
 							if menu.uix_callbacks ["displaySlots_on_before_create_button_mouseovertext"] then
+								if not mouseovertext then
+									mouseovertext = ""
+								end
+								if not untruncatedExtraText then
+									untruncatedExtraText = ""
+								end
 								for uix_id, uix_callback in pairs (menu.uix_callbacks ["displaySlots_on_before_create_button_mouseovertext"]) do
 									result = uix_callback (group[i].macro, plandata.macro, mouseovertext)
 									if result then
 										mouseovertext = result.mouseovertext
 									end
 								end
+								mouseovertext = untruncatedExtraText .. ((mouseovertext ~= "") and ("\n\n" .. mouseovertext) or "")
 							end
 							-- end: mycu call-back
-
-							mouseovertext = untruncatedExtraText .. ((mouseovertext ~= "") and ("\n\n" .. mouseovertext) or "")
 
 							local active = ((group[i].macro == plandata.macro) or (not hasmod))
 							local useable = hasstock and haslicence
@@ -5781,13 +5995,13 @@ function menu.displaySlots(frame, firsttime)
 								active = active,
 								width = columnWidths[i],
 								height = maxColumnWidth,
-								mouseOverText = mouseovertext,
 								bgColor = useable and Color["button_background_default"] or Color["button_background_inactive"],
 								highlightColor = useable and Color["button_highlight_bigbutton"] or Color["button_highlight_inactive"],
 								helpOverlayID = overlayid,
 								helpOverlayText = " ",
 								helpOverlayHighlightOnly = true,
 							}):setIcon(group[i].icon):setIcon2(installicon, { color = installcolor }):setText(icon, { y = maxColumnWidth / 2 - Helper.scaleY(Helper.standardTextHeight) / 2 - Helper.configButtonBorderSize, halign = "right", color = overridecolor, fontsize = Helper.scaleFont(Helper.standardFont, Helper.standardFontSize) }):setText2(weaponicon, { x = 3, y = -maxColumnWidth / 2 + Helper.scaleY(Helper.standardTextHeight) / 2 + Helper.configButtonBorderSize, fontsize = Helper.scaleFont(Helper.standardFont, Helper.standardFontSize) })
+							menu.equipmentMacroData[row.index * 1000 + column] = { macro = group[i].macro, hasmod = hasmod, price = price, type = upgradetype.type }
 							if useable then
 								row[column].handlers.onClick = function () return menu.buttonSelectUpgradeMacro(menu.upgradetypeMode, menu.currentSlot, group[i].macro, row.index, column, nil, (menu.mode == "customgamestart") or (menu.mode == "comparison")) end
 							end
@@ -5795,7 +6009,7 @@ function menu.displaySlots(frame, firsttime)
 								row[column].handlers.onRightClick = function (...) return menu.buttonInteract({ type = menu.upgradetypeMode, name = group[i].name, macro = group[i].macro }, ...) end
 							end
 
-							row2[column]:createBoxText(extraText, { width = columnWidths[i], fontsize = menu.extraFontSize, color = overridecolor, boxColor = (active and useable) and Color["button_background_default"] or Color["button_background_inactive"], mouseOverText = untruncatedExtraText })
+							row2[column]:createBoxText(extraText, { width = columnWidths[i], fontsize = menu.extraFontSize, color = overridecolor, boxColor = (active and useable) and Color["button_background_default"] or Color["button_background_inactive"] })
 						end
 					end
 					if (maxVisibleHeight == nil) and row.index >= config.maxSlotRows then
@@ -6149,7 +6363,7 @@ function menu.displaySlots(frame, firsttime)
 
 					local hasownlist = false
 					local currentblacklistid = 0
-					if menu.object then
+					if menu.object and (menu.object ~= 0) then
 						hasownlist = C.HasControllableOwnBlacklist(menu.object, entry.type)
 						currentblacklistid = C.GetControllableBlacklistID(menu.object, entry.type, group)
 					end
@@ -6175,7 +6389,7 @@ function menu.displaySlots(frame, firsttime)
 						end
 					end
 					local row = ftable:addRow("orders_resupply", { scaling = true })
-					row[1]:setColSpan(10):createDropDown(locresponses, { startOption = (menu.settings.blacklists[entry.type] ~= 0) and menu.settings.blacklists[entry.type] or defaultblacklistid, active = menu.settings.blacklists[entry.type] ~= 0 })
+					row[1]:setColSpan(10):createDropDown(locresponses, { startOption = (menu.settings.blacklists[entry.type] ~= 0) and menu.settings.blacklists[entry.type] or defaultblacklistid, active = menu.settings.blacklists[entry.type] ~= 0, height = Helper.standardButtonHeight })
 					row[1].handlers.onDropDownConfirmed = function (_, id) menu.settings.blacklists[entry.type] = tonumber(id) end
 					row[11]:createButton({ mouseOverText = ReadText(1026, 8413) }):setIcon("menu_edit")
 					row[11].handlers.onClick = function () return menu.buttonEditBlacklist((menu.settings.blacklists[entry.type] ~= 0) and menu.settings.blacklists[entry.type] or defaultblacklistid) end
@@ -6191,7 +6405,7 @@ function menu.displaySlots(frame, firsttime)
 
 				local hasownlist = false
 				local currentfightruleid = 0
-				if menu.object then
+				if menu.object and (menu.object ~= 0) then
 					hasownlist = C.HasControllableOwnFightRule(menu.object, "attack")
 					currentfightruleid = C.GetControllableFightRuleID(menu.object, "attack")
 				end
@@ -6215,7 +6429,7 @@ function menu.displaySlots(frame, firsttime)
 					table.insert(locresponses, { id = fightrule.id, text = fightrule.name, icon = "", displayremoveoption = false })
 				end
 				local row = ftable:addRow("orders_resupply", { scaling = true })
-				row[1]:setColSpan(10):createDropDown(locresponses, { startOption = (menu.settings.fightrules["attack"] ~= 0) and menu.settings.fightrules["attack"] or defaultfightruleid, active = menu.settings.fightrules["attack"] ~= 0 })
+				row[1]:setColSpan(10):createDropDown(locresponses, { startOption = (menu.settings.fightrules["attack"] ~= 0) and menu.settings.fightrules["attack"] or defaultfightruleid, active = menu.settings.fightrules["attack"] ~= 0, height = Helper.standardButtonHeight })
 				row[1].handlers.onDropDownConfirmed = function (_, id) menu.settings.fightrules["attack"] = tonumber(id) end
 				row[11]:createButton({ mouseOverText = ReadText(1026, 8414) }):setIcon("menu_edit")
 				row[11].handlers.onClick = function () return menu.buttonEditFightRule((menu.settings.fightrules["attack"] ~= 0) and menu.settings.fightrules["attack"] or defaultfightruleid) end
@@ -6359,7 +6573,7 @@ function menu.displayWeaponAmmoSelection(ftable, upgradetype, slot, data)
 		name = menu.slots[upgradetype][slot].slotname .. " - " .. name
 	end
 	row[1]:setColSpan(6):createText(name)
-	row[7]:setColSpan(5):createDropDown(dropdowndata, { startOption = data.ammomacro })
+	row[7]:setColSpan(5):createDropDown(dropdowndata, { startOption = data.ammomacro, height = Helper.standardButtonHeight })
 	row[7].handlers.onDropDownConfirmed = function(_, newammomacro) menu.upgradeplan[upgradetype][slot].ammomacro = newammomacro end
 end
 
@@ -6372,7 +6586,7 @@ function menu.displayWeaponModeSelection(ftable, upgradetype, slot, data)
 		name = menu.slots[upgradetype][slot].slotname .. " - " .. name
 	end
 	row[1]:setColSpan(6):createText(name)
-	row[7]:setColSpan(5):createDropDown(Helper.getMacroTurretModes(data.macro), { startOption = data.weaponmode })
+	row[7]:setColSpan(5):createDropDown(Helper.getMacroTurretModes(data.macro), { startOption = data.weaponmode, height = Helper.standardButtonHeight })
 	row[7].handlers.onDropDownConfirmed = function(_, newturretmode) menu.upgradeplan[upgradetype][slot].weaponmode = newturretmode end
 end
 
@@ -6427,8 +6641,8 @@ function menu.displayModifySlots(frame)
 					end
 				elseif (entry.upgrademode == "turret") and next(menu.groups) then
 					table.sort(menu.shieldgroups, Helper.sortSlots)
-					for i, shieldgroupdata in ipairs(menu.shieldgroups) do
-						menu.displayModSlot(ftable, entry.upgrademode, entry.modclass, i, shieldgroupdata, true)
+					for i, turretgroupdata in ipairs(menu.turretgroups) do
+						menu.displayModSlot(ftable, entry.upgrademode, entry.modclass, i, turretgroupdata, true)
 					end
 				else
 					local upgradetype = Helper.findUpgradeType(entry.upgrademode)
@@ -6756,7 +6970,6 @@ function menu.displayModifyPaintSlots(frame)
 	menu.topRows.slots = nil
 	menu.selectedRows.slots = nil
 	menu.selectedCols.slots = nil
-
 end
 
 function menu.displayModSlot(ftable, type, modclass, slot, slotdata, isgroup)
@@ -7113,6 +7326,7 @@ function menu.checkLicence(macro, rawicon, issoftware, rawmouseovertext)
 	local icon
 	local overridecolor = Color["text_normal"]
 	local mouseovertext = ""
+	local mouseovertextlist = {}
 	local limitstring = ""
 	if macro ~= "" then
 		local ware
@@ -7139,6 +7353,7 @@ function menu.checkLicence(macro, rawicon, issoftware, rawmouseovertext)
 					haslicence = false
 					icon = "menu_locked"
 					mouseovertext = ReadText(1026, 8019)
+					table.insert(mouseovertextlist, { text = ReadText(1026, 8019), icon = "menu_warning" })
 				elseif researchprecursors and (#researchprecursors > 0) then
 					mouseovertext = ReadText(1026, 8023) .. " "
 					local first = true
@@ -7151,6 +7366,7 @@ function menu.checkLicence(macro, rawicon, issoftware, rawmouseovertext)
 						end
 					end
 					icon = "gamestart_custom_research"
+					table.insert(mouseovertextlist, { text = mouseovertext, icon = "menu_warning" })
 				else
 					if tradelicence ~= "" then
 						haslicence = HasLicence("player", tradelicence, menu.containerowner)
@@ -7162,6 +7378,7 @@ function menu.checkLicence(macro, rawicon, issoftware, rawmouseovertext)
 									icon = "\27[" .. icon .. "]"
 								end
 								mouseovertext = (rawmouseovertext and "" or (haslicence and "" or ColorText["text_error"])) .. string.format(ReadText(1026, 8003), ffi.string(licenceinfo.name))
+								table.insert(mouseovertextlist, { text = mouseovertext, icon = "diplomacy_license_negative" })
 							end
 						end
 					end
@@ -7183,6 +7400,7 @@ function menu.checkLicence(macro, rawicon, issoftware, rawmouseovertext)
 					haslicence = false
 					icon = "menu_locked"
 					mouseovertext = ReadText(1026, 8028)
+					table.insert(mouseovertextlist, { text = ReadText(1026, 8028), icon = "menu_warning" })
 				end
 				limitstring = " (" .. used .. "/" .. limitamount .. ")"
 			end
@@ -7192,7 +7410,7 @@ function menu.checkLicence(macro, rawicon, issoftware, rawmouseovertext)
 		end
 	end
 
-	return haslicence, icon, overridecolor, mouseovertext, limitstring
+	return haslicence, icon, overridecolor, mouseovertext, limitstring, mouseovertextlist
 end
 
 function menu.checkMod(type, component, isgroup)
@@ -7269,62 +7487,58 @@ function menu.checkEquipment(removedEquipment, currentEquipment, newEquipment, r
 					if canequip then
 						if data.macro ~= "" then
 							local i = menu.findUpgradeMacro(upgradetype.grouptype, data.macro)
-							if not i then
-								break
-							end
-							local upgradeware = menu.upgradewares[upgradetype.grouptype][i]
+							if i then
+								local upgradeware = menu.upgradewares[upgradetype.grouptype][i]
 
-							if oldslotdata.currentmacro ~= "" then
-								local j = menu.findUpgradeMacro(upgradetype.grouptype, oldslotdata.currentmacro)
-								if not j then
-									break
-								end
-								local oldupgradeware = menu.upgradewares[upgradetype.grouptype][j]
+								if oldslotdata.currentmacro ~= "" then
+									local j = menu.findUpgradeMacro(upgradetype.grouptype, oldslotdata.currentmacro)
+									if j then
+										local oldupgradeware = menu.upgradewares[upgradetype.grouptype][j]
 
-								if data.macro == oldslotdata.currentmacro then
-									if upgradetype.mergeslots then
-										menu.insertWare(currentEquipment, objectEquipment.current, upgradetype.grouptype, upgradeware.ware, (upgradetype.mergeslots and #upgradeplanslots or data.count))
-									else
-										if oldslotdata.count < data.count then
-											menu.insertWare(currentEquipment, objectEquipment.current, upgradetype.grouptype, upgradeware.ware, oldslotdata.count)
-											menu.insertWare(newEquipment, objectEquipment.new, upgradetype.grouptype, upgradeware.ware, data.count - oldslotdata.count, "normal")
-											hasupgrades = true
-										elseif oldslotdata.count > data.count then
-											menu.insertWare(currentEquipment, objectEquipment.current, upgradetype.grouptype, upgradeware.ware, data.count)
-											menu.insertWare(removedEquipment, objectEquipment.removed, upgradetype.grouptype, upgradeware.ware, oldslotdata.count - data.count, "normal")
-											hasupgrades = true
+										if data.macro == oldslotdata.currentmacro then
+											if upgradetype.mergeslots then
+												menu.insertWare(currentEquipment, objectEquipment.current, upgradetype.grouptype, upgradeware.ware, (upgradetype.mergeslots and #upgradeplanslots or data.count))
+											else
+												if oldslotdata.count < data.count then
+													menu.insertWare(currentEquipment, objectEquipment.current, upgradetype.grouptype, upgradeware.ware, oldslotdata.count)
+													menu.insertWare(newEquipment, objectEquipment.new, upgradetype.grouptype, upgradeware.ware, data.count - oldslotdata.count, "normal")
+													hasupgrades = true
+												elseif oldslotdata.count > data.count then
+													menu.insertWare(currentEquipment, objectEquipment.current, upgradetype.grouptype, upgradeware.ware, data.count)
+													menu.insertWare(removedEquipment, objectEquipment.removed, upgradetype.grouptype, upgradeware.ware, oldslotdata.count - data.count, "normal")
+													hasupgrades = true
+												else
+													menu.insertWare(currentEquipment, objectEquipment.current, upgradetype.grouptype, upgradeware.ware, (upgradetype.mergeslots and #upgradeplanslots or data.count))
+												end
+											end
 										else
-											menu.insertWare(currentEquipment, objectEquipment.current, upgradetype.grouptype, upgradeware.ware, (upgradetype.mergeslots and #upgradeplanslots or data.count))
+											menu.insertWare(removedEquipment, objectEquipment.removed, upgradetype.grouptype, oldupgradeware.ware, (upgradetype.mergeslots and #upgradeplanslots or oldslotdata.count), "normal")
+											menu.insertWare(newEquipment, objectEquipment.new, upgradetype.grouptype, upgradeware.ware, (upgradetype.mergeslots and #upgradeplanslots or data.count), "normal")
+											hasupgrades = true
 										end
 									end
 								else
-									menu.insertWare(removedEquipment, objectEquipment.removed, upgradetype.grouptype, oldupgradeware.ware, (upgradetype.mergeslots and #upgradeplanslots or oldslotdata.count), "normal")
 									menu.insertWare(newEquipment, objectEquipment.new, upgradetype.grouptype, upgradeware.ware, (upgradetype.mergeslots and #upgradeplanslots or data.count), "normal")
 									hasupgrades = true
 								end
-							else
-								menu.insertWare(newEquipment, objectEquipment.new, upgradetype.grouptype, upgradeware.ware, (upgradetype.mergeslots and #upgradeplanslots or data.count), "normal")
-								hasupgrades = true
 							end
 						elseif oldslotdata.currentmacro ~= "" then
 							local j = menu.findUpgradeMacro(upgradetype.grouptype, oldslotdata.currentmacro)
-							if not j then
-								break
-							end
-							local oldupgradeware = menu.upgradewares[upgradetype.grouptype][j]
+							if j then
+								local oldupgradeware = menu.upgradewares[upgradetype.grouptype][j]
 
-							menu.insertWare(removedEquipment, objectEquipment.removed, upgradetype.grouptype, oldupgradeware.ware, (upgradetype.mergeslots and #upgradeplanslots or oldslotdata.count), "normal")
-							hasupgrades = true
+								menu.insertWare(removedEquipment, objectEquipment.removed, upgradetype.grouptype, oldupgradeware.ware, (upgradetype.mergeslots and #upgradeplanslots or oldslotdata.count), "normal")
+								hasupgrades = true
+							end
 						end
 					else
 						if oldslotdata.currentmacro ~= "" then
 							local j = menu.findUpgradeMacro(upgradetype.grouptype, oldslotdata.currentmacro)
-							if not j then
-								break
-							end
-							local oldupgradeware = menu.upgradewares[upgradetype.grouptype][j]
+							if j then
+								local oldupgradeware = menu.upgradewares[upgradetype.grouptype][j]
 
-							menu.insertWare(currentEquipment, objectEquipment.current, upgradetype.grouptype, oldupgradeware.ware, (upgradetype.mergeslots and #upgradeplanslots or oldslotdata.count), "normal")
+								menu.insertWare(currentEquipment, objectEquipment.current, upgradetype.grouptype, oldupgradeware.ware, (upgradetype.mergeslots and #upgradeplanslots or oldslotdata.count), "normal")
+							end
 						end
 					end
 				elseif (upgradetype.supertype == "macro") or (upgradetype.supertype == "virtualmacro") then
@@ -7340,48 +7554,44 @@ function menu.checkEquipment(removedEquipment, currentEquipment, newEquipment, r
 					if canequip then
 						if data.macro ~= "" then
 							local i = menu.findUpgradeMacro(upgradetype.type, data.macro)
-							if not i then
-								break
-							end
-							local upgradeware = menu.upgradewares[upgradetype.type][i]
+							if i then
+								local upgradeware = menu.upgradewares[upgradetype.type][i]
 
-							if oldslotdata.currentmacro ~= "" then
-								local j = menu.findUpgradeMacro(upgradetype.type, oldslotdata.currentmacro)
-								if not j then
-									break
-								end
-								local oldupgradeware = menu.upgradewares[upgradetype.type][j]
+								if oldslotdata.currentmacro ~= "" then
+									local j = menu.findUpgradeMacro(upgradetype.type, oldslotdata.currentmacro)
+									if j then
+										local oldupgradeware = menu.upgradewares[upgradetype.type][j]
 
-								if data.macro == oldslotdata.currentmacro then
-									menu.insertWare(currentEquipment, objectEquipment.current, upgradetype.type, upgradeware.ware, (upgradetype.mergeslots and #upgradeplanslots or 1))
+										if data.macro == oldslotdata.currentmacro then
+											menu.insertWare(currentEquipment, objectEquipment.current, upgradetype.type, upgradeware.ware, (upgradetype.mergeslots and #upgradeplanslots or 1))
+										else
+											menu.insertWare(removedEquipment, objectEquipment.removed, upgradetype.type, oldupgradeware.ware, (upgradetype.mergeslots and #upgradeplanslots or 1), "normal")
+											menu.insertWare(newEquipment, objectEquipment.new, upgradetype.type, upgradeware.ware, (upgradetype.mergeslots and #upgradeplanslots or 1), "normal")
+											hasupgrades = true
+										end
+									end
 								else
-									menu.insertWare(removedEquipment, objectEquipment.removed, upgradetype.type, oldupgradeware.ware, (upgradetype.mergeslots and #upgradeplanslots or 1), "normal")
 									menu.insertWare(newEquipment, objectEquipment.new, upgradetype.type, upgradeware.ware, (upgradetype.mergeslots and #upgradeplanslots or 1), "normal")
 									hasupgrades = true
 								end
-							else
-								menu.insertWare(newEquipment, objectEquipment.new, upgradetype.type, upgradeware.ware, (upgradetype.mergeslots and #upgradeplanslots or 1), "normal")
-								hasupgrades = true
 							end
 						elseif oldslotdata.currentmacro ~= "" then
 							local j = menu.findUpgradeMacro(upgradetype.type, oldslotdata.currentmacro)
-							if not j then
-								break
-							end
-							local oldupgradeware = menu.upgradewares[upgradetype.type][j]
+							if j then
+								local oldupgradeware = menu.upgradewares[upgradetype.type][j]
 
-							menu.insertWare(removedEquipment, objectEquipment.removed, upgradetype.type, oldupgradeware.ware, (upgradetype.mergeslots and #upgradeplanslots or 1), "normal")
-							hasupgrades = true
+								menu.insertWare(removedEquipment, objectEquipment.removed, upgradetype.type, oldupgradeware.ware, (upgradetype.mergeslots and #upgradeplanslots or 1), "normal")
+								hasupgrades = true
+							end
 						end
 					else
 						if oldslotdata.currentmacro ~= "" then
 							local j = menu.findUpgradeMacro(upgradetype.grouptype, oldslotdata.currentmacro)
-							if not j then
-								break
-							end
-							local oldupgradeware = menu.upgradewares[upgradetype.grouptype][j]
+							if j then
+								local oldupgradeware = menu.upgradewares[upgradetype.grouptype][j]
 
-							menu.insertWare(currentEquipment, objectEquipment.current, upgradetype.type, oldupgradeware.ware, (upgradetype.mergeslots and #upgradeplanslots or 1), "normal")
+								menu.insertWare(currentEquipment, objectEquipment.current, upgradetype.type, oldupgradeware.ware, (upgradetype.mergeslots and #upgradeplanslots or 1), "normal")
+							end
 						end
 					end
 				elseif upgradetype.supertype == "ammo" then
@@ -7391,25 +7601,24 @@ function menu.checkEquipment(removedEquipment, currentEquipment, newEquipment, r
 						local macro = slot
 						if (current > 0) or (current ~= new) then
 							local j = menu.findUpgradeMacro(upgradetype.type, macro)
-							if not j then
-								break
-							end
-							local upgradeware = menu.upgradewares[upgradetype.type][j]
+							if j then
+								local upgradeware = menu.upgradewares[upgradetype.type][j]
 
-							if current < new then
-								if current > 0 then
+								if current < new then
+									if current > 0 then
+										menu.insertWare(currentEquipment, objectEquipment.current, "consumables", upgradeware.ware, current)
+									end
+									menu.insertWare(newEquipment, objectEquipment.new, "consumables", upgradeware.ware, new - current, "normal")
+									hasupgrades = true
+								elseif current > new then
+									if new > 0 then
+										menu.insertWare(currentEquipment, objectEquipment.current, "consumables", upgradeware.ware, new)
+									end
+									menu.insertWare(removedEquipment, objectEquipment.removed, "consumables", upgradeware.ware, current - new, "normal")
+									hasupgrades = true
+								elseif current > 0 then
 									menu.insertWare(currentEquipment, objectEquipment.current, "consumables", upgradeware.ware, current)
 								end
-								menu.insertWare(newEquipment, objectEquipment.new, "consumables", upgradeware.ware, new - current, "normal")
-								hasupgrades = true
-							elseif current > new then
-								if new > 0 then
-									menu.insertWare(currentEquipment, objectEquipment.current, "consumables", upgradeware.ware, new)
-								end
-								menu.insertWare(removedEquipment, objectEquipment.removed, "consumables", upgradeware.ware, current - new, "normal")
-								hasupgrades = true
-							elseif current > 0 then
-								menu.insertWare(currentEquipment, objectEquipment.current, "consumables", upgradeware.ware, current)
 							end
 						end
 					end
@@ -7716,11 +7925,11 @@ function menu.displayPlan(frame)
 	if purpose ~= nil then
 		-- mining equipment warning
 		if (purpose == "mine") and (storagetags["universal"] or storagetags["solid"]) and (not hasminingequipment) then
-			menu.warnings[7] = menu.objectgroup and ReadText(1001, 8584) or ReadText(1001, 8583)
+			menu.warnings[8] = menu.objectgroup and ReadText(1001, 8584) or ReadText(1001, 8583)
 		end
 		-- combat equipment warning
 		if ((purpose == "fight") or (purpose == "auxiliary")) and (not hasmilitaryequipment) then
-			menu.warnings[8] = menu.objectgroup and ReadText(1001, 8586) or ReadText(1001, 8585)
+			menu.warnings[9] = menu.objectgroup and ReadText(1001, 8586) or ReadText(1001, 8585)
 		end
 	end
 
@@ -7761,6 +7970,13 @@ function menu.displayPlan(frame)
 		end
 		if (not menu.isReadOnly) and (#menu.missingResources > 0) then
 			menu.warnings[4] = ReadText(1001, 8018)
+			if menu.isplayerowned and C.IsContainerTransmuteForFactionAllowed(menu.container, "player") then
+				local hasalloy = true
+				local cargo = GetComponentData(ConvertStringToLuaID(tostring(menu.container)), "cargo") or {}
+				if (cargo["khaakalloy"] or 0) > 0 then
+					menu.warnings[5] = ReadText(1001, 8597)
+				end
+			end
 		end
 	elseif menu.mode == "upgrade" then
 		local considerCurrent = false
@@ -7815,10 +8031,27 @@ function menu.displayPlan(frame)
 		end
 		if (not menu.isReadOnly) and (#menu.missingResources > 0) then
 			menu.warnings[4] = ReadText(1001, 8018)
+			if menu.isplayerowned and C.IsContainerTransmuteForFactionAllowed(menu.container, "player") then
+				local hasalloy = true
+				local cargo = GetComponentData(ConvertStringToLuaID(tostring(menu.container)), "cargo") or {}
+				if (cargo["khaakalloy"] or 0) > 0 then
+					menu.warnings[5] = ReadText(1001, 8597)
+				end
+			end
 		end
 	end
 
-	if (not menu.isReadOnly) and (menu.mode ~= "customgamestart") and (menu.mode ~= "comparison") then
+	-- ammo warning
+	if not menu.isReadOnly then
+		for ammomacro, amount in pairs(menu.upgradeplan["missile"]) do
+			if (amount > 0) and (not menu.isAmmoCompatible("missile", ammomacro)) then
+				menu.warnings[10] = ReadText(1001, 13226)
+				break
+			end
+		end
+	end
+
+	if (not menu.isReadOnly) and (menu.mode ~= "customgamestart") and (menu.mode ~= "comparison") and (menu.mode ~= "upgradefleetunit") then
 		menu.addedCrewByPlayerBuildTasks = 0
 		local constructions = {}
 		-- current builds
@@ -7918,14 +8151,14 @@ function menu.displayPlan(frame)
 	end
 	-- selling parts, not getting money immediately
 	if menu.shoppinglistrefund < 0 then
-		menu.warnings[6] = ReadText(1001, 8546)
+		menu.warnings[7] = ReadText(1001, 8546)
 	end
 
 	Helper.ffiClearNewHelper()
-	if (menu.mode ~= "customgamestart") and (menu.mode ~= "comparison") then
+	if (menu.mode ~= "customgamestart") and (menu.mode ~= "comparison") and (menu.mode ~= "upgradefleetunit") then
 		-- edit warning
 		if (menu.macro ~= "") or (menu.object ~= 0) then
-			menu.warnings[5] = menu.objectgroup and ReadText(1001, 8567) or ReadText(1001, 8019)
+			menu.warnings[6] = menu.objectgroup and ReadText(1001, 8567) or ReadText(1001, 8019)
 		end
 	end
 
@@ -7976,6 +8209,9 @@ function menu.displayPlan(frame)
 
 				row[2]:createText(ConvertIntegerString(value, true, 0, true)  .. " " .. ColorText["customgamestart_budget_people"] .. "\27[gamestart_custom_people]", { halign = "right" })
 			end
+		elseif menu.mode == "upgradefleetunit" then
+			local row = buttontable:addRow(false, { fixed = true, bgColor = Color["row_title_background"] })
+			row[1]:setColSpan(2):createText(ReadText(1001, 7938), menu.headerTextProperties)
 		else
 			if menu.discounts.totalfactor < 1 then
 				buttontable:addEmptyRow(Helper.standardTextHeight)
@@ -8028,12 +8264,21 @@ function menu.displayPlan(frame)
 		row[2].handlers.onClick = function () return menu.closeMenu("back") end
 	else
 		row = buttontable:addRow(true, { fixed = true, bgColor = Color["row_title_background"] })
-		local button = row[1]:createButton({ active = ((#menu.shoppinglist > (menu.editingshoppinglist and 1 or 0)) or (menu.mode == "customgamestart") or ((menu.mode == "comparison") and (menu.macro ~= ""))) and (next(menu.criticalerrors) == nil), helpOverlayID = "shipconfig_confirm", helpOverlayText = " ", helpOverlayHighlightOnly = true, uiTriggerID = "shipconfig_confirm" }):setText(((menu.mode == "customgamestart") or (menu.mode == "comparison")) and ReadText(1001, 2821) or ReadText(1001, 8011), { halign = "center" })
+		local active = false
+		if (menu.mode == "customgamestart") or (menu.mode == "upgradefleetunit") then
+			active = true
+		elseif menu.mode == "comparison" then
+			active = menu.macro ~= ""
+		else
+			active = #menu.shoppinglist > (menu.editingshoppinglist and 1 or 0)
+		end
+		active = active and (next(menu.criticalerrors) == nil)
+		local button = row[1]:createButton({ active = active, helpOverlayID = "shipconfig_confirm", helpOverlayText = " ", helpOverlayHighlightOnly = true, uiTriggerID = "shipconfig_confirm" }):setText(((menu.mode == "customgamestart") or (menu.mode == "comparison") or (menu.mode == "upgradefleetunit")) and ReadText(1001, 2821) or ReadText(1001, 8011), { halign = "center" })
 		if (menu.object == 0) and (menu.macro == "") then
 			button:setHotkey("INPUT_STATE_DETAILMONITOR_X", { displayIcon = true })
 		end
 		row[1].handlers.onClick = menu.buttonConfirm
-		row[2]:createButton({  }):setText(((menu.mode == "customgamestart") or (menu.mode == "comparison")) and ReadText(1001, 64) or ReadText(1001, 8010), { halign = "center" })
+		row[2]:createButton({  }):setText(((menu.mode == "customgamestart") or (menu.mode == "comparison") or (menu.mode == "upgradefleetunit")) and ReadText(1001, 64) or ReadText(1001, 8010), { halign = "center" })
 		row[2].handlers.onClick = function () return menu.closeMenu("back") end
 	end
 	buttontable.properties.y = Helper.viewHeight - buttontable:getFullHeight() - menu.planData.offsetY
@@ -8041,7 +8286,7 @@ function menu.displayPlan(frame)
 	-- STATUS
 	local statustable, resourcetable
 	if not menu.isReadOnly then
-		if (menu.mode ~= "customgamestart") and (menu.mode ~= "comparison") then
+		if (menu.mode ~= "customgamestart") and (menu.mode ~= "comparison") and (menu.mode ~= "upgradefleetunit") then
 			if #menu.missingResources > 0 then
 				resourcetable = frame:addTable(2, { tabOrder = 8, width = menu.planData.width, x = menu.planData.offsetX, y = 0, reserveScrollBar = true, highlightMode = "off", skipTabChange = true, backgroundID = "solid", backgroundColor = Color["table_background_3d_editor"] })
 
@@ -8120,7 +8365,7 @@ function menu.displayPlan(frame)
 			else
 				statustable.properties.maxVisibleHeight = statustable:getFullHeight()
 			end
-			if (menu.mode ~= "customgamestart") and (menu.mode ~= "comparison") and (#menu.missingResources > 0) then
+			if (menu.mode ~= "customgamestart") and (menu.mode ~= "comparison") and (menu.mode ~= "upgradefleetunit") and (#menu.missingResources > 0) then
 				statustable.properties.y = resourcetable.properties.y - statustable:getVisibleHeight() - 2 * Helper.borderSize
 			else
 				statustable.properties.y = buttontable.properties.y - statustable:getVisibleHeight() - 2 * Helper.borderSize
@@ -8135,7 +8380,7 @@ function menu.displayPlan(frame)
 	if (not menu.isReadOnly) then
 		if next(menu.criticalerrors) or next(menu.errors) or next(menu.warnings) then
 			maxVisibleHeight = statustable.properties.y - menu.planData.offsetY
-		elseif (menu.mode ~= "customgamestart") and (menu.mode ~= "comparison") and (#menu.missingResources > 0) then
+		elseif (menu.mode ~= "customgamestart") and (menu.mode ~= "comparison") and (menu.mode ~= "upgradefleetunit") and (#menu.missingResources > 0) then
 			maxVisibleHeight = resourcetable.properties.y - menu.planData.offsetY
 		end
 	end
@@ -8187,7 +8432,7 @@ function menu.displayPlan(frame)
 		buildorder.macroname = Helper.ffiNewString(menu.macro)
 		buildorder.loadout = Helper.callLoadoutFunction(menu.upgradeplan, nil, function (loadout, _) return loadout end)
 		buildorder.amount = 1
-		if (not menu.isReadOnly) and (menu.mode ~= "customgamestart") and (menu.mode ~= "comparison") then
+		if (not menu.isReadOnly) and (menu.mode ~= "customgamestart") and (menu.mode ~= "comparison") and (menu.mode ~= "upgradefleetunit") then
 			menu.duration = (not menu.errors[4]) and C.GetBuildDuration(menu.container, buildorder) or 0
 		end
 
@@ -8209,7 +8454,7 @@ function menu.displayPlan(frame)
 
 		if menu.objectgroup then
 			row[1]:setColSpan(colspan + 2):createText(#menu.objectgroup.ships .. ReadText(1001, 42) .. " " .. GetMacroData(menu.objectgroup.macro, "name"))
-		elseif (not menu.isReadOnly) and (menu.mode ~= "customgamestart") and (menu.mode ~= "comparison") then
+		elseif (not menu.isReadOnly) and (menu.mode ~= "customgamestart") and (menu.mode ~= "comparison") and (menu.mode ~= "upgradefleetunit") then
 			menu.customShipNameEditBox = row[1]:setColSpan(colspan):createEditBox({ description = ReadText(1001, 8537), height = Helper.standardTextHeight }):setText(menu.customshipname, { halign = "left" })
 			row[1].handlers.onTextChanged = menu.editboxCustomShipName
 			row[1].handlers.onEditBoxDeactivated = menu.editboxCustomShipNameDeactivated
@@ -8221,11 +8466,13 @@ function menu.displayPlan(frame)
 			end
 
 			local row = ftable:addRow(true, {  })
-			row[1]:setColSpan(colspan + 1):createButton({ height = Helper.standardTextHeight, active = function () return not utf8.find(menu.customshipname, name, nil, true) end }):setText(ReadText(1001, 8588), { halign = "center" })
+			-- The "- 1" in the below line accounts for the " " added by helperSpaceAwareConcat
+			row[1]:setColSpan(colspan + 1):createButton({ height = Helper.standardTextHeight, active = function () return (not utf8.find(menu.customshipname, name, nil, true)) and (utf8.len(menu.customshipname) < (Helper.standardEditBoxMaxTextLength - 1)) end }):setText(ReadText(1001, 8588), { halign = "center" }) 
 			row[1].handlers.onClick = function () return menu.buttonCustomShipNameAppendShip(name) end
 
 			local row = ftable:addRow(true, {  })
-			row[1]:setColSpan(colspan + 1):createButton({ height = Helper.standardTextHeight, active = function () return not utf8.find(menu.customshipname, menu.loadoutName, nil, true) end }):setText(ReadText(1001, 8589), { halign = "center" })
+			-- The "- 1" in the below line accounts for the " " added by helperSpaceAwareConcat
+			row[1]:setColSpan(colspan + 1):createButton({ height = Helper.standardTextHeight, active = function () return (not utf8.find(menu.customshipname, menu.loadoutName, nil, true)) and (utf8.len(menu.customshipname) < (Helper.standardEditBoxMaxTextLength - 1)) end }):setText(ReadText(1001, 8589), { halign = "center" })
 			row[1].handlers.onClick = menu.buttonCustomShipNameAppendLoadout
 
 			local row = ftable:addRow(false, { bgColor = Color["row_background_unselectable"] })
@@ -8332,7 +8579,7 @@ function menu.displayPlan(frame)
 			for _, entry in ipairs(repairedEquipment) do
 				local repaircomponent = ConvertStringTo64Bit(entry.component)
 				local isextended = menu.isUpgradeExpanded(menu.currentIdx, repaircomponent, "repair")
-				local name = ffi.string(C.GetComponentName(repaircomponent)) .. " (" .. ffi.string(C.GetObjectIDCode(repaircomponent)) .. ")"
+				local name = ffi.string(C.GetComponentName(repaircomponent)) .. (C.IsComponentClass(repaircomponent, "ship") and (" (" .. ffi.string(C.GetObjectIDCode(repaircomponent)) .. ")") or "")
 
 				local resources = {}
 				local n = C.GetNumRepairResources2(menu.container, menu.object, repaircomponent)
@@ -8363,7 +8610,7 @@ function menu.displayPlan(frame)
 			row[2]:setColSpan(5):createText("--- " .. ReadText(1001, 7936) .. " ---", { halign = "center" } )
 		end
 
-		if (not menu.isReadOnly) and (menu.mode ~= "customgamestart") and (menu.mode ~= "comparison") then
+		if (not menu.isReadOnly) and (menu.mode ~= "customgamestart") and (menu.mode ~= "comparison") and (menu.mode ~= "upgradefleetunit") then
 			local row = ftable:addRow(true, {  })
 			local hasupgrades = (next(removedEquipment) ~= nil) or (next(newEquipment) ~= nil) or (#menu.crew.transferdetails > 0)
 			local hasrepairs = (#repairedEquipment > 0)
@@ -8393,7 +8640,7 @@ function menu.displayPlan(frame)
 		row[3]:setColSpan(4):createButton({ active = false, helpOverlayID = "shipconfig_addtoshoppinglist", helpOverlayText = " ", helpOverlayHighlightOnly = true, uiTriggerID = "shipconfig_addtoshoppinglist" }):setText(ReadText(1001, 8006), { halign = "center" })
 	end
 
-	if (not menu.isReadOnly) and (menu.mode ~= "customgamestart") and (menu.mode ~= "comparison") then
+	if (not menu.isReadOnly) and (menu.mode ~= "customgamestart") and (menu.mode ~= "comparison") and (menu.mode ~= "upgradefleetunit") then
 		-- shoppinglist
 		local row = ftable:addRow(false, { bgColor = Color["row_title_background"] })
 		row[1]:setColSpan(6):createText(ReadText(1001, 8009), menu.headerTextProperties)
@@ -8754,6 +9001,79 @@ function menu.displayModifyPlan(frame)
 	menu.selectedCols.plan = nil
 end
 
+config.slotsizes = {
+	{ slotsize = "extralarge",	name = ReadText(1001, 2856) },
+	{ slotsize = "large",		name = ReadText(1001, 2855) },
+	{ slotsize = "medium",		name = ReadText(1001, 2854) },
+	{ slotsize = "small",		name = ReadText(1001, 2853) },
+}
+
+function menu.addLoadoutStat(row, entry, side, loadoutstats, currentloadoutstats, maxloadoutstats, iscapship)
+	local offset = (side == "right") and 3 or 0
+
+	local id = entry.id
+	if entry.capshipid ~= nil then
+		id = iscapship and entry.capshipid or id
+	end
+
+	if id ~= "" then
+		local value
+		if entry.type == "dock" then
+			row[1 + offset]:createText(entry.name .. ((entry.unit ~= "") and (" (" .. entry.unit .. ")") or ""), { mouseOverText = entry.mouseovertext })
+			local amounttext = ConvertIntegerString(Helper.round(loadoutstats[entry.amount], 0), true, 0, true, false)
+			local capacitytext = ConvertIntegerString(Helper.round(loadoutstats[entry.capacity], 0), true, 0, true, false)
+			row[2 + offset]:createText(amounttext, { halign = "right" })
+			row[3 + offset]:createText("(" .. ReadText(1001, 13204) .. ReadText(1001, 120) .. " " .. capacitytext .. ")", { x = 0 })
+		elseif entry.type == "slot" then
+			local color = Color["text_normal"]
+			local slottext = ""
+			if menu.slotStats[id] then
+				for _, slotsize in pairs(config.slotsizes) do
+					local amount = menu.slotStats[id][slotsize.slotsize] or 0
+					if amount > 0 then
+						if slottext ~= "" then
+							slottext = slottext .. ", "
+						end
+						slottext = slottext .. amount .. ReadText(1001, 42) .. " " .. slotsize.name
+					end
+				end
+			end
+			if slottext == "" then
+				color = Color["text_inactive"]
+				slottext = ReadText(1001, 7936)
+			end
+			row[1 + offset]:createText(entry.name .. ((entry.unit ~= "") and (" (" .. entry.unit .. ")") or ""), { mouseOverText = entry.mouseovertext, color = color })
+			row[2 + offset]:setColSpan(2):createText(slottext, { halign = "right", color = color })
+		else
+			local color = (maxloadoutstats[id] == 0) and Color["text_inactive"] or Color["text_normal"]
+			row[1 + offset]:createText(entry.name .. ((entry.unit ~= "") and (" (" .. entry.unit .. ")") or ""), { mouseOverText = entry.mouseovertext, color = color })
+			if loadoutstats[id] > currentloadoutstats[id] then
+				color = entry.inverted and (menu.usemacro and Color["text_normal"] or Color["text_negative"]) or Color["text_positive"]
+			elseif loadoutstats[id] < currentloadoutstats[id] then
+				color = entry.inverted and Color["text_positive"] or Color["text_negative"]
+			end
+			if entry.type == "UINT" then
+				value = ConvertIntegerString(Helper.round(loadoutstats[id], 0), true, 0, true, false)
+			elseif (entry.type == "float") or (entry.type == "double") then
+				value = Helper.formatLoadoutStat(loadoutstats[id], entry.accuracy)
+			end
+			row[2 + offset]:createText(value, { halign = "right", color = color })
+				local posChangeColor, negChangeColor
+				if entry.inverted then
+					if menu.usemacro then
+						posChangeColor = Color["statusbar_value_default"]
+					else
+						posChangeColor = Color["statusbar_diff_neg_default"]
+					end
+					negChangeColor = Color["statusbar_diff_pos_default"]
+				end
+			row[3 + offset]:createStatusBar({ current = loadoutstats[id], start = currentloadoutstats[id], max = maxloadoutstats[id], cellBGColor = Color["ship_stat_background"], posChangeColor = posChangeColor, negChangeColor = negChangeColor })
+		end
+	else
+		row[1 + offset]:createText("")
+	end
+end
+
 function menu.displayStats(frame)
 	-- title
 	local titletable = frame:addTable(3, { tabOrder = 19, width = menu.statsData.width, x = menu.statsData.offsetX, y = 0, reserveScrollBar = false, backgroundID = "solid", backgroundColor = Color["table_background_3d_editor"] })
@@ -8784,26 +9104,26 @@ function menu.displayStats(frame)
 	end
 	menu.selectedCols.stats = nil
 
+	local currentloadoutstats
+	if menu.usemacro then
+		local ffiloadoutstats = Helper.callLoadoutFunction(menu.upgradeplan, nil, function (loadout, _) return C.GetLoadoutStatistics5(0, menu.macro, loadout) end)
+		menu.loadoutstats = Helper.convertLoadoutStats(ffiloadoutstats)
+
+		currentloadoutstats = Helper.convertLoadoutStats(ffi.new("UILoadoutStatistics5", 0))
+	elseif menu.mode == "upgrade" then
+		local ffiloadoutstats = Helper.callLoadoutFunction(menu.upgradeplan, nil, function (loadout, _) return C.GetLoadoutStatistics5(menu.object, "", loadout) end)
+		menu.loadoutstats = Helper.convertLoadoutStats(ffiloadoutstats)
+
+		local fficurrentloadoutstats = C.GetCurrentLoadoutStatistics5(menu.object)
+		currentloadoutstats = Helper.convertLoadoutStats(fficurrentloadoutstats)
+	elseif menu.mode == "modify" then
+		local fficurrentloadoutstats = C.GetCurrentLoadoutStatistics5(menu.object)
+		menu.loadoutstats = Helper.convertLoadoutStats(fficurrentloadoutstats)
+
+		currentloadoutstats = menu.initialLoadoutStatistics
+	end
+
 	if __CORE_DETAILMONITOR_SHIPBUILD[statskeyword] ~= "hidden" then
-		local loadoutstats, currentloadoutstats
-		if menu.usemacro then
-			local ffiloadoutstats = Helper.callLoadoutFunction(menu.upgradeplan, nil, function (loadout, _) return C.GetLoadoutStatistics5(0, menu.macro, loadout) end)
-			loadoutstats = Helper.convertLoadoutStats(ffiloadoutstats)
-
-			currentloadoutstats = Helper.convertLoadoutStats(ffi.new("UILoadoutStatistics5", 0))
-		elseif menu.mode == "upgrade" then
-			local ffiloadoutstats = Helper.callLoadoutFunction(menu.upgradeplan, nil, function (loadout, _) return C.GetLoadoutStatistics5(menu.object, "", loadout) end)
-			loadoutstats = Helper.convertLoadoutStats(ffiloadoutstats)
-
-			local fficurrentloadoutstats = C.GetCurrentLoadoutStatistics5(menu.object)
-			currentloadoutstats = Helper.convertLoadoutStats(fficurrentloadoutstats)
-		elseif menu.mode == "modify" then
-			local fficurrentloadoutstats = C.GetCurrentLoadoutStatistics5(menu.object)
-			loadoutstats = Helper.convertLoadoutStats(fficurrentloadoutstats)
-
-			currentloadoutstats = menu.initialLoadoutStatistics
-		end
-
 		local ffimaxloadoutstats = C.GetMaxLoadoutStatistics5(menu.object, menu.macro)
 		local maxloadoutstats = Helper.convertLoadoutStats(ffimaxloadoutstats)
 
@@ -8823,102 +9143,30 @@ function menu.displayStats(frame)
 		local islimited = __CORE_DETAILMONITOR_SHIPBUILD[statskeyword] == "limited"
 		if islimited then
 			stats = Helper.tableCopy(config.limitedStats)
-			for i = #stats, 1, -1 do
-				if stats[i].hasany and (loadoutstats[stats[i].id] == 0) then
-					table.remove(stats, i)
-				elseif stats[i].class and (not stats[i].class[menu.class]) then
-					table.remove(stats, i)
+		else
+			stats = Helper.tableCopy(config.stats)
+		end
+		for _, statscol in pairs(stats) do
+			for i = #statscol, 1, -1 do
+				if statscol[i].hasany and (menu.loadoutstats[statscol[i].id] == 0) then
+					table.remove(statscol, i)
+				elseif statscol[i].class and (not statscol[i].class[menu.class]) then
+					table.remove(statscol, i)
+				elseif (statscol[i].new ~= nil) and (statscol[i].new ~= menu.newShipStats) then
+					table.remove(statscol, i)
 				end
 			end
-		else
-			stats = config.stats
 		end
 
-		local numRows = math.ceil(#stats / 2)
+		local numRows = math.max(#stats.left, #stats.right)
 		for i = 1, numRows do
-			if (not islimited) or (stats[i].id ~= "") or ((i + numRows <= #stats) and (stats[i + numRows].id ~= "")) then
+			if (not islimited) or (stats.left[i] and (stats.left[i].id ~= "")) or ((stats.right[i]) and (stats.right[i].id ~= "")) then
 				local row = ftable:addRow(false, {  })
-				local entry = stats[i]
-
-				local id = entry.id
-				if entry.capshipid ~= nil then
-					id = iscapship and entry.capshipid or id
+				if stats.left[i] then
+					menu.addLoadoutStat(row, stats.left[i], "left", menu.loadoutstats, currentloadoutstats, maxloadoutstats, iscapship)
 				end
-
-				if id ~= "" then
-					local color = (maxloadoutstats[id] == 0) and Color["text_inactive"] or Color["text_normal"]
-					row[1]:createText(entry.name .. ((entry.unit ~= "") and (" (" .. entry.unit .. ")") or ""), { mouseOverText = entry.mouseovertext, color = color })
-					if loadoutstats[id] > currentloadoutstats[id] then
-						color = entry.inverted and (menu.usemacro and Color["text_normal"] or Color["text_negative"]) or Color["text_positive"]
-					elseif loadoutstats[id] < currentloadoutstats[id] then
-						color = entry.inverted and Color["text_positive"] or Color["text_negative"]
-					end
-					local value
-					if entry.type == "UINT" then
-						value = ConvertIntegerString(Helper.round(loadoutstats[id], 0), true, 0, true, false)
-					elseif (entry.type == "float") or (entry.type == "double") then
-						local int, frac = math.modf(Helper.floor(loadoutstats[id], entry.accuracy))
-						value = ConvertIntegerString(int, true, 0, true, false)
-						if entry.accuracy > 0 then
-							frac = Helper.round(math.abs(frac or 0) * (10 ^ entry.accuracy))
-							value = value .. ReadText(1001, 105) .. string.format("%0".. (entry.accuracy) .."d", frac)
-						end
-					end
-					row[2]:createText(value, { halign = "right", color = color })
-						local posChangeColor, negChangeColor
-						if entry.inverted then
-							if menu.usemacro then
-								posChangeColor = Color["statusbar_value_default"]
-							else
-								posChangeColor = Color["statusbar_diff_neg_default"]
-							end
-							negChangeColor = Color["statusbar_diff_pos_default"]
-						end
-					row[3]:createStatusBar({ current = loadoutstats[id], start = currentloadoutstats[id], max = maxloadoutstats[id], cellBGColor = Color["ship_stat_background"], posChangeColor = posChangeColor, negChangeColor = negChangeColor })
-				else
-					row[1]:createText("")
-				end
-				if i + numRows <= #stats then
-					local entry2 = stats[i + numRows]
-
-					local id2 = entry2.id
-					if entry2.capshipid ~= nil then
-						id2 = iscapship and entry2.capshipid or id2
-					end
-
-					if id2 ~= "" then
-						row[4]:createText(entry2.name .. ((entry2.unit ~= "") and (" (" .. entry2.unit .. ")") or ""))
-						local color = Color["text_normal"]
-						if loadoutstats[id2] > currentloadoutstats[id2] then
-							color = entry2.inverted and (menu.usemacro and Color["text_normal"] or Color["text_negative"]) or Color["text_positive"]
-						elseif loadoutstats[id2] < currentloadoutstats[id2] then
-							color = entry2.inverted and Color["text_positive"] or Color["text_negative"]
-						end
-						local value
-						if entry2.type == "UINT" then
-							value = ConvertIntegerString(Helper.round(loadoutstats[id2], 0), true, 0, true, false)
-						elseif (entry2.type == "float") or (entry2.type == "double") then
-							local int, frac = math.modf(Helper.floor(loadoutstats[id2], entry2.accuracy))
-							value = ConvertIntegerString(int, true, 0, true, false)
-							if entry2.accuracy > 0 then
-								frac = Helper.round(math.abs(frac or 0) * (10 ^ entry2.accuracy))
-								value = value .. ReadText(1001, 105) .. string.format("%0".. (entry2.accuracy) .."d", frac)
-							end
-						end
-						row[5]:createText(value, { halign = "right", color = color })
-						local posChangeColor, negChangeColor
-						if entry2.inverted then
-							if menu.usemacro then
-								posChangeColor = Color["statusbar_value_default"]
-							else
-								posChangeColor = Color["statusbar_diff_neg_default"]
-							end
-							negChangeColor = Color["statusbar_diff_pos_default"]
-						end
-						row[6]:createStatusBar({ current = loadoutstats[id2], start = currentloadoutstats[id2], max = maxloadoutstats[id2], cellBGColor = Color["ship_stat_background"], posChangeColor = posChangeColor, negChangeColor = negChangeColor })
-					else
-						row[4]:createText("")
-					end
+				if stats.right[i] then
+					menu.addLoadoutStat(row, stats.right[i], "right", menu.loadoutstats, currentloadoutstats, maxloadoutstats, iscapship)
 				end
 			end
 		end
@@ -8926,19 +9174,49 @@ function menu.displayStats(frame)
 		local row = ftable:addRow(nil, {  })
 		row[1]:setColSpan(6):createText(ReadText(1001, 8595), { font = Helper.headerRow1Font, fontsize = Helper.headerRow1FontSize, x = Helper.headerRow1Offsetx, y = Helper.headerRow1Offsety, halign = "left", titleColor = Color["row_title"] })
 
+		local macro = (menu.macro ~= "") and menu.macro or GetComponentData(ConvertStringToLuaID(tostring(menu.object)), "macro")
+		local shiptype, prestigename, weaponheatmodifier, shieldcapacitymodifier, shieldrechargedelaymodifier, shieldrechargeratemodifier, maxtraveldrivestabilityvalue, defaultmaxtraveldrivestabilityvalue = GetMacroData(macro, "shiptypename", "prestigename", "weaponheatmodifier", "shieldcapacitymodifier", "shieldrechargedelaymodifier", "shieldrechargeratemodifier", "maxtraveldrivestabilityvalue", "defaultmaxtraveldrivestabilityvalue")
+		shiptype = shiptype .. " - "
+
 		local row = ftable:addRow(nil, {  })
 		row[1]:createText(ReadText(1001, 9051))
-		local shiptype, prestigename = "", ""
-		if menu.object ~= 0 then
-			shiptype, prestigename = GetComponentData(ConvertStringToLuaID(tostring(menu.object)), "shiptypename", "prestigename")
-			shiptype = shiptype .. " - "
-		else
-			shiptype, prestigename = GetMacroData(menu.macro, "shiptypename", "prestigename")
-			shiptype = shiptype .. " - "
-		end
 		row[2]:setColSpan(2):createText(shiptype .. Helper.getClassText(menu.class), { halign = "right" })
 		row[4]:createText(ReadText(1001, 12920))
 		row[5]:setColSpan(2):createText(prestigename, { halign = "right" })
+
+		local row = ftable:addRow(nil, {  })
+		row[1]:createText(ReadText(1001, 8598))
+		row[2]:setColSpan(2):createText(menu.displayModifier(weaponheatmodifier), { halign = "right" })
+		if maxtraveldrivestabilityvalue ~= defaultmaxtraveldrivestabilityvalue then
+			row[4]:createText(ReadText(1001, 13227))
+			row[5]:setColSpan(2):createText((maxtraveldrivestabilityvalue < defaultmaxtraveldrivestabilityvalue) and ReadText(1001, 7736) or ReadText(1001, 7738), { halign = "right" })
+		end
+
+		local row
+		local newrow, coloffset = true, 0
+
+		local shieldprops = {
+			{ name = ReadText(1001, 8599),	value = shieldcapacitymodifier },
+			{ name = ReadText(1001, 13201),	value = shieldrechargedelaymodifier },
+			{ name = ReadText(1001, 13202),	value = shieldrechargeratemodifier },
+		}
+		for _, shieldprop in ipairs(shieldprops) do
+			if shieldprop.value ~= 1 and shieldprop.value ~= nil then
+				if newrow then
+					row = ftable:addRow(nil, {  })
+					newrow = false
+				end
+				row[1 + coloffset]:createText(shieldprop.name)
+				row[2 + coloffset]:setColSpan(2):createText(menu.displayModifier(shieldprop.value), { halign = "right" })
+				if coloffset > 0 then
+					newrow = true
+					coloffset = 0
+				else
+					coloffset = 3
+				end
+			end
+		end
+		
 
 		titletable.properties.y = Helper.viewHeight - titletable:getFullHeight() - Helper.borderSize - ftable:getVisibleHeight() - menu.statsData.offsetY
 		ftable.properties.y = titletable.properties.y + ftable.properties.y
@@ -8949,6 +9227,15 @@ function menu.displayStats(frame)
 	menu.statsTableOffsetY = titletable.properties.y
 
 	titletable:addConnection(2, 3)
+end
+
+function menu.displayModifier(value)
+	if value == 1 then
+		return ReadText(1001, 13203)
+	end
+	local text = (value > 1) and "+" or ""
+	text = text .. Helper.round((value - 1) * 100) .. " %"
+	return text
 end
 
 function menu.evaluateShipOptions()
@@ -8985,7 +9272,7 @@ function menu.evaluateShipOptions()
 					end
 				end
 				-- end: alexandretk call-back
-				
+
 				-- start: cpsdo call-back (ship options: override shiptypename)
 				if menu.uix_callbacks["cpsdo_evaluateShipOptions_override_shiptypename"] then
 					local shiptypename_override
@@ -9268,6 +9555,28 @@ function menu.displayMenu(firsttime)
 	menu.infoFrame:display()
 end
 
+function menu.displayEquipmentInfoFrame()
+	Helper.removeAllWidgetScripts(menu, config.equipmentInfoLayer)
+
+	menu.equipmentInfoFrame = Helper.createFrameHandle(menu, {
+		layer = config.equipmentInfoLayer,
+		standardButtons = {  },
+		width = Helper.scaleX(300) + 2 * Helper.standardContainerOffset,
+		x = menu.slotData.offsetX + menu.slotData.width + Helper.minorPanelSpacing,
+		y = menu.slotData.offsetY + menu.equipmentOffsetY,
+		autoFrameHeight = true,
+	})
+	menu.equipmentInfoFrame:setBackground("solid", {
+		color = Color["frame_background_semitransparent"]
+	})
+
+	if menu.equipmentData.mouse or menu.equipmentData.keyboard then
+		Helper.createEquipmentInfoContext(menu, menu.equipmentInfoFrame, menu.object, menu.macro, menu.upgradeplan)
+	end
+
+	menu.equipmentInfoFrame:display()
+end
+
 function menu.displayContextFrame(mode, width, x, y)
 	PlaySound("ui_positive_click")
 	menu.contextMode = { mode = mode, width = width, x = x, y = y }
@@ -9316,6 +9625,8 @@ function menu.createSlotContext()
 	local prefix = ""
 	if upgradetype.mergeslots then
 		prefix = #menu.slots[upgradetype.type] .. ReadText(1001, 42) .. " "
+	elseif menu.slots[upgradetype.type].mergedslotindices and menu.slots[upgradetype.type].mergedslotindices[menu.currentSlot] and (menu.slots[upgradetype.type].mergedslotcount > 1) then
+		prefix = menu.slots[upgradetype.type].mergedslotcount .. ReadText(1001, 42) .. " "
 	end
 
 	local hasmod, modicon = false, ""
@@ -9386,6 +9697,34 @@ function menu.createSlotContext()
 		end
 	end
 
+	local allowempty = upgradetype.allowempty
+	if upgradetype.supertype == "macro" then
+		allowempty = allowempty and (not C.IsSlotMandatory(menu.object, 0, menu.macro, false, upgradetype.type,  menu.contextData.slot))
+	end
+	if allowempty then
+		local name = ReadText(1001, 7906)
+
+		local mouseovertext = ""
+		if hasmod then
+			mouseovertext = ColorText["text_error"] .. ReadText(1026, 8009) .. "\27X"
+		end
+
+		local color = Color["text_normal"]
+		if ("" == slotdata.currentmacro) and ("" ~= plandata) then
+			color = Color["text_negative"]
+		elseif ("" == plandata) then
+			color = Color["text_positive"]
+		end
+
+		local row = ftable:addRow(true)
+		row[1]:createButton({ active = canequip and (not hasmod), bgColor = bgcolor, mouseOverText = mouseovertext, height = Helper.standardTextHeight, helpOverlayID = "upgrade_empty", helpOverlayText = " ", helpOverlayHighlightOnly = true }):setText(name, { color = color })
+		if (menu.upgradetypeMode == "enginegroup") or (menu.upgradetypeMode == "turretgroup") then
+			row[1].handlers.onClick = function () return menu.buttonSelectGroupUpgrade(upgradetype2.type, menu.currentSlot, "", nil, nil, row.index) end
+		else
+			row[1].handlers.onClick = function () return menu.buttonSelectUpgradeMacro(upgradetype.type, menu.contextData.slot, "", nil, nil, row.index) end
+		end
+	end
+
 	for k, macro in ipairs(slotdata.possiblemacros) do
 		local name = prefix .. GetMacroData(macro, "name")
 
@@ -9423,13 +9762,13 @@ function menu.createSlotContext()
 			local j = menu.findUpgradeMacro(upgradetype2.grouptype, macro)
 			if j then
 				local upgradeware = menu.upgradewares[upgradetype2.grouptype][j]
-					hasstock = upgradeware.isFromShipyard or ((slotdata.currentmacro == macro) and (slotdata.hasstock ~= false))
+				hasstock = upgradeware.isFromShipyard or ((slotdata.currentmacro == macro) and (slotdata.hasstock ~= false))
 			end
 		else
 			local j = menu.findUpgradeMacro(upgradetype.type, macro)
 			if j then
 				local upgradeware = menu.upgradewares[upgradetype.type][j]
-					hasstock = upgradeware.isFromShipyard or ((slotdata.currentmacro == macro) and (slotdata.hasstock ~= false))
+				hasstock = upgradeware.isFromShipyard or ((slotdata.currentmacro == macro) and (slotdata.hasstock ~= false))
 			end
 		end
 
@@ -9445,34 +9784,6 @@ function menu.createSlotContext()
 			else
 				row[1].handlers.onClick = function () return menu.buttonSelectUpgradeMacro(upgradetype.type, menu.contextData.slot, macro, nil, nil, row.index) end
 			end
-		end
-	end
-
-	local allowempty = upgradetype.allowempty
-	if upgradetype.supertype == "macro" then
-		allowempty = allowempty and (not C.IsSlotMandatory(menu.object, 0, menu.macro, false, upgradetype.type,  menu.contextData.slot))
-	end
-	if allowempty then
-		local name = ReadText(1001, 7906)
-
-		local mouseovertext = ""
-		if hasmod then
-			mouseovertext = ColorText["text_error"] .. ReadText(1026, 8009) .. "\27X"
-		end
-
-		local color = Color["text_normal"]
-		if ("" == slotdata.currentmacro) and ("" ~= plandata) then
-			color = Color["text_negative"]
-		elseif ("" == plandata) then
-			color = Color["text_positive"]
-		end
-
-		local row = ftable:addRow(true)
-		row[1]:createButton({ active = canequip and (not hasmod), bgColor = bgcolor, mouseOverText = mouseovertext, height = Helper.standardTextHeight, helpOverlayID = "upgrade_empty", helpOverlayText = " ", helpOverlayHighlightOnly = true }):setText(name, { color = color })
-		if (menu.upgradetypeMode == "enginegroup") or (menu.upgradetypeMode == "turretgroup") then
-			row[1].handlers.onClick = function () return menu.buttonSelectGroupUpgrade(upgradetype2.type, menu.currentSlot, "", nil, nil, row.index) end
-		else
-			row[1].handlers.onClick = function () return menu.buttonSelectUpgradeMacro(upgradetype.type, menu.contextData.slot, "", nil, nil, row.index) end
 		end
 	end
 
@@ -9791,6 +10102,7 @@ function menu.onUpdate()
 		local rendertargetTexture = GetRenderTargetTexture(menu.map)
 		if rendertargetTexture then
 			menu.holomap = C.AddHoloMap(rendertargetTexture, renderX0, renderX1, renderY0, renderY1, menu.mapData.width / menu.mapData.height, 1)
+			C.SetMapFocus(menu.holomap, false)
 			if (menu.usemacro and (menu.macro ~= "")) or (((menu.mode == "upgrade") or (menu.mode == "modify")) and (menu.object ~= 0)) then
 				if menu.holomap and (menu.holomap ~= 0) then
 					menu.currentIdx = menu.currentIdx + 1
@@ -9809,6 +10121,7 @@ function menu.onUpdate()
 				end
 			end
 
+			menu.updateInputBar()
 			menu.activatemap = false
 		end
 	end
@@ -9848,7 +10161,8 @@ function menu.onUpdate()
 		return
 	end
 
-	local refresh, newdatarefresh = false, false
+	local refresh, newdatarefresh = menu.refresh, false
+	menu.refresh = nil
 
 	-- update player money
 	if menu.updateMoney and (menu.updateMoney + 1 < curtime) then
@@ -9889,17 +10203,67 @@ function menu.onUpdate()
 end
 
 function menu.onRowChanged(row, rowdata, uitable)
-	if menu.mode == "modify" then
-		if uitable == menu.slottable then
+	if uitable == menu.slottable then
+		if menu.mode == "modify" then
 			if type(rowdata) == "table" then
 				menu.currentSlot = rowdata[1]
 				menu.selectMapMacroSlot()
+			end
+		else
+			if (type(rowdata) == "table") and rowdata.software then
+				local curdata = menu.equipmentData.keyboard
+				local newdata = menu.equipmentMacroData[row * 1000 + 1]
+				if ((curdata == nil) ~= (newdata == nil)) or (curdata and newdata and (curdata.software ~= newdata.software)) then
+					menu.equipmentData.keyboard = newdata
+					menu.displayEquipmentInfoFrame()
+				end
+			else
+				if (menu.equipmentData.mouse == nil) and menu.equipmentData.keyboard then
+					menu.equipmentData.keyboard = nil
+					menu.displayEquipmentInfoFrame()
+				end
 			end
 		end
 	end
 end
 
 function menu.onSelectElement()
+end
+
+function menu.onButtonOver(uitable, row, col, button, input)
+	if menu.mode ~= "modify" then
+		if uitable == menu.slottable then
+			if row then
+				local curdata = menu.equipmentData[input]
+				local newdata = menu.equipmentMacroData[row * 1000 + col]
+				if ((curdata == nil) ~= (newdata == nil)) or (curdata and newdata and (curdata.macro ~= newdata.macro)) then
+					menu.equipmentData[input] = newdata
+					menu.displayEquipmentInfoFrame()
+				end
+			end
+		end
+	end
+end
+
+function menu.onButtonOut(uitable, row, col, button, input)
+	if menu.mode ~= "modify" then
+		if uitable == menu.slottable then
+			if row then
+				menu.equipmentData.mouse = nil
+				menu.displayEquipmentInfoFrame()
+			end
+		end
+	end
+end
+
+function menu.onInteractiveElementChanged(element)
+	if (element ~= menu.slottable) and (element ~= menu.contexttable) then
+		if menu.equipmentData.mouse or menu.equipmentData.keyboard then
+			menu.equipmentData.mouse = nil
+			menu.equipmentData.keyboard = nil
+			menu.displayEquipmentInfoFrame()
+		end
+	end
 end
 
 -- rendertarget selections
@@ -10012,7 +10376,19 @@ function menu.selectMapMacroSlot()
 				if upgradetype.mergeslots then
 					C.SetSelectedMapMacroSlot(menu.holomap, menu.object, 0, menu.macro, false, menu.upgradetypeMode, 0)
 				else
-					C.SetSelectedMapMacroSlot(menu.holomap, menu.object, 0, menu.macro, false, menu.upgradetypeMode, menu.currentSlot)
+					local mergedslotindices = menu.slots[upgradetype.type].mergedslotindices
+					local mergedslotcount = menu.slots[upgradetype.type].mergedslotcount
+					if upgradetype.mergecompatibilities and mergedslotindices and mergedslotindices[menu.currentSlot] then
+						local slots = ffi.new("size_t[?]", mergedslotcount)
+						local i = 0
+						for index in pairs(mergedslotindices) do
+							slots[i] = index
+							i = i + 1
+						end
+						C.SetSelectedMapMacroSlots(menu.holomap, menu.object, 0, menu.macro, false, menu.upgradetypeMode, slots, mergedslotcount)
+					else
+						C.SetSelectedMapMacroSlot(menu.holomap, menu.object, 0, menu.macro, false, menu.upgradetypeMode, menu.currentSlot)
+					end
 				end
 			else
 				C.ClearSelectedMapMacroSlots(menu.holomap)
@@ -10098,13 +10474,15 @@ function menu.onTableRightMouseClick(uitable, row, posx, posy)
 		if uitable == menu.slottable then
 			if type(rowdata) == "table" then
 				menu.selectedUpgrade = rowdata
-				local x, y = GetLocalMousePosition()
-				if x == nil then
-					-- gamepad case
-					x = posx
-					y = -posy
+				if C.IsStoryFeatureUnlocked("x4ep1_encyclopedia") then
+					local x, y = GetLocalMousePosition()
+					if x == nil then
+						-- gamepad case
+						x = posx
+						y = -posy
+					end
+					menu.displayContextFrame("equipment", Helper.scaleX(200), x + Helper.viewWidth / 2, Helper.viewHeight / 2 - y)
 				end
-				menu.displayContextFrame("equipment", Helper.scaleX(200), x + Helper.viewWidth / 2, Helper.viewHeight / 2 - y)
 			end
 		end
 	end
@@ -10435,9 +10813,36 @@ function menu.prepareComponentUpgradeSlots(object, slots, ammo, software, change
 			slots[upgradetype.type] = {}
 			-- and for all slots in the object,
 			for j = 1, tonumber(C.GetNumUpgradeSlots(object, "", upgradetype.type)) do
+				local compatibilities
+				local n = C.GetNumSlotCompatibilities(object, 0, "", false, upgradetype.type, j)
+				if n > 0 then
+					compatibilities = {}
+					local buf = ffi.new("EquipmentCompatibilityInfo[?]", n)
+					n = C.GetSlotCompatibilities(buf, n, object, 0, "", false, upgradetype.type, j)
+					for j = 0, n - 1 do
+						compatibilities[ffi.string(buf[j].tag)] = ffi.string(buf[j].name)
+					end
+				end
+
+				if upgradetype.mergecompatibilities and (type(compatibilities) == "table") then
+					for compatibility in pairs(upgradetype.mergecompatibilities) do
+						if compatibilities[compatibility] then
+							if slots[upgradetype.type].mergedslotindices then
+								slots[upgradetype.type].mergedslotindices[j] = true
+								slots[upgradetype.type].mergedslotcount = slots[upgradetype.type].mergedslotcount + 1
+							else
+								compatibilities = { [compatibility] = compatibilities[compatibility] }
+								slots[upgradetype.type].mergedslotindices = { [j] = true }
+								slots[upgradetype.type].mergedslotcount = 1
+							end
+							break
+						end
+					end
+				end
+
 				local groupinfo = C.GetUpgradeSlotGroup(object, "", upgradetype.type, j)
 				if upgradetype.pseudogroup or ((ffi.string(groupinfo.path) == "..") and (ffi.string(groupinfo.group) == "")) then
-					slots[upgradetype.type][j] = { currentmacro = ffi.string(C.GetUpgradeSlotCurrentMacro(object, 0, upgradetype.type, j)), possiblemacros = {}, component = nil }
+					slots[upgradetype.type][j] = { currentmacro = ffi.string(C.GetUpgradeSlotCurrentMacro(object, 0, upgradetype.type, j)), possiblemacros = {}, component = nil, compatibilities = compatibilities }
 					if changeupgradeplan then
 						local macro = slots[upgradetype.type][j].currentmacro
 						local checkforeignmacro
@@ -10457,7 +10862,7 @@ function menu.prepareComponentUpgradeSlots(object, slots, ammo, software, change
 						menu.upgradeplan[upgradetype.type][j] = { macro = macro, ammomacro = "", weaponmode = "", checkforeignmacro = checkforeignmacro }
 					end
 				else
-					slots[upgradetype.type][j] = { currentmacro = "", possiblemacros = {}, component = nil }
+					slots[upgradetype.type][j] = { currentmacro = "", possiblemacros = {}, component = nil, compatibilities = compatibilities }
 					if changeupgradeplan then
 						menu.upgradeplan[upgradetype.type][j] = { macro = "", ammomacro = "", weaponmode = "" }
 					end
@@ -10669,8 +11074,35 @@ function menu.prepareMacroUpgradeSlots(macro)
 		if upgradetype.supertype == "macro" then
 			menu.slots[upgradetype.type] = {}
 			for j = 1, tonumber(C.GetNumUpgradeSlots(0, macro, upgradetype.type)) do
+				local compatibilities
+				local n = C.GetNumSlotCompatibilities(0, 0, macro, false, upgradetype.type, j)
+				if n > 0 then
+					compatibilities = {}
+					local buf = ffi.new("EquipmentCompatibilityInfo[?]", n)
+					n = C.GetSlotCompatibilities(buf, n, 0, 0, macro, false, upgradetype.type, j)
+					for j = 0, n - 1 do
+						compatibilities[ffi.string(buf[j].tag)] = ffi.string(buf[j].name)
+					end
+				end
+
+				if upgradetype.mergecompatibilities and (type(compatibilities) == "table") then
+					for compatibility in pairs(upgradetype.mergecompatibilities) do
+						if compatibilities[compatibility] then
+							if menu.slots[upgradetype.type].mergedslotindices then
+								menu.slots[upgradetype.type].mergedslotindices[j] = true
+								menu.slots[upgradetype.type].mergedslotcount = menu.slots[upgradetype.type].mergedslotcount + 1
+							else
+								compatibilities = { [compatibility] = compatibilities[compatibility] }
+								menu.slots[upgradetype.type].mergedslotindices = { [j] = true }
+								menu.slots[upgradetype.type].mergedslotcount = 1
+							end
+							break
+						end
+					end
+				end
+
 				-- convert index from lua to C-style
-				menu.slots[upgradetype.type][j] = { currentmacro = "", possiblemacros = {} }
+				menu.slots[upgradetype.type][j] = { currentmacro = "", possiblemacros = {}, compatibilities = compatibilities }
 				menu.upgradeplan[upgradetype.type][j] = { macro = "", ammomacro = "", weaponmode = "" }
 			end
 		elseif upgradetype.supertype == "ammo" then
@@ -11237,6 +11669,17 @@ function menu.upgradeSettingsVersion()
 	__CORE_DETAILMONITOR_SHIPBUILD.version = config.persistentdataversion
 end
 
+function menu.onInputModeChanged(_, mode)
+	menu.updateInputBar()
+end
+
+function menu.updateInputBar()
+	local inputs = config.inputBarStates["mouse"]
+	if GetControllerInfo() == "gamepad" then
+		inputs = config.inputBarStates["controller"]
+	end
+	Helper.updateInputBar(menu, inputs.left, inputs.right)
+end
 
 -- kuertee start:
 menu.uix_callbackCount = 0

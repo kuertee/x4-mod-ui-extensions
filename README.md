@@ -6,9 +6,17 @@ Contributors: AlexandreTK, ChemODun, Damonya, DrWhoKnows, DmytroK, Erixon, Farem
 
 Updates
 =======
-v8.0.4.6, 11 June 2026:
-- New feature: hierarchical sub-groups in the Interact Menu (available via Lua/MD) by ChemODun.
-- Bug-fix: Diplomacy and PlayerInfo Menu: Bug-fix to potential crashes by ChemODun.
+v9.0.0.1, 11 Jun 2026:
+- Compatibility: 9.0.
+
+Changes from the last v8.0.4.3, 06 Apr 2025 version that were released in previous 9.0 betas:
+- New feature: Callbacks for sticeIO's mod/s.
+- Tweaks: Callbacks for IALuir's mod/s.
+- New feature: Map Menu > Property Owned > Sort by Weapons. The Properties Owned list can be sorted by objects' damage-per-second value. This is the same sort type used in the Multi-rename feature when.
+- New feature: Boarding Menu: Set-up "All" ships entry that propagates its settings to all attacking ships.
+- New feature: hierarchical sub-groups in the Interact Menu (available via Lua/MD) by ChemODun. More details in the "Add Nested Sub-Groups*" and "Add a Custom Root Section*" sections.
+- New feature: Map Menu > Properties Owned > Deployables: The list of deployables are grouped by name that can be expanded and collapsed.
+- New feature: Map Menu > Information > Full Crew List: The list of people on board can be expanded and collapsed.
 
 NOTES FOR PLAYERS:
 ==================
@@ -20,7 +28,7 @@ NOTES FOR MOD DEVELOPERS:
 1. PROTECTED UI MODE: Mods that use UI Extensions will need the Protected UI Mode setting in the Extensions menu disabled.
 2. LOADING CUSTOM LUAS: ModSupportAPIs' `Lua_Loader` (and in extension its `<raise_lua_event name="'Lua_Loader.Load'" param="'X'"/>)` no longer function.
 3. UI.XML FILE: To load custom lua files, use ui.xml as described here: https://wiki.egosoft.com:1337/X%20Rebirth%20Wiki/Modding%20support/UI%20Modding%20support/Getting%20started%20guide/
-   - Note that guideline is for X Rebirth. But its use in X4 is similar.[/li]
+   - Note that guideline is for X Rebirth. But its use in X4 is similar.
    - Here is the extensions\kuertee_alternatives_to_death\ui.xml file for my mod Alternatives To Death:
    ```xml
    <?xml version="1.0" encoding="UTF-8"?>
@@ -41,7 +49,7 @@ Instructions for players
 - Disable Protected UI Mode in the Settings > Extensions menu.
 - Install UI Extensions as normal.
 - When extracting the package from github, ensure that the folder you install the mod to is: "(X4 game)/extensions/kuertee_ui_extensions/". Extracting the package from Nexus Mods will extract it to "(X4 game)/extensions/kuertee_ui_extensions/". But be sure it does anyway.
-- Read the CHANGES BUILT INTO THIS MOD (for players) section.
+- Read the "CHANGES BUILT INTO THIS MOD (for players)" section.
 
 Instructions for developers
 ===========================
@@ -131,18 +139,30 @@ But here is documentation on NEW features (not connected to mod-specific changes
 CHANGES BUILT INTO THIS MOD (for players)
 =========================================
 
+Map Menu: Boarding Menu: Ship assignment tweaks
+===============================================
+Ensure that subordinates of selected ships acquire their immediate commander's boarding behaviour. In the base-game, when selecting ships, e.g. SHIP A, with subordinates AND those ships' fleet commander (i.e. THE COMMANDER of SHIP A) the subordinates of SHIP A sometimes acquired THE COMMANDER's behaviour (e.g. Maintain Distance) instead of SHIP A's behaviour (e.g. Target Turrets). This tweak allows the player to select wings of a fleet for separate boarding behaviour assignments without needing each wing to be in separate fleets. Note: also check out Kuda's new boarding behaviour changes (https://www.nexusmods.com/x4foundations/mods/839). e.g.: ships on attack orders during boarding operations now stop their attack minimising the chance of the boarding target getting destroyed.
+
+Map Menu: Boarding Menu: "All" ships set-up
+===========================================
+Set-up "All" ships entry that propagates its settings to all attacking ships.
+
 Map Menu: Distance tool
 =======================
 - Click on an object or a position on the map or on a list.
 - Right-click on another object or another position on the map.
 - The distance or the number jumps between the two points will be listed.
 
-Map Menu: Mission lists
-=======================
-Mission lists have an "open all/close all" button.
+Map Menu: Information: Full Crew List
+=====================================
+The list of people on board can be expanded and collapsed.
 
-Map Menu: Multi-rename
-======================
+Map Menu: Interact Menu: Center On Map / Destination
+====================================================
+Right-click on an object and click on Center On Map to center the object on the map without changing your selected objects. This is usable on sectors. When used on a gate, the Center On Destination action centers the gate's destination. (Based on Brinnie's mod request: https://forum.egosoft.com/viewtopic.php?t=471439&sid=a3f501f4bd3cc9a74a01dd4eb5107998.)
+
+Map Menu: Interact Menu: Multi-rename
+=====================================
 Note: Like the base game's single-rename function, confirming a blank entry will to revert an object's name to its default name.
 
 When renaming multiple objects, these special texts in the name will be replaced with the listed value.
@@ -154,23 +174,30 @@ Examples:
 - "Red $i" will name all the objects "Red X" in which X is the object's order in the list.
 - "$name $i" will add the object's order in the list to the object's current name.
 
-Map Menu: Sort by distance
-==========================
-The Player Owned list can be sorted by distance from the player or from the last selected object.
-Note that Egosoft's sorting icons (the up and down arrows) signify direction of the list NOT ascending descending orders.
-E.g. The down arrow actually sorts the list in ascending order. The list is sorted from least to greatest.
+Map Menu: Mission Offers / Mission Manager
+==========================================
+Mission lists have an "open all/close all" button.
 
-Map Menu: Mission Guidance tab
-==============================
+Map Menu: Mission Manager > Guidance Missions
+=============================================
 Any mission with the "missiontype.guidance" will now be listed in the Mission Guidance tab.
 In the base game, the Mission Guidance tab lists only the Guidance created manually with the right-click mouse button. 
 
 The "Set to inactive" and "Set to active" buttons are available on missions listed in the Mission Guidance tab.
 The base game makes these buttons unavailable for Guidance Missions.
 
-Map Menu: Center On Map / Destination
-=====================================
-Right-click on an object and click on Center On Map to center the object on the map without changing your selected objects. This is usable on sectors. When used on a gate, the Center On Destination action centers the gate's destination. (Based on Brinnie's mod request: https://forum.egosoft.com/viewtopic.php?t=471439&sid=a3f501f4bd3cc9a74a01dd4eb5107998.)
+Map Menu: Properties Owned > Deployables
+========================================
+The list of deployables are grouped by name that can be expanded and collapsed.
+
+Map Menu: Sort by Weapons
+=========================
+The Properties Owned list can be sorted by the objects' damage-per-second value.
+This is the same sort type used in the Multi-rename feature.
+
+Map Menu: Sort by Distance
+==========================
+The Properties Owned list can be sorted by distance from the player or from the last selected object.
 
 Map Menu: Zoom Function Tweaks
 ==============================
@@ -184,25 +211,11 @@ Map Menu: Zoom Function Tweaks
   - "sector view" that always shows the icons of major object,
   - and a "local cluster view".
 
-Boarding Menu: Ship assignment tweaks
-=====================================
-Ensure that subordinates of selected ships acquire their immediate commander's boarding behaviour. In the base-game, when selecting ships, e.g. SHIP A, with subordinates AND those ships' fleet commander, e.g. THE COMMANDER of SHIP A, the subordinates of SHIP A sometimes acquired THE COMMANDER's behaviour (e.g. Maintain Distance) instead of SHIP A's behaviour (e.g. Target Turrets). This tweak allows the player to select wings of a fleet for separate boarding behaviour assignments without needing each wing to be in separate fleets. Note: also check out Kuda's new boarding behaviour changes (https://www.nexusmods.com/x4foundations/mods/839). e.g.: ships on attack orders during boarding operations now stop their attack minimising the chance of the boarding target getting destroyed.
-
 CHANGES BUILT INTO THIS MOD (for developers)
 ============================================
 
-Map Menu: selectComponent mode
-==============================
-The selectComponent mode is now available to use from directly within the Map Menu. In the base game, the use of this mode is limited to conversations triggered from the Mission Director (md). E.g. `<open_conversation_menu menu="MapMenu" param="[0, 0, true, player.entity, null, 'selectComponent', ['kTFTR_set_destination', [class.ship_s, class.ship_m, class.ship_l, class.ship_xl, class.station]]]" />`. Which then triggers an "event_conversation_next_section" with the menu.modeparam[1] as the section of the conversation. In this version, this mode can be called directly from the Map Menu.
-
-To use:
-1. Call "mapMenu.setSelectComponentMode (returnsection, classlist, category, playerowned, customheading, screenname)"
-2. The parameters are described at the top of the base game's menu_map.lua file. They are described in more detail at the top of UIX's kuertee_menu_map.lua file.
-3. To trigger an "AddUITriggeredEvent" after the player selects an object, set screenname in the mapMenu.setSelectComponentMode call.
-4. To disable the default "event_conversation_next_section" after the player selects an object, set returnsection to nil in the mapMenu.setSelectComponentMode call.
-
-Add Custom Actions/Orders Group to the Interact Menu (via MD)
-=============================================================
+Interact Menu: Add Custom Actions/Orders Group (via MD)
+=======================================================
 1. At `<event_ui_triggered screen="'Interact_Menu_API'" control="'reloaded'" />`, add the Custom Actions/Orders below.
 2. Add the new Custom Actions/Orders Group Id `<raise_lua_event name="'Interact_Menu_API.Add_Custom_Actions_Group_Id'" param="'my_custom_actions_group_id'" />`
 3. Add the new Custom Actions/Orders Group Name `<raise_lua_event name="'Interact_Menu_API.Add_Custom_Actions_Group_Text'" param="'My Custom Actions/Orders Group'" />`
@@ -327,6 +340,16 @@ end
 init()
 ```
 
+Map Menu: selectComponent mode
+==============================
+The selectComponent mode is now available to use from directly within the Map Menu. In the base game, the use of this mode is limited to conversations triggered from the Mission Director (md). E.g. `<open_conversation_menu menu="MapMenu" param="[0, 0, true, player.entity, null, 'selectComponent', ['kTFTR_set_destination', [class.ship_s, class.ship_m, class.ship_l, class.ship_xl, class.station]]]" />`. Which then triggers an "event_conversation_next_section" with the menu.modeparam[1] as the section of the conversation. In this version, this mode can be called directly from the Map Menu.
+
+To use:
+1. Call "mapMenu.setSelectComponentMode (returnsection, classlist, category, playerowned, customheading, screenname)"
+2. The parameters are described at the top of the base game's menu_map.lua file. They are described in more detail at the top of UIX's kuertee_menu_map.lua file.
+3. To trigger an "AddUITriggeredEvent" after the player selects an object, set screenname in the mapMenu.setSelectComponentMode call.
+4. To disable the default "event_conversation_next_section" after the player selects an object, set returnsection to nil in the mapMenu.setSelectComponentMode call.
+
 Install
 =======
 - Unzip to 'X4 Foundations/extensions/kuertee_ui_extensions/'.
@@ -350,11 +373,61 @@ French localisation by Calvitix.
 
 History
 =======
-v8.0.4.5, 10 May 2026:
-- New feature: New callbacks by ChemOdun.
+v9.0.0.0.12.4, 5 Jun 2026:
+- Compatibility: 9.0 RC 4 UI files merged. Thanks, ChemODun!
 
-v8.0.4.4, 1 May 2025:
-- New feature: Expand/collapse deployables by name.
+v9.0.0.0.12.1, 28 May 2026:
+- Bug-fix: Map Menu: Selecting multiple objects caused the map to continually refresh.
+
+v9.0.0.0.12, 28 May 2026:
+- Compatibility: 9.0 RC 1 UI files merged. Thanks, ChemODun!
+- New feature: Callbacks for sticeIO's mod/s.
+- Tweaks: Callbacks for IALuir's mod/s.
+- New feature: Map Menu > Property Owned > Sort by Weapons. The Properties Owned list can be sorted by objects' damage-per-second value. This is the same sort type used in the Multi-rename feature when.
+- Bug-fix: Map Menu: Breaks when a selected object becomes invalid. E.g. when collecting a deployable after deactivating it.
+
+v9.0.0.0.11.1, 22 May 2026:
+- Bug-fix: Ship Configuration Menu: merge of new base UI file removed all mod callbacks.
+
+v9.0.0.0.11, 21 May 2026:
+- Compatibility: Update to 9.0 beta 11 of the base lua files.
+- New feature: Boarding Menu: Set-up "All" ships entry that propagates its settings to all attacking ships.
+- Bug-fix: Map Menu: The UI breaks when the "Sort by distance to object" is active then the object becomes invalid. E.g. after collecting a deployable.
+
+v9.0.0.0.10, 13 May 2026:
+- Compatibility: Update to 9.0 beta 10 of the base lua files.
+- New feature: hierarchical sub-groups in the Interact Menu (available via Lua/MD) by ChemODun. More details in the "Add Nested Sub-Groups*" and "Add a Custom Root Section*" sections.
+- Bug-fix: Diplomacy Menu: Bug-fix to potential crashes by ChemODun.
+
+v9.0.0.0.8.6, 10 May 2026:
+- New feature: New callbacks by ChemODun.
+
+v9.0.0.0.8.5, 7 May 2026:
+- Compatibility: Update to 9.0 beta 9 of the base lua files.
+- Bug-fix: Map Menu > Information menu: missing "row" parameter after a custom callback function.
+- Bug-fix: Doh! I Forgot to pack the fixed files for the two bug fixes below (from the previous update) into the subst files. Sorry, my bad.
+- Bug-fix: UIX's sort by distance from object breaks the objects list sometimes. Fixed by ChemODun. Thanks!
+- Bug-fix: Another bug in Map > Mission Offers / Mission Manager: If there were no missions in a mission type, the menu would break.
+
+v9.0.0.0.8.3, 5 May 2026:
+- Bug-fix: Map > Mission Offers / Mission Manager: If there were no missions in a mission type, the menu would break.
+- Bug-fix: Map > Mission Offers / Mission Manager: The internal list of variables for the expanded/collapsed flags for missions were not getting cleaned-up properly.
+
+v9.0.0.0.8.2, 5 May 2026:
+- Bug-fix: Missing calback in the Map > Property Owned menu that prevent mods that use that callback from working. Fix by ChemODun.
+- Bug-fix: Bug in the Diplomacy menu that incorrectly sent nil data to callback functions. Fix by ChemODun.
+- Bug-fix: Bug in the Map > Information menu that sent incorrect data to a callback function. Fix by DrWhoKnows.
+
+v9.0.0.0.8, 4 May 2026:
+- Tweak: Multi-rename now adds leading zeroes to the "$i" portion of the objects name. Previously, it used raw text numbers preventing the ship from getting sorted propertly.
+- New feature: Map Menu > Properties Owned > Deployables: The list of deployables are grouped by name that can be expanded and collapsed.
+- New feature: Map Menu > Information > Full Crew List: The list of people on board can be expanded and collapsed.
+- Bug-fix: Multi-rename feature was missing from the Interact Menu.
+- Bug-fix: Missing callbacks in the Game Options menu that prevented mods like Grouped Saved Files from working.
+- Bug-fix: Possible bug in the Ship Configuration menu that might have prevented mods like Mycu's Equipment Tooltips from working.
+- Bug-fix: Missing callbacks in the Player Information menu that prevented mods like Social Standing And Citizenships from working.
+- Bug-fix: Missing callbacks in the Diplomacy menu that prevented mods like Reputations And Professions from working.
+- Bug-fix: Bug in the Map > Manage Plots menu that prevented mods that allow very large plot sizes (e.g. Star Wars Interworlds) from working. Note: The last working version of Star Wars Interworlds is not yet compatible with the 9.0 beta.
 
 v8.0.4.3, 06 Apr 2025:
 - New feature: new callbacks by ChemOdun.

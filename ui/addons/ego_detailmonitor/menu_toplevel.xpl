@@ -1,4 +1,4 @@
--- ffi setup
+﻿-- ffi setup
 local ffi = require("ffi")
 local C = ffi.C
 ffi.cdef[[
@@ -124,6 +124,7 @@ function menu.createInfoFrame()
 		y = Helper.scaleY(config.offsetY),
 		layer = config.layer,
 		startAnimation = false,
+		blurBackground = false,
 		playerControls = true,
 		-- kuertee custom HUD start:
 		-- useMiniWidgetSystem = (not menu.showTabs) and (not menu.over),
@@ -140,7 +141,7 @@ function menu.createInfoFrame()
 		x = Helper.borderSize,
 		y = Helper.borderSize,
 	}
-
+	
 	if menu.showTabs then
 		if not menu.hasRegistered then
 			menu.hasRegistered = true

@@ -1,4 +1,4 @@
-
+﻿
 -- param == { 0, 0, mode, modeparam }
 -- modes: - "hackpanel",			param: { panelcomponent, panelconnection, paneltype }
 --		  - "abortupgrade",			param: { container, task, price }
@@ -303,7 +303,7 @@ function menu.createTable(frame, tableProperties)
 
 		local row = ftable:addRow(false, { fixed = true })
 		row[1]:setColSpan(numCols):createText(ReadText(1001, 9702) .. ReadText(1001, 120))
-
+		
 		local row = ftable:addRow(false, { fixed = true })
 		row[1]:setColSpan(numCols):createText(ffi.string(C.GetControlPanelName(menu.hacktarget)))
 	elseif menu.mode == "abortupgrade" then

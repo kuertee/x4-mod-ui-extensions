@@ -1,4 +1,4 @@
--- param == { 0, 0 }
+﻿-- param == { 0, 0 }
 
 -- modes:
 
@@ -75,7 +75,6 @@ ffi.cdef[[
 	uint32_t GetAllSatellites(AmmoData* result, uint32_t resultlen, UniverseID defensibleid);
 	double GetBuildProcessorEstimatedTimeLeft(UniverseID buildprocessorid);
 	uint32_t GetBuildTasks(BuildTaskInfo* result, uint32_t resultlen, UniverseID containerid, UniverseID buildmoduleid, bool isinprogress, bool includeupgrade);
-	const char* GetComponentName(UniverseID componentid);
 	UniverseID GetContextByClass(UniverseID componentid, const char* classname, bool includeself);
 	const char* GetCurrentAmmoOfWeapon(UniverseID weaponid);
 	const char* GetCurrentDroneMode(UniverseID defensibleid, const char* dronetype);
@@ -177,7 +176,7 @@ local config = {
 		{ id = "lasertower",	type = "military",	getnum = C.GetNumAllLaserTowers,	getdata = C.GetAllLaserTowers,		callback = C.LaunchLaserTower },
 		{ id = "mine",			type = "military",	getnum = C.GetNumAllMines,			getdata = C.GetAllMines,			callback = C.LaunchMine },
 	},
-	inactiveButtonProperties = { bgColor = Color["button_background_inactive"], highlightColor = Color["button_highlight_inactive"] },
+	inactiveButtonProperties = { bgColor = Color["button_background_inactive"], highlightColor = Color["button_highlight_inactive"], borderColor = Color["button_border_inactive"] },
 	activeButtonTextProperties = { halign = "center" },
 	inactiveButtonTextProperties = { halign = "center", color = Color["text_inactive"] },
 	dronetypes = {
@@ -206,6 +205,8 @@ local function init()
 	registerForEvent("gameplanchange", getElement("Scene.UIContract"), menu.onGamePlanChange)
 	RegisterEvent("conversationCancelled", menu.onConvEnds)
 	RegisterEvent("conversationFinished", menu.onConvEnds)
+	RegisterEvent("cinematic_camera_deactivated", menu.checkActivation)
+	RegisterEvent("coverabilitychanged", menu.onCoverAbilityChanged)
 
 	-- kuertee start:
 	menu.init_kuertee()
@@ -238,11 +239,21 @@ end
 
 function menu.onConvEnds()
 	if not Helper.hasConversationReturnHandler then
-		local controlpost = ffi.string(C.GetPlayerCurrentControlGroup())
-		local occupiedship = ConvertStringTo64Bit(tostring(C.GetPlayerOccupiedShipID()))
-		if ((occupiedship ~= 0) and GetComponentData(occupiedship, "isdocked")) or ((controlpost ~= "") and (controlpost ~= "pilotcontrol")) then
-			OpenMenu("DockedMenu", { 0, 0 }, nil)
-		end
+		menu.checkActivation()
+	end
+end
+
+function menu.checkActivation()
+	local controlpost = ffi.string(C.GetPlayerCurrentControlGroup())
+	local occupiedship = ConvertStringTo64Bit(tostring(C.GetPlayerOccupiedShipID()))
+	if ((occupiedship ~= 0) and GetComponentData(occupiedship, "isdocked")) or ((controlpost ~= "") and (controlpost ~= "pilotcontrol")) then
+		OpenMenu("DockedMenu", { 0, 0 }, nil)
+	end
+end
+
+function menu.onCoverAbilityChanged()
+	if menu.shown then
+		menu.refresh = getElapsedTime() - 1
 	end
 end
 
@@ -342,12 +353,19 @@ function menu.display()
 	local xoffset = 0
 	local yoffset = 0
 
-	menu.frame = Helper.createFrameHandle(menu, { width = width, x = xoffset, y = yoffset, standardButtons = (((menu.mode == "docked") and (menu.currentplayership ~= 0)) or menu.secondarycontrolpost) and {} or { close = true, back = true }, showTickerPermanently = true })
+	menu.frame = Helper.createFrameHandle(menu, {
+		width = width,
+		x = xoffset,
+		y = yoffset,
+		standardButtons = (((menu.mode == "docked") and (menu.currentplayership ~= 0)) or menu.secondarycontrolpost) and {} or { close = true, back = true },
+		showTickerPermanently = true,
+		blurBackground = false,
+	})
 	menu.frame:setBackground("solid", { color = Color["frame_background_semitransparent"] })
 
 	menu.createTopLevel(menu.frame)
 
-	local table_topleft, table_header, table_button, row
+	local table_header, table_button, row
 
 	local isdocked = (menu.currentplayership ~= 0) and GetComponentData(menu.currentplayership, "isdocked")
 	local ownericon, owner, shiptrader, isdock, canbuildships, isplayerowned, issupplyship, canhavetradeoffers, aipilot = GetComponentData(menu.currentcontainer, "ownericon", "owner", "shiptrader", "isdock", "canbuildships", "isplayerowned", "issupplyship", "canhavetradeoffers", "aipilot")
@@ -385,17 +403,9 @@ function menu.display()
 	local istimelineshub = ffi.string(C.GetGameStartName()) == "x4ep1_gamestart_hub"
 	--print("cantrade: " .. tostring(cantrade) .. ", canbuyship: " .. tostring(canbuyship) .. ", canmodifyship: " .. tostring(canmodifyship))
 
-	width = (width / 3) - Helper.borderSize
+	width = math.max(Helper.scaleX(600), (width / 3) - Helper.borderSize)
 
-	-- set up a new table
-	table_topleft = menu.frame:addTable(1, { tabOrder = 0, width = Helper.playerInfoConfig.width, height = Helper.playerInfoConfig.height, x = Helper.playerInfoConfig.offsetX, y = Helper.playerInfoConfig.offsetY, scaling = false })
-
-	row = table_topleft:addRow(false, { fixed = true, bgColor = Color["player_info_background"] })
-	local icon = row[1]:createIcon(function () local logo = C.GetCurrentPlayerLogo(); return ffi.string(logo.icon) end, { width = Helper.playerInfoConfig.height, height = Helper.playerInfoConfig.height, color = Helper.getPlayerLogoColor })
-
-	local textheight = math.ceil(C.GetTextHeight(Helper.playerInfoConfigTextLeft(), Helper.standardFont, Helper.playerInfoConfig.fontsize, Helper.playerInfoConfig.width - Helper.playerInfoConfig.height - Helper.borderSize))
-	icon:setText(Helper.playerInfoConfigTextLeft,	{ fontsize = Helper.playerInfoConfig.fontsize, halign = "left",  x = Helper.playerInfoConfig.height + Helper.borderSize, y = (Helper.playerInfoConfig.height - textheight) / 2 })
-	icon:setText2(Helper.playerInfoConfigTextRight,	{ fontsize = Helper.playerInfoConfig.fontsize, halign = "right", x = Helper.borderSize,          y = (Helper.playerInfoConfig.height - textheight) / 2 })
+	Helper.createPlayerInfo(menu, menu.frame, Helper.playerInfoConfig.cornerTableWidth, Helper.playerInfoConfig.height, Helper.playerInfoConfig.offsetX, Helper.playerInfoConfig.offsetY)
 
 	local xoffset = (Helper.viewWidth - width) / 2
 	local yoffset = 25
@@ -548,7 +558,7 @@ function menu.display()
 			mouseOverText = mouseovertext,
 		}):setTextProperties(active and config.activeButtonTextProperties or config.inactiveButtonTextProperties):setText2Properties(active and config.activeButtonTextProperties or config.inactiveButtonTextProperties)	-- Deploy Civilian
 		row[1].properties.text2.halign = "right"
-		row[1].properties.text2.x = Helper.standardTextOffsetx
+		row[1].properties.text2.x = 0
 		if active then
 			row[1].handlers.onDropDownConfirmed = menu.dropdownDeploy
 		end
@@ -572,7 +582,7 @@ function menu.display()
 			mouseOverText = mouseovertext,
 		}):setTextProperties(active and config.activeButtonTextProperties or config.inactiveButtonTextProperties):setText2Properties(active and config.activeButtonTextProperties or config.inactiveButtonTextProperties)	-- Deploy Military
 		row[7].properties.text2.halign = "right"
-		row[7].properties.text2.x = Helper.standardTextOffsetx
+		row[7].properties.text2.x = 0
 		if active then
 			row[7].handlers.onDropDownConfirmed = menu.dropdownDeploy
 		end
@@ -583,7 +593,7 @@ function menu.display()
 		if active then
 			row[1].handlers.onClick = menu.buttonFlightAssist
 		end
-		row[2]:createButton({ bgColor = menu.dockButtonBGColor, highlightColor = menu.dockButtonHighlightColor, helpOverlayID = "docked_dock", helpOverlayText = " ", helpOverlayHighlightOnly = true }):setText(ReadText(1001, 8605), { halign = "center", color = menu.dockButtonTextColor })	-- "Dock"
+		row[2]:createButton({ bgColor = menu.dockButtonBGColor, highlightColor = menu.dockButtonHighlightColor, borderColor = menu.dockButtonBorderColor, helpOverlayID = "docked_dock", helpOverlayText = " ", helpOverlayHighlightOnly = true }):setText(ReadText(1001, 8605), { halign = "center", color = menu.dockButtonTextColor })	-- "Dock"
 		row[2].properties.mouseOverText = GetLocalizedKeyName("action", 175)
 		row[2].handlers.onClick = menu.buttonDock
 		local active = (menu.currentplayership ~= 0) and C.ToggleAutoPilot(true)
@@ -609,7 +619,7 @@ function menu.display()
 				local buf = ffi.new("ShipStanceInfo[?]", numstances)
 				numstances = C.GetShipStances(buf, numstances, menu.currentplayership)
 				for i = 0, numstances - 1 do
-					table.insert(stanceoptions, { id = ffi.string(buf[i].id), text = "\27[" .. ffi.string(buf[i].iconid) .. "] " .. ffi.string(buf[i].name), text2 = "", icon = "", displayremoveoption = false })
+					table.insert(stanceoptions, { id = ffi.string(buf[i].id), text = "\27[" .. ffi.string(buf[i].iconid) .. "] " .. ffi.string(buf[i].name), text2 = "", icon = "", displayremoveoption = false, mouseovertext = ffi.string(buf[i].description) })
 				end
 				if ffi.string(C.GetShipDefaultStance(menu.currentplayership)) == "" then -- sic! If the default stance doesn't exist, we need to add a neutral option
 					table.insert(stanceoptions, 1, { id = "neutral", text = "\27[stance_neutral] " .. ReadText(1001, 8644), text2 = "", icon = "", displayremoveoption = false })
@@ -620,7 +630,7 @@ function menu.display()
 				row[7]:createDropDown(stanceoptions, { active = function () return C.CanShipSwitchStance(menu.currentplayership) end, startOption = function () local activestance = ffi.string(C.GetShipActiveStance(menu.currentplayership)); return (activestance == "") and "neutral" or activestance end, mouseOverText = function () return (not C.CanShipSwitchStance(menu.currentplayership)) and ReadText(1026, 8612) or "" end })
 				row[7].handlers.onDropDownConfirmed = function (_, id) if (id ~= ffi.string(C.GetShipActiveStance(menu.currentplayership))) then return C.SetShipStance(menu.currentplayership, id) end end
 			end
-
+			
 			-- cover button
 			local coverfaction = ""
 			if menu.currentplayership ~= 0 then
@@ -630,7 +640,7 @@ function menu.display()
 			if coverfaction ~= "" then
 				-- story case
 				local row = table_header:addRow(true, { bgColor = Color["row_background_unselectable"] })
-				row[1]:setColSpan(6):createText(ReadText(1001, 8643))
+				row[1]:setColSpan(6):createText(ReadText(1001, 8643), { y = Helper.standardTextToButtonPadding })
 
 				local mouseovertext = ReadText(1026, 8611) .. ReadText(1001, 120) .. " " .. ColorText["licence"] .. GetFactionData(coverfaction, "name") .. "\27X"
 				local shortcut = GetLocalizedKeyName("action", 377)
@@ -1017,6 +1027,8 @@ function menu.display()
 
 						local isstation = C.IsComponentClass(menu.currentplayership, "station")
 						if isstation then
+							local prospectactive = (not usedassignments["prospect"]) or (usedassignments["prospect"] == i)
+							table.insert(subordinateassignments, { id = "prospect", text = ReadText(20208, 41701), icon = "", displayremoveoption = false, active = prospectactive, mouseovertext = prospectactive and "" or ReadText(1026, 7840) })
 							local miningactive = (groups[i].numassignableminingships == #groups[i].subordinates) and ((not usedassignments["mining"]) or (usedassignments["mining"] == i))
 							table.insert(subordinateassignments, { id = "mining", text = ReadText(20208, 40201), icon = "", displayremoveoption = false, active = miningactive, mouseovertext = miningactive and "" or ReadText(1026, 8602) })
 							local tradeactive = (not usedassignments["trade"]) or (usedassignments["trade"] == i)
@@ -1078,7 +1090,7 @@ function menu.display()
 						local row = table_header:addRow("subordinate_config", {  })
 						row[1]:createText(function () menu.updateSubordinateGroupInfo(); return ReadText(20401, i) .. (menu.subordinategroups[i] and (" (" .. ((not C.ShouldSubordinateGroupDockAtCommander(menu.currentplayership, i)) and ((#menu.subordinategroups[i].subordinates - menu.subordinategroups[i].numdockedatcommander) .. "/") or "") .. #menu.subordinategroups[i].subordinates ..")") or "") end, { color = isblocked and Color["text_warning"] or nil })
 						row[2]:setColSpan(5):createDropDown(subordinateassignments, { startOption = function () menu.updateSubordinateGroupInfo(); return menu.subordinategroups[i] and menu.subordinategroups[i].assignment or "" end, uiTriggerID = "subordinate_group_role_" .. i, helpOverlayID = "docked_subordinate_role" .. subordinatecounter, helpOverlayText = " ", helpOverlayHighlightOnly = true })
-						row[2].handlers.onDropDownConfirmed = function(_, newassignment) Helper.dropdownAssignment(_, nil, i, menu.currentplayership, newassignment) end
+						row[2].handlers.onDropDownConfirmed = function(_, newassignment) Helper.dropdownAssignment(menu, nil, i, menu.currentplayership, newassignment, function () menu.refresh = getElapsedTime() - 1 end) end
 
 						-- Start Reactive Docking callback
 						local rd_callbackVal
@@ -1218,7 +1230,7 @@ function menu.display()
 		end
 		if not istimelineshub then
 			if menu.currentplayership ~= 0 then
-				row[2]:createButton({ mouseOverText = GetLocalizedKeyName("action", 175), bgColor = menu.undockButtonBGColor, highlightColor = menu.undockButtonHighlightColor, helpOverlayID = "docked_undock", helpOverlayText = " ", helpOverlayHighlightOnly = true }):setText(ReadText(1002, 20013), { halign = "center", color = menu.undockButtonTextColor })	-- "Undock"
+				row[2]:createButton({ mouseOverText = GetLocalizedKeyName("action", 175), bgColor = menu.undockButtonBGColor, highlightColor = menu.undockButtonHighlightColor, borderColor = menu.undockButtonBorderColor, helpOverlayID = "docked_undock", helpOverlayText = " ", helpOverlayHighlightOnly = true }):setText(ReadText(1002, 20013), { halign = "center", color = menu.undockButtonTextColor })	-- "Undock"
 				row[2].handlers.onClick = menu.buttonUndock
 			else
 				row[2]:createButton({ mouseOverText = GetLocalizedKeyName("action", 175), helpOverlayID = "docked_gotoship", helpOverlayText = " ", helpOverlayHighlightOnly = true }):setText(ReadText(1001, 7305), { halign = "center" })	-- "Go to Ship"
@@ -1296,6 +1308,10 @@ function menu.dockButtonHighlightColor()
 	return menu.isDockButtonActive() and Color["button_highlight_default"] or Color["button_highlight_inactive"]
 end
 
+function menu.dockButtonBorderColor()
+	return menu.isDockButtonActive() and Color["button_border_default"] or Color["button_border_inactive"]
+end
+
 function menu.dockButtonTextColor()
 	return menu.isDockButtonActive() and Color["text_normal"] or Color["text_inactive"]
 end
@@ -1310,6 +1326,10 @@ end
 
 function menu.undockButtonHighlightColor()
 	return menu.isUndockButtonActive() and Color["button_highlight_default"] or Color["button_highlight_inactive"]
+end
+
+function menu.undockButtonBorderColor()
+	return menu.isUndockButtonActive() and Color["button_border_default"] or Color["button_border_inactive"]
 end
 
 function menu.undockButtonTextColor()
@@ -1344,7 +1364,7 @@ end
 function menu.buttonActiveSubordinateGroupLaunch(i)
 	menu.updateSubordinateGroupInfo()
 	if menu.subordinategroups[i] then
-		return (menu.subordinategroups[i].assignment ~= "trade") and (menu.subordinategroups[i].assignment ~= "mining") and (menu.subordinategroups[i].assignment ~= "follow") and (menu.subordinategroups[i].assignment ~= "assist") and (menu.subordinategroups[i].assignment ~= "supplyfleet")
+		return (menu.subordinategroups[i].assignment ~= "trade") and (menu.subordinategroups[i].assignment ~= "mining") and (menu.subordinategroups[i].assignment ~= "follow") and (menu.subordinategroups[i].assignment ~= "assist") and (menu.subordinategroups[i].assignment ~= "supplyfleet") and (menu.subordinategroups[i].assignment ~= "prospect")
 	end
 	return false
 end
@@ -1662,7 +1682,7 @@ function menu.onCloseElement(dueToClose)
 	end
 end
 
--- kuetee start:
+-- kuertee start:
 menu.uix_callbackCount = 0
 function menu.registerCallback(callbackName, callbackFunction, id)
     -- note 1: format is generally [function name]_[action]. e.g.: in kuertee_menu_transporter, "display_on_set_room_active" overrides the room's active property with the return of the callback.
@@ -1761,12 +1781,12 @@ function menu.updateCallbacksNow()
                         Helper.debugText_forced(menu.name .. " uix updateCallbacksNow (post): menu.uix_callbacks[" .. tostring(callbackName) .. "][" .. tostring(updateData.id) .. "]: " .. tostring(menu.uix_callbacks[callbackName][updateData.id]))
                     end
                 else
-                    Helper.debugText_forced(menu.name .. " uix updateCallbacksNow: callback at " .. callbackName .. " with id " .. tostring(id) .. " doesn't exist")
+                    Helper.debugText_forced(menu.name .. " uix updateCallbacksNow: callback at " .. callbackName .. " with id " .. tostring(updateData.id) .. " doesn't exist")
                 end
             end
         end
     end
 end
--- kuerte end
+-- kuertee end
 
 init()
