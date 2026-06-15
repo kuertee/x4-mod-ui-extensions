@@ -27612,7 +27612,9 @@ function menu.createBoardingContext(frame, target, boarders)
 				for _, uix_counterId in ipairs(uix_counterIds) do
 					for _, uix_tierData in ipairs(menu.boardingData.marinelevels) do
 						local uix_skillLevel = uix_tierData.skilllevel
-						menu.boardingData.shipdata["all"][uix_counterId][uix_skillLevel] = menu.boardingData.shipdata["all"][uix_counterId][uix_skillLevel] + menu.boardingData.shipdata[uix_ship][uix_counterId][uix_skillLevel]
+						local uix_allSkillLevel = menu.boardingData.shipdata["all"][uix_counterId][uix_skillLevel] and menu.boardingData.shipdata["all"][uix_counterId][uix_skillLevel] or 0
+						local uix_shipSkillLevel = menu.boardingData.shipdata[uix_ship][uix_counterId][uix_skillLevel] and menu.boardingData.shipdata[uix_ship][uix_counterId][uix_skillLevel] or 0
+						menu.boardingData.shipdata["all"][uix_counterId][uix_skillLevel] = uix_allSkillLevel + uix_shipSkillLevel
 					end
 				end
 			end
