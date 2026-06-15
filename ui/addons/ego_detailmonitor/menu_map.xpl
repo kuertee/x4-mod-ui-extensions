@@ -10006,10 +10006,20 @@ function menu.createPropertyRow(instance, ftable, rowgroup, component, iteration
 		if showmodules and isstation and isconstruction then
 			isstationexpandable = C.GetNumStationModules(convertedComponent, true, false) > 0
 		end
-		if isstationexpandable or (subordinates.hasRendered and (not hidesubordinates) and subordinatefound) or (#dockedships > 0) or (isstation and (#constructions > 0)) then
+
+		-- kuertee start: uix properties owned tab
+		-- if isstationexpandable or (subordinates.hasRendered and (not hidesubordinates) and subordinatefound) or (#dockedships > 0) or (isstation and (#constructions > 0)) then
+		if (menu.uix_propertiesOwnedTabGroup and menu.uix_propertiesOwnedTabGroup.isForceComponentExpandable) or isstationexpandable or (subordinates.hasRendered and (not hidesubordinates) and subordinatefound) or (#dockedships > 0) or (isstation and (#constructions > 0)) then
+		-- kuertee end: uix properties owned tab
 			row[1]:createButton({ scaling = false }):setText(menu.isPropertyExtended(tostring(component)) and "-" or "+", { scaling = true, halign = "center" })
 			row[1].handlers.onClick = function () return menu.buttonExtendProperty(tostring(component)) end
 		end
+
+		-- kuertee start: uix properties owned tab
+		if menu.uix_propertiesOwnedTabGroup and menu.uix_propertiesOwnedTabGroup.onRenderComponentCallback then
+			menu.uix_propertiesOwnedTabGroup.onRenderComponentCallback(component, ftable, rowgroup, row)
+		end
+		-- kuertee end: uix properties owned tab
 
 		local displaylocation = location and not (commanderlocation and IsSameComponent(location, commanderlocation))
 		local currentordericon, currentorderrawicon, currentordercolor, currentordername, currentorderdescription, currentorderisoverride, currentordermouseovertext, behaviouricon, behaviourrawicon, behaviourname, behaviourdescription = "", "", nil, "", "", false, nil, "", "", "", ""
@@ -33882,12 +33892,14 @@ function menu.uix_addUIXPropertyOwnedTab(id, name, propertyGroups, propertyInfo,
 	-- 		id = string,
 	-- 		name = string,
 	-- 		components = {component, ...},
+	-- 		(optional) isForceComponentExpandable = boolean, if true, +/- is active
 	-- 		(optional) isHideSubordinates = boolean,
 	-- 		(optional) infoByComponent = {
 	-- 			tostring(component) = {
 	-- 				key = value, ...,
 	-- 			}, ...,
 	-- 		}
+	-- 		(optional) onRenderComponentCallback = function,
 	-- 	}
 	-- }
 
