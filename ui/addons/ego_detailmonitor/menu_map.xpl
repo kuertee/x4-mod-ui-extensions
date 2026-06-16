@@ -9022,7 +9022,9 @@ function menu.createPropertyOwned(frame, instance)
 				numdisplayed = menu.uix_propertiesOwnedTab_rendering.data.beforeSectionsCallback(numdisplayed, ftable, menu.uix_propertiesOwnedTab_rendering)
 			end
 
-			table.sort(uix_propertiesOwnedTabSections, function(a, b) return a.name < b.name end)
+			if (not menu.uix_propertiesOwnedTab_rendering.data) or menu.uix_propertiesOwnedTab_rendering.data.isSortPropertySections ~= false then
+				table.sort(uix_propertiesOwnedTabSections, function(a, b) return a.name < b.name end)
+			end
 			for _, uix_propertySection in ipairs(uix_propertiesOwnedTabSections) do
 				local uix_array = (uix_propertySection.sortedComponents and #uix_propertySection.sortedComponents > 1) and uix_propertySection.sortedComponents or uix_propertySection.components
 				-- if uix_array and next(uix_array) and #uix_array > 0 then
@@ -33857,10 +33859,12 @@ function menu.uix_addUIXPropertyOwnedTab(id, name, propertySections, propertyInf
 
 	-- (optional) data:
 	-- {
+	-- 	isSortPropertySections = boolean. if false, propertySections are not sorted. otherwise, sorted by name.,
 	-- 	beforeSectionsCallback = function(numdisplayed, ftable, propertiesOwnedTab),
 	-- 	afterSectionsCallback = function(numdisplayed, ftable, propertiesOwnedTab),
 	-- 	key = value, ...,
 	-- }
+
 	if (not id) or (not name) or (not propertySections) or (not next(propertySections)) then
 		return
 	end
