@@ -4305,7 +4305,7 @@ function menu.buttonSelectHandler()
 	elseif menu.mode == "selectComponent" then
 
 		-- kuertee start: allow trigger of selectComponent mode from lua
-		if menu.modeparam[7].isUIXSelectComponentMode then
+		if type(menu.modeparam[1]) == "function" or type(menu.modeparam[6]) == "string" or (type(menu.modeparam[7]) == "table" and menu.modeparam[7].isUIXSelectComponentMode) then
 			if type(menu.modeparam[6]) == "string" then
 				-- if selectComponent modeparam[6] is string, then AddUITriggeredEvent menu.modeparam[6]
 				AddUITriggeredEvent(menu.modeparam[6], "select_component", ConvertStringToLuaID(tostring(menu.contextMenuData.component)))
