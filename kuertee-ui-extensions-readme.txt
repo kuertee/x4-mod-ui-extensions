@@ -6,8 +6,8 @@ Contributors: AlexandreTK, ChemODun, Damonya, DrWhoKnows, DmytroK, Erixon, Farem
 
 Updates
 =======
-v9.0.0.3, 15 Jun 2026:
-- Bug-fix: The Boarding Menu was sometimes broken.
+v9.0.0.4, 17 Jun 2026:
+- Bug-fix: Map Menu: The "select component" mode was broken. This is the mode when the game asks you to select an object on the map. E.g. When teleporting the Player's HQ.
 
 NOTES FOR PLAYERS:
 ==================
@@ -364,6 +364,9 @@ French localisation by Calvitix.
 
 History
 =======
+v9.0.0.3, 15 Jun 2026:
+- Bug-fix: The Boarding Menu was sometimes broken.
+
 v9.0.0.1, 11 Jun 2026:
 - Compatibility: 9.0.
 Changes from the last v8.0.4.3, 06 Apr 2025 version that were released in previous 9.0 betas:

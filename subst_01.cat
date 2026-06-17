@@ -2,7 +2,7 @@ dev-revert_files_to_base_lua_files.bat 1858 1781321653 f1196c705f2278fdc744f82b0
 ui/addons/ego_detailmonitor/menu_diplomacy.xpl 217125 1781321653 af08b654269ac0fa6f3d8fd16ff2f1e0
 ui/addons/ego_detailmonitor/menu_docked.xpl 93121 1781321653 fa99f534d16c76e4158dd05a1d670224
 ui/addons/ego_detailmonitor/menu_encyclopedia.xpl 205184 1781321653 0c1d2768d81d8f4df785ad36ae42690a
-ui/addons/ego_detailmonitor/menu_map.xpl 1646598 1781407431 87080ef76aa4f1f0b3480e9ee0cb87b8
+ui/addons/ego_detailmonitor/menu_map.xpl 1646744 1781617769 241e2d0cb570bf159665248a2365ddb2
 ui/addons/ego_detailmonitor/menu_playerinfo.xpl 347155 1781321653 ee9070838ce70c82b75cff1d0d421a89
 ui/addons/ego_detailmonitor/menu_research.xpl 45233 1781321653 2fcb7af78441f4eb28cc180e5f9ef262
 ui/addons/ego_detailmonitor/menu_scenario_debriefing.xpl 32372 1781321653 15b07b65cec637402d8ecbc28629fd6c
