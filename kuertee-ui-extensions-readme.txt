@@ -6,6 +6,9 @@ Contributors: AlexandreTK, ChemODun, Damonya, DrWhoKnows, DmytroK, Erixon, Farem
 
 Updates
 =======
+v9.0.0.5, 19 Jun 2026:
+- Bug-fix: In Map Menu > Select Object mode (e.g. selecting a navigation beacon for HQ teleportation), the +/- buttons for the deployables were broken.
+
 v9.0.0.4, 17 Jun 2026:
 - Bug-fix: Map Menu: The "select component" mode was broken. This is the mode when the game asks you to select an object on the map. E.g. When teleporting the Player's HQ.
 

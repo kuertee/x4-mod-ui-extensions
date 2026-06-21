@@ -9499,13 +9499,16 @@ function menu.createPropertySection(instance, id, ftable, name, array, nonetext,
 				uix_isAnyExpanded = uix_isAnyExpanded or uix_isExpanded
 				for _, component in ipairs(components) do
 					if (not uix_openCloseDeployables_rowByName[uix_name]) or uix_isExpanded then
+						local uix_oldNumDisplayed = numdisplayed
 						numdisplayed = menu.createPropertyRow(instance, ftable, propertysectionrowgroup, component, 0, nil, showmodules, hidesubordinates, numdisplayed, sorter)
-						if not uix_openCloseDeployables_rowByName[uix_name] then
-							uix_openCloseDeployables_rowByName[uix_name] = ftable.rows[#ftable.rows]
-							uix_openCloseDeployables_rowByName[uix_name][1]:createButton({active = #components > 1}):setText(uix_isExpanded and "-" or "+", { halign = "center" })
-							uix_openCloseDeployables_rowByName[uix_name][1].handlers.onClick = function()
-								__userdata_uix_menu_map.savedCollapsedDeployables[uix_name] = not __userdata_uix_menu_map.savedCollapsedDeployables[uix_name]
-								menu.refreshInfoFrame()
+						if numdisplayed ~= uix_oldNumDisplayed then
+							if not uix_openCloseDeployables_rowByName[uix_name] then
+								uix_openCloseDeployables_rowByName[uix_name] = ftable.rows[#ftable.rows]
+								uix_openCloseDeployables_rowByName[uix_name][1]:createButton({active = #components > 1}):setText(uix_isExpanded and "-" or "+", { halign = "center" })
+								uix_openCloseDeployables_rowByName[uix_name][1].handlers.onClick = function()
+									__userdata_uix_menu_map.savedCollapsedDeployables[uix_name] = not __userdata_uix_menu_map.savedCollapsedDeployables[uix_name]
+									menu.refreshInfoFrame()
+								end
 							end
 						end
 					end
