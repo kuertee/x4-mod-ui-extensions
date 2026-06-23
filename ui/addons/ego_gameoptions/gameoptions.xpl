@@ -3760,7 +3760,18 @@ function menu.checkInputSource(sourceid)
 		end
 	end
 
-	if (menu.currentOption == "keyboard_space") or (menu.currentOption == "keyboard_firstperson") or (menu.currentOption == "keyboard_menus") then
+	-- chemodun start: callback
+	local isUixControlsPage = false
+	if menu.uix_callbacks["submenuHandler_isControlsPage"] then
+		for uix_id, uix_callback in pairs(menu.uix_callbacks["submenuHandler_isControlsPage"]) do
+			if uix_callback(menu.currentOption) then
+				isUixControlsPage = true
+			end
+		end
+	end
+	-- chemodun end: callback
+
+	if (menu.currentOption == "keyboard_space") or (menu.currentOption == "keyboard_firstperson") or (menu.currentOption == "keyboard_menus") or isUixControlsPage then
 		return (sourceid < 20)
 	elseif (menu.currentOption == "vrtouch_space") or (menu.currentOption == "vrtouch_firstperson") or (menu.currentOption == "vrtouch_menus") then
 		return (sourceid == 20) or (sourceid == 24)
@@ -5341,7 +5352,32 @@ function menu.submenuHandler(optionParameter)
 	end
 	-- kuertee end: callback
 
-	if optionParameter == "main" then
+	-- chemodun start: callback
+	local isUixControlsPage = false
+	if menu.uix_callbacks["submenuHandler_isControlsPage"] then
+		for uix_id, uix_callback in pairs(menu.uix_callbacks["submenuHandler_isControlsPage"]) do
+			if uix_callback(optionParameter) then
+				isUixControlsPage = true
+			end
+		end
+	end
+	-- chemodun end: callback
+
+	-- chemodun start: callback
+	local isCustomPageHandled = false
+	if menu.uix_callbacks["submenuHandler_customPage"] then
+		for uix_id, uix_callback in pairs(menu.uix_callbacks["submenuHandler_customPage"]) do
+			if uix_callback(optionParameter, config) then
+				isCustomPageHandled = true
+			end
+		end
+	end
+	-- chemodun end: callback
+	-- chemodun start: if statement
+	if isCustomPageHandled then
+		-- already fully rendered by a registered submenuHandler_customPage callback above
+	elseif optionParameter == "main" then
+	-- chemodun end: if statement
 		if menu.isStartmenu then
 			C.ShowPromo()
 		end
@@ -5391,7 +5427,10 @@ function menu.submenuHandler(optionParameter)
 			(optionParameter == "vrvive_menus") or
 			(optionParameter == "keyboard_space") or
 			(optionParameter == "keyboard_firstperson") or
-			(optionParameter == "keyboard_menus")
+			(optionParameter == "keyboard_menus") or
+			-- chemodun start: elseif update
+			isUixControlsPage
+			-- chemodun end: elseif update
 	then
 		menu.displayControls(optionParameter)
 	elseif optionParameter == "joysticks" then
@@ -5683,6 +5722,28 @@ function menu.remapInput(newinputtype, newinputcode, newinputsgn, checked)
 		newinputsgn = 0
 	end
 	local conflicts = menu.checkForConflicts(newinputtype, newinputcode, newinputsgn)
+
+	-- chemodun start: callback
+	-- checkall=true only scans config.input.controlsorder (the vanilla
+	-- space/menus/firstperson groups) - it does NOT also check
+	-- menu.controlsorder (the current page's own row list), so this adds to
+	-- the normal page-scoped result above rather than replacing it.
+	local useCheckAll = false
+	if menu.uix_callbacks["remapInput_useCheckAll"] then
+		for uix_id, uix_callback in pairs(menu.uix_callbacks["remapInput_useCheckAll"]) do
+			if uix_callback(menu.remapControl.controltype, menu.remapControl.controlcode) then
+				useCheckAll = true
+			end
+		end
+	end
+	if useCheckAll then
+		local crossPageConflicts = menu.checkForConflicts(newinputtype, newinputcode, newinputsgn, true)
+		for _, conflict in ipairs(crossPageConflicts) do
+			table.insert(conflicts, conflict)
+		end
+	end
+	-- chemodun end: callback
+
 	-- remove conflicts with the same control
 	for i = #conflicts, 1, -1 do
 		if (conflicts[i].control[1] == menu.remapControl.controltype) and (conflicts[i].control[2] == menu.remapControl.controlcode) then
@@ -12924,11 +12985,29 @@ function menu.displayControls(optionParameter)
 		secondpart = ReadText(1001, 12688)
 	end
 
+	-- chemodun start: callback
+	-- Reuses submenuHandler_isControlsPage rather than adding a new hook - a
+	-- predicate registered there may return a string (a custom title) instead
+	-- of plain true; either is truthy where the hook is used as a yes/no
+	-- check (submenuHandler/checkInputSource), so no other call site changes.
+	local customTitle = nil
+	if menu.uix_callbacks["submenuHandler_isControlsPage"] then
+		for uix_id, uix_callback in pairs(menu.uix_callbacks["submenuHandler_isControlsPage"]) do
+			local result = uix_callback(optionParameter)
+			if type(result) == "string" then
+				customTitle = result
+			end
+		end
+	end
+	-- chemodun end: callback
+
 	local row = headertable:addRow({}, { fixed = true })
 	row[1]:setBackgroundColSpan(2)
 	row[1]:createButton({ height = config.headerTextHeight }):setIcon(config.backarrow, { x = config.backarrowOffsetX })
 	row[1].handlers.onClick = function () return menu.onCloseElement("back") end
-	row[2]:setColSpan(numheadercols - 1):createText(firstpart .. ReadText(1001, 120) .. " " .. secondpart, config.headerTextProperties)
+	-- chemodun start: custom title
+	row[2]:setColSpan(numheadercols - 1):createText(customTitle or (firstpart .. ReadText(1001, 120) .. " " .. secondpart), config.headerTextProperties)
+	-- chemodun end: custom title
 
 	menu.controlsorder = {}
 	if (optionParameter == "keyboard_space") or (optionParameter == "vrtouch_space") or (optionParameter == "vrvive_space") then
@@ -12938,6 +13017,14 @@ function menu.displayControls(optionParameter)
 	elseif (optionParameter == "keyboard_firstperson") or (optionParameter == "vrtouch_firstperson") or (optionParameter == "vrvive_firstperson") then
 		menu.controlsorder = config.input.controlsorder.firstperson
 	end
+
+	-- chemodun start: callback
+	if menu.uix_callbacks["displayControls_modifyControlsOrder"] then
+		for uix_id, uix_callback in pairs(menu.uix_callbacks["displayControls_modifyControlsOrder"]) do
+			menu.controlsorder = uix_callback(optionParameter, menu.controlsorder, config) or menu.controlsorder
+		end
+	end
+	-- chemodun end: callback
 
 	local row
 	local i = 1
