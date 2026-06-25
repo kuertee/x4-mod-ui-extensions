@@ -1505,7 +1505,7 @@ function menu.createLeftBar(frame, offsetx, offsety)
 	end
 
 	if menu.uix_callbacks ["createLeftBar_on_start"] then
-		for uix_id, uix_callback in pairs (menu.uix_callbacks ["ccreateLeftBar_on_start"]) do
+		for uix_id, uix_callback in pairs (menu.uix_callbacks ["createLeftBar_on_start"]) do
 			uix_callback (config)
 		end
 	end
