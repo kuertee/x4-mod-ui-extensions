@@ -8680,6 +8680,12 @@ function menu.Add_Custom_Actions_Group_Text(_, text)
 end
 
 function menu.Add_Custom_Actions_Group(id, text)
+	-- chemodun start: skip re-adding a group that was already promoted to a root section
+	if menu.uix_convertedRootSectionIds[id] then
+		Helper.debugText("Add_Custom_Actions_Group: id already promoted to root, skipping: " .. tostring(id))
+		return
+	end
+	-- chemodun end: skip re-adding a group that was already promoted to a root section
 	local customActionsSection
 	local customActionsSection_isFound = false
 	local customActionsSection_isAddTo = string.find(id, "actions_")
@@ -8766,6 +8772,12 @@ function menu.Add_Custom_Actions_SubGroup(parentId, subGroupId, text)
 			if section.id == parentId then
 				if not section.subsections then
 					section.subsections = {}
+				end
+				for _, subsection in ipairs(section.subsections) do
+					if subsection.id == subGroupId then
+						Helper.debugText("Add_Custom_Actions_SubGroup: subGroupId already present in root section: " .. tostring(subGroupId))
+						return
+					end
 				end
 				table.insert(section.subsections, { id = subGroupId, text = text })
 				return
