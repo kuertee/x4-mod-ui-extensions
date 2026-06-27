@@ -350,20 +350,15 @@ Install
 
 Uninstall
 =========
-- Uninstall only when not docked nor at a station.
-- Delete the mod folder. Note that this mod doesn't create objects (missions, npcs, etc.) in the game.
+Summary: Load the save; Deactivate from the menu; Save the game (This is the "deactivated mod" save.); Exit the game; Load the "deactivate mod" save; Save the game (This is the "clean" save).
 
-Notes about uninstallation and creating a clean save
-====================================================
-- When saving a game with the mod active in the Extensions menu, the file will contain the mod's scripts and data.
-- If the mod creates objects (missions, npcs, etc.) in the game, simply deleting the mod folder is insufficient in creating a "clean save". This is because those objects will be "orphaned" from its mod and will forever exist in the file.
-- To properly uninstall a mod that creates objects, that mod needs to remove those objects itself. My mods that create these objects have their own methods of cleanly uninstalling them. Read the "Uninstall" sections in their read-me files or on their Nexus Mods page. E.g For the Emergent Missions mod, entering "kuertee deactivate emissions" in the Chat window will cleanly remove its objects. Its a "kuertee deactivate rap" for the Reputations and Professions mod. etc. But for convenience, the general command, "kuertee deactivate", will cleanly remove objects created by all my mods all at once.
-- Save the game once the mod is cleanly deactivated. This save file still contains the mod's scripts and zeroed data because the mod still exist in the game. Scripts are just deactivated and data are zeroed.
-- Deactivate the mod in the Extension Options.
-- Exit the game. Delete the mod folder. Restart the game.
-- Load that save file. The game will identify that the mod's now invalid scripts and data.
-- Save the game again. This save file will not contain the mod's scripts and data because the mod wasn't loaded with the game.
-- This last save is the "clean save" file.
+1. Load a game that contains the running mod.
+2. Move away from nearby stations where station data is shown in the Information panel.
+3. Deactivate the mod from the Settings > Extensions menu. This safely removes objects (missions, npcs, etc.) the scripts created and then safely cancels the scripts. Its Extension Options, if one exists, should be blank.
+4. Save the game. This is the "deactivated mod" save. This still contains the deactivated scripts and zeroed data because the mod still "exists" in the game environment. They are simply deactivated and zeroed.
+5. Exit the game.
+6. Load the "deactivated mod" save. The game will identify then remove the invalid scripts and data because the mod doesn't "exist" in the game environment anymore.
+7. Save the game. This is the "clean" save. This doesn't contain the mod's scripts and data anymore.
 
 Troubleshooting
 ===============

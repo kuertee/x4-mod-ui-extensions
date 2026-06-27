@@ -8362,6 +8362,25 @@ function menu.callbackExtensionSettingEnabled(overrideextension)
 	else
 		enabled = not extension.enabledbydefault
 	end
+
+	-- kuertee start: AddUITriggeredEvent mod activation/deactivation
+	if enabled then
+		-- just in-case a mod wants to listen for another mod being activated.
+		-- generally, useless.
+		AddUITriggeredEvent(menu.name, "uix_activate_mod", extension.id)
+	else
+		AddUITriggeredEvent(menu.name, "uix_deactivate_mod", extension.id)
+	end
+	-- kuertee end: AddUITriggeredEvent mod activation/deactivation
+
+	-- kuertee start: callback
+	if menu.uix_callbacks ["callbackExtensionSettingEnabled_set"] then
+		for uix_id, uix_callback in pairs (menu.uix_callbacks ["callbackExtensionSettingEnabled_set"]) do
+			uix_callback(extension, enabled)
+		end
+	end
+	-- kuertee end: callback
+
 	SetExtensionSettings(extension.id, extension.personal, "enable", enabled)
 	menu.extensionSettingsChanged = nil
 	menu.extensionSettings = GetAllExtensionSettings()
