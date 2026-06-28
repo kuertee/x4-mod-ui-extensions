@@ -6,42 +6,30 @@ Contributors: AlexandreTK, ChemODun, Damonya, DrWhoKnows, DmytroK, Erixon, Farem
 
 Updates
 =======
-v9.0.0.5, 19 Jun 2026:
-- Bug-fix: In Map Menu > Select Object mode (e.g. selecting a navigation beacon for HQ teleportation), the +/- buttons for the deployables were broken.
+v9.0.0.6, 27 Jun 2026:
+FOR PLAYERS:
+- Protected UI Mode: I've been playing with Protected UI Mode active for the last 3 weeks with no adverse effects. I now recommend that this mode is active and that the pop-up message about disabling it is ignored. Only deactivate this mode if you experience something unexpected.
 
-v9.0.0.4, 17 Jun 2026:
-- Bug-fix: Map Menu: The "select component" mode was broken. This is the mode when the game asks you to select an object on the map. E.g. When teleporting the Player's HQ.
+FOR MODDERS:
+- New feature: new callbacks by ChemOdun.
+- New feature: Deactivating a mod in the Settings > Extensions menu triggers the UI event "uix_deactivate_mod" with the mod's id. Listen for this event to from the mod's MD to, for example, destroy npcs, cancel scripts, etc. More information is in the "Options Menu: Deactivating a mod" section.
+- New feature: uix_addUIXPropertyOwnedTab() adds new category tabs in the Property Owned section. E.g. my mods Crime has Consequences mod, Emergent Missions mod, Military Exercises mod, and Wear and Tear mod use this to add their category tabs. More information is in the "Map Menu: Custom Property Owned category tabs".
 
-NOTES FOR PLAYERS:
-==================
-Disable Protected UI Mode BEFORE activating this mod.
-Unfortunately, due to how this mod is built, disabling or enabling Protected UI Mode WHILE the mod is active will prevent the menus from loading.
+Protected UI Mode
+=================
+I've been playing with Protected UI Mode active with no adverse effects. I recommend that this mode is active and that the pop-up message about disabling it is ignored. Only deactivate this mode if you experience something unexpected.
 
-NOTES FOR MOD DEVELOPERS:
-=========================
-1. PROTECTED UI MODE: Mods that use UI Extensions will need the Protected UI Mode setting in the Extensions menu disabled.
-2. LOADING CUSTOM LUAS: ModSupportAPIs' `Lua_Loader` (and in extension its `<raise_lua_event name="'Lua_Loader.Load'" param="'X'"/>)` no longer function.
-3. UI.XML FILE: To load custom lua files, use ui.xml as described here: https://wiki.egosoft.com:1337/X%20Rebirth%20Wiki/Modding%20support/UI%20Modding%20support/Getting%20started%20guide/
-   - Note that guideline is for X Rebirth. But its use in X4 is similar.
-   - Here is the extensions\kuertee_alternatives_to_death\ui.xml file for my mod Alternatives To Death:
-   ```xml
-   <?xml version="1.0" encoding="UTF-8"?>
-   <addon name="kuertee_alternatives_to_death" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../ui/core/addon.xsd">
-     <environment type="menus">
-       <file name="ui/gameoptions_uix.lua" />
-       <file name="ui/menu_toplevel_uix.lua" />
-       <dependency name="ego_detailmonitor" />
-     </environment>
-   </addon>
-   ```
-   - With the game now loading custom lua files (instead of UIX loading them), make sure that any init() functions are called after they are loaded.
-   - note: Pre 7.5 UIX loaded and, if set-up a particular way like my mods are, UIX also called their init() functions.
-   - E.g. instead of "return ModLua" at the bottom of my mods' custom lua files, I now call "ModLua.init()". E.g.: kuertee_uix_mod_sample from UIX's Nexus Mods page (https://www.nexusmods.com/x4foundations/mods/552).
+Unfortunately, because of how this mod is built, disabling or enabling Protected UI Mode WHILE the mod is active will prevent the menus from reloading.
+
+Either:
+1. Activate/deactivate the mod and then restart the game at the operating system level. E.g. Task Manager, Steam, etc.
+OR
+2. Activate/deactivate Protected UI Mode BEFORE this mod is activated.
 
 Instructions for players
 ========================
-- Disable Protected UI Mode in the Settings > Extensions menu.
 - Install UI Extensions as normal.
+- Leave Protected UI Mode active. Ignore the pop-up message about disabling it.
 - When extracting the package from github, ensure that the folder you install the mod to is: "(X4 game)/extensions/kuertee_ui_extensions/". Extracting the package from Nexus Mods will extract it to "(X4 game)/extensions/kuertee_ui_extensions/". But be sure it does anyway.
 - Read the "CHANGES BUILT INTO THIS MOD (for players)" section.
 
@@ -55,13 +43,6 @@ An overview on how to mod for UIX:
 5. When done adding your callbacks, send me the changed XPL files.
 6. I'll merge them with the master UIX files.
 7. We'll coordinate release dates so that the new UIX mod with your callbacks is released near the time you release your mod.
-
-Alternative installation instructions for advanced developers:
-1. Pull the github files into the "(X4 game)/extensions/kuertee_ui_extensions" folder.
-2. To copy the UIX XPL files that are in "(X4 game)/extensions/kuertee_ui_extensions/ui" to the "game/ui" folder, run the "dev-make_symlink_files.bat". This will copy-linked files from UIX's folder into the game folder. Any changes you make in the UIX folder will be automatically mirrored in the files in the game folder.
-3. Examine one of the callbacks in any of those XPL files. Search for "callback". Add any callback you need in any of the XPL files IN THE MOD FOLDER. If you need any add callbacks to a menu file that UIX doesn't have let me know (on Discord, Nexus or kuertee@gmail.com).
-4. When done adding your callbacks, commit your changes to github.
-5. We'll coordinate release dates so that the new UIX mod with your callbacks is released near the time you release your mod.
 
 For any questions, it's best to @ me on Egosoft's unofficial Discord modding channel: https://discord.gg/RzAGhcY
 
@@ -89,46 +70,6 @@ Modders can use this API to mod the game's Lua files that and helps compatibilit
 Without this API, some Lua elements can only be modified by one mod. For example, my mods, "NPC reactions: NPC taxis" and "Teleport from transporter room" add buttons to the bottom of the Transporter Room panel. Because its Lua's display () function constructs its frame, table, rows, and content AND THEN immediately calls the frame:display () function, it is impossible for both mods to "rewrite" the display () function and expect both "rewrites" to work.
 
 With this API, specifically its callbacks, it is possible.
-
-Files in this API will be referred to as UIXs.
-
-Summary of how to use
-=====================
-In the mod's Lua file:
-- ---------------------
-1. Create a pointer to the base game's menu to be modded.
-2. Register a callback.
-3. Write your changes in the callback.
-4. Return what the callback expects - if it expects any.
-5. If a new callback is required in a function that already exists in the UIXs, simply insert a new callback where it's needed.
-6. If a new callback is required in a function that DOESN'T yet exists in the UIX, copy the function from the base game's menu.
-7. Paste that function in the relevant UIX.
-8. Insert the callback where it's needed.
-9. Push your changes to Git.
-
-Load the UIX and the mod's lua file:
-- --------------------
-**v7.5 and upwards:**
-
-Specify the UI file to be loaded in the mod's ui/ui.xml file (See **v7.5 NOTES FOR PLAYERS** section above).
-
-**Pre v7.5:**
-
-In the mod's MD file:
-1. Load the UIX required with SirNukes Mod Support APIs. For example: <raise_lua_event name="'Lua_Loader.Load'" param="'extensions.kuertee_ui_extensions.ui.kuertee_menu_transporter'" />
-2. Load the mod's Lua with SirNukes Mod Support APIs. For example: <raise_lua_event name="'Lua_Loader.Load'" param="'extensions.kuertee_npc_reactions.ui.kuertee_npc_reactions'"/>
-
-In your mod's release:
-- ---------------------
-Make this mod a required download for your mod.
-
-Documentation
-=============
-Soon.
-
-But the callbacks, along with their function parameters and their expected returns, are listed in each of the new Lua files. Learning at which point in the code they execute is as easy as searching for them in the code. Examples of how they are used can be seen in my mods that use them. My mods "NPC reactions/NPC taxi" and "Teleport from transporter room" both have changes to the "TransporterMenu".
-
-But here is documentation on NEW features (not connected to mod-specific changes via call-backs) that UIX offers.
 
 CHANGES BUILT INTO THIS MOD (for players)
 =========================================
@@ -180,18 +121,18 @@ In the base game, the Mission Guidance tab lists only the Guidance created manua
 The "Set to inactive" and "Set to active" buttons are available on missions listed in the Mission Guidance tab.
 The base game makes these buttons unavailable for Guidance Missions.
 
-Map Menu: Properties Owned > Deployables
+Map Menu: Property Owned > Deployables
 ========================================
 The list of deployables are grouped by name that can be expanded and collapsed.
 
 Map Menu: Sort by Weapons
 =========================
-The Properties Owned list can be sorted by the objects' damage-per-second value.
+The Property Owned list can be sorted by the objects' damage-per-second value.
 This is the same sort type used in the Multi-rename feature.
 
 Map Menu: Sort by Distance
 ==========================
-The Properties Owned list can be sorted by distance from the player or from the last selected object.
+The Property Owned list can be sorted by distance from the player or from the last selected object.
 
 Map Menu: Zoom Function Tweaks
 ==============================
@@ -207,6 +148,26 @@ Map Menu: Zoom Function Tweaks
 
 CHANGES BUILT INTO THIS MOD (for developers)
 ============================================
+
+Options Menu: Deactivating a mod
+================================
+When a mod is deactivated from the Settings > Extension menu, the UI event, "uix_deactivate_mod", is triggered. MDs can listen for this with:
+```xml
+  <event_ui_triggered screen="'OptionsMenu'" control="'uix_deactivate_mod'" />
+  <check_value value="event.param3 == '<mod id from the mod's content.xml file>'" />
+```
+
+For an example of how this is used, search for "uix_deactivate_mod" in the "kuertee_professions.xml" file of my Reputations and Professions mod.
+
+Map Menu: Custom Property Owned category tabs
+=============================================
+Add new category tabs to the Property Owned section with the uix_addUIXPropertyOwnedTab() function. More information about this function and its arguments are in "uix_addUIXPropertyOwnedTab()" function in the "menu_map.xpl" file.
+
+Note that unlike tabs added directly to the "propertyCategories" list, these tabs are temporary and are only shown when they have objects to list. Mods that use this function need to continually call "uix_addUIXPropertyOwnedTab()" at every refresh of the Map Menu. The best place to call "uix_addUIXPropertyOwnedTab()" is at the "createPropertyOwned_on_start()" callback.
+
+Because these tabs are temporary, they are always listed after the other tabs.
+
+For an example of how this is used, search for "uix_addUIXPropertyOwnedTab" in the "kuertee_military_exercises_map.lua" file of my Military Exercises mod. For a simpler example, search for "uix_addUIXPropertyOwnedTab" in the "kWAT.lua" file of my Wear And Tear mod.
 
 Interact Menu: Add Custom Actions/Orders Group (via MD)
 =======================================================
@@ -375,6 +336,12 @@ French localisation by Calvitix.
 
 History
 =======
+v9.0.0.5, 19 Jun 2026:
+- Bug-fix: In Map Menu > Select Object mode (e.g. selecting a navigation beacon for HQ teleportation), the +/- buttons for the deployables were broken.
+
+v9.0.0.4, 17 Jun 2026:
+- Bug-fix: Map Menu: The "select component" mode was broken. This is the mode when the game asks you to select an object on the map. E.g. When teleporting the Player's HQ.
+
 v9.0.0.3, 15 Jun 2026:
 - Bug-fix: The Boarding Menu was sometimes broken.
 
@@ -383,10 +350,10 @@ v9.0.0.1, 11 Jun 2026:
 Changes from the last v8.0.4.3, 06 Apr 2025 version that were released in previous 9.0 betas:
 - New feature: Callbacks for sticeIO's mod/s.
 - Tweaks: Callbacks for IALuir's mod/s.
-- New feature: Map Menu > Property Owned > Sort by Weapons. The Properties Owned list can be sorted by objects' damage-per-second value. This is the same sort type used in the Multi-rename feature when.
+- New feature: Map Menu > Property Owned > Sort by Weapons. The Property Owned list can be sorted by objects' damage-per-second value. This is the same sort type used in the Multi-rename feature when.
 - New feature: Boarding Menu: Set-up "All" ships entry that propagates its settings to all attacking ships.
 - New feature: hierarchical sub-groups in the Interact Menu (available via Lua/MD) by ChemODun. More details in the "Add Nested Sub-Groups*" and "Add a Custom Root Section*" sections.
-- New feature: Map Menu > Properties Owned > Deployables: The list of deployables are grouped by name that can be expanded and collapsed.
+- New feature: Map Menu > Property Owned > Deployables: The list of deployables are grouped by name that can be expanded and collapsed.
 - New feature: Map Menu > Information > Full Crew List: The list of people on board can be expanded and collapsed.
 
 v9.0.0.0.12.4, 5 Jun 2026:
@@ -399,7 +366,7 @@ v9.0.0.0.12, 28 May 2026:
 - Compatibility: 9.0 RC 1 UI files merged. Thanks, ChemODun!
 - New feature: Callbacks for sticeIO's mod/s.
 - Tweaks: Callbacks for IALuir's mod/s.
-- New feature: Map Menu > Property Owned > Sort by Weapons. The Properties Owned list can be sorted by objects' damage-per-second value. This is the same sort type used in the Multi-rename feature when.
+- New feature: Map Menu > Property Owned > Sort by Weapons. The Property Owned list can be sorted by objects' damage-per-second value. This is the same sort type used in the Multi-rename feature when.
 - Bug-fix: Map Menu: Breaks when a selected object becomes invalid. E.g. when collecting a deployable after deactivating it.
 
 v9.0.0.0.11.1, 22 May 2026:
@@ -436,7 +403,7 @@ v9.0.0.0.8.2, 5 May 2026:
 
 v9.0.0.0.8, 4 May 2026:
 - Tweak: Multi-rename now adds leading zeroes to the "$i" portion of the objects name. Previously, it used raw text numbers preventing the ship from getting sorted propertly.
-- New feature: Map Menu > Properties Owned > Deployables: The list of deployables are grouped by name that can be expanded and collapsed.
+- New feature: Map Menu > Property Owned > Deployables: The list of deployables are grouped by name that can be expanded and collapsed.
 - New feature: Map Menu > Information > Full Crew List: The list of people on board can be expanded and collapsed.
 - Bug-fix: Multi-rename feature was missing from the Interact Menu.
 - Bug-fix: Missing callbacks in the Game Options menu that prevented mods like Grouped Saved Files from working.
