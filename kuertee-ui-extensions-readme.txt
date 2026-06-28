@@ -6,9 +6,9 @@ Contributors: AlexandreTK, ChemODun, Damonya, DrWhoKnows, DmytroK, Erixon, Farem
 
 Updates
 =======
-v8.0.4.6, 11 June 2026:
-- New feature: hierarchical sub-groups in the Interact Menu (available via Lua/MD) by ChemODun.
-- Bug-fix: Diplomacy and PlayerInfo Menu: Bug-fix to potential crashes by ChemODun.
+v8.0.4.7, 28 June 2026:
+- New callbacks: in gameoptions for the controls management by ChemODun.
+- Fix:  For hierarchical sub-groups in the Interact Menu, to prevent double addition of sub-groups.
 
 NOTES FOR PLAYERS:
 ==================
@@ -350,6 +350,10 @@ French localisation by Calvitix.
 
 History
 =======
+v8.0.4.6, 11 June 2026:
+- New feature: hierarchical sub-groups in the Interact Menu (available via Lua/MD) by ChemODun.
+- Bug-fix: Diplomacy and PlayerInfo Menu: Bug-fix to potential crashes by ChemODun.
+
 v8.0.4.5, 10 May 2026:
 - New feature: New callbacks by ChemOdun.
 
