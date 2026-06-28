@@ -8,7 +8,7 @@ Updates
 =======
 v9.0.0.6, 27 Jun 2026:
 FOR PLAYERS:
-- Protected UI Mode: I've been playing with Protected UI Mode active for the last 3 weeks with no adverse effects. I now recommend that this mode is active and that the pop-up message about disabling it is ignored. Only deactivate this mode if you experience something unexpected.
+- Protected UI Mode: I've been playing with Protected UI Mode active for the last 3 weeks with no adverse effects. I now recommend that this mode is active and that the pop-up message about disabling it is ignored. Only deactivate this mode if you experience something unexpected. Unfortunately, activating/deactivating this mode still halts all UI, so either 1. Activate/deactivate Protected UI Mode and then restart the game at the operating system level. E.g. Task Manager, Steam, etc. OR 2. Activate/deactivate Protected UI Mode BEFORE this mod is activated.
 
 FOR MODDERS:
 - New feature: new callbacks by ChemOdun.
