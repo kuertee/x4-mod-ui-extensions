@@ -6,7 +6,7 @@ Contributors: AlexandreTK, ChemODun, Damonya, DrWhoKnows, DmytroK, Erixon, Farem
 
 Updates
 =======
-v8.0.4.7, 28 June 2026:
+v8.0.4.9, 28 June 2026:
 - New callbacks: in gameoptions for the controls management by ChemODun.
 - Fix:  For hierarchical sub-groups in the Interact Menu, to prevent double addition of sub-groups.
 
