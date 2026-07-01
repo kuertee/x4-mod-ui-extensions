@@ -5624,22 +5624,14 @@ function menu.remapInput(newinputtype, newinputcode, newinputsgn, checked)
 	local conflicts = menu.checkForConflicts(newinputtype, newinputcode, newinputsgn)
 
 	-- chemodun start: callback
-	-- checkall=true only scans config.input.controlsorder (the vanilla
-	-- space/menus/firstperson groups) - it does NOT also check
-	-- menu.controlsorder (the current page's own row list), so this adds to
-	-- the normal page-scoped result above rather than replacing it.
-	local useCheckAll = false
-	if menu.uix_callbacks["remapInput_useCheckAll"] then
-		for uix_id, uix_callback in pairs(menu.uix_callbacks["remapInput_useCheckAll"]) do
-			if uix_callback(menu.remapControl.controltype, menu.remapControl.controlcode) then
-				useCheckAll = true
-			end
-		end
-	end
-	if useCheckAll then
-		local crossPageConflicts = menu.checkForConflicts(newinputtype, newinputcode, newinputsgn, true)
-		for _, conflict in ipairs(crossPageConflicts) do
-			table.insert(conflicts, conflict)
+	-- Registered callbacks receive (conflicts, controltype, controlcode,
+	-- newinputtype, newinputcode, newinputsgn, currentOption) and may append
+	-- additional entries directly into the conflicts table. currentOption is
+	-- menu.currentOption at the time of the remap (e.g. "keyboard_space"),
+	-- letting callbacks apply area-aware filtering.
+	if menu.uix_callbacks["remapInput_enrichConflicts"] then
+		for uix_id, uix_callback in pairs(menu.uix_callbacks["remapInput_enrichConflicts"]) do
+			uix_callback(conflicts, menu.remapControl.controltype, menu.remapControl.controlcode, newinputtype, newinputcode, newinputsgn, menu.currentOption)
 		end
 	end
 	-- chemodun end: callback
@@ -5900,6 +5892,22 @@ function menu.remapInputInternal(newinputtype, newinputcode, newinputsgn, newinp
 
 	-- check for resulting conflicts and change control map appropriatly
 	menu.fixInputConflicts(newinput)
+
+	-- chemodun start: callback
+	-- fixForPage lets callbacks clear a specific controlsorder page without
+	-- needing direct access to menu or config. currentOption identifies the
+	-- page being remapped so callbacks can apply area-aware filtering.
+	local function fixForPage(pageName)
+		if config.input.controlsorder[pageName] then
+			menu.fixInputConflictsInternal(config.input.controlsorder[pageName], newinput, true)
+		end
+	end
+	if menu.uix_callbacks["remapInput_resolveConflicts"] then
+		for uix_id, uix_callback in pairs(menu.uix_callbacks["remapInput_resolveConflicts"]) do
+			uix_callback(newinput, menu.remapControl.controltype, menu.remapControl.controlcode, menu.currentOption, fixForPage)
+		end
+	end
+	-- chemodun end: callback
 
 	local function insertInput(controltype, controlcode, newinput)
 		if not menu.controls[controltype][controlcode] then
