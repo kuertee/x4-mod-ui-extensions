@@ -11549,7 +11549,11 @@ Helper.rightSideBar = {
 	{ name = ReadText(1001, 3800), icon = "tlt_terraforming",				mode = "terraforming",				helpOverlayID = "tlt_terraforming",				helpOverlayText = ReadText(1028, 8109),		canterraform = true },
 }
 
-function Helper.createRightSideBar(menu, frame, container, condition, currentmode, callback, selfcallback, refreshcallback)
+-- DiCrash start: sidebar offset arguments
+function Helper.createRightSideBar(menu, frame, container, condition, currentmode, callback, selfcallback, refreshcallback, xoffset, yoffset)
+	xoffset = xoffset or 0
+	yoffset = yoffset or 0
+-- DiCrash end:
 	local sidebarWidth = Helper.scaleX(Helper.sidebarWidth)
 
 	local rightbarpanel = frame:addHiddenFrameBorder("rightbar", { active = menu.panelState and menu.panelState.rightbar })
@@ -11559,8 +11563,10 @@ function Helper.createRightSideBar(menu, frame, container, condition, currentmod
 		tabOrder = 4,
 		width = sidebarWidth,
 		height = 0,
-		x = Helper.viewWidth - sidebarWidth - Helper.frameBorder,
-		y = Helper.frameBorder + 20,
+		-- DiCrash start: sidebar position offsets
+		x = Helper.viewWidth - sidebarWidth - Helper.frameBorder + xoffset,
+		y = Helper.frameBorder + 20 + yoffset,
+		-- DiCrash end:
 		scaling = false,
 		borderEnabled = false,
 		reserveScrollBar = false,
@@ -11569,7 +11575,29 @@ function Helper.createRightSideBar(menu, frame, container, condition, currentmod
 
 	local isplayerowned = GetComponentData(container, "isplayerowned")
 
-	for _, entry in ipairs(Helper.rightSideBar) do
+	-- DiCrash start: sidebar entries extension
+	local entries = {}
+	for i, entry in ipairs(Helper.rightSideBar) do
+		entries[i] = {}
+		for key, value in pairs(entry) do
+			entries[i][key] = value
+		end
+	end
+
+	if menu.uix_callbacks and menu.uix_callbacks["createRightSideBar_on_prepare_entries"] then
+		for uix_id, uix_callback in pairs(menu.uix_callbacks["createRightSideBar_on_prepare_entries"]) do
+			local result = uix_callback(entries, container, condition, currentmode)
+
+			if type(result) == "table" and type(result.entries) == "table" then
+				entries = result.entries
+			end
+		end
+	end
+	-- DiCrash end:
+
+	-- DiCrash start: sidebar entries rendering
+	for _, entry in ipairs(entries) do
+	-- DiCrash end:
 		local display = true
 		if (entry.canresearch ~= nil) then
 			if isplayerowned then

@@ -1491,6 +1491,13 @@ function menu.createIndex()
 		menu.addIndexEntry(bp_index, i, entry.name, { "Blueprints", i, menu.data["Blueprints"][entry.key] }, 1, numentries)
 	end
 
+	-- DiCrash start: encyclopedia index extension
+	if menu.uix_callbacks["createIndex_on_end"] then
+		for uix_id, uix_callback in pairs(menu.uix_callbacks["createIndex_on_end"]) do
+			uix_callback(index, menu)
+		end
+	end
+	-- DiCrash end:
 	return index
 end
 
@@ -3253,6 +3260,19 @@ function menu.addDetailRows(ftable)
 			menu.addDetailRow(ftable, ReadText(1001, 9083), ConvertIntegerString(menu.object.hull, true, 0, true) .. " " .. ReadText(1001, 118))
 			-- ship type
 
+			-- DiCrash start: encyclopedia ship type
+			local shiptypename = menu.object.shiptypename
+			if menu.uix_callbacks["onShowMenu_on_set_shiptypename"] then
+				for uix_id, uix_callback in pairs(menu.uix_callbacks["onShowMenu_on_set_shiptypename"]) do
+					local result = uix_callback(shiptypename, menu.id, menu.library, menu.object)
+
+					if type(result) == "table" and type(result.shiptypename) == "string" then
+						shiptypename = result.shiptypename
+					end
+				end
+			end
+			-- DiCrash end:
+
 			-- start: alexandretk callback
 			if menu.uix_callbacks ["onShowMenu_addOtherShipTypes"] then
 				for uix_id, uix_callback in pairs (menu.uix_callbacks ["onShowMenu_addOtherShipTypes"]) do
@@ -3269,7 +3289,9 @@ function menu.addDetailRows(ftable)
 			end
 			-- end: cpsdo callback
 
-				menu.addDetailRow(ftable, ReadText(1001, 9051), menu.object.shiptypename)
+				-- DiCrash start: ship type display
+				menu.addDetailRow(ftable, ReadText(1001, 9051), shiptypename)
+				-- DiCrash end:
 
 			end
 

@@ -2067,6 +2067,14 @@ function menu.createLegend()
 			end
 		end
 	end
+
+	-- DiCrash start: map legend extension
+	if menu.uix_callbacks["createLegend_on_end"] then
+		for uix_id, uix_callback in pairs(menu.uix_callbacks["createLegend_on_end"]) do
+			uix_callback(config.legend, menu)
+		end
+	end
+	-- DiCrash end:
 end
 
 function menu.sortWareGroupsByTier(a, b)
@@ -8832,7 +8840,21 @@ function menu.createPropertyOwned(frame, instance)
 			end
 		end
 
-		if Helper.isComponentClass(entry.realclassid, "station") then
+		-- DiCrash start: build task capability
+		local supportsbuildtasks = Helper.isComponentClass(entry.realclassid, "station")
+
+		if menu.uix_callbacks["createPropertyOwned_on_set_supportsbuildtasks"] then
+			for uix_id, uix_callback in pairs(menu.uix_callbacks["createPropertyOwned_on_set_supportsbuildtasks"]) do
+				local result = uix_callback(object, object64, entry, supportsbuildtasks)
+
+				if type(result) == "table" and type(result.supportsbuildtasks) == "boolean" then
+					supportsbuildtasks = result.supportsbuildtasks
+				end
+			end
+		end
+
+		if supportsbuildtasks then
+		-- DiCrash end:
 			local constructions = {}
 			local constructionshipsbymacro = {}
 			-- builds in progress
@@ -8865,7 +8887,11 @@ function menu.createPropertyOwned(frame, instance)
 				end
 			end
 			infoTableData.constructions[object_string] = constructions
-		elseif Helper.isComponentClass(entry.classid, "ship") then
+		-- DiCrash start: build task ship split
+		end
+
+		if Helper.isComponentClass(entry.classid, "ship") then
+		-- DiCrash end:
 			if menu.propertyMode == "inventoryships" then
 				local pilot = ConvertIDTo64Bit(assignedpilot)
 				if pilot and (pilot ~= playerid) then
@@ -10025,7 +10051,9 @@ function menu.createPropertyRow(instance, ftable, rowgroup, component, iteration
 
 		-- kuertee start: uix properties owned tab
 		-- if isstationexpandable or (subordinates.hasRendered and (not hidesubordinates) and subordinatefound) or (#dockedships > 0) or (isstation and (#constructions > 0)) then
-		if (menu.uix_propertiesOwnedTab_renderingPropertySection and menu.uix_propertiesOwnedTab_renderingPropertySection.isForceComponentExpandable) or isstationexpandable or (subordinates.hasRendered and (not hidesubordinates) and subordinatefound) or (#dockedships > 0) or (isstation and (#constructions > 0)) then
+		-- DiCrash start: construction row expansion
+		if (menu.uix_propertiesOwnedTab_renderingPropertySection and menu.uix_propertiesOwnedTab_renderingPropertySection.isForceComponentExpandable) or isstationexpandable or (subordinates.hasRendered and (not hidesubordinates) and subordinatefound) or (#dockedships > 0) or (#constructions > 0) then
+		-- DiCrash end:
 		-- kuertee end: uix properties owned tab
 			row[1]:createButton({ scaling = false }):setText(menu.isPropertyExtended(tostring(component)) and "-" or "+", { scaling = true, halign = "center" })
 			row[1].handlers.onClick = function () return menu.buttonExtendProperty(tostring(component)) end
@@ -10430,12 +10458,12 @@ function menu.createPropertyRow(instance, ftable, rowgroup, component, iteration
 					end
 				end
 			end
-			if isstation then
-				-- construction
-				if #constructions > 0 then
-					menu.createConstructionSubSection(ftable, rowgroup, component, constructions)
-				end
+			-- DiCrash start: construction subsection support
+			-- construction
+			if #constructions > 0 then
+				menu.createConstructionSubSection(ftable, rowgroup, component, constructions)
 			end
+			-- DiCrash end:
 		end
 	end
 
