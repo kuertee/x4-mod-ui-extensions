@@ -9533,48 +9533,29 @@ function menu.callbackPrivacyUserID()
 end
 
 function menu.callbackSave(savegame, name)
-	Helper.debugText_forced("callbackSave")
-	-- kuertee start: save after 5s pause
-	menu.closeMenu("close")
-	Pause()
-	Helper.addDelayedOneTimeCallbackOnUpdate(function ()
-		Helper.debugText_forced("callbackSave start")
-	-- kuertee end: save after 5s pause
-
-		if savegame.empty then
-			--  don't save the default name, so on next save to this slot it gets updated
-			if name == menu.getNewSavegameName(savegame) then
-				name = "#" .. savegame.empty
-			end
-			SaveGame("save_" .. savegame.empty, name)
-		else
-			--  don't save the default name, so on next save to this slot it gets updated
-			if type(savegame.name) == "string" then
-				local find_start, find_end = string.find(savegame.name, "#[0-9][0-9][0-9]")
-				if (find_start == 1) and (find_end == #savegame.name) and (name == menu.getNewSavegameName(savegame)) then
-					name = savegame.name
-				end
-			else
-				DebugError("Savegame name was not a string! See earlier output. [Florian]")
-			end
-			if savegame.isonline then
-				SaveOnlineGame()
-			else
-				SaveGame(savegame.filename, name)
-			end
+	if savegame.empty then
+		--  don't save the default name, so on next save to this slot it gets updated
+		if name == menu.getNewSavegameName(savegame) then
+			name = "#" .. savegame.empty
 		end
-
-		-- kuertee start: save after 5s pause
-		-- menu already closed above
-		-- menu.closeMenu("close")
-		-- kuertee end: save after 5s pause
-
-		Helper.debugText_forced("callbackSave done")
-		Unpause()
-
-	-- kuertee start: save after 5s pause
-	end, true, getElapsedTime() + 5)
-	-- kuertee end: save after 5s pause
+		SaveGame("save_" .. savegame.empty, name)
+	else
+		--  don't save the default name, so on next save to this slot it gets updated
+		if type(savegame.name) == "string" then
+			local find_start, find_end = string.find(savegame.name, "#[0-9][0-9][0-9]")
+			if (find_start == 1) and (find_end == #savegame.name) and (name == menu.getNewSavegameName(savegame)) then
+				name = savegame.name
+			end
+		else
+			DebugError("Savegame name was not a string! See earlier output. [Florian]")
+		end
+		if savegame.isonline then
+			SaveOnlineGame()
+		else
+			SaveGame(savegame.filename, name)
+		end
+	end
+	menu.closeMenu("close")
 end
 
 function menu.callbackSfxDefaults()
@@ -14464,7 +14445,6 @@ function menu.getLatestOnlineSave()
 end
 
 function menu.closeMenu(dueToClose)
-	Helper.debugText_forced("closeMenu")
 	Helper.closeMenu(menu, dueToClose)
 	menu.cleanup()
 end

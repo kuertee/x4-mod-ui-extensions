@@ -4319,10 +4319,12 @@ function menu.buttonSelectHandler()
 				local uix_argument = menu.contextMenuData.component
 				Helper.addDelayedOneTimeCallbackOnUpdate(function() return uix_function(ConvertStringTo64Bit(tostring(uix_argument))) end, true, getElapsedTime())
 			end
-			menu.mode = menu.old_mode
-			menu.modeparam = menu.old_modeparam
-			menu.infoTableMode = menu.old_infoTableMode
-			menu.propertyMode = menu.old_propertyMode
+
+			menu.mode = menu.uix_old_mode
+			menu.modeparam = menu.uix_old_modeparam
+			menu.infoTableMode = menu.uix_old_infoTableMode
+			menu.propertyMode = menu.uix_old_propertyMode
+
 			menu.closeContextMenu()
 			menu.refreshMainFrame = true
 			menu.refreshInfoFrame()
@@ -7738,7 +7740,15 @@ function menu.getContainerNameAndColors(container, iteration, issquadleader, sho
 		highlightvisitors = menu.getFilterOption("think_diplomacy_highlightvisitor", false)
 	end
 
-	local name = Helper.unlockInfo(unlocked, name .. " (" .. idcode .. ")") .. (((not showScanLevel) or isplayer) and "" or " (" .. revealpercent .. " %)")
+	-- kuertee start: do not idcode if no idcode
+	-- local name = Helper.unlockInfo(unlocked, name .. " (" .. idcode .. ")") .. (((not showScanLevel) or isplayer) and "" or " (" .. revealpercent .. " %)")
+	if idcode and idcode ~= "" then
+		name = Helper.unlockInfo(unlocked, name .. " (" .. idcode .. ")") .. (((not showScanLevel) or isplayer) and "" or " (" .. revealpercent .. " %)")
+	else
+		name = Helper.unlockInfo(unlocked, name .. " ") .. (((not showScanLevel) or isplayer) and "" or " (" .. revealpercent .. " %)")
+	end
+	-- kuertee end: do not idcode if no idcode
+
 	local font = Helper.standardFont
 	local color = Color["text_normal"]
 
@@ -33992,14 +34002,15 @@ function menu.uix_removeUIXPropertyTab(id)
 end
 
 -- allow trigger of selectComponent mode from lua
-function menu.setSelectComponentMode(returnsection, classlist, category, playerowned, customheading, screenname)
-	menu.old_mode = menu.mode
-	menu.old_modeparam = menu.modeparam
-	menu.old_infoTableMode = menu.infoTableMode
-	menu.old_propertyMode = menu.propertyMode
+function menu.setSelectComponentMode(returnsection, classlist, category, playerowned, customheading, screenname, fromMenu)
+	menu.uix_old_mode = menu.mode
+	menu.uix_old_modeparam = menu.modeparam
+	menu.uix_old_infoTableMode = menu.infoTableMode
+	menu.uix_old_propertyMode = menu.propertyMode
+	menu.infoTableMode = "propertyall"
+	menu.propertyMode = "propertyowned"
 
-	menu.mode = "selectComponent"
-	menu.modeparam = {
+	local modeparam = {
 		returnsection,
 		classlist,
 		category,
@@ -34008,11 +34019,25 @@ function menu.setSelectComponentMode(returnsection, classlist, category, playero
 		screenname,
 		{isUIXSelectComponentMode = true}
 	}
-	menu.infoTableMode = "propertyowned"
-	menu.propertyMode = "propertyall"
-	menu.closeContextMenu()
-	menu.refreshMainFrame = true
-	menu.refreshInfoFrame()
+
+	if menu.mainFrame then
+		menu.mode = "selectComponent"
+		menu.modeparam = modeparam
+		menu.closeContextMenu()
+		menu.refreshMainFrame = true
+		menu.refreshInfoFrame()
+	else
+		local showzone = nil
+		local focuscomponent = nil
+		local history = nil
+		local mode = "selectComponent"
+		local param = {0, 0, showzone, focuscomponent, history, mode, modeparam}
+		if fromMenu then
+			Helper.closeMenuAndOpenNewMenu(fromMenu, "MapMenu", param, true)
+		else
+			OpenMenu("MapMenu", nil, param)
+		end
+	end
 end
 
 -- extra sort options

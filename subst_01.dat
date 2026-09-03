@@ -15511,10 +15511,12 @@ function menu.buttonSelectHandler()
 				local uix_argument = menu.contextMenuData.component
 				Helper.addDelayedOneTimeCallbackOnUpdate(function() return uix_function(ConvertStringTo64Bit(tostring(uix_argument))) end, true, getElapsedTime())
 			end
-			menu.mode = menu.old_mode
-			menu.modeparam = menu.old_modeparam
-			menu.infoTableMode = menu.old_infoTableMode
-			menu.propertyMode = menu.old_propertyMode
+
+			menu.mode = menu.uix_old_mode
+			menu.modeparam = menu.uix_old_modeparam
+			menu.infoTableMode = menu.uix_old_infoTableMode
+			menu.propertyMode = menu.uix_old_propertyMode
+
 			menu.closeContextMenu()
 			menu.refreshMainFrame = true
 			menu.refreshInfoFrame()
@@ -45184,14 +45186,15 @@ function menu.uix_removeUIXPropertyTab(id)
 end
 
 -- allow trigger of selectComponent mode from lua
-function menu.setSelectComponentMode(returnsection, classlist, category, playerowned, customheading, screenname)
-	menu.old_mode = menu.mode
-	menu.old_modeparam = menu.modeparam
-	menu.old_infoTableMode = menu.infoTableMode
-	menu.old_propertyMode = menu.propertyMode
+function menu.setSelectComponentMode(returnsection, classlist, category, playerowned, customheading, screenname, fromMenu)
+	menu.uix_old_mode = menu.mode
+	menu.uix_old_modeparam = menu.modeparam
+	menu.uix_old_infoTableMode = menu.infoTableMode
+	menu.uix_old_propertyMode = menu.propertyMode
+	menu.infoTableMode = "propertyall"
+	menu.propertyMode = "propertyowned"
 
-	menu.mode = "selectComponent"
-	menu.modeparam = {
+	local modeparam = {
 		returnsection,
 		classlist,
 		category,
@@ -45200,11 +45203,25 @@ function menu.setSelectComponentMode(returnsection, classlist, category, playero
 		screenname,
 		{isUIXSelectComponentMode = true}
 	}
-	menu.infoTableMode = "propertyowned"
-	menu.propertyMode = "propertyall"
-	menu.closeContextMenu()
-	menu.refreshMainFrame = true
-	menu.refreshInfoFrame()
+
+	if menu.mainFrame then
+		menu.mode = "selectComponent"
+		menu.modeparam = modeparam
+		menu.closeContextMenu()
+		menu.refreshMainFrame = true
+		menu.refreshInfoFrame()
+	else
+		local showzone = nil
+		local focuscomponent = nil
+		local history = nil
+		local mode = "selectComponent"
+		local param = {0, 0, showzone, focuscomponent, history, mode, modeparam}
+		if fromMenu then
+			Helper.closeMenuAndOpenNewMenu(fromMenu, "MapMenu", param, true)
+		else
+			OpenMenu("MapMenu", nil, param)
+		end
+	end
 end
 
 -- extra sort options
@@ -115132,48 +115149,29 @@ function menu.callbackPrivacyUserID()
 end
 
 function menu.callbackSave(savegame, name)
-	Helper.debugText_forced("callbackSave")
-	-- kuertee start: save after 5s pause
-	menu.closeMenu("close")
-	Pause()
-	Helper.addDelayedOneTimeCallbackOnUpdate(function ()
-		Helper.debugText_forced("callbackSave start")
-	-- kuertee end: save after 5s pause
-
-		if savegame.empty then
-			--  don't save the default name, so on next save to this slot it gets updated
-			if name == menu.getNewSavegameName(savegame) then
-				name = "#" .. savegame.empty
-			end
-			SaveGame("save_" .. savegame.empty, name)
-		else
-			--  don't save the default name, so on next save to this slot it gets updated
-			if type(savegame.name) == "string" then
-				local find_start, find_end = string.find(savegame.name, "#[0-9][0-9][0-9]")
-				if (find_start == 1) and (find_end == #savegame.name) and (name == menu.getNewSavegameName(savegame)) then
-					name = savegame.name
-				end
-			else
-				DebugError("Savegame name was not a string! See earlier output. [Florian]")
-			end
-			if savegame.isonline then
-				SaveOnlineGame()
-			else
-				SaveGame(savegame.filename, name)
-			end
+	if savegame.empty then
+		--  don't save the default name, so on next save to this slot it gets updated
+		if name == menu.getNewSavegameName(savegame) then
+			name = "#" .. savegame.empty
 		end
-
-		-- kuertee start: save after 5s pause
-		-- menu already closed above
-		-- menu.closeMenu("close")
-		-- kuertee end: save after 5s pause
-
-		Helper.debugText_forced("callbackSave done")
-		Unpause()
-
-	-- kuertee start: save after 5s pause
-	end, true, getElapsedTime() + 5)
-	-- kuertee end: save after 5s pause
+		SaveGame("save_" .. savegame.empty, name)
+	else
+		--  don't save the default name, so on next save to this slot it gets updated
+		if type(savegame.name) == "string" then
+			local find_start, find_end = string.find(savegame.name, "#[0-9][0-9][0-9]")
+			if (find_start == 1) and (find_end == #savegame.name) and (name == menu.getNewSavegameName(savegame)) then
+				name = savegame.name
+			end
+		else
+			DebugError("Savegame name was not a string! See earlier output. [Florian]")
+		end
+		if savegame.isonline then
+			SaveOnlineGame()
+		else
+			SaveGame(savegame.filename, name)
+		end
+	end
+	menu.closeMenu("close")
 end
 
 function menu.callbackSfxDefaults()
@@ -120063,7 +120061,6 @@ function menu.getLatestOnlineSave()
 end
 
 function menu.closeMenu(dueToClose)
-	Helper.debugText_forced("closeMenu")
 	Helper.closeMenu(menu, dueToClose)
 	menu.cleanup()
 end

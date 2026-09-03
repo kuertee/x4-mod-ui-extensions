@@ -3600,9 +3600,9 @@ end
 
 function menu.draw()
 	-- kuertee start: callback
-	if menu.uix_callbacks ["draw_on_start"] then
-		for uix_id, uix_callback in pairs (menu.uix_callbacks ["draw_on_start"]) do
-			uix_callback (config)
+	if menu.uix_callbacks["draw_on_start"] then
+		for uix_id, uix_callback in pairs (menu.uix_callbacks["draw_on_start"]) do
+			uix_callback(config)
 		end
 	end
 	-- kuertee end: callback
@@ -4311,9 +4311,9 @@ function menu.createContentTable(frame, position)
 		if ((not skipped) or (section.skippable == false)) and ((not skiporders) or section.allowmultiloop) then
 			-- kuertee start: callback
 			local kUIX_isSectionValid = true
-			if menu.uix_callbacks ["createContentTable_getIsSectionValid"] then
-				for uix_id, uix_callback in pairs (menu.uix_callbacks ["createContentTable_getIsSectionValid"]) do
-					kUIX_isSectionValid = uix_callback (section)
+			if menu.uix_callbacks["createContentTable_getIsSectionValid"] then
+				for uix_id, uix_callback in pairs (menu.uix_callbacks["createContentTable_getIsSectionValid"]) do
+					kUIX_isSectionValid = uix_callback(section)
 					if kUIX_isSectionValid ~= true then
 						break
 					end
@@ -4375,9 +4375,9 @@ function menu.createContentTable(frame, position)
 					for _, subsection in ipairs(section.subsections) do
 						-- kuertee start: callback
 						local kUIX_isSubsectionValid = true
-						if menu.uix_callbacks ["createContentTable_getIsSubsectionValid"] then
-							for uix_id, uix_callback in pairs (menu.uix_callbacks ["createContentTable_getIsSubsectionValid"]) do
-								kUIX_isSubsectionValid = uix_callback (subsection)
+						if menu.uix_callbacks["createContentTable_getIsSubsectionValid"] then
+							for uix_id, uix_callback in pairs (menu.uix_callbacks["createContentTable_getIsSubsectionValid"]) do
+								kUIX_isSubsectionValid = uix_callback(subsection)
 								if kUIX_isSubsectionValid ~= true then
 									break
 								end
@@ -4418,9 +4418,9 @@ function menu.createContentTable(frame, position)
 							-- row[1].handlers.onClick = function () return menu.handleSubSectionOption(data, true) end
 							row[1].handlers.onClick = function()
 								local uix_isOverrideClickEvent
-								if menu.uix_callbacks ["interactMenu_clickSubsection"] then
-									for uix_id, uix_callback in pairs (menu.uix_callbacks ["interactMenu_clickSubsection"]) do
-										uix_isOverrideClickEvent = uix_callback (menu.actions[subsection.id])
+								if menu.uix_callbacks["interactMenu_clickSubsection"] then
+									for uix_id, uix_callback in pairs (menu.uix_callbacks["interactMenu_clickSubsection"]) do
+										uix_isOverrideClickEvent = uix_callback(menu.actions[subsection.id])
 										if uix_isOverrideClickEvent then
 											break
 										end
@@ -4466,9 +4466,9 @@ function menu.createContentTable(frame, position)
 
 						-- kuertee start: callback
 						local kUIX_isActionValid = true
-						if menu.uix_callbacks ["createContentTable_getIsActionValid"] then
-							for uix_id, uix_callback in pairs (menu.uix_callbacks ["createContentTable_getIsActionValid"]) do
-								kUIX_isActionValid = uix_callback (entry)
+						if menu.uix_callbacks["createContentTable_getIsActionValid"] then
+							for uix_id, uix_callback in pairs (menu.uix_callbacks["createContentTable_getIsActionValid"]) do
+								kUIX_isActionValid = uix_callback(entry)
 								if kUIX_isActionValid ~= true then
 									break
 								end
@@ -4541,9 +4541,9 @@ function menu.createContentTable(frame, position)
 							-- row[1].handlers.onClick = entry.script
 							row[1].handlers.onClick = function(...)
 								local uix_isOverrideClickEvent
-								if menu.uix_callbacks ["interactMenu_clickAction"] then
-									for uix_id, uix_callback in pairs (menu.uix_callbacks ["interactMenu_clickAction"]) do
-										uix_isOverrideClickEvent = uix_callback (entry)
+								if menu.uix_callbacks["interactMenu_clickAction"] then
+									for uix_id, uix_callback in pairs (menu.uix_callbacks["interactMenu_clickAction"]) do
+										uix_isOverrideClickEvent = uix_callback(entry)
 										if uix_isOverrideClickEvent then
 											break
 										end
@@ -4747,9 +4747,9 @@ function menu.createSubSectionTable(frame, position)
 		-- row[1].handlers.onClick = entry.script
 		row[1].handlers.onClick = function(...)
 			local uix_isOverrideClickEvent
-			if menu.uix_callbacks ["interactMenu_clickAction"] then
-				for uix_id, uix_callback in pairs (menu.uix_callbacks ["interactMenu_clickAction"]) do
-					uix_isOverrideClickEvent = uix_callback (entry)
+			if menu.uix_callbacks["interactMenu_clickAction"] then
+				for uix_id, uix_callback in pairs (menu.uix_callbacks["interactMenu_clickAction"]) do
+					uix_isOverrideClickEvent = uix_callback(entry)
 					if uix_isOverrideClickEvent then
 						break
 					end
@@ -5200,9 +5200,9 @@ function menu.prepareSections()
 	menu.actions = {}
 
 	-- start uix_callback
-	if menu.uix_callbacks ["prepareSections_on_start"] then
-		for uix_id, uix_callback in pairs (menu.uix_callbacks ["prepareSections_on_start"]) do
-			uix_callback (config.sections)
+	if menu.uix_callbacks["prepareSections_on_start"] then
+		for uix_id, uix_callback in pairs (menu.uix_callbacks["prepareSections_on_start"]) do
+			uix_callback(config.sections)
 		end
 	end
 	-- end uix_callback
@@ -5249,9 +5249,9 @@ function menu.prepareSections()
 	-- chemodun end: menu subsection stack: initialize registered sub-groups
 
 	-- chemodun start: menu subsection stack: callback
-	if menu.uix_callbacks ["prepareSections_on_end"] then
-		for uix_id, uix_callback in pairs (menu.uix_callbacks ["prepareSections_on_end"]) do
-			uix_callback (config.sections)
+	if menu.uix_callbacks["prepareSections_on_end"] then
+		for uix_id, uix_callback in pairs (menu.uix_callbacks["prepareSections_on_end"]) do
+			uix_callback(config.sections)
 		end
 	end
 	-- chemodun end: menu subsection stack: callback
@@ -5259,9 +5259,9 @@ end
 
 function menu.insertInteractionContent(section, entry)
     -- start uix_callback
-    if menu.uix_callbacks ["insertInteractionContent_on_start"] then
-        for uix_id, uix_callback in pairs (menu.uix_callbacks ["insertInteractionContent_on_start"]) do
-            entry = uix_callback (entry)
+    if menu.uix_callbacks["insertInteractionContent_on_start"] then
+        for uix_id, uix_callback in pairs (menu.uix_callbacks["insertInteractionContent_on_start"]) do
+            entry = uix_callback(entry)
             if entry == nil then
                 return
             end
@@ -5562,10 +5562,10 @@ function menu.insertLuaAction(actiontype, istobedisplayed)
 				end
 
 				-- IALuir start: aegs call-back
-				if menu.uix_callbacks ["aegs_map_rightMenu_shipassignments_insert_01"] then
+				if menu.uix_callbacks["aegs_map_rightMenu_shipassignments_insert_01"] then
 					local state,main_o,assignment_o
-					for uix_id, uix_callback in pairs (menu.uix_callbacks ["aegs_map_rightMenu_shipassignments_insert_01"]) do
-						state,main_o,assignment_o = uix_callback (GetComponentData(convertedComponent, "macro"),menu.numassignableminingships,menu.numassignabletugs)
+					for uix_id, uix_callback in pairs (menu.uix_callbacks["aegs_map_rightMenu_shipassignments_insert_01"]) do
+						state,main_o,assignment_o = uix_callback(GetComponentData(convertedComponent, "macro"),menu.numassignableminingships,menu.numassignabletugs)
 						if state then
 							menu.insertAssignSubActions(main_o, assignment_o, menu.buttonAssignCommander, groups, isstation, true)
 						end
@@ -5626,10 +5626,10 @@ function menu.insertLuaAction(actiontype, istobedisplayed)
 		end
 	elseif actiontype == "behaviourinspection" then
 		-- IALuir start: aegs call-back
-		if menu.uix_callbacks ["aegs_map_rightMenu_shipOverview_insert"] then
+		if menu.uix_callbacks["aegs_map_rightMenu_shipOverview_insert"] then
 			local category_o,text_o
-			for uix_id, uix_callback in pairs (menu.uix_callbacks ["aegs_map_rightMenu_shipOverview_insert"]) do
-				category_o,text_o = uix_callback (GetComponentData(convertedComponent, "macro"))
+			for uix_id, uix_callback in pairs (menu.uix_callbacks["aegs_map_rightMenu_shipOverview_insert"]) do
+				category_o,text_o = uix_callback(GetComponentData(convertedComponent, "macro"))
 				if category_o then
 					menu.insertInteractionContent("main", { type = "logicalstationoverview", text = text_o, helpOverlayID = "interactmenu_logicalstationoverview", helpOverlayText = " ", helpOverlayHighlightOnly = true, script = menu.buttonStationOverview })
 				end
@@ -6486,10 +6486,10 @@ function menu.insertLuaAction(actiontype, istobedisplayed)
 					end
 
 					-- IALuir start: aegs call-back
-					if menu.uix_callbacks ["aegs_map_rightMenu_shipassignments_insert_02"] then
+					if menu.uix_callbacks["aegs_map_rightMenu_shipassignments_insert_02"] then
 						local state,main_o,assignment_o,purpose_o
-						for uix_id, uix_callback in pairs (menu.uix_callbacks ["aegs_map_rightMenu_shipassignments_insert_02"]) do
-							state,main_o,assignment_o,purpose_o = uix_callback (GetComponentData(commander, "macro"))
+						for uix_id, uix_callback in pairs (menu.uix_callbacks["aegs_map_rightMenu_shipassignments_insert_02"]) do
+							state,main_o,assignment_o,purpose_o = uix_callback(GetComponentData(commander, "macro"))
 							if state and purpose == purpose_o then
 								menu.insertAssignSubActions(main_o, assignment_o, menu.buttonChangeAssignment, groups, isstation, true, currentgroup)
 							end
@@ -6579,10 +6579,10 @@ function menu.insertLuaAction(actiontype, istobedisplayed)
 					end
 
 					-- IALuir start: aegs call-back
-					if menu.uix_callbacks ["aegs_map_rightMenu_shipassignments_insert_03"] then
+					if menu.uix_callbacks["aegs_map_rightMenu_shipassignments_insert_03"] then
 						local state,main_o,assignment_o
-						for uix_id, uix_callback in pairs (menu.uix_callbacks ["aegs_map_rightMenu_shipassignments_insert_03"]) do
-							state,main_o,assignment_o = uix_callback (GetComponentData(convertedComponent, "macro"),allmining,alltugs)
+						for uix_id, uix_callback in pairs (menu.uix_callbacks["aegs_map_rightMenu_shipassignments_insert_03"]) do
+							state,main_o,assignment_o = uix_callback(GetComponentData(convertedComponent, "macro"),allmining,alltugs)
 							if state then
 								menu.insertAssignSubActions(main_o, assignment_o, menu.buttonChangeAssignment, groups, isstation, true)
 							end
@@ -7431,9 +7431,9 @@ function menu.insertLuaAction(actiontype, istobedisplayed)
 			menu.insertInteractionContent("cheats", { type = actiontype, text = "Warp here", script = menu.buttonWarpCheat }) -- (cheat only)
 		end
 	-- start uix_callback
-	elseif menu.uix_callbacks ["insertLuaAction_insert_custom_action"] then
-		for uix_id, uix_callback in pairs (menu.uix_callbacks ["insertLuaAction_insert_custom_action"]) do
-			uix_callback (actiontype, istobedisplayed)
+	elseif menu.uix_callbacks["insertLuaAction_insert_custom_action"] then
+		for uix_id, uix_callback in pairs (menu.uix_callbacks["insertLuaAction_insert_custom_action"]) do
+			uix_callback(actiontype, istobedisplayed)
 		end
 	-- end uix_callback
 	else
@@ -7632,9 +7632,9 @@ function menu.prepareActions()
 		end
 
 		-- start uix_callback
-		if menu.uix_callbacks ["prepareActions_prepare_custom_action"] then
-			for uix_id, uix_callback in pairs (menu.uix_callbacks ["prepareActions_prepare_custom_action"]) do
-				uix_callback (actions, definedactions)
+		if menu.uix_callbacks["prepareActions_prepare_custom_action"] then
+			for uix_id, uix_callback in pairs (menu.uix_callbacks["prepareActions_prepare_custom_action"]) do
+				uix_callback(actions, definedactions)
 			end
 		end
 		-- end uix_callback
@@ -8835,8 +8835,8 @@ function menu.registerCallback(callbackName, callbackFunction, id)
     -- note 3: new callbacks can be added or existing callbacks can be edited. but commit your additions/changes to the mod's GIT repository.
     -- note 4: search for the callback names to see where they are executed.
     -- note 5: if a callback requires a return value, return it in an object var. e.g. "display_on_set_room_active" requires a return of {active = true | false}.
-    if menu.uix_callbacks [callbackName] == nil then
-        menu.uix_callbacks [callbackName] = {}
+    if menu.uix_callbacks[callbackName] == nil then
+        menu.uix_callbacks[callbackName] = {}
     end
     if not menu.uix_callbacks[callbackName][id] then
         if not id then
