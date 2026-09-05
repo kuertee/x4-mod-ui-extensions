@@ -404,6 +404,22 @@ end
 
 -- Menu member functions
 
+-- DiCrash start: graph ware setter
+function menu.uix_setStationOverviewGraphWare(ware, value)
+	if menu.uix_callbacks["setStationOverviewGraphWare_on_set_ware"] then
+		for uix_id, uix_callback in pairs(menu.uix_callbacks["setStationOverviewGraphWare_on_set_ware"]) do
+			local result = uix_callback(menu.container, ware, value, menu.containerid)
+
+			if type(result) == "table" and result.handled == true then
+				return
+			end
+		end
+	end
+
+	C.SetStationOverviewGraphWare(menu.container, ware, value)
+end
+-- DiCrash end:
+
 function menu.onShowMenu(state)
 	menu.containerid = menu.param[3]
 	menu.container = ConvertIDTo64Bit(menu.containerid)
@@ -423,20 +439,57 @@ function menu.onShowMenu(state)
 		menu.containerid = GetPlayerContextByClass("container")
 		menu.container = ConvertIDTo64Bit(menu.containerid)
 	else
-		local boolbuf = ffi.new("bool[1]", 0)
-		local n = C.GetNumStationOverviewGraphWares(menu.container, boolbuf)
-		menu.graphwaresinit = boolbuf[0]
-		if n > 0 then
-			local buf = ffi.new("const char*[?]", n)
-			n = C.GetStationOverviewGraphWares(buf, n, menu.container)
-			for i = 0, n - 1 do
-				local ware = ffi.string(buf[i])
-				menu.displayedgraphwares[ware] = true
+		-- DiCrash start: graph wares provider
+		local uix_graphwareshandled = false
+
+		if menu.uix_callbacks["getStationOverviewGraphWares_on_get_wares"] then
+			for uix_id, uix_callback in pairs(menu.uix_callbacks["getStationOverviewGraphWares_on_get_wares"]) do
+				local uix_result = uix_callback(menu.container, menu.containerid)
+
+				if type(uix_result) == "table" and uix_result.handled == true and type(uix_result.initialized) == "boolean" and (uix_result.wares == nil or type(uix_result.wares) == "table") then
+					menu.graphwaresinit = uix_result.initialized
+
+					for uix_ware, uix_shown in pairs(uix_result.wares or {}) do
+						if uix_shown then
+							menu.displayedgraphwares[uix_ware] = true
+						end
+					end
+
+					uix_graphwareshandled = true
+					break
+				end
 			end
 		end
+
+		if not uix_graphwareshandled then
+			local boolbuf = ffi.new("bool[1]", 0)
+			local n = C.GetNumStationOverviewGraphWares(menu.container, boolbuf)
+			menu.graphwaresinit = boolbuf[0]
+			if n > 0 then
+				local buf = ffi.new("const char*[?]", n)
+				n = C.GetStationOverviewGraphWares(buf, n, menu.container)
+				for i = 0, n - 1 do
+					local ware = ffi.string(buf[i])
+					menu.displayedgraphwares[ware] = true
+				end
+			end
+		end
+		-- DiCrash end:
 	end
 
 	menu.title = ReadText(1001, 7903)
+
+	-- DiCrash start: overview title override
+	if menu.uix_callbacks["onShowMenu_on_set_title"] then
+		for uix_id, uix_callback in pairs(menu.uix_callbacks["onShowMenu_on_set_title"]) do
+			local uix_result = uix_callback(menu.title, menu.container, menu.containerid)
+
+			if type(uix_result) == "table" and type(uix_result.title) == "string" then
+				menu.title = uix_result.title
+			end
+		end
+	end
+	-- DiCrash end:
 
 	menu.topRows = {}
 	menu.firstCols = {}
@@ -586,6 +639,18 @@ function menu.getFlowchartProductionNodes()
 	if menu.isdummy then
 		return menu.getFlowchartDummyProductionNodes()
 	end
+
+	-- DiCrash start: production nodes provider
+	if menu.uix_callbacks["getFlowchartProductionNodes_on_get_nodes"] then
+		for uix_id, uix_callback in pairs(menu.uix_callbacks["getFlowchartProductionNodes_on_get_nodes"]) do
+			local uix_result = uix_callback(menu.container, menu.containerid)
+
+			if type(uix_result) == "table" and type(uix_result.nodes) == "table" then
+				return uix_result.nodes, uix_result.warenodes or {}, uix_result.workforcenode, uix_result.researchnode, uix_result.terraformingnode
+			end
+		end
+	end
+	-- DiCrash end:
 
 	local nodes = { }
 	local warenodes = { }
@@ -1130,6 +1195,24 @@ function menu.getSupplyResourceMax(ware, raw)
 	end
 end
 
+-- DiCrash start: account text override
+function menu.uix_getAccountText()
+	local text = ReadText(1001, 7710)
+
+	if menu.uix_callbacks["getAccountText_on_get_text"] then
+		for uix_id, uix_callback in pairs(menu.uix_callbacks["getAccountText_on_get_text"]) do
+			local result = uix_callback(text, menu.container, menu.containerid)
+
+			if type(result) == "table" and type(result.text) == "string" then
+				text = result.text
+			end
+		end
+	end
+
+	return text
+end
+-- DiCrash end:
+
 function menu.setupFlowchartData()
 	-- kuertee start: callback
 	if menu.uix_callbacks ["setupFlowchartData_on_start"] then
@@ -1523,7 +1606,9 @@ function menu.setupFlowchartData()
 		local shownmax = math.max(shownamount, budget)
 		local accountnode = {
 			account = true,
-			text = ReadText(1001, 7710),
+			-- DiCrash start: account text routing
+			text = menu.uix_getAccountText(),
+			-- DiCrash end:
 			type = "container",
 			row = #nodes + 1, col = 1, numrows = 1, numcols = 1,
 			{
@@ -2265,7 +2350,9 @@ function menu.display()
 
 	menu.restoreFlowchartState("flowchart", menu.flowchart)
 
-	Helper.createRightSideBar(menu, menu.frame, menu.container, true, "logical", menu.buttonRightBar)
+	-- DiCrash start: sidebar selector alignment
+	Helper.createRightSideBar(menu, menu.frame, menu.container, true, "logical", menu.buttonRightBar, nil, nil, 0, menu.flowchart.properties.y - (Helper.frameBorder + 20))
+	-- DiCrash end:
 
 	-- display view/frame
 	menu.frame:display()
@@ -3904,7 +3991,9 @@ function menu.onExpandAccount(_, ftable, _, nodedata)
 		start = money,
 		hideMaxValue = true,
 		suffix = ReadText(1001, 101),
-	}):setText(ReadText(1001, 7710))
+	-- DiCrash start: account text routing
+	}):setText(menu.uix_getAccountText())
+	-- DiCrash end:
 	row[1].handlers.onSliderCellChanged = menu.slidercellAccount
 	-- confirm
 	row = ftable:addRow(true, {  })
@@ -4295,6 +4384,15 @@ function menu.uix_getStationOptions()
 			})
 		end
 	end
+
+	-- DiCrash start: station options extension
+	if menu.uix_callbacks["uix_getStationOptions_on_end"] then
+		for uix_id, uix_callback in pairs(menu.uix_callbacks["uix_getStationOptions_on_end"]) do
+			uix_callback(stations, menu.container, menu.containerid)
+		end
+	end
+	-- DiCrash end:
+
 	table.sort(stations, function (a, b)
 		if a.sector ~= b.sector then
 			return a.sector < b.sector
@@ -4385,8 +4483,13 @@ end
 function menu.checkboxSelected(idx, row, col)
 	if menu.graphdata[idx].shown or (menu.numshowndata < config.graph.maxshowndata) then
 		menu.graphdata[idx].shown = not menu.graphdata[idx].shown
-		menu.displayedgraphwares[menu.graphdata[idx].ware] = menu.graphdata[idx].shown or nil
-		C.SetStationOverviewGraphWare(menu.container, menu.graphdata[idx].ware, menu.graphdata[idx].shown)
+		-- DiCrash start: graph ware handling
+		local uix_ware = menu.graphdata[idx].ware
+		if uix_ware then
+			menu.displayedgraphwares[uix_ware] = menu.graphdata[idx].shown or nil
+			menu.uix_setStationOverviewGraphWare(uix_ware, menu.graphdata[idx].shown)
+		end
+		-- DiCrash end:
 		if menu.graphdata[idx].shown then
 			for i = 1, config.graph.maxshowndata do
 				if not menu.showndata[i] then
@@ -4704,7 +4807,9 @@ function menu.getData(numdatapoints)
 			local dataIdx = menu.getDataIdxByWare(ware)
 			if not dataIdx then
 				menu.displayedgraphwares[ware] = nil
-				C.SetStationOverviewGraphWare(menu.container, ware, false)
+				-- DiCrash start: graph ware routing
+				menu.uix_setStationOverviewGraphWare(ware, false)
+				-- DiCrash end:
 			end
 		end
 
@@ -4714,14 +4819,18 @@ function menu.getData(numdatapoints)
 					-- default select the 4 first data sets
 					table.insert(menu.showndata, entry.ware)
 					menu.displayedgraphwares[entry.ware] = true
-					C.SetStationOverviewGraphWare(menu.container, entry.ware, true)
+					-- DiCrash start: graph ware routing
+					menu.uix_setStationOverviewGraphWare(entry.ware, true)
+					-- DiCrash end:
 				end
 			elseif menu.displayedgraphwares[entry.ware] then
 				if #menu.showndata < 4 then
 					table.insert(menu.showndata, entry.ware)
 				else
 					menu.displayedgraphwares[entry.ware] = nil
-					C.SetStationOverviewGraphWare(menu.container, entry.ware, false)
+					-- DiCrash start: graph ware routing
+					menu.uix_setStationOverviewGraphWare(entry.ware, false)
+					-- DiCrash end:
 				end
 			end
 		end

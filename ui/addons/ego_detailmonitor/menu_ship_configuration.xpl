@@ -2642,6 +2642,14 @@ function menu.determineInitialSlot()
 end
 
 function menu.onShowMenu(state)
+	-- DiCrash start: ship config show start
+	if menu.uix_callbacks["onShowMenu_start"] then
+		for uix_id, uix_callback in pairs(menu.uix_callbacks["onShowMenu_start"]) do
+			uix_callback(state, menu.param)
+		end
+	end
+	-- DiCrash end:
+
 	Helper.addInputBar(menu, Helper.inputBarStandardHeight)
 
 	registerForEvent("inputModeChanged", getElement("Scene.UIContract"), menu.onInputModeChanged)
@@ -3293,6 +3301,14 @@ function menu.onShowMenu(state)
 		RegisterAddonBindings("ego_detailmonitor", "undo")
 		Helper.setKeyBinding(menu, menu.hotkey)
 	end
+
+	-- DiCrash start: ship config show end
+	if menu.uix_callbacks["onShowMenu_end"] then
+		for uix_id, uix_callback in pairs(menu.uix_callbacks["onShowMenu_end"]) do
+			uix_callback(state, menu.param)
+		end
+	end
+	-- DiCrash end:
 end
 
 function menu.prepareSoftwareData(macro)
@@ -9284,6 +9300,19 @@ function menu.displayStats(frame)
 
 		local macro = (menu.macro ~= "") and menu.macro or GetComponentData(ConvertStringToLuaID(tostring(menu.object)), "macro")
 		local shiptype, prestigename, weaponheatmodifier, shieldcapacitymodifier, shieldrechargedelaymodifier, shieldrechargeratemodifier, maxtraveldrivestabilityvalue, defaultmaxtraveldrivestabilityvalue = GetMacroData(macro, "shiptypename", "prestigename", "weaponheatmodifier", "shieldcapacitymodifier", "shieldrechargedelaymodifier", "shieldrechargeratemodifier", "maxtraveldrivestabilityvalue", "defaultmaxtraveldrivestabilityvalue")
+
+		-- DiCrash start: ship type override
+		if menu.uix_callbacks["displayStats_on_set_shiptypename"] then
+			for uix_id, uix_callback in pairs(menu.uix_callbacks["displayStats_on_set_shiptypename"]) do
+				local uix_result = uix_callback(shiptype, macro, menu.object)
+
+				if type(uix_result) == "table" and type(uix_result.shiptypename) == "string" then
+					shiptype = uix_result.shiptypename
+				end
+			end
+		end
+		-- DiCrash end:
+
 		shiptype = shiptype .. " - "
 
 		local row = ftable:addRow(nil, {  })
@@ -10805,6 +10834,18 @@ function menu.getAmmoUsage(type)
 end
 
 function menu.isAmmoCompatible(type, ammomacro)
+	-- DiCrash start: ammo compatibility override
+	if menu.uix_callbacks["isAmmoCompatible_on_check_compatible"] then
+		for uix_id, uix_callback in pairs(menu.uix_callbacks["isAmmoCompatible_on_check_compatible"]) do
+			local uix_result = uix_callback(type, ammomacro, menu.object, menu.macro)
+
+			if uix_result and ((uix_result.compatible == true) or (uix_result.compatible == false)) then
+				return uix_result.compatible
+			end
+		end
+	end
+	-- DiCrash end:
+
 	if ammomacro ~= "" then
 		if type == "missile" then
 			for slot, data in pairs(menu.upgradeplan.weapon) do
