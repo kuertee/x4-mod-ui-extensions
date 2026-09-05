@@ -3261,13 +3261,13 @@ function menu.addDetailRows(ftable)
 			-- ship type
 
 			-- DiCrash start: encyclopedia ship type
-			local shiptypename = menu.object.shiptypename
+			local uix_shiptypename = menu.object.shiptypename
 			if menu.uix_callbacks["onShowMenu_on_set_shiptypename"] then
 				for uix_id, uix_callback in pairs(menu.uix_callbacks["onShowMenu_on_set_shiptypename"]) do
-					local result = uix_callback(shiptypename, menu.id, menu.library, menu.object)
+					local uix_result = uix_callback(uix_shiptypename, menu.id, menu.library, menu.object)
 
-					if type(result) == "table" and type(result.shiptypename) == "string" then
-						shiptypename = result.shiptypename
+					if type(uix_result) == "table" and type(uix_result.shiptypename) == "string" then
+						uix_shiptypename = uix_result.shiptypename
 					end
 				end
 			end
@@ -3290,7 +3290,7 @@ function menu.addDetailRows(ftable)
 			-- end: cpsdo callback
 
 				-- DiCrash start: ship type display
-				menu.addDetailRow(ftable, ReadText(1001, 9051), shiptypename)
+				menu.addDetailRow(ftable, ReadText(1001, 9051), uix_shiptypename)
 				-- DiCrash end:
 
 			end

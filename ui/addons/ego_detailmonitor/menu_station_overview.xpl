@@ -440,28 +440,28 @@ function menu.onShowMenu(state)
 		menu.container = ConvertIDTo64Bit(menu.containerid)
 	else
 		-- DiCrash start: graph wares provider
-		local graphwareshandled = false
+		local uix_graphwareshandled = false
 
 		if menu.uix_callbacks["getStationOverviewGraphWares_on_get_wares"] then
 			for uix_id, uix_callback in pairs(menu.uix_callbacks["getStationOverviewGraphWares_on_get_wares"]) do
-				local result = uix_callback(menu.container, menu.containerid)
+				local uix_result = uix_callback(menu.container, menu.containerid)
 
-				if type(result) == "table" and result.handled == true and type(result.initialized) == "boolean" and (result.wares == nil or type(result.wares) == "table") then
-					menu.graphwaresinit = result.initialized
+				if type(uix_result) == "table" and uix_result.handled == true and type(uix_result.initialized) == "boolean" and (uix_result.wares == nil or type(uix_result.wares) == "table") then
+					menu.graphwaresinit = uix_result.initialized
 
-					for ware, shown in pairs(result.wares or {}) do
-						if shown then
-							menu.displayedgraphwares[ware] = true
+					for uix_ware, uix_shown in pairs(uix_result.wares or {}) do
+						if uix_shown then
+							menu.displayedgraphwares[uix_ware] = true
 						end
 					end
 
-					graphwareshandled = true
+					uix_graphwareshandled = true
 					break
 				end
 			end
 		end
 
-		if not graphwareshandled then
+		if not uix_graphwareshandled then
 			local boolbuf = ffi.new("bool[1]", 0)
 			local n = C.GetNumStationOverviewGraphWares(menu.container, boolbuf)
 			menu.graphwaresinit = boolbuf[0]
@@ -482,10 +482,10 @@ function menu.onShowMenu(state)
 	-- DiCrash start: overview title override
 	if menu.uix_callbacks["onShowMenu_on_set_title"] then
 		for uix_id, uix_callback in pairs(menu.uix_callbacks["onShowMenu_on_set_title"]) do
-			local result = uix_callback(menu.title, menu.container, menu.containerid)
+			local uix_result = uix_callback(menu.title, menu.container, menu.containerid)
 
-			if type(result) == "table" and type(result.title) == "string" then
-				menu.title = result.title
+			if type(uix_result) == "table" and type(uix_result.title) == "string" then
+				menu.title = uix_result.title
 			end
 		end
 	end
@@ -643,10 +643,10 @@ function menu.getFlowchartProductionNodes()
 	-- DiCrash start: production nodes provider
 	if menu.uix_callbacks["getFlowchartProductionNodes_on_get_nodes"] then
 		for uix_id, uix_callback in pairs(menu.uix_callbacks["getFlowchartProductionNodes_on_get_nodes"]) do
-			local result = uix_callback(menu.container, menu.containerid)
+			local uix_result = uix_callback(menu.container, menu.containerid)
 
-			if type(result) == "table" and type(result.nodes) == "table" then
-				return result.nodes, result.warenodes or {}, result.workforcenode, result.researchnode, result.terraformingnode
+			if type(uix_result) == "table" and type(uix_result.nodes) == "table" then
+				return uix_result.nodes, uix_result.warenodes or {}, uix_result.workforcenode, uix_result.researchnode, uix_result.terraformingnode
 			end
 		end
 	end
@@ -4484,10 +4484,10 @@ function menu.checkboxSelected(idx, row, col)
 	if menu.graphdata[idx].shown or (menu.numshowndata < config.graph.maxshowndata) then
 		menu.graphdata[idx].shown = not menu.graphdata[idx].shown
 		-- DiCrash start: graph ware handling
-		local ware = menu.graphdata[idx].ware
-		if ware then
-			menu.displayedgraphwares[ware] = menu.graphdata[idx].shown or nil
-			menu.uix_setStationOverviewGraphWare(ware, menu.graphdata[idx].shown)
+		local uix_ware = menu.graphdata[idx].ware
+		if uix_ware then
+			menu.displayedgraphwares[uix_ware] = menu.graphdata[idx].shown or nil
+			menu.uix_setStationOverviewGraphWare(uix_ware, menu.graphdata[idx].shown)
 		end
 		-- DiCrash end:
 		if menu.graphdata[idx].shown then

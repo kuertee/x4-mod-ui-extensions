@@ -4905,10 +4905,10 @@ function menu.setupEmpireRows(mode, properties_table_center, tabOrderOffset, tab
 				-- DiCrash start: empire ship type
 				if menu.uix_callbacks["setupEmpireRows_on_set_shiptypename"] then
 					for uix_id, uix_callback in pairs(menu.uix_callbacks["setupEmpireRows_on_set_shiptypename"]) do
-						local result = uix_callback(ship.ship, shiptype, locmode)
+						local uix_result = uix_callback(ship.ship, shiptype, locmode)
 
-						if type(result) == "table" and type(result.shiptypename) == "string" then
-							shiptype = result.shiptypename
+						if type(uix_result) == "table" and type(uix_result.shiptypename) == "string" then
+							shiptype = uix_result.shiptypename
 						end
 					end
 				end
@@ -5172,10 +5172,10 @@ function menu.setupEmpireRows(mode, properties_table_center, tabOrderOffset, tab
 				-- DiCrash start: empire ship type
 				if menu.uix_callbacks["setupEmpireRows_on_set_shiptypename"] then
 					for uix_id, uix_callback in pairs(menu.uix_callbacks["setupEmpireRows_on_set_shiptypename"]) do
-						local result = uix_callback(ship.ship, shiptype, locmode)
+						local uix_result = uix_callback(ship.ship, shiptype, locmode)
 
-						if type(result) == "table" and type(result.shiptypename) == "string" then
-							shiptype = result.shiptypename
+						if type(uix_result) == "table" and type(uix_result.shiptypename) == "string" then
+							shiptype = uix_result.shiptypename
 						end
 					end
 				end

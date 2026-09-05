@@ -11550,9 +11550,9 @@ Helper.rightSideBar = {
 }
 
 -- DiCrash start: sidebar offset arguments
-function Helper.createRightSideBar(menu, frame, container, condition, currentmode, callback, selfcallback, refreshcallback, xoffset, yoffset)
-	xoffset = xoffset or 0
-	yoffset = yoffset or 0
+function Helper.createRightSideBar(menu, frame, container, condition, currentmode, callback, selfcallback, refreshcallback, uix_xoffset, uix_yoffset)
+	uix_xoffset = uix_xoffset or 0
+	uix_yoffset = uix_yoffset or 0
 -- DiCrash end:
 	local sidebarWidth = Helper.scaleX(Helper.sidebarWidth)
 
@@ -11564,8 +11564,8 @@ function Helper.createRightSideBar(menu, frame, container, condition, currentmod
 		width = sidebarWidth,
 		height = 0,
 		-- DiCrash start: sidebar position offsets
-		x = Helper.viewWidth - sidebarWidth - Helper.frameBorder + xoffset,
-		y = Helper.frameBorder + 20 + yoffset,
+		x = Helper.viewWidth - sidebarWidth - Helper.frameBorder + uix_xoffset,
+		y = Helper.frameBorder + 20 + uix_yoffset,
 		-- DiCrash end:
 		scaling = false,
 		borderEnabled = false,
@@ -11576,27 +11576,27 @@ function Helper.createRightSideBar(menu, frame, container, condition, currentmod
 	local isplayerowned = GetComponentData(container, "isplayerowned")
 
 	-- DiCrash start: sidebar entries extension
-	local entries = {}
-	for i, entry in ipairs(Helper.rightSideBar) do
-		entries[i] = {}
-		for key, value in pairs(entry) do
-			entries[i][key] = value
+	local uix_entries = {}
+	for uix_i, uix_entry in ipairs(Helper.rightSideBar) do
+		uix_entries[uix_i] = {}
+		for uix_key, uix_value in pairs(uix_entry) do
+			uix_entries[uix_i][uix_key] = uix_value
 		end
 	end
 
 	if menu.uix_callbacks and menu.uix_callbacks["createRightSideBar_on_prepare_entries"] then
 		for uix_id, uix_callback in pairs(menu.uix_callbacks["createRightSideBar_on_prepare_entries"]) do
-			local result = uix_callback(entries, container, condition, currentmode)
+			local uix_result = uix_callback(uix_entries, container, condition, currentmode)
 
-			if type(result) == "table" and type(result.entries) == "table" then
-				entries = result.entries
+			if type(uix_result) == "table" and type(uix_result.entries) == "table" then
+				uix_entries = uix_result.entries
 			end
 		end
 	end
 	-- DiCrash end:
 
 	-- DiCrash start: sidebar entries rendering
-	for _, entry in ipairs(entries) do
+	for _, entry in ipairs(uix_entries) do
 	-- DiCrash end:
 		local display = true
 		if (entry.canresearch ~= nil) then

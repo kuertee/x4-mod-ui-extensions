@@ -416,10 +416,10 @@ function GetTargetMonitorDetails(component, templateConnectionName, isSofttarget
 	-- DiCrash start: target details override
 	if Helper.uix_callbacks and Helper.uix_callbacks["GetTargetMonitorDetails_on_get_details"] then
 		for uix_id, uix_callback in pairs(Helper.uix_callbacks["GetTargetMonitorDetails_on_get_details"]) do
-			local result = uix_callback(component, templateConnectionName, isSofttarget)
+			local uix_result = uix_callback(component, templateConnectionName, isSofttarget)
 
-			if type(result) == "table" and type(result.details) == "table" then
-				return result.details
+			if type(uix_result) == "table" and type(uix_result.details) == "table" then
+				return uix_result.details
 			end
 		end
 	end

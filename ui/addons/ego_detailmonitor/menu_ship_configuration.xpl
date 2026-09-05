@@ -9304,10 +9304,10 @@ function menu.displayStats(frame)
 		-- DiCrash start: ship type override
 		if menu.uix_callbacks["displayStats_on_set_shiptypename"] then
 			for uix_id, uix_callback in pairs(menu.uix_callbacks["displayStats_on_set_shiptypename"]) do
-				local result = uix_callback(shiptype, macro, menu.object)
+				local uix_result = uix_callback(shiptype, macro, menu.object)
 
-				if type(result) == "table" and type(result.shiptypename) == "string" then
-					shiptype = result.shiptypename
+				if type(uix_result) == "table" and type(uix_result.shiptypename) == "string" then
+					shiptype = uix_result.shiptypename
 				end
 			end
 		end
@@ -10837,10 +10837,10 @@ function menu.isAmmoCompatible(type, ammomacro)
 	-- DiCrash start: ammo compatibility override
 	if menu.uix_callbacks["isAmmoCompatible_on_check_compatible"] then
 		for uix_id, uix_callback in pairs(menu.uix_callbacks["isAmmoCompatible_on_check_compatible"]) do
-			local result = uix_callback(type, ammomacro, menu.object, menu.macro)
+			local uix_result = uix_callback(type, ammomacro, menu.object, menu.macro)
 
-			if result and ((result.compatible == true) or (result.compatible == false)) then
-				return result.compatible
+			if uix_result and ((uix_result.compatible == true) or (uix_result.compatible == false)) then
+				return uix_result.compatible
 			end
 		end
 	end

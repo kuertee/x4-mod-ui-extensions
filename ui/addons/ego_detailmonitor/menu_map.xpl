@@ -8841,19 +8841,19 @@ function menu.createPropertyOwned(frame, instance)
 		end
 
 		-- DiCrash start: build task capability
-		local supportsbuildtasks = Helper.isComponentClass(entry.realclassid, "station")
+		local uix_supportsbuildtasks = Helper.isComponentClass(entry.realclassid, "station")
 
 		if menu.uix_callbacks["createPropertyOwned_on_set_supportsbuildtasks"] then
 			for uix_id, uix_callback in pairs(menu.uix_callbacks["createPropertyOwned_on_set_supportsbuildtasks"]) do
-				local result = uix_callback(object, object64, entry, supportsbuildtasks)
+				local uix_result = uix_callback(object, object64, entry, uix_supportsbuildtasks)
 
-				if type(result) == "table" and type(result.supportsbuildtasks) == "boolean" then
-					supportsbuildtasks = result.supportsbuildtasks
+				if type(uix_result) == "table" and type(uix_result.supportsbuildtasks) == "boolean" then
+					uix_supportsbuildtasks = uix_result.supportsbuildtasks
 				end
 			end
 		end
 
-		if supportsbuildtasks then
+		if uix_supportsbuildtasks then
 		-- DiCrash end:
 			local constructions = {}
 			local constructionshipsbymacro = {}
