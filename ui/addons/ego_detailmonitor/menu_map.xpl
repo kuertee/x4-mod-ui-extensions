@@ -6426,7 +6426,7 @@ function menu.onMinimizeMenu()
 
 	-- kuertee start: callback
 	if menu.uix_callbacks["on_menu_minimize"] then
-		for uix_id, uix_callbac in pairs(menu.uix_callbacks["on_menu_minimize"]) do
+		for uix_id, uix_callback in pairs(menu.uix_callbacks["on_menu_minimize"]) do
 			uix_callback(menu, config)
 		end
 	end
