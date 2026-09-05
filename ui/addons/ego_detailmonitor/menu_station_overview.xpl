@@ -4483,9 +4483,12 @@ end
 function menu.checkboxSelected(idx, row, col)
 	if menu.graphdata[idx].shown or (menu.numshowndata < config.graph.maxshowndata) then
 		menu.graphdata[idx].shown = not menu.graphdata[idx].shown
-		menu.displayedgraphwares[menu.graphdata[idx].ware] = menu.graphdata[idx].shown or nil
-		-- DiCrash start: graph ware routing
-		menu.uix_setStationOverviewGraphWare(menu.graphdata[idx].ware, menu.graphdata[idx].shown)
+		-- DiCrash start: graph ware handling
+		local ware = menu.graphdata[idx].ware
+		if ware then
+			menu.displayedgraphwares[ware] = menu.graphdata[idx].shown or nil
+			menu.uix_setStationOverviewGraphWare(ware, menu.graphdata[idx].shown)
+		end
 		-- DiCrash end:
 		if menu.graphdata[idx].shown then
 			for i = 1, config.graph.maxshowndata do
