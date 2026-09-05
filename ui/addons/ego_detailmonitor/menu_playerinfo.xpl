@@ -4901,6 +4901,18 @@ function menu.setupEmpireRows(mode, properties_table_center, tabOrderOffset, tab
 			row[5]:createText(ReadText(1001, 2943))	-- Location
 			for i, ship in ipairs(menu.empireData.ships) do
 				local name, shiptype, location, isonlineobject = GetComponentData(ship.ship, "name", "shiptypename", "sector", "isonlineobject")
+
+				-- DiCrash start: empire ship type
+				if menu.uix_callbacks["setupEmpireRows_on_set_shiptypename"] then
+					for uix_id, uix_callback in pairs(menu.uix_callbacks["setupEmpireRows_on_set_shiptypename"]) do
+						local uix_result = uix_callback(ship.ship, shiptype, locmode)
+
+						if type(uix_result) == "table" and type(uix_result.shiptypename) == "string" then
+							shiptype = uix_result.shiptypename
+						end
+					end
+				end
+				-- DiCrash end:
 				if isonlineobject then
 					location = ReadText(1001, 9121)	-- On venture
 				end
@@ -5156,6 +5168,18 @@ function menu.setupEmpireRows(mode, properties_table_center, tabOrderOffset, tab
 
 			for i, ship in ipairs(menu.empireData.ships) do
 				local name, shiptype, isonlineobject = GetComponentData(ship.ship, "name", "shiptypename", "isonlineobject")
+
+				-- DiCrash start: empire ship type
+				if menu.uix_callbacks["setupEmpireRows_on_set_shiptypename"] then
+					for uix_id, uix_callback in pairs(menu.uix_callbacks["setupEmpireRows_on_set_shiptypename"]) do
+						local uix_result = uix_callback(ship.ship, shiptype, locmode)
+
+						if type(uix_result) == "table" and type(uix_result.shiptypename) == "string" then
+							shiptype = uix_result.shiptypename
+						end
+					end
+				end
+				-- DiCrash end:
 				if isonlineobject then
 					row = table_center:addRow({ "empire_onlineship", ship.ship }, { interative = false })
 					row[1]:setColSpan(4):createText(name)
