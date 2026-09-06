@@ -2,15 +2,16 @@ UI Extensions and HUD
 https://www.nexusmods.com/x4foundations/mods/552
 Code: https://github.com/kuertee/x4-mod-ui-extensions
 by kuertee.
-Contributors: Alakeram, AlexandreTK, ChemODun, Damonya, DrWhoKnows, 
-DmytroK, Erixon, Faremen, Forleyor, HYLT2233,
-IALuir, Mycu, Orbika, Runekn, sticeIO.
+Contributors: Alakeram, AlexandreTK, ChemODun, Damonya, DiCrash,
+DrWhoKnows, DmytroK, Erixon, Faremen, Forleyor,
+HYLT2233, IALuir, Mycu, Orbika, Runekn, sticeIO.
 
 Updates
 =======
-v9.0.0.12, 17 Aug 2026:
-FOR PLAYERS:
-- New feature: ChemODun's station selector in the Logical Overview menu and the Transaction Log menu.
+v9.0.0.13, 6 Sep 2026:
+- New feature: New callbacks for Di Crash's mod.
+- Bug-fix: Typos in callbacks fixed by ChemODun.
+- Tweak: Removed this feature because it didn't fix the prolem I was experiencing: - Tweak: Work-in-progress/trial: Manual saves are delayed by 5 seconds while the game is paused (to ensure all running scripts and their chained calls are stoped) before the actual save operation. kuertee's note: I started to experience trouble with my oldest saved game that I started on v4.2 (2020) of the base game in which loaded saves were not loading their data as if I had removed a mod, when I had not. I think with some of my mods (e.g. several personal mods that capture game data as I play, etc.), the serialisation of the data fails to save without giving errors until it is loaded after a very long playtime. I added this as a long-term trial. It has no effect in the game apart from manual saves are delayed for 5 seconds, at which time the game is paused. Autosaves are unaffected with this change.
 
 Protected UI Mode
 =================
@@ -333,13 +334,17 @@ Troubleshooting
 Credits
 =======
 kuertee
-Contributors: Alakeram, AlexandreTK, ChemODun, Damonya, DrWhoKnows, 
-DmytroK, Erixon, Faremen, Forleyor, HYLT2233,
-IALuir, Mycu, Orbika, Runekn, sticeIO.
+Contributors: Alakeram, AlexandreTK, ChemODun, Damonya, DiCrash,
+DrWhoKnows, DmytroK, Erixon, Faremen, Forleyor,
+HYLT2233, IALuir, Mycu, Orbika, Runekn, sticeIO.
 French localisation by Calvitix.
 
 History
 =======
+v9.0.0.12, 17 Aug 2026:
+FOR PLAYERS:
+- New feature: ChemODun's station selector in the Logical Overview menu and the Transaction Log menu.
+
 v9.0.0.9, 18 Jul 2026:
 FOR MODDERS:
 - New callbacks: Alakeram's callbacks in the Ship Configuration menu.

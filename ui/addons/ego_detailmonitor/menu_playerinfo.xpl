@@ -1,5 +1,4 @@
-﻿
--- param == { 0, 0, mode, modeparam }
+﻿-- param == { 0, 0, mode, modeparam }
 -- modes: - "globalorders",		param: { "traderule|blacklist|fightrule", id }
 
 -- ffi setup
@@ -4913,6 +4912,7 @@ function menu.setupEmpireRows(mode, properties_table_center, tabOrderOffset, tab
 					end
 				end
 				-- DiCrash end:
+
 				if isonlineobject then
 					location = ReadText(1001, 9121)	-- On venture
 				end
@@ -5180,6 +5180,7 @@ function menu.setupEmpireRows(mode, properties_table_center, tabOrderOffset, tab
 					end
 				end
 				-- DiCrash end:
+
 				if isonlineobject then
 					row = table_center:addRow({ "empire_onlineship", ship.ship }, { interative = false })
 					row[1]:setColSpan(4):createText(name)

@@ -11550,10 +11550,12 @@ Helper.rightSideBar = {
 }
 
 -- DiCrash start: sidebar offset arguments
+-- function Helper.createRightSideBar(menu, frame, container, condition, currentmode, callback, selfcallback, refreshcallback)
 function Helper.createRightSideBar(menu, frame, container, condition, currentmode, callback, selfcallback, refreshcallback, uix_xoffset, uix_yoffset)
 	uix_xoffset = uix_xoffset or 0
 	uix_yoffset = uix_yoffset or 0
 -- DiCrash end:
+
 	local sidebarWidth = Helper.scaleX(Helper.sidebarWidth)
 
 	local rightbarpanel = frame:addHiddenFrameBorder("rightbar", { active = menu.panelState and menu.panelState.rightbar })
@@ -11563,10 +11565,14 @@ function Helper.createRightSideBar(menu, frame, container, condition, currentmod
 		tabOrder = 4,
 		width = sidebarWidth,
 		height = 0,
+
 		-- DiCrash start: sidebar position offsets
+		-- x = Helper.viewWidth - sidebarWidth - Helper.frameBorder,
+		-- y = Helper.frameBorder + 20,
 		x = Helper.viewWidth - sidebarWidth - Helper.frameBorder + uix_xoffset,
 		y = Helper.frameBorder + 20 + uix_yoffset,
 		-- DiCrash end:
+
 		scaling = false,
 		borderEnabled = false,
 		reserveScrollBar = false,
@@ -11577,6 +11583,7 @@ function Helper.createRightSideBar(menu, frame, container, condition, currentmod
 
 	-- DiCrash start: sidebar entries extension
 	local uix_entries = {}
+	-- for _, entry in ipairs(Helper.rightSideBar) do
 	for uix_i, uix_entry in ipairs(Helper.rightSideBar) do
 		uix_entries[uix_i] = {}
 		for uix_key, uix_value in pairs(uix_entry) do

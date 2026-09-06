@@ -424,6 +424,7 @@ function GetTargetMonitorDetails(component, templateConnectionName, isSofttarget
 		end
 	end
 	-- DiCrash end:
+
 	local targetdata = getTargetDataForDisplay(component, templateConnectionName, isSofttarget)
 	if not targetdata then
 		return { }	-- ignore invalid component

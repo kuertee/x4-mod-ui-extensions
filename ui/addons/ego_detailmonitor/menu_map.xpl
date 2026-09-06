@@ -1,5 +1,4 @@
-﻿
--- section == gMain_map
+﻿-- section == gMain_map
 -- param == { 0, 0, showzone, focuscomponent [, history] [, mode, modeparam] [, showmultiverse] [, focusoffset] }
 
 -- modes: - "orderparam_object",				param: { returnfunction, paramdata, toprow, ordercontrollable }
@@ -8851,6 +8850,7 @@ function menu.createPropertyOwned(frame, instance)
 		end
 
 		-- DiCrash start: build task capability
+		-- if Helper.isComponentClass(entry.realclassid, "station") then
 		local uix_supportsbuildtasks = Helper.isComponentClass(entry.realclassid, "station")
 
 		if menu.uix_callbacks["createPropertyOwned_on_set_supportsbuildtasks"] then
@@ -8865,6 +8865,7 @@ function menu.createPropertyOwned(frame, instance)
 
 		if uix_supportsbuildtasks then
 		-- DiCrash end:
+
 			local constructions = {}
 			local constructionshipsbymacro = {}
 			-- builds in progress
@@ -8897,7 +8898,9 @@ function menu.createPropertyOwned(frame, instance)
 				end
 			end
 			infoTableData.constructions[object_string] = constructions
+
 		-- DiCrash start: build task ship split
+		-- elseif Helper.isComponentClass(entry.classid, "ship") then
 		end
 
 		if Helper.isComponentClass(entry.classid, "ship") then
@@ -10064,6 +10067,7 @@ function menu.createPropertyRow(instance, ftable, rowgroup, component, iteration
 		-- DiCrash start: construction row expansion
 		if (menu.uix_propertiesOwnedTab_renderingPropertySection and menu.uix_propertiesOwnedTab_renderingPropertySection.isForceComponentExpandable) or isstationexpandable or (subordinates.hasRendered and (not hidesubordinates) and subordinatefound) or (#dockedships > 0) or (#constructions > 0) then
 		-- DiCrash end:
+
 		-- kuertee end: uix properties owned tab
 			row[1]:createButton({ scaling = false }):setText(menu.isPropertyExtended(tostring(component)) and "-" or "+", { scaling = true, halign = "center" })
 			row[1].handlers.onClick = function () return menu.buttonExtendProperty(tostring(component)) end
@@ -10468,11 +10472,18 @@ function menu.createPropertyRow(instance, ftable, rowgroup, component, iteration
 					end
 				end
 			end
+
 			-- DiCrash start: construction subsection support
-			-- construction
-			if #constructions > 0 then
-				menu.createConstructionSubSection(ftable, rowgroup, component, constructions)
-			end
+			-- if isstation then
+			-- DiCrash end:
+
+				-- construction
+				if #constructions > 0 then
+					menu.createConstructionSubSection(ftable, rowgroup, component, constructions)
+				end
+
+			-- DiCrash start: construction subsection support
+			-- end
 			-- DiCrash end:
 		end
 	end

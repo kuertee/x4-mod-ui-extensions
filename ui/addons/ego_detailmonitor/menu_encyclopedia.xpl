@@ -1498,6 +1498,7 @@ function menu.createIndex()
 		end
 	end
 	-- DiCrash end:
+
 	return index
 end
 
@@ -3290,6 +3291,7 @@ function menu.addDetailRows(ftable)
 			-- end: cpsdo callback
 
 				-- DiCrash start: ship type display
+				-- menu.addDetailRow(ftable, ReadText(1001, 9051), menu.object.shiptypename)
 				menu.addDetailRow(ftable, ReadText(1001, 9051), uix_shiptypename)
 				-- DiCrash end:
 

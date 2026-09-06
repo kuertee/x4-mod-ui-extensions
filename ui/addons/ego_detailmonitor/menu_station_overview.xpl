@@ -439,6 +439,7 @@ function menu.onShowMenu(state)
 		menu.containerid = GetPlayerContextByClass("container")
 		menu.container = ConvertIDTo64Bit(menu.containerid)
 	else
+
 		-- DiCrash start: graph wares provider
 		local uix_graphwareshandled = false
 
@@ -1606,9 +1607,12 @@ function menu.setupFlowchartData()
 		local shownmax = math.max(shownamount, budget)
 		local accountnode = {
 			account = true,
+
 			-- DiCrash start: account text routing
+			-- text = ReadText(1001, 7710),
 			text = menu.uix_getAccountText(),
 			-- DiCrash end:
+
 			type = "container",
 			row = #nodes + 1, col = 1, numrows = 1, numcols = 1,
 			{
@@ -2351,6 +2355,7 @@ function menu.display()
 	menu.restoreFlowchartState("flowchart", menu.flowchart)
 
 	-- DiCrash start: sidebar selector alignment
+	-- Helper.createRightSideBar(menu, menu.frame, menu.container, true, "logical", menu.buttonRightBar)
 	Helper.createRightSideBar(menu, menu.frame, menu.container, true, "logical", menu.buttonRightBar, nil, nil, 0, menu.flowchart.properties.y - (Helper.frameBorder + 20))
 	-- DiCrash end:
 
@@ -3991,9 +3996,12 @@ function menu.onExpandAccount(_, ftable, _, nodedata)
 		start = money,
 		hideMaxValue = true,
 		suffix = ReadText(1001, 101),
+
 	-- DiCrash start: account text routing
+	-- }):setText(ReadText(1001, 7710))
 	}):setText(menu.uix_getAccountText())
 	-- DiCrash end:
+
 	row[1].handlers.onSliderCellChanged = menu.slidercellAccount
 	-- confirm
 	row = ftable:addRow(true, {  })
@@ -4483,13 +4491,17 @@ end
 function menu.checkboxSelected(idx, row, col)
 	if menu.graphdata[idx].shown or (menu.numshowndata < config.graph.maxshowndata) then
 		menu.graphdata[idx].shown = not menu.graphdata[idx].shown
+
 		-- DiCrash start: graph ware handling
+		-- menu.displayedgraphwares[menu.graphdata[idx].ware] = menu.graphdata[idx].shown or nil
+		-- C.SetStationOverviewGraphWare(menu.container, menu.graphdata[idx].ware, menu.graphdata[idx].shown)
 		local uix_ware = menu.graphdata[idx].ware
 		if uix_ware then
 			menu.displayedgraphwares[uix_ware] = menu.graphdata[idx].shown or nil
 			menu.uix_setStationOverviewGraphWare(uix_ware, menu.graphdata[idx].shown)
 		end
 		-- DiCrash end:
+
 		if menu.graphdata[idx].shown then
 			for i = 1, config.graph.maxshowndata do
 				if not menu.showndata[i] then
@@ -4807,7 +4819,9 @@ function menu.getData(numdatapoints)
 			local dataIdx = menu.getDataIdxByWare(ware)
 			if not dataIdx then
 				menu.displayedgraphwares[ware] = nil
+
 				-- DiCrash start: graph ware routing
+				-- C.SetStationOverviewGraphWare(menu.container, ware, false)
 				menu.uix_setStationOverviewGraphWare(ware, false)
 				-- DiCrash end:
 			end
@@ -4819,7 +4833,9 @@ function menu.getData(numdatapoints)
 					-- default select the 4 first data sets
 					table.insert(menu.showndata, entry.ware)
 					menu.displayedgraphwares[entry.ware] = true
+
 					-- DiCrash start: graph ware routing
+					-- C.SetStationOverviewGraphWare(menu.container, entry.ware, true)
 					menu.uix_setStationOverviewGraphWare(entry.ware, true)
 					-- DiCrash end:
 				end
@@ -4828,7 +4844,9 @@ function menu.getData(numdatapoints)
 					table.insert(menu.showndata, entry.ware)
 				else
 					menu.displayedgraphwares[entry.ware] = nil
+
 					-- DiCrash start: graph ware routing
+					-- C.SetStationOverviewGraphWare(menu.container, entry.ware, false)
 					menu.uix_setStationOverviewGraphWare(entry.ware, false)
 					-- DiCrash end:
 				end
