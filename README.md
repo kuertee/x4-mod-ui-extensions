@@ -8,10 +8,11 @@ HYLT2233, IALuir, Mycu, Orbika, Runekn, sticeIO.
 
 Updates
 =======
-v9.0.0.13, 6 Sep 2026:
+v9.0.0.13, 7 Sep 2026:
+- New: Custom callbacks documentation by ChemODun: https://chemodun.github.io/x4/modding-support/ui-modding/uix-callbacks/. Thanks, ChemODun!
 - New feature: New callbacks for Di Crash's mod.
 - Bug-fix: Typos in callbacks fixed by ChemODun.
-- Tweak: Removed this feature because it didn't fix the prolem I was experiencing: - Tweak: Work-in-progress/trial: Manual saves are delayed by 5 seconds while the game is paused (to ensure all running scripts and their chained calls are stoped) before the actual save operation. kuertee's note: I started to experience trouble with my oldest saved game that I started on v4.2 (2020) of the base game in which loaded saves were not loading their data as if I had removed a mod, when I had not. I think with some of my mods (e.g. several personal mods that capture game data as I play, etc.), the serialisation of the data fails to save without giving errors until it is loaded after a very long playtime. I added this as a long-term trial. It has no effect in the game apart from manual saves are delayed for 5 seconds, at which time the game is paused. Autosaves are unaffected with this change.
+- Tweak: Removed this feature because it didn't fix the prolem I was experiencing: - Tweak: Work-in-progress/trial: Manual saves are delayed by 5 seconds while the game is paused.
 
 Protected UI Mode
 =================
@@ -33,11 +34,13 @@ Instructions for players
 
 Instructions for developers
 ===========================
+Custom callbacks documentation by ChemODun: https://chemodun.github.io/x4/modding-support/ui-modding/uix-callbacks/. Thanks, ChemODun!
+
 An overview on how to mod for UIX:
 1. Install the mod as a player.
 2. Copy the "(X4 game)/extensions/kuertee_ui_extensions/ui" folder into the "(X4 game)/ui" folder. This will overwrite UIX's XPL files into the game.
 3. Launch the game with the "-prefersinglefiles" option. This will make the game use UIX XPL files instead of the base game's corresponding files that are in its cat/dat files.
-4. Examine one of the callbacks in any of those XPL files. Search for "callback". Add any callback you need in any of the XPL files IN THE GAME FOLDER. If you need any callbacks added to a menu file that UIX doesn't have let me know (on Discord, Nexus or kuertee@gmail.com).
+4. Examine one of the callbacks in any of those XPL files. Search for "callback". Add any callback you need in any of the XPL files IN THE GAME FOLDER. If you need any callbacks added to a menu file, let me know (on Discord, Nexus or kuertee@gmail.com).
 5. When done adding your callbacks, send me the changed XPL files.
 6. I'll merge them with the master UIX files.
 7. We'll coordinate release dates so that the new UIX mod with your callbacks is released near the time you release your mod.
