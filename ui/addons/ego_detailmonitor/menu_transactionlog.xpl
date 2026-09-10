@@ -173,6 +173,11 @@ end
 
 function menu.uix_switchStation(station)
 	if station and (station ~= 0) and (not IsSameComponent(station, menu.container)) then
+		-- the station editor parks its construction map state when it jumps here, and every vanilla
+		-- exit releases it again; skipping that makes the next station reuse the parked plan
+		if Helper.checkDiscardStationEditorChanges(menu) then
+			return
+		end
 		-- noreturn = true forwards menu.param2, so "back" still leads to whatever opened this menu
 		Helper.closeMenuAndOpenNewMenu(menu, "TransactionLogMenu", { 0, 0, station }, true)
 		menu.cleanup()
