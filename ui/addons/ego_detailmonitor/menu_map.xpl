@@ -9068,8 +9068,20 @@ function menu.createPropertyOwned(frame, instance)
 				table.sort(uix_propertiesOwnedTabSections, function(a, b) return a.name < b.name end)
 			end
 			for _, uix_propertySection in ipairs(uix_propertiesOwnedTabSections) do
-				local uix_array = (uix_propertySection.sortedComponents and #uix_propertySection.sortedComponents > 1) and uix_propertySection.sortedComponents or uix_propertySection.components
-				-- if uix_array and next(uix_array) and #uix_array > 0 then
+				local uix_array, uix_inSortedComponents = {}, {}
+				for _, uix_object in ipairs(uix_propertySection.sortedComponents) do
+					if IsValidComponent(uix_object) then
+						uix_inSortedComponents[tostring(uix_object)] = 1
+						table.insert(uix_array, uix_object)
+					end
+				end
+				for _, uix_object in ipairs(uix_propertySection.components) do
+					if IsValidComponent(uix_object) then
+						if not uix_inSortedComponents[tostring(uix_object)] then
+							table.insert(uix_array, uix_object)
+						end
+					end
+				end
 				if (uix_array and next(uix_array) and #uix_array > 0) or uix_propertySection.isRenderEmptySection then
 					menu.uix_propertiesOwnedTab_renderingPropertySection = uix_propertySection
 					local uix_id = menu.propertyMode

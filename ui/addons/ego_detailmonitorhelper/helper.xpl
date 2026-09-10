@@ -869,7 +869,13 @@ function Helper.createComponentClassLookup()
 end
 
 function Helper.isComponentClass(class1, class2)
-	return Helper.componentClassLookup[class1 * 1000 + Helper.classIDs[class2]] ~= nil
+	-- kuertee start: class1 is sometimes nil
+	if class1 then
+		return Helper.componentClassLookup[class1 * 1000 + Helper.classIDs[class2]] ~= nil
+	else
+		return false
+	end
+	-- kuertee end: class1 is sometimes nil
 end
 
 ---------------------------------------------------------------------------------
