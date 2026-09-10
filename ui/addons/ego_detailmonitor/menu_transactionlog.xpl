@@ -89,12 +89,30 @@ function menu.buttonTransactionLog(controllable)
 end
 
 -- Chem begin: station selector
+-- the sort mode lives in UIX's own userdata bag, so it survives a station switch, a save and a restart.
+-- seeded on read, because the engine can restore the saved variable after this file has been loaded.
+function menu.uix_isSortByName()
+	__userdata_uix_menu_map = __userdata_uix_menu_map or {}
+	return __userdata_uix_menu_map.savedStationSelectorSortByName == true
+end
+
+-- the box is labelled "Sort by: Sector", so checked is the sector-first order
+function menu.uix_checkBoxSortBySector(checked)
+	__userdata_uix_menu_map = __userdata_uix_menu_map or {}
+	__userdata_uix_menu_map.savedStationSelectorSortByName = not checked
+	-- the same click dismissed the dropdown, but onDropDownDeactivated fires from a path that can
+	-- bail out early, so the guard is cleared here or the log would stay frozen
+	Helper.transactionLogData.noupdate = nil
+	menu.refreshInfoFrame()
+end
+
 -- called before the first row exists, because addRow() finalises the column widths
 function menu.uix_setupSelectorColumns(ftable)
 	ftable:setColWidthPercent(1, 25)
 	ftable:setColWidth(2, Helper.standardButtonHeight)
 	ftable:setColWidth(4, Helper.standardButtonHeight)
-	ftable:setColWidthPercent(5, 25)
+	ftable:setColWidth(5, Helper.standardButtonHeight)
+	ftable:setColWidthPercent(6, 25)
 	-- col 3 is left undefined, so the dropdown takes everything the others leave
 end
 
@@ -122,6 +140,22 @@ function menu.uix_displayStationSelector(ftable)
 
 	row[4]:createButton({ active = canStep, mouseOverText = ReadText(1005, 358) }):setIcon("widget_arrow_right_01")
 	row[4].handlers.onClick = function () return menu.uix_buttonStepStation(1) end
+
+	-- a checkbox has to be given an explicit square size, or it stretches over the whole cell.
+	-- box and label are both a text tall, in a cell a button wide and a row a button tall,
+	-- so the one offset centres the box on both axes and the label vertically.
+	local checkBoxSize = Helper.standardTextHeight
+	local centerOffset = (Helper.standardButtonHeight - checkBoxSize) / 2
+	local sortByText = ReadText(1001, 2906) .. ReadText(1001, 120) .. " " .. ReadText(1001, 11284)
+	row[5]:createCheckBox(not menu.uix_isSortByName(), {
+		width = checkBoxSize,
+		height = checkBoxSize,
+		x = centerOffset,
+		y = centerOffset,
+		mouseOverText = sortByText,
+	})
+	row[5].handlers.onClick = function (_, checked) return menu.uix_checkBoxSortBySector(checked) end
+	row[6]:createText(sortByText, { halign = "left", y = centerOffset })
 end
 
 function menu.uix_getStationOptions()
@@ -140,11 +174,16 @@ function menu.uix_getStationOptions()
 			})
 		end
 	end
+	local sortByName = menu.uix_isSortByName()
 	table.sort(stations, function (a, b)
-		if a.sector ~= b.sector then
+		if (not sortByName) and (a.sector ~= b.sector) then
 			return a.sector < b.sector
 		end
-		return a.name < b.name
+		if a.name ~= b.name then
+			return a.name < b.name
+		end
+		-- table.sort is unstable, so stations sharing a name need a deterministic tie-break
+		return a.idcode < b.idcode
 	end)
 
 	local options = {}
@@ -173,6 +212,11 @@ end
 
 function menu.uix_switchStation(station)
 	if station and (station ~= 0) and (not IsSameComponent(station, menu.container)) then
+		-- the station editor parks its construction map state when it jumps here, and every vanilla
+		-- exit releases it again; skipping that makes the next station reuse the parked plan
+		if Helper.checkDiscardStationEditorChanges(menu) then
+			return
+		end
 		-- noreturn = true forwards menu.param2, so "back" still leads to whatever opened this menu
 		Helper.closeMenuAndOpenNewMenu(menu, "TransactionLogMenu", { 0, 0, station }, true)
 		menu.cleanup()
@@ -262,7 +306,7 @@ function menu.createFrame()
 	menu.uix_hasSelector = nil
 	menu.uix_stationOptions = menu.isstation and menu.uix_getStationOptions() or {}
 	if #menu.uix_stationOptions > 0 then
-		local selectortable = menu.infoFrame:addTable(5, { tabOrder = 5, width = Helper.viewWidth - tableProperties.x - tableProperties.x2, x = tableProperties.x, y = tableProperties.y })
+		local selectortable = menu.infoFrame:addTable(6, { tabOrder = 5, width = Helper.viewWidth - tableProperties.x - tableProperties.x2, x = tableProperties.x, y = tableProperties.y })
 		menu.uix_setupSelectorColumns(selectortable)		-- must happen before the first addRow(), which finalises the widths
 		menu.uix_displayStationSelector(selectortable)
 		menu.uix_hasSelector = true
