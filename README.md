@@ -8,6 +8,11 @@ HYLT2233, IALuir, Mycu, Orbika, Runekn, sticeIO.
 
 Updates
 =======
+v9.0.0.14, 11 Sep 2026:
+- New feature: ChemODun added the ability to sort the station list in his Station Selector drop-down menu in the Station Overview and Transaction Log menus. Thanks, ChemODun!
+- Bug-fix: Some objects, particularly non-player-owned objects, in custom Property Owned tabs added by mods (e.g. Military Exercises mod) with the uix_addUIXPropertyOwnedTab() function were not getting listed. For modders: For information on adding custom Property Owned tabs, read the "Map Menu: Custom Property Owned category tabs" section.
+- Bug-fix: Non-player-owned objects in custom Property Owned tabs added by mods (e.g. Military Exercises mod) with the uix_addUIXPropertyOwnedTab() function were not obeying the selected sort by type. For modders: For information on adding custom Property Owned tabs, read the "Map Menu: Custom Property Owned category tabs" section.
+
 v9.0.0.13, 7 Sep 2026:
 - New: Custom callbacks documentation by ChemODun: https://chemodun.github.io/x4/modding-support/ui-modding/uix-callbacks/. Thanks, ChemODun!
 - New feature: New callbacks for Di Crash's mod.

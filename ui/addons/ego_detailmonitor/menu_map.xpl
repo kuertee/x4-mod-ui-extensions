@@ -8754,12 +8754,18 @@ function menu.createPropertyOwned(frame, instance)
 		local uix_propertiesOwnedTabSections = menu.uix_propertiesOwnedTabDataById[menu.propertyMode].propertySections
 		if uix_propertiesOwnedTabSections and next(uix_propertiesOwnedTabSections) and #uix_propertiesOwnedTabSections > 0 then
 			for _, uix_propertySection in ipairs(uix_propertiesOwnedTabSections) do
-				uix_propertySection.sortedComponents = {}
 				local uix_components = uix_propertySection.components
 				if (uix_components and next(uix_components) and #uix_components > 0) or uix_propertySection.isRenderEmptySection then
 					menu.uix_propertiesOwnedTab_rendering = menu.uix_propertiesOwnedTabDataById[menu.propertyMode]
+					-- sort components in section
+					local uix_listForSorting = {}
 					for _, uix_component in ipairs(uix_components) do
-						uix_propertySectionByComponent[tostring(uix_component)] = uix_propertySection
+						table.insert(uix_listForSorting, {component = uix_component})
+					end
+					local uix_listSorted = menu.sortComponentListHelper(uix_listForSorting, menu.propertySorterType)
+					uix_propertySection.components = {}
+					for _, uix_entry in ipairs(uix_listSorted) do
+						table.insert(uix_propertySection.components, uix_entry.component)
 					end
 				end
 			end
@@ -8938,15 +8944,6 @@ function menu.createPropertyOwned(frame, instance)
 			end
 		end
 		-- kuertee end: callback on every playerobject
-
-		-- kuertee start: uix properties owned tab
-		if menu.uix_propertiesOwnedTab_rendering then
-			local uix_propertySection = uix_propertySectionByComponent[tostring(object)]
-			if uix_propertySection then
-				table.insert(uix_propertySection.sortedComponents, object)
-			end
-		end
-		-- kuertee end: uix properties owned tab
 	end
 
 	-- kuertee start: callback
@@ -9068,20 +9065,7 @@ function menu.createPropertyOwned(frame, instance)
 				table.sort(uix_propertiesOwnedTabSections, function(a, b) return a.name < b.name end)
 			end
 			for _, uix_propertySection in ipairs(uix_propertiesOwnedTabSections) do
-				local uix_array, uix_inSortedComponents = {}, {}
-				for _, uix_object in ipairs(uix_propertySection.sortedComponents) do
-					if IsValidComponent(uix_object) then
-						uix_inSortedComponents[tostring(uix_object)] = 1
-						table.insert(uix_array, uix_object)
-					end
-				end
-				for _, uix_object in ipairs(uix_propertySection.components) do
-					if IsValidComponent(uix_object) then
-						if not uix_inSortedComponents[tostring(uix_object)] then
-							table.insert(uix_array, uix_object)
-						end
-					end
-				end
+				local uix_array = uix_propertySection.components
 				if (uix_array and next(uix_array) and #uix_array > 0) or uix_propertySection.isRenderEmptySection then
 					menu.uix_propertiesOwnedTab_renderingPropertySection = uix_propertySection
 					local uix_id = menu.propertyMode
