@@ -14975,7 +14975,7 @@ function Helper.deregisterCallback(callbackName, callbackFunction, id)
     end
     if not Helper.uix_isDeregisterQueued then
         Helper.uix_isDeregisterQueued = true
-        Helper.addDelayedOneTimeCallbackOnUpdate(ModLua.deregisterCallbacksNow, true, getElapsedTime() + 1)
+        Helper.addDelayedOneTimeCallbackOnUpdate(Helper.deregisterCallbacksNow, true, getElapsedTime() + 1)
     end
 end
 
@@ -15012,7 +15012,7 @@ function Helper.updateCallback(callbackName, id, callbackFunction)
     end
     if not Helper.uix_isUpdateQueued then
         Helper.uix_isUpdateQueued = true
-        Helper.addDelayedOneTimeCallbackOnUpdate(ModLua.updateCallbacksNow, true, getElapsedTime() + 1)
+        Helper.addDelayedOneTimeCallbackOnUpdate(Helper.updateCallbacksNow, true, getElapsedTime() + 1)
     end
 end
 
