@@ -14939,6 +14939,11 @@ function Helper.registerCallback(callbackName, callbackFunction, id)
     -- note 3: new callbacks can be added or existing callbacks can be edited. but commit your additions/changes to the mod's GIT repository.
     -- note 4: search for the callback names to see where they are executed.
     -- note 5: if a callback requires a return value, return it in an object var. e.g. "display_on_set_room_active" requires a return of {active = true | false}.
+    -- Chem begin: supported callbacks
+    if not Helper.uix_isCallbackSupported(callbackName) then
+        Helper.debugText_forced("Helper uix registerCallback: callback " .. tostring(callbackName) .. " is not supported")
+    end
+    -- Chem end: supported callbacks
     if Helper.uix_callbacks [callbackName] == nil then
         Helper.uix_callbacks [callbackName] = {}
     end
@@ -15081,5 +15086,37 @@ end
 ---------------------------------------------------------------------------------
 -- Init
 ---------------------------------------------------------------------------------
+
+-- Chem begin: supported callbacks
+Helper.uix_supportedCallbacks = {
+    ["checkboxSetTradeRuleOverride_pre_update_expanded_node"] = true,
+    ["checkTopLevelConditions_get_is_entry_available"] = true,
+    ["createFrameHandle_on_start"] = true,
+    ["createLSOStorageNode_get_ware_name"] = true,
+    ["createTransactionLog_on_before_adding_entry"] = true,
+    ["createTransactionLog_set_graph_height"] = true,
+    ["dropdownTradeRule_pre_update_expanded_node"] = true,
+    ["GetTargetMonitorDetails_on_get_details"] = true,
+    ["onCollapseLSOStorageNode"] = true,
+    ["onExpandLSOStorageNode"] = true,
+    ["onExpandLSOStorageNode_list_incoming_trade"] = true,
+    ["onExpandLSOStorageNode_pre_buy_offer_title"] = true,
+    ["onExpandLSOStorageNode_pre_sell_offer_title"] = true,
+    ["onUpdate"] = true,
+    ["registerMenu_onShow"] = true,
+    ["updateLSOStorageNode_pre_update_expanded_node"] = true,
+}
+function Helper.uix_isCallbackSupported(callbackName)
+    return Helper.uix_supportedCallbacks[callbackName] == true
+end
+function Helper.uix_getSupportedCallbacks()
+    local result = {}
+    for callbackName in pairs(Helper.uix_supportedCallbacks) do
+        table.insert(result, callbackName)
+    end
+    table.sort(result)
+    return result
+end
+-- Chem end: supported callbacks
 
 init()

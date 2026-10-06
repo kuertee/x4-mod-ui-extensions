@@ -791,6 +791,11 @@ function menu.registerCallback(callbackName, callbackFunction, id)
     -- note 3: new callbacks can be added or existing callbacks can be edited. but commit your additions/changes to the mod's GIT repository.
     -- note 4: search for the callback names to see where they are executed.
     -- note 5: if a callback requires a return value, return it in an object var. e.g. "display_on_set_room_active" requires a return of {active = true | false}.
+    -- Chem begin: supported callbacks
+    if not menu.uix_isCallbackSupported(callbackName) then
+        Helper.debugText_forced(menu.name .. " uix registerCallback: callback " .. tostring(callbackName) .. " is not supported")
+    end
+    -- Chem end: supported callbacks
     if menu.uix_callbacks [callbackName] == nil then
         menu.uix_callbacks [callbackName] = {}
     end
@@ -889,5 +894,22 @@ function menu.updateCallbacksNow()
     end
 end
 -- kuertee end
+
+-- Chem begin: supported callbacks
+menu.uix_supportedCallbacks = {
+    ["display_on_after_create_equipment_text"] = true,
+}
+function menu.uix_isCallbackSupported(callbackName)
+    return menu.uix_supportedCallbacks[callbackName] == true
+end
+function menu.uix_getSupportedCallbacks()
+    local result = {}
+    for callbackName in pairs(menu.uix_supportedCallbacks) do
+        table.insert(result, callbackName)
+    end
+    table.sort(result)
+    return result
+end
+-- Chem end: supported callbacks
 
 init()

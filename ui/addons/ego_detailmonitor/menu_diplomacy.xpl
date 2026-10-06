@@ -4559,6 +4559,11 @@ function menu.registerCallback(callbackName, callbackFunction, id)
     -- note 3: new callbacks can be added or existing callbacks can be edited. but commit your additions/changes to the mod's GIT repository.
     -- note 4: search for the callback names to see where they are executed.
     -- note 5: if a callback requires a return value, return it in an object var. e.g. "display_on_set_room_active" requires a return of {active = true | false}.
+    -- Chem begin: supported callbacks
+    if not menu.uix_isCallbackSupported(callbackName) then
+        Helper.debugText_forced(menu.name .. " uix registerCallback: callback " .. tostring(callbackName) .. " is not supported")
+    end
+    -- Chem end: supported callbacks
     if menu.uix_callbacks [callbackName] == nil then
         menu.uix_callbacks [callbackName] = {}
     end
@@ -4657,5 +4662,55 @@ function menu.updateCallbacksNow()
     end
 end
 -- kuertee end
+
+-- Chem begin: supported callbacks
+menu.uix_supportedCallbacks = {
+    ["buttonSelectObject_before_open_map"] = true,
+    ["buttonStartAction_start_operation"] = true,
+    ["buttonTogglePlayerInfo_on_start"] = true,
+    ["cleanup"] = true,
+    ["createActionConfigContext_after_action_gift"] = true,
+    ["createActionConfigContext_after_action_requirements"] = true,
+    ["createActionConfigContext_after_action_targets"] = true,
+    ["createActionConfigContext_after_agent_selection"] = true,
+    ["createActionConfigContext_archive_operation"] = true,
+    ["createActionConfigContext_modify_giftwareoptions"] = true,
+    ["createActionConfigContext_modify_wareoptions"] = true,
+    ["createActionConfigContext_on_giftware_dropdown_confirmed"] = true,
+    ["createContextFrame_on_end"] = true,
+    ["createContextFrame_on_start"] = true,
+    ["createFactionDetailsContext_on_add_detail_tabs"] = true,
+    ["createFactionDetailsContext_on_before_detail_tabs"] = true,
+    ["createFactionDetailsContext_on_before_detailtable"] = true,
+    ["createFactionDetailsContext_on_render_detail_tab"] = true,
+    ["createFactions_after_relationtext"] = true,
+    ["createFactions_after_sorter"] = true,
+    ["createFactions_on_after_declare_war_button"] = true,
+    ["createFactions_on_before_render_licences"] = true,
+    ["createFactions_relationtext_setText2"] = true,
+    ["createInfoFrame_on_info_frame_mode"] = true,
+    ["createInfoFrame_on_start"] = true,
+    ["createLeftBar_on_start"] = true,
+    ["createPlayerInfo_on_start"] = true,
+    ["dropdownSelectWare"] = true,
+    ["getData"] = true,
+    ["init"] = true,
+    ["onRowChanged"] = true,
+    ["refreshContextFrame_on_end"] = true,
+    ["refreshContextFrame_on_start"] = true,
+    ["relationSorter"] = true,
+}
+function menu.uix_isCallbackSupported(callbackName)
+    return menu.uix_supportedCallbacks[callbackName] == true
+end
+function menu.uix_getSupportedCallbacks()
+    local result = {}
+    for callbackName in pairs(menu.uix_supportedCallbacks) do
+        table.insert(result, callbackName)
+    end
+    table.sort(result)
+    return result
+end
+-- Chem end: supported callbacks
 
 init()

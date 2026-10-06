@@ -34333,6 +34333,11 @@ function menu.registerCallback(callbackName, callbackFunction, id)
     -- note 3: new callbacks can be added or existing callbacks can be edited. but commit your additions/changes to the mod's GIT repository.
     -- note 4: search for the callback names to see where they are executed.
     -- note 5: if a callback requires a return value, return it in an object var. e.g. "display_on_set_room_active" requires a return of {active = true | false}.
+    -- Chem begin: supported callbacks
+    if not menu.uix_isCallbackSupported(callbackName) then
+        Helper.debugText_forced(menu.name .. " uix registerCallback: callback " .. tostring(callbackName) .. " is not supported")
+    end
+    -- Chem end: supported callbacks
     if menu.uix_callbacks[callbackName] == nil then
         menu.uix_callbacks[callbackName] = {}
     end
@@ -34431,5 +34436,102 @@ function menu.updateCallbacksNow()
     end
 end
 -- kuertee end
+
+-- Chem begin: supported callbacks
+menu.uix_supportedCallbacks = {
+    ["addCrewSection_after_full_crew_list"] = true,
+    ["aegs_map_loadoutinfo_double_insert"] = true,
+    ["aegs_map_propertyowned_constructionships_insert"] = true,
+    ["aegs_map_ship_assignments_insert"] = true,
+    ["aegs_map_ship_subordinateassignments_insert"] = true,
+    ["aegs_map_shipInformation_shiptypename_override"] = true,
+    ["buttonMissionActivate_on_activate"] = true,
+    ["buttonRenameConfirm_onMultiRename_on_after_rename"] = true,
+    ["buttonRenameConfirm_onMultiRename_on_before_rename"] = true,
+    ["buttonToggleObjectList_on_start"] = true,
+    ["closeContextMenu_on_before"] = true,
+    ["cpsdo_map_loadoutinfo_sessystem_display_insert"] = true,
+    ["cpsdo_map_shipInformation_shiptypename_replace"] = true,
+    ["createContextFrame_on_end"] = true,
+    ["createContextFrame_on_start"] = true,
+    ["createInfoFrame_on_menu_infoTableMode"] = true,
+    ["createInfoFrame2_on_menu_infoModeRight"] = true,
+    ["createLegend_on_end"] = true,
+    ["createMissionContext_addMissionAcceptedButtons"] = true,
+    ["createMissionContext_addMissionOfferButtons"] = true,
+    ["createMissionContext_getIsMissionAcceptable"] = true,
+    ["createMissionContext_getIsMissionBriefingAvailable"] = true,
+    ["createMissionContext_on_end"] = true,
+    ["createMissionContext_startDescriptionTable"] = true,
+    ["createMissionMode_on_missionoffer_guild_start"] = true,
+    ["createMissionMode_replaceMissionModeCurrent"] = true,
+    ["createObjectList_on_add_entry_infoTableData"] = true,
+    ["createObjectList_on_createPropertySection"] = true,
+    ["createObjectList_on_init_infoTableData"] = true,
+    ["createPropertyOwned_on_add_other_objects_infoTableData"] = true,
+    ["createPropertyOwned_on_add_ship_infoTableData"] = true,
+    ["createPropertyOwned_on_category_tab_title"] = true,
+    ["createPropertyOwned_on_createPropertySection"] = true,
+    ["createPropertyOwned_on_createPropertySection_unassignedships"] = true,
+    ["createPropertyOwned_on_every_playerobject"] = true,
+    ["createPropertyOwned_on_init_infoTableData"] = true,
+    ["createPropertyOwned_on_set_supportsbuildtasks"] = true,
+    ["createPropertyOwned_on_start"] = true,
+    ["createPropertyOwned_on_tabtable_end"] = true,
+    ["createPropertyRow_after_config_change"] = true,
+    ["createPropertyRow_after_row_height"] = true,
+    ["createPropertyRow_before_config_change"] = true,
+    ["createPropertyRow_on_init_vars"] = true,
+    ["createPropertyRow_on_set_locationtext"] = true,
+    ["createPropertyRow_override_row_location_createText"] = true,
+    ["createPropertyRow_override_row_shipname_createText"] = true,
+    ["createRightBar_on_start"] = true,
+    ["createSideBar_on_start"] = true,
+    ["displayDefaultBehaviour_change_param_behaviouractive"] = true,
+    ["displayOrderParam_change_paramactive"] = true,
+    ["getContainerNameAndColors_on_name_construct"] = true,
+    ["getPropertyOwnedFleetDataInternal_addToFleetIcons"] = true,
+    ["ic_onRowChanged"] = true,
+    ["ic_onSelectElement"] = true,
+    ["ic_onTableRightMouseClick"] = true,
+    ["info_sub_menu_create"] = true,
+    ["info_sub_menu_is_valid_for"] = true,
+    ["info_sub_menu_to_show"] = true,
+    ["MtCst_map_shipInformation_newrowsafterboardingstrength"] = true,
+    ["on_create_main_frame"] = true,
+    ["on_menu_cleanup"] = true,
+    ["on_menu_minimize"] = true,
+    ["onInteractMenuCallback_on_custom_type"] = true,
+    ["onRenderTargetDoubleClick_at_end"] = true,
+    ["onRenderTargetDoubleClick_at_start"] = true,
+    ["onRenderTargetSelect_on_leave"] = true,
+    ["onRenderTargetSelect_on_objectlist_newmode"] = true,
+    ["onRenderTargetSelect_on_propertyowned_newmode"] = true,
+    ["onSetActiveStateForCVMode_on_createPropertyOwned"] = true,
+    ["onShowMenu_orderdefs_forcedorderatfront"] = true,
+    ["onUpdateTableSelection_at_end"] = true,
+    ["rd_addReactiveDockingMapMenu"] = true,
+    ["refreshContextFrame_on_end"] = true,
+    ["refreshContextFrame_on_start"] = true,
+    ["refreshInfoFrame2_on_start"] = true,
+    ["sto_addTurretBehavioursMapMenu"] = true,
+    ["updatePlotSize_on_before_extend"] = true,
+    ["utRenaming_buttonRenameConfirm"] = true,
+    ["utRenaming_createRenameContext_get_startname"] = true,
+    ["utRenaming_infoChangeObjectName"] = true,
+    ["utRenaming_setupInfoSubmenuRows_on_end"] = true,
+}
+function menu.uix_isCallbackSupported(callbackName)
+    return menu.uix_supportedCallbacks[callbackName] == true
+end
+function menu.uix_getSupportedCallbacks()
+    local result = {}
+    for callbackName in pairs(menu.uix_supportedCallbacks) do
+        table.insert(result, callbackName)
+    end
+    table.sort(result)
+    return result
+end
+-- Chem end: supported callbacks
 
 init()
