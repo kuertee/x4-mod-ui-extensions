@@ -8555,7 +8555,12 @@ function Helper.sortNameAndObjectID(a, b, invert)
 		return a.fleetname ~= nil
 	end
 	if a.name == b.name then
-		if invert then
+		-- if invert then
+		-- kuertee start: in case objectid is null
+		if (not a.objectid) and (not b.objectid) then
+			return true
+		elseif invert then
+		-- kuertee: end in case objectid is null
 			return a.objectid > b.objectid
 		else
 			return a.objectid < b.objectid

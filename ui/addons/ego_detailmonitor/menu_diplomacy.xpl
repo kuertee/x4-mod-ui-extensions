@@ -2777,7 +2777,7 @@ function menu.createActionConfigContext(frame)
 			ispastoperation = ispastoperation,
 		}
 		for uix_id, uix_callback in pairs(menu.uix_callbacks["createActionConfigContext_after_action_targets"]) do
-			uix_callback(frame, titletable, desctable, infotable, infotable2, actionConfigData)
+			uix_callback(frame, titletable, desctable, infotable, infotable2, actionConfigData, targetrowgroup)
 		end
 	end
 	-- kuertee end
@@ -2881,7 +2881,7 @@ function menu.createActionConfigContext(frame)
 			ispastoperation = ispastoperation,
 		}
 		for uix_id, uix_callback in pairs(menu.uix_callbacks["createActionConfigContext_after_action_requirements"]) do
-			uix_callback(frame, titletable, desctable, infotable, infotable2, actionConfigData)
+			uix_callback(frame, titletable, desctable, infotable, infotable2, actionConfigData, reqrowgroup)
 		end
 	end
 	-- kuertee end
@@ -2973,7 +2973,7 @@ function menu.createActionConfigContext(frame)
 				ispastoperation = ispastoperation,
 			}
 			for uix_id, uix_callback in pairs(menu.uix_callbacks["createActionConfigContext_after_action_gift"]) do
-				uix_callback(frame, titletable, desctable, infotable, infotable2, actionConfigData, giftactive)
+				uix_callback(frame, titletable, desctable, infotable, infotable2, actionConfigData, giftactive, reqrowgroup)
 			end
 		end
 		-- kuertee end
