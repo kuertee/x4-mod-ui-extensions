@@ -521,6 +521,11 @@ function menu.registerCallback(callbackName, callbackFunction, id)
     -- note 3: new callbacks can be added or existing callbacks can be edited. but commit your additions/changes to the mod's GIT repository.
     -- note 4: search for the callback names to see where they are executed.
     -- note 5: if a callback requires a return value, return it in an object var. e.g. "display_on_set_room_active" requires a return of {active = true | false}.
+    -- Chem begin: supported callbacks
+    if not menu.uix_isCallbackSupported(callbackName) then
+        Helper.debugText_forced(menu.name .. " uix registerCallback: callback " .. tostring(callbackName) .. " is not supported")
+    end
+    -- Chem end: supported callbacks
     if menu.uix_callbacks [callbackName] == nil then
         menu.uix_callbacks [callbackName] = {}
     end
@@ -619,5 +624,29 @@ function menu.updateCallbacksNow()
     end
 end
 -- kuertee end
+
+-- Chem begin: supported callbacks
+menu.uix_supportedCallbacks = {
+    ["cleanup"] = true,
+    ["createInfoFrame_on_add_table"] = true,
+    ["createInfoFrame_on_before_frame_display"] = true,
+    ["kHUD_add_HUD_tables"] = true,
+    ["kHUD_add_tables"] = true,
+    ["kHUD_get_is_show_custom_hud"] = true,
+    ["onUpdate_before_frame_update"] = true,
+    ["onUpdate_start"] = true,
+}
+function menu.uix_isCallbackSupported(callbackName)
+    return menu.uix_supportedCallbacks[callbackName] == true
+end
+function menu.uix_getSupportedCallbacks()
+    local result = {}
+    for callbackName in pairs(menu.uix_supportedCallbacks) do
+        table.insert(result, callbackName)
+    end
+    table.sort(result)
+    return result
+end
+-- Chem end: supported callbacks
 
 init()
