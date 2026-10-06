@@ -4595,6 +4595,11 @@ function menu.registerCallback(callbackName, callbackFunction, id)
     -- note 3: new callbacks can be added or existing callbacks can be edited. but commit your additions/changes to the mod's GIT repository.
     -- note 4: search for the callback names to see where they are executed.
     -- note 5: if a callback requires a return value, return it in an object var. e.g. "display_on_set_room_active" requires a return of {active = true | false}.
+    -- Chem begin: supported callbacks
+    if not menu.uix_isCallbackSupported(callbackName) then
+        Helper.debugText_forced(menu.name .. " uix registerCallback: callback " .. tostring(callbackName) .. " is not supported")
+    end
+    -- Chem end: supported callbacks
     if menu.uix_callbacks [callbackName] == nil then
         menu.uix_callbacks [callbackName] = {}
     end
@@ -4693,6 +4698,56 @@ function menu.updateCallbacksNow()
     end
 end
 -- kuertee end
+
+-- Chem begin: supported callbacks
+menu.uix_supportedCallbacks = {
+    ["buttonSelectObject_before_open_map"] = true,
+    ["buttonStartAction_start_operation"] = true,
+    ["buttonTogglePlayerInfo_on_start"] = true,
+    ["cleanup"] = true,
+    ["createActionConfigContext_after_action_gift"] = true,
+    ["createActionConfigContext_after_action_requirements"] = true,
+    ["createActionConfigContext_after_action_targets"] = true,
+    ["createActionConfigContext_after_agent_selection"] = true,
+    ["createActionConfigContext_archive_operation"] = true,
+    ["createActionConfigContext_modify_giftwareoptions"] = true,
+    ["createActionConfigContext_modify_wareoptions"] = true,
+    ["createActionConfigContext_on_giftware_dropdown_confirmed"] = true,
+    ["createContextFrame_on_end"] = true,
+    ["createContextFrame_on_start"] = true,
+    ["createFactionDetailsContext_on_add_detail_tabs"] = true,
+    ["createFactionDetailsContext_on_before_detail_tabs"] = true,
+    ["createFactionDetailsContext_on_before_detailtable"] = true,
+    ["createFactionDetailsContext_on_render_detail_tab"] = true,
+    ["createFactions_after_relationtext"] = true,
+    ["createFactions_after_sorter"] = true,
+    ["createFactions_on_after_declare_war_button"] = true,
+    ["createFactions_on_before_render_licences"] = true,
+    ["createFactions_relationtext_setText2"] = true,
+    ["createInfoFrame_on_info_frame_mode"] = true,
+    ["createInfoFrame_on_start"] = true,
+    ["createLeftBar_on_start"] = true,
+    ["createPlayerInfo_on_start"] = true,
+    ["dropdownSelectWare"] = true,
+    ["getData"] = true,
+    ["init"] = true,
+    ["onRowChanged"] = true,
+    ["refreshContextFrame_on_end"] = true,
+    ["refreshContextFrame_on_start"] = true,
+    ["relationSorter"] = true,
+}
+function menu.uix_isCallbackSupported(callbackName)
+    return menu.uix_supportedCallbacks[callbackName] == true
+end
+function menu.uix_getSupportedCallbacks()
+    local result = {}
+    for callbackName in pairs(menu.uix_supportedCallbacks) do
+        table.insert(result, callbackName)
+    end
+    table.sort(result)
+    return result
+end
+-- Chem end: supported callbacks
 
 init()
 ﻿-- param == { 0, 0 }
@@ -6407,6 +6462,11 @@ function menu.registerCallback(callbackName, callbackFunction, id)
     -- note 3: new callbacks can be added or existing callbacks can be edited. but commit your additions/changes to the mod's GIT repository.
     -- note 4: search for the callback names to see where they are executed.
     -- note 5: if a callback requires a return value, return it in an object var. e.g. "display_on_set_room_active" requires a return of {active = true | false}.
+    -- Chem begin: supported callbacks
+    if not menu.uix_isCallbackSupported(callbackName) then
+        Helper.debugText_forced(menu.name .. " uix registerCallback: callback " .. tostring(callbackName) .. " is not supported")
+    end
+    -- Chem end: supported callbacks
     if menu.uix_callbacks [callbackName] == nil then
         menu.uix_callbacks [callbackName] = {}
     end
@@ -6505,6 +6565,27 @@ function menu.updateCallbacksNow()
     end
 end
 -- kuertee end
+
+-- Chem begin: supported callbacks
+menu.uix_supportedCallbacks = {
+    ["cleanup"] = true,
+    ["display_on_after_main_interactions"] = true,
+    ["display_on_after_weaponconfig_weapon_row"] = true,
+    ["rd_addReactiveDockingDockMenu"] = true,
+    ["sto_addTurretBehavioursDockMenu"] = true,
+}
+function menu.uix_isCallbackSupported(callbackName)
+    return menu.uix_supportedCallbacks[callbackName] == true
+end
+function menu.uix_getSupportedCallbacks()
+    local result = {}
+    for callbackName in pairs(menu.uix_supportedCallbacks) do
+        table.insert(result, callbackName)
+    end
+    table.sort(result)
+    return result
+end
+-- Chem end: supported callbacks
 
 init()
 ﻿-- param == { 0, 0, mode, library, id, object }
@@ -11114,6 +11195,11 @@ function menu.registerCallback(callbackName, callbackFunction, id)
     -- note 3: new callbacks can be added or existing callbacks can be edited. but commit your additions/changes to the mod's GIT repository.
     -- note 4: search for the callback names to see where they are executed.
     -- note 5: if a callback requires a return value, return it in an object var. e.g. "display_on_set_room_active" requires a return of {active = true | false}.
+    -- Chem begin: supported callbacks
+    if not menu.uix_isCallbackSupported(callbackName) then
+        Helper.debugText_forced(menu.name .. " uix registerCallback: callback " .. tostring(callbackName) .. " is not supported")
+    end
+    -- Chem end: supported callbacks
     if menu.uix_callbacks [callbackName] == nil then
         menu.uix_callbacks [callbackName] = {}
     end
@@ -11212,6 +11298,38 @@ function menu.updateCallbacksNow()
     end
 end
 -- kuertee end
+
+-- Chem begin: supported callbacks
+menu.uix_supportedCallbacks = {
+    ["addDetailRow_get_shield_disruption_text"] = true,
+    ["addDetailRow_known_cluster_production_module_entries"] = true,
+    ["addDetailRow_known_sector_production_module_entries"] = true,
+    ["addDetailRow_post_missile_entry"] = true,
+    ["cleanup"] = true,
+    ["cpsdo_onShowMenu_addOtherShipTypes"] = true,
+    ["createIndex_on_end"] = true,
+    ["display_on_start"] = true,
+    ["onShowMenu_addingIndexEntries"] = true,
+    ["onShowMenu_addingIndexNumEntries"] = true,
+    ["onShowMenu_addingTypeIndexEntries"] = true,
+    ["onShowMenu_addOtherShipTypes"] = true,
+    ["onShowMenu_on_set_shiptypename"] = true,
+    ["onShowMenu_override_capitalsizecategory"] = true,
+    ["onShowMenu_override_menu_printed_variables"] = true,
+    ["onShowMenu_override_sizecategory"] = true,
+}
+function menu.uix_isCallbackSupported(callbackName)
+    return menu.uix_supportedCallbacks[callbackName] == true
+end
+function menu.uix_getSupportedCallbacks()
+    local result = {}
+    for callbackName in pairs(menu.uix_supportedCallbacks) do
+        table.insert(result, callbackName)
+    end
+    table.sort(result)
+    return result
+end
+-- Chem end: supported callbacks
 
 init()
 ﻿-- section == gMain_map
@@ -45549,6 +45667,11 @@ function menu.registerCallback(callbackName, callbackFunction, id)
     -- note 3: new callbacks can be added or existing callbacks can be edited. but commit your additions/changes to the mod's GIT repository.
     -- note 4: search for the callback names to see where they are executed.
     -- note 5: if a callback requires a return value, return it in an object var. e.g. "display_on_set_room_active" requires a return of {active = true | false}.
+    -- Chem begin: supported callbacks
+    if not menu.uix_isCallbackSupported(callbackName) then
+        Helper.debugText_forced(menu.name .. " uix registerCallback: callback " .. tostring(callbackName) .. " is not supported")
+    end
+    -- Chem end: supported callbacks
     if menu.uix_callbacks[callbackName] == nil then
         menu.uix_callbacks[callbackName] = {}
     end
@@ -45647,6 +45770,103 @@ function menu.updateCallbacksNow()
     end
 end
 -- kuertee end
+
+-- Chem begin: supported callbacks
+menu.uix_supportedCallbacks = {
+    ["addCrewSection_after_full_crew_list"] = true,
+    ["aegs_map_loadoutinfo_double_insert"] = true,
+    ["aegs_map_propertyowned_constructionships_insert"] = true,
+    ["aegs_map_ship_assignments_insert"] = true,
+    ["aegs_map_ship_subordinateassignments_insert"] = true,
+    ["aegs_map_shipInformation_shiptypename_override"] = true,
+    ["buttonMissionActivate_on_activate"] = true,
+    ["buttonRenameConfirm_onMultiRename_on_after_rename"] = true,
+    ["buttonRenameConfirm_onMultiRename_on_before_rename"] = true,
+    ["buttonToggleObjectList_on_start"] = true,
+    ["closeContextMenu_on_before"] = true,
+    ["cpsdo_map_loadoutinfo_sessystem_display_insert"] = true,
+    ["cpsdo_map_shipInformation_shiptypename_replace"] = true,
+    ["createContextFrame_on_end"] = true,
+    ["createContextFrame_on_start"] = true,
+    ["createInfoFrame_on_menu_infoTableMode"] = true,
+    ["createInfoFrame2_on_menu_infoModeRight"] = true,
+    ["createLegend_on_end"] = true,
+    ["createMissionContext_addMissionAcceptedButtons"] = true,
+    ["createMissionContext_addMissionOfferButtons"] = true,
+    ["createMissionContext_getIsMissionAcceptable"] = true,
+    ["createMissionContext_getIsMissionBriefingAvailable"] = true,
+    ["createMissionContext_on_end"] = true,
+    ["createMissionContext_startDescriptionTable"] = true,
+    ["createMissionMode_on_missionoffer_guild_start"] = true,
+    ["createMissionMode_replaceMissionModeCurrent"] = true,
+    ["createObjectList_on_add_entry_infoTableData"] = true,
+    ["createObjectList_on_createPropertySection"] = true,
+    ["createObjectList_on_init_infoTableData"] = true,
+    ["createPropertyOwned_on_add_other_objects_infoTableData"] = true,
+    ["createPropertyOwned_on_add_ship_infoTableData"] = true,
+    ["createPropertyOwned_on_category_tab_title"] = true,
+    ["createPropertyOwned_on_createPropertySection"] = true,
+    ["createPropertyOwned_on_createPropertySection_unassignedships"] = true,
+    ["createPropertyOwned_on_every_playerobject"] = true,
+    ["createPropertyOwned_on_init_infoTableData"] = true,
+    ["createPropertyOwned_on_set_supportsbuildtasks"] = true,
+    ["createPropertyOwned_on_start"] = true,
+    ["createPropertyOwned_on_tabtable_end"] = true,
+    ["createPropertyRow_after_config_change"] = true,
+    ["createPropertyRow_after_row_height"] = true,
+    ["createPropertyRow_before_config_change"] = true,
+    ["createPropertyRow_on_init_vars"] = true,
+    ["createPropertyRow_on_set_locationtext"] = true,
+    ["createPropertyRow_override_row_location_createText"] = true,
+    ["createPropertyRow_override_row_shipname_createText"] = true,
+    ["createRightBar_on_start"] = true,
+    ["createSideBar_on_start"] = true,
+    ["displayDefaultBehaviour_change_param_behaviouractive"] = true,
+    ["displayOrderParam_change_paramactive"] = true,
+    ["getContainerNameAndColors_on_name_construct"] = true,
+    ["getPropertyOwnedFleetDataInternal_addToFleetIcons"] = true,
+    ["ic_onRowChanged"] = true,
+    ["ic_onSelectElement"] = true,
+    ["ic_onTableRightMouseClick"] = true,
+    ["info_sub_menu_create"] = true,
+    ["info_sub_menu_is_valid_for"] = true,
+    ["info_sub_menu_to_show"] = true,
+    ["MtCst_map_shipInformation_newrowsafterboardingstrength"] = true,
+    ["on_create_main_frame"] = true,
+    ["on_menu_cleanup"] = true,
+    ["on_menu_minimize"] = true,
+    ["onInteractMenuCallback_on_custom_type"] = true,
+    ["onRenderTargetDoubleClick_at_end"] = true,
+    ["onRenderTargetDoubleClick_at_start"] = true,
+    ["onRenderTargetSelect_on_leave"] = true,
+    ["onRenderTargetSelect_on_objectlist_newmode"] = true,
+    ["onRenderTargetSelect_on_propertyowned_newmode"] = true,
+    ["onSetActiveStateForCVMode_on_createPropertyOwned"] = true,
+    ["onShowMenu_orderdefs_forcedorderatfront"] = true,
+    ["onUpdateTableSelection_at_end"] = true,
+    ["rd_addReactiveDockingMapMenu"] = true,
+    ["refreshContextFrame_on_end"] = true,
+    ["refreshContextFrame_on_start"] = true,
+    ["refreshInfoFrame2_on_start"] = true,
+    ["sto_addTurretBehavioursMapMenu"] = true,
+    ["updatePlotSize_on_before_extend"] = true,
+    ["utRenaming_buttonRenameConfirm"] = true,
+    ["utRenaming_createRenameContext_get_startname"] = true,
+    ["utRenaming_infoChangeObjectName"] = true,
+    ["utRenaming_setupInfoSubmenuRows_on_end"] = true,
+}
+function menu.uix_isCallbackSupported(callbackName)
+    return menu.uix_supportedCallbacks[callbackName] == true
+end
+function menu.uix_getSupportedCallbacks()
+    local result = {}
+    for callbackName in pairs(menu.uix_supportedCallbacks) do
+        table.insert(result, callbackName)
+    end
+    table.sort(result)
+    return result
+end
+-- Chem end: supported callbacks
 
 init()
 ﻿-- param == { 0, 0, mode, modeparam }
@@ -53356,6 +53576,11 @@ function menu.registerCallback(callbackName, callbackFunction, id)
     -- note 3: new callbacks can be added or existing callbacks can be edited. but commit your additions/changes to the mod's GIT repository.
     -- note 4: search for the callback names to see where they are executed.
     -- note 5: if a callback requires a return value, return it in an object var. e.g. "display_on_set_room_active" requires a return of {active = true | false}.
+    -- Chem begin: supported callbacks
+    if not menu.uix_isCallbackSupported(callbackName) then
+        Helper.debugText_forced(menu.name .. " uix registerCallback: callback " .. tostring(callbackName) .. " is not supported")
+    end
+    -- Chem end: supported callbacks
     if menu.uix_callbacks [callbackName] == nil then
         menu.uix_callbacks [callbackName] = {}
     end
@@ -53454,6 +53679,37 @@ function menu.updateCallbacksNow()
     end
 end
 -- kuertee end
+
+-- Chem begin: supported callbacks
+menu.uix_supportedCallbacks = {
+    ["buttonTogglePlayerInfo_on_start"] = true,
+    ["cleanup"] = true,
+    ["createContextFrame_on_end"] = true,
+    ["createContextFrame_on_start"] = true,
+    ["createFactions_on_after_declare_war_button"] = true,
+    ["createFactions_on_before_render_licences"] = true,
+    ["createInfoFrame_on_info_frame_mode"] = true,
+    ["createInfoFrame_on_start"] = true,
+    ["createLeftBar_on_start"] = true,
+    ["createPlayerInfo_on_start"] = true,
+    ["init"] = true,
+    ["onRowChanged"] = true,
+    ["refreshContextFrame_on_end"] = true,
+    ["refreshContextFrame_on_start"] = true,
+    ["setupEmpireRows_on_set_shiptypename"] = true,
+}
+function menu.uix_isCallbackSupported(callbackName)
+    return menu.uix_supportedCallbacks[callbackName] == true
+end
+function menu.uix_getSupportedCallbacks()
+    local result = {}
+    for callbackName in pairs(menu.uix_supportedCallbacks) do
+        table.insert(result, callbackName)
+    end
+    table.sort(result)
+    return result
+end
+-- Chem end: supported callbacks
 
 init()
 ﻿-- param == { 0, 0 }
@@ -54463,6 +54719,11 @@ function menu.registerCallback(callbackName, callbackFunction, id)
     -- note 3: new callbacks can be added or existing callbacks can be edited. but commit your additions/changes to the mod's GIT repository.
     -- note 4: search for the callback names to see where they are executed.
     -- note 5: if a callback requires a return value, return it in an object var. e.g. "display_on_set_room_active" requires a return of {active = true | false}.
+    -- Chem begin: supported callbacks
+    if not menu.uix_isCallbackSupported(callbackName) then
+        Helper.debugText_forced(menu.name .. " uix registerCallback: callback " .. tostring(callbackName) .. " is not supported")
+    end
+    -- Chem end: supported callbacks
     if menu.uix_callbacks [callbackName] == nil then
         menu.uix_callbacks [callbackName] = {}
     end
@@ -54561,6 +54822,24 @@ function menu.updateCallbacksNow()
     end
 end
 -- kuertee end
+
+-- Chem begin: supported callbacks
+menu.uix_supportedCallbacks = {
+    ["createRightSideBar_on_prepare_entries"] = true,
+    ["expandNode_before_start_button"] = true,
+}
+function menu.uix_isCallbackSupported(callbackName)
+    return menu.uix_supportedCallbacks[callbackName] == true
+end
+function menu.uix_getSupportedCallbacks()
+    local result = {}
+    for callbackName in pairs(menu.uix_supportedCallbacks) do
+        table.insert(result, callbackName)
+    end
+    table.sort(result)
+    return result
+end
+-- Chem end: supported callbacks
 
 init()
 ﻿-- ffi setup
@@ -55243,6 +55522,11 @@ function menu.registerCallback(callbackName, callbackFunction, id)
     -- note 3: new callbacks can be added or existing callbacks can be edited. but commit your additions/changes to the mod's GIT repository.
     -- note 4: search for the callback names to see where they are executed.
     -- note 5: if a callback requires a return value, return it in an object var. e.g. "display_on_set_room_active" requires a return of {active = true | false}.
+    -- Chem begin: supported callbacks
+    if not menu.uix_isCallbackSupported(callbackName) then
+        Helper.debugText_forced(menu.name .. " uix registerCallback: callback " .. tostring(callbackName) .. " is not supported")
+    end
+    -- Chem end: supported callbacks
     if menu.uix_callbacks [callbackName] == nil then
         menu.uix_callbacks [callbackName] = {}
     end
@@ -55341,6 +55625,21 @@ function menu.updateCallbacksNow()
     end
 end
 -- kuerte end
+
+-- Chem begin: supported callbacks
+menu.uix_supportedCallbacks = {}
+function menu.uix_isCallbackSupported(callbackName)
+    return menu.uix_supportedCallbacks[callbackName] == true
+end
+function menu.uix_getSupportedCallbacks()
+    local result = {}
+    for callbackName in pairs(menu.uix_supportedCallbacks) do
+        table.insert(result, callbackName)
+    end
+    table.sort(result)
+    return result
+end
+-- Chem end: supported callbacks
 
 init()
 ﻿-- param == { 0, 0, enablesecretscenarios }
@@ -56288,6 +56587,11 @@ function menu.registerCallback(callbackName, callbackFunction, id)
     -- note 3: new callbacks can be added or existing callbacks can be edited. but commit your additions/changes to the mod's GIT repository.
     -- note 4: search for the callback names to see where they are executed.
     -- note 5: if a callback requires a return value, return it in an object var. e.g. "display_on_set_room_active" requires a return of {active = true | false}.
+    -- Chem begin: supported callbacks
+    if not menu.uix_isCallbackSupported(callbackName) then
+        Helper.debugText_forced(menu.name .. " uix registerCallback: callback " .. tostring(callbackName) .. " is not supported")
+    end
+    -- Chem end: supported callbacks
     if menu.uix_callbacks [callbackName] == nil then
         menu.uix_callbacks [callbackName] = {}
     end
@@ -56386,6 +56690,21 @@ function menu.updateCallbacksNow()
     end
 end
 -- kuerte end
+
+-- Chem begin: supported callbacks
+menu.uix_supportedCallbacks = {}
+function menu.uix_isCallbackSupported(callbackName)
+    return menu.uix_supportedCallbacks[callbackName] == true
+end
+function menu.uix_getSupportedCallbacks()
+    local result = {}
+    for callbackName in pairs(menu.uix_supportedCallbacks) do
+        table.insert(result, callbackName)
+    end
+    table.sort(result)
+    return result
+end
+-- Chem end: supported callbacks
 
 init()
 ﻿-- section == cArch_configureships
@@ -68251,6 +68570,11 @@ function menu.registerCallback(callbackName, callbackFunction, id)
     -- note 3: new callbacks can be added or existing callbacks can be edited. but commit your additions/changes to the mod's GIT repository.
     -- note 4: search for the callback names to see where they are executed.
     -- note 5: if a callback requires a return value, return it in an object var. e.g. "display_on_set_room_active" requires a return of {active = true | false}.
+    -- Chem begin: supported callbacks
+    if not menu.uix_isCallbackSupported(callbackName) then
+        Helper.debugText_forced(menu.name .. " uix registerCallback: callback " .. tostring(callbackName) .. " is not supported")
+    end
+    -- Chem end: supported callbacks
     if menu.uix_callbacks[callbackName] == nil then
         menu.uix_callbacks[callbackName] = {}
     end
@@ -68367,6 +68691,48 @@ end
 
 -- end
 
+-- Chem begin: supported callbacks
+menu.uix_supportedCallbacks = {
+    ["addEquipmentInfoRow_on_create_value"] = true,
+    ["buttonSelectPaintMod_onStart"] = true,
+    ["checkEquipment_onUpgradeSlots"] = true,
+    ["cleanup"] = true,
+    ["cpsdo_evaluateShipOptions_override_shiptypename"] = true,
+    ["createEquipmentInfoContext_on_after_stats"] = true,
+    ["createEquipmentInfoContext_on_before_stats"] = true,
+    ["createEquipmentInfoContext_on_create_frame"] = true,
+    ["displayModifyPaintSlots_assigningPaintsToGroups"] = true,
+    ["displayModifyPaintSlots_onShowingButton"] = true,
+    ["displayModifyPlan_onSelectedShips"] = true,
+    ["displaySlots_on_after_create_store_loadout_button"] = true,
+    ["displaySlots_on_before_create_button_mouseovertext"] = true,
+    ["displaySlots_on_before_create_store_loadout_button"] = true,
+    ["displaySlots_on_create_upgrade_button"] = true,
+    ["displayStats_on_set_shiptypename"] = true,
+    ["evaluateShipOptions_override_shiptypename"] = true,
+    ["getDataAndDisplay_beforeDisplay"] = true,
+    ["getDataAndDisplay_on_assemble_possible_upgrades"] = true,
+    ["insertWare_onPriceCalculation"] = true,
+    ["isAmmoCompatible_on_check_compatible"] = true,
+    ["onShowMenu_end"] = true,
+    ["onShowMenu_on_check_selectable_ship_owner"] = true,
+    ["onShowMenu_start"] = true,
+    ["prepareModWares_onEnd"] = true,
+    ["repairandupgrade_after_build_order_created"] = true,
+    ["uix_fire_createTitleBar_on_create_controls"] = true,
+}
+function menu.uix_isCallbackSupported(callbackName)
+    return menu.uix_supportedCallbacks[callbackName] == true
+end
+function menu.uix_getSupportedCallbacks()
+    local result = {}
+    for callbackName in pairs(menu.uix_supportedCallbacks) do
+        table.insert(result, callbackName)
+    end
+    table.sort(result)
+    return result
+end
+-- Chem end: supported callbacks
 
 init()
 ﻿-- section == cArch_configureStation
@@ -75575,6 +75941,11 @@ function menu.registerCallback(callbackName, callbackFunction, id)
     -- note 3: new callbacks can be added or existing callbacks can be edited. but commit your additions/changes to the mod's GIT repository.
     -- note 4: search for the callback names to see where they are executed.
     -- note 5: if a callback requires a return value, return it in an object var. e.g. "display_on_set_room_active" requires a return of {active = true | false}.
+    -- Chem begin: supported callbacks
+    if not menu.uix_isCallbackSupported(callbackName) then
+        Helper.debugText_forced(menu.name .. " uix registerCallback: callback " .. tostring(callbackName) .. " is not supported")
+    end
+    -- Chem end: supported callbacks
     if menu.uix_callbacks [callbackName] == nil then
         menu.uix_callbacks [callbackName] = {}
     end
@@ -75673,6 +76044,31 @@ function menu.updateCallbacksNow()
     end
 end
 -- kuertee end
+
+-- Chem begin: supported callbacks
+menu.uix_supportedCallbacks = {
+    ["addEquipmentInfoRow_on_create_value"] = true,
+    ["cleanup"] = true,
+    ["createEquipmentInfoContext_on_after_stats"] = true,
+    ["createEquipmentInfoContext_on_before_stats"] = true,
+    ["createEquipmentInfoContext_on_create_frame"] = true,
+    ["createRightSideBar_on_prepare_entries"] = true,
+    ["displayModules_on_before_create_button_mouseovertext"] = true,
+    ["displayPlan_getWareName"] = true,
+    ["displayPlan_render_incoming_ware"] = true,
+}
+function menu.uix_isCallbackSupported(callbackName)
+    return menu.uix_supportedCallbacks[callbackName] == true
+end
+function menu.uix_getSupportedCallbacks()
+    local result = {}
+    for callbackName in pairs(menu.uix_supportedCallbacks) do
+        table.insert(result, callbackName)
+    end
+    table.sort(result)
+    return result
+end
+-- Chem end: supported callbacks
 
 init()
 ﻿-- param == { 0, 0, container }
@@ -81310,6 +81706,11 @@ function menu.registerCallback(callbackName, callbackFunction, id)
     -- note 3: new callbacks can be added or existing callbacks can be edited. but commit your additions/changes to the mod's GIT repository.
     -- note 4: search for the callback names to see where they are executed.
     -- note 5: if a callback requires a return value, return it in an object var. e.g. "display_on_set_room_active" requires a return of {active = true | false}.
+    -- Chem begin: supported callbacks
+    if not menu.uix_isCallbackSupported(callbackName) then
+        Helper.debugText_forced(menu.name .. " uix registerCallback: callback " .. tostring(callbackName) .. " is not supported")
+    end
+    -- Chem end: supported callbacks
     if menu.uix_callbacks [callbackName] == nil then
         menu.uix_callbacks [callbackName] = {}
     end
@@ -81408,6 +81809,38 @@ function menu.updateCallbacksNow()
     end
 end
 -- kuertee end
+
+-- Chem begin: supported callbacks
+menu.uix_supportedCallbacks = {
+    ["cleanup"] = true,
+    ["createRightSideBar_on_prepare_entries"] = true,
+    ["display_get_station_name_extras"] = true,
+    ["getAccountText_on_get_text"] = true,
+    ["getFlowchartProductionNodes_on_get_nodes"] = true,
+    ["getStationOverviewGraphWares_on_get_wares"] = true,
+    ["onExpandTradeWares_insert_ware_to_allwares"] = true,
+    ["onExpandTradeWares_on_start"] = true,
+    ["onShowMenu_on_set_title"] = true,
+    ["onShowMenu_start"] = true,
+    ["setStationOverviewGraphWare_on_set_ware"] = true,
+    ["setupFlowchartData_on_start"] = true,
+    ["setupFlowchartData_pre_trade_wares_button"] = true,
+    ["uix_getStationOptions_on_end"] = true,
+    ["updateExpandedNode_at_end"] = true,
+    ["updateExpandedNode_at_start"] = true,
+}
+function menu.uix_isCallbackSupported(callbackName)
+    return menu.uix_supportedCallbacks[callbackName] == true
+end
+function menu.uix_getSupportedCallbacks()
+    local result = {}
+    for callbackName in pairs(menu.uix_supportedCallbacks) do
+        table.insert(result, callbackName)
+    end
+    table.sort(result)
+    return result
+end
+-- Chem end: supported callbacks
 
 init()
 ﻿-- ffi setup
@@ -81933,6 +82366,11 @@ function menu.registerCallback(callbackName, callbackFunction, id)
     -- note 3: new callbacks can be added or existing callbacks can be edited. but commit your additions/changes to the mod's GIT repository.
     -- note 4: search for the callback names to see where they are executed.
     -- note 5: if a callback requires a return value, return it in an object var. e.g. "display_on_set_room_active" requires a return of {active = true | false}.
+    -- Chem begin: supported callbacks
+    if not menu.uix_isCallbackSupported(callbackName) then
+        Helper.debugText_forced(menu.name .. " uix registerCallback: callback " .. tostring(callbackName) .. " is not supported")
+    end
+    -- Chem end: supported callbacks
     if menu.uix_callbacks [callbackName] == nil then
         menu.uix_callbacks [callbackName] = {}
     end
@@ -82031,6 +82469,30 @@ function menu.updateCallbacksNow()
     end
 end
 -- kuertee end
+
+-- Chem begin: supported callbacks
+menu.uix_supportedCallbacks = {
+    ["cleanup"] = true,
+    ["createInfoFrame_on_add_table"] = true,
+    ["createInfoFrame_on_before_frame_display"] = true,
+    ["kHUD_add_HUD_tables"] = true,
+    ["kHUD_add_tables"] = true,
+    ["kHUD_get_is_show_custom_hud"] = true,
+    ["onUpdate_before_frame_update"] = true,
+    ["onUpdate_start"] = true,
+}
+function menu.uix_isCallbackSupported(callbackName)
+    return menu.uix_supportedCallbacks[callbackName] == true
+end
+function menu.uix_getSupportedCallbacks()
+    local result = {}
+    for callbackName in pairs(menu.uix_supportedCallbacks) do
+        table.insert(result, callbackName)
+    end
+    table.sort(result)
+    return result
+end
+-- Chem end: supported callbacks
 
 init()
 ﻿-- param == { 0, 0, traderentity, mode }
@@ -82826,6 +83288,11 @@ function menu.registerCallback(callbackName, callbackFunction, id)
     -- note 3: new callbacks can be added or existing callbacks can be edited. but commit your additions/changes to the mod's GIT repository.
     -- note 4: search for the callback names to see where they are executed.
     -- note 5: if a callback requires a return value, return it in an object var. e.g. "display_on_set_room_active" requires a return of {active = true | false}.
+    -- Chem begin: supported callbacks
+    if not menu.uix_isCallbackSupported(callbackName) then
+        Helper.debugText_forced(menu.name .. " uix registerCallback: callback " .. tostring(callbackName) .. " is not supported")
+    end
+    -- Chem end: supported callbacks
     if menu.uix_callbacks [callbackName] == nil then
         menu.uix_callbacks [callbackName] = {}
     end
@@ -82924,6 +83391,23 @@ function menu.updateCallbacksNow()
     end
 end
 -- kuertee end
+
+-- Chem begin: supported callbacks
+menu.uix_supportedCallbacks = {
+    ["display_on_after_create_equipment_text"] = true,
+}
+function menu.uix_isCallbackSupported(callbackName)
+    return menu.uix_supportedCallbacks[callbackName] == true
+end
+function menu.uix_getSupportedCallbacks()
+    local result = {}
+    for callbackName in pairs(menu.uix_supportedCallbacks) do
+        table.insert(result, callbackName)
+    end
+    table.sort(result)
+    return result
+end
+-- Chem end: supported callbacks
 
 init()
 ﻿-- param == { 0, 0, container }
@@ -83403,6 +83887,11 @@ function menu.registerCallback(callbackName, callbackFunction, id)
     -- note 3: new callbacks can be added or existing callbacks can be edited. but commit your additions/changes to the mod's GIT repository.
     -- note 4: search for the callback names to see where they are executed.
     -- note 5: if a callback requires a return value, return it in an object var. e.g. "display_on_set_room_active" requires a return of {active = true | false}.
+    -- Chem begin: supported callbacks
+    if not menu.uix_isCallbackSupported(callbackName) then
+        Helper.debugText_forced(menu.name .. " uix registerCallback: callback " .. tostring(callbackName) .. " is not supported")
+    end
+    -- Chem end: supported callbacks
     if menu.uix_callbacks [callbackName] == nil then
         menu.uix_callbacks [callbackName] = {}
     end
@@ -83501,6 +83990,25 @@ function menu.updateCallbacksNow()
     end
 end
 -- kuertee end
+
+-- Chem begin: supported callbacks
+menu.uix_supportedCallbacks = {
+    ["cleanup"] = true,
+    ["createFrame_on_create_transaction_log"] = true,
+    ["createRightSideBar_on_prepare_entries"] = true,
+}
+function menu.uix_isCallbackSupported(callbackName)
+    return menu.uix_supportedCallbacks[callbackName] == true
+end
+function menu.uix_getSupportedCallbacks()
+    local result = {}
+    for callbackName in pairs(menu.uix_supportedCallbacks) do
+        table.insert(result, callbackName)
+    end
+    table.sort(result)
+    return result
+end
+-- Chem end: supported callbacks
 
 init()
 ﻿-- param == { 0, 0, transporter, transporterconnection }
@@ -84446,6 +84954,11 @@ function menu.registerCallback(callbackName, callbackFunction, id)
     -- note 3: new callbacks can be added or existing callbacks can be edited. but commit your additions/changes to the mod's GIT repository.
     -- note 4: search for the callback names to see where they are executed.
     -- note 5: if a callback requires a return value, return it in an object var. e.g. "display_on_set_room_active" requires a return of {active = true | false}.
+    -- Chem begin: supported callbacks
+    if not menu.uix_isCallbackSupported(callbackName) then
+        Helper.debugText_forced(menu.name .. " uix registerCallback: callback " .. tostring(callbackName) .. " is not supported")
+    end
+    -- Chem end: supported callbacks
     if menu.uix_callbacks [callbackName] == nil then
         menu.uix_callbacks [callbackName] = {}
     end
@@ -84544,6 +85057,26 @@ function menu.updateCallbacksNow()
     end
 end
 -- kuertee end
+
+-- Chem begin: supported callbacks
+menu.uix_supportedCallbacks = {
+    ["addEntry_on_set_room_name"] = true,
+    ["display_on_set_buttontable"] = true,
+    ["display_on_set_room_active"] = true,
+    ["display_onButtonCreate"] = true,
+}
+function menu.uix_isCallbackSupported(callbackName)
+    return menu.uix_supportedCallbacks[callbackName] == true
+end
+function menu.uix_getSupportedCallbacks()
+    local result = {}
+    for callbackName in pairs(menu.uix_supportedCallbacks) do
+        table.insert(result, callbackName)
+    end
+    table.sort(result)
+    return result
+end
+-- Chem end: supported callbacks
 
 init()
 ﻿
@@ -85064,6 +85597,11 @@ function menu.registerCallback(callbackName, callbackFunction, id)
     -- note 3: new callbacks can be added or existing callbacks can be edited. but commit your additions/changes to the mod's GIT repository.
     -- note 4: search for the callback names to see where they are executed.
     -- note 5: if a callback requires a return value, return it in an object var. e.g. "display_on_set_room_active" requires a return of {active = true | false}.
+    -- Chem begin: supported callbacks
+    if not menu.uix_isCallbackSupported(callbackName) then
+        Helper.debugText_forced(menu.name .. " uix registerCallback: callback " .. tostring(callbackName) .. " is not supported")
+    end
+    -- Chem end: supported callbacks
     if menu.uix_callbacks [callbackName] == nil then
         menu.uix_callbacks [callbackName] = {}
     end
@@ -85162,6 +85700,25 @@ function menu.updateCallbacksNow()
     end
 end
 -- kuertee end
+
+-- Chem begin: supported callbacks
+menu.uix_supportedCallbacks = {
+    ["cleanup_end"] = true,
+    ["createInfoFrame_custom_frame_properties"] = true,
+    ["createTable_new_custom_table"] = true,
+}
+function menu.uix_isCallbackSupported(callbackName)
+    return menu.uix_supportedCallbacks[callbackName] == true
+end
+function menu.uix_getSupportedCallbacks()
+    local result = {}
+    for callbackName in pairs(menu.uix_supportedCallbacks) do
+        table.insert(result, callbackName)
+    end
+    table.sort(result)
+    return result
+end
+-- Chem end: supported callbacks
 
 init()
 ﻿-- ffi setup
@@ -93721,7 +94278,12 @@ function Helper.sortNameAndObjectID(a, b, invert)
 		return a.fleetname ~= nil
 	end
 	if a.name == b.name then
-		if invert then
+		-- if invert then
+		-- kuertee start: in case objectid is null
+		if (not a.objectid) and (not b.objectid) then
+			return true
+		elseif invert then
+		-- kuertee: end in case objectid is null
 			return a.objectid > b.objectid
 		else
 			return a.objectid < b.objectid
@@ -100105,6 +100667,11 @@ function Helper.registerCallback(callbackName, callbackFunction, id)
     -- note 3: new callbacks can be added or existing callbacks can be edited. but commit your additions/changes to the mod's GIT repository.
     -- note 4: search for the callback names to see where they are executed.
     -- note 5: if a callback requires a return value, return it in an object var. e.g. "display_on_set_room_active" requires a return of {active = true | false}.
+    -- Chem begin: supported callbacks
+    if not Helper.uix_isCallbackSupported(callbackName) then
+        Helper.debugText_forced("Helper uix registerCallback: callback " .. tostring(callbackName) .. " is not supported")
+    end
+    -- Chem end: supported callbacks
     if Helper.uix_callbacks [callbackName] == nil then
         Helper.uix_callbacks [callbackName] = {}
     end
@@ -100141,7 +100708,7 @@ function Helper.deregisterCallback(callbackName, callbackFunction, id)
     end
     if not Helper.uix_isDeregisterQueued then
         Helper.uix_isDeregisterQueued = true
-        Helper.addDelayedOneTimeCallbackOnUpdate(ModLua.deregisterCallbacksNow, true, getElapsedTime() + 1)
+        Helper.addDelayedOneTimeCallbackOnUpdate(Helper.deregisterCallbacksNow, true, getElapsedTime() + 1)
     end
 end
 
@@ -100178,7 +100745,7 @@ function Helper.updateCallback(callbackName, id, callbackFunction)
     end
     if not Helper.uix_isUpdateQueued then
         Helper.uix_isUpdateQueued = true
-        Helper.addDelayedOneTimeCallbackOnUpdate(ModLua.updateCallbacksNow, true, getElapsedTime() + 1)
+        Helper.addDelayedOneTimeCallbackOnUpdate(Helper.updateCallbacksNow, true, getElapsedTime() + 1)
     end
 end
 
@@ -100247,6 +100814,38 @@ end
 ---------------------------------------------------------------------------------
 -- Init
 ---------------------------------------------------------------------------------
+
+-- Chem begin: supported callbacks
+Helper.uix_supportedCallbacks = {
+    ["checkboxSetTradeRuleOverride_pre_update_expanded_node"] = true,
+    ["checkTopLevelConditions_get_is_entry_available"] = true,
+    ["createFrameHandle_on_start"] = true,
+    ["createLSOStorageNode_get_ware_name"] = true,
+    ["createTransactionLog_on_before_adding_entry"] = true,
+    ["createTransactionLog_set_graph_height"] = true,
+    ["dropdownTradeRule_pre_update_expanded_node"] = true,
+    ["GetTargetMonitorDetails_on_get_details"] = true,
+    ["onCollapseLSOStorageNode"] = true,
+    ["onExpandLSOStorageNode"] = true,
+    ["onExpandLSOStorageNode_list_incoming_trade"] = true,
+    ["onExpandLSOStorageNode_pre_buy_offer_title"] = true,
+    ["onExpandLSOStorageNode_pre_sell_offer_title"] = true,
+    ["onUpdate"] = true,
+    ["registerMenu_onShow"] = true,
+    ["updateLSOStorageNode_pre_update_expanded_node"] = true,
+}
+function Helper.uix_isCallbackSupported(callbackName)
+    return Helper.uix_supportedCallbacks[callbackName] == true
+end
+function Helper.uix_getSupportedCallbacks()
+    local result = {}
+    for callbackName in pairs(Helper.uix_supportedCallbacks) do
+        table.insert(result, callbackName)
+    end
+    table.sort(result)
+    return result
+end
+-- Chem end: supported callbacks
 
 init()
 ﻿-- Custom gamestart editor
@@ -105903,6 +106502,11 @@ function menu.registerCallback(callbackName, callbackFunction, id)
     -- note 3: new callbacks can be added or existing callbacks can be edited. but commit your additions/changes to the mod's GIT repository.
     -- note 4: search for the callback names to see where they are executed.
     -- note 5: if a callback requires a return value, return it in an object var. e.g. "display_on_set_room_active" requires a return of {active = true | false}.
+    -- Chem begin: supported callbacks
+    if not menu.uix_isCallbackSupported(callbackName) then
+        Helper.debugText_forced(menu.name .. " uix registerCallback: callback " .. tostring(callbackName) .. " is not supported")
+    end
+    -- Chem end: supported callbacks
     if menu.uix_callbacks [callbackName] == nil then
         menu.uix_callbacks [callbackName] = {}
     end
@@ -106001,6 +106605,41 @@ function menu.updateCallbacksNow()
     end
 end
 -- kuertee end
+
+-- Chem begin: supported callbacks
+menu.uix_supportedCallbacks = {
+    ["buttonNewGame_preNewGame"] = true,
+    ["buttonReset_on_end"] = true,
+    ["cleanup"] = true,
+    ["display_on_after_category_name"] = true,
+    ["display_on_after_category_options"] = true,
+    ["display_on_after_main_options"] = true,
+    ["display_on_after_property_name"] = true,
+    ["display_on_start"] = true,
+    ["dropdownProperty_on_start"] = true,
+    ["editboxProperty_on_end"] = true,
+    ["openPlayerPropertyShipConfig_on_end"] = true,
+    ["openShipConfig_on_end"] = true,
+    ["openShipConfig_on_start"] = true,
+    ["playerMacro_on_end"] = true,
+    ["removeFactionRelationHelper_on_end"] = true,
+    ["setPlayerMacro_on_end"] = true,
+    ["setPlayerSector_on_end"] = true,
+    ["slidercellFaction_on_end"] = true,
+    ["universeSector_on_end"] = true,
+}
+function menu.uix_isCallbackSupported(callbackName)
+    return menu.uix_supportedCallbacks[callbackName] == true
+end
+function menu.uix_getSupportedCallbacks()
+    local result = {}
+    for callbackName in pairs(menu.uix_supportedCallbacks) do
+        table.insert(result, callbackName)
+    end
+    table.sort(result)
+    return result
+end
+-- Chem end: supported callbacks
 
 init()
 ﻿-- Ingame Options Main Menu
@@ -120583,6 +121222,11 @@ function menu.registerCallback(callbackName, callbackFunction, id)
     -- note 3: new callbacks can be added or existing callbacks can be edited. but commit your additions/changes to the mod's GIT repository.
     -- note 4: search for the callback names to see where they are executed.
     -- note 5: if a callback requires a return value, return it in an object var. e.g. "display_on_set_room_active" requires a return of {active = true | false}.
+    -- Chem begin: supported callbacks
+    if not menu.uix_isCallbackSupported(callbackName) then
+        Helper.debugText_forced(menu.name .. " uix registerCallback: callback " .. tostring(callbackName) .. " is not supported")
+    end
+    -- Chem end: supported callbacks
     if menu.uix_callbacks [callbackName] == nil then
         menu.uix_callbacks [callbackName] = {}
     end
@@ -120681,6 +121325,45 @@ function menu.updateCallbacksNow()
     end
 end
 -- kuertee end
+
+-- Chem begin: supported callbacks
+menu.uix_supportedCallbacks = {
+    ["addSavegameRow_changeSaveGameDisplayName"] = true,
+    ["addSavegameRow_getIsBoldFilename"] = true,
+    ["addSavegameRow_getRowHeightForExtraInfo"] = true,
+    ["addSavegameRow_isListSaveGame"] = true,
+    ["addSavegameRow_postSaveGameRowAdd"] = true,
+    ["addSavegameRow_preSaveGameRowAdd"] = true,
+    ["callbackDeleteSave_onDeleteSave"] = true,
+    ["callbackExtensionSettingEnabled_set"] = true,
+    ["displayControls_modifyControlsOrder"] = true,
+    ["displayOptions_modifyOptions"] = true,
+    ["displaySavegameOptions_isShowUnusedSaveGame"] = true,
+    ["displaySavegameOptions_onGetSaveGames"] = true,
+    ["displaySaveGameOptions_postSaveGameRowAdd"] = true,
+    ["displaySaveGameOptions_preSaveGameRowAdd"] = true,
+    ["displaySaveGameOptions_sortSaveGames"] = true,
+    ["loadGameCallback_preLoadGame"] = true,
+    ["newGameCallback_preNewGame"] = true,
+    ["onUpdate_start"] = true,
+    ["remapInput_enrichConflicts"] = true,
+    ["remapInput_resolveConflicts"] = true,
+    ["submenuHandler_customPage"] = true,
+    ["submenuHandler_isControlsPage"] = true,
+    ["submenuHandler_preDisplayOptions"] = true,
+}
+function menu.uix_isCallbackSupported(callbackName)
+    return menu.uix_supportedCallbacks[callbackName] == true
+end
+function menu.uix_getSupportedCallbacks()
+    local result = {}
+    for callbackName in pairs(menu.uix_supportedCallbacks) do
+        table.insert(result, callbackName)
+    end
+    table.sort(result)
+    return result
+end
+-- Chem end: supported callbacks
 
 init()
 ﻿-- ffi setup
@@ -129520,6 +130203,11 @@ function menu.registerCallback(callbackName, callbackFunction, id)
     -- note 3: new callbacks can be added or existing callbacks can be edited. but commit your additions/changes to the mod's GIT repository.
     -- note 4: search for the callback names to see where they are executed.
     -- note 5: if a callback requires a return value, return it in an object var. e.g. "display_on_set_room_active" requires a return of {active = true | false}.
+    -- Chem begin: supported callbacks
+    if not menu.uix_isCallbackSupported(callbackName) then
+        Helper.debugText_forced(menu.name .. " uix registerCallback: callback " .. tostring(callbackName) .. " is not supported")
+    end
+    -- Chem end: supported callbacks
     if menu.uix_callbacks[callbackName] == nil then
         menu.uix_callbacks[callbackName] = {}
     end
@@ -129621,6 +130309,40 @@ function menu.updateCallbacksNow()
 	end
 end
 -- kuertee end
+
+-- Chem begin: supported callbacks
+menu.uix_supportedCallbacks = {
+    ["aegs_map_rightMenu_shipassignments_insert_01"] = true,
+    ["aegs_map_rightMenu_shipassignments_insert_02"] = true,
+    ["aegs_map_rightMenu_shipassignments_insert_03"] = true,
+    ["aegs_map_rightMenu_shipBuilding_insert"] = true,
+    ["aegs_map_rightMenu_shipOverview_insert"] = true,
+    ["cpsdo_map_rightMenu_shipBuildShip_insert"] = true,
+    ["cpsdo_map_rightMenu_shipLogistic_insert"] = true,
+    ["createContentTable_getIsActionValid"] = true,
+    ["createContentTable_getIsSectionValid"] = true,
+    ["createContentTable_getIsSubsectionValid"] = true,
+    ["draw_on_start"] = true,
+    ["insertInteractionContent_on_start"] = true,
+    ["insertLuaAction_insert_custom_action"] = true,
+    ["interactMenu_clickAction"] = true,
+    ["interactMenu_clickSubsection"] = true,
+    ["prepareActions_prepare_custom_action"] = true,
+    ["prepareSections_on_end"] = true,
+    ["prepareSections_on_start"] = true,
+}
+function menu.uix_isCallbackSupported(callbackName)
+    return menu.uix_supportedCallbacks[callbackName] == true
+end
+function menu.uix_getSupportedCallbacks()
+    local result = {}
+    for callbackName in pairs(menu.uix_supportedCallbacks) do
+        table.insert(result, callbackName)
+    end
+    table.sort(result)
+    return result
+end
+-- Chem end: supported callbacks
 
 init()
 ﻿-- ffi setup
