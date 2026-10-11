@@ -97,6 +97,18 @@ function menu.cleanup()
 
 	menu.settoprow = nil
 	menu.setselectedrow = nil
+
+	-- alakeram start
+	menu.uix_iscustomcategory = nil
+	-- alakeram end
+
+	-- kuertee start: callback
+	if menu.uix_callbacks["cleanup"] then
+		for uix_id, uix_callback in pairs (menu.uix_callbacks["cleanup"]) do
+			uix_callback ()
+		end
+	end
+	-- kuertee end: callback
 end
 
 -- Menu member functions
@@ -113,6 +125,7 @@ function menu.buttonInventoryCraft()
 		return
 	end
 	-- alakeram end: callback
+
 	if menu.inventoryData.mode == "craft" then
 		if menu.inventoryData.craftAmount and menu.inventoryData.craftAmount > 0 then
 			for _, entry in ipairs(menu.craftable[menu.category] or {}) do
@@ -272,6 +285,7 @@ function menu.createCrafting(frame, tableProperties)
 	end
 
 	-- alakeram start: callback
+	-- local numcols = #config.categories
 	local uix_categories = {}
 	for _, category in ipairs(config.categories) do
 		table.insert(uix_categories, { id = category, name = menu.waregroups[category].name })
@@ -303,9 +317,10 @@ function menu.createCrafting(frame, tableProperties)
 		menu.category = config.categories[1]
 		menu.uix_iscustomcategory = false
 	end
-	-- alakeram end: callback
 
 	local numcols = #uix_categories
+	-- alakeram end: callback
+
 	local titletable = frame:addTable(numcols, { tabOrder = 2, borderEnabled = true, width = tableProperties.width, x = tableProperties.x, y = tableProperties.y, maxVisibleHeight = tableProperties.height })
 	titletable:setColWidth(2, tableProperties.width / 5, false)
 	titletable:setColWidth(3, tableProperties.width / 5, false)
@@ -317,11 +332,15 @@ function menu.createCrafting(frame, tableProperties)
 
 	-- tabs
 	local row = titletable:addRow(true, { fixed = true, borderBelow = false })
+
 	-- alakeram start: callback (iterate uix_categories instead of config.categories)
+	-- for i, category in ipairs(config.categories) do
+	-- 	row[i]:createButton({ bgColor = (menu.category == category) and Color["row_background_selected"] or Color["row_background_blue"], helpOverlayID = "crafting_category_"..category, helpOverlayText = " ", helpOverlayHighlightOnly = true }):setText(menu.waregroups[category].name, { halign = "center" })
 	for i, uix_entry in ipairs(uix_categories) do
 		local category = uix_entry.id
 		row[i]:createButton({ bgColor = (menu.category == category) and Color["row_background_selected"] or Color["row_background_blue"], helpOverlayID = "crafting_category_"..category, helpOverlayText = " ", helpOverlayHighlightOnly = true }):setText(uix_entry.name, { halign = "center" })
 	-- alakeram end: callback
+
 		row[i].handlers.onClick = function () menu.closeContextMenu(); menu.category = category; menu.buttonInventoryCancel() end
 		if menu.category == category then
 			titletable:setSelectedCol(i)
@@ -343,6 +362,7 @@ function menu.createCrafting(frame, tableProperties)
 	infotable:setDefaultBackgroundColSpan(1, 4)
 
 	-- alakeram start: callback
+	-- if next(menu.craftable[menu.category]) then
 	local uix_handled = false
 	-- optional { text, active, mouseovertext, onClick(rowdata), slider = { max, start, minselect, text, onChanged(value) }, onCancel() }
 	-- shown where the vanilla Craft Item button is; with slider it mirrors the vanilla craft mode
@@ -363,7 +383,6 @@ function menu.createCrafting(frame, tableProperties)
 			end
 		end
 	end
-	-- alakeram end: callback
 
 	if uix_handled then
 		-- alakeram: rows were created by the callback
@@ -371,6 +390,8 @@ function menu.createCrafting(frame, tableProperties)
 		row = infotable:addRow(true, {  })
 		row[1]:setColSpan(4):createText("-- " .. ReadText(1001, 32) .. " --", { halign = "center" })
 	elseif next(menu.craftable[menu.category]) then
+	-- alakeram end: callback
+
 		-- header
 		row = infotable:addRow(ware, { bgColor = Color["row_background_unselectable"] })
 		row[1]:createText(ReadText(1001, 45), { font = Helper.standardFontBold })
@@ -423,7 +444,9 @@ function menu.createCrafting(frame, tableProperties)
 		row = buttontable:addRow(nil, { fixed = true })
 		row[1]:setColSpan(3):createText("")
 	end
+
 	-- alakeram start: callback (custom categories have no vanilla craft controls)
+	-- if menu.inventoryData.mode == "craft" then
 	if menu.uix_iscustomcategory then
 		if uix_craftbutton and type(uix_craftbutton.slider) == "table" then
 			-- same craft mode layout as vanilla: amount slider, then Craft Item + Cancel
@@ -443,8 +466,9 @@ function menu.createCrafting(frame, tableProperties)
 			row = buttontable:addRow(false, { fixed = true })
 			row[1]:setColSpan(3):createText("")
 		end
-	-- alakeram end: callback
 	elseif menu.inventoryData.mode == "craft" then
+	-- alakeram end: callback
+
 		row = buttontable:addRow(true, { fixed = true })
 
 		local slidermax = menu.inventoryData.craftWare[2].craftable
@@ -458,18 +482,19 @@ function menu.createCrafting(frame, tableProperties)
 	else
 		row = buttontable:addRow(true, { fixed = true })
 	end
+
+	-- alakeram start: callback (craft button provided by the custom category)
 	if not menu.uix_iscustomcategory then
 		-- craft item button
 		row[1]:createButton({ active = true, helpOverlayID = "crafting_craftitem", helpOverlayText = " ", helpOverlayHighlightOnly = true }):setText(ReadText(1001, 7706), { halign = "center" }):setHotkey("INPUT_STATE_DETAILMONITOR_X", { displayIcon = true })
 		row[1].handlers.onClick = menu.buttonInventoryCraft
 		menu.craftButtonWidth = row[3]:getWidth()
-	-- alakeram start: callback (craft button provided by the custom category)
 	elseif uix_craftbutton then
 		row[1]:createButton({ active = uix_craftbutton.active ~= false, mouseOverText = uix_craftbutton.mouseovertext }):setText(uix_craftbutton.text or ReadText(1001, 7706), { halign = "center" }):setHotkey("INPUT_STATE_DETAILMONITOR_X", { displayIcon = true })
 		row[1].handlers.onClick = function () uix_craftbutton.onClick(Helper.getCurrentRowData(menu, menu.infoTable)) end
 		menu.craftButtonWidth = row[3]:getWidth()
-	-- alakeram end: callback
 	end
+	-- alakeram end: callback
 
 	local maxVisibleHeight = infotable.properties.maxVisibleHeight - buttontable:getFullHeight() - Helper.frameBorder
 	buttontable.properties.y = buttontable.properties.y + math.min(maxVisibleHeight, infotable:getFullHeight())
@@ -580,6 +605,7 @@ function menu.onRowChanged(row, rowdata, uitable)
 		return
 	end
 	-- alakeram end: callback
+
 	if uitable == menu.infoTable then
 		if menu.mode == "crafting" then
 			if type(rowdata) == "table" then
@@ -629,6 +655,7 @@ function menu.onSelectElement(uitable, modified, row)
 		return
 	end
 	-- alakeram end: callback
+
 	local rowdata = Helper.getCurrentRowData(menu, uitable)
 	if uitable == menu.infoTable then
 		if (menu.mode == "crafting") then
@@ -645,6 +672,7 @@ function menu.onTableRightMouseClick(uitable, row, posx, posy)
 		return
 	end
 	-- alakeram end: callback
+
 	if menu.mode == "crafting" then
 		if uitable == menu.infoTable then
 			local rowdata = menu.rowDataMap[uitable] and menu.rowDataMap[uitable][row]
@@ -908,6 +936,7 @@ end
 
 -- Chem begin: supported callbacks
 menu.uix_supportedCallbacks = {
+    ["cleanup"] = true,
     ["createCrafting_on_assemble_categories"] = true,
     ["createCrafting_on_create_category_rows"] = true,
 }

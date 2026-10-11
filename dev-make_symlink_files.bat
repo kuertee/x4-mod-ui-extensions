@@ -11,6 +11,7 @@ cd ..\..
 
 mkdir addons\ego_detailmonitor
 cd addons\ego_detailmonitor
+del menu_crafting.xpl
 del menu_diplomacy.xpl
 del menu_docked.xpl
 del menu_encyclopedia.xpl
@@ -27,6 +28,7 @@ del menu_trader_blueprintsorlicences.xpl
 del menu_transactionlog.xpl
 del menu_transporter.xpl
 del menu_userquestion.xpl
+mklink /h menu_crafting.xpl "..\..\..\extensions\kuertee_ui_extensions\ui\addons\ego_detailmonitor\menu_crafting.xpl"
 mklink /h menu_diplomacy.xpl "..\..\..\extensions\kuertee_ui_extensions\ui\addons\ego_detailmonitor\menu_diplomacy.xpl"
 mklink /h menu_docked.xpl "..\..\..\extensions\kuertee_ui_extensions\ui\addons\ego_detailmonitor\menu_docked.xpl"
 mklink /h menu_encyclopedia.xpl "..\..\..\extensions\kuertee_ui_extensions\ui\addons\ego_detailmonitor\menu_encyclopedia.xpl"
