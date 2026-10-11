@@ -17519,8 +17519,21 @@ function menu.setupLoadoutInfoSubmenuRows(mode, inputtable, inputobject, instanc
 
 						local row = turretrowgroup:addRow("info_turretconfig" .. i, {  })
 						row[1]:setColSpan(4):createText(ffi.string(C.GetComponentName(turret)))
-						row[5]:setColSpan(9):createDropDown(Helper.getTurretModes(turret), { startOption = function () return menu.getDropDownTurretModeOption(turret) end })
-						row[5].handlers.onDropDownConfirmed = function(_, newturretmode) menu.noupdate = false; C.SetWeaponMode(turret, newturretmode) end
+						-- alakeram start: callback
+						local uix_handled
+						if menu.uix_callbacks["setupLoadoutInfoSubmenuRows_on_create_turret_mode_dropdown"] then
+							for uix_id, uix_callback in pairs(menu.uix_callbacks["setupLoadoutInfoSubmenuRows_on_create_turret_mode_dropdown"]) do
+								local uix_result = uix_callback({ row = row, column = 5, colspan = 9, ship = inputobject, turret = turret, counter = i })
+								if uix_result and uix_result.handled then
+									uix_handled = true
+								end
+							end
+						end
+						if not uix_handled then
+							row[5]:setColSpan(9):createDropDown(Helper.getTurretModes(turret), { startOption = function () return menu.getDropDownTurretModeOption(turret) end })
+							row[5].handlers.onDropDownConfirmed = function(_, newturretmode) menu.noupdate = false; C.SetWeaponMode(turret, newturretmode) end
+						end
+						-- alakeram end: callback
 						row[5].handlers.onDropDownActivated = function () menu.noupdate = true end
 						dropdownCount = dropdownCount + 1
 						if dropdownCount == 14 then
@@ -17539,8 +17552,21 @@ function menu.setupLoadoutInfoSubmenuRows(mode, inputtable, inputobject, instanc
 
 						local row = turretrowgroup:addRow("info_turretgroupconfig" .. i, {  })
 						row[1]:setColSpan(4):createText(name, { color = (group.operational > 0) and Color["text_normal"] or Color["text_error"] })
-						row[5]:setColSpan(9):createDropDown(Helper.getTurretModes(group.currentcomponent), { startOption = function () return menu.getDropDownTurretModeOption(inputobject, group.context, group.path, group.group) end, active = group.operational > 0 })
-						row[5].handlers.onDropDownConfirmed = function(_, newturretmode) menu.noupdate = false; C.SetTurretGroupMode2(inputobject, group.context, group.path, group.group, newturretmode) end
+						-- alakeram start: callback
+						local uix_handled
+						if menu.uix_callbacks["setupLoadoutInfoSubmenuRows_on_create_turret_mode_dropdown"] then
+							for uix_id, uix_callback in pairs(menu.uix_callbacks["setupLoadoutInfoSubmenuRows_on_create_turret_mode_dropdown"]) do
+								local uix_result = uix_callback({ row = row, column = 5, colspan = 9, ship = inputobject, group = group, counter = i })
+								if uix_result and uix_result.handled then
+									uix_handled = true
+								end
+							end
+						end
+						if not uix_handled then
+							row[5]:setColSpan(9):createDropDown(Helper.getTurretModes(group.currentcomponent), { startOption = function () return menu.getDropDownTurretModeOption(inputobject, group.context, group.path, group.group) end, active = group.operational > 0 })
+							row[5].handlers.onDropDownConfirmed = function(_, newturretmode) menu.noupdate = false; C.SetTurretGroupMode2(inputobject, group.context, group.path, group.group, newturretmode) end
+						end
+						-- alakeram end: callback
 						row[5].handlers.onDropDownActivated = function () menu.noupdate = true end
 						dropdownCount = dropdownCount + 1
 						if dropdownCount == 14 then
@@ -34514,6 +34540,7 @@ menu.uix_supportedCallbacks = {
     ["refreshContextFrame_on_end"] = true,
     ["refreshContextFrame_on_start"] = true,
     ["refreshInfoFrame2_on_start"] = true,
+    ["setupLoadoutInfoSubmenuRows_on_create_turret_mode_dropdown"] = true,
     ["sto_addTurretBehavioursMapMenu"] = true,
     ["updatePlotSize_on_before_extend"] = true,
     ["utRenaming_buttonRenameConfirm"] = true,
