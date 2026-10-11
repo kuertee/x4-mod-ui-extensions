@@ -8,12 +8,8 @@ HYLT2233, IALuir, Mycu, Orbika, Runekn, sticeIO.
 
 Updates
 =======
-v9.0.0.16, 06 Oct 2026:
-FOR MODDERS:
-- New feature: ChemODun's helper functions: menu.uix_isCallbackSupported(callbackName) and menu.uix_getSupportedCallbacks(). Note that modders should add their new callbacks to the list menu.uix_supportedCallbacks when adding new callbacks.
-
-FOR PLAYERS:
-- Compatibility: Agent Actions menu: no warnings should be thrown to the log when new action controls (E.g. Repeat Action feature from the mod, Additional Agent Actions mod) are added to this menu. This was a "silent" bug that players do not see because the game allows those extra controls to render regardless of this error. But this error threw warnings to the log about those actions not rendering into expected rowgroups.
+v9.0.0.17, 11 Oct 2026:
+- New feature: Alakeram's new callbacks for a new mod.
 
 Protected UI Mode
 =================
@@ -345,6 +341,13 @@ French localisation by Calvitix.
 
 History
 =======
+v9.0.0.16, 06 Oct 2026:
+FOR MODDERS:
+- New feature: ChemODun's helper functions: menu.uix_isCallbackSupported(callbackName) and menu.uix_getSupportedCallbacks(). Note that modders should add their new callbacks to the list menu.uix_supportedCallbacks when adding new callbacks.
+
+FOR PLAYERS:
+- Compatibility: Agent Actions menu: no warnings should be thrown to the log when new action controls (E.g. Repeat Action feature from the mod, Additional Agent Actions mod) are added to this menu. This was a "silent" bug that players do not see because the game allows those extra controls to render regardless of this error. But this error threw warnings to the log about those actions not rendering into expected rowgroups.
+
 v9.0.0.14, 11 Sep 2026:
 - New feature: ChemODun added the ability to sort the station list in his Station Selector drop-down menu in the Station Overview and Transaction Log menus. Thanks, ChemODun!
 - Bug-fix: Some objects, particularly non-player-owned objects, in custom Property Owned tabs added by mods (e.g. Military Exercises mod) with the uix_addUIXPropertyOwnedTab() function were not getting listed. For modders: For information on adding custom Property Owned tabs, read the "Map Menu: Custom Property Owned category tabs" section.
