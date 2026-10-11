@@ -2332,6 +2332,14 @@ function menu.cleanup()
 	menu.uix_propertiesOwnedTab_rendering = nil
 	menu.uix_propertiesOwnedTab_renderingPropertySection = nil
 	-- kuertee end: uix properties owned tab
+
+	-- kuertee start: callback
+	if menu.uix_callbacks["cleanup"] then
+		for uix_id, uix_callback in pairs (menu.uix_callbacks["cleanup"]) do
+			uix_callback ()
+		end
+	end
+	-- kuertee end: callback
 end
 
 -- Menu member functions
@@ -11347,8 +11355,8 @@ function menu.displayOrderParam(ftable, orderidx, order, paramidx, param, listid
 	end
 
 	-- VasiliyTemniy start: callback
-	if menu.uix_callbacks ["displayOrderParam_change_paramactive"] then
-		for uix_id, uix_callback in pairs (menu.uix_callbacks ["displayOrderParam_change_paramactive"]) do
+	if menu.uix_callbacks["displayOrderParam_change_paramactive"] then
+		for uix_id, uix_callback in pairs (menu.uix_callbacks["displayOrderParam_change_paramactive"]) do
 			local result = uix_callback (ftable, orderidx, order, paramidx, param, listidx, instance, paramactive)
 			if result and (result.paramactive ~= nil) then
 				paramactive = result.paramactive

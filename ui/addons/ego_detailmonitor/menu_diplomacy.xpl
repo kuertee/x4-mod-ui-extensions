@@ -278,8 +278,8 @@ end
 
 -- kuertee start:
 function menu.init_kuertee ()
-	if menu.uix_callbacks ["init"] then
-		for uix_id, uix_callback in pairs (menu.uix_callbacks ["init"]) do
+	if menu.uix_callbacks["init"] then
+		for uix_id, uix_callback in pairs (menu.uix_callbacks["init"]) do
 			uix_callback (config)
 		end
 	end
@@ -345,8 +345,8 @@ function menu.cleanup()
 	C.SetUICoverOverride(false)
 
 	-- kuertee start: callback
-	if menu.uix_callbacks ["cleanup"] then
-		for uix_id, uix_callback in pairs (menu.uix_callbacks ["cleanup"]) do
+	if menu.uix_callbacks["cleanup"] then
+		for uix_id, uix_callback in pairs (menu.uix_callbacks["cleanup"]) do
 			uix_callback ()
 		end
 	end
@@ -380,8 +380,8 @@ end
 
 function menu.buttonTogglePlayerInfo(mode)
 	-- kuertee start: callback
-	if menu.uix_callbacks ["buttonTogglePlayerInfo_on_start"] then
-		for uix_id, uix_callback in pairs (menu.uix_callbacks ["buttonTogglePlayerInfo_on_start"]) do
+	if menu.uix_callbacks["buttonTogglePlayerInfo_on_start"] then
+		for uix_id, uix_callback in pairs (menu.uix_callbacks["buttonTogglePlayerInfo_on_start"]) do
 			uix_callback (mode, config)
 		end
 	end
@@ -1114,14 +1114,14 @@ function menu.createLeftBar(frame, offsetx, offsety)
 	-- kuertee NOTE: use the new createLeftBar_on_start callback for any post 9.x mods.
 
 	-- kuertee start: callback
-	if menu.uix_callbacks ["createPlayerInfo_on_start"] then
-		for uix_id, uix_callback in pairs (menu.uix_callbacks ["createPlayerInfo_on_start"]) do
+	if menu.uix_callbacks["createPlayerInfo_on_start"] then
+		for uix_id, uix_callback in pairs (menu.uix_callbacks["createPlayerInfo_on_start"]) do
 			uix_callback (config)
 		end
 	end
 
-	if menu.uix_callbacks ["createLeftBar_on_start"] then
-		for uix_id, uix_callback in pairs (menu.uix_callbacks ["createLeftBar_on_start"]) do
+	if menu.uix_callbacks["createLeftBar_on_start"] then
+		for uix_id, uix_callback in pairs (menu.uix_callbacks["createLeftBar_on_start"]) do
 			uix_callback (config)
 		end
 	end
@@ -1199,8 +1199,8 @@ function menu.createInfoFrame()
 	-- kuertee start: callback
 	-- kuertee NOTE: moved from start of function to here because menu.tableProperties is required.
 	-- kuertee NOTE: callback name not changed for backward compatibility.
-	if menu.uix_callbacks ["createInfoFrame_on_start"] then
-		for uix_id, uix_callback in pairs (menu.uix_callbacks ["createInfoFrame_on_start"]) do
+	if menu.uix_callbacks["createInfoFrame_on_start"] then
+		for uix_id, uix_callback in pairs (menu.uix_callbacks["createInfoFrame_on_start"]) do
 			uix_callback (menu.infoFrame, menu.tableProperties, config)
 		end
 	end
@@ -1220,8 +1220,8 @@ function menu.createInfoFrame()
 	end
 
 	-- kuertee start: callback
-	if menu.uix_callbacks ["createInfoFrame_on_info_frame_mode"] then
-		for uix_id, uix_callback in pairs (menu.uix_callbacks ["createInfoFrame_on_info_frame_mode"]) do
+	if menu.uix_callbacks["createInfoFrame_on_info_frame_mode"] then
+		for uix_id, uix_callback in pairs (menu.uix_callbacks["createInfoFrame_on_info_frame_mode"]) do
 			uix_callback (menu.infoFrame, menu.tableProperties)
 		end
 	end
@@ -1864,13 +1864,13 @@ function menu.createFactionDetailsContext(frame)
 		local heightafterfirstsection = math.max(descheight, datatable:getFullHeight())
 
 		-- kuertee start: callback
-		if menu.uix_callbacks ["createFactionDetailsContext_on_before_detailtable"] then
+		if menu.uix_callbacks["createFactionDetailsContext_on_before_detailtable"] then
 			local tableProperties = {
 				width = menu.factionConfig.width - 4 * Helper.standardContainerOffset,
 				x = 2 * Helper.standardContainerOffset,
 				y = datatable.properties.y + heightafterfirstsection + 2 * Helper.standardContainerOffset,
 			}
-			for uix_id, uix_callback in pairs (menu.uix_callbacks ["createFactionDetailsContext_on_before_detailtable"]) do
+			for uix_id, uix_callback in pairs (menu.uix_callbacks["createFactionDetailsContext_on_before_detailtable"]) do
 				local uix_table = uix_callback (frame, tableProperties, relation.id)
 				if uix_table then
 					tableProperties.y = tableProperties.y + uix_table:getVisibleHeight()
@@ -1905,8 +1905,8 @@ function menu.createFactionDetailsContext(frame)
 		local row = detailtable:addRow(true, { fixed = true, borderBelow = false })
 
 		-- kuertee start: callback
-		if menu.uix_callbacks ["createFactionDetailsContext_on_before_detail_tabs"] then
-			for uix_id, uix_callback in pairs (menu.uix_callbacks ["createFactionDetailsContext_on_before_detail_tabs"]) do
+		if menu.uix_callbacks["createFactionDetailsContext_on_before_detail_tabs"] then
+			for uix_id, uix_callback in pairs (menu.uix_callbacks["createFactionDetailsContext_on_before_detail_tabs"]) do
 				uix_callback (frame, menu.tableProperties, relation.id, detailtable)
 			end
 		end
@@ -1922,9 +1922,9 @@ function menu.createFactionDetailsContext(frame)
 		row[5].handlers.onClick = function () menu.factionData.curTab = "implications"; menu.refreshContextFrame() end
 
 		-- kuertee start: callback
-		if menu.uix_callbacks ["createFactionDetailsContext_on_add_detail_tabs"] then
+		if menu.uix_callbacks["createFactionDetailsContext_on_add_detail_tabs"] then
 			local uix_detailTabs = {}
-			for uix_id, uix_callback in pairs (menu.uix_callbacks ["createFactionDetailsContext_on_add_detail_tabs"]) do
+			for uix_id, uix_callback in pairs (menu.uix_callbacks["createFactionDetailsContext_on_add_detail_tabs"]) do
 				local uix_detailTab = uix_callback (frame, menu.tableProperties, relation.id, detailtable)
 				-- e.g. from crime has consequences
 				-- uix_detailTab = {
@@ -1965,8 +1965,8 @@ function menu.createFactionDetailsContext(frame)
 
 		if menu.factionData.curTab == "licence" then
 			-- kuertee start: callback for backward compatibility. obsolete do not create new callbacks with this id.
-			if menu.uix_callbacks ["createFactions_on_before_render_licences"] then
-				for uix_id, uix_callback in pairs (menu.uix_callbacks ["createFactions_on_before_render_licences"]) do
+			if menu.uix_callbacks["createFactions_on_before_render_licences"] then
+				for uix_id, uix_callback in pairs (menu.uix_callbacks["createFactions_on_before_render_licences"]) do
 					uix_callback (frame, menu.tableProperties, relation.id, detailtable)
 				end
 			end
@@ -2131,8 +2131,8 @@ function menu.createFactionDetailsContext(frame)
 			end
 
 			-- kuertee start: callback for backward compatibility. obsolete do not create new callbacks with this id.
-			if menu.uix_callbacks ["createFactions_on_after_declare_war_button"] then
-				for uix_id, uix_callback in pairs (menu.uix_callbacks ["createFactions_on_after_declare_war_button"]) do
+			if menu.uix_callbacks["createFactions_on_after_declare_war_button"] then
+				for uix_id, uix_callback in pairs (menu.uix_callbacks["createFactions_on_after_declare_war_button"]) do
 					uix_callback (frame, menu.tableProperties, relation.id, detailtable)
 				end
 			end
@@ -2304,8 +2304,8 @@ function menu.createFactionDetailsContext(frame)
 		end
 
 		-- kuertee start: callback
-		if menu.uix_callbacks ["createFactionDetailsContext_on_render_detail_tab"] then
-			for uix_id, uix_callback in pairs (menu.uix_callbacks ["createFactionDetailsContext_on_render_detail_tab"]) do
+		if menu.uix_callbacks["createFactionDetailsContext_on_render_detail_tab"] then
+			for uix_id, uix_callback in pairs (menu.uix_callbacks["createFactionDetailsContext_on_render_detail_tab"]) do
 				uix_callback (frame, menu.tableProperties, relation.id, detailtable, menu.factionData.curTab)
 			end
 		end
@@ -3987,8 +3987,8 @@ end
 
 function menu.relationSorter(a, b)
 	-- kuertee start: callback
-	if menu.uix_callbacks ["relationSorter"] then
-		for uix_id, uix_callback in pairs (menu.uix_callbacks ["relationSorter"]) do
+	if menu.uix_callbacks["relationSorter"] then
+		for uix_id, uix_callback in pairs (menu.uix_callbacks["relationSorter"]) do
 			local sortResult = uix_callback (a, b)
 			if sortResult then
 				return sortResult
@@ -4048,8 +4048,8 @@ function menu.createContextFrame(x, y, width, nomouseout)
 	local autoFrameHeight = true
 
 	-- kuertee start: callback
-	if menu.uix_callbacks ["createContextFrame_on_start"] then
-		for uix_id, uix_callback in pairs (menu.uix_callbacks ["createContextFrame_on_start"]) do
+	if menu.uix_callbacks["createContextFrame_on_start"] then
+		for uix_id, uix_callback in pairs (menu.uix_callbacks["createContextFrame_on_start"]) do
 			local result = uix_callback (menu.contextMenuData, menu.contextMenuMode)
 			if result then
 				menu.contextMenuData = result.contextMenuData
@@ -4088,8 +4088,8 @@ function menu.createContextFrame(x, y, width, nomouseout)
 	end
 
 	-- kuertee start: callback
-	if menu.uix_callbacks ["createContextFrame_on_end"] then
-		for uix_id, uix_callback in pairs (menu.uix_callbacks ["createContextFrame_on_end"]) do
+	if menu.uix_callbacks["createContextFrame_on_end"] then
+		for uix_id, uix_callback in pairs (menu.uix_callbacks["createContextFrame_on_end"]) do
 			local result = uix_callback (menu.contextFrame, menu.contextMenuData, menu.contextMenuMode)
 			if result then
 				menu.contextFrame = result.contextFrame
@@ -4131,8 +4131,8 @@ function menu.refreshContextFrame()
 	local autoFrameHeight = true
 
 	-- kuertee start: callback
-	if menu.uix_callbacks ["refreshContextFrame_on_start"] then
-		for uix_id, uix_callback in pairs (menu.uix_callbacks ["refreshContextFrame_on_start"]) do
+	if menu.uix_callbacks["refreshContextFrame_on_start"] then
+		for uix_id, uix_callback in pairs (menu.uix_callbacks["refreshContextFrame_on_start"]) do
 			local result = uix_callback (menu.contextMenuData, menu.contextMenuMode)
 			if result then
 				menu.contextMenuData = result.contextMenuData
@@ -4164,8 +4164,8 @@ function menu.refreshContextFrame()
 	end
 
 	-- kuertee start: callback
-	if menu.uix_callbacks ["refreshContextFrame_on_end"] then
-		for uix_id, uix_callback in pairs (menu.uix_callbacks ["refreshContextFrame_on_end"]) do
+	if menu.uix_callbacks["refreshContextFrame_on_end"] then
+		for uix_id, uix_callback in pairs (menu.uix_callbacks["refreshContextFrame_on_end"]) do
 			local result = uix_callback (menu.contextFrame, menu.contextMenuData, menu.contextMenuMode)
 			if result then
 				menu.contextFrame = result.contextFrame
@@ -4427,8 +4427,8 @@ function menu.onRowChanged(row, rowdata, uitable, modified, input, source)
 	end
 
 	-- kuertee start: callback
-	if menu.uix_callbacks ["onRowChanged"] then
-		for uix_id, uix_callback in pairs (menu.uix_callbacks ["onRowChanged"]) do
+	if menu.uix_callbacks["onRowChanged"] then
+		for uix_id, uix_callback in pairs (menu.uix_callbacks["onRowChanged"]) do
 			uix_callback (row, rowdata, uitable, modified, input)
 		end
 	end
@@ -4564,8 +4564,8 @@ function menu.registerCallback(callbackName, callbackFunction, id)
         Helper.debugText_forced(menu.name .. " uix registerCallback: callback " .. tostring(callbackName) .. " is not supported")
     end
     -- Chem end: supported callbacks
-    if menu.uix_callbacks [callbackName] == nil then
-        menu.uix_callbacks [callbackName] = {}
+    if menu.uix_callbacks[callbackName] == nil then
+        menu.uix_callbacks[callbackName] = {}
     end
     if not menu.uix_callbacks[callbackName][id] then
         if not id then

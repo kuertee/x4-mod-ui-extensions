@@ -2990,8 +2990,8 @@ function menu.loadSaveCallback(_, filename)
 	-- Helper.addDelayedOneTimeCallbackOnUpdate(function () LoadGame(filename) end, true, getElapsedTime() + 0.1)
 	Helper.addDelayedOneTimeCallbackOnUpdate(
 		function ()
-			if menu.uix_callbacks ["loadGameCallback_preLoadGame"] then
-				for uix_id, uix_callback in pairs (menu.uix_callbacks ["loadGameCallback_preLoadGame"]) do
+			if menu.uix_callbacks["loadGameCallback_preLoadGame"] then
+				for uix_id, uix_callback in pairs (menu.uix_callbacks["loadGameCallback_preLoadGame"]) do
 					uix_callback(filename)
 				end
 			end
@@ -3516,8 +3516,8 @@ function menu.addSavegameRow(ftable, savegame, name, slot, idx, maxIdx)
 	-- kuertee start: callback
 	local isAddSaveGameToList = true
 	savegame.uix_isDisplayedInList = true
-	if menu.uix_callbacks ["addSavegameRow_isListSaveGame"] then
-		for uix_id, uix_callback in pairs (menu.uix_callbacks ["addSavegameRow_isListSaveGame"]) do
+	if menu.uix_callbacks["addSavegameRow_isListSaveGame"] then
+		for uix_id, uix_callback in pairs (menu.uix_callbacks["addSavegameRow_isListSaveGame"]) do
 			isAddSaveGameToList = uix_callback(ftable, savegame, name, slot)
 			if not isAddSaveGameToList then
 				break
@@ -3531,16 +3531,16 @@ function menu.addSavegameRow(ftable, savegame, name, slot, idx, maxIdx)
 	-- kuertee end: callback
 
 	-- kuertee start: callback
-	if menu.uix_callbacks ["addSavegameRow_changeSaveGameDisplayName"] then
-		for uix_id, uix_callback in pairs (menu.uix_callbacks ["addSavegameRow_changeSaveGameDisplayName"]) do
+	if menu.uix_callbacks["addSavegameRow_changeSaveGameDisplayName"] then
+		for uix_id, uix_callback in pairs (menu.uix_callbacks["addSavegameRow_changeSaveGameDisplayName"]) do
 			name = uix_callback(ftable, savegame, name, slot) or name
 		end
 	end
 	-- kuertee end: callback
 
 	-- kuertee start: callback
-	if menu.uix_callbacks ["addSavegameRow_preSaveGameRowAdd"] then
-		for uix_id, uix_callback in pairs (menu.uix_callbacks ["addSavegameRow_preSaveGameRowAdd"]) do
+	if menu.uix_callbacks["addSavegameRow_preSaveGameRowAdd"] then
+		for uix_id, uix_callback in pairs (menu.uix_callbacks["addSavegameRow_preSaveGameRowAdd"]) do
 			uix_callback(ftable, savegame, name, slot, idx, maxIdx, config)
 		end
 	end
@@ -3576,8 +3576,8 @@ function menu.addSavegameRow(ftable, savegame, name, slot, idx, maxIdx)
 
 	-- kuertee start: callback
 	local uix_isAddRowHeightForExtraInfo = nil
-	if menu.uix_callbacks ["addSavegameRow_getRowHeightForExtraInfo"] then
-		for uix_id, uix_callback in pairs (menu.uix_callbacks ["addSavegameRow_getRowHeightForExtraInfo"]) do
+	if menu.uix_callbacks["addSavegameRow_getRowHeightForExtraInfo"] then
+		for uix_id, uix_callback in pairs (menu.uix_callbacks["addSavegameRow_getRowHeightForExtraInfo"]) do
 			uix_isAddRowHeightForExtraInfo = uix_isAddRowHeightForExtraInfo or uix_callback(ftable, savegame, name, slot)
 		end
 	end
@@ -3603,8 +3603,8 @@ function menu.addSavegameRow(ftable, savegame, name, slot, idx, maxIdx)
 
 	-- kuertee start: callback
 	local uix_isBoldFileName = nil
-	if menu.uix_callbacks ["addSavegameRow_getIsBoldFilename"] then
-		for uix_id, uix_callback in pairs (menu.uix_callbacks ["addSavegameRow_getIsBoldFilename"]) do
+	if menu.uix_callbacks["addSavegameRow_getIsBoldFilename"] then
+		for uix_id, uix_callback in pairs (menu.uix_callbacks["addSavegameRow_getIsBoldFilename"]) do
 			uix_isBoldFileName = uix_isBoldFileName or uix_callback(ftable, savegame, name, slot)
 		end
 	end
@@ -3647,8 +3647,8 @@ function menu.addSavegameRow(ftable, savegame, name, slot, idx, maxIdx)
 	-- kuertee start: callback
 	-- return row:getHeight()
 	local maxRowHeight = row:getHeight()
-	if menu.uix_callbacks ["addSavegameRow_postSaveGameRowAdd"] then
-		for uix_id, uix_callback in pairs (menu.uix_callbacks ["addSavegameRow_postSaveGameRowAdd"]) do
+	if menu.uix_callbacks["addSavegameRow_postSaveGameRowAdd"] then
+		for uix_id, uix_callback in pairs (menu.uix_callbacks["addSavegameRow_postSaveGameRowAdd"]) do
 			maxRowHeight = math.max(maxRowHeight, uix_callback(ftable, savegame, name, slot, idx, maxIdx, config))
 		end
 	end
@@ -3745,6 +3745,14 @@ function menu.cleanup()
 	menu.frameOffsetY = nil
 
 	menu.table = {}
+
+	-- kuertee start: callback
+	if menu.uix_callbacks["cleanup"] then
+		for uix_id, uix_callback in pairs (menu.uix_callbacks["cleanup"]) do
+			uix_callback ()
+		end
+	end
+	-- kuertee end: callback
 end
 
 function menu.createOptionsFrame(extrawide)
@@ -5251,8 +5259,8 @@ function menu.submenuHandler(optionParameter)
 	end
 
 	-- kuertee start: callback
-	if menu.uix_callbacks ["submenuHandler_preDisplayOptions"] then
-		for uix_id, uix_callback in pairs (menu.uix_callbacks ["submenuHandler_preDisplayOptions"]) do
+	if menu.uix_callbacks["submenuHandler_preDisplayOptions"] then
+		for uix_id, uix_callback in pairs (menu.uix_callbacks["submenuHandler_preDisplayOptions"]) do
 			uix_callback(optionParameter)
 		end
 	end
@@ -8251,8 +8259,8 @@ function menu.loadGameCallback(filename, checked)
 		-- Helper.addDelayedOneTimeCallbackOnUpdate(function () LoadGame(filename) end, true, getElapsedTime() + 0.1)
 		Helper.addDelayedOneTimeCallbackOnUpdate(
 			function ()
-				if menu.uix_callbacks ["loadGameCallback_preLoadGame"] then
-					for uix_id, uix_callback in pairs (menu.uix_callbacks ["loadGameCallback_preLoadGame"]) do
+				if menu.uix_callbacks["loadGameCallback_preLoadGame"] then
+					for uix_id, uix_callback in pairs (menu.uix_callbacks["loadGameCallback_preLoadGame"]) do
 						uix_callback(filename)
 					end
 				end
@@ -8338,8 +8346,8 @@ function menu.callbackDeleteSave(filename)
 	menu.onCloseElement("back")
 
 	-- kuertee start: callback
-	if menu.uix_callbacks ["callbackDeleteSave_onDeleteSave"] then
-		for uix_id, uix_callback in pairs (menu.uix_callbacks ["callbackDeleteSave_onDeleteSave"]) do
+	if menu.uix_callbacks["callbackDeleteSave_onDeleteSave"] then
+		for uix_id, uix_callback in pairs (menu.uix_callbacks["callbackDeleteSave_onDeleteSave"]) do
 			uix_callback(filename)
 		end
 	end
@@ -8382,8 +8390,8 @@ function menu.callbackExtensionSettingEnabled(overrideextension)
 	-- kuertee end: AddUITriggeredEvent mod activation/deactivation
 
 	-- kuertee start: callback
-	if menu.uix_callbacks ["callbackExtensionSettingEnabled_set"] then
-		for uix_id, uix_callback in pairs (menu.uix_callbacks ["callbackExtensionSettingEnabled_set"]) do
+	if menu.uix_callbacks["callbackExtensionSettingEnabled_set"] then
+		for uix_id, uix_callback in pairs (menu.uix_callbacks["callbackExtensionSettingEnabled_set"]) do
 			uix_callback(extension, enabled)
 		end
 	end
@@ -9596,8 +9604,8 @@ function menu.displayOptions(optionParameter)
 	local options = config.optionDefinitions[optionParameter]
 
 	-- kuertee start: callback
-	if menu.uix_callbacks ["displayOptions_modifyOptions"] then
-		for uix_id, uix_callback in pairs (menu.uix_callbacks ["displayOptions_modifyOptions"]) do
+	if menu.uix_callbacks["displayOptions_modifyOptions"] then
+		for uix_id, uix_callback in pairs (menu.uix_callbacks["displayOptions_modifyOptions"]) do
 			options = uix_callback(options, config)
 		end
 	end
@@ -12189,8 +12197,8 @@ function menu.displaySavegameOptions(optionParameter)
 	menu.savegames = GetSaveList(Helper.validSaveFilenames)
 
 	-- kuertee start: callback
-	if menu.uix_callbacks ["displaySavegameOptions_onGetSaveGames"] then
-		for uix_id, uix_callback in pairs (menu.uix_callbacks ["displaySavegameOptions_onGetSaveGames"]) do
+	if menu.uix_callbacks["displaySavegameOptions_onGetSaveGames"] then
+		for uix_id, uix_callback in pairs (menu.uix_callbacks["displaySavegameOptions_onGetSaveGames"]) do
 			uix_callback(optionParameter)
 		end
 	end
@@ -12207,8 +12215,8 @@ function menu.displaySavegameOptions(optionParameter)
 
 		-- table.sort(menu.savegames, function (a, b) return a.rawtime > b.rawtime end)
 		-- kuertee start: callback
-		if menu.uix_callbacks ["displaySaveGameOptions_sortSaveGames"] then
-			for uix_id, uix_callback in pairs (menu.uix_callbacks ["displaySaveGameOptions_sortSaveGames"]) do
+		if menu.uix_callbacks["displaySaveGameOptions_sortSaveGames"] then
+			for uix_id, uix_callback in pairs (menu.uix_callbacks["displaySaveGameOptions_sortSaveGames"]) do
 				uix_callback(menu.savegames, "rawtime", true)
 			end
 		else
@@ -12343,8 +12351,8 @@ function menu.displaySavegameOptions(optionParameter)
 
 					-- kuertee start: callback
 					local isShowUnusedSaveFile = true
-					if menu.uix_callbacks ["displaySavegameOptions_isShowUnusedSaveGame"] then
-						for uix_id, uix_callback in pairs (menu.uix_callbacks ["displaySavegameOptions_isShowUnusedSaveGame"]) do
+					if menu.uix_callbacks["displaySavegameOptions_isShowUnusedSaveGame"] then
+						for uix_id, uix_callback in pairs (menu.uix_callbacks["displaySavegameOptions_isShowUnusedSaveGame"]) do
 							isShowUnusedSaveFile = uix_callback(i)
 							if not isShowUnusedSaveFile then
 								goto continue
@@ -12373,8 +12381,8 @@ function menu.displaySavegameOptions(optionParameter)
 
 				-- table.sort(sortablesaves, function (a, b) return a.rawtime > b.rawtime end)
 				-- kuertee start: callback
-				if menu.uix_callbacks ["displaySaveGameOptions_sortSaveGames"] then
-					for uix_id, uix_callback in pairs (menu.uix_callbacks ["displaySaveGameOptions_sortSaveGames"]) do
+				if menu.uix_callbacks["displaySaveGameOptions_sortSaveGames"] then
+					for uix_id, uix_callback in pairs (menu.uix_callbacks["displaySaveGameOptions_sortSaveGames"]) do
 						uix_callback(sortablesaves, "rawtime", true)
 					end
 				else
@@ -12386,8 +12394,8 @@ function menu.displaySavegameOptions(optionParameter)
 
 				-- table.sort(sortablesaves, function (a, b) return a.rawtime < b.rawtime end)
 				-- kuertee start: callback
-				if menu.uix_callbacks ["displaySaveGameOptions_sortSaveGames"] then
-					for uix_id, uix_callback in pairs (menu.uix_callbacks ["displaySaveGameOptions_sortSaveGames"]) do
+				if menu.uix_callbacks["displaySaveGameOptions_sortSaveGames"] then
+					for uix_id, uix_callback in pairs (menu.uix_callbacks["displaySaveGameOptions_sortSaveGames"]) do
 						uix_callback(sortablesaves, "rawtime", false)
 					end
 				else
@@ -12399,8 +12407,8 @@ function menu.displaySavegameOptions(optionParameter)
 
 				-- table.sort(sortablesaves, function (a, b) return a.displayedname < b.displayedname end)
 				-- kuertee start: callback
-				if menu.uix_callbacks ["displaySaveGameOptions_sortSaveGames"] then
-					for uix_id, uix_callback in pairs (menu.uix_callbacks ["displaySaveGameOptions_sortSaveGames"]) do
+				if menu.uix_callbacks["displaySaveGameOptions_sortSaveGames"] then
+					for uix_id, uix_callback in pairs (menu.uix_callbacks["displaySaveGameOptions_sortSaveGames"]) do
 						uix_callback(sortablesaves, "displayedname", true)
 					end
 				else
@@ -12412,8 +12420,8 @@ function menu.displaySavegameOptions(optionParameter)
 
 				-- table.sort(sortablesaves, function (a, b) return a.displayedname > b.displayedname end)
 				-- kuertee start: callback
-				if menu.uix_callbacks ["displaySaveGameOptions_sortSaveGames"] then
-					for uix_id, uix_callback in pairs (menu.uix_callbacks ["displaySaveGameOptions_sortSaveGames"]) do
+				if menu.uix_callbacks["displaySaveGameOptions_sortSaveGames"] then
+					for uix_id, uix_callback in pairs (menu.uix_callbacks["displaySaveGameOptions_sortSaveGames"]) do
 						uix_callback(sortablesaves, "displayedname", false)
 					end
 				else
@@ -12423,14 +12431,14 @@ function menu.displaySavegameOptions(optionParameter)
 			end
 			for i, savegame in ipairs(sortablesaves) do
 				-- kuertee start: callback
-				if menu.uix_callbacks ["displaySaveGameOptions_preSaveGameRowAdd"] then
+				if menu.uix_callbacks["displaySaveGameOptions_preSaveGameRowAdd"] then
 					if next(menu.uix_callbacks["displaySaveGameOptions_preSaveGameRowAdd"]) and (not menu.uix_isWarn_displaySaveGameOptions_preSaveGameRowAdd) then
 						menu.uix_isWarn_displaySaveGameOptions_preSaveGameRowAdd = true
 						Helper.debugText_forced("NOTE: gameoptions_uix displaySaveGameOptions_preSaveGameRowAdd call back is obsolete.")
 						Helper.debugText_forced("Use addSavegameRow_preSaveGameRowAdd.")
 						Helper.debugText_forced("displaySaveGameOptions_preSaveGameRowAdd exists only for backward-compatibility.")
 					end
-					for uix_id, uix_callback in pairs (menu.uix_callbacks ["displaySaveGameOptions_preSaveGameRowAdd"]) do
+					for uix_id, uix_callback in pairs (menu.uix_callbacks["displaySaveGameOptions_preSaveGameRowAdd"]) do
 						maxRowHeight = math.max(maxRowHeight, uix_callback(ftable, savegame, savegame.displayedname, i, #sortablesaves, config))
 					end
 				end
@@ -12444,14 +12452,14 @@ function menu.displaySavegameOptions(optionParameter)
 				-- kuertee end
 
 				-- kuertee start: callback
-				if menu.uix_callbacks ["displaySaveGameOptions_postSaveGameRowAdd"] then
+				if menu.uix_callbacks["displaySaveGameOptions_postSaveGameRowAdd"] then
 					if next(menu.uix_callbacks["displaySaveGameOptions_postSaveGameRowAdd"]) and (not menu.uix_isWarn_displaySaveGameOptions_postSaveGameRowAdd) then
 						menu.uix_isWarn_displaySaveGameOptions_postSaveGameRowAdd = true
 						Helper.debugText_forced("NOTE: gameoptions_uix displaySaveGameOptions_postSaveGameRowAdd call back is obsolete.")
 						Helper.debugText_forced("Use addSavegameRow_postSaveGameRowAdd.")
 						Helper.debugText_forced("displaySaveGameOptions_postSaveGameRowAdd exists only for backward-compatibility.")
 					end
-					for uix_id, uix_callback in pairs (menu.uix_callbacks ["displaySaveGameOptions_postSaveGameRowAdd"]) do
+					for uix_id, uix_callback in pairs (menu.uix_callbacks["displaySaveGameOptions_postSaveGameRowAdd"]) do
 						maxRowHeight = math.max(maxRowHeight, uix_callback(ftable, savegame, savegame.displayedname, i, #sortablesaves))
 					end
 				end
@@ -12468,8 +12476,8 @@ function menu.displaySavegameOptions(optionParameter)
 
 					-- kuertee start: callback
 					local isShowUnusedSaveFile = true
-					if menu.uix_callbacks ["displaySavegameOptions_isShowUnusedSaveGame"] then
-						for uix_id, uix_callback in pairs (menu.uix_callbacks ["displaySavegameOptions_isShowUnusedSaveGame"]) do
+					if menu.uix_callbacks["displaySavegameOptions_isShowUnusedSaveGame"] then
+						for uix_id, uix_callback in pairs (menu.uix_callbacks["displaySavegameOptions_isShowUnusedSaveGame"]) do
 							isShowUnusedSaveFile = uix_callback(i)
 							if not isShowUnusedSaveFile then
 								goto continue
@@ -13859,8 +13867,8 @@ function menu.onUpdate()
 	local curtime = getElapsedTime()
 
 	-- kuertee start: callback
-	if menu.uix_callbacks ["onUpdate_start"] then
-		for uix_id, uix_callback in pairs (menu.uix_callbacks ["onUpdate_start"]) do
+	if menu.uix_callbacks["onUpdate_start"] then
+		for uix_id, uix_callback in pairs (menu.uix_callbacks["onUpdate_start"]) do
 			uix_callback(curtime)
 		end
 	end
@@ -13881,8 +13889,8 @@ function menu.onUpdate()
 			else
 
 				-- kuertee start: callback
-				if menu.uix_callbacks ["newGameCallback_preNewGame"] then
-					for uix_id, uix_callback in pairs (menu.uix_callbacks ["newGameCallback_preNewGame"]) do
+				if menu.uix_callbacks["newGameCallback_preNewGame"] then
+					for uix_id, uix_callback in pairs (menu.uix_callbacks["newGameCallback_preNewGame"]) do
 						uix_callback(menu.animationDelay[2].id)
 					end
 				end
@@ -13940,8 +13948,8 @@ function menu.onUpdate()
 
 					-- table.sort(menu.savegames, function (a, b) return a.rawtime > b.rawtime end)
 					-- kuertee start: callback
-					if menu.uix_callbacks ["displaySaveGameOptions_sortSaveGames"] then
-						for uix_id, uix_callback in pairs (menu.uix_callbacks ["displaySaveGameOptions_sortSaveGames"]) do
+					if menu.uix_callbacks["displaySaveGameOptions_sortSaveGames"] then
+						for uix_id, uix_callback in pairs (menu.uix_callbacks["displaySaveGameOptions_sortSaveGames"]) do
 							uix_callback(menu.savegames, "rawtime", true)
 						end
 					else
@@ -14205,8 +14213,8 @@ function menu.newGameCallback(option, checked)
 						Helper.addDelayedOneTimeCallbackOnUpdate(
 							function ()
 								C.SetUserData("tutorial_started_from", tostring(value));
-								if menu.uix_callbacks ["newGameCallback_preNewGame"] then
-									for uix_id, uix_callback in pairs (menu.uix_callbacks ["newGameCallback_preNewGame"]) do
+								if menu.uix_callbacks["newGameCallback_preNewGame"] then
+									for uix_id, uix_callback in pairs (menu.uix_callbacks["newGameCallback_preNewGame"]) do
 										uix_callback(option.id)
 									end
 								end
@@ -14222,8 +14230,8 @@ function menu.newGameCallback(option, checked)
 					-- kuertee start: callback
 					Helper.addDelayedOneTimeCallbackOnUpdate(
 						function ()
-							if menu.uix_callbacks ["newGameCallback_preNewGame"] then
-								for uix_id, uix_callback in pairs (menu.uix_callbacks ["newGameCallback_preNewGame"]) do
+							if menu.uix_callbacks["newGameCallback_preNewGame"] then
+								for uix_id, uix_callback in pairs (menu.uix_callbacks["newGameCallback_preNewGame"]) do
 									uix_callback(option.id)
 								end
 							end
@@ -14583,8 +14591,8 @@ function menu.registerCallback(callbackName, callbackFunction, id)
         Helper.debugText_forced(menu.name .. " uix registerCallback: callback " .. tostring(callbackName) .. " is not supported")
     end
     -- Chem end: supported callbacks
-    if menu.uix_callbacks [callbackName] == nil then
-        menu.uix_callbacks [callbackName] = {}
+    if menu.uix_callbacks[callbackName] == nil then
+        menu.uix_callbacks[callbackName] = {}
     end
     if not menu.uix_callbacks[callbackName][id] then
         if not id then
