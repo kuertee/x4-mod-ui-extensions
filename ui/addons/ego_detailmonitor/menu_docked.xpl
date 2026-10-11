@@ -926,9 +926,22 @@ function menu.display()
 						mouseovertext = turretname
 					end
 					row[1]:createText(turretname, { mouseOverText = mouseovertext })
-					row[2]:setColSpan(5):createDropDown(Helper.getTurretModes(turret, nil, "docked_turrets_modes_dropdown_", turretscounter), { startOption = function () return menu.getDropDownTurretModeOption(turret) end, helpOverlayID = "docked_turrets_modes".. turretscounter, helpOverlayText = " ", helpOverlayHighlightOnly = true, uiTriggerID = "docked_turrets_modes" .. turretscounter  })
-					row[2].properties.helpOverlayID = "docked_turrets_modes_dropdown" .. turretscounter
-					row[2].handlers.onDropDownConfirmed = function(_, newturretmode) C.SetWeaponMode(turret, newturretmode) end
+					-- alakeram start: callback
+					local uix_handled
+					if menu.uix_callbacks["display_on_create_turret_mode_dropdown"] then
+						for uix_id, uix_callback in pairs(menu.uix_callbacks["display_on_create_turret_mode_dropdown"]) do
+							local uix_result = uix_callback({ row = row, column = 2, colspan = 5, ship = menu.currentplayership, turret = turret, counter = turretscounter })
+							if uix_result and uix_result.handled then
+								uix_handled = true
+							end
+						end
+					end
+					if not uix_handled then
+						row[2]:setColSpan(5):createDropDown(Helper.getTurretModes(turret, nil, "docked_turrets_modes_dropdown_", turretscounter), { startOption = function () return menu.getDropDownTurretModeOption(turret) end, helpOverlayID = "docked_turrets_modes".. turretscounter, helpOverlayText = " ", helpOverlayHighlightOnly = true, uiTriggerID = "docked_turrets_modes" .. turretscounter  })
+						row[2].properties.helpOverlayID = "docked_turrets_modes_dropdown" .. turretscounter
+						row[2].handlers.onDropDownConfirmed = function(_, newturretmode) C.SetWeaponMode(turret, newturretmode) end
+					end
+					-- alakeram end: callback
 					row[7]:setColSpan(5):createButton({helpOverlayID = "docked_turrets_arm" .. turretscounter, helpOverlayText = " ", helpOverlayHighlightOnly = true   }):setText(function () return C.IsWeaponArmed(turret) and ReadText(1001, 8631) or ReadText(1001, 8632) end, { halign = "center" })
 					row[7].handlers.onClick = function () return C.SetWeaponArmed(turret, not C.IsWeaponArmed(turret)) end
 				end
@@ -944,9 +957,22 @@ function menu.display()
 						mouseovertext = groupname
 					end
 					row[1]:createText(groupname, { color = (group.operational > 0) and Color["text_normal"] or Color["text_error"], mouseOverText = mouseovertext })
-					row[2]:setColSpan(5):createDropDown(Helper.getTurretModes(group.currentcomponent ~= 0 and group.currentcomponent or nil, nil, "docked_turretgroups_modes_dropdown_", turretgroupscounter), { startOption = function () return menu.getDropDownTurretModeOption(menu.currentplayership, group.context, group.path, group.group) end, active = group.operational > 0, helpOverlayID = "docked_turretgroups_modes".. turretgroupscounter, helpOverlayText = " ", helpOverlayHighlightOnly = true, uiTriggerID = "docked_turretgroups_modes" .. turretgroupscounter  })
-					row[2].properties.helpOverlayID = "docked_turretgroups_modes_dropdown" .. turretgroupscounter
-					row[2].handlers.onDropDownConfirmed = function(_, newturretmode) C.SetTurretGroupMode2(menu.currentplayership, group.context, group.path, group.group, newturretmode) end
+					-- alakeram start: callback
+					local uix_handled
+					if menu.uix_callbacks["display_on_create_turret_mode_dropdown"] then
+						for uix_id, uix_callback in pairs(menu.uix_callbacks["display_on_create_turret_mode_dropdown"]) do
+							local uix_result = uix_callback({ row = row, column = 2, colspan = 5, ship = menu.currentplayership, group = group, counter = turretgroupscounter })
+							if uix_result and uix_result.handled then
+								uix_handled = true
+							end
+						end
+					end
+					if not uix_handled then
+						row[2]:setColSpan(5):createDropDown(Helper.getTurretModes(group.currentcomponent ~= 0 and group.currentcomponent or nil, nil, "docked_turretgroups_modes_dropdown_", turretgroupscounter), { startOption = function () return menu.getDropDownTurretModeOption(menu.currentplayership, group.context, group.path, group.group) end, active = group.operational > 0, helpOverlayID = "docked_turretgroups_modes".. turretgroupscounter, helpOverlayText = " ", helpOverlayHighlightOnly = true, uiTriggerID = "docked_turretgroups_modes" .. turretgroupscounter  })
+						row[2].properties.helpOverlayID = "docked_turretgroups_modes_dropdown" .. turretgroupscounter
+						row[2].handlers.onDropDownConfirmed = function(_, newturretmode) C.SetTurretGroupMode2(menu.currentplayership, group.context, group.path, group.group, newturretmode) end
+					end
+					-- alakeram end: callback
 					row[7]:setColSpan(5):createButton({ helpOverlayID = "docked_turretgroups_arm" .. turretgroupscounter, helpOverlayText = " ", helpOverlayHighlightOnly = true  }):setText(function () return C.IsTurretGroupArmed(menu.currentplayership, group.context, group.path, group.group) and ReadText(1001, 8631) or ReadText(1001, 8632) end, { halign = "center" })
 					row[7].handlers.onClick = function () return C.SetTurretGroupArmed(menu.currentplayership, group.context, group.path, group.group, not C.IsTurretGroupArmed(menu.currentplayership, group.context, group.path, group.group)) end
 				end
@@ -1819,6 +1845,7 @@ menu.uix_supportedCallbacks = {
     ["cleanup"] = true,
     ["display_on_after_main_interactions"] = true,
     ["display_on_after_weaponconfig_weapon_row"] = true,
+    ["display_on_create_turret_mode_dropdown"] = true,
     ["rd_addReactiveDockingDockMenu"] = true,
     ["sto_addTurretBehavioursDockMenu"] = true,
 }
