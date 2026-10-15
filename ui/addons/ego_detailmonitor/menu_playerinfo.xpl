@@ -3925,6 +3925,14 @@ function menu.getEmployeeList()
 		end
 	end
 	menu.empireData.filteredemployees = filteredemployees
+
+	-- GalaxyTrader start: callback
+	if menu.uix_callbacks["getEmployeeList_on_end"] then
+		for uix_id, uix_callback in pairs(menu.uix_callbacks["getEmployeeList_on_end"]) do
+			uix_callback(menu.empireData.filteredemployees)
+		end
+	end
+	-- GalaxyTrader end: callback
 end
 
 function menu.employeeSearchHelper(entry, text)
@@ -7821,6 +7829,7 @@ menu.uix_supportedCallbacks = {
     ["createInfoFrame_on_start"] = true,
     ["createLeftBar_on_start"] = true,
     ["createPlayerInfo_on_start"] = true,
+    ["getEmployeeList_on_end"] = true,
     ["init"] = true,
     ["onRowChanged"] = true,
     ["refreshContextFrame_on_end"] = true,

@@ -4,12 +4,12 @@ Code: https://github.com/kuertee/x4-mod-ui-extensions
 by kuertee.
 Contributors: Alakeram, AlexandreTK, ChemODun, Damonya, DiCrash,
 DrWhoKnows, DmytroK, Erixon, Faremen, Forleyor,
-HYLT2233, IALuir, Mycu, Orbika, Runekn, sticeIO.
+GoAhead78, HYLT2233, IALuir, Mycu, Orbika, Runekn, sticeIO.
 
 Updates
 =======
-v9.0.0.17, 11 Oct 2026:
-- New feature: Alakeram's new callbacks for a new mod.
+v9.0.0.18, 16 Oct 2026:
+- New feature: GoAhead78's new callbacks for the Galaxy Trader mod.
 
 Protected UI Mode
 =================
@@ -336,11 +336,14 @@ Credits
 kuertee
 Contributors: Alakeram, AlexandreTK, ChemODun, Damonya, DiCrash,
 DrWhoKnows, DmytroK, Erixon, Faremen, Forleyor,
-HYLT2233, IALuir, Mycu, Orbika, Runekn, sticeIO.
+GoAhead78, HYLT2233, IALuir, Mycu, Orbika, Runekn, sticeIO.
 French localisation by Calvitix.
 
 History
 =======
+v9.0.0.17, 11 Oct 2026:
+- New feature: Alakeram's new callbacks for a new mod.
+
 v9.0.0.16, 06 Oct 2026:
 FOR MODDERS:
 - New feature: ChemODun's helper functions: menu.uix_isCallbackSupported(callbackName) and menu.uix_getSupportedCallbacks(). Note that modders should add their new callbacks to the list menu.uix_supportedCallbacks when adding new callbacks.

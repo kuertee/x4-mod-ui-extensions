@@ -7291,9 +7291,30 @@ function menu.createContextFrame(width, height, xoffset, yoffset, noborder, star
 	})
 	menu.contextFrame:setBackground("solid", { color = Color["frame_background_semitransparent"] })
 
+	-- GalaxyTrader start: callback
+	-- createContextFrame_on_custom_mode(contextFrame, contextMenuMode, contextMenuData)
+	-- Return true to own this mode and skip the vanilla mode chain. The first true wins.
+	local uix_customModeHandled = false
+	if menu.uix_callbacks["createContextFrame_on_custom_mode"] then
+		for uix_id, uix_callback in pairs(menu.uix_callbacks["createContextFrame_on_custom_mode"]) do
+			if uix_callback(menu.contextFrame, menu.contextMenuMode, menu.contextMenuData) then
+				uix_customModeHandled = true
+				break
+			end
+		end
+	end
+	-- GalaxyTrader end: callback
+
 	local adjustFrameHeight = true
 	menu.isVentureContextMode = false
-	if menu.contextMenuMode == "neworder" then
+
+	-- GalaxyTrader start: callback
+	-- if menu.contextMenuMode == "neworder" then
+	if uix_customModeHandled then
+		-- content was added by the callback
+	elseif menu.contextMenuMode == "neworder" then
+	-- GalaxyTrader end: callback
+
 		menu.createNewOrderContext(menu.contextFrame, menu.contextMenuData.instance)
 	elseif menu.contextMenuMode == "set_orderparam_ware" then
 		menu.createOrderparamWareContext(menu.contextFrame, menu.contextMenuData.instance)
@@ -7418,7 +7439,12 @@ function menu.createContextFrame(width, height, xoffset, yoffset, noborder, star
 	-- kuertee end: callback
 
 	-- only add one border as the table y offset already is part of frame:getUsedHeight()
-	if adjustFrameHeight then
+
+	-- GalaxyTrader start: callback
+	-- if adjustFrameHeight then
+	if adjustFrameHeight and not uix_customModeHandled then
+	-- GalaxyTrader end: callback
+
 		menu.contextFrame.properties.height = math.min(Helper.viewHeight - menu.contextFrame.properties.y, menu.contextFrame:getUsedHeight() + 2 * Helper.standardContainerOffset)
 	end
 	menu.contextFrame:display()
@@ -7536,8 +7562,29 @@ function menu.refreshContextFrame(setrow, setcol, noborder)
 	})
 	menu.contextFrame:setBackground("solid", { color = Color["frame_background_semitransparent"] })
 
+	-- GalaxyTrader start: callback
+	-- refreshContextFrame_on_custom_mode(contextFrame, contextMenuMode, contextMenuData)
+	-- Return true to own this mode and skip the vanilla mode chain. The first true wins.
+	local uix_customModeHandled = false
+	if menu.uix_callbacks["refreshContextFrame_on_custom_mode"] then
+		for uix_id, uix_callback in pairs(menu.uix_callbacks["refreshContextFrame_on_custom_mode"]) do
+			if uix_callback(menu.contextFrame, menu.contextMenuMode, menu.contextMenuData) then
+				uix_customModeHandled = true
+				break
+			end
+		end
+	end
+	-- GalaxyTrader end: callback
+
 	local adjustFrameHeight = true
-	if menu.contextMenuMode == "boardingcontext" then
+
+	-- GalaxyTrader start: callback
+	-- if menu.contextMenuMode == "boardingcontext" then
+	if uix_customModeHandled then
+		-- content was added by the callback
+	elseif menu.contextMenuMode == "boardingcontext" then
+	-- GalaxyTrader end: callback
+
 		menu.contexttoprow = GetTopRow(menu.boardingtable_shipselection.id)
 		menu.contextselectedrow = Helper.currentTableRow[menu.boardingtable_shipselection.id]
 
@@ -7616,7 +7663,12 @@ function menu.refreshContextFrame(setrow, setcol, noborder)
 	-- kuertee end: callback
 
 	-- only add one border as the table y offset already is part of frame:getUsedHeight()
-	if adjustFrameHeight then
+
+	-- GalaxyTrader start: callback
+	-- if adjustFrameHeight then
+	if adjustFrameHeight and not uix_customModeHandled then
+	-- GalaxyTrader end: callback
+
 		menu.contextFrame.properties.height = math.min(Helper.viewHeight - menu.contextFrame.properties.y, menu.contextFrame:getUsedHeight() + Helper.borderSize)
 	end
 	menu.contextFrame:display()
@@ -29570,6 +29622,14 @@ function menu.onUpdate()
 		menu.prepareKnownSectors()
 		menu.updateKnownSectors = nil
 	end
+
+	-- GalaxyTrader start: callback
+	if menu.uix_callbacks["onUpdate_on_end"] then
+		for uix_id, uix_callback in pairs(menu.uix_callbacks["onUpdate_on_end"]) do
+			uix_callback()
+		end
+	end
+	-- GalaxyTrader end: callback
 end
 
 -- row changes
@@ -34320,6 +34380,8 @@ function menu.uix_distanceTool(posrot, posrotcomponent)
 	if not posrot then
 		posrot = ffi.new("UIPosRot")
 	end
+	Helper.uix_distanceTool_distance = nil
+	Helper.uix_distanceTool_jumps = nil
 	local uix_distanceTool_selected_component = next(menu.selectedcomponents)
 	if uix_distanceTool_selected_component then
 		uix_distanceTool_from_posRot = ffi.new("UIPosRot")
@@ -34328,34 +34390,34 @@ function menu.uix_distanceTool(posrot, posrotcomponent)
 		-- use uix_distanceTool_from_component set at the bottom of menu.onRenderTargetMouseDown()
 		uix_distanceTool_from_component = ConvertStringTo64Bit(tostring(uix_distanceTool_from_component))
 	end
-	Helper.uix_distanceTool_distance = nil
-	Helper.uix_distanceTool_jumps = nil
-	if uix_distanceTool_from_component and uix_distanceTool_from_posRot then
+	if uix_distanceTool_from_component and IsValidComponent(uix_distanceTool_from_component) and uix_distanceTool_from_posRot then
 		uix_distanceTool_to_posRot = posrot
 		uix_distanceTool_to_component = ConvertStringTo64Bit(tostring(posrotcomponent))
-		local uix_posFrom, uix_sectorFrom, uix_posTo, uix_sectorTo
-		if C.IsComponentClass(uix_distanceTool_from_component, "sector") then
-			uix_posFrom = uix_distanceTool_from_posRot
-			uix_sectorFrom = uix_distanceTool_from_component
-		else
-			uix_posFrom = C.GetObjectPositionInSector(uix_distanceTool_from_component)
-			uix_sectorFrom = ConvertIDTo64Bit(GetComponentData(uix_distanceTool_from_component, "sectorid"))
-		end
-		if C.IsComponentClass(uix_distanceTool_to_component, "sector") then
-			uix_posTo = uix_distanceTool_to_posRot
-			uix_sectorTo = uix_distanceTool_to_component
-		else
-			uix_posTo = C.GetObjectPositionInSector(uix_distanceTool_to_component)
-			uix_sectorTo = ConvertIDTo64Bit(GetComponentData(uix_distanceTool_to_component, "sectorid"))
-		end
-		local uix_gates = FindJumpRoute(uix_sectorFrom, uix_sectorTo)
-		if uix_gates == 0 or IsSameComponent(uix_sectorFrom, uix_sectorTo) then
-			local uix_x_delta = math.abs (uix_posTo.x - uix_posFrom.x)
-			local uix_y_delta = math.abs (uix_posTo.y - uix_posFrom.y)
-			local uix_z_delta = math.abs (uix_posTo.z - uix_posFrom.z)
-			Helper.uix_distanceTool_distance = math.pow(math.pow(uix_x_delta, 2) + math.pow(uix_y_delta, 2) + math.pow(uix_z_delta, 2), 0.5)
-		elseif uix_sectorFrom and uix_sectorTo then
-			Helper.uix_distanceTool_jumps = uix_gates
+		if uix_distanceTool_to_component and IsValidComponent(uix_distanceTool_to_component) then
+			local uix_posFrom, uix_sectorFrom, uix_posTo, uix_sectorTo
+			if C.IsComponentClass(uix_distanceTool_from_component, "sector") then
+				uix_posFrom = uix_distanceTool_from_posRot
+				uix_sectorFrom = uix_distanceTool_from_component
+			else
+				uix_posFrom = C.GetObjectPositionInSector(uix_distanceTool_from_component)
+				uix_sectorFrom = ConvertIDTo64Bit(GetComponentData(uix_distanceTool_from_component, "sectorid"))
+			end
+			if C.IsComponentClass(uix_distanceTool_to_component, "sector") then
+				uix_posTo = uix_distanceTool_to_posRot
+				uix_sectorTo = uix_distanceTool_to_component
+			else
+				uix_posTo = C.GetObjectPositionInSector(uix_distanceTool_to_component)
+				uix_sectorTo = ConvertIDTo64Bit(GetComponentData(uix_distanceTool_to_component, "sectorid"))
+			end
+			local uix_gates = FindJumpRoute(uix_sectorFrom, uix_sectorTo)
+			if uix_gates == 0 or IsSameComponent(uix_sectorFrom, uix_sectorTo) then
+				local uix_x_delta = math.abs (uix_posTo.x - uix_posFrom.x)
+				local uix_y_delta = math.abs (uix_posTo.y - uix_posFrom.y)
+				local uix_z_delta = math.abs (uix_posTo.z - uix_posFrom.z)
+				Helper.uix_distanceTool_distance = math.pow(math.pow(uix_x_delta, 2) + math.pow(uix_y_delta, 2) + math.pow(uix_z_delta, 2), 0.5)
+			elseif uix_sectorFrom and uix_sectorTo then
+				Helper.uix_distanceTool_jumps = uix_gates
+			end
 		end
 	end
 end
@@ -34486,6 +34548,7 @@ menu.uix_supportedCallbacks = {
     ["closeContextMenu_on_before"] = true,
     ["cpsdo_map_loadoutinfo_sessystem_display_insert"] = true,
     ["cpsdo_map_shipInformation_shiptypename_replace"] = true,
+    ["createContextFrame_on_custom_mode"] = true,
     ["createContextFrame_on_end"] = true,
     ["createContextFrame_on_start"] = true,
     ["createInfoFrame_on_menu_infoTableMode"] = true,
@@ -34544,7 +34607,9 @@ menu.uix_supportedCallbacks = {
     ["onSetActiveStateForCVMode_on_createPropertyOwned"] = true,
     ["onShowMenu_orderdefs_forcedorderatfront"] = true,
     ["onUpdateTableSelection_at_end"] = true,
+    ["onUpdate_on_end"] = true,
     ["rd_addReactiveDockingMapMenu"] = true,
+    ["refreshContextFrame_on_custom_mode"] = true,
     ["refreshContextFrame_on_end"] = true,
     ["refreshContextFrame_on_start"] = true,
     ["refreshInfoFrame2_on_start"] = true,
