@@ -5033,6 +5033,24 @@ function menu.setupEmpireRows(mode, properties_table_center, tabOrderOffset, tab
 
 			local row = table_center:addRow("orders_buildmethod", {  })
 			row[1]:setColSpan(5):createDropDown(locresponses, { height = Helper.standardTextHeight, startOption = cursetting }):setTextProperties({ fontsize = config.mapFontSize })
+			-- kuertee start: callback
+			if menu.uix_callbacks["getBuildMethodOptions"] then
+				for uix_id, uix_callback in pairs(menu.uix_callbacks["getBuildMethodOptions"]) do
+					local uix_result = uix_callback(row[1].properties.options, nil, cursetting, row[1].properties.startOption)
+					if uix_result then
+						if uix_result.options ~= nil then
+							row[1].properties.options = uix_result.options
+						end
+						if uix_result.startOption ~= nil then
+							row[1].properties.startOption = uix_result.startOption
+						end
+						if uix_result.active ~= nil then
+							row[1].properties.active = uix_result.active
+						end
+					end
+				end
+			end
+			-- kuertee end: callback
 			row[1].handlers.onDropDownConfirmed = menu.dropdownOrdersBuildRule
 
 			table_center:addEmptyRow()
@@ -7829,6 +7847,7 @@ menu.uix_supportedCallbacks = {
     ["createInfoFrame_on_start"] = true,
     ["createLeftBar_on_start"] = true,
     ["createPlayerInfo_on_start"] = true,
+    ["getBuildMethodOptions"] = true,
     ["getEmployeeList_on_end"] = true,
     ["init"] = true,
     ["onRowChanged"] = true,

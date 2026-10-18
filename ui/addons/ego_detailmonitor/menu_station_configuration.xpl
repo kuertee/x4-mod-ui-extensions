@@ -4009,6 +4009,24 @@ function menu.displayPlan(frame)
 
 			local row = modulestatustable:addRow("info_buildrule", {  })
 			row[1]:setColSpan(6):createDropDown(locresponses, { height = Helper.standardTextHeight, startOption = hasownsetting and cursetting or curglobalsetting, active = hasownsetting }):setTextProperties({ fontsize = config.mapFontSize })
+			-- kuertee start: callback
+			if menu.uix_callbacks["getBuildMethodOptions"] then
+				for uix_id, uix_callback in pairs(menu.uix_callbacks["getBuildMethodOptions"]) do
+					local uix_result = uix_callback(row[1].properties.options, menu.buildstorage, cursetting, row[1].properties.startOption)
+					if uix_result then
+						if uix_result.options ~= nil then
+							row[1].properties.options = uix_result.options
+						end
+						if uix_result.startOption ~= nil then
+							row[1].properties.startOption = uix_result.startOption
+						end
+						if uix_result.active ~= nil then
+							row[1].properties.active = uix_result.active
+						end
+					end
+				end
+			end
+			-- kuertee end: callback
 			row[1].handlers.onDropDownConfirmed = function (_, id) return menu.dropdownBuildRule(menu.buildstorage, id) end
 			row[1].handlers.onDropDownActivated = function () menu.noupdate = true end
 
@@ -7319,6 +7337,7 @@ menu.uix_supportedCallbacks = {
     ["displayModules_on_before_create_button_mouseovertext"] = true,
     ["displayPlan_getWareName"] = true,
     ["displayPlan_render_incoming_ware"] = true,
+    ["getBuildMethodOptions"] = true,
 }
 function menu.uix_isCallbackSupported(callbackName)
     return menu.uix_supportedCallbacks[callbackName] == true
