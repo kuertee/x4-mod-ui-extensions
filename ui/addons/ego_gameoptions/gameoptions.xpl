@@ -14700,6 +14700,7 @@ menu.uix_supportedCallbacks = {
     ["addSavegameRow_preSaveGameRowAdd"] = true,
     ["callbackDeleteSave_onDeleteSave"] = true,
     ["callbackExtensionSettingEnabled_set"] = true,
+    ["cleanup"] = true,
     ["displayControls_modifyControlsOrder"] = true,
     ["displayOptions_modifyOptions"] = true,
     ["displaySavegameOptions_isShowUnusedSaveGame"] = true,
