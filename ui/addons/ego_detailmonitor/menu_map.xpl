@@ -12213,6 +12213,24 @@ function menu.createResponsesForControllable(ftable, controllable, textpropertie
 
 				local row = buildmethodrowgroup:addRow("info_buildrule", {  })
 				row[1]:setColSpan(8):createDropDown(locresponses, { height = Helper.standardTextHeight, startOption = hasownsetting and cursetting or curglobalsetting, active = hasownsetting }):setTextProperties({ fontsize = config.mapFontSize })
+				-- kuertee start: callback
+				if menu.uix_callbacks["getBuildMethodOptions"] then
+					for uix_id, uix_callback in pairs(menu.uix_callbacks["getBuildMethodOptions"]) do
+						local uix_result = uix_callback(row[1].properties.options, controllable, cursetting, row[1].properties.startOption)
+						if uix_result then
+							if uix_result.options ~= nil then
+								row[1].properties.options = uix_result.options
+							end
+							if uix_result.startOption ~= nil then
+								row[1].properties.startOption = uix_result.startOption
+							end
+							if uix_result.active ~= nil then
+								row[1].properties.active = uix_result.active
+							end
+						end
+					end
+				end
+				-- kuertee end: callback
 				row[1].handlers.onDropDownConfirmed = function (_, id) return menu.dropdownBuildRule(controllable, id) end
 				row[1].handlers.onDropDownActivated = function () menu.noupdate = true end
 
@@ -15837,6 +15855,24 @@ function menu.setupInfoSubmenuRows(mode, inputtable, inputobject, instance)
 
 				local row = traderulerowgroup:addRow("info_buildrule", {  })
 				row[1]:setColSpan(8):createDropDown(locresponses, { height = Helper.standardTextHeight, startOption = hasownsetting and cursetting or curglobalsetting, active = hasownsetting }):setTextProperties({ fontsize = config.mapFontSize })
+				-- kuertee start: callback
+				if menu.uix_callbacks["getBuildMethodOptions"] then
+					for uix_id, uix_callback in pairs(menu.uix_callbacks["getBuildMethodOptions"]) do
+						local uix_result = uix_callback(row[1].properties.options, inputobject, cursetting, row[1].properties.startOption)
+						if uix_result then
+							if uix_result.options ~= nil then
+								row[1].properties.options = uix_result.options
+							end
+							if uix_result.startOption ~= nil then
+								row[1].properties.startOption = uix_result.startOption
+							end
+							if uix_result.active ~= nil then
+								row[1].properties.active = uix_result.active
+							end
+						end
+					end
+				end
+				-- kuertee end: callback
 				row[1].handlers.onDropDownConfirmed = function (_, id) return menu.dropdownBuildRule(inputobject, id) end
 				row[1].handlers.onDropDownActivated = function () menu.noupdate = true end
 			end
@@ -34586,6 +34622,7 @@ menu.uix_supportedCallbacks = {
     ["createSideBar_on_start"] = true,
     ["displayDefaultBehaviour_change_param_behaviouractive"] = true,
     ["displayOrderParam_change_paramactive"] = true,
+    ["getBuildMethodOptions"] = true,
     ["getContainerNameAndColors_on_name_construct"] = true,
     ["getPropertyOwnedFleetDataInternal_addToFleetIcons"] = true,
     ["ic_onRowChanged"] = true,
