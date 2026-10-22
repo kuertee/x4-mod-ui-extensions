@@ -12213,6 +12213,7 @@ function menu.createResponsesForControllable(ftable, controllable, textpropertie
 
 				local row = buildmethodrowgroup:addRow("info_buildrule", {  })
 				row[1]:setColSpan(8):createDropDown(locresponses, { height = Helper.standardTextHeight, startOption = hasownsetting and cursetting or curglobalsetting, active = hasownsetting }):setTextProperties({ fontsize = config.mapFontSize })
+
 				-- kuertee start: callback
 				if menu.uix_callbacks["getBuildMethodOptions"] then
 					for uix_id, uix_callback in pairs(menu.uix_callbacks["getBuildMethodOptions"]) do
@@ -12231,6 +12232,7 @@ function menu.createResponsesForControllable(ftable, controllable, textpropertie
 					end
 				end
 				-- kuertee end: callback
+
 				row[1].handlers.onDropDownConfirmed = function (_, id) return menu.dropdownBuildRule(controllable, id) end
 				row[1].handlers.onDropDownActivated = function () menu.noupdate = true end
 
@@ -14182,6 +14184,16 @@ function menu.createPlotMode(inputframe)
 		table.insert(menu.plotsliders, { table = table_plotdetails, cell = row[1], row = row.index, col = 1, dimension = dimension.dimension, slider = slider })
 	end
 
+	-- precise_plot_placer start: callback
+	-- createPlotMode_after_size_sliders(detailsTable, sizeRowGroup, plotData)
+	-- Add rows to sizeRowGroup to sit under the size sliders. plotData.placed is false while the new-plot entry is selected.
+	if menu.uix_callbacks["createPlotMode_after_size_sliders"] then
+		for uix_id, uix_callback in pairs(menu.uix_callbacks["createPlotMode_after_size_sliders"]) do
+			uix_callback(table_plotdetails, plotsizerowgroup, menu.plotData)
+		end
+	end
+	-- precise_plot_placer end: callback
+
 	plotsizerowgroup:addEmptyRow(config.mapRowHeight / 2)
 
 	row = plotsizerowgroup:addRow(nil, { bgColor = Color["row_background_unselectable"] })
@@ -15855,6 +15867,7 @@ function menu.setupInfoSubmenuRows(mode, inputtable, inputobject, instance)
 
 				local row = traderulerowgroup:addRow("info_buildrule", {  })
 				row[1]:setColSpan(8):createDropDown(locresponses, { height = Helper.standardTextHeight, startOption = hasownsetting and cursetting or curglobalsetting, active = hasownsetting }):setTextProperties({ fontsize = config.mapFontSize })
+
 				-- kuertee start: callback
 				if menu.uix_callbacks["getBuildMethodOptions"] then
 					for uix_id, uix_callback in pairs(menu.uix_callbacks["getBuildMethodOptions"]) do
@@ -15873,6 +15886,7 @@ function menu.setupInfoSubmenuRows(mode, inputtable, inputobject, instance)
 					end
 				end
 				-- kuertee end: callback
+
 				row[1].handlers.onDropDownConfirmed = function (_, id) return menu.dropdownBuildRule(inputobject, id) end
 				row[1].handlers.onDropDownActivated = function () menu.noupdate = true end
 			end
@@ -26632,6 +26646,7 @@ function menu.createRenameContext(frame)
 	row[2]:createButton({  }):setText(ReadText(1001, 64), { halign = "center" })
 	row[2].handlers.onClick = function () return menu.closeContextMenu("back") end
 
+
 	-- [UniTrader's Advanced Renaming] Forleyor start: callback
 	if menu.uix_callbacks["utRenaming_createRenameContext_on_after_confirm_button"] then
 		for uix_id, uix_callback in pairs(menu.uix_callbacks["utRenaming_createRenameContext_on_after_confirm_button"]) do
@@ -30087,6 +30102,22 @@ function menu.onRenderTargetSelect(modified)
 			local pickedplayer = C.GetPickedMultiverseMapPlayer(menu.holomap)
 			-- TODO
 		elseif menu.mode == "selectbuildlocation" then
+
+			-- precise_plot_placer start: callback
+			-- onRenderTargetSelect_on_plot_pick()
+			-- Return true to handle this click and skip the vanilla plot place or station select. The first true wins.
+			local uix_plotPickHandled = false
+			if menu.uix_callbacks["onRenderTargetSelect_on_plot_pick"] then
+				for uix_id, uix_callback in pairs(menu.uix_callbacks["onRenderTargetSelect_on_plot_pick"]) do
+					if uix_callback() then
+						uix_plotPickHandled = true
+						break
+					end
+				end
+			end
+			if not uix_plotPickHandled then
+			-- precise_plot_placer end: callback
+
 			local station = 0
 			if menu.plotData.active then
 				local offset = ffi.new("UIPosRot")
@@ -30128,6 +30159,11 @@ function menu.onRenderTargetSelect(modified)
 				menu.updatePlotData(station, true)
 				menu.refreshInfoFrame()
 			end
+
+			-- precise_plot_placer start: callback
+			end
+			-- precise_plot_placer end: callback
+
 		elseif menu.mode == "orderparam_position" then
 			local offset = ffi.new("UIPosRot")
 			local eclipticoffset = ffi.new("UIPosRot")
@@ -34606,6 +34642,7 @@ menu.uix_supportedCallbacks = {
     ["createMissionContext_startDescriptionTable"] = true,
     ["createMissionMode_on_missionoffer_guild_start"] = true,
     ["createMissionMode_replaceMissionModeCurrent"] = true,
+    ["createPlotMode_after_size_sliders"] = true,
     ["createObjectList_on_add_entry_infoTableData"] = true,
     ["createObjectList_on_createPropertySection"] = true,
     ["createObjectList_on_init_infoTableData"] = true,
@@ -34648,6 +34685,7 @@ menu.uix_supportedCallbacks = {
     ["onRenderTargetDoubleClick_at_start"] = true,
     ["onRenderTargetSelect_on_leave"] = true,
     ["onRenderTargetSelect_on_objectlist_newmode"] = true,
+    ["onRenderTargetSelect_on_plot_pick"] = true,
     ["onRenderTargetSelect_on_propertyowned_newmode"] = true,
     ["onSetActiveStateForCVMode_on_createPropertyOwned"] = true,
     ["onShowMenu_orderdefs_forcedorderatfront"] = true,
