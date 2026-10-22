@@ -4398,14 +4398,24 @@ function menu.createEmpire(frame, tableProperties)
 				table.insert(entry.spaces, ConvertStringTo64Bit(tostring(buf[i].spaceids[j])))
 			end
 			entry.objectclasses		= {}
-			for class in string.gmatch(ffi.string(buf[i].objectclass), "[%a_]+") do
+
+			-- kuertee start: allow alpha-numeric matches
+			-- for class in string.gmatch(ffi.string(buf[i].objectclass), "[%a_]+") do
+			for class in string.gmatch(ffi.string(buf[i].objectclass), "[%w_]+") do
+			-- kuertee end: allow alpha-numeric matches
+
 				table.insert(entry.objectclasses, class)
 			end
 			table.sort(entry.objectclasses, menu.sortClasses)
 			entry.objectpurpose		= ffi.string(buf[i].objectpurpose)
 			entry.objectidcode		= ffi.string(buf[i].objectidcode)
 			entry.objectowners		= {}
-			for faction in string.gmatch(ffi.string(buf[i].objectowner), "[%a_]+") do
+
+			-- kuertee start: allow alpha-numeric matches
+			-- for faction in string.gmatch(ffi.string(buf[i].objectowner), "[%a_]+") do
+			for faction in string.gmatch(ffi.string(buf[i].objectowner), "[%w_]+") do
+			-- kuertee end: allow alpha-numeric matches
+
 				table.insert(entry.objectowners, faction)
 			end
 			table.sort(entry.objectowners, Helper.sortFactionName)

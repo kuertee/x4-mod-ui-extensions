@@ -3103,7 +3103,12 @@ function menu.onShowMenu(state)
 
 		menu.availableshipmacros = {}
 		if options ~= "" then
-			for macro in string.gmatch(options, "[%a_]+") do
+
+			-- kuertee start: allow alpha-numeric matches
+			-- for macro in string.gmatch(options, "[%a_]+") do
+			for macro in string.gmatch(options, "[%w_]+") do
+			-- kuertee end: allow alpha-numeric matches
+
 				table.insert(menu.availableshipmacros, macro)
 			end
 		else

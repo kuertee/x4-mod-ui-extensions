@@ -1584,7 +1584,11 @@ function menu.setupFlowchartData()
 		}
 		table.insert(nodes, warenode)
 
-		for supplytype in string.gmatch(entry.supplytypes, "%a+") do
+		-- kuertee start: allow alpha-numeric matches
+		-- for supplytype in string.gmatch(entry.supplytypes, "%a+") do
+		for supplytype in string.gmatch(entry.supplytypes, "%w+") do
+		-- kuertee end: allow alpha-numeric matches
+
 			if dronesnode and (supplytype == "unit") then
 				addFlowchartEdge(warenode, dronesnode)
 			elseif missilesnode and (supplytype == "missile") then

@@ -26632,6 +26632,14 @@ function menu.createRenameContext(frame)
 	row[2]:createButton({  }):setText(ReadText(1001, 64), { halign = "center" })
 	row[2].handlers.onClick = function () return menu.closeContextMenu("back") end
 
+	-- [UniTrader's Advanced Renaming] Forleyor start: callback
+	if menu.uix_callbacks["utRenaming_createRenameContext_on_after_confirm_button"] then
+		for uix_id, uix_callback in pairs(menu.uix_callbacks["utRenaming_createRenameContext_on_after_confirm_button"]) do
+			uix_callback(frame, shiptable)
+		end
+	end
+	-- [UniTrader's Advanced Renaming] Forleyor end: callback
+
 	-- adjust frame position
 	local neededheight = shiptable.properties.y + shiptable:getVisibleHeight()
 	if frame.properties.y + neededheight + Helper.frameBorder > Helper.viewHeight then
@@ -34655,6 +34663,7 @@ menu.uix_supportedCallbacks = {
     ["updatePlotSize_on_before_extend"] = true,
     ["utRenaming_buttonRenameConfirm"] = true,
     ["utRenaming_createRenameContext_get_startname"] = true,
+    ["utRenaming_createRenameContext_on_after_confirm_button"] = true,
     ["utRenaming_infoChangeObjectName"] = true,
     ["utRenaming_setupInfoSubmenuRows_on_end"] = true,
 }
