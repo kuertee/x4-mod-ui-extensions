@@ -24530,6 +24530,26 @@ function menu.createResponsesForControllable(ftable, controllable, textpropertie
 
 				local row = buildmethodrowgroup:addRow("info_buildrule", {  })
 				row[1]:setColSpan(8):createDropDown(locresponses, { height = Helper.standardTextHeight, startOption = hasownsetting and cursetting or curglobalsetting, active = hasownsetting }):setTextProperties({ fontsize = config.mapFontSize })
+
+				-- kuertee start: callback
+				if menu.uix_callbacks["getBuildMethodOptions"] then
+					for uix_id, uix_callback in pairs(menu.uix_callbacks["getBuildMethodOptions"]) do
+						local uix_result = uix_callback(row[1].properties.options, controllable, cursetting, row[1].properties.startOption)
+						if uix_result then
+							if uix_result.options ~= nil then
+								row[1].properties.options = uix_result.options
+							end
+							if uix_result.startOption ~= nil then
+								row[1].properties.startOption = uix_result.startOption
+							end
+							if uix_result.active ~= nil then
+								row[1].properties.active = uix_result.active
+							end
+						end
+					end
+				end
+				-- kuertee end: callback
+
 				row[1].handlers.onDropDownConfirmed = function (_, id) return menu.dropdownBuildRule(controllable, id) end
 				row[1].handlers.onDropDownActivated = function () menu.noupdate = true end
 
@@ -26481,6 +26501,16 @@ function menu.createPlotMode(inputframe)
 		table.insert(menu.plotsliders, { table = table_plotdetails, cell = row[1], row = row.index, col = 1, dimension = dimension.dimension, slider = slider })
 	end
 
+	-- precise_plot_placer start: callback
+	-- createPlotMode_after_size_sliders(detailsTable, sizeRowGroup, plotData)
+	-- Add rows to sizeRowGroup to sit under the size sliders. plotData.placed is false while the new-plot entry is selected.
+	if menu.uix_callbacks["createPlotMode_after_size_sliders"] then
+		for uix_id, uix_callback in pairs(menu.uix_callbacks["createPlotMode_after_size_sliders"]) do
+			uix_callback(table_plotdetails, plotsizerowgroup, menu.plotData)
+		end
+	end
+	-- precise_plot_placer end: callback
+
 	plotsizerowgroup:addEmptyRow(config.mapRowHeight / 2)
 
 	row = plotsizerowgroup:addRow(nil, { bgColor = Color["row_background_unselectable"] })
@@ -28154,6 +28184,26 @@ function menu.setupInfoSubmenuRows(mode, inputtable, inputobject, instance)
 
 				local row = traderulerowgroup:addRow("info_buildrule", {  })
 				row[1]:setColSpan(8):createDropDown(locresponses, { height = Helper.standardTextHeight, startOption = hasownsetting and cursetting or curglobalsetting, active = hasownsetting }):setTextProperties({ fontsize = config.mapFontSize })
+
+				-- kuertee start: callback
+				if menu.uix_callbacks["getBuildMethodOptions"] then
+					for uix_id, uix_callback in pairs(menu.uix_callbacks["getBuildMethodOptions"]) do
+						local uix_result = uix_callback(row[1].properties.options, inputobject, cursetting, row[1].properties.startOption)
+						if uix_result then
+							if uix_result.options ~= nil then
+								row[1].properties.options = uix_result.options
+							end
+							if uix_result.startOption ~= nil then
+								row[1].properties.startOption = uix_result.startOption
+							end
+							if uix_result.active ~= nil then
+								row[1].properties.active = uix_result.active
+							end
+						end
+					end
+				end
+				-- kuertee end: callback
+
 				row[1].handlers.onDropDownConfirmed = function (_, id) return menu.dropdownBuildRule(inputobject, id) end
 				row[1].handlers.onDropDownActivated = function () menu.noupdate = true end
 			end
@@ -38913,6 +38963,15 @@ function menu.createRenameContext(frame)
 	row[2]:createButton({  }):setText(ReadText(1001, 64), { halign = "center" })
 	row[2].handlers.onClick = function () return menu.closeContextMenu("back") end
 
+
+	-- [UniTrader's Advanced Renaming] Forleyor start: callback
+	if menu.uix_callbacks["utRenaming_createRenameContext_on_after_confirm_button"] then
+		for uix_id, uix_callback in pairs(menu.uix_callbacks["utRenaming_createRenameContext_on_after_confirm_button"]) do
+			uix_callback(frame, shiptable)
+		end
+	end
+	-- [UniTrader's Advanced Renaming] Forleyor end: callback
+
 	-- adjust frame position
 	local neededheight = shiptable.properties.y + shiptable:getVisibleHeight()
 	if frame.properties.y + neededheight + Helper.frameBorder > Helper.viewHeight then
@@ -42360,6 +42419,22 @@ function menu.onRenderTargetSelect(modified)
 			local pickedplayer = C.GetPickedMultiverseMapPlayer(menu.holomap)
 			-- TODO
 		elseif menu.mode == "selectbuildlocation" then
+
+			-- precise_plot_placer start: callback
+			-- onRenderTargetSelect_on_plot_pick()
+			-- Return true to handle this click and skip the vanilla plot place or station select. The first true wins.
+			local uix_plotPickHandled = false
+			if menu.uix_callbacks["onRenderTargetSelect_on_plot_pick"] then
+				for uix_id, uix_callback in pairs(menu.uix_callbacks["onRenderTargetSelect_on_plot_pick"]) do
+					if uix_callback() then
+						uix_plotPickHandled = true
+						break
+					end
+				end
+			end
+			if not uix_plotPickHandled then
+			-- precise_plot_placer end: callback
+
 			local station = 0
 			if menu.plotData.active then
 				local offset = ffi.new("UIPosRot")
@@ -42401,6 +42476,11 @@ function menu.onRenderTargetSelect(modified)
 				menu.updatePlotData(station, true)
 				menu.refreshInfoFrame()
 			end
+
+			-- precise_plot_placer start: callback
+			end
+			-- precise_plot_placer end: callback
+
 		elseif menu.mode == "orderparam_position" then
 			local offset = ffi.new("UIPosRot")
 			local eclipticoffset = ffi.new("UIPosRot")
@@ -46879,6 +46959,7 @@ menu.uix_supportedCallbacks = {
     ["createMissionContext_startDescriptionTable"] = true,
     ["createMissionMode_on_missionoffer_guild_start"] = true,
     ["createMissionMode_replaceMissionModeCurrent"] = true,
+    ["createPlotMode_after_size_sliders"] = true,
     ["createObjectList_on_add_entry_infoTableData"] = true,
     ["createObjectList_on_createPropertySection"] = true,
     ["createObjectList_on_init_infoTableData"] = true,
@@ -46903,6 +46984,7 @@ menu.uix_supportedCallbacks = {
     ["createSideBar_on_start"] = true,
     ["displayDefaultBehaviour_change_param_behaviouractive"] = true,
     ["displayOrderParam_change_paramactive"] = true,
+    ["getBuildMethodOptions"] = true,
     ["getContainerNameAndColors_on_name_construct"] = true,
     ["getPropertyOwnedFleetDataInternal_addToFleetIcons"] = true,
     ["ic_onRowChanged"] = true,
@@ -46920,6 +47002,7 @@ menu.uix_supportedCallbacks = {
     ["onRenderTargetDoubleClick_at_start"] = true,
     ["onRenderTargetSelect_on_leave"] = true,
     ["onRenderTargetSelect_on_objectlist_newmode"] = true,
+    ["onRenderTargetSelect_on_plot_pick"] = true,
     ["onRenderTargetSelect_on_propertyowned_newmode"] = true,
     ["onSetActiveStateForCVMode_on_createPropertyOwned"] = true,
     ["onShowMenu_orderdefs_forcedorderatfront"] = true,
@@ -46935,6 +47018,7 @@ menu.uix_supportedCallbacks = {
     ["updatePlotSize_on_before_extend"] = true,
     ["utRenaming_buttonRenameConfirm"] = true,
     ["utRenaming_createRenameContext_get_startname"] = true,
+    ["utRenaming_createRenameContext_on_after_confirm_button"] = true,
     ["utRenaming_infoChangeObjectName"] = true,
     ["utRenaming_setupInfoSubmenuRows_on_end"] = true,
 }
@@ -51352,14 +51436,24 @@ function menu.createEmpire(frame, tableProperties)
 				table.insert(entry.spaces, ConvertStringTo64Bit(tostring(buf[i].spaceids[j])))
 			end
 			entry.objectclasses		= {}
-			for class in string.gmatch(ffi.string(buf[i].objectclass), "[%a_]+") do
+
+			-- kuertee start: allow alpha-numeric matches
+			-- for class in string.gmatch(ffi.string(buf[i].objectclass), "[%a_]+") do
+			for class in string.gmatch(ffi.string(buf[i].objectclass), "[%w_]+") do
+			-- kuertee end: allow alpha-numeric matches
+
 				table.insert(entry.objectclasses, class)
 			end
 			table.sort(entry.objectclasses, menu.sortClasses)
 			entry.objectpurpose		= ffi.string(buf[i].objectpurpose)
 			entry.objectidcode		= ffi.string(buf[i].objectidcode)
 			entry.objectowners		= {}
-			for faction in string.gmatch(ffi.string(buf[i].objectowner), "[%a_]+") do
+
+			-- kuertee start: allow alpha-numeric matches
+			-- for faction in string.gmatch(ffi.string(buf[i].objectowner), "[%a_]+") do
+			for faction in string.gmatch(ffi.string(buf[i].objectowner), "[%w_]+") do
+			-- kuertee end: allow alpha-numeric matches
+
 				table.insert(entry.objectowners, faction)
 			end
 			table.sort(entry.objectowners, Helper.sortFactionName)
@@ -51987,6 +52081,24 @@ function menu.setupEmpireRows(mode, properties_table_center, tabOrderOffset, tab
 
 			local row = table_center:addRow("orders_buildmethod", {  })
 			row[1]:setColSpan(5):createDropDown(locresponses, { height = Helper.standardTextHeight, startOption = cursetting }):setTextProperties({ fontsize = config.mapFontSize })
+			-- kuertee start: callback
+			if menu.uix_callbacks["getBuildMethodOptions"] then
+				for uix_id, uix_callback in pairs(menu.uix_callbacks["getBuildMethodOptions"]) do
+					local uix_result = uix_callback(row[1].properties.options, nil, cursetting, row[1].properties.startOption)
+					if uix_result then
+						if uix_result.options ~= nil then
+							row[1].properties.options = uix_result.options
+						end
+						if uix_result.startOption ~= nil then
+							row[1].properties.startOption = uix_result.startOption
+						end
+						if uix_result.active ~= nil then
+							row[1].properties.active = uix_result.active
+						end
+					end
+				end
+			end
+			-- kuertee end: callback
 			row[1].handlers.onDropDownConfirmed = menu.dropdownOrdersBuildRule
 
 			table_center:addEmptyRow()
@@ -54783,6 +54895,7 @@ menu.uix_supportedCallbacks = {
     ["createInfoFrame_on_start"] = true,
     ["createLeftBar_on_start"] = true,
     ["createPlayerInfo_on_start"] = true,
+    ["getBuildMethodOptions"] = true,
     ["getEmployeeList_on_end"] = true,
     ["init"] = true,
     ["onRowChanged"] = true,
@@ -60904,7 +61017,12 @@ function menu.onShowMenu(state)
 
 		menu.availableshipmacros = {}
 		if options ~= "" then
-			for macro in string.gmatch(options, "[%a_]+") do
+
+			-- kuertee start: allow alpha-numeric matches
+			-- for macro in string.gmatch(options, "[%a_]+") do
+			for macro in string.gmatch(options, "[%w_]+") do
+			-- kuertee end: allow alpha-numeric matches
+
 				table.insert(menu.availableshipmacros, macro)
 			end
 		else
@@ -73838,6 +73956,24 @@ function menu.displayPlan(frame)
 
 			local row = modulestatustable:addRow("info_buildrule", {  })
 			row[1]:setColSpan(6):createDropDown(locresponses, { height = Helper.standardTextHeight, startOption = hasownsetting and cursetting or curglobalsetting, active = hasownsetting }):setTextProperties({ fontsize = config.mapFontSize })
+			-- kuertee start: callback
+			if menu.uix_callbacks["getBuildMethodOptions"] then
+				for uix_id, uix_callback in pairs(menu.uix_callbacks["getBuildMethodOptions"]) do
+					local uix_result = uix_callback(row[1].properties.options, menu.buildstorage, cursetting, row[1].properties.startOption)
+					if uix_result then
+						if uix_result.options ~= nil then
+							row[1].properties.options = uix_result.options
+						end
+						if uix_result.startOption ~= nil then
+							row[1].properties.startOption = uix_result.startOption
+						end
+						if uix_result.active ~= nil then
+							row[1].properties.active = uix_result.active
+						end
+					end
+				end
+			end
+			-- kuertee end: callback
 			row[1].handlers.onDropDownConfirmed = function (_, id) return menu.dropdownBuildRule(menu.buildstorage, id) end
 			row[1].handlers.onDropDownActivated = function () menu.noupdate = true end
 
@@ -77148,6 +77284,7 @@ menu.uix_supportedCallbacks = {
     ["displayModules_on_before_create_button_mouseovertext"] = true,
     ["displayPlan_getWareName"] = true,
     ["displayPlan_render_incoming_ware"] = true,
+    ["getBuildMethodOptions"] = true,
 }
 function menu.uix_isCallbackSupported(callbackName)
     return menu.uix_supportedCallbacks[callbackName] == true
@@ -78749,7 +78886,11 @@ function menu.setupFlowchartData()
 		}
 		table.insert(nodes, warenode)
 
-		for supplytype in string.gmatch(entry.supplytypes, "%a+") do
+		-- kuertee start: allow alpha-numeric matches
+		-- for supplytype in string.gmatch(entry.supplytypes, "%a+") do
+		for supplytype in string.gmatch(entry.supplytypes, "%w+") do
+		-- kuertee end: allow alpha-numeric matches
+
 			if dronesnode and (supplytype == "unit") then
 				addFlowchartEdge(warenode, dronesnode)
 			elseif missilesnode and (supplytype == "missile") then
@@ -122436,6 +122577,7 @@ menu.uix_supportedCallbacks = {
     ["addSavegameRow_preSaveGameRowAdd"] = true,
     ["callbackDeleteSave_onDeleteSave"] = true,
     ["callbackExtensionSettingEnabled_set"] = true,
+    ["cleanup"] = true,
     ["displayControls_modifyControlsOrder"] = true,
     ["displayOptions_modifyOptions"] = true,
     ["displaySavegameOptions_isShowUnusedSaveGame"] = true,
