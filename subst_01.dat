@@ -73976,6 +73976,13 @@ function menu.displayPlan(frame)
 			-- kuertee end: callback
 			row[1].handlers.onDropDownConfirmed = function (_, id) return menu.dropdownBuildRule(menu.buildstorage, id) end
 			row[1].handlers.onDropDownActivated = function () menu.noupdate = true end
+			-- kuertee start: callback
+			if menu.uix_callbacks["displayPlan_on_after_build_method"] then
+				for uix_id, uix_callback in pairs(menu.uix_callbacks["displayPlan_on_after_build_method"]) do
+					uix_callback(modulestatustable, menu.buildstorage, menu.container)
+				end
+			end
+			-- kuertee end: callback
 
 			-- module status here
 			local row = modulestatustable:addRow(false, { fixed = true, bgColor = Color["row_title_background"] })
@@ -77283,6 +77290,7 @@ menu.uix_supportedCallbacks = {
     ["createRightSideBar_on_prepare_entries"] = true,
     ["displayModules_on_before_create_button_mouseovertext"] = true,
     ["displayPlan_getWareName"] = true,
+    ["displayPlan_on_after_build_method"] = true,
     ["displayPlan_render_incoming_ware"] = true,
     ["getBuildMethodOptions"] = true,
 }

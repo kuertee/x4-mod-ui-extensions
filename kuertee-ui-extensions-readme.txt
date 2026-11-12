@@ -8,9 +8,8 @@ GoAhead78, HYLT2233, IALuir, Mycu, Orbika, Runekn, sticeIO.
 
 Updates
 =======
-v9.0.0.19, 23 Oct 2026:
-- New feature: by GoAhead78: New callbacks for new a mod.
-- New feature: by Mycu: New callbacks for new a mod.
+v9.0.0.21, 13 Nov 2026:
+- New feature: New callbacks by Mycu.
 
 Protected UI Mode
 =================
@@ -342,6 +341,10 @@ French localisation by Calvitix.
 
 History
 =======
+v9.0.0.19, 23 Oct 2026:
+- New feature: by GoAhead78: New callbacks for new a mod.
+- New feature: by Mycu: New callbacks for new a mod.
+
 v9.0.0.18, 16 Oct 2026:
 - New feature: GoAhead78's new callbacks for the Galaxy Trader mod.
 
